@@ -61,12 +61,12 @@ export function GameBoard() {
 
         {/* Center UI panel */}
         <div 
-          className="absolute flex items-center justify-center"
+          className="absolute flex items-center justify-center overflow-hidden"
           style={{
-            top: '17%',
-            left: '16%',
-            width: '68%',
-            height: '53%',
+            top: '20%',
+            left: '17.5%',
+            width: '65%',
+            height: '47%',
           }}
         >
           <div className="w-full h-full p-4">
