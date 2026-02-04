@@ -59,17 +59,18 @@ export function GameBoard() {
           })}
         </div>
 
-        {/* Center UI panel */}
+        {/* Center UI panel - positioned exactly within the white frame */}
         <div 
-          className="absolute flex items-center justify-center overflow-hidden"
+          className="absolute overflow-hidden z-10"
           style={{
-            top: '20%',
-            left: '17.5%',
-            width: '65%',
-            height: '47%',
+            top: '18.5%',
+            left: '17%',
+            width: '66%',
+            height: '49%',
+            padding: '1%',
           }}
         >
-          <div className="w-full h-full p-4">
+          <div className="w-full h-full overflow-hidden">
             {selectedLocation ? (
               <LocationPanel locationId={selectedLocation} />
             ) : (
