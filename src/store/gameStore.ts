@@ -28,6 +28,7 @@ interface GameStore extends GameState {
   modifyHappiness: (playerId: string, amount: number) => void;
   modifyFood: (playerId: string, amount: number) => void;
   modifyClothing: (playerId: string, amount: number) => void;
+  modifyMaxHealth: (playerId: string, amount: number) => void;
   setHousing: (playerId: string, tier: HousingTier) => void;
   setJob: (playerId: string, jobId: string | null) => void;
   workShift: (playerId: string, hours: number, wage: number) => void;
@@ -38,12 +39,20 @@ interface GameStore extends GameState {
   withdrawFromBank: (playerId: string, amount: number) => void;
   invest: (playerId: string, amount: number) => void;
   buyItem: (playerId: string, itemId: string, cost: number) => void;
+  sellItem: (playerId: string, itemId: string, price: number) => void;
+  takeQuest: (playerId: string, questId: string) => void;
+  completeQuest: (playerId: string) => void;
+  abandonQuest: (playerId: string) => void;
+  evictPlayer: (playerId: string) => void;
+  checkDeath: (playerId: string) => boolean;
+  promoteGuildRank: (playerId: string) => void;
   endTurn: () => void;
   processWeekEnd: () => void;
   setPhase: (phase: GameState['phase']) => void;
   selectLocation: (location: LocationId | null) => void;
   dismissEvent: () => void;
   checkVictory: (playerId: string) => boolean;
+  setEventMessage: (message: string | null) => void;
   selectedLocation: LocationId | null;
 }
 
@@ -85,6 +94,9 @@ const createPlayer = (
   currentJob: null,
   inventory: [],
   isAI,
+  activeQuest: null,
+  hasNewspaper: false,
+  isSick: false,
 });
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -201,6 +213,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
       players: state.players.map((p) =>
         p.id === playerId
           ? { ...p, clothingCondition: Math.max(0, Math.min(100, p.clothingCondition + amount)) }
+          : p
+      ),
+    }));
+  },
+
+  modifyMaxHealth: (playerId, amount) => {
+    set((state) => ({
+      players: state.players.map((p) =>
+        p.id === playerId
+          ? { ...p, maxHealth: Math.max(50, p.maxHealth + amount), health: Math.min(p.health, p.maxHealth + amount) }
           : p
       ),
     }));
@@ -351,6 +373,126 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }));
   },
 
+  sellItem: (playerId, itemId, price) => {
+    set((state) => ({
+      players: state.players.map((p) => {
+        if (p.id !== playerId) return p;
+        const itemIndex = p.inventory.indexOf(itemId);
+        if (itemIndex === -1) return p;
+        const newInventory = [...p.inventory];
+        newInventory.splice(itemIndex, 1);
+        return {
+          ...p,
+          gold: p.gold + price,
+          inventory: newInventory,
+        };
+      }),
+    }));
+  },
+
+  takeQuest: (playerId, questId) => {
+    set((state) => ({
+      players: state.players.map((p) =>
+        p.id === playerId
+          ? { ...p, activeQuest: questId }
+          : p
+      ),
+    }));
+  },
+
+  completeQuest: (playerId) => {
+    const state = get();
+    const player = state.players.find(p => p.id === playerId);
+    if (!player || !player.activeQuest) return;
+    
+    // Import quest data dynamically to avoid circular deps
+    import('@/data/quests').then(({ getQuest, QUEST_RANK_REQUIREMENTS }) => {
+      const quest = getQuest(player.activeQuest!);
+      if (!quest) return;
+
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          
+          // Apply quest rewards and risks
+          const healthLoss = Math.random() < 0.5 ? quest.healthRisk : Math.floor(quest.healthRisk / 2);
+          
+          return {
+            ...p,
+            gold: p.gold + quest.goldReward,
+            health: Math.max(0, p.health - healthLoss),
+            happiness: Math.min(100, p.happiness + quest.happinessReward),
+            timeRemaining: Math.max(0, p.timeRemaining - quest.timeRequired),
+            completedQuests: p.completedQuests + 1,
+            activeQuest: null,
+          };
+        }),
+      }));
+
+      // Check for guild rank promotion
+      get().promoteGuildRank(playerId);
+    });
+  },
+
+  abandonQuest: (playerId) => {
+    set((state) => ({
+      players: state.players.map((p) =>
+        p.id === playerId
+          ? { 
+              ...p, 
+              activeQuest: null,
+              happiness: Math.max(0, p.happiness - 5), // Penalty for abandoning
+            }
+          : p
+      ),
+    }));
+  },
+
+  evictPlayer: (playerId) => {
+    set((state) => ({
+      players: state.players.map((p) =>
+        p.id === playerId
+          ? { 
+              ...p, 
+              housing: 'homeless' as HousingTier,
+              weeksSinceRent: 0,
+              inventory: [], // Lose all items
+              happiness: Math.max(0, p.happiness - 30),
+            }
+          : p
+      ),
+      eventMessage: "You have been evicted! All your possessions are lost.",
+    }));
+  },
+
+  checkDeath: (playerId) => {
+    const state = get();
+    const player = state.players.find(p => p.id === playerId);
+    if (!player) return false;
+    
+    if (player.health <= 0) {
+      // Check for resurrection (if has savings)
+      if (player.savings >= 100) {
+        set((state) => ({
+          players: state.players.map((p) =>
+            p.id === playerId
+              ? { 
+                  ...p, 
+                  health: 50,
+                  savings: p.savings - 100,
+                  currentLocation: 'enchanter' as LocationId,
+                }
+              : p
+          ),
+          eventMessage: "The healers have revived you! 100 gold was taken from your savings.",
+        }));
+        return false;
+      }
+      return true; // Player is dead
+    }
+    return false;
+  },
+
   endTurn: () => {
     const state = get();
     const nextIndex = (state.currentPlayerIndex + 1) % state.players.length;
@@ -376,10 +518,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const newWeek = state.week + 1;
     const isRentDue = newWeek % 4 === 0;
     const isClothingDegradation = newWeek % 8 === 0;
+    let eventMessages: string[] = [];
     
     // Process all players for week-end effects
     const updatedPlayers = state.players.map((player) => {
       let p = { ...player };
+      
+      // Reset newspaper for new week
+      p.hasNewspaper = false;
       
       // Food depletion
       p.foodLevel = Math.max(0, p.foodLevel - 25);
@@ -388,11 +534,30 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (p.foodLevel === 0) {
         p.health = Math.max(0, p.health - 10);
         p.happiness = Math.max(0, p.happiness - 15);
+        if (!p.isAI) {
+          eventMessages.push(`${p.name} is starving! -10 health, -15 happiness.`);
+        }
       }
       
       // Clothing degradation
       if (isClothingDegradation) {
         p.clothingCondition = Math.max(0, p.clothingCondition - 25);
+        if (!p.isAI && p.clothingCondition <= 25) {
+          eventMessages.push(`${p.name}'s clothing is in poor condition!`);
+        }
+      }
+      
+      // Eviction check - after 8 weeks without paying rent
+      if (p.housing !== 'homeless' && p.weeksSinceRent >= 8) {
+        p.housing = 'homeless';
+        p.weeksSinceRent = 0;
+        p.inventory = []; // Lose all items
+        p.happiness = Math.max(0, p.happiness - 30);
+        if (!p.isAI) {
+          eventMessages.push(`${p.name} has been evicted! All possessions lost.`);
+        }
+      } else if (p.housing !== 'homeless' && p.weeksSinceRent >= 4 && !p.isAI) {
+        eventMessages.push(`${p.name}: Rent is overdue! Pay soon or face eviction.`);
       }
       
       // Investment returns (small weekly interest)
@@ -414,6 +579,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
         if (theftEvent.effect.happiness) {
           p.happiness = Math.max(0, p.happiness + theftEvent.effect.happiness);
         }
+        if (!p.isAI) {
+          eventMessages.push(`Shadowfingers struck! ${p.name} lost ${Math.abs(theftEvent.effect.gold)} gold!`);
+        }
+      }
+      
+      // Random sickness chance (5%)
+      if (Math.random() < 0.05 && !p.isSick) {
+        p.isSick = true;
+        p.health = Math.max(0, p.health - 15);
+        if (!p.isAI) {
+          eventMessages.push(`${p.name} has fallen ill! Visit a healer to recover.`);
+        }
       }
       
       // Rent tracking
@@ -431,6 +608,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       ),
       rentDueWeek: isRentDue ? newWeek : state.rentDueWeek,
       selectedLocation: null,
+      eventMessage: eventMessages.length > 0 ? eventMessages.join('\n') : null,
+      phase: eventMessages.length > 0 ? 'event' : 'playing',
     });
   },
 
@@ -439,6 +618,34 @@ export const useGameStore = create<GameStore>((set, get) => ({
   selectLocation: (location) => set({ selectedLocation: location }),
 
   dismissEvent: () => set({ eventMessage: null, phase: 'playing' }),
+
+  setEventMessage: (message) => set({ eventMessage: message }),
+
+  promoteGuildRank: (playerId: string) => {
+    const state = get();
+    const player = state.players.find(p => p.id === playerId);
+    if (!player) return;
+
+    const rankOrder = ['novice', 'apprentice', 'journeyman', 'adept', 'veteran', 'elite', 'guild-master'] as const;
+    const requirements = { novice: 0, apprentice: 3, journeyman: 10, adept: 25, veteran: 50, elite: 100, 'guild-master': 200 };
+    
+    const currentIndex = rankOrder.indexOf(player.guildRank);
+    if (currentIndex >= rankOrder.length - 1) return; // Already max rank
+    
+    const nextRank = rankOrder[currentIndex + 1];
+    const required = requirements[nextRank];
+    
+    if (player.completedQuests >= required) {
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? { ...p, guildRank: nextRank }
+            : p
+        ),
+        eventMessage: `Congratulations! You have been promoted to ${nextRank.charAt(0).toUpperCase() + nextRank.slice(1)}!`,
+      }));
+    }
+  },
 
   checkVictory: (playerId) => {
     const state = get();

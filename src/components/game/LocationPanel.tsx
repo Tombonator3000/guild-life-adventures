@@ -2,11 +2,18 @@ import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { getLocation, getMovementCost } from '@/data/locations';
 import type { LocationId, EducationPath, HousingTier } from '@/types/game.types';
 import { RENT_COSTS } from '@/types/game.types';
-import { MapPin, Clock, ArrowRight, X, Utensils, GraduationCap, Briefcase, Coins, ShoppingBag, Home, Dices, Sparkles, Hammer } from 'lucide-react';
+import { MapPin, Clock, ArrowRight, X, Utensils, GraduationCap, Briefcase, Coins, ShoppingBag, Home, Sparkles, Hammer, Newspaper, Scroll, Heart } from 'lucide-react';
 import { EDUCATION_PATHS, getCourse, getNextCourse } from '@/data/education';
 import { getAvailableJobs, JOBS, FORGE_JOBS } from '@/data/jobs';
 import { GENERAL_STORE_ITEMS, TAVERN_ITEMS, ARMORY_ITEMS, ENCHANTER_ITEMS, SHADOW_MARKET_ITEMS, getItemPrice } from '@/data/items';
 import { HOUSING_DATA, HOUSING_TIERS } from '@/data/housing';
+import { QuestPanel } from './QuestPanel';
+import { HealerPanel } from './HealerPanel';
+import { PawnShopPanel } from './PawnShopPanel';
+import { getAvailableQuests } from '@/data/quests';
+import { NEWSPAPER_COST, NEWSPAPER_TIME, generateNewspaper } from '@/data/newspaper';
+import { useState } from 'react';
+import { NewspaperModal } from './NewspaperModal';
 
 interface LocationPanelProps {
   locationId: LocationId;
@@ -21,6 +28,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     modifyHealth,
     modifyFood,
     modifyClothing,
+    modifyMaxHealth,
     spendTime,
     workShift,
     studySession,
@@ -31,9 +39,16 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     withdrawFromBank,
     invest,
     priceModifier,
+    week,
+    takeQuest,
+    completeQuest,
+    abandonQuest,
+    sellItem,
   } = useGameStore();
   const player = useCurrentPlayer();
   const location = getLocation(locationId);
+  const [showNewspaper, setShowNewspaper] = useState(false);
+  const [currentNewspaper, setCurrentNewspaper] = useState<ReturnType<typeof generateNewspaper> | null>(null);
 
   if (!location || !player) return null;
 
@@ -45,6 +60,15 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     if (canAffordMove && !isHere) {
       movePlayer(player.id, locationId, moveCost);
     }
+  };
+
+  const handleBuyNewspaper = () => {
+    const price = Math.round(NEWSPAPER_COST * priceModifier);
+    modifyGold(player.id, -price);
+    spendTime(player.id, NEWSPAPER_TIME);
+    const newspaper = generateNewspaper(week, priceModifier);
+    setCurrentNewspaper(newspaper);
+    setShowNewspaper(true);
   };
 
   // Location-specific actions
@@ -85,14 +109,25 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
       
       case 'guild-hall':
         const availableJobs = getAvailableJobs(player.education, player.clothingCondition);
+        const availableQuests = getAvailableQuests(player.guildRank);
         return (
           <div className="space-y-4">
+            {/* Quest System */}
+            <QuestPanel
+              quests={availableQuests}
+              player={player}
+              onTakeQuest={(questId) => takeQuest(player.id, questId)}
+              onCompleteQuest={() => completeQuest(player.id)}
+              onAbandonQuest={() => abandonQuest(player.id)}
+            />
+            
+            {/* Jobs */}
             <div>
               <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
                 <Briefcase className="w-4 h-4" /> Available Jobs
               </h4>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {JOBS.slice(0, 6).map(job => {
+              <div className="space-y-2 max-h-32 overflow-y-auto">
+                {JOBS.slice(0, 4).map(job => {
                   const canWork = availableJobs.some(j => j.id === job.id);
                   return (
                     <ActionButton
@@ -245,12 +280,24 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
         );
 
       case 'general-store':
+        const newspaperPrice = Math.round(NEWSPAPER_COST * priceModifier);
         return (
           <div className="space-y-2">
             <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+              <Newspaper className="w-4 h-4" /> The Guildholm Herald
+            </h4>
+            <ActionButton
+              label="Buy Newspaper"
+              cost={newspaperPrice}
+              time={NEWSPAPER_TIME}
+              disabled={player.gold < newspaperPrice || player.timeRemaining < NEWSPAPER_TIME}
+              onClick={handleBuyNewspaper}
+            />
+            
+            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2 mt-4">
               <ShoppingBag className="w-4 h-4" /> Food and Supplies
             </h4>
-            {GENERAL_STORE_ITEMS.map(item => {
+            {GENERAL_STORE_ITEMS.slice(0, 5).map(item => {
               const price = getItemPrice(item, priceModifier);
               return (
                 <ActionButton
@@ -308,11 +355,32 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
 
       case 'enchanter':
         return (
-          <div className="space-y-2">
+          <div className="space-y-4">
+            {/* Healer's Sanctuary */}
+            <HealerPanel
+              player={player}
+              priceModifier={priceModifier}
+              onHeal={(cost, healthGain, time) => {
+                modifyGold(player.id, -cost);
+                modifyHealth(player.id, healthGain);
+                spendTime(player.id, time);
+              }}
+              onCureSickness={(cost, time) => {
+                modifyGold(player.id, -cost);
+                spendTime(player.id, time);
+                // Would need to add setSickness to store
+              }}
+              onBlessHealth={(cost, time) => {
+                modifyGold(player.id, -cost);
+                modifyMaxHealth(player.id, 10);
+                spendTime(player.id, time);
+              }}
+            />
+            
             <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
               <Sparkles className="w-4 h-4" /> Magical Items
             </h4>
-            {ENCHANTER_ITEMS.map(item => {
+            {ENCHANTER_ITEMS.slice(0, 3).map(item => {
               const price = getItemPrice(item, priceModifier);
               return (
                 <ActionButton
@@ -346,10 +414,19 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
                 <span>Current Housing:</span>
                 <span className="font-bold">{HOUSING_DATA[player.housing].name}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between mb-2">
                 <span>Weekly Rent:</span>
                 <span className="font-bold">{currentRent}g</span>
               </div>
+              <div className="flex justify-between">
+                <span>Weeks Since Payment:</span>
+                <span className={`font-bold ${player.weeksSinceRent >= 4 ? 'text-destructive' : ''}`}>
+                  {player.weeksSinceRent}
+                </span>
+              </div>
+              {player.weeksSinceRent >= 4 && (
+                <p className="text-destructive text-xs mt-2">⚠️ Eviction warning! Pay rent now!</p>
+              )}
             </div>
             <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2">
               <Home className="w-4 h-4" /> Housing Options
@@ -429,9 +506,27 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
         );
 
       case 'shadow-market':
+        const shadowNewspaperPrice = Math.round(NEWSPAPER_COST * priceModifier * 0.5); // Cheaper here
         return (
           <div className="space-y-2">
             <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+              <Newspaper className="w-4 h-4" /> Black Market Info
+            </h4>
+            <ActionButton
+              label="Buy Newspaper (Discount)"
+              cost={shadowNewspaperPrice}
+              time={NEWSPAPER_TIME}
+              disabled={player.gold < shadowNewspaperPrice || player.timeRemaining < NEWSPAPER_TIME}
+              onClick={() => {
+                modifyGold(player.id, -shadowNewspaperPrice);
+                spendTime(player.id, NEWSPAPER_TIME);
+                const newspaper = generateNewspaper(week, priceModifier);
+                setCurrentNewspaper(newspaper);
+                setShowNewspaper(true);
+              }}
+            />
+            
+            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2 mt-4">
               <ShoppingBag className="w-4 h-4" /> Black Market Goods
             </h4>
             {SHADOW_MARKET_ITEMS.map(item => {
@@ -484,43 +579,38 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
 
       case 'fence':
         return (
-          <div className="space-y-2">
-            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
-              <Dices className="w-4 h-4" /> Pawn Shop and Gambling
-            </h4>
-            <ActionButton
-              label="Gamble (10g stake)"
-              cost={10}
-              time={2}
-              disabled={player.gold < 10 || player.timeRemaining < 2}
-              onClick={() => {
-                modifyGold(player.id, -10);
-                spendTime(player.id, 2);
-                if (Math.random() < 0.4) {
-                  modifyGold(player.id, 25);
-                  modifyHappiness(player.id, 5);
-                } else {
-                  modifyHappiness(player.id, -3);
-                }
-              }}
-            />
-            <ActionButton
-              label="High Stakes (50g)"
-              cost={50}
-              time={2}
-              disabled={player.gold < 50 || player.timeRemaining < 2}
-              onClick={() => {
-                modifyGold(player.id, -50);
-                spendTime(player.id, 2);
-                if (Math.random() < 0.3) {
-                  modifyGold(player.id, 150);
-                  modifyHappiness(player.id, 15);
-                } else {
-                  modifyHappiness(player.id, -10);
-                }
-              }}
-            />
-          </div>
+          <PawnShopPanel
+            player={player}
+            priceModifier={priceModifier}
+            onSellItem={(itemId, price) => {
+              sellItem(player.id, itemId, price);
+              spendTime(player.id, 1);
+            }}
+            onBuyUsedItem={(itemId, price) => {
+              modifyGold(player.id, -price);
+              spendTime(player.id, 1);
+              // Apply effects based on item
+              if (itemId === 'used-clothes') {
+                modifyClothing(player.id, 50);
+              } else if (itemId === 'used-blanket') {
+                modifyHappiness(player.id, 3);
+              }
+            }}
+            onGamble={(stake) => {
+              modifyGold(player.id, -stake);
+              spendTime(player.id, stake >= 100 ? 3 : 2);
+              
+              let winChance = stake === 10 ? 0.4 : stake === 50 ? 0.3 : 0.2;
+              let winAmount = stake === 10 ? 25 : stake === 50 ? 150 : 400;
+              
+              if (Math.random() < winChance) {
+                modifyGold(player.id, winAmount);
+                modifyHappiness(player.id, stake >= 100 ? 25 : stake >= 50 ? 15 : 5);
+              } else {
+                modifyHappiness(player.id, stake >= 100 ? -20 : stake >= 50 ? -10 : -3);
+              }
+            }}
+          />
         );
 
       default:
@@ -533,53 +623,60 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
   };
 
   return (
-    <div className="parchment-panel h-full p-4 flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <MapPin className="w-6 h-6 text-primary flex-shrink-0" />
-          <div>
-            <h2 className="font-display text-xl font-bold text-card-foreground">
-              {location.name}
-            </h2>
-            <p className="text-muted-foreground text-sm">{location.description}</p>
-          </div>
-        </div>
-        <button 
-          onClick={() => selectLocation(null)}
-          className="p-1 hover:bg-muted rounded-lg transition-colors flex-shrink-0"
-        >
-          <X className="w-4 h-4 text-muted-foreground" />
-        </button>
-      </div>
-
-      {/* Travel or Actions */}
-      <div className="flex-1 overflow-y-auto">
-        {isHere ? (
-          <div>
-            {getLocationActions()}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full">
-            <div className="flex items-center gap-2 text-muted-foreground mb-4">
-              <Clock className="w-5 h-5" />
-              <span>Travel time: {moveCost} hours</span>
+    <>
+      <div className="parchment-panel h-full p-4 flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <MapPin className="w-6 h-6 text-primary flex-shrink-0" />
+            <div>
+              <h2 className="font-display text-xl font-bold text-card-foreground">
+                {location.name}
+              </h2>
+              <p className="text-muted-foreground text-sm">{location.description}</p>
             </div>
-            <button
-              onClick={handleTravel}
-              disabled={!canAffordMove}
-              className="gold-button flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Travel to {location.name}
-              <ArrowRight className="w-5 h-5" />
-            </button>
-            {!canAffordMove && (
-              <p className="text-destructive text-sm mt-2">Not enough time!</p>
-            )}
           </div>
-        )}
+          <button 
+            onClick={() => selectLocation(null)}
+            className="p-1 hover:bg-muted rounded-lg transition-colors flex-shrink-0"
+          >
+            <X className="w-4 h-4 text-muted-foreground" />
+          </button>
+        </div>
+
+        {/* Travel or Actions */}
+        <div className="flex-1 overflow-y-auto">
+          {isHere ? (
+            <div>
+              {getLocationActions()}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full">
+              <div className="flex items-center gap-2 text-muted-foreground mb-4">
+                <Clock className="w-5 h-5" />
+                <span>Travel time: {moveCost} hours</span>
+              </div>
+              <button
+                onClick={handleTravel}
+                disabled={!canAffordMove}
+                className="gold-button flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Travel to {location.name}
+                <ArrowRight className="w-5 h-5" />
+              </button>
+              {!canAffordMove && (
+                <p className="text-destructive text-sm mt-2">Not enough time!</p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+      
+      <NewspaperModal 
+        newspaper={currentNewspaper} 
+        onClose={() => setShowNewspaper(false)} 
+      />
+    </>
   );
 }
 
