@@ -51,13 +51,21 @@ export function useAI() {
       }
     }
 
-    // Priority 3: Work if low on money (< 50 gold)
-    if (player.gold < 50 && player.timeRemaining >= 8) {
+    // Priority 3: Work if low on money (< 50 gold) or no job
+    if ((player.gold < 50 || !player.currentJob) && player.timeRemaining >= 8) {
       const availableJobs = getAvailableJobs(player.education, player.clothingCondition);
       if (availableJobs.length > 0) {
         const bestJob = availableJobs.reduce((best, job) => 
           job.hourlyWage > best.hourlyWage ? job : best
         );
+        
+        // If no job, get one first
+        if (!player.currentJob) {
+          if (player.currentLocation !== 'guild-hall') {
+            return { type: 'move', location: 'guild-hall' };
+          }
+          return { type: 'work', details: { ...bestJob, getJob: true } };
+        }
         
         // Go to guild-hall for most jobs
         if (player.currentLocation !== 'guild-hall') {
@@ -135,6 +143,11 @@ export function useAI() {
       
       case 'work':
         if (action.details) {
+          // If AI needs to get a job first
+          if (action.details.getJob) {
+            const state = useGameStore.getState();
+            state.setJob(player.id, action.details.id, action.details.hourlyWage);
+          }
           workShift(player.id, action.details.hoursPerShift, action.details.hourlyWage);
         }
         break;

@@ -70,11 +70,15 @@ export interface Player {
   savings: number; // Money in bank
   investments: number; // Invested amount
   currentJob: string | null;
+  currentWage: number; // Current job hourly wage (can increase with raises)
+  dependability: number; // 0-100, affects job performance and raise chance
+  experience: number; // Work experience points
   inventory: string[];
   isAI: boolean;
   activeQuest: string | null; // Current quest ID
   hasNewspaper: boolean; // Has purchased newspaper this week
   isSick: boolean; // Has sickness debuff
+  rentDebt: number; // Accumulated rent debt for garnishment
 }
 
 export interface GoalSettings {

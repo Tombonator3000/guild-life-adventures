@@ -2,9 +2,9 @@ import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { getLocation, getMovementCost } from '@/data/locations';
 import type { LocationId, EducationPath, HousingTier } from '@/types/game.types';
 import { RENT_COSTS } from '@/types/game.types';
-import { MapPin, Clock, ArrowRight, X, Utensils, GraduationCap, Briefcase, Coins, ShoppingBag, Home, Sparkles, Hammer, Newspaper, Scroll, Heart } from 'lucide-react';
+import { MapPin, Clock, ArrowRight, X, Utensils, GraduationCap, Briefcase, Coins, ShoppingBag, Home, Sparkles, Hammer, Newspaper, Scroll, Heart, TrendingUp } from 'lucide-react';
 import { EDUCATION_PATHS, getCourse, getNextCourse } from '@/data/education';
-import { getAvailableJobs, JOBS, FORGE_JOBS } from '@/data/jobs';
+import { getAvailableJobs, JOBS, FORGE_JOBS, getJob } from '@/data/jobs';
 import { GENERAL_STORE_ITEMS, TAVERN_ITEMS, ARMORY_ITEMS, ENCHANTER_ITEMS, SHADOW_MARKET_ITEMS, getItemPrice } from '@/data/items';
 import { HOUSING_DATA, HOUSING_TIERS } from '@/data/housing';
 import { QuestPanel } from './QuestPanel';
@@ -14,6 +14,7 @@ import { getAvailableQuests } from '@/data/quests';
 import { NEWSPAPER_COST, NEWSPAPER_TIME, generateNewspaper } from '@/data/newspaper';
 import { useState } from 'react';
 import { NewspaperModal } from './NewspaperModal';
+import { toast } from 'sonner';
 
 interface LocationPanelProps {
   locationId: LocationId;
@@ -44,6 +45,8 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     completeQuest,
     abandonQuest,
     sellItem,
+    setJob,
+    requestRaise,
   } = useGameStore();
   const player = useCurrentPlayer();
   const location = getLocation(locationId);
@@ -110,8 +113,55 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
       case 'guild-hall':
         const availableJobs = getAvailableJobs(player.education, player.clothingCondition);
         const availableQuests = getAvailableQuests(player.guildRank);
+        const currentJobData = player.currentJob ? getJob(player.currentJob) : null;
         return (
           <div className="space-y-4">
+            {/* Current Job Status */}
+            {player.currentJob && currentJobData && (
+              <div className="wood-frame p-3 text-card">
+                <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+                  <Briefcase className="w-4 h-4" /> Current Employment
+                </h4>
+                <div className="flex justify-between mb-1">
+                  <span>Job:</span>
+                  <span className="font-bold">{currentJobData.name}</span>
+                </div>
+                <div className="flex justify-between mb-1">
+                  <span>Wage:</span>
+                  <span className="font-bold text-gold">{player.currentWage}g/hour</span>
+                </div>
+                <div className="flex justify-between mb-2">
+                  <span>Dependability:</span>
+                  <span className={`font-bold ${player.dependability < 30 ? 'text-destructive' : ''}`}>
+                    {player.dependability}%
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <ActionButton
+                    label={`Work Shift (+${Math.ceil(currentJobData.hoursPerShift * 1.33 * player.currentWage)}g)`}
+                    cost={0}
+                    time={currentJobData.hoursPerShift}
+                    disabled={player.timeRemaining < currentJobData.hoursPerShift}
+                    onClick={() => {
+                      workShift(player.id, currentJobData.hoursPerShift, player.currentWage);
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                      const result = requestRaise(player.id);
+                      toast(result.success ? result.message : result.message, {
+                        description: result.success ? '🎉' : '😔',
+                      });
+                    }}
+                    className="gold-button text-xs py-1 px-2 flex items-center gap-1"
+                    disabled={player.dependability < 40}
+                  >
+                    <TrendingUp className="w-3 h-3" /> Raise
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Quest System */}
             <QuestPanel
               quests={availableQuests}
@@ -121,24 +171,26 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               onAbandonQuest={() => abandonQuest(player.id)}
             />
             
-            {/* Jobs */}
+            {/* Get a Job / Available Jobs */}
             <div>
               <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
-                <Briefcase className="w-4 h-4" /> Available Jobs
+                <Briefcase className="w-4 h-4" /> {player.currentJob ? 'Other Jobs' : 'Get a Job'}
               </h4>
               <div className="space-y-2 max-h-32 overflow-y-auto">
                 {JOBS.slice(0, 4).map(job => {
                   const canWork = availableJobs.some(j => j.id === job.id);
+                  const isCurrentJob = player.currentJob === job.id;
                   return (
                     <ActionButton
                       key={job.id}
-                      label={`${job.name} (${job.hoursPerShift}h)`}
+                      label={`${job.name} (${job.hourlyWage}g/h)`}
                       cost={0}
-                      time={job.hoursPerShift}
-                      reward={job.hourlyWage * job.hoursPerShift}
-                      disabled={!canWork || player.timeRemaining < job.hoursPerShift}
+                      time={1}
+                      disabled={!canWork || isCurrentJob}
                       onClick={() => {
-                        workShift(player.id, job.hoursPerShift, job.hourlyWage);
+                        setJob(player.id, job.id, job.hourlyWage);
+                        spendTime(player.id, 1);
+                        toast(`You are now employed as ${job.name}!`);
                       }}
                     />
                   );

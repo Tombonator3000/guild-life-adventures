@@ -30,8 +30,9 @@ interface GameStore extends GameState {
   modifyClothing: (playerId: string, amount: number) => void;
   modifyMaxHealth: (playerId: string, amount: number) => void;
   setHousing: (playerId: string, tier: HousingTier) => void;
-  setJob: (playerId: string, jobId: string | null) => void;
+  setJob: (playerId: string, jobId: string | null, wage?: number) => void;
   workShift: (playerId: string, hours: number, wage: number) => void;
+  requestRaise: (playerId: string) => { success: boolean; newWage?: number; message: string };
   studySession: (playerId: string, path: EducationPath, cost: number, hours: number) => void;
   completeEducationLevel: (playerId: string, path: EducationPath) => void;
   payRent: (playerId: string) => void;
@@ -92,11 +93,15 @@ const createPlayer = (
   savings: 0,
   investments: 0,
   currentJob: null,
+  currentWage: 0,
+  dependability: 50, // Start at 50%
+  experience: 0,
   inventory: [],
   isAI,
   activeQuest: null,
   hasNewspaper: false,
   isSick: false,
+  rentDebt: 0,
 });
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -238,29 +243,91 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }));
   },
 
-  setJob: (playerId, jobId) => {
+  setJob: (playerId, jobId, wage = 0) => {
     set((state) => ({
       players: state.players.map((p) =>
         p.id === playerId
-          ? { ...p, currentJob: jobId }
+          ? { ...p, currentJob: jobId, currentWage: wage, dependability: Math.max(30, p.dependability - 10) }
           : p
       ),
     }));
   },
 
+  requestRaise: (playerId) => {
+    const state = get();
+    const player = state.players.find(p => p.id === playerId);
+    if (!player || !player.currentJob) {
+      return { success: false, message: "You don't have a job to request a raise for." };
+    }
+
+    // Raise chance based on dependability (50% base + dependability bonus)
+    const raiseChance = 0.3 + (player.dependability / 200); // 30-80% chance
+    const success = Math.random() < raiseChance;
+
+    if (success) {
+      const raiseAmount = Math.ceil(player.currentWage * 0.15); // 15% raise
+      const newWage = player.currentWage + raiseAmount;
+      
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? { ...p, currentWage: newWage }
+            : p
+        ),
+      }));
+      
+      return { success: true, newWage, message: `Raise approved! New wage: ${newWage} gold/hour.` };
+    } else {
+      // Failed raise request decreases dependability
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? { ...p, dependability: Math.max(0, p.dependability - 10) }
+            : p
+        ),
+      }));
+      
+      return { success: false, message: "Your raise request was denied. Work harder to prove yourself!" };
+    }
+  },
+
   workShift: (playerId, hours, wage) => {
-    const earnings = hours * wage;
     set((state) => ({
-      players: state.players.map((p) =>
-        p.id === playerId
-          ? { 
-              ...p, 
-              gold: p.gold + earnings,
-              timeRemaining: Math.max(0, p.timeRemaining - hours),
-              happiness: Math.max(0, p.happiness - 2), // Work is tiring
-            }
-          : p
-      ),
+      players: state.players.map((p) => {
+        if (p.id !== playerId) return p;
+        
+        // Use current wage if player has a job, otherwise use passed wage
+        const effectiveWage = p.currentJob ? p.currentWage : wage;
+        
+        // Work bonus: 6+ hours = 8 hours pay (33% efficiency bonus like original game)
+        const bonusHours = hours >= 6 ? Math.ceil(hours * 1.33) : hours;
+        let earnings = bonusHours * effectiveWage;
+        
+        // Garnishment: 50% + 2 gold interest if rent is overdue (4+ weeks)
+        let garnishment = 0;
+        let newRentDebt = p.rentDebt;
+        if (p.weeksSinceRent >= 4 && p.housing !== 'homeless') {
+          garnishment = Math.floor(earnings * 0.5) + 2;
+          newRentDebt = Math.max(0, newRentDebt - garnishment);
+          earnings -= garnishment;
+        }
+        
+        // Dependability increases with work
+        const newDependability = Math.min(100, p.dependability + 2);
+        
+        // Experience increases
+        const newExperience = p.experience + hours;
+        
+        return { 
+          ...p, 
+          gold: p.gold + Math.max(0, earnings),
+          timeRemaining: Math.max(0, p.timeRemaining - hours),
+          happiness: Math.max(0, p.happiness - 2), // Work is tiring
+          dependability: newDependability,
+          experience: newExperience,
+          rentDebt: newRentDebt,
+        };
+      }),
     }));
   },
 
@@ -527,6 +594,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // Reset newspaper for new week
       p.hasNewspaper = false;
       
+      // Dependability decay (decreases 5% each week if not working)
+      p.dependability = Math.max(0, p.dependability - 5);
+      
+      // If dependability too low, may lose job
+      if (p.currentJob && p.dependability < 20) {
+        p.currentJob = null;
+        p.currentWage = 0;
+        if (!p.isAI) {
+          eventMessages.push(`${p.name} was fired due to poor dependability!`);
+        }
+      }
+      
       // Food depletion
       p.foodLevel = Math.max(0, p.foodLevel - 25);
       
@@ -547,17 +626,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
         }
       }
       
+      // Rent debt accumulation for garnishment
+      if (p.housing !== 'homeless' && p.weeksSinceRent >= 4) {
+        const rentCost = RENT_COSTS[p.housing];
+        p.rentDebt += Math.floor(rentCost * 0.25); // Add 25% of rent as debt each week
+      }
+      
       // Eviction check - after 8 weeks without paying rent
       if (p.housing !== 'homeless' && p.weeksSinceRent >= 8) {
         p.housing = 'homeless';
         p.weeksSinceRent = 0;
+        p.rentDebt = 0; // Clear debt on eviction
         p.inventory = []; // Lose all items
         p.happiness = Math.max(0, p.happiness - 30);
         if (!p.isAI) {
           eventMessages.push(`${p.name} has been evicted! All possessions lost.`);
         }
       } else if (p.housing !== 'homeless' && p.weeksSinceRent >= 4 && !p.isAI) {
-        eventMessages.push(`${p.name}: Rent is overdue! Pay soon or face eviction.`);
+        eventMessages.push(`${p.name}: Rent is overdue! Wages will be garnished 50%.`);
       }
       
       // Investment returns (small weekly interest)
