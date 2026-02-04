@@ -1,14 +1,23 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useGameStore } from '@/store/gameStore';
+import { TitleScreen } from '@/components/screens/TitleScreen';
+import { GameSetup } from '@/components/screens/GameSetup';
+import { GameBoard } from '@/components/game/GameBoard';
 
 const Index = () => {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
-  );
+  const { phase } = useGameStore();
+
+  switch (phase) {
+    case 'title':
+      return <TitleScreen />;
+    case 'setup':
+      return <GameSetup />;
+    case 'playing':
+      return <GameBoard />;
+    case 'victory':
+      return <TitleScreen />; // TODO: Victory screen
+    default:
+      return <TitleScreen />;
+  }
 };
 
 export default Index;
