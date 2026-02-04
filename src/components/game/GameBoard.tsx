@@ -63,10 +63,10 @@ export function GameBoard() {
         <div 
           className="absolute flex items-center justify-center"
           style={{
-            top: '19%',
-            left: '13%',
-            width: '71%',
-            height: '46%',
+            top: '17%',
+            left: '16%',
+            width: '68%',
+            height: '53%',
           }}
         >
           <div className="w-full h-full p-4">
