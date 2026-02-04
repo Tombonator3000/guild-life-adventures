@@ -4,10 +4,11 @@ import { LocationZone } from './LocationZone';
 import { PlayerToken } from './PlayerToken';
 import { ResourcePanel } from './ResourcePanel';
 import { LocationPanel } from './LocationPanel';
+import { EventModal, type GameEvent } from './EventModal';
 import gameBoard from '@/assets/game-board.jpeg';
 
 export function GameBoard() {
-  const { players, selectedLocation, selectLocation, week, priceModifier } = useGameStore();
+  const { players, selectedLocation, selectLocation, week, priceModifier, eventMessage, dismissEvent, phase } = useGameStore();
   const currentPlayer = useCurrentPlayer();
 
   const handleLocationClick = (locationId: string) => {
@@ -17,6 +18,18 @@ export function GameBoard() {
       selectLocation(locationId as any);
     }
   };
+
+  // Convert eventMessage to GameEvent format
+  const currentEvent: GameEvent | null = eventMessage ? {
+    id: 'weekly-event',
+    title: 'Week ' + week + ' Events',
+    description: eventMessage,
+    type: eventMessage.includes('evicted') ? 'eviction' :
+          eventMessage.includes('Shadowfingers') ? 'theft' :
+          eventMessage.includes('starving') ? 'starvation' :
+          eventMessage.includes('ill') ? 'sickness' :
+          'info',
+  } : null;
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-background flex items-center justify-center">
@@ -93,6 +106,12 @@ export function GameBoard() {
           </div>
         </div>
       </div>
+
+      {/* Event Modal */}
+      <EventModal 
+        event={phase === 'event' ? currentEvent : null} 
+        onDismiss={dismissEvent} 
+      />
     </div>
   );
 }

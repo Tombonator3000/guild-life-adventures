@@ -72,6 +72,9 @@ export interface Player {
   currentJob: string | null;
   inventory: string[];
   isAI: boolean;
+  activeQuest: string | null; // Current quest ID
+  hasNewspaper: boolean; // Has purchased newspaper this week
+  isSick: boolean; // Has sickness debuff
 }
 
 export interface GoalSettings {
