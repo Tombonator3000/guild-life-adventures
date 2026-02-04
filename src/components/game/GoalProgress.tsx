@@ -1,6 +1,6 @@
-import type { Player, GoalSettings, GUILD_RANK_ORDER } from '@/types/game.types';
-import { GUILD_RANK_ORDER as rankOrder } from '@/types/game.types';
-import { Target, Coins, Smile, GraduationCap, Shield } from 'lucide-react';
+import { Coins, Smile, GraduationCap, Shield, Target } from 'lucide-react';
+import type { Player, GoalSettings } from '@/types/game.types';
+import { GUILD_RANK_INDEX } from '@/types/game.types';
 
 interface GoalProgressProps {
   player: Player;
@@ -8,19 +8,17 @@ interface GoalProgressProps {
 }
 
 export function GoalProgress({ player, goals }: GoalProgressProps) {
-  // Calculate progress percentages
-  const wealthTarget = goals.wealth * 100; // e.g., 50% goal = 5000 gold target
-  const wealthProgress = Math.min(100, (player.gold / wealthTarget) * 100);
-
+  // Calculate progress for each goal
+  const totalWealth = player.gold + player.savings + player.investments;
+  const wealthProgress = Math.min(100, (totalWealth / goals.wealth) * 100);
+  
   const happinessProgress = Math.min(100, (player.happiness / goals.happiness) * 100);
-
-  const educationTotal = Object.values(player.education).reduce((sum, val) => sum + (val || 0), 0);
-  const educationTarget = goals.education; // Number of courses
-  const educationProgress = Math.min(100, (educationTotal / educationTarget) * 100);
-
-  const careerTarget = Math.floor((goals.career / 100) * rankOrder.length);
-  const careerCurrent = rankOrder.indexOf(player.guildRank);
-  const careerProgress = Math.min(100, ((careerCurrent + 1) / (careerTarget + 1)) * 100);
+  
+  const totalEducation = Object.values(player.education).reduce((sum, level) => sum + level, 0);
+  const educationProgress = Math.min(100, (totalEducation / goals.education) * 100);
+  
+  const rankIndex = GUILD_RANK_INDEX[player.guildRank];
+  const careerProgress = Math.min(100, (rankIndex / goals.career) * 100);
 
   const allGoalsMet = 
     wealthProgress >= 100 && 
@@ -29,12 +27,12 @@ export function GoalProgress({ player, goals }: GoalProgressProps) {
     careerProgress >= 100;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <GoalBar 
         icon={<Coins className="w-4 h-4" />}
         label="Wealth"
-        current={player.gold}
-        target={wealthTarget}
+        current={totalWealth}
+        target={goals.wealth}
         progress={wealthProgress}
         unit="g"
       />
@@ -49,23 +47,23 @@ export function GoalProgress({ player, goals }: GoalProgressProps) {
       <GoalBar 
         icon={<GraduationCap className="w-4 h-4" />}
         label="Education"
-        current={educationTotal}
-        target={educationTarget}
+        current={totalEducation}
+        target={goals.education}
         progress={educationProgress}
         unit=" courses"
       />
       <GoalBar 
         icon={<Shield className="w-4 h-4" />}
         label="Career"
-        current={careerCurrent + 1}
-        target={careerTarget + 1}
+        current={rankIndex}
+        target={goals.career}
         progress={careerProgress}
         unit=" rank"
       />
 
       {allGoalsMet && (
-        <div className="mt-4 p-3 bg-gold/20 border border-gold rounded-lg text-center animate-pulse-gold">
-          <span className="font-display font-bold text-gold-dark">
+        <div className="mt-3 p-2 bg-gold/20 border border-gold rounded-lg text-center animate-pulse-gold">
+          <span className="font-display font-bold text-gold-dark text-sm">
             All Goals Met! You Win!
           </span>
         </div>
@@ -87,26 +85,22 @@ function GoalBar({ icon, label, current, target, progress, unit }: GoalBarProps)
   const isComplete = progress >= 100;
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2">
       <div className={`${isComplete ? 'text-secondary' : 'text-muted-foreground'}`}>
         {icon}
       </div>
-      <div className="flex-1">
-        <div className="flex justify-between text-xs mb-1">
-          <span className="font-display">{label}</span>
-          <span className="text-muted-foreground">
-            {current}{unit} / {target}{unit}
-          </span>
-        </div>
-        <div className="resource-bar h-2">
-          <div 
-            className={`resource-fill ${isComplete ? 'bg-secondary' : 'bg-primary'}`}
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+      <span className="font-display text-xs w-16">{label}</span>
+      <div className="flex-1 resource-bar h-2">
+        <div 
+          className={`resource-fill ${isComplete ? 'bg-secondary' : 'bg-primary'}`}
+          style={{ width: `${progress}%` }}
+        />
       </div>
+      <span className="text-xs text-muted-foreground w-20 text-right">
+        {current}{unit} / {target}{unit}
+      </span>
       {isComplete && (
-        <Target className="w-4 h-4 text-secondary" />
+        <Target className="w-3 h-3 text-secondary" />
       )}
     </div>
   );
