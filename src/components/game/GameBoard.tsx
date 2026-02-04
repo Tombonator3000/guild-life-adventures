@@ -63,10 +63,10 @@ export function GameBoard() {
         <div 
           className="absolute overflow-hidden z-10"
           style={{
-            top: '17%',
-            left: '14%',
-            width: '72%',
-            height: '51%',
+            top: '19%',
+            left: '16.5%',
+            width: '67%',
+            height: '47%',
           }}
         >
           <div className="w-full h-full overflow-hidden">
