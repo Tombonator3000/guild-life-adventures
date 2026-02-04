@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { PLAYER_COLORS } from '@/types/game.types';
-import { Plus, Minus, Bot, User, Play } from 'lucide-react';
+import { PLAYER_COLORS, GUILD_RANK_NAMES, GUILD_RANK_ORDER } from '@/types/game.types';
+import { Plus, Minus, Bot, Play } from 'lucide-react';
 import gameBoard from '@/assets/game-board.jpeg';
 
 export function GameSetup() {
@@ -9,10 +9,10 @@ export function GameSetup() {
   const [playerNames, setPlayerNames] = useState<string[]>(['Adventurer 1']);
   const [includeAI, setIncludeAI] = useState(false);
   const [goals, setGoals] = useState({
-    wealth: 50,
-    happiness: 50,
+    wealth: 5000,
+    happiness: 100,
     education: 5,
-    career: 50,
+    career: 4,
   });
 
   const addPlayer = () => {
@@ -37,6 +37,13 @@ export function GameSetup() {
     startNewGame(playerNames, includeAI, goals);
   };
 
+  // Preset game lengths
+  const presets = {
+    quick: { wealth: 2000, happiness: 75, education: 2, career: 2 },
+    standard: { wealth: 5000, happiness: 100, education: 5, career: 4 },
+    epic: { wealth: 10000, happiness: 100, education: 10, career: 7 },
+  };
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* Background */}
@@ -52,7 +59,7 @@ export function GameSetup() {
           Prepare Your Adventure
         </h1>
 
-        <div className="w-full max-w-2xl space-y-8">
+        <div className="w-full max-w-2xl space-y-6">
           {/* Players Section */}
           <div className="parchment-panel p-6">
             <div className="flex items-center justify-between mb-4">
@@ -112,29 +119,53 @@ export function GameSetup() {
 
           {/* Victory Goals */}
           <div className="parchment-panel p-6">
-            <h2 className="font-display text-xl font-semibold text-card-foreground mb-4">
+            <h2 className="font-display text-xl font-semibold text-card-foreground mb-2">
               Victory Goals
             </h2>
             <p className="text-muted-foreground text-sm mb-4">
-              Set the targets required to win. Higher values = longer game.
+              Set the targets required to win. First to reach all four goals wins!
             </p>
+
+            {/* Preset buttons */}
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => setGoals(presets.quick)}
+                className="flex-1 p-2 wood-frame text-card text-sm font-display hover:brightness-110"
+              >
+                Quick Game
+              </button>
+              <button
+                onClick={() => setGoals(presets.standard)}
+                className="flex-1 p-2 wood-frame text-card text-sm font-display hover:brightness-110"
+              >
+                Standard
+              </button>
+              <button
+                onClick={() => setGoals(presets.epic)}
+                className="flex-1 p-2 wood-frame text-card text-sm font-display hover:brightness-110"
+              >
+                Epic Quest
+              </button>
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <GoalSlider
                 label="Wealth Target"
                 value={goals.wealth}
                 onChange={(v) => setGoals({ ...goals, wealth: v })}
-                min={10}
-                max={100}
-                unit="%"
-                description={`${goals.wealth * 100} gold`}
+                min={1000}
+                max={20000}
+                step={500}
+                unit="g"
+                description="Gold + Savings + Investments"
               />
               <GoalSlider
                 label="Happiness Target"
                 value={goals.happiness}
                 onChange={(v) => setGoals({ ...goals, happiness: v })}
-                min={10}
+                min={25}
                 max={100}
+                step={5}
                 unit="%"
               />
               <GoalSlider
@@ -142,17 +173,28 @@ export function GameSetup() {
                 value={goals.education}
                 onChange={(v) => setGoals({ ...goals, education: v })}
                 min={1}
-                max={20}
+                max={16}
+                step={1}
                 unit=""
+                description="Total course levels completed"
               />
-              <GoalSlider
-                label="Career Progress"
-                value={goals.career}
-                onChange={(v) => setGoals({ ...goals, career: v })}
-                min={10}
-                max={100}
-                unit="%"
-              />
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="font-display text-card-foreground">Career Rank</span>
+                  <span className="text-primary font-semibold">
+                    {GUILD_RANK_NAMES[GUILD_RANK_ORDER[goals.career - 1] || 'novice']}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">Reach this guild rank</p>
+                <input
+                  type="range"
+                  min={1}
+                  max={7}
+                  value={goals.career}
+                  onChange={(e) => setGoals({ ...goals, career: Number(e.target.value) })}
+                  className="w-full accent-primary"
+                />
+              </div>
             </div>
           </div>
 
@@ -169,7 +211,7 @@ export function GameSetup() {
               className="gold-button flex items-center gap-2"
             >
               <Play className="w-5 h-5" />
-              Start Game
+              Begin Adventure
             </button>
           </div>
         </div>
@@ -184,11 +226,12 @@ interface GoalSliderProps {
   onChange: (value: number) => void;
   min: number;
   max: number;
+  step?: number;
   unit: string;
   description?: string;
 }
 
-function GoalSlider({ label, value, onChange, min, max, unit, description }: GoalSliderProps) {
+function GoalSlider({ label, value, onChange, min, max, step = 1, unit, description }: GoalSliderProps) {
   return (
     <div>
       <div className="flex justify-between text-sm mb-1">
@@ -202,6 +245,7 @@ function GoalSlider({ label, value, onChange, min, max, unit, description }: Goa
         type="range"
         min={min}
         max={max}
+        step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         className="w-full accent-primary"

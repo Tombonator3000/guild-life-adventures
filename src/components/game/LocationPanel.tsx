@@ -1,14 +1,37 @@
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { getLocation, getMovementCost } from '@/data/locations';
-import type { LocationId } from '@/types/game.types';
-import { MapPin, Clock, ArrowRight, X } from 'lucide-react';
+import type { LocationId, EducationPath, HousingTier } from '@/types/game.types';
+import { RENT_COSTS } from '@/types/game.types';
+import { MapPin, Clock, ArrowRight, X, Utensils, GraduationCap, Briefcase, Coins, ShoppingBag, Home, Dices, Sparkles, Hammer } from 'lucide-react';
+import { EDUCATION_PATHS, getCourse, getNextCourse } from '@/data/education';
+import { getAvailableJobs, JOBS, FORGE_JOBS } from '@/data/jobs';
+import { GENERAL_STORE_ITEMS, TAVERN_ITEMS, ARMORY_ITEMS, ENCHANTER_ITEMS, SHADOW_MARKET_ITEMS, getItemPrice } from '@/data/items';
+import { HOUSING_DATA, HOUSING_TIERS } from '@/data/housing';
 
 interface LocationPanelProps {
   locationId: LocationId;
 }
 
 export function LocationPanel({ locationId }: LocationPanelProps) {
-  const { selectLocation, movePlayer, modifyGold, modifyHappiness, spendTime } = useGameStore();
+  const { 
+    selectLocation, 
+    movePlayer, 
+    modifyGold, 
+    modifyHappiness, 
+    modifyHealth,
+    modifyFood,
+    modifyClothing,
+    spendTime,
+    workShift,
+    studySession,
+    completeEducationLevel,
+    setHousing,
+    payRent,
+    depositToBank,
+    withdrawFromBank,
+    invest,
+    priceModifier,
+  } = useGameStore();
   const player = useCurrentPlayer();
   const location = getLocation(locationId);
 
@@ -32,119 +55,469 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
       case 'rusty-tankard':
         return (
           <div className="space-y-2">
-            <ActionButton
-              label="Buy a Meal"
-              cost={10}
-              time={2}
-              disabled={player.gold < 10 || player.timeRemaining < 2}
-              onClick={() => {
-                modifyGold(player.id, -10);
-                modifyHappiness(player.id, 5);
-                spendTime(player.id, 2);
-              }}
-            />
-            <ActionButton
-              label="Have a Drink"
-              cost={5}
-              time={1}
-              disabled={player.gold < 5 || player.timeRemaining < 1}
-              onClick={() => {
-                modifyGold(player.id, -5);
-                modifyHappiness(player.id, 3);
-                spendTime(player.id, 1);
-              }}
-            />
-            <ActionButton
-              label="Listen for Rumors"
-              cost={0}
-              time={4}
-              disabled={player.timeRemaining < 4}
-              onClick={() => {
-                spendTime(player.id, 4);
-                // Random event chance
-                if (Math.random() > 0.5) {
-                  modifyGold(player.id, 15);
-                }
-              }}
-            />
+            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+              <Utensils className="w-4 h-4" /> Food and Drink
+            </h4>
+            {TAVERN_ITEMS.map(item => {
+              const price = getItemPrice(item, priceModifier);
+              return (
+                <ActionButton
+                  key={item.id}
+                  label={item.name}
+                  cost={price}
+                  time={1}
+                  disabled={player.gold < price || player.timeRemaining < 1}
+                  onClick={() => {
+                    modifyGold(player.id, -price);
+                    spendTime(player.id, 1);
+                    if (item.effect?.type === 'food') {
+                      modifyFood(player.id, item.effect.value);
+                    }
+                    if (item.effect?.type === 'happiness') {
+                      modifyHappiness(player.id, item.effect.value);
+                    }
+                  }}
+                />
+              );
+            })}
           </div>
         );
       
       case 'guild-hall':
+        const availableJobs = getAvailableJobs(player.education, player.clothingCondition);
         return (
-          <div className="space-y-2">
-            <ActionButton
-              label="Work a Shift (8h)"
-              cost={0}
-              time={8}
-              reward={25}
-              disabled={player.timeRemaining < 8}
-              onClick={() => {
-                spendTime(player.id, 8);
-                modifyGold(player.id, 25);
-              }}
-            />
-            <ActionButton
-              label="Take a Quest (12h)"
-              cost={0}
-              time={12}
-              reward={50}
-              disabled={player.timeRemaining < 12}
-              onClick={() => {
-                spendTime(player.id, 12);
-                modifyGold(player.id, 50);
-                modifyHappiness(player.id, 5);
-              }}
-            />
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+                <Briefcase className="w-4 h-4" /> Available Jobs
+              </h4>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {JOBS.slice(0, 6).map(job => {
+                  const canWork = availableJobs.some(j => j.id === job.id);
+                  return (
+                    <ActionButton
+                      key={job.id}
+                      label={`${job.name} (${job.hoursPerShift}h)`}
+                      cost={0}
+                      time={job.hoursPerShift}
+                      reward={job.hourlyWage * job.hoursPerShift}
+                      disabled={!canWork || player.timeRemaining < job.hoursPerShift}
+                      onClick={() => {
+                        workShift(player.id, job.hoursPerShift, job.hourlyWage);
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
           </div>
         );
 
       case 'forge':
+        const forgeJobs = getAvailableJobs(player.education, player.clothingCondition)
+          .filter(j => FORGE_JOBS.some(fj => fj.id === j.id));
         return (
           <div className="space-y-2">
-            <ActionButton
-              label="Labor at the Forge (10h)"
-              cost={0}
-              time={10}
-              reward={35}
-              disabled={player.timeRemaining < 10}
-              onClick={() => {
-                spendTime(player.id, 10);
-                modifyGold(player.id, 35);
-                modifyHappiness(player.id, -2);
-              }}
-            />
+            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+              <Hammer className="w-4 h-4" /> Forge Work
+            </h4>
+            {FORGE_JOBS.map(job => {
+              const canWork = forgeJobs.some(j => j.id === job.id);
+              return (
+                <ActionButton
+                  key={job.id}
+                  label={`${job.name} (${job.hoursPerShift}h)`}
+                  cost={0}
+                  time={job.hoursPerShift}
+                  reward={job.hourlyWage * job.hoursPerShift}
+                  disabled={!canWork || player.timeRemaining < job.hoursPerShift}
+                  onClick={() => {
+                    workShift(player.id, job.hoursPerShift, job.hourlyWage);
+                    modifyHappiness(player.id, -3); // Forge work is hard
+                  }}
+                />
+              );
+            })}
+          </div>
+        );
+
+      case 'academy':
+        return (
+          <div className="space-y-4">
+            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+              <GraduationCap className="w-4 h-4" /> Education Paths
+            </h4>
+            {(Object.keys(EDUCATION_PATHS) as EducationPath[]).map(path => {
+              const pathData = EDUCATION_PATHS[path];
+              const currentLevel = player.education[path] || 0;
+              const progress = player.educationProgress[path] || 0;
+              const nextCourse = getNextCourse(path, currentLevel);
+              
+              if (!nextCourse) return (
+                <div key={path} className="text-sm text-muted-foreground">
+                  {pathData.name}: Completed!
+                </div>
+              );
+              
+              const price = getItemPrice({ basePrice: nextCourse.costPerSession } as any, priceModifier);
+              const isComplete = progress >= nextCourse.sessionsRequired;
+              
+              return (
+                <div key={path} className="wood-frame p-2 text-card">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-display font-semibold text-sm">{nextCourse.name}</span>
+                    <span className="text-xs">{progress}/{nextCourse.sessionsRequired} sessions</span>
+                  </div>
+                  {isComplete ? (
+                    <button
+                      onClick={() => completeEducationLevel(player.id, path)}
+                      className="w-full gold-button text-sm py-1"
+                    >
+                      Complete Degree!
+                    </button>
+                  ) : (
+                    <ActionButton
+                      label="Attend Class"
+                      cost={price}
+                      time={nextCourse.hoursPerSession}
+                      disabled={player.gold < price || player.timeRemaining < nextCourse.hoursPerSession}
+                      onClick={() => {
+                        studySession(player.id, path, price, nextCourse.hoursPerSession);
+                      }}
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
         );
 
       case 'bank':
         return (
-          <div className="space-y-2">
-            <ActionButton
-              label="Deposit 100 Gold"
-              cost={100}
-              time={1}
-              disabled={player.gold < 100 || player.timeRemaining < 1}
-              onClick={() => {
-                modifyGold(player.id, -100);
-                spendTime(player.id, 1);
-                // In full implementation, track savings
-              }}
-            />
+          <div className="space-y-4">
+            <div className="wood-frame p-3 text-card">
+              <div className="flex justify-between mb-2">
+                <span>Savings:</span>
+                <span className="font-bold">{player.savings}g</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Investments:</span>
+                <span className="font-bold">{player.investments}g</span>
+              </div>
+            </div>
+            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2">
+              <Coins className="w-4 h-4" /> Banking Services
+            </h4>
+            <div className="space-y-2">
+              <ActionButton
+                label="Deposit 50 Gold"
+                cost={50}
+                time={1}
+                disabled={player.gold < 50 || player.timeRemaining < 1}
+                onClick={() => {
+                  depositToBank(player.id, 50);
+                  spendTime(player.id, 1);
+                }}
+              />
+              <ActionButton
+                label="Withdraw 50 Gold"
+                cost={0}
+                time={1}
+                reward={50}
+                disabled={player.savings < 50 || player.timeRemaining < 1}
+                onClick={() => {
+                  withdrawFromBank(player.id, 50);
+                  spendTime(player.id, 1);
+                }}
+              />
+              <ActionButton
+                label="Invest 100 Gold"
+                cost={100}
+                time={1}
+                disabled={player.gold < 100 || player.timeRemaining < 1}
+                onClick={() => {
+                  invest(player.id, 100);
+                  spendTime(player.id, 1);
+                }}
+              />
+            </div>
           </div>
         );
 
       case 'general-store':
         return (
           <div className="space-y-2">
+            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+              <ShoppingBag className="w-4 h-4" /> Food and Supplies
+            </h4>
+            {GENERAL_STORE_ITEMS.map(item => {
+              const price = getItemPrice(item, priceModifier);
+              return (
+                <ActionButton
+                  key={item.id}
+                  label={item.name}
+                  cost={price}
+                  time={1}
+                  disabled={player.gold < price || player.timeRemaining < 1}
+                  onClick={() => {
+                    modifyGold(player.id, -price);
+                    spendTime(player.id, 1);
+                    if (item.effect?.type === 'food') {
+                      modifyFood(player.id, item.effect.value);
+                    }
+                    if (item.effect?.type === 'happiness') {
+                      modifyHappiness(player.id, item.effect.value);
+                    }
+                  }}
+                />
+              );
+            })}
+          </div>
+        );
+
+      case 'armory':
+        return (
+          <div className="space-y-2">
+            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+              <ShoppingBag className="w-4 h-4" /> Clothing and Weapons
+            </h4>
+            {ARMORY_ITEMS.slice(0, 5).map(item => {
+              const price = getItemPrice(item, priceModifier);
+              return (
+                <ActionButton
+                  key={item.id}
+                  label={item.name}
+                  cost={price}
+                  time={1}
+                  disabled={player.gold < price || player.timeRemaining < 1}
+                  onClick={() => {
+                    modifyGold(player.id, -price);
+                    spendTime(player.id, 1);
+                    if (item.effect?.type === 'clothing') {
+                      modifyClothing(player.id, item.effect.value);
+                    }
+                    if (item.effect?.type === 'happiness') {
+                      modifyHappiness(player.id, item.effect.value);
+                    }
+                  }}
+                />
+              );
+            })}
+          </div>
+        );
+
+      case 'enchanter':
+        return (
+          <div className="space-y-2">
+            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+              <Sparkles className="w-4 h-4" /> Magical Items
+            </h4>
+            {ENCHANTER_ITEMS.map(item => {
+              const price = getItemPrice(item, priceModifier);
+              return (
+                <ActionButton
+                  key={item.id}
+                  label={item.name}
+                  cost={price}
+                  time={1}
+                  disabled={player.gold < price || player.timeRemaining < 1}
+                  onClick={() => {
+                    modifyGold(player.id, -price);
+                    spendTime(player.id, 1);
+                    if (item.effect?.type === 'happiness') {
+                      modifyHappiness(player.id, item.effect.value);
+                    }
+                    if (item.effect?.type === 'health') {
+                      modifyHealth(player.id, item.effect.value);
+                    }
+                  }}
+                />
+              );
+            })}
+          </div>
+        );
+
+      case 'landlord':
+        const currentRent = RENT_COSTS[player.housing];
+        return (
+          <div className="space-y-4">
+            <div className="wood-frame p-3 text-card">
+              <div className="flex justify-between mb-2">
+                <span>Current Housing:</span>
+                <span className="font-bold">{HOUSING_DATA[player.housing].name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Weekly Rent:</span>
+                <span className="font-bold">{currentRent}g</span>
+              </div>
+            </div>
+            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2">
+              <Home className="w-4 h-4" /> Housing Options
+            </h4>
+            <div className="space-y-2">
+              {player.housing !== 'homeless' && (
+                <ActionButton
+                  label={`Pay Rent (${currentRent}g)`}
+                  cost={currentRent}
+                  time={1}
+                  disabled={player.gold < currentRent || player.timeRemaining < 1}
+                  onClick={() => {
+                    payRent(player.id);
+                    spendTime(player.id, 1);
+                  }}
+                />
+              )}
+              {HOUSING_TIERS.filter(t => t !== player.housing && t !== 'homeless').map(tier => {
+                const housing = HOUSING_DATA[tier];
+                const moveCost = housing.weeklyRent * 2; // First + deposit
+                return (
+                  <ActionButton
+                    key={tier}
+                    label={`Move to ${housing.name}`}
+                    cost={moveCost}
+                    time={4}
+                    disabled={player.gold < moveCost || player.timeRemaining < 4}
+                    onClick={() => {
+                      modifyGold(player.id, -moveCost);
+                      setHousing(player.id, tier);
+                      spendTime(player.id, 4);
+                    }}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        );
+
+      case 'noble-heights':
+      case 'slums':
+        if (player.housing === 'homeless') {
+          return (
+            <p className="text-muted-foreground text-center py-4">
+              You need to rent a place first. Visit the Landlord's Office.
+            </p>
+          );
+        }
+        const housingData = HOUSING_DATA[player.housing];
+        return (
+          <div className="space-y-2">
+            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+              <Home className="w-4 h-4" /> Rest and Relaxation
+            </h4>
             <ActionButton
-              label="Buy Supplies"
-              cost={20}
-              time={1}
-              disabled={player.gold < 20 || player.timeRemaining < 1}
+              label="Rest (Restore Happiness)"
+              cost={0}
+              time={housingData.relaxationRate}
+              disabled={player.timeRemaining < housingData.relaxationRate || housingData.relaxationRate === 0}
               onClick={() => {
-                modifyGold(player.id, -20);
-                spendTime(player.id, 1);
+                spendTime(player.id, housingData.relaxationRate);
+                modifyHappiness(player.id, 10);
+              }}
+            />
+            <ActionButton
+              label="Sleep Well (Full Rest)"
+              cost={0}
+              time={8}
+              disabled={player.timeRemaining < 8}
+              onClick={() => {
+                spendTime(player.id, 8);
+                modifyHappiness(player.id, 20);
+                modifyHealth(player.id, 10);
+              }}
+            />
+          </div>
+        );
+
+      case 'shadow-market':
+        return (
+          <div className="space-y-2">
+            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+              <ShoppingBag className="w-4 h-4" /> Black Market Goods
+            </h4>
+            {SHADOW_MARKET_ITEMS.map(item => {
+              const price = getItemPrice(item, priceModifier * 0.7); // Cheaper prices
+              if (item.id === 'lottery-ticket') {
+                return (
+                  <ActionButton
+                    key={item.id}
+                    label={`${item.name} (Try your luck!)`}
+                    cost={price}
+                    time={1}
+                    disabled={player.gold < price || player.timeRemaining < 1}
+                    onClick={() => {
+                      modifyGold(player.id, -price);
+                      spendTime(player.id, 1);
+                      // 10% chance to win big
+                      if (Math.random() < 0.1) {
+                        modifyGold(player.id, 200);
+                        modifyHappiness(player.id, 20);
+                      } else if (Math.random() < 0.3) {
+                        modifyGold(player.id, 20);
+                        modifyHappiness(player.id, 5);
+                      }
+                    }}
+                  />
+                );
+              }
+              return (
+                <ActionButton
+                  key={item.id}
+                  label={item.name}
+                  cost={price}
+                  time={1}
+                  disabled={player.gold < price || player.timeRemaining < 1}
+                  onClick={() => {
+                    modifyGold(player.id, -price);
+                    spendTime(player.id, 1);
+                    if (item.effect?.type === 'food') {
+                      modifyFood(player.id, item.effect.value);
+                    }
+                    if (item.effect?.type === 'happiness') {
+                      modifyHappiness(player.id, item.effect.value);
+                    }
+                  }}
+                />
+              );
+            })}
+          </div>
+        );
+
+      case 'fence':
+        return (
+          <div className="space-y-2">
+            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+              <Dices className="w-4 h-4" /> Pawn Shop and Gambling
+            </h4>
+            <ActionButton
+              label="Gamble (10g stake)"
+              cost={10}
+              time={2}
+              disabled={player.gold < 10 || player.timeRemaining < 2}
+              onClick={() => {
+                modifyGold(player.id, -10);
+                spendTime(player.id, 2);
+                if (Math.random() < 0.4) {
+                  modifyGold(player.id, 25);
+                  modifyHappiness(player.id, 5);
+                } else {
+                  modifyHappiness(player.id, -3);
+                }
+              }}
+            />
+            <ActionButton
+              label="High Stakes (50g)"
+              cost={50}
+              time={2}
+              disabled={player.gold < 50 || player.timeRemaining < 2}
+              onClick={() => {
+                modifyGold(player.id, -50);
+                spendTime(player.id, 2);
+                if (Math.random() < 0.3) {
+                  modifyGold(player.id, 150);
+                  modifyHappiness(player.id, 15);
+                } else {
+                  modifyHappiness(player.id, -10);
+                }
               }}
             />
           </div>
@@ -160,33 +533,30 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
   };
 
   return (
-    <div className="parchment-panel h-full p-6 flex flex-col">
+    <div className="parchment-panel h-full p-4 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <MapPin className="w-8 h-8 text-primary" />
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <MapPin className="w-6 h-6 text-primary flex-shrink-0" />
           <div>
-            <h2 className="font-display text-2xl font-bold text-card-foreground">
+            <h2 className="font-display text-xl font-bold text-card-foreground">
               {location.name}
             </h2>
-            <p className="text-muted-foreground">{location.description}</p>
+            <p className="text-muted-foreground text-sm">{location.description}</p>
           </div>
         </div>
         <button 
           onClick={() => selectLocation(null)}
-          className="p-2 hover:bg-muted rounded-lg transition-colors"
+          className="p-1 hover:bg-muted rounded-lg transition-colors flex-shrink-0"
         >
-          <X className="w-5 h-5 text-muted-foreground" />
+          <X className="w-4 h-4 text-muted-foreground" />
         </button>
       </div>
 
       {/* Travel or Actions */}
-      <div className="flex-1">
+      <div className="flex-1 overflow-y-auto">
         {isHere ? (
           <div>
-            <h3 className="font-display text-lg font-semibold mb-4 text-card-foreground">
-              Available Actions
-            </h3>
             {getLocationActions()}
           </div>
         ) : (
@@ -227,10 +597,10 @@ function ActionButton({ label, cost, time, reward, disabled, onClick }: ActionBu
     <button
       onClick={onClick}
       disabled={disabled}
-      className="w-full p-3 wood-frame text-card flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      className="w-full p-2 wood-frame text-card flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
     >
       <span className="font-display font-semibold">{label}</span>
-      <div className="flex items-center gap-4 text-sm">
+      <div className="flex items-center gap-3 text-xs">
         {cost > 0 && (
           <span className="text-gold">-{cost}g</span>
         )}
