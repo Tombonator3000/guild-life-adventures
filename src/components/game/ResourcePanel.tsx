@@ -1,5 +1,5 @@
 import { useCurrentPlayer, useGameStore } from '@/store/gameStore';
-import { Coins, Heart, Smile, Clock, Utensils, Shirt } from 'lucide-react';
+import { Coins, Heart, Smile, Clock, Utensils, Shirt, Shield, Briefcase } from 'lucide-react';
 import { GUILD_RANK_NAMES } from '@/types/game.types';
 import { GoalProgress } from './GoalProgress';
 
@@ -36,7 +36,7 @@ export function ResourcePanel() {
       </div>
 
       {/* Resources - compact grid */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
+      <div className="grid grid-cols-4 gap-2 mb-4">
         <ResourceCard 
           icon={<Coins className="w-4 h-4" />}
           label="Gold"
@@ -94,6 +94,23 @@ export function ResourcePanel() {
           barMax={100}
           barColor="bg-primary"
           warning={player.clothingCondition < 25}
+        />
+        <ResourceCard 
+          icon={<Shield className="w-4 h-4" />}
+          label="Depend."
+          value={`${player.dependability}%`}
+          color="text-accent-foreground"
+          showBar
+          barValue={player.dependability}
+          barMax={100}
+          barColor="bg-accent"
+          warning={player.dependability < 30}
+        />
+        <ResourceCard 
+          icon={<Briefcase className="w-4 h-4" />}
+          label="Wage"
+          value={player.currentWage > 0 ? `${player.currentWage}g/h` : '-'}
+          color="text-gold"
         />
       </div>
 

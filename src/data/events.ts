@@ -53,6 +53,38 @@ export const RANDOM_EVENTS: GameEvent[] = [
     },
   },
   
+  // Robbery events at specific locations (high gold triggers)
+  {
+    id: 'bank-robbery',
+    name: 'Bank Heist!',
+    description: 'Shadowfingers targeted you leaving the bank.',
+    probability: 0.20,
+    conditions: {
+      location: ['bank'],
+      minGold: 200,
+    },
+    effect: {
+      gold: -100,
+      happiness: -20,
+      message: 'You were robbed leaving the bank! Lost 100 gold.',
+    },
+  },
+  {
+    id: 'shadow-market-ambush',
+    name: 'Shadow Market Ambush!',
+    description: 'Thieves spotted you carrying gold.',
+    probability: 0.25,
+    conditions: {
+      location: ['shadow-market'],
+      minGold: 150,
+    },
+    effect: {
+      gold: -75,
+      happiness: -15,
+      message: 'You were ambushed in the Shadow Market! Lost 75 gold.',
+    },
+  },
+  
   // Pickpocket events at shady locations
   {
     id: 'pickpocket-market',
