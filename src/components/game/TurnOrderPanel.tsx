@@ -18,7 +18,7 @@ export function TurnOrderPanel({
   goalSettings
 }: TurnOrderPanelProps) {
   return (
-    <div className="h-full flex flex-col p-2 bg-card/95 rounded-lg border-2 border-wood-dark/50">
+    <div className="h-full flex flex-col p-[4%] bg-card/95 rounded-lg border-2 border-wood-dark/50">
       {/* Turn Order Header */}
       <div className="flex items-center gap-2 mb-2 pb-2 border-b border-border">
         <Users className="w-4 h-4 text-primary" />

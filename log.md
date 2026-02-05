@@ -1,5 +1,85 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Fix Responsive Layout (Consistent Screen Sizing)
+
+### Task Summary
+Fixed the game board layout to maintain consistent proportions regardless of screen size. The center panel, side panels, and game board now scale uniformly on all screen sizes.
+
+### Problem
+- Side panels used fixed pixel widths (`w-[180px]`)
+- Game board margins were fixed (`mx-[180px]`)
+- This caused layout inconsistencies on different screen sizes
+- Elements would not scale proportionally when window size changed
+
+### Solution
+Implemented a viewport-based responsive container that maintains a 16:9 aspect ratio:
+
+**Layout Structure:**
+```
+[Left Panel 12%] [Game Board 76%] [Right Panel 12%]
+```
+
+**Key Changes:**
+1. **Main Container**: Uses CSS `min()` function to calculate dimensions
+   - Width: `min(100vw, 177.78vh)` - limits width based on height
+   - Height: `min(100vh, 56.25vw)` - limits height based on width
+   - This ensures 16:9 aspect ratio while fitting any screen
+
+2. **Side Panels**: Changed from fixed 180px to 12% of container width
+   - Uses `flex-shrink-0` to prevent compression
+   - Padding uses percentage (`p-[0.5%]`) for proportional spacing
+   - Panel content padding also uses percentage (`p-[4%]`)
+
+3. **Game Board**: Takes 76% of container width
+   - Height fills container (`h-full`)
+   - Background image uses `bg-contain` to maintain aspect ratio
+
+4. **Center Panel**: Already used percentages, now scales with game board
+   - Position percentages are relative to game board container
+   - Maintains same proportions at all screen sizes
+
+### Files Modified
+- `src/components/game/GameBoard.tsx` - Complete layout restructure:
+  - Replaced absolute positioned side panels with flex layout
+  - Added viewport-based responsive container
+  - Changed fixed pixel values to percentages
+- `src/components/game/PlayerInfoPanel.tsx` - Changed padding to percentage
+- `src/components/game/TurnOrderPanel.tsx` - Changed padding to percentage
+
+### Technical Details
+
+**Aspect Ratio Math:**
+- 16:9 ratio means: width = 1.7778 × height, height = 0.5625 × width
+- `min(100vw, 177.78vh)` ensures width doesn't exceed what 16:9 allows for screen height
+- `min(100vh, 56.25vw)` ensures height doesn't exceed what 16:9 allows for screen width
+
+**Layout Distribution:**
+```typescript
+const SIDE_PANEL_WIDTH_PERCENT = 12;  // Each side panel
+const GAME_BOARD_WIDTH_PERCENT = 76;  // Center game board
+// Total: 12 + 76 + 12 = 100%
+```
+
+**Container Styling:**
+```tsx
+<div
+  className="relative flex items-stretch"
+  style={{
+    width: 'min(100vw, 177.78vh)',
+    height: 'min(100vh, 56.25vw)',
+  }}
+>
+```
+
+### Result
+The game now displays consistently on:
+- Wide monitors (pillarboxed with black bars on sides)
+- Tall monitors (letterboxed with black bars on top/bottom)
+- 16:9 monitors (fills entire screen)
+- All elements scale proportionally together
+
+---
+
 ## 2026-02-05 - Standardize Panel Layout (Jones-Style UI)
 
 ### Task Summary

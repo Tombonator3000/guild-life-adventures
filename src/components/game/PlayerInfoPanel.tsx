@@ -18,7 +18,7 @@ export function PlayerInfoPanel({ player, isCurrentPlayer }: PlayerInfoPanelProp
   const clothingWarning = player.clothingCondition <= 25;
 
   return (
-    <div className={`h-full flex flex-col p-2 bg-card/95 rounded-lg border-2 ${isCurrentPlayer ? 'border-primary' : 'border-wood-dark/50'}`}>
+    <div className={`h-full flex flex-col p-[4%] bg-card/95 rounded-lg border-2 ${isCurrentPlayer ? 'border-primary' : 'border-wood-dark/50'}`}>
       {/* Player Header */}
       <div className="flex items-center gap-2 mb-2 pb-2 border-b border-border">
         <div
