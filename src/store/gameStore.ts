@@ -9,6 +9,9 @@ import type {
   DegreeId,
   GuildRank,
   DurableItems,
+  ApplianceSource,
+  OwnedAppliance,
+  AppliancesInventory,
   HOURS_PER_WEEK,
   RENT_INTERVAL,
   FOOD_DEPLETION_PER_WEEK,
@@ -18,7 +21,7 @@ import type {
   GUILD_RANK_INDEX,
 } from '@/types/game.types';
 import { GRADUATION_BONUSES, getDegree, type DegreeId as DegreeIdType } from '@/data/education';
-import { PLAYER_COLORS, AI_COLOR, RENT_COSTS, CLOTHING_INTERVAL } from '@/types/game.types';
+import { PLAYER_COLORS, AI_COLOR, RENT_COSTS, CLOTHING_INTERVAL, APPLIANCE_BREAK_CHANCE } from '@/types/game.types';
 import { checkWeeklyTheft, checkMarketCrash } from '@/data/events';
 import {
   checkStreetRobbery,
@@ -26,6 +29,11 @@ import {
   type StreetRobberyResult,
   type ApartmentRobberyResult,
 } from '@/data/shadowfingers';
+import {
+  getAppliance,
+  calculateRepairCost,
+  checkApplianceBreakage,
+} from '@/data/items';
 
 // Shadowfingers robbery event for display
 export interface ShadowfingersEvent {
@@ -80,6 +88,16 @@ interface GameStore extends GameState {
   // Shadowfingers robbery state
   shadowfingersEvent: ShadowfingersEvent | null;
   dismissShadowfingersEvent: () => void;
+  // Appliance system (Jones-style)
+  buyAppliance: (playerId: string, applianceId: string, price: number, source: ApplianceSource) => number; // Returns happiness gained
+  repairAppliance: (playerId: string, applianceId: string) => number; // Returns repair cost
+  pawnAppliance: (playerId: string, applianceId: string, pawnValue: number) => void;
+  // Housing prepayment system (Jones-style)
+  prepayRent: (playerId: string, weeks: number, totalCost: number) => void;
+  moveToHousing: (playerId: string, tier: HousingTier, cost: number, lockInRent: number) => void;
+  // Appliance breakage event
+  applianceBreakageEvent: { playerId: string; applianceId: string; repairCost: number } | null;
+  dismissApplianceBreakageEvent: () => void;
 }
 
 const createPlayer = (
@@ -129,12 +147,17 @@ const createPlayer = (
   experience: 0,
   relaxation: 30, // Default relaxation (ranges 10-50)
   durables: {}, // Durable items owned at apartment
+  appliances: {}, // Appliances with detailed tracking
+  applianceHistory: [], // Appliance types ever owned (for happiness bonus)
   inventory: [],
   isAI,
   activeQuest: null,
   hasNewspaper: false,
   isSick: false,
   rentDebt: 0,
+  // Housing prepayment system
+  rentPrepaidWeeks: 0,
+  lockedRent: 0,
 });
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -779,6 +802,67 @@ export const useGameStore = create<GameStore>((set, get) => ({
         },
       }));
     }
+
+    // Jones-style appliance breakage check (only if player has >500 gold)
+    if (player.gold > 500) {
+      const applianceIds = Object.keys(player.appliances);
+      for (const applianceId of applianceIds) {
+        const ownedAppliance = player.appliances[applianceId];
+        if (!ownedAppliance.isBroken && checkApplianceBreakage(ownedAppliance.source, player.gold)) {
+          const repairCost = calculateRepairCost(ownedAppliance.originalPrice);
+          const appliance = getAppliance(applianceId);
+
+          // Mark as broken and charge repair cost, lose happiness
+          set((state) => ({
+            players: state.players.map((p) => {
+              if (p.id !== playerId) return p;
+              const newAppliances = { ...p.appliances };
+              newAppliances[applianceId] = { ...newAppliances[applianceId], isBroken: true };
+              return {
+                ...p,
+                appliances: newAppliances,
+                gold: Math.max(0, p.gold - repairCost),
+                happiness: Math.max(0, p.happiness - 1),
+              };
+            }),
+            applianceBreakageEvent: {
+              playerId,
+              applianceId,
+              repairCost,
+            },
+          }));
+
+          // Only trigger one breakage per turn
+          break;
+        }
+      }
+    }
+
+    // Cooking Fire / Preservation Box per-turn happiness bonus
+    const hasCookingAppliance = player.appliances['cooking-fire'] && !player.appliances['cooking-fire'].isBroken;
+    if (hasCookingAppliance) {
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? { ...p, happiness: Math.min(100, p.happiness + 1) }
+            : p
+        ),
+      }));
+    }
+
+    // Arcane Tome random income chance
+    const hasArcaneTome = player.appliances['arcane-tome'] && !player.appliances['arcane-tome'].isBroken;
+    if (hasArcaneTome && Math.random() < 0.15) { // 15% chance per turn
+      const income = Math.floor(Math.random() * 50) + 10; // 10-60 gold
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? { ...p, gold: p.gold + income }
+            : p
+        ),
+        eventMessage: `Your Arcane Tome generated ${income} gold through mystical knowledge!`,
+      }));
+    }
   },
 
   processWeekEnd: () => {
@@ -967,29 +1051,163 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!player) return false;
 
     const goals = state.goalSettings;
-    
+
     // Calculate total wealth
     const totalWealth = player.gold + player.savings + player.investments;
     const wealthMet = totalWealth >= goals.wealth;
-    
+
     // Check happiness
     const happinessMet = player.happiness >= goals.happiness;
-    
+
     // Calculate total education
     const totalEducation = Object.values(player.education).reduce((sum, level) => sum + level, 0);
     const educationMet = totalEducation >= goals.education;
-    
+
     // Check career rank
     const rankIndex = ['novice', 'apprentice', 'journeyman', 'adept', 'veteran', 'elite', 'guild-master']
       .indexOf(player.guildRank) + 1;
     const careerMet = rankIndex >= goals.career;
-    
+
     if (wealthMet && happinessMet && educationMet && careerMet) {
       set({ winner: playerId, phase: 'victory' });
       return true;
     }
-    
+
     return false;
+  },
+
+  // Appliance breakage event state
+  applianceBreakageEvent: null,
+  dismissApplianceBreakageEvent: () => set({ applianceBreakageEvent: null }),
+
+  // Buy appliance with Jones-style tracking
+  buyAppliance: (playerId, applianceId, price, source) => {
+    const state = get();
+    const player = state.players.find(p => p.id === playerId);
+    if (!player) return 0;
+
+    const appliance = getAppliance(applianceId);
+    if (!appliance) return 0;
+
+    // Check if this is first time owning this type (for happiness bonus)
+    const isFirstTime = !player.applianceHistory.includes(applianceId);
+    const happinessGain = isFirstTime
+      ? (source === 'enchanter' ? appliance.happinessEnchanter : appliance.happinessMarket)
+      : 0;
+
+    set((state) => ({
+      players: state.players.map((p) => {
+        if (p.id !== playerId) return p;
+
+        const newAppliances = { ...p.appliances };
+        newAppliances[applianceId] = {
+          itemId: applianceId,
+          originalPrice: price,
+          source,
+          isBroken: false,
+          purchasedFirstTime: isFirstTime,
+        };
+
+        const newHistory = isFirstTime
+          ? [...p.applianceHistory, applianceId]
+          : p.applianceHistory;
+
+        return {
+          ...p,
+          gold: Math.max(0, p.gold - price),
+          appliances: newAppliances,
+          applianceHistory: newHistory,
+          happiness: Math.min(100, p.happiness + happinessGain),
+        };
+      }),
+    }));
+
+    return happinessGain;
+  },
+
+  // Repair a broken appliance
+  repairAppliance: (playerId, applianceId) => {
+    const state = get();
+    const player = state.players.find(p => p.id === playerId);
+    if (!player) return 0;
+
+    const ownedAppliance = player.appliances[applianceId];
+    if (!ownedAppliance || !ownedAppliance.isBroken) return 0;
+
+    const repairCost = calculateRepairCost(ownedAppliance.originalPrice);
+
+    set((state) => ({
+      players: state.players.map((p) => {
+        if (p.id !== playerId) return p;
+
+        const newAppliances = { ...p.appliances };
+        newAppliances[applianceId] = {
+          ...newAppliances[applianceId],
+          isBroken: false,
+        };
+
+        return {
+          ...p,
+          gold: Math.max(0, p.gold - repairCost),
+          appliances: newAppliances,
+        };
+      }),
+    }));
+
+    return repairCost;
+  },
+
+  // Pawn an appliance
+  pawnAppliance: (playerId, applianceId, pawnValue) => {
+    set((state) => ({
+      players: state.players.map((p) => {
+        if (p.id !== playerId) return p;
+
+        const newAppliances = { ...p.appliances };
+        delete newAppliances[applianceId];
+
+        return {
+          ...p,
+          gold: p.gold + pawnValue,
+          appliances: newAppliances,
+          happiness: Math.max(0, p.happiness - 1), // -1 happiness for pawning
+        };
+      }),
+    }));
+  },
+
+  // Prepay rent for multiple weeks
+  prepayRent: (playerId, weeks, totalCost) => {
+    set((state) => ({
+      players: state.players.map((p) => {
+        if (p.id !== playerId) return p;
+
+        return {
+          ...p,
+          gold: Math.max(0, p.gold - totalCost),
+          rentPrepaidWeeks: p.rentPrepaidWeeks + weeks,
+          weeksSinceRent: 0,
+        };
+      }),
+    }));
+  },
+
+  // Move to new housing with locked-in rent
+  moveToHousing: (playerId, tier, cost, lockInRent) => {
+    set((state) => ({
+      players: state.players.map((p) => {
+        if (p.id !== playerId) return p;
+
+        return {
+          ...p,
+          gold: Math.max(0, p.gold - cost),
+          housing: tier,
+          weeksSinceRent: 0,
+          rentPrepaidWeeks: 0,
+          lockedRent: lockInRent,
+        };
+      }),
+    }));
   },
 }));
 

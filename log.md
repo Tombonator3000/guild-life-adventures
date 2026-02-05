@@ -1,5 +1,119 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Jones-Style Housing & Appliances System
+
+### Research Summary (from jonesinthefastlane.fandom.com)
+
+**Low-Cost Housing (The Slums):**
+- Wild Willy (Shadowfingers) robs players in Low-Cost Housing
+- Apartment robbery only happens at Low-Cost Housing with durables
+- Chance based on Relaxation stat (1/(relaxation+1)), ranging 2-9% per turn
+- Le Securité (Noble Heights equivalent) is safe from robbery
+- Players can lock in lower rent when economy drops
+- Rent can be prepaid multiple weeks in advance
+- Salary garnishment (50%) if rent is overdue
+
+**Appliances (Socket City = Enchanter's Workshop):**
+- All appliances can break, requiring repair
+- Socket City items: lower break chance (1/51), higher repair cost
+- Z-Mart items: higher break chance (1/36), cheaper to buy
+- Pawn Shop items: same 1/36 break chance as Z-Mart
+- Break chance only triggers if player has >$500 cash
+- Repair cost: 1/20 to 1/4 of original purchase price
+- Each break: -1 Happiness
+- Happiness bonus only on FIRST purchase of each type
+
+**Appliance Types (Jones → Fantasy):**
+| Jones | Fantasy (Guild Life) | Socket City Price | Z-Mart Price | Happiness |
+|-------|---------------------|------------------|--------------|-----------|
+| Color TV | Scrying Mirror | 525g | 450g | +2/+1 |
+| B&W TV | Simple Scrying Glass | - | 220g | +1 |
+| VCR | Memory Crystal | 475g | 300g | +2/+1 |
+| Stereo | Music Box | 325g | 350g | +2/+1 |
+| Microwave | Cooking Fire | 276g | 200g | +1/turn |
+| Refrigerator | Preservation Box | 876g | 650g | +2/+1 |
+| Computer | Arcane Tome | 1599g | - | +3, random income |
+
+**Pawn Shop Mechanics:**
+- Pawn item: 40% of original price
+- Redeem within few weeks: 50% of original price
+- After expiry: item goes on sale for 50% price
+- Pawned items from Socket City keep 1/51 break chance if redeemed
+- Bought from Pawn Shop: always 1/36 break chance
+
+### Implementation Plan
+
+1. **Housing System Update:**
+   - Add rent prepayment (pay multiple weeks ahead)
+   - Add rent lock-in when signing new lease
+   - Update landlord UI with these options
+
+2. **Appliances System:**
+   - Update items.ts with complete appliance list
+   - Add breakChance and source (enchanter/market/pawn) to durables
+   - Add appliance breakage check at start of turn
+   - Add repair cost calculation
+
+3. **Location Updates:**
+   - Enchanter's Workshop: Full appliance shop (Socket City)
+   - Shadow Market: Cheaper used appliances (Z-Mart)
+   - The Fence: Pawn/redeem/buy mechanics for appliances
+
+### Implementation Completed
+
+**New Types Added (game.types.ts):**
+- `ApplianceSource`: 'enchanter' | 'market' | 'pawn'
+- `APPLIANCE_BREAK_CHANCE`: Break chances by source (1/51 enchanter, 1/36 market/pawn)
+- `OwnedAppliance`: Interface with itemId, originalPrice, source, isBroken, purchasedFirstTime
+- `AppliancesInventory`: Record of owned appliances
+- Player fields: `appliances`, `applianceHistory`, `rentPrepaidWeeks`, `lockedRent`
+
+**New Appliances (items.ts):**
+| Fantasy Name | Jones Equivalent | Enchanter Price | Market Price | Happiness |
+|--------------|-----------------|-----------------|--------------|-----------|
+| Scrying Mirror | Color TV | 525g | 450g | +2/+1 |
+| Simple Scrying Glass | B&W TV | - | 220g | +1 |
+| Memory Crystal | VCR | 475g | 300g | +2/+1 |
+| Enchanted Music Box | Stereo | 325g | 350g | +2/+1 |
+| Eternal Cooking Fire | Microwave | 276g | 200g | +1/turn |
+| Preservation Box | Refrigerator | 876g | 650g | +2/+1 |
+| Arcane Tome | Computer | 1599g | - | +3, income |
+
+**New Store Functions (gameStore.ts):**
+- `buyAppliance(playerId, applianceId, price, source)` - Buy with happiness tracking
+- `repairAppliance(playerId, applianceId)` - Fix broken appliance
+- `pawnAppliance(playerId, applianceId, pawnValue)` - Pawn for 40% value
+- `prepayRent(playerId, weeks, totalCost)` - Pay rent in advance
+- `moveToHousing(playerId, tier, cost, lockInRent)` - Move with rent lock-in
+
+**startTurn Updates:**
+- Appliance breakage check (only if gold > 500)
+- Auto-repair with cost deduction
+- Cooking Fire per-turn happiness bonus (+1)
+- Arcane Tome random income (15% chance, 10-60g)
+
+**New UI Components:**
+- `EnchanterPanel.tsx` - Socket City equivalent with repair section
+- `ShadowMarketPanel.tsx` - Z-Mart equivalent with used appliances
+- `PawnShopPanel.tsx` - Updated with appliance pawn/buy
+
+**Landlord UI Updates:**
+- Shows locked rent vs market rate
+- Prepay 1/4/8 weeks options
+- Moving locks in current market rate
+- Shows savings when locked rate < market
+
+### Files Modified
+- `src/types/game.types.ts` - New appliance types and player fields
+- `src/data/items.ts` - APPLIANCES array, helper functions
+- `src/store/gameStore.ts` - New functions, startTurn appliance logic
+- `src/components/game/LocationPanel.tsx` - Updated all relevant locations
+- `src/components/game/PawnShopPanel.tsx` - Appliance pawn/buy
+- `src/components/game/EnchanterPanel.tsx` - NEW
+- `src/components/game/ShadowMarketPanel.tsx` - NEW
+
+---
+
 ## 2026-02-05 - Guild Hall (Jones-Style Employment System)
 
 ### Implementation
