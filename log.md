@@ -1,5 +1,47 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Editor Board Info Controls
+
+### Completed
+- Enhanced Zone Editor to support center info panel editing
+- Added drag-to-move and drag-to-resize for center panel (yellow area)
+- Added numeric input fields for precise center panel adjustments
+- Updated export function to include both zone configs AND center panel config
+- Center panel position now syncs between editor and game board in real-time
+
+### New Features
+- **Center Panel Editing**: Click the yellow "Info Panel" button in Zone Editor sidebar
+  - Drag the yellow panel to reposition
+  - Drag corner handle to resize
+  - Use numeric inputs for precise positioning
+- **Enhanced Export**: "Copy Config" now exports:
+  - `ZONE_CONFIGS` for all location zones
+  - `CENTER_PANEL_CONFIG` for the info panel position
+- Center panel changes apply immediately when clicking "Apply"
+
+### Files Modified
+- `src/components/game/ZoneEditor.tsx` - Added CenterPanelConfig type, center panel editing UI
+- `src/components/game/GameBoard.tsx` - Added centerPanel state, uses editable positions
+
+### Export Format Example
+```typescript
+// Zone configurations for game board locations
+export const ZONE_CONFIGS: ZoneConfig[] = [
+  { id: 'noble-heights', x: 0.0, y: 0.0, width: 10.0, height: 28.0 },
+  // ... more zones
+];
+
+// Center info panel configuration
+export const CENTER_PANEL_CONFIG = {
+  top: 15.8,
+  left: 15.2,
+  width: 69.6,
+  height: 49.2,
+};
+```
+
+---
+
 ## 2026-02-05 - Game Board Zone System
 
 ### Completed
