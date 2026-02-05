@@ -139,6 +139,7 @@ export interface Player {
   investments: number; // Invested amount
   currentJob: string | null;
   currentWage: number; // Current job hourly wage (can increase with raises)
+  shiftsWorkedSinceHire: number; // Shifts worked at current job (resets on new hire)
   dependability: number; // 0-100, affects job performance and raise chance
   experience: number; // Work experience points
   relaxation: number; // 10-50, affects apartment robbery chance (higher = safer)

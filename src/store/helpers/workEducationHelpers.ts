@@ -41,6 +41,7 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
             happiness: Math.max(0, p.happiness - 2), // Work is tiring
             dependability: newDependability,
             experience: newExperience,
+            shiftsWorkedSinceHire: (p.shiftsWorkedSinceHire || 0) + 1,
             rentDebt: newRentDebt,
           };
         }),
@@ -52,6 +53,13 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
       const player = state.players.find(p => p.id === playerId);
       if (!player || !player.currentJob) {
         return { success: false, message: "You don't have a job to request a raise for." };
+      }
+
+      // Must work at least 3 shifts before requesting a raise
+      const MIN_SHIFTS_FOR_RAISE = 3;
+      const shiftsWorked = player.shiftsWorkedSinceHire || 0;
+      if (shiftsWorked < MIN_SHIFTS_FOR_RAISE) {
+        return { success: false, message: `You need to work at least ${MIN_SHIFTS_FOR_RAISE} shifts before requesting a raise. (${shiftsWorked}/${MIN_SHIFTS_FOR_RAISE})` };
       }
 
       // Raise chance based on dependability (50% base + dependability bonus)

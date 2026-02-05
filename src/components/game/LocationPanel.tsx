@@ -106,11 +106,13 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
       case 'guild-hall':
         const availableQuests = getAvailableQuests(player.guildRank);
         const currentJobData = player.currentJob ? getJob(player.currentJob) : null;
+        const canWorkAtGuildHall = currentJobData && currentJobData.location === 'Guild Hall';
+        const MIN_SHIFTS_FOR_RAISE = 3;
 
         return (
           <div className="space-y-4">
-            {/* Current Job Status - Show work button if employed */}
-            {player.currentJob && currentJobData && (
+            {/* Current Job Status - Show work button ONLY if job is at Guild Hall */}
+            {player.currentJob && currentJobData && canWorkAtGuildHall && (
               <div className="wood-frame p-3 text-card">
                 <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
                   <Briefcase className="w-4 h-4" /> Current Job: {currentJobData.name}
@@ -137,7 +139,8 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
                       });
                     }}
                     className="gold-button text-xs py-1 px-2 flex items-center gap-1"
-                    disabled={player.dependability < 40}
+                    disabled={player.dependability < 40 || (player.shiftsWorkedSinceHire || 0) < MIN_SHIFTS_FOR_RAISE}
+                    title={(player.shiftsWorkedSinceHire || 0) < MIN_SHIFTS_FOR_RAISE ? `Work ${MIN_SHIFTS_FOR_RAISE} shifts first (${player.shiftsWorkedSinceHire || 0}/${MIN_SHIFTS_FOR_RAISE})` : 'Request a raise'}
                   >
                     <TrendingUp className="w-3 h-3" /> Raise
                   </button>
