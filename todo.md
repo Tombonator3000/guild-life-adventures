@@ -2,7 +2,7 @@
 
 ## Pagar (In Progress)
 
-- [ ] Dokumentasjon fullfort (agents.md, log.md, todo.md, README.md)
+*Ingen aktive oppgaver*
 
 ---
 
@@ -37,6 +37,7 @@
 ## Fullfort
 
 ### 2026-02-05
+- [x] Dokumentasjon fullfort (agents.md, log.md, todo.md, README.md)
 - [x] Quest System implementert
 - [x] Newspaper (The Guildholm Herald)
 - [x] Pawn Shop (The Fence)
