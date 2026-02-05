@@ -38,6 +38,16 @@
 
 ## Completed
 
+### 2026-02-05 - Jones-Style Turn System and Board Movement
+- [x] Researched Jones in the Fast Lane wiki for Turn and Hour mechanics
+- [x] Implemented 60-hour turn system (changed from 168)
+- [x] Created board path system with 14 locations in a ring
+- [x] Shortest path calculation (clockwise or counter-clockwise)
+- [x] Movement costs 1 Hour per location step
+- [x] Players start in The Slums (not Guild Hall)
+- [x] Starvation time penalty: -20 Hours if no food at turn start
+- [x] Updated ResourcePanel to show 60-hour max with warning
+
 ### 2026-02-05 - Jones-Style Housing & Appliances System
 - [x] Researched Jones in the Fast Lane wiki for Low-Cost Housing and Appliances
 - [x] Implemented 7 fantasy appliances (Scrying Mirror, Memory Crystal, Music Box, etc.)

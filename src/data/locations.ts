@@ -1,4 +1,80 @@
-import type { Location, ZoneConfig } from '@/types/game.types';
+import type { Location, ZoneConfig, LocationId } from '@/types/game.types';
+
+// Jones-style board path - locations form a ring that players travel around
+// The path goes clockwise from top-left around the board
+// Full lap around the board costs approximately 10-14 Hours
+export const BOARD_PATH: LocationId[] = [
+  'noble-heights',    // Top left
+  'general-store',    // Left side (below noble-heights)
+  'bank',             // Left side (below general-store)
+  'forge',            // Bottom left
+  'guild-hall',       // Bottom
+  'cave',             // Bottom center
+  'academy',          // Bottom
+  'enchanter',        // Bottom right
+  'armory',           // Right side
+  'rusty-tankard',    // Right side (above armory)
+  'shadow-market',    // Top right
+  'fence',            // Top
+  'slums',            // Top center
+  'landlord',         // Top (between slums and noble-heights)
+];
+
+// Get the index of a location in the board path
+export const getPathIndex = (locationId: LocationId): number => {
+  return BOARD_PATH.indexOf(locationId);
+};
+
+// Calculate movement cost between two locations (Jones-style)
+// Each step along the path costs 1 Hour
+// Players can move in either direction and take the shortest route
+export const calculatePathDistance = (from: LocationId, to: LocationId): number => {
+  if (from === to) return 0;
+
+  const fromIndex = getPathIndex(from);
+  const toIndex = getPathIndex(to);
+
+  if (fromIndex === -1 || toIndex === -1) return 0;
+
+  const pathLength = BOARD_PATH.length;
+
+  // Calculate distance in both directions
+  const clockwise = (toIndex - fromIndex + pathLength) % pathLength;
+  const counterClockwise = (fromIndex - toIndex + pathLength) % pathLength;
+
+  // Return the shorter distance
+  return Math.min(clockwise, counterClockwise);
+};
+
+// Get the path from one location to another (shortest route)
+export const getPath = (from: LocationId, to: LocationId): LocationId[] => {
+  if (from === to) return [from];
+
+  const fromIndex = getPathIndex(from);
+  const toIndex = getPathIndex(to);
+
+  if (fromIndex === -1 || toIndex === -1) return [from];
+
+  const pathLength = BOARD_PATH.length;
+  const clockwise = (toIndex - fromIndex + pathLength) % pathLength;
+  const counterClockwise = (fromIndex - toIndex + pathLength) % pathLength;
+
+  const path: LocationId[] = [from];
+
+  if (clockwise <= counterClockwise) {
+    // Go clockwise
+    for (let i = 1; i <= clockwise; i++) {
+      path.push(BOARD_PATH[(fromIndex + i) % pathLength]);
+    }
+  } else {
+    // Go counter-clockwise
+    for (let i = 1; i <= counterClockwise; i++) {
+      path.push(BOARD_PATH[(fromIndex - i + pathLength) % pathLength]);
+    }
+  }
+
+  return path;
+};
 
 // Zone configurations with precise coordinates matching the game board image
 // These can be edited to fine-tune zone positions
@@ -138,20 +214,10 @@ export const LOCATIONS: Location[] = [
   },
 ];
 
-export const getLocation = (id: string): Location | undefined => 
+export const getLocation = (id: string): Location | undefined =>
   LOCATIONS.find(loc => loc.id === id);
 
+// Jones-style movement cost: Each step along the path costs 1 Hour
 export const getMovementCost = (from: string, to: string): number => {
-  // Simple distance calculation based on position in array
-  const fromIndex = LOCATIONS.findIndex(loc => loc.id === from);
-  const toIndex = LOCATIONS.findIndex(loc => loc.id === to);
-  
-  if (fromIndex === -1 || toIndex === -1) return 0;
-  if (fromIndex === toIndex) return 0;
-  
-  // Each location hop costs 2 hours
-  const distance = Math.abs(fromIndex - toIndex);
-  const wrappedDistance = Math.min(distance, LOCATIONS.length - distance);
-  
-  return wrappedDistance * 2;
+  return calculatePathDistance(from as LocationId, to as LocationId);
 };

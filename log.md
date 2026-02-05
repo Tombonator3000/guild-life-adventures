@@ -1,5 +1,76 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Jones-Style Turn System and Board Movement
+
+### Research Summary (from jonesinthefastlane.fandom.com)
+
+**Turn System:**
+- Each player's turn is split into 60 Hours (time points)
+- Players spend Hours on actions and movement
+- Turn ends once all 60 Hours are spent
+- Free actions may be performed after time runs out
+
+**Movement:**
+- Players move around a ring of locations on the board
+- Full lap around the board costs ~10 Hours
+- Players can move in either direction (clockwise/counter-clockwise)
+- Shortest route is automatically calculated
+
+**Starting Location:**
+- Players start at their apartment (The Slums for new players)
+
+**Starvation Penalty:**
+- If no food at turn start: Lose 20 Hours (1/3 of turn!)
+- Having a Refrigerator (Preservation Box) with food prevents this
+
+### Implementation Completed
+
+**60-Hour Turn System:**
+- Changed `HOURS_PER_TURN` from 168 to 60 (Jones-style)
+- Updated all time references to use the new constant
+- ResourcePanel now shows "Hours" with proper 60-hour max
+
+**Board Path System:**
+- Created `BOARD_PATH` array defining the ring of 14 locations
+- Path goes clockwise: noble-heights → general-store → bank → forge → guild-hall → cave → academy → enchanter → armory → rusty-tankard → shadow-market → fence → slums → landlord
+- Added `calculatePathDistance()` function for shortest route
+- Added `getPath()` function to get actual path between locations
+
+**Movement Cost:**
+- Each step along the path costs 1 Hour
+- Maximum distance (half the board) = 7 Hours
+- Shortest route is automatically chosen
+
+**Starting Location:**
+- Players now start in 'slums' instead of 'guild-hall'
+- Matches Jones in the Fast Lane starting position
+
+**Starvation Time Penalty:**
+- Added check at turn start
+- If no food and no Preservation Box: -20 Hours
+- Shows event message explaining the penalty
+
+### Files Modified
+- `src/types/game.types.ts` - Added HOURS_PER_TURN constant (60)
+- `src/data/locations.ts` - Added BOARD_PATH, calculatePathDistance(), getPath()
+- `src/store/gameStore.ts` - Updated to use HOURS_PER_TURN, start in slums, starvation penalty
+- `src/components/game/ResourcePanel.tsx` - Updated to show 60-hour max
+
+### Board Path Layout
+```
+        noble-heights ─── landlord ─── slums ─── fence
+              │                                    │
+        general-store                        shadow-market
+              │                                    │
+            bank                            rusty-tankard
+              │                                    │
+            forge                              armory
+              │                                    │
+        guild-hall ─── cave ─── academy ─── enchanter
+```
+
+---
+
 ## 2026-02-05 - Jones-Style Housing & Appliances System
 
 ### Research Summary (from jonesinthefastlane.fandom.com)

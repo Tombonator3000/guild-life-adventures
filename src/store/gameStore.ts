@@ -100,6 +100,8 @@ interface GameStore extends GameState {
   dismissApplianceBreakageEvent: () => void;
 }
 
+import { HOURS_PER_TURN } from '@/types/game.types';
+
 const createPlayer = (
   id: string,
   name: string,
@@ -113,8 +115,8 @@ const createPlayer = (
   health: 100,
   maxHealth: 100,
   happiness: 50,
-  timeRemaining: 168,
-  currentLocation: 'guild-hall',
+  timeRemaining: HOURS_PER_TURN, // Jones-style: 60 Hours per turn
+  currentLocation: 'slums', // Players start in The Slums (like Jones)
   previousLocation: null, // Track where player came from (for street robbery)
   guildRank: 'novice',
   housing: 'homeless',
@@ -760,7 +762,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         currentPlayerIndex: nextIndex,
         players: state.players.map((p, index) =>
           index === nextIndex
-            ? { ...p, timeRemaining: 168 }
+            ? { ...p, timeRemaining: HOURS_PER_TURN }
             : p
         ),
         selectedLocation: null,
@@ -774,6 +776,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const state = get();
     const player = state.players.find(p => p.id === playerId);
     if (!player || player.isAI) return;
+
+    // Jones-style Starvation Check at start of turn
+    // If player has no food and no Preservation Box with food, they starve and lose 20 Hours
+    const hasPreservationBox = player.appliances['preservation-box'] && !player.appliances['preservation-box'].isBroken;
+    const hasFood = player.foodLevel > 0;
+
+    if (!hasFood && !hasPreservationBox) {
+      // Starving: Lose 20 Hours (1/3 of turn!) - Jones-style penalty
+      const STARVATION_TIME_PENALTY = 20;
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? { ...p, timeRemaining: Math.max(0, p.timeRemaining - STARVATION_TIME_PENALTY) }
+            : p
+        ),
+        eventMessage: `${player.name} is starving! Lost ${STARVATION_TIME_PENALTY} Hours searching for food.`,
+      }));
+    }
 
     // Check for apartment robbery at the start of player's turn
     const robberyResult = checkApartmentRobbery(player);
@@ -994,7 +1014,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       currentPlayerIndex: 0,
       priceModifier: 0.7 + Math.random() * 0.6, // Random price between 0.7 and 1.3
       players: updatedPlayers.map((p, index) =>
-        index === 0 ? { ...p, timeRemaining: 168 } : p
+        index === 0 ? { ...p, timeRemaining: HOURS_PER_TURN } : p
       ),
       rentDueWeek: isRentDue ? newWeek : state.rentDueWeek,
       selectedLocation: null,
