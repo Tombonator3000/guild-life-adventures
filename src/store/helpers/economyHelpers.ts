@@ -298,5 +298,20 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
         }),
       }));
     },
+
+    clearDungeonFloor: (playerId: string, floorId: number) => {
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? {
+                ...p,
+                dungeonFloorsCleared: p.dungeonFloorsCleared.includes(floorId)
+                  ? p.dungeonFloorsCleared
+                  : [...p.dungeonFloorsCleared, floorId],
+              }
+            : p
+        ),
+      }));
+    },
   };
 }

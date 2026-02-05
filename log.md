@@ -1,5 +1,74 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Phase 3: Cave UI Overhaul (Floor Selection Interface)
+
+### Problem
+The Cave location had a simple "Explore the Cave" button with random outcomes (treasure, lost, creature encounter) and a "Rest in Cave" option. This didn't use the dungeon floor system designed in Phase 2 (`src/data/dungeon.ts`), which defines 5 floors with encounters, bosses, requirements, and loot tables. The cave UI needed a complete overhaul to show floor selection, equipment checks, dungeon progress, and integrate with the Phase 2 data.
+
+### Solution
+Replaced the CavePanel with a full dungeon floor selection interface that shows all 5 floors with their status, requirements, and lets players enter floors with auto-resolved combat.
+
+### Architecture
+
+**New CavePanel** (`src/components/game/CavePanel.tsx`):
+- **Dungeon Progress Bar** — Visual progress tracker showing X/5 floors cleared with gradient bar
+- **Equipment Summary** — Compact ATK/DEF/BLK display with tip for unequipped players
+- **Education Bonuses** — Shows active dungeon bonuses from completed degrees (Trap Sense, Arcane Sight, damage reduction, attack bonus, gold bonus, potion chance)
+- **Floor Selection Cards** — 5 collapsible floor cards, each showing:
+  - Status: Cleared (green checkmark), Available (sword or warning), Locked (lock icon)
+  - Color-coded left border (green/amber/red/gray)
+  - Expanded view with: description, time cost, gold range, health risk, boss info, rare drop hint, requirements checklist, recommended degrees
+  - "Enter Floor" / "Re-enter Floor" button with disabled state reasons
+- **Rest in Cave** — Kept from old design (8 hours, +15 HP, +1 happiness)
+
+**Floor Status Logic**:
+- `cleared` — Player has beaten the boss (green, re-enterable for gold farming)
+- `available` — Previous floor cleared but may not meet equipment requirements
+- `locked` — Previous floor not yet cleared
+
+**Auto-Resolve Combat** (`resolveFloorRun` function):
+- Generates 3 random encounters + 1 boss per floor via `generateFloorEncounters()`
+- Resolves each encounter based on player power vs encounter power ratio
+- Treasure encounters: Gold with gold bonus
+- Healing encounters: Restore HP mid-floor
+- Trap encounters: Take damage, or skip if Trade Guild disarm ability
+- Combat/Boss encounters: Damage inversely proportional to power ratio, gold proportional, block chance rolls, arcane requirement check
+- Education bonuses applied: damage reduction, attack bonus, gold bonus, healing potion drops
+- First clear: Marks floor cleared, awards happiness bonus, 5% rare drop check
+- Re-runs: Gold farming without happiness bonus or rare drops
+
+**Store Changes**:
+- Added `clearDungeonFloor(playerId, floorId)` action to `economyHelpers.ts`
+- Added type to `storeTypes.ts` GameStore interface
+- Updates `player.dungeonFloorsCleared` array (idempotent, won't duplicate)
+
+### Files Modified
+- `src/components/game/CavePanel.tsx` — Complete rewrite (137 → 578 lines): floor selection UI, auto-resolve combat, education bonuses display
+- `src/components/game/LocationPanel.tsx` — Added `clearDungeonFloor` to store destructure and CavePanel props
+- `src/store/storeTypes.ts` — Added `clearDungeonFloor` to GameStore interface
+- `src/store/helpers/economyHelpers.ts` — Implemented `clearDungeonFloor` action
+
+### Combat Formula
+```
+attackPower = baseATK * (1 + eduAttackBonus)
+effATK = requiresArcane && !hasArcane ? attackPower * 0.3 : attackPower
+playerPower = effATK + DEF * 0.5
+ratio = playerPower / encounterPower
+
+damage = baseDamage * max(0.3, 1 - ratio * 0.5) * (1 - eduDmgReduction)
+if blocked: damage *= 0.5
+damage = max(1, damage)
+
+gold = baseGold * (1 + eduGoldBonus) * min(1.5, ratio)
+```
+
+### Verification
+- TypeScript compiles cleanly (`tsc --noEmit` passes)
+- Production build succeeds (`vite build`)
+- All tests pass (`vitest run`)
+
+---
+
 ## 2026-02-05 - Movement Path Drawing System (Zone Editor)
 
 ### Problem

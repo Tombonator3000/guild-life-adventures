@@ -38,6 +38,30 @@
 
 *No active tasks*
 
+## Completed (Phase 3 - Cave UI Overhaul)
+
+- [x] Replace CavePanel explore/rest with floor selection interface
+  - 5 collapsible floor cards with status icons (cleared/available/locked)
+  - Color-coded borders, expandable details
+- [x] Show equipment check before entering a floor
+  - Uses `checkFloorRequirements()` from dungeon.ts
+  - Shows red ✗ for each unmet requirement, green ✓ when all met
+  - Disabled button with reason text
+- [x] Display dungeon progress (floors cleared, boss status)
+  - Progress bar (X/5 floors)
+  - Boss name and power shown per floor
+  - Rare drop hints (revealed after first clear)
+- [x] Keep basic "Rest in Cave" option
+  - Retained at bottom of panel (8 hrs, +15 HP, +1 happiness)
+- [x] Auto-resolve combat system
+  - Generates encounters from dungeon.ts floor data
+  - Power-ratio based damage/gold calculation
+  - Education bonuses (trap disarm, arcane, damage reduction, potions)
+  - First clear: happiness bonus + rare drop check
+  - Re-runs for gold farming
+- [x] Store action: `clearDungeonFloor(playerId, floorId)`
+- [x] TypeScript compiles cleanly, build succeeds, tests pass
+
 ## Completed (Phase 2 - Dungeon Data)
 
 - [x] Create `src/data/dungeon.ts` with all types and interfaces
@@ -72,11 +96,11 @@
 ### Dungeon & Combat System (Rogue-Lite RPG)
 See log.md "Game Gap Analysis & Rogue-Lite RPG Design Proposal" for full design.
 
-**Phase 3: Cave UI Overhaul**
-- [ ] Replace CavePanel explore/rest with floor selection interface
-- [ ] Show equipment check before entering a floor
-- [ ] Display dungeon progress (floors cleared, boss status)
-- [ ] Keep basic "Rest in Cave" option
+**Phase 3: Cave UI Overhaul** ✅ DONE
+- [x] Replace CavePanel explore/rest with floor selection interface
+- [x] Show equipment check before entering a floor
+- [x] Display dungeon progress (floors cleared, boss status)
+- [x] Keep basic "Rest in Cave" option
 
 **Phase 4: Combat System**
 - [ ] Implement combat resolution formula (Player Power vs Encounter Power)
