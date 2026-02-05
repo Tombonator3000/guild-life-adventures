@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { PLAYER_COLORS, GUILD_RANK_NAMES, GUILD_RANK_ORDER } from '@/types/game.types';
-import { Plus, Minus, Bot, Play } from 'lucide-react';
+import { PLAYER_COLORS, GUILD_RANK_NAMES, GUILD_RANK_ORDER, AI_DIFFICULTY_NAMES, AI_DIFFICULTY_DESCRIPTIONS, type AIDifficulty } from '@/types/game.types';
+import { Plus, Minus, Bot, Play, Brain, Zap, Crown } from 'lucide-react';
 import gameBoard from '@/assets/game-board.jpeg';
 
 export function GameSetup() {
   const { startNewGame, setPhase } = useGameStore();
   const [playerNames, setPlayerNames] = useState<string[]>(['Adventurer 1']);
   const [includeAI, setIncludeAI] = useState(false);
+  const [aiDifficulty, setAIDifficulty] = useState<AIDifficulty>('medium');
   const [goals, setGoals] = useState({
     wealth: 5000,
     happiness: 100,
@@ -34,7 +35,7 @@ export function GameSetup() {
   };
 
   const handleStart = () => {
-    startNewGame(playerNames, includeAI, goals);
+    startNewGame(playerNames, includeAI, goals, aiDifficulty);
   };
 
   // Preset game lengths
@@ -114,6 +115,36 @@ export function GameSetup() {
                   Include Grimwald (AI Opponent)
                 </span>
               </label>
+
+              {/* AI Difficulty Selection */}
+              {includeAI && (
+                <div className="mt-4 ml-8 space-y-2">
+                  <p className="text-sm text-muted-foreground mb-2">Select Grimwald's cunning:</p>
+                  <div className="flex gap-2">
+                    {(['easy', 'medium', 'hard'] as AIDifficulty[]).map((diff) => (
+                      <button
+                        key={diff}
+                        onClick={() => setAIDifficulty(diff)}
+                        className={`flex-1 p-2 rounded border transition-all ${
+                          aiDifficulty === diff
+                            ? 'border-primary bg-primary/20 text-primary'
+                            : 'border-border bg-background/50 text-muted-foreground hover:border-primary/50'
+                        }`}
+                      >
+                        <div className="flex flex-col items-center gap-1">
+                          {diff === 'easy' && <Brain className="w-4 h-4" />}
+                          {diff === 'medium' && <Zap className="w-4 h-4" />}
+                          {diff === 'hard' && <Crown className="w-4 h-4" />}
+                          <span className="text-xs font-display">{AI_DIFFICULTY_NAMES[diff]}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center mt-1">
+                    {AI_DIFFICULTY_DESCRIPTIONS[aiDifficulty]}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

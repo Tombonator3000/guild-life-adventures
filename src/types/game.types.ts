@@ -175,6 +175,7 @@ export interface GameState {
   winner: string | null;
   eventMessage: string | null;
   rentDueWeek: number; // Week when rent is next due
+  aiDifficulty: AIDifficulty; // Grimwald AI difficulty level
 }
 
 export interface Job {
@@ -266,6 +267,21 @@ export const PLAYER_COLORS = [
 ];
 
 export const AI_COLOR = { name: 'Pearl', value: '#E5E5E5' };
+
+// AI Difficulty levels (Jones-style)
+export type AIDifficulty = 'easy' | 'medium' | 'hard';
+
+export const AI_DIFFICULTY_NAMES: Record<AIDifficulty, string> = {
+  easy: 'Novice Grimwald',
+  medium: 'Cunning Grimwald',
+  hard: 'Master Grimwald',
+};
+
+export const AI_DIFFICULTY_DESCRIPTIONS: Record<AIDifficulty, string> = {
+  easy: 'Makes occasional mistakes, slower reactions',
+  medium: 'Balanced gameplay, strategic decisions',
+  hard: 'Highly efficient, plans multiple turns ahead',
+};
 
 // Education path display names
 export const EDUCATION_PATH_NAMES: Record<EducationPath, string> = {

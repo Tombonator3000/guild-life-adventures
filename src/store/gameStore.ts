@@ -12,6 +12,7 @@ import type {
   ApplianceSource,
   OwnedAppliance,
   AppliancesInventory,
+  AIDifficulty,
   HOURS_PER_WEEK,
   RENT_INTERVAL,
   FOOD_DEPLETION_PER_WEEK,
@@ -43,7 +44,7 @@ export interface ShadowfingersEvent {
 
 interface GameStore extends GameState {
   // Actions
-  startNewGame: (playerNames: string[], includeAI: boolean, goals: GoalSettings) => void;
+  startNewGame: (playerNames: string[], includeAI: boolean, goals: GoalSettings, aiDifficulty?: AIDifficulty) => void;
   movePlayer: (playerId: string, location: LocationId, timeCost: number) => void;
   spendTime: (playerId: string, hours: number) => void;
   modifyGold: (playerId: string, amount: number) => void;
@@ -181,9 +182,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   rentDueWeek: 4,
   selectedLocation: null,
   shadowfingersEvent: null,
+  aiDifficulty: 'medium' as AIDifficulty,
 
-  startNewGame: (playerNames, includeAI, goals) => {
-    const players: Player[] = playerNames.map((name, index) => 
+  startNewGame: (playerNames, includeAI, goals, aiDifficulty = 'medium') => {
+    const players: Player[] = playerNames.map((name, index) =>
       createPlayer(
         `player-${index}`,
         name,
@@ -208,6 +210,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       rentDueWeek: 4,
       selectedLocation: null,
       shadowfingersEvent: null,
+      aiDifficulty,
     });
   },
 
