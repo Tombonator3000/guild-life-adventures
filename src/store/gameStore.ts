@@ -84,6 +84,7 @@ const createPlayer = (
   equippedArmor: null,
   equippedShield: null,
   dungeonFloorsCleared: [],
+  permanentGoldBonus: 0,
 });
 
 export const useGameStore = create<GameStore>((set, get) => {

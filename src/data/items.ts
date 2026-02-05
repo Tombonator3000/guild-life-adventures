@@ -570,6 +570,21 @@ export const ACADEMY_ITEMS: Item[] = [
   },
 ];
 
+// Rare dungeon drop items (obtained from dungeon bosses)
+export const RARE_DROP_ITEMS: Item[] = [
+  {
+    id: 'dragon-scale-shield',
+    name: 'Dragon Scale Shield',
+    category: 'shield',
+    basePrice: 0,
+    description: 'A shield forged from dragon scales. +20 Defense, +20% Block.',
+    isDurable: true,
+    isUnstealable: true,
+    equipSlot: 'shield',
+    equipStats: { defense: 20, blockChance: 0.20 },
+  },
+];
+
 // All items combined
 export const ALL_ITEMS: Item[] = [
   ...GENERAL_STORE_ITEMS,
@@ -578,6 +593,7 @@ export const ALL_ITEMS: Item[] = [
   ...ENCHANTER_ITEMS,
   ...TAVERN_ITEMS,
   ...ACADEMY_ITEMS,
+  ...RARE_DROP_ITEMS,
 ];
 
 // Get all durable items that can be stolen

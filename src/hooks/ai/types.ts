@@ -61,6 +61,11 @@ export type AIActionType =
   | 'buy-appliance'
   | 'move-housing'
   | 'rest'
+  | 'buy-equipment'
+  | 'explore-dungeon'
+  | 'buy-guild-pass'
+  | 'take-quest'
+  | 'complete-quest'
   | 'end-turn';
 
 export interface AIAction {

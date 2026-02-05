@@ -17,6 +17,10 @@ export interface Quest {
     level: number;
   };
   requiredItem?: string;
+  /** Requires specific dungeon floor to be cleared */
+  requiresDungeonFloor?: number;
+  /** Requires ALL dungeon floors to be cleared */
+  requiresAllDungeonFloors?: boolean;
 }
 
 // Quest rank to guild rank requirements
@@ -164,12 +168,13 @@ export const QUESTS: Quest[] = [
   {
     id: 'dungeon-dive',
     name: 'Dungeon Dive',
-    description: 'Explore the first level of the ancient dungeon.',
+    description: 'Prove your dungeon prowess — requires Floor 1 cleared.',
     rank: 'B',
     goldReward: 75,
     timeRequired: 40,
     healthRisk: 30,
     happinessReward: 6,
+    requiresDungeonFloor: 1,
   },
   {
     id: 'exorcism',
@@ -221,12 +226,13 @@ export const QUESTS: Quest[] = [
   {
     id: 'deep-dungeon-clear',
     name: 'Deep Dungeon Clear',
-    description: 'Conquer all levels of the legendary dungeon.',
+    description: 'Conquer all 5 levels of the legendary dungeon.',
     rank: 'S',
     goldReward: 200,
     timeRequired: 80,
     healthRisk: 60,
     happinessReward: 12,
+    requiresAllDungeonFloors: true,
   },
   {
     id: 'dragon-slayer',
@@ -255,13 +261,14 @@ export function canTakeQuest(
   quest: Quest,
   guildRank: GuildRank,
   education: Record<EducationPath, number>,
-  inventory: string[]
+  inventory: string[],
+  dungeonFloorsCleared?: number[]
 ): { canTake: boolean; reason?: string } {
   // Check guild rank
   const rankIndex = GUILD_RANK_ORDER.indexOf(guildRank);
   const requiredRank = QUEST_RANK_REQUIREMENTS[quest.rank];
   const requiredIndex = GUILD_RANK_ORDER.indexOf(requiredRank);
-  
+
   if (rankIndex < requiredIndex) {
     return { canTake: false, reason: `Requires ${requiredRank} rank` };
   }
@@ -270,9 +277,9 @@ export function canTakeQuest(
   if (quest.requiredEducation) {
     const playerLevel = education[quest.requiredEducation.path] || 0;
     if (playerLevel < quest.requiredEducation.level) {
-      return { 
-        canTake: false, 
-        reason: `Requires ${quest.requiredEducation.path} level ${quest.requiredEducation.level}` 
+      return {
+        canTake: false,
+        reason: `Requires ${quest.requiredEducation.path} level ${quest.requiredEducation.level}`
       };
     }
   }
@@ -280,6 +287,20 @@ export function canTakeQuest(
   // Check item requirement
   if (quest.requiredItem && !inventory.includes(quest.requiredItem)) {
     return { canTake: false, reason: `Requires ${quest.requiredItem}` };
+  }
+
+  // Check dungeon floor requirement
+  const cleared = dungeonFloorsCleared || [];
+  if (quest.requiresDungeonFloor && !cleared.includes(quest.requiresDungeonFloor)) {
+    return { canTake: false, reason: `Requires Dungeon Floor ${quest.requiresDungeonFloor} cleared` };
+  }
+
+  // Check all dungeon floors requirement
+  if (quest.requiresAllDungeonFloors) {
+    const allCleared = [1, 2, 3, 4, 5].every(f => cleared.includes(f));
+    if (!allCleared) {
+      return { canTake: false, reason: `Requires all 5 dungeon floors cleared` };
+    }
   }
 
   return { canTake: true };

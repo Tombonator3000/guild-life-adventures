@@ -64,6 +64,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     equipItem,
     unequipItem,
     clearDungeonFloor,
+    applyRareDrop,
   } = useGameStore();
   const player = useCurrentPlayer();
   const location = getLocation(locationId);
@@ -420,6 +421,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             modifyHealth={modifyHealth}
             modifyHappiness={modifyHappiness}
             clearDungeonFloor={clearDungeonFloor}
+            applyRareDrop={applyRareDrop}
           />
         );
 

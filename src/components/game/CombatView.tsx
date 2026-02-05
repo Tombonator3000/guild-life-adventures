@@ -17,6 +17,7 @@ import {
 import type { DungeonFloor } from '@/data/dungeon';
 import { getFloorTimeCost, calculateEducationBonuses } from '@/data/dungeon';
 import { calculateCombatStats } from '@/data/items';
+import { getLootMultiplier } from '@/data/dungeon';
 import type { Player } from '@/types/game.types';
 import {
   type DungeonRunState,
@@ -528,9 +529,10 @@ export function CombatView({ player, floor, onComplete, onCancel }: CombatViewPr
         ? -2  // Defeat penalty
         : 0;
 
+    const lootMult = getLootMultiplier(floor, player.guildRank);
     onComplete({
       success: runState.bossDefeated,
-      goldEarned: runState.totalGold,
+      goldEarned: Math.floor(runState.totalGold * lootMult),
       totalDamage: runState.totalDamage,
       totalHealed: runState.totalHealed,
       isFirstClear: runState.isFirstClear && runState.bossDefeated,

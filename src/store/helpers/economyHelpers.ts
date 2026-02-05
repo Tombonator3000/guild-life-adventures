@@ -313,5 +313,60 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
         ),
       }));
     },
+
+    applyRareDrop: (playerId: string, dropId: string) => {
+      // Import dungeon data to find the rare drop definition
+      import('@/data/dungeon').then(({ DUNGEON_FLOORS }) => {
+        const drop = DUNGEON_FLOORS
+          .map(f => f.rareDrop)
+          .find(d => d.id === dropId);
+
+        if (!drop) return;
+
+        set((state) => ({
+          players: state.players.map((p) => {
+            if (p.id !== playerId) return p;
+
+            const effect = drop.effect;
+            const updates: Partial<typeof p> = {};
+
+            switch (effect.type) {
+              case 'heal':
+                updates.health = Math.min(p.maxHealth, p.health + effect.value);
+                break;
+
+              case 'permanent_gold_bonus':
+                updates.permanentGoldBonus = (p.permanentGoldBonus || 0) + effect.value;
+                break;
+
+              case 'permanent_max_health':
+                updates.maxHealth = p.maxHealth + effect.value;
+                updates.health = p.health + effect.value;
+                break;
+
+              case 'equippable': {
+                // Add rare drop as a durable and auto-equip
+                const newDurables = { ...p.durables };
+                newDurables[dropId] = (newDurables[dropId] || 0) + 1;
+                updates.durables = newDurables;
+                if (effect.slot === 'shield') {
+                  updates.equippedShield = dropId;
+                }
+                break;
+              }
+
+              case 'happiness_and_stats':
+                updates.happiness = Math.min(100, p.happiness + effect.happiness);
+                updates.maxHealth = p.maxHealth + effect.statCap;
+                updates.maxDependability = p.maxDependability + effect.statCap;
+                updates.maxExperience = p.maxExperience + effect.statCap;
+                break;
+            }
+
+            return { ...p, ...updates };
+          }),
+        }));
+      });
+    },
   };
 }

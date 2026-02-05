@@ -173,6 +173,7 @@ export interface Player {
   equippedArmor: string | null;    // Item ID of equipped armor
   equippedShield: string | null;   // Item ID of equipped shield
   dungeonFloorsCleared: number[];  // Floors cleared at least once (e.g. [1, 2, 3])
+  permanentGoldBonus: number;      // Permanent % bonus to gold from work (from rare drops)
 }
 
 export interface GoalSettings {

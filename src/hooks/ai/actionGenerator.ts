@@ -19,6 +19,10 @@ import {
   shouldUpgradeHousing,
   calculateBankingStrategy,
   getJobLocation,
+  getBestDungeonFloor,
+  getNextEquipmentUpgrade,
+  shouldBuyGuildPass,
+  getBestQuest,
 } from './strategy';
 
 /**
@@ -395,6 +399,104 @@ export function generateActions(
         location: 'bank',
         priority: 60,
         description: 'Travel to bank to withdraw',
+      });
+    }
+  }
+
+  // ============================================
+  // DUNGEON & QUEST ACTIONS
+  // ============================================
+
+  // Buy Guild Pass when affordable (needed for quests)
+  if (shouldBuyGuildPass(player, settings)) {
+    if (currentLocation === 'guild-hall') {
+      actions.push({
+        type: 'buy-guild-pass',
+        priority: 55,
+        description: 'Buy Guild Pass for quests',
+      });
+    } else if (player.timeRemaining > moveCost('guild-hall') + 2) {
+      actions.push({
+        type: 'move',
+        location: 'guild-hall',
+        priority: 50,
+        description: 'Travel to guild hall to buy pass',
+      });
+    }
+  }
+
+  // Buy equipment for dungeon progression
+  const equipUpgrade = getNextEquipmentUpgrade(player);
+  if (equipUpgrade) {
+    if (currentLocation === 'armory') {
+      actions.push({
+        type: 'buy-equipment',
+        priority: 55,
+        description: `Buy ${equipUpgrade.itemId} for dungeon`,
+        details: { itemId: equipUpgrade.itemId, cost: equipUpgrade.cost, slot: equipUpgrade.slot },
+      });
+    } else if (player.timeRemaining > moveCost('armory') + 2) {
+      actions.push({
+        type: 'move',
+        location: 'armory',
+        priority: 50,
+        description: 'Travel to armory to buy equipment',
+      });
+    }
+  }
+
+  // Take quest if at guild hall and have pass
+  const bestQuest = getBestQuest(player, settings);
+  if (bestQuest) {
+    if (currentLocation === 'guild-hall') {
+      actions.push({
+        type: 'take-quest',
+        priority: 60,
+        description: `Take quest: ${bestQuest}`,
+        details: { questId: bestQuest },
+      });
+    } else if (player.timeRemaining > moveCost('guild-hall') + 2) {
+      actions.push({
+        type: 'move',
+        location: 'guild-hall',
+        priority: 55,
+        description: 'Travel to guild hall to take quest',
+      });
+    }
+  }
+
+  // Complete active quest
+  if (player.activeQuest && currentLocation === 'guild-hall') {
+    actions.push({
+      type: 'complete-quest',
+      priority: 70,
+      description: 'Complete active quest',
+    });
+  } else if (player.activeQuest && player.timeRemaining > moveCost('guild-hall') + 2) {
+    actions.push({
+      type: 'move',
+      location: 'guild-hall',
+      priority: 65,
+      description: 'Travel to guild hall to complete quest',
+    });
+  }
+
+  // Explore dungeon
+  const dungeonFloor = getBestDungeonFloor(player, settings);
+  if (dungeonFloor !== null) {
+    if (currentLocation === 'cave') {
+      actions.push({
+        type: 'explore-dungeon',
+        priority: 58 + (weakestGoal === 'wealth' ? 10 : 0),
+        description: `Explore dungeon floor ${dungeonFloor}`,
+        details: { floorId: dungeonFloor },
+      });
+    } else if (player.timeRemaining > moveCost('cave') + 6) {
+      actions.push({
+        type: 'move',
+        location: 'cave',
+        priority: 53,
+        description: 'Travel to cave for dungeon',
       });
     }
   }

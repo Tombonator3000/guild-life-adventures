@@ -1,5 +1,73 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Phase 5: Integration (Quests + AI + Balance)
+
+### Problem
+The game's subsystems — dungeon, quests, combat, AI (Grimwald), and economy — existed in isolation. Dungeon quests (`dungeon-dive`, `deep-dungeon-clear`) had no connection to actual floor clears. Rare drops from bosses were displayed as toasts but never applied to the player. Grimwald AI had no knowledge of dungeons, equipment, quests, or the guild pass. The loot multiplier system (guild rank → gold bonus) was defined but never used.
+
+### Solution: 6-Part Integration
+
+#### 1. Quest ↔ Dungeon Connection
+- Added `requiresDungeonFloor` and `requiresAllDungeonFloors` fields to Quest interface
+- `dungeon-dive` (B-rank) now requires Floor 1 cleared
+- `deep-dungeon-clear` (S-rank) now requires all 5 floors cleared
+- Updated `canTakeQuest()` to validate dungeon floor requirements (new `dungeonFloorsCleared` param)
+
+#### 2. Rare Drop System Integration
+- Added `permanentGoldBonus` field to Player interface (default 0)
+- Created `applyRareDrop` store action in economyHelpers that handles all 5 effect types:
+  - `heal` → instant HP restore (Cave Mushroom)
+  - `permanent_gold_bonus` → permanent % bonus to work earnings (Goblin's Lucky Coin)
+  - `permanent_max_health` → increase max health cap (Undead Amulet)
+  - `equippable` → add as durable item + auto-equip (Dragon Scale Shield)
+  - `happiness_and_stats` → happiness + stat cap increases (Demon's Heart)
+- Added Dragon Scale Shield to ALL_ITEMS as a RARE_DROP_ITEMS category (isUnstealable)
+- Connected `applyRareDrop` through CavePanel → LocationPanel → GameStore
+- Applied `permanentGoldBonus` in `workShift` earnings calculation
+
+#### 3. Grimwald AI — Dungeon Exploration
+- Added 5 new `AIActionType` values: `buy-equipment`, `explore-dungeon`, `buy-guild-pass`, `take-quest`, `complete-quest`
+- Strategy functions in `strategy.ts`:
+  - `getBestDungeonFloor()` — evaluates uncleared floors, checks requirements, power ratio, and time budget
+  - `getNextEquipmentUpgrade()` — weapon/armor/shield upgrade path (dagger → sword → steel → enchanted)
+  - `shouldBuyGuildPass()` — gold threshold varies by AI difficulty
+  - `getBestQuest()` — picks best quest by gold/time ratio (strategic) or raw gold (simple)
+- Action generation in `actionGenerator.ts` — dungeon/quest actions with contextual priorities
+- Full action execution in `useGrimwaldAI.ts` — calls `autoResolveFloor()` with loot multiplier, applies gold/health/happiness/rare drops
+
+#### 4. Loot Multiplier Balance
+- Connected guild rank loot multiplier (novice 0.8× → guild-master 1.5×) to combat resolver
+- Added `lootMultiplier` parameter to `autoResolveFloor()` (default 1.0)
+- Applied in CombatView (human players) via `getLootMultiplier(floor, player.guildRank)`
+- Applied in Grimwald AI dungeon exploration
+
+### Files Modified (15 files)
+| File | Changes |
+|------|---------|
+| `src/types/game.types.ts` | Added `permanentGoldBonus` to Player |
+| `src/data/quests.ts` | Quest-dungeon fields, updated canTakeQuest |
+| `src/data/items.ts` | Dragon Scale Shield in RARE_DROP_ITEMS |
+| `src/data/combatResolver.ts` | lootMultiplier param on autoResolveFloor |
+| `src/store/storeTypes.ts` | Added applyRareDrop to GameStore |
+| `src/store/gameStore.ts` | permanentGoldBonus default in createPlayer |
+| `src/store/helpers/economyHelpers.ts` | applyRareDrop action (5 effect types) |
+| `src/store/helpers/workEducationHelpers.ts` | Apply permanentGoldBonus in workShift |
+| `src/hooks/ai/types.ts` | 5 new AIActionType values |
+| `src/hooks/ai/strategy.ts` | 4 new strategy functions (dungeon/quest) |
+| `src/hooks/ai/actionGenerator.ts` | Dungeon/quest action generation |
+| `src/hooks/useGrimwaldAI.ts` | 5 new action execution cases |
+| `src/components/game/CavePanel.tsx` | applyRareDrop prop + usage |
+| `src/components/game/CombatView.tsx` | Loot multiplier in handleFinish |
+| `src/components/game/LocationPanel.tsx` | Pass applyRareDrop to CavePanel |
+
+### Verification
+- TypeScript: 0 errors (`tsc --noEmit`)
+- Build: Succeeds (`vite build` → 587 KB JS, 88 KB CSS)
+- Tests: 1/1 passing
+- ESLint: No new errors (2 pre-existing in actionGenerator.ts)
+
+---
+
 ## 2026-02-05 - Phase 4: Combat System (Encounter Resolution)
 
 ### Problem
