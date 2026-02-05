@@ -1,5 +1,32 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Fix: Single-Player Win Condition (Last Man Standing Bug)
+
+### Problem
+In a single-player game, the player would automatically win as "last man standing" on their very first turn end. The `endTurn()` and `processWeekEnd()` functions in `turnHelpers.ts` both checked `alivePlayers.length === 1` without considering whether the game was single-player or multiplayer. Since a solo player is always the only one alive, the victory screen triggered immediately — bypassing all goal requirements (Wealth, Happiness, Education, Career).
+
+### Root Cause
+Two locations in `src/store/helpers/turnHelpers.ts`:
+1. **`endTurn()`** (line 57): `if (alivePlayers.length === 1)` → instant "last one standing" win
+2. **`processWeekEnd()`** (line 387): Same check at end of week
+
+Both triggered regardless of total player count.
+
+### Solution
+Added a guard to both "last man standing" checks: only trigger when there are **multiple players** (`state.players.length > 1` / `updatedPlayers.length > 1`). In single-player games, the player must now achieve all four victory goals (Wealth, Happiness, Education, Career) via `checkVictory()` to win.
+
+### Files Modified (1 file)
+| File | Changes |
+|------|---------|
+| `src/store/helpers/turnHelpers.ts` | Added `&& state.players.length > 1` guard to both "last man standing" checks in `endTurn()` and `processWeekEnd()` |
+
+### Verification
+- TypeScript: 0 errors (`tsc --noEmit`)
+- Tests: 1/1 passing
+- Logic: Single-player → must complete goals. Multiplayer → last survivor still wins.
+
+---
+
 ## 2026-02-05 - Phase 5: Integration (Quests + AI + Balance)
 
 ### Problem

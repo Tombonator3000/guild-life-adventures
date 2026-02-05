@@ -53,9 +53,10 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         return { index: (startIndex + 1) % totalPlayers, isNewWeek: (startIndex + 1) % totalPlayers === 0 };
       };
 
-      // Check if only one player remains alive - they win
+      // Check if only one player remains alive - they win (multiplayer only)
+      // In single-player, the player must achieve all goals to win
       const alivePlayers = state.players.filter(p => !p.isGameOver);
-      if (alivePlayers.length === 1) {
+      if (alivePlayers.length === 1 && state.players.length > 1) {
         set({
           winner: alivePlayers[0].id,
           phase: 'victory',
@@ -382,9 +383,10 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         return;
       }
 
-      // Check if only one player remains
+      // Check if only one player remains (multiplayer only)
+      // In single-player, the player must achieve all goals to win
       const alivePlayers = updatedPlayers.filter(p => !p.isGameOver);
-      if (alivePlayers.length === 1) {
+      if (alivePlayers.length === 1 && updatedPlayers.length > 1) {
         set({
           week: newWeek,
           winner: alivePlayers[0].id,
