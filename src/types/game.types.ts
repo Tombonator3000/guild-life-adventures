@@ -82,9 +82,33 @@ export interface EducationProgress {
   sessionsCompleted: number;
 }
 
+// Appliance source affects break chance
+export type ApplianceSource = 'enchanter' | 'market' | 'pawn';
+
+// Break chances by source (Jones-style)
+export const APPLIANCE_BREAK_CHANCE: Record<ApplianceSource, number> = {
+  enchanter: 1 / 51, // Socket City equivalent - lower break chance
+  market: 1 / 36,    // Z-Mart equivalent - higher break chance
+  pawn: 1 / 36,      // Pawn Shop - same as market
+};
+
+// Owned appliance with metadata
+export interface OwnedAppliance {
+  itemId: string;
+  originalPrice: number;
+  source: ApplianceSource;
+  isBroken: boolean;
+  purchasedFirstTime: boolean; // True if this was first purchase of this type (for happiness)
+}
+
 // Durable items that can be owned and potentially stolen
 export interface DurableItems {
   [itemType: string]: number; // item type -> quantity owned
+}
+
+// New appliances inventory with detailed tracking
+export interface AppliancesInventory {
+  [itemId: string]: OwnedAppliance;
 }
 
 export interface Player {
@@ -119,12 +143,17 @@ export interface Player {
   experience: number; // Work experience points
   relaxation: number; // 10-50, affects apartment robbery chance (higher = safer)
   durables: DurableItems; // Durable items owned (stored at apartment)
+  appliances: AppliancesInventory; // Appliances with detailed tracking
+  applianceHistory: string[]; // List of appliance types ever owned (for happiness bonus tracking)
   inventory: string[];
   isAI: boolean;
   activeQuest: string | null; // Current quest ID
   hasNewspaper: boolean; // Has purchased newspaper this week
   isSick: boolean; // Has sickness debuff
   rentDebt: number; // Accumulated rent debt for garnishment
+  // Housing prepayment system (Jones-style)
+  rentPrepaidWeeks: number; // Number of weeks rent paid in advance
+  lockedRent: number; // Locked-in rent price (0 = not locked, uses current rate)
 }
 
 export interface GoalSettings {

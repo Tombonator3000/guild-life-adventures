@@ -38,6 +38,21 @@
 
 ## Completed
 
+### 2026-02-05 - Jones-Style Housing & Appliances System
+- [x] Researched Jones in the Fast Lane wiki for Low-Cost Housing and Appliances
+- [x] Implemented 7 fantasy appliances (Scrying Mirror, Memory Crystal, Music Box, etc.)
+- [x] Added appliance breakage system (1/51 enchanter, 1/36 market/pawn)
+- [x] Added appliance repair at Enchanter's Workshop
+- [x] Created EnchanterPanel (Socket City equivalent)
+- [x] Created ShadowMarketPanel (Z-Mart equivalent with cheaper used items)
+- [x] Updated PawnShopPanel with appliance pawn/buy (40% pawn, 50% buy)
+- [x] Implemented rent prepayment (1/4/8 weeks)
+- [x] Implemented rent lock-in when moving to new housing
+- [x] Updated Landlord UI with prepay options and rate comparison
+- [x] Added Cooking Fire per-turn happiness bonus (+1)
+- [x] Added Arcane Tome random income generation (15% chance)
+- [x] Happiness bonus only on first purchase of each appliance type
+
 ### 2026-02-05 - Jones-Style Employment Office
 - [x] Employer list view (Guild Hall, Bank, Forge, Academy, etc.)
 - [x] Click employer to see available positions

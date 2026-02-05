@@ -1,4 +1,5 @@
 // Guild Life - Items and Shopping Data
+import type { ApplianceSource } from '@/types/game.types';
 
 export type ItemCategory = 'food' | 'clothing' | 'appliance' | 'luxury' | 'weapon' | 'magic' | 'education';
 
@@ -14,7 +15,143 @@ export interface Item {
   description: string;
   isDurable?: boolean; // If true, can be stored at apartment and potentially stolen
   isUnstealable?: boolean; // If true, cannot be stolen by Shadowfingers
+  isAppliance?: boolean; // If true, can break and require repair
+  happinessOnPurchase?: number; // Happiness bonus when purchased (first time only)
+  happinessOnPurchaseMarket?: number; // Lower happiness bonus when bought from market/pawn
+  givesPerTurnBonus?: boolean; // True for items like microwave/stove that give +1/turn
+  canGenerateIncome?: boolean; // True for computer - random income chance
 }
+
+// Appliance data for Jones-style appliances (Socket City = Enchanter's Workshop)
+export interface Appliance {
+  id: string;
+  name: string;
+  enchanterPrice: number; // Socket City equivalent price
+  marketPrice?: number; // Z-Mart equivalent price (undefined = not sold there)
+  happinessEnchanter: number; // Happiness bonus from Enchanter
+  happinessMarket: number; // Happiness bonus from Market/Pawn
+  description: string;
+  givesPerTurnBonus?: boolean;
+  canGenerateIncome?: boolean;
+}
+
+// Jones-style appliances translated to fantasy
+export const APPLIANCES: Appliance[] = [
+  {
+    id: 'scrying-mirror',
+    name: 'Scrying Mirror',
+    enchanterPrice: 525,
+    marketPrice: 450,
+    happinessEnchanter: 2,
+    happinessMarket: 1,
+    description: 'A magical mirror that shows distant places and events. Entertainment for the home.',
+  },
+  {
+    id: 'simple-scrying-glass',
+    name: 'Simple Scrying Glass',
+    enchanterPrice: 0, // Not sold at enchanter
+    marketPrice: 220,
+    happinessEnchanter: 0,
+    happinessMarket: 1,
+    description: 'A basic enchanted glass. Shows fuzzy images but works.',
+  },
+  {
+    id: 'memory-crystal',
+    name: 'Memory Crystal',
+    enchanterPrice: 475,
+    marketPrice: 300,
+    happinessEnchanter: 2,
+    happinessMarket: 1,
+    description: 'Stores and replays magical recordings. Like having your own theater.',
+  },
+  {
+    id: 'music-box',
+    name: 'Enchanted Music Box',
+    enchanterPrice: 325,
+    marketPrice: 350, // Cheaper at enchanter in Jones
+    happinessEnchanter: 2,
+    happinessMarket: 1,
+    description: 'A magical music box that plays soothing melodies endlessly.',
+  },
+  {
+    id: 'cooking-fire',
+    name: 'Eternal Cooking Fire',
+    enchanterPrice: 276,
+    marketPrice: 200,
+    happinessEnchanter: 1,
+    happinessMarket: 1,
+    description: 'A magical flame for cooking. Provides comfort each day.',
+    givesPerTurnBonus: true,
+  },
+  {
+    id: 'preservation-box',
+    name: 'Preservation Box',
+    enchanterPrice: 876,
+    marketPrice: 650,
+    happinessEnchanter: 2,
+    happinessMarket: 1,
+    description: 'Keeps food fresh indefinitely with preservation magic.',
+  },
+  {
+    id: 'arcane-tome',
+    name: 'Arcane Tome',
+    enchanterPrice: 1599,
+    marketPrice: undefined, // Not sold at market
+    happinessEnchanter: 3,
+    happinessMarket: 0,
+    description: 'A powerful magical book that can generate income through arcane knowledge.',
+    canGenerateIncome: true,
+  },
+];
+
+// Get appliance by ID
+export const getAppliance = (id: string): Appliance | undefined => {
+  return APPLIANCES.find(a => a.id === id);
+};
+
+// Get appliances available at Enchanter (Socket City)
+export const getEnchanterAppliances = (): Appliance[] => {
+  return APPLIANCES.filter(a => a.enchanterPrice > 0);
+};
+
+// Get appliances available at Market (Z-Mart)
+export const getMarketAppliances = (): Appliance[] => {
+  return APPLIANCES.filter(a => a.marketPrice !== undefined && a.marketPrice > 0);
+};
+
+// Calculate repair cost for a broken appliance (Jones-style: 1/20 to 1/4 of original price)
+export const calculateRepairCost = (originalPrice: number): number => {
+  const minCost = Math.floor(originalPrice / 20); // 5% minimum
+  const maxCost = Math.floor(originalPrice / 4);  // 25% maximum
+  return Math.floor(Math.random() * (maxCost - minCost + 1)) + minCost;
+};
+
+// Check if an appliance breaks this turn (Jones-style)
+// Only triggers if player has >500 gold
+export const checkApplianceBreakage = (
+  source: ApplianceSource,
+  playerGold: number
+): boolean => {
+  if (playerGold <= 500) return false;
+
+  const breakChance = source === 'enchanter' ? 1 / 51 : 1 / 36;
+  return Math.random() < breakChance;
+};
+
+// Get pawn value for an item (40% of original price)
+export const getPawnValue = (originalPrice: number, economyModifier: number): number => {
+  return Math.floor(originalPrice * 0.4 * economyModifier);
+};
+
+// Get redeem price for a pawned item (50% of original price)
+export const getRedeemPrice = (originalPrice: number): number => {
+  return Math.floor(originalPrice * 0.5);
+};
+
+// Get sale price for items on sale at pawn shop (50% of original price)
+export const getPawnSalePrice = (originalPrice: number): number => {
+  return Math.floor(originalPrice * 0.5);
+};
 
 // General Store items (Z-Mart equivalent)
 export const GENERAL_STORE_ITEMS: Item[] = [

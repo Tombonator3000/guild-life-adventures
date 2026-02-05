@@ -2,7 +2,7 @@ import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { getLocation, getMovementCost } from '@/data/locations';
 import type { LocationId, EducationPath, HousingTier } from '@/types/game.types';
 import { RENT_COSTS } from '@/types/game.types';
-import { MapPin, Clock, ArrowRight, X, Utensils, GraduationCap, Briefcase, Coins, ShoppingBag, Home, Sparkles, Hammer, Newspaper, Scroll, Heart, TrendingUp } from 'lucide-react';
+import { MapPin, Clock, ArrowRight, X, Utensils, GraduationCap, Briefcase, Coins, ShoppingBag, Home, Sparkles, Hammer, Newspaper, Scroll, Heart, TrendingUp, Lock } from 'lucide-react';
 import { EDUCATION_PATHS, getCourse, getNextCourse, getAvailableDegrees, DEGREES, getDegree, type DegreeId } from '@/data/education';
 import { getAvailableJobs, JOBS, FORGE_JOBS, getJob, ALL_JOBS, getEntryLevelJobs, getJobOffers, type JobOffer } from '@/data/jobs';
 import { GuildHallPanel } from './GuildHallPanel';
@@ -11,6 +11,8 @@ import { HOUSING_DATA, HOUSING_TIERS } from '@/data/housing';
 import { QuestPanel } from './QuestPanel';
 import { HealerPanel } from './HealerPanel';
 import { PawnShopPanel } from './PawnShopPanel';
+import { EnchanterPanel } from './EnchanterPanel';
+import { ShadowMarketPanel } from './ShadowMarketPanel';
 import { getAvailableQuests } from '@/data/quests';
 import { NEWSPAPER_COST, NEWSPAPER_TIME, generateNewspaper } from '@/data/newspaper';
 import { useState } from 'react';
@@ -22,11 +24,11 @@ interface LocationPanelProps {
 }
 
 export function LocationPanel({ locationId }: LocationPanelProps) {
-  const { 
-    selectLocation, 
-    movePlayer, 
-    modifyGold, 
-    modifyHappiness, 
+  const {
+    selectLocation,
+    movePlayer,
+    modifyGold,
+    modifyHappiness,
     modifyHealth,
     modifyFood,
     modifyClothing,
@@ -39,6 +41,8 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     completeDegree,
     setHousing,
     payRent,
+    prepayRent,
+    moveToHousing,
     depositToBank,
     withdrawFromBank,
     invest,
@@ -458,7 +462,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               onCureSickness={(cost, time) => {
                 modifyGold(player.id, -cost);
                 spendTime(player.id, time);
-                // Would need to add setSickness to store
               }}
               onBlessHealth={(cost, time) => {
                 modifyGold(player.id, -cost);
@@ -466,37 +469,22 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
                 spendTime(player.id, time);
               }}
             />
-            
-            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
-              <Sparkles className="w-4 h-4" /> Magical Items
-            </h4>
-            {ENCHANTER_ITEMS.slice(0, 3).map(item => {
-              const price = getItemPrice(item, priceModifier);
-              return (
-                <ActionButton
-                  key={item.id}
-                  label={item.name}
-                  cost={price}
-                  time={1}
-                  disabled={player.gold < price || player.timeRemaining < 1}
-                  onClick={() => {
-                    modifyGold(player.id, -price);
-                    spendTime(player.id, 1);
-                    if (item.effect?.type === 'happiness') {
-                      modifyHappiness(player.id, item.effect.value);
-                    }
-                    if (item.effect?.type === 'health') {
-                      modifyHealth(player.id, item.effect.value);
-                    }
-                  }}
-                />
-              );
-            })}
+
+            {/* Enchanter's Workshop - Appliance Shop (Socket City equivalent) */}
+            <EnchanterPanel
+              player={player}
+              priceModifier={priceModifier}
+              onSpendTime={(hours) => spendTime(player.id, hours)}
+            />
           </div>
         );
 
       case 'landlord':
-        const currentRent = RENT_COSTS[player.housing];
+        // Calculate effective rent (locked or current market rate)
+        const baseRent = RENT_COSTS[player.housing];
+        const marketRent = Math.round(baseRent * priceModifier);
+        const effectiveRent = player.lockedRent > 0 ? player.lockedRent : marketRent;
+
         return (
           <div className="space-y-4">
             <div className="wood-frame p-3 text-card">
@@ -506,7 +494,26 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               </div>
               <div className="flex justify-between mb-2">
                 <span>Weekly Rent:</span>
-                <span className="font-bold">{currentRent}g</span>
+                <div className="text-right">
+                  <span className="font-bold">{effectiveRent}g</span>
+                  {player.lockedRent > 0 && (
+                    <span className="text-xs text-secondary ml-1 flex items-center gap-1">
+                      <Lock className="w-3 h-3" /> Locked
+                    </span>
+                  )}
+                </div>
+              </div>
+              {player.lockedRent > 0 && marketRent !== player.lockedRent && (
+                <div className="flex justify-between mb-2 text-xs">
+                  <span>Market Rate:</span>
+                  <span className={marketRent > player.lockedRent ? 'text-secondary' : 'text-destructive'}>
+                    {marketRent}g {marketRent > player.lockedRent ? '(saving!)' : '(could be cheaper)'}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between mb-2">
+                <span>Prepaid Weeks:</span>
+                <span className="font-bold text-secondary">{player.rentPrepaidWeeks}</span>
               </div>
               <div className="flex justify-between">
                 <span>Weeks Since Payment:</span>
@@ -518,38 +525,88 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
                 <p className="text-destructive text-xs mt-2">⚠️ Eviction warning! Pay rent now!</p>
               )}
             </div>
-            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2">
-              <Home className="w-4 h-4" /> Housing Options
-            </h4>
-            <div className="space-y-2">
-              {player.housing !== 'homeless' && (
-                <ActionButton
-                  label={`Pay Rent (${currentRent}g)`}
-                  cost={currentRent}
-                  time={1}
-                  disabled={player.gold < currentRent || player.timeRemaining < 1}
-                  onClick={() => {
-                    payRent(player.id);
-                    spendTime(player.id, 1);
-                  }}
-                />
-              )}
-              {HOUSING_TIERS.filter(t => t !== player.housing && t !== 'homeless').map(tier => {
-                const housing = HOUSING_DATA[tier];
-                const moveCost = housing.weeklyRent * 2; // First + deposit
-                return (
+
+            {/* Rent Payment Options */}
+            {player.housing !== 'homeless' && (
+              <>
+                <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2">
+                  <Coins className="w-4 h-4" /> Pay Rent
+                </h4>
+                <div className="space-y-2">
                   <ActionButton
-                    key={tier}
-                    label={`Move to ${housing.name}`}
-                    cost={moveCost}
-                    time={4}
-                    disabled={player.gold < moveCost || player.timeRemaining < 4}
+                    label={`Pay 1 Week (${effectiveRent}g)`}
+                    cost={effectiveRent}
+                    time={1}
+                    disabled={player.gold < effectiveRent || player.timeRemaining < 1}
                     onClick={() => {
-                      modifyGold(player.id, -moveCost);
-                      setHousing(player.id, tier);
-                      spendTime(player.id, 4);
+                      prepayRent(player.id, 1, effectiveRent);
+                      spendTime(player.id, 1);
+                      toast.success('Rent paid for 1 week!');
                     }}
                   />
+                  <ActionButton
+                    label={`Pay 4 Weeks (${effectiveRent * 4}g)`}
+                    cost={effectiveRent * 4}
+                    time={1}
+                    disabled={player.gold < effectiveRent * 4 || player.timeRemaining < 1}
+                    onClick={() => {
+                      prepayRent(player.id, 4, effectiveRent * 4);
+                      spendTime(player.id, 1);
+                      toast.success('Rent prepaid for 4 weeks!');
+                    }}
+                  />
+                  <ActionButton
+                    label={`Pay 8 Weeks (${effectiveRent * 8}g)`}
+                    cost={effectiveRent * 8}
+                    time={1}
+                    disabled={player.gold < effectiveRent * 8 || player.timeRemaining < 1}
+                    onClick={() => {
+                      prepayRent(player.id, 8, effectiveRent * 8);
+                      spendTime(player.id, 1);
+                      toast.success('Rent prepaid for 8 weeks!');
+                    }}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Housing Options */}
+            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2">
+              <Home className="w-4 h-4" /> Move to New Housing
+            </h4>
+            <p className="text-xs text-muted-foreground">
+              Moving locks in the current market rent rate.
+            </p>
+            <div className="space-y-2">
+              {HOUSING_TIERS.filter(t => t !== player.housing && t !== 'homeless').map(tier => {
+                const housing = HOUSING_DATA[tier];
+                const tierMarketRent = Math.round(housing.weeklyRent * priceModifier);
+                const moveCost = tierMarketRent * 2; // First month + deposit
+                const isCheaper = player.lockedRent > 0 && tierMarketRent < player.lockedRent;
+
+                return (
+                  <div key={tier} className="wood-frame p-2 text-card">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-display font-semibold text-sm">{housing.name}</span>
+                      <span className="text-gold font-bold">{tierMarketRent}g/week</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground mb-2">
+                      {housing.description}
+                      {tier === 'noble' && <span className="text-secondary ml-1">(Safe from Shadowfingers!)</span>}
+                      {isCheaper && <span className="text-secondary ml-1">(Cheaper than current!)</span>}
+                    </div>
+                    <button
+                      onClick={() => {
+                        moveToHousing(player.id, tier, moveCost, tierMarketRent);
+                        spendTime(player.id, 4);
+                        toast.success(`Moved to ${housing.name}! Rent locked at ${tierMarketRent}g/week.`);
+                      }}
+                      disabled={player.gold < moveCost || player.timeRemaining < 4}
+                      className="w-full gold-button text-xs py-1 disabled:opacity-50"
+                    >
+                      Move In ({moveCost}g deposit, 4h)
+                    </button>
+                  </div>
                 );
               })}
             </div>
@@ -598,7 +655,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
       case 'shadow-market':
         const shadowNewspaperPrice = Math.round(NEWSPAPER_COST * priceModifier * 0.5); // Cheaper here
         return (
-          <div className="space-y-2">
+          <div className="space-y-4">
             <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
               <Newspaper className="w-4 h-4" /> Black Market Info
             </h4>
@@ -615,55 +672,16 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
                 setShowNewspaper(true);
               }}
             />
-            
-            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2 mt-4">
-              <ShoppingBag className="w-4 h-4" /> Black Market Goods
-            </h4>
-            {SHADOW_MARKET_ITEMS.map(item => {
-              const price = getItemPrice(item, priceModifier * 0.7); // Cheaper prices
-              if (item.id === 'lottery-ticket') {
-                return (
-                  <ActionButton
-                    key={item.id}
-                    label={`${item.name} (Try your luck!)`}
-                    cost={price}
-                    time={1}
-                    disabled={player.gold < price || player.timeRemaining < 1}
-                    onClick={() => {
-                      modifyGold(player.id, -price);
-                      spendTime(player.id, 1);
-                      // 10% chance to win big
-                      if (Math.random() < 0.1) {
-                        modifyGold(player.id, 200);
-                        modifyHappiness(player.id, 20);
-                      } else if (Math.random() < 0.3) {
-                        modifyGold(player.id, 20);
-                        modifyHappiness(player.id, 5);
-                      }
-                    }}
-                  />
-                );
-              }
-              return (
-                <ActionButton
-                  key={item.id}
-                  label={item.name}
-                  cost={price}
-                  time={1}
-                  disabled={player.gold < price || player.timeRemaining < 1}
-                  onClick={() => {
-                    modifyGold(player.id, -price);
-                    spendTime(player.id, 1);
-                    if (item.effect?.type === 'food') {
-                      modifyFood(player.id, item.effect.value);
-                    }
-                    if (item.effect?.type === 'happiness') {
-                      modifyHappiness(player.id, item.effect.value);
-                    }
-                  }}
-                />
-              );
-            })}
+
+            {/* Shadow Market Panel - Z-Mart equivalent with used appliances */}
+            <ShadowMarketPanel
+              player={player}
+              priceModifier={priceModifier}
+              onSpendTime={(hours) => spendTime(player.id, hours)}
+              onModifyGold={(amount) => modifyGold(player.id, amount)}
+              onModifyHappiness={(amount) => modifyHappiness(player.id, amount)}
+              onModifyFood={(amount) => modifyFood(player.id, amount)}
+            />
           </div>
         );
 
@@ -700,6 +718,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
                 modifyHappiness(player.id, stake >= 100 ? -20 : stake >= 50 ? -10 : -3);
               }
             }}
+            onSpendTime={(hours) => spendTime(player.id, hours)}
           />
         );
 

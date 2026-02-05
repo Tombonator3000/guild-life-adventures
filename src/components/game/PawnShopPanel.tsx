@@ -1,8 +1,10 @@
 // Guild Life - The Fence (Pawn Shop) Panel
 
-import { Coins, ShoppingBag, Dices, Package } from 'lucide-react';
+import { Coins, ShoppingBag, Dices, Package, Sparkles, AlertTriangle } from 'lucide-react';
 import type { Player } from '@/types/game.types';
-import { getItem } from '@/data/items';
+import { getItem, getAppliance, getPawnValue, getPawnSalePrice, APPLIANCES } from '@/data/items';
+import { useGameStore } from '@/store/gameStore';
+import { toast } from 'sonner';
 
 interface PawnShopPanelProps {
   player: Player;
@@ -10,6 +12,7 @@ interface PawnShopPanelProps {
   onSellItem: (itemId: string, price: number) => void;
   onBuyUsedItem: (itemId: string, price: number) => void;
   onGamble: (stake: number) => void;
+  onSpendTime: (hours: number) => void;
 }
 
 // Used items available at the pawn shop (discounted)
@@ -20,7 +23,8 @@ const USED_ITEMS = [
   { id: 'used-blanket', name: 'Patched Blanket', basePrice: 12, effect: { type: 'happiness' as const, value: 3 } },
 ];
 
-export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem, onGamble }: PawnShopPanelProps) {
+export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem, onGamble, onSpendTime }: PawnShopPanelProps) {
+  const { pawnAppliance, buyAppliance } = useGameStore();
   // Calculate sell prices (50% of original value)
   const getSellPrice = (itemId: string): number => {
     const item = getItem(itemId);
@@ -77,6 +81,84 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
                 <span className="font-display font-semibold">{item.name}</span>
                 <div className="flex items-center gap-3 text-xs">
                   <span className="text-gold">-{price}g</span>
+                  <span className="text-time">1h</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Pawn Appliances Section */}
+      {Object.keys(player.appliances).length > 0 && (
+        <div>
+          <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+            <Sparkles className="w-4 h-4" /> Pawn Your Appliances
+          </h4>
+          <p className="text-xs text-muted-foreground mb-2">
+            Get 40% of original price. -1 Happiness.
+          </p>
+          <div className="space-y-2 max-h-24 overflow-y-auto">
+            {Object.entries(player.appliances).map(([applianceId, owned]) => {
+              const appliance = getAppliance(applianceId);
+              const pawnValue = getPawnValue(owned.originalPrice, priceModifier);
+              return (
+                <button
+                  key={applianceId}
+                  onClick={() => {
+                    pawnAppliance(player.id, applianceId, pawnValue);
+                    onSpendTime(1);
+                    toast.success(`Pawned ${appliance?.name} for ${pawnValue} gold`);
+                  }}
+                  disabled={player.timeRemaining < 1}
+                  className="w-full p-2 wood-frame text-card flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  <span className="font-display font-semibold">
+                    {appliance?.name || applianceId}
+                    {owned.isBroken && <span className="text-destructive ml-1">(Broken)</span>}
+                  </span>
+                  <div className="flex items-center gap-3 text-xs">
+                    <span className="text-secondary">+{pawnValue}g</span>
+                    <span className="text-time">1h</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Buy Pawned Appliances Section */}
+      <div>
+        <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+          <Sparkles className="w-4 h-4" /> Pawned Magical Items
+        </h4>
+        <p className="text-xs text-muted-foreground flex items-center gap-1 mb-2">
+          <AlertTriangle className="w-3 h-3 text-warning" />
+          50% off, but 1/36 break chance. No happiness bonus.
+        </p>
+        <div className="space-y-2 max-h-32 overflow-y-auto">
+          {APPLIANCES.filter(a => a.enchanterPrice > 0).slice(0, 4).map(appliance => {
+            const salePrice = getPawnSalePrice(appliance.enchanterPrice);
+            const alreadyOwns = !!player.appliances[appliance.id];
+
+            return (
+              <button
+                key={appliance.id}
+                onClick={() => {
+                  buyAppliance(player.id, appliance.id, salePrice, 'pawn');
+                  onSpendTime(1);
+                  toast.success(`Bought ${appliance.name} from pawn shop!`);
+                }}
+                disabled={player.gold < salePrice || player.timeRemaining < 1 || alreadyOwns}
+                className="w-full p-2 wood-frame text-card flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              >
+                <span className="font-display font-semibold">
+                  {appliance.name}
+                  {alreadyOwns && <span className="text-secondary ml-1">(Owned)</span>}
+                </span>
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="text-gold">-{salePrice}g</span>
                   <span className="text-time">1h</span>
                 </div>
               </button>
