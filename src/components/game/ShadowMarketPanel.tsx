@@ -6,6 +6,13 @@ import { getMarketAppliances, getAppliance, SHADOW_MARKET_ITEMS, getItemPrice } 
 import { ShoppingBag, Sparkles, AlertTriangle } from 'lucide-react';
 import type { Player } from '@/types/game.types';
 import { toast } from 'sonner';
+import {
+  JonesPanel,
+  JonesPanelHeader,
+  JonesPanelContent,
+  JonesSectionHeader,
+  JonesMenuItem,
+} from './JonesStylePanel';
 
 interface ShadowMarketPanelProps {
   player: Player;
@@ -67,82 +74,53 @@ export function ShadowMarketPanel({
   };
 
   return (
-    <div className="space-y-4">
-      {/* Black Market Goods */}
-      <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2">
-        <ShoppingBag className="w-4 h-4" /> Black Market Goods
-      </h4>
-      <div className="space-y-2">
+    <JonesPanel>
+      <JonesPanelHeader title="Shadow Market" subtitle="Discount Goods" />
+      <JonesPanelContent>
+        <JonesSectionHeader title="BLACK MARKET GOODS" />
         {SHADOW_MARKET_ITEMS.map(item => {
           const price = Math.round(getItemPrice(item, priceModifier * 0.7)); // 30% cheaper
+          const canAfford = player.gold >= price && player.timeRemaining >= 1;
           return (
-            <button
+            <JonesMenuItem
               key={item.id}
+              label={item.name}
+              price={price}
+              disabled={!canAfford}
               onClick={() => handleBuyItem(item, price)}
-              disabled={player.gold < price || player.timeRemaining < 1}
-              className="w-full p-2 wood-frame text-card flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-            >
-              <span className="font-display font-semibold">{item.name}</span>
-              <div className="flex items-center gap-3 text-xs">
-                <span className="text-gold">-{price}g</span>
-                <span className="text-time">1h</span>
-              </div>
-            </button>
+            />
           );
         })}
-      </div>
 
-      {/* Used Appliances */}
-      <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mt-4">
-        <Sparkles className="w-4 h-4" /> Used Magical Items
-      </h4>
-      <p className="text-xs text-muted-foreground flex items-center gap-1">
-        <AlertTriangle className="w-3 h-3 text-warning" />
-        Cheaper, but higher break chance (1/36 per turn)
-      </p>
-
-      <div className="space-y-2 max-h-40 overflow-y-auto">
+        <JonesSectionHeader title="USED MAGICAL ITEMS" />
+        <div className="text-xs text-[#a09080] px-2 mb-1 flex items-center gap-1">
+          <AlertTriangle className="w-3 h-3" />
+          Higher break chance (1/36)
+        </div>
         {appliances.map(appliance => {
           const price = Math.round((appliance.marketPrice || 0) * priceModifier);
           const alreadyOwns = !!player.appliances[appliance.id];
+          const canAfford = player.gold >= price && player.timeRemaining >= 1;
           const isFirstPurchase = !player.applianceHistory.includes(appliance.id);
-          const enchanterPrice = Math.round(appliance.enchanterPrice * priceModifier);
-          const savings = enchanterPrice > 0 ? enchanterPrice - price : 0;
+          const happinessNote = isFirstPurchase && appliance.happinessMarket > 0
+            ? ` (+${appliance.happinessMarket} Hap)`
+            : '';
 
           return (
-            <div key={appliance.id} className="wood-frame p-2 text-card">
-              <div className="flex justify-between items-start mb-1">
-                <div>
-                  <span className="font-display font-semibold text-sm">{appliance.name}</span>
-                  {alreadyOwns && (
-                    <span className="ml-2 text-xs text-secondary">(Owned)</span>
-                  )}
-                </div>
-                <div className="text-right">
-                  <span className="text-gold font-bold">{price}g</span>
-                  {savings > 0 && (
-                    <div className="text-xs text-secondary">Save {savings}g!</div>
-                  )}
-                </div>
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="text-xs">
-                  {isFirstPurchase && appliance.happinessMarket > 0 && (
-                    <span className="text-secondary">+{appliance.happinessMarket} Happiness</span>
-                  )}
-                </div>
-                <button
-                  onClick={() => handleBuyAppliance(appliance.id, price)}
-                  disabled={player.gold < price || player.timeRemaining < 1 || alreadyOwns}
-                  className="gold-button text-xs py-1 px-2 disabled:opacity-50"
-                >
-                  {alreadyOwns ? 'Owned' : 'Buy (1h)'}
-                </button>
-              </div>
-            </div>
+            <JonesMenuItem
+              key={appliance.id}
+              label={`${appliance.name}${happinessNote}`}
+              price={price}
+              disabled={!canAfford || alreadyOwns}
+              highlight={alreadyOwns}
+              onClick={() => handleBuyAppliance(appliance.id, price)}
+            />
           );
         })}
-      </div>
-    </div>
+        <div className="mt-2 text-xs text-[#8b7355] px-2">
+          1 hour per purchase
+        </div>
+      </JonesPanelContent>
+    </JonesPanel>
   );
 }
