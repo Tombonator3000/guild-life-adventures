@@ -80,6 +80,13 @@
 - [x] Guild rank loot multiplier connected — 0.8× novice → 1.5× guild-master applied to combat gold
 - [x] TypeScript compiles cleanly, build succeeds, tests pass, no new ESLint errors
 
+## Completed (2026-02-05)
+
+- [x] Fix single-player "last man standing" auto-win bug
+  - Added `players.length > 1` guard to both `endTurn()` and `processWeekEnd()`
+  - Single-player must now complete all victory goals to win
+  - Multiplayer "last man standing" still works correctly
+
 ## In Progress
 
 *No active tasks*
