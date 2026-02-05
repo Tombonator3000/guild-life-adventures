@@ -12,10 +12,10 @@ import gameBoard from '@/assets/game-board.jpeg';
 import type { ZoneConfig } from '@/types/game.types';
 
 const DEFAULT_CENTER_PANEL: CenterPanelConfig = {
-  top: 15.8,
-  left: 15.2,
-  width: 69.6,
-  height: 49.2,
+  top: 23.4,
+  left: 26.7,
+  width: 46.5,
+  height: 53.4,
 };
 
 export function GameBoard() {

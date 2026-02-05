@@ -1,5 +1,41 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Zone Configurations Update
+
+### Completed
+- Updated ZONE_CONFIGS in `src/data/locations.ts` with precise coordinates from visual editor
+- Updated CENTER_PANEL_CONFIG in both `ZoneEditor.tsx` and `GameBoard.tsx`
+
+### New Zone Coordinates
+All coordinates are percentages relative to the game board:
+- noble-heights: x=10.6, y=0.3, w=15.2, h=30.2
+- landlord: x=30.9, y=2.5, w=9.9, h=18.9
+- slums: x=41.9, y=1.1, w=18.2, h=21.2
+- fence: x=61.1, y=0.0, w=13.1, h=20.6
+- general-store: x=11.0, y=35.9, w=15.2, h=18.9
+- shadow-market: x=74.7, y=0.8, w=14.9, h=18.8
+- rusty-tankard: x=74.9, y=20.9, w=14.4, h=19.6
+- armory: x=74.9, y=41.0, w=14.3, h=22.7
+- forge: x=11.9, y=74.3, w=13.3, h=25.2
+- guild-hall: x=26.9, y=77.0, w=14.3, h=23.0
+- cave: x=45.0, y=78.0, w=10.0, h=22.0
+- academy: x=58.9, y=77.0, w=14.8, h=22.8
+- enchanter: x=74.6, y=65.0, w=15.0, h=35.0
+- bank: x=10.9, y=55.8, w=14.6, h=17.0
+
+### Center Panel Configuration
+- top: 23.4%
+- left: 26.7%
+- width: 46.5%
+- height: 53.4%
+
+### Files Modified
+- `src/data/locations.ts` - Updated ZONE_CONFIGS array
+- `src/components/game/ZoneEditor.tsx` - Updated DEFAULT_CENTER_PANEL
+- `src/components/game/GameBoard.tsx` - Updated DEFAULT_CENTER_PANEL
+
+---
+
 ## 2026-02-05 - Jones in the Fast Lane Education/Jobs Overhaul
 
 ### Research Summary (from jonesinthefastlane.fandom.com)
