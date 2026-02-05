@@ -20,10 +20,10 @@ import {
   checkFloorRequirements,
   getDungeonProgress,
   calculateEducationBonuses,
-  generateFloorEncounters,
   getFloorTimeCost,
   type DungeonFloor,
 } from '@/data/dungeon';
+import { CombatView, type CombatRunResult } from './CombatView';
 
 interface CavePanelProps {
   player: Player;
@@ -60,122 +60,6 @@ function getFloorStatus(
   return 'available';
 }
 
-// ─── Auto-resolve a floor run ────────────────────────────────────
-
-function resolveFloorRun(
-  floor: DungeonFloor,
-  combatStats: { attack: number; defense: number; blockChance: number },
-  eduBonuses: ReturnType<typeof calculateEducationBonuses>,
-  playerHealth: number,
-) {
-  const encounters = generateFloorEncounters(floor);
-  let goldEarned = 0;
-  let damageTaken = 0;
-  let healed = 0;
-  let currentHealth = playerHealth;
-  let bossDefeated = false;
-  const log: string[] = [];
-
-  const attackPower = combatStats.attack * (1 + eduBonuses.attackBonus);
-
-  for (const enc of encounters) {
-    if (currentHealth <= 0) {
-      log.push('Too injured — retreated!');
-      break;
-    }
-
-    switch (enc.type) {
-      case 'treasure': {
-        const g = Math.floor(
-          enc.baseGold * (1 + eduBonuses.goldBonus),
-        );
-        goldEarned += g;
-        log.push(`${enc.name}: +${g}g`);
-        break;
-      }
-      case 'healing': {
-        const h = Math.abs(enc.baseDamage);
-        healed += h;
-        currentHealth = Math.min(playerHealth, currentHealth + h);
-        log.push(`${enc.name}: +${h} HP`);
-        break;
-      }
-      case 'trap': {
-        if (enc.isDisarmable && eduBonuses.canDisarmTraps) {
-          log.push(`${enc.name}: Disarmed!`);
-        } else {
-          let d = Math.floor(
-            enc.baseDamage * (1 - eduBonuses.damageReduction),
-          );
-          d = Math.max(1, d);
-          damageTaken += d;
-          currentHealth -= d;
-          log.push(`${enc.name}: -${d} HP`);
-        }
-        break;
-      }
-      case 'combat':
-      case 'boss': {
-        let effAtk = attackPower;
-        if (enc.requiresArcane && !eduBonuses.canDamageEthereal) {
-          effAtk *= 0.3;
-        }
-
-        const playerPower = effAtk + combatStats.defense * 0.5;
-        const ratio = playerPower / Math.max(1, enc.basePower);
-
-        // Damage: inversely proportional to power ratio
-        let d = Math.floor(
-          enc.baseDamage * Math.max(0.3, 1 - ratio * 0.5),
-        );
-        d = Math.floor(d * (1 - eduBonuses.damageReduction));
-        if (
-          combatStats.blockChance > 0 &&
-          Math.random() < combatStats.blockChance
-        ) {
-          d = Math.floor(d * 0.5);
-        }
-        d = Math.max(1, d);
-
-        // Gold: proportional to power ratio (capped at 1.5x)
-        const g = Math.floor(
-          enc.baseGold *
-            (1 + eduBonuses.goldBonus) *
-            Math.min(1.5, ratio),
-        );
-
-        damageTaken += d;
-        goldEarned += g;
-        currentHealth -= d;
-
-        if (enc.type === 'boss') {
-          bossDefeated = currentHealth > 0;
-          log.push(
-            bossDefeated
-              ? `BOSS ${enc.name}: Defeated! (-${d} HP, +${g}g)`
-              : `BOSS ${enc.name}: You fell! (-${d} HP)`,
-          );
-        } else {
-          log.push(`${enc.name}: -${d} HP, +${g}g`);
-        }
-        break;
-      }
-    }
-
-    // Healing potion chance from Alchemy
-    if (
-      eduBonuses.healingPotionChance > 0 &&
-      Math.random() < eduBonuses.healingPotionChance
-    ) {
-      healed += 15;
-      currentHealth += 15;
-      log.push('Found Healing Potion: +15 HP');
-    }
-  }
-
-  return { success: bossDefeated, goldEarned, damageTaken, healed, log };
-}
-
 // ─── Main component ──────────────────────────────────────────────
 
 export function CavePanel({
@@ -187,6 +71,7 @@ export function CavePanel({
   clearDungeonFloor,
 }: CavePanelProps) {
   const [expandedFloor, setExpandedFloor] = useState<number | null>(null);
+  const [activeFloor, setActiveFloor] = useState<DungeonFloor | null>(null);
 
   const combatStats = calculateCombatStats(
     player.equippedWeapon,
@@ -205,60 +90,80 @@ export function CavePanel({
     eduBonuses.goldBonus > 0 ||
     eduBonuses.healingPotionChance > 0;
 
-  // ─── Enter floor handler ─────────────────────────────────────
+  // ─── Enter floor — switch to combat view ───────────────────
 
   const handleEnterFloor = (floor: DungeonFloor) => {
     const timeCost = getFloorTimeCost(floor, combatStats);
     spendTime(player.id, timeCost);
+    setActiveFloor(floor);
+  };
 
-    const result = resolveFloorRun(
-      floor,
-      combatStats,
-      eduBonuses,
-      player.health,
-    );
+  // ─── Combat complete — apply results ───────────────────────
+
+  const handleCombatComplete = (result: CombatRunResult) => {
+    if (!activeFloor) return;
 
     // Apply gold earned
     if (result.goldEarned > 0) modifyGold(player.id, result.goldEarned);
 
     // Apply net damage (damage - healing)
-    const netDamage = result.damageTaken - result.healed;
+    const netDamage = result.totalDamage - result.totalHealed;
     if (netDamage !== 0) modifyHealth(player.id, -netDamage);
 
-    const isFirstClear =
-      result.success && !player.dungeonFloorsCleared.includes(floor.id);
+    // Apply happiness change
+    if (result.happinessChange !== 0) {
+      modifyHappiness(player.id, result.happinessChange);
+    }
+
+    // Mark floor as cleared on first successful clear
+    if (result.isFirstClear) {
+      clearDungeonFloor(player.id, activeFloor.id);
+    }
+
+    // Show toast notifications
+    if (result.rareDropName) {
+      toast.success(
+        `RARE DROP: ${result.rareDropName}! ${activeFloor.rareDrop.description}`,
+        { duration: 6000 },
+      );
+    }
 
     if (result.success) {
-      if (isFirstClear) {
-        clearDungeonFloor(player.id, floor.id);
-        modifyHappiness(player.id, floor.happinessOnClear);
-      }
-
-      // Rare drop check (only on first clear)
-      if (isFirstClear && Math.random() < floor.rareDrop.dropChance) {
-        toast.success(
-          `RARE DROP: ${floor.rareDrop.name}! ${floor.rareDrop.description}`,
-          { duration: 6000 },
-        );
-      }
-
       toast.success(
-        `Floor ${floor.id}: ${floor.name} — ${isFirstClear ? 'CLEARED!' : 'Completed!'} ` +
-          `+${result.goldEarned}g, -${result.damageTaken} HP` +
-          (isFirstClear ? `, +${floor.happinessOnClear} happiness` : ''),
+        `Floor ${activeFloor.id}: ${activeFloor.name} — ${result.isFirstClear ? 'CLEARED!' : 'Completed!'} ` +
+          `+${result.goldEarned}g, -${result.totalDamage} HP` +
+          (result.isFirstClear ? `, +${activeFloor.happinessOnClear} happiness` : ''),
         { duration: 5000 },
       );
+    } else if (result.retreated) {
+      toast(`Floor ${activeFloor.id}: ${activeFloor.name} — Retreated. +${result.goldEarned}g`, {
+        duration: 4000,
+      });
     } else {
-      modifyHappiness(player.id, -2);
       toast.error(
-        `Floor ${floor.id}: ${floor.name} — Retreated! ` +
-          `+${result.goldEarned}g, -${result.damageTaken} HP`,
+        `Floor ${activeFloor.id}: ${activeFloor.name} — Defeated! +${result.goldEarned}g, -${result.totalDamage} HP`,
         { duration: 5000 },
       );
     }
+
+    // Return to floor selection
+    setActiveFloor(null);
   };
 
-  // ─── Render ──────────────────────────────────────────────────
+  // ─── If in combat, show combat view ────────────────────────
+
+  if (activeFloor) {
+    return (
+      <CombatView
+        player={player}
+        floor={activeFloor}
+        onComplete={handleCombatComplete}
+        onCancel={() => setActiveFloor(null)}
+      />
+    );
+  }
+
+  // ─── Floor selection view ──────────────────────────────────
 
   return (
     <div className="space-y-3">

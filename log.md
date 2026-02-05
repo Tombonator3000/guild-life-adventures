@@ -1,5 +1,99 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Phase 4: Combat System (Encounter Resolution)
+
+### Problem
+The dungeon system (Phase 3) used auto-resolve combat — clicking "Enter Floor" instantly resolved all 4 encounters at once and showed a toast notification with totals. Players had no agency during combat: no ability to see individual encounters, no retreat option mid-floor, no step-by-step feedback on damage/gold/bonuses. Combat was invisible and felt like a black box.
+
+### Solution
+Replaced auto-resolve with an encounter-by-encounter combat system. Players now step through each encounter individually, seeing detailed results and making tactical decisions (fight/retreat) between encounters.
+
+### Architecture
+
+**Combat Resolver Module** (`src/data/combatResolver.ts`):
+- Pure-function state machine for combat resolution, separate from UI
+- Types: `EncounterResult`, `DungeonRunState`, `CombatPhase`, `CombatStats`, `AutoResolveResult`
+- `initDungeonRun()` — Generate encounters, set up initial state
+- `resolveEncounter()` — Resolve a single encounter (same formula as Phase 3 auto-resolve, extracted and enriched)
+- `applyEncounterResult()` — Apply result to run state, advance phase
+- `advanceToNextEncounter()` — Move to next encounter (player chose "Continue")
+- `retreatFromDungeon()` — Strategic retreat with partial rewards
+- `autoResolveFloor()` — Auto-resolve entire floor (for AI in Phase 5)
+- Helper functions: `getEncounterAction()`, `getEncounterIcon()`
+
+**Combat View Component** (`src/components/game/CombatView.tsx`):
+Three sub-views managed by the combat state machine:
+
+1. **EncounterIntro** — Shows encounter card with:
+   - Type-specific icon and color theme (red for boss, amber for treasure, cyan for healing, orange for trap)
+   - Enemy name, flavor text, power/damage/gold stats
+   - HP bar with health percentage coloring (green/yellow/red)
+   - Encounter counter (e.g., "Encounter 2 of 4")
+   - Arcane warning for ethereal enemies
+   - Action button: "Fight!" / "Search" / "Disarm" / "Drink" / "Fight Boss!"
+
+2. **EncounterResultView** — Shows post-encounter results:
+   - Damage taken (with block indicator)
+   - Gold earned
+   - Healing received
+   - Trap disarmed status
+   - Healing potion found (Alchemy bonus)
+   - Education bonuses that activated (listed with icons)
+   - Updated HP bar
+   - Low health warning at ≤30% HP
+   - "Continue Deeper" / "Retreat" buttons
+
+3. **FloorSummaryView** — Shows full floor results:
+   - Success/retreat/defeat header with appropriate icon
+   - Complete encounter log with per-encounter damage/gold
+   - Total gold earned, total damage taken, healing received
+   - First clear happiness bonus
+   - Rare drop notification (purple themed)
+   - "Return to Dungeon" button
+
+**Retreat Mechanic** (new):
+- Between encounters, player can choose to retreat
+- Retreating keeps all gold earned so far
+- Floor is NOT marked as cleared on retreat
+- No happiness penalty for strategic retreat
+- Cannot retreat before the boss encounter (committed once boss is next)
+
+**CavePanel Refactored** (`src/components/game/CavePanel.tsx`):
+- Removed inline `resolveFloorRun()` function
+- Added `activeFloor` state to toggle between floor selection and combat view
+- `handleEnterFloor()` now spends time and switches to CombatView
+- `handleCombatComplete()` receives `CombatRunResult` and applies all effects to store
+- Floor selection UI unchanged
+
+### Combat Formula (unchanged from Phase 3, extracted to resolveEncounter)
+```
+attackPower = baseATK * (1 + eduAttackBonus)
+effATK = requiresArcane && !hasArcane ? attackPower * 0.3 : attackPower
+playerPower = effATK + DEF * 0.5
+ratio = playerPower / encounterPower
+
+damage = baseDamage * max(0.3, 1 - ratio * 0.5) * (1 - eduDmgReduction)
+if blocked: damage *= 0.5
+damage = max(1, damage)
+
+gold = baseGold * (1 + eduGoldBonus) * min(1.5, ratio)
+```
+
+### Files Created
+- `src/data/combatResolver.ts` — Combat state machine, encounter resolution, auto-resolve (380 lines)
+- `src/components/game/CombatView.tsx` — Encounter-by-encounter combat UI (340 lines)
+
+### Files Modified
+- `src/components/game/CavePanel.tsx` — Removed auto-resolve, integrated CombatView, added state toggle (578 → 484 lines)
+
+### Verification
+- TypeScript compiles cleanly (`tsc --noEmit` passes)
+- Production build succeeds (`vite build`)
+- All tests pass (`vitest run`)
+- ESLint clean on all modified files
+
+---
+
 ## 2026-02-05 - Phase 3: Cave UI Overhaul (Floor Selection Interface)
 
 ### Problem
