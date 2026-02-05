@@ -199,7 +199,10 @@ export interface Quest {
   happinessReward: number;
 }
 
-export const HOURS_PER_WEEK = 168;
+// Jones-style: Each turn has 60 Hours (time points)
+export const HOURS_PER_TURN = 60;
+// Legacy constant for backward compatibility
+export const HOURS_PER_WEEK = HOURS_PER_TURN;
 export const RENT_INTERVAL = 4; // Rent due every 4 weeks
 export const CLOTHING_INTERVAL = 8; // Clothing degrades every 8 weeks
 export const FOOD_DEPLETION_PER_WEEK = 25; // Lose 25 food per week

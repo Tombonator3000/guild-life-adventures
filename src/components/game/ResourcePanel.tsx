@@ -1,6 +1,6 @@
 import { useCurrentPlayer, useGameStore } from '@/store/gameStore';
 import { Coins, Heart, Smile, Clock, Utensils, Shirt, Shield, Briefcase } from 'lucide-react';
-import { GUILD_RANK_NAMES } from '@/types/game.types';
+import { GUILD_RANK_NAMES, HOURS_PER_TURN } from '@/types/game.types';
 import { GoalProgress } from './GoalProgress';
 
 export function ResourcePanel() {
@@ -43,15 +43,16 @@ export function ResourcePanel() {
           value={player.gold}
           color="text-gold"
         />
-        <ResourceCard 
+        <ResourceCard
           icon={<Clock className="w-4 h-4" />}
-          label="Time"
-          value={`${player.timeRemaining}h`}
+          label="Hours"
+          value={`${player.timeRemaining}`}
           color="text-time"
           showBar
           barValue={player.timeRemaining}
-          barMax={168}
+          barMax={HOURS_PER_TURN}
           barColor="bg-time"
+          warning={player.timeRemaining < 10}
         />
         <ResourceCard 
           icon={<Heart className="w-4 h-4" />}
