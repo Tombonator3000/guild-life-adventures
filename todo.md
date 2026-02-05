@@ -16,6 +16,41 @@
 
 ## Backlog
 
+### Dungeon & Combat System (NEW — Rogue-Lite RPG)
+See log.md "Game Gap Analysis & Rogue-Lite RPG Design Proposal" for full design.
+
+**Phase 1: Equipment System**
+- [ ] Add combat fields to Player interface (equippedWeapon, equippedArmor, equippedShield, attackPower, defensePower, dungeonFloorsCleared)
+- [ ] Add attack/defense stats to weapons/armor in items.ts
+- [ ] Add new equipment tiers (Steel Sword, Enchanted Blade, Chainmail, Plate, Tower Shield, etc.)
+- [ ] Add equip/unequip actions to gameStore
+- [ ] Update ArmoryPanel to show combat stats and equip buttons
+
+**Phase 2: Dungeon Data**
+- [ ] Create `src/data/dungeon.ts` with 5 floor definitions
+- [ ] Define encounter tables per floor (3-4 encounters + boss)
+- [ ] Define loot tables and rare drops per floor
+- [ ] Add floor unlock logic and equipment requirement checks
+
+**Phase 3: Cave UI Overhaul**
+- [ ] Replace CavePanel explore/rest with floor selection interface
+- [ ] Show equipment check before entering a floor
+- [ ] Display dungeon progress (floors cleared, boss status)
+- [ ] Keep basic "Rest in Cave" option
+
+**Phase 4: Combat System**
+- [ ] Implement combat resolution formula (Player Power vs Encounter Power)
+- [ ] Add encounter-by-encounter floor progression
+- [ ] Create combat result display (damage, gold, items found)
+- [ ] Add boss encounter mechanics
+- [ ] Add education bonuses to combat (Trade Guild disarms traps, Combat Training reduces damage, etc.)
+
+**Phase 5: Integration**
+- [ ] Connect dungeon quests to floor clear requirements
+- [ ] Add rare drops to loot tables (Goblin's Lucky Coin, Dragon Scale, etc.)
+- [ ] Add dungeon exploration to Grimwald AI decision engine
+- [ ] Balance dungeon rewards with economy
+
 ### Missing Jones Features (Priority)
 Based on JONES_REFERENCE.md analysis:
 
@@ -64,7 +99,7 @@ Based on JONES_REFERENCE.md analysis:
 - [ ] Save game state (localStorage)
 
 ### Content
-- [ ] More quest types
+- [ ] More quest types (dungeon-linked)
 - [ ] More jobs
 - [ ] Seasonal events
 - [ ] Achievements/trophies
