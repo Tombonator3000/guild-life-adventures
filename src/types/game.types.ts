@@ -1,6 +1,6 @@
 // Guild Life - Game Types (based on Jones in the Fast Lane)
 
-export type LocationId = 
+export type LocationId =
   | 'noble-heights'
   | 'landlord'
   | 'slums'
@@ -13,7 +13,21 @@ export type LocationId =
   | 'guild-hall'
   | 'forge'
   | 'bank'
-  | 'general-store';
+  | 'general-store'
+  | 'cave';
+
+// Zone configuration for the game board
+// Coordinates are percentages relative to the board container
+export interface ZoneConfig {
+  id: LocationId;
+  // Bounding box (percentage of board)
+  x: number;      // left position (%)
+  y: number;      // top position (%)
+  width: number;  // zone width (%)
+  height: number; // zone height (%)
+  // Optional polygon for more precise hit detection (array of [x,y] points as percentages)
+  polygon?: [number, number][];
+}
 
 export interface Location {
   id: LocationId;

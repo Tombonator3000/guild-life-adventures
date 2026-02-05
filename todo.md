@@ -19,6 +19,8 @@
 - [ ] Animations for player movement
 - [ ] Tooltips for all buttons
 - [ ] Dark mode support
+- [x] Zone Editor for visual positioning (Ctrl+Shift+Z)
+- [x] Debug overlay for zone boundaries (Ctrl+Shift+D)
 
 ### Technical
 - [ ] Unit tests for gameStore
@@ -36,7 +38,15 @@
 
 ## Completed
 
-### 2026-02-05
+### 2026-02-05 - Zone System
+- [x] Implemented zone-based coordinate system for game board
+- [x] Added ZoneConfig interface for precise positioning
+- [x] Created visual Zone Editor tool
+- [x] Added debug overlay for zone visualization
+- [x] Added "The Cave" location with exploration mechanics
+- [x] Center info panel properly isolated for text display
+
+### 2026-02-05 - Localization
 - [x] Verified all game text is in English
 - [x] Translated agents.md to English
 - [x] Translated log.md to English
