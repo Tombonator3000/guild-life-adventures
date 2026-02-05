@@ -38,6 +38,16 @@
 
 ## Completed
 
+### 2026-02-05 - Shadowfingers Robbery System
+- [x] Implemented Shadowfingers character (criminal NPC)
+- [x] Street Robbery system (Bank/Black's Market, Week 4+)
+- [x] Apartment Robbery system (slums housing, durables)
+- [x] Added Relaxation stat (10-50, affects robbery chance)
+- [x] Added Durables system (items stored at apartment)
+- [x] Educational items that cannot be stolen (Encyclopedia, Dictionary, Atlas)
+- [x] ShadowfingersModal with newspaper-style display
+- [x] Integrated robbery checks into game flow
+
 ### 2026-02-05 - Zone System
 - [x] Implemented zone-based coordinate system for game board
 - [x] Added ZoneConfig interface for precise positioning

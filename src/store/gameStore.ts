@@ -1,12 +1,13 @@
 import { create } from 'zustand';
-import type { 
-  GameState, 
-  Player, 
-  LocationId, 
+import type {
+  GameState,
+  Player,
+  LocationId,
   GoalSettings,
   HousingTier,
   EducationPath,
   GuildRank,
+  DurableItems,
   HOURS_PER_WEEK,
   RENT_INTERVAL,
   FOOD_DEPLETION_PER_WEEK,
@@ -17,6 +18,18 @@ import type {
 } from '@/types/game.types';
 import { PLAYER_COLORS, AI_COLOR, RENT_COSTS, CLOTHING_INTERVAL } from '@/types/game.types';
 import { checkWeeklyTheft } from '@/data/events';
+import {
+  checkStreetRobbery,
+  checkApartmentRobbery,
+  type StreetRobberyResult,
+  type ApartmentRobberyResult,
+} from '@/data/shadowfingers';
+
+// Shadowfingers robbery event for display
+export interface ShadowfingersEvent {
+  type: 'street' | 'apartment';
+  result: StreetRobberyResult | ApartmentRobberyResult;
+}
 
 interface GameStore extends GameState {
   // Actions
@@ -29,6 +42,7 @@ interface GameStore extends GameState {
   modifyFood: (playerId: string, amount: number) => void;
   modifyClothing: (playerId: string, amount: number) => void;
   modifyMaxHealth: (playerId: string, amount: number) => void;
+  modifyRelaxation: (playerId: string, amount: number) => void;
   setHousing: (playerId: string, tier: HousingTier) => void;
   setJob: (playerId: string, jobId: string | null, wage?: number) => void;
   workShift: (playerId: string, hours: number, wage: number) => void;
@@ -40,7 +54,9 @@ interface GameStore extends GameState {
   withdrawFromBank: (playerId: string, amount: number) => void;
   invest: (playerId: string, amount: number) => void;
   buyItem: (playerId: string, itemId: string, cost: number) => void;
+  buyDurable: (playerId: string, itemId: string, cost: number) => void;
   sellItem: (playerId: string, itemId: string, price: number) => void;
+  sellDurable: (playerId: string, itemId: string, price: number) => void;
   takeQuest: (playerId: string, questId: string) => void;
   completeQuest: (playerId: string) => void;
   abandonQuest: (playerId: string) => void;
@@ -48,6 +64,7 @@ interface GameStore extends GameState {
   checkDeath: (playerId: string) => boolean;
   promoteGuildRank: (playerId: string) => void;
   endTurn: () => void;
+  startTurn: (playerId: string) => void;
   processWeekEnd: () => void;
   setPhase: (phase: GameState['phase']) => void;
   selectLocation: (location: LocationId | null) => void;
@@ -55,12 +72,15 @@ interface GameStore extends GameState {
   checkVictory: (playerId: string) => boolean;
   setEventMessage: (message: string | null) => void;
   selectedLocation: LocationId | null;
+  // Shadowfingers robbery state
+  shadowfingersEvent: ShadowfingersEvent | null;
+  dismissShadowfingersEvent: () => void;
 }
 
 const createPlayer = (
-  id: string, 
-  name: string, 
-  color: string, 
+  id: string,
+  name: string,
+  color: string,
   isAI: boolean = false
 ): Player => ({
   id,
@@ -72,6 +92,7 @@ const createPlayer = (
   happiness: 50,
   timeRemaining: 168,
   currentLocation: 'guild-hall',
+  previousLocation: null, // Track where player came from (for street robbery)
   guildRank: 'novice',
   housing: 'homeless',
   education: {
@@ -96,6 +117,8 @@ const createPlayer = (
   currentWage: 0,
   dependability: 50, // Start at 50%
   experience: 0,
+  relaxation: 30, // Default relaxation (ranges 10-50)
+  durables: {}, // Durable items owned at apartment
   inventory: [],
   isAI,
   activeQuest: null,
@@ -120,6 +143,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   eventMessage: null,
   rentDueWeek: 4,
   selectedLocation: null,
+  shadowfingersEvent: null,
 
   startNewGame: (playerNames, includeAI, goals) => {
     const players: Player[] = playerNames.map((name, index) => 
@@ -146,21 +170,59 @@ export const useGameStore = create<GameStore>((set, get) => ({
       eventMessage: null,
       rentDueWeek: 4,
       selectedLocation: null,
+      shadowfingersEvent: null,
     });
   },
 
   movePlayer: (playerId, location, timeCost) => {
+    const state = get();
+    const player = state.players.find(p => p.id === playerId);
+    if (!player) return;
+
+    const previousLocation = player.currentLocation;
+
+    // Update player position
     set((state) => ({
       players: state.players.map((p) =>
         p.id === playerId
-          ? { 
-              ...p, 
-              currentLocation: location, 
-              timeRemaining: Math.max(0, p.timeRemaining - timeCost) 
+          ? {
+              ...p,
+              previousLocation,
+              currentLocation: location,
+              timeRemaining: Math.max(0, p.timeRemaining - timeCost)
             }
           : p
       ),
     }));
+
+    // Check for street robbery when leaving bank or shadow-market
+    const updatedPlayer = get().players.find(p => p.id === playerId);
+    if (updatedPlayer && !updatedPlayer.isAI) {
+      const robberyResult = checkStreetRobbery(
+        { ...updatedPlayer, currentLocation: previousLocation }, // Use previous location for check
+        previousLocation,
+        state.week
+      );
+
+      if (robberyResult) {
+        // Apply robbery effects
+        set((state) => ({
+          players: state.players.map((p) =>
+            p.id === playerId
+              ? {
+                  ...p,
+                  gold: 0, // Street robbery takes all cash
+                  happiness: Math.max(0, p.happiness + robberyResult.happinessLoss),
+                }
+              : p
+          ),
+          shadowfingersEvent: {
+            type: 'street',
+            result: robberyResult,
+          },
+        }));
+      }
+    }
   },
 
   spendTime: (playerId, hours) => {
@@ -228,6 +290,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
       players: state.players.map((p) =>
         p.id === playerId
           ? { ...p, maxHealth: Math.max(50, p.maxHealth + amount), health: Math.min(p.health, p.maxHealth + amount) }
+          : p
+      ),
+    }));
+  },
+
+  modifyRelaxation: (playerId, amount) => {
+    set((state) => ({
+      players: state.players.map((p) =>
+        p.id === playerId
+          ? { ...p, relaxation: Math.max(10, Math.min(50, p.relaxation + amount)) }
           : p
       ),
     }));
@@ -457,6 +529,38 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }));
   },
 
+  buyDurable: (playerId, itemId, cost) => {
+    set((state) => ({
+      players: state.players.map((p) => {
+        if (p.id !== playerId) return p;
+        const newDurables = { ...p.durables };
+        newDurables[itemId] = (newDurables[itemId] || 0) + 1;
+        return {
+          ...p,
+          gold: Math.max(0, p.gold - cost),
+          durables: newDurables,
+        };
+      }),
+    }));
+  },
+
+  sellDurable: (playerId, itemId, price) => {
+    set((state) => ({
+      players: state.players.map((p) => {
+        if (p.id !== playerId) return p;
+        const newDurables = { ...p.durables };
+        if ((newDurables[itemId] || 0) <= 0) return p;
+        newDurables[itemId] = newDurables[itemId] - 1;
+        if (newDurables[itemId] === 0) delete newDurables[itemId];
+        return {
+          ...p,
+          gold: p.gold + price,
+          durables: newDurables,
+        };
+      }),
+    }));
+  },
+
   takeQuest: (playerId, questId) => {
     set((state) => ({
       players: state.players.map((p) =>
@@ -519,11 +623,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set((state) => ({
       players: state.players.map((p) =>
         p.id === playerId
-          ? { 
-              ...p, 
+          ? {
+              ...p,
               housing: 'homeless' as HousingTier,
               weeksSinceRent: 0,
               inventory: [], // Lose all items
+              durables: {}, // Lose all durables too
               happiness: Math.max(0, p.happiness - 30),
             }
           : p
@@ -568,15 +673,53 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (isNewWeek) {
       get().processWeekEnd();
     } else {
+      // Start next player's turn (includes apartment robbery check)
+      const nextPlayer = state.players[nextIndex];
       set({
         currentPlayerIndex: nextIndex,
-        players: state.players.map((p, index) => 
-          index === nextIndex 
+        players: state.players.map((p, index) =>
+          index === nextIndex
             ? { ...p, timeRemaining: 168 }
             : p
         ),
         selectedLocation: null,
       });
+      // Check for apartment robbery at start of turn
+      get().startTurn(nextPlayer.id);
+    }
+  },
+
+  startTurn: (playerId: string) => {
+    const state = get();
+    const player = state.players.find(p => p.id === playerId);
+    if (!player || player.isAI) return;
+
+    // Check for apartment robbery at the start of player's turn
+    const robberyResult = checkApartmentRobbery(player);
+
+    if (robberyResult) {
+      // Remove stolen items from player's durables
+      const newDurables = { ...player.durables };
+      for (const stolen of robberyResult.stolenItems) {
+        delete newDurables[stolen.itemId];
+      }
+
+      // Apply robbery effects
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? {
+                ...p,
+                durables: newDurables,
+                happiness: Math.max(0, p.happiness + robberyResult.happinessLoss),
+              }
+            : p
+        ),
+        shadowfingersEvent: {
+          type: 'apartment',
+          result: robberyResult,
+        },
+      }));
     }
   },
 
@@ -689,7 +832,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       week: newWeek,
       currentPlayerIndex: 0,
       priceModifier: 0.7 + Math.random() * 0.6, // Random price between 0.7 and 1.3
-      players: updatedPlayers.map((p, index) => 
+      players: updatedPlayers.map((p, index) =>
         index === 0 ? { ...p, timeRemaining: 168 } : p
       ),
       rentDueWeek: isRentDue ? newWeek : state.rentDueWeek,
@@ -697,6 +840,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       eventMessage: eventMessages.length > 0 ? eventMessages.join('\n') : null,
       phase: eventMessages.length > 0 ? 'event' : 'playing',
     });
+
+    // Check for apartment robbery at start of first player's turn
+    const firstPlayer = updatedPlayers[0];
+    if (firstPlayer) {
+      get().startTurn(firstPlayer.id);
+    }
   },
 
   setPhase: (phase) => set({ phase }),
@@ -704,6 +853,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   selectLocation: (location) => set({ selectedLocation: location }),
 
   dismissEvent: () => set({ eventMessage: null, phase: 'playing' }),
+
+  dismissShadowfingersEvent: () => set({ shadowfingersEvent: null }),
 
   setEventMessage: (message) => set({ eventMessage: message }),
 
