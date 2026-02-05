@@ -13,6 +13,7 @@ const Index = () => {
     case 'setup':
       return <GameSetup />;
     case 'playing':
+    case 'event':
       return <GameBoard />;
     case 'victory':
       return <VictoryScreen />;
