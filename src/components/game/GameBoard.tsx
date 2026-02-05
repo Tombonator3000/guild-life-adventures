@@ -6,15 +6,23 @@ import { PlayerToken } from './PlayerToken';
 import { ResourcePanel } from './ResourcePanel';
 import { LocationPanel } from './LocationPanel';
 import { EventModal, type GameEvent } from './EventModal';
-import { ZoneEditor } from './ZoneEditor';
+import { ZoneEditor, type CenterPanelConfig } from './ZoneEditor';
 import gameBoard from '@/assets/game-board.jpeg';
 import type { ZoneConfig } from '@/types/game.types';
+
+const DEFAULT_CENTER_PANEL: CenterPanelConfig = {
+  top: 15.8,
+  left: 15.2,
+  width: 69.6,
+  height: 49.2,
+};
 
 export function GameBoard() {
   const { players, selectedLocation, selectLocation, week, priceModifier, eventMessage, dismissEvent, phase } = useGameStore();
   const [showZoneEditor, setShowZoneEditor] = useState(false);
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
   const [customZones, setCustomZones] = useState<ZoneConfig[]>(ZONE_CONFIGS);
+  const [centerPanel, setCenterPanel] = useState<CenterPanelConfig>(DEFAULT_CENTER_PANEL);
 
   // Keyboard shortcut: Ctrl+Shift+Z to toggle zone editor
   useEffect(() => {
@@ -32,10 +40,12 @@ export function GameBoard() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleSaveZones = (zones: ZoneConfig[]) => {
+  const handleSaveZones = (zones: ZoneConfig[], newCenterPanel: CenterPanelConfig) => {
     setCustomZones(zones);
+    setCenterPanel(newCenterPanel);
     setShowZoneEditor(false);
     console.log('Zones updated. Copy this config to locations.ts:', zones);
+    console.log('Center panel updated:', newCenterPanel);
   };
 
   // Get location with custom zones applied
@@ -142,10 +152,10 @@ export function GameBoard() {
             <div
               className="absolute border-2 border-yellow-400 bg-yellow-400/10"
               style={{
-                top: '15.8%',
-                left: '15.2%',
-                width: '69.6%',
-                height: '49.2%',
+                top: `${centerPanel.top}%`,
+                left: `${centerPanel.left}%`,
+                width: `${centerPanel.width}%`,
+                height: `${centerPanel.height}%`,
               }}
             >
               <span className="text-xs text-yellow-400 bg-black/70 px-1">
@@ -160,10 +170,10 @@ export function GameBoard() {
         <div
           className="absolute overflow-hidden z-10"
           style={{
-            top: '15.8%',
-            left: '15.2%',
-            width: '69.6%',
-            height: '49.2%',
+            top: `${centerPanel.top}%`,
+            left: `${centerPanel.left}%`,
+            width: `${centerPanel.width}%`,
+            height: `${centerPanel.height}%`,
           }}
         >
           <div className="w-full h-full overflow-auto bg-card/95">
@@ -224,6 +234,7 @@ export function GameBoard() {
         <ZoneEditor
           onClose={() => setShowZoneEditor(false)}
           onSave={handleSaveZones}
+          initialCenterPanel={centerPanel}
         />
       )}
     </div>
