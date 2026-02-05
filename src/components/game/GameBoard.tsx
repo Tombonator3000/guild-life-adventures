@@ -11,9 +11,11 @@ import { ShadowfingersModal, useShadowfingersModal } from './ShadowfingersModal'
 import { ZoneEditor, type CenterPanelConfig } from './ZoneEditor';
 import { PlayerInfoPanel } from './PlayerInfoPanel';
 import { TurnOrderPanel } from './TurnOrderPanel';
+import { useGrimwaldAI } from '@/hooks/useGrimwaldAI';
 import gameBoard from '@/assets/game-board.jpeg';
-import type { ZoneConfig, LocationId } from '@/types/game.types';
+import type { ZoneConfig, LocationId, AIDifficulty } from '@/types/game.types';
 import { toast } from 'sonner';
+import { Bot, Brain } from 'lucide-react';
 
 const DEFAULT_CENTER_PANEL: CenterPanelConfig = {
   top: 23.4,
@@ -39,12 +41,18 @@ export function GameBoard() {
     checkDeath,
     setEventMessage,
     setPhase,
+    aiDifficulty,
   } = useGameStore();
   const { event: shadowfingersEvent, dismiss: dismissShadowfingers } = useShadowfingersModal();
   const [showZoneEditor, setShowZoneEditor] = useState(false);
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
   const [customZones, setCustomZones] = useState<ZoneConfig[]>(ZONE_CONFIGS);
   const [centerPanel, setCenterPanel] = useState<CenterPanelConfig>(DEFAULT_CENTER_PANEL);
+
+  // AI State
+  const [aiIsThinking, setAiIsThinking] = useState(false);
+  const aiTurnStartedRef = useRef(false);
+  const { runAITurn, analyzeGameState, settings: aiSettings } = useGrimwaldAI(aiDifficulty);
 
   // Animation state for player movement
   const [animatingPlayer, setAnimatingPlayer] = useState<string | null>(null);
@@ -66,6 +74,44 @@ export function GameBoard() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // AI Turn Handler - triggers when it's Grimwald's turn
+  useEffect(() => {
+    if (!currentPlayer || phase !== 'playing') {
+      aiTurnStartedRef.current = false;
+      return;
+    }
+
+    // Check if it's an AI player's turn and we haven't started their turn yet
+    if (currentPlayer.isAI && !aiTurnStartedRef.current && !aiIsThinking) {
+      aiTurnStartedRef.current = true;
+      setAiIsThinking(true);
+
+      // Show toast notification that Grimwald is thinking
+      toast.info(`Grimwald is planning...`, {
+        duration: 2000,
+        icon: <Bot className="w-4 h-4" />,
+      });
+
+      // Small delay before AI starts to let the UI settle
+      setTimeout(() => {
+        runAITurn(currentPlayer);
+      }, 1000);
+    }
+
+    // Reset when it's no longer AI's turn
+    if (!currentPlayer.isAI) {
+      aiTurnStartedRef.current = false;
+      setAiIsThinking(false);
+    }
+  }, [currentPlayer, phase, aiIsThinking, runAITurn]);
+
+  // Listen for player changes to detect when AI turn ends
+  useEffect(() => {
+    if (currentPlayer && !currentPlayer.isAI) {
+      setAiIsThinking(false);
+    }
+  }, [currentPlayer?.id]);
 
   const handleSaveZones = (zones: ZoneConfig[], newCenterPanel: CenterPanelConfig) => {
     setCustomZones(zones);
@@ -429,6 +475,32 @@ export function GameBoard() {
           onSave={handleSaveZones}
           initialCenterPanel={centerPanel}
         />
+      )}
+
+      {/* AI Thinking Overlay */}
+      {aiIsThinking && currentPlayer?.isAI && (
+        <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" />
+          <div className="relative parchment-panel p-6 flex flex-col items-center gap-4 animate-pulse">
+            <div className="flex items-center gap-3">
+              <Bot className="w-8 h-8 text-primary animate-bounce" />
+              <Brain className="w-6 h-6 text-secondary animate-spin" style={{ animationDuration: '3s' }} />
+            </div>
+            <h3 className="font-display text-xl text-card-foreground">
+              Grimwald is Scheming...
+            </h3>
+            <p className="text-sm text-muted-foreground text-center max-w-xs">
+              {aiDifficulty === 'easy' && 'Hmm, let me think about this...'}
+              {aiDifficulty === 'medium' && 'Calculating optimal strategy...'}
+              {aiDifficulty === 'hard' && 'Analyzing all possibilities with precision!'}
+            </p>
+            <div className="flex gap-1">
+              <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

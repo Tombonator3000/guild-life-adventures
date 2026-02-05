@@ -1,5 +1,99 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Smart Grimwald AI Opponent System
+
+### Task Summary
+Implemented a comprehensive, intelligent AI opponent system for Grimwald inspired by "Jones" from Jones in the Fast Lane (Sierra, 1991). The new AI uses goal-oriented decision making with difficulty levels.
+
+### Features Implemented
+
+**1. Three Difficulty Levels**
+- **Novice Grimwald (Easy)**: 20% mistake chance, reactive decisions, 800ms action delay
+- **Cunning Grimwald (Medium)**: 8% mistake chance, 2-turn planning depth, 500ms delay
+- **Master Grimwald (Hard)**: 2% mistake chance, 3-turn planning depth, 300ms delay
+
+**2. Goal-Oriented Decision Engine**
+- Calculates progress toward all victory goals (Wealth, Happiness, Education, Career)
+- Identifies weakest goal and prioritizes actions to improve it
+- Adaptive strategy based on current game state
+
+**3. Priority-Based Action System**
+- **Critical Actions (85-100)**: Food (prevent starvation), rent (prevent eviction)
+- **Goal Actions (60-85)**: Education, work, banking based on weakest goal
+- **Strategic Actions (45-70)**: Job upgrades, housing upgrades, banking deposits
+
+**4. Resource Management**
+- Monitors food, rent, clothing, health urgency levels
+- Makes intelligent decisions about resource allocation
+- Prevents game-ending states (starvation, eviction)
+
+**5. Strategic Behaviors**
+- **Education**: Prioritizes degrees that unlock high-paying jobs
+- **Career**: Gets jobs, upgrades when 20%+ better wage available
+- **Banking**: Deposits excess gold to avoid robbery, withdraws when low
+- **Housing**: Considers upgrading to Noble Heights to protect valuables
+
+**6. Visual Feedback**
+- "Grimwald is Scheming..." overlay during AI turns
+- Animated icons (Bot, Brain) with difficulty-specific text
+- Toast notifications for AI actions
+- Console logging for debugging
+
+### Files Created
+- `src/hooks/useGrimwaldAI.ts` - New comprehensive AI decision engine (600+ lines)
+
+### Files Modified
+- `src/types/game.types.ts` - Added AIDifficulty type, difficulty names/descriptions
+- `src/store/gameStore.ts` - Added aiDifficulty state, updated startNewGame signature
+- `src/components/screens/GameSetup.tsx` - Added AI difficulty selector UI
+- `src/components/game/GameBoard.tsx` - Integrated AI turn handling with visual feedback
+- `agents.md` - Complete rewrite with new AI documentation
+- `log.md` - Added this entry
+
+### Technical Architecture
+
+**DifficultySettings Interface:**
+```typescript
+interface DifficultySettings {
+  aggressiveness: number;    // Goal pursuit intensity (0-1)
+  planningDepth: number;     // Turns to plan ahead (1-3)
+  mistakeChance: number;     // Suboptimal decision chance (0-1)
+  efficiencyWeight: number;  // Time optimization value (0-1)
+  decisionDelay: number;     // MS between actions
+}
+```
+
+**Goal Progress Tracking:**
+```typescript
+interface GoalProgress {
+  wealth: { current, target, progress };
+  happiness: { current, target, progress };
+  education: { current, target, progress };
+  career: { current, target, progress };
+  overall: number; // Average progress
+}
+```
+
+**Action Priority System:**
+- Each possible action gets a priority score (1-100)
+- Actions sorted by priority, highest executed first
+- Mistake chance can swap top two actions for easier difficulty
+- Safety limit of 15 actions per turn prevents infinite loops
+
+### Game Setup UI
+Added difficulty selection when Grimwald is enabled:
+- Three clickable buttons with icons (Brain/Zap/Crown)
+- Shows selected difficulty with description
+- Stores selection in game state
+
+### References
+Based on research from:
+- [Jones in the Fast Lane Wiki](https://jonesinthefastlane.fandom.com/wiki/Jones)
+- [MobyGames](https://www.mobygames.com/game/370/jones-in-the-fast-lane/)
+- [Hardcore Gaming 101](http://www.hardcoregaming101.net/jones-in-the-fast-lane/)
+
+---
+
 ## 2026-02-05 - Fix Responsive Layout (Consistent Screen Sizing)
 
 ### Task Summary
