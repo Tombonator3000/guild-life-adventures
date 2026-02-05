@@ -19,6 +19,44 @@ export interface Job {
   careerLevel: number;           // 1-10, for career goal tracking
 }
 
+// Extended Job interface with calculated wage based on economy (like Jones)
+export interface JobOffer extends Job {
+  offeredWage: number;           // Actual wage offered (50-250% of baseWage)
+  wageMultiplier: number;        // The multiplier used (0.5-2.5)
+}
+
+// Calculate offered wage based on economy (Jones-style: 50-250% of base)
+// The economy affects what wage is offered when applying for a job
+export const calculateOfferedWage = (job: Job, economyModifier: number): JobOffer => {
+  // Economy modifier affects wage offers
+  // Base range is 0.5-2.5 (50%-250% of base wage)
+  // Economy modifier shifts this range
+  const baseMultiplier = 0.5 + (Math.random() * 2.0); // 0.5 to 2.5
+  const adjustedMultiplier = baseMultiplier * economyModifier;
+
+  // Clamp between 0.5 and 2.5
+  const finalMultiplier = Math.max(0.5, Math.min(2.5, adjustedMultiplier));
+  const offeredWage = Math.round(job.baseWage * finalMultiplier);
+
+  return {
+    ...job,
+    offeredWage,
+    wageMultiplier: finalMultiplier,
+  };
+};
+
+// Get job offers for all available jobs (with economy-based wages)
+export const getJobOffers = (
+  completedDegrees: DegreeId[],
+  clothingLevel: number,
+  experience: number,
+  dependability: number,
+  economyModifier: number
+): JobOffer[] => {
+  const availableJobs = getAvailableJobs(completedDegrees, clothingLevel, experience, dependability);
+  return availableJobs.map(job => calculateOfferedWage(job, economyModifier));
+};
+
 // All jobs in the game, organized by workplace location (like Jones)
 // Wages based on Jones: Janitor $4-6, mid-level $10, high $20-22, top $25
 

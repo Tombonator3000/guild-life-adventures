@@ -38,6 +38,15 @@
 
 ## Completed
 
+### 2026-02-05 - Jones-Style Working System Overhaul
+- [x] Variable wage offers (50-250% of base wage based on economy)
+- [x] Market crash events (pay cut at 80%, layoffs)
+- [x] Experience capped at maxExperience
+- [x] Dependability capped at maxDependability
+- [x] Employment Office UI with job offers and market rates
+- [x] Raise indicator when market rate exceeds current wage
+- [x] Forge job system with variable wages
+
 ### 2026-02-05 - Jones-Style Education/Jobs Overhaul
 - [x] Researched Jones in the Fast Lane wiki for degrees and jobs
 - [x] Implemented 11-degree system with prerequisites (Trade Guild, Junior Academy, etc.)

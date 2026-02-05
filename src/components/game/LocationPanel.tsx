@@ -4,7 +4,7 @@ import type { LocationId, EducationPath, HousingTier } from '@/types/game.types'
 import { RENT_COSTS } from '@/types/game.types';
 import { MapPin, Clock, ArrowRight, X, Utensils, GraduationCap, Briefcase, Coins, ShoppingBag, Home, Sparkles, Hammer, Newspaper, Scroll, Heart, TrendingUp } from 'lucide-react';
 import { EDUCATION_PATHS, getCourse, getNextCourse, getAvailableDegrees, DEGREES, getDegree, type DegreeId } from '@/data/education';
-import { getAvailableJobs, JOBS, FORGE_JOBS, getJob, ALL_JOBS, getEntryLevelJobs } from '@/data/jobs';
+import { getAvailableJobs, JOBS, FORGE_JOBS, getJob, ALL_JOBS, getEntryLevelJobs, getJobOffers, type JobOffer } from '@/data/jobs';
 import { GENERAL_STORE_ITEMS, TAVERN_ITEMS, ARMORY_ITEMS, ENCHANTER_ITEMS, SHADOW_MARKET_ITEMS, getItemPrice } from '@/data/items';
 import { HOUSING_DATA, HOUSING_TIERS } from '@/data/housing';
 import { QuestPanel } from './QuestPanel';
@@ -113,9 +113,23 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
         );
       
       case 'guild-hall':
-        const availableJobs = getAvailableJobs(player.education, player.clothingCondition);
+        // Get job offers with economy-based wages (Jones-style: 50-250% of base)
+        const jobOffers = getJobOffers(
+          player.completedDegrees as DegreeId[],
+          player.clothingCondition,
+          player.experience,
+          player.dependability,
+          priceModifier
+        );
         const availableQuests = getAvailableQuests(player.guildRank);
         const currentJobData = player.currentJob ? getJob(player.currentJob) : null;
+
+        // Check if current job is being offered at higher wage (for raise comparison)
+        const currentJobOffer = currentJobData
+          ? jobOffers.find(j => j.id === currentJobData.id)
+          : null;
+        const canGetRaiseFromMarket = currentJobOffer && currentJobOffer.offeredWage > player.currentWage;
+
         return (
           <div className="space-y-4">
             {/* Current Job Status */}
@@ -132,11 +146,15 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
                   <span>Wage:</span>
                   <span className="font-bold text-gold">{player.currentWage}g/hour</span>
                 </div>
-                <div className="flex justify-between mb-2">
+                <div className="flex justify-between mb-1">
                   <span>Dependability:</span>
                   <span className={`font-bold ${player.dependability < 30 ? 'text-destructive' : ''}`}>
                     {player.dependability}%
                   </span>
+                </div>
+                <div className="flex justify-between mb-2">
+                  <span>Experience:</span>
+                  <span className="font-bold">{player.experience}/{player.maxExperience}</span>
                 </div>
                 <div className="flex gap-2">
                   <ActionButton
@@ -157,10 +175,17 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
                     }}
                     className="gold-button text-xs py-1 px-2 flex items-center gap-1"
                     disabled={player.dependability < 40}
+                    title={canGetRaiseFromMarket ? `Market offering ${currentJobOffer?.offeredWage}g/h!` : 'Request a raise'}
                   >
                     <TrendingUp className="w-3 h-3" /> Raise
+                    {canGetRaiseFromMarket && <span className="text-green-400">!</span>}
                   </button>
                 </div>
+                {canGetRaiseFromMarket && (
+                  <p className="text-xs text-green-600 mt-1">
+                    Market rate for your job: {currentJobOffer?.offeredWage}g/h (ask for a raise!)
+                  </p>
+                )}
               </div>
             )}
 
@@ -172,29 +197,47 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               onCompleteQuest={() => completeQuest(player.id)}
               onAbandonQuest={() => abandonQuest(player.id)}
             />
-            
-            {/* Get a Job / Available Jobs */}
+
+            {/* Get a Job / Available Jobs - Jones-style with variable wages */}
             <div>
               <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
-                <Briefcase className="w-4 h-4" /> {player.currentJob ? 'Other Jobs' : 'Get a Job'}
+                <Briefcase className="w-4 h-4" /> {player.currentJob ? 'Job Openings' : 'Employment Office'}
               </h4>
-              <div className="space-y-2 max-h-32 overflow-y-auto">
-                {JOBS.slice(0, 4).map(job => {
-                  const canWork = availableJobs.some(j => j.id === job.id);
-                  const isCurrentJob = player.currentJob === job.id;
+              <p className="text-xs text-muted-foreground mb-2">
+                Wages vary based on market conditions (50-250% of base)
+              </p>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {jobOffers.slice(0, 6).map(offer => {
+                  const isCurrentJob = player.currentJob === offer.id;
+                  const isBetterPay = isCurrentJob && offer.offeredWage > player.currentWage;
                   return (
-                    <ActionButton
-                      key={job.id}
-                      label={`${job.name} (${job.hourlyWage}g/h)`}
-                      cost={0}
-                      time={1}
-                      disabled={!canWork || isCurrentJob}
-                      onClick={() => {
-                        setJob(player.id, job.id, job.hourlyWage);
-                        spendTime(player.id, 1);
-                        toast(`You are now employed as ${job.name}!`);
-                      }}
-                    />
+                    <div key={offer.id} className="wood-frame p-2 text-card">
+                      <div className="flex justify-between items-center">
+                        <span className="font-display font-semibold text-sm">{offer.name}</span>
+                        <span className={`font-bold ${offer.wageMultiplier > 1.5 ? 'text-green-600' : offer.wageMultiplier < 0.8 ? 'text-red-500' : 'text-gold'}`}>
+                          {offer.offeredWage}g/h
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{offer.location}</p>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-xs">
+                          {offer.wageMultiplier > 1.5 ? '🔥 Great pay!' :
+                           offer.wageMultiplier < 0.8 ? '⚠️ Low offer' :
+                           'Standard rate'}
+                        </span>
+                        <button
+                          onClick={() => {
+                            setJob(player.id, offer.id, offer.offeredWage);
+                            spendTime(player.id, 1);
+                            toast(`You are now employed as ${offer.name} at ${offer.offeredWage}g/h!`);
+                          }}
+                          disabled={isCurrentJob && !isBetterPay}
+                          className="gold-button text-xs py-1 px-2 disabled:opacity-50"
+                        >
+                          {isCurrentJob ? (isBetterPay ? 'Switch' : 'Current') : 'Apply'}
+                        </button>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
@@ -203,30 +246,56 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
         );
 
       case 'forge':
-        const forgeJobs = getAvailableJobs(player.education, player.clothingCondition)
-          .filter(j => FORGE_JOBS.some(fj => fj.id === j.id));
+        // Get forge job offers with economy-based wages
+        const forgeJobOffers = getJobOffers(
+          player.completedDegrees as DegreeId[],
+          player.clothingCondition,
+          player.experience,
+          player.dependability,
+          priceModifier
+        ).filter(j => FORGE_JOBS.some(fj => fj.id === j.id));
+
         return (
           <div className="space-y-2">
             <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
               <Hammer className="w-4 h-4" /> Forge Work
             </h4>
-            {FORGE_JOBS.map(job => {
-              const canWork = forgeJobs.some(j => j.id === job.id);
-              return (
-                <ActionButton
-                  key={job.id}
-                  label={`${job.name} (${job.hoursPerShift}h)`}
-                  cost={0}
-                  time={job.hoursPerShift}
-                  reward={job.hourlyWage * job.hoursPerShift}
-                  disabled={!canWork || player.timeRemaining < job.hoursPerShift}
-                  onClick={() => {
-                    workShift(player.id, job.hoursPerShift, job.hourlyWage);
-                    modifyHappiness(player.id, -3); // Forge work is hard
-                  }}
-                />
-              );
-            })}
+            <p className="text-xs text-muted-foreground mb-2">
+              Apply for forge jobs or work your current shift
+            </p>
+            {forgeJobOffers.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                No forge positions available. Need Trade Guild or Combat Training certificates.
+              </p>
+            ) : (
+              forgeJobOffers.map(offer => {
+                const earnings = Math.ceil(offer.hoursPerShift * 1.33 * offer.offeredWage);
+                return (
+                  <div key={offer.id} className="wood-frame p-2 text-card">
+                    <div className="flex justify-between items-center">
+                      <span className="font-display font-semibold text-sm">{offer.name}</span>
+                      <span className="text-gold font-bold">{offer.offeredWage}g/h</span>
+                    </div>
+                    <div className="flex justify-between items-center mt-1">
+                      <span className="text-xs text-muted-foreground">
+                        {offer.hoursPerShift}h shift → {earnings}g
+                      </span>
+                      <button
+                        onClick={() => {
+                          setJob(player.id, offer.id, offer.offeredWage);
+                          workShift(player.id, offer.hoursPerShift, offer.offeredWage);
+                          modifyHappiness(player.id, -3); // Forge work is hard
+                        }}
+                        disabled={player.timeRemaining < offer.hoursPerShift}
+                        className="gold-button text-xs py-1 px-2 disabled:opacity-50"
+                      >
+                        Work
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         );
 
