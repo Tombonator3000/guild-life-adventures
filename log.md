@@ -1,5 +1,163 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Cave & Dungeon Exploration System Design
+
+### Task Summary
+Designing a comprehensive dungeon exploration system for The Cave location - the unique feature that differentiates Guild Life Adventures from Jones in the Fast Lane.
+
+### Design Goals
+1. Make The Cave the game's unique selling point
+2. Create equipment requirements (armor/weapons) for deeper exploration
+3. Link education/skills to better quest outcomes
+4. Provide meaningful progression through dungeon floors
+
+### Proposed System: Multi-Floor Dungeon
+
+**5 Dungeon Floors with Progressive Difficulty:**
+
+| Floor | Name | Equipment Required | Education Bonus | Gold Range | Health Risk |
+|-------|------|-------------------|-----------------|------------|-------------|
+| 1 | Entrance Cavern | None | None | 20-50g | 5-15 |
+| 2 | Goblin Tunnels | Dagger + Casual | Trade Guild: disarm traps | 40-100g | 15-25 |
+| 3 | Undead Crypt | Sword + Leather Armor | Arcane Studies: damage ghosts | 80-200g | 25-40 |
+| 4 | Dragon's Lair | Iron Sword + Chainmail + Combat Training | Master Combat: -20% damage | 150-400g | 40-60 |
+| 5 | The Abyss | Full Plate + Master Combat + Arcane Studies | All bonuses stack | 300-1000g | 50-80 |
+
+### New Equipment System
+
+**Weapons (Armory):**
+| Weapon | Price | Attack Bonus | Unlocks Floor |
+|--------|-------|--------------|---------------|
+| Dagger | 25g | +5 | 2 |
+| Iron Sword | 100g | +15 | 3 |
+| Steel Sword | 250g | +25 | 4 |
+| Enchanted Blade | 500g | +40 | 5 |
+
+**Armor (Armory):**
+| Armor | Price | Defense Bonus | Unlocks Floor |
+|-------|-------|---------------|---------------|
+| Leather Armor | 50g | +10 | 3 |
+| Chainmail | 150g | +25 | 4 |
+| Plate Armor | 400g | +40 | 5 |
+| Enchanted Plate | 800g | +60 | Bonus only |
+
+### Education Bonuses in Dungeon
+
+| Degree | Combat Effect |
+|--------|---------------|
+| Trade Guild Certificate | Can disarm traps (avoid trap damage) |
+| Combat Training | -10% health damage received |
+| Master Combat | -20% health damage, required for Floor 4 |
+| Arcane Studies | +20% gold find, can damage ghosts |
+| Alchemy | 15% chance to find healing potions |
+| Scholar Degree | +10% XP from dungeon clears |
+
+### Encounter Types per Floor
+
+**Floor 1 - Entrance Cavern:**
+- Rats, Bats (easy encounters)
+- Lost treasure chests
+- Healing spring (rare)
+- Time: 4 hours
+
+**Floor 2 - Goblin Tunnels:**
+- Goblins (medium difficulty)
+- Pit traps (Trade Guild disarms)
+- Goblin treasure cache
+- Time: 8 hours
+
+**Floor 3 - Undead Crypt:**
+- Skeletons (hard)
+- Ghosts (need Arcane Studies to damage)
+- Ancient artifacts
+- Rare education scrolls
+- Time: 12 hours
+
+**Floor 4 - Dragon's Lair:**
+- Young dragons (very hard)
+- Dragon hoard treasure
+- Legendary weapon drops (rare)
+- Boss encounters possible
+- Time: 16 hours
+
+**Floor 5 - The Abyss:**
+- Demon lords (extreme)
+- Massive gold rewards
+- Unique items (once per game)
+- Victory point bonus (+5 happiness)
+- Time: 20 hours
+
+### Combat Resolution
+
+```
+Damage Received = Base Damage × (1 - Defense%) × (1 - Education%)
+Gold Found = Base Gold × (1 + Attack%) × (1 + Education%)
+
+Where:
+- Defense% = Armor bonus / 100
+- Attack% = Weapon bonus / 100
+- Education% = Applicable degree bonuses
+```
+
+### Integration with Existing Systems
+
+1. **Quest System:** Move dungeon-related quests to Cave
+   - "Dungeon Dive" → Requires Floor 2 clear
+   - "Monster Slaying" → Requires Floor 3 clear
+   - "Dragon Slayer" → Requires Floor 4 boss kill
+
+2. **Guild Rank:** Higher rank = better loot tables
+   - Novice: 80% normal loot
+   - Journeyman: 100% normal loot
+   - Veteran: 120% normal loot
+   - Elite: 150% normal loot
+
+3. **Happiness:** Successful dives give happiness bonus
+   - Floor 1 clear: +3
+   - Floor 3 clear: +8
+   - Floor 5 clear: +20
+
+4. **Career Goal:** Dungeon clears count toward completedQuests
+
+### Implementation Plan
+
+**Phase 1: Equipment System**
+- Add weapon/armor types to items.ts
+- Add attack/defense stats to Player
+- Update Armory UI to sell combat gear
+
+**Phase 2: Dungeon Floor System**
+- Create dungeon.ts with floor definitions
+- Add floor unlock logic
+- Create encounter tables
+
+**Phase 3: Cave UI Overhaul**
+- Floor selection interface
+- Equipment check before entering
+- Progress tracking (floors cleared)
+
+**Phase 4: Combat System**
+- Implement damage/loot calculations
+- Add encounter resolution
+- Create dungeon completion rewards
+
+### Files to Modify
+- `src/types/game.types.ts` - Add combat stats, equipment types
+- `src/data/items.ts` - Add weapons and armor
+- `src/data/dungeon.ts` - NEW: Dungeon floor definitions
+- `src/store/gameStore.ts` - Add dungeon actions
+- `src/components/game/LocationPanel.tsx` - Update Cave panel
+- `src/components/game/DungeonPanel.tsx` - NEW: Dungeon exploration UI
+
+### Status
+- [x] Design complete
+- [ ] Phase 1: Equipment system
+- [ ] Phase 2: Dungeon floors
+- [ ] Phase 3: Cave UI
+- [ ] Phase 4: Combat system
+
+---
+
 ## 2026-02-05 - Fix Workplace Access (Work Buttons)
 
 ### Task Summary
