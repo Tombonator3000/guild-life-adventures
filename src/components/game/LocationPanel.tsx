@@ -3,6 +3,16 @@ import { getLocation, getMovementCost } from '@/data/locations';
 import type { LocationId, EducationPath, HousingTier } from '@/types/game.types';
 import { RENT_COSTS } from '@/types/game.types';
 import { MapPin, Clock, ArrowRight, X, Utensils, GraduationCap, Briefcase, Coins, ShoppingBag, Home, Sparkles, Hammer, Newspaper, Scroll, Heart, TrendingUp, Lock } from 'lucide-react';
+import {
+  JonesPanel,
+  JonesPanelHeader,
+  JonesPanelContent,
+  JonesSectionHeader,
+  JonesMenuItem,
+  JonesListItem,
+  JonesInfoRow,
+  JonesButton,
+} from './JonesStylePanel';
 import { EDUCATION_PATHS, getCourse, getNextCourse, getAvailableDegrees, DEGREES, getDegree, type DegreeId } from '@/data/education';
 import { getAvailableJobs, JOBS, FORGE_JOBS, getJob, ALL_JOBS, getEntryLevelJobs, getJobOffers, type JobOffer } from '@/data/jobs';
 import { GuildHallPanel } from './GuildHallPanel';
@@ -88,33 +98,37 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     switch (locationId) {
       case 'rusty-tankard':
         return (
-          <div className="space-y-2">
-            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
-              <Utensils className="w-4 h-4" /> Food and Drink
-            </h4>
-            {TAVERN_ITEMS.map(item => {
-              const price = getItemPrice(item, priceModifier);
-              return (
-                <ActionButton
-                  key={item.id}
-                  label={item.name}
-                  cost={price}
-                  time={1}
-                  disabled={player.gold < price || player.timeRemaining < 1}
-                  onClick={() => {
-                    modifyGold(player.id, -price);
-                    spendTime(player.id, 1);
-                    if (item.effect?.type === 'food') {
-                      modifyFood(player.id, item.effect.value);
-                    }
-                    if (item.effect?.type === 'happiness') {
-                      modifyHappiness(player.id, item.effect.value);
-                    }
-                  }}
-                />
-              );
-            })}
-          </div>
+          <JonesPanel>
+            <JonesPanelHeader title="The Rusty Tankard" subtitle="Tavern & Eatery" />
+            <JonesPanelContent>
+              {TAVERN_ITEMS.map(item => {
+                const price = getItemPrice(item, priceModifier);
+                const canAfford = player.gold >= price && player.timeRemaining >= 1;
+                return (
+                  <JonesMenuItem
+                    key={item.id}
+                    label={item.name}
+                    price={price}
+                    disabled={!canAfford}
+                    onClick={() => {
+                      modifyGold(player.id, -price);
+                      spendTime(player.id, 1);
+                      if (item.effect?.type === 'food') {
+                        modifyFood(player.id, item.effect.value);
+                      }
+                      if (item.effect?.type === 'happiness') {
+                        modifyHappiness(player.id, item.effect.value);
+                      }
+                      toast.success(`Purchased ${item.name}`);
+                    }}
+                  />
+                );
+              })}
+              <div className="mt-2 text-xs text-[#8b7355] px-2">
+                1 hour per purchase
+              </div>
+            </JonesPanelContent>
+          </JonesPanel>
         );
       
       case 'guild-hall':
@@ -242,209 +256,240 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
         const completedCount = player.completedDegrees.length;
 
         return (
-          <div className="space-y-4">
-            <div className="wood-frame p-2 text-card mb-2">
-              <div className="flex justify-between items-center">
-                <span className="font-display text-sm">Degrees Earned:</span>
-                <span className="font-bold text-gold">{completedCount} / 11</span>
-              </div>
+          <JonesPanel>
+            <JonesPanelHeader title="Academy" subtitle="Higher Education" />
+            <JonesPanelContent>
+              <JonesInfoRow label="Degrees Earned:" value={`${completedCount} / 11`} />
               {completedCount > 0 && (
-                <div className="text-xs text-muted-foreground mt-1">
+                <div className="text-xs text-[#8b7355] px-2 mb-2">
                   {player.completedDegrees.map(id => DEGREES[id as DegreeId]?.name).join(', ')}
                 </div>
               )}
-            </div>
 
-            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
-              <GraduationCap className="w-4 h-4" /> Available Courses
-            </h4>
+              <JonesSectionHeader title="AVAILABLE COURSES" />
 
-            {availableDegrees.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-2">
-                You have completed all available degrees!
-              </p>
-            ) : (
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {availableDegrees.map(degree => {
-                  const progress = player.degreeProgress[degree.id as DegreeId] || 0;
-                  const price = getItemPrice({ basePrice: degree.costPerSession } as any, priceModifier);
-                  const isComplete = progress >= degree.sessionsRequired;
-
-                  return (
-                    <div key={degree.id} className="wood-frame p-2 text-card">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="font-display font-semibold text-sm">{degree.name}</span>
-                        <span className="text-xs">{progress}/{degree.sessionsRequired}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mb-2">{degree.description}</p>
-                      {isComplete ? (
-                        <button
-                          onClick={() => completeDegree(player.id, degree.id as DegreeId)}
-                          className="w-full gold-button text-sm py-1"
-                        >
-                          Graduate! (+5 Happiness, +5 Dependability)
-                        </button>
-                      ) : (
-                        <ActionButton
-                          label="Attend Class"
-                          cost={price}
-                          time={degree.hoursPerSession}
-                          disabled={player.gold < price || player.timeRemaining < degree.hoursPerSession}
-                          onClick={() => {
-                            studyDegree(player.id, degree.id as DegreeId, price, degree.hoursPerSession);
-                          }}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Show locked degrees as preview */}
-            {completedCount > 0 && completedCount < 11 && (
-              <div className="mt-4">
-                <h4 className="font-display text-xs text-muted-foreground mb-2">Locked Courses (need prerequisites):</h4>
-                <div className="text-xs text-muted-foreground">
-                  {Object.values(DEGREES)
-                    .filter(d => !player.completedDegrees.includes(d.id) && !availableDegrees.some(a => a.id === d.id))
-                    .slice(0, 3)
-                    .map(d => (
-                      <div key={d.id} className="flex justify-between">
-                        <span>{d.name}</span>
-                        <span>Requires: {d.prerequisites.map(p => DEGREES[p]?.name || p).join(', ')}</span>
-                      </div>
-                    ))}
+              {availableDegrees.length === 0 ? (
+                <div className="text-sm text-[#a09080] text-center py-2 px-2">
+                  You have completed all available degrees!
                 </div>
-              </div>
-            )}
-          </div>
+              ) : (
+                <div className="max-h-48 overflow-y-auto">
+                  {availableDegrees.map(degree => {
+                    const progress = player.degreeProgress[degree.id as DegreeId] || 0;
+                    const price = getItemPrice({ basePrice: degree.costPerSession } as any, priceModifier);
+                    const isComplete = progress >= degree.sessionsRequired;
+                    const canAfford = player.gold >= price && player.timeRemaining >= degree.hoursPerSession;
+
+                    return (
+                      <div key={degree.id} className="bg-[#2a2318] p-2 rounded mb-1">
+                        <div className="flex justify-between items-baseline">
+                          <span className="font-mono text-sm text-[#e0d4b8]">{degree.name}</span>
+                          <span className="font-mono text-xs text-[#8b7355]">{progress}/{degree.sessionsRequired}</span>
+                        </div>
+                        {isComplete ? (
+                          <JonesButton
+                            label="Graduate! (+5 Hap, +5 Dep)"
+                            onClick={() => completeDegree(player.id, degree.id as DegreeId)}
+                            variant="primary"
+                            className="w-full mt-1"
+                          />
+                        ) : (
+                          <JonesMenuItem
+                            label={`Attend Class (${degree.hoursPerSession}h)`}
+                            price={price}
+                            disabled={!canAfford}
+                            onClick={() => {
+                              studyDegree(player.id, degree.id as DegreeId, price, degree.hoursPerSession);
+                              toast.success(`Attended ${degree.name} class!`);
+                            }}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Show locked degrees as preview */}
+              {completedCount > 0 && completedCount < 11 && (
+                <>
+                  <JonesSectionHeader title="LOCKED (NEED PREREQUISITES)" />
+                  <div className="text-xs text-[#6b5a45] px-2">
+                    {Object.values(DEGREES)
+                      .filter(d => !player.completedDegrees.includes(d.id) && !availableDegrees.some(a => a.id === d.id))
+                      .slice(0, 3)
+                      .map(d => (
+                        <div key={d.id} className="py-0.5">
+                          {d.name} - <span className="text-[#8b7355]">{d.prerequisites.map(p => DEGREES[p]?.name || p).join(', ')}</span>
+                        </div>
+                      ))}
+                  </div>
+                </>
+              )}
+            </JonesPanelContent>
+          </JonesPanel>
         );
 
       case 'bank':
         return (
-          <div className="space-y-4">
-            <div className="wood-frame p-3 text-card">
-              <div className="flex justify-between mb-2">
-                <span>Savings:</span>
-                <span className="font-bold">{player.savings}g</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Investments:</span>
-                <span className="font-bold">{player.investments}g</span>
-              </div>
-            </div>
-            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2">
-              <Coins className="w-4 h-4" /> Banking Services
-            </h4>
-            <div className="space-y-2">
-              <ActionButton
+          <JonesPanel>
+            <JonesPanelHeader title="Bank" subtitle="Financial Services" />
+            <JonesPanelContent>
+              <JonesInfoRow label="Savings:" value={`${player.savings}g`} />
+              <JonesInfoRow label="Investments:" value={`${player.investments}g`} />
+
+              <JonesSectionHeader title="BANKING SERVICES" />
+              <JonesMenuItem
                 label="Deposit 50 Gold"
-                cost={50}
-                time={1}
+                price={50}
                 disabled={player.gold < 50 || player.timeRemaining < 1}
                 onClick={() => {
                   depositToBank(player.id, 50);
                   spendTime(player.id, 1);
+                  toast.success('Deposited 50 gold!');
                 }}
               />
-              <ActionButton
+              <JonesMenuItem
                 label="Withdraw 50 Gold"
-                cost={0}
-                time={1}
-                reward={50}
                 disabled={player.savings < 50 || player.timeRemaining < 1}
                 onClick={() => {
                   withdrawFromBank(player.id, 50);
                   spendTime(player.id, 1);
+                  toast.success('Withdrew 50 gold!');
                 }}
               />
-              <ActionButton
+              <JonesMenuItem
                 label="Invest 100 Gold"
-                cost={100}
-                time={1}
+                price={100}
                 disabled={player.gold < 100 || player.timeRemaining < 1}
                 onClick={() => {
                   invest(player.id, 100);
                   spendTime(player.id, 1);
+                  toast.success('Invested 100 gold!');
                 }}
               />
-            </div>
-          </div>
+              <div className="mt-2 text-xs text-[#8b7355] px-2">
+                1 hour per transaction
+              </div>
+            </JonesPanelContent>
+          </JonesPanel>
         );
 
       case 'general-store':
         const newspaperPrice = Math.round(NEWSPAPER_COST * priceModifier);
         return (
-          <div className="space-y-2">
-            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
-              <Newspaper className="w-4 h-4" /> The Guildholm Herald
-            </h4>
-            <ActionButton
-              label="Buy Newspaper"
-              cost={newspaperPrice}
-              time={NEWSPAPER_TIME}
-              disabled={player.gold < newspaperPrice || player.timeRemaining < NEWSPAPER_TIME}
-              onClick={handleBuyNewspaper}
-            />
-            
-            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2 mt-4">
-              <ShoppingBag className="w-4 h-4" /> Food and Supplies
-            </h4>
-            {GENERAL_STORE_ITEMS.slice(0, 5).map(item => {
-              const price = getItemPrice(item, priceModifier);
-              return (
-                <ActionButton
-                  key={item.id}
-                  label={item.name}
-                  cost={price}
-                  time={1}
-                  disabled={player.gold < price || player.timeRemaining < 1}
-                  onClick={() => {
-                    modifyGold(player.id, -price);
-                    spendTime(player.id, 1);
-                    if (item.effect?.type === 'food') {
-                      modifyFood(player.id, item.effect.value);
-                    }
-                    if (item.effect?.type === 'happiness') {
-                      modifyHappiness(player.id, item.effect.value);
-                    }
-                  }}
-                />
-              );
-            })}
-          </div>
+          <JonesPanel>
+            <JonesPanelHeader title="General Store" subtitle="Provisions & Sundries" />
+            <JonesPanelContent>
+              <JonesSectionHeader title="FOOD & PROVISIONS" />
+              {GENERAL_STORE_ITEMS.filter(item => item.effect?.type === 'food').map(item => {
+                const price = getItemPrice(item, priceModifier);
+                const canAfford = player.gold >= price && player.timeRemaining >= 1;
+                return (
+                  <JonesMenuItem
+                    key={item.id}
+                    label={item.name}
+                    price={price}
+                    disabled={!canAfford}
+                    onClick={() => {
+                      modifyGold(player.id, -price);
+                      spendTime(player.id, 1);
+                      if (item.effect?.type === 'food') {
+                        modifyFood(player.id, item.effect.value);
+                      }
+                      toast.success(`Purchased ${item.name}`);
+                    }}
+                  />
+                );
+              })}
+
+              <JonesSectionHeader title="OTHER ITEMS" />
+              <JonesMenuItem
+                label="Newspaper"
+                price={newspaperPrice}
+                disabled={player.gold < newspaperPrice || player.timeRemaining < NEWSPAPER_TIME}
+                onClick={handleBuyNewspaper}
+              />
+              {GENERAL_STORE_ITEMS.filter(item => item.effect?.type !== 'food').slice(0, 3).map(item => {
+                const price = getItemPrice(item, priceModifier);
+                const canAfford = player.gold >= price && player.timeRemaining >= 1;
+                return (
+                  <JonesMenuItem
+                    key={item.id}
+                    label={item.name}
+                    price={price}
+                    disabled={!canAfford}
+                    onClick={() => {
+                      modifyGold(player.id, -price);
+                      spendTime(player.id, 1);
+                      if (item.effect?.type === 'happiness') {
+                        modifyHappiness(player.id, item.effect.value);
+                      }
+                      toast.success(`Purchased ${item.name}`);
+                    }}
+                  />
+                );
+              })}
+              <div className="mt-2 text-xs text-[#8b7355] px-2">
+                1 hour per purchase
+              </div>
+            </JonesPanelContent>
+          </JonesPanel>
         );
 
       case 'armory':
         return (
-          <div className="space-y-2">
-            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
-              <ShoppingBag className="w-4 h-4" /> Clothing and Weapons
-            </h4>
-            {ARMORY_ITEMS.slice(0, 5).map(item => {
-              const price = getItemPrice(item, priceModifier);
-              return (
-                <ActionButton
-                  key={item.id}
-                  label={item.name}
-                  cost={price}
-                  time={1}
-                  disabled={player.gold < price || player.timeRemaining < 1}
-                  onClick={() => {
-                    modifyGold(player.id, -price);
-                    spendTime(player.id, 1);
-                    if (item.effect?.type === 'clothing') {
-                      modifyClothing(player.id, item.effect.value);
-                    }
-                    if (item.effect?.type === 'happiness') {
-                      modifyHappiness(player.id, item.effect.value);
-                    }
-                  }}
-                />
-              );
-            })}
-          </div>
+          <JonesPanel>
+            <JonesPanelHeader title="Armory" subtitle="Clothing & Weapons" />
+            <JonesPanelContent>
+              <JonesSectionHeader title="CLOTHING" />
+              {ARMORY_ITEMS.filter(item => item.effect?.type === 'clothing').map(item => {
+                const price = getItemPrice(item, priceModifier);
+                const canAfford = player.gold >= price && player.timeRemaining >= 1;
+                return (
+                  <JonesMenuItem
+                    key={item.id}
+                    label={item.name}
+                    price={price}
+                    disabled={!canAfford}
+                    onClick={() => {
+                      modifyGold(player.id, -price);
+                      spendTime(player.id, 1);
+                      if (item.effect?.type === 'clothing') {
+                        modifyClothing(player.id, item.effect.value);
+                      }
+                      toast.success(`Purchased ${item.name}!`);
+                    }}
+                  />
+                );
+              })}
+
+              <JonesSectionHeader title="OTHER ITEMS" />
+              {ARMORY_ITEMS.filter(item => item.effect?.type !== 'clothing').slice(0, 3).map(item => {
+                const price = getItemPrice(item, priceModifier);
+                const canAfford = player.gold >= price && player.timeRemaining >= 1;
+                return (
+                  <JonesMenuItem
+                    key={item.id}
+                    label={item.name}
+                    price={price}
+                    disabled={!canAfford}
+                    onClick={() => {
+                      modifyGold(player.id, -price);
+                      spendTime(player.id, 1);
+                      if (item.effect?.type === 'happiness') {
+                        modifyHappiness(player.id, item.effect.value);
+                      }
+                      toast.success(`Purchased ${item.name}!`);
+                    }}
+                  />
+                );
+              })}
+              <div className="mt-2 text-xs text-[#8b7355] px-2">
+                1 hour per purchase
+              </div>
+            </JonesPanelContent>
+          </JonesPanel>
         );
 
       case 'enchanter':

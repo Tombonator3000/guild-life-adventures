@@ -1,5 +1,77 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Standardize Panel Layout (Jones-Style UI)
+
+### Task Summary
+Standardized the center panel (info) layout at different locations to match the classic Jones in the Fast Lane UI style, with:
+- Items displayed with dotted lines connecting names to prices (like "Hamburgers........ $83")
+- Clean list format for employers, education options, etc.
+- Section headers styled like the original game
+- Consistent color scheme matching the retro aesthetic
+
+### Files Created
+- `src/components/game/JonesStylePanel.tsx` - New component library with:
+  - `JonesPanel` - Main panel wrapper with dark background
+  - `JonesPanelHeader` - Green header bar styled like Jones locations
+  - `JonesPanelContent` - Content container
+  - `JonesSectionHeader` - Brown sub-section headers
+  - `JonesMenuItem` - Item with dotted line to price (........$XX)
+  - `JonesListItem` - Simple list item (for employers, etc.)
+  - `JonesInfoRow` - Label: value display row
+  - `JonesButton` - Styled action button
+
+### Panels Updated
+
+**1. Rusty Tankard (Monolith Burgers equivalent)**
+- Jones-style header with title and subtitle
+- Food items listed with dotted prices
+- Time cost indicator at bottom
+
+**2. General Store (Black's Market equivalent)**
+- Section headers for "FOOD & PROVISIONS" and "OTHER ITEMS"
+- Items with dotted line pricing
+- Newspaper and supplies in clean list format
+
+**3. Shadow Market (Z-Mart equivalent)**
+- Discount goods section
+- Used magical items with break chance warning
+- Appliances listed with happiness bonus notes
+
+**4. Guild Hall / Employment Office**
+- Employer list matching Jones' Employment Office style
+- Simple list of employer names
+- Current employment status section
+- Job details with base wage and requirements
+- Application result modals styled consistently
+
+**5. Academy (Hi-Tech University equivalent)**
+- Available courses listed with progress
+- Graduate button for completed courses
+- Locked courses section showing prerequisites
+
+**6. Bank**
+- Financial services with info rows
+- Deposit/withdraw/invest options with prices
+
+**7. Armory**
+- Clothing and weapons sections
+- Items with dotted line pricing
+
+### Visual Style
+- Dark brown background (`#3d3224`)
+- Green header bars (`#2a5c3a`)
+- Brown section headers (`#8b7355`)
+- Gold accent color for prices (`#c9a227`)
+- Cream text color (`#e0d4b8`)
+- Dotted lines connecting labels to prices
+
+### Files Modified
+- `src/components/game/LocationPanel.tsx` - Updated 7 location panels
+- `src/components/game/ShadowMarketPanel.tsx` - Full Jones-style rewrite
+- `src/components/game/GuildHallPanel.tsx` - Full Jones-style rewrite
+
+---
+
 ## 2026-02-05 - Fix Victory Goals Check
 
 ### Bug Description

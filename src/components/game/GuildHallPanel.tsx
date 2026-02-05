@@ -16,6 +16,16 @@ import {
 } from '@/data/jobs';
 import { DEGREES, type DegreeId } from '@/data/education';
 import type { Player } from '@/types/game.types';
+import {
+  JonesPanel,
+  JonesPanelHeader,
+  JonesPanelContent,
+  JonesSectionHeader,
+  JonesListItem,
+  JonesMenuItem,
+  JonesInfoRow,
+  JonesButton,
+} from './JonesStylePanel';
 
 interface GuildHallPanelProps {
   player: Player;
@@ -75,51 +85,52 @@ export function GuildHallPanel({
   // Application result modal
   if (applicationResult) {
     return (
-      <div className="space-y-4">
-        <div className="wood-frame p-4 text-card">
-          <h3 className="font-display text-lg font-bold mb-2 text-center">
-            {applicationResult.result.success ? '🎉 HIRED!' : '❌ APPLICATION DENIED'}
-          </h3>
-
-          <div className="text-center mb-4">
-            <p className="font-bold">{applicationResult.job.name}</p>
-            <p className="text-sm text-muted-foreground">{applicationResult.job.location}</p>
+      <JonesPanel>
+        <JonesPanelHeader
+          title={applicationResult.result.success ? 'HIRED!' : 'APPLICATION DENIED'}
+        />
+        <JonesPanelContent>
+          <div className="text-center mb-3">
+            <p className="font-mono text-[#e0d4b8] font-bold">{applicationResult.job.name}</p>
+            <p className="text-xs text-[#8b7355]">{applicationResult.job.location}</p>
           </div>
 
           {applicationResult.result.success ? (
             <div className="space-y-3">
-              <div className="text-center">
-                <p className="text-sm">Offered Wage:</p>
-                <p className="text-2xl font-bold text-gold">{applicationResult.offeredWage}g/hour</p>
-                <p className="text-xs text-muted-foreground">
-                  (Base: {applicationResult.job.baseWage}g/h)
+              <div className="text-center bg-[#2a2318] p-3 rounded">
+                <p className="text-xs text-[#a09080]">Offered Wage:</p>
+                <p className="text-2xl font-mono font-bold text-[#c9a227]">
+                  ${applicationResult.offeredWage}/hour
+                </p>
+                <p className="text-xs text-[#6b5a45]">
+                  (Base: ${applicationResult.job.baseWage}/h)
                 </p>
               </div>
               <div className="flex gap-2">
-                <button
+                <JonesButton
+                  label="Accept Job"
                   onClick={handleAcceptJob}
-                  className="flex-1 gold-button py-2 flex items-center justify-center gap-2"
-                >
-                  <Check className="w-4 h-4" /> Accept Job
-                </button>
-                <button
+                  variant="primary"
+                  className="flex-1"
+                />
+                <JonesButton
+                  label="Decline"
                   onClick={handleDismissResult}
-                  className="flex-1 wood-frame py-2 text-card hover:brightness-110"
-                >
-                  Decline
-                </button>
+                  variant="secondary"
+                  className="flex-1"
+                />
               </div>
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-center text-destructive font-bold">
+              <p className="text-center text-red-400 font-mono font-bold">
                 {applicationResult.result.reason}
               </p>
 
               {applicationResult.result.missingDegrees && applicationResult.result.missingDegrees.length > 0 && (
-                <div className="text-sm">
-                  <p className="font-bold">Missing Education:</p>
-                  <ul className="list-disc list-inside text-muted-foreground">
+                <div className="text-sm text-[#a09080]">
+                  <p className="font-bold text-[#e0d4b8]">Missing Education:</p>
+                  <ul className="list-disc list-inside">
                     {applicationResult.result.missingDegrees.map(deg => (
                       <li key={deg}>{DEGREES[deg]?.name || deg}</li>
                     ))}
@@ -128,170 +139,121 @@ export function GuildHallPanel({
               )}
 
               {applicationResult.result.missingExperience && (
-                <p className="text-sm">
-                  Need <span className="font-bold">{applicationResult.result.missingExperience}</span> more experience
+                <p className="text-sm text-[#a09080]">
+                  Need <span className="font-bold text-[#e0d4b8]">{applicationResult.result.missingExperience}</span> more experience
                 </p>
               )}
 
               {applicationResult.result.missingDependability && (
-                <p className="text-sm">
-                  Need <span className="font-bold">{applicationResult.result.missingDependability}%</span> more dependability
+                <p className="text-sm text-[#a09080]">
+                  Need <span className="font-bold text-[#e0d4b8]">{applicationResult.result.missingDependability}%</span> more dependability
                 </p>
               )}
 
               {applicationResult.result.missingClothing && (
-                <p className="text-sm">
+                <p className="text-sm text-[#a09080]">
                   Your clothing is not suitable. Visit the Armory!
                 </p>
               )}
 
-              <button
+              <JonesButton
+                label="OK"
                 onClick={handleDismissResult}
-                className="w-full wood-frame py-2 text-card hover:brightness-110"
-              >
-                OK
-              </button>
+                variant="secondary"
+                className="w-full"
+              />
             </div>
           )}
-        </div>
-      </div>
+        </JonesPanelContent>
+      </JonesPanel>
     );
   }
 
   // Job list for selected employer
   if (selectedEmployer) {
     return (
-      <div className="space-y-3">
-        <button
-          onClick={() => setSelectedEmployer(null)}
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-card transition-colors"
-        >
-          <ChevronLeft className="w-4 h-4" /> Back to Guild Hall
-        </button>
+      <JonesPanel>
+        <JonesPanelHeader title={selectedEmployer.name} />
+        <JonesPanelContent>
+          <button
+            onClick={() => setSelectedEmployer(null)}
+            className="flex items-center gap-1 text-sm text-[#a09080] hover:text-[#e0d4b8] transition-colors mb-2"
+          >
+            <ChevronLeft className="w-4 h-4" /> Back to Employers
+          </button>
 
-        <div className="wood-frame p-3 text-card">
-          <h3 className="font-display font-bold">{selectedEmployer.name}</h3>
-          <p className="text-xs text-muted-foreground">{selectedEmployer.description}</p>
-        </div>
+          <JonesSectionHeader title="AVAILABLE POSITIONS" />
+          <div className="max-h-52 overflow-y-auto space-y-1">
+            {selectedEmployer.jobs.map(job => {
+              const isCurrentJob = player.currentJob === job.id;
 
-        <h4 className="font-display text-sm text-muted-foreground">Available Positions:</h4>
-
-        <div className="space-y-2 max-h-64 overflow-y-auto">
-          {selectedEmployer.jobs.map(job => {
-            const isCurrentJob = player.currentJob === job.id;
-
-            return (
-              <div
-                key={job.id}
-                className={`wood-frame p-3 text-card ${isCurrentJob ? 'ring-2 ring-gold' : ''}`}
-              >
-                <div className="flex justify-between items-start mb-1">
-                  <div>
-                    <span className="font-display font-semibold">{job.name}</span>
-                    {isCurrentJob && (
-                      <span className="ml-2 text-xs text-gold">(Current Job)</span>
-                    )}
+              return (
+                <div
+                  key={job.id}
+                  className={`bg-[#2a2318] p-2 rounded ${isCurrentJob ? 'ring-1 ring-[#c9a227]' : ''}`}
+                >
+                  <div className="flex justify-between items-baseline">
+                    <span className="font-mono text-sm text-[#e0d4b8]">
+                      {job.name}
+                      {isCurrentJob && <span className="text-[#c9a227] ml-1">(Current)</span>}
+                    </span>
+                    <span className="font-mono text-sm text-[#c9a227] font-bold">${job.baseWage}/h</span>
                   </div>
-                  <span className="text-gold font-bold">{job.baseWage}g/h</span>
+                  <div className="text-xs text-[#8b7355] mt-1">
+                    {job.requiredDegrees.length > 0 && (
+                      <span>{job.requiredDegrees.map(d => DEGREES[d]?.name || d).join(', ')} | </span>
+                    )}
+                    {job.requiredExperience > 0 && <span>Exp: {job.requiredExperience}+ | </span>}
+                    {job.requiredDependability > 0 && <span>Dep: {job.requiredDependability}%+</span>}
+                  </div>
+                  <div className="flex justify-between items-center mt-1">
+                    <span className="text-xs text-[#6b5a45]">{job.hoursPerShift}h shifts</span>
+                    <JonesButton
+                      label={isCurrentJob ? 'Current' : 'Apply'}
+                      onClick={() => handleApply(job)}
+                      disabled={isCurrentJob || player.timeRemaining < 1}
+                      variant="secondary"
+                    />
+                  </div>
                 </div>
-
-                <p className="text-xs text-muted-foreground mb-2">{job.description}</p>
-
-                {/* Requirements */}
-                <div className="text-xs space-y-1 mb-2">
-                  {job.requiredDegrees.length > 0 && (
-                    <div className="flex items-center gap-1">
-                      <GraduationCap className="w-3 h-3" />
-                      <span>{job.requiredDegrees.map(d => DEGREES[d]?.name || d).join(', ')}</span>
-                    </div>
-                  )}
-                  {job.requiredExperience > 0 && (
-                    <div className="flex items-center gap-1">
-                      <Star className="w-3 h-3" />
-                      <span>Exp: {job.requiredExperience}+</span>
-                    </div>
-                  )}
-                  {job.requiredDependability > 0 && (
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      <span>Dep: {job.requiredDependability}%+</span>
-                    </div>
-                  )}
-                  {job.requiredClothing !== 'none' && (
-                    <div className="flex items-center gap-1">
-                      <Shirt className="w-3 h-3" />
-                      <span>{job.requiredClothing} attire</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-muted-foreground">
-                    {CAREER_LEVEL_NAMES[job.careerLevel]} • {job.hoursPerShift}h shifts
-                  </span>
-                  <button
-                    onClick={() => handleApply(job)}
-                    disabled={isCurrentJob || player.timeRemaining < 1}
-                    className="gold-button text-xs py-1 px-3 disabled:opacity-50"
-                  >
-                    {isCurrentJob ? 'Current' : 'Apply'}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+              );
+            })}
+          </div>
+        </JonesPanelContent>
+      </JonesPanel>
     );
   }
 
   // Employer list (main view - like Jones Employment Office)
   return (
-    <div className="space-y-3">
-      <div className="wood-frame p-3 text-card text-center">
-        <h3 className="font-display text-lg font-bold flex items-center justify-center gap-2">
-          <Briefcase className="w-5 h-5" /> GUILD HALL
-        </h3>
-        <p className="text-xs text-muted-foreground mt-1">
-          Seek employment throughout Guildholm
-        </p>
-      </div>
-
-      <h4 className="font-display text-sm text-muted-foreground">EMPLOYERS</h4>
-
-      <div className="space-y-1 max-h-72 overflow-y-auto">
-        {employers.map(employer => (
-          <button
-            key={employer.id}
-            onClick={() => setSelectedEmployer(employer)}
-            className="w-full wood-frame p-2 text-card text-left hover:brightness-110 transition-all flex justify-between items-center"
-          >
-            <span className="font-display font-semibold">{employer.name}</span>
-            <span className="text-xs text-muted-foreground">{employer.jobs.length} positions</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Current job status */}
-      {player.currentJob && (
-        <div className="wood-frame p-3 text-card mt-4">
-          <h4 className="font-display text-sm text-muted-foreground mb-2">Current Employment</h4>
-          <div className="flex justify-between">
-            <span>Wage:</span>
-            <span className="font-bold text-gold">{player.currentWage}g/h</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Experience:</span>
-            <span>{player.experience}/{player.maxExperience}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Dependability:</span>
-            <span className={player.dependability < 30 ? 'text-destructive' : ''}>
-              {player.dependability}%
-            </span>
-          </div>
+    <JonesPanel>
+      <JonesPanelHeader title="Employment Office" subtitle="Guild Hall" />
+      <JonesPanelContent>
+        <JonesSectionHeader title="EMPLOYERS" />
+        <div className="max-h-48 overflow-y-auto">
+          {employers.map(employer => (
+            <JonesListItem
+              key={employer.id}
+              label={employer.name}
+              onClick={() => setSelectedEmployer(employer)}
+            />
+          ))}
         </div>
-      )}
-    </div>
+
+        {/* Current job status */}
+        {player.currentJob && (
+          <>
+            <JonesSectionHeader title="CURRENT EMPLOYMENT" />
+            <JonesInfoRow label="Wage:" value={`${player.currentWage}g/h`} />
+            <JonesInfoRow label="Experience:" value={`${player.experience}/${player.maxExperience}`} />
+            <JonesInfoRow
+              label="Dependability:"
+              value={`${player.dependability}%`}
+              valueClass={player.dependability < 30 ? 'text-red-400' : ''}
+            />
+          </>
+        )}
+      </JonesPanelContent>
+    </JonesPanel>
   );
 }
