@@ -761,6 +761,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
   endTurn: () => {
     const state = get();
 
+    // Check if current player has achieved victory goals before switching turns
+    const currentPlayer = state.players[state.currentPlayerIndex];
+    if (currentPlayer && !currentPlayer.isGameOver) {
+      if (get().checkVictory(currentPlayer.id)) {
+        return; // Victory achieved, don't continue with turn switching
+      }
+    }
+
     // Find next alive player
     const findNextAlivePlayer = (startIndex: number): { index: number; isNewWeek: boolean } => {
       let index = startIndex;
@@ -1183,17 +1191,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Check happiness
     const happinessMet = player.happiness >= goals.happiness;
 
-    // Calculate total education
-    const totalEducation = Object.values(player.education).reduce((sum, level) => sum + level, 0);
+    // Calculate total education using completedDegrees (Jones-style system)
+    // Each degree is worth 9 education points (like Jones in the Fast Lane)
+    const totalEducation = player.completedDegrees.length * 9;
     const educationMet = totalEducation >= goals.education;
 
-    // Check career rank
+    // Check career rank (guild rank)
     const rankIndex = ['novice', 'apprentice', 'journeyman', 'adept', 'veteran', 'elite', 'guild-master']
       .indexOf(player.guildRank) + 1;
     const careerMet = rankIndex >= goals.career;
 
     if (wealthMet && happinessMet && educationMet && careerMet) {
-      set({ winner: playerId, phase: 'victory' });
+      set({
+        winner: playerId,
+        phase: 'victory',
+        eventMessage: `${player.name} has achieved all victory goals and wins the game!`,
+      });
       return true;
     }
 

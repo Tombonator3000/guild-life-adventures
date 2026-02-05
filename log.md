@@ -1,5 +1,77 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Fix Victory Goals Check
+
+### Bug Description
+The game was declaring victory even when the player had NOT achieved the victory goals. As shown in screenshot:
+- Wealth: 150G (Goal: 2000G) - NOT MET
+- Happiness: 68 (Goal: 75) - NOT MET
+- Education: 0 (Goal: 2) - NOT MET
+- Guild Rank: APPRENTICE (Rank 2+) - UNCLEAR
+
+### Root Causes Found
+
+**1. `checkVictory` was NEVER called:**
+- The function existed but was never invoked during gameplay
+- Only way to win was "last player standing" which didn't check goals
+
+**2. Education check used wrong system:**
+- Used old `player.education` object (fighter/mage/priest/business)
+- Should use new Jones-style `completedDegrees` array
+- Each degree = 9 education points
+
+**3. VictoryScreen showed wrong message:**
+- Always displayed "has achieved all victory goals!"
+- Even when player won by "last standing" without meeting goals
+
+### Fixes Applied
+
+**1. Fixed `checkVictory` education calculation:**
+```typescript
+// Before: OLD education system
+const totalEducation = Object.values(player.education).reduce((sum, level) => sum + level, 0);
+
+// After: Jones-style completedDegrees (9 points per degree)
+const totalEducation = player.completedDegrees.length * 9;
+```
+
+**2. Added `checkVictory` call in `endTurn`:**
+- Now checks if current player achieved victory goals before switching turns
+- Returns early if victory achieved
+
+**3. Updated VictoryScreen:**
+- Detects "last standing" vs "goals achieved" victory
+- Shows appropriate message for each type
+- Added visual indicators (check/X) for each goal
+- Green background for met goals, red for unmet
+
+### Files Modified
+- `src/store/gameStore.ts` - Fixed education calc, added checkVictory call in endTurn
+- `src/components/screens/VictoryScreen.tsx` - Added goal checking and visual indicators
+
+### Technical Details
+
+**Victory now triggers correctly:**
+```typescript
+endTurn: () => {
+  // Check victory goals BEFORE switching turns
+  const currentPlayer = state.players[state.currentPlayerIndex];
+  if (currentPlayer && !currentPlayer.isGameOver) {
+    if (get().checkVictory(currentPlayer.id)) {
+      return; // Victory achieved
+    }
+  }
+  // Continue with normal turn switching...
+}
+```
+
+**VictoryScreen now shows:**
+- Different messages: "has achieved all victory goals!" vs "is the last one standing!"
+- Per-goal status: green checkmark for met, red X for unmet
+- Proper education display using completedDegrees
+
+---
+
 ## 2026-02-05 - Player Movement Animation, Home Location Start, and Job Fixes
 
 ### Task Summary

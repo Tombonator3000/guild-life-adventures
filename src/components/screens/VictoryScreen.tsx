@@ -1,11 +1,14 @@
 import { useGameStore } from '@/store/gameStore';
-import { Crown, Trophy, Scroll, Coins, Heart, GraduationCap, Star } from 'lucide-react';
+import { Crown, Trophy, Scroll, Coins, Heart, GraduationCap, Star, Check, X } from 'lucide-react';
 import gameBoard from '@/assets/game-board.jpeg';
 
 export function VictoryScreen() {
-  const { setPhase, winner, players, goalSettings } = useGameStore();
+  const { setPhase, winner, players, goalSettings, eventMessage } = useGameStore();
 
   const winningPlayer = players.find(p => p.id === winner);
+
+  // Check if this is a "last standing" victory or actual goals victory
+  const isLastStanding = eventMessage?.includes('last one standing');
 
   // Handle case where all players perished
   if (!winningPlayer) {
@@ -41,7 +44,17 @@ export function VictoryScreen() {
 
   // Calculate player stats for display
   const totalWealth = winningPlayer.gold + winningPlayer.savings + winningPlayer.investments;
-  const totalEducation = Object.values(winningPlayer.education).reduce((sum, level) => sum + level, 0);
+  // Use completedDegrees for education (Jones-style: 9 points per degree)
+  const totalEducation = winningPlayer.completedDegrees.length * 9;
+
+  // Check which goals are actually met
+  const wealthMet = totalWealth >= goalSettings.wealth;
+  const happinessMet = winningPlayer.happiness >= goalSettings.happiness;
+  const educationMet = totalEducation >= goalSettings.education;
+  const rankIndex = ['novice', 'apprentice', 'journeyman', 'adept', 'veteran', 'elite', 'guild-master']
+    .indexOf(winningPlayer.guildRank) + 1;
+  const careerMet = rankIndex >= goalSettings.career;
+  const allGoalsMet = wealthMet && happinessMet && educationMet && careerMet;
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -78,7 +91,11 @@ export function VictoryScreen() {
           </div>
 
           <p className="font-display text-lg text-muted-foreground">
-            has achieved all victory goals!
+            {isLastStanding
+              ? 'is the last one standing!'
+              : allGoalsMet
+                ? 'has achieved all victory goals!'
+                : 'wins the game!'}
           </p>
         </div>
 
@@ -94,24 +111,28 @@ export function VictoryScreen() {
               label="Wealth"
               value={`${totalWealth}g`}
               goal={`Goal: ${goalSettings.wealth}g`}
+              isMet={wealthMet}
             />
             <StatItem
               icon={<Heart className="w-5 h-5 text-red-500" />}
               label="Happiness"
               value={winningPlayer.happiness.toString()}
               goal={`Goal: ${goalSettings.happiness}`}
+              isMet={happinessMet}
             />
             <StatItem
               icon={<GraduationCap className="w-5 h-5 text-blue-500" />}
               label="Education"
               value={totalEducation.toString()}
               goal={`Goal: ${goalSettings.education}`}
+              isMet={educationMet}
             />
             <StatItem
               icon={<Crown className="w-5 h-5 text-purple-500" />}
               label="Guild Rank"
-              value={winningPlayer.guildRank.replace('-', ' ')}
+              value={winningPlayer.guildRank.replace('-', ' ').toUpperCase()}
               goal={`Rank ${goalSettings.career}+`}
+              isMet={careerMet}
             />
           </div>
         </div>
@@ -145,21 +166,28 @@ function StatItem({
   icon,
   label,
   value,
-  goal
+  goal,
+  isMet
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   goal: string;
+  isMet: boolean;
 }) {
   return (
-    <div className="flex items-center gap-3 p-2 bg-background/30 rounded-lg">
+    <div className={`flex items-center gap-3 p-2 rounded-lg ${isMet ? 'bg-green-500/20' : 'bg-red-500/10'}`}>
       {icon}
-      <div>
+      <div className="flex-1">
         <p className="font-display text-sm text-muted-foreground">{label}</p>
         <p className="font-display text-lg text-card-foreground">{value}</p>
         <p className="font-display text-xs text-muted-foreground/70">{goal}</p>
       </div>
+      {isMet ? (
+        <Check className="w-5 h-5 text-green-500" />
+      ) : (
+        <X className="w-5 h-5 text-red-400" />
+      )}
     </div>
   );
 }
