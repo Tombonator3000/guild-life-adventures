@@ -25,28 +25,28 @@ export const HOUSING_DATA: Record<HousingTier, Housing> = {
     tier: 'slums',
     name: 'The Slums',
     description: 'Cheap housing in a rough neighborhood. Beware Shadowfingers.',
-    weeklyRent: 50,
+    weeklyRent: 75,
     happinessBonus: 0,
     theftRisk: 25,
-    relaxationRate: 8, // 8 hours per 10% happiness
+    relaxationRate: 8,
   },
   modest: {
     tier: 'modest',
     name: 'Modest Dwelling',
     description: 'A comfortable apartment in a decent area.',
-    weeklyRent: 150,
-    happinessBonus: 5,
+    weeklyRent: 200,
+    happinessBonus: 3,
     theftRisk: 5,
-    relaxationRate: 4, // 4 hours per 10% happiness
+    relaxationRate: 5,
   },
   noble: {
     tier: 'noble',
     name: 'Noble Heights',
     description: 'Luxury living for the wealthy. Safe and prestigious.',
-    weeklyRent: 400,
-    happinessBonus: 15,
+    weeklyRent: 500,
+    happinessBonus: 5,
     theftRisk: 0,
-    relaxationRate: 2, // 2 hours per 10% happiness
+    relaxationRate: 3, // Increased from 2 to prevent happiness spam
   },
 };
 

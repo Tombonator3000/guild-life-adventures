@@ -1,5 +1,135 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Full Economy & Happiness Balance Audit
+
+### Task Summary
+Performed a comprehensive audit of the game economy and happiness systems, comparing values against Jones in the Fast Lane reference. Found multiple balance issues causing gold to accumulate too fast, happiness to be trivially easy, and costs to be too low relative to income.
+
+### Audit Findings
+
+**Gold Income - Too High:**
+1. **Work bonus (33%)**: 6hr shifts paid as 8hrs → entry jobs earned 320g/turn, mid-level 800g/turn
+2. **Quest rewards**: S-rank quests gave 1000-1500g + 50-60 happiness — economy-breaking
+3. **Cave exploration**: 30% chance of 20-70g for just 4 hours with no prerequisites
+4. **Investment returns**: 2% weekly = 104% annual compound — infinite money engine
+5. **Savings interest**: 0.5% weekly = 26% annual — too generous for safe storage
+
+**Gold Sinks - Too Cheap:**
+1. **Food**: Mystery Meat at 3g for +15 food, bread at 5g — starvation impossible
+2. **Rent**: Slums at 50g/week — trivial when entry workers earn 200g+/turn
+3. **Clothing**: Already reasonable
+
+**Happiness - Trivially Easy:**
+1. **Sleep**: +20 happiness for 8hrs — could max happiness in 1.5 turns
+2. **Relax**: +10 happiness per use — Noble Heights (2hrs) = 5 happiness/hr rate
+3. **Stolen Goods**: 20g for +10 happiness — cheapest happiness in the game
+4. **Item purchases**: Enchanter items gave up to +15 happiness per purchase
+5. **Cave explore**: 30% chance of +10 happiness for 4hrs
+
+### Changes Applied
+
+#### Gold Income Nerfs
+| Source | Before | After | Reasoning |
+|--------|--------|-------|-----------|
+| Work bonus multiplier | 1.33x (33%) | 1.15x (15%) | Entry job per shift: 32g → 28g |
+| E-rank quest gold | 15-30g | 10-25g | Slight reduction |
+| D-rank quest gold | 40-60g | 30-40g | ~30% reduction |
+| C-rank quest gold | 90-120g | 55-75g | ~40% reduction |
+| B-rank quest gold | 180-250g | 100-150g | ~40% reduction |
+| A-rank quest gold | 400-500g | 200-250g | ~50% reduction |
+| S-rank quest gold | 1000-1500g | 500-750g | ~50% reduction |
+| Cave treasure (gold) | 20-70g (30% chance) | 10-35g (20% chance) | Less gold, lower chance |
+| Cave explore time | 4 hrs | 6 hrs | Fewer explores per turn |
+| Investment returns | 2% weekly | 0.5% weekly | Prevents infinite money |
+| Savings interest | 0.5% weekly | 0.1% weekly | Banks are safe, not profitable |
+
+#### Happiness Nerfs
+| Source | Before | After | Reasoning |
+|--------|--------|-------|-----------|
+| Sleep | +20 happiness | +5 happiness | Was trivial to max happiness |
+| Relax | +10 happiness | +3 happiness | Consistent with Jones relaxation |
+| Stolen Goods | +10 happiness (20g) | +3 happiness (30g) | Was cheapest happiness source |
+| Ale | +3 happiness (3g) | +1 happiness (5g) | Too cheap |
+| Candles | +2 happiness (10g) | +1 happiness (12g) | Minor item |
+| Blanket | +5 happiness (25g) | +2 happiness (30g) | Overvalued |
+| Glow Orb | +5 happiness (50g) | +2 happiness (60g) | Overvalued |
+| Warmth Stone | +10 happiness (100g) | +3 happiness (120g) | Overvalued |
+| Preservation Box (item) | +8 happiness (150g) | +2 happiness (175g) | Utility, not happiness |
+| Scrying Mirror (item) | +15 happiness (300g) | +4 happiness (350g) | Was biggest happiness exploit |
+| Dagger | +3 happiness (30g) | +1 happiness (35g) | Minor item |
+| Iron Sword | +8 happiness (80g) | +2 happiness (90g) | Overvalued |
+| Shield | +4 happiness (40g) | +1 happiness (45g) | Minor item |
+| Encyclopedia | +5 happiness | +2 happiness | Utility, not happiness |
+| Dictionary | +3 happiness | +1 happiness | Utility |
+| Atlas | +4 happiness | +1 happiness | Utility |
+| Education completion (old) | +10 happiness | +5 happiness | Matches Jones |
+| E-rank quest happiness | 2-8 | 1-3 | Proportional reduction |
+| B-rank quest happiness | 12-20 | 6-10 | Proportional reduction |
+| S-rank quest happiness | 50-60 | 25-30 | Still rewarding but not game-ending |
+| Cave treasure happiness | +10 | +3 | Proportional to gold nerf |
+| Cave spring happiness | +5 | +2 | Slight reduction |
+| Cave rest happiness | +3 | +1 | Minor |
+| Cave danger happiness loss | -10 | -5 | Balanced with reduced gains |
+
+#### Cost Increases
+| Expense | Before | After | Reasoning |
+|---------|--------|-------|-----------|
+| Slums rent | 50g/week | 75g/week | +50% — more meaningful |
+| Modest rent | 150g/week | 200g/week | +33% |
+| Noble rent | 400g/week | 500g/week | +25% — luxury costs more |
+| Noble relaxation rate | 2 hrs | 3 hrs | Was too efficient for happiness |
+| Modest relaxation rate | 4 hrs | 5 hrs | Slight increase |
+| Bread | 5g | 8g | Food is a real expense now |
+| Cheese | 8g | 15g | More realistic |
+| Salted Meat | 15g | 25g | ~1g per food point |
+| Week of Provisions | 30g | 50g | 1g per food point |
+| Feast Supplies | 50g | 85g | Slight premium |
+| Mystery Meat | 3g (+15 food) | 6g (+10 food) | Was absurdly cheap |
+| Stew | 8g (+20 food) | 12g (+15 food) | Slightly less efficient |
+| Roast Dinner | 15g (+35 food) | 22g (+30 food) | More expensive |
+| Tavern Feast | 30g (+50 food) | 45g (+50 food) | Price increase |
+
+#### Other Changes
+- Default happiness victory goal reduced from 100 to 75
+- Cave explore time increased from 4 to 6 hours (fewer explores per turn)
+- Cave rest time increased from 6 to 8 hours
+- Cave danger chance increased from 30% to 40%
+- Housing happiness bonuses reduced (Modest 5→3, Noble 15→5)
+
+### Economy After Rebalance (example turn)
+
+**Entry-level worker (Floor Sweeper, 4g/hr):**
+- Per shift (6hrs): 7 * 4 = 28g (was 32g)
+- Max shifts per turn: ~8 shifts (48hrs) = 224g (was ~320g)
+- Weekly expenses: Rent 75g + Food ~25g = 100g
+- Net per turn: ~124g (was ~220g) — more reasonable progression
+
+**Mid-level worker (Market Vendor, 10g/hr):**
+- Per shift (6hrs): 7 * 10 = 70g (was 80g)
+- Max shifts: ~8 = 560g (was 800g)
+- Net per turn: ~460g — still good but not economy-breaking
+
+**Happiness per turn (Slums housing):**
+- 3 relax sessions (24hrs) + 1 sleep (8hrs) = 9 + 5 = 14 happiness (was 50)
+- Requires multiple turns to build happiness — makes it a real strategic choice
+
+### Files Modified
+- `src/store/helpers/workEducationHelpers.ts` — Work bonus 1.33→1.15, education completion +10→+5
+- `src/store/helpers/turnHelpers.ts` — Investment 2%→0.5%, savings 0.5%→0.1%
+- `src/data/quests.ts` — All quest gold and happiness rewards reduced 30-50%
+- `src/data/items.ts` — Food prices increased, happiness values reduced across all items
+- `src/data/housing.ts` — Rent increased, happiness bonuses reduced, relaxation rates adjusted
+- `src/types/game.types.ts` — RENT_COSTS updated
+- `src/components/game/CavePanel.tsx` — Gold, happiness, time, and risk rebalanced
+- `src/components/game/HomePanel.tsx` — Relax +10→+3, Sleep +20→+5, tooltips updated
+- `src/store/gameStore.ts` — Default happiness goal 100→75
+
+### Verification
+- Build passes (`npx vite build`)
+- Tests pass (`npx vitest run`)
+
+---
+
 ## 2026-02-05 - Fix Guild Job Location Restrictions & Raise Requirements
 
 ### Task Summary

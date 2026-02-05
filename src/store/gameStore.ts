@@ -96,7 +96,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     priceModifier: 1.0,
     goalSettings: {
       wealth: 5000,
-      happiness: 100,
+      happiness: 75,   // Reduced from 100 - happiness is harder to accumulate now
       education: 5,
       career: 4,
     },
