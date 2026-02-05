@@ -53,10 +53,10 @@ export function useAI() {
 
     // Priority 3: Work if low on money (< 50 gold) or no job
     if ((player.gold < 50 || !player.currentJob) && player.timeRemaining >= 8) {
-      const availableJobs = getAvailableJobs(player.education, player.clothingCondition);
+      const availableJobs = getAvailableJobs(player.completedDegrees, player.clothingCondition, player.experience, player.dependability);
       if (availableJobs.length > 0) {
         const bestJob = availableJobs.reduce((best, job) => 
-          job.hourlyWage > best.hourlyWage ? job : best
+          job.baseWage > best.baseWage ? job : best
         );
         
         // If no job, get one first
@@ -116,10 +116,10 @@ export function useAI() {
 
     // Priority 8: Work more if nothing else to do
     if (player.timeRemaining >= 8) {
-      const availableJobs = getAvailableJobs(player.education, player.clothingCondition);
+      const availableJobs = getAvailableJobs(player.completedDegrees, player.clothingCondition, player.experience, player.dependability);
       if (availableJobs.length > 0) {
         const bestJob = availableJobs.reduce((best, job) => 
-          job.hourlyWage > best.hourlyWage ? job : best
+          job.baseWage > best.baseWage ? job : best
         );
         
         if (player.currentLocation !== 'guild-hall') {
