@@ -1,5 +1,60 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Fix Game Crash After 3 Rounds (Event Phase Not Handled)
+
+### Problem
+The game would suddenly "crash" and return to the title screen after approximately 3 rounds of play. This happened consistently when weekly events occurred (starvation, sickness, rent warnings, market crashes, etc.).
+
+### Root Cause
+In `src/pages/Index.tsx`, the `switch` statement that routes between screens based on `phase` did **not** handle the `'event'` phase:
+
+```typescript
+// BEFORE (broken)
+switch (phase) {
+  case 'title':      return <TitleScreen />;
+  case 'setup':      return <GameSetup />;
+  case 'playing':    return <GameBoard />;
+  case 'victory':    return <VictoryScreen />;
+  default:           return <TitleScreen />; // <-- 'event' falls here!
+}
+```
+
+When `processWeekEnd()` in `gameStore.ts` fires at the end of each round of player turns, it generates event messages (food depletion, sickness, market crashes, rent warnings, etc.) and sets `phase: 'event'`. Since `Index.tsx` had no `case 'event'`, it fell through to the `default` case, which rendered `<TitleScreen />` — making the game appear to crash back to the start screen.
+
+The `GameBoard` component already contains an `EventModal` that correctly handles the `'event'` phase and dismisses it back to `'playing'`, but it never got rendered because `Index.tsx` already switched away from it.
+
+### Why After ~3 Rounds
+After all players complete their turns, `processWeekEnd()` runs. There is a very high cumulative probability of at least one event message being generated each week:
+- Food depletion always happens (25 per week), so starvation warnings trigger often
+- 5% sickness chance per player per week
+- Market crash events (5% pay cut, 3% layoff)
+- Rent debt warnings after 4 weeks
+- Shadowfingers theft events
+
+By round 3, with food depleting and stats changing, the probability of hitting at least one event approaches ~100%.
+
+### Solution
+Added `case 'event'` to the switch statement in `Index.tsx`, falling through to render `<GameBoard />` (same as `'playing'`):
+
+```typescript
+// AFTER (fixed)
+case 'playing':
+case 'event':
+  return <GameBoard />;
+```
+
+This allows the `EventModal` inside `GameBoard` to properly display and dismiss event messages.
+
+### Files Modified
+- `src/pages/Index.tsx` - Added `case 'event'` to phase routing switch
+
+### Verification
+- Build completes successfully (`bun run build`)
+- The `'event'` phase now correctly shows the GameBoard with EventModal overlay
+- Dismissing the event modal returns to `'playing'` phase as intended
+
+---
+
 ## 2026-02-05 - Fix Game Startup Circular Dependency Error
 
 ### Problem
