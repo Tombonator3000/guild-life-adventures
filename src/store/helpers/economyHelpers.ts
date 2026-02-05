@@ -1,7 +1,7 @@
 // Economy helpers
-// Banking, rent, buying/selling items, durables, appliances, housing
+// Banking, rent, buying/selling items, durables, appliances, housing, equipment
 
-import type { HousingTier, ApplianceSource } from '@/types/game.types';
+import type { HousingTier, ApplianceSource, EquipmentSlot } from '@/types/game.types';
 import { RENT_COSTS } from '@/types/game.types';
 import { getAppliance, calculateRepairCost } from '@/data/items';
 import type { SetFn, GetFn } from '../storeTypes';
@@ -118,8 +118,16 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
           if ((newDurables[itemId] || 0) <= 0) return p;
           newDurables[itemId] = newDurables[itemId] - 1;
           if (newDurables[itemId] === 0) delete newDurables[itemId];
+          // Unequip if selling the last of an equipped item
+          const unequip: Partial<typeof p> = {};
+          if (!newDurables[itemId]) {
+            if (p.equippedWeapon === itemId) unequip.equippedWeapon = null;
+            if (p.equippedArmor === itemId) unequip.equippedArmor = null;
+            if (p.equippedShield === itemId) unequip.equippedShield = null;
+          }
           return {
             ...p,
+            ...unequip,
             gold: p.gold + price,
             durables: newDurables,
           };
@@ -253,6 +261,40 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
             rentPrepaidWeeks: 0,
             lockedRent: lockInRent,
           };
+        }),
+      }));
+    },
+
+    // Equip an item to a slot (must own the durable)
+    equipItem: (playerId: string, itemId: string, slot: EquipmentSlot) => {
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          // Must own the item as a durable
+          if (!p.durables[itemId] || p.durables[itemId] <= 0) return p;
+
+          const update: Partial<typeof p> = {};
+          if (slot === 'weapon') update.equippedWeapon = itemId;
+          else if (slot === 'armor') update.equippedArmor = itemId;
+          else if (slot === 'shield') update.equippedShield = itemId;
+
+          return { ...p, ...update };
+        }),
+      }));
+    },
+
+    // Unequip an item from a slot
+    unequipItem: (playerId: string, slot: EquipmentSlot) => {
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+
+          const update: Partial<typeof p> = {};
+          if (slot === 'weapon') update.equippedWeapon = null;
+          else if (slot === 'armor') update.equippedArmor = null;
+          else if (slot === 'shield') update.equippedShield = null;
+
+          return { ...p, ...update };
         }),
       }));
     },

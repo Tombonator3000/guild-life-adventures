@@ -1,5 +1,283 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Phase 1 Implementation: Equipment System
+
+### What Was Done
+Implemented the full equipment system (Phase 1 of the Rogue-Lite RPG plan).
+
+**Types (game.types.ts):**
+- Added `EquipmentSlot` type ('weapon' | 'armor' | 'shield')
+- Added `EquipmentStats` interface (attack, defense, blockChance)
+- Added to Player: `equippedWeapon`, `equippedArmor`, `equippedShield`, `dungeonFloorsCleared`
+
+**Items (items.ts):**
+- Extended Item interface with `equipSlot`, `equipStats`, `requiresFloorCleared`
+- Added `armor` and `shield` to ItemCategory
+- Updated existing weapons with combat stats (Dagger +5 ATK, Iron Sword +15 ATK, Shield +5 DEF/10% BLK)
+- Added new equipment tiers:
+  - Steel Sword (250g, +25 ATK, requires Floor 2)
+  - Enchanted Blade (500g, +40 ATK, requires Floor 3)
+  - Leather Armor (75g, +10 DEF)
+  - Chainmail (200g, +20 DEF, requires Floor 2)
+  - Plate Armor (450g, +35 DEF, requires Floor 3)
+  - Enchanted Plate (900g, +50 DEF, requires Floor 4)
+  - Iron Shield (120g, +10 DEF/15% BLK)
+  - Tower Shield (300g, +15 DEF/25% BLK, requires Floor 2)
+- Added helper functions: `getEquipmentBySlot()`, `getEquipStats()`, `calculateCombatStats()`
+
+**Store (economyHelpers.ts, storeTypes.ts):**
+- Added `equipItem(playerId, itemId, slot)` and `unequipItem(playerId, slot)` actions
+- Updated `sellDurable` to auto-unequip sold items
+- Player defaults include new fields (all null/empty)
+
+**UI (ArmoryPanel.tsx):**
+- Complete rewrite with sections: Clothing, Weapons, Armor, Shields
+- Combat stats summary box (ATK/DEF/BLK with equipped item names)
+- Buy items you don't own (with price, Jones-style dotted line)
+- Equip/unequip owned items (green highlight when equipped)
+- Locked items show floor requirement when not yet available
+- Stat labels on all equipment items
+
+**UI (CavePanel.tsx):**
+- Equipment status display showing ATK/DEF/BLK
+- Context-aware tips based on gear level
+- Equipment now affects exploration:
+  - Attack increases treasure find chance and gold amount
+  - Defense reduces creature damage
+  - Shield block chance halves damage on proc
+  - Having a weapon enables fighting back (earn gold from creature encounters)
+  - Without weapon: full damage, more happiness loss
+
+### Files Modified
+- `src/types/game.types.ts` — New types and Player fields
+- `src/data/items.ts` — Equipment stats, new items, helper functions
+- `src/store/storeTypes.ts` — equipItem/unequipItem in GameStore interface
+- `src/store/helpers/economyHelpers.ts` — equip/unequip/sell logic
+- `src/store/gameStore.ts` — Player defaults
+- `src/components/game/ArmoryPanel.tsx` — Full equipment UI
+- `src/components/game/CavePanel.tsx` — Equipment-aware combat
+- `src/components/game/LocationPanel.tsx` — Pass new props to ArmoryPanel
+
+### Status
+- [x] Phase 1: Equipment system — **COMPLETE**
+- [ ] Phase 2: Dungeon data (dungeon.ts)
+- [ ] Phase 3: Cave UI overhaul (floor selection)
+- [ ] Phase 4: Combat system (encounter resolution)
+- [ ] Phase 5: Integration (quests + AI + balance)
+
+---
+
+## 2026-02-05 - Game Gap Analysis & Rogue-Lite RPG Design Proposal
+
+### Task Summary
+Comprehensive analysis of what's missing in the game, with design proposals for rogue-lite RPG elements including functional combat, equipment, and dungeon progression.
+
+### Current State Analysis
+
+**What EXISTS but is broken/cosmetic:**
+- Weapons (Dagger, Iron Sword, Shield) exist as items but are **cosmetic only** — they give happiness bonuses, not combat stats
+- Cave has two buttons (Explore/Rest) with hardcoded random outcomes (20% treasure, 40% creature dealing 8-22 damage)
+- 21 quests exist with rank system (E through S), but all triggered from Guild Hall only
+- No combat stats on Player interface (no attack, defense, equippedWeapon, equippedArmor)
+
+**What was DESIGNED (in log.md) but NEVER IMPLEMENTED:**
+- 5-floor dungeon system with progressive difficulty
+- Equipment requirements per floor
+- Encounter types (Rats, Goblins, Skeletons, Dragons, Demons)
+- Combat resolution formula
+- Education bonuses in combat
+- `dungeon.ts` file — does not exist
+
+**Missing Jones Features (from JONES_REFERENCE.md):**
+- Stock Market / T-Bills trading system
+- Loan system (Bank)
+- Weekend activity system
+- Doctor/Healer visit mechanic (sickness exists but no cure)
+- Save/Load game (localStorage)
+
+### Design Decision: Guild Hall vs Cave for Quests
+
+**Recommendation: Guild Hall = accept quests, Cave = execute dungeon quests**
+
+Reasoning:
+1. Guild Hall is the "Employment Office" equivalent — it's where you get contracts/missions
+2. The Cave is the unique location that differentiates this game from Jones in the Fast Lane
+3. Non-dungeon quests (escort, merchant, investigation) remain "auto-complete" from Guild Hall
+4. Dungeon quests require going to Cave and clearing specific floors
+5. This creates a natural gameplay loop: Guild Hall → equip at Armory → enter Cave → return to Guild Hall
+
+### Proposed System: Rogue-Lite Dungeon & Combat
+
+#### 1. Equipment System (make weapons/armor functional)
+
+**New Player fields:**
+- `equippedWeapon: string | null` — currently equipped weapon ID
+- `equippedArmor: string | null` — currently equipped armor ID
+- `equippedShield: string | null` — currently equipped shield ID
+- `attackPower: number` — calculated from weapon + education bonuses
+- `defensePower: number` — calculated from armor + shield + education bonuses
+- `dungeonFloorsCleared: number[]` — floors cleared at least once (e.g. [1, 2, 3])
+
+**Weapons (Armory — expanded):**
+
+| Weapon | Price | Attack | Unlock |
+|--------|-------|--------|--------|
+| Simple Dagger | 35g | +5 | Always |
+| Iron Sword | 90g | +15 | Always |
+| Steel Sword | 250g | +25 | Floor 2 cleared |
+| Enchanted Blade | 500g | +40 | Floor 3 cleared |
+
+**Armor (Armory — new):**
+
+| Armor | Price | Defense | Unlock |
+|-------|-------|---------|--------|
+| Leather Armor | 75g | +10 | Always |
+| Chainmail | 200g | +20 | Floor 2 cleared |
+| Plate Armor | 450g | +35 | Floor 3 cleared |
+| Enchanted Plate | 900g | +50 | Floor 4 cleared |
+
+**Shields (Armory — expanded):**
+
+| Shield | Price | Defense | Block% |
+|--------|-------|---------|--------|
+| Wooden Shield | 45g | +5 | 10% |
+| Iron Shield | 120g | +10 | 15% |
+| Tower Shield | 300g | +15 | 25% |
+
+#### 2. Five-Floor Dungeon System
+
+| Floor | Name | Time | Requirements | Enemies | Gold Range |
+|-------|------|------|-------------|---------|------------|
+| 1 | Entrance Cavern | 6 hrs | None | Rats, Bats | 15-40g |
+| 2 | Goblin Tunnels | 10 hrs | Dagger + Floor 1 | Goblins, Traps | 30-80g |
+| 3 | Undead Crypt | 14 hrs | Sword + Armor + Floor 2 | Skeletons, Ghosts | 60-150g |
+| 4 | Dragon's Lair | 18 hrs | Steel Sword + Chainmail + Floor 3 | Young Dragons | 120-300g |
+| 5 | The Abyss | 22 hrs | Enchanted Blade + Plate + Floor 4 | Demon Lords | 250-600g |
+
+**Rogue-lite elements:**
+- 3-4 random encounters per floor from encounter tables
+- Last encounter is always a boss (must defeat to "clear" floor)
+- One floor-clear attempt per turn (fatigue)
+- Defeat = lose found gold, retreat to entrance, keep equipment
+- Health reaching 0 in dungeon = same death system (resurrection if 100g savings)
+
+#### 3. Combat Resolution Formula
+
+```
+Encounter Power = Floor Base × (1 + random(0, 0.5))
+Player Power = attackPower + defensePower + educationBonus
+
+Damage Taken = max(5, Encounter Power - defensePower × 0.6)
+Shield Block = random < blockChance ? damage × 0.5 : 0
+Gold Found = Floor Base Gold × (1 + attackPower / 100)
+
+Results:
+- Player Power > Encounter × 1.5 → Full Victory (max gold, min damage)
+- Player Power > Encounter → Victory (normal gold, normal damage)
+- Player Power > Encounter × 0.5 → Pyrrhic Victory (half gold, double damage)
+- Else → Defeat (no gold, heavy damage, forced retreat)
+```
+
+#### 4. Education Bonuses in Dungeon
+
+| Degree | Combat Effect |
+|--------|---------------|
+| Trade Guild Certificate | Disarm traps (skip trap encounters on Floor 2) |
+| Combat Training | -15% damage received |
+| Master Combat | -25% damage received, +10% attack power |
+| Arcane Studies | Can damage ghosts on Floor 3, +15% gold find |
+| Alchemy | 20% chance to find Healing Potion after encounters |
+| Scholar Degree | +10% XP/gold from all dungeon activities |
+
+#### 5. Rare Drops (Rogue-Lite Loot)
+
+5% chance per floor clear for a unique drop:
+- Floor 1: "Cave Mushroom" — consumable, +20 health
+- Floor 2: "Goblin's Lucky Coin" — permanent +5% gold from all work
+- Floor 3: "Undead Amulet" — permanent +10 max health
+- Floor 4: "Dragon Scale Shield" — equippable, +20 defense, +20% block
+- Floor 5: "Demon's Heart" — one-time +25 happiness, +5 to all stat caps
+
+#### 6. Quest Integration with Dungeon
+
+Move dungeon quests from "auto-complete at Guild Hall" to requiring actual floor clears:
+
+| Quest | Rank | Requirement | Reward |
+|-------|------|------------|--------|
+| Rat Extermination | E | Clear Floor 1 | 25g, +2 happiness |
+| Goblin Bounty | D | Clear Floor 2 | 50g, +5 happiness |
+| Crypt Cleansing | C | Clear Floor 3 | 100g, +8 happiness |
+| Dragon Slayer | A | Defeat Floor 4 boss | 250g, +15 happiness |
+| Seal the Abyss | S | Defeat Floor 5 boss | 500g, +30 happiness |
+
+Non-dungeon quests (escort, investigation, delivery) remain auto-complete from Guild Hall.
+
+#### 7. Implementation Plan
+
+**Phase 1 — Equipment System:**
+- Add combat fields to Player interface in `game.types.ts`
+- Add attack/defense stats to weapons/armor in `items.ts`
+- Add equip/unequip actions to gameStore
+- Update Armory UI to show equip buttons and combat stats
+
+**Phase 2 — Dungeon Data:**
+- Create `src/data/dungeon.ts` with floor definitions, encounter tables, boss data
+- Add floor unlock logic and requirement checks
+
+**Phase 3 — Cave UI Overhaul:**
+- Replace simple Explore/Rest buttons with floor selection interface
+- Equipment check before entering a floor
+- Show dungeon progress (floors cleared, best loot found)
+
+**Phase 4 — Combat System:**
+- Implement combat resolution with the formula above
+- Add encounter-by-encounter progression through a floor
+- Create combat result screen (damage taken, gold found, items found)
+- Add boss encounter special mechanics
+
+**Phase 5 — Integration:**
+- Connect dungeon quests to floor clears
+- Add rare drops to loot tables
+- Education bonuses applied to combat calculations
+- Grimwald AI: Add dungeon exploration to AI decision engine
+
+### Other Missing Features (Priority Ordered)
+
+| Feature | Priority | Description | Effort |
+|---------|----------|-------------|--------|
+| Save/Load Game | HIGH | localStorage save/load, critical for playability | Medium |
+| Doctor/Healer Mechanic | HIGH | Cure sickness at Healer location (-10 hrs, -4 happiness, -30-200g) | Small |
+| Stock Market/T-Bills | MEDIUM | Trading at Bank, T-Bills safe, stocks risky | Medium |
+| Loan System | MEDIUM | Bank loans with interest and consequences | Small |
+| Weekend Activities | LOW | Automatic between-turn activities with costs | Medium |
+| Sound Effects | LOW | Audio feedback for actions | Large |
+
+### Files to Create/Modify
+
+**New files:**
+- `src/data/dungeon.ts` — Floor definitions, encounter tables, loot tables, boss data
+- `src/components/game/DungeonPanel.tsx` — Dungeon exploration UI (replaces CavePanel interior)
+
+**Modified files:**
+- `src/types/game.types.ts` — Add combat stats, equipment fields, dungeon progress to Player
+- `src/data/items.ts` — Add attack/defense stats to weapons/armor, new equipment tiers
+- `src/store/gameStore.ts` — Equip/unequip actions, dungeon actions
+- `src/components/game/CavePanel.tsx` — Floor selection, equipment check, dungeon entry
+- `src/components/game/ArmoryPanel.tsx` — Show combat stats, equip buttons
+- `src/data/quests.ts` — Connect dungeon quests to floor requirements
+- `src/hooks/ai/actionGenerator.ts` — Add dungeon exploration to Grimwald AI
+
+### Status
+- [x] Analysis complete
+- [x] Design complete
+- [ ] Phase 1: Equipment system
+- [ ] Phase 2: Dungeon data
+- [ ] Phase 3: Cave UI overhaul
+- [ ] Phase 4: Combat system
+- [ ] Phase 5: Integration
+
+---
+
 ## 2026-02-05 - Full Economy & Happiness Balance Audit
 
 ### Task Summary

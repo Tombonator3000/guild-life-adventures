@@ -1,13 +1,14 @@
-import type { Player } from '@/types/game.types';
+import type { Player, EquipmentSlot } from '@/types/game.types';
 import {
   JonesPanel,
   JonesPanelHeader,
   JonesPanelContent,
   JonesSectionHeader,
   JonesMenuItem,
+  JonesInfoRow,
 } from './JonesStylePanel';
 import { WorkSection } from './WorkSection';
-import { ARMORY_ITEMS, getItemPrice } from '@/data/items';
+import { ARMORY_ITEMS, getItemPrice, calculateCombatStats, getItem } from '@/data/items';
 import { toast } from 'sonner';
 
 interface ArmoryPanelProps {
@@ -18,6 +19,9 @@ interface ArmoryPanelProps {
   modifyClothing: (playerId: string, amount: number) => void;
   modifyHappiness: (playerId: string, amount: number) => void;
   workShift: (playerId: string, hours: number, wage: number) => void;
+  buyDurable: (playerId: string, itemId: string, cost: number) => void;
+  equipItem: (playerId: string, itemId: string, slot: EquipmentSlot) => void;
+  unequipItem: (playerId: string, slot: EquipmentSlot) => void;
 }
 
 export function ArmoryPanel({
@@ -28,13 +32,141 @@ export function ArmoryPanel({
   modifyClothing,
   modifyHappiness,
   workShift,
+  buyDurable,
+  equipItem,
+  unequipItem,
 }: ArmoryPanelProps) {
+  const combatStats = calculateCombatStats(
+    player.equippedWeapon,
+    player.equippedArmor,
+    player.equippedShield,
+  );
+
+  const clothingItems = ARMORY_ITEMS.filter(item => item.effect?.type === 'clothing');
+  const weaponItems = ARMORY_ITEMS.filter(item => item.equipSlot === 'weapon');
+  const armorItems = ARMORY_ITEMS.filter(item => item.equipSlot === 'armor');
+  const shieldItems = ARMORY_ITEMS.filter(item => item.equipSlot === 'shield');
+
+  const canPurchaseEquipment = (item: typeof ARMORY_ITEMS[0]) => {
+    if (item.requiresFloorCleared && !player.dungeonFloorsCleared.includes(item.requiresFloorCleared)) {
+      return false;
+    }
+    return true;
+  };
+
+  const renderEquipSection = (
+    title: string,
+    items: typeof ARMORY_ITEMS,
+    slot: EquipmentSlot,
+    equippedId: string | null,
+  ) => (
+    <>
+      <JonesSectionHeader title={title} />
+      {items.map(item => {
+        const price = getItemPrice(item, priceModifier);
+        const owns = (player.durables[item.id] || 0) > 0;
+        const isEquipped = equippedId === item.id;
+        const canAfford = player.gold >= price && player.timeRemaining >= 1;
+        const meetsFloorReq = canPurchaseEquipment(item);
+        const stats = item.equipStats;
+
+        // Build stat label
+        const statParts: string[] = [];
+        if (stats?.attack) statParts.push(`+${stats.attack} ATK`);
+        if (stats?.defense) statParts.push(`+${stats.defense} DEF`);
+        if (stats?.blockChance) statParts.push(`${Math.round(stats.blockChance * 100)}% BLK`);
+        const statLabel = statParts.join(', ');
+
+        if (!meetsFloorReq) {
+          return (
+            <div key={item.id} className="py-1 px-2 opacity-40">
+              <div className="font-mono text-sm text-[#8b7355]">
+                🔒 {item.name} ({statLabel}) — Floor {item.requiresFloorCleared} required
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div key={item.id} className="py-0.5 px-1">
+            {owns ? (
+              <button
+                onClick={() => {
+                  if (isEquipped) {
+                    unequipItem(player.id, slot);
+                    toast.info(`Unequipped ${item.name}`);
+                  } else {
+                    equipItem(player.id, item.id, slot);
+                    toast.success(`Equipped ${item.name}!`);
+                  }
+                }}
+                className={`w-full text-left py-1 px-2 rounded transition-colors ${
+                  isEquipped
+                    ? 'bg-[#2a5c3a] border border-[#4a9c5a]'
+                    : 'hover:bg-[#5c4a32]'
+                }`}
+              >
+                <div className="flex items-baseline w-full font-mono text-sm">
+                  <span className={isEquipped ? 'text-[#a0d8b0] font-bold' : 'text-[#e0d4b8]'}>
+                    {isEquipped ? '⚔ ' : '  '}{item.name}
+                  </span>
+                  <span className="flex-1"></span>
+                  <span className="text-xs text-[#a09080] ml-2">{statLabel}</span>
+                  <span className="ml-2 text-xs">
+                    {isEquipped ? (
+                      <span className="text-[#a0d8b0]">[EQUIPPED]</span>
+                    ) : (
+                      <span className="text-gold">[EQUIP]</span>
+                    )}
+                  </span>
+                </div>
+              </button>
+            ) : (
+              <JonesMenuItem
+                label={`${item.name} (${statLabel})`}
+                price={price}
+                disabled={!canAfford}
+                onClick={() => {
+                  modifyGold(player.id, -price);
+                  spendTime(player.id, 1);
+                  buyDurable(player.id, item.id, 0); // Gold already deducted
+                  if (item.effect?.type === 'happiness') {
+                    modifyHappiness(player.id, item.effect.value);
+                  }
+                  toast.success(`Purchased ${item.name}!`);
+                }}
+              />
+            )}
+          </div>
+        );
+      })}
+    </>
+  );
+
   return (
     <JonesPanel>
-      <JonesPanelHeader title="Armory" subtitle="Clothing & Weapons" />
+      <JonesPanelHeader title="Armory" subtitle="Equipment & Clothing" />
       <JonesPanelContent>
+        {/* Combat Stats Summary */}
+        <div className="bg-[#2d1f0f] border border-[#8b7355] rounded p-2 mb-2">
+          <div className="text-xs text-[#a09080] uppercase tracking-wide mb-1">Combat Stats</div>
+          <div className="flex gap-4 font-mono text-sm">
+            <span className="text-red-400">⚔ ATK: {combatStats.attack}</span>
+            <span className="text-blue-400">🛡 DEF: {combatStats.defense}</span>
+            {combatStats.blockChance > 0 && (
+              <span className="text-yellow-400">BLK: {Math.round(combatStats.blockChance * 100)}%</span>
+            )}
+          </div>
+          <div className="flex gap-3 mt-1 text-xs text-[#8b7355]">
+            <span>W: {player.equippedWeapon ? getItem(player.equippedWeapon)?.name : 'None'}</span>
+            <span>A: {player.equippedArmor ? getItem(player.equippedArmor)?.name : 'None'}</span>
+            <span>S: {player.equippedShield ? getItem(player.equippedShield)?.name : 'None'}</span>
+          </div>
+        </div>
+
+        {/* Clothing */}
         <JonesSectionHeader title="CLOTHING" />
-        {ARMORY_ITEMS.filter(item => item.effect?.type === 'clothing').map(item => {
+        {clothingItems.map(item => {
           const price = getItemPrice(item, priceModifier);
           const canAfford = player.gold >= price && player.timeRemaining >= 1;
           return (
@@ -55,29 +187,17 @@ export function ArmoryPanel({
           );
         })}
 
-        <JonesSectionHeader title="OTHER ITEMS" />
-        {ARMORY_ITEMS.filter(item => item.effect?.type !== 'clothing').slice(0, 3).map(item => {
-          const price = getItemPrice(item, priceModifier);
-          const canAfford = player.gold >= price && player.timeRemaining >= 1;
-          return (
-            <JonesMenuItem
-              key={item.id}
-              label={item.name}
-              price={price}
-              disabled={!canAfford}
-              onClick={() => {
-                modifyGold(player.id, -price);
-                spendTime(player.id, 1);
-                if (item.effect?.type === 'happiness') {
-                  modifyHappiness(player.id, item.effect.value);
-                }
-                toast.success(`Purchased ${item.name}!`);
-              }}
-            />
-          );
-        })}
+        {/* Weapons */}
+        {renderEquipSection('WEAPONS', weaponItems, 'weapon', player.equippedWeapon)}
+
+        {/* Armor */}
+        {renderEquipSection('ARMOR', armorItems, 'armor', player.equippedArmor)}
+
+        {/* Shields */}
+        {renderEquipSection('SHIELDS', shieldItems, 'shield', player.equippedShield)}
+
         <div className="mt-2 text-xs text-[#8b7355] px-2">
-          1 hour per purchase
+          1 hour per purchase • Click owned items to equip/unequip
         </div>
 
         {/* Work button for armory employees */}
