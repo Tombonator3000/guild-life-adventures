@@ -6,6 +6,7 @@ import type {
   GoalSettings,
   HousingTier,
   EducationPath,
+  DegreeId,
   GuildRank,
   DurableItems,
   HOURS_PER_WEEK,
@@ -16,6 +17,7 @@ import type {
   GUILD_RANK_ORDER,
   GUILD_RANK_INDEX,
 } from '@/types/game.types';
+import { GRADUATION_BONUSES, getDegree, type DegreeId as DegreeIdType } from '@/data/education';
 import { PLAYER_COLORS, AI_COLOR, RENT_COSTS, CLOTHING_INTERVAL } from '@/types/game.types';
 import { checkWeeklyTheft } from '@/data/events';
 import {
@@ -49,6 +51,9 @@ interface GameStore extends GameState {
   requestRaise: (playerId: string) => { success: boolean; newWage?: number; message: string };
   studySession: (playerId: string, path: EducationPath, cost: number, hours: number) => void;
   completeEducationLevel: (playerId: string, path: EducationPath) => void;
+  // New Jones-style degree functions
+  studyDegree: (playerId: string, degreeId: DegreeId, cost: number, hours: number) => void;
+  completeDegree: (playerId: string, degreeId: DegreeId) => void;
   payRent: (playerId: string) => void;
   depositToBank: (playerId: string, amount: number) => void;
   withdrawFromBank: (playerId: string, amount: number) => void;
@@ -107,6 +112,11 @@ const createPlayer = (
     priest: 0,
     business: 0,
   },
+  // New Jones-style degree system
+  completedDegrees: [],
+  degreeProgress: {} as Record<DegreeId, number>,
+  maxDependability: 100,
+  maxExperience: 100,
   completedQuests: 0,
   clothingCondition: 50,
   weeksSinceRent: 0,
@@ -425,18 +435,66 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set((state) => ({
       players: state.players.map((p) => {
         if (p.id !== playerId) return p;
-        
+
         const newEducation = { ...p.education };
         newEducation[path] = (newEducation[path] || 0) + 1;
-        
+
         const newProgress = { ...p.educationProgress };
         newProgress[path] = 0;
-        
-        return { 
-          ...p, 
+
+        return {
+          ...p,
           education: newEducation,
           educationProgress: newProgress,
           happiness: Math.min(100, p.happiness + 10), // Completing education is satisfying
+        };
+      }),
+    }));
+  },
+
+  // New Jones-style degree functions
+  studyDegree: (playerId, degreeId, cost, hours) => {
+    set((state) => ({
+      players: state.players.map((p) => {
+        if (p.id !== playerId) return p;
+
+        const newProgress = { ...p.degreeProgress };
+        newProgress[degreeId] = (newProgress[degreeId] || 0) + 1;
+
+        return {
+          ...p,
+          gold: Math.max(0, p.gold - cost),
+          timeRemaining: Math.max(0, p.timeRemaining - hours),
+          degreeProgress: newProgress,
+        };
+      }),
+    }));
+  },
+
+  completeDegree: (playerId, degreeId) => {
+    const degree = getDegree(degreeId);
+    if (!degree) return;
+
+    set((state) => ({
+      players: state.players.map((p) => {
+        if (p.id !== playerId) return p;
+
+        // Add degree to completed list
+        const newCompletedDegrees = [...p.completedDegrees, degreeId];
+
+        // Reset progress for this degree
+        const newProgress = { ...p.degreeProgress };
+        delete newProgress[degreeId];
+
+        // Apply graduation bonuses (like Jones)
+        return {
+          ...p,
+          completedDegrees: newCompletedDegrees,
+          degreeProgress: newProgress,
+          happiness: Math.min(100, p.happiness + GRADUATION_BONUSES.happiness),
+          dependability: Math.min(p.maxDependability, p.dependability + GRADUATION_BONUSES.dependability),
+          maxDependability: p.maxDependability + GRADUATION_BONUSES.maxDependability,
+          maxExperience: p.maxExperience + GRADUATION_BONUSES.maxExperience,
         };
       }),
     }));

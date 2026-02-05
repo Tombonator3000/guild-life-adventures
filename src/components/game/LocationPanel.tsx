@@ -3,8 +3,8 @@ import { getLocation, getMovementCost } from '@/data/locations';
 import type { LocationId, EducationPath, HousingTier } from '@/types/game.types';
 import { RENT_COSTS } from '@/types/game.types';
 import { MapPin, Clock, ArrowRight, X, Utensils, GraduationCap, Briefcase, Coins, ShoppingBag, Home, Sparkles, Hammer, Newspaper, Scroll, Heart, TrendingUp } from 'lucide-react';
-import { EDUCATION_PATHS, getCourse, getNextCourse } from '@/data/education';
-import { getAvailableJobs, JOBS, FORGE_JOBS, getJob } from '@/data/jobs';
+import { EDUCATION_PATHS, getCourse, getNextCourse, getAvailableDegrees, DEGREES, getDegree, type DegreeId } from '@/data/education';
+import { getAvailableJobs, JOBS, FORGE_JOBS, getJob, ALL_JOBS, getEntryLevelJobs } from '@/data/jobs';
 import { GENERAL_STORE_ITEMS, TAVERN_ITEMS, ARMORY_ITEMS, ENCHANTER_ITEMS, SHADOW_MARKET_ITEMS, getItemPrice } from '@/data/items';
 import { HOUSING_DATA, HOUSING_TIERS } from '@/data/housing';
 import { QuestPanel } from './QuestPanel';
@@ -34,6 +34,8 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     workShift,
     studySession,
     completeEducationLevel,
+    studyDegree,
+    completeDegree,
     setHousing,
     payRent,
     depositToBank,
@@ -229,53 +231,87 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
         );
 
       case 'academy':
+        // Get available degrees based on completed degrees
+        const availableDegrees = getAvailableDegrees(player.completedDegrees as DegreeId[]);
+        const completedCount = player.completedDegrees.length;
+
         return (
           <div className="space-y-4">
+            <div className="wood-frame p-2 text-card mb-2">
+              <div className="flex justify-between items-center">
+                <span className="font-display text-sm">Degrees Earned:</span>
+                <span className="font-bold text-gold">{completedCount} / 11</span>
+              </div>
+              {completedCount > 0 && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  {player.completedDegrees.map(id => DEGREES[id as DegreeId]?.name).join(', ')}
+                </div>
+              )}
+            </div>
+
             <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
-              <GraduationCap className="w-4 h-4" /> Education Paths
+              <GraduationCap className="w-4 h-4" /> Available Courses
             </h4>
-            {(Object.keys(EDUCATION_PATHS) as EducationPath[]).map(path => {
-              const pathData = EDUCATION_PATHS[path];
-              const currentLevel = player.education[path] || 0;
-              const progress = player.educationProgress[path] || 0;
-              const nextCourse = getNextCourse(path, currentLevel);
-              
-              if (!nextCourse) return (
-                <div key={path} className="text-sm text-muted-foreground">
-                  {pathData.name}: Completed!
+
+            {availableDegrees.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-2">
+                You have completed all available degrees!
+              </p>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {availableDegrees.map(degree => {
+                  const progress = player.degreeProgress[degree.id as DegreeId] || 0;
+                  const price = getItemPrice({ basePrice: degree.costPerSession } as any, priceModifier);
+                  const isComplete = progress >= degree.sessionsRequired;
+
+                  return (
+                    <div key={degree.id} className="wood-frame p-2 text-card">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-display font-semibold text-sm">{degree.name}</span>
+                        <span className="text-xs">{progress}/{degree.sessionsRequired}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-2">{degree.description}</p>
+                      {isComplete ? (
+                        <button
+                          onClick={() => completeDegree(player.id, degree.id as DegreeId)}
+                          className="w-full gold-button text-sm py-1"
+                        >
+                          Graduate! (+5 Happiness, +5 Dependability)
+                        </button>
+                      ) : (
+                        <ActionButton
+                          label="Attend Class"
+                          cost={price}
+                          time={degree.hoursPerSession}
+                          disabled={player.gold < price || player.timeRemaining < degree.hoursPerSession}
+                          onClick={() => {
+                            studyDegree(player.id, degree.id as DegreeId, price, degree.hoursPerSession);
+                          }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Show locked degrees as preview */}
+            {completedCount > 0 && completedCount < 11 && (
+              <div className="mt-4">
+                <h4 className="font-display text-xs text-muted-foreground mb-2">Locked Courses (need prerequisites):</h4>
+                <div className="text-xs text-muted-foreground">
+                  {Object.values(DEGREES)
+                    .filter(d => !player.completedDegrees.includes(d.id) && !availableDegrees.some(a => a.id === d.id))
+                    .slice(0, 3)
+                    .map(d => (
+                      <div key={d.id} className="flex justify-between">
+                        <span>{d.name}</span>
+                        <span>Requires: {d.prerequisites.map(p => DEGREES[p]?.name || p).join(', ')}</span>
+                      </div>
+                    ))}
                 </div>
-              );
-              
-              const price = getItemPrice({ basePrice: nextCourse.costPerSession } as any, priceModifier);
-              const isComplete = progress >= nextCourse.sessionsRequired;
-              
-              return (
-                <div key={path} className="wood-frame p-2 text-card">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-display font-semibold text-sm">{nextCourse.name}</span>
-                    <span className="text-xs">{progress}/{nextCourse.sessionsRequired} sessions</span>
-                  </div>
-                  {isComplete ? (
-                    <button
-                      onClick={() => completeEducationLevel(player.id, path)}
-                      className="w-full gold-button text-sm py-1"
-                    >
-                      Complete Degree!
-                    </button>
-                  ) : (
-                    <ActionButton
-                      label="Attend Class"
-                      cost={price}
-                      time={nextCourse.hoursPerSession}
-                      disabled={player.gold < price || player.timeRemaining < nextCourse.hoursPerSession}
-                      onClick={() => {
-                        studySession(player.id, path, price, nextCourse.hoursPerSession);
-                      }}
-                    />
-                  )}
-                </div>
-              );
-            })}
+              </div>
+            )}
           </div>
         );
 

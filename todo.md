@@ -38,6 +38,14 @@
 
 ## Completed
 
+### 2026-02-05 - Jones-Style Education/Jobs Overhaul
+- [x] Researched Jones in the Fast Lane wiki for degrees and jobs
+- [x] Implemented 11-degree system with prerequisites (Trade Guild, Junior Academy, etc.)
+- [x] Added 30+ jobs across 8 locations with degree requirements
+- [x] Graduation bonuses (+5 happiness, +5 dependability, permanent stat increases)
+- [x] Updated Academy UI to show available/locked degrees
+- [x] Career progression from Floor Sweeper ($4/hr) to Guild Master's Assistant ($25/hr)
+
 ### 2026-02-05 - Shadowfingers Robbery System
 - [x] Implemented Shadowfingers character (criminal NPC)
 - [x] Street Robbery system (Bank/Black's Market, Week 4+)

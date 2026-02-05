@@ -57,6 +57,25 @@ export type HousingTier = 'homeless' | 'slums' | 'modest' | 'noble';
 
 export type EducationPath = 'fighter' | 'mage' | 'priest' | 'business';
 
+// New degree system (Jones-style)
+export type DegreeId =
+  | 'trade-guild'
+  | 'junior-academy'
+  | 'arcane-studies'
+  | 'combat-training'
+  | 'master-combat'
+  | 'scholar'
+  | 'advanced-scholar'
+  | 'sage-studies'
+  | 'loremaster'
+  | 'commerce'
+  | 'alchemy';
+
+export interface DegreeProgress {
+  degreeId: DegreeId;
+  sessionsCompleted: number;
+}
+
 export interface EducationProgress {
   path: EducationPath;
   level: number;
@@ -83,6 +102,11 @@ export interface Player {
   housing: HousingTier;
   education: Record<EducationPath, number>;
   educationProgress: Record<EducationPath, number>; // Sessions completed for current level
+  // New Jones-style degree system
+  completedDegrees: DegreeId[]; // Array of completed degrees
+  degreeProgress: Record<DegreeId, number>; // Sessions completed per degree (0-10)
+  maxDependability: number; // Max dependability (increases with graduation)
+  maxExperience: number; // Max experience (increases with graduation)
   completedQuests: number;
   clothingCondition: number;
   weeksSinceRent: number;
