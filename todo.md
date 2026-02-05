@@ -8,6 +8,21 @@
   - Costs increased (food, rent)
   - See log.md for full details
 
+- [x] Quest reward balancing — gold rewards cut ~50% across all ranks
+  - E-rank: 6-15g (was 10-25g)
+  - D-rank: 18-22g (was 30-40g)
+  - S-rank: 200-300g (was 500-750g)
+
+- [x] Guild Pass system — 500g required before taking quests
+  - Prevents immediate quest grinding from turn 1
+  - Forces early-game job/income focus
+  - AI updated to buy pass when affordable
+
+- [x] Homeless penalties — real consequences for no housing
+  - -5 health, -8 hours per turn
+  - 3x street robbery chance, 2x weekly theft
+  - Makes housing an urgent early priority
+
 ## In Progress
 
 *No active tasks*
@@ -93,7 +108,7 @@ Based on JONES_REFERENCE.md analysis:
   - Relaxation-triggered health issues
 
 ### Gameplay
-- [ ] Balance quest rewards
+- [x] Balance quest rewards
 - [ ] Add more random events
 - [ ] Improve AI opponent strategies
 - [ ] Sound effects and music

@@ -1,7 +1,8 @@
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { getLocation, getMovementCost } from '@/data/locations';
 import type { LocationId } from '@/types/game.types';
-import { MapPin, Clock, ArrowRight, X, Briefcase, Newspaper, TrendingUp } from 'lucide-react';
+import { GUILD_PASS_COST } from '@/types/game.types';
+import { MapPin, Clock, ArrowRight, X, Briefcase, Newspaper, TrendingUp, ScrollText } from 'lucide-react';
 import { getJob } from '@/data/jobs';
 import { GuildHallPanel } from './GuildHallPanel';
 import { NEWSPAPER_COST, NEWSPAPER_TIME, generateNewspaper } from '@/data/newspaper';
@@ -55,6 +56,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     takeQuest,
     completeQuest,
     abandonQuest,
+    buyGuildPass,
     sellItem,
     setJob,
     requestRaise,
@@ -151,14 +153,41 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               </div>
             )}
 
-            {/* Quest System */}
-            <QuestPanel
-              quests={availableQuests}
-              player={player}
-              onTakeQuest={(questId) => takeQuest(player.id, questId)}
-              onCompleteQuest={() => completeQuest(player.id)}
-              onAbandonQuest={() => abandonQuest(player.id)}
-            />
+            {/* Quest System - requires Guild Pass */}
+            {player.hasGuildPass ? (
+              <QuestPanel
+                quests={availableQuests}
+                player={player}
+                onTakeQuest={(questId) => takeQuest(player.id, questId)}
+                onCompleteQuest={() => completeQuest(player.id)}
+                onAbandonQuest={() => abandonQuest(player.id)}
+              />
+            ) : (
+              <div className="wood-frame p-3 text-card">
+                <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+                  <ScrollText className="w-4 h-4" /> Guild Quest Board
+                </h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  You need a <span className="font-bold text-[#c9a227]">Guild Pass</span> to access the quest board. Guild membership grants access to quests and rank advancement.
+                </p>
+                <div className="text-center bg-black/20 p-2 rounded mb-2">
+                  <span className="text-xs text-muted-foreground">Guild Pass Cost:</span>
+                  <span className="font-bold text-[#c9a227] ml-2">{GUILD_PASS_COST}g</span>
+                </div>
+                <button
+                  onClick={() => {
+                    buyGuildPass(player.id);
+                    toast.success('Guild Pass acquired! You can now take quests.');
+                  }}
+                  disabled={player.gold < GUILD_PASS_COST}
+                  className="w-full gold-button py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {player.gold < GUILD_PASS_COST
+                    ? `Need ${GUILD_PASS_COST - player.gold}g more`
+                    : `Buy Guild Pass (${GUILD_PASS_COST}g)`}
+                </button>
+              </div>
+            )}
 
             {/* Guild Hall - Seek Employment */}
             <GuildHallPanel

@@ -1,5 +1,84 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Balance: Quest Rewards, Guild Pass, Homeless Penalties
+
+### Problem
+Three balance issues identified:
+1. **Quest gold rewards too generous** — Players accumulated gold too quickly through quests, trivializing the economy
+2. **Quests available too early** — Players could immediately start grinding quests at the Guild Hall from turn 1 with no investment
+3. **No homeless penalty** — Being homeless had no mechanical downside besides rent being free, removing incentive to find housing
+
+### Changes
+
+#### 1. Quest Gold Rewards Reduced (~50% across the board)
+
+All quest gold rewards and happiness rewards reduced significantly. Higher-rank quests took bigger proportional cuts since they compounded the problem most:
+
+| Rank | Quest | Old Gold | New Gold | Old Hap | New Hap |
+|------|-------|----------|----------|---------|---------|
+| E | Rat Extermination | 20g | 12g | 2 | 1 |
+| E | Package Delivery | 10g | 6g | 1 | 1 |
+| E | Herb Gathering | 15g | 8g | 2 | 1 |
+| E | Find the Lost Cat | 25g | 15g | 3 | 2 |
+| D | Escort Merchant | 35g | 20g | 3 | 2 |
+| D | Guard Duty | 30g | 18g | 1 | 1 |
+| D | Urgent Courier Run | 40g | 22g | 2 | 1 |
+| C | Bandit Hunt | 60g | 35g | 5 | 3 |
+| C | Lost Artifact | 75g | 40g | 5 | 3 |
+| C | Curse Investigation | 55g | 30g | 4 | 2 |
+| B | Monster Slaying | 120g | 60g | 8 | 5 |
+| B | Dungeon Dive | 150g | 75g | 10 | 6 |
+| B | Exorcism | 100g | 50g | 6 | 4 |
+| A | Dragon Investigation | 200g | 100g | 12 | 7 |
+| A | Demon Cult | 250g | 120g | 15 | 8 |
+| A | Ancient Evil Awakens | 225g | 110g | 12 | 7 |
+| S | Deep Dungeon Clear | 500g | 200g | 25 | 12 |
+| S | Dragon Slayer | 750g | 300g | 30 | 15 |
+
+#### 2. Guild Pass Required for Quests (500g)
+
+New mechanic: Players must purchase a **Guild Pass** (500g) at the Guild Hall before they can access the quest board. This:
+- Creates an early-game gold sink and investment decision
+- Prevents immediate quest grinding from turn 1
+- Forces players to earn money through jobs first before questing
+- Adds strategic depth (save up 500g early vs. spend on housing/gear first)
+
+**Implementation:**
+- Added `hasGuildPass: boolean` to Player interface
+- Added `GUILD_PASS_COST = 500` constant
+- Added `buyGuildPass(playerId)` store action
+- Guild Hall UI shows "Buy Guild Pass" prompt when player doesn't have one
+- Quest board only accessible after purchasing the pass
+- Grimwald AI updated to buy Guild Pass when it can afford it
+
+#### 3. Homeless Penalties
+
+Being homeless now has real consequences each turn:
+- **-5 health** per turn (sleeping on the streets is dangerous)
+- **-8 hours** per turn (wasted time finding shelter, less productive)
+- **3x street robbery chance** from Shadowfingers (homeless are easier targets)
+- **2x weekly theft probability** (more vulnerable to pickpockets)
+
+This makes getting housing an urgent early priority and adds meaningful trade-offs to the homeless state.
+
+### Files Modified
+- `src/data/quests.ts` — All quest gold/happiness rewards reduced
+- `src/types/game.types.ts` — Added `hasGuildPass` to Player, `GUILD_PASS_COST` constant
+- `src/store/gameStore.ts` — Added `hasGuildPass: false` default
+- `src/store/storeTypes.ts` — Added `buyGuildPass` to GameStore interface
+- `src/store/helpers/questHelpers.ts` — Added `buyGuildPass` action
+- `src/store/helpers/turnHelpers.ts` — Added homeless penalty (health + time) at start of turn
+- `src/data/shadowfingers.ts` — Added `HOMELESS_ROBBERY_MULTIPLIER` (3x street robbery chance)
+- `src/data/events.ts` — Added 2x weekly theft multiplier for homeless
+- `src/components/game/LocationPanel.tsx` — Guild Pass gate UI at Guild Hall
+- `src/hooks/useAI.ts` — AI buys Guild Pass before attempting quests
+
+### Verification
+- TypeScript compiles cleanly (`tsc --noEmit` passes)
+- Build/test blocked by pre-existing dependency issue (cssesc package missing), not related to these changes
+
+---
+
 ## 2026-02-05 - Bug Fix: Slums Crash (JonesButton ReferenceError)
 
 ### Problem

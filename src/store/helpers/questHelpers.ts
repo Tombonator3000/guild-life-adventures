@@ -6,6 +6,23 @@ import type { SetFn, GetFn } from '../storeTypes';
 
 export function createQuestActions(set: SetFn, get: GetFn) {
   return {
+    buyGuildPass: (playerId: string) => {
+      const state = get();
+      const player = state.players.find(p => p.id === playerId);
+      if (!player || player.hasGuildPass) return;
+
+      const GUILD_PASS_COST = 500;
+      if (player.gold < GUILD_PASS_COST) return;
+
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? { ...p, gold: p.gold - GUILD_PASS_COST, hasGuildPass: true }
+            : p
+        ),
+      }));
+    },
+
     takeQuest: (playerId: string, questId: string) => {
       set((state) => ({
         players: state.players.map((p) =>

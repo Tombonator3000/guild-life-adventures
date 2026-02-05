@@ -267,8 +267,11 @@ export const checkWeeklyTheft = (housing: string, gold: number): GameEvent | nul
     (!event.conditions?.minGold || gold >= event.conditions.minGold)
   );
 
+  // Homeless players are much more vulnerable to theft (2x probability)
+  const homelessMultiplier = housing === 'homeless' ? 2 : 1;
+
   for (const event of theftEvents) {
-    if (Math.random() < event.probability) {
+    if (Math.random() < event.probability * homelessMultiplier) {
       return event;
     }
   }
