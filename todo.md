@@ -65,6 +65,17 @@ Based on JONES_REFERENCE.md analysis:
 
 ## Completed
 
+### 2026-02-05 - Side Panels, Direct Travel, Auto-Turn End, Death System
+- [x] Created PlayerInfoPanel component for left side of game board
+- [x] Created TurnOrderPanel component for right side of game board
+- [x] Implemented direct travel on location click (no more "Travel" button)
+- [x] Implemented auto-return to housing when time runs out
+- [x] Implemented player death system with game over state
+- [x] Added isGameOver field to Player interface
+- [x] Updated endTurn to skip dead players
+- [x] Updated processWeekEnd to skip dead players
+- [x] Last player standing wins automatically
+
 ### 2026-02-05 - Jones Wiki Reference Documentation
 - [x] Fetched Jones wiki main page and navigation
 - [x] Fetched all Goals pages (Happiness, Career, Education, Wealth)
