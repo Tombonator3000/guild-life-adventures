@@ -619,6 +619,112 @@ export const CAREER_LEVEL_NAMES: Record<number, string> = {
   10: 'Master',
 };
 
+// Employer/Location data for Jones-style Employment Office
+export interface Employer {
+  id: string;
+  name: string;
+  description: string;
+  jobs: Job[];
+}
+
+// Get all unique employers from jobs
+export const getEmployers = (): Employer[] => {
+  const employerMap = new Map<string, Employer>();
+
+  // Define employer metadata
+  const employerMeta: Record<string, { name: string; description: string }> = {
+    'Guild Hall': { name: 'Guild Hall', description: 'The adventurers guild - administrative and clerical work' },
+    'General Store': { name: 'General Store', description: 'Retail and customer service positions' },
+    'Shadow Market': { name: 'Shadow Market', description: 'Trading and vendor positions' },
+    'Bank': { name: 'Bank', description: 'Financial services and accounting' },
+    'Forge': { name: 'Forge', description: 'Metalworking and smithing positions' },
+    'Academy': { name: 'Academy', description: 'Teaching and scholarly positions' },
+    'Guildholm': { name: 'City Guard', description: 'Military and security positions' },
+    'Arena': { name: 'Arena', description: 'Combat and entertainment positions' },
+    'Enchanter': { name: 'Enchanter\'s Tower', description: 'Magical crafting and alchemy' },
+    'Noble Heights': { name: 'Noble Court', description: 'High society advisory positions' },
+  };
+
+  for (const job of ALL_JOBS) {
+    if (!employerMap.has(job.location)) {
+      const meta = employerMeta[job.location] || { name: job.location, description: 'Various positions available' };
+      employerMap.set(job.location, {
+        id: job.location.toLowerCase().replace(/\s+/g, '-'),
+        name: meta.name,
+        description: meta.description,
+        jobs: [],
+      });
+    }
+    employerMap.get(job.location)!.jobs.push(job);
+  }
+
+  return Array.from(employerMap.values());
+};
+
+// Check why a job application would be rejected
+export interface JobApplicationResult {
+  success: boolean;
+  reason?: string;
+  missingDegrees?: DegreeId[];
+  missingExperience?: number;
+  missingDependability?: number;
+  missingClothing?: boolean;
+}
+
+export const applyForJob = (
+  job: Job,
+  completedDegrees: DegreeId[],
+  clothingLevel: number,
+  experience: number,
+  dependability: number
+): JobApplicationResult => {
+  // Check degrees
+  const missingDegrees = job.requiredDegrees.filter(deg => !completedDegrees.includes(deg));
+  if (missingDegrees.length > 0) {
+    return {
+      success: false,
+      reason: 'Insufficient education',
+      missingDegrees,
+    };
+  }
+
+  // Check clothing
+  const clothingMap: Record<ClothingRequirement, number> = {
+    'none': 0,
+    'casual': 25,
+    'dress': 50,
+    'business': 75,
+    'uniform': 75,
+  };
+  if (clothingLevel < clothingMap[job.requiredClothing]) {
+    return {
+      success: false,
+      reason: 'Clothing not suitable',
+      missingClothing: true,
+    };
+  }
+
+  // Check experience
+  if (experience < job.requiredExperience) {
+    return {
+      success: false,
+      reason: 'Not enough experience',
+      missingExperience: job.requiredExperience - experience,
+    };
+  }
+
+  // Check dependability
+  if (dependability < job.requiredDependability) {
+    return {
+      success: false,
+      reason: 'Dependability too low',
+      missingDependability: job.requiredDependability - dependability,
+    };
+  }
+
+  return { success: true };
+};
+
 // Legacy exports for backwards compatibility
 export const JOBS = GUILD_HALL_JOBS;
 

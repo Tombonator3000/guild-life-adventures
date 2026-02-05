@@ -1,5 +1,40 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Jones-Style Employment Office
+
+### Implementation
+
+Created a proper Jones-style Employment Office that matches the original game:
+
+**Employer List View:**
+- Shows list of employers (Guild Hall, General Store, Bank, Forge, Academy, etc.)
+- Each employer shows number of available positions
+- Click on employer to see their jobs
+
+**Job Application System:**
+- Click on a job to apply
+- Application costs 1 hour of time
+- System checks ALL qualifications:
+  - Required degrees (education)
+  - Required experience points
+  - Required dependability percentage
+  - Required clothing level
+- Shows HIRED! or APPLICATION DENIED with specific reason
+
+**Application Results:**
+- Success: Shows offered wage (50-250% of base based on economy)
+- Can accept or decline the offer
+- Failure: Shows exactly what's missing (degrees, exp, dep, clothing)
+
+### New Files
+- `src/components/game/EmploymentOfficePanel.tsx` - Complete Employment Office component
+
+### Modified Files
+- `src/data/jobs.ts` - Added Employer interface, getEmployers(), applyForJob()
+- `src/components/game/LocationPanel.tsx` - Integrated EmploymentOfficePanel
+
+---
+
 ## 2026-02-05 - Jones-Style Working System Overhaul
 
 ### Research Summary (from jonesinthefastlane.fandom.com)
