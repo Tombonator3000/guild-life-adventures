@@ -1,5 +1,62 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Jones-Style Home Interior Display
+
+### Task Summary
+When a player visits their home location (The Slums or Noble Heights), the center panel now shows a large visual room scene — just like in Jones in the Fast Lane's apartment view. The room displays owned appliances and durables as furniture, with Relax, Sleep, and Done buttons at the bottom.
+
+### Features Implemented
+
+**1. Full-Panel Home Scene (CSS Art)**
+- The home view takes over the entire center panel (no parchment wrapper/header)
+- Visual room scene drawn entirely with CSS: walls, floor, window, door, bed, table, chair
+- Different visual themes for each housing tier:
+  - **The Slums**: Dark stone walls, rough wood floor, cracks in walls, rats scurrying
+  - **Noble Heights**: Purple/elegant walls, decorative wallpaper, chandelier, rug, painting
+  - **Modest Dwelling**: Neutral brown tones (in-between)
+
+**2. Appliances Displayed in Room**
+- All 7 Jones-style appliances have assigned positions and emoji icons in the room:
+  - Scrying Mirror (🪞), Memory Crystal (💎), Music Box (🎵), Cooking Fire (🔥), Preservation Box (📦), Arcane Tome (📖), Simple Scrying Glass (🔮)
+- Broken appliances shown dimmed/greyed with ✗ indicator
+- Durable items (candles, blanket, furniture, weapons, etc.) also shown in the room
+- Appliance legend bar at bottom lists all owned items by name
+
+**3. Action Buttons (Jones-Style)**
+- **RELAX**: Green button, costs housing-tier hours (+10 happiness, +3 relaxation)
+- **SLEEP**: Blue button, 8 hours (+20 happiness, +10 health, +5 relaxation)
+- **DONE**: Brown button, closes the home panel
+- Buttons disabled with visual feedback when not enough time
+- Both Relax and Sleep now also increase the Relaxation stat (was missing before)
+
+**4. Room Details**
+- "Home Sweet Home" / "~ Noble Living ~" wall sign
+- Window with moon/sun visible
+- Door with handle
+- Relaxation stat display in top-right corner
+- Empty room hint text when no items owned
+
+### Files Modified
+- `src/components/game/HomePanel.tsx` - Complete rewrite with visual room scene
+- `src/components/game/LocationPanel.tsx` - Home locations bypass parchment wrapper; pass `modifyRelaxation` and `onDone` props
+
+### Technical Details
+- Room scene uses absolute positioning with percentage-based coordinates for responsive scaling
+- `clamp()` used throughout for font sizes to scale with viewport
+- Housing tier determines wall/floor colors, decorative elements, and ambient details
+- Appliance/durable positions are defined as constant maps for easy adjustment
+
+### Visual Comparison (Jones → Guild Life)
+| Jones | Guild Life |
+|-------|------------|
+| "LOW COST APARTMENT" header | "The Slums" header |
+| Cockroaches in low-cost | Rats in slums |
+| Furniture appears when bought | Appliances/durables appear when owned |
+| RELAX button | RELAX button (+relaxation stat) |
+| DONE button | DONE button |
+
+---
+
 ## 2026-02-05 - Refactor Large Files
 
 ### Goal
