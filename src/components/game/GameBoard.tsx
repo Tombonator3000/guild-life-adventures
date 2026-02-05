@@ -207,32 +207,45 @@ export function GameBoard() {
           'info',
   } : null;
 
+  // The game layout uses a fixed aspect ratio container that scales uniformly
+  // Total layout: [Left Panel 12%] [Game Board 76%] [Right Panel 12%]
+  // This ensures consistent sizing regardless of screen size
+  const SIDE_PANEL_WIDTH_PERCENT = 12;
+  const GAME_BOARD_WIDTH_PERCENT = 76;
+
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-background flex items-center justify-center">
-      {/* Left Side Panel - Player Info */}
-      <div className="absolute left-0 top-0 bottom-0 w-[180px] z-30 p-2 flex flex-col">
-        {currentPlayer && (
-          <PlayerInfoPanel
-            player={currentPlayer}
-            isCurrentPlayer={true}
-          />
-        )}
-      </div>
+    <div className="w-screen h-screen overflow-hidden bg-background flex items-center justify-center">
+      {/* Main container - uses viewport units to maintain consistent aspect ratio */}
+      {/* The container scales based on the smaller dimension (width or height) */}
+      <div
+        className="relative flex items-stretch"
+        style={{
+          // Use the minimum of 100vw or 177.78vh (16:9 width for a given height)
+          // and 100vh or 56.25vw (16:9 height for a given width)
+          // This ensures the layout fits in any screen while maintaining proportions
+          width: 'min(100vw, 177.78vh)',
+          height: 'min(100vh, 56.25vw)',
+        }}
+      >
+        {/* Left Side Panel - Player Info (12% of container width) */}
+        <div
+          className="relative z-30 p-[0.5%] flex flex-col flex-shrink-0 h-full"
+          style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
+        >
+          {currentPlayer && (
+            <PlayerInfoPanel
+              player={currentPlayer}
+              isCurrentPlayer={true}
+            />
+          )}
+        </div>
 
-      {/* Right Side Panel - Turn Order */}
-      <div className="absolute right-0 top-0 bottom-0 w-[180px] z-30 p-2 flex flex-col">
-        <TurnOrderPanel
-          players={players}
-          currentPlayerIndex={currentPlayerIndex}
-          week={week}
-          priceModifier={priceModifier}
-          goalSettings={goalSettings}
-        />
-      </div>
-
-      {/* Game board container - maintains aspect ratio, with padding for side panels */}
-      <div className="relative w-full h-full max-w-[177.78vh] max-h-[56.25vw] mx-[180px]">
-        {/* Game board background */}
+        {/* Game board container - maintains aspect ratio (76% of container width) */}
+        <div
+          className="relative flex-shrink-0 h-full"
+          style={{ width: `${GAME_BOARD_WIDTH_PERCENT}%` }}
+        >
+          {/* Game board background */}
         <div
           className="absolute inset-0 bg-contain bg-center bg-no-repeat"
           style={{ backgroundImage: `url(${gameBoard})` }}
@@ -379,6 +392,21 @@ export function GameBoard() {
           >
             Edit Zones
           </button>
+        </div>
+        </div>
+
+        {/* Right Side Panel - Turn Order (12% of container width) */}
+        <div
+          className="relative z-30 p-[0.5%] flex flex-col flex-shrink-0 h-full"
+          style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
+        >
+          <TurnOrderPanel
+            players={players}
+            currentPlayerIndex={currentPlayerIndex}
+            week={week}
+            priceModifier={priceModifier}
+            goalSettings={goalSettings}
+          />
         </div>
       </div>
 
