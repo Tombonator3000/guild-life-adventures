@@ -59,6 +59,9 @@ export function GameBoard() {
   const [animationPath, setAnimationPath] = useState<LocationId[] | null>(null);
   const pendingMoveRef = useRef<{ playerId: string; destination: LocationId; timeCost: number } | null>(null);
 
+  // Get current player BEFORE useEffects that depend on it
+  const currentPlayer = useCurrentPlayer();
+
   // Keyboard shortcut: Ctrl+Shift+Z to toggle zone editor
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -138,7 +141,6 @@ export function GameBoard() {
     }
     return location;
   };
-  const currentPlayer = useCurrentPlayer();
 
   // Check if player should auto-return to housing when time runs out
   const checkAutoReturn = useCallback(() => {

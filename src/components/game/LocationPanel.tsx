@@ -958,7 +958,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             <div className="space-y-2">
               <ActionButton
                 label="Explore the Cave"
-                description="Risk: Low health damage, Reward: Chance to find gold or items"
                 cost={0}
                 time={4}
                 disabled={player.timeRemaining < 4}
@@ -992,7 +991,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               />
               <ActionButton
                 label="Rest in the Cave"
-                description="A quiet place to recover. Restore some health."
                 cost={0}
                 time={6}
                 disabled={player.timeRemaining < 6 || player.health >= player.maxHealth}
