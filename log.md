@@ -1,5 +1,68 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Movement Path Drawing System (Zone Editor)
+
+### Problem
+Player tokens moved in straight lines between zone centers during animation, ignoring the road layout on the game board image. This looked unnatural because the tokens would "fly" over buildings and terrain instead of following the visible roads/paths.
+
+### Solution
+Added a movement path drawing system to the Zone Editor that allows defining custom waypoints between adjacent locations. The AnimatedPlayerToken now follows these waypoints during movement animation, resulting in more detailed and road-accurate player movement.
+
+### Architecture
+
+**Data Model**: `MOVEMENT_PATHS` in `src/data/locations.ts`
+- Record keyed by `"fromId_toId"` (clockwise direction in BOARD_PATH)
+- Values are arrays of `[x%, y%]` waypoints between zone centers
+- Counter-clockwise travel automatically reverses waypoints
+- Helper functions: `getSegmentWaypoints()`, `getAnimationPoints()`, `getPathKey()`
+
+**Zone Editor** (`src/components/game/ZoneEditor.tsx`):
+- New **Zones/Paths** mode toggle in the editor header
+- **Paths mode**: Shows all 14 adjacent edges as SVG polylines on the board
+- Click an edge in the right panel or on the SVG to select it
+- Click on the board to add waypoints to the selected edge
+- Drag waypoints to reposition them (with mouse)
+- Right-click a waypoint to remove it
+- Per-waypoint X/Y coordinate editing in the properties panel
+- "Clear" button to remove all waypoints from an edge
+- Green lines = edges with waypoints defined, gray dashed = straight line (no waypoints)
+- Cyan highlight = currently selected edge
+- "Copy Config" now exports MOVEMENT_PATHS alongside ZONE_CONFIGS and CENTER_PANEL_CONFIG
+
+**Animation** (`src/components/game/AnimatedPlayerToken.tsx`):
+- Replaced zone-center-only animation with full waypoint chain
+- `getAnimationPoints(path)` builds: zone1Center → waypoints → zone2Center → waypoints → zone3Center
+- Animation speed: 150ms per waypoint (faster than the old 300ms per zone step, since there are more points)
+- CSS transition duration also reduced to 150ms for smooth interpolation
+
+**Debug Overlay** (`src/components/game/GameBoard.tsx`):
+- Debug overlay (Ctrl+Shift+D) now renders movement path lines
+- Shows all 14 edges with their waypoints
+- Green solid lines for paths with waypoints, gray dashed for straight connections
+
+### How to Use
+1. Open Zone Editor (Ctrl+Shift+Z or "Edit Zones" button)
+2. Switch to "Paths" tab
+3. Select an edge (e.g., "noble-heights → general-store") from the right panel
+4. Click on the board to add waypoints along the road
+5. Drag waypoints to fine-tune positions
+6. Right-click to remove individual waypoints
+7. Click "Apply" to activate paths in-game
+8. Click "Copy Config" to get the code for `locations.ts`
+
+### Files Modified
+- `src/data/locations.ts` — Added `MOVEMENT_PATHS`, `MovementWaypoint` type, `getPathKey()`, `getSegmentWaypoints()`, `getAnimationPoints()` helpers
+- `src/components/game/ZoneEditor.tsx` — Added Zones/Paths mode toggle, full path drawing UI with SVG visualization, waypoint drag/add/remove, coordinate editing, path export
+- `src/components/game/AnimatedPlayerToken.tsx` — Replaced zone-center jumping with waypoint-chain animation using `getAnimationPoints()`
+- `src/components/game/GameBoard.tsx` — Updated `handleSaveZones` to accept and apply movement paths, added path visualization to debug overlay
+
+### Verification
+- TypeScript compiles cleanly (`tsc --noEmit` passes)
+- Production build succeeds (`vite build`)
+- All tests pass (`vitest run`)
+
+---
+
 ## 2026-02-05 - Balance: Quest Rewards, Guild Pass, Homeless Penalties
 
 ### Problem

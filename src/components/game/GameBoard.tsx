@@ -9,6 +9,7 @@ import { LocationPanel } from './LocationPanel';
 import { EventModal, type GameEvent } from './EventModal';
 import { ShadowfingersModal, useShadowfingersModal } from './ShadowfingersModal';
 import { ZoneEditor, type CenterPanelConfig } from './ZoneEditor';
+import { MOVEMENT_PATHS, BOARD_PATH, type MovementWaypoint } from '@/data/locations';
 import { PlayerInfoPanel } from './PlayerInfoPanel';
 import { TurnOrderPanel } from './TurnOrderPanel';
 import { useGrimwaldAI } from '@/hooks/useGrimwaldAI';
@@ -116,10 +117,16 @@ export function GameBoard() {
     }
   }, [currentPlayer?.id]);
 
-  const handleSaveZones = (zones: ZoneConfig[], newCenterPanel: CenterPanelConfig) => {
+  const handleSaveZones = (zones: ZoneConfig[], newCenterPanel: CenterPanelConfig, paths?: Record<string, MovementWaypoint[]>) => {
     setCustomZones(zones);
     setCenterPanel(newCenterPanel);
     setShowZoneEditor(false);
+    // Apply movement paths to the global MOVEMENT_PATHS object
+    if (paths) {
+      Object.keys(MOVEMENT_PATHS).forEach(k => delete MOVEMENT_PATHS[k]);
+      Object.entries(paths).forEach(([k, v]) => { MOVEMENT_PATHS[k] = v; });
+      console.log('Movement paths updated:', paths);
+    }
     console.log('Zones updated. Copy this config to locations.ts:', zones);
     console.log('Center panel updated:', newCenterPanel);
   };
@@ -349,7 +356,7 @@ export function GameBoard() {
           </div>
         )}
 
-        {/* Debug overlay - shows zone boundaries */}
+        {/* Debug overlay - shows zone boundaries and movement paths */}
         {showDebugOverlay && (
           <div className="absolute inset-0 pointer-events-none z-5">
             {customZones.map(zone => (
@@ -382,6 +389,39 @@ export function GameBoard() {
                 CENTER INFO PANEL
               </span>
             </div>
+            {/* Movement paths overlay */}
+            <svg
+              className="absolute inset-0 w-full h-full"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+            >
+              {BOARD_PATH.map((loc, i) => {
+                const next = BOARD_PATH[(i + 1) % BOARD_PATH.length];
+                const key = `${loc}_${next}`;
+                const waypoints = MOVEMENT_PATHS[key] || [];
+                const fromZone = customZones.find(z => z.id === loc);
+                const toZone = customZones.find(z => z.id === next);
+                if (!fromZone || !toZone) return null;
+                const fromCenter: [number, number] = [fromZone.x + fromZone.width / 2, fromZone.y + fromZone.height - 5];
+                const toCenter: [number, number] = [toZone.x + toZone.width / 2, toZone.y + toZone.height - 5];
+                const allPoints = [fromCenter, ...waypoints, toCenter];
+                return (
+                  <g key={key}>
+                    <polyline
+                      points={allPoints.map(([x, y]) => `${x},${y}`).join(' ')}
+                      fill="none"
+                      stroke={waypoints.length > 0 ? '#4ade80' : '#6b7280'}
+                      strokeWidth={0.25}
+                      strokeDasharray={waypoints.length > 0 ? 'none' : '1 0.5'}
+                      opacity={0.6}
+                    />
+                    {waypoints.map(([x, y], idx) => (
+                      <circle key={idx} cx={x} cy={y} r={0.4} fill="#4ade80" opacity={0.7} />
+                    ))}
+                  </g>
+                );
+              })}
+            </svg>
           </div>
         )}
 
