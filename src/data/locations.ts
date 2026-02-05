@@ -4,27 +4,20 @@ import type { Location, ZoneConfig } from '@/types/game.types';
 // These can be edited to fine-tune zone positions
 // Coordinates are percentages relative to the board container
 export const ZONE_CONFIGS: ZoneConfig[] = [
-  // Top row (left to right)
-  { id: 'noble-heights',   x: 0,    y: 0,    width: 10,  height: 28 },
-  { id: 'landlord',        x: 10,   y: 0,    width: 10,  height: 17 },
-  { id: 'slums',           x: 20,   y: 0,    width: 11,  height: 17 },
-  { id: 'fence',           x: 31,   y: 0,    width: 12,  height: 17 },
-  { id: 'general-store',   x: 43,   y: 0,    width: 10,  height: 17 },
-  { id: 'shadow-market',   x: 53,   y: 0,    width: 12,  height: 17 },
-
-  // Right side (top to bottom)
-  { id: 'rusty-tankard',   x: 85,   y: 17,   width: 15,  height: 23 },
-  { id: 'armory',          x: 85,   y: 40,   width: 15,  height: 25 },
-
-  // Bottom row (left to right)
-  { id: 'forge',           x: 0,    y: 65,   width: 14,  height: 35 },
-  { id: 'guild-hall',      x: 31,   y: 75,   width: 14,  height: 25 },
-  { id: 'cave',            x: 45,   y: 78,   width: 10,  height: 22 },
-  { id: 'academy',         x: 55,   y: 75,   width: 14,  height: 25 },
-  { id: 'enchanter',       x: 85,   y: 65,   width: 15,  height: 35 },
-
-  // Left side (top to bottom)
-  { id: 'bank',            x: 0,    y: 28,   width: 10,  height: 22 },
+  { id: 'noble-heights', x: 10.6, y: 0.3, width: 15.2, height: 30.2 },
+  { id: 'landlord', x: 30.9, y: 2.5, width: 9.9, height: 18.9 },
+  { id: 'slums', x: 41.9, y: 1.1, width: 18.2, height: 21.2 },
+  { id: 'fence', x: 61.1, y: 0.0, width: 13.1, height: 20.6 },
+  { id: 'general-store', x: 11.0, y: 35.9, width: 15.2, height: 18.9 },
+  { id: 'shadow-market', x: 74.7, y: 0.8, width: 14.9, height: 18.8 },
+  { id: 'rusty-tankard', x: 74.9, y: 20.9, width: 14.4, height: 19.6 },
+  { id: 'armory', x: 74.9, y: 41.0, width: 14.3, height: 22.7 },
+  { id: 'forge', x: 11.9, y: 74.3, width: 13.3, height: 25.2 },
+  { id: 'guild-hall', x: 26.9, y: 77.0, width: 14.3, height: 23.0 },
+  { id: 'cave', x: 45.0, y: 78.0, width: 10.0, height: 22.0 },
+  { id: 'academy', x: 58.9, y: 77.0, width: 14.8, height: 22.8 },
+  { id: 'enchanter', x: 74.6, y: 65.0, width: 15.0, height: 35.0 },
+  { id: 'bank', x: 10.9, y: 55.8, width: 14.6, height: 17.0 },
 ];
 
 // Convert zone config to Location format for backward compatibility
