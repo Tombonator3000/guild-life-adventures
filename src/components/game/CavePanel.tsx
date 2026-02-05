@@ -32,6 +32,7 @@ interface CavePanelProps {
   modifyHealth: (playerId: string, amount: number) => void;
   modifyHappiness: (playerId: string, amount: number) => void;
   clearDungeonFloor: (playerId: string, floorId: number) => void;
+  applyRareDrop: (playerId: string, dropId: string) => void;
 }
 
 // ─── Degree ID to display name ───────────────────────────────────
@@ -69,6 +70,7 @@ export function CavePanel({
   modifyHealth,
   modifyHappiness,
   clearDungeonFloor,
+  applyRareDrop,
 }: CavePanelProps) {
   const [expandedFloor, setExpandedFloor] = useState<number | null>(null);
   const [activeFloor, setActiveFloor] = useState<DungeonFloor | null>(null);
@@ -120,8 +122,9 @@ export function CavePanel({
       clearDungeonFloor(player.id, activeFloor.id);
     }
 
-    // Show toast notifications
+    // Apply rare drop effect
     if (result.rareDropName) {
+      applyRareDrop(player.id, activeFloor.rareDrop.id);
       toast.success(
         `RARE DROP: ${result.rareDropName}! ${activeFloor.rareDrop.description}`,
         { duration: 6000 },

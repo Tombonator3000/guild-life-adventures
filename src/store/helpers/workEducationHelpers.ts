@@ -20,6 +20,11 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
           const bonusHours = hours >= 6 ? Math.ceil(hours * 1.15) : hours;
           let earnings = bonusHours * effectiveWage;
 
+          // Apply permanent gold bonus from rare drops (e.g., Goblin's Lucky Coin)
+          if (p.permanentGoldBonus > 0) {
+            earnings = Math.floor(earnings * (1 + p.permanentGoldBonus));
+          }
+
           // Garnishment: 50% + 2 gold interest if rent is overdue (4+ weeks)
           let garnishment = 0;
           let newRentDebt = p.rentDebt;

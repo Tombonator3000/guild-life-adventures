@@ -7,6 +7,9 @@
 import type { Player, LocationId } from '@/types/game.types';
 import { getAvailableJobs, getJob, ALL_JOBS, canWorkJob, type Job } from '@/data/jobs';
 import { getAvailableDegrees, type Degree } from '@/data/education';
+import { DUNGEON_FLOORS, checkFloorRequirements, getFloorTimeCost, calculateEducationBonuses } from '@/data/dungeon';
+import { calculateCombatStats } from '@/data/items';
+import { getAvailableQuests, canTakeQuest } from '@/data/quests';
 
 import type { DifficultySettings, GoalProgress, ResourceUrgency } from './types';
 
@@ -186,4 +189,145 @@ export function getJobLocation(job: Job): LocationId {
     'Rusty Tankard': 'rusty-tankard',
   };
   return locationMap[job.location] || 'guild-hall';
+}
+
+/**
+ * Determine the best dungeon floor the AI can attempt.
+ * Returns floor ID or null if no floor is advisable.
+ */
+export function getBestDungeonFloor(player: Player, settings: DifficultySettings): number | null {
+  const combatStats = calculateCombatStats(
+    player.equippedWeapon,
+    player.equippedArmor,
+    player.equippedShield,
+  );
+
+  if (player.health < 40) return null;
+
+  // Find highest uncleared floor we can enter
+  for (let i = DUNGEON_FLOORS.length - 1; i >= 0; i--) {
+    const floor = DUNGEON_FLOORS[i];
+    if (player.dungeonFloorsCleared.includes(floor.id)) continue;
+
+    const check = checkFloorRequirements(
+      floor,
+      player.dungeonFloorsCleared,
+      player.equippedWeapon,
+      player.equippedArmor,
+      combatStats,
+    );
+
+    if (!check.canEnter) continue;
+
+    const timeCost = getFloorTimeCost(floor, combatStats);
+    if (player.timeRemaining < timeCost + 4) continue;
+
+    // Strategic AI checks power ratio against boss
+    if (settings.planningDepth >= 2) {
+      const eduBonuses = calculateEducationBonuses(player.completedDegrees);
+      const playerPower = combatStats.attack * (1 + eduBonuses.attackBonus) + combatStats.defense * 0.5;
+      const bossRatio = playerPower / Math.max(1, floor.boss.basePower);
+      if (bossRatio < 0.6) continue;
+    }
+
+    return floor.id;
+  }
+
+  // Re-run cleared floor for gold (wealth focus only)
+  if (settings.aggressiveness > 0.5 && player.dungeonFloorsCleared.length > 0) {
+    const highestCleared = Math.max(...player.dungeonFloorsCleared);
+    const floor = DUNGEON_FLOORS.find(f => f.id === highestCleared);
+    if (floor) {
+      const timeCost = getFloorTimeCost(floor, combatStats);
+      if (player.timeRemaining >= timeCost + 4 && player.health >= 50) {
+        return floor.id;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Get the best equipment upgrade the AI should buy.
+ */
+export function getNextEquipmentUpgrade(player: Player): { itemId: string; cost: number; slot: string } | null {
+  const combatStats = calculateCombatStats(
+    player.equippedWeapon,
+    player.equippedArmor,
+    player.equippedShield,
+  );
+
+  const weaponUpgrades = [
+    { id: 'dagger', atk: 5, cost: 35, floor: 0 },
+    { id: 'sword', atk: 15, cost: 90, floor: 0 },
+    { id: 'steel-sword', atk: 25, cost: 250, floor: 2 },
+    { id: 'enchanted-blade', atk: 40, cost: 500, floor: 3 },
+  ];
+
+  for (const w of weaponUpgrades) {
+    if (combatStats.attack >= w.atk) continue;
+    if (w.floor > 0 && !player.dungeonFloorsCleared.includes(w.floor)) continue;
+    if (player.gold < w.cost) continue;
+    if (player.durables[w.id]) continue;
+    return { itemId: w.id, cost: w.cost, slot: 'weapon' };
+  }
+
+  const armorUpgrades = [
+    { id: 'leather-armor', def: 10, cost: 75, floor: 0 },
+    { id: 'chainmail', def: 20, cost: 200, floor: 2 },
+    { id: 'plate-armor', def: 35, cost: 450, floor: 3 },
+  ];
+
+  for (const a of armorUpgrades) {
+    if (combatStats.defense >= a.def) continue;
+    if (a.floor > 0 && !player.dungeonFloorsCleared.includes(a.floor)) continue;
+    if (player.gold < a.cost) continue;
+    if (player.durables[a.id]) continue;
+    return { itemId: a.id, cost: a.cost, slot: 'armor' };
+  }
+
+  if (!player.equippedShield && player.gold >= 45 && !player.durables['shield']) {
+    return { itemId: 'shield', cost: 45, slot: 'shield' };
+  }
+
+  return null;
+}
+
+/**
+ * Should AI buy a Guild Pass for quests?
+ */
+export function shouldBuyGuildPass(player: Player, settings: DifficultySettings): boolean {
+  if (player.hasGuildPass) return false;
+  if (player.gold < 500) return false;
+  return settings.planningDepth >= 2 ? player.gold >= 600 : player.gold >= 700;
+}
+
+/**
+ * Get the best quest the AI should take.
+ */
+export function getBestQuest(player: Player, settings: DifficultySettings): string | null {
+  if (!player.hasGuildPass) return null;
+  if (player.activeQuest) return null;
+
+  const available = getAvailableQuests(player.guildRank);
+  const takeable = available.filter((q: { id: string; timeRequired: number; healthRisk: number }) => {
+    const check = canTakeQuest(q, player.guildRank, player.education, player.inventory, player.dungeonFloorsCleared);
+    if (!check.canTake) return false;
+    if (q.timeRequired > player.timeRemaining) return false;
+    if (q.healthRisk > player.health - 20) return false;
+    return true;
+  });
+
+  if (takeable.length === 0) return null;
+
+  if (settings.planningDepth >= 2) {
+    takeable.sort((a: { goldReward: number; timeRequired: number }, b: { goldReward: number; timeRequired: number }) =>
+      (b.goldReward / b.timeRequired) - (a.goldReward / a.timeRequired)
+    );
+  } else {
+    takeable.sort((a: { goldReward: number }, b: { goldReward: number }) => b.goldReward - a.goldReward);
+  }
+
+  return takeable[0].id;
 }

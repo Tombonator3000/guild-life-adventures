@@ -53,6 +53,13 @@ Strategic actions based on weakest goal:
 - **Happiness Focus**: Buy appliances, rest at home
 - **Career Focus**: Apply for better jobs, build dependability
 
+#### Dungeon & Quest Actions (Priority 50-70)
+- **Buy Equipment** (priority 55): Upgrade weapon/armor/shield at Armory for dungeon progression
+- **Explore Dungeon** (priority 58-68): Attempt next uncleared floor if requirements met, health > 40
+- **Buy Guild Pass** (priority 55): Purchase 500g pass when affordable (with gold buffer)
+- **Take Quest** (priority 60): Pick best available quest by gold/time ratio
+- **Complete Quest** (priority 70): Turn in active quest at Guild Hall
+
 #### General Strategic Actions (Priority 45-70)
 - Get first job if unemployed
 - Upgrade jobs when better offers available
@@ -105,6 +112,20 @@ The AI constantly monitors resource levels:
   - Has sufficient gold (> 300g)
   - Aggressiveness setting permits
 
+#### Dungeon Strategy (Phase 5)
+- **Equipment progression**: dagger → sword → steel sword → enchanted blade (matching armor)
+- **Floor assessment**: Checks requirements, power ratio vs boss (≥0.6), time budget
+- **Difficulty scaling**: Hard AI evaluates power ratio; Easy AI just checks if entry requirements are met
+- **Re-farming**: Aggressive AI re-runs cleared floors for gold when wealth-focused
+- **Rare drop handling**: Applies all 5 rare drop types (heal, gold bonus, max HP, equippable, stats)
+- **Loot multiplier**: Guild rank loot multiplier (0.8× novice → 1.5× guild-master)
+
+#### Quest Strategy (Phase 5)
+- Buys Guild Pass when gold ≥ 600 (strategic) or ≥ 700 (simple)
+- Selects quest with best gold/time ratio (strategic AI) or highest gold (simple AI)
+- Validates dungeon floor requirements before taking dungeon quests
+- Completes quests at Guild Hall as high priority
+
 ### Action Execution
 
 The AI executes actions with delays for visual feedback:
@@ -118,7 +139,10 @@ Safety limits prevent infinite loops (max 15 actions per turn).
 
 | File | Purpose |
 |------|---------|
-| `src/hooks/useGrimwaldAI.ts` | Main AI decision engine |
+| `src/hooks/useGrimwaldAI.ts` | Main AI decision engine (19 action types) |
+| `src/hooks/ai/types.ts` | AI types, difficulty settings, action types |
+| `src/hooks/ai/strategy.ts` | Pure strategy functions (dungeon, quest, equipment) |
+| `src/hooks/ai/actionGenerator.ts` | Priority-based action generation |
 | `src/hooks/useAI.ts` | Legacy simple AI (deprecated) |
 | `src/store/gameStore.ts` | Game state and actions |
 | `src/types/game.types.ts` | TypeScript types including AIDifficulty |
@@ -137,9 +161,15 @@ Safety limits prevent infinite loops (max 15 actions per turn).
 | `dependability` | Job qualification, career goal |
 | `experience` | Job qualification tracking |
 | `currentJob` | Work decisions, upgrade checks |
-| `completedDegrees` | Education progress, job unlocks |
+| `completedDegrees` | Education progress, job unlocks, dungeon bonuses |
 | `housing` | Robbery risk assessment |
 | `weeksSinceRent` | Rent payment urgency |
+| `equippedWeapon/Armor/Shield` | Dungeon readiness, equipment upgrade decisions |
+| `dungeonFloorsCleared` | Dungeon progression, quest eligibility |
+| `hasGuildPass` | Quest system access |
+| `activeQuest` | Quest completion tracking |
+| `guildRank` | Quest availability, loot multiplier |
+| `permanentGoldBonus` | Rare drop income bonus |
 
 ## Configuration
 

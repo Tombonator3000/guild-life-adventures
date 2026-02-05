@@ -12,11 +12,14 @@
 
 import { useCallback, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import type { Player, HousingTier, DegreeId } from '@/types/game.types';
-import { RENT_COSTS } from '@/types/game.types';
+import type { Player, HousingTier, DegreeId, EquipmentSlot } from '@/types/game.types';
+import { RENT_COSTS, GUILD_PASS_COST } from '@/types/game.types';
 import { getJob, canWorkJob } from '@/data/jobs';
 import { DEGREES } from '@/data/education';
 import { calculatePathDistance } from '@/data/locations';
+import { calculateCombatStats } from '@/data/items';
+import { getFloor, calculateEducationBonuses, getFloorTimeCost, getLootMultiplier } from '@/data/dungeon';
+import { autoResolveFloor } from '@/data/combatResolver';
 
 // Import from extracted modules
 import { DIFFICULTY_SETTINGS } from '@/hooks/ai/types';
@@ -41,6 +44,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     movePlayer,
     workShift,
     modifyGold,
+    modifyHealth,
     modifyFood,
     modifyHappiness,
     modifyClothing,
@@ -53,6 +57,13 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     withdrawFromBank,
     buyAppliance,
     moveToHousing,
+    buyDurable,
+    equipItem,
+    buyGuildPass,
+    takeQuest,
+    completeQuest,
+    clearDungeonFloor,
+    applyRareDrop,
     endTurn,
   } = useGameStore();
 
@@ -190,6 +201,75 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         return true;
       }
 
+      case 'buy-equipment': {
+        const itemId = action.details?.itemId as string;
+        const cost = (action.details?.cost as number) || 0;
+        const slot = (action.details?.slot as string) || 'weapon';
+        if (!itemId || player.gold < cost) return false;
+        buyDurable(player.id, itemId, cost);
+        equipItem(player.id, itemId, slot as EquipmentSlot);
+        spendTime(player.id, 1);
+        return true;
+      }
+
+      case 'buy-guild-pass': {
+        if (player.hasGuildPass || player.gold < GUILD_PASS_COST) return false;
+        buyGuildPass(player.id);
+        spendTime(player.id, 1);
+        return true;
+      }
+
+      case 'take-quest': {
+        const questId = action.details?.questId as string;
+        if (!questId || player.activeQuest) return false;
+        takeQuest(player.id, questId);
+        spendTime(player.id, 1);
+        return true;
+      }
+
+      case 'complete-quest': {
+        if (!player.activeQuest) return false;
+        completeQuest(player.id);
+        return true;
+      }
+
+      case 'explore-dungeon': {
+        const floorId = action.details?.floorId as number;
+        if (!floorId) return false;
+        const floor = getFloor(floorId);
+        if (!floor) return false;
+
+        const combatStats = calculateCombatStats(
+          player.equippedWeapon,
+          player.equippedArmor,
+          player.equippedShield,
+        );
+        const eduBonuses = calculateEducationBonuses(player.completedDegrees);
+        const timeCost = getFloorTimeCost(floor, combatStats);
+        if (player.timeRemaining < timeCost) return false;
+
+        spendTime(player.id, timeCost);
+        const isFirstClear = !player.dungeonFloorsCleared.includes(floorId);
+        const lootMult = getLootMultiplier(floor, player.guildRank);
+        const result = autoResolveFloor(floor, combatStats, eduBonuses, player.health, isFirstClear, lootMult);
+
+        // Apply results
+        if (result.goldEarned > 0) modifyGold(player.id, result.goldEarned);
+        const netDamage = result.totalDamage - result.totalHealed;
+        if (netDamage !== 0) modifyHealth(player.id, -netDamage);
+        if (result.bossDefeated && isFirstClear) {
+          clearDungeonFloor(player.id, floorId);
+          modifyHappiness(player.id, floor.happinessOnClear);
+        }
+        if (result.rareDropName) {
+          applyRareDrop(player.id, floor.rareDrop.id);
+        }
+
+        console.log(`[Grimwald AI] Dungeon Floor ${floorId}: ${result.success ? 'CLEARED' : 'FAILED'}. ` +
+          `+${result.goldEarned}g, -${result.totalDamage} HP. ${result.log.join(' | ')}`);
+        return true;
+      }
+
       case 'end-turn':
         endTurn();
         return true;
@@ -197,9 +277,10 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
       default:
         return false;
     }
-  }, [movePlayer, modifyGold, modifyFood, modifyHappiness, modifyClothing, spendTime,
+  }, [movePlayer, modifyGold, modifyHealth, modifyFood, modifyHappiness, modifyClothing, spendTime,
       studyDegree, completeDegree, setJob, payRent, depositToBank, withdrawFromBank,
-      buyAppliance, moveToHousing, workShift, endTurn]);
+      buyAppliance, moveToHousing, workShift, buyDurable, equipItem, buyGuildPass,
+      takeQuest, completeQuest, clearDungeonFloor, applyRareDrop, endTurn]);
 
   /**
    * Run the AI's turn

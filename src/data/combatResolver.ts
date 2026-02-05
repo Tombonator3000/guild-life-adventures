@@ -338,6 +338,7 @@ export function autoResolveFloor(
   eduBonuses: EducationBonuses,
   playerHealth: number,
   isFirstClear: boolean,
+  lootMultiplier: number = 1.0,
 ): AutoResolveResult {
   let state = initDungeonRun(floor, playerHealth, isFirstClear);
   const log: string[] = [];
@@ -370,7 +371,7 @@ export function autoResolveFloor(
 
   return {
     success: state.bossDefeated,
-    goldEarned: state.totalGold,
+    goldEarned: Math.floor(state.totalGold * lootMultiplier),
     totalDamage: state.totalDamage,
     totalHealed: state.totalHealed,
     bossDefeated: state.bossDefeated,

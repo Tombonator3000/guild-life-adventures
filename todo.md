@@ -68,6 +68,18 @@
   - Ready for Grimwald AI integration in Phase 5
 - [x] TypeScript compiles cleanly, build succeeds, tests pass
 
+## Completed (Phase 5 - Integration: Quests + AI + Balance)
+
+- [x] Quest ↔ Dungeon connection — dungeon-dive requires Floor 1, deep-dungeon-clear requires all 5
+- [x] Rare drops integration — all 5 effect types (heal, gold bonus, max health, equippable, happiness+stats)
+- [x] Dragon Scale Shield added as RARE_DROP_ITEMS (auto-equip on drop, unstealable)
+- [x] permanentGoldBonus field on Player — applied in workShift earnings
+- [x] Grimwald AI dungeon exploration — getBestDungeonFloor, autoResolveFloor, equipment buying
+- [x] Grimwald AI quest system — getBestQuest, shouldBuyGuildPass, take/complete quest
+- [x] Grimwald AI equipment strategy — getNextEquipmentUpgrade (weapon/armor/shield upgrade paths)
+- [x] Guild rank loot multiplier connected — 0.8× novice → 1.5× guild-master applied to combat gold
+- [x] TypeScript compiles cleanly, build succeeds, tests pass, no new ESLint errors
+
 ## In Progress
 
 *No active tasks*
@@ -145,11 +157,11 @@ See log.md "Game Gap Analysis & Rogue-Lite RPG Design Proposal" for full design.
 - [x] Add retreat mechanic (keep partial gold, floor not cleared)
 - [x] Add auto-resolve function for AI (Phase 5 prep)
 
-**Phase 5: Integration**
-- [ ] Connect dungeon quests to floor clear requirements
-- [ ] Add rare drops to loot tables (Goblin's Lucky Coin, Dragon Scale, etc.)
-- [ ] Add dungeon exploration to Grimwald AI decision engine
-- [ ] Balance dungeon rewards with economy
+**Phase 5: Integration** ✅ DONE
+- [x] Connect dungeon quests to floor clear requirements
+- [x] Add rare drops to loot tables (Goblin's Lucky Coin, Dragon Scale, etc.)
+- [x] Add dungeon exploration to Grimwald AI decision engine
+- [x] Balance dungeon rewards with economy (guild rank loot multiplier)
 
 ### Missing Jones Features (Priority)
 Based on JONES_REFERENCE.md analysis:
