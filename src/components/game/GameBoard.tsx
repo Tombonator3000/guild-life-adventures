@@ -76,10 +76,10 @@ export function GameBoard() {
         <div 
           className="absolute overflow-hidden z-10"
           style={{
-           top: '17.5%',
-           left: '17.8%',
-           width: '64.4%',
-           height: '48.5%',
+           top: '15.8%',
+           left: '15.2%',
+           width: '69.6%',
+           height: '49.2%',
           }}
         >
          <div className="w-full h-full overflow-auto bg-card/95">
