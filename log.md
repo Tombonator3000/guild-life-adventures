@@ -1,5 +1,101 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Jones in the Fast Lane Education/Jobs Overhaul
+
+### Research Summary (from jonesinthefastlane.fandom.com)
+
+**Jones in the Fast Lane Degree System:**
+The original game has 11 degrees organized in a tree structure:
+
+1. **Starting Degrees** (no prerequisites):
+   - Trade School - unlocks mid-level jobs like Butcher
+   - Junior College - gateway to advanced degrees
+
+2. **From Trade School:**
+   - Electronics - jobs at Socket City
+   - Pre-Engineering → Engineering - factory top jobs
+
+3. **From Junior College:**
+   - Academic → Graduate School → Post Doctoral → Research (Professor path)
+   - Business Administration - management jobs
+   - Electronics (also requires Trade School)
+   - Pre-Engineering (also requires Trade School)
+
+4. **Key Jobs and Requirements:**
+   - Entry: Janitor ($4-6/hr), Cook, Clerk
+   - Mid: Butcher (Trade School), Checker ($10/hr)
+   - High: Engineer ($23/hr), Broker ($22/hr), Professor ($20/hr)
+   - Top: General Manager ($25/hr) - requires Engineering + Business Admin
+
+**Graduation Bonuses:**
+- +5 Happiness
+- +5 Dependability
+- +5 Max Dependability (permanent)
+- +5 Max Experience (permanent)
+
+**Course Mechanics:**
+- 10 sessions to complete a degree
+- $50 base enrollment fee
+- Up to 4 courses simultaneously
+- Each degree = +9 education points
+
+### Plan for Guild Life Adventures
+
+Adapt the Jones system to fantasy setting:
+
+**Education Paths (replacing current 4-path system):**
+1. **Trade Guild** (Trade School equivalent) → unlocks basic trade jobs
+2. **Junior Academy** (Junior College) → gateway to advanced paths
+3. **Arcane Studies** (Electronics) → enchanting/magic tech jobs
+4. **Combat Engineering** (Pre-Engineering → Engineering) → forge/factory jobs
+5. **Scholar's Path** (Academic → Grad → Post Doc → Research) → professor/sage
+6. **Commerce Academy** (Business Admin) → management jobs
+
+**Fantasy Job Equivalents:**
+- Clerk → Shop Assistant
+- Butcher → Market Vendor
+- Broker → Guild Treasurer
+- Engineer → Master Artificer
+- Professor → Sage/Loremaster
+- General Manager → Guild Master (location)
+
+### Implementation Completed
+
+**New Degree System (11 degrees like Jones):**
+1. **Trade Guild Certificate** - Starting degree, unlocks basic trade jobs
+2. **Junior Academy Diploma** - Starting degree, gateway to advanced studies
+3. **Arcane Studies Certificate** - Requires Trade Guild, magic-related jobs
+4. **Combat Training Certificate** - Requires Trade Guild, military jobs
+5. **Master Combat Degree** - Requires Combat Training, top forge/military jobs
+6. **Scholar Degree** - Requires Junior Academy, Teacher job
+7. **Advanced Scholar Degree** - Requires Scholar, Senior Teacher
+8. **Sage Studies Certificate** - Requires Advanced Scholar, Lecturer
+9. **Loremaster Degree** - Requires Sage Studies, Sage/Court Advisor jobs
+10. **Commerce Degree** - Requires Junior Academy, management jobs
+11. **Alchemy Degree** - Requires Arcane Studies + Junior Academy, Alchemist jobs
+
+**New Job System (30+ jobs across 8 locations):**
+- Entry-level: Floor Sweeper ($4/hr), Market Porter ($4/hr), Forge Laborer ($4/hr)
+- Mid-level: Market Vendor ($10/hr - Trade Guild), Journeyman Smith ($10/hr)
+- High-level: Teacher ($14/hr - Scholar), Guild Accountant ($14/hr - Commerce)
+- Top-level: Forge Manager ($23/hr), Guild Treasurer ($22/hr), Sage ($20/hr)
+- Ultimate: Guild Master's Assistant ($25/hr - requires 3 top degrees!)
+
+**Graduation Bonuses (like Jones):**
+- +5 Happiness
+- +5 Dependability
+- +5 Max Dependability (permanent)
+- +5 Max Experience (permanent)
+
+### Files Modified
+- `src/data/education.ts` - Complete rewrite with Jones-style degree tree
+- `src/data/jobs.ts` - 30+ new jobs with degree requirements
+- `src/types/game.types.ts` - Added DegreeId type and player fields
+- `src/store/gameStore.ts` - Added studyDegree/completeDegree functions
+- `src/components/game/LocationPanel.tsx` - New Academy UI with degree progression
+
+---
+
 ## 2026-02-05 - Shadowfingers Robbery System
 
 ### Completed
