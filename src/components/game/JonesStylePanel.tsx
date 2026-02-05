@@ -3,7 +3,7 @@
 // - Items with dotted lines connecting names to prices (like "Hamburgers........ $83")
 // - Clean list format for locations, employers, etc.
 
-import React from 'react';
+import type React from 'react';
 
 interface JonesMenuItemProps {
   label: string;
