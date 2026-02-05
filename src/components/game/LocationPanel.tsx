@@ -63,6 +63,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     buyDurable,
     equipItem,
     unequipItem,
+    clearDungeonFloor,
   } = useGameStore();
   const player = useCurrentPlayer();
   const location = getLocation(locationId);
@@ -418,6 +419,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             modifyGold={modifyGold}
             modifyHealth={modifyHealth}
             modifyHappiness={modifyHappiness}
+            clearDungeonFloor={clearDungeonFloor}
           />
         );
 

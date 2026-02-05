@@ -78,6 +78,8 @@ export interface GameStore extends GameState {
   // Equipment actions
   equipItem: (playerId: string, itemId: string, slot: EquipmentSlot) => void;
   unequipItem: (playerId: string, slot: EquipmentSlot) => void;
+  // Dungeon actions
+  clearDungeonFloor: (playerId: string, floorId: number) => void;
 }
 
 // Zustand set/get function types
