@@ -1,50 +1,54 @@
-# Guild Life Adventures - Todo Liste
+# Guild Life Adventures - Todo List
 
-## Pagar (In Progress)
+## In Progress
 
-*Ingen aktive oppgaver*
+*No active tasks*
 
 ---
 
-## Kommende oppgaver (Backlog)
+## Backlog
 
 ### Gameplay
-- [ ] Balansere quest-belonninger
-- [ ] Legge til flere tilfeldige hendelser
-- [ ] Forbedre AI-motstanderens strategier
-- [ ] Lydeffekter og musikk
+- [ ] Balance quest rewards
+- [ ] Add more random events
+- [ ] Improve AI opponent strategies
+- [ ] Sound effects and music
 
 ### UI/UX
-- [ ] Responsivt design for mobil
-- [ ] Animasjoner for spillerbevegelse
-- [ ] Tooltips for alle knapper
+- [ ] Responsive design for mobile
+- [ ] Animations for player movement
+- [ ] Tooltips for all buttons
 - [ ] Dark mode support
 
-### Teknisk
-- [ ] Enhetstester for gameStore
-- [ ] E2E-tester med Playwright
-- [ ] Performance-optimalisering
-- [ ] Lagre spilltilstand (localStorage)
+### Technical
+- [ ] Unit tests for gameStore
+- [ ] E2E tests with Playwright
+- [ ] Performance optimization
+- [ ] Save game state (localStorage)
 
-### Innhold
-- [ ] Flere quest-typer
-- [ ] Flere jobber
-- [ ] Sesongbaserte hendelser
-- [ ] Achievements/tropeer
+### Content
+- [ ] More quest types
+- [ ] More jobs
+- [ ] Seasonal events
+- [ ] Achievements/trophies
 
 ---
 
-## Fullfort
+## Completed
 
 ### 2026-02-05
-- [x] Dokumentasjon fullfort (agents.md, log.md, todo.md, README.md)
-- [x] Quest System implementert
+- [x] Verified all game text is in English
+- [x] Translated agents.md to English
+- [x] Translated log.md to English
+- [x] Translated todo.md to English
+- [x] Documentation completed (agents.md, log.md, todo.md, README.md)
+- [x] Quest System implemented
 - [x] Newspaper (The Guildholm Herald)
 - [x] Pawn Shop (The Fence)
 - [x] Healer's Sanctuary
 - [x] Rent consequences system
 - [x] Death & resurrection mechanic
-- [x] AI-logikk (Grimwald)
+- [x] AI logic (Grimwald)
 - [x] Event display system
 - [x] Advanced job system
 - [x] Enhanced robbery events
@@ -52,8 +56,8 @@
 
 ---
 
-## Notater
+## Notes
 
-Se `plan.md` for fullstendig implementasjonsstatus.
-Se `log.md` for detaljert utviklingshistorikk.
-Se `agents.md` for AI-system dokumentasjon.
+See `plan.md` for complete implementation status.
+See `log.md` for detailed development history.
+See `agents.md` for AI system documentation.
