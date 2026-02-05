@@ -312,15 +312,15 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           eventMessages.push(`${p.name}: Rent is overdue! Wages will be garnished 50%.`);
         }
 
-        // Investment returns (small weekly interest)
+        // Investment returns (modest weekly interest - reduced for balance)
         if (p.investments > 0) {
-          const returns = Math.floor(p.investments * 0.02); // 2% weekly
+          const returns = Math.floor(p.investments * 0.005); // 0.5% weekly (was 2%)
           p.investments += returns;
         }
 
-        // Savings interest
+        // Savings interest (minimal - banks are safe storage, not income)
         if (p.savings > 0) {
-          const interest = Math.floor(p.savings * 0.005); // 0.5% weekly
+          const interest = Math.floor(p.savings * 0.001); // 0.1% weekly (was 0.5%)
           p.savings += interest;
         }
 

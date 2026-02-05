@@ -213,11 +213,12 @@ export const FOOD_DEPLETION_PER_WEEK = 25; // Lose 25 food per week
 export const STARVATION_HEALTH_PENALTY = 10; // Lose 10 health when starving
 export const STARVATION_HAPPINESS_PENALTY = 15; // Lose 15 happiness when starving
 
+// Rent costs per week - increased to be a meaningful recurring expense
 export const RENT_COSTS: Record<HousingTier, number> = {
   homeless: 0,
-  slums: 50,
-  modest: 150,
-  noble: 400,
+  slums: 75,
+  modest: 200,
+  noble: 500,
 };
 
 export const GUILD_RANK_ORDER: GuildRank[] = [

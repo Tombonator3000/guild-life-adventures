@@ -1,5 +1,13 @@
 # Guild Life Adventures - Todo List
 
+## Completed (2026-02-05)
+
+- [x] Full economy & happiness audit — all values rebalanced
+  - Gold income reduced (work bonus, quests, cave, investments)
+  - Happiness sources nerfed (relax, sleep, items, quests)
+  - Costs increased (food, rent)
+  - See log.md for full details
+
 ## In Progress
 
 *No active tasks*

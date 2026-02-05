@@ -76,13 +76,13 @@ export function HomePanel({
 
   const handleRelax = () => {
     spendTime(player.id, housingData.relaxationRate);
-    modifyHappiness(player.id, 10);
+    modifyHappiness(player.id, 3);  // Reduced from 10 - relaxing is nice but not euphoric
     modifyRelaxation(player.id, 3);
   };
 
   const handleSleep = () => {
     spendTime(player.id, 8);
-    modifyHappiness(player.id, 20);
+    modifyHappiness(player.id, 5);   // Reduced from 20 - sleep is restorative, not happiness factory
     modifyHealth(player.id, 10);
     modifyRelaxation(player.id, 5);
   };
@@ -536,7 +536,7 @@ export function HomePanel({
             cursor: canRelax ? 'pointer' : 'not-allowed',
             opacity: canRelax ? 1 : 0.6,
           }}
-          title={`Rest for ${housingData.relaxationRate} hours (+10 happiness, +3 relaxation)`}
+          title={`Rest for ${housingData.relaxationRate} hours (+3 happiness, +3 relaxation)`}
         >
           Relax ({housingData.relaxationRate}h)
         </button>
@@ -558,7 +558,7 @@ export function HomePanel({
             cursor: canSleep ? 'pointer' : 'not-allowed',
             opacity: canSleep ? 1 : 0.6,
           }}
-          title="Sleep for 8 hours (+20 happiness, +10 health, +5 relaxation)"
+          title="Sleep for 8 hours (+5 happiness, +10 health, +5 relaxation)"
         >
           Sleep (8h)
         </button>

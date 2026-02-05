@@ -15,8 +15,9 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
           // Use current wage if player has a job, otherwise use passed wage
           const effectiveWage = p.currentJob ? p.currentWage : wage;
 
-          // Work bonus: 6+ hours = 8 hours pay (33% efficiency bonus like original game)
-          const bonusHours = hours >= 6 ? Math.ceil(hours * 1.33) : hours;
+          // Work bonus: 6+ hours shift gets a small efficiency bonus (15%)
+          // Reduced from 33% to slow gold accumulation and better match Jones pacing
+          const bonusHours = hours >= 6 ? Math.ceil(hours * 1.15) : hours;
           let earnings = bonusHours * effectiveWage;
 
           // Garnishment: 50% + 2 gold interest if rent is overdue (4+ weeks)
@@ -126,7 +127,7 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
             ...p,
             education: newEducation,
             educationProgress: newProgress,
-            happiness: Math.min(100, p.happiness + 10), // Completing education is satisfying
+            happiness: Math.min(100, p.happiness + 5), // Completing education is satisfying (matches Jones +5)
           };
         }),
       }));
