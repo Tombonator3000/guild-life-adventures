@@ -65,6 +65,13 @@ Based on JONES_REFERENCE.md analysis:
 
 ## Completed
 
+### 2026-02-05 - Refactor Large Files
+- [x] gameStore.ts: 1363 → 177 lines (extracted 5 helper modules in store/helpers/)
+- [x] LocationPanel.tsx: 1104 → 448 lines (extracted 11 component files)
+- [x] useGrimwaldAI.ts: 945 → 294 lines (extracted 3 modules in hooks/ai/)
+- [x] jobs.ts: 813 → 1 line (split into jobs/ directory with types, definitions, utils)
+- [x] All builds and tests pass, backwards-compatible barrel re-exports
+
 ### 2026-02-05 - Side Panels, Direct Travel, Auto-Turn End, Death System
 - [x] Created PlayerInfoPanel component for left side of game board
 - [x] Created TurnOrderPanel component for right side of game board
