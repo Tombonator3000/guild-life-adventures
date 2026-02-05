@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { LOCATIONS, getMovementCost, ZONE_CONFIGS } from '@/data/locations';
 import { LocationZone } from './LocationZone';
@@ -8,8 +8,11 @@ import { LocationPanel } from './LocationPanel';
 import { EventModal, type GameEvent } from './EventModal';
 import { ShadowfingersModal, useShadowfingersModal } from './ShadowfingersModal';
 import { ZoneEditor, type CenterPanelConfig } from './ZoneEditor';
+import { PlayerInfoPanel } from './PlayerInfoPanel';
+import { TurnOrderPanel } from './TurnOrderPanel';
 import gameBoard from '@/assets/game-board.jpeg';
-import type { ZoneConfig } from '@/types/game.types';
+import type { ZoneConfig, LocationId } from '@/types/game.types';
+import { toast } from 'sonner';
 
 const DEFAULT_CENTER_PANEL: CenterPanelConfig = {
   top: 23.4,
@@ -19,7 +22,23 @@ const DEFAULT_CENTER_PANEL: CenterPanelConfig = {
 };
 
 export function GameBoard() {
-  const { players, selectedLocation, selectLocation, week, priceModifier, eventMessage, dismissEvent, phase } = useGameStore();
+  const {
+    players,
+    selectedLocation,
+    selectLocation,
+    week,
+    priceModifier,
+    eventMessage,
+    dismissEvent,
+    phase,
+    currentPlayerIndex,
+    goalSettings,
+    movePlayer,
+    endTurn,
+    checkDeath,
+    setEventMessage,
+    setPhase,
+  } = useGameStore();
   const { event: shadowfingersEvent, dismiss: dismissShadowfingers } = useShadowfingersModal();
   const [showZoneEditor, setShowZoneEditor] = useState(false);
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
@@ -69,11 +88,78 @@ export function GameBoard() {
   };
   const currentPlayer = useCurrentPlayer();
 
+  // Check if player should auto-return to housing when time runs out
+  const checkAutoReturn = useCallback(() => {
+    if (!currentPlayer) return;
+
+    // Check for death first
+    if (currentPlayer.health <= 0) {
+      const isDead = checkDeath(currentPlayer.id);
+      if (isDead) {
+        setEventMessage(`${currentPlayer.name} has died! Game over for this player.`);
+        setPhase('event');
+        // Move to next player's turn after death
+        setTimeout(() => {
+          endTurn();
+        }, 100);
+        return true;
+      }
+    }
+
+    // Check if time has run out
+    if (currentPlayer.timeRemaining <= 0) {
+      // Get player's home location based on housing
+      const homeLocation: LocationId = currentPlayer.housing === 'noble' ? 'noble-heights' : 'slums';
+
+      // Only move if not already at home
+      if (currentPlayer.currentLocation !== homeLocation) {
+        toast.info(`${currentPlayer.name}'s time is up! Returning home...`);
+      }
+
+      // End turn automatically
+      setTimeout(() => {
+        endTurn();
+      }, 500);
+      return true;
+    }
+
+    return false;
+  }, [currentPlayer, checkDeath, setEventMessage, setPhase, endTurn]);
+
+  // Monitor time and health changes
+  useEffect(() => {
+    if (currentPlayer && phase === 'playing') {
+      checkAutoReturn();
+    }
+  }, [currentPlayer?.timeRemaining, currentPlayer?.health, phase, checkAutoReturn]);
+
+  // Direct travel on location click (instead of showing travel button)
   const handleLocationClick = (locationId: string) => {
-    if (selectedLocation === locationId) {
-      selectLocation(null);
+    if (!currentPlayer) return;
+
+    const isCurrentLocation = currentPlayer.currentLocation === locationId;
+
+    if (isCurrentLocation) {
+      // If already here, toggle the location panel
+      if (selectedLocation === locationId) {
+        selectLocation(null);
+      } else {
+        selectLocation(locationId as LocationId);
+      }
     } else {
-      selectLocation(locationId as any);
+      // Travel directly to the location
+      const moveCost = getMovementCost(currentPlayer.currentLocation, locationId as LocationId);
+
+      if (currentPlayer.timeRemaining >= moveCost) {
+        // Move player directly
+        movePlayer(currentPlayer.id, locationId as LocationId, moveCost);
+        selectLocation(locationId as LocationId);
+        toast.success(`Traveled to ${LOCATIONS.find(l => l.id === locationId)?.name}`);
+      } else {
+        // Not enough time
+        toast.error('Not enough time to travel there!');
+        selectLocation(locationId as LocationId); // Still show the location panel
+      }
     }
   };
 
@@ -91,8 +177,29 @@ export function GameBoard() {
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-background flex items-center justify-center">
-      {/* Game board container - maintains aspect ratio */}
-      <div className="relative w-full h-full max-w-[177.78vh] max-h-[56.25vw]">
+      {/* Left Side Panel - Player Info */}
+      <div className="absolute left-0 top-0 bottom-0 w-[180px] z-30 p-2 flex flex-col">
+        {currentPlayer && (
+          <PlayerInfoPanel
+            player={currentPlayer}
+            isCurrentPlayer={true}
+          />
+        )}
+      </div>
+
+      {/* Right Side Panel - Turn Order */}
+      <div className="absolute right-0 top-0 bottom-0 w-[180px] z-30 p-2 flex flex-col">
+        <TurnOrderPanel
+          players={players}
+          currentPlayerIndex={currentPlayerIndex}
+          week={week}
+          priceModifier={priceModifier}
+          goalSettings={goalSettings}
+        />
+      </div>
+
+      {/* Game board container - maintains aspect ratio, with padding for side panels */}
+      <div className="relative w-full h-full max-w-[177.78vh] max-h-[56.25vw] mx-[180px]">
         {/* Game board background */}
         <div
           className="absolute inset-0 bg-contain bg-center bg-no-repeat"

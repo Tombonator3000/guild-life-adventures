@@ -160,6 +160,8 @@ const createPlayer = (
   // Housing prepayment system
   rentPrepaidWeeks: 0,
   lockedRent: 0,
+  // Death/Game Over state
+  isGameOver: false,
 });
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -723,16 +725,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
   checkDeath: (playerId) => {
     const state = get();
     const player = state.players.find(p => p.id === playerId);
-    if (!player) return false;
-    
+    if (!player || player.isGameOver) return false;
+
     if (player.health <= 0) {
       // Check for resurrection (if has savings)
       if (player.savings >= 100) {
         set((state) => ({
           players: state.players.map((p) =>
             p.id === playerId
-              ? { 
-                  ...p, 
+              ? {
+                  ...p,
                   health: 50,
                   savings: p.savings - 100,
                   currentLocation: 'enchanter' as LocationId,
@@ -743,6 +745,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
         }));
         return false;
       }
+      // Player dies - mark as game over
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? { ...p, isGameOver: true }
+            : p
+        ),
+      }));
       return true; // Player is dead
     }
     return false;
@@ -750,8 +760,53 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   endTurn: () => {
     const state = get();
-    const nextIndex = (state.currentPlayerIndex + 1) % state.players.length;
-    const isNewWeek = nextIndex === 0;
+
+    // Find next alive player
+    const findNextAlivePlayer = (startIndex: number): { index: number; isNewWeek: boolean } => {
+      let index = startIndex;
+      let loopCount = 0;
+      const totalPlayers = state.players.length;
+
+      while (loopCount < totalPlayers) {
+        index = (index + 1) % totalPlayers;
+        const isNewWeek = index === 0;
+
+        // Check if this player is alive
+        if (!state.players[index].isGameOver) {
+          return { index, isNewWeek };
+        }
+
+        // If we've checked a full loop and all players are dead, game over
+        loopCount++;
+        if (loopCount >= totalPlayers) {
+          // All players are game over - this shouldn't normally happen
+          return { index: 0, isNewWeek: true };
+        }
+      }
+
+      return { index: (startIndex + 1) % totalPlayers, isNewWeek: (startIndex + 1) % totalPlayers === 0 };
+    };
+
+    // Check if only one player remains alive - they win
+    const alivePlayers = state.players.filter(p => !p.isGameOver);
+    if (alivePlayers.length === 1) {
+      set({
+        winner: alivePlayers[0].id,
+        phase: 'victory',
+        eventMessage: `${alivePlayers[0].name} is the last one standing and wins the game!`,
+      });
+      return;
+    }
+
+    if (alivePlayers.length === 0) {
+      set({
+        phase: 'victory',
+        eventMessage: 'All players have perished. Game Over!',
+      });
+      return;
+    }
+
+    const { index: nextIndex, isNewWeek } = findNextAlivePlayer(state.currentPlayerIndex);
 
     if (isNewWeek) {
       get().processWeekEnd();
@@ -891,14 +946,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const isRentDue = newWeek % 4 === 0;
     const isClothingDegradation = newWeek % 8 === 0;
     let eventMessages: string[] = [];
-    
+
     // Process all players for week-end effects
     const updatedPlayers = state.players.map((player) => {
       let p = { ...player };
-      
+
+      // Skip dead players
+      if (p.isGameOver) {
+        return p;
+      }
+
       // Reset newspaper for new week
       p.hasNewspaper = false;
-      
+
       // Dependability decay (decreases 5% each week if not working)
       p.dependability = Math.max(0, p.dependability - 5);
       
@@ -1009,12 +1069,37 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return p;
     });
     
+    // Find first alive player for the new week
+    const firstAliveIndex = updatedPlayers.findIndex(p => !p.isGameOver);
+
+    // Check if all players are dead
+    if (firstAliveIndex === -1) {
+      set({
+        week: newWeek,
+        phase: 'victory',
+        eventMessage: 'All players have perished. Game Over!',
+      });
+      return;
+    }
+
+    // Check if only one player remains
+    const alivePlayers = updatedPlayers.filter(p => !p.isGameOver);
+    if (alivePlayers.length === 1) {
+      set({
+        week: newWeek,
+        winner: alivePlayers[0].id,
+        phase: 'victory',
+        eventMessage: `${alivePlayers[0].name} is the last one standing and wins the game!`,
+      });
+      return;
+    }
+
     set({
       week: newWeek,
-      currentPlayerIndex: 0,
+      currentPlayerIndex: firstAliveIndex,
       priceModifier: 0.7 + Math.random() * 0.6, // Random price between 0.7 and 1.3
       players: updatedPlayers.map((p, index) =>
-        index === 0 ? { ...p, timeRemaining: HOURS_PER_TURN } : p
+        index === firstAliveIndex ? { ...p, timeRemaining: HOURS_PER_TURN } : p
       ),
       rentDueWeek: isRentDue ? newWeek : state.rentDueWeek,
       selectedLocation: null,
@@ -1022,9 +1107,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       phase: eventMessages.length > 0 ? 'event' : 'playing',
     });
 
-    // Check for apartment robbery at start of first player's turn
-    const firstPlayer = updatedPlayers[0];
-    if (firstPlayer) {
+    // Check for apartment robbery at start of first alive player's turn
+    const firstPlayer = updatedPlayers[firstAliveIndex];
+    if (firstPlayer && !firstPlayer.isGameOver) {
       get().startTurn(firstPlayer.id);
     }
   },

@@ -1,5 +1,107 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Side Panels, Direct Travel, Auto-Turn End, and Death System
+
+### Task Summary
+Implemented major UI and gameplay improvements to utilize the unused black areas on the sides of the game board and improve gameplay flow.
+
+### 1. Left Side Panel - Player Info Panel
+Created `PlayerInfoPanel.tsx` component that displays:
+- Player name, color, and guild rank
+- All vital stats with progress bars:
+  - Time remaining (Hours)
+  - Gold
+  - Health
+  - Happiness
+  - Food level
+  - Clothing condition
+  - Dependability
+  - Current wage (if employed)
+  - Housing status
+  - Experience
+- Warning indicators for critical stats (low health, low food, etc.)
+- Sick/Dead status indicators
+
+### 2. Right Side Panel - Turn Order Panel
+Created `TurnOrderPanel.tsx` component that displays:
+- Turn order with all players
+- Current turn indicator (crown icon)
+- Each player's progress toward victory (circular progress indicator)
+- Player status (gold, time remaining)
+- Dead player indicators (skull icon, grayed out)
+- AI player indicators (bot icon)
+- Victory goals summary
+- Game tip
+
+### 3. Direct Travel on Click
+**Before:** Players had to click a location, then click a "Travel to X" button
+**After:** Clicking a location directly travels there if:
+- Player has enough time
+- Shows success toast with location name
+- If not enough time, shows error toast but still opens location panel
+
+### 4. Auto-Return to Housing When Time Runs Out
+When a player's time reaches 0:
+- Shows toast notification
+- Automatically ends turn after 500ms delay
+- Next player's turn begins
+
+### 5. Player Death System
+**Health reaches 0:**
+- First checks for resurrection (requires 100g in savings)
+- If can resurrect: Health restored to 50, moved to Enchanter
+- If cannot resurrect: Player marked as `isGameOver: true`
+
+**Game Over handling:**
+- Dead players are skipped in turn order
+- Dead players don't receive weekly effects
+- If only one player remains alive, they win automatically
+- If all players die, game shows "All players have perished"
+
+### Files Created
+- `src/components/game/PlayerInfoPanel.tsx` - Left side player stats panel
+- `src/components/game/TurnOrderPanel.tsx` - Right side turn order panel
+
+### Files Modified
+- `src/components/game/GameBoard.tsx` - Added side panels, direct travel, auto-return logic
+- `src/store/gameStore.ts` - Updated endTurn, processWeekEnd, checkDeath for death system
+- `src/types/game.types.ts` - Added `isGameOver` field to Player interface
+
+### Layout Changes
+- Left panel: 180px wide, shows current player info
+- Right panel: 180px wide, shows turn order and goals
+- Game board container: Adjusted with margins for side panels
+
+### Technical Details
+```typescript
+// Direct travel implementation
+const handleLocationClick = (locationId: string) => {
+  if (isCurrentLocation) {
+    // Toggle location panel
+  } else {
+    const moveCost = getMovementCost(currentLocation, locationId);
+    if (timeRemaining >= moveCost) {
+      movePlayer(playerId, locationId, moveCost);
+      toast.success(`Traveled to ${locationName}`);
+    } else {
+      toast.error('Not enough time!');
+    }
+  }
+};
+
+// Auto-return when time runs out
+useEffect(() => {
+  if (currentPlayer && phase === 'playing') {
+    if (currentPlayer.timeRemaining <= 0) {
+      toast.info(`${name}'s time is up! Returning home...`);
+      setTimeout(() => endTurn(), 500);
+    }
+  }
+}, [currentPlayer?.timeRemaining]);
+```
+
+---
+
 ## 2026-02-05 - Jones in the Fast Lane Wiki Reference Documentation
 
 ### Task

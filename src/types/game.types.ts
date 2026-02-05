@@ -154,6 +154,8 @@ export interface Player {
   // Housing prepayment system (Jones-style)
   rentPrepaidWeeks: number; // Number of weeks rent paid in advance
   lockedRent: number; // Locked-in rent price (0 = not locked, uses current rate)
+  // Death/Game Over state
+  isGameOver: boolean; // True if player has died and is out of the game
 }
 
 export interface GoalSettings {
