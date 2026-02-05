@@ -1,5 +1,61 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Fix Workplace Access (Work Buttons)
+
+### Task Summary
+Fixed the bug where players could not work at Rusty Tankard even when employed there. Added "Work" buttons to all workplace locations so players can work shifts at their current job when visiting the appropriate location.
+
+### Problem
+- Players employed at Rusty Tankard (tavern jobs like Dishwasher, Cook, Barmaid) could not work their shifts
+- The Rusty Tankard panel only showed food/drink items, with no work option
+- Other locations like Bank, Academy, Armory, Enchanter, General Store, and Shadow Market also lacked work buttons
+
+### Solution
+Added conditional "Work" sections to all location panels that check:
+1. If player has a current job
+2. If that job's location matches the current location
+3. If so, display a "Work Shift" button showing expected earnings
+
+### Locations Updated
+
+| Location | Job Types Available |
+|----------|---------------------|
+| Rusty Tankard | Dishwasher, Tavern Cook, Barmaid/Barkeep, Head Chef, Tavern Manager |
+| Bank | Bank Janitor, Bank Teller, Guild Treasurer |
+| General Store | Market Porter, Shop Clerk, Shop Manager |
+| Academy | Library Assistant, Scribe, Teacher, Senior Teacher, Academy Lecturer, Sage, Weapons Instructor |
+| Armory | City Guard, Caravan Guard, Arena Fighter |
+| Enchanter | Scroll Copier, Enchantment Assistant, Alchemist, Potion Brewer |
+| Shadow Market | Market Vendor |
+
+### UI Implementation
+Each location now displays a "WORK" section when applicable:
+- Shows current job name and hourly wage
+- "Work Shift" button with expected earnings (hours × wage × 1.33 bonus)
+- Shows hours required per shift
+- Button disabled if not enough time remaining
+
+### Files Modified
+- `src/components/game/LocationPanel.tsx` - Added work buttons to 7 location panels:
+  - `rusty-tankard` case
+  - `bank` case
+  - `general-store` case
+  - `academy` case
+  - `armory` case
+  - `enchanter` case
+  - `shadow-market` case
+
+### Technical Details
+Each location panel now checks:
+```typescript
+const jobData = player.currentJob ? getJob(player.currentJob) : null;
+const canWorkHere = jobData && jobData.location === 'Location Name';
+
+// Then renders work section if canWorkHere && jobData
+```
+
+---
+
 ## 2026-02-05 - Smart Grimwald AI Opponent System
 
 ### Task Summary
