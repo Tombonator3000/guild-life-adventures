@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
-import { LOCATIONS, getMovementCost, ZONE_CONFIGS } from '@/data/locations';
+import { LOCATIONS, getMovementCost, ZONE_CONFIGS, getPath } from '@/data/locations';
 import { LocationZone } from './LocationZone';
 import { PlayerToken } from './PlayerToken';
+import { AnimatedPlayerToken } from './AnimatedPlayerToken';
 import { ResourcePanel } from './ResourcePanel';
 import { LocationPanel } from './LocationPanel';
 import { EventModal, type GameEvent } from './EventModal';
@@ -44,6 +45,11 @@ export function GameBoard() {
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
   const [customZones, setCustomZones] = useState<ZoneConfig[]>(ZONE_CONFIGS);
   const [centerPanel, setCenterPanel] = useState<CenterPanelConfig>(DEFAULT_CENTER_PANEL);
+
+  // Animation state for player movement
+  const [animatingPlayer, setAnimatingPlayer] = useState<string | null>(null);
+  const [animationPath, setAnimationPath] = useState<LocationId[] | null>(null);
+  const pendingMoveRef = useRef<{ playerId: string; destination: LocationId; timeCost: number } | null>(null);
 
   // Keyboard shortcut: Ctrl+Shift+Z to toggle zone editor
   useEffect(() => {
@@ -133,9 +139,26 @@ export function GameBoard() {
     }
   }, [currentPlayer?.timeRemaining, currentPlayer?.health, phase, checkAutoReturn]);
 
+  // Handle animation completion
+  const handleAnimationComplete = useCallback(() => {
+    const pending = pendingMoveRef.current;
+    if (pending) {
+      // Execute the actual move
+      movePlayer(pending.playerId, pending.destination, pending.timeCost);
+      selectLocation(pending.destination);
+      toast.success(`Traveled to ${LOCATIONS.find(l => l.id === pending.destination)?.name}`);
+      pendingMoveRef.current = null;
+    }
+    setAnimatingPlayer(null);
+    setAnimationPath(null);
+  }, [movePlayer, selectLocation]);
+
   // Direct travel on location click (instead of showing travel button)
   const handleLocationClick = (locationId: string) => {
     if (!currentPlayer) return;
+
+    // Don't allow clicks during animation
+    if (animatingPlayer) return;
 
     const isCurrentLocation = currentPlayer.currentLocation === locationId;
 
@@ -147,14 +170,23 @@ export function GameBoard() {
         selectLocation(locationId as LocationId);
       }
     } else {
-      // Travel directly to the location
+      // Travel directly to the location with animation
       const moveCost = getMovementCost(currentPlayer.currentLocation, locationId as LocationId);
 
       if (currentPlayer.timeRemaining >= moveCost) {
-        // Move player directly
-        movePlayer(currentPlayer.id, locationId as LocationId, moveCost);
-        selectLocation(locationId as LocationId);
-        toast.success(`Traveled to ${LOCATIONS.find(l => l.id === locationId)?.name}`);
+        // Calculate path and start animation
+        const path = getPath(currentPlayer.currentLocation as LocationId, locationId as LocationId);
+
+        // Store pending move for after animation
+        pendingMoveRef.current = {
+          playerId: currentPlayer.id,
+          destination: locationId as LocationId,
+          timeCost: moveCost,
+        };
+
+        // Start animation
+        setAnimatingPlayer(currentPlayer.id);
+        setAnimationPath(path);
       } else {
         // Not enough time
         toast.error('Not enough time to travel there!');
@@ -210,7 +242,10 @@ export function GameBoard() {
         <div className="absolute inset-0">
           {LOCATIONS.map((baseLocation) => {
             const location = getLocationWithCustomPosition(baseLocation.id) || baseLocation;
-            const playersHere = players.filter(p => p.currentLocation === location.id);
+            // Don't show animating player in the location zones
+            const playersHere = players.filter(
+              p => p.currentLocation === location.id && p.id !== animatingPlayer
+            );
             const moveCost = currentPlayer
               ? getMovementCost(currentPlayer.currentLocation, location.id)
               : 0;
@@ -221,7 +256,7 @@ export function GameBoard() {
                 key={location.id}
                 location={location}
                 isSelected={selectedLocation === location.id}
-                isCurrentLocation={isCurrentLocation}
+                isCurrentLocation={isCurrentLocation && !animatingPlayer}
                 moveCost={moveCost}
                 onClick={() => handleLocationClick(location.id)}
               >
@@ -237,6 +272,21 @@ export function GameBoard() {
             );
           })}
         </div>
+
+        {/* Animated player token layer (above location zones) */}
+        {animatingPlayer && animationPath && (
+          <div className="absolute inset-0 pointer-events-none z-40">
+            {players.filter(p => p.id === animatingPlayer).map((player) => (
+              <AnimatedPlayerToken
+                key={player.id}
+                player={player}
+                isCurrent={true}
+                animationPath={animationPath}
+                onAnimationComplete={handleAnimationComplete}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Debug overlay - shows zone boundaries */}
         {showDebugOverlay && (

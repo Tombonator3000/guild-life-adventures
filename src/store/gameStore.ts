@@ -813,11 +813,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     } else {
       // Start next player's turn (includes apartment robbery check)
       const nextPlayer = state.players[nextIndex];
+      // Move player to their home location at start of turn
+      const homeLocation: LocationId = nextPlayer.housing === 'noble' ? 'noble-heights' : 'slums';
       set({
         currentPlayerIndex: nextIndex,
         players: state.players.map((p, index) =>
           index === nextIndex
-            ? { ...p, timeRemaining: HOURS_PER_TURN }
+            ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: homeLocation }
             : p
         ),
         selectedLocation: null,
@@ -831,6 +833,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const state = get();
     const player = state.players.find(p => p.id === playerId);
     if (!player || player.isAI) return;
+
+    // Move player to their home location at start of turn (like Jones in the Fast Lane)
+    const homeLocation: LocationId = player.housing === 'noble' ? 'noble-heights' : 'slums';
+    if (player.currentLocation !== homeLocation) {
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? { ...p, currentLocation: homeLocation, previousLocation: p.currentLocation }
+            : p
+        ),
+      }));
+    }
 
     // Jones-style Starvation Check at start of turn
     // If player has no food and no Preservation Box with food, they starve and lose 20 Hours
@@ -1094,12 +1108,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return;
     }
 
+    // Move first player to their home location
+    const firstPlayer = updatedPlayers[firstAliveIndex];
+    const firstPlayerHome: LocationId = firstPlayer.housing === 'noble' ? 'noble-heights' : 'slums';
+
     set({
       week: newWeek,
       currentPlayerIndex: firstAliveIndex,
       priceModifier: 0.7 + Math.random() * 0.6, // Random price between 0.7 and 1.3
       players: updatedPlayers.map((p, index) =>
-        index === firstAliveIndex ? { ...p, timeRemaining: HOURS_PER_TURN } : p
+        index === firstAliveIndex
+          ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: firstPlayerHome }
+          : p
       ),
       rentDueWeek: isRentDue ? newWeek : state.rentDueWeek,
       selectedLocation: null,
@@ -1108,7 +1128,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
 
     // Check for apartment robbery at start of first alive player's turn
-    const firstPlayer = updatedPlayers[firstAliveIndex];
     if (firstPlayer && !firstPlayer.isGameOver) {
       get().startTurn(firstPlayer.id);
     }
