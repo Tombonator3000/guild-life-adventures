@@ -12,6 +12,18 @@
 
 *No active tasks*
 
+## Completed (Phase 2 - Dungeon Data)
+
+- [x] Create `src/data/dungeon.ts` with all types and interfaces
+- [x] Define 5 floor definitions (Entrance Cavern → Goblin Tunnels → Undead Crypt → Dragon's Lair → The Abyss)
+- [x] Define encounter tables per floor (4 encounters per pool + 1 boss each)
+- [x] Define loot tables and rare drops per floor (5% chance unique items)
+- [x] Add 6 education dungeon bonuses (trap disarm, damage reduction, arcane sight, etc.)
+- [x] Add floor unlock logic and equipment requirement checks
+- [x] Add helper functions (checkFloorRequirements, calculateEducationBonuses, generateFloorEncounters, etc.)
+- [x] Guild rank loot multipliers (80% novice → 150% guild master)
+- [x] TypeScript compiles cleanly (tsc --noEmit passes)
+
 ## Completed (Phase 1 - Equipment System)
 
 - [x] Add combat fields to Player interface (equippedWeapon, equippedArmor, equippedShield, dungeonFloorsCleared)
@@ -33,12 +45,6 @@
 
 ### Dungeon & Combat System (Rogue-Lite RPG)
 See log.md "Game Gap Analysis & Rogue-Lite RPG Design Proposal" for full design.
-
-**Phase 2: Dungeon Data**
-- [ ] Create `src/data/dungeon.ts` with 5 floor definitions
-- [ ] Define encounter tables per floor (3-4 encounters + boss)
-- [ ] Define loot tables and rare drops per floor
-- [ ] Add floor unlock logic and equipment requirement checks
 
 **Phase 3: Cave UI Overhaul**
 - [ ] Replace CavePanel explore/rest with floor selection interface

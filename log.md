@@ -1,5 +1,98 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Phase 2 Implementation: Dungeon Data (dungeon.ts)
+
+### What Was Done
+Created the complete dungeon data system (`src/data/dungeon.ts`) — Phase 2 of the Rogue-Lite RPG plan.
+
+**New File: `src/data/dungeon.ts`**
+
+**Types & Interfaces:**
+- `EncounterDifficulty` — easy | medium | hard | boss
+- `EncounterType` — combat | trap | treasure | healing | boss
+- `EncounterOutcome` — victory | pyrrhic | defeat
+- `FloorRunResult` — cleared | retreated | defeated
+- `DungeonEncounter` — Individual encounter with name, type, power, damage, gold, flavor text
+- `FloorRequirements` — Previous floor, minimum weapon/armor/ATK/DEF, recommended degrees
+- `RareDrop` — Unique per-floor drops with 5% chance
+- `RareDropEffect` — Heal, permanent gold bonus, max health, equippable shield, happiness+stats
+- `EducationDungeonBonus` — Per-degree combat bonuses
+- `DungeonFloor` — Complete floor definition with encounters, boss, loot, requirements
+
+**5 Dungeon Floors:**
+
+| Floor | Name | Time | Min ATK/DEF | Encounters | Boss | Gold Range |
+|-------|------|------|-------------|------------|------|------------|
+| 1 | Entrance Cavern | 6/4 hrs | 0/0 | Rats, Bats, Chest, Spring | Rat King | 15-50g |
+| 2 | Goblin Tunnels | 10/8 hrs | 5/0 | Goblin Scouts, Pit Trap, Warriors, Cache | Goblin Chieftain | 30-100g |
+| 3 | Undead Crypt | 14/12 hrs | 15/10 | Skeletons, Ghosts, Poison Trap, Artifacts | Crypt Lich | 60-200g |
+| 4 | Dragon's Lair | 18/16 hrs | 25/20 | Young Dragon, Fire Vent, Drake Pack, Hoard | Elder Dragon | 120-400g |
+| 5 | The Abyss | 22/20 hrs | 40/35 | Demon Soldiers, Void Rift, Shadow Fiends, Vault | Azrathor | 250-600g |
+
+**Encounter Tables (per floor):**
+- Each floor has 4 encounters in the pool (mix of combat, trap, treasure, healing)
+- Floor run selects 3 random encounters + 1 boss = 4 total per attempt
+- Traps are disarmable with Trade Guild Certificate
+- Ghosts/ethereal enemies require Arcane Studies for full damage
+
+**Education Dungeon Bonuses (6 degrees):**
+- Trade Guild: Disarm traps (skip trap encounters)
+- Combat Training: -15% damage received
+- Master Combat: -25% damage + 10% attack (highest damage reduction wins, no stacking)
+- Arcane Studies: Damage ghosts, +15% gold find
+- Alchemy: 20% chance to find Healing Potion after encounters
+- Scholar: +10% gold from dungeon activities
+
+**Rare Drops (5% per floor clear):**
+- Floor 1: Cave Mushroom (+20 HP heal)
+- Floor 2: Goblin's Lucky Coin (+5% permanent gold from work)
+- Floor 3: Undead Amulet (+10 permanent max health)
+- Floor 4: Dragon Scale Shield (+20 DEF, +20% Block, equippable)
+- Floor 5: Demon's Heart (+25 happiness, +5 all stat caps)
+
+**Loot Multiplier by Guild Rank:**
+- Novice: 80%, Apprentice: 90%, Journeyman: 100%, Adept: 110%
+- Veteran: 120%, Elite: 135%, Guild Master: 150%
+
+**Helper Functions:**
+- `getFloor(id)` — Get floor by ID
+- `checkFloorRequirements(floor, cleared, weapon, armor, stats)` — Returns canEnter + reasons
+- `calculateEducationBonuses(degrees)` — Accumulated education combat bonuses
+- `generateFloorEncounters(floor)` — Pick 3 random + boss for a run
+- `getLootMultiplier(floor, rank)` — Gold multiplier by guild rank
+- `getFloorTimeCost(floor, stats)` — Reduced time if overpowered
+- `getHighestAvailableFloor(cleared)` — Next floor to attempt
+- `getDungeonProgress(cleared)` — Summary for UI display
+
+**Constants:**
+- `ENCOUNTERS_PER_FLOOR = 4`
+- `MAX_DUNGEON_FLOOR = 5`
+- `MAX_FLOOR_ATTEMPTS_PER_TURN = 1`
+- `HEALING_POTION_HP = 15`
+
+**Design Decisions:**
+- Damage reduction from education is non-stacking (best value wins) to prevent master-combat + combat-training giving 40% reduction
+- Floor time cost has a "reduced" variant for overpowered players (1.5x minimum stats)
+- Equipment requirements check both item equipped AND stat thresholds (can't skip dagger requirement with magic buffs)
+- Encounters use basePower for combat formula and baseDamage for direct HP loss (traps/healing use baseDamage only)
+- Boss encounters always have `requiresArcane` on Floors 3 and 5 (Lich and Demon Lord) — arcane studies gives significant advantage
+
+### Files Created
+- `src/data/dungeon.ts` — All dungeon data, types, and helper functions
+
+### Files Not Modified
+- `src/types/game.types.ts` — No changes needed (Player already has `dungeonFloorsCleared` from Phase 1)
+- No other files modified — Phase 2 is data-only
+
+### Status
+- [x] Phase 1: Equipment system — **COMPLETE**
+- [x] Phase 2: Dungeon data (dungeon.ts) — **COMPLETE**
+- [ ] Phase 3: Cave UI overhaul (floor selection)
+- [ ] Phase 4: Combat system (encounter resolution)
+- [ ] Phase 5: Integration (quests + AI + balance)
+
+---
+
 ## 2026-02-05 - Phase 1 Implementation: Equipment System
 
 ### What Was Done
