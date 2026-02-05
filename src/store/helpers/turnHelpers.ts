@@ -246,6 +246,7 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         if (p.currentJob && p.dependability < 20) {
           p.currentJob = null;
           p.currentWage = 0;
+          p.shiftsWorkedSinceHire = 0;
           if (!p.isAI) {
             eventMessages.push(`${p.name} was fired due to poor dependability!`);
           }
@@ -257,6 +258,7 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           if (crashResult.type === 'layoff') {
             p.currentJob = null;
             p.currentWage = 0;
+            p.shiftsWorkedSinceHire = 0;
             p.happiness = Math.max(0, p.happiness - 20);
             if (!p.isAI) {
               eventMessages.push(`${p.name}: ${crashResult.message}`);

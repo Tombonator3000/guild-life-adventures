@@ -60,6 +60,7 @@ const createPlayer = (
   investments: 0,
   currentJob: null,
   currentWage: 0,
+  shiftsWorkedSinceHire: 0,
   dependability: 50, // Start at 50%
   experience: 0,
   relaxation: 30, // Default relaxation (ranges 10-50)

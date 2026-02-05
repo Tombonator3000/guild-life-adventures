@@ -1,5 +1,46 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Fix Guild Job Location Restrictions & Raise Requirements
+
+### Task Summary
+Fixed two gameplay bugs:
+1. Players could work and request raises at the Guild Hall even when their job was at a different location (e.g., Bank, Forge, Tavern)
+2. Players could request a raise immediately after being hired without working any shifts
+
+### Bug 1: Guild Hall Work Restriction
+
+**Problem:**
+The Guild Hall's work section checked `player.currentJob && currentJobData` but did NOT check if the job's `location` was `'Guild Hall'`. This meant a player employed as a Bank Janitor could visit the Guild Hall and work their shift there — which makes no sense.
+
+**Fix:**
+Added a `canWorkAtGuildHall` check: `currentJobData.location === 'Guild Hall'`. The work button and raise button now only appear at the Guild Hall when the player's job is actually located there. Other locations (Bank, Forge, Academy, etc.) already had correct location checks via the `WorkSection` component.
+
+### Bug 2: Raise Without Working
+
+**Problem:**
+The `requestRaise` function had no check for how many shifts the player had worked. A player could get hired and immediately request (and potentially receive) a raise with 30-80% success chance.
+
+**Fix:**
+- Added `shiftsWorkedSinceHire` field to the Player interface (tracks work shifts since last hire)
+- Field resets to 0 when: hired for a new job, fired for low dependability, or laid off due to market crash
+- Field increments by 1 each time `workShift` is called
+- `requestRaise` now requires at least 3 shifts worked before allowing a raise request
+- Raise button is disabled in UI when insufficient shifts, with tooltip showing progress
+
+### Files Modified
+- `src/types/game.types.ts` - Added `shiftsWorkedSinceHire` field to Player interface
+- `src/store/gameStore.ts` - Initialize `shiftsWorkedSinceHire: 0` for new players
+- `src/store/helpers/playerHelpers.ts` - Reset `shiftsWorkedSinceHire` to 0 on `setJob`
+- `src/store/helpers/workEducationHelpers.ts` - Increment counter in `workShift`, add minimum shift check in `requestRaise`
+- `src/store/helpers/turnHelpers.ts` - Reset counter on fired/layoff events
+- `src/components/game/LocationPanel.tsx` - Add `canWorkAtGuildHall` check, disable raise button when insufficient shifts
+
+### Verification
+- Build passes (`bun run build`)
+- Tests pass (`bun run test`)
+
+---
+
 ## 2026-02-05 - Jones-Style Home Interior Display
 
 ### Task Summary

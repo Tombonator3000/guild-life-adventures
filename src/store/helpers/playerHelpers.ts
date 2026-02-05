@@ -154,7 +154,7 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
       set((state) => ({
         players: state.players.map((p) =>
           p.id === playerId
-            ? { ...p, currentJob: jobId, currentWage: wage, dependability: Math.max(30, p.dependability - 10) }
+            ? { ...p, currentJob: jobId, currentWage: wage, shiftsWorkedSinceHire: 0, dependability: Math.max(30, p.dependability - 10) }
             : p
         ),
       }));
