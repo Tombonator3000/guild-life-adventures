@@ -58,6 +58,9 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     sellItem,
     setJob,
     requestRaise,
+    buyDurable,
+    equipItem,
+    unequipItem,
   } = useGameStore();
   const player = useCurrentPlayer();
   const location = getLocation(locationId);
@@ -229,6 +232,9 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             modifyClothing={modifyClothing}
             modifyHappiness={modifyHappiness}
             workShift={workShift}
+            buyDurable={buyDurable}
+            equipItem={equipItem}
+            unequipItem={unequipItem}
           />
         );
 

@@ -78,6 +78,11 @@ const createPlayer = (
   lockedRent: 0,
   // Death/Game Over state
   isGameOver: false,
+  // Combat & Equipment
+  equippedWeapon: null,
+  equippedArmor: null,
+  equippedShield: null,
+  dungeonFloorsCleared: [],
 });
 
 export const useGameStore = create<GameStore>((set, get) => {

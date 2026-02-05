@@ -12,19 +12,27 @@
 
 *No active tasks*
 
+## Completed (Phase 1 - Equipment System)
+
+- [x] Add combat fields to Player interface (equippedWeapon, equippedArmor, equippedShield, dungeonFloorsCleared)
+- [x] Add EquipmentSlot and EquipmentStats types to game.types.ts
+- [x] Add attack/defense stats to existing weapons (Dagger +5 ATK, Iron Sword +15 ATK, Shield +5 DEF/10% BLK)
+- [x] Add new equipment tiers:
+  - Weapons: Steel Sword (+25 ATK, Floor 2), Enchanted Blade (+40 ATK, Floor 3)
+  - Armor: Leather (+10 DEF), Chainmail (+20 DEF, Floor 2), Plate (+35 DEF, Floor 3), Enchanted Plate (+50 DEF, Floor 4)
+  - Shields: Iron Shield (+10 DEF/15% BLK), Tower Shield (+15 DEF/25% BLK, Floor 2)
+- [x] Add equip/unequip actions to gameStore (via economyHelpers)
+- [x] Selling equipped durable auto-unequips
+- [x] Update ArmoryPanel: Combat stats summary, buy/equip/unequip UI, locked items for uncleared floors
+- [x] Update CavePanel: Equipment-aware combat (defense reduces damage, attack increases gold, shield blocks, weapon enables fighting back)
+- [x] TypeScript compiles cleanly (tsc --noEmit passes)
+
 ---
 
 ## Backlog
 
-### Dungeon & Combat System (NEW — Rogue-Lite RPG)
+### Dungeon & Combat System (Rogue-Lite RPG)
 See log.md "Game Gap Analysis & Rogue-Lite RPG Design Proposal" for full design.
-
-**Phase 1: Equipment System**
-- [ ] Add combat fields to Player interface (equippedWeapon, equippedArmor, equippedShield, attackPower, defensePower, dungeonFloorsCleared)
-- [ ] Add attack/defense stats to weapons/armor in items.ts
-- [ ] Add new equipment tiers (Steel Sword, Enchanted Blade, Chainmail, Plate, Tower Shield, etc.)
-- [ ] Add equip/unequip actions to gameStore
-- [ ] Update ArmoryPanel to show combat stats and equip buttons
 
 **Phase 2: Dungeon Data**
 - [ ] Create `src/data/dungeon.ts` with 5 floor definitions

@@ -1,5 +1,72 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Phase 1 Implementation: Equipment System
+
+### What Was Done
+Implemented the full equipment system (Phase 1 of the Rogue-Lite RPG plan).
+
+**Types (game.types.ts):**
+- Added `EquipmentSlot` type ('weapon' | 'armor' | 'shield')
+- Added `EquipmentStats` interface (attack, defense, blockChance)
+- Added to Player: `equippedWeapon`, `equippedArmor`, `equippedShield`, `dungeonFloorsCleared`
+
+**Items (items.ts):**
+- Extended Item interface with `equipSlot`, `equipStats`, `requiresFloorCleared`
+- Added `armor` and `shield` to ItemCategory
+- Updated existing weapons with combat stats (Dagger +5 ATK, Iron Sword +15 ATK, Shield +5 DEF/10% BLK)
+- Added new equipment tiers:
+  - Steel Sword (250g, +25 ATK, requires Floor 2)
+  - Enchanted Blade (500g, +40 ATK, requires Floor 3)
+  - Leather Armor (75g, +10 DEF)
+  - Chainmail (200g, +20 DEF, requires Floor 2)
+  - Plate Armor (450g, +35 DEF, requires Floor 3)
+  - Enchanted Plate (900g, +50 DEF, requires Floor 4)
+  - Iron Shield (120g, +10 DEF/15% BLK)
+  - Tower Shield (300g, +15 DEF/25% BLK, requires Floor 2)
+- Added helper functions: `getEquipmentBySlot()`, `getEquipStats()`, `calculateCombatStats()`
+
+**Store (economyHelpers.ts, storeTypes.ts):**
+- Added `equipItem(playerId, itemId, slot)` and `unequipItem(playerId, slot)` actions
+- Updated `sellDurable` to auto-unequip sold items
+- Player defaults include new fields (all null/empty)
+
+**UI (ArmoryPanel.tsx):**
+- Complete rewrite with sections: Clothing, Weapons, Armor, Shields
+- Combat stats summary box (ATK/DEF/BLK with equipped item names)
+- Buy items you don't own (with price, Jones-style dotted line)
+- Equip/unequip owned items (green highlight when equipped)
+- Locked items show floor requirement when not yet available
+- Stat labels on all equipment items
+
+**UI (CavePanel.tsx):**
+- Equipment status display showing ATK/DEF/BLK
+- Context-aware tips based on gear level
+- Equipment now affects exploration:
+  - Attack increases treasure find chance and gold amount
+  - Defense reduces creature damage
+  - Shield block chance halves damage on proc
+  - Having a weapon enables fighting back (earn gold from creature encounters)
+  - Without weapon: full damage, more happiness loss
+
+### Files Modified
+- `src/types/game.types.ts` — New types and Player fields
+- `src/data/items.ts` — Equipment stats, new items, helper functions
+- `src/store/storeTypes.ts` — equipItem/unequipItem in GameStore interface
+- `src/store/helpers/economyHelpers.ts` — equip/unequip/sell logic
+- `src/store/gameStore.ts` — Player defaults
+- `src/components/game/ArmoryPanel.tsx` — Full equipment UI
+- `src/components/game/CavePanel.tsx` — Equipment-aware combat
+- `src/components/game/LocationPanel.tsx` — Pass new props to ArmoryPanel
+
+### Status
+- [x] Phase 1: Equipment system — **COMPLETE**
+- [ ] Phase 2: Dungeon data (dungeon.ts)
+- [ ] Phase 3: Cave UI overhaul (floor selection)
+- [ ] Phase 4: Combat system (encounter resolution)
+- [ ] Phase 5: Integration (quests + AI + balance)
+
+---
+
 ## 2026-02-05 - Game Gap Analysis & Rogue-Lite RPG Design Proposal
 
 ### Task Summary

@@ -1,7 +1,7 @@
 // Guild Life - Items and Shopping Data
-import type { ApplianceSource } from '@/types/game.types';
+import type { ApplianceSource, EquipmentSlot, EquipmentStats } from '@/types/game.types';
 
-export type ItemCategory = 'food' | 'clothing' | 'appliance' | 'luxury' | 'weapon' | 'magic' | 'education';
+export type ItemCategory = 'food' | 'clothing' | 'appliance' | 'luxury' | 'weapon' | 'armor' | 'shield' | 'magic' | 'education';
 
 export interface Item {
   id: string;
@@ -20,6 +20,10 @@ export interface Item {
   happinessOnPurchaseMarket?: number; // Lower happiness bonus when bought from market/pawn
   givesPerTurnBonus?: boolean; // True for items like microwave/stove that give +1/turn
   canGenerateIncome?: boolean; // True for computer - random income chance
+  // Combat equipment stats
+  equipSlot?: EquipmentSlot; // Which slot this equips to
+  equipStats?: EquipmentStats; // Combat stats when equipped
+  requiresFloorCleared?: number; // Dungeon floor that must be cleared to purchase
 }
 
 // Appliance data for Jones-style appliances (Socket City = Enchanter's Workshop)
@@ -313,15 +317,17 @@ export const ARMORY_ITEMS: Item[] = [
     effect: { type: 'clothing', value: 100 },
     description: 'Official uniform for guild work.',
   },
-  // Weapons (for show, affect happiness) - Durable
+  // Weapons - equippable with combat stats
   {
     id: 'dagger',
     name: 'Simple Dagger',
     category: 'weapon',
     basePrice: 35,
     effect: { type: 'happiness', value: 1 },
-    description: 'A basic self-defense weapon.',
+    description: 'A basic self-defense weapon. +5 Attack.',
     isDurable: true,
+    equipSlot: 'weapon',
+    equipStats: { attack: 5 },
   },
   {
     id: 'sword',
@@ -329,17 +335,117 @@ export const ARMORY_ITEMS: Item[] = [
     category: 'weapon',
     basePrice: 90,
     effect: { type: 'happiness', value: 2 },
-    description: 'A reliable blade for adventurers.',
+    description: 'A reliable blade for adventurers. +15 Attack.',
     isDurable: true,
+    equipSlot: 'weapon',
+    equipStats: { attack: 15 },
   },
+  {
+    id: 'steel-sword',
+    name: 'Steel Sword',
+    category: 'weapon',
+    basePrice: 250,
+    effect: { type: 'happiness', value: 3 },
+    description: 'A finely forged steel blade. +25 Attack. Requires Floor 2 cleared.',
+    isDurable: true,
+    equipSlot: 'weapon',
+    equipStats: { attack: 25 },
+    requiresFloorCleared: 2,
+  },
+  {
+    id: 'enchanted-blade',
+    name: 'Enchanted Blade',
+    category: 'weapon',
+    basePrice: 500,
+    effect: { type: 'happiness', value: 5 },
+    description: 'A blade imbued with arcane energy. +40 Attack. Requires Floor 3 cleared.',
+    isDurable: true,
+    equipSlot: 'weapon',
+    equipStats: { attack: 40 },
+    requiresFloorCleared: 3,
+  },
+  // Armor - equippable with defense stats
+  {
+    id: 'leather-armor',
+    name: 'Leather Armor',
+    category: 'armor',
+    basePrice: 75,
+    effect: { type: 'happiness', value: 1 },
+    description: 'Light protection for dungeon delving. +10 Defense.',
+    isDurable: true,
+    equipSlot: 'armor',
+    equipStats: { defense: 10 },
+  },
+  {
+    id: 'chainmail',
+    name: 'Chainmail',
+    category: 'armor',
+    basePrice: 200,
+    effect: { type: 'happiness', value: 2 },
+    description: 'Interlocking metal rings. +20 Defense. Requires Floor 2 cleared.',
+    isDurable: true,
+    equipSlot: 'armor',
+    equipStats: { defense: 20 },
+    requiresFloorCleared: 2,
+  },
+  {
+    id: 'plate-armor',
+    name: 'Plate Armor',
+    category: 'armor',
+    basePrice: 450,
+    effect: { type: 'happiness', value: 3 },
+    description: 'Heavy steel plates. +35 Defense. Requires Floor 3 cleared.',
+    isDurable: true,
+    equipSlot: 'armor',
+    equipStats: { defense: 35 },
+    requiresFloorCleared: 3,
+  },
+  {
+    id: 'enchanted-plate',
+    name: 'Enchanted Plate',
+    category: 'armor',
+    basePrice: 900,
+    effect: { type: 'happiness', value: 5 },
+    description: 'Magically reinforced armor. +50 Defense. Requires Floor 4 cleared.',
+    isDurable: true,
+    equipSlot: 'armor',
+    equipStats: { defense: 50 },
+    requiresFloorCleared: 4,
+  },
+  // Shields - equippable with defense + block chance
   {
     id: 'shield',
     name: 'Wooden Shield',
-    category: 'weapon',
+    category: 'shield',
     basePrice: 45,
     effect: { type: 'happiness', value: 1 },
-    description: 'Protection against blows.',
+    description: 'Basic protection. +5 Defense, 10% Block.',
     isDurable: true,
+    equipSlot: 'shield',
+    equipStats: { defense: 5, blockChance: 0.10 },
+  },
+  {
+    id: 'iron-shield',
+    name: 'Iron Shield',
+    category: 'shield',
+    basePrice: 120,
+    effect: { type: 'happiness', value: 2 },
+    description: 'Sturdy metal shield. +10 Defense, 15% Block.',
+    isDurable: true,
+    equipSlot: 'shield',
+    equipStats: { defense: 10, blockChance: 0.15 },
+  },
+  {
+    id: 'tower-shield',
+    name: 'Tower Shield',
+    category: 'shield',
+    basePrice: 300,
+    effect: { type: 'happiness', value: 3 },
+    description: 'Massive shield. +15 Defense, 25% Block. Requires Floor 2 cleared.',
+    isDurable: true,
+    equipSlot: 'shield',
+    equipStats: { defense: 15, blockChance: 0.25 },
+    requiresFloorCleared: 2,
   },
 ];
 
@@ -496,4 +602,44 @@ export const getItemPrice = (item: Item, priceModifier: number): number => {
 export const canBeStolen = (itemId: string): boolean => {
   const item = getItem(itemId);
   return item ? (item.isDurable === true && item.isUnstealable !== true) : false;
+};
+
+// Get all equippable items by slot
+export const getEquipmentBySlot = (slot: EquipmentSlot): Item[] => {
+  return ALL_ITEMS.filter(item => item.equipSlot === slot);
+};
+
+// Get combat stats for an equipped item
+export const getEquipStats = (itemId: string): EquipmentStats | undefined => {
+  const item = getItem(itemId);
+  return item?.equipStats;
+};
+
+// Calculate total combat stats for a player's equipment
+export const calculateCombatStats = (
+  equippedWeapon: string | null,
+  equippedArmor: string | null,
+  equippedShield: string | null,
+): { attack: number; defense: number; blockChance: number } => {
+  let attack = 0;
+  let defense = 0;
+  let blockChance = 0;
+
+  if (equippedWeapon) {
+    const stats = getEquipStats(equippedWeapon);
+    if (stats) attack += stats.attack || 0;
+  }
+  if (equippedArmor) {
+    const stats = getEquipStats(equippedArmor);
+    if (stats) defense += stats.defense || 0;
+  }
+  if (equippedShield) {
+    const stats = getEquipStats(equippedShield);
+    if (stats) {
+      defense += stats.defense || 0;
+      blockChance = stats.blockChance || 0;
+    }
+  }
+
+  return { attack, defense, blockChance };
 };

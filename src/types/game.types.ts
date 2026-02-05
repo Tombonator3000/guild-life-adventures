@@ -111,6 +111,16 @@ export interface AppliancesInventory {
   [itemId: string]: OwnedAppliance;
 }
 
+// Equipment slot types for combat system
+export type EquipmentSlot = 'weapon' | 'armor' | 'shield';
+
+// Equipment stats for weapons, armor, shields
+export interface EquipmentStats {
+  attack?: number;       // Bonus attack power (weapons)
+  defense?: number;      // Bonus defense power (armor, shields)
+  blockChance?: number;  // % chance to block (shields only, 0-1)
+}
+
 export interface Player {
   id: string;
   name: string;
@@ -157,6 +167,11 @@ export interface Player {
   lockedRent: number; // Locked-in rent price (0 = not locked, uses current rate)
   // Death/Game Over state
   isGameOver: boolean; // True if player has died and is out of the game
+  // Combat & Equipment system
+  equippedWeapon: string | null;   // Item ID of equipped weapon
+  equippedArmor: string | null;    // Item ID of equipped armor
+  equippedShield: string | null;   // Item ID of equipped shield
+  dungeonFloorsCleared: number[];  // Floors cleared at least once (e.g. [1, 2, 3])
 }
 
 export interface GoalSettings {
