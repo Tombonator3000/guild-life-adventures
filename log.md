@@ -1,5 +1,64 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Refactor Large Files
+
+### Goal
+Split the 4 largest source files into smaller, focused modules for maintainability.
+
+### Changes
+
+**gameStore.ts (1363 → 177 lines)**
+Extracted Zustand store actions into factory-function helper modules:
+- `src/store/storeTypes.ts` - SetFn/GetFn type aliases
+- `src/store/helpers/playerHelpers.ts` - Player stat modifications (modifyGold, modifyHealth, etc.)
+- `src/store/helpers/economyHelpers.ts` - Banking, rent, housing, appliance, buy/sell actions
+- `src/store/helpers/turnHelpers.ts` - endTurn, startTurn, processWeekEnd logic
+- `src/store/helpers/workEducationHelpers.ts` - workShift, studyDegree, completeDegree, requestRaise
+- `src/store/helpers/questHelpers.ts` - Quest actions, death check, guild rank, eviction, victory check
+
+Main gameStore.ts now imports and composes these via `create<GameStore>((set, get) => ({ ...createPlayerActions(set, get), ... }))`.
+
+**LocationPanel.tsx (1104 → 448 lines)**
+Extracted each location's switch case into its own component:
+- `ActionButton.tsx` - Shared action button component
+- `WorkSection.tsx` - Reusable work-shift section (jones/wood-frame variants)
+- `TavernPanel.tsx` - Rusty Tankard (food/drink)
+- `BankPanel.tsx` - Banking services
+- `GeneralStorePanel.tsx` - Food & provisions
+- `ArmoryPanel.tsx` - Clothing & weapons
+- `AcademyPanel.tsx` - Education/degrees
+- `LandlordPanel.tsx` - Housing & rent
+- `CavePanel.tsx` - Cave exploration
+- `ForgePanel.tsx` - Forge jobs
+- `HomePanel.tsx` - Rest at noble-heights/slums
+
+LocationPanel.tsx now delegates to these via the switch statement, passing store actions as props.
+
+**useGrimwaldAI.ts (945 → 294 lines)**
+Extracted pure logic into `src/hooks/ai/`:
+- `types.ts` - AI types, interfaces, difficulty settings
+- `strategy.ts` - Goal progress, resource urgency, job/degree selection, banking strategy
+- `actionGenerator.ts` - The main `generateActions()` function (~400 lines of decision logic)
+
+Main hook file now imports these modules and re-exports types for backwards compatibility.
+
+**jobs.ts (813 → 1 line barrel re-export)**
+Split into `src/data/jobs/`:
+- `types.ts` - Job, JobOffer, Employer interfaces
+- `definitions.ts` - All job constant arrays (GUILD_HALL_JOBS, FORGE_JOBS, etc.)
+- `utils.ts` - canWorkJob, getAvailableJobs, getJobOffers, applyForJob, etc.
+- `index.ts` - Barrel re-export
+
+Original `jobs.ts` re-exports from `./jobs/index` for backwards compatibility.
+
+### Result
+- No file over 640 lines (sidebar.tsx is a shadcn/ui component, not ours)
+- Build passes, tests pass
+- All existing imports unchanged (backwards-compatible barrel re-exports)
+- 24 new focused module files created
+
+---
+
 ## 2026-02-05 - Fix Game Crash After 3 Rounds (Event Phase Not Handled)
 
 ### Problem
