@@ -76,13 +76,13 @@ export function GameBoard() {
         <div 
           className="absolute overflow-hidden z-10"
           style={{
-            top: '19%',
-            left: '16.5%',
-            width: '67%',
-            height: '47%',
+           top: '17.5%',
+           left: '17.8%',
+           width: '64.4%',
+           height: '48.5%',
           }}
         >
-          <div className="w-full h-full overflow-hidden">
+         <div className="w-full h-full overflow-auto bg-card/95">
             {selectedLocation ? (
               <LocationPanel locationId={selectedLocation} />
             ) : (
