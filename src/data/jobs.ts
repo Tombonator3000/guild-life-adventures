@@ -389,12 +389,12 @@ export const ACADEMY_JOBS: Job[] = [
   },
 ];
 
-// === MILITARY JOBS ===
+// === MILITARY JOBS (at Armory) ===
 export const MILITARY_JOBS: Job[] = [
   {
     id: 'city-guard',
     name: 'City Guard',
-    location: 'Guildholm',
+    location: 'Armory',
     baseWage: 8,
     hoursPerShift: 8,
     requiredDegrees: ['combat-training'],
@@ -407,7 +407,7 @@ export const MILITARY_JOBS: Job[] = [
   {
     id: 'caravan-guard',
     name: 'Caravan Guard',
-    location: 'Guildholm',
+    location: 'Armory',
     baseWage: 12,
     hoursPerShift: 10,
     requiredDegrees: ['combat-training'],
@@ -420,7 +420,7 @@ export const MILITARY_JOBS: Job[] = [
   {
     id: 'arena-fighter',
     name: 'Arena Fighter',
-    location: 'Arena',
+    location: 'Armory',
     baseWage: 16,
     hoursPerShift: 4,
     requiredDegrees: ['master-combat'],
@@ -501,12 +501,84 @@ export const MAGIC_JOBS: Job[] = [
   },
 ];
 
-// === NOBLE JOBS ===
+// === RUSTY TANKARD JOBS (Monolith Burgers equivalent - tavern/fast food) ===
+export const TAVERN_JOBS: Job[] = [
+  // Entry level - no requirements (like Cook at Monolith Burgers)
+  {
+    id: 'tavern-dishwasher',
+    name: 'Dishwasher',
+    location: 'Rusty Tankard',
+    baseWage: 4,
+    hoursPerShift: 6,
+    requiredDegrees: [],
+    requiredClothing: 'none',
+    requiredExperience: 0,
+    requiredDependability: 0,
+    description: 'Wash dishes and clean the kitchen. Honest work for beginners.',
+    careerLevel: 1,
+  },
+  {
+    id: 'tavern-cook',
+    name: 'Tavern Cook',
+    location: 'Rusty Tankard',
+    baseWage: 5,
+    hoursPerShift: 6,
+    requiredDegrees: [],
+    requiredClothing: 'casual',
+    requiredExperience: 10,
+    requiredDependability: 20,
+    description: 'Prepare hearty meals for hungry adventurers.',
+    careerLevel: 1,
+  },
+  {
+    id: 'barmaid',
+    name: 'Barmaid/Barkeep',
+    location: 'Rusty Tankard',
+    baseWage: 6,
+    hoursPerShift: 6,
+    requiredDegrees: [],
+    requiredClothing: 'casual',
+    requiredExperience: 15,
+    requiredDependability: 25,
+    description: 'Serve drinks and food to patrons. Tips are good!',
+    careerLevel: 2,
+  },
+  // Requires Trade Guild
+  {
+    id: 'tavern-chef',
+    name: 'Head Chef',
+    location: 'Rusty Tankard',
+    baseWage: 10,
+    hoursPerShift: 6,
+    requiredDegrees: ['trade-guild'],
+    requiredClothing: 'casual',
+    requiredExperience: 25,
+    requiredDependability: 35,
+    description: 'Lead the kitchen and create the tavern\'s famous dishes.',
+    careerLevel: 3,
+  },
+  // Manager position - requires Commerce
+  {
+    id: 'tavern-manager',
+    name: 'Tavern Manager',
+    location: 'Rusty Tankard',
+    baseWage: 14,
+    hoursPerShift: 6,
+    requiredDegrees: ['commerce'],
+    requiredClothing: 'dress',
+    requiredExperience: 40,
+    requiredDependability: 45,
+    description: 'Manage the entire tavern operation. Keep the ale flowing!',
+    careerLevel: 5,
+  },
+];
+
+// === NOBLE/TOP JOBS (at Guild Hall) ===
 export const NOBLE_JOBS: Job[] = [
   {
     id: 'court-advisor',
     name: 'Court Advisor',
-    location: 'Noble Heights',
+    location: 'Guild Hall',
     baseWage: 21,
     hoursPerShift: 6,
     requiredDegrees: ['loremaster'],
@@ -541,6 +613,7 @@ export const ALL_JOBS: Job[] = [
   ...ACADEMY_JOBS,
   ...MILITARY_JOBS,
   ...MAGIC_JOBS,
+  ...TAVERN_JOBS,
   ...NOBLE_JOBS,
 ];
 
@@ -633,16 +706,15 @@ export const getEmployers = (): Employer[] => {
 
   // Define employer metadata
   const employerMeta: Record<string, { name: string; description: string }> = {
-    'Guild Hall': { name: 'Guild Hall', description: 'The adventurers guild - administrative and clerical work' },
+    'Guild Hall': { name: 'Guild Hall', description: 'The adventurers guild - administrative and leadership positions' },
     'General Store': { name: 'General Store', description: 'Retail and customer service positions' },
     'Shadow Market': { name: 'Shadow Market', description: 'Trading and vendor positions' },
     'Bank': { name: 'Bank', description: 'Financial services and accounting' },
     'Forge': { name: 'Forge', description: 'Metalworking and smithing positions' },
     'Academy': { name: 'Academy', description: 'Teaching and scholarly positions' },
-    'Guildholm': { name: 'City Guard', description: 'Military and security positions' },
-    'Arena': { name: 'Arena', description: 'Combat and entertainment positions' },
+    'Armory': { name: 'The Armory', description: 'Military, security, and combat positions' },
     'Enchanter': { name: 'Enchanter\'s Tower', description: 'Magical crafting and alchemy' },
-    'Noble Heights': { name: 'Noble Court', description: 'High society advisory positions' },
+    'Rusty Tankard': { name: 'The Rusty Tankard', description: 'Tavern work - food service and hospitality' },
   };
 
   for (const job of ALL_JOBS) {

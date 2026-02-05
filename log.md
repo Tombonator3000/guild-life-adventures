@@ -1,5 +1,96 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Player Movement Animation, Home Location Start, and Job Fixes
+
+### Task Summary
+Implemented animated player movement along the board path, made players start each turn at their home location, and fixed job locations to match actual game board locations.
+
+### 1. Animated Player Movement
+Created a new animation system that shows player tokens moving step-by-step along the board path when traveling.
+
+**Implementation:**
+- Created `AnimatedPlayerToken.tsx` component that animates through path waypoints
+- Uses `getPath()` to calculate the shortest route between locations
+- Animation speed: 300ms per step along the path
+- Player token is elevated above location zones during animation
+- Movement completes with the actual game state update
+
+**Key Features:**
+- Player token visually moves through each intermediate location
+- Current player indicator disabled during animation
+- Click disabled on locations during animation to prevent conflicts
+- Smooth CSS transitions for movement
+
+### 2. Players Start at Home Location
+Players now return to their housing location at the start of each turn (like Jones in the Fast Lane).
+
+**Rules:**
+- Slums/Homeless players start at "The Slums"
+- Noble Heights players start at "Noble Heights"
+- Applies at start of new turns and at start of new week
+
+**Modified:**
+- `endTurn()` - Moves next player to their home before starting turn
+- `processWeekEnd()` - Moves first player to their home at week start
+- `startTurn()` - Additional safety check for player location
+
+### 3. Fixed Job Locations
+Fixed jobs that referenced non-existent board locations:
+
+**Before → After:**
+- Military jobs (City Guard, Caravan Guard, Arena Fighter): "Guildholm"/"Arena" → "Armory"
+- Court Advisor: "Noble Heights" → "Guild Hall"
+
+### 4. Added Rusty Tankard Jobs (Monolith Burgers Equivalent)
+Added 5 new tavern jobs at The Rusty Tankard (fantasy equivalent of Monolith Burgers):
+
+| Job | Wage | Requirements |
+|-----|------|--------------|
+| Dishwasher | $4/hr | None |
+| Tavern Cook | $5/hr | 10 Exp, 20 Dep, Casual |
+| Barmaid/Barkeep | $6/hr | 15 Exp, 25 Dep, Casual |
+| Head Chef | $10/hr | Trade Guild, 25 Exp, 35 Dep |
+| Tavern Manager | $14/hr | Commerce, 40 Exp, 45 Dep, Dress |
+
+### Files Created
+- `src/components/game/AnimatedPlayerToken.tsx` - Animated movement component
+
+### Files Modified
+- `src/components/game/GameBoard.tsx` - Integrated animation system
+- `src/store/gameStore.ts` - Home location start logic
+- `src/data/jobs.ts` - Fixed locations, added TAVERN_JOBS
+
+### Technical Details
+
+**Animation System:**
+```typescript
+// Animation path state
+const [animatingPlayer, setAnimatingPlayer] = useState<string | null>(null);
+const [animationPath, setAnimationPath] = useState<LocationId[] | null>(null);
+
+// Calculate path and start animation
+const path = getPath(currentPlayer.currentLocation, destination);
+setAnimatingPlayer(currentPlayer.id);
+setAnimationPath(path);
+```
+
+**Home Location Logic:**
+```typescript
+// Determine home based on housing
+const homeLocation: LocationId = player.housing === 'noble' ? 'noble-heights' : 'slums';
+
+// Move player to home at turn start
+set({
+  players: state.players.map((p, index) =>
+    index === nextIndex
+      ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: homeLocation }
+      : p
+  ),
+});
+```
+
+---
+
 ## 2026-02-05 - CLAUDE.md and Victory Screen
 
 ### Task Summary
