@@ -160,6 +160,28 @@ export const RANDOM_EVENTS: GameEvent[] = [
       message: 'Market crash! Prices have increased.',
     },
   },
+
+  // Jones-style Market Crash events affecting jobs
+  {
+    id: 'market-crash-paycut',
+    name: 'Market Crash - Pay Cut',
+    description: 'Economic downturn forces employers to reduce wages.',
+    probability: 0.05, // 5% chance per week
+    effect: {
+      happiness: -10,
+      message: 'Due to market conditions, your employer has reduced your wages by 20%!',
+    },
+  },
+  {
+    id: 'market-crash-layoff',
+    name: 'Market Crash - Layoffs',
+    description: 'Severe economic downturn leads to job cuts.',
+    probability: 0.03, // 3% chance per week
+    effect: {
+      happiness: -20,
+      message: 'The market crash has forced your employer to let you go. You have lost your job!',
+    },
+  },
   
   // Health events
   {
@@ -239,17 +261,51 @@ export const checkForEvent = (
 };
 
 export const checkWeeklyTheft = (housing: string, gold: number): GameEvent | null => {
-  const theftEvents = RANDOM_EVENTS.filter(event => 
+  const theftEvents = RANDOM_EVENTS.filter(event =>
     event.id.includes('shadowfingers') &&
     event.conditions?.housing?.includes(housing) &&
     (!event.conditions?.minGold || gold >= event.conditions.minGold)
   );
-  
+
   for (const event of theftEvents) {
     if (Math.random() < event.probability) {
       return event;
     }
   }
-  
+
   return null;
+};
+
+// Jones-style market crash result
+export interface MarketCrashResult {
+  type: 'paycut' | 'layoff' | 'none';
+  wageMultiplier?: number; // 0.8 for pay cut (20% reduction)
+  message?: string;
+}
+
+// Check for market crash events affecting jobs (Jones-style)
+// Only affects players who have jobs
+export const checkMarketCrash = (hasJob: boolean): MarketCrashResult => {
+  if (!hasJob) {
+    return { type: 'none' };
+  }
+
+  // Check for layoff first (more severe, less likely)
+  if (Math.random() < 0.03) { // 3% chance
+    return {
+      type: 'layoff',
+      message: 'The market crash has forced your employer to let you go. You have lost your job!',
+    };
+  }
+
+  // Check for pay cut (less severe, more likely)
+  if (Math.random() < 0.05) { // 5% chance
+    return {
+      type: 'paycut',
+      wageMultiplier: 0.8, // 20% reduction like Jones
+      message: 'Due to market conditions, your employer has reduced your wages by 20%!',
+    };
+  }
+
+  return { type: 'none' };
 };

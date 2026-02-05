@@ -19,7 +19,7 @@ import type {
 } from '@/types/game.types';
 import { GRADUATION_BONUSES, getDegree, type DegreeId as DegreeIdType } from '@/data/education';
 import { PLAYER_COLORS, AI_COLOR, RENT_COSTS, CLOTHING_INTERVAL } from '@/types/game.types';
-import { checkWeeklyTheft } from '@/data/events';
+import { checkWeeklyTheft, checkMarketCrash } from '@/data/events';
 import {
   checkStreetRobbery,
   checkApartmentRobbery,
@@ -377,14 +377,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set((state) => ({
       players: state.players.map((p) => {
         if (p.id !== playerId) return p;
-        
+
         // Use current wage if player has a job, otherwise use passed wage
         const effectiveWage = p.currentJob ? p.currentWage : wage;
-        
+
         // Work bonus: 6+ hours = 8 hours pay (33% efficiency bonus like original game)
         const bonusHours = hours >= 6 ? Math.ceil(hours * 1.33) : hours;
         let earnings = bonusHours * effectiveWage;
-        
+
         // Garnishment: 50% + 2 gold interest if rent is overdue (4+ weeks)
         let garnishment = 0;
         let newRentDebt = p.rentDebt;
@@ -393,15 +393,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
           newRentDebt = Math.max(0, newRentDebt - garnishment);
           earnings -= garnishment;
         }
-        
-        // Dependability increases with work
-        const newDependability = Math.min(100, p.dependability + 2);
-        
-        // Experience increases
-        const newExperience = p.experience + hours;
-        
-        return { 
-          ...p, 
+
+        // Dependability increases with work (capped at maxDependability)
+        const newDependability = Math.min(p.maxDependability, p.dependability + 2);
+
+        // Experience increases (capped at maxExperience like Jones)
+        const newExperience = Math.min(p.maxExperience, p.experience + hours);
+
+        return {
+          ...p,
           gold: p.gold + Math.max(0, earnings),
           timeRemaining: Math.max(0, p.timeRemaining - hours),
           happiness: Math.max(0, p.happiness - 2), // Work is tiring
@@ -804,6 +804,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
         p.currentWage = 0;
         if (!p.isAI) {
           eventMessages.push(`${p.name} was fired due to poor dependability!`);
+        }
+      }
+
+      // Jones-style Market Crash events (affects employed players)
+      if (p.currentJob) {
+        const crashResult = checkMarketCrash(true);
+        if (crashResult.type === 'layoff') {
+          p.currentJob = null;
+          p.currentWage = 0;
+          p.happiness = Math.max(0, p.happiness - 20);
+          if (!p.isAI) {
+            eventMessages.push(`${p.name}: ${crashResult.message}`);
+          }
+        } else if (crashResult.type === 'paycut' && crashResult.wageMultiplier) {
+          p.currentWage = Math.floor(p.currentWage * crashResult.wageMultiplier);
+          p.happiness = Math.max(0, p.happiness - 10);
+          if (!p.isAI) {
+            eventMessages.push(`${p.name}: ${crashResult.message}`);
+          }
         }
       }
       

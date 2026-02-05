@@ -19,6 +19,44 @@ export interface Job {
   careerLevel: number;           // 1-10, for career goal tracking
 }
 
+// Extended Job interface with calculated wage based on economy (like Jones)
+export interface JobOffer extends Job {
+  offeredWage: number;           // Actual wage offered (50-250% of baseWage)
+  wageMultiplier: number;        // The multiplier used (0.5-2.5)
+}
+
+// Calculate offered wage based on economy (Jones-style: 50-250% of base)
+// The economy affects what wage is offered when applying for a job
+export const calculateOfferedWage = (job: Job, economyModifier: number): JobOffer => {
+  // Economy modifier affects wage offers
+  // Base range is 0.5-2.5 (50%-250% of base wage)
+  // Economy modifier shifts this range
+  const baseMultiplier = 0.5 + (Math.random() * 2.0); // 0.5 to 2.5
+  const adjustedMultiplier = baseMultiplier * economyModifier;
+
+  // Clamp between 0.5 and 2.5
+  const finalMultiplier = Math.max(0.5, Math.min(2.5, adjustedMultiplier));
+  const offeredWage = Math.round(job.baseWage * finalMultiplier);
+
+  return {
+    ...job,
+    offeredWage,
+    wageMultiplier: finalMultiplier,
+  };
+};
+
+// Get job offers for all available jobs (with economy-based wages)
+export const getJobOffers = (
+  completedDegrees: DegreeId[],
+  clothingLevel: number,
+  experience: number,
+  dependability: number,
+  economyModifier: number
+): JobOffer[] => {
+  const availableJobs = getAvailableJobs(completedDegrees, clothingLevel, experience, dependability);
+  return availableJobs.map(job => calculateOfferedWage(job, economyModifier));
+};
+
 // All jobs in the game, organized by workplace location (like Jones)
 // Wages based on Jones: Janitor $4-6, mid-level $10, high $20-22, top $25
 
@@ -579,6 +617,112 @@ export const CAREER_LEVEL_NAMES: Record<number, string> = {
   8: 'Executive',
   9: 'Director',
   10: 'Master',
+};
+
+// Employer/Location data for Jones-style Employment Office
+export interface Employer {
+  id: string;
+  name: string;
+  description: string;
+  jobs: Job[];
+}
+
+// Get all unique employers from jobs
+export const getEmployers = (): Employer[] => {
+  const employerMap = new Map<string, Employer>();
+
+  // Define employer metadata
+  const employerMeta: Record<string, { name: string; description: string }> = {
+    'Guild Hall': { name: 'Guild Hall', description: 'The adventurers guild - administrative and clerical work' },
+    'General Store': { name: 'General Store', description: 'Retail and customer service positions' },
+    'Shadow Market': { name: 'Shadow Market', description: 'Trading and vendor positions' },
+    'Bank': { name: 'Bank', description: 'Financial services and accounting' },
+    'Forge': { name: 'Forge', description: 'Metalworking and smithing positions' },
+    'Academy': { name: 'Academy', description: 'Teaching and scholarly positions' },
+    'Guildholm': { name: 'City Guard', description: 'Military and security positions' },
+    'Arena': { name: 'Arena', description: 'Combat and entertainment positions' },
+    'Enchanter': { name: 'Enchanter\'s Tower', description: 'Magical crafting and alchemy' },
+    'Noble Heights': { name: 'Noble Court', description: 'High society advisory positions' },
+  };
+
+  for (const job of ALL_JOBS) {
+    if (!employerMap.has(job.location)) {
+      const meta = employerMeta[job.location] || { name: job.location, description: 'Various positions available' };
+      employerMap.set(job.location, {
+        id: job.location.toLowerCase().replace(/\s+/g, '-'),
+        name: meta.name,
+        description: meta.description,
+        jobs: [],
+      });
+    }
+    employerMap.get(job.location)!.jobs.push(job);
+  }
+
+  return Array.from(employerMap.values());
+};
+
+// Check why a job application would be rejected
+export interface JobApplicationResult {
+  success: boolean;
+  reason?: string;
+  missingDegrees?: DegreeId[];
+  missingExperience?: number;
+  missingDependability?: number;
+  missingClothing?: boolean;
+}
+
+export const applyForJob = (
+  job: Job,
+  completedDegrees: DegreeId[],
+  clothingLevel: number,
+  experience: number,
+  dependability: number
+): JobApplicationResult => {
+  // Check degrees
+  const missingDegrees = job.requiredDegrees.filter(deg => !completedDegrees.includes(deg));
+  if (missingDegrees.length > 0) {
+    return {
+      success: false,
+      reason: 'Insufficient education',
+      missingDegrees,
+    };
+  }
+
+  // Check clothing
+  const clothingMap: Record<ClothingRequirement, number> = {
+    'none': 0,
+    'casual': 25,
+    'dress': 50,
+    'business': 75,
+    'uniform': 75,
+  };
+  if (clothingLevel < clothingMap[job.requiredClothing]) {
+    return {
+      success: false,
+      reason: 'Clothing not suitable',
+      missingClothing: true,
+    };
+  }
+
+  // Check experience
+  if (experience < job.requiredExperience) {
+    return {
+      success: false,
+      reason: 'Not enough experience',
+      missingExperience: job.requiredExperience - experience,
+    };
+  }
+
+  // Check dependability
+  if (dependability < job.requiredDependability) {
+    return {
+      success: false,
+      reason: 'Dependability too low',
+      missingDependability: job.requiredDependability - dependability,
+    };
+  }
+
+  return { success: true };
 };
 
 // Legacy exports for backwards compatibility

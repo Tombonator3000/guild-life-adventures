@@ -1,5 +1,101 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Guild Hall (Jones-Style Employment System)
+
+### Implementation
+
+Created Guild Hall panel - our fantasy version of Jones' Employment Office:
+
+**Employer List View:**
+- Shows list of employers (Guild Hall, General Store, Bank, Forge, Academy, etc.)
+- Each employer shows number of available positions
+- Click on employer to see their jobs
+
+**Job Application System:**
+- Click on a job to apply (costs 1 hour)
+- System checks ALL qualifications:
+  - Required degrees (education)
+  - Required experience points
+  - Required dependability percentage
+  - Required clothing level
+- Shows HIRED! or APPLICATION DENIED with specific reason
+
+**Application Results:**
+- Success: Shows offered wage (50-250% of base based on economy)
+- Can accept or decline the offer
+- Failure: Shows exactly what's missing (degrees, exp, dep, clothing)
+
+### Files
+- `src/components/game/GuildHallPanel.tsx` - Guild Hall job seeking panel
+- `src/data/jobs.ts` - Added Employer interface, getEmployers(), applyForJob()
+- `src/components/game/LocationPanel.tsx` - Integrated GuildHallPanel
+
+---
+
+## 2026-02-05 - Jones-Style Working System Overhaul
+
+### Research Summary (from jonesinthefastlane.fandom.com)
+
+**Jones in the Fast Lane Job System:**
+- Jobs have base wages but actual offered wages vary 50-250% based on economy
+- Players can request raises if market rate exceeds their current wage
+- Market crashes can cause:
+  - Pay cuts (wages reduced to 80%)
+  - Layoffs (job loss)
+- Experience and Dependability are capped at maximum values
+- Each degree earned increases max caps permanently
+
+### Implementation Completed
+
+**Variable Wage Offers (Jones-style):**
+- Jobs now offer wages between 50-250% of base wage
+- Economy modifier affects wage offers
+- UI shows wage quality indicators (🔥 Great pay! / ⚠️ Low offer)
+- Players can see when market rate exceeds their current wage
+
+**Market Crash Events:**
+- 5% weekly chance of pay cut (20% wage reduction)
+- 3% weekly chance of layoff (job loss)
+- Events affect happiness and trigger event messages
+
+**Experience/Dependability Caps:**
+- Experience now properly capped at `maxExperience` (starts at 100)
+- Dependability capped at `maxDependability` (starts at 100)
+- Completing degrees increases these caps (+5 each)
+
+**Employment Office Overhaul:**
+- Guild Hall now shows "Employment Office" with job offers
+- Each job shows offered wage with economy-based variation
+- Color coding: green for high offers, red for low offers
+- Current job market rate shown for raise negotiation
+
+**Forge Job System Update:**
+- Forge now uses variable wage offers
+- Shows unavailable jobs message when lacking qualifications
+- Earnings calculated with bonus multiplier
+
+### Files Modified
+- `src/data/jobs.ts` - Added JobOffer interface and getJobOffers function
+- `src/data/events.ts` - Added market crash events and checkMarketCrash function
+- `src/store/gameStore.ts` - Added market crash handling and experience caps
+- `src/components/game/LocationPanel.tsx` - Updated Guild Hall and Forge UI
+
+### Technical Details
+
+**New Job Functions:**
+```typescript
+// Calculate offered wage (50-250% of base)
+calculateOfferedWage(job: Job, economyModifier: number): JobOffer
+
+// Get all available job offers with economy wages
+getJobOffers(degrees, clothing, exp, dep, economy): JobOffer[]
+
+// Check for market crash events
+checkMarketCrash(hasJob: boolean): MarketCrashResult
+```
+
+---
+
 ## 2026-02-05 - Zone Configurations Update
 
 ### Completed
