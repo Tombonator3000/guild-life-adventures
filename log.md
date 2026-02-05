@@ -1,5 +1,109 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Jones in the Fast Lane Wiki Reference Documentation
+
+### Task
+Created comprehensive reference documentation by scraping the Jones in the Fast Lane wiki (jonesinthefastlane.fandom.com) to serve as an authoritative source for game mechanics implementation.
+
+### Research Process
+- Performed systematic web searches across all wiki categories
+- Extracted information about: Goals, Time/Turns, Stats, Locations, Housing, Jobs, Education, Economy, Items, Food, Clothing, Robbery, Weekends, Stocks, Pawn Shop
+- Direct wiki fetching was blocked (403), used web search to gather content
+
+### Created: JONES_REFERENCE.md
+
+A comprehensive 800+ line reference document containing:
+
+**Goals System:**
+- Wealth Goal: $100 = 1 point, need $10,000 for 100 points
+- Happiness Goal: Multiple sources (+5 graduation, +3 computer, etc.)
+- Education Goal: 9 points per degree, 11 degrees = 100 max
+- Career Goal: Equals Dependability stat
+
+**Time System:**
+- 60 Hours per turn
+- Movement costs ~1 Hour per location step
+- Entering location = +2 Hours
+- Starvation penalty = -20 Hours
+- Doctor visit = -10 Hours, -4 Happiness, -$30-200
+
+**Stats:**
+- Experience: Gained by working, capped at maxExperience
+- Dependability: Gained by working, capped at maxDependability
+- Relaxation: 10-50 range, decreases by 1/turn, affects robbery chance
+
+**Jobs:**
+- 20+ jobs documented with wages and requirements
+- Entry: $4-6/hr (Janitor, Cook)
+- Mid: $8-14/hr (Checker, Butcher, Teacher)
+- Top: $20-25/hr (Broker, Professor, Engineer, GM)
+- Wages vary 50-250% based on economy
+
+**Education:**
+- 11 degrees in prerequisite tree
+- 10 lessons per degree (reducible to 8 with items)
+- Graduation bonus: +5 Happiness, +5 Dependability, +5 max caps
+
+**Appliances:**
+- Socket City: Higher prices, 1/51 break chance, better happiness
+- Z-Mart: Lower prices, 1/36 break chance
+- Full price list for TV, VCR, Stereo, Microwave, Refrigerator, Computer
+
+**Robbery (Wild Willy → Shadowfingers):**
+- Street: Week 4+, leaving Bank/Market, takes ALL cash, -3 Happiness
+- Apartment: Low-Cost Housing only, 1/(relaxation+1) chance, -4 Happiness
+- Items that can't be stolen: Computer, Refrigerator, Freezer, Encyclopedia, etc.
+
+**Economy:**
+- Fluctuates every turn
+- Market crashes: Pay cuts (80%), Layoffs
+- Affects item prices, job wages offered, new rent
+
+**Weekend System:**
+- Automatic activities between turns
+- Ticket priorities: Baseball > Theatre > Concert
+- Durable-triggered weekends (20% chance each)
+- Cost ranges: Cheap ($5-20), Medium ($15-55), Expensive ($50-100)
+
+### Implementation Mapping Table
+Created complete mapping from Jones concepts to Guild Life fantasy equivalents:
+- Locations (14 mapped)
+- Appliances (7 mapped)
+- Degrees (11 mapped)
+- Characters (Wild Willy → Shadowfingers, Jones AI → Grimwald)
+
+### Files Created
+- `JONES_REFERENCE.md` - Comprehensive reference guide (800+ lines)
+
+### Source References
+30+ wiki pages cited including Goals, Turn, Locations, Jobs, Degrees, Economy, Wild Willy, Appliances, and more.
+
+### Implementation Gap Analysis
+
+**Fully Implemented (~80%):**
+- Goals system (Wealth, Happiness, Education, Career)
+- Time/Turn system (60 hours, turn structure)
+- Stats (Experience, Dependability, Relaxation)
+- Food system (Fast Food, Fresh Food, Starvation, Refrigerator)
+- Clothing system (Casual, Dress, Business, wear out)
+- Appliance/Durables system with break mechanics
+- Shadowfingers robbery (Street and Apartment)
+- Market crash events (Pay cuts, Layoffs)
+- Lottery tickets
+- Rent system with prepayment
+
+**Partially Implemented:**
+- Weekend/Relaxation system (mechanics exist but not as activities)
+- Doctor/Healer visits (sickness exists but no healing mechanic)
+
+**Not Implemented:**
+- Stock Market/T-Bills trading system
+- Loan system (request, interest, repayment)
+- Entertainment tickets (Baseball, Theatre, Concert)
+- Weekend activity costs ($5-100)
+
+---
+
 ## 2026-02-05 - Jones-Style Turn System and Board Movement
 
 ### Research Summary (from jonesinthefastlane.fandom.com)
