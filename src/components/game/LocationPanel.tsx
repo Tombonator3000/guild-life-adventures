@@ -97,6 +97,9 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
 
     switch (locationId) {
       case 'rusty-tankard':
+        const tavernJobData = player.currentJob ? getJob(player.currentJob) : null;
+        const canWorkAtTavern = tavernJobData && tavernJobData.location === 'Rusty Tankard';
+
         return (
           <JonesPanel>
             <JonesPanelHeader title="The Rusty Tankard" subtitle="Tavern & Eatery" />
@@ -127,6 +130,29 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               <div className="mt-2 text-xs text-[#8b7355] px-2">
                 1 hour per purchase
               </div>
+
+              {/* Work button for tavern employees */}
+              {canWorkAtTavern && tavernJobData && (
+                <div className="mt-4 pt-3 border-t border-[#5a4a3a]">
+                  <JonesSectionHeader title="WORK" />
+                  <div className="px-2 py-1 text-xs text-[#8b7355]">
+                    Current Job: {tavernJobData.name} ({player.currentWage}g/hr)
+                  </div>
+                  <JonesButton
+                    label={`Work Shift (+${Math.ceil(tavernJobData.hoursPerShift * 1.33 * player.currentWage)}g)`}
+                    onClick={() => {
+                      workShift(player.id, tavernJobData.hoursPerShift, player.currentWage);
+                      toast.success(`Worked a shift at ${tavernJobData.name}!`);
+                    }}
+                    disabled={player.timeRemaining < tavernJobData.hoursPerShift}
+                    variant="primary"
+                    className="w-full"
+                  />
+                  <div className="text-xs text-[#8b7355] px-2 mt-1">
+                    {tavernJobData.hoursPerShift} hours per shift
+                  </div>
+                </div>
+              )}
             </JonesPanelContent>
           </JonesPanel>
         );
@@ -254,6 +280,8 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
         // Get available degrees based on completed degrees
         const availableDegrees = getAvailableDegrees(player.completedDegrees as DegreeId[]);
         const completedCount = player.completedDegrees.length;
+        const academyJobData = player.currentJob ? getJob(player.currentJob) : null;
+        const canWorkAtAcademy = academyJobData && academyJobData.location === 'Academy';
 
         return (
           <JonesPanel>
@@ -326,11 +354,37 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
                   </div>
                 </>
               )}
+
+              {/* Work button for academy employees */}
+              {canWorkAtAcademy && academyJobData && (
+                <div className="mt-4 pt-3 border-t border-[#5a4a3a]">
+                  <JonesSectionHeader title="WORK" />
+                  <div className="px-2 py-1 text-xs text-[#8b7355]">
+                    Current Job: {academyJobData.name} ({player.currentWage}g/hr)
+                  </div>
+                  <JonesButton
+                    label={`Work Shift (+${Math.ceil(academyJobData.hoursPerShift * 1.33 * player.currentWage)}g)`}
+                    onClick={() => {
+                      workShift(player.id, academyJobData.hoursPerShift, player.currentWage);
+                      toast.success(`Worked a shift at ${academyJobData.name}!`);
+                    }}
+                    disabled={player.timeRemaining < academyJobData.hoursPerShift}
+                    variant="primary"
+                    className="w-full"
+                  />
+                  <div className="text-xs text-[#8b7355] px-2 mt-1">
+                    {academyJobData.hoursPerShift} hours per shift
+                  </div>
+                </div>
+              )}
             </JonesPanelContent>
           </JonesPanel>
         );
 
       case 'bank':
+        const bankJobData = player.currentJob ? getJob(player.currentJob) : null;
+        const canWorkAtBank = bankJobData && bankJobData.location === 'Bank';
+
         return (
           <JonesPanel>
             <JonesPanelHeader title="Bank" subtitle="Financial Services" />
@@ -371,12 +425,38 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               <div className="mt-2 text-xs text-[#8b7355] px-2">
                 1 hour per transaction
               </div>
+
+              {/* Work button for bank employees */}
+              {canWorkAtBank && bankJobData && (
+                <div className="mt-4 pt-3 border-t border-[#5a4a3a]">
+                  <JonesSectionHeader title="WORK" />
+                  <div className="px-2 py-1 text-xs text-[#8b7355]">
+                    Current Job: {bankJobData.name} ({player.currentWage}g/hr)
+                  </div>
+                  <JonesButton
+                    label={`Work Shift (+${Math.ceil(bankJobData.hoursPerShift * 1.33 * player.currentWage)}g)`}
+                    onClick={() => {
+                      workShift(player.id, bankJobData.hoursPerShift, player.currentWage);
+                      toast.success(`Worked a shift at ${bankJobData.name}!`);
+                    }}
+                    disabled={player.timeRemaining < bankJobData.hoursPerShift}
+                    variant="primary"
+                    className="w-full"
+                  />
+                  <div className="text-xs text-[#8b7355] px-2 mt-1">
+                    {bankJobData.hoursPerShift} hours per shift
+                  </div>
+                </div>
+              )}
             </JonesPanelContent>
           </JonesPanel>
         );
 
       case 'general-store':
         const newspaperPrice = Math.round(NEWSPAPER_COST * priceModifier);
+        const storeJobData = player.currentJob ? getJob(player.currentJob) : null;
+        const canWorkAtStore = storeJobData && storeJobData.location === 'General Store';
+
         return (
           <JonesPanel>
             <JonesPanelHeader title="General Store" subtitle="Provisions & Sundries" />
@@ -433,11 +513,37 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               <div className="mt-2 text-xs text-[#8b7355] px-2">
                 1 hour per purchase
               </div>
+
+              {/* Work button for store employees */}
+              {canWorkAtStore && storeJobData && (
+                <div className="mt-4 pt-3 border-t border-[#5a4a3a]">
+                  <JonesSectionHeader title="WORK" />
+                  <div className="px-2 py-1 text-xs text-[#8b7355]">
+                    Current Job: {storeJobData.name} ({player.currentWage}g/hr)
+                  </div>
+                  <JonesButton
+                    label={`Work Shift (+${Math.ceil(storeJobData.hoursPerShift * 1.33 * player.currentWage)}g)`}
+                    onClick={() => {
+                      workShift(player.id, storeJobData.hoursPerShift, player.currentWage);
+                      toast.success(`Worked a shift at ${storeJobData.name}!`);
+                    }}
+                    disabled={player.timeRemaining < storeJobData.hoursPerShift}
+                    variant="primary"
+                    className="w-full"
+                  />
+                  <div className="text-xs text-[#8b7355] px-2 mt-1">
+                    {storeJobData.hoursPerShift} hours per shift
+                  </div>
+                </div>
+              )}
             </JonesPanelContent>
           </JonesPanel>
         );
 
       case 'armory':
+        const armoryJobData = player.currentJob ? getJob(player.currentJob) : null;
+        const canWorkAtArmory = armoryJobData && armoryJobData.location === 'Armory';
+
         return (
           <JonesPanel>
             <JonesPanelHeader title="Armory" subtitle="Clothing & Weapons" />
@@ -488,11 +594,37 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               <div className="mt-2 text-xs text-[#8b7355] px-2">
                 1 hour per purchase
               </div>
+
+              {/* Work button for armory employees */}
+              {canWorkAtArmory && armoryJobData && (
+                <div className="mt-4 pt-3 border-t border-[#5a4a3a]">
+                  <JonesSectionHeader title="WORK" />
+                  <div className="px-2 py-1 text-xs text-[#8b7355]">
+                    Current Job: {armoryJobData.name} ({player.currentWage}g/hr)
+                  </div>
+                  <JonesButton
+                    label={`Work Shift (+${Math.ceil(armoryJobData.hoursPerShift * 1.33 * player.currentWage)}g)`}
+                    onClick={() => {
+                      workShift(player.id, armoryJobData.hoursPerShift, player.currentWage);
+                      toast.success(`Worked a shift at ${armoryJobData.name}!`);
+                    }}
+                    disabled={player.timeRemaining < armoryJobData.hoursPerShift}
+                    variant="primary"
+                    className="w-full"
+                  />
+                  <div className="text-xs text-[#8b7355] px-2 mt-1">
+                    {armoryJobData.hoursPerShift} hours per shift
+                  </div>
+                </div>
+              )}
             </JonesPanelContent>
           </JonesPanel>
         );
 
       case 'enchanter':
+        const enchanterJobData = player.currentJob ? getJob(player.currentJob) : null;
+        const canWorkAtEnchanter = enchanterJobData && enchanterJobData.location === 'Enchanter';
+
         return (
           <div className="space-y-4">
             {/* Healer's Sanctuary */}
@@ -521,6 +653,28 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               priceModifier={priceModifier}
               onSpendTime={(hours) => spendTime(player.id, hours)}
             />
+
+            {/* Work button for enchanter employees */}
+            {canWorkAtEnchanter && enchanterJobData && (
+              <div className="wood-frame p-3 text-card">
+                <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+                  <Briefcase className="w-4 h-4" /> Work
+                </h4>
+                <div className="text-xs text-muted-foreground mb-2">
+                  Current Job: {enchanterJobData.name} ({player.currentWage}g/hr)
+                </div>
+                <ActionButton
+                  label={`Work Shift (+${Math.ceil(enchanterJobData.hoursPerShift * 1.33 * player.currentWage)}g)`}
+                  cost={0}
+                  time={enchanterJobData.hoursPerShift}
+                  disabled={player.timeRemaining < enchanterJobData.hoursPerShift}
+                  onClick={() => {
+                    workShift(player.id, enchanterJobData.hoursPerShift, player.currentWage);
+                    toast.success(`Worked a shift at ${enchanterJobData.name}!`);
+                  }}
+                />
+              </div>
+            )}
           </div>
         );
 
@@ -699,6 +853,9 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
 
       case 'shadow-market':
         const shadowNewspaperPrice = Math.round(NEWSPAPER_COST * priceModifier * 0.5); // Cheaper here
+        const shadowMarketJobData = player.currentJob ? getJob(player.currentJob) : null;
+        const canWorkAtShadowMarket = shadowMarketJobData && shadowMarketJobData.location === 'Shadow Market';
+
         return (
           <div className="space-y-4">
             <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
@@ -727,6 +884,28 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               onModifyHappiness={(amount) => modifyHappiness(player.id, amount)}
               onModifyFood={(amount) => modifyFood(player.id, amount)}
             />
+
+            {/* Work button for shadow market employees */}
+            {canWorkAtShadowMarket && shadowMarketJobData && (
+              <div className="wood-frame p-3 text-card">
+                <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+                  <Briefcase className="w-4 h-4" /> Work
+                </h4>
+                <div className="text-xs text-muted-foreground mb-2">
+                  Current Job: {shadowMarketJobData.name} ({player.currentWage}g/hr)
+                </div>
+                <ActionButton
+                  label={`Work Shift (+${Math.ceil(shadowMarketJobData.hoursPerShift * 1.33 * player.currentWage)}g)`}
+                  cost={0}
+                  time={shadowMarketJobData.hoursPerShift}
+                  disabled={player.timeRemaining < shadowMarketJobData.hoursPerShift}
+                  onClick={() => {
+                    workShift(player.id, shadowMarketJobData.hoursPerShift, player.currentWage);
+                    toast.success(`Worked a shift at ${shadowMarketJobData.name}!`);
+                  }}
+                />
+              </div>
+            )}
           </div>
         );
 
