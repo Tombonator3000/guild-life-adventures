@@ -8,6 +8,33 @@
 
 ## Backlog
 
+### Missing Jones Features (Priority)
+Based on JONES_REFERENCE.md analysis:
+
+**Not Implemented:**
+- [ ] Stock Market/Trading System
+  - Individual stock purchases/sales
+  - T-Bills (safe investment, no crash risk)
+  - Market volatility and trading
+  - Broker NPC at Bank
+- [ ] Loan System
+  - Request loans from Bank
+  - Interest on loans
+  - Repayment schedule
+  - Loan defaults and consequences
+
+**Partially Implemented:**
+- [ ] Weekend System
+  - Entertainment tickets (Baseball, Theatre, Concert)
+  - Weekend activities with costs ($5-100)
+  - Durable-triggered weekends (20% chance each)
+  - Ticket priority system
+- [ ] Doctor/Healer System
+  - Proper healer location/NPC
+  - Doctor visit mechanic (-10 Hours, -4 Happiness, -$30-200)
+  - Sickness cure functionality
+  - Relaxation-triggered health issues
+
 ### Gameplay
 - [ ] Balance quest rewards
 - [ ] Add more random events
@@ -37,6 +64,17 @@
 ---
 
 ## Completed
+
+### 2026-02-05 - Jones Wiki Reference Documentation
+- [x] Fetched Jones wiki main page and navigation
+- [x] Fetched all Goals pages (Happiness, Career, Education, Wealth)
+- [x] Fetched Location pages (Apartments, Stores, etc.)
+- [x] Fetched Gameplay mechanics pages (Relaxation, Stats, etc.)
+- [x] Fetched Job and Education pages
+- [x] Fetched Items and Economy pages
+- [x] Created comprehensive JONES_REFERENCE.md file (800+ lines)
+- [x] Identified implementation gaps (Stock Market, Loans, Weekend, Doctor)
+- [x] Updated todo.md with missing features
 
 ### 2026-02-05 - Jones-Style Turn System and Board Movement
 - [x] Researched Jones in the Fast Lane wiki for Turn and Hour mechanics
