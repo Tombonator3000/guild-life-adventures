@@ -96,6 +96,63 @@ export const ZONE_CONFIGS: ZoneConfig[] = [
   { id: 'bank', x: 10.9, y: 55.8, width: 14.6, height: 17.0 },
 ];
 
+// Movement paths between adjacent locations
+// Each key is "fromId_toId" in clockwise BOARD_PATH order
+// Values are arrays of [x, y] waypoints (percentages) between zone centers
+// When traveling counter-clockwise, waypoints are reversed automatically
+export type MovementWaypoint = [number, number];
+
+export const MOVEMENT_PATHS: Record<string, MovementWaypoint[]> = {};
+
+// Get the movement path key for two adjacent locations (always clockwise order)
+export const getPathKey = (from: LocationId, to: LocationId): { key: string; reversed: boolean } => {
+  const fromIdx = getPathIndex(from);
+  const toIdx = getPathIndex(to);
+  const len = BOARD_PATH.length;
+
+  // Check if going clockwise (from → to is +1 step)
+  if ((fromIdx + 1) % len === toIdx) {
+    return { key: `${from}_${to}`, reversed: false };
+  }
+  // Going counter-clockwise (to → from is +1 step)
+  if ((toIdx + 1) % len === fromIdx) {
+    return { key: `${to}_${from}`, reversed: true };
+  }
+  // Non-adjacent - shouldn't happen for single steps
+  return { key: `${from}_${to}`, reversed: false };
+};
+
+// Get waypoints for traveling between two adjacent locations
+export const getSegmentWaypoints = (from: LocationId, to: LocationId): MovementWaypoint[] => {
+  const { key, reversed } = getPathKey(from, to);
+  const waypoints = MOVEMENT_PATHS[key];
+  if (!waypoints || waypoints.length === 0) return [];
+  return reversed ? [...waypoints].reverse() : waypoints;
+};
+
+// Get the full list of animation points for a path (zone centers + intermediate waypoints)
+export const getAnimationPoints = (path: LocationId[]): MovementWaypoint[] => {
+  if (path.length === 0) return [];
+
+  const points: MovementWaypoint[] = [];
+
+  for (let i = 0; i < path.length; i++) {
+    // Add zone center
+    const zone = ZONE_CONFIGS.find(z => z.id === path[i]);
+    if (zone) {
+      points.push([zone.x + zone.width / 2, zone.y + zone.height - 5]);
+    }
+
+    // Add waypoints between this zone and the next
+    if (i < path.length - 1) {
+      const waypoints = getSegmentWaypoints(path[i], path[i + 1]);
+      points.push(...waypoints);
+    }
+  }
+
+  return points;
+};
+
 // Convert zone config to Location format for backward compatibility
 function zoneToPosition(zone: ZoneConfig): Location['position'] {
   return {

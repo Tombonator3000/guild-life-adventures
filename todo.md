@@ -23,6 +23,17 @@
   - 3x street robbery chance, 2x weekly theft
   - Makes housing an urgent early priority
 
+## Completed (2026-02-05)
+
+- [x] Movement path drawing system in Zone Editor
+  - Zones/Paths mode toggle
+  - SVG path visualization on board
+  - Click to add waypoints, drag to reposition, right-click to remove
+  - Waypoint coordinate editing in properties panel
+  - AnimatedPlayerToken follows waypoints instead of straight lines
+  - Debug overlay shows movement paths
+  - Export includes MOVEMENT_PATHS in copied config
+
 ## In Progress
 
 *No active tasks*
@@ -120,6 +131,7 @@ Based on JONES_REFERENCE.md analysis:
 - [ ] Dark mode support
 - [x] Zone Editor for visual positioning (Ctrl+Shift+Z)
 - [x] Debug overlay for zone boundaries (Ctrl+Shift+D)
+- [x] Movement path drawing in Zone Editor (roads instead of straight lines)
 
 ### Technical
 - [ ] Unit tests for gameStore
