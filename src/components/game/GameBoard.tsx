@@ -6,6 +6,7 @@ import { PlayerToken } from './PlayerToken';
 import { ResourcePanel } from './ResourcePanel';
 import { LocationPanel } from './LocationPanel';
 import { EventModal, type GameEvent } from './EventModal';
+import { ShadowfingersModal, useShadowfingersModal } from './ShadowfingersModal';
 import { ZoneEditor, type CenterPanelConfig } from './ZoneEditor';
 import gameBoard from '@/assets/game-board.jpeg';
 import type { ZoneConfig } from '@/types/game.types';
@@ -19,6 +20,7 @@ const DEFAULT_CENTER_PANEL: CenterPanelConfig = {
 
 export function GameBoard() {
   const { players, selectedLocation, selectLocation, week, priceModifier, eventMessage, dismissEvent, phase } = useGameStore();
+  const { event: shadowfingersEvent, dismiss: dismissShadowfingers } = useShadowfingersModal();
   const [showZoneEditor, setShowZoneEditor] = useState(false);
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
   const [customZones, setCustomZones] = useState<ZoneConfig[]>(ZONE_CONFIGS);
@@ -227,6 +229,12 @@ export function GameBoard() {
       <EventModal
         event={phase === 'event' ? currentEvent : null}
         onDismiss={dismissEvent}
+      />
+
+      {/* Shadowfingers Robbery Modal */}
+      <ShadowfingersModal
+        event={shadowfingersEvent}
+        onDismiss={dismissShadowfingers}
       />
 
       {/* Zone Editor Modal */}

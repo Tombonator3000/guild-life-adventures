@@ -1,15 +1,19 @@
 // Guild Life - Items and Shopping Data
 
+export type ItemCategory = 'food' | 'clothing' | 'appliance' | 'luxury' | 'weapon' | 'magic' | 'education';
+
 export interface Item {
   id: string;
   name: string;
-  category: 'food' | 'clothing' | 'appliance' | 'luxury' | 'weapon' | 'magic';
+  category: ItemCategory;
   basePrice: number;
   effect?: {
-    type: 'happiness' | 'health' | 'clothing' | 'food';
+    type: 'happiness' | 'health' | 'clothing' | 'food' | 'relaxation';
     value: number;
   };
   description: string;
+  isDurable?: boolean; // If true, can be stored at apartment and potentially stolen
+  isUnstealable?: boolean; // If true, cannot be stolen by Shadowfingers
 }
 
 // General Store items (Z-Mart equivalent)
@@ -55,7 +59,7 @@ export const GENERAL_STORE_ITEMS: Item[] = [
     effect: { type: 'food', value: 100 },
     description: 'Enough to throw a small party!',
   },
-  // Consumables/Supplies
+  // Durable Appliances
   {
     id: 'candles',
     name: 'Bundle of Candles',
@@ -63,6 +67,7 @@ export const GENERAL_STORE_ITEMS: Item[] = [
     basePrice: 10,
     effect: { type: 'happiness', value: 2 },
     description: 'Light up your dwelling.',
+    isDurable: true,
   },
   {
     id: 'blanket',
@@ -71,6 +76,25 @@ export const GENERAL_STORE_ITEMS: Item[] = [
     basePrice: 25,
     effect: { type: 'happiness', value: 5 },
     description: 'Stay warm on cold nights.',
+    isDurable: true,
+  },
+  {
+    id: 'stereo',
+    name: 'Music Box',
+    category: 'appliance',
+    basePrice: 75,
+    effect: { type: 'relaxation', value: 5 },
+    description: 'A magical music box that plays soothing melodies.',
+    isDurable: true,
+  },
+  {
+    id: 'furniture',
+    name: 'Quality Furniture',
+    category: 'appliance',
+    basePrice: 150,
+    effect: { type: 'relaxation', value: 10 },
+    description: 'Comfortable chairs and tables for your dwelling.',
+    isDurable: true,
   },
 ];
 
@@ -151,7 +175,7 @@ export const ARMORY_ITEMS: Item[] = [
     effect: { type: 'clothing', value: 100 },
     description: 'Official uniform for guild work.',
   },
-  // Weapons (for show, affect happiness)
+  // Weapons (for show, affect happiness) - Durable
   {
     id: 'dagger',
     name: 'Simple Dagger',
@@ -159,6 +183,7 @@ export const ARMORY_ITEMS: Item[] = [
     basePrice: 30,
     effect: { type: 'happiness', value: 3 },
     description: 'A basic self-defense weapon.',
+    isDurable: true,
   },
   {
     id: 'sword',
@@ -167,6 +192,7 @@ export const ARMORY_ITEMS: Item[] = [
     basePrice: 80,
     effect: { type: 'happiness', value: 8 },
     description: 'A reliable blade for adventurers.',
+    isDurable: true,
   },
   {
     id: 'shield',
@@ -175,10 +201,11 @@ export const ARMORY_ITEMS: Item[] = [
     basePrice: 40,
     effect: { type: 'happiness', value: 4 },
     description: 'Protection against blows.',
+    isDurable: true,
   },
 ];
 
-// Enchanter items (Socket City equivalent)
+// Enchanter items (Socket City equivalent) - Durable magical items
 export const ENCHANTER_ITEMS: Item[] = [
   {
     id: 'glow-orb',
@@ -187,6 +214,7 @@ export const ENCHANTER_ITEMS: Item[] = [
     basePrice: 50,
     effect: { type: 'happiness', value: 5 },
     description: 'Magical light source that never dims.',
+    isDurable: true,
   },
   {
     id: 'warmth-stone',
@@ -195,6 +223,7 @@ export const ENCHANTER_ITEMS: Item[] = [
     basePrice: 100,
     effect: { type: 'happiness', value: 10 },
     description: 'Keeps your home warm without fire.',
+    isDurable: true,
   },
   {
     id: 'preservation-box',
@@ -203,6 +232,7 @@ export const ENCHANTER_ITEMS: Item[] = [
     basePrice: 150,
     effect: { type: 'happiness', value: 8 },
     description: 'Keeps food fresh indefinitely.',
+    isDurable: true,
   },
   {
     id: 'scrying-mirror',
@@ -211,6 +241,7 @@ export const ENCHANTER_ITEMS: Item[] = [
     basePrice: 300,
     effect: { type: 'happiness', value: 15 },
     description: 'See distant places and people.',
+    isDurable: true,
   },
   {
     id: 'healing-potion',
@@ -219,6 +250,7 @@ export const ENCHANTER_ITEMS: Item[] = [
     basePrice: 75,
     effect: { type: 'health', value: 50 },
     description: 'Restores health instantly.',
+    // Not durable - consumable
   },
 ];
 
@@ -258,17 +290,70 @@ export const TAVERN_ITEMS: Item[] = [
   },
 ];
 
+// Academy items - Educational durables that CANNOT be stolen by Shadowfingers
+export const ACADEMY_ITEMS: Item[] = [
+  {
+    id: 'encyclopedia',
+    name: 'Encyclopedia',
+    category: 'education',
+    basePrice: 200,
+    effect: { type: 'happiness', value: 5 },
+    description: 'A comprehensive book of knowledge. Helps with studies.',
+    isDurable: true,
+    isUnstealable: true, // Cannot be stolen by Shadowfingers
+  },
+  {
+    id: 'dictionary',
+    name: 'Dictionary',
+    category: 'education',
+    basePrice: 100,
+    effect: { type: 'happiness', value: 3 },
+    description: 'Contains definitions of every word. Essential for scholars.',
+    isDurable: true,
+    isUnstealable: true, // Cannot be stolen by Shadowfingers
+  },
+  {
+    id: 'atlas',
+    name: 'Atlas',
+    category: 'education',
+    basePrice: 150,
+    effect: { type: 'happiness', value: 4 },
+    description: 'Maps of the known world. Aids in quest planning.',
+    isDurable: true,
+    isUnstealable: true, // Cannot be stolen by Shadowfingers
+  },
+];
+
+// All items combined
+export const ALL_ITEMS: Item[] = [
+  ...GENERAL_STORE_ITEMS,
+  ...SHADOW_MARKET_ITEMS,
+  ...ARMORY_ITEMS,
+  ...ENCHANTER_ITEMS,
+  ...TAVERN_ITEMS,
+  ...ACADEMY_ITEMS,
+];
+
+// Get all durable items that can be stolen
+export const STEALABLE_DURABLES: Item[] = ALL_ITEMS.filter(
+  item => item.isDurable && !item.isUnstealable
+);
+
+// Get all durable item types (for robbery logic)
+export const DURABLE_ITEM_TYPES: string[] = [...new Set(
+  ALL_ITEMS.filter(item => item.isDurable).map(item => item.id)
+)];
+
 export const getItem = (id: string): Item | undefined => {
-  const allItems = [
-    ...GENERAL_STORE_ITEMS,
-    ...SHADOW_MARKET_ITEMS,
-    ...ARMORY_ITEMS,
-    ...ENCHANTER_ITEMS,
-    ...TAVERN_ITEMS,
-  ];
-  return allItems.find(item => item.id === id);
+  return ALL_ITEMS.find(item => item.id === id);
 };
 
 export const getItemPrice = (item: Item, priceModifier: number): number => {
   return Math.round(item.basePrice * priceModifier);
+};
+
+// Check if an item can be stolen by Shadowfingers
+export const canBeStolen = (itemId: string): boolean => {
+  const item = getItem(itemId);
+  return item ? (item.isDurable === true && item.isUnstealable !== true) : false;
 };

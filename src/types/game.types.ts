@@ -63,6 +63,11 @@ export interface EducationProgress {
   sessionsCompleted: number;
 }
 
+// Durable items that can be owned and potentially stolen
+export interface DurableItems {
+  [itemType: string]: number; // item type -> quantity owned
+}
+
 export interface Player {
   id: string;
   name: string;
@@ -73,6 +78,7 @@ export interface Player {
   happiness: number;
   timeRemaining: number;
   currentLocation: LocationId;
+  previousLocation: LocationId | null; // Track where player came from (for street robbery)
   guildRank: GuildRank;
   housing: HousingTier;
   education: Record<EducationPath, number>;
@@ -87,6 +93,8 @@ export interface Player {
   currentWage: number; // Current job hourly wage (can increase with raises)
   dependability: number; // 0-100, affects job performance and raise chance
   experience: number; // Work experience points
+  relaxation: number; // 10-50, affects apartment robbery chance (higher = safer)
+  durables: DurableItems; // Durable items owned (stored at apartment)
   inventory: string[];
   isAI: boolean;
   activeQuest: string | null; // Current quest ID

@@ -1,5 +1,48 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Shadowfingers Robbery System
+
+### Completed
+- Implemented Shadowfingers character - a criminal who robs players
+- Added Street Robbery system (triggered when leaving Bank or Black's Market)
+- Added Apartment Robbery system (triggered at start of turn for slums residents)
+- Added Relaxation stat (10-50, affects apartment robbery chance)
+- Added Durables system (items stored at apartment, can be stolen)
+- Added educational items (Encyclopedia, Dictionary, Atlas) that cannot be stolen
+- Created ShadowfingersModal component with newspaper-style headline display
+- Integrated robbery checks into game flow
+
+### Street Robbery Rules
+- Only triggers on Week 4 or later
+- Only when leaving Bank (1/31 chance, ~3.2%) or Black's Market (1/51 chance, ~1.95%)
+- Only if player has cash
+- Takes ALL player cash
+- -3 Happiness penalty
+
+### Apartment Robbery Rules
+- Only affects players in slums housing
+- Only if player owns durables
+- Chance = 1 / (relaxation + 1), ranging ~2% to ~9% per turn
+- Each durable type has 25% chance to be stolen (all items of that type)
+- Encyclopedia, Dictionary, Atlas CANNOT be stolen
+- -4 Happiness penalty
+
+### Files Added
+- `src/data/shadowfingers.ts` - Robbery logic and constants
+- `src/components/game/ShadowfingersModal.tsx` - Robbery event modal with image
+
+### Files Modified
+- `src/types/game.types.ts` - Added DurableItems interface, relaxation stat, previousLocation tracking
+- `src/data/items.ts` - Added isDurable/isUnstealable flags, educational items, ACADEMY_ITEMS
+- `src/store/gameStore.ts` - Added robbery checks, durables management, ShadowfingersEvent state
+- `src/components/game/GameBoard.tsx` - Integrated ShadowfingersModal
+
+### Image Setup
+To display the Shadowfingers character image, save the provided image to:
+`src/assets/shadowfingers.jpg`
+
+---
+
 ## 2026-02-05 - Editor Board Info Controls
 
 ### Completed
