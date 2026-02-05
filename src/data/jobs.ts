@@ -1,7 +1,7 @@
 // Guild Life - Jobs Data (based on Jones in the Fast Lane)
 // Fantasy-themed jobs with degree requirements matching Jones job progression
 
-import type { DegreeId } from './education';
+import type { DegreeId, EducationPath } from '@/types/game.types';
 
 export type ClothingRequirement = 'none' | 'casual' | 'dress' | 'business' | 'uniform';
 
@@ -801,7 +801,7 @@ export const applyForJob = (
 export const JOBS = GUILD_HALL_JOBS;
 
 // Legacy function
-export type EducationPath = 'fighter' | 'mage' | 'priest' | 'business';
+// EducationPath type is imported from @/types/game.types
 export interface LegacyJob {
   id: string;
   name: string;

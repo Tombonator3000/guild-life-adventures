@@ -21,7 +21,7 @@ import type {
   GUILD_RANK_ORDER,
   GUILD_RANK_INDEX,
 } from '@/types/game.types';
-import { GRADUATION_BONUSES, getDegree, type DegreeId as DegreeIdType } from '@/data/education';
+import { GRADUATION_BONUSES, getDegree } from '@/data/education';
 import { PLAYER_COLORS, AI_COLOR, RENT_COSTS, CLOTHING_INTERVAL, APPLIANCE_BREAK_CHANCE } from '@/types/game.types';
 import { checkWeeklyTheft, checkMarketCrash } from '@/data/events';
 import {

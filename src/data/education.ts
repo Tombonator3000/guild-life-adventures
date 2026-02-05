@@ -1,18 +1,10 @@
 // Guild Life - Education System (based on Jones in the Fast Lane Hi-Tech U)
 // Fantasy-themed degrees with Jones-style prerequisites and unlock system
 
-export type DegreeId =
-  | 'trade-guild'        // Trade School equivalent - starting degree
-  | 'junior-academy'     // Junior College equivalent - starting degree
-  | 'arcane-studies'     // Electronics equivalent
-  | 'combat-training'    // Pre-Engineering equivalent
-  | 'master-combat'      // Engineering equivalent
-  | 'scholar'            // Academic equivalent
-  | 'advanced-scholar'   // Graduate School equivalent
-  | 'sage-studies'       // Post Doctoral equivalent
-  | 'loremaster'         // Research equivalent
-  | 'commerce'           // Business Administration equivalent
-  | 'alchemy';           // Extra fantasy degree
+import type { DegreeId, EducationPath } from '@/types/game.types';
+
+// Re-export types for backwards compatibility
+export type { DegreeId, EducationPath };
 
 export interface Degree {
   id: DegreeId;
@@ -210,7 +202,7 @@ export const MAX_DEGREES = ALL_DEGREES.length; // 11 degrees like Jones
 export const MAX_EDUCATION_POINTS = MAX_DEGREES * 9; // 99 points max
 
 // Legacy compatibility - map old path system to new degrees
-export type EducationPath = 'fighter' | 'mage' | 'priest' | 'business';
+// EducationPath type is imported from @/types/game.types
 
 export const PATH_TO_DEGREES: Record<EducationPath, DegreeId[]> = {
   fighter: ['trade-guild', 'combat-training', 'master-combat'],
