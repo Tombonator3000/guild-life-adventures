@@ -34,6 +34,40 @@
   - Debug overlay shows movement paths
   - Export includes MOVEMENT_PATHS in copied config
 
+## Completed (Phase 4 - Combat System)
+
+- [x] Implement combat resolution formula (Player Power vs Encounter Power)
+  - Extracted `resolveEncounter()` from Phase 3 auto-resolve
+  - Same formula: power ratio, damage reduction, block chance, gold scaling
+  - Pure-function state machine in `src/data/combatResolver.ts`
+- [x] Add encounter-by-encounter floor progression
+  - State machine: encounter-intro → encounter-result → floor-summary
+  - Player steps through each encounter individually
+  - HP bar and encounter counter shown throughout
+- [x] Create combat result display (damage, gold, items found)
+  - Per-encounter results: damage, gold, healing, potion drops
+  - Education bonus activation display (which bonuses triggered)
+  - Low health warning at ≤30%
+  - Floor summary with complete encounter log and totals
+- [x] Add boss encounter mechanics
+  - Special red-themed boss cards with "Floor Boss" label
+  - "Fight Boss!" action button
+  - No retreat once boss encounter is next
+  - Boss defeat required to clear floor
+- [x] Add education bonuses to combat display
+  - Shows which bonuses activated per encounter (Trap Sense, Arcane Sight, dmg reduction, ATK bonus, gold bonus, Potion Brewing)
+  - Bonuses listed in encounter result view
+- [x] Add retreat mechanic (new feature)
+  - Between encounters, player can "Retreat" to keep earned gold
+  - Floor not marked cleared on retreat
+  - No happiness penalty for strategic retreat
+  - Cannot retreat once committed to boss fight
+- [x] Add auto-resolve function for AI (Phase 5 prep)
+  - `autoResolveFloor()` in combatResolver.ts
+  - Same resolution logic, runs all encounters without UI
+  - Ready for Grimwald AI integration in Phase 5
+- [x] TypeScript compiles cleanly, build succeeds, tests pass
+
 ## In Progress
 
 *No active tasks*
@@ -102,12 +136,14 @@ See log.md "Game Gap Analysis & Rogue-Lite RPG Design Proposal" for full design.
 - [x] Display dungeon progress (floors cleared, boss status)
 - [x] Keep basic "Rest in Cave" option
 
-**Phase 4: Combat System**
-- [ ] Implement combat resolution formula (Player Power vs Encounter Power)
-- [ ] Add encounter-by-encounter floor progression
-- [ ] Create combat result display (damage, gold, items found)
-- [ ] Add boss encounter mechanics
-- [ ] Add education bonuses to combat (Trade Guild disarms traps, Combat Training reduces damage, etc.)
+**Phase 4: Combat System** ✅ DONE
+- [x] Implement combat resolution formula (Player Power vs Encounter Power)
+- [x] Add encounter-by-encounter floor progression
+- [x] Create combat result display (damage, gold, items found)
+- [x] Add boss encounter mechanics
+- [x] Add education bonuses to combat (Trade Guild disarms traps, Combat Training reduces damage, etc.)
+- [x] Add retreat mechanic (keep partial gold, floor not cleared)
+- [x] Add auto-resolve function for AI (Phase 5 prep)
 
 **Phase 5: Integration**
 - [ ] Connect dungeon quests to floor clear requirements
