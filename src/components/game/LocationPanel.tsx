@@ -40,6 +40,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     modifyFood,
     modifyClothing,
     modifyMaxHealth,
+    modifyRelaxation,
     spendTime,
     workShift,
     studyDegree,
@@ -287,6 +288,8 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             spendTime={spendTime}
             modifyHappiness={modifyHappiness}
             modifyHealth={modifyHealth}
+            modifyRelaxation={modifyRelaxation}
+            onDone={() => selectLocation(null)}
           />
         );
 
@@ -388,6 +391,16 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
         );
     }
   };
+
+  // Home locations get a full-panel visual room display (Jones-style)
+  const isHomeLocation = locationId === 'noble-heights' || locationId === 'slums';
+  if (isHomeLocation && isHere) {
+    return (
+      <div className="h-full">
+        {getLocationActions()}
+      </div>
+    );
+  }
 
   return (
     <>
