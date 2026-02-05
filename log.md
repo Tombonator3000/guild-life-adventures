@@ -1,5 +1,53 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Fix Game Startup Circular Dependency Error
+
+### Problem
+The game failed to start with JavaScript error:
+```
+ReferenceError: Cannot access 'I' before initialization
+```
+
+This error appeared in the minified production build, indicating a circular dependency issue during module initialization.
+
+### Root Cause
+Duplicate type definitions were causing circular dependency issues:
+1. `DegreeId` was defined in BOTH `game.types.ts` AND `education.ts`
+2. `EducationPath` was defined in `game.types.ts`, `education.ts`, AND `jobs.ts`
+
+The import chain created a circular dependency:
+- `gameStore.ts` → imports from `education.ts`
+- `education.ts` → defined its own `DegreeId`
+- `jobs.ts` → imported `DegreeId` from `education.ts` (local import)
+- This created initialization conflicts during module loading
+
+### Solution
+Consolidated type definitions to have a single source of truth:
+
+**education.ts:**
+- Removed local `DegreeId` and `EducationPath` type definitions
+- Import from `@/types/game.types` instead
+- Added re-export for backwards compatibility with existing imports
+
+**jobs.ts:**
+- Changed import from `./education` to `@/types/game.types`
+- Removed duplicate `EducationPath` type definition
+
+**gameStore.ts:**
+- Removed redundant `DegreeIdType` alias import
+
+### Files Modified
+- `src/data/education.ts` - Import and re-export types from game.types
+- `src/data/jobs.ts` - Import types from game.types
+- `src/store/gameStore.ts` - Remove redundant type alias
+
+### Verification
+- Build completes successfully (`bun run build`)
+- Dev server starts without errors (`bun run dev`)
+- No more circular dependency initialization errors
+
+---
+
 ## 2026-02-05 - Cave & Dungeon Exploration System Design
 
 ### Task Summary
