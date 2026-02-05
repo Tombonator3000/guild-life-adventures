@@ -37,6 +37,9 @@ export interface ApartmentRobberyResult {
   message: string;
 }
 
+// Homeless robbery multiplier - homeless players are easier targets
+export const HOMELESS_ROBBERY_MULTIPLIER = 3; // 3x more likely to be robbed on the street
+
 /**
  * Check if a street robbery should occur when player leaves a location
  *
@@ -48,6 +51,8 @@ export interface ApartmentRobberyResult {
  * Chance depends on location:
  * - Bank: 1/31 (~3.2%)
  * - Shadow Market: 1/51 (~1.95%)
+ *
+ * Homeless players have 3x higher robbery chance
  */
 export function checkStreetRobbery(
   player: Player,
@@ -70,9 +75,14 @@ export function checkStreetRobbery(
   }
 
   // Determine robbery chance based on location
-  const robberyChance = fromLocation === 'bank'
+  let robberyChance = fromLocation === 'bank'
     ? BANK_ROBBERY_CHANCE
     : SHADOW_MARKET_ROBBERY_CHANCE;
+
+  // Homeless players are easier targets - higher robbery chance
+  if (player.housing === 'homeless') {
+    robberyChance *= HOMELESS_ROBBERY_MULTIPLIER;
+  }
 
   // Roll for robbery
   if (Math.random() >= robberyChance) {

@@ -50,6 +50,7 @@ export interface GameStore extends GameState {
   buyDurable: (playerId: string, itemId: string, cost: number) => void;
   sellItem: (playerId: string, itemId: string, price: number) => void;
   sellDurable: (playerId: string, itemId: string, price: number) => void;
+  buyGuildPass: (playerId: string) => void;
   takeQuest: (playerId: string, questId: string) => void;
   completeQuest: (playerId: string) => void;
   abandonQuest: (playerId: string) => void;

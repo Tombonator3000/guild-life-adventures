@@ -70,6 +70,7 @@ const createPlayer = (
   inventory: [],
   isAI,
   activeQuest: null,
+  hasGuildPass: false,
   hasNewspaper: false,
   isSick: false,
   rentDebt: 0,

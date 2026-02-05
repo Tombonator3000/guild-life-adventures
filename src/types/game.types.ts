@@ -159,6 +159,7 @@ export interface Player {
   inventory: string[];
   isAI: boolean;
   activeQuest: string | null; // Current quest ID
+  hasGuildPass: boolean; // Has purchased Guild Pass (required for quests)
   hasNewspaper: boolean; // Has purchased newspaper this week
   isSick: boolean; // Has sickness debuff
   rentDebt: number; // Accumulated rent debt for garnishment
@@ -235,6 +236,9 @@ export const RENT_COSTS: Record<HousingTier, number> = {
   modest: 200,
   noble: 500,
 };
+
+// Guild Pass cost - required before taking quests
+export const GUILD_PASS_COST = 500;
 
 export const GUILD_RANK_ORDER: GuildRank[] = [
   'novice',

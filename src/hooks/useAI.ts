@@ -5,10 +5,10 @@ import { useGameStore } from '@/store/gameStore';
 import type { Player, LocationId } from '@/types/game.types';
 import { getAvailableJobs, JOBS } from '@/data/jobs';
 import { getAvailableQuests, canTakeQuest } from '@/data/quests';
-import { RENT_COSTS } from '@/types/game.types';
+import { RENT_COSTS, GUILD_PASS_COST } from '@/types/game.types';
 
 type AIAction = {
-  type: 'move' | 'work' | 'eat' | 'study' | 'quest' | 'rest' | 'pay-rent' | 'end-turn';
+  type: 'move' | 'work' | 'eat' | 'study' | 'quest' | 'buy-guild-pass' | 'rest' | 'pay-rent' | 'end-turn';
   location?: LocationId;
   details?: any;
 };
@@ -26,6 +26,7 @@ export function useAI() {
     studySession,
     takeQuest,
     completeQuest,
+    buyGuildPass,
     endTurn,
   } = useGameStore();
 
@@ -75,8 +76,16 @@ export function useAI() {
       }
     }
 
-    // Priority 4: Take quest if no active quest and have enough time
-    if (!player.activeQuest && player.timeRemaining >= 20 && player.health >= 60) {
+    // Priority 4: Buy Guild Pass if can afford and don't have one yet
+    if (!player.hasGuildPass && player.gold >= GUILD_PASS_COST && player.timeRemaining >= 20) {
+      if (player.currentLocation !== 'guild-hall') {
+        return { type: 'move', location: 'guild-hall' };
+      }
+      return { type: 'buy-guild-pass' };
+    }
+
+    // Priority 5: Take quest if no active quest, have guild pass, and have enough time
+    if (player.hasGuildPass && !player.activeQuest && player.timeRemaining >= 20 && player.health >= 60) {
       const availableQuests = getAvailableQuests(player.guildRank);
       const affordableQuest = availableQuests.find(q => {
         const { canTake } = canTakeQuest(q, player.guildRank, player.education, player.inventory);
@@ -162,6 +171,10 @@ export function useAI() {
         studySession(player.id, 'fighter', 25, 4);
         break;
       
+      case 'buy-guild-pass':
+        buyGuildPass(player.id);
+        break;
+
       case 'quest':
         if (action.details?.complete) {
           completeQuest(player.id);
@@ -184,7 +197,7 @@ export function useAI() {
         endTurn();
         break;
     }
-  }, [movePlayer, workShift, modifyGold, modifyFood, modifyHappiness, spendTime, studySession, payRent, endTurn, takeQuest, completeQuest]);
+  }, [movePlayer, workShift, modifyGold, modifyFood, modifyHappiness, spendTime, studySession, payRent, endTurn, takeQuest, completeQuest, buyGuildPass]);
 
   const runAITurn = useCallback((player: Player) => {
     // AI takes multiple actions per turn until out of time or decides to end

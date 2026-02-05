@@ -130,6 +130,24 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         }));
       }
 
+      // Homeless penalty: sleeping on the streets costs health and time
+      if (player.housing === 'homeless') {
+        const HOMELESS_HEALTH_PENALTY = 5;
+        const HOMELESS_TIME_PENALTY = 8;
+        set((state) => ({
+          players: state.players.map((p) =>
+            p.id === playerId
+              ? {
+                  ...p,
+                  health: Math.max(0, p.health - HOMELESS_HEALTH_PENALTY),
+                  timeRemaining: Math.max(0, p.timeRemaining - HOMELESS_TIME_PENALTY),
+                }
+              : p
+          ),
+          eventMessage: `${player.name} slept on the streets. -${HOMELESS_HEALTH_PENALTY} health, -${HOMELESS_TIME_PENALTY} hours.`,
+        }));
+      }
+
       // Check for apartment robbery at the start of player's turn
       const robberyResult = checkApartmentRobbery(player);
 
