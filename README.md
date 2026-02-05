@@ -1,73 +1,86 @@
-# Welcome to your Lovable project
+# Guild Life Adventures
 
-## Project info
+Et fantasy-livssimuleringsspill inspirert av det klassiske "Jones in the Fast Lane".
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Om spillet
 
-## How can I edit this code?
+Guild Life Adventures er et turbasert strategispill hvor du navigerer livet som eventyrer i fantasy-byen Guildholm. Balanser arbeid, utdanning, quests og personlige behov mens du streber etter suksess.
 
-There are several ways of editing your application.
+### Spillfunksjoner
 
-**Use Lovable**
+- **Quest System** - Ta pa deg oppdrag rangert fra E til S med okende belonninger
+- **Jobb & Karriere** - Sok jobber, jobb skift, be om lonnsforhoyelse
+- **Utdanning** - Fire veier: Fighter, Mage, Priest, Business
+- **Housing** - Fra hjemlos til Noble Heights
+- **AI-motstander** - Konkurrer mot Grimwald
+- **Dynamisk okonomi** - Prissvingninger, investeringer, bank
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### Lokasjoner i Guildholm
 
-Changes made via Lovable will be committed automatically to this repo.
+| Lokasjon | Funksjon |
+|----------|----------|
+| Guild Hall | Jobber, quests, guild-rang |
+| Academy | Utdanning |
+| Bank | Sparing, investeringer |
+| General Store | Mat, klrer, avis |
+| The Fence | Kjop/salg brukte varer, gambling |
+| Healer's Sanctuary | Helbredelse |
+| Noble Heights | Luksusbolig |
+| The Slums | Rimelig bolig |
 
-**Use your preferred IDE**
+## Kom i gang
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+```bash
+# Installer avhengigheter
+npm install
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start utviklingsserver
 npm run dev
+
+# Bygg for produksjon
+npm run build
+
+# Kjor tester
+npm test
 ```
 
-**Edit a file directly in GitHub**
+## Teknologi
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- **React 18** - UI-bibliotek
+- **TypeScript** - Typesikkerhet
+- **Vite** - Byggverkty
+- **Zustand** - State management
+- **Tailwind CSS** - Styling
+- **shadcn/ui** - UI-komponenter
 
-**Use GitHub Codespaces**
+## Dokumentasjon
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- [agents.md](./agents.md) - AI-system og agentlogikk
+- [todo.md](./todo.md) - Prosjektoppgaver og backlog
+- [log.md](./log.md) - Utviklingslogg
+- [.lovable/plan.md](./.lovable/plan.md) - Implementasjonsplan
 
-## What technologies are used for this project?
+## Spillmekanikker
 
-This project is built with:
+### Tid
+- 168 timer per uke
+- Handlinger koster tid
+- Uke slutter nar alle spillere har brukt opp tiden
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Ressurser
+- **Gull** - Hovedvaluta
+- **Helse** - 0 = dod (kan gjenopplives)
+- **Lykke** - Paviker spillopplevelsen
+- **Mat** - Synker ukentlig, sult skader helse
+- **Klr** - Degraderes over tid
 
-## How can I deploy this project?
+### Mal
+Velg dine mal ved spillstart:
+- Rikdom (gull + sparing + investeringer)
+- Lykke (prosent)
+- Utdanning (antall nivaer)
+- Karriere (guild-rang)
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## Lisens
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+MIT
