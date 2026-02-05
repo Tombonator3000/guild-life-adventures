@@ -1,6 +1,7 @@
 import type { Player } from '@/types/game.types';
 import { HOUSING_DATA } from '@/data/housing';
 import { getAppliance } from '@/data/items';
+import { JonesButton } from './JonesStylePanel';
 
 interface HomePanelProps {
   player: Player;

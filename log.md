@@ -1,5 +1,36 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-05 - Bug Fix: Slums Crash (JonesButton ReferenceError)
+
+### Problem
+Game crashed with `ReferenceError: JonesButton is not defined` when navigating to the Slums location while the player had no housing (`player.housing === 'homeless'`).
+
+### Root Cause
+`src/components/game/HomePanel.tsx` used the `JonesButton` component on line 52 (in the homeless player branch) but never imported it. All other panel files (GuildHallPanel, AcademyPanel, WorkSection) correctly import `JonesButton` from `./JonesStylePanel`, but HomePanel was missing this import.
+
+### How It Triggers
+1. Player visits the Slums location on the board
+2. `LocationPanel.tsx` routes both `'slums'` and `'noble-heights'` to `HomePanel`
+3. `HomePanel` checks `player.housing === 'homeless'` (line 45)
+4. If homeless, it renders a "You have no home" message with a `<JonesButton label="DONE" />` (line 52)
+5. Since `JonesButton` is not imported → crash
+
+### Fix
+Added missing import to `HomePanel.tsx`:
+```typescript
+import { JonesButton } from './JonesStylePanel';
+```
+
+### Files Modified
+- `src/components/game/HomePanel.tsx` — Added missing `JonesButton` import
+
+### Verification
+- TypeScript compiles cleanly (`tsc --noEmit` passes)
+- Production build succeeds (`bun run build`)
+- All tests pass (`bun run test`)
+
+---
+
 ## 2026-02-05 - Phase 2 Implementation: Dungeon Data (dungeon.ts)
 
 ### What Was Done
