@@ -1,10 +1,10 @@
 # Guild Life Adventures - Development Log
 
-## 2026-02-05 - Jones-Style Employment Office
+## 2026-02-05 - Guild Hall (Jones-Style Employment System)
 
 ### Implementation
 
-Created a proper Jones-style Employment Office that matches the original game:
+Created Guild Hall panel - our fantasy version of Jones' Employment Office:
 
 **Employer List View:**
 - Shows list of employers (Guild Hall, General Store, Bank, Forge, Academy, etc.)
@@ -12,8 +12,7 @@ Created a proper Jones-style Employment Office that matches the original game:
 - Click on employer to see their jobs
 
 **Job Application System:**
-- Click on a job to apply
-- Application costs 1 hour of time
+- Click on a job to apply (costs 1 hour)
 - System checks ALL qualifications:
   - Required degrees (education)
   - Required experience points
@@ -26,12 +25,10 @@ Created a proper Jones-style Employment Office that matches the original game:
 - Can accept or decline the offer
 - Failure: Shows exactly what's missing (degrees, exp, dep, clothing)
 
-### New Files
-- `src/components/game/EmploymentOfficePanel.tsx` - Complete Employment Office component
-
-### Modified Files
+### Files
+- `src/components/game/GuildHallPanel.tsx` - Guild Hall job seeking panel
 - `src/data/jobs.ts` - Added Employer interface, getEmployers(), applyForJob()
-- `src/components/game/LocationPanel.tsx` - Integrated EmploymentOfficePanel
+- `src/components/game/LocationPanel.tsx` - Integrated GuildHallPanel
 
 ---
 

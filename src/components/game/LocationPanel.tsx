@@ -5,7 +5,7 @@ import { RENT_COSTS } from '@/types/game.types';
 import { MapPin, Clock, ArrowRight, X, Utensils, GraduationCap, Briefcase, Coins, ShoppingBag, Home, Sparkles, Hammer, Newspaper, Scroll, Heart, TrendingUp } from 'lucide-react';
 import { EDUCATION_PATHS, getCourse, getNextCourse, getAvailableDegrees, DEGREES, getDegree, type DegreeId } from '@/data/education';
 import { getAvailableJobs, JOBS, FORGE_JOBS, getJob, ALL_JOBS, getEntryLevelJobs, getJobOffers, type JobOffer } from '@/data/jobs';
-import { EmploymentOfficePanel } from './EmploymentOfficePanel';
+import { GuildHallPanel } from './GuildHallPanel';
 import { GENERAL_STORE_ITEMS, TAVERN_ITEMS, ARMORY_ITEMS, ENCHANTER_ITEMS, SHADOW_MARKET_ITEMS, getItemPrice } from '@/data/items';
 import { HOUSING_DATA, HOUSING_TIERS } from '@/data/housing';
 import { QuestPanel } from './QuestPanel';
@@ -164,8 +164,8 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               onAbandonQuest={() => abandonQuest(player.id)}
             />
 
-            {/* Jones-style Employment Office */}
-            <EmploymentOfficePanel
+            {/* Guild Hall - Seek Employment */}
+            <GuildHallPanel
               player={player}
               priceModifier={priceModifier}
               onHireJob={(jobId, wage) => {

@@ -1,4 +1,4 @@
-// Jones-style Employment Office Panel
+// Guild Hall Panel - Fantasy version of Jones' Employment Office
 // Shows list of employers, then jobs when clicking an employer
 // Players apply for jobs and get accepted/rejected based on qualifications
 
@@ -17,19 +17,19 @@ import {
 import { DEGREES, type DegreeId } from '@/data/education';
 import type { Player } from '@/types/game.types';
 
-interface EmploymentOfficePanelProps {
+interface GuildHallPanelProps {
   player: Player;
   priceModifier: number;
   onHireJob: (jobId: string, wage: number) => void;
   onSpendTime: (hours: number) => void;
 }
 
-export function EmploymentOfficePanel({
+export function GuildHallPanel({
   player,
   priceModifier,
   onHireJob,
   onSpendTime,
-}: EmploymentOfficePanelProps) {
+}: GuildHallPanelProps) {
   const [selectedEmployer, setSelectedEmployer] = useState<Employer | null>(null);
   const [applicationResult, setApplicationResult] = useState<{
     job: Job;
@@ -166,7 +166,7 @@ export function EmploymentOfficePanel({
           onClick={() => setSelectedEmployer(null)}
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-card transition-colors"
         >
-          <ChevronLeft className="w-4 h-4" /> Back to Employers
+          <ChevronLeft className="w-4 h-4" /> Back to Guild Hall
         </button>
 
         <div className="wood-frame p-3 text-card">
@@ -250,10 +250,10 @@ export function EmploymentOfficePanel({
     <div className="space-y-3">
       <div className="wood-frame p-3 text-card text-center">
         <h3 className="font-display text-lg font-bold flex items-center justify-center gap-2">
-          <Briefcase className="w-5 h-5" /> EMPLOYMENT OFFICE
+          <Briefcase className="w-5 h-5" /> GUILD HALL
         </h3>
         <p className="text-xs text-muted-foreground mt-1">
-          Select an employer to see available positions
+          Seek employment throughout Guildholm
         </p>
       </div>
 
