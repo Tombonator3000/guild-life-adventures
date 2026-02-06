@@ -14,7 +14,8 @@ export function GoalProgress({ player, goals }: GoalProgressProps) {
   
   const happinessProgress = Math.min(100, (player.happiness / goals.happiness) * 100);
   
-  const totalEducation = Object.values(player.education).reduce((sum, level) => sum + level, 0);
+  // Use completedDegrees * 9 to match checkVictory calculation (Jones-style)
+  const totalEducation = player.completedDegrees.length * 9;
   const educationProgress = Math.min(100, (totalEducation / goals.education) * 100);
   
   const rankIndex = GUILD_RANK_INDEX[player.guildRank];

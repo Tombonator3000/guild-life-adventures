@@ -122,11 +122,11 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
 
     modifyMaxHealth: (playerId: string, amount: number) => {
       set((state) => ({
-        players: state.players.map((p) =>
-          p.id === playerId
-            ? { ...p, maxHealth: Math.max(50, p.maxHealth + amount), health: Math.min(p.health, p.maxHealth + amount) }
-            : p
-        ),
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          const newMaxHealth = Math.max(50, p.maxHealth + amount);
+          return { ...p, maxHealth: newMaxHealth, health: Math.min(p.health, newMaxHealth) };
+        }),
       }));
     },
 

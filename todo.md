@@ -87,6 +87,14 @@
   - Single-player must now complete all victory goals to win
   - Multiplayer "last man standing" still works correctly
 
+## Completed (2026-02-06)
+
+- [x] Bugfix Batch A — 4 bugs fixed
+  - [x] Education progress display: GoalProgress now uses `completedDegrees.length * 9` matching checkVictory
+  - [x] Work income display: WorkSection now uses 1.15 bonus matching actual workShift calculation
+  - [x] Async import race conditions: Replaced `import().then()` with static imports in economyHelpers and questHelpers
+  - [x] modifyMaxHealth inconsistency: Uses clamped newMaxHealth for health cap; fixed applyRareDrop too
+
 ## In Progress
 
 *No active tasks*
