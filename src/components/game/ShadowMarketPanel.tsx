@@ -1,9 +1,10 @@
 // Shadow Market Panel - Z-Mart equivalent
 // Sells used/cheaper appliances with higher break chance
+// Also sells lottery tickets (Fortune's Wheel) and weekend event tickets
 
-import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
+import { useGameStore } from '@/store/gameStore';
 import { getMarketAppliances, getAppliance, SHADOW_MARKET_ITEMS, getItemPrice } from '@/data/items';
-import { ShoppingBag, Sparkles, AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import type { Player } from '@/types/game.types';
 import { toast } from 'sonner';
 import {
@@ -12,6 +13,7 @@ import {
   JonesPanelContent,
   JonesSectionHeader,
   JonesMenuItem,
+  JonesInfoRow,
 } from './JonesStylePanel';
 
 interface ShadowMarketPanelProps {
@@ -21,6 +23,8 @@ interface ShadowMarketPanelProps {
   onModifyGold: (amount: number) => void;
   onModifyHappiness: (amount: number) => void;
   onModifyFood: (amount: number) => void;
+  buyLotteryTicket: (playerId: string, cost: number) => void;
+  buyTicket: (playerId: string, ticketType: string, cost: number) => void;
 }
 
 export function ShadowMarketPanel({
@@ -30,6 +34,8 @@ export function ShadowMarketPanel({
   onModifyGold,
   onModifyHappiness,
   onModifyFood,
+  buyLotteryTicket,
+  buyTicket,
 }: ShadowMarketPanelProps) {
   const { buyAppliance } = useGameStore();
   const appliances = getMarketAppliances();
@@ -46,39 +52,47 @@ export function ShadowMarketPanel({
   };
 
   const handleBuyItem = (item: typeof SHADOW_MARKET_ITEMS[0], price: number) => {
+    if (item.isLotteryTicket) {
+      buyLotteryTicket(player.id, price);
+      onSpendTime(1);
+      toast.success(`Bought Fortune's Wheel ticket! (${player.lotteryTickets + 1} tickets for this week)`);
+      return;
+    }
+
+    if (item.isTicket && item.ticketType) {
+      if (player.tickets.includes(item.ticketType)) {
+        toast.error('You already have this ticket!');
+        return;
+      }
+      buyTicket(player.id, item.ticketType, price);
+      onSpendTime(1);
+      toast.success(`Bought ${item.name}! Use it this weekend.`);
+      return;
+    }
+
     onModifyGold(-price);
     onSpendTime(1);
 
-    if (item.id === 'lottery-ticket') {
-      // 10% chance to win big
-      if (Math.random() < 0.1) {
-        onModifyGold(200);
-        onModifyHappiness(20);
-        toast.success('JACKPOT! You won 200 gold!');
-      } else if (Math.random() < 0.3) {
-        onModifyGold(20);
-        onModifyHappiness(5);
-        toast.success('Small win! You got 20 gold back.');
-      } else {
-        toast.error('Better luck next time...');
-      }
-    } else {
-      if (item.effect?.type === 'food') {
-        onModifyFood(item.effect.value);
-      }
-      if (item.effect?.type === 'happiness') {
-        onModifyHappiness(item.effect.value);
-      }
-      toast.success(`Purchased ${item.name}!`);
+    if (item.effect?.type === 'food') {
+      onModifyFood(item.effect.value);
     }
+    if (item.effect?.type === 'happiness') {
+      onModifyHappiness(item.effect.value);
+    }
+    toast.success(`Purchased ${item.name}!`);
   };
+
+  // Separate items by type for better organization
+  const regularItems = SHADOW_MARKET_ITEMS.filter(i => !i.isLotteryTicket && !i.isTicket);
+  const lotteryItems = SHADOW_MARKET_ITEMS.filter(i => i.isLotteryTicket);
+  const ticketItems = SHADOW_MARKET_ITEMS.filter(i => i.isTicket);
 
   return (
     <JonesPanel>
       <JonesPanelHeader title="Shadow Market" subtitle="Discount Goods" />
       <JonesPanelContent>
         <JonesSectionHeader title="BLACK MARKET GOODS" />
-        {SHADOW_MARKET_ITEMS.map(item => {
+        {regularItems.map(item => {
           const price = Math.round(getItemPrice(item, priceModifier * 0.7)); // 30% cheaper
           const canAfford = player.gold >= price && player.timeRemaining >= 1;
           return (
@@ -87,6 +101,44 @@ export function ShadowMarketPanel({
               label={item.name}
               price={price}
               disabled={!canAfford}
+              onClick={() => handleBuyItem(item, price)}
+            />
+          );
+        })}
+
+        <JonesSectionHeader title="FORTUNE'S WHEEL" />
+        {player.lotteryTickets > 0 && (
+          <JonesInfoRow label="Tickets this week:" value={`${player.lotteryTickets}`} />
+        )}
+        {lotteryItems.map(item => {
+          const price = Math.round(getItemPrice(item, priceModifier * 0.7));
+          const canAfford = player.gold >= price && player.timeRemaining >= 1;
+          return (
+            <JonesMenuItem
+              key={item.id}
+              label={item.name}
+              price={price}
+              disabled={!canAfford}
+              onClick={() => handleBuyItem(item, price)}
+            />
+          );
+        })}
+        <div className="text-xs text-[#8b7355] px-2 mb-1">
+          Drawing at week end. Grand prize: 5,000g!
+        </div>
+
+        <JonesSectionHeader title="WEEKEND TICKETS" />
+        {ticketItems.map(item => {
+          const price = Math.round(getItemPrice(item, priceModifier * 0.7));
+          const canAfford = player.gold >= price && player.timeRemaining >= 1;
+          const alreadyOwns = item.ticketType ? player.tickets.includes(item.ticketType) : false;
+          return (
+            <JonesMenuItem
+              key={item.id}
+              label={item.name}
+              price={price}
+              disabled={!canAfford || alreadyOwns}
+              highlight={alreadyOwns}
               onClick={() => handleBuyItem(item, price)}
             />
           );

@@ -7,6 +7,7 @@ import type {
   AIDifficulty,
 } from '@/types/game.types';
 import { PLAYER_COLORS, AI_COLOR, HOURS_PER_TURN } from '@/types/game.types';
+import { getInitialStockPrices } from '@/data/stocks';
 import { createPlayerActions } from './helpers/playerHelpers';
 import { createEconomyActions } from './helpers/economyHelpers';
 import { createTurnActions } from './helpers/turnHelpers';
@@ -85,6 +86,17 @@ const createPlayer = (
   equippedShield: null,
   dungeonFloorsCleared: [],
   permanentGoldBonus: 0,
+  // Stock Market
+  stocks: {},
+  // Loans
+  loanAmount: 0,
+  loanWeeksRemaining: 0,
+  // Weekend tickets
+  tickets: [],
+  // Fresh Food Storage
+  freshFood: 0,
+  // Lottery
+  lotteryTickets: 0,
 });
 
 export const useGameStore = create<GameStore>((set, get) => {
@@ -113,6 +125,8 @@ export const useGameStore = create<GameStore>((set, get) => {
     selectedLocation: null,
     shadowfingersEvent: null,
     aiDifficulty: 'medium' as AIDifficulty,
+    stockPrices: getInitialStockPrices(),
+    weekendEvent: null,
 
     // Game setup
     startNewGame: (playerNames, includeAI, goals, aiDifficulty = 'medium') => {
@@ -142,6 +156,8 @@ export const useGameStore = create<GameStore>((set, get) => {
         selectedLocation: null,
         shadowfingersEvent: null,
         aiDifficulty,
+        stockPrices: getInitialStockPrices(),
+        weekendEvent: null,
       });
     },
 
@@ -170,6 +186,8 @@ export const useGameStore = create<GameStore>((set, get) => {
     // Appliance breakage event state
     applianceBreakageEvent: null,
     dismissApplianceBreakageEvent: () => set({ applianceBreakageEvent: null }),
+    // Weekend event state
+    dismissWeekendEvent: () => set({ weekendEvent: null }),
   };
 });
 

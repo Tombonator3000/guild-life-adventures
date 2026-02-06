@@ -95,6 +95,16 @@
   - [x] Async import race conditions: Replaced `import().then()` with static imports in economyHelpers and questHelpers
   - [x] modifyMaxHealth inconsistency: Uses clamped newMaxHealth for health cap; fixed applyRareDrop too
 
+## Completed (2026-02-06)
+
+- [x] Feature Batch B — 6 missing Jones features implemented
+  - [x] B1: Stock Market — 3 stocks + Crown Bonds (T-Bills), broker UI at Bank, weekly price fluctuations, market crashes
+  - [x] B2: Loan System — Bank loans (100-1000g), 10% weekly interest, 8-week repayment, forced collection on default
+  - [x] B3: Weekend System — 3 ticket types, 5 durable weekends, 25+ random activities, auto-runs in processWeekEnd
+  - [x] B4: Doctor Visit Triggers — 25% on starvation, 20% on low relaxation, -10h/-4hap/-30-200g
+  - [x] B5: Food Storage — Fresh food units in Preservation Box (6 max), Frost Chest doubles to 12, auto-consume, spoilage
+  - [x] B6: Lottery (Fortune's Wheel) — Tickets at Shadow Market, weekly drawing, 2% grand (5000g), 5% small (50g)
+
 ## In Progress
 
 *No active tasks*
@@ -104,18 +114,18 @@
 See log.md "Improvement Proposals (Code Audit & Gap Analysis)" for full details.
 
 ### Bugs (Fix ASAP)
-- [ ] A1: Fix education progress display — GoalProgress uses old `player.education`, should use `completedDegrees * 9`
-- [ ] A2: Fix earnings display — WorkSection shows 33% bonus, actual calc uses 15%
-- [ ] A3: Fix async imports in store actions — race condition risk in applyRareDrop & quest helpers
-- [ ] A4: Decide on consistent modifyMaxHealth behavior
+- [x] A1: Fix education progress display — **FIXED** GoalProgress uses `completedDegrees * 9`
+- [x] A2: Fix earnings display — **FIXED** WorkSection uses 1.15 bonus
+- [x] A3: Fix async imports in store actions — **FIXED** Static imports
+- [x] A4: Decide on consistent modifyMaxHealth behavior — **FIXED** Clamped newMaxHealth
 
 ### Missing Jones Features
-- [ ] B1: Stock Market / Trading System (regular stocks + T-Bills)
-- [ ] B2: Loan System (bank loans with interest)
-- [ ] B3: Weekend System (ticket events, appliance weekends, random weekends)
-- [ ] B4: Doctor Visit triggers (starvation → doctor, low relaxation → doctor)
-- [ ] B5: Fresh Food storage system (Refrigerator/Freezer units)
-- [ ] B6: Lottery Tickets
+- [x] B1: Stock Market / Trading System (regular stocks + T-Bills) — **DONE**
+- [x] B2: Loan System (bank loans with interest) — **DONE**
+- [x] B3: Weekend System (ticket events, appliance weekends, random weekends) — **DONE**
+- [x] B4: Doctor Visit triggers (starvation → doctor, low relaxation → doctor) — **DONE**
+- [x] B5: Fresh Food storage system (Refrigerator/Freezer units) — **DONE**
+- [x] B6: Lottery Tickets — **DONE**
 
 ### Gameplay
 - [ ] C1: Save/Load game state (localStorage) — **highest usability gap**
@@ -217,32 +227,16 @@ See log.md "Game Gap Analysis & Rogue-Lite RPG Design Proposal" for full design.
 - [x] Add dungeon exploration to Grimwald AI decision engine
 - [x] Balance dungeon rewards with economy (guild rank loot multiplier)
 
-### Missing Jones Features (Priority)
+### Missing Jones Features (Priority) — ALL DONE
 Based on JONES_REFERENCE.md analysis:
 
-**Not Implemented:**
-- [ ] Stock Market/Trading System
-  - Individual stock purchases/sales
-  - T-Bills (safe investment, no crash risk)
-  - Market volatility and trading
-  - Broker NPC at Bank
-- [ ] Loan System
-  - Request loans from Bank
-  - Interest on loans
-  - Repayment schedule
-  - Loan defaults and consequences
-
-**Partially Implemented:**
-- [ ] Weekend System
-  - Entertainment tickets (Baseball, Theatre, Concert)
-  - Weekend activities with costs ($5-100)
-  - Durable-triggered weekends (20% chance each)
-  - Ticket priority system
-- [ ] Doctor/Healer System
-  - Proper healer location/NPC
-  - Doctor visit mechanic (-10 Hours, -4 Happiness, -$30-200)
-  - Sickness cure functionality
-  - Relaxation-triggered health issues
+**All Implemented (Batch B, 2026-02-06):**
+- [x] Stock Market/Trading System — 3 stocks + Crown Bonds, broker at Bank
+- [x] Loan System — Bank loans, 10% weekly interest, 8-week repayment
+- [x] Weekend System — Tickets, durable weekends, 25+ random activities
+- [x] Doctor/Healer System — Auto-triggers on starvation & low relaxation
+- [x] Fresh Food Storage — Preservation Box (6 units), Frost Chest (12 units)
+- [x] Lottery / Fortune's Wheel — Weekly drawing at Shadow Market
 
 ### Gameplay
 - [x] Balance quest rewards

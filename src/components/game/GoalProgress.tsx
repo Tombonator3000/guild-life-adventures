@@ -1,6 +1,8 @@
 import { Coins, Smile, GraduationCap, Shield, Target } from 'lucide-react';
 import type { Player, GoalSettings } from '@/types/game.types';
 import { GUILD_RANK_INDEX } from '@/types/game.types';
+import { calculateStockValue } from '@/data/stocks';
+import { useGameStore } from '@/store/gameStore';
 
 interface GoalProgressProps {
   player: Player;
@@ -8,8 +10,10 @@ interface GoalProgressProps {
 }
 
 export function GoalProgress({ player, goals }: GoalProgressProps) {
-  // Calculate progress for each goal
-  const totalWealth = player.gold + player.savings + player.investments;
+  const { stockPrices } = useGameStore();
+  // Calculate progress for each goal (includes stocks and loans)
+  const stockValue = calculateStockValue(player.stocks, stockPrices);
+  const totalWealth = player.gold + player.savings + player.investments + stockValue - player.loanAmount;
   const wealthProgress = Math.min(100, (totalWealth / goals.wealth) * 100);
   
   const happinessProgress = Math.min(100, (player.happiness / goals.happiness) * 100);

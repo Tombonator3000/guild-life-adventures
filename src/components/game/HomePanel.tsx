@@ -21,6 +21,7 @@ const APPLIANCE_POSITIONS: Record<string, { left: string; bottom: string; icon: 
   'cooking-fire': { left: '82%', bottom: '22%', icon: '🔥', label: 'Cooking Fire' },
   'preservation-box': { left: '85%', bottom: '38%', icon: '📦', label: 'Preservation Box' },
   'arcane-tome': { left: '22%', bottom: '30%', icon: '📖', label: 'Arcane Tome' },
+  'frost-chest': { left: '90%', bottom: '32%', icon: '❄️', label: 'Frost Chest' },
 };
 
 // Durable item display in room

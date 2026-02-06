@@ -1,7 +1,7 @@
 // Turn management helpers
 // endTurn, startTurn, processWeekEnd - the biggest functions in the store
 
-import type { LocationId, HousingTier } from '@/types/game.types';
+import type { LocationId, HousingTier, WeekendEventResult } from '@/types/game.types';
 import { HOURS_PER_TURN, RENT_COSTS } from '@/types/game.types';
 import { checkWeeklyTheft, checkMarketCrash } from '@/data/events';
 import {
@@ -12,6 +12,8 @@ import {
   calculateRepairCost,
   checkApplianceBreakage,
 } from '@/data/items';
+import { updateStockPrices } from '@/data/stocks';
+import { selectWeekendActivity } from '@/data/weekends';
 import type { SetFn, GetFn } from '../storeTypes';
 
 export function createTurnActions(set: SetFn, get: GetFn) {
@@ -113,13 +115,25 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         }));
       }
 
-      // Jones-style Starvation Check at start of turn
-      // If player has no food and no Preservation Box with food, they starve and lose 20 Hours
+      // === Jones-style Fresh Food + Starvation Check ===
+      // Priority: 1) regular foodLevel, 2) freshFood in Preservation Box, 3) starve
       const hasPreservationBox = player.appliances['preservation-box'] && !player.appliances['preservation-box'].isBroken;
-      const hasFood = player.foodLevel > 0;
+      const hasRegularFood = player.foodLevel > 0;
+      const hasFreshFood = hasPreservationBox && player.freshFood > 0;
 
-      if (!hasFood && !hasPreservationBox) {
+      let isStarving = false;
+      if (!hasRegularFood && hasFreshFood) {
+        // Consume 1 fresh food unit instead of starving
+        set((state) => ({
+          players: state.players.map((p) =>
+            p.id === playerId
+              ? { ...p, freshFood: Math.max(0, p.freshFood - 1) }
+              : p
+          ),
+        }));
+      } else if (!hasRegularFood && !hasFreshFood) {
         // Starving: Lose 20 Hours (1/3 of turn!) - Jones-style penalty
+        isStarving = true;
         const STARVATION_TIME_PENALTY = 20;
         set((state) => ({
           players: state.players.map((p) =>
@@ -129,6 +143,63 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           ),
           eventMessage: `${player.name} is starving! Lost ${STARVATION_TIME_PENALTY} Hours searching for food.`,
         }));
+
+        // B4: Doctor Visit trigger from starvation (25% chance)
+        if (Math.random() < 0.25) {
+          const doctorCost = 30 + Math.floor(Math.random() * 171); // 30-200g
+          set((state) => ({
+            players: state.players.map((p) =>
+              p.id === playerId
+                ? {
+                    ...p,
+                    timeRemaining: Math.max(0, p.timeRemaining - 10),
+                    happiness: Math.max(0, p.happiness - 4),
+                    gold: Math.max(0, p.gold - doctorCost),
+                  }
+                : p
+            ),
+            eventMessage: `${player.name} collapsed from hunger and was taken to the healer! -10 Hours, -4 Happiness, -${doctorCost}g.`,
+          }));
+        }
+      }
+
+      // B4: Doctor Visit trigger from low relaxation (<=15, 20% chance)
+      if (!isStarving && player.relaxation <= 15 && Math.random() < 0.20) {
+        const doctorCost = 30 + Math.floor(Math.random() * 171); // 30-200g
+        set((state) => ({
+          players: state.players.map((p) =>
+            p.id === playerId
+              ? {
+                  ...p,
+                  timeRemaining: Math.max(0, p.timeRemaining - 10),
+                  happiness: Math.max(0, p.happiness - 4),
+                  gold: Math.max(0, p.gold - doctorCost),
+                }
+              : p
+          ),
+          eventMessage: `${player.name} is exhausted and collapsed! The healer charged ${doctorCost}g. -10 Hours, -4 Happiness.`,
+        }));
+      }
+
+      // Fresh food spoilage: if no Preservation Box, all fresh food spoils
+      if (!hasPreservationBox && player.freshFood > 0) {
+        set((state) => ({
+          players: state.players.map((p) =>
+            p.id === playerId ? { ...p, freshFood: 0 } : p
+          ),
+          eventMessage: `${player.name}'s fresh food spoiled! No Preservation Box to keep it fresh.`,
+        }));
+      } else if (hasPreservationBox) {
+        // Cap fresh food to max storage
+        const hasFrostChest = player.appliances['frost-chest'] && !player.appliances['frost-chest'].isBroken;
+        const maxStorage = hasFrostChest ? 12 : 6;
+        if (player.freshFood > maxStorage) {
+          set((state) => ({
+            players: state.players.map((p) =>
+              p.id === playerId ? { ...p, freshFood: maxStorage } : p
+            ),
+          }));
+        }
       }
 
       // Homeless penalty: sleeping on the streets costs health and time
@@ -364,11 +435,98 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           }
         }
 
+        // === Loan Interest (10% per week on outstanding balance) ===
+        if (p.loanAmount > 0) {
+          const interest = Math.ceil(p.loanAmount * 0.10);
+          p.loanAmount += interest;
+          p.loanWeeksRemaining = Math.max(0, p.loanWeeksRemaining - 1);
+
+          // Loan default: if weeks run out, forced repayment from savings/gold
+          if (p.loanWeeksRemaining <= 0 && p.loanAmount > 0) {
+            // Take from savings first, then gold
+            const fromSavings = Math.min(p.savings, p.loanAmount);
+            p.savings -= fromSavings;
+            const remaining = p.loanAmount - fromSavings;
+            const fromGold = Math.min(p.gold, remaining);
+            p.gold -= fromGold;
+            const stillOwed = remaining - fromGold;
+
+            if (stillOwed > 0) {
+              // Can't fully repay: happiness penalty, wage garnishment continues
+              p.happiness = Math.max(0, p.happiness - 10);
+              p.loanWeeksRemaining = 4; // Extension with more penalties
+              if (!p.isAI) {
+                eventMessages.push(`${p.name} defaulted on loan! -10 happiness. ${stillOwed}g still owed.`);
+              }
+            } else {
+              p.loanAmount = 0;
+              if (!p.isAI) {
+                eventMessages.push(`${p.name}'s loan was forcefully repaid from savings!`);
+              }
+            }
+          }
+        }
+
+        // === Weekend System (Jones-style) ===
+        const weekendResult = selectWeekendActivity(
+          p.tickets,
+          p.appliances,
+          newWeek,
+          p.gold,
+        );
+        if (weekendResult) {
+          const { activity, ticketUsed } = weekendResult;
+          // Deduct cost
+          p.gold = Math.max(0, p.gold - activity.cost);
+          // Add happiness
+          p.happiness = Math.min(100, p.happiness + activity.happiness);
+          // Consume ticket if used
+          if (ticketUsed) {
+            p.tickets = p.tickets.filter(t => t !== ticketUsed);
+          }
+          if (!p.isAI) {
+            eventMessages.push(`Weekend: ${activity.description} (+${activity.happiness} Happiness${activity.cost > 0 ? `, -${activity.cost}g` : ''})`);
+          }
+        }
+
+        // === Lottery Drawing (Fortune's Wheel) ===
+        if (p.lotteryTickets > 0) {
+          let lotteryWinnings = 0;
+          for (let i = 0; i < p.lotteryTickets; i++) {
+            const roll = Math.random();
+            if (roll < 0.02) { // 2% grand prize per ticket
+              lotteryWinnings += 5000;
+            } else if (roll < 0.07) { // 5% small prize per ticket
+              lotteryWinnings += 50;
+            }
+          }
+          if (lotteryWinnings > 0) {
+            p.gold += lotteryWinnings;
+            p.happiness = Math.min(100, p.happiness + (lotteryWinnings >= 5000 ? 25 : 5));
+            if (!p.isAI) {
+              eventMessages.push(`Fortune's Wheel: ${p.name} won ${lotteryWinnings}g!`);
+            }
+          } else if (!p.isAI) {
+            eventMessages.push(`Fortune's Wheel: No luck this week.`);
+          }
+          p.lotteryTickets = 0; // Reset tickets after drawing
+        }
+
+        // Relaxation decay (-1 per week, Jones-style)
+        p.relaxation = Math.max(10, p.relaxation - 1);
+
         // Rent tracking
         p.weeksSinceRent += 1;
 
         return p;
       });
+
+      // === Update Stock Prices (Jones-style) ===
+      const isMarketCrash = Math.random() < 0.05; // 5% chance of market crash
+      const newStockPrices = updateStockPrices(state.stockPrices, isMarketCrash);
+      if (isMarketCrash) {
+        eventMessages.push('MARKET CRASH! Stock prices have plummeted!');
+      }
 
       // Find first alive player for the new week
       const firstAliveIndex = updatedPlayers.findIndex(p => !p.isGameOver);
@@ -379,6 +537,7 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           week: newWeek,
           phase: 'victory',
           eventMessage: 'All players have perished. Game Over!',
+          stockPrices: newStockPrices,
         });
         return;
       }
@@ -392,6 +551,7 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           winner: alivePlayers[0].id,
           phase: 'victory',
           eventMessage: `${alivePlayers[0].name} is the last one standing and wins the game!`,
+          stockPrices: newStockPrices,
         });
         return;
       }
@@ -413,6 +573,7 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         selectedLocation: null,
         eventMessage: eventMessages.length > 0 ? eventMessages.join('\n') : null,
         phase: eventMessages.length > 0 ? 'event' : 'playing',
+        stockPrices: newStockPrices,
       });
 
       // Check for apartment robbery at start of first alive player's turn

@@ -1,5 +1,109 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Feature Batch B: Missing Jones Features (6 systems)
+
+Implemented 6 missing Jones in the Fast Lane features with fantasy equivalents.
+
+### B1: Stock Market (Large)
+**Jones Reference:** Stock Market at Bank - stocks + T-Bills
+**Implementation:**
+- 3 regular stocks (Crystal Mine Ventures, Potion Consortium, Enchanting Guild Corp) with different volatility levels
+- Crown Bonds (T-Bill equivalent) - fixed price, 3% sell fee, crash-proof
+- Stock prices fluctuate each week in `processWeekEnd` via `updateStockPrices()`
+- 5% weekly chance of market crash (stocks lose 30-60% value, Crown Bonds safe)
+- Buy/sell shares at Bank → "See the Broker" sub-panel (2 hours per transaction)
+- Stock portfolio value counts toward Wealth goal in `checkVictory` and `GoalProgress`
+- **Files:** `src/data/stocks.ts` (new), `src/components/game/BankPanel.tsx`, `src/store/helpers/economyHelpers.ts`, `src/store/helpers/questHelpers.ts`, `src/components/game/GoalProgress.tsx`
+
+### B2: Loan System (Medium)
+**Jones Reference:** Bank loans with interest
+**Implementation:**
+- Loan amounts: 100, 250, 500, 1000g at Bank → "Loan Office" sub-panel
+- 10% weekly interest on outstanding balance (compounded in `processWeekEnd`)
+- 8 weeks to repay; default triggers forced collection from savings/gold
+- If can't repay: -10 happiness, 4-week extension
+- Only one loan at a time; loan amount subtracted from Wealth goal
+- Repayment options: 50, 100, 250, or full amount (1 hour per transaction)
+- **Files:** `src/components/game/BankPanel.tsx`, `src/store/helpers/economyHelpers.ts`, `src/store/helpers/turnHelpers.ts`
+
+### B3: Weekend System (Medium-Large)
+**Jones Reference:** Tickets, appliance weekends, random weekend activities
+**Implementation:**
+- Runs in `processWeekEnd` for every player each week
+- Priority: 1) Ticket weekends → 2) Durable weekends (20% chance each) → 3) Random weekends
+- 3 ticket types: Jousting Tournament (+8 hap), Theatre Performance (+10 hap), Bard Concert (+12 hap)
+- Tickets purchasable at Shadow Market, consumed on use
+- 5 durable weekends tied to appliances (Scrying Mirror, Memory Crystal, Music Box, Cooking Fire, Arcane Tome)
+- 25+ random weekend activities in 3 tiers: cheap ($0-15), medium ($15-55), expensive ($50-100, week 8+)
+- Weekend costs deducted automatically; happiness gained; results shown in event messages
+- **Files:** `src/data/weekends.ts` (new), `src/store/helpers/turnHelpers.ts`, `src/data/items.ts`, `src/components/game/ShadowMarketPanel.tsx`
+
+### B4: Doctor Visit Triggers (Small)
+**Jones Reference:** Starvation/low relaxation trigger forced doctor visit
+**Implementation:**
+- Starvation trigger: 25% chance when starving → -10 Hours, -4 Happiness, -30 to 200g
+- Low relaxation trigger: 20% chance when relaxation ≤ 15 → same penalties
+- Both check in `startTurn` for human players
+- **Files:** `src/store/helpers/turnHelpers.ts`
+
+### B5: Food Storage System (Medium)
+**Jones Reference:** Refrigerator (6 units) + Freezer (12 units)
+**Implementation:**
+- Preservation Box (existing, = Refrigerator): stores up to 6 fresh food units
+- Frost Chest (new appliance, = Freezer): doubles storage to 12 units, available at Enchanter (1200g) and Shadow Market (900g)
+- 3 fresh food items at General Store: Fresh Vegetables (+2 units), Fresh Meat (+3), Fresh Provisions Bundle (+6)
+- Fresh food auto-consumed at turn start if regular foodLevel is 0 (prevents starvation)
+- Spoilage: all fresh food lost if Preservation Box breaks
+- Fresh Food section appears in General Store only when player owns Preservation Box
+- Frost Chest displayed in HomePanel room scene
+- **Files:** `src/data/items.ts`, `src/store/helpers/economyHelpers.ts`, `src/store/helpers/turnHelpers.ts`, `src/components/game/GeneralStorePanel.tsx`, `src/components/game/HomePanel.tsx`
+
+### B6: Lottery / Fortune's Wheel (Small)
+**Jones Reference:** Lottery tickets with weekly drawing
+**Implementation:**
+- Buy Fortune's Wheel tickets at Shadow Market (10g base, affected by price modifier)
+- Multiple tickets per week allowed (each increases odds independently)
+- Drawing at week end in `processWeekEnd`: 2% grand prize (5,000g), 5% small prize (50g) per ticket
+- Winners get +25 happiness (grand) or +5 happiness (small)
+- Tickets reset to 0 after each drawing
+- **Files:** `src/data/items.ts`, `src/store/helpers/economyHelpers.ts`, `src/store/helpers/turnHelpers.ts`, `src/components/game/ShadowMarketPanel.tsx`
+
+### Type/State Changes
+- **Player fields added:** `stocks`, `loanAmount`, `loanWeeksRemaining`, `tickets`, `freshFood`, `lotteryTickets`
+- **GameState fields added:** `stockPrices`, `weekendEvent`
+- **New store actions:** `buyStock`, `sellStock`, `takeLoan`, `repayLoan`, `buyFreshFood`, `buyLotteryTicket`, `buyTicket`, `dismissWeekendEvent`
+- **Modified victory calculation:** Wealth = Cash + Savings + Investments + StockValue - LoanAmount
+
+### New Files (2)
+| File | Purpose |
+|------|---------|
+| `src/data/stocks.ts` | Stock definitions, price fluctuation logic, portfolio value calculation |
+| `src/data/weekends.ts` | Weekend activities, ticket types, durable weekends, activity selection |
+
+### Modified Files (14)
+| File | Changes |
+|------|---------|
+| `src/types/game.types.ts` | Added Player fields, GameState fields, WeekendEventResult interface |
+| `src/store/gameStore.ts` | New defaults in createPlayer, stockPrices/weekendEvent in state, dismissWeekendEvent action |
+| `src/store/storeTypes.ts` | Added all new action signatures to GameStore interface |
+| `src/store/helpers/economyHelpers.ts` | buyStock, sellStock, takeLoan, repayLoan, buyFreshFood, buyLotteryTicket, buyTicket |
+| `src/store/helpers/turnHelpers.ts` | Doctor triggers, fresh food consumption/spoilage, loan interest, weekends, lottery, stock prices |
+| `src/store/helpers/questHelpers.ts` | Updated checkVictory wealth calculation to include stocks and loans |
+| `src/data/items.ts` | Frost Chest appliance, fresh food items, ticket items, Fortune's Wheel ticket, new Item fields |
+| `src/components/game/BankPanel.tsx` | Complete rewrite: 3 views (main/broker/loans), stock trading, loan office |
+| `src/components/game/ShadowMarketPanel.tsx` | Lottery tickets, weekend tickets, reorganized sections |
+| `src/components/game/GeneralStorePanel.tsx` | Fresh food section with storage display |
+| `src/components/game/LocationPanel.tsx` | Wire up all new store actions to child components |
+| `src/components/game/HomePanel.tsx` | Frost Chest position in room scene |
+| `src/components/game/GoalProgress.tsx` | Wealth calculation includes stocks/loans |
+
+### Verification
+- TypeScript check passes (`tsc --noEmit`)
+- Build passes (`vite build`)
+- Tests pass (`vitest run`)
+
+---
+
 ## 2026-02-06 - Bugfix Batch A: Education Progress, Work Income, Async Imports, MaxHealth
 
 ### Bug A1: Education Progress Display Mismatch
