@@ -1,5 +1,75 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Multi-Platform Game Runner (GitHub Pages + Lovable)
+
+Made the game deployable and runnable from both GitHub Pages and Lovable without any manual configuration changes. Previously the game was hardcoded for Lovable's root-path deployment; now it dynamically adapts to the hosting platform.
+
+### Problem
+
+The game had ~18 hardcoded absolute asset paths (`/music/...`, `/npcs/...`, `/sfx/...`) and a fixed root base path (`/`). This works on Lovable (serves at `/`) but breaks on GitHub Pages (serves at `/guild-life-adventures/`).
+
+### What was changed
+
+1. **Dynamic base path in `vite.config.ts`** — `DEPLOY_TARGET=github` env var switches base from `/` to `/guild-life-adventures/`. PWA manifest `scope` and `start_url` also adapt.
+
+2. **Safe lovable-tagger import** — Replaced static `import { componentTagger } from "lovable-tagger"` with a try/catch dynamic `await import("lovable-tagger")`. Build no longer fails if the package is unavailable.
+
+3. **BrowserRouter basename** — `App.tsx` now uses `basename={import.meta.env.BASE_URL}` so React Router routes resolve correctly regardless of deploy path.
+
+4. **Fixed 18+ hardcoded absolute asset paths:**
+   - `src/audio/audioManager.ts` — music URLs now use `import.meta.env.BASE_URL`
+   - `src/audio/sfxManager.ts` — SFX URLs now use `import.meta.env.BASE_URL`
+   - `src/data/npcs.ts` — 12 NPC portrait paths changed from `/npcs/x.jpg` to `npcs/x.jpg`
+   - `src/components/game/NpcPortrait.tsx` — prepends `BASE_URL` to portrait src
+   - `src/components/game/RightSideTabs.tsx` — admin/sfx link uses `BASE_URL`
+   - `src/pages/NotFound.tsx` — replaced `<a href="/">` with React Router `<Link to="/">`
+   - `index.html` — apple-touch-icon uses relative path
+
+5. **GitHub Actions workflow** — `.github/workflows/deploy-github-pages.yml` auto-deploys on push to `main`:
+   - Uses Bun for install + build
+   - Copies `index.html` as `404.html` (SPA routing on GitHub Pages)
+   - Deploys to GitHub Pages via `actions/deploy-pages`
+
+6. **New build script** — `bun run build:github` builds with `DEPLOY_TARGET=github`
+
+### Build commands
+
+| Command | Target | Base Path |
+|---------|--------|-----------|
+| `bun run build` | Lovable (default) | `/` |
+| `bun run build:github` | GitHub Pages | `/guild-life-adventures/` |
+| `bun run dev` | Local development | `/` |
+
+### Files added
+- `.github/workflows/deploy-github-pages.yml` — CI/CD for GitHub Pages
+
+### Files modified
+- `vite.config.ts` — dynamic base path, safe lovable-tagger import
+- `package.json` — added `build:github` script
+- `src/App.tsx` — BrowserRouter basename
+- `src/audio/audioManager.ts` — BASE_URL for music paths
+- `src/audio/sfxManager.ts` — BASE_URL for SFX paths
+- `src/data/npcs.ts` — relative NPC portrait paths
+- `src/components/game/NpcPortrait.tsx` — BASE_URL for portrait src
+- `src/components/game/RightSideTabs.tsx` — BASE_URL for admin link
+- `src/pages/NotFound.tsx` — React Router Link
+- `index.html` — relative apple-touch-icon path
+
+### Verification
+- `bun run build` succeeds (64 precached entries, Lovable mode)
+- `DEPLOY_TARGET=github bun run build` succeeds (64 precached entries, GitHub Pages mode)
+- TypeScript compiles cleanly (`tsc --noEmit`)
+- All 112 tests pass
+- GitHub Pages manifest has correct `/guild-life-adventures/` scope and start_url
+
+### How to enable GitHub Pages
+
+1. Go to repo Settings → Pages
+2. Set Source to "GitHub Actions"
+3. Push to `main` — workflow auto-deploys to `https://tombonator3000.github.io/guild-life-adventures/`
+
+---
+
 ## 2026-02-06 - Offline PWA Support (Progressive Web App)
 
 Added full PWA support with offline capability and installability. The game can now be installed as a standalone app on desktop and mobile, with all assets cached for offline play.

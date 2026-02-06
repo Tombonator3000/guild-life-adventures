@@ -1,11 +1,24 @@
-import { defineConfig } from "vite";
+import { defineConfig, type PluginOption } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
+
+// Detect deploy target: "github" for GitHub Pages, default for Lovable/local
+const deployTarget = process.env.DEPLOY_TARGET || "lovable";
+const basePath = deployTarget === "github" ? "/guild-life-adventures/" : "/";
+
+// Lovable-tagger is optional — only available in Lovable dev environment
+let lovableTaggerPlugin: PluginOption | null = null;
+try {
+  const { componentTagger } = await import("lovable-tagger");
+  lovableTaggerPlugin = componentTagger();
+} catch {
+  // Not available (e.g., GitHub CI or non-Lovable dev) — skip silently
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  base: basePath,
   server: {
     host: "::",
     port: 8080,
@@ -15,7 +28,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === "development" && componentTagger(),
+    mode === "development" && lovableTaggerPlugin,
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: [
@@ -34,8 +47,8 @@ export default defineConfig(({ mode }) => ({
         background_color: "#1a1a2e",
         display: "standalone",
         orientation: "landscape",
-        scope: "/",
-        start_url: "/",
+        scope: basePath,
+        start_url: basePath,
         categories: ["games", "entertainment"],
         icons: [
           {

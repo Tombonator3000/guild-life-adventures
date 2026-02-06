@@ -98,7 +98,7 @@ class SFXManager {
     const sfx = SFX_LIBRARY[sfxId];
     if (!sfx) return;
 
-    const url = `/sfx/${sfx.file}`;
+    const url = `${import.meta.env.BASE_URL}sfx/${sfx.file}`;
     const volume = sfx.volume * this.settings.sfxVolume;
 
     // Get next audio element from pool (round-robin)
