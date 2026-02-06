@@ -171,10 +171,10 @@ export function GameSetup() {
 
           {/* Victory Goals */}
           <div className="parchment-panel p-6">
-            <h2 className="font-display text-xl font-semibold text-card-foreground mb-2">
+            <h2 className="font-display text-xl font-semibold text-amber-900 mb-2">
               Victory Goals
             </h2>
-            <p className="text-muted-foreground text-sm mb-4">
+            <p className="text-amber-700 text-sm mb-4">
               Set the targets required to win. First to reach all four goals wins!
             </p>
 
