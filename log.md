@@ -1,5 +1,51 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Offline PWA Support (Progressive Web App)
+
+Added full PWA support with offline capability and installability. The game can now be installed as a standalone app on desktop and mobile, with all assets cached for offline play.
+
+### What was added
+
+1. **vite-plugin-pwa** — Integrated Workbox-based service worker generation via `vite-plugin-pwa`
+2. **Web App Manifest** — Full manifest with app name, description, theme colors (#1a1a2e dark blue), landscape orientation, and 9 icon sizes
+3. **App Icons** — SVG source icon (shield + sword design) with generated PNGs at 72/96/128/144/152/192/384/512px + maskable 512px + Apple touch icon 180px
+4. **Service Worker** — Auto-updating service worker with:
+   - Precaching of all HTML, CSS, JS, images (64 entries including the 10MB game board)
+   - Runtime CacheFirst strategy for music files (MP3s cached for 1 year)
+   - Runtime CacheFirst strategy for images (cached for 30 days)
+5. **Install Prompt** — `usePWAInstall` hook captures the `beforeinstallprompt` event; Download button appears on TitleScreen when installation is available
+6. **HTML Meta Tags** — Apple mobile web app tags, theme-color, apple-touch-icon link
+
+### Files Added
+- `public/icon.svg` — Source SVG icon (shield + sword + "GUILD LIFE" text)
+- `public/pwa-{72,96,128,144,152,192,384,512}x512.png` — Rasterized icons
+- `public/pwa-maskable-512x512.png` — Maskable icon with safe-zone padding
+- `public/apple-touch-icon.png` — 180x180 Apple touch icon
+- `src/hooks/usePWAInstall.ts` — PWA install prompt hook
+- `scripts/generate-icons.mjs` — Icon generation script (uses sharp)
+
+### Files Modified
+- `vite.config.ts` — Added VitePWA plugin with manifest, workbox config, runtime caching
+- `index.html` — Updated title to "Guild Life Adventures", added PWA meta tags (theme-color, apple-mobile-web-app-capable, apple-touch-icon)
+- `src/vite-env.d.ts` — Added vite-plugin-pwa/client type reference
+- `src/components/screens/TitleScreen.tsx` — Added Download/Install button (visible when browser supports PWA install)
+- `package.json` — Added vite-plugin-pwa dependency
+
+### How it works
+- On first visit, the service worker precaches all game assets (JS, CSS, HTML, images, icons)
+- Music files are cached on first play via runtime CacheFirst strategy
+- Once cached, the entire game works fully offline — no server needed
+- Browsers show an "Install" option (or the in-app Download button) to add the game as a standalone app
+- Installed app launches in standalone mode (no browser chrome, landscape orientation)
+- Service worker auto-updates when new versions are deployed
+
+### Verification
+- Build succeeds (`bun run build`) — 64 precached entries, sw.js + registerSW.js generated
+- 110/112 tests pass (2 pre-existing freshFood test failures, unrelated)
+- Manifest validates with all required fields for installability
+
+---
+
 ## 2026-02-06 - Cave/Dungeon Music (20Cave.mp3)
 
 Added location-specific music for the Cave/Dungeon. The file `20Cave.mp3` already existed in `public/music/` but was not wired up in the music configuration.
