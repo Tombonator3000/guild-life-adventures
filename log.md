@@ -1,5 +1,75 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Fix 52 Bugs from Full Game Audit
+
+Applied fixes for 52 issues found during the full game audit using 5 parallel fix agents.
+
+### Files Modified (13)
+`turnHelpers.ts`, `economyHelpers.ts`, `workEducationHelpers.ts`, `questHelpers.ts`, `storeTypes.ts`, `useGrimwaldAI.ts`, `actionGenerator.ts`, `ai/types.ts`, `locations.ts`, `combatResolver.ts`, `game.types.ts`, `VictoryScreen.tsx`, `QuestPanel.tsx`
+
+### Critical Bugs Fixed: 14/14
+| Bug | Fix |
+|-----|-----|
+| C1: Missing 2h entry cost | `getMovementCost` returns `pathDistance + 2` |
+| C2: AI immune to startTurn | Removed `player.isAI` guard; AI gets all penalties |
+| C3: Broken rent prepayment | `processWeekEnd` decrements `rentPrepaidWeeks` before incrementing `weeksSinceRent` |
+| C4: `lockedRent` ignored | Rent uses `lockedRent > 0 ? lockedRent : RENT_COSTS[housing]` |
+| C5: No death check in processWeekEnd | Inline death check loop after week-end processing |
+| C6: 44% quests inaccessible | `completeDegree` now updates legacy `education` field via `DEGREE_TO_PATH` mapping |
+| C7: Buy with 0 gold | Added `if (p.gold < cost) return p;` to all 9 purchase actions |
+| C8: eventMessage overwrite | `startTurn` collects into `eventMessages[]` array, joins at end |
+| C9: Home location binary | `getHomeLocation()` handles all 4 tiers (noble/modest/slums/homeless) |
+| C10: Stale player data | Re-read `currentPlayer` from `get()` after doctor visit gold changes |
+| C11: Lottery +925% EV | Grand: 2%/5000g → 0.1%/500g, Small: 5%/50g → 5.9%/20g (EV: 1.68g per 10g) |
+| C12: Infinite wages | Cap at `3x job.baseWage` in `requestRaise` |
+| C13: Double-charge breakage | Breakage only marks broken + -1 happiness; no auto gold charge |
+| C14: AI hardcoded prices | All AI actions use `action.details` for dynamic prices |
+
+### High Priority Bugs Fixed: 10/12
+| Bug | Fix |
+|-----|-----|
+| H1: Eviction keeps items | Clears `durables`, `appliances`, `equipment`, `prepaid`, `lockedRent` |
+| H2: VictoryScreen wealth | Added `stockValue - loanAmount` to wealth display |
+| H3: Quest death check | `get().checkDeath(playerId)` after completeQuest |
+| H4: QuestPanel missing param | Passes `player.dungeonFloorsCleared` to `canTakeQuest()` |
+| H5: Rent partial pay | `if (p.gold < rentCost) return p;` |
+| H6: Free education | Gold + time validation in `studyDegree`/`studySession` |
+| H8: Per-player crash | Market crash now single global roll (moved outside player loop) |
+| H10: AI relaxation | Rest action calls `modifyRelaxation` |
+| H11: AI career quests | Career switch case adds quest-taking for guild rank |
+| H12: Dual items | AI uses explicit `cost` in action details |
+
+### Balance Fixes: 8/10
+| Issue | Fix |
+|-------|-----|
+| B1: Loan death spiral | Interest capped at `Math.min(loanAmount, 2000)` |
+| B3: Free retreat farming | `retreatFromDungeon` forfeits 50% gold |
+| B4: Noble rent 500g | Reduced to 350g in `RENT_COSTS` |
+| B5: Unconditional dep decay | Only decays if `!p.currentJob` |
+| B7: No invest withdrawal | Added `withdrawInvestment` with 10% penalty |
+| B8: Forced weekends | "Stay Home" (+1 happiness, free) as fallback |
+| B9: One-shot rare drops | Repeat clears: 20% of normal drop rate |
+| B10: 200-quest guild master | Flattened to 3/8/15/25/40/60 |
+
+### AI Improvements: 8/16
+| Gap | Fix |
+|-----|-----|
+| AI-1: No healing | Added `heal` action type in actionGenerator + useGrimwaldAI |
+| AI-9: Graduation only when edu weak | Opportunistic graduation check always runs at Academy |
+| AI-10: Only Rusty Tankard food | Added Shadow Market as food source |
+| AI-11: Single appliance | Priority list: Cooking Fire > Scrying Mirror > Preservation Box |
+| AI-13: Can't downgrade housing | Added `downgrade-housing` action when broke |
+| AI-14: efficiencyWeight unused | Dynamic prices via `action.details` |
+| AI-15: Career quest gap | Career case now takes quests for guild rank |
+| AI-16: Wrong clothing location | Uses closest of Armory/General Store |
+
+### Test Results
+- TypeScript: Compiles cleanly
+- Tests: 91/91 pass
+- 13 files changed, +394/-117 lines
+
+---
+
 ## 2026-02-06 - Full Game Audit (Agent Playthrough Analysis)
 
 Conducted a comprehensive audit of the entire game using 6 specialized analysis agents, each focusing on a different subsystem. Agents read all source code and simulated full playthroughs to find bugs, exploits, balance issues, and missing features.
