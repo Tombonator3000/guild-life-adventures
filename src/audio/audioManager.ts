@@ -37,6 +37,9 @@ class AudioManager {
   private activeDeck: 'A' | 'B' = 'A';
   private currentTrackId: string | null = null;
   private settings: AudioSettings;
+  // Cached immutable settings object for useSyncExternalStore
+  // Only recreated when settings actually change
+  private cachedSettings: AudioSettings;
   private fadeInterval: ReturnType<typeof setInterval> | null = null;
   private listeners: Array<() => void> = [];
 
@@ -50,6 +53,7 @@ class AudioManager {
     this.deckB.preload = 'auto';
 
     this.settings = loadSettings();
+    this.cachedSettings = { ...this.settings };
     this.applyVolume();
   }
 
@@ -79,9 +83,9 @@ class AudioManager {
     return this.currentTrackId;
   }
 
-  /** Get current settings. */
+  /** Get current settings - returns cached immutable object for React compatibility. */
   getSettings(): AudioSettings {
-    return { ...this.settings };
+    return this.cachedSettings;
   }
 
   /** Set music volume (0-1). */
@@ -119,6 +123,9 @@ class AudioManager {
   // --- Internal ---
 
   private notify() {
+    // Create new cached settings object when settings change
+    // This is required for useSyncExternalStore to detect changes
+    this.cachedSettings = { ...this.settings };
     this.listeners.forEach(l => l());
   }
 
