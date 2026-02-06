@@ -35,7 +35,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
     },
     effect: {
       gold: -50,
-      happiness: -10,
+      happiness: -3,
       message: 'Shadowfingers picked your pocket while you slept! Lost 50 gold.',
     },
   },
@@ -50,7 +50,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
     },
     effect: {
       gold: -100,
-      happiness: -15,
+      happiness: -5,
       message: 'Shadowfingers broke into your room! Lost 100 gold and valuables.',
     },
   },
@@ -67,7 +67,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
     },
     effect: {
       gold: -100,
-      happiness: -20,
+      happiness: -5,
       message: 'You were robbed leaving the bank! Lost 100 gold.',
     },
   },
@@ -82,7 +82,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
     },
     effect: {
       gold: -75,
-      happiness: -15,
+      happiness: -4,
       message: 'You were ambushed in the Shadow Market! Lost 75 gold.',
     },
   },
@@ -196,7 +196,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
     },
     effect: {
       health: -15,
-      happiness: -5,
+      happiness: -2,
       message: 'Living conditions gave you a cold. Health decreased.',
     },
   },
@@ -210,7 +210,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
     },
     effect: {
       health: -20,
-      happiness: -10,
+      happiness: -3,
       message: 'Food poisoning! You should be more careful what you eat.',
     },
   },

@@ -157,7 +157,7 @@ export function selectWeekendActivity(
     }
   }
 
-  // Priority 3: Random weekends
+  // Priority 3: Random weekends — prefer better tiers when affordable
   const availableWeekends = RANDOM_WEEKENDS.filter(w => {
     // Filter by tier availability
     if (w.tier === 'expensive' && week < 8) return false;
@@ -180,7 +180,13 @@ export function selectWeekendActivity(
     };
   }
 
-  const selected = availableWeekends[Math.floor(Math.random() * availableWeekends.length)];
+  // Weighted selection: expensive 3x, medium 2x, cheap 1x weight
+  const TIER_WEIGHTS: Record<string, number> = { expensive: 3, medium: 2, cheap: 1 };
+  const weighted = availableWeekends.flatMap(w => {
+    const weight = TIER_WEIGHTS[w.tier] ?? 1;
+    return Array(weight).fill(w);
+  });
+  const selected = weighted[Math.floor(Math.random() * weighted.length)];
   return { activity: selected };
 }
 

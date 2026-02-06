@@ -57,10 +57,10 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
           const newExperience = Math.min(p.maxExperience, p.experience + hours);
 
           // Work happiness penalty scales with game progression:
-          // Weeks 1-3: no penalty (let players get established)
-          // Weeks 4-8: -1 happiness (mild fatigue)
-          // Weeks 9+: -2 happiness (full fatigue)
-          const happinessPenalty = gameWeek <= 3 ? 0 : gameWeek <= 8 ? 1 : 2;
+          // Weeks 1-4: no penalty (let players get established)
+          // Weeks 5+: -1 happiness (mild fatigue)
+          // Reduced from -2 at week 9+ — was too punishing, made happiness unwinnable
+          const happinessPenalty = gameWeek <= 4 ? 0 : 1;
 
           return {
             ...p,

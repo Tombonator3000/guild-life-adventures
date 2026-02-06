@@ -4,6 +4,7 @@
 import type { LocationId, HousingTier, WeekendEventResult } from '@/types/game.types';
 import { HOURS_PER_TURN, RENT_COSTS } from '@/types/game.types';
 import { checkWeeklyTheft, checkMarketCrash } from '@/data/events';
+import { HOUSING_DATA } from '@/data/housing';
 import {
   checkApartmentRobbery,
 } from '@/data/shadowfingers';
@@ -361,6 +362,22 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         }));
       }
 
+      // Housing happiness bonus — applied per turn (was defined but never used)
+      // Homeless: -3, Slums: 0, Modest: +2, Noble: +3
+      const housingBonus = HOUSING_DATA[currentPlayer.housing as keyof typeof HOUSING_DATA]?.happinessBonus ?? 0;
+      if (housingBonus !== 0) {
+        set((state) => ({
+          players: state.players.map((p) =>
+            p.id === playerId
+              ? { ...p, happiness: Math.max(0, Math.min(100, p.happiness + housingBonus)) }
+              : p
+          ),
+        }));
+        if (housingBonus < 0) {
+          eventMessages.push(`${currentPlayer.name} is miserable without a home. (${housingBonus} Happiness)`);
+        }
+      }
+
       // Arcane Tome random income chance
       const hasArcaneTome = currentPlayer.appliances['arcane-tome'] && !currentPlayer.appliances['arcane-tome'].isBroken;
       if (hasArcaneTome && Math.random() < 0.15) { // 15% chance per turn
@@ -441,12 +458,12 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         // Food depletion
         p.foodLevel = Math.max(0, p.foodLevel - 25);
 
-        // Starvation effects
+        // Starvation effects (reduced happiness penalty — Jones uses time penalty, not happiness)
         if (p.foodLevel === 0) {
           p.health = Math.max(0, p.health - 10);
-          p.happiness = Math.max(0, p.happiness - 15);
+          p.happiness = Math.max(0, p.happiness - 8);
           if (!p.isAI) {
-            eventMessages.push(`${p.name} is starving! -10 health, -15 happiness.`);
+            eventMessages.push(`${p.name} is starving! -10 health, -8 happiness.`);
           }
         }
 
