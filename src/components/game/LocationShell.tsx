@@ -1,0 +1,105 @@
+// LocationShell - Jones-style layout wrapper for all location panels
+// Provides: NPC portrait (left) + tab navigation + content area (right)
+// Eliminates scrolling by showing only one section at a time
+
+import { useState, type ReactNode } from 'react';
+import type { LocationNPC } from '@/data/npcs';
+
+export interface LocationTab {
+  id: string;
+  label: string;
+  icon?: ReactNode;
+  content: ReactNode;
+  badge?: string; // e.g., "!" for notifications
+  hidden?: boolean; // Hide tab (e.g., Work tab when no job here)
+}
+
+interface LocationShellProps {
+  npc: LocationNPC;
+  tabs: LocationTab[];
+  defaultTab?: string;
+}
+
+export function LocationShell({ npc, tabs, defaultTab }: LocationShellProps) {
+  const visibleTabs = tabs.filter(t => !t.hidden);
+  const [activeTab, setActiveTab] = useState(defaultTab || visibleTabs[0]?.id || '');
+
+  const activeContent = visibleTabs.find(t => t.id === activeTab)?.content;
+
+  // If only one tab, skip the tab bar entirely
+  const showTabBar = visibleTabs.length > 1;
+
+  return (
+    <div className="flex gap-3 h-full">
+      {/* NPC Portrait - Left side (Jones-style) */}
+      <div className="flex-shrink-0 w-28 flex flex-col items-center">
+        <div
+          className="w-24 h-24 rounded-lg border-2 flex items-center justify-center text-5xl mb-2 shadow-inner"
+          style={{
+            backgroundColor: npc.bgColor,
+            borderColor: npc.accentColor,
+            boxShadow: `inset 0 2px 8px rgba(0,0,0,0.4), 0 0 12px ${npc.accentColor}33`,
+          }}
+        >
+          {npc.portrait}
+        </div>
+        <div className="text-center">
+          <div
+            className="font-display text-xs font-bold leading-tight"
+            style={{ color: npc.accentColor }}
+          >
+            {npc.name}
+          </div>
+          <div className="text-[10px] text-[#8b7355] leading-tight">
+            {npc.title}
+          </div>
+        </div>
+        <div
+          className="mt-2 text-[10px] italic text-center leading-tight px-1"
+          style={{ color: '#a09080' }}
+        >
+          &ldquo;{npc.greeting}&rdquo;
+        </div>
+      </div>
+
+      {/* Content area - Right side */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Tab navigation */}
+        {showTabBar && (
+          <div className="flex gap-1 mb-2 flex-wrap">
+            {visibleTabs.map(tab => {
+              const isActive = tab.id === activeTab;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`
+                    relative flex items-center gap-1 px-3 py-1.5 rounded-t text-xs font-display font-bold
+                    transition-colors border border-b-0
+                    ${isActive
+                      ? 'bg-[#3d3224] text-[#e0d4b8] border-[#8b7355]'
+                      : 'bg-[#2a2318] text-[#8b7355] border-[#5c4a32] hover:bg-[#342a1e] hover:text-[#c0b090]'
+                    }
+                  `}
+                >
+                  {tab.icon && <span className="w-3.5 h-3.5">{tab.icon}</span>}
+                  {tab.label}
+                  {tab.badge && (
+                    <span className="absolute -top-1 -right-1 bg-[#c9a227] text-[#2d1f0f] text-[9px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Tab content */}
+        <div className="flex-1 overflow-y-auto">
+          {activeContent}
+        </div>
+      </div>
+    </div>
+  );
+}
