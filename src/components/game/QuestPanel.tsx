@@ -77,7 +77,7 @@ export function QuestPanel({ quests, player, onTakeQuest, onCompleteQuest, onAba
       <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
         <Scroll className="w-4 h-4" /> Available Quests
       </h4>
-      <div className="space-y-2 max-h-48 overflow-y-auto">
+      <div className="space-y-2">
         {quests.length === 0 ? (
           <p className="text-muted-foreground text-center py-4">No quests available at your rank.</p>
         ) : (

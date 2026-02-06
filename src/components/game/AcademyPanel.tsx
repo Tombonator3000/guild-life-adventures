@@ -49,7 +49,7 @@ export function AcademyPanel({
             You have completed all available degrees!
           </div>
         ) : (
-          <div className="max-h-48 overflow-y-auto">
+          <div>
             {availableDegrees.map(degree => {
               const progress = player.degreeProgress[degree.id as DegreeId] || 0;
               const price = getItemPrice({ basePrice: degree.costPerSession } as any, priceModifier);

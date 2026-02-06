@@ -200,6 +200,17 @@
   - [x] Work tab only visible when player works at that location
   - [x] TypeScript compiles, build succeeds
 
+## Completed (2026-02-06)
+
+- [x] Location Panel Layout Optimization — reduce scrolling, bigger NPC portraits
+  - [x] NPC portrait: 96×96px → 128×144px (33%/50% bigger), emoji text-5xl → text-7xl
+  - [x] Portrait column: w-28 → w-36, NPC name text-xs → text-sm
+  - [x] Header compacted: two-line → single-line with inline description, text-lg → text-sm
+  - [x] Padding reduced: p-3 → p-2 when at location
+  - [x] Removed max-h constraints from 7 sub-panels (QuestPanel, GuildHallPanel, AcademyPanel, EnchanterPanel, PawnShopPanel)
+  - [x] Content now fills full panel height via flex-1 overflow-y-auto (single scroll context)
+  - [x] Build succeeds, all 112 tests pass
+
 ## In Progress
 
 *No active tasks*

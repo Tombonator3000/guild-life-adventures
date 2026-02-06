@@ -40,7 +40,7 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
           <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
             <Package className="w-4 h-4" /> Sell Your Items
           </h4>
-          <div className="space-y-2 max-h-32 overflow-y-auto">
+          <div className="space-y-2">
             {player.inventory.map((itemId, index) => {
               const item = getItem(itemId);
               const sellPrice = getSellPrice(itemId);
@@ -98,7 +98,7 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
           <p className="text-xs text-muted-foreground mb-2">
             Get 40% of original price. -1 Happiness.
           </p>
-          <div className="space-y-2 max-h-24 overflow-y-auto">
+          <div className="space-y-2">
             {Object.entries(player.appliances).map(([applianceId, owned]) => {
               const appliance = getAppliance(applianceId);
               const pawnValue = getPawnValue(owned.originalPrice, priceModifier);
@@ -137,7 +137,7 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
           <AlertTriangle className="w-3 h-3 text-warning" />
           50% off, but 1/36 break chance. No happiness bonus.
         </p>
-        <div className="space-y-2 max-h-32 overflow-y-auto">
+        <div className="space-y-2">
           {APPLIANCES.filter(a => a.enchanterPrice > 0).slice(0, 4).map(appliance => {
             const salePrice = getPawnSalePrice(appliance.enchanterPrice);
             const alreadyOwns = !!player.appliances[appliance.id];
