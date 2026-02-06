@@ -67,7 +67,7 @@ function EncounterIntro({
   encounterIndex,
   totalEncounters,
   currentHealth,
-  startHealth,
+  maxHealth,
   canDisarm,
   onFight,
 }: {
@@ -75,14 +75,14 @@ function EncounterIntro({
   encounterIndex: number;
   totalEncounters: number;
   currentHealth: number;
-  startHealth: number;
+  maxHealth: number;
   canDisarm: boolean;
   onFight: () => void;
 }) {
   const icon = getEncounterIcon(encounter.type);
   const action = getEncounterAction(encounter, canDisarm);
   const isBoss = encounter.type === 'boss';
-  const healthPct = Math.max(0, (currentHealth / startHealth) * 100);
+  const healthPct = Math.max(0, (currentHealth / maxHealth) * 100);
 
   return (
     <div className="space-y-3 animate-in fade-in duration-300">
@@ -93,8 +93,8 @@ function EncounterIntro({
         </span>
         <div className="flex items-center gap-1">
           <Heart className="w-3 h-3 text-red-400" />
-          <span className={currentHealth <= startHealth * 0.3 ? 'text-red-400' : 'text-[#e0d4b8]'}>
-            {currentHealth}/{startHealth}
+          <span className={currentHealth <= maxHealth * 0.3 ? 'text-red-400' : 'text-[#e0d4b8]'}>
+            {currentHealth}/{maxHealth}
           </span>
         </div>
       </div>
@@ -219,7 +219,7 @@ function EncounterIntro({
 function EncounterResultView({
   result,
   currentHealth,
-  startHealth,
+  maxHealth,
   canRetreat,
   onContinue,
   onRetreat,
@@ -229,7 +229,7 @@ function EncounterResultView({
 }: {
   result: EncounterResult;
   currentHealth: number;
-  startHealth: number;
+  maxHealth: number;
   canRetreat: boolean;
   onContinue: () => void;
   onRetreat: () => void;
@@ -239,7 +239,7 @@ function EncounterResultView({
 }) {
   const enc = result.encounter;
   const icon = getEncounterIcon(enc.type);
-  const healthPct = Math.max(0, (currentHealth / startHealth) * 100);
+  const healthPct = Math.max(0, (currentHealth / maxHealth) * 100);
 
   return (
     <div className="space-y-3 animate-in fade-in duration-300">
@@ -313,8 +313,8 @@ function EncounterResultView({
       <div>
         <div className="flex justify-between text-xs text-[#8b7355] mb-1">
           <span>Health</span>
-          <span className={currentHealth <= startHealth * 0.3 ? 'text-red-400' : 'text-[#e0d4b8]'}>
-            {currentHealth}/{startHealth}
+          <span className={currentHealth <= maxHealth * 0.3 ? 'text-red-400' : 'text-[#e0d4b8]'}>
+            {currentHealth}/{maxHealth}
           </span>
         </div>
         <div className="h-2 bg-black/40 rounded-full overflow-hidden">
@@ -328,7 +328,7 @@ function EncounterResultView({
       </div>
 
       {/* Low health warning */}
-      {currentHealth <= startHealth * 0.3 && currentHealth > 0 && (
+      {currentHealth <= maxHealth * 0.3 && currentHealth > 0 && (
         <div className="flex items-center gap-2 text-xs text-orange-400 bg-orange-950/30 border border-orange-800/30 rounded p-2">
           <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
           <span>Health is low. Consider retreating to keep your gold.</span>
@@ -492,14 +492,14 @@ function FloorSummaryView({
         {/* Retreat note */}
         {state.retreated && (
           <div className="mt-2 text-xs text-[#8b7355] text-center">
-            You retreated with your earnings. The floor remains uncleared.
+            You retreated with 50% of your earnings. The floor remains uncleared.
           </div>
         )}
 
         {/* Defeat note */}
         {!success && !state.retreated && (
           <div className="mt-2 text-xs text-red-400 text-center">
-            You were overwhelmed. Partial gold salvaged.
+            You were overwhelmed. Only 25% of gold salvaged.
           </div>
         )}
       </div>
@@ -573,9 +573,11 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
         : 0;
 
     const lootMult = getLootMultiplier(floor, player.guildRank);
+    // Defeat forfeits 75% gold (worse than retreat's 50%) so retreat is always the better choice
+    const defeatGoldPenalty = (!runState.bossDefeated && !runState.retreated) ? 0.25 : 1.0;
     onComplete({
       success: runState.bossDefeated,
-      goldEarned: Math.floor(runState.totalGold * lootMult),
+      goldEarned: Math.floor(runState.totalGold * lootMult * defeatGoldPenalty),
       totalDamage: runState.totalDamage,
       totalHealed: runState.totalHealed,
       isFirstClear: runState.isFirstClear && runState.bossDefeated,
@@ -616,7 +618,7 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
           encounterIndex={runState.currentEncounterIndex}
           totalEncounters={runState.encounters.length}
           currentHealth={runState.currentHealth}
-          startHealth={runState.startHealth}
+          maxHealth={player.maxHealth}
           canDisarm={eduBonuses.canDisarmTraps}
           onFight={handleFight}
         />
@@ -626,7 +628,7 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
         <EncounterResultView
           result={runState.results[runState.results.length - 1]}
           currentHealth={runState.currentHealth}
-          startHealth={runState.startHealth}
+          maxHealth={player.maxHealth}
           canRetreat={canRetreat}
           onContinue={handleContinue}
           onRetreat={handleRetreat}
