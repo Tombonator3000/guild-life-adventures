@@ -1,5 +1,120 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Online Multiplayer Implementation (WebRTC P2P)
+
+Implemented full online multiplayer support using PeerJS (WebRTC) for peer-to-peer connections. Players on different devices can now play turn-based games together without any server infrastructure.
+
+### Architecture: Host-Authoritative P2P
+
+```
+┌─────────────┐     PeerJS Cloud      ┌─────────────┐
+│   HOST PC   │ ←──── Signaling ────→ │  GUEST PC   │
+│             │                        │             │
+│ Zustand     │ ←── WebRTC Data ────→ │ Read-only   │
+│ Store       │     Channel            │ State Copy  │
+│ (Authority) │                        │             │
+│             │  State broadcasts →    │             │
+│             │  ← Action requests     │             │
+└─────────────┘                        └─────────────┘
+```
+
+**Key design decisions:**
+- **WebRTC P2P via PeerJS** — No server needed. Free PeerJS cloud handles signaling only. Game data flows directly between peers via WebRTC data channels.
+- **Host-authoritative model** — Host's Zustand store is the single source of truth. Host runs all game logic (turn processing, events, AI). Guests receive state snapshots.
+- **Action forwarding** — When a guest player acts, their store actions are intercepted and forwarded to the host via WebRTC. Host executes, then broadcasts new state.
+- **6-character room codes** — Human-readable codes (e.g., "K7M2NP") used as PeerJS peer IDs for room discovery.
+- **State sync** — Full serialized GameState (~10-50KB) broadcast on every state change, debounced at 50ms. Acceptable for turn-based game.
+
+### Network Flow
+
+**Room Creation (Host):**
+1. Host clicks "Online Multiplayer" → "Create Room"
+2. PeerManager creates PeerJS peer with room code as ID
+3. Host sees 6-character room code to share
+4. Guests connect via WebRTC data channel
+
+**Room Joining (Guest):**
+1. Guest enters 6-character room code
+2. PeerJS connects to host's peer ID
+3. Guest sends `join` message with name
+4. Host adds to lobby, broadcasts lobby update
+
+**Game Start:**
+1. Host configures goals, AI, then clicks "Start Game"
+2. Host calls `startNewGame()` on local store
+3. Host broadcasts `game-start` with full serialized state
+4. Guests apply state, set `networkMode: 'guest'`
+
+**During Gameplay:**
+1. Host's store changes → debounced broadcast to all guests (50ms)
+2. Guest's turn → actions intercepted by `NetworkActionProxy` → forwarded to host
+3. Host executes action → state changes → broadcast
+4. Non-current player sees "Waiting for [name]..." overlay
+
+### Implementation Details
+
+**New files created:**
+| File | Purpose |
+|------|---------|
+| `src/network/types.ts` | Network message types, lobby types, action classifications |
+| `src/network/roomCodes.ts` | Room code generation and validation (6-char alphanum) |
+| `src/network/PeerManager.ts` | PeerJS singleton: create/join rooms, message routing |
+| `src/network/NetworkActionProxy.ts` | Intercepts guest store actions, forwards to host |
+| `src/network/useOnlineGame.ts` | React hook for lobby management (create/join/start) |
+| `src/network/useNetworkSync.ts` | React hook for gameplay sync (state broadcast/receive) |
+| `src/components/screens/OnlineLobby.tsx` | Lobby UI: create room, join room, player list, settings |
+
+**Modified files:**
+| File | Change |
+|------|--------|
+| `src/types/game.types.ts` | Added `'online-lobby'` phase, `networkMode`/`localPlayerId`/`roomCode` to GameState |
+| `src/store/gameStore.ts` | Added network state, wrapped all helper actions with `wrapWithNetworkGuard()` |
+| `src/pages/Index.tsx` | Added OnlineLobby route for `'online-lobby'` phase |
+| `src/components/screens/TitleScreen.tsx` | Added "Online Multiplayer" button |
+| `src/components/game/GameBoard.tsx` | Added `useNetworkSync`, waiting overlay, connection indicator, turn lock for online |
+
+**Action interception pattern:**
+```typescript
+// In gameStore.ts — wraps ALL helper module actions
+function wrapWithNetworkGuard<T>(actions: T): T {
+  for (const [name, fn] of Object.entries(actions)) {
+    if (typeof fn !== 'function') continue;
+    wrapped[name] = (...args) => {
+      if (forwardIfGuest(name, args)) return; // Guest → forward to host
+      return fn(...args);                      // Host/local → execute
+    };
+  }
+}
+
+// Actions classified as:
+// LOCAL_ONLY: selectLocation, dismissEvent, etc. (execute on guest locally)
+// HOST_INTERNAL: startTurn, processWeekEnd, etc. (never triggered by guests)
+// All others: forwarded to host when in guest mode
+```
+
+**Auto-save disabled for guests** — Only host saves game state. Guest stores are read-only mirrors.
+
+### Technical Notes
+
+- PeerJS v1.5.5 installed (WebRTC wrapper, ~50KB gzipped)
+- Room codes exclude ambiguous chars: no O/0/I/1/L
+- PeerJS peer ID format: `guild-life-XXXXXX` (prefixed to avoid collisions)
+- Connection timeout: 10s for joining rooms
+- State serialization includes all GameState fields except functions
+- AI (Grimwald) always runs on host machine
+- Build: 932KB JS bundle (unchanged from before PeerJS — tree-shaken well)
+- All 112 tests pass, production build succeeds
+
+### Limitations (v1)
+
+- No host migration (if host disconnects, game ends)
+- No reconnection after disconnect
+- No spectator mode (all connected players must be in the game)
+- Room codes not persisted (refreshing host page destroys room)
+- No chat system between players
+- Max 4 human players (same as local)
+- NAT traversal may fail for ~10-15% of users behind strict firewalls (would need TURN server)
+
 ## 2026-02-06 - Full Balance Audit: Education vs Jobs vs Quests vs Cave
 
 Comprehensive playthrough simulation analysis of game balance across all four progression systems: education, jobs, quests, and dungeon. Three critical bugs found and fixed, plus full quest economy rebalance.

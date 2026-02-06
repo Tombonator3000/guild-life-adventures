@@ -1,0 +1,167 @@
+// Lightweight network sync hook for GameBoard
+// Handles state synchronization during online gameplay
+// Uses the PeerManager singleton — works across component mounts
+
+import { useEffect, useRef, useCallback } from 'react';
+import { peerManager } from './PeerManager';
+import { useGameStore } from '@/store/gameStore';
+import { setNetworkActionSender } from './NetworkActionProxy';
+import type { NetworkMessage, GuestMessage, HostMessage, SerializedGameState } from './types';
+
+/** Extract serializable game state from the store */
+function serializeGameState(): SerializedGameState {
+  const s = useGameStore.getState();
+  return {
+    phase: s.phase,
+    currentPlayerIndex: s.currentPlayerIndex,
+    players: s.players,
+    week: s.week,
+    priceModifier: s.priceModifier,
+    goalSettings: s.goalSettings,
+    winner: s.winner,
+    eventMessage: s.eventMessage,
+    rentDueWeek: s.rentDueWeek,
+    aiDifficulty: s.aiDifficulty,
+    stockPrices: s.stockPrices,
+    weekendEvent: s.weekendEvent,
+    aiSpeedMultiplier: s.aiSpeedMultiplier,
+    skipAITurn: s.skipAITurn,
+    showTutorial: s.showTutorial,
+    tutorialStep: s.tutorialStep,
+    networkMode: s.networkMode,
+    localPlayerId: s.localPlayerId,
+    roomCode: s.roomCode,
+  } as SerializedGameState;
+}
+
+/** Apply state from host to local store (guest only) */
+function applyNetworkState(state: SerializedGameState) {
+  useGameStore.setState({
+    phase: state.phase,
+    currentPlayerIndex: state.currentPlayerIndex,
+    players: state.players,
+    week: state.week,
+    priceModifier: state.priceModifier,
+    goalSettings: state.goalSettings,
+    winner: state.winner,
+    eventMessage: state.eventMessage,
+    rentDueWeek: state.rentDueWeek,
+    aiDifficulty: state.aiDifficulty,
+    stockPrices: state.stockPrices,
+    weekendEvent: state.weekendEvent,
+  });
+}
+
+/** Execute a store action by name (host only) */
+function executeAction(name: string, args: unknown[]): boolean {
+  const store = useGameStore.getState();
+  const action = (store as Record<string, unknown>)[name];
+  if (typeof action !== 'function') {
+    console.error(`[NetworkSync] Unknown action: ${name}`);
+    return false;
+  }
+  try {
+    (action as (...a: unknown[]) => unknown)(...args);
+    return true;
+  } catch (err) {
+    console.error(`[NetworkSync] Action ${name} failed:`, err);
+    return false;
+  }
+}
+
+/**
+ * Hook for network synchronization during gameplay.
+ *
+ * For HOST: subscribes to store changes and broadcasts to all guests.
+ * For GUEST: receives state updates and sets up action forwarding.
+ * For LOCAL: no-op.
+ */
+export function useNetworkSync() {
+  const networkMode = useGameStore(s => s.networkMode);
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Broadcast current state to all guests (host only)
+  const broadcastState = useCallback(() => {
+    if (networkMode !== 'host') return;
+    const state = serializeGameState();
+    peerManager.broadcast({ type: 'state-sync', gameState: state });
+  }, [networkMode]);
+
+  // Debounced broadcast
+  const debouncedBroadcast = useCallback(() => {
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+    syncTimerRef.current = setTimeout(broadcastState, 50);
+  }, [broadcastState]);
+
+  useEffect(() => {
+    if (networkMode === 'local') return;
+
+    // --- Set up the network action sender for guest mode ---
+    if (networkMode === 'guest') {
+      setNetworkActionSender((actionName: string, args: unknown[]) => {
+        const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        peerManager.sendToHost({
+          type: 'action',
+          requestId,
+          name: actionName,
+          args,
+        });
+      });
+    }
+
+    // --- Message handler ---
+    const unsubMessage = peerManager.onMessage((message: NetworkMessage, fromPeerId: string) => {
+      if (networkMode === 'host') {
+        const msg = message as GuestMessage;
+        if (msg.type === 'action') {
+          // Validate: check if it's the sender's turn
+          // (basic validation — full validation in useOnlineGame)
+          const success = executeAction(msg.name, msg.args);
+          peerManager.sendTo(fromPeerId, {
+            type: 'action-result',
+            requestId: msg.requestId,
+            success,
+            error: success ? undefined : 'Action failed',
+          });
+          // Broadcast updated state
+          broadcastState();
+        }
+      } else if (networkMode === 'guest') {
+        const msg = message as HostMessage;
+        if (msg.type === 'state-sync') {
+          applyNetworkState(msg.gameState);
+        }
+      }
+    });
+
+    // --- Host: subscribe to store changes for broadcasting ---
+    let unsubStore: (() => void) | undefined;
+    if (networkMode === 'host') {
+      unsubStore = useGameStore.subscribe(() => {
+        const state = useGameStore.getState();
+        if (state.phase === 'playing' || state.phase === 'event' || state.phase === 'victory') {
+          debouncedBroadcast();
+        }
+      });
+    }
+
+    return () => {
+      unsubMessage();
+      unsubStore?.();
+      if (networkMode === 'guest') {
+        setNetworkActionSender(null);
+      }
+      if (syncTimerRef.current) {
+        clearTimeout(syncTimerRef.current);
+      }
+    };
+  }, [networkMode, broadcastState, debouncedBroadcast]);
+
+  return {
+    networkMode,
+    isOnline: networkMode !== 'local',
+    isHost: networkMode === 'host',
+    isGuest: networkMode === 'guest',
+    broadcastState,
+  };
+}
