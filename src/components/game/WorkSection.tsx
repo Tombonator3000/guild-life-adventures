@@ -50,11 +50,11 @@ export function WorkSection({ player, locationName, workShift, variant }: WorkSe
 
   // wood-frame variant
   return (
-    <div className="wood-frame p-3 text-card">
-      <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+    <div className="wood-frame p-3 text-parchment">
+      <h4 className="font-display text-sm text-parchment-dark flex items-center gap-2 mb-2">
         <Briefcase className="w-4 h-4" /> Work
       </h4>
-      <div className="text-xs text-muted-foreground mb-2">
+      <div className="text-xs text-parchment-dark mb-2">
         Current Job: {jobData.name} ({player.currentWage}g/hr)
       </div>
       <ActionButton

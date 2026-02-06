@@ -163,7 +163,7 @@ export function OnlineLobby() {
             <div className="flex justify-center">
               <button
                 onClick={() => setPhase('title')}
-                className="px-6 py-2 wood-frame text-card font-display text-sm hover:brightness-110"
+                className="px-6 py-2 wood-frame text-parchment font-display text-sm hover:brightness-110"
               >
                 <ArrowLeft className="w-4 h-4 inline mr-1" />
                 Back
@@ -190,7 +190,7 @@ export function OnlineLobby() {
                   <div className="flex justify-center gap-3">
                     <button
                       onClick={handleBack}
-                      className="px-4 py-2 wood-frame text-card font-display text-sm hover:brightness-110"
+                      className="px-4 py-2 wood-frame text-parchment font-display text-sm hover:brightness-110"
                     >
                       Back
                     </button>
@@ -228,7 +228,7 @@ export function OnlineLobby() {
               <div className="flex justify-center gap-3 mt-4">
                 <button
                   onClick={handleBack}
-                  className="px-4 py-2 wood-frame text-card font-display text-sm hover:brightness-110"
+                  className="px-4 py-2 wood-frame text-parchment font-display text-sm hover:brightness-110"
                 >
                   Back
                 </button>
@@ -351,19 +351,19 @@ export function OnlineLobby() {
               <div className="flex gap-2 mb-3">
                 <button
                   onClick={() => updateSettings({ goals: { wealth: 2000, happiness: 75, education: 18, career: 2 } })}
-                  className="flex-1 p-1.5 wood-frame text-card text-xs font-display hover:brightness-110"
+                  className="flex-1 p-1.5 wood-frame text-parchment text-xs font-display hover:brightness-110"
                 >
                   Quick
                 </button>
                 <button
                   onClick={() => updateSettings({ goals: { wealth: 5000, happiness: 100, education: 45, career: 4 } })}
-                  className="flex-1 p-1.5 wood-frame text-card text-xs font-display hover:brightness-110"
+                  className="flex-1 p-1.5 wood-frame text-parchment text-xs font-display hover:brightness-110"
                 >
                   Standard
                 </button>
                 <button
                   onClick={() => updateSettings({ goals: { wealth: 10000, happiness: 100, education: 90, career: 7 } })}
-                  className="flex-1 p-1.5 wood-frame text-card text-xs font-display hover:brightness-110"
+                  className="flex-1 p-1.5 wood-frame text-parchment text-xs font-display hover:brightness-110"
                 >
                   Epic
                 </button>
@@ -394,7 +394,7 @@ export function OnlineLobby() {
             <div className="flex justify-center gap-4">
               <button
                 onClick={handleBack}
-                className="px-6 py-3 wood-frame text-card font-display hover:brightness-110"
+                className="px-6 py-3 wood-frame text-parchment font-display hover:brightness-110"
               >
                 Leave Room
               </button>
@@ -467,7 +467,7 @@ export function OnlineLobby() {
             <div className="flex justify-center">
               <button
                 onClick={handleBack}
-                className="px-6 py-2 wood-frame text-card font-display text-sm hover:brightness-110"
+                className="px-6 py-2 wood-frame text-parchment font-display text-sm hover:brightness-110"
               >
                 Leave Room
               </button>

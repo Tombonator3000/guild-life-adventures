@@ -49,7 +49,7 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
                   key={`${itemId}-${index}`}
                   onClick={() => onSellItem(itemId, sellPrice)}
                   disabled={player.timeRemaining < 1}
-                  className="w-full p-2 wood-frame text-card flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  className="w-full p-2 wood-frame text-parchment flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   <span className="font-display font-semibold">{item?.name || itemId}</span>
                   <div className="flex items-center gap-3 text-xs">
@@ -76,7 +76,7 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
                 key={item.id}
                 onClick={() => onBuyUsedItem(item.id, price)}
                 disabled={player.gold < price || player.timeRemaining < 1}
-                className="w-full p-2 wood-frame text-card flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                className="w-full p-2 wood-frame text-parchment flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 <span className="font-display font-semibold">{item.name}</span>
                 <div className="flex items-center gap-3 text-xs">
@@ -111,7 +111,7 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
                     toast.success(`Pawned ${appliance?.name} for ${pawnValue} gold`);
                   }}
                   disabled={player.timeRemaining < 1}
-                  className="w-full p-2 wood-frame text-card flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  className="w-full p-2 wood-frame text-parchment flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   <span className="font-display font-semibold">
                     {appliance?.name || applianceId}
@@ -151,7 +151,7 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
                   toast.success(`Bought ${appliance.name} from pawn shop!`);
                 }}
                 disabled={player.gold < salePrice || player.timeRemaining < 1 || alreadyOwns}
-                className="w-full p-2 wood-frame text-card flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                className="w-full p-2 wood-frame text-parchment flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 <span className="font-display font-semibold">
                   {appliance.name}
@@ -176,14 +176,14 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
           <button
             onClick={() => onGamble(10)}
             disabled={player.gold < 10 || player.timeRemaining < 2}
-            className="w-full p-2 wood-frame text-card flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            className="w-full p-2 wood-frame text-parchment flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
           >
             <div className="flex items-center gap-2">
               <Dices className="w-4 h-4" />
               <span className="font-display font-semibold">Low Stakes (10g)</span>
             </div>
             <div className="flex items-center gap-3 text-xs">
-              <span className="text-muted-foreground">40% win: +25g</span>
+              <span className="text-parchment-dark">40% win: +25g</span>
               <span className="text-time">2h</span>
             </div>
           </button>
@@ -191,14 +191,14 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
           <button
             onClick={() => onGamble(50)}
             disabled={player.gold < 50 || player.timeRemaining < 2}
-            className="w-full p-2 wood-frame text-card flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            className="w-full p-2 wood-frame text-parchment flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
           >
             <div className="flex items-center gap-2">
               <Dices className="w-4 h-4" />
               <span className="font-display font-semibold">High Stakes (50g)</span>
             </div>
             <div className="flex items-center gap-3 text-xs">
-              <span className="text-muted-foreground">30% win: +150g</span>
+              <span className="text-parchment-dark">30% win: +150g</span>
               <span className="text-time">2h</span>
             </div>
           </button>
@@ -206,14 +206,14 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
           <button
             onClick={() => onGamble(100)}
             disabled={player.gold < 100 || player.timeRemaining < 3}
-            className="w-full p-2 wood-frame text-card flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            className="w-full p-2 wood-frame text-parchment flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
           >
             <div className="flex items-center gap-2">
               <Dices className="w-4 h-4" />
               <span className="font-display font-semibold">All or Nothing (100g)</span>
             </div>
             <div className="flex items-center gap-3 text-xs">
-              <span className="text-muted-foreground">20% win: +400g</span>
+              <span className="text-parchment-dark">20% win: +400g</span>
               <span className="text-time">3h</span>
             </div>
           </button>

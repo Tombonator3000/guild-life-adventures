@@ -158,7 +158,7 @@ function ResourceCard({
   warning = false,
 }: ResourceCardProps) {
   return (
-    <div className={`wood-frame p-1.5 text-card ${warning ? 'ring-2 ring-destructive' : ''}`}>
+    <div className={`wood-frame p-1.5 text-parchment ${warning ? 'ring-2 ring-destructive' : ''}`}>
       <div className="flex items-center gap-1 mb-0.5">
         <span className={color}>{icon}</span>
         <span className="text-[11px] opacity-80">{label}</span>

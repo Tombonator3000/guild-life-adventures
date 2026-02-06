@@ -22,7 +22,7 @@ export function ActionButton({ label, cost, time, reward, disabled, onClick, sfx
     <button
       onClick={handleClick}
       disabled={disabled}
-      className="w-full p-2 wood-frame text-card flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+      className="w-full p-2 wood-frame text-parchment flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
     >
       <span className="font-display font-semibold">{label}</span>
       <div className="flex items-center gap-3 text-xs">

@@ -45,11 +45,11 @@ export function EnchanterPanel({ player, priceModifier, onSpendTime }: Enchanter
     <div className="space-y-4">
       {/* Repair Section */}
       {brokenAppliances.length > 0 && (
-        <div className="wood-frame p-3 text-card">
+        <div className="wood-frame p-3 text-parchment">
           <h4 className="font-display text-sm text-destructive flex items-center gap-2 mb-2">
             <Wrench className="w-4 h-4" /> Broken Appliances
           </h4>
-          <p className="text-xs text-muted-foreground mb-2">
+          <p className="text-xs text-parchment-dark mb-2">
             Your appliances need repair! Cost varies based on original price.
           </p>
           <div className="space-y-2">
@@ -87,7 +87,7 @@ export function EnchanterPanel({ player, priceModifier, onSpendTime }: Enchanter
           const isFirstPurchase = !player.applianceHistory.includes(appliance.id);
 
           return (
-            <div key={appliance.id} className="wood-frame p-2 text-card">
+            <div key={appliance.id} className="wood-frame p-2 text-parchment">
               <div className="flex justify-between items-start mb-1">
                 <div>
                   <span className="font-display font-semibold text-sm">{appliance.name}</span>
@@ -97,7 +97,7 @@ export function EnchanterPanel({ player, priceModifier, onSpendTime }: Enchanter
                 </div>
                 <span className="text-gold font-bold">{price}g</span>
               </div>
-              <p className="text-xs text-muted-foreground mb-2">{appliance.description}</p>
+              <p className="text-xs text-parchment-dark mb-2">{appliance.description}</p>
               <div className="flex justify-between items-center">
                 <div className="text-xs">
                   {isFirstPurchase && appliance.happinessEnchanter > 0 && (

@@ -82,12 +82,12 @@ export function NewspaperModal({ newspaper, onClose }: NewspaperModalProps) {
         
         <div className="space-y-4 overflow-y-auto max-h-[50vh] pr-2">
           {newspaper.articles.map((article, index) => (
-            <article key={index} className="wood-frame p-3 text-card">
+            <article key={index} className="wood-frame p-3 text-parchment">
               <div className="flex items-center gap-2 mb-2">
                 <ArticleIcon category={article.category} />
                 <h3 className="font-display font-bold text-sm">{article.headline}</h3>
               </div>
-              <p className="text-sm text-muted-foreground">{article.content}</p>
+              <p className="text-sm text-parchment-dark">{article.content}</p>
             </article>
           ))}
         </div>

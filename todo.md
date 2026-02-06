@@ -346,6 +346,15 @@
   - [x] Newspaper trend forecast text
   - [x] Network sync and save/load updated with new economy fields
 
+## Completed (2026-02-06)
+
+- [x] Standardize Beige/Brown Text Design — 15 files updated
+  - [x] Fix newspaper article text visibility (text-muted-foreground → text-parchment-dark on wood-frame)
+  - [x] Standardize ShadowfingersModal from raw amber to design system
+  - [x] All wood-frame elements: text-card → text-parchment (mode-independent light color)
+  - [x] All text-muted-foreground inside wood-frame → text-parchment-dark
+  - [x] Established design standard: wood-frame uses text-parchment/text-parchment-dark
+
 ## In Progress
 
 *No active tasks*

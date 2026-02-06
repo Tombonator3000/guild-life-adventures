@@ -82,11 +82,11 @@ export function ShadowfingersModal({ event, onDismiss }: ShadowfingersModalProps
           </div>
 
           {/* Newspaper-style headline */}
-          <div className="bg-amber-100 border-2 border-amber-900 p-3 mb-2 shadow-inner">
-            <div className="text-xs text-amber-800 uppercase tracking-wider mb-1">
+          <div className="bg-parchment-dark/30 border-2 border-wood-light p-3 mb-2 shadow-inner">
+            <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
               The Guildholm Herald - SPECIAL EDITION
             </div>
-            <DialogTitle className="font-display text-xl text-amber-950 leading-tight">
+            <DialogTitle className="font-display text-xl text-card-foreground leading-tight">
               {headline}
             </DialogTitle>
           </div>
@@ -97,19 +97,19 @@ export function ShadowfingersModal({ event, onDismiss }: ShadowfingersModalProps
         </DialogHeader>
 
         {/* Effects display */}
-        <div className="wood-frame p-3 text-card text-center my-4">
+        <div className="wood-frame p-3 text-parchment text-center my-4">
           <span className="font-display font-semibold text-destructive">{effectsText}</span>
         </div>
 
         {/* Stolen items list for apartment robbery */}
         {!isStreetRobbery && (event.result as ApartmentRobberyResult).stolenItems.length > 0 && (
-          <div className="bg-amber-50 border border-amber-300 rounded p-3 mb-4">
-            <div className="text-sm font-semibold text-amber-900 mb-2">Stolen Items:</div>
-            <ul className="text-sm text-amber-800">
+          <div className="bg-parchment-dark/20 border border-wood-light/50 rounded p-3 mb-4">
+            <div className="text-sm font-semibold text-card-foreground mb-2">Stolen Items:</div>
+            <ul className="text-sm text-card-foreground">
               {(event.result as ApartmentRobberyResult).stolenItems.map((item, idx) => (
                 <li key={idx} className="flex justify-between">
                   <span>{item.itemName}</span>
-                  <span className="text-amber-600">x{item.quantity}</span>
+                  <span className="text-muted-foreground">x{item.quantity}</span>
                 </li>
               ))}
             </ul>

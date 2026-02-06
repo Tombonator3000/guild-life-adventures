@@ -22,14 +22,14 @@ export function QuestPanel({ quests, player, onTakeQuest, onCompleteQuest, onAba
         <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
           <Scroll className="w-4 h-4" /> Active Quest
         </h4>
-        <div className="wood-frame p-3 text-card">
+        <div className="wood-frame p-3 text-parchment">
           <div className="flex items-center justify-between mb-2">
             <span className={`font-display font-bold ${QUEST_RANK_INFO[activeQuest.rank].color}`}>
               {QUEST_RANK_INFO[activeQuest.rank].name}
             </span>
             <span className="font-display font-semibold">{activeQuest.name}</span>
           </div>
-          <p className="text-sm text-muted-foreground mb-3">{activeQuest.description}</p>
+          <p className="text-sm text-parchment-dark mb-3">{activeQuest.description}</p>
           
           <div className="grid grid-cols-2 gap-2 text-sm mb-3">
             <div className="flex items-center gap-1">
@@ -94,14 +94,14 @@ export function QuestPanel({ quests, player, onTakeQuest, onCompleteQuest, onAba
             const isDisabled = !canTake || !hasTime || !hasHealth;
 
             return (
-              <div key={quest.id} className="wood-frame p-2 text-card">
+              <div key={quest.id} className="wood-frame p-2 text-parchment">
                 <div className="flex items-center justify-between mb-1">
                   <span className={`text-xs font-bold ${QUEST_RANK_INFO[quest.rank].color}`}>
                     {QUEST_RANK_INFO[quest.rank].name}
                   </span>
                   <span className="font-display font-semibold text-sm">{quest.name}</span>
                 </div>
-                <p className="text-xs text-muted-foreground mb-2 line-clamp-1">{quest.description}</p>
+                <p className="text-xs text-parchment-dark mb-2 line-clamp-1">{quest.description}</p>
                 
                 <div className="flex items-center justify-between text-xs mb-2">
                   <div className="flex items-center gap-2">
