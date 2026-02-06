@@ -22,6 +22,7 @@ import {
   getDungeonProgress,
   calculateEducationBonuses,
   getFloorTimeCost,
+  getEncounterTimeCost,
   MAX_FLOOR_ATTEMPTS_PER_TURN,
   type DungeonFloor,
 } from '@/data/dungeon';
@@ -106,8 +107,9 @@ export function CavePanel({
       toast.error('You are too fatigued for another dungeon run this week.');
       return;
     }
-    const timeCost = getFloorTimeCost(floor, combatStats);
-    spendTime(player.id, timeCost);
+    // Only charge for the first encounter's time on entry (rest charged per encounter)
+    const encounterTime = getEncounterTimeCost(floor, combatStats);
+    spendTime(player.id, encounterTime);
     // Increment dungeon attempts via direct store set
     const { players } = useGameStore.getState();
     useGameStore.setState({
@@ -211,6 +213,8 @@ export function CavePanel({
         floor={activeFloor}
         onComplete={handleCombatComplete}
         onCancel={() => setActiveFloor(null)}
+        onSpendTime={(hours: number) => spendTime(player.id, hours)}
+        encounterTimeCost={getEncounterTimeCost(activeFloor, combatStats)}
       />
     );
   }
@@ -332,11 +336,12 @@ export function CavePanel({
             player.equippedArmor,
             combatStats,
           );
-          const timeCost = getFloorTimeCost(floor, combatStats);
+          const totalTimeCost = getFloorTimeCost(floor, combatStats);
+          const encounterTime = getEncounterTimeCost(floor, combatStats);
           const canAttempt =
             status !== 'locked' &&
             reqCheck.canEnter &&
-            player.timeRemaining >= timeCost &&
+            player.timeRemaining >= encounterTime &&
             player.health > 10 &&
             attemptsRemaining > 0;
 
@@ -407,7 +412,7 @@ export function CavePanel({
                   {/* Stats row */}
                   <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs font-mono">
                     <span className="text-[#a09080] flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> {timeCost} hrs
+                      <Clock className="w-3 h-3" /> {encounterTime}h/encounter ({totalTimeCost}h total)
                     </span>
                     <span className="text-[#c9a227]">
                       💰 {floor.goldRange[0]}-{floor.goldRange[1]}g
@@ -495,7 +500,7 @@ export function CavePanel({
                           ? 'Too fatigued (max attempts)'
                           : !reqCheck.canEnter
                             ? 'Requirements not met'
-                            : player.timeRemaining < timeCost
+                            : player.timeRemaining < encounterTime
                               ? 'Not enough time'
                               : 'Too injured'}
                     </button>

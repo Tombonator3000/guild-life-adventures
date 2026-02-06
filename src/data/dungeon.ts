@@ -901,6 +901,19 @@ export function getDungeonProgress(floorsCleared: number[]): {
 /** Number of encounters per floor run (3 regular + 1 boss) */
 export const ENCOUNTERS_PER_FLOOR = 4;
 
+/**
+ * Get the time cost per encounter within a floor.
+ * Total floor time is distributed across encounters.
+ * Each encounter costs floor.timeCost / ENCOUNTERS_PER_FLOOR (rounded up).
+ */
+export function getEncounterTimeCost(
+  floor: DungeonFloor,
+  combatStats: { attack: number; defense: number },
+): number {
+  const totalTime = getFloorTimeCost(floor, combatStats);
+  return Math.ceil(totalTime / ENCOUNTERS_PER_FLOOR);
+}
+
 /** Maximum dungeon floor */
 export const MAX_DUNGEON_FLOOR = 5;
 

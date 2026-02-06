@@ -135,6 +135,21 @@
   - [x] 50% default volume, persistent settings (localStorage)
   - [x] 7 tracks: MainTheme, OnTheStreet, GuildHall, TheSlums, EnchantersWorkshop, RustyTankard, OhWhatAWeekend
 
+## Completed (2026-02-06)
+
+- [x] Job Market Wage Display — show real market-adjusted wages in job listings
+  - Pre-calculate offered wages when selecting employer using `calculateOfferedWage(job, priceModifier)`
+  - Job listings show market wage instead of base wage
+  - Hired modal says "(Market rate at time of visit)" instead of showing base wage
+  - Wage shown in listing = wage offered on hire (no more mismatch)
+
+- [x] Dungeon Per-Encounter Time Cost — each encounter costs time, not just entry
+  - Added `getEncounterTimeCost()` to dungeon.ts (floor time / 4 encounters, rounded up)
+  - Entry charges one encounter's time; "Continue Deeper" charges another
+  - "Leave Dungeon" option when out of time (keeps all gold, no retreat penalty)
+  - Floor cards show per-encounter time + total (e.g. "2h/encounter (6h total)")
+  - AI unaffected (still auto-resolves full floor with full time cost)
+
 ## In Progress
 
 *No active tasks*

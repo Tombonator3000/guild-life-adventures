@@ -13,6 +13,7 @@ import {
   Sparkles,
   AlertTriangle,
   BookOpen,
+  Clock,
 } from 'lucide-react';
 import type { DungeonFloor } from '@/data/dungeon';
 import { getFloorTimeCost, calculateEducationBonuses } from '@/data/dungeon';
@@ -40,6 +41,10 @@ interface CombatViewProps {
   floor: DungeonFloor;
   onComplete: (result: CombatRunResult) => void;
   onCancel: () => void;
+  /** Callback to spend time from the player's turn */
+  onSpendTime: (hours: number) => void;
+  /** Time cost per encounter in hours */
+  encounterTimeCost: number;
 }
 
 /** Final result returned to CavePanel when combat ends */
@@ -218,6 +223,9 @@ function EncounterResultView({
   canRetreat,
   onContinue,
   onRetreat,
+  onLeaveDungeon,
+  encounterTimeCost,
+  hasEnoughTime,
 }: {
   result: EncounterResult;
   currentHealth: number;
@@ -225,6 +233,9 @@ function EncounterResultView({
   canRetreat: boolean;
   onContinue: () => void;
   onRetreat: () => void;
+  onLeaveDungeon: () => void;
+  encounterTimeCost: number;
+  hasEnoughTime: boolean;
 }) {
   const enc = result.encounter;
   const icon = getEncounterIcon(enc.type);
@@ -324,18 +335,38 @@ function EncounterResultView({
         </div>
       )}
 
+      {/* Time cost info */}
+      <div className="text-xs text-[#8b7355] flex items-center justify-center gap-1">
+        <Clock className="w-3 h-3" />
+        {hasEnoughTime
+          ? `Continuing costs ${encounterTimeCost}h`
+          : 'Not enough time to continue'}
+      </div>
+
       {/* Action buttons */}
       <div className="flex gap-2">
-        <button
-          className="flex-1 py-2 px-3 text-sm font-display rounded-lg bg-gradient-to-r from-amber-800 to-amber-700 hover:from-amber-700 hover:to-amber-600 text-[#e0d4b8] border border-amber-600/50 transition-all"
-          onClick={onContinue}
-        >
-          <span className="flex items-center justify-center gap-1.5">
-            <ChevronRight className="w-4 h-4" />
-            Continue Deeper
-          </span>
-        </button>
-        {canRetreat && (
+        {hasEnoughTime ? (
+          <button
+            className="flex-1 py-2 px-3 text-sm font-display rounded-lg bg-gradient-to-r from-amber-800 to-amber-700 hover:from-amber-700 hover:to-amber-600 text-[#e0d4b8] border border-amber-600/50 transition-all"
+            onClick={onContinue}
+          >
+            <span className="flex items-center justify-center gap-1.5">
+              <ChevronRight className="w-4 h-4" />
+              Continue Deeper ({encounterTimeCost}h)
+            </span>
+          </button>
+        ) : (
+          <button
+            className="flex-1 py-2 px-3 text-sm font-display rounded-lg bg-[#2d1f0f] hover:bg-[#3d2f1f] text-[#a09080] border border-[#8b7355]/50 transition-all"
+            onClick={onLeaveDungeon}
+          >
+            <span className="flex items-center justify-center gap-1.5">
+              <RotateCcw className="w-3.5 h-3.5" />
+              Leave Dungeon (no time)
+            </span>
+          </button>
+        )}
+        {canRetreat && hasEnoughTime && (
           <button
             className="py-2 px-3 text-sm font-display rounded-lg bg-[#2d1f0f] hover:bg-[#3d2f1f] text-[#a09080] border border-[#8b7355]/50 transition-all"
             onClick={onRetreat}
@@ -486,7 +517,7 @@ function FloorSummaryView({
 
 // ─── Main CombatView Component ────────────────────────────────
 
-export function CombatView({ player, floor, onComplete, onCancel }: CombatViewProps) {
+export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, encounterTimeCost }: CombatViewProps) {
   const combatStats: CombatStats = calculateCombatStats(
     player.equippedWeapon,
     player.equippedArmor,
@@ -508,16 +539,28 @@ export function CombatView({ player, floor, onComplete, onCancel }: CombatViewPr
     setRunState(newState);
   }, [runState, combatStats, eduBonuses]);
 
-  // ─── Continue to next encounter ───────────────────────────
+  // ─── Continue to next encounter (costs time) ─────────────
 
   const handleContinue = useCallback(() => {
+    onSpendTime(encounterTimeCost);
     setRunState((s) => advanceToNextEncounter(s));
-  }, []);
+  }, [onSpendTime, encounterTimeCost]);
 
-  // ─── Retreat ──────────────────────────────────────────────
+  // ─── Retreat (50% gold forfeit) ──────────────────────────
 
   const handleRetreat = useCallback(() => {
     setRunState((s) => retreatFromDungeon(s));
+  }, []);
+
+  // ─── Leave dungeon (no time remaining, keep all gold) ──
+
+  const handleLeaveDungeon = useCallback(() => {
+    setRunState((s) => ({
+      ...s,
+      phase: 'floor-summary' as const,
+      retreated: true,
+      // Keep all gold — leaving due to time, not cowardice
+    }));
   }, []);
 
   // ─── Finish and return results to CavePanel ───────────────
@@ -587,6 +630,9 @@ export function CombatView({ player, floor, onComplete, onCancel }: CombatViewPr
           canRetreat={canRetreat}
           onContinue={handleContinue}
           onRetreat={handleRetreat}
+          onLeaveDungeon={handleLeaveDungeon}
+          encounterTimeCost={encounterTimeCost}
+          hasEnoughTime={player.timeRemaining >= encounterTimeCost}
         />
       )}
 

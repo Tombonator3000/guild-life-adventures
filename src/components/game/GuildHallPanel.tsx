@@ -46,8 +46,21 @@ export function GuildHallPanel({
     result: JobApplicationResult;
     offeredWage?: number;
   } | null>(null);
+  // Pre-calculated market wages for the selected employer's jobs
+  const [marketWages, setMarketWages] = useState<Map<string, number>>(new Map());
 
   const employers = getEmployers();
+
+  const handleSelectEmployer = (employer: Employer) => {
+    // Pre-calculate market wages for all jobs at this employer
+    const wages = new Map<string, number>();
+    for (const job of employer.jobs) {
+      const offer = calculateOfferedWage(job, priceModifier);
+      wages.set(job.id, offer.offeredWage);
+    }
+    setMarketWages(wages);
+    setSelectedEmployer(employer);
+  };
 
   const handleApply = (job: Job) => {
     // Spend 1 hour to apply
@@ -62,9 +75,9 @@ export function GuildHallPanel({
     );
 
     if (result.success) {
-      // Calculate offered wage based on economy
-      const offer = calculateOfferedWage(job, priceModifier);
-      setApplicationResult({ job, result, offeredWage: offer.offeredWage });
+      // Use the pre-calculated market wage
+      const offeredWage = marketWages.get(job.id) ?? calculateOfferedWage(job, priceModifier).offeredWage;
+      setApplicationResult({ job, result, offeredWage });
     } else {
       setApplicationResult({ job, result });
     }
@@ -103,7 +116,7 @@ export function GuildHallPanel({
                   ${applicationResult.offeredWage}/hour
                 </p>
                 <p className="text-xs text-[#6b5a45]">
-                  (Base: ${applicationResult.job.baseWage}/h)
+                  (Market rate at time of visit)
                 </p>
               </div>
               <div className="flex gap-2">
@@ -197,7 +210,9 @@ export function GuildHallPanel({
                       {job.name}
                       {isCurrentJob && <span className="text-[#c9a227] ml-1">(Current)</span>}
                     </span>
-                    <span className="font-mono text-sm text-[#c9a227] font-bold">${job.baseWage}/h</span>
+                    <span className="font-mono text-sm text-[#c9a227] font-bold">
+                      ${marketWages.get(job.id) ?? job.baseWage}/h
+                    </span>
                   </div>
                   <div className="text-xs text-[#8b7355] mt-1">
                     {job.requiredDegrees.length > 0 && (
@@ -235,7 +250,7 @@ export function GuildHallPanel({
             <JonesListItem
               key={employer.id}
               label={employer.name}
-              onClick={() => setSelectedEmployer(employer)}
+              onClick={() => handleSelectEmployer(employer)}
             />
           ))}
         </div>
