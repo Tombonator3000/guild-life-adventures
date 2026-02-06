@@ -6,6 +6,7 @@ import { PlayerToken } from './PlayerToken';
 import { AnimatedPlayerToken } from './AnimatedPlayerToken';
 import { ResourcePanel } from './ResourcePanel';
 import { LocationPanel } from './LocationPanel';
+import { InfoTabs } from './InfoTabs';
 import { EventModal, type GameEvent } from './EventModal';
 import { ShadowfingersModal, useShadowfingersModal } from './ShadowfingersModal';
 import { ZoneEditor, type CenterPanelConfig } from './ZoneEditor';
@@ -436,12 +437,12 @@ export function GameBoard() {
             height: `${centerPanel.height}%`,
           }}
         >
-          <div className="w-full h-full overflow-auto bg-card/95">
+          <div className="w-full h-full overflow-hidden flex flex-col bg-card/95">
             {selectedLocation ? (
               <LocationPanel locationId={selectedLocation} />
-            ) : (
-              <ResourcePanel />
-            )}
+            ) : currentPlayer ? (
+              <InfoTabs player={currentPlayer} goals={goalSettings} />
+            ) : null}
           </div>
         </div>
 

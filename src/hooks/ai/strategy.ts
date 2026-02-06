@@ -311,7 +311,7 @@ export function getBestQuest(player: Player, settings: DifficultySettings): stri
   if (player.activeQuest) return null;
 
   const available = getAvailableQuests(player.guildRank);
-  const takeable = available.filter((q: { id: string; timeRequired: number; healthRisk: number }) => {
+  const takeable = available.filter((q) => {
     const check = canTakeQuest(q, player.guildRank, player.education, player.inventory, player.dungeonFloorsCleared);
     if (!check.canTake) return false;
     if (q.timeRequired > player.timeRemaining) return false;
