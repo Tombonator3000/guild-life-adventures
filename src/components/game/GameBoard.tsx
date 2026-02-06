@@ -6,12 +6,11 @@ import { PlayerToken } from './PlayerToken';
 import { AnimatedPlayerToken } from './AnimatedPlayerToken';
 import { ResourcePanel } from './ResourcePanel';
 import { LocationPanel } from './LocationPanel';
-import { InfoTabs } from './InfoTabs';
 import { EventModal, type GameEvent } from './EventModal';
 import { ShadowfingersModal, useShadowfingersModal } from './ShadowfingersModal';
 import { ZoneEditor, type CenterPanelConfig } from './ZoneEditor';
 import { MOVEMENT_PATHS, BOARD_PATH, type MovementWaypoint } from '@/data/locations';
-import { PlayerInfoPanel } from './PlayerInfoPanel';
+import { SideInfoTabs } from './SideInfoTabs';
 import { TurnOrderPanel } from './TurnOrderPanel';
 import { useGrimwaldAI } from '@/hooks/useGrimwaldAI';
 import gameBoard from '@/assets/game-board.jpeg';
@@ -283,14 +282,15 @@ export function GameBoard() {
           height: 'min(100vh, 56.25vw)',
         }}
       >
-        {/* Left Side Panel - Player Info (12% of container width) */}
+        {/* Left Side Panel - Player Info Tabs (12% of container width) */}
         <div
           className="relative z-30 p-[0.5%] flex flex-col flex-shrink-0 h-full"
           style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
         >
           {currentPlayer && (
-            <PlayerInfoPanel
+            <SideInfoTabs
               player={currentPlayer}
+              goals={goalSettings}
               isCurrentPlayer={true}
             />
           )}
@@ -440,9 +440,9 @@ export function GameBoard() {
           <div className="w-full h-full overflow-hidden flex flex-col bg-card/95">
             {selectedLocation ? (
               <LocationPanel locationId={selectedLocation} />
-            ) : currentPlayer ? (
-              <InfoTabs player={currentPlayer} goals={goalSettings} />
-            ) : null}
+            ) : (
+              <ResourcePanel />
+            )}
           </div>
         </div>
 

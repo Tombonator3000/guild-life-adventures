@@ -1,48 +1,63 @@
 # Guild Life Adventures - Development Log
 
-## 2026-02-06 - Inventory & Info Tabs UI System
+## 2026-02-06 - Side Panel InfoTabs System (Redesign)
 
-Added a new tabbed info panel inspired by classic RPG inventory screens, replacing the unused center panel space when no location is selected.
+Moved the InfoTabs system from the center panel to the left side panel, replacing PlayerInfoPanel with a comprehensive tabbed interface that combines player stats with detailed inventory, goals, and stats views.
 
-### Feature: InfoTabs Component
-**Reference:** Medieval RPG inventory screens with equipment slots and stats displays
+### Feature: SideInfoTabs Component
+**Reference:** Jones in the Fast Lane left sidebar + medieval RPG inventory screens
 
 **Implementation:**
-- 3-tab navigation bar with medieval shield-styled buttons: Inventory, Goals, Stats
-- Tabs styled with parchment background and wood-grain accents
-- Responsive layout that fills the center panel area
+- Created new `SideInfoTabs.tsx` component for left sidebar
+- Combines quick-access resource bars at top (like original PlayerInfoPanel)
+- 3-tab navigation at bottom: Inventory, Goals, Stats
+- Compact design optimized for narrow sidebar width
 
-### Inventory Tab
-- **Equipment Grid**: Character silhouette with 3 equipment slots (Weapon, Armor, Shield)
-- **Combat Stats Summary**: Attack, Defense, Block % displayed in wood-styled bar
-- **Appliances Section**: Grid view of owned appliances with broken status indicator
-- **Stored Items**: Grid view of durables stored at apartment
-- **Fresh Food Storage**: Progress bar showing food units stored
-- **Weekend Tickets**: List of owned event tickets
+### Quick Stats Section (Always Visible)
+- Hours (with progress bar)
+- Gold
+- Health (with progress bar and warning at ≤20)
+- Happiness (with progress bar)
+- Food (with progress bar and warning at ≤25%)
+- Clothing (with progress bar and warning at ≤25%)
+- Dependability (warning at <30%)
+- Home status
+- Experience
 
-### Goals Tab  
-- **Victory Goals**: Reuses GoalProgress component for wealth/happiness/education/career
-- **Dungeon Progress**: Visual floor indicator (1-5) with completion status
-- **Quest Stats**: Quests completed count and Guild Pass status
+### Inventory Tab (Compact)
+- 3 equipment slots in row (Weapon, Armor, Shield)
+- Combat stats summary (ATK, DEF, Block%)
+- Appliances list with broken status
+- Stored items list
+- Fresh food storage bar
+- Weekend tickets
+
+### Goals Tab (Compact)
+- Victory goal progress bars with percentage display
+- Dungeon floor completion (1-5 floors)
+- Quest stats and Guild Pass status
 
 ### Stats Tab
-- **Character Info**: Guild rank, rank level, housing status
-- **Employment Stats**: Current job, wage, shifts worked, dependability, experience
-- **Financial Stats**: Gold on hand, bank savings, investments, loan debt, gold bonus
-- **Education**: List of completed degrees
-- **Misc Stats**: Relaxation, max health, sickness status
+- Character info (rank, level, housing)
+- Employment details (job, wage, shifts, dependability, experience)
+- Finances (gold, savings, investments, loans)
+- Education (completed degrees)
 
 ### Files Created/Modified
 | File | Changes |
 |------|---------|
-| `src/components/game/InfoTabs.tsx` | New component (450 lines) - complete tabbed info panel |
-| `src/components/game/GameBoard.tsx` | Integrated InfoTabs when no location selected |
+| `src/components/game/SideInfoTabs.tsx` | New component (480 lines) - sidebar tabbed panel |
+| `src/components/game/GoalProgress.tsx` | Added `compact` prop for sidebar use |
+| `src/components/game/GameBoard.tsx` | Replaced PlayerInfoPanel with SideInfoTabs |
 
 ### Technical Notes
-- Uses existing design tokens from index.css (parchment, wood, gold, etc.)
-- Imports player data from existing stores and data files
-- Equipment display pulls from ARMORY_ITEMS for item details
-- Stats pull from multiple data sources (jobs, housing, items)
+- GoalProgress now supports `compact` mode with smaller text and simpler display
+- Center panel reverts to ResourcePanel when no location selected
+- Uses existing design tokens (parchment, wood, gold, etc.)
+
+---
+
+## 2026-02-06 - Inventory & Info Tabs UI System (Original Center Panel)
 
 ---
 
