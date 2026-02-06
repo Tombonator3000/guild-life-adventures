@@ -32,10 +32,9 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
           // Use current wage if player has a job, otherwise use passed wage
           const effectiveWage = p.currentJob ? p.currentWage : wage;
 
-          // Work bonus: 6+ hours shift gets a small efficiency bonus (15%)
-          // Reduced from 33% to slow gold accumulation and better match Jones pacing
-          const bonusHours = hours >= 6 ? Math.ceil(hours * 1.15) : hours;
-          let earnings = bonusHours * effectiveWage;
+          // Work bonus: all shifts get a flat 15% efficiency bonus on earnings
+          // Applied to earnings directly (not hours) so all shift lengths benefit equally
+          let earnings = Math.floor(hours * effectiveWage * 1.15);
 
           // Apply permanent gold bonus from rare drops (e.g., Goblin's Lucky Coin)
           if (p.permanentGoldBonus > 0) {

@@ -6,7 +6,7 @@ let playerId: string;
 
 function resetAndStart() {
   const store = useGameStore.getState();
-  store.startNewGame(['TestPlayer'], false, { wealth: 5000, happiness: 75, education: 5, career: 4 });
+  store.startNewGame(['TestPlayer'], false, { wealth: 5000, happiness: 75, education: 45, career: 4 });
   playerId = useGameStore.getState().players[0].id;
 }
 

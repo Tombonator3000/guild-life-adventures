@@ -8,7 +8,7 @@ let playerId: string;
 
 function resetAndStart() {
   const store = useGameStore.getState();
-  store.startNewGame(['TestPlayer'], false, { wealth: 5000, happiness: 75, education: 5, career: 4 });
+  store.startNewGame(['TestPlayer'], false, { wealth: 5000, happiness: 75, education: 45, career: 4 });
   playerId = useGameStore.getState().players[0].id;
 }
 
@@ -21,7 +21,7 @@ describe('Game setup', () => {
     expect(p.happiness).toBe(50);
     expect(p.timeRemaining).toBe(60);
     expect(p.currentLocation).toBe('slums');
-    expect(p.housing).toBe('homeless');
+    expect(p.housing).toBe('slums');
     expect(p.guildRank).toBe('novice');
     expect(p.completedDegrees).toEqual([]);
     expect(p.isAI).toBe(false);
@@ -29,7 +29,7 @@ describe('Game setup', () => {
   });
 
   it('creates AI player when includeAI is true', () => {
-    useGameStore.getState().startNewGame(['Human'], true, { wealth: 5000, happiness: 75, education: 5, career: 4 });
+    useGameStore.getState().startNewGame(['Human'], true, { wealth: 5000, happiness: 75, education: 45, career: 4 });
     const state = useGameStore.getState();
     expect(state.players).toHaveLength(2);
     expect(state.players[1].name).toBe('Grimwald');
@@ -230,7 +230,7 @@ describe('Eviction', () => {
     }));
     useGameStore.getState().evictPlayer(playerId);
     const p = useGameStore.getState().players[0];
-    expect(p.housing).toBe('homeless');
+    expect(p.housing).toBe('homeless'); // Eviction sets housing to homeless
     expect(p.inventory).toEqual([]);
     expect(p.durables).toEqual({});
     expect(p.weeksSinceRent).toBe(0);

@@ -4187,6 +4187,152 @@ Center Info Panel:
 
 ---
 
+---
+
+## 2026-02-06 — Full Gameplay Balance Audit
+
+### Methodology
+Comprehensive code audit of all game data, store logic, AI behavior, and economy.
+Simulated full game progression path analysis across all victory goals.
+
+---
+
+### CRITICAL BUGS FOUND & FIXED
+
+#### B1: Education Victory Goal — Trivially Easy (CRITICAL)
+**Files:** `gameStore.ts:121`, `GameSetup.tsx:16,47-50`, `questHelpers.ts:190-191`
+**Problem:** Default education goal was 5 points, but each completed degree awards 9 points
+(`completedDegrees.length * 9`). This means 1 degree (9 pts) instantly satisfies the education
+goal (9 >= 5). In Jones in the Fast Lane, education goal ranges from 10-100 points.
+The GameSetup slider was also broken: range 1-16 with step 1, meaning even the max (16) only
+required 2 degrees.
+**Fix:**
+- Default education goal: `5` → `45` (5 degrees worth)
+- GameSetup presets: quick=18 (2 degrees), standard=45 (5 degrees), epic=90 (10 degrees)
+- Education slider: min=9, max=99, step=9 with dynamic degree count display
+- All test goals updated from `education: 5` to `education: 45`
+
+#### B2: AI Work Time Check Hardcoded to 6 Hours (HIGH)
+**File:** `actionGenerator.ts:331,432`
+**Problem:** AI checked `player.timeRemaining >= 6` before generating work actions, but Forge
+jobs require 8 hours, Caravan Guard requires 10, and Arena Fighter only needs 4. The AI could
+generate work actions for 8-hour jobs when only having 6 hours left. The `workShift` function
+would then clamp `timeRemaining` to 0 (`Math.max(0, 6 - 8)`), giving the AI a full 8-hour
+shift's pay for only 6 hours of time — effectively 2 free hours of work.
+**Fix:** Changed to `player.timeRemaining >= job.hoursPerShift`, also added `moveCost + hoursPerShift` travel check (was missing from career-priority path).
+
+#### B3: AI Dungeon Time Check Hardcoded to 6 Hours (HIGH)
+**File:** `actionGenerator.ts:796`
+**Problem:** AI checked `player.timeRemaining > moveCost('cave') + 6` for ALL dungeon floors,
+but actual floor times range from 6 hours (Floor 1) to 22 hours (Floor 5). AI would attempt
+Floor 5 thinking it needed 6 hours when it actually needs 22, wasting a turn.
+**Fix:** Import `getFloor`/`getFloorTimeCost` from dungeon.ts and `calculateCombatStats` from
+items.ts. Now uses actual floor time cost for the target floor.
+
+---
+
+### BALANCE ISSUES FOUND & FIXED
+
+#### B4: Work Bonus Scaling Favored Long Shifts (MEDIUM)
+**File:** `workEducationHelpers.ts:35-38`, `WorkSection.tsx:24-26`
+**Problem:** Work bonus formula `Math.ceil(hours * 1.15)` applied to hours, then multiplied by
+wage. Due to `Math.ceil` rounding, different shift lengths got different effective bonus rates:
+- 6-hour shifts: ceil(6.9) = 7 → +16.7% bonus
+- 8-hour shifts (Forge): ceil(9.2) = 10 → +25% bonus
+- 10-hour shifts (Caravan): ceil(11.5) = 12 → +20% bonus
+- 4-hour shifts (Arena Fighter): no bonus at all (under 6h threshold)
+
+This made Forge jobs disproportionately better per hour worked.
+**Fix:** Changed to `Math.floor(hours * effectiveWage * 1.15)` — flat 15% bonus applied to
+earnings directly. All shift lengths now get exactly 15% bonus. Removed the `hours >= 6`
+threshold so short shifts (Arena Fighter) also get the bonus.
+
+#### B5: Homeless Theft Multiplier Too Harsh (MEDIUM)
+**File:** `events.ts:272-273`
+**Problem:** Homeless players had a 2× theft probability multiplier:
+- Regular theft: 25% × 2 = **50% per week** (-50g, -10 happiness)
+- Major theft: 10% × 2 = **20% per week** (-100g, -15 happiness)
+- Expected weekly loss from theft alone: ~35g + ~20g = ~55g
+Combined with the homeless health penalty (-5 HP/turn), time penalty (-8 hours/turn), and
+doctor visit risk (25% chance, 30-200g), homeless players could not accumulate wealth.
+**Fix:** Reduced homeless multiplier from 2.0 to 1.5:
+- Regular theft: 25% × 1.5 = 37.5% (still punishing but survivable)
+- Major theft: 10% × 1.5 = 15%
+
+#### B6: Starting Housing = Homeless (MEDIUM)
+**File:** `gameStore.ts:39`
+**Problem:** Players started homeless, immediately exposed to the harsh homeless penalties
+(health loss, time loss, high theft) with only 100g starting gold. Combined with B5,
+the early game was a trap — players could lose most of their starting gold before getting
+established. In Jones in the Fast Lane, players start with basic housing.
+**Fix:** Starting housing changed from `'homeless'` to `'slums'` (cheapest housing tier).
+Players still need to manage rent but aren't crippled from turn 1.
+
+---
+
+### ADDITIONAL BALANCE OBSERVATIONS (Not Fixed — For Future Consideration)
+
+#### O1: Loan Interest Rate 10% Per Week
+**File:** `turnHelpers.ts:484-490`
+10% weekly compound interest = 520% annual rate. A 1000g loan becomes 2143g in 8 weeks.
+This is intentionally punishing (loans are a last resort), but combined with other cash sinks
+(rent, food, repairs), borrowing is essentially a trap. Consider reducing to 5% weekly for
+a more forgiving experience.
+
+#### O2: Market Crash 3% Layoff Rate
+**File:** `events.ts:299-303`
+3% weekly layoff chance + 5% pay cut chance means ~8% weekly negative employment event.
+Over 20 weeks, there's a ~45% cumulative chance of being laid off at least once. This is
+working as designed (Jones had market crashes too), but players may find it frustrating.
+
+#### O3: Forge Jobs — Intentional Design
+Forge jobs have 8-hour shifts at the same base wages as 6-hour Guild Hall jobs.
+After the B4 fix (flat 15% bonus), Forge workers now earn 15% more per shift
+but spend 33% more time. This makes Forge jobs time-inefficient compared to equivalent
+6-hour jobs at the same wage level:
+- Forge Laborer (8h, 4g/hr): floor(8×4×1.15) = 36g in 8h = **4.5g/effective hour**
+- Floor Sweeper (6h, 4g/hr): floor(6×4×1.15) = 27g in 6h = **4.5g/effective hour**
+Now perfectly balanced per hour. The tradeoff is more gold per shift but fewer shifts per turn.
+
+#### O4: Arena Fighter Short Shift Advantage
+Arena Fighter (4h, 16g/hr): floor(4×16×1.15) = 73g in 4h = **18.25g/effective hour**
+This is the best gold/hour ratio in the game, but requires Master Combat degree and only
+30 dependability (lower than other high-level jobs). Short shifts allow more actions per
+turn. This is intended — Arena Fighter is a specialized high-reward combat career.
+
+#### O5: Dungeon Combat Balance
+Floor difficulty scales well: Floor 1 (6h, 15-50g) → Floor 5 (22h, 250-600g).
+Education bonuses (trap disarm, ethereal damage, damage reduction) provide meaningful
+advantages without being required. The 5% rare drop chance per floor clear is reasonable.
+No issues found with dungeon balance.
+
+#### O6: Quest Reward Scaling
+E-Rank (12-25g) → S-Rank (400-500g) scaling is reasonable.
+S-Rank quests require 80-100 hours (more than one turn), making them late-game investments.
+Guild rank gating properly prevents rushing high-reward quests.
+
+---
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `src/store/gameStore.ts` | Education goal 5→45, starting housing homeless→slums |
+| `src/store/helpers/workEducationHelpers.ts` | Work bonus: flat 15% on earnings, no threshold |
+| `src/components/game/WorkSection.tsx` | Display matches new work bonus formula |
+| `src/components/screens/GameSetup.tsx` | Education presets & slider fixed (9-99, step 9) |
+| `src/data/events.ts` | Homeless theft multiplier 2.0→1.5 |
+| `src/hooks/ai/actionGenerator.ts` | AI work time uses job.hoursPerShift, dungeon uses actual floor time |
+| `src/test/work.test.ts` | Updated expectations for new work bonus formula |
+| `src/test/gameActions.test.ts` | Updated education goal & housing expectations |
+| `src/test/education.test.ts` | Updated education goal |
+| `src/test/economy.test.ts` | Updated education goal |
+
+### Test Results
+- **92 tests passed**, 0 failed
+- Build succeeds
+
+---
+
 ## Log Template
 
 ```markdown

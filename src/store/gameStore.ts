@@ -36,7 +36,7 @@ const createPlayer = (
   currentLocation: 'slums', // Players start in The Slums (like Jones)
   previousLocation: null, // Track where player came from (for street robbery)
   guildRank: 'novice',
-  housing: 'homeless',
+  housing: 'slums',  // Start in slums like Jones (not homeless - too punishing)
   education: {
     fighter: 0,
     mage: 0,
@@ -118,7 +118,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     goalSettings: {
       wealth: 5000,
       happiness: 75,   // Reduced from 100 - happiness is harder to accumulate now
-      education: 5,
+      education: 45,   // 45 points = 5 degrees (each degree = 9 pts, Jones-style)
       career: 4,
     },
     winner: null,

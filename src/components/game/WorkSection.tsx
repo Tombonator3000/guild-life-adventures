@@ -21,9 +21,8 @@ export function WorkSection({ player, locationName, workShift, variant }: WorkSe
 
   if (!canWork || !jobData) return null;
 
-  // Use 1.15 bonus multiplier to match actual workShift calculation in workEducationHelpers
-  const bonusHours = jobData.hoursPerShift >= 6 ? Math.ceil(jobData.hoursPerShift * 1.15) : jobData.hoursPerShift;
-  const earnings = bonusHours * player.currentWage;
+  // Match actual workShift calculation: flat 15% bonus on earnings for all shifts
+  const earnings = Math.floor(jobData.hoursPerShift * player.currentWage * 1.15);
 
   if (variant === 'jones') {
     return (
