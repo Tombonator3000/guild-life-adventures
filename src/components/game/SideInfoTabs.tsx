@@ -277,12 +277,12 @@ function GoalsTab({ player, goals }: { player: Player; goals: GoalSettings }) {
       {/* Quest Stats */}
       <StatSection title="Quests">
         <div className="flex justify-between items-center text-[11px]">
-          <span className="text-wood-dark font-medium">Quests Done</span>
-          <span className="font-bold text-gold-dark">{player.completedQuests}</span>
+          <span className="text-amber-800 font-medium">Quests Done</span>
+          <span className="font-bold text-amber-600">{player.completedQuests}</span>
         </div>
         <div className="flex justify-between items-center text-[11px] mt-1">
-          <span className="text-wood-dark font-medium">Guild Pass</span>
-          <span className={`font-bold ${player.hasGuildPass ? 'text-secondary' : 'text-destructive'}`}>
+          <span className="text-amber-800 font-medium">Guild Pass</span>
+          <span className={`font-bold ${player.hasGuildPass ? 'text-green-600' : 'text-red-600'}`}>
             {player.hasGuildPass ? 'Yes' : 'No'}
           </span>
         </div>
