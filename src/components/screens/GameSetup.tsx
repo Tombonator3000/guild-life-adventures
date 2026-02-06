@@ -124,7 +124,7 @@ export function GameSetup() {
               {/* AI Difficulty Selection */}
               {includeAI && (
                 <div className="mt-4 ml-8 space-y-2">
-                  <p className="text-sm text-muted-foreground mb-2">Select Grimwald's cunning:</p>
+                  <p className="text-sm text-amber-700 mb-2">Select Grimwald's cunning:</p>
                   <div className="flex gap-2">
                     {(['easy', 'medium', 'hard'] as AIDifficulty[]).map((diff) => (
                       <button
