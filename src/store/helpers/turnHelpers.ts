@@ -10,6 +10,7 @@ import {
 } from '@/data/shadowfingers';
 import {
   getAppliance,
+  getItem,
   calculateRepairCost,
   checkApplianceBreakage,
 } from '@/data/items';
@@ -319,8 +320,29 @@ export function createTurnActions(set: SetFn, get: GetFn) {
       if (robberyResult) {
         // Remove stolen items from player's durables
         const newDurables = { ...currentPlayer.durables };
+        const stolenItemIds = new Set<string>();
         for (const stolen of robberyResult.stolenItems) {
           delete newDurables[stolen.itemId];
+          stolenItemIds.add(stolen.itemId);
+        }
+
+        // Check if any equipped items were stolen — unequip them
+        const equipmentUnequip: { equippedWeapon?: null; equippedArmor?: null; equippedShield?: null } = {};
+        const lostEquipmentNames: string[] = [];
+        if (currentPlayer.equippedWeapon && stolenItemIds.has(currentPlayer.equippedWeapon)) {
+          equipmentUnequip.equippedWeapon = null;
+          const stolen = robberyResult.stolenItems.find(s => s.itemId === currentPlayer.equippedWeapon);
+          lostEquipmentNames.push(stolen?.itemName || currentPlayer.equippedWeapon);
+        }
+        if (currentPlayer.equippedArmor && stolenItemIds.has(currentPlayer.equippedArmor)) {
+          equipmentUnequip.equippedArmor = null;
+          const stolen = robberyResult.stolenItems.find(s => s.itemId === currentPlayer.equippedArmor);
+          lostEquipmentNames.push(stolen?.itemName || currentPlayer.equippedArmor);
+        }
+        if (currentPlayer.equippedShield && stolenItemIds.has(currentPlayer.equippedShield)) {
+          equipmentUnequip.equippedShield = null;
+          const stolen = robberyResult.stolenItems.find(s => s.itemId === currentPlayer.equippedShield);
+          lostEquipmentNames.push(stolen?.itemName || currentPlayer.equippedShield);
         }
 
         // Apply robbery effects (gameplay changes apply to all players)
@@ -330,11 +352,17 @@ export function createTurnActions(set: SetFn, get: GetFn) {
               ? {
                   ...p,
                   durables: newDurables,
+                  ...equipmentUnequip,
                   happiness: Math.max(0, p.happiness + robberyResult.happinessLoss),
                 }
               : p
           ),
         }));
+
+        // Add equipment loss notification to event messages
+        if (lostEquipmentNames.length > 0 && !currentPlayer.isAI) {
+          eventMessages.push(`Equipped gear stolen: ${lostEquipmentNames.join(', ')}! You are now less prepared for combat.`);
+        }
 
         // C2: Only show UI notification for non-AI players
         if (!currentPlayer.isAI) {
@@ -483,6 +511,23 @@ export function createTurnActions(set: SetFn, get: GetFn) {
 
         // Eviction check - after 8 weeks without paying rent
         if (p.housing !== 'homeless' && p.weeksSinceRent >= 8) {
+          // Collect names of lost equipment for notification
+          const lostGear: string[] = [];
+          if (p.equippedWeapon) {
+            const item = getItem(p.equippedWeapon);
+            lostGear.push(item?.name || p.equippedWeapon);
+          }
+          if (p.equippedArmor) {
+            const item = getItem(p.equippedArmor);
+            lostGear.push(item?.name || p.equippedArmor);
+          }
+          if (p.equippedShield) {
+            const item = getItem(p.equippedShield);
+            lostGear.push(item?.name || p.equippedShield);
+          }
+          const lostApplianceCount = Object.keys(p.appliances).length;
+          const lostDurableCount = Object.keys(p.durables).length;
+
           p.housing = 'homeless';
           p.weeksSinceRent = 0;
           p.rentDebt = 0; // Clear debt on eviction
@@ -496,7 +541,17 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           p.equippedShield = null;
           p.happiness = Math.max(0, p.happiness - 30);
           if (!p.isAI) {
-            eventMessages.push(`${p.name} has been evicted! All possessions lost.`);
+            let evictionMsg = `${p.name} has been evicted! All possessions lost.`;
+            if (lostGear.length > 0) {
+              evictionMsg += ` Equipment destroyed: ${lostGear.join(', ')}.`;
+            }
+            if (lostApplianceCount > 0) {
+              evictionMsg += ` ${lostApplianceCount} appliance(s) lost.`;
+            }
+            if (lostDurableCount > 0 && lostGear.length === 0) {
+              evictionMsg += ` ${lostDurableCount} item(s) lost.`;
+            }
+            eventMessages.push(evictionMsg);
           }
         } else if (p.housing !== 'homeless' && p.weeksSinceRent >= 4 && !p.isAI) {
           eventMessages.push(`${p.name}: Rent is overdue! Wages will be garnished 50%.`);

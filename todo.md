@@ -238,6 +238,18 @@
   - [x] Fix 5: Increase relax/sleep happiness gains (Relax +3→+5, Sleep +5→+8)
   - [x] Fix 6: Weighted weekend activity selection (better activities more likely when affordable)
 
+## Completed (2026-02-06)
+
+- [x] Partial Travel — walk as far as possible when not enough time
+  - GameBoard handles partial animation + auto-end-turn
+  - LocationPanel shows "Head toward {location}" with warning text
+  - Player uses all remaining hours, walks partial path, turn ends automatically
+
+- [x] Equipment/Appliance Loss Notifications — 3 fixes
+  - [x] Fix: Apartment robbery now unequips stolen equipment (was a bug — equipped items stayed after durable stolen)
+  - [x] Eviction message now lists destroyed equipment and appliances by name
+  - [x] Appliance breakage toast notification (was stored in state but never displayed)
+
 ## In Progress
 
 *No active tasks*

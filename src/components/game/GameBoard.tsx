@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { LOCATIONS, getMovementCost, ZONE_CONFIGS, getPath } from '@/data/locations';
+import { getAppliance } from '@/data/items';
 import { LocationZone } from './LocationZone';
 import { PlayerToken } from './PlayerToken';
 import { AnimatedPlayerToken } from './AnimatedPlayerToken';
@@ -54,6 +55,8 @@ export function GameBoard() {
     setSkipAITurn,
     showTutorial,
     setShowTutorial,
+    applianceBreakageEvent,
+    dismissApplianceBreakageEvent,
   } = useGameStore();
   const { event: shadowfingersEvent, dismiss: dismissShadowfingers } = useShadowfingersModal();
   const [showZoneEditor, setShowZoneEditor] = useState(false);
@@ -85,7 +88,7 @@ export function GameBoard() {
   // Animation state for player movement
   const [animatingPlayer, setAnimatingPlayer] = useState<string | null>(null);
   const [animationPath, setAnimationPath] = useState<LocationId[] | null>(null);
-  const pendingMoveRef = useRef<{ playerId: string; destination: LocationId; timeCost: number } | null>(null);
+  const pendingMoveRef = useRef<{ playerId: string; destination: LocationId; timeCost: number; isPartial?: boolean } | null>(null);
 
   // Get current player BEFORE useEffects that depend on it
   const currentPlayer = useCurrentPlayer();
@@ -257,19 +260,43 @@ export function GameBoard() {
     }
   }, [currentPlayer?.timeRemaining, currentPlayer?.health, phase, checkAutoReturn]);
 
+  // Show appliance/equipment breakage notification
+  useEffect(() => {
+    if (applianceBreakageEvent) {
+      const appliance = getAppliance(applianceBreakageEvent.applianceId);
+      const name = appliance?.name || applianceBreakageEvent.applianceId;
+      toast.warning(
+        `Your ${name} broke! Repair cost: ${applianceBreakageEvent.repairCost}g at the Enchanter or Market.`,
+        { duration: 6000 }
+      );
+      dismissApplianceBreakageEvent();
+    }
+  }, [applianceBreakageEvent, dismissApplianceBreakageEvent]);
+
   // Handle animation completion
   const handleAnimationComplete = useCallback(() => {
     const pending = pendingMoveRef.current;
     if (pending) {
-      // Execute the actual move
-      movePlayer(pending.playerId, pending.destination, pending.timeCost);
-      selectLocation(pending.destination);
-      toast.success(`Traveled to ${LOCATIONS.find(l => l.id === pending.destination)?.name}`);
+      if (pending.isPartial) {
+        // Partial travel: move player to last reachable location, spend all time, end turn
+        movePlayer(pending.playerId, pending.destination, pending.timeCost);
+        toast.info(`Not enough time to reach destination. Turn ended.`);
+        selectLocation(null);
+        // Auto-end turn after a short delay
+        setTimeout(() => {
+          endTurn();
+        }, 300);
+      } else {
+        // Full travel: move player to destination
+        movePlayer(pending.playerId, pending.destination, pending.timeCost);
+        selectLocation(pending.destination);
+        toast.success(`Traveled to ${LOCATIONS.find(l => l.id === pending.destination)?.name}`);
+      }
       pendingMoveRef.current = null;
     }
     setAnimatingPlayer(null);
     setAnimationPath(null);
-  }, [movePlayer, selectLocation]);
+  }, [movePlayer, selectLocation, endTurn]);
 
   // Direct travel on location click (instead of showing travel button)
   const handleLocationClick = (locationId: string) => {
@@ -292,23 +319,43 @@ export function GameBoard() {
       const moveCost = getMovementCost(currentPlayer.currentLocation, locationId as LocationId);
 
       if (currentPlayer.timeRemaining >= moveCost) {
-        // Calculate path and start animation
+        // Full travel: enough time to reach destination
         const path = getPath(currentPlayer.currentLocation as LocationId, locationId as LocationId);
 
-        // Store pending move for after animation
         pendingMoveRef.current = {
           playerId: currentPlayer.id,
           destination: locationId as LocationId,
           timeCost: moveCost,
         };
 
-        // Start animation
         setAnimatingPlayer(currentPlayer.id);
         setAnimationPath(path);
+      } else if (currentPlayer.timeRemaining > 0) {
+        // Partial travel: not enough time, but has some hours left
+        // Walk as far as possible along the path, then end turn
+        const fullPath = getPath(currentPlayer.currentLocation as LocationId, locationId as LocationId);
+        const stepsCanTake = currentPlayer.timeRemaining; // Each step costs 1 hour (no entry cost for partial)
+
+        if (stepsCanTake > 0 && fullPath.length > 1) {
+          // Take only the steps we can afford (path includes starting location at index 0)
+          const partialPath = fullPath.slice(0, stepsCanTake + 1);
+          const partialDestination = partialPath[partialPath.length - 1];
+
+          pendingMoveRef.current = {
+            playerId: currentPlayer.id,
+            destination: partialDestination,
+            timeCost: currentPlayer.timeRemaining, // Spend all remaining time
+            isPartial: true,
+          };
+
+          setAnimatingPlayer(currentPlayer.id);
+          setAnimationPath(partialPath);
+        } else {
+          toast.error('No time remaining!');
+        }
       } else {
-        // Not enough time
-        toast.error('Not enough time to travel there!');
-        selectLocation(locationId as LocationId); // Still show the location panel
+        // No time at all
+        toast.error('No time remaining!');
       }
     }
   };

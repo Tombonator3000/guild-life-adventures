@@ -1,5 +1,46 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Partial Travel & Equipment Loss Notifications
+
+Two gameplay improvements matching Jones in the Fast Lane behavior.
+
+### Feature 1: Partial Travel When Not Enough Time
+
+**Problem**: When a player had 1-4 hours remaining and clicked a location that cost more time to reach, the game showed "Not enough time to travel there!" and did nothing. This was frustrating — the player had no way to use their remaining hours.
+
+**Solution**: If the player has some time remaining (>0) but not enough to reach the destination:
+1. Calculate how many steps they can take along the path (1 hour per step, no entry cost for partial travel)
+2. Animate the player walking along the partial path
+3. Move them to the farthest reachable location
+4. Spend all remaining time
+5. Automatically end their turn
+6. At the start of next turn, they return home (already existing behavior)
+
+**Files Modified (2)**:
+| File | Change |
+|------|--------|
+| `src/components/game/GameBoard.tsx` | `handleLocationClick` now handles partial travel with animation; `handleAnimationComplete` distinguishes full vs partial moves; `pendingMoveRef` extended with `isPartial` flag |
+| `src/components/game/LocationPanel.tsx` | Travel button shows "Head toward {location}" with warning text when partial; imports `getPath` and `endTurn` |
+
+### Feature 2: Equipment/Appliance Loss Notifications
+
+**Problem**: When equipment (swords, armor, shields) was lost through robbery or eviction, the player received no specific notification about what was lost. Also, appliance breakage events were stored in state but never displayed to the player. Equipped items stolen in apartment robbery were not properly unequipped (bug).
+
+**Fixes Applied (3)**:
+
+| # | Fix | File | Details |
+|---|-----|------|---------|
+| 1 | **Robbery unequips stolen equipment** (BUG) | `turnHelpers.ts` | When apartment robbery steals a durable that's equipped (weapon/armor/shield), it's now properly unequipped. Notification: "Equipped gear stolen: Iron Sword, Leather Armor!" |
+| 2 | **Eviction lists lost equipment** | `turnHelpers.ts` | Eviction message now lists destroyed equipment by name and appliance count (e.g., "Equipment destroyed: Steel Sword, Chainmail. 3 appliance(s) lost.") |
+| 3 | **Appliance breakage toast notification** | `GameBoard.tsx` | `applianceBreakageEvent` state (existed but was never rendered) now triggers a warning toast: "Your Preservation Box broke! Repair cost: 87g at the Enchanter or Market." (6s duration) |
+
+### Build & Test
+- TypeScript compiles cleanly
+- Vite build succeeds
+- All 112 tests pass
+
+---
+
 ## 2026-02-06 - Happiness Decay Rebalance (6 fixes)
 
 Happiness was draining far too fast, making the happiness goal nearly impossible to maintain. Full audit comparing current mechanics to Jones in the Fast Lane revealed 6 major balance issues.
