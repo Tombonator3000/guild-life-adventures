@@ -247,13 +247,13 @@ function GoalsTab({ player, goals }: { player: Player; goals: GoalSettings }) {
       {/* Dungeon Progress */}
       <StatSection title="Dungeon">
         <div className="flex items-center gap-1 mb-1">
-          <div className="flex-1 h-1.5 bg-wood/20 rounded-full overflow-hidden">
+          <div className="flex-1 h-1.5 bg-amber-900/20 rounded-full overflow-hidden">
             <div 
               className="h-full bg-accent transition-all"
               style={{ width: `${(player.dungeonFloorsCleared.length / 5) * 100}%` }}
             />
           </div>
-          <span className="text-[10px] font-bold text-wood-dark">
+          <span className="text-[10px] font-bold text-amber-900">
             {player.dungeonFloorsCleared.length}/5
           </span>
         </div>
