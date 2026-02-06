@@ -220,12 +220,12 @@ function StatsTab({ player }: { player: Player }) {
       <StatSection title="Education">
         <StatRow icon={<GraduationCap className="w-3.5 h-3.5" />} label="Degrees" value={player.completedDegrees.length.toString()} />
         {player.completedDegrees.slice(0, 3).map(degreeId => (
-          <div key={degreeId} className="text-[9px] text-secondary-foreground pl-4 truncate font-medium">
+          <div key={degreeId} className="text-[9px] text-green-700 pl-4 truncate font-medium">
             * {degreeId.replace(/-/g, ' ')}
           </div>
         ))}
         {player.completedDegrees.length > 3 && (
-          <div className="text-[9px] text-wood/60 pl-4">
+          <div className="text-[9px] text-amber-700 pl-4">
             +{player.completedDegrees.length - 3} more
           </div>
         )}
@@ -247,13 +247,13 @@ function GoalsTab({ player, goals }: { player: Player; goals: GoalSettings }) {
       {/* Dungeon Progress */}
       <StatSection title="Dungeon">
         <div className="flex items-center gap-1 mb-1">
-          <div className="flex-1 h-1.5 bg-wood/20 rounded-full overflow-hidden">
+          <div className="flex-1 h-1.5 bg-amber-900/20 rounded-full overflow-hidden">
             <div 
               className="h-full bg-accent transition-all"
               style={{ width: `${(player.dungeonFloorsCleared.length / 5) * 100}%` }}
             />
           </div>
-          <span className="text-[10px] font-bold text-wood-dark">
+          <span className="text-[10px] font-bold text-amber-900">
             {player.dungeonFloorsCleared.length}/5
           </span>
         </div>
@@ -265,7 +265,7 @@ function GoalsTab({ player, goals }: { player: Player; goals: GoalSettings }) {
                 w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold
                 ${player.dungeonFloorsCleared.includes(floor)
                   ? 'bg-secondary text-secondary-foreground'
-                  : 'bg-wood/20 text-wood/50'}
+                  : 'bg-amber-900/20 text-amber-800'}
               `}
             >
               {floor}
@@ -277,12 +277,12 @@ function GoalsTab({ player, goals }: { player: Player; goals: GoalSettings }) {
       {/* Quest Stats */}
       <StatSection title="Quests">
         <div className="flex justify-between items-center text-[11px]">
-          <span className="text-wood-dark font-medium">Quests Done</span>
-          <span className="font-bold text-gold-dark">{player.completedQuests}</span>
+          <span className="text-amber-800 font-medium">Quests Done</span>
+          <span className="font-bold text-amber-600">{player.completedQuests}</span>
         </div>
         <div className="flex justify-between items-center text-[11px] mt-1">
-          <span className="text-wood-dark font-medium">Guild Pass</span>
-          <span className={`font-bold ${player.hasGuildPass ? 'text-secondary' : 'text-destructive'}`}>
+          <span className="text-amber-800 font-medium">Guild Pass</span>
+          <span className={`font-bold ${player.hasGuildPass ? 'text-green-600' : 'text-red-600'}`}>
             {player.hasGuildPass ? 'Yes' : 'No'}
           </span>
         </div>
@@ -297,8 +297,8 @@ function GoalsTab({ player, goals }: { player: Player; goals: GoalSettings }) {
 
 function StatSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-parchment-dark/40 rounded p-2 border border-wood/20">
-      <h3 className="font-display text-[10px] font-bold text-wood-dark mb-1.5 uppercase tracking-wide border-b border-wood/20 pb-0.5">
+    <div className="bg-amber-100/50 rounded p-2 border border-amber-700/30">
+      <h3 className="font-display text-[10px] font-bold text-amber-900 mb-1.5 uppercase tracking-wide border-b border-amber-700/30 pb-0.5">
         {title}
       </h3>
       <div className="space-y-1">
@@ -335,15 +335,15 @@ function ResourceRow({
     <div className={`${warning ? 'bg-destructive/15 rounded px-1 -mx-1' : ''}`}>
       <div className="flex items-center justify-between text-[11px]">
         <div className="flex items-center gap-1.5">
-          <span className="text-wood-dark">{icon}</span>
-          <span className="text-wood-dark font-medium">{label}</span>
+          <span className="text-amber-800">{icon}</span>
+          <span className="text-amber-800 font-medium">{label}</span>
         </div>
-        <span className={`font-bold ${warning ? 'text-destructive animate-pulse' : highlight ? 'text-gold-dark' : 'text-wood-dark'}`}>
+        <span className={`font-bold ${warning ? 'text-red-600 animate-pulse' : highlight ? 'text-amber-600' : 'text-amber-900'}`}>
           {value}
         </span>
       </div>
       {showBar && (
-        <div className="h-1 bg-wood/20 rounded-full mt-0.5 overflow-hidden">
+        <div className="h-1 bg-amber-900/20 rounded-full mt-0.5 overflow-hidden">
           <div
             className={`h-full ${barColor} transition-all duration-300`}
             style={{ width: `${Math.max(0, Math.min(100, (barValue / barMax) * 100))}%` }}
@@ -366,10 +366,10 @@ function StatRow({ icon, label, value, highlight = false, warning = false }: Sta
   return (
     <div className="flex items-center justify-between text-[11px]">
       <div className="flex items-center gap-1.5">
-        <span className="text-wood-dark">{icon}</span>
-        <span className="text-wood-dark font-medium">{label}</span>
+        <span className="text-amber-800">{icon}</span>
+        <span className="text-amber-800 font-medium">{label}</span>
       </div>
-      <span className={`font-bold ${warning ? 'text-destructive' : highlight ? 'text-gold-dark' : 'text-wood-dark'}`}>
+      <span className={`font-bold ${warning ? 'text-red-600' : highlight ? 'text-amber-600' : 'text-amber-900'}`}>
         {value}
       </span>
     </div>
