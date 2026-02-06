@@ -366,10 +366,10 @@ function StatRow({ icon, label, value, highlight = false, warning = false }: Sta
   return (
     <div className="flex items-center justify-between text-[11px]">
       <div className="flex items-center gap-1.5">
-        <span className="text-wood-dark">{icon}</span>
-        <span className="text-wood-dark font-medium">{label}</span>
+        <span className="text-amber-800">{icon}</span>
+        <span className="text-amber-800 font-medium">{label}</span>
       </div>
-      <span className={`font-bold ${warning ? 'text-destructive' : highlight ? 'text-gold-dark' : 'text-wood-dark'}`}>
+      <span className={`font-bold ${warning ? 'text-red-600' : highlight ? 'text-amber-600' : 'text-amber-900'}`}>
         {value}
       </span>
     </div>
