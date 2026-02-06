@@ -10,26 +10,26 @@ export function ResourcePanel() {
   if (!player) return null;
 
   return (
-    <div className="parchment-panel h-full p-4 flex flex-col overflow-hidden">
+    <div className="parchment-panel h-full p-3 flex flex-col overflow-hidden">
       {/* Player header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div 
-            className="w-10 h-10 rounded-full border-4 border-wood-light shadow-lg flex-shrink-0"
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div
+            className="w-8 h-8 rounded-full border-3 border-wood-light shadow-lg flex-shrink-0"
             style={{ backgroundColor: player.color }}
           />
           <div>
-            <h2 className="font-display text-xl font-bold text-card-foreground">
+            <h2 className="font-display text-lg font-bold text-card-foreground leading-tight">
               {player.name}
             </h2>
-            <p className="text-muted-foreground font-display text-sm">
+            <p className="text-muted-foreground font-display text-xs">
               {GUILD_RANK_NAMES[player.guildRank]}
             </p>
           </div>
         </div>
         <button
           onClick={endTurn}
-          className="gold-button text-sm py-2 px-4"
+          className="gold-button text-sm py-1.5 px-3"
           title="End your turn (E)"
         >
           End Turn
@@ -37,7 +37,7 @@ export function ResourcePanel() {
       </div>
 
       {/* Resources - compact grid */}
-      <div className="grid grid-cols-4 gap-2 mb-4">
+      <div className="grid grid-cols-4 gap-1.5 mb-2">
         <ResourceCard 
           icon={<Coins className="w-4 h-4" />}
           label="Gold"
@@ -125,9 +125,9 @@ export function ResourcePanel() {
       </div>
 
       {/* Week info and hint */}
-      <div className="mt-2 pt-2 border-t border-border">
-        <p className="text-center text-muted-foreground text-xs">
-          Week {week} &middot; Click a location to travel &middot; E=End Turn &middot; Esc=Menu &middot; T=Tutorial
+      <div className="mt-1 pt-1 border-t border-border">
+        <p className="text-center text-muted-foreground text-[10px]">
+          Week {week} &middot; Click location to travel &middot; E=End Turn &middot; Esc=Menu
         </p>
       </div>
     </div>
@@ -158,15 +158,15 @@ function ResourceCard({
   warning = false,
 }: ResourceCardProps) {
   return (
-    <div className={`wood-frame p-2 text-card ${warning ? 'ring-2 ring-destructive' : ''}`}>
-      <div className="flex items-center gap-1 mb-1">
+    <div className={`wood-frame p-1.5 text-card ${warning ? 'ring-2 ring-destructive' : ''}`}>
+      <div className="flex items-center gap-1 mb-0.5">
         <span className={color}>{icon}</span>
-        <span className="text-xs opacity-80">{label}</span>
+        <span className="text-[11px] opacity-80">{label}</span>
       </div>
-      <div className="font-display text-lg font-bold">{value}</div>
+      <div className="font-display text-base font-bold leading-tight">{value}</div>
       {showBar && (
-        <div className="resource-bar mt-1 h-2">
-          <div 
+        <div className="resource-bar mt-0.5 h-1.5">
+          <div
             className={`resource-fill ${barColor}`}
             style={{ width: `${(barValue / barMax) * 100}%` }}
           />

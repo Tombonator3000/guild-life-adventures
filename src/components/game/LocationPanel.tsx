@@ -472,16 +472,16 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
 
   return (
     <>
-      <div className="parchment-panel h-full p-4 flex flex-col overflow-hidden">
+      <div className="parchment-panel h-full p-3 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-start justify-between mb-3">
+        <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-2">
-            <MapPin className="w-6 h-6 text-primary flex-shrink-0" />
+            <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
             <div>
-              <h2 className="font-display text-xl font-bold text-card-foreground">
+              <h2 className="font-display text-lg font-bold text-card-foreground leading-tight">
                 {location.name}
               </h2>
-              <p className="text-muted-foreground text-sm">{location.description}</p>
+              <p className="text-muted-foreground text-xs">{location.description}</p>
             </div>
           </div>
           <button

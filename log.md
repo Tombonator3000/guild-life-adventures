@@ -1,5 +1,51 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Screen Size Audit & Responsive Layout Fix
+
+Fixed layout compression on non-16:9 screens (e.g. 1920×1200 laptops) and improved space utilization.
+
+### Problem
+- Game used a rigid 16:9 aspect ratio lock (`min(100vw, 177.78vh)` × `min(100vh, 56.25vw)`)
+- On 1920×1200 (16:10): rendered at 1920×1080, wasting 120px vertically
+- Side panels were inside the lock, losing height on taller screens
+- Center info panel content was compressed with large padding/margins
+
+### Layout Restructure
+| Change | Before | After |
+|--------|--------|-------|
+| Outer container | 16:9 locked, centered | Full viewport (100vw × 100vh) |
+| Side panels | Inside 16:9 box, limited height | Outside aspect lock, full viewport height |
+| Board area | Fixed 76% of 16:9 container | Flex-1 with `aspect-ratio: 1216/900`, `max-height: 100%` |
+| Board proportions | 1459×1080 on 1920 wide | Identical (aspect ratio preserved) |
+| Zone alignment | Calibrated for board div | Unchanged (same board dimensions) |
+
+### Resolution Behavior
+| Resolution | Side Panel Height | Board Size | Notes |
+|------------|------------------|------------|-------|
+| 1920×1080 (16:9) | 1080px | 1459×1080 | Identical to before |
+| 1920×1200 (16:10) | **1200px** (+120) | 1459×1080 | Side panels gain 120px |
+| 2560×1440 (16:9) | 1440px | 1946×1440 | Fills perfectly |
+| 1440×900 (16:10) | **900px** | 1094×810 | Panels use full height |
+
+### Center Panel & Content
+| Change | Before | After |
+|--------|--------|-------|
+| Center panel height | 53.4% of board | 55.5% (+2.1%) |
+| Center panel top | 23.4% | 22.5% |
+| ResourcePanel padding | p-4, mb-4 | p-3, mb-2 |
+| Resource cards | p-2, text-lg values | p-1.5, text-base values |
+| Resource grid gap | gap-2 | gap-1.5 |
+| LocationPanel padding | p-4, mb-3 header | p-3, mb-2 header |
+| Location header | text-xl, w-6 icon | text-lg, w-5 icon |
+| Footer hint | text-xs, mt-2 pt-2 | text-[10px], mt-1 pt-1 |
+
+### Files Changed
+- `src/components/game/GameBoard.tsx` — layout restructure, center panel defaults
+- `src/components/game/ResourcePanel.tsx` — compact padding, smaller resource cards
+- `src/components/game/LocationPanel.tsx` — compact header and padding
+
+---
+
 ## 2026-02-06 - Deferred Issues Batch Fix + AI Improvements
 
 Major batch of fixes covering deferred issues, new AI actions, dungeon RPG improvements, and bug fixes.

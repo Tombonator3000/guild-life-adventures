@@ -24,10 +24,10 @@ import { Bot, Brain, Menu, SkipForward, FastForward, Play } from 'lucide-react';
 import { audioManager } from '@/audio/audioManager';
 
 const DEFAULT_CENTER_PANEL: CenterPanelConfig = {
-  top: 23.4,
+  top: 22.5,
   left: 26.7,
   width: 46.5,
-  height: 53.4,
+  height: 55.5,
 };
 
 export function GameBoard() {
@@ -325,44 +325,39 @@ export function GameBoard() {
           'info',
   } : null;
 
-  // The game layout uses a fixed aspect ratio container that scales uniformly
-  // Total layout: [Left Panel 12%] [Game Board 76%] [Right Panel 12%]
-  // This ensures consistent sizing regardless of screen size
+  // Layout: Side panels fill full viewport height, board maintains aspect ratio
+  // This ensures panels use all screen space on non-16:9 displays (e.g. 1920×1200)
+  // Board aspect ratio = (76% of 16:9) preserves zone alignment with background image
   const SIDE_PANEL_WIDTH_PERCENT = 12;
-  const GAME_BOARD_WIDTH_PERCENT = 76;
+  const BOARD_ASPECT_RATIO = `${76 * 16} / ${100 * 9}`; // 1216/900 ≈ 1.351
 
   return (
-    <div className="w-screen h-screen overflow-hidden bg-background flex items-center justify-center">
-      {/* Main container - uses viewport units to maintain consistent aspect ratio */}
-      {/* The container scales based on the smaller dimension (width or height) */}
+    <div className="w-screen h-screen overflow-hidden bg-background flex">
+      {/* Left Side Panel - Full viewport height, always visible */}
       <div
-        className="relative flex items-stretch"
-        style={{
-          // Use the minimum of 100vw or 177.78vh (16:9 width for a given height)
-          // and 100vh or 56.25vw (16:9 height for a given width)
-          // This ensures the layout fits in any screen while maintaining proportions
-          width: 'min(100vw, 177.78vh)',
-          height: 'min(100vh, 56.25vw)',
-        }}
+        className="relative z-30 p-[0.5%] flex flex-col flex-shrink-0 h-full"
+        style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
       >
-        {/* Left Side Panel - Player Info Tabs (12% of container width) */}
-        <div
-          className="relative z-30 p-[0.5%] flex flex-col flex-shrink-0 h-full"
-          style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
-        >
-          {currentPlayer && (
-            <SideInfoTabs
-              player={currentPlayer}
-              goals={goalSettings}
-              isCurrentPlayer={true}
-            />
-          )}
-        </div>
+        {currentPlayer && (
+          <SideInfoTabs
+            player={currentPlayer}
+            goals={goalSettings}
+            isCurrentPlayer={true}
+          />
+        )}
+      </div>
 
-        {/* Game board container - maintains aspect ratio (76% of container width) */}
+      {/* Board area - centers the aspect-ratio-locked board within remaining space */}
+      <div className="flex-1 h-full flex items-center justify-center min-w-0">
+        {/* Board maintains exact proportions as before (76% of 16:9 container) */}
+        {/* On 16:9 screens this fills perfectly; on taller screens, board is centered */}
         <div
-          className="relative flex-shrink-0 h-full"
-          style={{ width: `${GAME_BOARD_WIDTH_PERCENT}%` }}
+          className="relative"
+          style={{
+            width: '100%',
+            aspectRatio: BOARD_ASPECT_RATIO,
+            maxHeight: '100%',
+          }}
         >
           {/* Game board background */}
         <div
@@ -533,27 +528,27 @@ export function GameBoard() {
         </div>
 
         </div>
+      </div>
 
-        {/* Right Side Panel - Players, Options, Developer Tabs (12% of container width) */}
-        <div
-          className="relative z-30 p-[0.5%] flex flex-col flex-shrink-0 h-full"
-          style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
-        >
-          <RightSideTabs
-            players={players}
-            currentPlayerIndex={currentPlayerIndex}
-            week={week}
-            goalSettings={goalSettings}
-            onOpenSaveMenu={() => setShowGameMenu(true)}
-            onToggleDebugOverlay={() => setShowDebugOverlay(prev => !prev)}
-            onToggleZoneEditor={() => setShowZoneEditor(true)}
-            showDebugOverlay={showDebugOverlay}
-            aiIsThinking={aiIsThinking}
-            aiSpeedMultiplier={aiSpeedMultiplier}
-            onSetAISpeed={setAISpeedMultiplier}
-            onSkipAITurn={() => setSkipAITurn(true)}
-          />
-        </div>
+      {/* Right Side Panel - Full viewport height */}
+      <div
+        className="relative z-30 p-[0.5%] flex flex-col flex-shrink-0 h-full"
+        style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
+      >
+        <RightSideTabs
+          players={players}
+          currentPlayerIndex={currentPlayerIndex}
+          week={week}
+          goalSettings={goalSettings}
+          onOpenSaveMenu={() => setShowGameMenu(true)}
+          onToggleDebugOverlay={() => setShowDebugOverlay(prev => !prev)}
+          onToggleZoneEditor={() => setShowZoneEditor(true)}
+          showDebugOverlay={showDebugOverlay}
+          aiIsThinking={aiIsThinking}
+          aiSpeedMultiplier={aiSpeedMultiplier}
+          onSetAISpeed={setAISpeedMultiplier}
+          onSkipAITurn={() => setSkipAITurn(true)}
+        />
       </div>
 
       {/* Event Modal */}
