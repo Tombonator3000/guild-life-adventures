@@ -114,6 +114,15 @@
   - [x] E4: LocationId types — events.ts uses HousingTier/LocationId instead of string
   - [x] E5: Legacy education cleanup — removed dead PATH_TO_DEGREES/EDUCATION_PATHS, fixed 2 display components
 
+## Completed (2026-02-06)
+
+- [x] Zone Editor localStorage persistence
+  - [x] Created `src/data/zoneStorage.ts` — save/load/clear utility with `guild-life-zone-config` key
+  - [x] GameBoard loads saved zone config on mount (zones, centerPanel, movement paths)
+  - [x] "Apply & Save" persists all zone editor changes to localStorage
+  - [x] "Reset Defaults" button clears localStorage and restores hardcoded values
+  - [x] ZoneEditor initializes from saved state instead of hardcoded defaults
+
 ## In Progress
 
 *No active tasks*

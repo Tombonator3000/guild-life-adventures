@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { ZONE_CONFIGS, BOARD_PATH, MOVEMENT_PATHS } from '@/data/locations';
+import { hasSavedZoneConfig } from '@/data/zoneStorage';
 import type { ZoneConfig, LocationId } from '@/types/game.types';
 import type { MovementWaypoint } from '@/data/locations';
 import gameBoard from '@/assets/game-board.jpeg';
@@ -14,7 +15,10 @@ export interface CenterPanelConfig {
 interface ZoneEditorProps {
   onClose: () => void;
   onSave: (configs: ZoneConfig[], centerPanel: CenterPanelConfig, paths: Record<string, MovementWaypoint[]>) => void;
+  onReset?: () => void;
   initialCenterPanel?: CenterPanelConfig;
+  initialZones?: ZoneConfig[];
+  initialPaths?: Record<string, MovementWaypoint[]>;
 }
 
 const DEFAULT_CENTER_PANEL: CenterPanelConfig = {
@@ -43,8 +47,8 @@ function getZoneCenter(zones: ZoneConfig[], locationId: LocationId): [number, nu
 
 type EditorMode = 'zones' | 'paths';
 
-export function ZoneEditor({ onClose, onSave, initialCenterPanel }: ZoneEditorProps) {
-  const [zones, setZones] = useState<ZoneConfig[]>([...ZONE_CONFIGS]);
+export function ZoneEditor({ onClose, onSave, onReset, initialCenterPanel, initialZones, initialPaths }: ZoneEditorProps) {
+  const [zones, setZones] = useState<ZoneConfig[]>(initialZones ? [...initialZones] : [...ZONE_CONFIGS]);
   const [selectedZone, setSelectedZone] = useState<LocationId | 'center-panel' | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragMode, setDragMode] = useState<'move' | 'resize' | null>(null);
@@ -57,7 +61,7 @@ export function ZoneEditor({ onClose, onSave, initialCenterPanel }: ZoneEditorPr
 
   // Path drawing state
   const [editorMode, setEditorMode] = useState<EditorMode>('zones');
-  const [paths, setPaths] = useState<Record<string, MovementWaypoint[]>>({ ...MOVEMENT_PATHS });
+  const [paths, setPaths] = useState<Record<string, MovementWaypoint[]>>(initialPaths ? { ...initialPaths } : { ...MOVEMENT_PATHS });
   const [selectedEdge, setSelectedEdge] = useState<string | null>(null); // "fromId_toId"
   const [draggingWaypoint, setDraggingWaypoint] = useState<number | null>(null); // index in waypoints array
 
@@ -393,11 +397,24 @@ ${pathsStr}`;
           >
             Copy Config
           </button>
+          {onReset && hasSavedZoneConfig() && (
+            <button
+              onClick={() => {
+                onReset();
+                setZones([...ZONE_CONFIGS]);
+                setCenterPanel(DEFAULT_CENTER_PANEL);
+                setPaths({});
+              }}
+              className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
+            >
+              Reset Defaults
+            </button>
+          )}
           <button
             onClick={() => onSave(zones, centerPanel, paths)}
             className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
           >
-            Apply
+            Apply & Save
           </button>
           <button
             onClick={onClose}

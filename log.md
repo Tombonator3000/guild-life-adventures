@@ -1,5 +1,46 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Zone Editor localStorage Persistence
+
+Added localStorage persistence to the Zone Editor tool so zone positions, center panel config, and movement paths survive page reloads.
+
+### Problem
+Zone Editor changes were lost on page reload. The only way to preserve edits was to click "Copy Config" and manually paste the output into `src/data/locations.ts`. This made iterative zone positioning tedious.
+
+### Implementation
+- **New file:** `src/data/zoneStorage.ts` — save/load/clear/check utility using `guild-life-zone-config` localStorage key
+  - `saveZoneConfig()` — serializes zones, centerPanel, paths with timestamp
+  - `loadZoneConfig()` — deserializes with validation
+  - `clearZoneConfig()` — removes saved data (reset to defaults)
+  - `hasSavedZoneConfig()` — existence check
+- **GameBoard.tsx changes:**
+  - `customZones` and `centerPanel` state initializers read from localStorage
+  - `useEffect` on mount applies saved `MOVEMENT_PATHS`
+  - `handleSaveZones()` now calls `saveZoneConfig()` + shows toast confirmation
+  - New `handleResetZones()` clears localStorage and restores hardcoded defaults
+  - Passes `initialZones`, `initialPaths`, `onReset` props to ZoneEditor
+- **ZoneEditor.tsx changes:**
+  - New props: `initialZones`, `initialPaths`, `onReset`
+  - Initializes state from props (persisted values) instead of hardcoded `ZONE_CONFIGS`
+  - "Apply" button renamed to "Apply & Save" (now persists to localStorage)
+  - "Reset Defaults" button (yellow) — only shown when saved config exists, clears localStorage and resets editor state
+
+### Files Modified (2)
+| File | Change |
+|------|--------|
+| `src/components/game/GameBoard.tsx` | Load from localStorage on mount, save on apply, reset handler, pass props |
+| `src/components/game/ZoneEditor.tsx` | Accept initial state props, Reset Defaults button, renamed Apply button |
+
+### Files Created (1)
+| File | Purpose |
+|------|---------|
+| `src/data/zoneStorage.ts` | Zone editor localStorage persistence utility |
+
+### Build Verification
+- TypeScript compiles cleanly (`tsc --noEmit`)
+- All 91 tests pass (`vitest run`)
+- Vite build succeeds
+
 ## 2026-02-06 - Technical Debt Batch E (5 items)
 
 Addressed all 5 technical debt items from the code audit.
