@@ -1,5 +1,56 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Inventory Grid System with Drag-Drop & Icons
+
+Implemented a medieval-styled inventory grid system with custom SVG icons, drag-and-drop functionality, and hover tooltips.
+
+### Feature: ItemIcon Component
+**File:** `src/components/game/ItemIcon.tsx`
+
+Created 40+ custom SVG icons for all game items:
+- **Weapons**: Dagger, Sword, Steel Sword, Enchanted Blade
+- **Armor**: Leather, Chainmail, Plate, Enchanted Plate
+- **Shields**: Wood, Iron, Tower Shield
+- **Food**: Bread, Cheese, Meat, Provisions, Feast, Vegetables, Ale, Stew, Roast
+- **Clothing**: Peasant Garb, Common Clothes, Fine Clothes, Noble Attire, Guild Uniform
+- **Appliances**: Candles, Blanket, Music Box, Furniture, Scrying Mirror, Preservation Box, Frost Chest
+- **Magic Items**: Glow Orb, Warmth Stone, Healing Potion, Arcane Tome, Memory Crystal
+- **Misc**: Lottery Ticket, Event Tickets
+
+### Feature: InventoryGrid Component
+**File:** `src/components/game/InventoryGrid.tsx`
+
+- **Grid Layout**: 4x5 grid of inventory slots (20 total slots)
+- **Equipment Slots**: 3 dedicated slots for Weapon, Armor, Shield at top
+- **Drag & Drop**: Drag items between equipment slots and inventory
+  - Draggable only for equippable items (weapons/armor/shields)
+  - Drop on equipment slot to equip
+  - Drop on inventory to unequip
+- **Hover Tooltips**: Fixed-position tooltips showing:
+  - Item name and description
+  - Combat stats (Attack, Defense, Block%)
+  - Broken status with warning
+  - "Drag to equip" hint for equippable items
+- **Visual Feedback**: 
+  - Golden highlight for equipped slots
+  - Accent ring when valid drop target
+  - Quantity badges for stacked items
+  - Broken indicator (⚠) for damaged appliances
+
+### Integration with SideInfoTabs
+- Replaced old InventoryTab with new InventoryGrid component
+- Compact combat stats summary (ATK/DEF) shown below inventory grid
+- Responsive design fits narrow sidebar width
+
+### Files Created/Modified
+| File | Changes |
+|------|---------|
+| `src/components/game/ItemIcon.tsx` | New (500 lines) - 40+ SVG item icons |
+| `src/components/game/InventoryGrid.tsx` | New (400 lines) - Grid inventory with drag-drop |
+| `src/components/game/SideInfoTabs.tsx` | Updated to use InventoryGrid |
+
+---
+
 ## 2026-02-06 - Side Panel InfoTabs System (Redesign)
 
 Moved the InfoTabs system from the center panel to the left side panel, replacing PlayerInfoPanel with a comprehensive tabbed interface that combines player stats with detailed inventory, goals, and stats views.

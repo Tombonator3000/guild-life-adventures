@@ -2,10 +2,10 @@
 // Combines player resource bars with Inventory, Goals, and Stats tabs
 
 import { useState } from 'react';
-import { Package, Target, BarChart3, Sword, Shield, Shirt, Clock, Coins, Heart, Smile, Utensils, Home, Sparkles, Skull, Briefcase } from 'lucide-react';
+import { Package, Target, BarChart3, Clock, Coins, Heart, Smile, Utensils, Home, Sparkles, Skull, Shield, Shirt } from 'lucide-react';
 import type { Player, GoalSettings } from '@/types/game.types';
 import { GoalProgress } from './GoalProgress';
-import { ARMORY_ITEMS, GENERAL_STORE_ITEMS, getAppliance } from '@/data/items';
+import { InventoryGrid } from './InventoryGrid';
 import { GUILD_RANK_NAMES, GUILD_RANK_INDEX, HOURS_PER_TURN } from '@/types/game.types';
 import { HOUSING_DATA } from '@/data/housing';
 import { getJob } from '@/data/jobs';
@@ -168,7 +168,7 @@ export function SideInfoTabs({ player, goals, isCurrentPlayer }: SideInfoTabsPro
 
       {/* Tab Content - Scrollable */}
       <div className="flex-1 overflow-y-auto p-2 min-h-0">
-        {activeTab === 'inventory' && <InventoryTab player={player} />}
+        {activeTab === 'inventory' && <InventoryGrid player={player} />}
         {activeTab === 'goals' && <GoalsTab player={player} goals={goals} />}
         {activeTab === 'stats' && <StatsTab player={player} />}
       </div>
@@ -251,180 +251,6 @@ function TabButton({ tab, isActive, onClick }: TabButtonProps) {
   );
 }
 
-// ============================================
-// INVENTORY TAB
-// ============================================
-function InventoryTab({ player }: { player: Player }) {
-  const equippedWeapon = player.equippedWeapon 
-    ? ARMORY_ITEMS.find(i => i.id === player.equippedWeapon)
-    : null;
-  const equippedArmor = player.equippedArmor 
-    ? ARMORY_ITEMS.find(i => i.id === player.equippedArmor)
-    : null;
-  const equippedShield = player.equippedShield 
-    ? ARMORY_ITEMS.find(i => i.id === player.equippedShield)
-    : null;
-
-  const totalAttack = (equippedWeapon?.equipStats?.attack || 0);
-  const totalDefense = (equippedArmor?.equipStats?.defense || 0) + 
-                       (equippedShield?.equipStats?.defense || 0);
-  const blockChance = Math.round((equippedShield?.equipStats?.blockChance || 0) * 100);
-
-  const durableItems = Object.entries(player.durables).filter(([, qty]) => qty > 0);
-  const applianceItems = Object.entries(player.appliances);
-
-  return (
-    <div className="space-y-2">
-      {/* Equipment Section */}
-      <div className="bg-parchment-dark/30 rounded p-2 border border-wood-light/30">
-        <h3 className="font-display text-[10px] font-bold text-wood mb-1.5 flex items-center gap-1">
-          <Sword className="w-3 h-3" />
-          Equipment
-        </h3>
-        
-        {/* Equipment Slots */}
-        <div className="grid grid-cols-3 gap-1 mb-2">
-          <EquipmentSlot
-            label="Weapon"
-            item={equippedWeapon?.name}
-            icon={<Sword className="w-3 h-3" />}
-            isEmpty={!equippedWeapon}
-          />
-          <EquipmentSlot
-            label="Armor"
-            item={equippedArmor?.name}
-            icon={<Shirt className="w-3 h-3" />}
-            isEmpty={!equippedArmor}
-          />
-          <EquipmentSlot
-            label="Shield"
-            item={equippedShield?.name}
-            icon={<Shield className="w-3 h-3" />}
-            isEmpty={!equippedShield}
-          />
-        </div>
-
-        {/* Combat Stats */}
-        <div className="bg-wood/80 rounded p-1.5 space-y-0.5 text-[9px]">
-          <div className="flex items-center justify-between text-parchment">
-            <span className="flex items-center gap-1">
-              <Sword className="w-2.5 h-2.5 text-health" /> ATK
-            </span>
-            <span className="font-bold text-gold">{totalAttack}</span>
-          </div>
-          <div className="flex items-center justify-between text-parchment">
-            <span className="flex items-center gap-1">
-              <Shield className="w-2.5 h-2.5 text-time" /> DEF
-            </span>
-            <span className="font-bold text-gold">{totalDefense}</span>
-          </div>
-          {blockChance > 0 && (
-            <div className="flex items-center justify-between text-parchment">
-              <span>Block</span>
-              <span className="font-bold text-gold">{blockChance}%</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Appliances */}
-      {applianceItems.length > 0 && (
-        <div className="bg-parchment-dark/30 rounded p-2 border border-wood-light/30">
-          <h3 className="font-display text-[10px] font-bold text-wood mb-1">Appliances</h3>
-          <div className="space-y-0.5">
-            {applianceItems.map(([id, data]) => {
-              const appliance = getAppliance(id);
-              return (
-                <div 
-                  key={id}
-                  className={`text-[9px] flex justify-between ${data.isBroken ? 'text-destructive' : 'text-wood'}`}
-                >
-                  <span className="truncate">{appliance?.name || id}</span>
-                  {data.isBroken && <span>⚠</span>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Durables */}
-      {durableItems.length > 0 && (
-        <div className="bg-parchment-dark/30 rounded p-2 border border-wood-light/30">
-          <h3 className="font-display text-[10px] font-bold text-wood mb-1">Stored Items</h3>
-          <div className="space-y-0.5">
-            {durableItems.map(([itemId, qty]) => {
-              const item = [...GENERAL_STORE_ITEMS, ...ARMORY_ITEMS].find(i => i.id === itemId);
-              return (
-                <div key={itemId} className="text-[9px] flex justify-between text-wood">
-                  <span className="truncate">{item?.name || itemId}</span>
-                  <span>×{qty}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Fresh Food */}
-      {player.freshFood > 0 && (
-        <div className="bg-parchment-dark/30 rounded p-2 border border-wood-light/30">
-          <h3 className="font-display text-[10px] font-bold text-wood mb-1">Fresh Food</h3>
-          <div className="flex items-center gap-1">
-            <div className="flex-1 h-2 bg-wood/20 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-secondary transition-all"
-                style={{ width: `${(player.freshFood / (player.appliances['frost-chest'] ? 12 : 6)) * 100}%` }}
-              />
-            </div>
-            <span className="text-[9px] font-bold text-wood">
-              {player.freshFood}/{player.appliances['frost-chest'] ? 12 : 6}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Tickets */}
-      {player.tickets.length > 0 && (
-        <div className="bg-parchment-dark/30 rounded p-2 border border-wood-light/30">
-          <h3 className="font-display text-[10px] font-bold text-wood mb-1">Tickets</h3>
-          <div className="flex flex-wrap gap-0.5">
-            {player.tickets.map((ticket, i) => (
-              <span key={i} className="px-1 py-0.5 bg-gold/20 text-wood text-[8px] rounded">
-                {ticket.replace('-', ' ')}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {durableItems.length === 0 && applianceItems.length === 0 && !equippedWeapon && !equippedArmor && !equippedShield && (
-        <div className="text-center text-muted-foreground text-[10px] py-2">
-          No items
-        </div>
-      )}
-    </div>
-  );
-}
-
-function EquipmentSlot({ label, item, icon, isEmpty }: { label: string; item: string | undefined; icon: React.ReactNode; isEmpty: boolean }) {
-  return (
-    <div className={`
-      aspect-square rounded border flex flex-col items-center justify-center p-0.5
-      ${isEmpty 
-        ? 'border-dashed border-wood-light/40 bg-parchment-dark/20' 
-        : 'border-wood-light bg-gold/20'}
-    `}>
-      <div className={`${isEmpty ? 'text-wood-light/50' : 'text-wood'}`}>
-        {icon}
-      </div>
-      <span className="text-[6px] text-center text-wood/70 font-semibold uppercase leading-tight">
-        {isEmpty ? label : (item?.split(' ')[0] || label)}
-      </span>
-    </div>
-  );
-}
 
 // ============================================
 // GOALS TAB
