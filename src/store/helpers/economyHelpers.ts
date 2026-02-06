@@ -1,10 +1,12 @@
 // Economy helpers
 // Banking, rent, buying/selling items, durables, appliances, housing, equipment
+// Stock market, loans, fresh food, lottery, tickets
 
 import type { HousingTier, ApplianceSource, EquipmentSlot } from '@/types/game.types';
 import { RENT_COSTS } from '@/types/game.types';
 import { getAppliance, calculateRepairCost } from '@/data/items';
 import { DUNGEON_FLOORS } from '@/data/dungeon';
+import { getSellPrice } from '@/data/stocks';
 import type { SetFn, GetFn } from '../storeTypes';
 
 export function createEconomyActions(set: SetFn, get: GetFn) {
@@ -365,6 +367,138 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
           }
 
           return { ...p, ...updates };
+        }),
+      }));
+    },
+
+    // === Stock Market Actions ===
+
+    buyStock: (playerId: string, stockId: string, shares: number) => {
+      const state = get();
+      const price = state.stockPrices[stockId] || 0;
+      const totalCost = price * shares;
+
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          if (p.gold < totalCost) return p;
+          const newStocks = { ...p.stocks };
+          newStocks[stockId] = (newStocks[stockId] || 0) + shares;
+          return {
+            ...p,
+            gold: p.gold - totalCost,
+            stocks: newStocks,
+          };
+        }),
+      }));
+    },
+
+    sellStock: (playerId: string, stockId: string, shares: number) => {
+      const state = get();
+      const currentPrice = state.stockPrices[stockId] || 0;
+
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          const ownedShares = p.stocks[stockId] || 0;
+          const actualShares = Math.min(shares, ownedShares);
+          if (actualShares <= 0) return p;
+
+          const revenue = getSellPrice(stockId, actualShares, currentPrice);
+          const newStocks = { ...p.stocks };
+          newStocks[stockId] = ownedShares - actualShares;
+          if (newStocks[stockId] <= 0) delete newStocks[stockId];
+
+          return {
+            ...p,
+            gold: p.gold + revenue,
+            stocks: newStocks,
+          };
+        }),
+      }));
+    },
+
+    // === Loan Actions ===
+
+    takeLoan: (playerId: string, amount: number) => {
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          // Can't take another loan if one is outstanding
+          if (p.loanAmount > 0) return p;
+          return {
+            ...p,
+            gold: p.gold + amount,
+            loanAmount: amount,
+            loanWeeksRemaining: 8, // 8 weeks to repay
+          };
+        }),
+      }));
+    },
+
+    repayLoan: (playerId: string, amount: number) => {
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          const actualPayment = Math.min(amount, p.loanAmount, p.gold);
+          return {
+            ...p,
+            gold: p.gold - actualPayment,
+            loanAmount: p.loanAmount - actualPayment,
+            loanWeeksRemaining: p.loanAmount - actualPayment <= 0 ? 0 : p.loanWeeksRemaining,
+          };
+        }),
+      }));
+    },
+
+    // === Fresh Food Actions ===
+
+    buyFreshFood: (playerId: string, units: number, cost: number) => {
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          // Check if player has preservation box
+          const hasPreservationBox = p.appliances['preservation-box'] && !p.appliances['preservation-box'].isBroken;
+          if (!hasPreservationBox) return p; // Can't store without preservation box
+
+          const hasFrostChest = p.appliances['frost-chest'] && !p.appliances['frost-chest'].isBroken;
+          const maxStorage = hasFrostChest ? 12 : 6;
+          const newFreshFood = Math.min(maxStorage, p.freshFood + units);
+
+          return {
+            ...p,
+            gold: Math.max(0, p.gold - cost),
+            freshFood: newFreshFood,
+          };
+        }),
+      }));
+    },
+
+    // === Lottery Actions ===
+
+    buyLotteryTicket: (playerId: string, cost: number) => {
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? { ...p, gold: Math.max(0, p.gold - cost), lotteryTickets: p.lotteryTickets + 1 }
+            : p
+        ),
+      }));
+    },
+
+    // === Ticket Actions ===
+
+    buyTicket: (playerId: string, ticketType: string, cost: number) => {
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          // Don't allow duplicate ticket types
+          if (p.tickets.includes(ticketType)) return p;
+          return {
+            ...p,
+            gold: Math.max(0, p.gold - cost),
+            tickets: [...p.tickets, ticketType],
+          };
         }),
       }));
     },

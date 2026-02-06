@@ -5,6 +5,7 @@ import {
   JonesPanelContent,
   JonesSectionHeader,
   JonesMenuItem,
+  JonesInfoRow,
 } from './JonesStylePanel';
 import { WorkSection } from './WorkSection';
 import { GENERAL_STORE_ITEMS, getItemPrice } from '@/data/items';
@@ -20,6 +21,7 @@ interface GeneralStorePanelProps {
   modifyHappiness: (playerId: string, amount: number) => void;
   workShift: (playerId: string, hours: number, wage: number) => void;
   onBuyNewspaper: () => void;
+  buyFreshFood: (playerId: string, units: number, cost: number) => void;
 }
 
 export function GeneralStorePanel({
@@ -31,15 +33,20 @@ export function GeneralStorePanel({
   modifyHappiness,
   workShift,
   onBuyNewspaper,
+  buyFreshFood,
 }: GeneralStorePanelProps) {
   const newspaperPrice = Math.round(NEWSPAPER_COST * priceModifier);
+
+  const hasPreservationBox = player.appliances['preservation-box'] && !player.appliances['preservation-box'].isBroken;
+  const hasFrostChest = player.appliances['frost-chest'] && !player.appliances['frost-chest'].isBroken;
+  const maxFreshFood = hasFrostChest ? 12 : hasPreservationBox ? 6 : 0;
 
   return (
     <JonesPanel>
       <JonesPanelHeader title="General Store" subtitle="Provisions & Sundries" />
       <JonesPanelContent>
         <JonesSectionHeader title="FOOD & PROVISIONS" />
-        {GENERAL_STORE_ITEMS.filter(item => item.effect?.type === 'food').map(item => {
+        {GENERAL_STORE_ITEMS.filter(item => item.effect?.type === 'food' && !item.isFreshFood).map(item => {
           const price = getItemPrice(item, priceModifier);
           const canAfford = player.gold >= price && player.timeRemaining >= 1;
           return (
@@ -60,6 +67,36 @@ export function GeneralStorePanel({
           );
         })}
 
+        {/* Fresh Food Section - only show if player has Preservation Box */}
+        {hasPreservationBox && (
+          <>
+            <JonesSectionHeader title="FRESH FOOD (STORED)" />
+            <JonesInfoRow label="Stored:" value={`${player.freshFood}/${maxFreshFood} units`} />
+            {GENERAL_STORE_ITEMS.filter(item => item.isFreshFood).map(item => {
+              const price = getItemPrice(item, priceModifier);
+              const units = item.freshFoodUnits || 0;
+              const spaceLeft = maxFreshFood - player.freshFood;
+              const canAfford = player.gold >= price && player.timeRemaining >= 1 && spaceLeft > 0;
+              return (
+                <JonesMenuItem
+                  key={item.id}
+                  label={`${item.name} (+${units} units)`}
+                  price={price}
+                  disabled={!canAfford}
+                  onClick={() => {
+                    buyFreshFood(player.id, units, price);
+                    spendTime(player.id, 1);
+                    toast.success(`Stored ${Math.min(units, spaceLeft)} fresh food units!`);
+                  }}
+                />
+              );
+            })}
+            <div className="text-xs text-[#8b7355] px-2 mb-1">
+              Fresh food prevents starvation. Auto-consumed weekly.
+            </div>
+          </>
+        )}
+
         <JonesSectionHeader title="OTHER ITEMS" />
         <JonesMenuItem
           label="Newspaper"
@@ -67,7 +104,7 @@ export function GeneralStorePanel({
           disabled={player.gold < newspaperPrice || player.timeRemaining < NEWSPAPER_TIME}
           onClick={onBuyNewspaper}
         />
-        {GENERAL_STORE_ITEMS.filter(item => item.effect?.type !== 'food').slice(0, 3).map(item => {
+        {GENERAL_STORE_ITEMS.filter(item => item.effect?.type !== 'food' && !item.isFreshFood).slice(0, 3).map(item => {
           const price = getItemPrice(item, priceModifier);
           const canAfford = player.gold >= price && player.timeRemaining >= 1;
           return (

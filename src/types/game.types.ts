@@ -174,6 +174,17 @@ export interface Player {
   equippedShield: string | null;   // Item ID of equipped shield
   dungeonFloorsCleared: number[];  // Floors cleared at least once (e.g. [1, 2, 3])
   permanentGoldBonus: number;      // Permanent % bonus to gold from work (from rare drops)
+  // Stock Market (Jones-style)
+  stocks: Record<string, number>;  // stockId -> shares owned
+  // Loan System (Jones-style)
+  loanAmount: number;              // Outstanding loan balance
+  loanWeeksRemaining: number;      // Weeks until forced repayment (0 = no loan)
+  // Weekend System (Jones-style)
+  tickets: string[];               // Ticket types owned (jousting, theatre, bard-concert)
+  // Fresh Food Storage (Jones-style Refrigerator/Freezer)
+  freshFood: number;               // Units of fresh food in storage (max 6, or 12 with frost chest)
+  // Lottery
+  lotteryTickets: number;          // Number of lottery tickets for this week's drawing
 }
 
 export interface GoalSettings {
@@ -194,6 +205,18 @@ export interface GameState {
   eventMessage: string | null;
   rentDueWeek: number; // Week when rent is next due
   aiDifficulty: AIDifficulty; // Grimwald AI difficulty level
+  // Stock Market prices (updated each week)
+  stockPrices: Record<string, number>;
+  // Weekend event result for display
+  weekendEvent: WeekendEventResult | null;
+}
+
+// Weekend event result for display between turns
+export interface WeekendEventResult {
+  playerName: string;
+  activity: string;
+  cost: number;
+  happinessGain: number;
 }
 
 export interface Job {

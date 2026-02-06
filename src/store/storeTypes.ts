@@ -81,6 +81,20 @@ export interface GameStore extends GameState {
   // Dungeon actions
   clearDungeonFloor: (playerId: string, floorId: number) => void;
   applyRareDrop: (playerId: string, dropId: string) => void;
+  // Stock Market actions
+  buyStock: (playerId: string, stockId: string, shares: number) => void;
+  sellStock: (playerId: string, stockId: string, shares: number) => void;
+  // Loan actions
+  takeLoan: (playerId: string, amount: number) => void;
+  repayLoan: (playerId: string, amount: number) => void;
+  // Fresh food actions
+  buyFreshFood: (playerId: string, units: number, cost: number) => void;
+  // Lottery actions
+  buyLotteryTicket: (playerId: string, cost: number) => void;
+  // Ticket actions
+  buyTicket: (playerId: string, ticketType: string, cost: number) => void;
+  // Weekend event display
+  dismissWeekendEvent: () => void;
 }
 
 // Zustand set/get function types

@@ -65,6 +65,14 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     unequipItem,
     clearDungeonFloor,
     applyRareDrop,
+    buyStock,
+    sellStock,
+    takeLoan,
+    repayLoan,
+    buyFreshFood,
+    buyLotteryTicket,
+    buyTicket,
+    stockPrices,
   } = useGameStore();
   const player = useCurrentPlayer();
   const location = getLocation(locationId);
@@ -236,6 +244,11 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             withdrawFromBank={withdrawFromBank}
             invest={invest}
             workShift={workShift}
+            buyStock={buyStock}
+            sellStock={sellStock}
+            takeLoan={takeLoan}
+            repayLoan={repayLoan}
+            stockPrices={stockPrices}
           />
         );
 
@@ -250,6 +263,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             modifyHappiness={modifyHappiness}
             workShift={workShift}
             onBuyNewspaper={handleBuyNewspaper}
+            buyFreshFood={buyFreshFood}
           />
         );
 
@@ -363,6 +377,8 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               onModifyGold={(amount) => modifyGold(player.id, amount)}
               onModifyHappiness={(amount) => modifyHappiness(player.id, amount)}
               onModifyFood={(amount) => modifyFood(player.id, amount)}
+              buyLotteryTicket={buyLotteryTicket}
+              buyTicket={buyTicket}
             />
 
             {/* Work button for shadow market employees */}

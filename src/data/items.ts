@@ -20,6 +20,13 @@ export interface Item {
   happinessOnPurchaseMarket?: number; // Lower happiness bonus when bought from market/pawn
   givesPerTurnBonus?: boolean; // True for items like microwave/stove that give +1/turn
   canGenerateIncome?: boolean; // True for computer - random income chance
+  // Fresh food for Preservation Box storage
+  isFreshFood?: boolean;     // True for items that store in Preservation Box
+  freshFoodUnits?: number;   // Number of fresh food units this item provides
+  // Lottery and ticket types
+  isLotteryTicket?: boolean; // True for lottery tickets (weekly drawing)
+  isTicket?: boolean;        // True for weekend event tickets
+  ticketType?: string;       // Weekend ticket type (jousting, theatre, bard-concert)
   // Combat equipment stats
   equipSlot?: EquipmentSlot; // Which slot this equips to
   equipStats?: EquipmentStats; // Combat stats when equipped
@@ -105,6 +112,15 @@ export const APPLIANCES: Appliance[] = [
     happinessMarket: 0,
     description: 'A powerful magical book that can generate income through arcane knowledge.',
     canGenerateIncome: true,
+  },
+  {
+    id: 'frost-chest',
+    name: 'Frost Chest',
+    enchanterPrice: 1200,
+    marketPrice: 900,
+    happinessEnchanter: 1,
+    happinessMarket: 1,
+    description: 'Doubles food storage to 12 units. Requires Preservation Box.',
   },
 ];
 
@@ -201,6 +217,34 @@ export const GENERAL_STORE_ITEMS: Item[] = [
     effect: { type: 'food', value: 100 },
     description: 'Enough to throw a small party!',
   },
+  // Fresh Food - requires Preservation Box to store (Jones-style Refrigerator food)
+  {
+    id: 'fresh-vegetables',
+    name: 'Fresh Vegetables',
+    category: 'food',
+    basePrice: 12,
+    description: 'Fresh produce. Stores 2 units in Preservation Box.',
+    isFreshFood: true,
+    freshFoodUnits: 2,
+  },
+  {
+    id: 'fresh-meat',
+    name: 'Fresh Meat',
+    category: 'food',
+    basePrice: 20,
+    description: 'Quality fresh meat. Stores 3 units in Preservation Box.',
+    isFreshFood: true,
+    freshFoodUnits: 3,
+  },
+  {
+    id: 'fresh-provisions',
+    name: 'Fresh Provisions Bundle',
+    category: 'food',
+    basePrice: 35,
+    description: 'A full bundle of fresh food. Stores 6 units in Preservation Box.',
+    isFreshFood: true,
+    freshFoodUnits: 6,
+  },
   // Durable Appliances - happiness reduced so they're comfort items, not happiness farms
   {
     id: 'candles',
@@ -260,10 +304,11 @@ export const SHADOW_MARKET_ITEMS: Item[] = [
   },
   {
     id: 'lottery-ticket',
-    name: 'Lottery Ticket',
+    name: "Fortune's Wheel Ticket",
     category: 'luxury',
     basePrice: 10,
-    description: 'Try your luck! Win big or lose it all.',
+    description: "Weekly lottery drawing. More tickets = better odds! Grand prize: 5,000g.",
+    isLotteryTicket: true,
   },
   {
     id: 'black-market-intel',
@@ -271,6 +316,34 @@ export const SHADOW_MARKET_ITEMS: Item[] = [
     category: 'luxury',
     basePrice: 50,
     description: 'Information about upcoming price changes.',
+  },
+  // Weekend event tickets
+  {
+    id: 'jousting-ticket',
+    name: 'Jousting Tournament Ticket',
+    category: 'luxury',
+    basePrice: 25,
+    description: 'Attend the jousting tournament this weekend! +8 Happiness.',
+    isTicket: true,
+    ticketType: 'jousting',
+  },
+  {
+    id: 'theatre-ticket',
+    name: 'Theatre Performance Ticket',
+    category: 'luxury',
+    basePrice: 40,
+    description: 'See a theatrical performance this weekend! +10 Happiness.',
+    isTicket: true,
+    ticketType: 'theatre',
+  },
+  {
+    id: 'bard-concert-ticket',
+    name: 'Bard Concert Ticket',
+    category: 'luxury',
+    basePrice: 50,
+    description: 'Attend a grand bard concert this weekend! +12 Happiness.',
+    isTicket: true,
+    ticketType: 'bard-concert',
   },
 ];
 

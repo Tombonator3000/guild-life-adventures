@@ -3,6 +3,7 @@
 
 import type { LocationId, HousingTier } from '@/types/game.types';
 import { getQuest } from '@/data/quests';
+import { calculateStockValue } from '@/data/stocks';
 import type { SetFn, GetFn } from '../storeTypes';
 
 export function createQuestActions(set: SetFn, get: GetFn) {
@@ -166,8 +167,10 @@ export function createQuestActions(set: SetFn, get: GetFn) {
 
       const goals = state.goalSettings;
 
-      // Calculate total wealth
-      const totalWealth = player.gold + player.savings + player.investments;
+      // Calculate total wealth (Jones-style Liquid Assets)
+      // Cash + Bank + Investments + Stock Value - Loans
+      const stockValue = calculateStockValue(player.stocks, state.stockPrices);
+      const totalWealth = player.gold + player.savings + player.investments + stockValue - player.loanAmount;
       const wealthMet = totalWealth >= goals.wealth;
 
       // Check happiness
