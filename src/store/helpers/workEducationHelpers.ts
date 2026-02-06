@@ -8,6 +8,7 @@ import type { SetFn, GetFn } from '../storeTypes';
 export function createWorkEducationActions(set: SetFn, get: GetFn) {
   return {
     workShift: (playerId: string, hours: number, wage: number) => {
+      const gameWeek = get().week;
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
@@ -40,11 +41,17 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
           // Experience increases (capped at maxExperience like Jones)
           const newExperience = Math.min(p.maxExperience, p.experience + hours);
 
+          // Work happiness penalty scales with game progression:
+          // Weeks 1-3: no penalty (let players get established)
+          // Weeks 4-8: -1 happiness (mild fatigue)
+          // Weeks 9+: -2 happiness (full fatigue)
+          const happinessPenalty = gameWeek <= 3 ? 0 : gameWeek <= 8 ? 1 : 2;
+
           return {
             ...p,
             gold: p.gold + Math.max(0, earnings),
             timeRemaining: Math.max(0, p.timeRemaining - hours),
-            happiness: Math.max(0, p.happiness - 2), // Work is tiring
+            happiness: Math.max(0, p.happiness - happinessPenalty),
             dependability: newDependability,
             experience: newExperience,
             shiftsWorkedSinceHire: (p.shiftsWorkedSinceHire || 0) + 1,
@@ -68,9 +75,12 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
         return { success: false, message: `You need to work at least ${MIN_SHIFTS_FOR_RAISE} shifts before requesting a raise. (${shiftsWorked}/${MIN_SHIFTS_FOR_RAISE})` };
       }
 
-      // Raise chance based on dependability (50% base + dependability bonus)
-      const raiseChance = 0.3 + (player.dependability / 200); // 30-80% chance
-      const success = Math.random() < raiseChance;
+      // Raise chance: 40% base + dependability bonus (up to 90%)
+      const raiseChance = 0.4 + (player.dependability / 200); // 40-90% chance
+      // Bonus: extra shifts worked beyond minimum boost chance
+      const bonusShifts = Math.min(10, shiftsWorked - MIN_SHIFTS_FOR_RAISE);
+      const adjustedChance = Math.min(0.95, raiseChance + bonusShifts * 0.02);
+      const success = Math.random() < adjustedChance;
 
       if (success) {
         const raiseAmount = Math.ceil(player.currentWage * 0.15); // 15% raise
@@ -86,16 +96,16 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
 
         return { success: true, newWage, message: `Raise approved! New wage: ${newWage} gold/hour.` };
       } else {
-        // Failed raise request decreases dependability
+        // Failed raise: mild penalty (-3 dependability instead of -10)
         set((state) => ({
           players: state.players.map((p) =>
             p.id === playerId
-              ? { ...p, dependability: Math.max(0, p.dependability - 10) }
+              ? { ...p, dependability: Math.max(0, p.dependability - 3) }
               : p
           ),
         }));
 
-        return { success: false, message: "Your raise request was denied. Work harder to prove yourself!" };
+        return { success: false, message: "Your raise request was denied. Keep working to build your case." };
       }
     },
 

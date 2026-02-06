@@ -27,9 +27,10 @@ export function ResourcePanel() {
             </p>
           </div>
         </div>
-        <button 
+        <button
           onClick={endTurn}
           className="gold-button text-sm py-2 px-4"
+          title="End your turn (E)"
         >
           End Turn
         </button>
@@ -126,7 +127,7 @@ export function ResourcePanel() {
       {/* Week info and hint */}
       <div className="mt-2 pt-2 border-t border-border">
         <p className="text-center text-muted-foreground text-xs">
-          Week {week} - Click a location on the board to travel there
+          Week {week} &middot; Click a location to travel &middot; E=End Turn &middot; Esc=Menu &middot; T=Tutorial
         </p>
       </div>
     </div>

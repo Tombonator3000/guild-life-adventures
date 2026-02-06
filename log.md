@@ -1,5 +1,122 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Gameplay Batch C + UI/UX Batch D (10 features)
+
+Implemented 5 gameplay improvements and 5 UI/UX enhancements.
+
+### C1: Save/Load System (Large)
+**Problem:** Game state lost on page refresh — biggest usability gap.
+**Implementation:**
+- Auto-save every 2 seconds during gameplay (debounced, localStorage)
+- 3 manual save slots + 1 auto-save slot
+- Save/Load menu accessible via Escape key or menu button in top bar
+- "Continue Game" button on title screen when auto-save exists
+- "Load Saved Game" browser on title screen with slot details (week, players, timestamp)
+- Save & Return to Title option in game menu
+- Delete saves per slot
+- **Files:** `src/data/saveLoad.ts` (new), `src/components/game/SaveLoadMenu.tsx` (new), `src/store/gameStore.ts`, `src/store/storeTypes.ts`, `src/components/screens/TitleScreen.tsx`
+
+### C2: Tutorial System (Medium)
+**Problem:** No guidance for new players.
+**Implementation:**
+- 9-step tutorial overlay with contextual tips
+- Steps: Welcome, Housing, Jobs, Food & Clothing, Movement & Time, Education, Banking, Cave & Quests, Victory
+- Each step has a title, description, and practical tip
+- Navigation: Next/Previous/Skip buttons
+- Opt-in checkbox in Game Setup (enabled by default)
+- Toggle with T key during gameplay
+- Persists step position in game state
+- **Files:** `src/components/game/TutorialOverlay.tsx` (new), `src/components/screens/GameSetup.tsx`, `src/types/game.types.ts`, `src/store/storeTypes.ts`
+
+### C3: Work Happiness Penalty Rebalance (Small)
+**Problem:** -2 happiness per work shift from turn 1 made early game too punishing.
+**Implementation:**
+- Weeks 1-3: no happiness penalty (let players get established)
+- Weeks 4-8: -1 happiness per shift (mild fatigue)
+- Weeks 9+: -2 happiness per shift (full penalty, same as before)
+- **File:** `src/store/helpers/workEducationHelpers.ts`
+
+### C4: AI Turn Speed Control (Medium)
+**Problem:** No way to skip or speed up Grimwald's turn.
+**Implementation:**
+- Speed controls in AI overlay: Normal (1x), Fast (3x), Skip
+- Skip instantly executes all remaining AI actions without delays
+- Space bar shortcut to skip AI turn
+- Speed multiplier applied to decision delay (min 50ms)
+- State stored in Zustand (aiSpeedMultiplier, skipAITurn)
+- **Files:** `src/hooks/useGrimwaldAI.ts`, `src/components/game/GameBoard.tsx`, `src/store/gameStore.ts`, `src/store/storeTypes.ts`, `src/types/game.types.ts`
+
+### C5: Raise Request Improvement (Small)
+**Problem:** -10 dependability on failed raise was too punishing.
+**Implementation:**
+- Base chance increased: 30% → 40%
+- Bonus for extra shifts worked beyond minimum (+2% per extra shift, up to +20%)
+- Max chance capped at 95%
+- Failure penalty reduced: -10 → -3 dependability
+- Friendlier denial message
+- **File:** `src/store/helpers/workEducationHelpers.ts`
+
+### D2: Tooltips (Small)
+- Added title attributes to End Turn button ("End your turn (E)")
+- Added title attributes to Menu button ("Game Menu (Esc)")
+- Added title attributes to Dark Mode toggle
+- Added keyboard shortcut hints in ResourcePanel footer
+
+### D3: Keyboard Shortcuts (Small)
+- **E** = End Turn (when not in menu/AI turn)
+- **Escape** = Open/close game menu
+- **Space** = Skip AI turn (during AI turn)
+- **T** = Toggle tutorial
+- **Ctrl+Shift+Z** = Zone editor (existing)
+- **Ctrl+Shift+D** = Debug overlay (existing)
+
+### D4: Confirmation Dialog Component (Small)
+- Created reusable ConfirmDialog component with useConfirmDialog hook
+- Shows cost warning for expensive actions
+- Styled with parchment theme
+- **File:** `src/components/game/ConfirmDialog.tsx` (new)
+
+### D5: Dark Mode Toggle (Small)
+- Dark mode CSS variables already existed; added toggle button
+- Toggle on title screen (top-right) and game board (top bar)
+- Persists preference to localStorage
+- Defaults to dark theme (matches medieval aesthetic)
+- **File:** `src/components/game/DarkModeToggle.tsx` (new)
+
+### Type/State Changes
+- **GameState fields added:** `aiSpeedMultiplier`, `skipAITurn`, `showTutorial`, `tutorialStep`
+- **New store actions:** `saveToSlot`, `loadFromSlot`, `setAISpeedMultiplier`, `setSkipAITurn`, `setShowTutorial`, `setTutorialStep`
+- **Auto-save subscription** added to store with 2-second debounce
+
+### New Files (6)
+| File | Purpose |
+|------|---------|
+| `src/data/saveLoad.ts` | Save/Load utility (serialize, slots, metadata) |
+| `src/components/game/SaveLoadMenu.tsx` | In-game save/load menu modal |
+| `src/components/game/TutorialOverlay.tsx` | 9-step tutorial overlay |
+| `src/components/game/ConfirmDialog.tsx` | Confirmation dialog + hook |
+| `src/components/game/DarkModeToggle.tsx` | Dark mode toggle button |
+
+### Modified Files (10)
+| File | Changes |
+|------|---------|
+| `src/types/game.types.ts` | Added GameState fields for AI speed + tutorial |
+| `src/store/storeTypes.ts` | Added save/load/AI/tutorial action types |
+| `src/store/gameStore.ts` | Save/load/AI/tutorial state + auto-save subscription |
+| `src/store/helpers/workEducationHelpers.ts` | Scaled happiness penalty, improved raise system |
+| `src/hooks/useGrimwaldAI.ts` | Speed multiplier + skip support |
+| `src/components/game/GameBoard.tsx` | Menu button, AI speed controls, keyboard shortcuts, dark mode, tutorial |
+| `src/components/game/ResourcePanel.tsx` | Keyboard shortcut hints, End Turn tooltip |
+| `src/components/screens/TitleScreen.tsx` | Continue/Load buttons, dark mode toggle |
+| `src/components/screens/GameSetup.tsx` | Tutorial toggle option |
+
+### Build Status
+- TypeScript compiles cleanly (tsc --noEmit)
+- Vite production build succeeds
+- All tests pass
+
+---
+
 ## 2026-02-06 - Inventory Grid System with Drag-Drop & Icons
 
 Implemented a medieval-styled inventory grid system with custom SVG icons, drag-and-drop functionality, and hover tooltips.

@@ -12,11 +12,14 @@ import { ZoneEditor, type CenterPanelConfig } from './ZoneEditor';
 import { MOVEMENT_PATHS, BOARD_PATH, type MovementWaypoint } from '@/data/locations';
 import { SideInfoTabs } from './SideInfoTabs';
 import { TurnOrderPanel } from './TurnOrderPanel';
+import { SaveLoadMenu } from './SaveLoadMenu';
+import { TutorialOverlay } from './TutorialOverlay';
+import { DarkModeToggle } from './DarkModeToggle';
 import { useGrimwaldAI } from '@/hooks/useGrimwaldAI';
 import gameBoard from '@/assets/game-board.jpeg';
 import type { ZoneConfig, LocationId, AIDifficulty } from '@/types/game.types';
 import { toast } from 'sonner';
-import { Bot, Brain } from 'lucide-react';
+import { Bot, Brain, Menu, SkipForward, FastForward, Play } from 'lucide-react';
 
 const DEFAULT_CENTER_PANEL: CenterPanelConfig = {
   top: 23.4,
@@ -43,10 +46,17 @@ export function GameBoard() {
     setEventMessage,
     setPhase,
     aiDifficulty,
+    aiSpeedMultiplier,
+    setAISpeedMultiplier,
+    skipAITurn,
+    setSkipAITurn,
+    showTutorial,
+    setShowTutorial,
   } = useGameStore();
   const { event: shadowfingersEvent, dismiss: dismissShadowfingers } = useShadowfingersModal();
   const [showZoneEditor, setShowZoneEditor] = useState(false);
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
+  const [showGameMenu, setShowGameMenu] = useState(false);
   const [customZones, setCustomZones] = useState<ZoneConfig[]>(ZONE_CONFIGS);
   const [centerPanel, setCenterPanel] = useState<CenterPanelConfig>(DEFAULT_CENTER_PANEL);
 
@@ -63,7 +73,7 @@ export function GameBoard() {
   // Get current player BEFORE useEffects that depend on it
   const currentPlayer = useCurrentPlayer();
 
-  // Keyboard shortcut: Ctrl+Shift+Z to toggle zone editor
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'Z') {
@@ -74,10 +84,32 @@ export function GameBoard() {
         e.preventDefault();
         setShowDebugOverlay(prev => !prev);
       }
+      // Escape opens/closes game menu
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setShowGameMenu(prev => !prev);
+      }
+      // Space skips AI turn
+      if (e.key === ' ' && aiIsThinking) {
+        e.preventDefault();
+        setSkipAITurn(true);
+      }
+      // E = End Turn (when not in modal/menu and not AI turn)
+      if (e.key === 'e' && !e.ctrlKey && !e.metaKey && !aiIsThinking && !showGameMenu) {
+        e.preventDefault();
+        if (currentPlayer && !currentPlayer.isAI && phase === 'playing') {
+          endTurn();
+        }
+      }
+      // T = Toggle tutorial
+      if (e.key === 't' && !e.ctrlKey && !e.metaKey && !showGameMenu) {
+        e.preventDefault();
+        setShowTutorial(!showTutorial);
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [aiIsThinking, setSkipAITurn, showGameMenu, currentPlayer, phase, endTurn, showTutorial, setShowTutorial]);
 
   // AI Turn Handler - triggers when it's Grimwald's turn
   useEffect(() => {
@@ -446,8 +478,8 @@ export function GameBoard() {
           </div>
         </div>
 
-        {/* Week and price indicator */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
+        {/* Week and price indicator + menu button */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
           <div className="parchment-panel px-6 py-2 flex items-center gap-6">
             <span className="font-display text-lg">
               Week <span className="text-primary font-bold">{week}</span>
@@ -459,6 +491,14 @@ export function GameBoard() {
               </span>
             </span>
           </div>
+          <button
+            onClick={() => setShowGameMenu(true)}
+            className="parchment-panel p-2 hover:brightness-110"
+            title="Game Menu (Esc)"
+          >
+            <Menu className="w-5 h-5 text-card-foreground" />
+          </button>
+          <DarkModeToggle className="parchment-panel" />
         </div>
 
         {/* Zone Editor button (bottom right) */}
@@ -520,11 +560,11 @@ export function GameBoard() {
         />
       )}
 
-      {/* AI Thinking Overlay */}
+      {/* AI Thinking Overlay with speed controls */}
       {aiIsThinking && currentPlayer?.isAI && (
-        <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/30" />
-          <div className="relative parchment-panel p-6 flex flex-col items-center gap-4 animate-pulse">
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/30 pointer-events-none" />
+          <div className="relative parchment-panel p-6 flex flex-col items-center gap-4">
             <div className="flex items-center gap-3">
               <Bot className="w-8 h-8 text-primary animate-bounce" />
               <Brain className="w-6 h-6 text-secondary animate-spin" style={{ animationDuration: '3s' }} />
@@ -537,13 +577,49 @@ export function GameBoard() {
               {aiDifficulty === 'medium' && 'Calculating optimal strategy...'}
               {aiDifficulty === 'hard' && 'Analyzing all possibilities with precision!'}
             </p>
-            <div className="flex gap-1">
+            <div className="flex gap-1 mb-2">
               <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
               <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
               <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
+            {/* Speed controls */}
+            <div className="flex items-center gap-2 border-t border-border pt-3">
+              <span className="text-xs text-muted-foreground font-display">Speed:</span>
+              <button
+                onClick={() => setAISpeedMultiplier(1)}
+                className={`p-1.5 rounded text-xs ${aiSpeedMultiplier === 1 ? 'bg-primary/30 text-primary' : 'bg-background/50 text-muted-foreground hover:text-foreground'}`}
+                title="Normal speed"
+              >
+                <Play className="w-3 h-3" />
+              </button>
+              <button
+                onClick={() => setAISpeedMultiplier(3)}
+                className={`p-1.5 rounded text-xs ${aiSpeedMultiplier === 3 ? 'bg-primary/30 text-primary' : 'bg-background/50 text-muted-foreground hover:text-foreground'}`}
+                title="Fast (3x)"
+              >
+                <FastForward className="w-3 h-3" />
+              </button>
+              <button
+                onClick={() => setSkipAITurn(true)}
+                className="p-1.5 rounded text-xs bg-background/50 text-muted-foreground hover:text-foreground"
+                title="Skip turn (Space)"
+              >
+                <SkipForward className="w-3 h-3" />
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">Press Space to skip</p>
           </div>
         </div>
+      )}
+
+      {/* Save/Load Menu */}
+      {showGameMenu && (
+        <SaveLoadMenu onClose={() => setShowGameMenu(false)} />
+      )}
+
+      {/* Tutorial Overlay */}
+      {showTutorial && currentPlayer && !currentPlayer.isAI && (
+        <TutorialOverlay onClose={() => setShowTutorial(false)} />
       )}
     </div>
   );

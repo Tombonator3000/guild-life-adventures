@@ -8,6 +8,7 @@ import type {
 } from '@/types/game.types';
 import { PLAYER_COLORS, AI_COLOR, HOURS_PER_TURN } from '@/types/game.types';
 import { getInitialStockPrices } from '@/data/stocks';
+import { saveGame, loadGame } from '@/data/saveLoad';
 import { createPlayerActions } from './helpers/playerHelpers';
 import { createEconomyActions } from './helpers/economyHelpers';
 import { createTurnActions } from './helpers/turnHelpers';
@@ -128,6 +129,14 @@ export const useGameStore = create<GameStore>((set, get) => {
     stockPrices: getInitialStockPrices(),
     weekendEvent: null,
 
+    // AI speed control
+    aiSpeedMultiplier: 1,
+    skipAITurn: false,
+
+    // Tutorial
+    showTutorial: false,
+    tutorialStep: 0,
+
     // Game setup
     startNewGame: (playerNames, includeAI, goals, aiDifficulty = 'medium') => {
       const players: Player[] = playerNames.map((name, index) =>
@@ -188,7 +197,55 @@ export const useGameStore = create<GameStore>((set, get) => {
     dismissApplianceBreakageEvent: () => set({ applianceBreakageEvent: null }),
     // Weekend event state
     dismissWeekendEvent: () => set({ weekendEvent: null }),
+
+    // Save/Load
+    saveToSlot: (slot: number, slotName?: string) => {
+      const state = get();
+      return saveGame(state, slot, slotName);
+    },
+    loadFromSlot: (slot: number) => {
+      const data = loadGame(slot);
+      if (!data) return false;
+      const gs = data.gameState;
+      set({
+        phase: gs.phase === 'event' ? 'playing' : gs.phase,
+        currentPlayerIndex: gs.currentPlayerIndex,
+        players: gs.players,
+        week: gs.week,
+        priceModifier: gs.priceModifier,
+        goalSettings: gs.goalSettings,
+        winner: gs.winner,
+        eventMessage: null,
+        rentDueWeek: gs.rentDueWeek,
+        selectedLocation: null,
+        shadowfingersEvent: null,
+        aiDifficulty: gs.aiDifficulty,
+        stockPrices: gs.stockPrices || getInitialStockPrices(),
+        weekendEvent: null,
+      });
+      return true;
+    },
+
+    // AI speed control
+    setAISpeedMultiplier: (multiplier: number) => set({ aiSpeedMultiplier: multiplier }),
+    setSkipAITurn: (skip: boolean) => set({ skipAITurn: skip }),
+
+    // Tutorial
+    setShowTutorial: (show: boolean) => set({ showTutorial: show }),
+    setTutorialStep: (step: number) => set({ tutorialStep: step }),
   };
+});
+
+// Auto-save: save to slot 0 whenever game state changes during play
+let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
+useGameStore.subscribe((state) => {
+  if (state.phase === 'playing' || state.phase === 'event') {
+    // Debounce auto-save to avoid excessive writes
+    if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => {
+      saveGame(state, 0);
+    }, 2000);
+  }
 });
 
 // Selector hooks
