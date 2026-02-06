@@ -60,6 +60,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     sellItem,
     setJob,
     requestRaise,
+    negotiateRaise,
     buyDurable,
     equipItem,
     unequipItem,
@@ -208,6 +209,10 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
                 setJob(player.id, jobId, wage);
                 const job = getJob(jobId);
                 toast.success(`You are now employed as ${job?.name}!`);
+              }}
+              onNegotiateRaise={(newWage) => {
+                negotiateRaise(player.id, newWage);
+                toast.success(`Salary increased to ${newWage}g/hour!`);
               }}
               onSpendTime={(hours) => spendTime(player.id, hours)}
             />
