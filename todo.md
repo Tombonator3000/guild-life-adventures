@@ -258,6 +258,13 @@
   - [x] Bug 3 (FAIRNESS): AI had no happiness penalty on defeat (player lost -2). Fixed
   - [x] Balance: Added Mushroom Grotto (+8 HP, Floor 2) and Sanctified Pool (+12 HP, Floor 3) healing encounters
 
+## Completed (2026-02-06)
+
+- [x] Cave/Dungeon Music — `20Cave.mp3` plays when player is at The Cave
+  - Added cave track to `MUSIC_TRACKS` and `LOCATION_MUSIC` in `src/audio/musicConfig.ts`
+  - AudioManager crossfades to cave music on entry, back to default on exit
+  - Music persists throughout dungeon combat encounters
+
 ## In Progress
 
 *No active tasks*

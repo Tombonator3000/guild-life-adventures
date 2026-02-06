@@ -17,6 +17,7 @@ export const MUSIC_TRACKS: Record<string, MusicTrack> = {
   'enchanter':        { id: 'enchanter',        file: '11EnchantersWorkshop.mp3', label: "Enchanter's Workshop" },
   'rusty-tankard':    { id: 'rusty-tankard',    file: '13rustytankard.mp3',       label: 'The Rusty Tankard' },
   'weekend':          { id: 'weekend',          file: '18OhWhatAWeekend.mp3',     label: 'Oh What a Weekend' },
+  'cave':             { id: 'cave',             file: '20Cave.mp3',               label: 'The Cave' },
 };
 
 // Screen-level music (menus, setup, victory)
@@ -33,6 +34,7 @@ export const LOCATION_MUSIC: Partial<Record<LocationId, string>> = {
   'slums':            'the-slums',
   'enchanter':        'enchanter',
   'rusty-tankard':    'rusty-tankard',
+  'cave':             'cave',
 };
 
 // Default track when a player is on the game board but no location-specific track
