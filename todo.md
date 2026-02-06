@@ -105,6 +105,15 @@
   - [x] B5: Food Storage — Fresh food units in Preservation Box (6 max), Frost Chest doubles to 12, auto-consume, spoilage
   - [x] B6: Lottery (Fortune's Wheel) — Tickets at Shadow Market, weekly drawing, 2% grand (5000g), 5% small (50g)
 
+## Completed (2026-02-06)
+
+- [x] Technical Debt Batch E — 5 items resolved
+  - [x] E1: Real unit tests — 91 tests across 5 files (victory, economy, work, education, game actions)
+  - [x] E2: Deduplicate GUILD_PASS_COST — import from game.types instead of local copy
+  - [x] E3: Input validation — 7 banking/stock/loan functions validated (negative, NaN, Infinity, overflow)
+  - [x] E4: LocationId types — events.ts uses HousingTier/LocationId instead of string
+  - [x] E5: Legacy education cleanup — removed dead PATH_TO_DEGREES/EDUCATION_PATHS, fixed 2 display components
+
 ## In Progress
 
 *No active tasks*
@@ -142,11 +151,11 @@ See log.md "Improvement Proposals (Code Audit & Gap Analysis)" for full details.
 - [x] D5: Dark mode — **DONE** Toggle with localStorage persistence
 
 ### Technical Debt
-- [ ] E1: Write real unit tests (victory, earnings, education, AI) — **zero coverage currently**
-- [ ] E2: Deduplicate GUILD_PASS_COST constant
-- [ ] E3: Add input validation to banking actions
-- [ ] E4: Use LocationId type instead of string in location functions
-- [ ] E5: Clean up legacy education system references
+- [x] E1: Write real unit tests (victory, earnings, education, AI) — **DONE** 91 tests across 5 files
+- [x] E2: Deduplicate GUILD_PASS_COST constant — **DONE** Import from game.types
+- [x] E3: Add input validation to banking actions — **DONE** 7 functions validated
+- [x] E4: Use LocationId type instead of string in location functions — **DONE** events.ts typed
+- [x] E5: Clean up legacy education system references — **DONE** Dead code removed, displays fixed
 
 ## Completed (Phase 3 - Cave UI Overhaul)
 

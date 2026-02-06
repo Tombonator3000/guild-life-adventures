@@ -26,44 +26,38 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
     },
 
     depositToBank: (playerId: string, amount: number) => {
+      if (amount <= 0 || !Number.isFinite(amount)) return;
       set((state) => ({
-        players: state.players.map((p) =>
-          p.id === playerId
-            ? {
-                ...p,
-                gold: Math.max(0, p.gold - amount),
-                savings: p.savings + amount,
-              }
-            : p
-        ),
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          const actual = Math.min(amount, p.gold);
+          if (actual <= 0) return p;
+          return { ...p, gold: p.gold - actual, savings: p.savings + actual };
+        }),
       }));
     },
 
     withdrawFromBank: (playerId: string, amount: number) => {
+      if (amount <= 0 || !Number.isFinite(amount)) return;
       set((state) => ({
-        players: state.players.map((p) =>
-          p.id === playerId
-            ? {
-                ...p,
-                gold: p.gold + Math.min(amount, p.savings),
-                savings: Math.max(0, p.savings - amount),
-              }
-            : p
-        ),
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          const actual = Math.min(amount, p.savings);
+          if (actual <= 0) return p;
+          return { ...p, gold: p.gold + actual, savings: p.savings - actual };
+        }),
       }));
     },
 
     invest: (playerId: string, amount: number) => {
+      if (amount <= 0 || !Number.isFinite(amount)) return;
       set((state) => ({
-        players: state.players.map((p) =>
-          p.id === playerId
-            ? {
-                ...p,
-                gold: Math.max(0, p.gold - amount),
-                investments: p.investments + amount,
-              }
-            : p
-        ),
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          const actual = Math.min(amount, p.gold);
+          if (actual <= 0) return p;
+          return { ...p, gold: p.gold - actual, investments: p.investments + actual };
+        }),
       }));
     },
 
@@ -374,8 +368,10 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
     // === Stock Market Actions ===
 
     buyStock: (playerId: string, stockId: string, shares: number) => {
+      if (shares <= 0 || !Number.isFinite(shares)) return;
       const state = get();
-      const price = state.stockPrices[stockId] || 0;
+      const price = state.stockPrices[stockId];
+      if (price == null || price <= 0) return;
       const totalCost = price * shares;
 
       set((state) => ({
@@ -394,6 +390,7 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
     },
 
     sellStock: (playerId: string, stockId: string, shares: number) => {
+      if (shares <= 0 || !Number.isFinite(shares)) return;
       const state = get();
       const currentPrice = state.stockPrices[stockId] || 0;
 
@@ -421,26 +418,29 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
     // === Loan Actions ===
 
     takeLoan: (playerId: string, amount: number) => {
+      if (amount <= 0 || !Number.isFinite(amount) || amount > 1000) return;
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
-          // Can't take another loan if one is outstanding
           if (p.loanAmount > 0) return p;
           return {
             ...p,
             gold: p.gold + amount,
             loanAmount: amount,
-            loanWeeksRemaining: 8, // 8 weeks to repay
+            loanWeeksRemaining: 8,
           };
         }),
       }));
     },
 
     repayLoan: (playerId: string, amount: number) => {
+      if (amount <= 0 || !Number.isFinite(amount)) return;
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
+          if (p.loanAmount <= 0) return p;
           const actualPayment = Math.min(amount, p.loanAmount, p.gold);
+          if (actualPayment <= 0) return p;
           return {
             ...p,
             gold: p.gold - actualPayment,

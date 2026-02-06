@@ -1,13 +1,15 @@
 // Guild Life - Random Events System (Wild Willy -> Shadowfingers)
 
+import type { LocationId, HousingTier } from '@/types/game.types';
+
 export interface GameEvent {
   id: string;
   name: string;
   description: string;
   probability: number; // 0-1 chance per trigger
   conditions?: {
-    housing?: string[];
-    location?: string[];
+    housing?: HousingTier[];
+    location?: LocationId[];
     minGold?: number;
     maxGold?: number;
   };
@@ -227,8 +229,8 @@ export const RANDOM_EVENTS: GameEvent[] = [
 ];
 
 export const checkForEvent = (
-  housing: string,
-  location: string,
+  housing: HousingTier,
+  location: LocationId,
   gold: number
 ): GameEvent | null => {
   const eligibleEvents = RANDOM_EVENTS.filter(event => {
@@ -260,7 +262,7 @@ export const checkForEvent = (
   return eligibleEvents[Math.floor(Math.random() * eligibleEvents.length)];
 };
 
-export const checkWeeklyTheft = (housing: string, gold: number): GameEvent | null => {
+export const checkWeeklyTheft = (housing: HousingTier, gold: number): GameEvent | null => {
   const theftEvents = RANDOM_EVENTS.filter(event =>
     event.id.includes('shadowfingers') &&
     event.conditions?.housing?.includes(housing) &&

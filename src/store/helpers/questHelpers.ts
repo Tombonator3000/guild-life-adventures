@@ -2,6 +2,7 @@
 // takeQuest, completeQuest, abandonQuest, checkDeath, promoteGuildRank, evictPlayer, checkVictory
 
 import type { LocationId, HousingTier } from '@/types/game.types';
+import { GUILD_PASS_COST } from '@/types/game.types';
 import { getQuest } from '@/data/quests';
 import { calculateStockValue } from '@/data/stocks';
 import type { SetFn, GetFn } from '../storeTypes';
@@ -13,7 +14,6 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       const player = state.players.find(p => p.id === playerId);
       if (!player || player.hasGuildPass) return;
 
-      const GUILD_PASS_COST = 500;
       if (player.gold < GUILD_PASS_COST) return;
 
       set((state) => ({
