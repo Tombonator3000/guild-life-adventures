@@ -6,80 +6,10 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { peerManager } from './PeerManager';
 import { useGameStore } from '@/store/gameStore';
 import { setNetworkActionSender } from './NetworkActionProxy';
-import type { NetworkMessage, GuestMessage, HostMessage, SerializedGameState } from './types';
+import { serializeGameState, applyNetworkState, executeAction } from './networkState';
+import { ALLOWED_GUEST_ACTIONS } from './types';
+import type { NetworkMessage, GuestMessage, HostMessage } from './types';
 import type { LocationId } from '@/types/game.types';
-
-/** Extract serializable game state from the store */
-function serializeGameState(): SerializedGameState {
-  const s = useGameStore.getState();
-  return {
-    phase: s.phase,
-    currentPlayerIndex: s.currentPlayerIndex,
-    players: s.players,
-    week: s.week,
-    priceModifier: s.priceModifier,
-    economyTrend: s.economyTrend,
-    economyCycleWeeksLeft: s.economyCycleWeeksLeft,
-    goalSettings: s.goalSettings,
-    winner: s.winner,
-    eventMessage: s.eventMessage,
-    rentDueWeek: s.rentDueWeek,
-    aiDifficulty: s.aiDifficulty,
-    stockPrices: s.stockPrices,
-    weekendEvent: s.weekendEvent,
-    aiSpeedMultiplier: s.aiSpeedMultiplier,
-    skipAITurn: s.skipAITurn,
-    showTutorial: s.showTutorial,
-    tutorialStep: s.tutorialStep,
-    networkMode: s.networkMode,
-    localPlayerId: s.localPlayerId,
-    roomCode: s.roomCode,
-    selectedLocation: s.selectedLocation,
-    shadowfingersEvent: s.shadowfingersEvent,
-    applianceBreakageEvent: s.applianceBreakageEvent,
-  } as SerializedGameState;
-}
-
-/** Apply state from host to local store (guest only) */
-function applyNetworkState(state: SerializedGameState) {
-  const store = useGameStore.getState();
-  useGameStore.setState({
-    phase: state.phase,
-    currentPlayerIndex: state.currentPlayerIndex,
-    players: state.players,
-    week: state.week,
-    priceModifier: state.priceModifier,
-    economyTrend: state.economyTrend,
-    economyCycleWeeksLeft: state.economyCycleWeeksLeft,
-    goalSettings: state.goalSettings,
-    winner: state.winner,
-    eventMessage: state.eventMessage,
-    rentDueWeek: state.rentDueWeek,
-    aiDifficulty: state.aiDifficulty,
-    stockPrices: state.stockPrices,
-    weekendEvent: state.weekendEvent,
-    // Sync event modals so guest sees robbery/breakage events
-    shadowfingersEvent: state.shadowfingersEvent as typeof store.shadowfingersEvent,
-    applianceBreakageEvent: state.applianceBreakageEvent as typeof store.applianceBreakageEvent,
-  });
-}
-
-/** Execute a store action by name (host only) */
-function executeAction(name: string, args: unknown[]): boolean {
-  const store = useGameStore.getState();
-  const action = (store as unknown as Record<string, unknown>)[name];
-  if (typeof action !== 'function') {
-    console.error(`[NetworkSync] Unknown action: ${name}`);
-    return false;
-  }
-  try {
-    (action as (...a: unknown[]) => unknown)(...args);
-    return true;
-  } catch (err) {
-    console.error(`[NetworkSync] Action ${name} failed:`, err);
-    return false;
-  }
-}
 
 /**
  * Hook for network synchronization during gameplay.
@@ -164,6 +94,18 @@ export function useNetworkSync() {
               requestId: msg.requestId,
               success: false,
               error: 'Not your turn',
+            });
+            return;
+          }
+
+          // Validate action is in the allowed whitelist
+          if (!ALLOWED_GUEST_ACTIONS.has(msg.name)) {
+            console.warn(`[NetworkSync] Blocked disallowed guest action: ${msg.name}`);
+            peerManager.sendTo(fromPeerId, {
+              type: 'action-result',
+              requestId: msg.requestId,
+              success: false,
+              error: 'Action not allowed',
             });
             return;
           }

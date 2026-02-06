@@ -23,8 +23,30 @@ export function useAutoEndTurn() {
   const checkAutoReturn = useCallback(() => {
     if (!currentPlayer) return;
 
-    // Guest mode: host handles all auto-end/death logic. Guest just displays synced state.
-    if (networkMode === 'guest') return false;
+    // Guest mode: guest can forward endTurn to host when time runs out,
+    // but death/event handling is host-only (guest sees it via state sync).
+    if (networkMode === 'guest') {
+      if (currentPlayer.timeRemaining <= 0) {
+        // Guard: don't schedule a second endTurn for the same player
+        if (scheduledEndTurnRef.current === currentPlayerIndex) return true;
+        scheduledEndTurnRef.current = currentPlayerIndex;
+        // Only end turn if it's our turn (not someone else's)
+        const localId = useGameStore.getState().localPlayerId;
+        if (currentPlayer.id === localId) {
+          if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
+          autoEndTimerRef.current = setTimeout(() => {
+            const storeIdx = useGameStore.getState().currentPlayerIndex;
+            if (storeIdx === currentPlayerIndex) {
+              endTurn(); // Forwarded to host via network proxy
+            }
+            scheduledEndTurnRef.current = null;
+            autoEndTimerRef.current = null;
+          }, 500);
+        }
+        return true;
+      }
+      return false;
+    }
 
     // Check for death first
     if (currentPlayer.health <= 0) {

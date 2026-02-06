@@ -100,7 +100,8 @@ export const LOCAL_ONLY_ACTIONS = new Set([
   'setPhase',
 ]);
 
-// Actions that are host-internal (triggered by game logic, not by UI)
+// Actions that are host-internal (triggered by game logic, not by player UI).
+// These are BLOCKED on guests — not forwarded, not executed locally.
 export const HOST_INTERNAL_ACTIONS = new Set([
   'startTurn',
   'processWeekEnd',
@@ -109,4 +110,74 @@ export const HOST_INTERNAL_ACTIONS = new Set([
   'evictPlayer',
   'promoteGuildRank',
   'startNewGame',
+]);
+
+// Explicit whitelist of actions a guest may send to the host.
+// Any action NOT in this set will be rejected by the host's action handler.
+// This prevents guests from calling internal/dangerous actions by name.
+export const ALLOWED_GUEST_ACTIONS = new Set([
+  // Movement & turn flow
+  'movePlayer',
+  'spendTime',
+  'endTurn',
+
+  // Player state changes
+  'modifyGold',
+  'modifyHealth',
+  'modifyHappiness',
+  'modifyFood',
+  'modifyClothing',
+  'modifyMaxHealth',
+  'modifyRelaxation',
+  'cureSickness',
+
+  // Housing
+  'setHousing',
+  'payRent',
+  'prepayRent',
+  'moveToHousing',
+
+  // Work & Education
+  'setJob',
+  'workShift',
+  'requestRaise',
+  'negotiateRaise',
+  'studySession',
+  'completeEducationLevel',
+  'studyDegree',
+  'completeDegree',
+
+  // Economy & Shopping
+  'depositToBank',
+  'withdrawFromBank',
+  'invest',
+  'withdrawInvestment',
+  'buyItem',
+  'sellItem',
+  'buyDurable',
+  'sellDurable',
+  'buyAppliance',
+  'repairAppliance',
+  'pawnAppliance',
+  'equipItem',
+  'unequipItem',
+
+  // Stocks & Loans
+  'buyStock',
+  'sellStock',
+  'takeLoan',
+  'repayLoan',
+
+  // Food & Items
+  'buyFreshFood',
+  'buyLotteryTicket',
+  'buyTicket',
+
+  // Quests & Dungeon
+  'buyGuildPass',
+  'takeQuest',
+  'completeQuest',
+  'abandonQuest',
+  'clearDungeonFloor',
+  'applyRareDrop',
 ]);

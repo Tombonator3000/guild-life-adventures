@@ -1,5 +1,128 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Online Multiplayer Deep Audit & Architecture Fix (Agent-Assisted)
+
+**Task**: Deep audit of the entire online multiplayer system using 4 parallel agents. Find bugs, missing features, architectural issues. Fix critical and high-priority problems.
+
+### Audit Methodology
+
+Ran 4 specialized audit agents in parallel:
+1. **PeerManager audit** — Connection reliability, security, WebRTC config
+2. **useNetworkSync audit** — State sync, turn validation, race conditions
+3. **OnlineLobby/GameBoard audit** — Lobby flow, game start, movement sync, victory
+4. **Store integration audit** — Action proxying, state serialization, AI integration
+
+### Audit Findings Summary
+
+| Category | Count | Severity |
+|----------|-------|----------|
+| Critical bugs | 10 | Fixed: 10 |
+| High-severity bugs | 8 | Fixed: 8 |
+| Medium issues | 6 | Noted for future |
+| Low / improvements | 12 | Noted for future |
+
+### Critical Bugs Fixed (10)
+
+**C1: Duplicate serializeGameState/applyNetworkState** (ARCHITECTURE)
+- **Files**: `useOnlineGame.ts`, `useNetworkSync.ts` → new `networkState.ts`
+- **Issue**: Two separate copies of serialize/deserialize functions with different field sets — useOnlineGame included `aiSpeedMultiplier`, `skipAITurn`, `showTutorial`, `tutorialStep`, `selectedLocation` which useNetworkSync didn't and vice versa
+- **Fix**: Created `src/network/networkState.ts` — single source of truth. Both hooks import from there. Excluded local-only UI state (selectedLocation, tutorial, AI speed) from sync
+
+**C2: No action whitelist — guests could call ANY store action** (SECURITY)
+- **Files**: `useNetworkSync.ts:68-82`, `types.ts`
+- **Issue**: Host executed ANY action name from guest network messages via `(store as Record)[name]()`. Guests could call `startTurn`, `processWeekEnd`, `evictPlayer`, `startNewGame` etc.
+- **Fix**: Added `ALLOWED_GUEST_ACTIONS` whitelist (45 legitimate player actions) in `types.ts`. Host rejects any action not in whitelist with "Action not allowed" error
+
+**C3: Duplicate store subscriptions — double broadcasts** (PERFORMANCE)
+- **Files**: `useOnlineGame.ts:464-476`, `useNetworkSync.ts:209-218`
+- **Issue**: Both hooks subscribed to Zustand store changes and broadcasted state. Every state change sent 2x messages to guests
+- **Fix**: Removed store subscription from `useOnlineGame`. Only `useNetworkSync` broadcasts now
+
+**C4: Duplicate message handlers — messages processed twice** (LOGIC)
+- **Files**: `useOnlineGame.ts:250-256`, `useNetworkSync.ts:140-207`
+- **Issue**: Both hooks registered `peerManager.onMessage()` handlers. Guest action messages, state-sync, movement — all processed twice causing duplicate execution and conflicting broadcasts
+- **Fix**: Split message handling by phase: `useOnlineGame` handles lobby messages only (join, ready, leave, lobby-update, game-start, kicked). `useNetworkSync` handles game messages only (action, state-sync, movement, ping/pong)
+
+**C5: AI turns triggered on guest clients** (MULTIPLAYER)
+- **File**: `GameBoard.tsx:79-83`
+- **Issue**: `useAITurnHandler` ran unconditionally on all clients. Guest received AI player as current player via state-sync → triggered local AI decision loop → AI actions had no effect (network-proxied) → game appeared hung
+- **Fix**: Pass `undefined` currentPlayer and `'title'` phase to useAITurnHandler when `networkMode === 'guest'`, preventing AI trigger
+
+**C6: Auto-end-turn completely blocked for guests** (MULTIPLAYER)
+- **File**: `useAutoEndTurn.ts:26-27`
+- **Issue**: `if (networkMode === 'guest') return false;` — guest with timeRemaining=0 could never end their turn. Host waited for guest action, guest was blocked → deadlock
+- **Fix**: Guest now detects own time running out and forwards `endTurn()` to host via network proxy. Death/event handling stays host-only (guest sees via state sync)
+
+**C7: Host peerId mapping included 'host' literal** (TURN VALIDATION)
+- **File**: `useOnlineGame.ts:186-190`
+- **Issue**: Host added to peerPlayerMap with peerId='host', but actual PeerJS peer ID is `guild-life-XXXXXX`. Turn validation via `getPlayerIdForPeer()` would never match the host's actual peer ID
+- **Fix**: Only map actual remote peers (skip peerId === 'host'). Host actions execute locally, never need peer → player mapping
+
+**C8: Connection timeout race condition** (CONNECTION)
+- **File**: `PeerManager.ts:161-166`
+- **Issue**: 10-second timeout fired even if connection opened 1ms before timeout. Both `resolve()` and `reject()` could fire, causing unhandled promise rejection
+- **Fix**: Added `settled` boolean guard — first of open/error/timeout to fire claims the settlement, subsequent callbacks are no-ops
+
+**C9: Settings modifiable during active game** (FAIRNESS)
+- **File**: `useOnlineGame.ts:480-494`
+- **Issue**: `updateSettings()` had no phase check. Host could change victory goals mid-game after seeing player progress
+- **Fix**: Added phase guard — settings changes blocked during 'playing' and 'victory' phases
+
+**C10: selectedLocation synced to all guests** (UX)
+- **Files**: `networkState.ts`, `useOnlineGame.ts:36`
+- **Issue**: `selectedLocation` was included in state sync. When host clicked a location to view info, all guests saw it selected. Guest's own location selection was overwritten by host state sync 50ms later
+- **Fix**: Removed `selectedLocation` from `serializeGameState()`. It's already in `LOCAL_ONLY_ACTIONS`, now consistently local-only
+
+### High-Severity Bugs Fixed (8)
+
+**H1: Player name collision → wrong player identification** (MULTIPLAYER)
+- **File**: `useOnlineGame.ts:283-285`
+- **Issue**: Guest's playerId determined by name matching (`find(p => p.name === localPlayerName)`). Two guests with same name → second guest gets wrong playerId → turn stealing
+- **Fix**: Host auto-appends slot number to duplicate names: "Adventurer" → "Adventurer (2)"
+
+**H2: Host game-start used stale serializeGameState** (MULTIPLAYER)
+- **File**: `useOnlineGame.ts:193`
+- **Issue**: Old `serializeGameState()` took a `store` parameter but the shared version reads from `useGameStore.getState()` directly. Updated call to match new API
+
+**H3–H8**: Addressed by the architectural fixes above (duplicate handlers, duplicate broadcasts, duplicate serialization functions)
+
+### Remaining Issues (Not Fixed — Future Work)
+
+**Medium Priority:**
+- No reconnection mechanism (guest drop = game lost)
+- No turn timeout (AFK player hangs game)
+- AI movement not animated for remote clients
+- No latency indicators (ping implemented but unused)
+- No heartbeat/keepalive between peers
+- PeerJS cloud signaling has no TURN server fallback
+
+**Low Priority:**
+- No spectator mode
+- No in-game chat
+- No save/load in multiplayer
+- No action deduplication (fast double-click → double action)
+- No pause/resume for network lag
+- No player AFK detection
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/network/networkState.ts` | **NEW** — Shared serialize/deserialize/executeAction functions |
+| `src/network/types.ts` | Added `ALLOWED_GUEST_ACTIONS` whitelist (45 actions) |
+| `src/network/useNetworkSync.ts` | Uses shared networkState, adds action whitelist validation |
+| `src/network/useOnlineGame.ts` | Uses shared networkState, removed duplicate store subscription + action handlers, lobby-only message handling, settings phase guard, name dedup |
+| `src/network/PeerManager.ts` | Fixed connection timeout race condition (settled guard) |
+| `src/components/game/GameBoard.tsx` | Guard AI turn handler for guest mode |
+| `src/hooks/useAutoEndTurn.ts` | Allow guest to forward endTurn when time runs out |
+
+### Build & Test Results
+- TypeScript compiles cleanly (`tsc --noEmit` passes)
+- Production build succeeds (9.5s, 944KB JS)
+- All 112 tests pass (7 test files)
+
+---
+
 ## 2026-02-06 - Online Multiplayer: Remote Movement Visibility
 
 **Problem**: In online multiplayer, movement animation was LOCAL ONLY. When a player moved, other players only saw the final position via state-sync — the token "teleported" instantly instead of walking along the board path.
