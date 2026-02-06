@@ -2,6 +2,7 @@
 // takeQuest, completeQuest, abandonQuest, checkDeath, promoteGuildRank, evictPlayer, checkVictory
 
 import type { LocationId, HousingTier } from '@/types/game.types';
+import { getQuest } from '@/data/quests';
 import type { SetFn, GetFn } from '../storeTypes';
 
 export function createQuestActions(set: SetFn, get: GetFn) {
@@ -38,33 +39,30 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       const player = state.players.find(p => p.id === playerId);
       if (!player || !player.activeQuest) return;
 
-      // Import quest data dynamically to avoid circular deps
-      import('@/data/quests').then(({ getQuest, QUEST_RANK_REQUIREMENTS }) => {
-        const quest = getQuest(player.activeQuest!);
-        if (!quest) return;
+      const quest = getQuest(player.activeQuest);
+      if (!quest) return;
 
-        set((state) => ({
-          players: state.players.map((p) => {
-            if (p.id !== playerId) return p;
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
 
-            // Apply quest rewards and risks
-            const healthLoss = Math.random() < 0.5 ? quest.healthRisk : Math.floor(quest.healthRisk / 2);
+          // Apply quest rewards and risks
+          const healthLoss = Math.random() < 0.5 ? quest.healthRisk : Math.floor(quest.healthRisk / 2);
 
-            return {
-              ...p,
-              gold: p.gold + quest.goldReward,
-              health: Math.max(0, p.health - healthLoss),
-              happiness: Math.min(100, p.happiness + quest.happinessReward),
-              timeRemaining: Math.max(0, p.timeRemaining - quest.timeRequired),
-              completedQuests: p.completedQuests + 1,
-              activeQuest: null,
-            };
-          }),
-        }));
+          return {
+            ...p,
+            gold: p.gold + quest.goldReward,
+            health: Math.max(0, p.health - healthLoss),
+            happiness: Math.min(100, p.happiness + quest.happinessReward),
+            timeRemaining: Math.max(0, p.timeRemaining - quest.timeRequired),
+            completedQuests: p.completedQuests + 1,
+            activeQuest: null,
+          };
+        }),
+      }));
 
-        // Check for guild rank promotion
-        get().promoteGuildRank(playerId);
-      });
+      // Check for guild rank promotion
+      get().promoteGuildRank(playerId);
     },
 
     abandonQuest: (playerId: string) => {

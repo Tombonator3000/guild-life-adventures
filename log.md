@@ -1,5 +1,49 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Bugfix Batch A: Education Progress, Work Income, Async Imports, MaxHealth
+
+### Bug A1: Education Progress Display Mismatch
+
+**Problem:** `GoalProgress.tsx` calculated education using `Object.values(player.education).reduce(...)` (old path-level system), but `checkVictory()` in `questHelpers.ts` uses `player.completedDegrees.length * 9` (new Jones-style degree system). Players saw misleading progress bars that didn't match actual victory conditions.
+
+**Fix:** Changed `GoalProgress.tsx` to use `player.completedDegrees.length * 9`, matching the `checkVictory` calculation exactly.
+
+### Bug A2: Work Income Display Shows 33% But Actual Is 15%
+
+**Problem:** `WorkSection.tsx` calculated displayed earnings with `hoursPerShift * 1.33 * wage` (33% bonus), but the actual `workShift` action in `workEducationHelpers.ts` uses `Math.ceil(hours * 1.15)` (15% bonus). The 33% was the old multiplier before the economy rebalance. Players expected more gold than they actually earned.
+
+**Fix:** Changed `WorkSection.tsx` to replicate the actual workShift logic: apply `Math.ceil(hoursPerShift * 1.15)` bonus for 6+ hour shifts, then multiply by wage.
+
+### Bug A3: Async Imports in Store Actions (Race Conditions)
+
+**Problem:** Two store actions used `import().then()` for dynamic imports:
+- `applyRareDrop` in `economyHelpers.ts` — `import('@/data/dungeon').then(...)`
+- `completeQuest` in `questHelpers.ts` — `import('@/data/quests').then(...)`
+
+The async callbacks meant `set()` state updates happened in a later microtask, racing with other synchronous state changes. Neither `dungeon.ts` nor `quests.ts` imports from the store, so the "avoid circular deps" comment was incorrect — no circular dependency exists.
+
+**Fix:** Replaced both dynamic `import().then()` calls with top-level static imports. State updates now happen synchronously within the action, eliminating race conditions.
+
+### Bug A4: modifyMaxHealth Inconsistent Logic
+
+**Problem:** `modifyMaxHealth` in `playerHelpers.ts` had `health: Math.min(p.health, p.maxHealth + amount)` — this used the raw `maxHealth + amount` to cap health, ignoring the `Math.max(50, ...)` floor applied to maxHealth itself. The `applyRareDrop` `permanent_max_health` case had the same issue: it set health to `p.health + effect.value` without capping to the new maxHealth.
+
+**Fix:**
+- `modifyMaxHealth`: Compute `newMaxHealth = Math.max(50, p.maxHealth + amount)` first, then cap health to `newMaxHealth`.
+- `applyRareDrop` `permanent_max_health`: Same pattern — compute clamped newMax, cap health to it.
+
+### Files Modified (5 files)
+| File | Changes |
+|------|---------|
+| `src/components/game/GoalProgress.tsx` | Use `completedDegrees.length * 9` instead of old `education` path sum |
+| `src/components/game/WorkSection.tsx` | Use `1.15` bonus matching actual `workShift` logic |
+| `src/store/helpers/economyHelpers.ts` | Static import of `DUNGEON_FLOORS`, sync `applyRareDrop`, fixed `permanent_max_health` cap |
+| `src/store/helpers/questHelpers.ts` | Static import of `getQuest`, sync `completeQuest` |
+| `src/store/helpers/playerHelpers.ts` | Fixed `modifyMaxHealth` to use clamped newMaxHealth for health cap |
+
+### Verification
+- Build passes (`npx vite build`)
+- Tests pass (`npx vitest run`)
 ## 2026-02-05 - Improvement Proposals (Code Audit & Gap Analysis)
 
 A full codebase audit and gap analysis against JONES_REFERENCE.md was performed. Below are categorized improvement proposals, from highest to lowest priority.
