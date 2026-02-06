@@ -11,7 +11,7 @@ import { ShadowfingersModal, useShadowfingersModal } from './ShadowfingersModal'
 import { ZoneEditor, type CenterPanelConfig } from './ZoneEditor';
 import { MOVEMENT_PATHS, BOARD_PATH, type MovementWaypoint } from '@/data/locations';
 import { SideInfoTabs } from './SideInfoTabs';
-import { TurnOrderPanel } from './TurnOrderPanel';
+import { RightSideTabs } from './RightSideTabs';
 import { SaveLoadMenu } from './SaveLoadMenu';
 import { TutorialOverlay } from './TutorialOverlay';
 import { DarkModeToggle } from './DarkModeToggle';
