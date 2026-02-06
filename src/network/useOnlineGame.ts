@@ -27,12 +27,14 @@ function serializeGameState(store: ReturnType<typeof useGameStore.getState>): Se
     goalSettings, winner, eventMessage, rentDueWeek, aiDifficulty, stockPrices, weekendEvent,
     aiSpeedMultiplier, skipAITurn, showTutorial, tutorialStep,
     selectedLocation, shadowfingersEvent, applianceBreakageEvent,
+    networkMode, localPlayerId, roomCode,
   } = store;
   return {
     phase, currentPlayerIndex, players, week, priceModifier, economyTrend, economyCycleWeeksLeft,
     goalSettings, winner, eventMessage, rentDueWeek, aiDifficulty, stockPrices, weekendEvent,
     aiSpeedMultiplier, skipAITurn, showTutorial, tutorialStep,
     selectedLocation, shadowfingersEvent, applianceBreakageEvent,
+    networkMode, localPlayerId, roomCode,
   } as SerializedGameState;
 }
 
@@ -65,7 +67,7 @@ function applyNetworkState(state: SerializedGameState) {
 /** Execute a store action by name with args (host-side) */
 function executeAction(name: string, args: unknown[]): boolean {
   const store = useGameStore.getState();
-  const action = (store as Record<string, unknown>)[name];
+  const action = (store as unknown as Record<string, unknown>)[name];
   if (typeof action !== 'function') {
     console.error(`[Network] Unknown action: ${name}`);
     return false;
@@ -371,8 +373,9 @@ export function useOnlineGame() {
         // Apply the full game state from host
         applyNetworkState(message.gameState);
         // Find our player ID based on lobby position
+        const gameStartMessage = message as { type: 'game-start'; gameState: SerializedGameState; lobby?: LobbyState };
         const myLobbyPlayer = lobbyPlayers.find(p => p.name === localPlayerName)
-          || message.lobby?.players?.find((p: LobbyPlayer) => p.name === localPlayerName);
+          || gameStartMessage.lobby?.players?.find((p: LobbyPlayer) => p.name === localPlayerName);
         const mySlot = myLobbyPlayer?.slot ?? -1;
         const myPlayerId = mySlot >= 0 ? `player-${mySlot}` : null;
 
