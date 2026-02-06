@@ -123,6 +123,9 @@ class AudioManager {
   // --- Internal ---
 
   private notify() {
+    // Create new cached settings object when settings change
+    // This is required for useSyncExternalStore to detect changes
+    this.cachedSettings = { ...this.settings };
     this.listeners.forEach(l => l());
   }
 
