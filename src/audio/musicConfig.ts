@@ -11,11 +11,12 @@ export interface MusicTrack {
 export const MUSIC_TRACKS: Record<string, MusicTrack> = {
   'main-theme':       { id: 'main-theme',       file: '01MainTheme.mp3',          label: 'Main Theme' },
   'on-the-street':    { id: 'on-the-street',    file: '02OnTheStreet.mp3',        label: 'On the Street' },
-  'guild-hall':       { id: 'guild-hall',        file: '03guildhall.mp3',          label: 'Guild Hall' },
-  'the-slums':        { id: 'the-slums',         file: '09TheSlums.mp3',           label: 'The Slums' },
-  'enchanter':        { id: 'enchanter',         file: '11EnchantersWorkshop.mp3', label: "Enchanter's Workshop" },
-  'rusty-tankard':    { id: 'rusty-tankard',     file: '13rustytankard.mp3',       label: 'The Rusty Tankard' },
-  'weekend':          { id: 'weekend',           file: '18OhWhatAWeekend.mp3',     label: 'Oh What a Weekend' },
+  'guild-hall':       { id: 'guild-hall',       file: '03guildhall.mp3',          label: 'Guild Hall' },
+  'bank':             { id: 'bank',             file: '06Bank.mp3',               label: 'The Bank' },
+  'the-slums':        { id: 'the-slums',        file: '09TheSlums.mp3',           label: 'The Slums' },
+  'enchanter':        { id: 'enchanter',        file: '11EnchantersWorkshop.mp3', label: "Enchanter's Workshop" },
+  'rusty-tankard':    { id: 'rusty-tankard',    file: '13rustytankard.mp3',       label: 'The Rusty Tankard' },
+  'weekend':          { id: 'weekend',          file: '18OhWhatAWeekend.mp3',     label: 'Oh What a Weekend' },
 };
 
 // Screen-level music (menus, setup, victory)
