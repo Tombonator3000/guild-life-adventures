@@ -167,6 +167,13 @@
   - `negotiateRaise` store action updates wage without resetting shifts or dependability
   - Costs 1 hour to negotiate (same as job application)
 
+## Completed (2026-02-06)
+
+- [x] Players always start turn at home (Slums or Noble Heights)
+  - Simplified `getHomeLocation()` — `noble` → Noble Heights, all others → The Slums
+  - Matches Jones in the Fast Lane's two-apartment system
+  - Previously `modest` mapped to Landlord (rent office) and `homeless` to Rusty Tankard (tavern)
+
 ## In Progress
 
 *No active tasks*

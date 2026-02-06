@@ -16,14 +16,10 @@ import { updateStockPrices } from '@/data/stocks';
 import { selectWeekendActivity } from '@/data/weekends';
 import type { SetFn, GetFn } from '../storeTypes';
 
-// C9: Helper to get home location for all housing tiers
+// Players always start their turn at home: Noble Heights or The Slums
 function getHomeLocation(housing: string): LocationId {
-  switch (housing) {
-    case 'noble': return 'noble-heights';
-    case 'modest': return 'landlord'; // Modest housing near landlord
-    case 'slums': return 'slums';
-    default: return 'rusty-tankard'; // Homeless sleep near tavern
-  }
+  if (housing === 'noble') return 'noble-heights';
+  return 'slums';
 }
 
 export function createTurnActions(set: SetFn, get: GetFn) {
