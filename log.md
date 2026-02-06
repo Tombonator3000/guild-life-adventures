@@ -1,5 +1,64 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Online Multiplayer: Remote Movement Visibility
+
+**Problem**: In online multiplayer, movement animation was LOCAL ONLY. When a player moved, other players only saw the final position via state-sync — the token "teleported" instantly instead of walking along the board path.
+
+**Root Cause**: `usePlayerAnimation` was entirely local React state. The `AnimatedPlayerToken` animation ran on the moving player's client, then `movePlayer()` updated the store, which triggered `state-sync` broadcast. Remote clients received the final `currentLocation` with no animation data.
+
+### Solution: Broadcast movement animation over WebRTC
+
+Added a separate `movement-animation` message type that broadcasts the animation path to all remote clients before the animation starts.
+
+**Flow — Host moves:**
+1. Host clicks location → `startAnimation()` runs locally
+2. Host broadcasts `{ type: 'movement-animation', playerId, path }` to all guests
+3. Guest receives → `startRemoteAnimation()` plays visual-only animation (no `movePlayer` on completion)
+4. Host animation completes → `movePlayer()` → state-sync broadcasts
+5. Guest receives state-sync → position updated; `animatingPlayer` filter prevents visual glitch
+
+**Flow — Guest moves (their turn):**
+1. Guest clicks location → `startAnimation()` runs locally
+2. Guest sends `{ type: 'movement-start', playerId, path }` to host
+3. Host re-broadcasts as `movement-animation` to ALL guests + triggers animation on host screen
+4. Moving guest ignores own `movement-animation` (already animating)
+5. Guest animation completes → `movePlayer` forwarded to host → host executes → state-sync
+
+### Changes by File
+
+**`src/network/types.ts`**
+- Added `LocationId` import
+- Added `movement-animation` to `HostMessage` (host → guest: animation path for remote player)
+- Added `movement-start` to `GuestMessage` (guest → host: notify of movement start)
+
+**`src/hooks/usePlayerAnimation.ts`**
+- Added `startRemoteAnimation(playerId, path)` — visual-only animation (no `pendingMoveRef`, so `handleAnimationComplete` just clears state without calling `movePlayer`)
+
+**`src/network/useNetworkSync.ts`**
+- Added `remoteAnimation` state + `clearRemoteAnimation` + `broadcastMovement`
+- `broadcastMovement`: host broadcasts directly; guest sends `movement-start` to host
+- Host handler for `movement-start`: re-broadcasts as `movement-animation` + triggers local animation
+- Guest handler for `movement-animation`: triggers remote animation (skips if `playerId === localPlayerId`)
+
+**`src/components/game/GameBoard.tsx`**
+- Destructures `broadcastMovement`, `remoteAnimation`, `clearRemoteAnimation` from `useNetworkSync()`
+- Destructures `startRemoteAnimation` from `usePlayerAnimation()`
+- Added `useEffect` that picks up `remoteAnimation` and calls `startRemoteAnimation`
+- Added `broadcastMovement()` calls after both full and partial `startAnimation()` calls
+
+### Design Notes
+
+- **No timing conflicts**: `animatingPlayer` is filtered from location zones (line 277), so even if state-sync arrives mid-animation and updates `currentLocation`, the player won't appear in two places — they stay in the animated layer until animation completes
+- **Turn-based safety**: Only one player moves at a time, so single `animatingPlayer` state is sufficient
+- **Network overhead**: Minimal — one small message per movement containing only `playerId` + `LocationId[]` path
+
+### Test Results
+- TypeScript compiles clean
+- Build succeeds
+- 111/112 tests pass (1 pre-existing failure in freshFood.test.ts)
+
+---
+
 ## 2026-02-06 - Fix NPC Banter System — 2 Bugs Fixed
 
 The banter system was fully implemented (data, hook, component, integration) but speech bubbles never appeared in-game. Root cause analysis found 2 bugs.

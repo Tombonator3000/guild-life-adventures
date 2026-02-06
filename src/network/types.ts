@@ -1,6 +1,6 @@
 // Network types for online multiplayer
 
-import type { GameState, GoalSettings, AIDifficulty } from '@/types/game.types';
+import type { GameState, GoalSettings, AIDifficulty, LocationId } from '@/types/game.types';
 
 // --- Lobby Types ---
 
@@ -35,7 +35,8 @@ export type HostMessage =
   | { type: 'action-result'; requestId: string; success: boolean; error?: string }
   | { type: 'player-disconnected'; playerName: string }
   | { type: 'kicked'; reason: string }
-  | { type: 'pong'; timestamp: number };
+  | { type: 'pong'; timestamp: number }
+  | { type: 'movement-animation'; playerId: string; path: LocationId[] };
 
 // Guest → Host messages
 export type GuestMessage =
@@ -43,7 +44,8 @@ export type GuestMessage =
   | { type: 'ready'; isReady: boolean }
   | { type: 'action'; requestId: string; name: string; args: unknown[] }
   | { type: 'ping'; timestamp: number }
-  | { type: 'leave' };
+  | { type: 'leave' }
+  | { type: 'movement-start'; playerId: string; path: LocationId[] };
 
 export type NetworkMessage = HostMessage | GuestMessage;
 

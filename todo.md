@@ -368,6 +368,15 @@
   - [x] Bug 8 (LOW): "Only host can broadcast" warning spammed console
   - Build succeeds, TypeScript clean, 111/112 tests pass (1 pre-existing)
 
+## Completed (2026-02-06)
+
+- [x] Online Multiplayer: Remote Movement Visibility
+  - [x] Added `movement-animation` (host→guest) and `movement-start` (guest→host) message types
+  - [x] `startRemoteAnimation()` in usePlayerAnimation — visual-only animation without movePlayer
+  - [x] `broadcastMovement()` in useNetworkSync — host broadcasts directly, guest via host relay
+  - [x] GameBoard broadcasts movement on local player move, animates on remote movement receive
+  - [x] Build succeeds, 111/112 tests pass (1 pre-existing)
+
 ## In Progress
 
 *No active tasks*

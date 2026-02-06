@@ -2,11 +2,12 @@
 // Handles state synchronization during online gameplay
 // Uses the PeerManager singleton — works across component mounts
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { peerManager } from './PeerManager';
 import { useGameStore } from '@/store/gameStore';
 import { setNetworkActionSender } from './NetworkActionProxy';
 import type { NetworkMessage, GuestMessage, HostMessage, SerializedGameState } from './types';
+import type { LocationId } from '@/types/game.types';
 
 /** Extract serializable game state from the store */
 function serializeGameState(): SerializedGameState {
@@ -92,6 +93,20 @@ export function useNetworkSync() {
   const networkMode = useGameStore(s => s.networkMode);
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Remote movement animation state — set when another player's movement should be animated
+  const [remoteAnimation, setRemoteAnimation] = useState<{ playerId: string; path: LocationId[] } | null>(null);
+
+  const clearRemoteAnimation = useCallback(() => setRemoteAnimation(null), []);
+
+  // Broadcast movement animation to other players
+  const broadcastMovement = useCallback((playerId: string, path: LocationId[]) => {
+    if (networkMode === 'host') {
+      peerManager.broadcast({ type: 'movement-animation', playerId, path });
+    } else if (networkMode === 'guest') {
+      peerManager.sendToHost({ type: 'movement-start', playerId, path });
+    }
+  }, [networkMode]);
+
   // Broadcast current state to all guests (host only)
   const broadcastState = useCallback(() => {
     if (networkMode !== 'host') return;
@@ -168,6 +183,10 @@ export function useNetworkSync() {
             type: 'pong',
             timestamp: msg.timestamp,
           });
+        } else if (msg.type === 'movement-start') {
+          // Guest started a movement animation — re-broadcast to all guests and show locally
+          peerManager.broadcast({ type: 'movement-animation', playerId: msg.playerId, path: msg.path });
+          setRemoteAnimation({ playerId: msg.playerId, path: msg.path });
         }
       } else if (networkMode === 'guest') {
         const msg = message as HostMessage;
@@ -176,6 +195,12 @@ export function useNetworkSync() {
         } else if (msg.type === 'action-result') {
           if (!msg.success && msg.error !== 'Not your turn') {
             console.warn(`[NetworkSync] Action failed: ${msg.error}`);
+          }
+        } else if (msg.type === 'movement-animation') {
+          // Another player started moving — animate locally if it's not our own movement
+          const localId = useGameStore.getState().localPlayerId;
+          if (msg.playerId !== localId) {
+            setRemoteAnimation({ playerId: msg.playerId, path: msg.path });
           }
         }
       }
@@ -210,5 +235,8 @@ export function useNetworkSync() {
     isHost: networkMode === 'host',
     isGuest: networkMode === 'guest',
     broadcastState,
+    broadcastMovement,
+    remoteAnimation,
+    clearRemoteAnimation,
   };
 }
