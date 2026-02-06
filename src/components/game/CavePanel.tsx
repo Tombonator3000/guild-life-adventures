@@ -130,9 +130,8 @@ export function CavePanel({
     // Apply gold earned
     if (result.goldEarned > 0) modifyGold(player.id, result.goldEarned);
 
-    // Apply net damage (damage - healing)
-    const netDamage = result.totalDamage - result.totalHealed;
-    if (netDamage !== 0) modifyHealth(player.id, -netDamage);
+    // Apply actual health change (uses real HP delta, not raw totals which can include wasted overheal)
+    if (result.healthChange !== 0) modifyHealth(player.id, result.healthChange);
 
     // Check for death after dungeon combat damage
     const { checkDeath } = useGameStore.getState();

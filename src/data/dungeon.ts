@@ -313,6 +313,17 @@ const FLOOR_2_ENCOUNTERS: DungeonEncounter[] = [
     baseGold: 25,
     flavorText: 'The goblins\' ill-gotten gains. Finders keepers.',
   },
+  {
+    id: 'f2-mushroom-grotto',
+    name: 'Mushroom Grotto',
+    description: 'A hidden alcove filled with glowing mushrooms and a dripping spring.',
+    type: 'healing',
+    difficulty: 'easy',
+    basePower: 0,
+    baseDamage: -8,
+    baseGold: 0,
+    flavorText: 'The air here is damp and earthy. The mushrooms glow softly, easing your wounds.',
+  },
 ];
 
 const FLOOR_2_BOSS: DungeonEncounter = {
@@ -377,6 +388,17 @@ const FLOOR_3_ENCOUNTERS: DungeonEncounter[] = [
     baseDamage: 0,
     baseGold: 50,
     flavorText: 'Gold coins with unfamiliar faces and jeweled trinkets catch the torchlight.',
+  },
+  {
+    id: 'f3-sanctified-pool',
+    name: 'Sanctified Pool',
+    description: 'A stone basin of blessed water, untouched by the crypt\'s corruption.',
+    type: 'healing',
+    difficulty: 'easy',
+    basePower: 0,
+    baseDamage: -12,
+    baseGold: 0,
+    flavorText: 'Holy light radiates from the water. Its warmth pushes back the chill of the dead.',
   },
 ];
 

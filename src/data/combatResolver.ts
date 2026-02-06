@@ -335,6 +335,8 @@ export interface AutoResolveResult {
   goldEarned: number;
   totalDamage: number;
   totalHealed: number;
+  /** Actual health change (negative = damage, positive = net heal). Uses real HP delta, not raw totals. */
+  healthChange: number;
   bossDefeated: boolean;
   rareDropName: string | null;
   log: string[];
@@ -387,6 +389,7 @@ export function autoResolveFloor(
     goldEarned: Math.floor(state.totalGold * lootMultiplier),
     totalDamage: state.totalDamage,
     totalHealed: state.totalHealed,
+    healthChange: state.currentHealth - state.startHealth,
     bossDefeated: state.bossDefeated,
     rareDropName: state.rareDropName,
     log,
