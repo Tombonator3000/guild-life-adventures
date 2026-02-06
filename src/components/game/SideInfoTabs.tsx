@@ -1,8 +1,8 @@
 // SideInfoTabs - Left sidebar tabbed info panel inspired by Jones in the Fast Lane
-// Combines player resource bars with Inventory, Goals, and Stats tabs
+// Clean tabs-only design with Stats, Inventory, and Goals
 
 import { useState } from 'react';
-import { Package, Target, BarChart3, Clock, Coins, Heart, Smile, Utensils, Home, Sparkles, Skull, Shield, Shirt } from 'lucide-react';
+import { Package, Target, BarChart3, Clock, Coins, Heart, Smile, Utensils, Home, Sparkles, Skull, Shield, Shirt, Briefcase, GraduationCap, PiggyBank } from 'lucide-react';
 import type { Player, GoalSettings } from '@/types/game.types';
 import { GoalProgress } from './GoalProgress';
 import { InventoryGrid } from './InventoryGrid';
@@ -10,7 +10,7 @@ import { GUILD_RANK_NAMES, GUILD_RANK_INDEX, HOURS_PER_TURN } from '@/types/game
 import { HOUSING_DATA } from '@/data/housing';
 import { getJob } from '@/data/jobs';
 
-type TabId = 'inventory' | 'goals' | 'stats';
+type TabId = 'stats' | 'inventory' | 'goals';
 
 interface TabConfig {
   id: TabId;
@@ -19,9 +19,9 @@ interface TabConfig {
 }
 
 const TABS: TabConfig[] = [
+  { id: 'stats', label: 'STATS', icon: <BarChart3 className="w-4 h-4" /> },
   { id: 'inventory', label: 'INVENTORY', icon: <Package className="w-4 h-4" /> },
   { id: 'goals', label: 'GOALS', icon: <Target className="w-4 h-4" /> },
-  { id: 'stats', label: 'STATS', icon: <BarChart3 className="w-4 h-4" /> },
 ];
 
 interface SideInfoTabsProps {
@@ -32,18 +32,11 @@ interface SideInfoTabsProps {
 
 export function SideInfoTabs({ player, goals, isCurrentPlayer }: SideInfoTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>('stats');
-  const housingName = player.housing !== 'homeless' ? HOUSING_DATA[player.housing]?.name : 'Homeless';
-
-  // Warning states
-  const healthWarning = player.health <= 20;
-  const timeWarning = player.timeRemaining <= 10;
-  const foodWarning = player.foodLevel <= 25;
-  const clothingWarning = player.clothingCondition <= 25;
 
   return (
-    <div className={`h-full flex flex-col bg-parchment/95 rounded-lg border-2 overflow-hidden ${isCurrentPlayer ? 'border-accent' : 'border-wood-dark/50'}`}>
+    <div className={`h-full flex flex-col bg-parchment rounded-lg border-2 overflow-hidden ${isCurrentPlayer ? 'border-accent' : 'border-wood-dark/50'}`}>
       {/* Player Header */}
-      <div className="flex items-center gap-2 p-2 bg-gradient-to-b from-wood to-wood-light border-b-2 border-wood-light">
+      <div className="flex items-center gap-2 p-2 bg-gradient-to-b from-wood-dark to-wood border-b-2 border-wood-light">
         <div
           className="w-8 h-8 rounded-full border-2 border-parchment shadow-md flex-shrink-0"
           style={{ backgroundColor: player.color }}
@@ -52,97 +45,19 @@ export function SideInfoTabs({ player, goals, isCurrentPlayer }: SideInfoTabsPro
           <h3 className="font-display text-xs font-bold text-parchment truncate">
             {player.name}
           </h3>
-          <p className="text-[10px] text-parchment/70 truncate">
+          <p className="text-[10px] text-parchment/80 truncate">
             {GUILD_RANK_NAMES[player.guildRank]}
           </p>
         </div>
       </div>
 
-      {/* Quick Stats - Always Visible (like image-16) */}
-      <div className="flex-shrink-0 p-2 space-y-1 border-b border-wood-light/30 bg-parchment-dark/20">
-        <QuickStatRow
-          icon={<Clock className="w-3 h-3" />}
-          label="Hours"
-          value={`${player.timeRemaining}/${HOURS_PER_TURN}`}
-          color="text-time"
-          warning={timeWarning}
-          barValue={player.timeRemaining}
-          barMax={HOURS_PER_TURN}
-          barColor="bg-time"
-        />
-        <QuickStatRow
-          icon={<Coins className="w-3 h-3" />}
-          label="Gold"
-          value={player.gold.toString()}
-          color="text-gold"
-        />
-        <QuickStatRow
-          icon={<Heart className="w-3 h-3" />}
-          label="Health"
-          value={`${player.health}/${player.maxHealth}`}
-          color="text-health"
-          warning={healthWarning}
-          barValue={player.health}
-          barMax={player.maxHealth}
-          barColor="bg-health"
-        />
-        <QuickStatRow
-          icon={<Smile className="w-3 h-3" />}
-          label="Happiness"
-          value={`${player.happiness}%`}
-          color="text-happiness"
-          barValue={player.happiness}
-          barMax={100}
-          barColor="bg-happiness"
-        />
-        <QuickStatRow
-          icon={<Utensils className="w-3 h-3" />}
-          label="Food"
-          value={`${player.foodLevel}%`}
-          color="text-secondary"
-          warning={foodWarning}
-          barValue={player.foodLevel}
-          barMax={100}
-          barColor="bg-secondary"
-        />
-        <QuickStatRow
-          icon={<Shirt className="w-3 h-3" />}
-          label="Clothing"
-          value={`${player.clothingCondition}%`}
-          color="text-primary"
-          warning={clothingWarning}
-          barValue={player.clothingCondition}
-          barMax={100}
-          barColor="bg-primary"
-        />
-        <QuickStatRow
-          icon={<Shield className="w-3 h-3" />}
-          label="Depend."
-          value={`${player.dependability}%`}
-          color="text-accent-foreground"
-          warning={player.dependability < 30}
-        />
-        <QuickStatRow
-          icon={<Home className="w-3 h-3" />}
-          label="Home"
-          value={housingName}
-          color="text-muted-foreground"
-        />
-        <QuickStatRow
-          icon={<Sparkles className="w-3 h-3" />}
-          label="Exp"
-          value={`${player.experience}/${player.maxExperience}`}
-          color="text-purple-400"
-        />
-      </div>
-
-      {/* Status Indicators */}
+      {/* Status Alerts - Only show when sick/dead */}
       {(player.isSick || player.health <= 0) && (
-        <div className="flex-shrink-0 px-2 py-1 border-b border-wood-light/30 bg-destructive/10">
+        <div className="flex-shrink-0 px-2 py-1 bg-destructive/20 border-b border-destructive/30">
           {player.isSick && (
-            <div className="flex items-center gap-1 text-[10px] text-destructive">
+            <div className="flex items-center gap-1 text-[10px] text-destructive font-semibold">
               <Skull className="w-3 h-3" />
-              <span>Sick</span>
+              <span>Sick - Visit Healer!</span>
             </div>
           )}
           {player.health <= 0 && (
@@ -167,56 +82,11 @@ export function SideInfoTabs({ player, goals, isCurrentPlayer }: SideInfoTabsPro
       </div>
 
       {/* Tab Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto p-2 min-h-0">
+      <div className="flex-1 overflow-y-auto p-2 min-h-0 bg-parchment">
+        {activeTab === 'stats' && <StatsTab player={player} />}
         {activeTab === 'inventory' && <InventoryGrid player={player} />}
         {activeTab === 'goals' && <GoalsTab player={player} goals={goals} />}
-        {activeTab === 'stats' && <StatsTab player={player} />}
       </div>
-    </div>
-  );
-}
-
-// Quick stat row for top section
-interface QuickStatRowProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  color: string;
-  warning?: boolean;
-  barValue?: number;
-  barMax?: number;
-  barColor?: string;
-}
-
-function QuickStatRow({
-  icon,
-  label,
-  value,
-  color,
-  warning = false,
-  barValue,
-  barMax,
-  barColor = 'bg-primary'
-}: QuickStatRowProps) {
-  const showBar = barValue !== undefined && barMax !== undefined;
-  
-  return (
-    <div className={`${warning ? 'bg-destructive/20 rounded px-0.5' : ''}`}>
-      <div className="flex items-center justify-between text-[10px]">
-        <div className="flex items-center gap-1">
-          <span className={color}>{icon}</span>
-          <span className="text-wood/70">{label}</span>
-        </div>
-        <span className={`font-bold ${color} ${warning ? 'animate-pulse' : ''}`}>{value}</span>
-      </div>
-      {showBar && (
-        <div className="h-0.5 bg-wood/20 rounded-full mt-0.5 overflow-hidden">
-          <div
-            className={`h-full ${barColor} transition-all duration-300`}
-            style={{ width: `${Math.max(0, Math.min(100, (barValue / barMax) * 100))}%` }}
-          />
-        </div>
-      )}
     </div>
   );
 }
@@ -233,24 +103,136 @@ function TabButton({ tab, isActive, onClick }: TabButtonProps) {
       onClick={onClick}
       className={`
         relative flex flex-col items-center justify-center
-        w-12 h-10 rounded-t transition-all duration-200
+        w-14 h-10 rounded-t transition-all duration-200
         ${isActive 
-          ? 'bg-parchment text-wood border border-b-0 border-accent -mb-[1px] z-10' 
-          : 'bg-wood-light/50 text-parchment/80 hover:bg-wood-light hover:text-parchment border border-transparent'
+          ? 'bg-parchment text-wood-dark border border-b-0 border-wood-dark -mb-[1px] z-10' 
+          : 'bg-wood-light/50 text-parchment/90 hover:bg-wood-light hover:text-parchment border border-transparent'
         }
       `}
       title={tab.label}
     >
-      <div className={`${isActive ? 'text-accent' : 'text-parchment/70'}`}>
+      <div className={`${isActive ? 'text-accent' : 'text-parchment/80'}`}>
         {tab.icon}
       </div>
-      <span className="text-[6px] font-display font-semibold uppercase tracking-wide leading-tight">
+      <span className={`text-[7px] font-display font-bold uppercase tracking-wide leading-tight ${isActive ? 'text-wood-dark' : ''}`}>
         {tab.label}
       </span>
     </button>
   );
 }
 
+// ============================================
+// STATS TAB - All player resources and info
+// ============================================
+function StatsTab({ player }: { player: Player }) {
+  const housingName = player.housing !== 'homeless' ? HOUSING_DATA[player.housing]?.name : 'Homeless';
+  const jobData = player.currentJob ? getJob(player.currentJob) : null;
+
+  const healthWarning = player.health <= 20;
+  const timeWarning = player.timeRemaining <= 10;
+  const foodWarning = player.foodLevel <= 25;
+  const clothingWarning = player.clothingCondition <= 25;
+
+  return (
+    <div className="space-y-2">
+      {/* Core Resources */}
+      <StatSection title="Resources">
+        <ResourceRow
+          icon={<Clock className="w-3.5 h-3.5" />}
+          label="Hours"
+          value={`${player.timeRemaining}/${HOURS_PER_TURN}`}
+          barValue={player.timeRemaining}
+          barMax={HOURS_PER_TURN}
+          barColor="bg-time"
+          warning={timeWarning}
+        />
+        <ResourceRow
+          icon={<Coins className="w-3.5 h-3.5" />}
+          label="Gold"
+          value={player.gold.toString()}
+          highlight
+        />
+        <ResourceRow
+          icon={<Heart className="w-3.5 h-3.5" />}
+          label="Health"
+          value={`${player.health}/${player.maxHealth}`}
+          barValue={player.health}
+          barMax={player.maxHealth}
+          barColor="bg-health"
+          warning={healthWarning}
+        />
+        <ResourceRow
+          icon={<Smile className="w-3.5 h-3.5" />}
+          label="Happiness"
+          value={`${player.happiness}%`}
+          barValue={player.happiness}
+          barMax={100}
+          barColor="bg-happiness"
+        />
+        <ResourceRow
+          icon={<Utensils className="w-3.5 h-3.5" />}
+          label="Food"
+          value={`${player.foodLevel}%`}
+          barValue={player.foodLevel}
+          barMax={100}
+          barColor="bg-secondary"
+          warning={foodWarning}
+        />
+        <ResourceRow
+          icon={<Shirt className="w-3.5 h-3.5" />}
+          label="Clothing"
+          value={`${player.clothingCondition}%`}
+          barValue={player.clothingCondition}
+          barMax={100}
+          barColor="bg-primary"
+          warning={clothingWarning}
+        />
+      </StatSection>
+
+      {/* Character Info */}
+      <StatSection title="Character">
+        <StatRow icon={<Shield className="w-3.5 h-3.5" />} label="Depend." value={`${player.dependability}%`} warning={player.dependability < 30} />
+        <StatRow icon={<Home className="w-3.5 h-3.5" />} label="Home" value={housingName} />
+        <StatRow icon={<Sparkles className="w-3.5 h-3.5" />} label="Exp" value={`${player.experience}/${player.maxExperience}`} />
+      </StatSection>
+
+      {/* Employment */}
+      <StatSection title="Employment">
+        <StatRow icon={<Briefcase className="w-3.5 h-3.5" />} label="Job" value={jobData?.name || 'Unemployed'} />
+        {player.currentJob && (
+          <>
+            <StatRow icon={<Coins className="w-3.5 h-3.5" />} label="Wage" value={`${player.currentWage}g/hr`} highlight />
+            <StatRow icon={<Clock className="w-3.5 h-3.5" />} label="Shifts" value={player.shiftsWorkedSinceHire.toString()} />
+          </>
+        )}
+      </StatSection>
+
+      {/* Finances */}
+      <StatSection title="Finances">
+        <StatRow icon={<PiggyBank className="w-3.5 h-3.5" />} label="Savings" value={`${player.savings}g`} />
+        <StatRow icon={<Coins className="w-3.5 h-3.5" />} label="Investments" value={`${player.investments}g`} />
+        {player.loanAmount > 0 && (
+          <StatRow icon={<Skull className="w-3.5 h-3.5" />} label="Loan Debt" value={`-${player.loanAmount}g`} warning />
+        )}
+      </StatSection>
+
+      {/* Education */}
+      <StatSection title="Education">
+        <StatRow icon={<GraduationCap className="w-3.5 h-3.5" />} label="Degrees" value={player.completedDegrees.length.toString()} />
+        {player.completedDegrees.slice(0, 3).map(degreeId => (
+          <div key={degreeId} className="text-[9px] text-secondary-foreground pl-4 truncate font-medium">
+            * {degreeId.replace(/-/g, ' ')}
+          </div>
+        ))}
+        {player.completedDegrees.length > 3 && (
+          <div className="text-[9px] text-wood/60 pl-4">
+            +{player.completedDegrees.length - 3} more
+          </div>
+        )}
+      </StatSection>
+    </div>
+  );
+}
 
 // ============================================
 // GOALS TAB
@@ -258,17 +240,12 @@ function TabButton({ tab, isActive, onClick }: TabButtonProps) {
 function GoalsTab({ player, goals }: { player: Player; goals: GoalSettings }) {
   return (
     <div className="space-y-2">
-      <div className="bg-parchment-dark/30 rounded p-2 border border-wood-light/30">
-        <h3 className="font-display text-[10px] font-bold text-wood mb-1.5 flex items-center gap-1">
-          <Target className="w-3 h-3" />
-          Victory Goals
-        </h3>
+      <StatSection title="Victory Goals">
         <GoalProgress player={player} goals={goals} compact />
-      </div>
+      </StatSection>
 
       {/* Dungeon Progress */}
-      <div className="bg-parchment-dark/30 rounded p-2 border border-wood-light/30">
-        <h3 className="font-display text-[10px] font-bold text-wood mb-1">Dungeon</h3>
+      <StatSection title="Dungeon">
         <div className="flex items-center gap-1 mb-1">
           <div className="flex-1 h-1.5 bg-wood/20 rounded-full overflow-hidden">
             <div 
@@ -276,16 +253,16 @@ function GoalsTab({ player, goals }: { player: Player; goals: GoalSettings }) {
               style={{ width: `${(player.dungeonFloorsCleared.length / 5) * 100}%` }}
             />
           </div>
-          <span className="text-[9px] font-bold text-wood">
+          <span className="text-[10px] font-bold text-wood-dark">
             {player.dungeonFloorsCleared.length}/5
           </span>
         </div>
-        <div className="flex gap-0.5">
+        <div className="flex gap-0.5 justify-center">
           {[1, 2, 3, 4, 5].map(floor => (
             <div
               key={floor}
               className={`
-                w-4 h-4 rounded flex items-center justify-center text-[8px] font-bold
+                w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold
                 ${player.dungeonFloorsCleared.includes(floor)
                   ? 'bg-secondary text-secondary-foreground'
                   : 'bg-wood/20 text-wood/50'}
@@ -295,94 +272,104 @@ function GoalsTab({ player, goals }: { player: Player; goals: GoalSettings }) {
             </div>
           ))}
         </div>
-      </div>
+      </StatSection>
 
       {/* Quest Stats */}
-      <div className="bg-parchment-dark/30 rounded p-2 border border-wood-light/30">
-        <div className="flex justify-between items-center text-[10px]">
-          <span className="text-wood">Quests Done</span>
-          <span className="font-bold text-gold">{player.completedQuests}</span>
+      <StatSection title="Quests">
+        <div className="flex justify-between items-center text-[11px]">
+          <span className="text-wood-dark font-medium">Quests Done</span>
+          <span className="font-bold text-gold-dark">{player.completedQuests}</span>
         </div>
-        <div className="flex justify-between items-center text-[10px] mt-0.5">
-          <span className="text-wood">Guild Pass</span>
+        <div className="flex justify-between items-center text-[11px] mt-1">
+          <span className="text-wood-dark font-medium">Guild Pass</span>
           <span className={`font-bold ${player.hasGuildPass ? 'text-secondary' : 'text-destructive'}`}>
-            {player.hasGuildPass ? '✓' : '✗'}
+            {player.hasGuildPass ? 'Yes' : 'No'}
           </span>
         </div>
-      </div>
+      </StatSection>
     </div>
   );
 }
 
 // ============================================
-// STATS TAB
+// SHARED COMPONENTS
 // ============================================
-function StatsTab({ player }: { player: Player }) {
-  const housingName = player.housing !== 'homeless' ? HOUSING_DATA[player.housing]?.name : 'Homeless';
-  const jobData = player.currentJob ? getJob(player.currentJob) : null;
 
+function StatSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-2">
-      {/* Character */}
-      <div className="bg-parchment-dark/30 rounded p-2 border border-wood-light/30">
-        <h3 className="font-display text-[10px] font-bold text-wood mb-1">Character</h3>
-        <StatRow label="Guild Rank" value={GUILD_RANK_NAMES[player.guildRank]} />
-        <StatRow label="Rank Level" value={`${GUILD_RANK_INDEX[player.guildRank]}/7`} />
-        <StatRow label="Housing" value={housingName} />
-      </div>
-
-      {/* Employment */}
-      <div className="bg-parchment-dark/30 rounded p-2 border border-wood-light/30">
-        <h3 className="font-display text-[10px] font-bold text-wood mb-1">Employment</h3>
-        <StatRow label="Current Job" value={jobData?.name || 'Unemployed'} />
-        {player.currentJob && (
-          <>
-            <StatRow label="Wage" value={`${player.currentWage}g/hr`} highlight />
-            <StatRow label="Shifts" value={player.shiftsWorkedSinceHire.toString()} />
-          </>
-        )}
-        <StatRow label="Dependability" value={`${player.dependability}%`} />
-        <StatRow label="Experience" value={`${player.experience}/${player.maxExperience}`} />
-      </div>
-
-      {/* Finances */}
-      <div className="bg-parchment-dark/30 rounded p-2 border border-wood-light/30">
-        <h3 className="font-display text-[10px] font-bold text-wood mb-1">Finances</h3>
-        <StatRow label="Gold on Hand" value={`${player.gold}g`} highlight />
-        <StatRow label="Bank Savings" value={`${player.savings}g`} />
-        <StatRow label="Investments" value={`${player.investments}g`} />
-        {player.loanAmount > 0 && (
-          <StatRow label="Loan Debt" value={`-${player.loanAmount}g`} warning />
-        )}
-      </div>
-
-      {/* Education */}
-      <div className="bg-parchment-dark/30 rounded p-2 border border-wood-light/30">
-        <h3 className="font-display text-[10px] font-bold text-wood mb-1">Education</h3>
-        <StatRow label="Degrees" value={player.completedDegrees.length.toString()} />
-        {player.completedDegrees.slice(0, 3).map(degreeId => (
-          <div key={degreeId} className="text-[8px] text-secondary pl-1 truncate">
-            ✓ {degreeId.replace(/-/g, ' ')}
-          </div>
-        ))}
-        {player.completedDegrees.length > 3 && (
-          <div className="text-[8px] text-muted-foreground pl-1">
-            +{player.completedDegrees.length - 3} more
-          </div>
-        )}
+    <div className="bg-parchment-dark/40 rounded p-2 border border-wood/20">
+      <h3 className="font-display text-[10px] font-bold text-wood-dark mb-1.5 uppercase tracking-wide border-b border-wood/20 pb-0.5">
+        {title}
+      </h3>
+      <div className="space-y-1">
+        {children}
       </div>
     </div>
   );
 }
 
-function StatRow({ label, value, highlight = false, warning = false }: { label: string; value: string; highlight?: boolean; warning?: boolean }) {
+interface ResourceRowProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  barValue?: number;
+  barMax?: number;
+  barColor?: string;
+  warning?: boolean;
+  highlight?: boolean;
+}
+
+function ResourceRow({
+  icon,
+  label,
+  value,
+  barValue,
+  barMax,
+  barColor = 'bg-primary',
+  warning = false,
+  highlight = false
+}: ResourceRowProps) {
+  const showBar = barValue !== undefined && barMax !== undefined;
+  
   return (
-    <div className="flex justify-between items-baseline py-px">
-      <span className="text-[9px] text-wood/70">{label}</span>
-      <span className={`
-        text-[9px] font-semibold
-        ${warning ? 'text-destructive' : highlight ? 'text-gold' : 'text-wood'}
-      `}>
+    <div className={`${warning ? 'bg-destructive/15 rounded px-1 -mx-1' : ''}`}>
+      <div className="flex items-center justify-between text-[11px]">
+        <div className="flex items-center gap-1.5">
+          <span className="text-wood-dark">{icon}</span>
+          <span className="text-wood-dark font-medium">{label}</span>
+        </div>
+        <span className={`font-bold ${warning ? 'text-destructive animate-pulse' : highlight ? 'text-gold-dark' : 'text-wood-dark'}`}>
+          {value}
+        </span>
+      </div>
+      {showBar && (
+        <div className="h-1 bg-wood/20 rounded-full mt-0.5 overflow-hidden">
+          <div
+            className={`h-full ${barColor} transition-all duration-300`}
+            style={{ width: `${Math.max(0, Math.min(100, (barValue / barMax) * 100))}%` }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface StatRowProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  highlight?: boolean;
+  warning?: boolean;
+}
+
+function StatRow({ icon, label, value, highlight = false, warning = false }: StatRowProps) {
+  return (
+    <div className="flex items-center justify-between text-[11px]">
+      <div className="flex items-center gap-1.5">
+        <span className="text-wood-dark">{icon}</span>
+        <span className="text-wood-dark font-medium">{label}</span>
+      </div>
+      <span className={`font-bold ${warning ? 'text-destructive' : highlight ? 'text-gold-dark' : 'text-wood-dark'}`}>
         {value}
       </span>
     </div>
