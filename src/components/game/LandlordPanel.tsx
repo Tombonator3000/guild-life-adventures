@@ -26,7 +26,7 @@ export function LandlordPanel({
 
   return (
     <div className="space-y-4">
-      <div className="wood-frame p-3 text-card">
+      <div className="wood-frame p-3 text-parchment">
         <div className="flex justify-between mb-2">
           <span>Current Housing:</span>
           <span className="font-bold">{HOUSING_DATA[player.housing].name}</span>
@@ -124,12 +124,12 @@ export function LandlordPanel({
           const isCheaper = player.lockedRent > 0 && tierMarketRent < player.lockedRent;
 
           return (
-            <div key={tier} className="wood-frame p-2 text-card">
+            <div key={tier} className="wood-frame p-2 text-parchment">
               <div className="flex justify-between items-center mb-1">
                 <span className="font-display font-semibold text-sm">{housing.name}</span>
                 <span className="text-gold font-bold">{tierMarketRent}g/week</span>
               </div>
-              <div className="text-xs text-muted-foreground mb-2">
+              <div className="text-xs text-parchment-dark mb-2">
                 {housing.description}
                 {tier === 'noble' && <span className="text-secondary ml-1">(Safe from Shadowfingers!)</span>}
                 {isCheaper && <span className="text-secondary ml-1">(Cheaper than current!)</span>}

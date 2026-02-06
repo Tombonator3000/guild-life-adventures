@@ -1,5 +1,55 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Standardize Beige/Brown Text Design
+
+Text on dark brown `wood-frame` backgrounds was nearly invisible across the entire game. The root cause: `text-muted-foreground` (medium-dark brown `hsl(30 25% 35%)`) and `text-card` (light in light mode but dark in dark mode) were used on the fixed dark brown gradient background (`hsl(30 35% 35%)` → `hsl(25 40% 20%)`).
+
+### Changes
+
+**1. Newspaper Text Fix** (`NewspaperModal.tsx`)
+- Article body: `text-muted-foreground` → `text-parchment-dark` (visible beige on dark wood)
+- Article base color: `text-card` → `text-parchment` (always light, mode-independent)
+
+**2. ShadowfingersModal Standardization** (`ShadowfingersModal.tsx`)
+- Headline section: raw `bg-amber-100/text-amber-*` → design system `bg-parchment-dark/text-card-foreground`
+- Stolen items list: raw `bg-amber-50/text-amber-*` → design system `bg-parchment-dark/text-card-foreground`
+- Effects box: `text-card` → `text-parchment`
+
+**3. Global wood-frame Text Standardization** (15 files)
+- **Rule**: All `wood-frame` elements now use `text-parchment` (always `hsl(40 40% 92%)`, never changes with dark mode) instead of `text-card` (which maps to dark in dark mode)
+- **Secondary text**: All `text-muted-foreground` inside `wood-frame` → `text-parchment-dark`
+- This ensures readable beige text on brown backgrounds in both light and dark modes
+
+### Files Modified
+| File | Change |
+|------|--------|
+| `NewspaperModal.tsx` | Article text: `text-card` → `text-parchment`, body: `text-muted-foreground` → `text-parchment-dark` |
+| `ShadowfingersModal.tsx` | Headline/stolen items → design system colors, effects → `text-parchment` |
+| `WorkSection.tsx` | Wood-frame: `text-card` → `text-parchment`, subtext: → `text-parchment-dark` |
+| `EnchanterPanel.tsx` | Repair/shop wood-frame: → `text-parchment`, descriptions: → `text-parchment-dark` |
+| `QuestPanel.tsx` | Active/available quest cards: → `text-parchment`, descriptions: → `text-parchment-dark` |
+| `LandlordPanel.tsx` | Housing info/options: → `text-parchment`, descriptions: → `text-parchment-dark` |
+| `ForgePanel.tsx` | Job offers: → `text-parchment`, shift info: → `text-parchment-dark` |
+| `HealerPanel.tsx` | Health display + all service buttons: → `text-parchment` |
+| `EventModal.tsx` | Effects display: → `text-parchment` |
+| `ActionButton.tsx` | Shared button component: → `text-parchment` |
+| `PawnShopPanel.tsx` | All buttons: → `text-parchment`, gambling odds: → `text-parchment-dark` |
+| `ResourcePanel.tsx` | Resource cards: → `text-parchment` |
+| `TitleScreen.tsx` | All wood-frame buttons: → `text-parchment` |
+| `GameSetup.tsx` | Preset/back buttons: → `text-parchment` |
+| `OnlineLobby.tsx` | All wood-frame buttons: → `text-parchment` |
+
+### Design System Standard (established)
+- **On `wood-frame` (dark brown bg)**: Use `text-parchment` for primary text, `text-parchment-dark` for secondary
+- **On `parchment-panel` (light beige bg)**: Use `text-card-foreground` for primary, `text-muted-foreground` for secondary
+
+### Build & Tests
+- TypeScript compiles cleanly
+- Build succeeds
+- 112/112 tests pass
+
+---
+
 ## 2026-02-06 - Economy Stabilization: Gradual Drift System
 
 The economy was too volatile — `priceModifier` was fully random (0.7–1.3) every single week, causing prices and wage offers to swing wildly. Combined with the per-job wage multiplier (0.5–2.5×), the effective wage range was enormous and felt unstable.

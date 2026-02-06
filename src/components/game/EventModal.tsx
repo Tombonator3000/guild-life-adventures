@@ -89,7 +89,7 @@ export function EventModal({ event, onDismiss }: EventModalProps) {
         </DialogHeader>
         
         {effectsText && (
-          <div className="wood-frame p-3 text-card text-center my-4">
+          <div className="wood-frame p-3 text-parchment text-center my-4">
             <span className="font-display font-semibold">{effectsText}</span>
           </div>
         )}

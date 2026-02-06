@@ -41,13 +41,13 @@ export function ForgePanel({
         forgeJobOffers.map(offer => {
           const earnings = Math.ceil(offer.hoursPerShift * 1.33 * offer.offeredWage);
           return (
-            <div key={offer.id} className="wood-frame p-2 text-card">
+            <div key={offer.id} className="wood-frame p-2 text-parchment">
               <div className="flex justify-between items-center">
                 <span className="font-display font-semibold text-sm">{offer.name}</span>
                 <span className="text-gold font-bold">{offer.offeredWage}g/h</span>
               </div>
               <div className="flex justify-between items-center mt-1">
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-parchment-dark">
                   {offer.hoursPerShift}h shift → {earnings}g
                 </span>
                 <button

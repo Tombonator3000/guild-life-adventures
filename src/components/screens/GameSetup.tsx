@@ -75,7 +75,7 @@ export function GameSetup() {
               <button
                 onClick={addPlayer}
                 disabled={playerNames.length >= 4}
-                className="p-2 wood-frame text-card hover:brightness-110 disabled:opacity-50"
+                className="p-2 wood-frame text-parchment hover:brightness-110 disabled:opacity-50"
               >
                 <Plus className="w-5 h-5" />
               </button>
@@ -182,19 +182,19 @@ export function GameSetup() {
             <div className="flex gap-2 mb-4">
               <button
                 onClick={() => setGoals(presets.quick)}
-                className="flex-1 p-2 wood-frame text-card text-sm font-display hover:brightness-110"
+                className="flex-1 p-2 wood-frame text-parchment text-sm font-display hover:brightness-110"
               >
                 Quick Game
               </button>
               <button
                 onClick={() => setGoals(presets.standard)}
-                className="flex-1 p-2 wood-frame text-card text-sm font-display hover:brightness-110"
+                className="flex-1 p-2 wood-frame text-parchment text-sm font-display hover:brightness-110"
               >
                 Standard
               </button>
               <button
                 onClick={() => setGoals(presets.epic)}
-                className="flex-1 p-2 wood-frame text-card text-sm font-display hover:brightness-110"
+                className="flex-1 p-2 wood-frame text-parchment text-sm font-display hover:brightness-110"
               >
                 Epic Quest
               </button>
@@ -254,7 +254,7 @@ export function GameSetup() {
           <div className="flex justify-center gap-4">
             <button
               onClick={() => setPhase('title')}
-              className="px-6 py-3 wood-frame text-card font-display hover:brightness-110"
+              className="px-6 py-3 wood-frame text-parchment font-display hover:brightness-110"
             >
               Back
             </button>

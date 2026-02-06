@@ -83,7 +83,7 @@ export function TitleScreen() {
 
           <button
             onClick={() => setPhase('online-lobby')}
-            className="wood-frame text-card text-lg px-10 py-3 font-display hover:brightness-110 flex items-center gap-2 justify-center"
+            className="wood-frame text-parchment text-lg px-10 py-3 font-display hover:brightness-110 flex items-center gap-2 justify-center"
           >
             <Globe className="w-5 h-5" />
             Online Multiplayer
@@ -92,7 +92,7 @@ export function TitleScreen() {
           {autoSaveExists && (
             <button
               onClick={handleContinue}
-              className="wood-frame text-card text-lg px-10 py-3 font-display hover:brightness-110"
+              className="wood-frame text-parchment text-lg px-10 py-3 font-display hover:brightness-110"
             >
               Continue Game
             </button>
@@ -181,7 +181,7 @@ export function TitleScreen() {
             <div className="mt-4 flex justify-center">
               <button
                 onClick={() => setShowLoadMenu(false)}
-                className="px-6 py-2 wood-frame text-card font-display text-sm hover:brightness-110"
+                className="px-6 py-2 wood-frame text-parchment font-display text-sm hover:brightness-110"
               >
                 Cancel
               </button>
