@@ -178,13 +178,13 @@
   }
 
   .location-zone {
-    @apply absolute cursor-pointer transition-all duration-200;
+    @apply absolute cursor-default transition-all duration-200;
     border: none;
     border-radius: 8px;
   }
 
   .location-zone:hover {
-    /* No visual highlight - only tooltip shows */
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23d4a537' stroke-width='2'%3E%3Cpath d='M3 12h4l3 9 4-18 3 9h4'/%3E%3C/svg%3E") 12 12, pointer;
   }
 
   .location-zone.active {
