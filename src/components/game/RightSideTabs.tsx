@@ -477,7 +477,7 @@ function DeveloperTab({
 
       <OptionSection title="SFX Generator">
         <a
-          href="/admin/sfx"
+          href={`${import.meta.env.BASE_URL}admin/sfx`}
           target="_blank"
           rel="noopener noreferrer"
           className="w-full flex items-center justify-center gap-2 p-2 bg-amber-100/30 hover:bg-amber-100 rounded border border-amber-300/50 text-amber-700 font-display text-xs transition-colors"

@@ -277,6 +277,18 @@
   - [x] HTML meta tags (theme-color, apple-mobile-web-app-capable)
   - [x] Build succeeds, 110/112 tests pass
 
+## Completed (2026-02-06)
+
+- [x] Multi-Platform Game Runner — deployable from both GitHub Pages and Lovable
+  - [x] Dynamic base path via `DEPLOY_TARGET` env var (vite.config.ts)
+  - [x] Safe lovable-tagger import (try/catch dynamic import)
+  - [x] BrowserRouter basename from `import.meta.env.BASE_URL`
+  - [x] Fixed 18+ hardcoded absolute asset paths (music, SFX, NPC portraits, links)
+  - [x] GitHub Actions workflow for auto-deploy to GitHub Pages
+  - [x] `build:github` script in package.json
+  - [x] 404.html SPA redirect for GitHub Pages routing
+  - [x] All 112 tests pass, both build targets succeed
+
 ## In Progress
 
 *No active tasks*

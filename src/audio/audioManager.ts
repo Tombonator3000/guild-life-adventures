@@ -66,7 +66,7 @@ class AudioManager {
     const track = MUSIC_TRACKS[trackId];
     if (!track) return;
 
-    const url = `/music/${track.file}`;
+    const url = `${import.meta.env.BASE_URL}music/${track.file}`;
     this.crossfadeTo(url, trackId);
   }
 

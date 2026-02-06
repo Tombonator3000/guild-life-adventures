@@ -23,7 +23,7 @@ export function NpcPortrait({ npc }: NpcPortraitProps) {
     >
       {showImage ? (
         <img
-          src={npc.portraitImage}
+          src={`${import.meta.env.BASE_URL}${npc.portraitImage}`}
           alt={npc.name}
           className="w-full h-full object-cover"
           onError={() => setImgFailed(true)}
