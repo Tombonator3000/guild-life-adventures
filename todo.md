@@ -187,6 +187,19 @@
   - [x] Bug 8: Misleading "Auto-consumed weekly" description in General Store
   - [x] 20 unit tests in src/test/freshFood.test.ts
 
+## Completed (2026-02-06)
+
+- [x] Location Panel Layout Overhaul — Jones-style menu system with NPC portraits
+  - [x] Created `src/data/npcs.ts` — 12 NPC definitions (name, title, portrait, greeting, colors)
+  - [x] Created `src/components/game/LocationShell.tsx` — portrait + tab layout wrapper
+  - [x] Refactored `LocationPanel.tsx` — all 12 non-home locations use LocationShell with tabs
+  - [x] Guild Hall split into Quests / Jobs / Work tabs (eliminates vertical scrolling)
+  - [x] Enchanter split into Healing / Appliances / Work tabs
+  - [x] Shadow Market split into Market / Work tabs
+  - [x] Single-tab locations show content without tab bar (no wasted space)
+  - [x] Work tab only visible when player works at that location
+  - [x] TypeScript compiles, build succeeds
+
 ## In Progress
 
 *No active tasks*

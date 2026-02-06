@@ -1,5 +1,80 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Location Panel Layout Overhaul (Jones-Style Menu System)
+
+Redesigned all location panels to use a Jones-style menu system with NPC portraits and tab navigation. Eliminates excessive scrolling by showing only one section at a time.
+
+### Problem
+Location panels (especially Guild Hall and Enchanter) stacked all content vertically, requiring significant scrolling. Quest board, employment office, and work sections were all visible simultaneously, making the UI cluttered and hard to navigate.
+
+### Solution: LocationShell + Tab Navigation
+Inspired by Jones in the Fast Lane's Employment Office (left-side NPC portrait, right-side clean menu), created a new layout system:
+
+**Layout Structure:**
+```
+┌─────────────────────────────────────────┐
+│ Location Name                      [X]  │
+│ Description                             │
+├──────────┬──────────────────────────────┤
+│  NPC     │  [Tab1] [Tab2] [Tab3]        │
+│ Portrait │──────────────────────────────│
+│  Name    │                              │
+│  Title   │  Tab Content (no scrolling)  │
+│ "Quote"  │                              │
+└──────────┴──────────────────────────────┘
+```
+
+### Files Created (2)
+| File | Purpose |
+|------|---------|
+| `src/data/npcs.ts` | NPC data per location (name, title, emoji portrait, greeting, colors) — 12 NPCs |
+| `src/components/game/LocationShell.tsx` | Layout wrapper: NPC portrait (left) + tab bar + content area (right) |
+
+### Files Modified (1)
+| File | Change |
+|------|--------|
+| `src/components/game/LocationPanel.tsx` | Refactored to use LocationShell with tab-based navigation for all 12 non-home locations |
+
+### Location Tab Breakdown
+| Location | Tabs | Key Change |
+|----------|------|------------|
+| Guild Hall | Quests, Jobs, Work* | Split quests/employment/work into separate tabs |
+| Enchanter | Healing, Appliances, Work* | Split healer/shop/work into separate tabs |
+| Shadow Market | Market, Work* | Market + work separated |
+| Bank | Services | Already uses internal view switching |
+| General Store | Shop | Single content area |
+| Armory | Equipment | Single content area |
+| Academy | Courses | Single content area |
+| Rusty Tankard | Menu | Single content area |
+| Forge | Work | Single content area |
+| Landlord | Housing | Single content area |
+| Fence | Trade | Single content area |
+| Cave | Dungeon | Single content area |
+
+*Work tab only visible when player has a job at that location.
+
+### NPC Portraits (12)
+Each location now shows a themed NPC portrait (emoji + styled frame):
+- Guild Hall: Aldric (Guild Master) 🧙‍♂️
+- Bank: Mathilda (Head Banker) 👩‍💼
+- General Store: Brynn (Shopkeeper) 👨‍🌾
+- Armory: Gunther (Master Armorer) 🦸‍♂️
+- Enchanter: Lyra (Enchantress) 🧝‍♀️
+- Shadow Market: Shade (Black Marketeer) 🦊
+- Academy: Elara (Dean of Studies) 👩‍🏫
+- Rusty Tankard: Magnus (Barkeep) 🧔
+- Cave: The Cave (Dark Entrance) 🗿
+- Forge: Korr (Smithmaster) 🧑‍🔧
+- Landlord: Tomas (Landlord) 🤵
+- Fence: Whiskers (Fence & Dealer) 🎭
+
+### Design Decisions
+- Tab bar hidden when location has only 1 tab (no wasted space)
+- Home locations (Noble Heights, Slums) keep their existing SVG room display
+- Existing sub-panels (GuildHallPanel, BankPanel, etc.) unchanged — just wrapped in tabs
+- NPC portrait area is 112px wide (w-28), content fills remaining space
+- Portrait frame uses location-specific accent colors for visual identity
+
 ## 2026-02-06 - Preservation Box & Frost Chest Audit (8 Bugs Fixed)
 
 Audited the fresh food preservation system (Preservation Box = Refrigerator, Frost Chest = Freezer from Jones in the Fast Lane). Compared against Jones wiki Fresh Food and Consumables mechanics. Found and fixed 8 bugs, added 20 unit tests.

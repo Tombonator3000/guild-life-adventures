@@ -2,7 +2,7 @@ import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { getLocation, getMovementCost } from '@/data/locations';
 import type { LocationId } from '@/types/game.types';
 import { GUILD_PASS_COST } from '@/types/game.types';
-import { MapPin, Clock, ArrowRight, X, Briefcase, Newspaper, TrendingUp, ScrollText } from 'lucide-react';
+import { MapPin, Clock, ArrowRight, X, Briefcase, Newspaper, TrendingUp, ScrollText, Scroll, Sword, ShieldHalf, Heart, Sparkles, Package, ShoppingBag, Dices, Coins, Home, GraduationCap, Hammer } from 'lucide-react';
 import { getJob } from '@/data/jobs';
 import { GuildHallPanel } from './GuildHallPanel';
 import { NEWSPAPER_COST, NEWSPAPER_TIME, generateNewspaper } from '@/data/newspaper';
@@ -23,6 +23,8 @@ import { LandlordPanel } from './LandlordPanel';
 import { CavePanel } from './CavePanel';
 import { ForgePanel } from './ForgePanel';
 import { HomePanel } from './HomePanel';
+import { LocationShell, type LocationTab } from './LocationShell';
+import { LOCATION_NPCS } from '@/data/npcs';
 import { useState } from 'react';
 import { NewspaperModal } from './NewspaperModal';
 import { toast } from 'sonner';
@@ -102,41 +104,102 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     setShowNewspaper(true);
   };
 
-  // Location-specific actions
-  const getLocationActions = () => {
+  // Check if player has a job at this location (for Work tab)
+  const currentJobData = player.currentJob ? getJob(player.currentJob) : null;
+
+  // Build tabs for each location
+  const getLocationTabs = (): LocationTab[] | null => {
     if (!isHere) return null;
 
     switch (locationId) {
-      case 'rusty-tankard':
-        return (
-          <TavernPanel
-            player={player}
-            priceModifier={priceModifier}
-            modifyGold={modifyGold}
-            spendTime={spendTime}
-            modifyFood={modifyFood}
-            modifyHappiness={modifyHappiness}
-            workShift={workShift}
-          />
-        );
-
-      case 'guild-hall':
+      case 'guild-hall': {
         const availableQuests = getAvailableQuests(player.guildRank);
-        const currentJobData = player.currentJob ? getJob(player.currentJob) : null;
         const canWorkAtGuildHall = currentJobData && currentJobData.location === 'Guild Hall';
         const MIN_SHIFTS_FOR_RAISE = 3;
 
-        return (
-          <div className="space-y-4">
-            {/* Current Job Status - Show work button ONLY if job is at Guild Hall */}
-            {player.currentJob && currentJobData && canWorkAtGuildHall && (
-              <div className="wood-frame p-3 text-card">
-                <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
-                  <Briefcase className="w-4 h-4" /> Current Job: {currentJobData.name}
+        const tabs: LocationTab[] = [];
+
+        // Quest tab
+        tabs.push({
+          id: 'quests',
+          label: 'Quests',
+          badge: player.activeQuest ? '!' : undefined,
+          content: player.hasGuildPass ? (
+            <QuestPanel
+              quests={availableQuests}
+              player={player}
+              onTakeQuest={(questId) => takeQuest(player.id, questId)}
+              onCompleteQuest={() => completeQuest(player.id)}
+              onAbandonQuest={() => abandonQuest(player.id)}
+            />
+          ) : (
+            <div className="space-y-3">
+              <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+                <ScrollText className="w-4 h-4" /> Guild Quest Board
+              </h4>
+              <p className="text-sm text-muted-foreground mb-3">
+                You need a <span className="font-bold text-[#c9a227]">Guild Pass</span> to access the quest board.
+              </p>
+              <div className="text-center bg-black/20 p-2 rounded mb-2">
+                <span className="text-xs text-muted-foreground">Guild Pass Cost:</span>
+                <span className="font-bold text-[#c9a227] ml-2">{GUILD_PASS_COST}g</span>
+              </div>
+              <button
+                onClick={() => {
+                  buyGuildPass(player.id);
+                  toast.success('Guild Pass acquired! You can now take quests.');
+                }}
+                disabled={player.gold < GUILD_PASS_COST}
+                className="w-full gold-button py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {player.gold < GUILD_PASS_COST
+                  ? `Need ${GUILD_PASS_COST - player.gold}g more`
+                  : `Buy Guild Pass (${GUILD_PASS_COST}g)`}
+              </button>
+            </div>
+          ),
+        });
+
+        // Employment tab
+        tabs.push({
+          id: 'employment',
+          label: 'Jobs',
+          content: (
+            <GuildHallPanel
+              player={player}
+              priceModifier={priceModifier}
+              onHireJob={(jobId, wage) => {
+                setJob(player.id, jobId, wage);
+                const job = getJob(jobId);
+                toast.success(`You are now employed as ${job?.name}!`);
+              }}
+              onNegotiateRaise={(newWage) => {
+                negotiateRaise(player.id, newWage);
+                toast.success(`Salary increased to ${newWage}g/hour!`);
+              }}
+              onSpendTime={(hours) => spendTime(player.id, hours)}
+            />
+          ),
+        });
+
+        // Work tab (only if job is at Guild Hall)
+        tabs.push({
+          id: 'work',
+          label: 'Work',
+          hidden: !canWorkAtGuildHall,
+          content: canWorkAtGuildHall && currentJobData ? (
+            <div className="space-y-3">
+              <div className="bg-[#3d3224] border border-[#8b7355] rounded p-3">
+                <h4 className="font-display text-sm text-[#e0d4b8] flex items-center gap-2 mb-2">
+                  <Briefcase className="w-4 h-4" /> {currentJobData.name}
                 </h4>
-                <div className="flex justify-between mb-1">
-                  <span>Wage:</span>
-                  <span className="font-bold text-gold">{player.currentWage}g/hour</span>
+                <div className="flex justify-between text-sm font-mono mb-1">
+                  <span className="text-[#a09080]">Wage:</span>
+                  <span className="font-bold text-[#c9a227]">{player.currentWage}g/hour</span>
+                </div>
+                <div className="flex justify-between text-sm font-mono mb-3">
+                  <span className="text-[#a09080]">Shift earnings:</span>
+                  <span className="font-bold text-[#c9a227]">{Math.ceil(currentJobData.hoursPerShift * 1.33 * player.currentWage)}g</span>
                 </div>
                 <div className="flex gap-2">
                   <ActionButton
@@ -163,305 +226,321 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
                   </button>
                 </div>
               </div>
-            )}
+            </div>
+          ) : null,
+        });
 
-            {/* Quest System - requires Guild Pass */}
-            {player.hasGuildPass ? (
-              <QuestPanel
-                quests={availableQuests}
-                player={player}
-                onTakeQuest={(questId) => takeQuest(player.id, questId)}
-                onCompleteQuest={() => completeQuest(player.id)}
-                onAbandonQuest={() => abandonQuest(player.id)}
-              />
-            ) : (
-              <div className="wood-frame p-3 text-card">
-                <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
-                  <ScrollText className="w-4 h-4" /> Guild Quest Board
-                </h4>
-                <p className="text-sm text-muted-foreground mb-3">
-                  You need a <span className="font-bold text-[#c9a227]">Guild Pass</span> to access the quest board. Guild membership grants access to quests and rank advancement.
-                </p>
-                <div className="text-center bg-black/20 p-2 rounded mb-2">
-                  <span className="text-xs text-muted-foreground">Guild Pass Cost:</span>
-                  <span className="font-bold text-[#c9a227] ml-2">{GUILD_PASS_COST}g</span>
-                </div>
-                <button
-                  onClick={() => {
-                    buyGuildPass(player.id);
-                    toast.success('Guild Pass acquired! You can now take quests.');
-                  }}
-                  disabled={player.gold < GUILD_PASS_COST}
-                  className="w-full gold-button py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {player.gold < GUILD_PASS_COST
-                    ? `Need ${GUILD_PASS_COST - player.gold}g more`
-                    : `Buy Guild Pass (${GUILD_PASS_COST}g)`}
-                </button>
-              </div>
-            )}
+        return tabs;
+      }
 
-            {/* Guild Hall - Seek Employment */}
-            <GuildHallPanel
+      case 'rusty-tankard':
+        return [{
+          id: 'menu',
+          label: 'Menu',
+          content: (
+            <TavernPanel
               player={player}
               priceModifier={priceModifier}
-              onHireJob={(jobId, wage) => {
-                setJob(player.id, jobId, wage);
-                const job = getJob(jobId);
-                toast.success(`You are now employed as ${job?.name}!`);
-              }}
-              onNegotiateRaise={(newWage) => {
-                negotiateRaise(player.id, newWage);
-                toast.success(`Salary increased to ${newWage}g/hour!`);
-              }}
-              onSpendTime={(hours) => spendTime(player.id, hours)}
+              modifyGold={modifyGold}
+              spendTime={spendTime}
+              modifyFood={modifyFood}
+              modifyHappiness={modifyHappiness}
+              workShift={workShift}
             />
-          </div>
-        );
+          ),
+        }];
 
       case 'forge':
-        return (
-          <ForgePanel
-            player={player}
-            priceModifier={priceModifier}
-            setJob={setJob}
-            workShift={workShift}
-            modifyHappiness={modifyHappiness}
-          />
-        );
+        return [{
+          id: 'forge-work',
+          label: 'Work',
+          content: (
+            <ForgePanel
+              player={player}
+              priceModifier={priceModifier}
+              setJob={setJob}
+              workShift={workShift}
+              modifyHappiness={modifyHappiness}
+            />
+          ),
+        }];
 
       case 'academy':
-        return (
-          <AcademyPanel
-            player={player}
-            priceModifier={priceModifier}
-            studyDegree={studyDegree}
-            completeDegree={completeDegree}
-            workShift={workShift}
-          />
-        );
+        return [{
+          id: 'courses',
+          label: 'Courses',
+          content: (
+            <AcademyPanel
+              player={player}
+              priceModifier={priceModifier}
+              studyDegree={studyDegree}
+              completeDegree={completeDegree}
+              workShift={workShift}
+            />
+          ),
+        }];
 
       case 'bank':
-        return (
-          <BankPanel
-            player={player}
-            spendTime={spendTime}
-            depositToBank={depositToBank}
-            withdrawFromBank={withdrawFromBank}
-            invest={invest}
-            workShift={workShift}
-            buyStock={buyStock}
-            sellStock={sellStock}
-            takeLoan={takeLoan}
-            repayLoan={repayLoan}
-            stockPrices={stockPrices}
-          />
-        );
+        return [{
+          id: 'banking',
+          label: 'Services',
+          content: (
+            <BankPanel
+              player={player}
+              spendTime={spendTime}
+              depositToBank={depositToBank}
+              withdrawFromBank={withdrawFromBank}
+              invest={invest}
+              workShift={workShift}
+              buyStock={buyStock}
+              sellStock={sellStock}
+              takeLoan={takeLoan}
+              repayLoan={repayLoan}
+              stockPrices={stockPrices}
+            />
+          ),
+        }];
 
       case 'general-store':
-        return (
-          <GeneralStorePanel
-            player={player}
-            priceModifier={priceModifier}
-            modifyGold={modifyGold}
-            spendTime={spendTime}
-            modifyFood={modifyFood}
-            modifyHappiness={modifyHappiness}
-            workShift={workShift}
-            onBuyNewspaper={handleBuyNewspaper}
-            buyFreshFood={buyFreshFood}
-          />
-        );
+        return [{
+          id: 'shop',
+          label: 'Shop',
+          content: (
+            <GeneralStorePanel
+              player={player}
+              priceModifier={priceModifier}
+              modifyGold={modifyGold}
+              spendTime={spendTime}
+              modifyFood={modifyFood}
+              modifyHappiness={modifyHappiness}
+              workShift={workShift}
+              onBuyNewspaper={handleBuyNewspaper}
+              buyFreshFood={buyFreshFood}
+            />
+          ),
+        }];
 
       case 'armory':
-        return (
-          <ArmoryPanel
-            player={player}
-            priceModifier={priceModifier}
-            modifyGold={modifyGold}
-            spendTime={spendTime}
-            modifyClothing={modifyClothing}
-            modifyHappiness={modifyHappiness}
-            workShift={workShift}
-            buyDurable={buyDurable}
-            equipItem={equipItem}
-            unequipItem={unequipItem}
-          />
-        );
-
-      case 'enchanter':
-        return (
-          <div className="space-y-4">
-            {/* Healer's Sanctuary */}
-            <HealerPanel
+        return [{
+          id: 'equipment',
+          label: 'Equipment',
+          content: (
+            <ArmoryPanel
               player={player}
               priceModifier={priceModifier}
-              onHeal={(cost, healthGain, time) => {
-                modifyGold(player.id, -cost);
-                modifyHealth(player.id, healthGain);
-                spendTime(player.id, time);
-              }}
-              onCureSickness={(cost, time) => {
-                modifyGold(player.id, -cost);
-                spendTime(player.id, time);
-                cureSickness(player.id);
-              }}
-              onBlessHealth={(cost, time) => {
-                modifyGold(player.id, -cost);
-                modifyMaxHealth(player.id, 10);
-                spendTime(player.id, time);
-              }}
-            />
-
-            {/* Enchanter's Workshop - Appliance Shop (Socket City equivalent) */}
-            <EnchanterPanel
-              player={player}
-              priceModifier={priceModifier}
-              onSpendTime={(hours) => spendTime(player.id, hours)}
-            />
-
-            {/* Work button for enchanter employees */}
-            <WorkSection
-              player={player}
-              locationName="Enchanter"
+              modifyGold={modifyGold}
+              spendTime={spendTime}
+              modifyClothing={modifyClothing}
+              modifyHappiness={modifyHappiness}
               workShift={workShift}
-              variant="wood-frame"
+              buyDurable={buyDurable}
+              equipItem={equipItem}
+              unequipItem={unequipItem}
             />
-          </div>
-        );
+          ),
+        }];
 
-      case 'landlord':
-        return (
-          <LandlordPanel
-            player={player}
-            priceModifier={priceModifier}
-            spendTime={spendTime}
-            prepayRent={prepayRent}
-            moveToHousing={moveToHousing}
-          />
-        );
+      case 'enchanter': {
+        const tabs: LocationTab[] = [
+          {
+            id: 'healing',
+            label: 'Healing',
+            content: (
+              <HealerPanel
+                player={player}
+                priceModifier={priceModifier}
+                onHeal={(cost, healthGain, time) => {
+                  modifyGold(player.id, -cost);
+                  modifyHealth(player.id, healthGain);
+                  spendTime(player.id, time);
+                }}
+                onCureSickness={(cost, time) => {
+                  modifyGold(player.id, -cost);
+                  spendTime(player.id, time);
+                  cureSickness(player.id);
+                }}
+                onBlessHealth={(cost, time) => {
+                  modifyGold(player.id, -cost);
+                  modifyMaxHealth(player.id, 10);
+                  spendTime(player.id, time);
+                }}
+              />
+            ),
+          },
+          {
+            id: 'appliances',
+            label: 'Appliances',
+            content: (
+              <EnchanterPanel
+                player={player}
+                priceModifier={priceModifier}
+                onSpendTime={(hours) => spendTime(player.id, hours)}
+              />
+            ),
+          },
+          {
+            id: 'work',
+            label: 'Work',
+            hidden: !(currentJobData && currentJobData.location === 'Enchanter'),
+            content: (
+              <WorkSection
+                player={player}
+                locationName="Enchanter"
+                workShift={workShift}
+                variant="jones"
+              />
+            ),
+          },
+        ];
+        return tabs;
+      }
 
-      case 'noble-heights':
-      case 'slums':
-        return (
-          <HomePanel
-            player={player}
-            spendTime={spendTime}
-            modifyHappiness={modifyHappiness}
-            modifyHealth={modifyHealth}
-            modifyRelaxation={modifyRelaxation}
-            onDone={() => selectLocation(null)}
-          />
-        );
+      case 'landlord': {
+        const tabs: LocationTab[] = [
+          {
+            id: 'housing',
+            label: 'Housing',
+            content: (
+              <LandlordPanel
+                player={player}
+                priceModifier={priceModifier}
+                spendTime={spendTime}
+                prepayRent={prepayRent}
+                moveToHousing={moveToHousing}
+              />
+            ),
+          },
+        ];
+        return tabs;
+      }
 
-      case 'shadow-market':
-        const shadowNewspaperPrice = Math.round(NEWSPAPER_COST * priceModifier * 0.5); // Cheaper here
+      case 'shadow-market': {
+        const shadowNewspaperPrice = Math.round(NEWSPAPER_COST * priceModifier * 0.5);
 
-        return (
-          <div className="space-y-4">
-            <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
-              <Newspaper className="w-4 h-4" /> Black Market Info
-            </h4>
-            <ActionButton
-              label="Buy Newspaper (Discount)"
-              cost={shadowNewspaperPrice}
-              time={NEWSPAPER_TIME}
-              disabled={player.gold < shadowNewspaperPrice || player.timeRemaining < NEWSPAPER_TIME}
-              onClick={() => {
-                modifyGold(player.id, -shadowNewspaperPrice);
-                spendTime(player.id, NEWSPAPER_TIME);
-                const newspaper = generateNewspaper(week, priceModifier);
-                setCurrentNewspaper(newspaper);
-                setShowNewspaper(true);
-              }}
-            />
-
-            {/* Shadow Market Panel - Z-Mart equivalent with used appliances */}
-            <ShadowMarketPanel
-              player={player}
-              priceModifier={priceModifier}
-              onSpendTime={(hours) => spendTime(player.id, hours)}
-              onModifyGold={(amount) => modifyGold(player.id, amount)}
-              onModifyHappiness={(amount) => modifyHappiness(player.id, amount)}
-              onModifyFood={(amount) => modifyFood(player.id, amount)}
-              buyLotteryTicket={buyLotteryTicket}
-              buyTicket={buyTicket}
-            />
-
-            {/* Work button for shadow market employees */}
-            <WorkSection
-              player={player}
-              locationName="Shadow Market"
-              workShift={workShift}
-              variant="wood-frame"
-            />
-          </div>
-        );
+        const tabs: LocationTab[] = [
+          {
+            id: 'market',
+            label: 'Market',
+            content: (
+              <div className="space-y-3">
+                <ActionButton
+                  label="Buy Newspaper (Discount)"
+                  cost={shadowNewspaperPrice}
+                  time={NEWSPAPER_TIME}
+                  disabled={player.gold < shadowNewspaperPrice || player.timeRemaining < NEWSPAPER_TIME}
+                  onClick={() => {
+                    modifyGold(player.id, -shadowNewspaperPrice);
+                    spendTime(player.id, NEWSPAPER_TIME);
+                    const newspaper = generateNewspaper(week, priceModifier);
+                    setCurrentNewspaper(newspaper);
+                    setShowNewspaper(true);
+                  }}
+                />
+                <ShadowMarketPanel
+                  player={player}
+                  priceModifier={priceModifier}
+                  onSpendTime={(hours) => spendTime(player.id, hours)}
+                  onModifyGold={(amount) => modifyGold(player.id, amount)}
+                  onModifyHappiness={(amount) => modifyHappiness(player.id, amount)}
+                  onModifyFood={(amount) => modifyFood(player.id, amount)}
+                  buyLotteryTicket={buyLotteryTicket}
+                  buyTicket={buyTicket}
+                />
+              </div>
+            ),
+          },
+          {
+            id: 'work',
+            label: 'Work',
+            hidden: !(currentJobData && currentJobData.location === 'Shadow Market'),
+            content: (
+              <WorkSection
+                player={player}
+                locationName="Shadow Market"
+                workShift={workShift}
+                variant="jones"
+              />
+            ),
+          },
+        ];
+        return tabs;
+      }
 
       case 'fence':
-        return (
-          <PawnShopPanel
-            player={player}
-            priceModifier={priceModifier}
-            onSellItem={(itemId, price) => {
-              sellItem(player.id, itemId, price);
-              spendTime(player.id, 1);
-            }}
-            onBuyUsedItem={(itemId, price) => {
-              modifyGold(player.id, -price);
-              spendTime(player.id, 1);
-              // Apply effects and add to inventory/durables
-              if (itemId === 'used-clothes') {
-                modifyClothing(player.id, 50);
-              } else if (itemId === 'used-blanket') {
-                modifyHappiness(player.id, 3);
-              } else if (itemId === 'used-sword') {
-                buyDurable(player.id, 'sword', 0); // Already paid above
-                equipItem(player.id, 'sword', 'weapon');
-                toast.success('Equipped Used Sword!');
-              } else if (itemId === 'used-shield') {
-                buyDurable(player.id, 'shield', 0); // Already paid above
-                equipItem(player.id, 'shield', 'shield');
-                toast.success('Equipped Dented Shield!');
-              }
-            }}
-            onGamble={(stake) => {
-              modifyGold(player.id, -stake);
-              spendTime(player.id, stake >= 100 ? 3 : 2);
+        return [{
+          id: 'fence',
+          label: 'Trade',
+          content: (
+            <PawnShopPanel
+              player={player}
+              priceModifier={priceModifier}
+              onSellItem={(itemId, price) => {
+                sellItem(player.id, itemId, price);
+                spendTime(player.id, 1);
+              }}
+              onBuyUsedItem={(itemId, price) => {
+                modifyGold(player.id, -price);
+                spendTime(player.id, 1);
+                if (itemId === 'used-clothes') {
+                  modifyClothing(player.id, 50);
+                } else if (itemId === 'used-blanket') {
+                  modifyHappiness(player.id, 3);
+                } else if (itemId === 'used-sword') {
+                  buyDurable(player.id, 'sword', 0);
+                  equipItem(player.id, 'sword', 'weapon');
+                  toast.success('Equipped Used Sword!');
+                } else if (itemId === 'used-shield') {
+                  buyDurable(player.id, 'shield', 0);
+                  equipItem(player.id, 'shield', 'shield');
+                  toast.success('Equipped Dented Shield!');
+                }
+              }}
+              onGamble={(stake) => {
+                modifyGold(player.id, -stake);
+                spendTime(player.id, stake >= 100 ? 3 : 2);
 
-              let winChance = stake === 10 ? 0.4 : stake === 50 ? 0.3 : 0.2;
-              let winAmount = stake === 10 ? 25 : stake === 50 ? 150 : 400;
+                let winChance = stake === 10 ? 0.4 : stake === 50 ? 0.3 : 0.2;
+                let winAmount = stake === 10 ? 25 : stake === 50 ? 150 : 400;
 
-              if (Math.random() < winChance) {
-                modifyGold(player.id, winAmount);
-                modifyHappiness(player.id, stake >= 100 ? 25 : stake >= 50 ? 15 : 5);
-              } else {
-                modifyHappiness(player.id, stake >= 100 ? -20 : stake >= 50 ? -10 : -3);
-              }
-            }}
-            onSpendTime={(hours) => spendTime(player.id, hours)}
-          />
-        );
+                if (Math.random() < winChance) {
+                  modifyGold(player.id, winAmount);
+                  modifyHappiness(player.id, stake >= 100 ? 25 : stake >= 50 ? 15 : 5);
+                } else {
+                  modifyHappiness(player.id, stake >= 100 ? -20 : stake >= 50 ? -10 : -3);
+                }
+              }}
+              onSpendTime={(hours) => spendTime(player.id, hours)}
+            />
+          ),
+        }];
 
       case 'cave':
-        return (
-          <CavePanel
-            player={player}
-            spendTime={spendTime}
-            modifyGold={modifyGold}
-            modifyHealth={modifyHealth}
-            modifyHappiness={modifyHappiness}
-            clearDungeonFloor={clearDungeonFloor}
-            applyRareDrop={applyRareDrop}
-          />
-        );
+        return [{
+          id: 'dungeon',
+          label: 'Dungeon',
+          content: (
+            <CavePanel
+              player={player}
+              spendTime={spendTime}
+              modifyGold={modifyGold}
+              modifyHealth={modifyHealth}
+              modifyHappiness={modifyHappiness}
+              clearDungeonFloor={clearDungeonFloor}
+              applyRareDrop={applyRareDrop}
+            />
+          ),
+        }];
 
       default:
-        return (
-          <p className="text-muted-foreground text-center py-4">
-            This location is under construction...
-          </p>
-        );
+        return [{
+          id: 'default',
+          label: 'Info',
+          content: (
+            <p className="text-muted-foreground text-center py-4">
+              This location is under construction...
+            </p>
+          ),
+        }];
     }
   };
 
@@ -470,10 +549,20 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
   if (isHomeLocation && isHere) {
     return (
       <div className="h-full">
-        {getLocationActions()}
+        <HomePanel
+          player={player}
+          spendTime={spendTime}
+          modifyHappiness={modifyHappiness}
+          modifyHealth={modifyHealth}
+          modifyRelaxation={modifyRelaxation}
+          onDone={() => selectLocation(null)}
+        />
       </div>
     );
   }
+
+  const npc = LOCATION_NPCS[locationId];
+  const tabs = getLocationTabs();
 
   return (
     <>
@@ -498,10 +587,12 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
         </div>
 
         {/* Travel or Actions */}
-        <div className="flex-1 overflow-y-auto">
-          {isHere ? (
-            <div>
-              {getLocationActions()}
+        <div className="flex-1 overflow-hidden">
+          {isHere && npc && tabs ? (
+            <LocationShell npc={npc} tabs={tabs} />
+          ) : isHere && tabs ? (
+            <div className="overflow-y-auto h-full">
+              {tabs[0]?.content}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full">
