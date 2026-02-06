@@ -1,7 +1,5 @@
 // SFX Generation Service - calls the ElevenLabs edge function
 
-import { supabase } from '@/integrations/supabase/client';
-
 export interface SFXGenerationResult {
   success: boolean;
   audioUrl?: string;
