@@ -159,6 +159,14 @@
   - [x] Bug 4: Defeat kept 100% gold while retreat kept 50% (perverse incentive) — defeat now keeps 25%
   - [x] Bug 5: Combat HP bar showed entry health instead of maxHealth — misleading at low HP
 
+## Completed (2026-02-06)
+
+- [x] Guild Hall Salary Negotiation — market rate raise for current job
+  - If market wage > current wage, "Request Raise" button appears on current job listing
+  - Shows salary comparison modal with old/new wage and raise amount
+  - `negotiateRaise` store action updates wage without resetting shifts or dependability
+  - Costs 1 hour to negotiate (same as job application)
+
 ## In Progress
 
 *No active tasks*

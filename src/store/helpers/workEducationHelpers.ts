@@ -130,6 +130,16 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
       }
     },
 
+    negotiateRaise: (playerId: string, newWage: number) => {
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? { ...p, currentWage: newWage }
+            : p
+        ),
+      }));
+    },
+
     studySession: (playerId: string, path: EducationPath, cost: number, hours: number) => {
       set((state) => ({
         players: state.players.map((p) => {

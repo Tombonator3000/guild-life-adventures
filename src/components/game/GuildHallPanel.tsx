@@ -31,6 +31,7 @@ interface GuildHallPanelProps {
   player: Player;
   priceModifier: number;
   onHireJob: (jobId: string, wage: number) => void;
+  onNegotiateRaise: (newWage: number) => void;
   onSpendTime: (hours: number) => void;
 }
 
@@ -38,6 +39,7 @@ export function GuildHallPanel({
   player,
   priceModifier,
   onHireJob,
+  onNegotiateRaise,
   onSpendTime,
 }: GuildHallPanelProps) {
   const [selectedEmployer, setSelectedEmployer] = useState<Employer | null>(null);
@@ -45,6 +47,8 @@ export function GuildHallPanel({
     job: Job;
     result: JobApplicationResult;
     offeredWage?: number;
+    isRaise?: boolean;
+    oldWage?: number;
   } | null>(null);
   // Pre-calculated market wages for the selected employer's jobs
   const [marketWages, setMarketWages] = useState<Map<string, number>>(new Map());
@@ -83,9 +87,29 @@ export function GuildHallPanel({
     }
   };
 
+  const handleRequestRaise = (job: Job) => {
+    const marketWage = marketWages.get(job.id);
+    if (!marketWage || marketWage <= player.currentWage) return;
+
+    // Spend 1 hour to negotiate
+    onSpendTime(1);
+
+    setApplicationResult({
+      job,
+      result: { success: true },
+      offeredWage: marketWage,
+      isRaise: true,
+      oldWage: player.currentWage,
+    });
+  };
+
   const handleAcceptJob = () => {
     if (applicationResult && applicationResult.result.success && applicationResult.offeredWage) {
-      onHireJob(applicationResult.job.id, applicationResult.offeredWage);
+      if (applicationResult.isRaise) {
+        onNegotiateRaise(applicationResult.offeredWage);
+      } else {
+        onHireJob(applicationResult.job.id, applicationResult.offeredWage);
+      }
       setApplicationResult(null);
       setSelectedEmployer(null);
     }
@@ -97,10 +121,11 @@ export function GuildHallPanel({
 
   // Application result modal
   if (applicationResult) {
+    const isRaise = applicationResult.isRaise;
     return (
       <JonesPanel>
         <JonesPanelHeader
-          title={applicationResult.result.success ? 'HIRED!' : 'APPLICATION DENIED'}
+          title={isRaise ? 'SALARY INCREASE!' : (applicationResult.result.success ? 'HIRED!' : 'APPLICATION DENIED')}
         />
         <JonesPanelContent>
           <div className="text-center mb-3">
@@ -111,17 +136,27 @@ export function GuildHallPanel({
           {applicationResult.result.success ? (
             <div className="space-y-3">
               <div className="text-center bg-[#2a2318] p-3 rounded">
-                <p className="text-xs text-[#a09080]">Offered Wage:</p>
+                {isRaise && applicationResult.oldWage != null && (
+                  <p className="text-xs text-[#a09080] mb-1">
+                    Current: <span className="line-through text-[#6b5a45]">${applicationResult.oldWage}/hour</span>
+                  </p>
+                )}
+                <p className="text-xs text-[#a09080]">{isRaise ? 'New Wage:' : 'Offered Wage:'}</p>
                 <p className="text-2xl font-mono font-bold text-[#c9a227]">
                   ${applicationResult.offeredWage}/hour
                 </p>
                 <p className="text-xs text-[#6b5a45]">
                   (Market rate at time of visit)
                 </p>
+                {isRaise && applicationResult.oldWage != null && applicationResult.offeredWage != null && (
+                  <p className="text-xs text-green-400 mt-1">
+                    +${applicationResult.offeredWage - applicationResult.oldWage}/hour raise
+                  </p>
+                )}
               </div>
               <div className="flex gap-2">
                 <JonesButton
-                  label="Accept Job"
+                  label={isRaise ? 'Accept Raise' : 'Accept Job'}
                   onClick={handleAcceptJob}
                   variant="primary"
                   className="flex-1"
@@ -199,6 +234,8 @@ export function GuildHallPanel({
           <div className="max-h-52 overflow-y-auto space-y-1">
             {selectedEmployer.jobs.map(job => {
               const isCurrentJob = player.currentJob === job.id;
+              const marketWage = marketWages.get(job.id) ?? job.baseWage;
+              const canGetRaise = isCurrentJob && marketWage > player.currentWage;
 
               return (
                 <div
@@ -211,9 +248,14 @@ export function GuildHallPanel({
                       {isCurrentJob && <span className="text-[#c9a227] ml-1">(Current)</span>}
                     </span>
                     <span className="font-mono text-sm text-[#c9a227] font-bold">
-                      ${marketWages.get(job.id) ?? job.baseWage}/h
+                      ${marketWage}/h
                     </span>
                   </div>
+                  {isCurrentJob && canGetRaise && (
+                    <div className="text-xs text-green-400 mt-0.5">
+                      Your wage: ${player.currentWage}/h — Market rate is higher!
+                    </div>
+                  )}
                   <div className="text-xs text-[#8b7355] mt-1">
                     {job.requiredDegrees.length > 0 && (
                       <span>{job.requiredDegrees.map(d => DEGREES[d]?.name || d).join(', ')} | </span>
@@ -223,12 +265,21 @@ export function GuildHallPanel({
                   </div>
                   <div className="flex justify-between items-center mt-1">
                     <span className="text-xs text-[#6b5a45]">{job.hoursPerShift}h shifts</span>
-                    <JonesButton
-                      label={isCurrentJob ? 'Current' : 'Apply'}
-                      onClick={() => handleApply(job)}
-                      disabled={isCurrentJob || player.timeRemaining < 1}
-                      variant="secondary"
-                    />
+                    {canGetRaise ? (
+                      <JonesButton
+                        label="Request Raise"
+                        onClick={() => handleRequestRaise(job)}
+                        disabled={player.timeRemaining < 1}
+                        variant="primary"
+                      />
+                    ) : (
+                      <JonesButton
+                        label={isCurrentJob ? 'Current' : 'Apply'}
+                        onClick={() => handleApply(job)}
+                        disabled={isCurrentJob || player.timeRemaining < 1}
+                        variant="secondary"
+                      />
+                    )}
                   </div>
                 </div>
               );

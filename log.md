@@ -1,5 +1,44 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Guild Hall Salary Negotiation (Market Rate Raise)
+
+Added ability to negotiate a salary increase at the Guild Hall when the current market rate for your job is higher than your current wage. Based on Jones in the Fast Lane mechanic: "If market rate > current wage, can request raise — Select same job at Employment Office to ask."
+
+### How It Works
+
+1. Player visits Guild Hall → selects their current employer
+2. Job listings show pre-calculated market wages (based on economy)
+3. If the market wage for the player's current job is higher than their current wage:
+   - A green notification appears: "Your wage: $X/h — Market rate is higher!"
+   - The "Current" button is replaced with a "Request Raise" button (primary style)
+4. Clicking "Request Raise" costs 1 hour and shows a "SALARY INCREASE!" modal with:
+   - Old wage (strikethrough)
+   - New market wage
+   - Raise amount (+$X/hour)
+5. Player can Accept or Decline the raise
+6. Accepting updates the wage without resetting shifts worked or dependability (unlike changing jobs)
+
+| Scenario | Before | After |
+|----------|--------|-------|
+| Current job, market wage > current wage | Disabled "Current" button | Active "Request Raise" button |
+| Current job, market wage <= current wage | Disabled "Current" button | Disabled "Current" button (unchanged) |
+| Different job | "Apply" button | "Apply" button (unchanged) |
+
+### Store Changes
+
+- Added `negotiateRaise(playerId, newWage)` action — only updates `currentWage`, no side effects (no shift reset, no dependability penalty)
+- Different from `requestRaise` which uses random chance and gives 15% increments
+- Different from `setJob` which resets `shiftsWorkedSinceHire` and penalizes dependability
+
+### Files Changed
+- `src/store/storeTypes.ts` — Added `negotiateRaise` to GameStore interface
+- `src/store/helpers/workEducationHelpers.ts` — Implemented `negotiateRaise` action
+- `src/components/game/GuildHallPanel.tsx` — Added `onNegotiateRaise` prop, raise detection logic, "Request Raise" button, "SALARY INCREASE!" modal
+- `src/components/game/LocationPanel.tsx` — Wired up `negotiateRaise` store action to GuildHallPanel
+- TypeScript compiles cleanly
+
+---
+
 ## 2026-02-06 - Sound Effects System (SFX)
 
 Added a complete sound effects system for UI interactions and game events.
