@@ -221,6 +221,13 @@
   - All 12 NPCs have `portraitImage` paths pointing to `public/npcs/<name>.jpg`
   - Drop real images into `public/npcs/` to replace emoji placeholders
 
+## Completed (2026-02-06)
+
+- [x] NPC Placeholder Portraits — 12 placeholder JPG files created
+  - 256×288px placeholders with accent colors, diamond emblem, name/title
+  - All 12 locations: Aldric, Mathilda, Brynn, Gunther, Lyra, Shade, Elara, Magnus, Cave, Korr, Tomas, Whiskers
+  - Replace with real art by dropping new files in `public/npcs/`
+
 ## In Progress
 
 *No active tasks*
