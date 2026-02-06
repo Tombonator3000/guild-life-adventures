@@ -61,7 +61,7 @@ export function GameSetup() {
 
       {/* Content */}
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-8">
-        <h1 className="font-display text-4xl font-bold text-foreground mb-8">
+        <h1 className="font-display text-4xl font-bold text-amber-900 mb-8">
           Prepare Your Adventure
         </h1>
 
@@ -69,7 +69,7 @@ export function GameSetup() {
           {/* Players Section */}
           <div className="parchment-panel p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display text-xl font-semibold text-card-foreground">
+              <h2 className="font-display text-xl font-semibold text-amber-900">
                 Adventurers
               </h2>
               <button
