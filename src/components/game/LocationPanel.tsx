@@ -1,5 +1,5 @@
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
-import { getLocation, getMovementCost } from '@/data/locations';
+import { getLocation, getMovementCost, getPath } from '@/data/locations';
 import type { LocationId } from '@/types/game.types';
 import { GUILD_PASS_COST } from '@/types/game.types';
 import { MapPin, Clock, ArrowRight, X, Briefcase, Newspaper, TrendingUp, ScrollText, Scroll, Sword, ShieldHalf, Heart, Sparkles, Package, ShoppingBag, Dices, Coins, Home, GraduationCap, Hammer } from 'lucide-react';
@@ -77,6 +77,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     buyTicket,
     stockPrices,
     cureSickness,
+    endTurn,
   } = useGameStore();
   const player = useCurrentPlayer();
   const location = getLocation(locationId);
@@ -89,9 +90,24 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
   const isHere = player.currentLocation === locationId;
   const canAffordMove = player.timeRemaining >= moveCost;
 
+  const canPartialTravel = !canAffordMove && player.timeRemaining > 0 && !isHere;
+
   const handleTravel = () => {
-    if (canAffordMove && !isHere) {
+    if (isHere) return;
+    if (canAffordMove) {
       movePlayer(player.id, locationId, moveCost);
+    } else if (canPartialTravel) {
+      // Partial travel: walk as far as possible, then end turn
+      const fullPath = getPath(player.currentLocation, locationId);
+      const stepsCanTake = player.timeRemaining;
+      if (stepsCanTake > 0 && fullPath.length > 1) {
+        const partialPath = fullPath.slice(0, stepsCanTake + 1);
+        const partialDestination = partialPath[partialPath.length - 1];
+        movePlayer(player.id, partialDestination, player.timeRemaining);
+        toast.info('Not enough time to reach destination. Turn ended.');
+        selectLocation(null);
+        setTimeout(() => endTurn(), 300);
+      }
     }
   };
 
@@ -605,14 +621,17 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               </div>
               <button
                 onClick={handleTravel}
-                disabled={!canAffordMove}
+                disabled={!canAffordMove && !canPartialTravel}
                 className="gold-button flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Travel to {location.name}
+                {canAffordMove ? `Travel to ${location.name}` : canPartialTravel ? `Head toward ${location.name}` : `Travel to ${location.name}`}
                 <ArrowRight className="w-5 h-5" />
               </button>
-              {!canAffordMove && (
-                <p className="text-destructive text-sm mt-2">Not enough time!</p>
+              {!canAffordMove && canPartialTravel && (
+                <p className="text-amber-500 text-sm mt-2">Not enough time to arrive — will walk as far as possible and end turn.</p>
+              )}
+              {!canAffordMove && !canPartialTravel && (
+                <p className="text-destructive text-sm mt-2">No time remaining!</p>
               )}
             </div>
           )}
