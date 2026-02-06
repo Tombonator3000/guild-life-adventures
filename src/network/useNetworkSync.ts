@@ -59,7 +59,7 @@ function applyNetworkState(state: SerializedGameState) {
 /** Execute a store action by name (host only) */
 function executeAction(name: string, args: unknown[]): boolean {
   const store = useGameStore.getState();
-  const action = (store as Record<string, unknown>)[name];
+  const action = (store as unknown as Record<string, unknown>)[name];
   if (typeof action !== 'function') {
     console.error(`[NetworkSync] Unknown action: ${name}`);
     return false;

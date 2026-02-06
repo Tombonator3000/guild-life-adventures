@@ -2,9 +2,12 @@
 // Provides: NPC portrait (left) + tab navigation + content area (right)
 // Eliminates scrolling by showing only one section at a time
 
-import { useState, type ReactNode } from 'react';
+import { useState, type ReactNode, useCallback, cloneElement, isValidElement, Children } from 'react';
 import type { LocationNPC } from '@/data/npcs';
 import { NpcPortrait } from './NpcPortrait';
+import { BanterBubble } from './BanterBubble';
+import { useBanter } from '@/hooks/useBanter';
+import type { LocationId } from '@/types/game.types';
 
 export interface LocationTab {
   id: string;
@@ -19,21 +22,47 @@ interface LocationShellProps {
   npc: LocationNPC;
   tabs: LocationTab[];
   defaultTab?: string;
+  locationId: LocationId; // Needed for banter
 }
 
-export function LocationShell({ npc, tabs, defaultTab }: LocationShellProps) {
+export function LocationShell({ npc, tabs, defaultTab, locationId }: LocationShellProps) {
   const visibleTabs = tabs.filter(t => !t.hidden);
   const [activeTab, setActiveTab] = useState(defaultTab || visibleTabs[0]?.id || '');
+  const { activeBanter, banterLocationId, tryTriggerBanter, dismissBanter } = useBanter();
 
   const activeContent = visibleTabs.find(t => t.id === activeTab)?.content;
 
   // If only one tab, skip the tab bar entirely
   const showTabBar = visibleTabs.length > 1;
 
+  // Handle interaction - potentially trigger banter
+  const handleInteraction = useCallback(() => {
+    tryTriggerBanter(locationId);
+  }, [tryTriggerBanter, locationId]);
+
+  // Wrap content to capture clicks and trigger banter
+  const wrapWithInteractionHandler = (content: ReactNode): ReactNode => {
+    if (!isValidElement(content)) return content;
+    
+    return (
+      <div onClick={handleInteraction} className="contents">
+        {content}
+      </div>
+    );
+  };
+
+  // Check if banter should show for this location
+  const showBanter = activeBanter && banterLocationId === locationId;
+
   return (
     <div className="flex gap-2 h-full">
       {/* NPC Portrait - Left side (Jones-style) */}
-      <div className="flex-shrink-0 w-36 flex flex-col items-center">
+      <div className="flex-shrink-0 w-36 flex flex-col items-center relative">
+        {/* Banter bubble */}
+        {showBanter && (
+          <BanterBubble banter={activeBanter} onDismiss={dismissBanter} />
+        )}
+        
         <NpcPortrait npc={npc} />
         <div className="text-center">
           <div
@@ -87,9 +116,9 @@ export function LocationShell({ npc, tabs, defaultTab }: LocationShellProps) {
           </div>
         )}
 
-        {/* Tab content */}
+        {/* Tab content - wrapped with interaction handler */}
         <div className="flex-1 overflow-y-auto">
-          {activeContent}
+          {wrapWithInteractionHandler(activeContent)}
         </div>
       </div>
     </div>

@@ -49,8 +49,11 @@ export type NetworkMessage = HostMessage | GuestMessage;
 
 // --- Serialized State ---
 
-// GameState without functions — only data fields
-export type SerializedGameState = Omit<GameState, never>; // GameState is already pure data
+// GameState without functions — only data fields, plus extra sync fields
+export interface SerializedGameState extends GameState {
+  shadowfingersEvent?: unknown;
+  applianceBreakageEvent?: unknown;
+}
 
 // --- Connection Status ---
 
