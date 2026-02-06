@@ -1,5 +1,41 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Fix NPC Banter System — 2 Bugs Fixed
+
+The banter system was fully implemented (data, hook, component, integration) but speech bubbles never appeared in-game. Root cause analysis found 2 bugs.
+
+### Bugs Fixed
+
+| # | Severity | File | Bug |
+|---|----------|------|-----|
+| 1 | **CRITICAL** | `BanterBubble.tsx` | Bubble invisible due to overflow clipping — `absolute bottom-full` positioned the bubble ABOVE the portrait column, outside the `overflow-hidden` ancestor containers in LocationPanel (lines 618 and 642). The bubble rendered in the DOM but was completely clipped. Fixed by changing to `top-0` so the bubble overlays the portrait within visible bounds. |
+| 2 | **MEDIUM** | `LocationShell.tsx` | No banter trigger on location entry — banter only triggered via clicks in the content area. If the player entered a location and didn't click anything, they'd never see banter. Added `useEffect` that calls `tryTriggerBanter` 600ms after entering a location (25% chance, respects cooldown). |
+
+### Changes by File
+
+**`src/components/game/BanterBubble.tsx`**
+- Changed positioning from `absolute bottom-full left-1/2 -translate-x-1/2 mb-2` to `absolute top-0 left-1/2 -translate-x-1/2`
+- Changed animation direction: hidden state uses `-translate-y-2` (slide down from above) instead of `translate-y-2` (slide up from below)
+- Bubble now overlays the top of the NPC portrait with speech tail pointing down
+
+**`src/components/game/LocationShell.tsx`**
+- Added `useEffect` import
+- Added auto-trigger: `useEffect` calls `tryTriggerBanter(locationId)` after 600ms delay on mount
+- Click-based triggering in content area still works as before (25% chance per click, 30s cooldown)
+
+### Banter System Architecture (unchanged)
+- `src/data/banter.ts` — 12 locations × 4-7 lines each, 5 mood types
+- `src/hooks/useBanter.ts` — state + per-location cooldown (30s) + 25% trigger chance
+- `src/components/game/BanterBubble.tsx` — mood-colored speech bubble, 4s auto-dismiss
+- `src/components/game/LocationShell.tsx` — integration point (portrait column + content clicks)
+
+### Test Results
+- TypeScript compiles clean
+- Build succeeds
+- 111/112 tests pass (1 pre-existing failure in freshFood.test.ts)
+
+---
+
 ## 2026-02-06 - Online Multiplayer Deep Audit & Fix — 8 Bugs Fixed
 
 Deep audit of the WebRTC P2P multiplayer system revealed 8 critical bugs causing: opponents not seeing movements, guests unable to move on their turn, and game becoming unresponsive.
