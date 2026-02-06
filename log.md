@@ -1,5 +1,37 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Players Always Start Turn at Home (Slums or Noble Heights)
+
+Fixed `getHomeLocation()` so players always start their turn at one of the two actual housing locations, matching Jones in the Fast Lane's two-apartment system (Low-Cost Housing / Le Security Apartments).
+
+### Before (Broken)
+| Housing Tier | Start Location | Problem |
+|---|---|---|
+| `noble` | Noble Heights | Correct |
+| `modest` | Landlord | Landlord is the rent office, not a home |
+| `slums` | The Slums | Correct |
+| `homeless` | Rusty Tankard | Tavern is not a home |
+
+### After (Fixed)
+| Housing Tier | Start Location |
+|---|---|
+| `noble` | Noble Heights |
+| `modest` | The Slums |
+| `slums` | The Slums |
+| `homeless` | The Slums |
+
+Only two possible turn-start locations now, matching Jones in the Fast Lane where players always return to their apartment (Low-Cost Housing or Le Security Apartments).
+
+### Files Changed
+- `src/store/helpers/turnHelpers.ts` — Simplified `getHomeLocation()`: `noble` → `noble-heights`, all others → `slums`
+
+### Verification
+- All 91 tests pass
+- Build succeeds
+- TypeScript compiles cleanly
+
+---
+
 ## 2026-02-06 - Guild Hall Salary Negotiation (Market Rate Raise)
 
 Added ability to negotiate a salary increase at the Guild Hall when the current market rate for your job is higher than your current wage. Based on Jones in the Fast Lane mechanic: "If market rate > current wage, can request raise — Select same job at Employment Office to ask."
