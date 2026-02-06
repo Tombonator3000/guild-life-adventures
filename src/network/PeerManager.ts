@@ -143,7 +143,11 @@ export class PeerManager {
           serialization: 'json',
         });
 
+        let settled = false;
+
         conn.on('open', () => {
+          if (settled) return;
+          settled = true;
           this.connections.set(hostPeerId, conn);
           this.setupConnectionHandlers(conn, hostPeerId);
           this.setStatus('connected');
@@ -152,14 +156,17 @@ export class PeerManager {
         });
 
         conn.on('error', (err) => {
+          if (settled) return;
+          settled = true;
           console.error('[PeerManager] Connection error:', err);
           this.setStatus('error');
           reject(err);
         });
 
-        // Timeout if connection doesn't open
+        // Timeout if connection doesn't open — guarded against race with open/error
         setTimeout(() => {
-          if (this._status === 'connecting') {
+          if (!settled) {
+            settled = true;
             this.setStatus('error');
             reject(new Error('Connection timeout — room not found'));
           }

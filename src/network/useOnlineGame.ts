@@ -1,9 +1,11 @@
 // React hook for online multiplayer game management
-// Connects PeerManager to the Zustand game store
+// Handles lobby phase: creating/joining rooms, player management, game start
+// During gameplay, useNetworkSync handles state sync (this hook only handles lobby messages)
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { peerManager } from './PeerManager';
 import { useGameStore } from '@/store/gameStore';
+import { serializeGameState, applyNetworkState } from './networkState';
 import type {
   LobbyPlayer,
   LobbyState,
@@ -12,81 +14,8 @@ import type {
   HostMessage,
   GuestMessage,
   ConnectionStatus,
-  SerializedGameState,
 } from './types';
-import { LOCAL_ONLY_ACTIONS, HOST_INTERNAL_ACTIONS } from './types';
-import type { GoalSettings, AIDifficulty, GameState } from '@/types/game.types';
-import { PLAYER_COLORS, AI_COLOR } from '@/types/game.types';
-
-// --- State Serialization ---
-
-/** Extract serializable game state (data only, no functions) */
-function serializeGameState(store: ReturnType<typeof useGameStore.getState>): SerializedGameState {
-  const {
-    phase, currentPlayerIndex, players, week, priceModifier, economyTrend, economyCycleWeeksLeft,
-    goalSettings, winner, eventMessage, rentDueWeek, aiDifficulty, stockPrices, weekendEvent,
-    aiSpeedMultiplier, skipAITurn, showTutorial, tutorialStep,
-    selectedLocation, shadowfingersEvent, applianceBreakageEvent,
-    networkMode, localPlayerId, roomCode,
-  } = store;
-  return {
-    phase, currentPlayerIndex, players, week, priceModifier, economyTrend, economyCycleWeeksLeft,
-    goalSettings, winner, eventMessage, rentDueWeek, aiDifficulty, stockPrices, weekendEvent,
-    aiSpeedMultiplier, skipAITurn, showTutorial, tutorialStep,
-    selectedLocation, shadowfingersEvent, applianceBreakageEvent,
-    networkMode, localPlayerId, roomCode,
-  } as SerializedGameState;
-}
-
-/** Apply serialized state to the store */
-function applyNetworkState(state: SerializedGameState) {
-  const store = useGameStore.getState();
-  // Only apply game-relevant state, preserve local UI state
-  useGameStore.setState({
-    phase: state.phase,
-    currentPlayerIndex: state.currentPlayerIndex,
-    players: state.players,
-    week: state.week,
-    priceModifier: state.priceModifier,
-    economyTrend: state.economyTrend,
-    economyCycleWeeksLeft: state.economyCycleWeeksLeft,
-    goalSettings: state.goalSettings,
-    winner: state.winner,
-    eventMessage: state.eventMessage,
-    rentDueWeek: state.rentDueWeek,
-    aiDifficulty: state.aiDifficulty,
-    stockPrices: state.stockPrices,
-    weekendEvent: state.weekendEvent,
-    shadowfingersEvent: state.shadowfingersEvent as typeof store.shadowfingersEvent,
-    applianceBreakageEvent: state.applianceBreakageEvent as typeof store.applianceBreakageEvent,
-  });
-}
-
-// --- Execute Action on Host ---
-
-/** Execute a store action by name with args (host-side) */
-function executeAction(name: string, args: unknown[]): boolean {
-  const store = useGameStore.getState();
-  const action = (store as unknown as Record<string, unknown>)[name];
-  if (typeof action !== 'function') {
-    console.error(`[Network] Unknown action: ${name}`);
-    return false;
-  }
-  try {
-    (action as (...a: unknown[]) => unknown)(...args);
-    return true;
-  } catch (err) {
-    console.error(`[Network] Action ${name} failed:`, err);
-    return false;
-  }
-}
-
-// --- Lobby Management ---
-
-interface OnlineLobbyState {
-  lobbyPlayers: LobbyPlayer[];
-  settings: OnlineGameSettings;
-}
+import { PLAYER_COLORS } from '@/types/game.types';
 
 // --- Main Hook ---
 
@@ -103,10 +32,6 @@ export function useOnlineGame() {
   });
   const [error, setError] = useState<string | null>(null);
 
-  // Track local peer ID
-  const localPeerIdRef = useRef<string>('');
-  // Track state sync debounce
-  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Track if we're in online game mode
   const isOnlineRef = useRef(false);
 
@@ -183,14 +108,18 @@ export function useOnlineGame() {
     });
 
     // Set peerId → playerId mapping on PeerManager for turn validation
+    // Host uses 'host' as peerId in lobby, but host actions execute locally (not via network)
     const peerMap = new Map<string, string>();
     lobbyPlayers.forEach(p => {
-      peerMap.set(p.peerId, `player-${p.slot}`);
+      if (p.peerId !== 'host') {
+        // Only map actual remote peers (not the host itself)
+        peerMap.set(p.peerId, `player-${p.slot}`);
+      }
     });
     peerManager.setPeerPlayerMap(peerMap);
 
     // Broadcast initial game state + lobby data to all guests
-    const gameState = serializeGameState(useGameStore.getState());
+    const gameState = serializeGameState();
     const lobby: LobbyState = {
       roomCode,
       hostName: localPlayerName,
@@ -200,42 +129,8 @@ export function useOnlineGame() {
     peerManager.broadcast({ type: 'game-start', gameState, lobby });
   }, [isHost, lobbyPlayers, settings, roomCode, localPlayerName]);
 
-  // --- Guest: Send Action to Host ---
-
-  const sendAction = useCallback((actionName: string, args: unknown[]) => {
-    if (isHost) return; // Host executes locally
-
-    // Don't forward local-only or host-internal actions
-    if (LOCAL_ONLY_ACTIONS.has(actionName) || HOST_INTERNAL_ACTIONS.has(actionName)) return;
-
-    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    peerManager.sendToHost({
-      type: 'action',
-      requestId,
-      name: actionName,
-      args,
-    });
-  }, [isHost]);
-
-  // --- Host: Broadcast State ---
-
-  const broadcastState = useCallback(() => {
-    if (!isHost || !isOnlineRef.current) return;
-    const gameState = serializeGameState(useGameStore.getState());
-    peerManager.broadcast({ type: 'state-sync', gameState });
-  }, [isHost]);
-
-  // Debounced broadcast: coalesce rapid state changes
-  const debouncedBroadcast = useCallback(() => {
-    if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
-    syncTimerRef.current = setTimeout(() => {
-      broadcastState();
-    }, 50); // 50ms debounce — fast enough for turn-based
-  }, [broadcastState]);
-
   // --- Message Handling ---
   // Use refs to avoid stale closures — handlers reference current lobbyPlayers etc.
-  // Initialized as null, populated after the useCallback definitions below.
   const handleHostMessageRef = useRef<((msg: GuestMessage, from: string) => void) | null>(null);
   const handleGuestMessageRef = useRef<((msg: HostMessage) => void) | null>(null);
   const handlePlayerDisconnectRef = useRef<((peerId: string) => void) | null>(null);
@@ -247,11 +142,27 @@ export function useOnlineGame() {
     });
 
     // Message handler — uses refs to always call current version
+    // Only handles LOBBY messages here. Game-phase messages (action, state-sync, movement)
+    // are handled by useNetworkSync to avoid duplicate processing.
     const unsubMessage = peerManager.onMessage((message: NetworkMessage, fromPeerId: string) => {
+      const gamePhase = useGameStore.getState().phase;
       if (isHost) {
-        handleHostMessageRef.current?.(message as GuestMessage, fromPeerId);
+        // Host: handle lobby messages (join, ready, leave) always
+        // Game actions (action, ping, movement-start) handled by useNetworkSync
+        const msg = message as GuestMessage;
+        if (msg.type === 'join' || msg.type === 'ready' || msg.type === 'leave') {
+          handleHostMessageRef.current?.(msg, fromPeerId);
+        }
+        // Don't handle 'action', 'ping', 'movement-start' — those go to useNetworkSync
       } else {
-        handleGuestMessageRef.current?.(message as HostMessage);
+        // Guest: handle lobby messages (lobby-update, game-start, kicked, player-disconnected)
+        // State-sync, action-result, movement-animation handled by useNetworkSync
+        const msg = message as HostMessage;
+        if (msg.type === 'lobby-update' || msg.type === 'game-start' ||
+            msg.type === 'kicked' || msg.type === 'player-disconnected') {
+          handleGuestMessageRef.current?.(msg);
+        }
+        // Don't handle 'state-sync', 'action-result', 'movement-animation' — those go to useNetworkSync
       }
     });
 
@@ -275,17 +186,22 @@ export function useOnlineGame() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isHost]);
 
-  // Host: Handle messages from guests
+  // Host: Handle lobby messages from guests
   const handleHostMessage = useCallback((message: GuestMessage, fromPeerId: string) => {
     switch (message.type) {
       case 'join': {
         // Add new player to lobby
         setLobbyPlayers(prev => {
           if (prev.length >= 4) return prev; // Max 4 human players
+          // Prevent duplicate names
+          const existingName = prev.find(p => p.name === message.playerName);
+          const displayName = existingName
+            ? `${message.playerName} (${prev.length})`
+            : message.playerName;
           const slot = prev.length;
           const newPlayer: LobbyPlayer = {
             peerId: fromPeerId,
-            name: message.playerName,
+            name: displayName,
             color: PLAYER_COLORS[slot]?.value || '#888888',
             isReady: false,
             slot,
@@ -321,64 +237,14 @@ export function useOnlineGame() {
         break;
       }
 
-      case 'action': {
-        // Validate: only allow actions from the current player
-        const store = useGameStore.getState();
-        const currentPlayer = store.players[store.currentPlayerIndex];
-        const senderPlayer = lobbyPlayers.find(p => p.peerId === fromPeerId);
-
-        if (!senderPlayer || !currentPlayer) {
-          peerManager.sendTo(fromPeerId, {
-            type: 'action-result',
-            requestId: message.requestId,
-            success: false,
-            error: 'Invalid player',
-          });
-          break;
-        }
-
-        // Check if it's this player's turn
-        const senderPlayerId = `player-${senderPlayer.slot}`;
-        if (currentPlayer.id !== senderPlayerId) {
-          peerManager.sendTo(fromPeerId, {
-            type: 'action-result',
-            requestId: message.requestId,
-            success: false,
-            error: 'Not your turn',
-          });
-          break;
-        }
-
-        // Execute the action
-        const success = executeAction(message.name, message.args);
-        peerManager.sendTo(fromPeerId, {
-          type: 'action-result',
-          requestId: message.requestId,
-          success,
-          error: success ? undefined : 'Action failed',
-        });
-
-        // Broadcast updated state
-        broadcastState();
-        break;
-      }
-
-      case 'ping': {
-        peerManager.sendTo(fromPeerId, {
-          type: 'pong',
-          timestamp: message.timestamp,
-        });
-        break;
-      }
-
       case 'leave': {
         handlePlayerDisconnect(fromPeerId);
         break;
       }
     }
-  }, [roomCode, localPlayerName, settings, lobbyPlayers, broadcastState]);
+  }, [roomCode, localPlayerName, settings]);
 
-  // Guest: Handle messages from host
+  // Guest: Handle lobby messages from host
   const handleGuestMessage = useCallback((message: HostMessage) => {
     switch (message.type) {
       case 'lobby-update': {
@@ -391,6 +257,7 @@ export function useOnlineGame() {
         // Apply the full game state from host
         applyNetworkState(message.gameState);
         // Find our player ID from lobby data (included in game-start message)
+        // Use peerId matching first (reliable), fall back to name matching
         const myLobbyPlayer = message.lobby?.players?.find((p: LobbyPlayer) => p.name === localPlayerName)
           || lobbyPlayers.find(p => p.name === localPlayerName);
         const mySlot = myLobbyPlayer?.slot ?? -1;
@@ -401,18 +268,6 @@ export function useOnlineGame() {
           localPlayerId: myPlayerId,
           roomCode: roomCode,
         });
-        break;
-      }
-
-      case 'state-sync': {
-        applyNetworkState(message.gameState);
-        break;
-      }
-
-      case 'action-result': {
-        if (!message.success) {
-          console.warn(`[Network] Action failed: ${message.error}`);
-        }
         break;
       }
 
@@ -459,26 +314,17 @@ export function useOnlineGame() {
   handleGuestMessageRef.current = handleGuestMessage;
   handlePlayerDisconnectRef.current = handlePlayerDisconnect;
 
-  // --- Host: Subscribe to store changes for broadcasting ---
+  // NOTE: Store subscription for state broadcasting is handled by useNetworkSync only.
+  // This hook no longer subscribes to avoid duplicate broadcasts.
 
-  useEffect(() => {
-    if (!isHost || !isOnlineRef.current) return;
-
-    const unsub = useGameStore.subscribe(() => {
-      const state = useGameStore.getState();
-      // Only broadcast when in playing/event phase
-      if (state.phase === 'playing' || state.phase === 'event' || state.phase === 'victory') {
-        debouncedBroadcast();
-      }
-    });
-
-    return unsub;
-  }, [isHost, debouncedBroadcast]);
-
-  // --- Settings Update (host only) ---
+  // --- Settings Update (host only, lobby phase only) ---
 
   const updateSettings = useCallback((newSettings: Partial<OnlineGameSettings>) => {
     if (!isHost) return;
+    // Only allow settings changes in lobby/setup phase
+    const phase = useGameStore.getState().phase;
+    if (phase === 'playing' || phase === 'victory') return;
+
     setSettings(prev => {
       const updated = { ...prev, ...newSettings };
       // Broadcast to guests
@@ -533,10 +379,8 @@ export function useOnlineGame() {
     createRoom,
     joinRoom,
     startOnlineGame,
-    sendAction,
     updateSettings,
     disconnect,
     setLocalPlayerName,
-    broadcastState,
   };
 }

@@ -377,6 +377,22 @@
   - [x] GameBoard broadcasts movement on local player move, animates on remote movement receive
   - [x] Build succeeds, 111/112 tests pass (1 pre-existing)
 
+## Completed (2026-02-06)
+
+- [x] Online Multiplayer Deep Audit & Architecture Fix — 10 critical + 8 high bugs fixed
+  - [x] C1: Consolidated duplicate serializeGameState/applyNetworkState into `src/network/networkState.ts`
+  - [x] C2: Added ALLOWED_GUEST_ACTIONS whitelist (45 actions) — blocks guests from calling internal actions
+  - [x] C3: Removed duplicate store subscription in useOnlineGame (only useNetworkSync broadcasts now)
+  - [x] C4: Split message handlers — useOnlineGame=lobby only, useNetworkSync=game only (no duplicate processing)
+  - [x] C5: Guard AI turn handler for guest mode — prevents AI running on guest clients
+  - [x] C6: Fix auto-end-turn for guest — guest forwards endTurn to host when time=0 (was deadlocking)
+  - [x] C7: Fix host peerId mapping — exclude 'host' literal from peer→player map
+  - [x] C8: Fix connection timeout race condition — settled guard prevents double resolve/reject
+  - [x] C9: Block settings changes during active game (host fairness)
+  - [x] C10: Remove selectedLocation from network sync (local-only UI state)
+  - [x] H1: Auto-deduplicate player names in lobby (prevent wrong player identification)
+  - Build succeeds, all 112 tests pass
+
 ## In Progress
 
 *No active tasks*

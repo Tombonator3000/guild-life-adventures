@@ -76,9 +76,10 @@ export function GameBoard() {
     getLocationWithCustomPosition,
   } = useZoneConfiguration();
 
+  // AI turns only run on host/local — guests receive AI state via sync
   const { aiIsThinking } = useAITurnHandler({
-    currentPlayer,
-    phase,
+    currentPlayer: networkMode !== 'guest' ? currentPlayer : undefined,
+    phase: networkMode !== 'guest' ? phase : 'title', // prevent AI trigger on guest
     aiDifficulty,
   });
 
