@@ -1,13 +1,13 @@
 // Guild Life - Job Types and Interfaces
 
-import type { DegreeId, EducationPath } from '@/types/game.types';
+import type { DegreeId } from '@/types/game.types';
 
 export type ClothingRequirement = 'none' | 'casual' | 'dress' | 'business' | 'uniform';
 
 export interface Job {
   id: string;
   name: string;
-  location: string;              // Where you work (for flavor)
+  location: string;              // Where you work (employer name, not LocationId)
   baseWage: number;              // Base hourly wage (like Jones base wage)
   hoursPerShift: number;         // Hours per work shift (6 like Jones)
   requiredDegrees: DegreeId[];   // ALL degrees required (AND logic)
@@ -40,18 +40,6 @@ export interface JobApplicationResult {
   missingExperience?: number;
   missingDependability?: number;
   missingClothing?: boolean;
-}
-
-// Legacy function
-// EducationPath type is imported from @/types/game.types
-export interface LegacyJob {
-  id: string;
-  name: string;
-  hourlyWage: number;
-  hoursPerShift: number;
-  requiredEducation?: { path: EducationPath; level: number };
-  requiredClothing: 'none' | 'basic' | 'professional' | 'uniform';
-  description: string;
 }
 
 // Career level names (for display)

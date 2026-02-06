@@ -1,10 +1,10 @@
 // Guild Life - Education System (based on Jones in the Fast Lane Hi-Tech U)
 // Fantasy-themed degrees with Jones-style prerequisites and unlock system
 
-import type { DegreeId, EducationPath } from '@/types/game.types';
+import type { DegreeId } from '@/types/game.types';
 
 // Re-export types for backwards compatibility
-export type { DegreeId, EducationPath };
+export type { DegreeId };
 
 export interface Degree {
   id: DegreeId;
@@ -201,69 +201,3 @@ export const GRADUATION_BONUSES = {
 export const MAX_DEGREES = ALL_DEGREES.length; // 11 degrees like Jones
 export const MAX_EDUCATION_POINTS = MAX_DEGREES * 9; // 99 points max
 
-// Legacy compatibility - map old path system to new degrees
-// EducationPath type is imported from @/types/game.types
-
-export const PATH_TO_DEGREES: Record<EducationPath, DegreeId[]> = {
-  fighter: ['trade-guild', 'combat-training', 'master-combat'],
-  mage: ['junior-academy', 'arcane-studies', 'alchemy'],
-  priest: ['junior-academy', 'scholar', 'advanced-scholar', 'sage-studies', 'loremaster'],
-  business: ['trade-guild', 'junior-academy', 'commerce'],
-};
-
-// For backwards compatibility with existing code
-export const EDUCATION_PATHS: Record<EducationPath, {
-  name: string;
-  description: string;
-  courses: { id: string; name: string; path: EducationPath; level: number; sessionsRequired: number; costPerSession: number; hoursPerSession: number; description: string; }[];
-}> = {
-  fighter: {
-    name: 'Combat Path',
-    description: 'Military and forge training',
-    courses: [
-      { id: 'trade-guild', name: 'Trade Guild', path: 'fighter', level: 1, sessionsRequired: 10, costPerSession: 5, hoursPerSession: 6, description: 'Basic trade skills' },
-      { id: 'combat-training', name: 'Combat Training', path: 'fighter', level: 2, sessionsRequired: 10, costPerSession: 8, hoursPerSession: 6, description: 'Weapons and tactics' },
-      { id: 'master-combat', name: 'Master Combat', path: 'fighter', level: 3, sessionsRequired: 10, costPerSession: 12, hoursPerSession: 6, description: 'Elite combat mastery' },
-    ],
-  },
-  mage: {
-    name: 'Arcane Path',
-    description: 'Magic and enchantment',
-    courses: [
-      { id: 'junior-academy', name: 'Junior Academy', path: 'mage', level: 1, sessionsRequired: 10, costPerSession: 5, hoursPerSession: 6, description: 'Foundational studies' },
-      { id: 'arcane-studies', name: 'Arcane Studies', path: 'mage', level: 2, sessionsRequired: 10, costPerSession: 8, hoursPerSession: 6, description: 'Magic theory' },
-      { id: 'alchemy', name: 'Alchemy', path: 'mage', level: 3, sessionsRequired: 10, costPerSession: 15, hoursPerSession: 6, description: 'Potion and transmutation' },
-    ],
-  },
-  priest: {
-    name: 'Scholar Path',
-    description: 'Academic studies and lore',
-    courses: [
-      { id: 'junior-academy', name: 'Junior Academy', path: 'priest', level: 1, sessionsRequired: 10, costPerSession: 5, hoursPerSession: 6, description: 'Foundational studies' },
-      { id: 'scholar', name: 'Scholar', path: 'priest', level: 2, sessionsRequired: 10, costPerSession: 10, hoursPerSession: 6, description: 'Advanced academics' },
-      { id: 'advanced-scholar', name: 'Advanced Scholar', path: 'priest', level: 3, sessionsRequired: 10, costPerSession: 15, hoursPerSession: 6, description: 'Research and thesis' },
-      { id: 'loremaster', name: 'Loremaster', path: 'priest', level: 4, sessionsRequired: 10, costPerSession: 25, hoursPerSession: 6, description: 'Ultimate knowledge' },
-    ],
-  },
-  business: {
-    name: 'Commerce Path',
-    description: 'Trade and management',
-    courses: [
-      { id: 'trade-guild', name: 'Trade Guild', path: 'business', level: 1, sessionsRequired: 10, costPerSession: 5, hoursPerSession: 6, description: 'Basic commerce' },
-      { id: 'junior-academy', name: 'Junior Academy', path: 'business', level: 2, sessionsRequired: 10, costPerSession: 5, hoursPerSession: 6, description: 'Foundation studies' },
-      { id: 'commerce', name: 'Commerce', path: 'business', level: 3, sessionsRequired: 10, costPerSession: 10, hoursPerSession: 6, description: 'Business administration' },
-    ],
-  },
-};
-
-export const getCourse = (path: EducationPath, level: number) => {
-  return EDUCATION_PATHS[path].courses.find(c => c.level === level);
-};
-
-export const getNextCourse = (path: EducationPath, currentLevel: number) => {
-  return EDUCATION_PATHS[path].courses.find(c => c.level === currentLevel + 1);
-};
-
-export const getTotalEducationLevel = (education: Record<string, number>): number => {
-  return Object.values(education).reduce((sum, level) => sum + level, 0);
-};

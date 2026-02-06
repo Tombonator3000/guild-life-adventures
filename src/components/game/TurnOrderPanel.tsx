@@ -36,7 +36,7 @@ export function TurnOrderPanel({
           // Calculate goal progress
           const wealthProgress = Math.min(100, ((player.gold + player.savings + player.investments) / goalSettings.wealth) * 100);
           const happinessProgress = Math.min(100, (player.happiness / goalSettings.happiness) * 100);
-          const educationTotal = Object.values(player.education).reduce((a, b) => a + b, 0);
+          const educationTotal = player.completedDegrees.length * 9;
           const educationProgress = Math.min(100, (educationTotal / goalSettings.education) * 100);
           const careerProgress = Math.min(100, (GUILD_RANK_INDEX[player.guildRank] / goalSettings.career) * 100);
           const overallProgress = (wealthProgress + happinessProgress + educationProgress + careerProgress) / 4;

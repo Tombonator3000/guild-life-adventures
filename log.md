@@ -1,5 +1,90 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Technical Debt Batch E (5 items)
+
+Addressed all 5 technical debt items from the code audit.
+
+### E1: Real Unit Tests (Large)
+**Problem:** Zero test coverage — only `expect(true).toBe(true)` placeholder existed.
+**Implementation:**
+- **91 real tests** across 5 test files replacing the single placeholder
+- `victory.test.ts` (8 tests): checkVictory with all goal types, wealth calculation (gold+savings+investments+stocks-loans), education via completedDegrees, career rank indexing, edge cases
+- `economy.test.ts` (28 tests): depositToBank, withdrawFromBank, invest, takeLoan, repayLoan, buyStock, sellStock — all with input validation tests (negative, zero, NaN, Infinity, exceeding balance)
+- `work.test.ts` (12 tests): workShift earnings, 15% efficiency bonus, currentWage usage, dependability/experience increases, happiness penalty scaling (weeks 1-3/4-8/9+), permanentGoldBonus, garnishment, shiftsWorkedSinceHire
+- `education.test.ts` (16 tests): canEnrollIn, getAvailableDegrees, studyDegree, completeDegree, graduation bonuses, prerequisite chains, degree data integrity
+- `gameActions.test.ts` (26 tests): Game setup defaults, player actions (movePlayer, modifyGold/Health/Happiness), buyGuildPass, death/resurrection, stock market pure functions, job system pure functions, eviction
+- **Files:** `src/test/victory.test.ts`, `src/test/economy.test.ts`, `src/test/work.test.ts`, `src/test/education.test.ts`, `src/test/gameActions.test.ts`, `src/test/example.test.ts` (updated)
+
+### E2: Deduplicate GUILD_PASS_COST (Small)
+**Problem:** `questHelpers.ts` defined a local `const GUILD_PASS_COST = 500` instead of importing from `game.types.ts`.
+**Fix:** Removed local constant, added import from `@/types/game.types`.
+- **File:** `src/store/helpers/questHelpers.ts`
+
+### E3: Input Validation on Banking Actions (Medium)
+**Problem:** Banking functions accepted negative, NaN, Infinity amounts; could create inconsistent state.
+**Fix:** Added validation guards to 7 functions:
+- `depositToBank`: Rejects amount ≤ 0 / non-finite; clamps to available gold
+- `withdrawFromBank`: Rejects amount ≤ 0 / non-finite; clamps to available savings
+- `invest`: Rejects amount ≤ 0 / non-finite; clamps to available gold
+- `buyStock`: Rejects shares ≤ 0 / non-finite; validates stock ID exists with valid price
+- `sellStock`: Rejects shares ≤ 0 / non-finite
+- `takeLoan`: Rejects amount ≤ 0 / non-finite / > 1000; no-ops when outstanding loan
+- `repayLoan`: Rejects amount ≤ 0 / non-finite; no-ops when no outstanding loan
+- **File:** `src/store/helpers/economyHelpers.ts`
+
+### E4: LocationId Type Safety (Medium)
+**Problem:** `events.ts` used `string` for housing/location parameters instead of `LocationId`/`HousingTier`.
+**Fix:**
+- `GameEvent.conditions.housing` → `HousingTier[]`
+- `GameEvent.conditions.location` → `LocationId[]`
+- `checkForEvent()` parameters → `HousingTier`, `LocationId`
+- `checkWeeklyTheft()` parameter → `HousingTier`
+- Removed unused `LegacyJob` interface from `jobs/types.ts`
+- Removed unused `EducationPath` import from `jobs/types.ts`
+- **Note:** Job `location` field intentionally kept as `string` — it holds employer display names ("Guild Hall"), not LocationId values ("guild-hall")
+- **Files:** `src/data/events.ts`, `src/data/jobs/types.ts`
+
+### E5: Legacy Education System Cleanup (Medium)
+**Problem:** Old path-based education system (fighter/mage/priest/business levels) coexisted with new Jones-style degree system. Multiple components used `Object.values(player.education).reduce()` which read the OLD system, while victory conditions used `completedDegrees` (NEW system).
+**Fix:**
+- `RightSideTabs.tsx`: Changed education progress to `player.completedDegrees.length * 9` (matches checkVictory)
+- `TurnOrderPanel.tsx`: Same fix
+- `education.ts`: Removed dead legacy compatibility code:
+  - `PATH_TO_DEGREES` mapping (unused)
+  - `EDUCATION_PATHS` backwards-compat structure (unused)
+  - `getCourse()`, `getNextCourse()`, `getTotalEducationLevel()` (all unused)
+  - Removed `EducationPath` re-export
+- **Files:** `src/components/game/RightSideTabs.tsx`, `src/components/game/TurnOrderPanel.tsx`, `src/data/education.ts`
+- **Note:** `education` and `educationProgress` fields on Player kept for now — still used by quest `requiredEducation` checks in `canTakeQuest()`
+
+### Build Verification
+- TypeScript compiles cleanly (`tsc --noEmit`)
+- All 91 tests pass (`vitest run`)
+- No new ESLint errors
+
+### Files Modified (8)
+| File | Change |
+|------|--------|
+| `src/store/helpers/questHelpers.ts` | Import GUILD_PASS_COST, remove local duplicate |
+| `src/store/helpers/economyHelpers.ts` | Input validation on 7 banking/stock/loan functions |
+| `src/data/events.ts` | LocationId/HousingTier types on functions + interface |
+| `src/data/jobs/types.ts` | Remove LegacyJob, unused EducationPath import |
+| `src/data/education.ts` | Remove legacy PATH_TO_DEGREES, EDUCATION_PATHS, helper functions |
+| `src/components/game/RightSideTabs.tsx` | Fix education progress to use completedDegrees |
+| `src/components/game/TurnOrderPanel.tsx` | Fix education progress to use completedDegrees |
+| `src/test/example.test.ts` | Replace placeholder with actual environment check |
+
+### Files Created (4)
+| File | Tests |
+|------|-------|
+| `src/test/victory.test.ts` | 8 tests — victory condition logic |
+| `src/test/economy.test.ts` | 28 tests — banking, stocks, loans with validation |
+| `src/test/work.test.ts` | 12 tests — work shift earnings and bonuses |
+| `src/test/education.test.ts` | 16 tests — degree system and graduation |
+| `src/test/gameActions.test.ts` | 26 tests — game setup, player actions, quests, death, jobs |
+
+---
+
 ## 2026-02-06 - Gameplay Batch C + UI/UX Batch D (10 features)
 
 Implemented 5 gameplay improvements and 5 UI/UX enhancements.
