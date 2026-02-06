@@ -3,6 +3,7 @@ import { TitleScreen } from '@/components/screens/TitleScreen';
 import { GameSetup } from '@/components/screens/GameSetup';
 import { GameBoard } from '@/components/game/GameBoard';
 import { VictoryScreen } from '@/components/screens/VictoryScreen';
+import { OnlineLobby } from '@/components/screens/OnlineLobby';
 import { useMusicController } from '@/hooks/useMusic';
 
 const Index = () => {
@@ -17,6 +18,8 @@ const Index = () => {
       return <TitleScreen />;
     case 'setup':
       return <GameSetup />;
+    case 'online-lobby':
+      return <OnlineLobby />;
     case 'playing':
     case 'event':
       return <GameBoard />;

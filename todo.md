@@ -318,6 +318,22 @@
   - [x] Verified: Career victory goal achievable in ~2-3 weeks with rebalanced quests
   - See log.md for full analysis with ROI calculations
 
+## Completed (2026-02-06)
+
+- [x] Online Multiplayer (WebRTC P2P via PeerJS)
+  - [x] PeerManager singleton — WebRTC connection management via PeerJS
+  - [x] Room code system — 6-char alphanumeric codes (no ambiguous chars)
+  - [x] OnlineLobby screen — create/join rooms, player list, game settings
+  - [x] Host-authoritative state sync — host broadcasts full GameState on changes (50ms debounce)
+  - [x] NetworkActionProxy — intercepts guest store actions, forwards to host via WebRTC
+  - [x] wrapWithNetworkGuard — all 50+ store actions automatically network-aware
+  - [x] Turn lock — guests can't act when not their turn (spectator view mode)
+  - [x] "Waiting for [player]..." overlay during other players' turns
+  - [x] Connection status indicator (online badge + room code)
+  - [x] Auto-save disabled for guest mode
+  - [x] "Online Multiplayer" button on TitleScreen
+  - [x] Build succeeds, all 112 tests pass
+
 ## In Progress
 
 *No active tasks*

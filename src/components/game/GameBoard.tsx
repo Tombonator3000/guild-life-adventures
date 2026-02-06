@@ -21,8 +21,9 @@ import { useGrimwaldAI } from '@/hooks/useGrimwaldAI';
 import gameBoard from '@/assets/game-board.jpeg';
 import type { ZoneConfig, LocationId, AIDifficulty } from '@/types/game.types';
 import { toast } from 'sonner';
-import { Bot, Brain, Menu, SkipForward, FastForward, Play } from 'lucide-react';
+import { Bot, Brain, Menu, SkipForward, FastForward, Play, Globe, Wifi } from 'lucide-react';
 import { audioManager } from '@/audio/audioManager';
+import { useNetworkSync } from '@/network/useNetworkSync';
 
 const DEFAULT_CENTER_PANEL: CenterPanelConfig = {
   top: 22.5,
@@ -59,6 +60,14 @@ export function GameBoard() {
     dismissApplianceBreakageEvent,
   } = useGameStore();
   const { event: shadowfingersEvent, dismiss: dismissShadowfingers } = useShadowfingersModal();
+  const { isOnline, isGuest, networkMode } = useNetworkSync();
+  const localPlayerId = useGameStore(s => s.localPlayerId);
+  const roomCodeDisplay = useGameStore(s => s.roomCode);
+
+  // Online mode: is it this client's turn?
+  const isLocalPlayerTurn = !isOnline || (currentPlayer?.id === localPlayerId);
+  const isWaitingForOtherPlayer = isOnline && !isLocalPlayerTurn && !currentPlayer?.isAI;
+
   const [showZoneEditor, setShowZoneEditor] = useState(false);
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
   const [showGameMenu, setShowGameMenu] = useState(false);
@@ -118,10 +127,10 @@ export function GameBoard() {
         e.preventDefault();
         setSkipAITurn(true);
       }
-      // E = End Turn (when not in modal/menu and not AI turn)
+      // E = End Turn (when not in modal/menu and not AI turn, and it's local player's turn)
       if (e.key === 'e' && !e.ctrlKey && !e.metaKey && !aiIsThinking && !showGameMenu) {
         e.preventDefault();
-        if (currentPlayer && !currentPlayer.isAI && phase === 'playing') {
+        if (currentPlayer && !currentPlayer.isAI && phase === 'playing' && isLocalPlayerTurn) {
           endTurn();
         }
       }
@@ -337,6 +346,17 @@ export function GameBoard() {
 
     // Don't allow clicks during animation
     if (animatingPlayer) return;
+
+    // Online mode: only allow clicks when it's this client's turn
+    if (isOnline && !isLocalPlayerTurn) {
+      // In spectator mode, allow selecting locations to view info
+      if (selectedLocation === locationId) {
+        selectLocation(null);
+      } else {
+        selectLocation(locationId as LocationId);
+      }
+      return;
+    }
 
     const isCurrentLocation = currentPlayer.currentLocation === locationId;
 
@@ -653,6 +673,35 @@ export function GameBoard() {
           initialZones={customZones}
           initialPaths={{ ...MOVEMENT_PATHS }}
         />
+      )}
+
+      {/* Online: Waiting for other player overlay */}
+      {isWaitingForOtherPlayer && phase === 'playing' && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40">
+          <div className="parchment-panel px-6 py-3 flex items-center gap-3 shadow-lg">
+            <Globe className="w-5 h-5 text-primary animate-pulse" />
+            <span className="font-display text-card-foreground">
+              Waiting for <strong>{currentPlayer?.name}</strong> to play...
+            </span>
+            <div className="flex gap-1">
+              <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Online: Connection indicator */}
+      {isOnline && (
+        <div className="fixed bottom-4 right-4 z-40">
+          <div className="parchment-panel px-3 py-1.5 flex items-center gap-2 text-xs">
+            <Wifi className="w-3 h-3 text-green-600" />
+            <span className="text-amber-800 font-display">
+              Online {roomCodeDisplay ? `(${roomCodeDisplay})` : ''}
+            </span>
+          </div>
+        </div>
       )}
 
       {/* AI Thinking Overlay with speed controls */}

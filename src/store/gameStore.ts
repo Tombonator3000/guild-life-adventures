@@ -14,7 +14,28 @@ import { createEconomyActions } from './helpers/economyHelpers';
 import { createTurnActions } from './helpers/turnHelpers';
 import { createWorkEducationActions } from './helpers/workEducationHelpers';
 import { createQuestActions } from './helpers/questHelpers';
+import { forwardIfGuest } from '@/network/NetworkActionProxy';
 import type { GameStore } from './storeTypes';
+
+/**
+ * Wrap a set of store actions with network-aware guards.
+ * For online guests: actions are forwarded to the host instead of executing locally.
+ * For local/host mode: actions pass through unchanged.
+ */
+function wrapWithNetworkGuard<T extends Record<string, unknown>>(actions: T): T {
+  const wrapped = {} as Record<string, unknown>;
+  for (const [name, fn] of Object.entries(actions)) {
+    if (typeof fn !== 'function') {
+      wrapped[name] = fn;
+      continue;
+    }
+    wrapped[name] = (...args: unknown[]) => {
+      if (forwardIfGuest(name, args)) return;
+      return (fn as (...a: unknown[]) => unknown)(...args);
+    };
+  }
+  return wrapped as T;
+}
 
 // Re-export ShadowfingersEvent from storeTypes for consumers
 export type { ShadowfingersEvent } from './storeTypes';
@@ -138,6 +159,11 @@ export const useGameStore = create<GameStore>((set, get) => {
     showTutorial: false,
     tutorialStep: 0,
 
+    // Online multiplayer
+    networkMode: 'local' as const,
+    localPlayerId: null as string | null,
+    roomCode: null as string | null,
+
     // Game setup
     startNewGame: (playerNames, includeAI, goals, aiDifficulty = 'medium') => {
       const players: Player[] = playerNames.map((name, index) =>
@@ -171,20 +197,20 @@ export const useGameStore = create<GameStore>((set, get) => {
       });
     },
 
-    // Player actions
-    ...playerActions,
+    // Player actions (network-aware: guest actions forwarded to host)
+    ...wrapWithNetworkGuard(playerActions),
 
-    // Work and education actions
-    ...workEducationActions,
+    // Work and education actions (network-aware)
+    ...wrapWithNetworkGuard(workEducationActions),
 
-    // Economy actions
-    ...economyActions,
+    // Economy actions (network-aware)
+    ...wrapWithNetworkGuard(economyActions),
 
-    // Quest and game status actions
-    ...questActions,
+    // Quest and game status actions (network-aware)
+    ...wrapWithNetworkGuard(questActions),
 
-    // Turn management actions
-    ...turnActions,
+    // Turn management actions (network-aware)
+    ...wrapWithNetworkGuard(turnActions),
 
     // Simple UI actions
     setPhase: (phase) => set({ phase }),
@@ -238,9 +264,10 @@ export const useGameStore = create<GameStore>((set, get) => {
 });
 
 // Auto-save: save to slot 0 whenever game state changes during play
+// Disabled for online guest mode (host is authoritative)
 let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
 useGameStore.subscribe((state) => {
-  if (state.phase === 'playing' || state.phase === 'event') {
+  if ((state.phase === 'playing' || state.phase === 'event') && state.networkMode !== 'guest') {
     // Debounce auto-save to avoid excessive writes
     if (autoSaveTimer) clearTimeout(autoSaveTimer);
     autoSaveTimer = setTimeout(() => {

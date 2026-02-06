@@ -196,7 +196,7 @@ export interface GoalSettings {
 }
 
 export interface GameState {
-  phase: 'title' | 'setup' | 'playing' | 'victory' | 'event';
+  phase: 'title' | 'setup' | 'playing' | 'victory' | 'event' | 'online-lobby';
   currentPlayerIndex: number;
   players: Player[];
   week: number;
@@ -216,6 +216,10 @@ export interface GameState {
   // Tutorial state
   showTutorial: boolean;
   tutorialStep: number;
+  // Online multiplayer state
+  networkMode: 'local' | 'host' | 'guest';
+  localPlayerId: string | null;   // This client's player ID in online mode
+  roomCode: string | null;        // Room code for display
 }
 
 // Weekend event result for display between turns

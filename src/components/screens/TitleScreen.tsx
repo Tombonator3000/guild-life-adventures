@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { Sword, Shield, Scroll, Crown, Save, Trash2, Volume2, VolumeX, Download } from 'lucide-react';
+import { Sword, Shield, Scroll, Crown, Save, Trash2, Volume2, VolumeX, Download, Globe } from 'lucide-react';
 import { hasAutoSave, getSaveSlots, formatSaveDate, deleteSave } from '@/data/saveLoad';
 import type { SaveSlotInfo } from '@/data/saveLoad';
 import { DarkModeToggle } from '@/components/game/DarkModeToggle';
@@ -79,6 +79,14 @@ export function TitleScreen() {
             className="gold-button text-xl px-12 py-4 animate-pulse-gold"
           >
             New Adventure
+          </button>
+
+          <button
+            onClick={() => setPhase('online-lobby')}
+            className="wood-frame text-card text-lg px-10 py-3 font-display hover:brightness-110 flex items-center gap-2 justify-center"
+          >
+            <Globe className="w-5 h-5" />
+            Online Multiplayer
           </button>
 
           {autoSaveExists && (
