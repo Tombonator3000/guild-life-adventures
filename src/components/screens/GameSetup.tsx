@@ -115,8 +115,8 @@ export function GameSetup() {
                   onChange={(e) => setIncludeAI(e.target.checked)}
                   className="w-5 h-5 accent-primary"
                 />
-                <Bot className="w-5 h-5 text-muted-foreground" />
-                <span className="font-display text-card-foreground">
+                <Bot className="w-5 h-5 text-amber-700" />
+                <span className="font-display text-amber-900">
                   Include Grimwald (AI Opponent)
                 </span>
               </label>
