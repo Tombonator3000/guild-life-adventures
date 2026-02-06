@@ -4,6 +4,7 @@
 
 import { useState, type ReactNode } from 'react';
 import type { LocationNPC } from '@/data/npcs';
+import { NpcPortrait } from './NpcPortrait';
 
 export interface LocationTab {
   id: string;
@@ -33,16 +34,7 @@ export function LocationShell({ npc, tabs, defaultTab }: LocationShellProps) {
     <div className="flex gap-2 h-full">
       {/* NPC Portrait - Left side (Jones-style) */}
       <div className="flex-shrink-0 w-36 flex flex-col items-center">
-        <div
-          className="w-32 h-36 rounded-lg border-2 flex items-center justify-center text-7xl mb-1.5 shadow-inner"
-          style={{
-            backgroundColor: npc.bgColor,
-            borderColor: npc.accentColor,
-            boxShadow: `inset 0 2px 8px rgba(0,0,0,0.4), 0 0 12px ${npc.accentColor}33`,
-          }}
-        >
-          {npc.portrait}
-        </div>
+        <NpcPortrait npc={npc} />
         <div className="text-center">
           <div
             className="font-display text-sm font-bold leading-tight"

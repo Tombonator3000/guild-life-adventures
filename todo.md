@@ -211,6 +211,16 @@
   - [x] Content now fills full panel height via flex-1 overflow-y-auto (single scroll context)
   - [x] Build succeeds, all 112 tests pass
 
+## Completed (2026-02-06)
+
+- [x] Fix NPC portrait bug — empty content area on first location visit
+  - Root cause: `LocationShell` reused across locations, `activeTab` state was stale
+  - Fix: `key={locationId}` on `<LocationShell>` forces remount on location change
+- [x] JPG/PNG NPC portrait support with emoji fallback
+  - `NpcPortrait.tsx` component: tries `portraitImage`, falls back to emoji on error
+  - All 12 NPCs have `portraitImage` paths pointing to `public/npcs/<name>.jpg`
+  - Drop real images into `public/npcs/` to replace emoji placeholders
+
 ## In Progress
 
 *No active tasks*

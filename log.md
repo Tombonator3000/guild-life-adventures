@@ -1,5 +1,48 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Fix NPC Portrait Bug + JPG Portrait Support
+
+Fixed a bug where location panels showed only the NPC portrait (empty content area) on first visit, requiring exit and re-entry. Also added support for JPG/PNG NPC portrait images with emoji fallback.
+
+### Bug Fix: Empty Location Content on First Visit
+
+**Problem:** When traveling between locations without closing the panel (e.g., Guild Hall → Rusty Tankard via board click), the `LocationShell` component stayed mounted and its `activeTab` state retained the value from the previous location. For example, `activeTab = 'quests'` from Guild Hall doesn't match any tab in Rusty Tankard's single `'menu'` tab, so `activeContent` was `undefined` and the right side rendered empty.
+
+**Root Cause:** `LocationShell` used `useState` for `activeTab`, which only initializes on mount. When `LocationPanel` received a new `locationId` (from `selectLocation` after travel), the same `LocationShell` instance was reused by React (same JSX position), keeping stale state.
+
+**Fix:** Added `key={locationId}` to `<LocationShell>` in `LocationPanel.tsx`. This forces React to unmount and remount LocationShell whenever the location changes, resetting the active tab state.
+
+### Feature: JPG/PNG NPC Portrait Support
+
+**Changes:**
+- Added `portraitImage?: string` field to `LocationNPC` interface in `npcs.ts`
+- Created `NpcPortrait.tsx` component that tries to load `portraitImage`, falls back to emoji `portrait` on error
+- All 12 NPCs now have `portraitImage` paths pointing to `/npcs/<name>.jpg`
+- Created `public/npcs/` directory with `.gitkeep` for placeholder images
+- Emoji portraits remain as automatic fallback when image files don't exist
+
+**How to add real portraits:** Drop JPG/PNG files into `public/npcs/` matching the filenames in `npcs.ts` (e.g., `aldric.jpg`, `magnus.jpg`). No code changes needed.
+
+### Files Modified (3)
+| File | Change |
+|------|--------|
+| `src/components/game/LocationPanel.tsx` | Added `key={locationId}` to `<LocationShell>` |
+| `src/components/game/LocationShell.tsx` | Replaced inline portrait div with `<NpcPortrait>` component |
+| `src/data/npcs.ts` | Added `portraitImage` field to interface + all 12 NPC definitions |
+
+### Files Created (2)
+| File | Purpose |
+|------|---------|
+| `src/components/game/NpcPortrait.tsx` | Image portrait component with emoji fallback on load error |
+| `public/npcs/.gitkeep` | Placeholder directory for NPC portrait images |
+
+### Build & Test
+- TypeScript compiles cleanly
+- Vite build succeeds
+- All 112 tests pass
+
+---
+
 ## 2026-02-06 - Location Panel Layout Optimization (Reduce Scrolling, Bigger NPC Portraits)
 
 Optimized the center panel layout to better utilize available space. NPC portraits are significantly bigger, header is more compact, and sub-panels fill available height instead of using restrictive max-height constraints.
