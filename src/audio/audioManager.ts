@@ -1,0 +1,222 @@
+// AudioManager — singleton that handles background music with crossfade transitions.
+// Uses two HTMLAudioElement instances (A/B) to allow smooth volume crossfading.
+
+import { MUSIC_TRACKS, CROSSFADE_MS, DEFAULT_MUSIC_VOLUME } from './musicConfig';
+
+const SETTINGS_KEY = 'guild-life-audio-settings';
+
+export interface AudioSettings {
+  musicVolume: number; // 0-1
+  musicMuted: boolean;
+}
+
+function loadSettings(): AudioSettings {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        musicVolume: typeof parsed.musicVolume === 'number' ? parsed.musicVolume : DEFAULT_MUSIC_VOLUME,
+        musicMuted: typeof parsed.musicMuted === 'boolean' ? parsed.musicMuted : false,
+      };
+    }
+  } catch { /* ignore */ }
+  return { musicVolume: DEFAULT_MUSIC_VOLUME, musicMuted: false };
+}
+
+function saveSettings(settings: AudioSettings) {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch { /* ignore */ }
+}
+
+class AudioManager {
+  private deckA: HTMLAudioElement;
+  private deckB: HTMLAudioElement;
+  // Which deck is currently active (the one playing or fading in)
+  private activeDeck: 'A' | 'B' = 'A';
+  private currentTrackId: string | null = null;
+  private settings: AudioSettings;
+  private fadeInterval: ReturnType<typeof setInterval> | null = null;
+  private listeners: Array<() => void> = [];
+
+  constructor() {
+    this.deckA = new Audio();
+    this.deckB = new Audio();
+    this.deckA.loop = true;
+    this.deckB.loop = true;
+    // Prevent network errors from being noisy
+    this.deckA.preload = 'auto';
+    this.deckB.preload = 'auto';
+
+    this.settings = loadSettings();
+    this.applyVolume();
+  }
+
+  // --- Public API ---
+
+  /** Play a track by ID. If the same track is already playing, do nothing. */
+  play(trackId: string) {
+    if (trackId === this.currentTrackId) return;
+
+    const track = MUSIC_TRACKS[trackId];
+    if (!track) return;
+
+    const url = `/music/${track.file}`;
+    this.crossfadeTo(url, trackId);
+  }
+
+  /** Stop all music with a short fade out. */
+  stop() {
+    if (!this.currentTrackId) return;
+    this.currentTrackId = null;
+    this.fadeOut(this.getActiveDeck());
+    this.fadeOut(this.getInactiveDeck());
+  }
+
+  /** Get the currently playing track ID (or null). */
+  getCurrentTrack(): string | null {
+    return this.currentTrackId;
+  }
+
+  /** Get current settings. */
+  getSettings(): AudioSettings {
+    return { ...this.settings };
+  }
+
+  /** Set music volume (0-1). */
+  setVolume(volume: number) {
+    this.settings.musicVolume = Math.max(0, Math.min(1, volume));
+    this.applyVolume();
+    saveSettings(this.settings);
+    this.notify();
+  }
+
+  /** Toggle mute. */
+  toggleMute() {
+    this.settings.musicMuted = !this.settings.musicMuted;
+    this.applyVolume();
+    saveSettings(this.settings);
+    this.notify();
+  }
+
+  /** Set muted state directly. */
+  setMuted(muted: boolean) {
+    this.settings.musicMuted = muted;
+    this.applyVolume();
+    saveSettings(this.settings);
+    this.notify();
+  }
+
+  /** Subscribe to settings changes. Returns an unsubscribe function. */
+  subscribe(listener: () => void): () => void {
+    this.listeners.push(listener);
+    return () => {
+      this.listeners = this.listeners.filter(l => l !== listener);
+    };
+  }
+
+  // --- Internal ---
+
+  private notify() {
+    this.listeners.forEach(l => l());
+  }
+
+  private getActiveDeck(): HTMLAudioElement {
+    return this.activeDeck === 'A' ? this.deckA : this.deckB;
+  }
+
+  private getInactiveDeck(): HTMLAudioElement {
+    return this.activeDeck === 'A' ? this.deckB : this.deckA;
+  }
+
+  private effectiveVolume(): number {
+    return this.settings.musicMuted ? 0 : this.settings.musicVolume;
+  }
+
+  private applyVolume() {
+    const vol = this.effectiveVolume();
+    // Only set volume on the active deck; inactive deck is either silent or fading out
+    this.getActiveDeck().volume = vol;
+  }
+
+  private crossfadeTo(url: string, trackId: string) {
+    // Cancel any ongoing fade
+    if (this.fadeInterval) {
+      clearInterval(this.fadeInterval);
+      this.fadeInterval = null;
+    }
+
+    const oldDeck = this.getActiveDeck();
+    // Switch active deck
+    this.activeDeck = this.activeDeck === 'A' ? 'B' : 'A';
+    const newDeck = this.getActiveDeck();
+
+    this.currentTrackId = trackId;
+
+    // Prepare the new deck
+    newDeck.src = url;
+    newDeck.volume = 0;
+    newDeck.currentTime = 0;
+
+    // Start playing the new deck (handle autoplay restrictions)
+    const playPromise = newDeck.play();
+    if (playPromise) {
+      playPromise.catch(() => {
+        // Autoplay blocked — we'll retry on next user interaction
+      });
+    }
+
+    // Crossfade
+    const targetVolume = this.effectiveVolume();
+    const steps = 30; // ~30 steps during crossfade
+    const interval = CROSSFADE_MS / steps;
+    let step = 0;
+
+    this.fadeInterval = setInterval(() => {
+      step++;
+      const progress = step / steps;
+
+      // New deck fades in
+      newDeck.volume = Math.min(targetVolume, targetVolume * progress);
+      // Old deck fades out
+      oldDeck.volume = Math.max(0, targetVolume * (1 - progress));
+
+      if (step >= steps) {
+        if (this.fadeInterval) {
+          clearInterval(this.fadeInterval);
+          this.fadeInterval = null;
+        }
+        // Ensure final volumes
+        newDeck.volume = targetVolume;
+        oldDeck.volume = 0;
+        oldDeck.pause();
+        oldDeck.src = '';
+      }
+    }, interval);
+  }
+
+  private fadeOut(deck: HTMLAudioElement) {
+    const startVolume = deck.volume;
+    if (startVolume <= 0) {
+      deck.pause();
+      deck.src = '';
+      return;
+    }
+    const steps = 20;
+    const interval = 500 / steps;
+    let step = 0;
+    const fadeTimer = setInterval(() => {
+      step++;
+      deck.volume = Math.max(0, startVolume * (1 - step / steps));
+      if (step >= steps) {
+        clearInterval(fadeTimer);
+        deck.pause();
+        deck.src = '';
+      }
+    }, interval);
+  }
+}
+
+// Singleton instance
+export const audioManager = new AudioManager();

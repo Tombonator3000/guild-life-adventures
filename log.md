@@ -1,5 +1,56 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Audio & Music System
+
+Added a complete background music system with smooth crossfade transitions between tracks.
+
+### Architecture
+- `src/audio/audioManager.ts` — Singleton AudioManager with dual-deck (A/B) crossfade engine
+- `src/audio/musicConfig.ts` — Track definitions, location-to-music mapping, screen-level music mapping
+- `src/hooks/useMusic.ts` — React hooks: `useMusicController` (drives music from game state), `useAudioSettings` (volume/mute controls)
+
+### Features
+- **Crossfade transitions** (1.5s) between tracks when changing locations or screens
+- **Location-specific music**: Guild Hall, The Slums, Enchanter's Workshop, Rusty Tankard each have unique tracks
+- **Screen music**: Main Theme on title/setup screens, "Oh What a Weekend" on victory screen
+- **Default game track**: "On the Street" plays for locations without a specific track
+- **50% default volume** as baseline
+- **Volume slider + mute toggle** in Options tab (RightSideTabs)
+- **Mute button** on TitleScreen (next to dark mode toggle)
+- **Keyboard shortcut**: M to toggle mute during gameplay
+- **Persistent settings** — volume and mute state saved to localStorage (`guild-life-audio-settings`)
+- **Autoplay-safe** — gracefully handles browser autoplay restrictions
+
+### Music Tracks (MP3 files in `public/music/`)
+| File | Context |
+|------|---------|
+| `01MainTheme.mp3` | Title screen, game setup |
+| `02OnTheStreet.mp3` | Default in-game (no location-specific track) |
+| `03guildhall.mp3` | Guild Hall location |
+| `09TheSlums.mp3` | The Slums location |
+| `11EnchantersWorkshop.mp3` | Enchanter's Workshop location |
+| `13rustytankard.mp3` | Rusty Tankard location |
+| `18OhWhatAWeekend.mp3` | Victory screen |
+
+### Files Modified
+- `src/pages/Index.tsx` — Added `useMusicController` hook
+- `src/components/screens/TitleScreen.tsx` — Added mute toggle button
+- `src/components/game/GameBoard.tsx` — Added M keyboard shortcut for mute
+- `src/components/game/RightSideTabs.tsx` — Added Music section to Options tab with volume slider and mute
+
+### Files Created
+- `src/audio/audioManager.ts`
+- `src/audio/musicConfig.ts`
+- `src/hooks/useMusic.ts`
+- `public/music/` (directory for MP3 files)
+
+### Build & Tests
+- TypeScript compiles cleanly (`tsc --noEmit`)
+- Vite build succeeds
+- All 91 tests pass
+
+---
+
 ## 2026-02-06 - Fix 52 Bugs from Full Game Audit
 
 Applied fixes for 52 issues found during the full game audit using 5 parallel fix agents.
