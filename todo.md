@@ -300,6 +300,24 @@
   - [x] Bug 3a: Turn-end race condition — added scheduledEndTurnRef + timer guards to prevent double endTurn
   - [x] Bug 3b: Education Math.max — added Math.max(0) safety to studySession and studyDegree
 
+## Completed (2026-02-06)
+
+- [x] Full Balance Audit: Education vs Jobs vs Quests vs Cave
+  - [x] Bug: 3 quests impossible (Monster Slaying, Dragon Investigation, Dragon Slayer) — fighter level 3/4 required but max = 2
+    - Fixed all three to fighter level 2 (gated by guild rank instead)
+  - [x] Balance: All 18 quests rebalanced — gold/time ratios now competitive with equivalent-tier jobs
+    - E-rank: 4.5-5.0 g/hr (was 2.5-3.0), time 3-6h (was 4-10h)
+    - D-rank: 5.0-7.0 g/hr (was 1.75-2.5), time 6-10h (was 12-20h)
+    - C-rank: 7.5-8.1 g/hr (was 2.7), time 8-12h (was 20-28h)
+    - B-rank: 10-11 g/hr (was 2.78-3.54), time 10-16h (was 24-40h)
+    - A-rank: 11.8-13.3 g/hr (was 3.56-3.65), time 18-22h (was 48-56h)
+    - S-rank: 15-16.7 g/hr (was 5.0), time 30-36h (was 80-100h)
+  - [x] Verified: Education paths balanced (combat=cheap/fast, academic=education victory, commerce=efficient)
+  - [x] Verified: Job wage progression well-structured (4-25g/hr across 10 levels)
+  - [x] Verified: Dungeon floor difficulty/rewards properly scaled
+  - [x] Verified: Career victory goal achievable in ~2-3 weeks with rebalanced quests
+  - See log.md for full analysis with ROI calculations
+
 ## In Progress
 
 *No active tasks*

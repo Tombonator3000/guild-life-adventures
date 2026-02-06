@@ -1,5 +1,179 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Full Balance Audit: Education vs Jobs vs Quests vs Cave
+
+Comprehensive playthrough simulation analysis of game balance across all four progression systems: education, jobs, quests, and dungeon. Three critical bugs found and fixed, plus full quest economy rebalance.
+
+### Methodology
+
+Simulated complete playthroughs by computing gold/hour rates, time investments, and ROI for every degree, job, quest, and dungeon floor. Cross-referenced DEGREE_TO_PATH mapping against quest requirements to verify all content is reachable.
+
+### Critical Bug: 3 Quests Were Impossible to Take
+
+**File:** `src/data/quests.ts`
+
+The `DEGREE_TO_PATH` mapping in `workEducationHelpers.ts` gives each education path a maximum level:
+- **fighter**: combat-training + master-combat = max level **2**
+- **mage**: arcane-studies + sage-studies + loremaster + alchemy = max level **4**
+- **priest**: scholar + advanced-scholar = max level **2**
+- **business**: trade-guild + junior-academy + commerce = max level **3**
+
+Three quests required fighter levels that exceed the maximum:
+
+| Quest | Required | Max Possible | Status |
+|-------|----------|-------------|--------|
+| Monster Slaying (B) | fighter 3 | fighter 2 | **IMPOSSIBLE** |
+| Dragon Investigation (A) | fighter 4 | fighter 2 | **IMPOSSIBLE** |
+| Dragon Slayer (S) | fighter 4 | fighter 2 | **IMPOSSIBLE** |
+
+**Fix:** Reduced all three to `fighter level 2` (requires Master Combat degree). These quests are already gated behind guild rank (B=adept/15 quests, A=veteran/25 quests, S=elite/40 quests), so the guild rank requirement provides sufficient progression gating.
+
+### Balance Issue: All Quest Gold Rates Were Below Entry-Level Work
+
+**File:** `src/data/quests.ts`
+
+Before rebalance, every single quest paid less per hour than the lowest entry-level job (Floor Sweeper at 4g/hr × 1.15 bonus = 4.6g/hr):
+
+| Rank | Quest | Old Gold/Time | Old g/hr | Comparison |
+|------|-------|--------------|----------|------------|
+| E | Rat Extermination | 20g / 8h | 2.50 | Below Floor Sweeper (4.6) |
+| E | Package Delivery | 12g / 4h | 3.00 | Below Floor Sweeper |
+| D | Guard Duty | 30g / 12h | 2.50 | Below Floor Sweeper |
+| D | Urgent Courier | 35g / 20h | 1.75 | Far below Floor Sweeper |
+| C | Bandit Hunt | 65g / 24h | 2.71 | Below Floor Sweeper |
+| B | Monster Slaying | 100g / 36h | 2.78 | Below Floor Sweeper |
+| A | Dragon Investigation | 175g / 48h | 3.65 | Below Floor Sweeper |
+| S | Dragon Slayer | 500g / 100h | 5.00 | Only S-rank matched entry work |
+
+This made quests a pure gold loss. Players doing quests fell behind economically vs pure work strategies. S-rank quests also consumed 80-100 hours (1.3-1.7 full weeks), leaving no time for anything else.
+
+### Fix: Quest Gold/Time Rebalance
+
+Rebalanced all 18 quests so gold/hour scales competitively with equivalent-tier jobs. Quests remain slightly below pure work rates (working is always optimal for pure gold), but now provide meaningful income alongside happiness rewards and guild rank progression.
+
+| Rank | Quest | Old → New Gold | Old → New Time | New g/hr |
+|------|-------|---------------|---------------|----------|
+| E | Rat Extermination | 20 → 25g | 8 → 5h | 5.0 |
+| E | Package Delivery | 12 → 15g | 4 → 3h | 5.0 |
+| E | Herb Gathering | 15 → 18g | 6 → 4h | 4.5 |
+| E | Find Lost Cat | 25 → 30g | 10 → 6h | 5.0 |
+| D | Escort Merchant | 40 → 50g | 16 → 10h | 5.0 |
+| D | Guard Duty | 30 → 42g | 12 → 6h | 7.0 |
+| D | Urgent Courier | 35 → 40g | 20 → 8h | 5.0 |
+| C | Bandit Hunt | 65 → 80g | 24 → 10h | 8.0 |
+| C | Lost Artifact | 75 → 90g | 28 → 12h | 7.5 |
+| C | Curse Investigation | 55 → 65g | 20 → 8h | 8.1 |
+| B | Monster Slaying | 100 → 140g | 36 → 14h | 10.0 |
+| B | Dungeon Dive | 120 → 160g | 40 → 16h | 10.0 |
+| B | Exorcism | 85 → 110g | 24 → 10h | 11.0 |
+| A | Dragon Investigation | 175 → 220g | 48 → 18h | 12.2 |
+| A | Demon Cult | 200 → 260g | 56 → 22h | 11.8 |
+| A | Ancient Evil | 185 → 240g | 52 → 18h | 13.3 |
+| S | Deep Dungeon Clear | 400 → 450g | 80 → 30h | 15.0 |
+| S | Dragon Slayer | 500 → 600g | 100 → 36h | 16.7 |
+
+**Design rationale:** Quests provide three things work doesn't:
+1. **Happiness rewards** (1-20 per quest, critical for happiness victory)
+2. **Guild rank progression** (critical for career victory, requires 15 quests for adept)
+3. **Variety** (no clothing/dependability requirements, no employer needed)
+
+### Education Balance Analysis (No Changes Needed)
+
+Verified all education paths are balanced for their purpose:
+
+**Cost-efficiency ranking:**
+
+| Path | Degrees | Cost | Time | Best Job Unlocked | Wage |
+|------|---------|------|------|-------------------|------|
+| Commerce only | JA + Commerce (2) | 150g | 120h | Shop Manager | 16g/hr |
+| Combat path | TG + CT + MC (3) | 250g | 180h | Weapons Instructor | 19g/hr |
+| Combined | JA + Com + TG + CT + MC (5) | 400g | 300h | Forge Manager | 23g/hr |
+| Full academic | JA → Sch → ASch → SS → LM (5) | 750g | 300h | Sage | 20g/hr |
+| Ultimate | All 9 required degrees | 1100g | 540h | Guild Master's Asst | 25g/hr |
+
+The academic path costs 3x more than combat for similar wages, but this is balanced by:
+- More education points per gold spent (critical for education victory)
+- Mage path quest access (Ancient Evil, Curse Investigation)
+- Dungeon bonuses (Scholar +10% gold, Arcane Studies +15% gold + ghost damage)
+- Multiple graduation happiness bonuses (+5 per degree × 5 = +25 total)
+
+**Conclusion:** Education paths represent different strategies — combat for quick income, academic for education victory + dungeon bonuses, commerce for mid-game management jobs. No changes needed.
+
+### Job Balance Analysis (No Changes Needed)
+
+Job wage progression is well-structured:
+- **Entry (0 degrees):** 4-6g/hr — survivable, intentionally low to motivate education
+- **Junior (1 degree):** 6-10g/hr — Trade Guild unlocks best early jobs
+- **Mid (2 degrees):** 10-18g/hr — meaningful wage jump rewards education investment
+- **Senior (2-3 degrees):** 18-23g/hr — high wages for committed players
+- **Master (3+ degrees):** 21-25g/hr — top tier, requires significant investment
+
+Trade Guild Certificate ROI is excellent: 50g + 60h invested → Market Vendor at 10g/hr (from 4g/hr) = breakeven in ~1.5 weeks. This motivates early education, which is good design.
+
+### Dungeon Balance Analysis (No Changes Needed)
+
+Dungeon gold/hour scales progressively:
+- **Floor 1:** 2.5-8.3g/hr (below work, but exists for progression + rare drops)
+- **Floor 2:** 3-10g/hr (comparable to entry work after equipment costs)
+- **Floor 3:** 4.3-14.3g/hr (mid-level, requires sword + armor investment)
+- **Floor 4:** 6.7-22.2g/hr (high-tier, requires Steel Sword + Chainmail)
+- **Floor 5:** 11.4-27.3g/hr (competitive with top jobs, requires Enchanted Blade + Plate)
+
+Health costs reduce effective gold rates significantly. With healing potions at 75g/50HP, Floor 5's ~95 HP average damage costs ~142g to heal, reducing net gold from ~425g to ~283g (12.9g/hr). This makes dungeon farming competitive with but not dominant over working at equivalent career levels.
+
+Education bonuses dramatically improve survivability: Master Combat (-25% damage) + Trade Guild (trap disarm) can reduce Floor 5 total damage from ~200 to ~80 HP. This rewards education investment for dungeon strategies.
+
+### Career Victory Goal Analysis
+
+Default career goal: rank 4 (adept) requiring 15 completed quests.
+
+With the quest time rebalance:
+- 15 E-rank quests × 5h average = 75h of quest time
+- Plus travel to Guild Hall (~7h from Slums per trip, can chain quests)
+- Achievable in ~2-3 weeks of focused questing
+- Plus 500g guild pass investment
+
+This is well-balanced against other victory goals:
+- Education (45 pts = 5 degrees): ~5 weeks + 450g
+- Wealth (5000g): ~8-12 weeks of sustained work
+- Happiness (75): ~6-10 weeks with active management
+- Career (rank 4): ~2-3 weeks of questing + guild pass
+
+All four goals converge around weeks 8-12, creating a well-paced game.
+
+### DEGREE_TO_PATH Mapping Reference
+
+For future reference, the complete degree-to-education-path mapping:
+
+```
+trade-guild      → business (level +1)
+junior-academy   → business (level +1)
+commerce         → business (level +1)    Max business: 3
+combat-training  → fighter  (level +1)
+master-combat    → fighter  (level +1)    Max fighter: 2
+arcane-studies   → mage     (level +1)
+sage-studies     → mage     (level +1)
+loremaster       → mage     (level +1)
+alchemy          → mage     (level +1)    Max mage: 4
+scholar          → priest   (level +1)
+advanced-scholar → priest   (level +1)    Max priest: 2
+```
+
+All quest education requirements now respect these maximums.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/data/quests.ts` | Fixed 3 impossible education requirements, rebalanced all 18 quest gold/time values |
+
+### Build & Test
+- TypeScript compiles cleanly
+- Vite build succeeds (65 precached entries)
+- 111/112 tests pass (1 pre-existing freshFood test failure, unrelated)
+
+---
+
 ## 2026-02-06 - Forge, Cave & Turn-End Bug Fixes
 
 Three critical gameplay bugs fixed: Forge work bypass, deferred cave damage, and premature turn endings.
