@@ -5,7 +5,7 @@ let playerId: string;
 
 function resetAndStart() {
   const store = useGameStore.getState();
-  store.startNewGame(['TestPlayer'], false, { wealth: 5000, happiness: 75, education: 5, career: 4 });
+  store.startNewGame(['TestPlayer'], false, { wealth: 5000, happiness: 75, education: 45, career: 4 });
   playerId = useGameStore.getState().players[0].id;
 }
 
@@ -15,31 +15,38 @@ describe('workShift', () => {
   it('adds earnings and spends time', () => {
     useGameStore.getState().workShift(playerId, 6, 10);
     const p = useGameStore.getState().players[0];
-    // 6 hours at 10/hr, 6 >= 6 so bonus: ceil(6 * 1.15) = 7 hours * 10 = 70
-    expect(p.gold).toBe(100 + 70);
+    // 6 hours at 10/hr with 15% bonus: floor(6 * 10 * 1.15) = floor(69) = 69
+    expect(p.gold).toBe(100 + 69);
     expect(p.timeRemaining).toBe(54); // 60 - 6
   });
 
-  it('applies 15% efficiency bonus for 6+ hour shifts', () => {
+  it('applies 15% efficiency bonus to all shifts equally', () => {
     useGameStore.getState().workShift(playerId, 6, 10);
     const p = useGameStore.getState().players[0];
-    // bonusHours = ceil(6 * 1.15) = 7, earnings = 7 * 10 = 70
-    expect(p.gold).toBe(170);
+    // floor(6 * 10 * 1.15) = 69
+    expect(p.gold).toBe(169);
   });
 
-  it('no efficiency bonus for shifts under 6 hours', () => {
+  it('applies 15% bonus to short shifts too (no threshold)', () => {
     useGameStore.getState().workShift(playerId, 4, 10);
     const p = useGameStore.getState().players[0];
-    // bonusHours = 4, earnings = 4 * 10 = 40
-    expect(p.gold).toBe(140);
+    // floor(4 * 10 * 1.15) = floor(46) = 46
+    expect(p.gold).toBe(146);
+  });
+
+  it('applies 15% bonus to 8-hour shifts fairly', () => {
+    useGameStore.getState().workShift(playerId, 8, 10);
+    const p = useGameStore.getState().players[0];
+    // floor(8 * 10 * 1.15) = floor(92) = 92
+    expect(p.gold).toBe(192);
   });
 
   it('uses currentWage when player has a job', () => {
     useGameStore.getState().setJob(playerId, 'floor-sweeper', 5);
     useGameStore.getState().workShift(playerId, 6, 999); // wage param should be ignored
     const p = useGameStore.getState().players[0];
-    // effectiveWage = currentWage (5), bonusHours = 7, earnings = 7 * 5 = 35
-    expect(p.gold).toBe(135);
+    // effectiveWage = currentWage (5), floor(6 * 5 * 1.15) = floor(34.5) = 34
+    expect(p.gold).toBe(134);
   });
 
   it('increases dependability by 2 (capped at max)', () => {
@@ -83,8 +90,8 @@ describe('workShift', () => {
     }));
     useGameStore.getState().workShift(playerId, 6, 10);
     const p = useGameStore.getState().players[0];
-    // bonusHours = 7, earnings = 7 * 10 = 70, with 10% bonus = floor(70 * 1.1) = 77
-    expect(p.gold).toBe(100 + 77);
+    // floor(6 * 10 * 1.15) = 69, with 10% bonus = floor(69 * 1.1) = floor(75.9) = 75
+    expect(p.gold).toBe(100 + 75);
   });
 
   it('applies 50% garnishment when rent overdue 4+ weeks', () => {
@@ -95,9 +102,9 @@ describe('workShift', () => {
     }));
     useGameStore.getState().workShift(playerId, 6, 10);
     const p = useGameStore.getState().players[0];
-    // bonusHours = 7, earnings = 70
-    // garnishment = floor(70 * 0.5) + 2 = 37
-    // net = 70 - 37 = 33
+    // floor(6 * 10 * 1.15) = 69
+    // garnishment = floor(69 * 0.5) + 2 = 36
+    // net = 69 - 36 = 33
     expect(p.gold).toBe(100 + 33);
   });
 

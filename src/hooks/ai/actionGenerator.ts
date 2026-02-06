@@ -9,6 +9,8 @@ import { RENT_COSTS } from '@/types/game.types';
 import { getJob } from '@/data/jobs';
 import { DEGREES } from '@/data/education';
 import { calculatePathDistance } from '@/data/locations';
+import { getFloor, getFloorTimeCost } from '@/data/dungeon';
+import { calculateCombatStats } from '@/data/items';
 
 import type { DifficultySettings, AIAction } from './types';
 import {
@@ -328,9 +330,9 @@ export function generateActions(
       }
 
       // Work to build dependability
-      if (player.currentJob && player.timeRemaining >= 6) {
+      if (player.currentJob) {
         const job = getJob(player.currentJob);
-        if (job) {
+        if (job && player.timeRemaining >= job.hoursPerShift) {
           const jobLocation = getJobLocation(job);
           if (currentLocation === jobLocation || currentLocation === 'guild-hall') {
             actions.push({
@@ -339,7 +341,7 @@ export function generateActions(
               description: `Work to build dependability`,
               details: { jobId: job.id, hours: job.hoursPerShift, wage: player.currentWage },
             });
-          } else {
+          } else if (player.timeRemaining > moveCost(jobLocation) + job.hoursPerShift) {
             actions.push({
               type: 'move',
               location: jobLocation,
@@ -428,10 +430,10 @@ export function generateActions(
     }
   }
 
-  // Work if we have time and a job
-  if (player.currentJob && player.timeRemaining >= 6) {
+  // Work if we have time and a job (check actual hoursPerShift, not hardcoded 6)
+  if (player.currentJob) {
     const job = getJob(player.currentJob);
-    if (job) {
+    if (job && player.timeRemaining >= job.hoursPerShift) {
       const jobLocation = getJobLocation(job);
       if (currentLocation === jobLocation || currentLocation === 'guild-hall') {
         actions.push({
@@ -793,13 +795,19 @@ export function generateActions(
         description: `Explore dungeon floor ${dungeonFloor}`,
         details: { floorId: dungeonFloor },
       });
-    } else if (player.timeRemaining > moveCost('cave') + 6) {
-      actions.push({
-        type: 'move',
-        location: 'cave',
-        priority: 53,
-        description: 'Travel to cave for dungeon',
-      });
+    } else {
+      // Use actual floor time cost instead of hardcoded 6
+      const targetFloor = getFloor(dungeonFloor);
+      const combatStats = calculateCombatStats(player.equippedWeapon, player.equippedArmor, player.equippedShield);
+      const floorTime = targetFloor ? getFloorTimeCost(targetFloor, combatStats) : 6;
+      if (player.timeRemaining > moveCost('cave') + floorTime) {
+        actions.push({
+          type: 'move',
+          location: 'cave',
+          priority: 53,
+          description: 'Travel to cave for dungeon',
+        });
+      }
     }
   }
 

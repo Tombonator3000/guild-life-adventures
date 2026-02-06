@@ -13,7 +13,7 @@ export function GameSetup() {
   const [goals, setGoals] = useState({
     wealth: 5000,
     happiness: 100,
-    education: 5,
+    education: 45,   // 45 points = 5 degrees (each degree = 9 pts)
     career: 4,
   });
 
@@ -43,11 +43,11 @@ export function GameSetup() {
     }
   };
 
-  // Preset game lengths
+  // Preset game lengths (education in points: each degree = 9 pts)
   const presets = {
-    quick: { wealth: 2000, happiness: 75, education: 2, career: 2 },
-    standard: { wealth: 5000, happiness: 100, education: 5, career: 4 },
-    epic: { wealth: 10000, happiness: 100, education: 10, career: 7 },
+    quick: { wealth: 2000, happiness: 75, education: 18, career: 2 },    // 2 degrees
+    standard: { wealth: 5000, happiness: 100, education: 45, career: 4 }, // 5 degrees
+    epic: { wealth: 10000, happiness: 100, education: 90, career: 7 },    // 10 degrees
   };
 
   return (
@@ -221,14 +221,14 @@ export function GameSetup() {
                 unit="%"
               />
               <GoalSlider
-                label="Education Courses"
+                label="Education (Degrees)"
                 value={goals.education}
                 onChange={(v) => setGoals({ ...goals, education: v })}
-                min={1}
-                max={16}
-                step={1}
-                unit=""
-                description="Total course levels completed"
+                min={9}
+                max={99}
+                step={9}
+                unit=" pts"
+                description={`${Math.floor(goals.education / 9)} degree${Math.floor(goals.education / 9) !== 1 ? 's' : ''} required`}
               />
               <div>
                 <div className="flex justify-between text-sm mb-1">
