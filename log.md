@@ -1,5 +1,27 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Music Placeholder Files
+
+Added placeholder MP3 files to `public/music/` folder for the audio system.
+
+### Files Created
+| File | Purpose |
+|------|---------|
+| `01MainTheme.mp3` | Title screen, game setup |
+| `02OnTheStreet.mp3` | Default in-game track |
+| `03guildhall.mp3` | Guild Hall location |
+| `06Bank.mp3` | Bank location (new) |
+| `09TheSlums.mp3` | The Slums location |
+| `11EnchantersWorkshop.mp3` | Enchanter's Workshop |
+| `13rustytankard.mp3` | Rusty Tankard tavern |
+| `18OhWhatAWeekend.mp3` | Victory/weekend screen |
+
+### Config Updated
+- Added Bank track to `MUSIC_TRACKS` in musicConfig.ts
+- Added Bank location mapping to `LOCATION_MUSIC`
+
+---
+
 ## 2026-02-06 - Audio & Music System
 
 Added a complete background music system with smooth crossfade transitions between tracks.
