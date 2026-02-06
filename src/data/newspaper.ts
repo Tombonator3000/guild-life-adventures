@@ -66,22 +66,24 @@ const ECONOMY_HEADLINES_NORMAL = [
   "Economy Holds Steady Amid Uncertainty",
 ];
 
-export function generateNewspaper(week: number, priceModifier: number): Newspaper {
+export function generateNewspaper(week: number, priceModifier: number, economyTrend?: number): Newspaper {
   const articles: NewsArticle[] = [];
 
-  // Economy article based on price modifier
+  // Economy article based on price modifier and trend
   let economyHeadline: string;
   let economyContent: string;
-  
+  const trend = economyTrend ?? 0;
+  const trendText = trend === 1 ? ' Economists expect continued growth.' : trend === -1 ? ' Experts warn of further decline.' : '';
+
   if (priceModifier > 1.1) {
     economyHeadline = ECONOMY_HEADLINES_HIGH[Math.floor(Math.random() * ECONOMY_HEADLINES_HIGH.length)];
-    economyContent = `Prices are currently ${Math.round((priceModifier - 1) * 100)}% higher than usual. Consider postponing major purchases if possible.`;
+    economyContent = `Prices are currently ${Math.round((priceModifier - 1) * 100)}% higher than usual. Consider postponing major purchases if possible.${trendText}`;
   } else if (priceModifier < 0.9) {
     economyHeadline = ECONOMY_HEADLINES_LOW[Math.floor(Math.random() * ECONOMY_HEADLINES_LOW.length)];
-    economyContent = `Prices are currently ${Math.round((1 - priceModifier) * 100)}% lower than usual. Great time to stock up on supplies!`;
+    economyContent = `Prices are currently ${Math.round((1 - priceModifier) * 100)}% lower than usual. Great time to stock up on supplies!${trendText}`;
   } else {
     economyHeadline = ECONOMY_HEADLINES_NORMAL[Math.floor(Math.random() * ECONOMY_HEADLINES_NORMAL.length)];
-    economyContent = `Market prices are within normal ranges this week. No significant changes expected.`;
+    economyContent = `Market prices are within normal ranges this week.${trendText || ' No significant changes expected.'}`;
   }
 
   articles.push({

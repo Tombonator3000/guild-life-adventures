@@ -136,6 +136,8 @@ export const useGameStore = create<GameStore>((set, get) => {
     players: [],
     week: 1,
     priceModifier: 1.0,
+    economyTrend: 0,
+    economyCycleWeeksLeft: 4,
     goalSettings: {
       wealth: 5000,
       happiness: 75,   // Reduced from 100 - happiness is harder to accumulate now
@@ -185,6 +187,8 @@ export const useGameStore = create<GameStore>((set, get) => {
         currentPlayerIndex: 0,
         week: 1,
         priceModifier: 1.0,
+        economyTrend: 0,
+        economyCycleWeeksLeft: 4,
         goalSettings: goals,
         winner: null,
         eventMessage: null,
@@ -240,6 +244,8 @@ export const useGameStore = create<GameStore>((set, get) => {
         players: gs.players,
         week: gs.week,
         priceModifier: gs.priceModifier,
+        economyTrend: gs.economyTrend ?? 0,
+        economyCycleWeeksLeft: gs.economyCycleWeeksLeft ?? 4,
         goalSettings: gs.goalSettings,
         winner: gs.winner,
         eventMessage: null,

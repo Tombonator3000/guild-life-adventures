@@ -39,6 +39,7 @@ export function GameBoard() {
     selectLocation,
     week,
     priceModifier,
+    economyTrend,
     eventMessage,
     dismissEvent,
     phase,
@@ -614,6 +615,9 @@ export function GameBoard() {
             <span className="font-display text-lg">
               Market: <span className={priceModifier > 1 ? 'text-destructive' : 'text-secondary'}>
                 {(priceModifier * 100).toFixed(0)}%
+              </span>
+              <span className="text-sm ml-1" title={economyTrend === 1 ? 'Economy rising' : economyTrend === -1 ? 'Economy declining' : 'Economy stable'}>
+                {economyTrend === 1 ? '\u2191' : economyTrend === -1 ? '\u2193' : '\u2194'}
               </span>
             </span>
           </div>

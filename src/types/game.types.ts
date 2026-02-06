@@ -201,6 +201,8 @@ export interface GameState {
   players: Player[];
   week: number;
   priceModifier: number;
+  economyTrend: number;          // -1 (recession), 0 (stable), 1 (boom)
+  economyCycleWeeksLeft: number;  // Weeks until next trend change
   goalSettings: GoalSettings;
   winner: string | null;
   eventMessage: string | null;
