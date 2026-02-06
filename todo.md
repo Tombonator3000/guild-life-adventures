@@ -393,6 +393,18 @@
   - [x] H1: Auto-deduplicate player names in lobby (prevent wrong player identification)
   - Build succeeds, all 112 tests pass
 
+## Completed (2026-02-06)
+
+- [x] Mobile Game Layout — responsive design for Samsung S24 and other mobile devices
+  - [x] `useIsMobile` hook — matchMedia-based viewport detection (< 1024px = mobile)
+  - [x] `MobileHUD` component — compact top bar with player info, 5 resource chips, End Turn, drawer toggles
+  - [x] `MobileDrawer` component — slide-out overlay drawers for Stats/Inventory/Goals (left) and Players/Options (right)
+  - [x] `GameBoard.tsx` — conditional mobile layout: side panels hidden, full-width board, bottom sheet location panel (65% height)
+  - [x] `LocationShell.tsx` — mobile mode: compact NPC avatar (28px) inline instead of 144px portrait column
+  - [x] Board fully visible when no location selected, bottom sheet appears on location tap
+  - [x] AI overlay, online indicators, and waiting overlay have compact mobile variants
+  - [x] Build succeeds, all 112 tests pass, TypeScript clean
+
 ## In Progress
 
 *No active tasks*
@@ -487,7 +499,7 @@ See log.md "Improvement Proposals (Code Audit & Gap Analysis)" for full details.
 - [x] C5: Improve raise request system (less punishing) — **DONE** -3 dep instead of -10
 
 ### UI/UX
-- [ ] D1: Mobile/responsive layout
+- [x] D1: Mobile/responsive layout — **DONE** (MobileHUD, MobileDrawer, bottom sheet, useIsMobile hook)
 - [x] D2: Tooltips for all buttons and icons — **DONE** Title attributes + shortcut hints
 - [x] D3: Keyboard shortcuts for common actions — **DONE** E/Esc/Space/T
 - [x] D4: Confirmation dialogs for expensive actions — **DONE** ConfirmDialog component
@@ -597,7 +609,7 @@ Based on JONES_REFERENCE.md analysis:
 - [x] Sound effects and music — **DONE** (music system with crossfade, 7 tracks, per-location)
 
 ### UI/UX
-- [ ] Responsive design for mobile
+- [x] Responsive design for mobile — **DONE** (mobile layout for Samsung S24)
 - [ ] Animations for player movement
 - [ ] Tooltips for all buttons
 - [ ] Dark mode support

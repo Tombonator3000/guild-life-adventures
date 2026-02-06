@@ -16,6 +16,8 @@ import { RightSideTabs } from './RightSideTabs';
 import { SaveLoadMenu } from './SaveLoadMenu';
 import { TutorialOverlay } from './TutorialOverlay';
 import { DarkModeToggle } from './DarkModeToggle';
+import { MobileHUD } from './MobileHUD';
+import { MobileDrawer } from './MobileDrawer';
 import gameBoard from '@/assets/game-board.jpeg';
 import type { LocationId } from '@/types/game.types';
 import { toast } from 'sonner';
@@ -26,6 +28,7 @@ import { useZoneConfiguration } from '@/hooks/useZoneConfiguration';
 import { useAITurnHandler } from '@/hooks/useAITurnHandler';
 import { useAutoEndTurn } from '@/hooks/useAutoEndTurn';
 import { usePlayerAnimation } from '@/hooks/usePlayerAnimation';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 export function GameBoard() {
   const {
@@ -66,6 +69,9 @@ export function GameBoard() {
   const [showZoneEditor, setShowZoneEditor] = useState(false);
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
   const [showGameMenu, setShowGameMenu] = useState(false);
+  const [showLeftDrawer, setShowLeftDrawer] = useState(false);
+  const [showRightDrawer, setShowRightDrawer] = useState(false);
+  const isMobile = useIsMobile();
 
   // Extracted hooks
   const {
@@ -251,25 +257,40 @@ export function GameBoard() {
   const BOARD_ASPECT_RATIO = `${76 * 16} / ${100 * 9}`; // 1216/900 ≈ 1.351
 
   return (
-    <div className="w-screen h-screen overflow-hidden bg-background flex">
-      {/* Left Side Panel - Full viewport height, always visible */}
-      <div
-        className="relative z-30 p-[0.5%] flex flex-col flex-shrink-0 h-full"
-        style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
-      >
-        {currentPlayer && (
-          <SideInfoTabs
-            player={currentPlayer}
-            goals={goalSettings}
-            isCurrentPlayer={true}
-          />
-        )}
-      </div>
+    <div className={`w-screen h-screen overflow-hidden bg-background flex ${isMobile ? 'flex-col' : 'flex-row'}`}>
+      {/* Mobile HUD - compact top bar (mobile only) */}
+      {isMobile && currentPlayer && (
+        <MobileHUD
+          player={currentPlayer}
+          week={week}
+          priceModifier={priceModifier}
+          economyTrend={economyTrend}
+          onEndTurn={endTurn}
+          onOpenLeftDrawer={() => setShowLeftDrawer(true)}
+          onOpenRightDrawer={() => setShowRightDrawer(true)}
+          onOpenMenu={() => setShowGameMenu(true)}
+          disabled={!isLocalPlayerTurn || aiIsThinking || currentPlayer.isAI}
+        />
+      )}
+
+      {/* Left Side Panel - desktop only */}
+      {!isMobile && (
+        <div
+          className="relative z-30 p-[0.5%] flex flex-col flex-shrink-0 h-full"
+          style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
+        >
+          {currentPlayer && (
+            <SideInfoTabs
+              player={currentPlayer}
+              goals={goalSettings}
+              isCurrentPlayer={true}
+            />
+          )}
+        </div>
+      )}
 
       {/* Board area - centers the aspect-ratio-locked board within remaining space */}
-      <div className="flex-1 h-full flex items-center justify-center min-w-0">
-        {/* Board maintains exact proportions as before (76% of 16:9 container) */}
-        {/* On 16:9 screens this fills perfectly; on taller screens, board is centered */}
+      <div className="flex-1 flex items-center justify-center min-w-0 min-h-0">
         <div
           className="relative"
           style={{
@@ -279,199 +300,249 @@ export function GameBoard() {
           }}
         >
           {/* Game board background */}
-        <div
-          className="absolute inset-0 bg-contain bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${gameBoard})` }}
-        />
+          <div
+            className="absolute inset-0 bg-contain bg-center bg-no-repeat"
+            style={{ backgroundImage: `url(${gameBoard})` }}
+          />
 
-        {/* Location zones overlay */}
-        <div className="absolute inset-0">
-          {LOCATIONS.map((baseLocation) => {
-            const location = getLocationWithCustomPosition(baseLocation.id) || baseLocation;
-            // Don't show animating player in the location zones
-            const playersHere = players.filter(
-              p => p.currentLocation === location.id && p.id !== animatingPlayer
-            );
-            const moveCost = currentPlayer
-              ? getMovementCost(currentPlayer.currentLocation, location.id)
-              : 0;
-            const isCurrentLocation = currentPlayer?.currentLocation === location.id;
+          {/* Location zones overlay */}
+          <div className="absolute inset-0">
+            {LOCATIONS.map((baseLocation) => {
+              const location = getLocationWithCustomPosition(baseLocation.id) || baseLocation;
+              const playersHere = players.filter(
+                p => p.currentLocation === location.id && p.id !== animatingPlayer
+              );
+              const moveCost = currentPlayer
+                ? getMovementCost(currentPlayer.currentLocation, location.id)
+                : 0;
+              const isCurrentLocation = currentPlayer?.currentLocation === location.id;
 
-            return (
-              <LocationZone
-                key={location.id}
-                location={location}
-                isSelected={selectedLocation === location.id}
-                isCurrentLocation={isCurrentLocation && !animatingPlayer}
-                moveCost={moveCost}
-                onClick={() => handleLocationClick(location.id)}
-              >
-                {playersHere.map((player, index) => (
-                  <PlayerToken
-                    key={player.id}
-                    player={player}
-                    index={index}
-                    isCurrent={player.id === currentPlayer?.id}
-                  />
-                ))}
-              </LocationZone>
-            );
-          })}
-        </div>
-
-        {/* Animated player token layer (above location zones) */}
-        {animatingPlayer && animationPath && (
-          <div className="absolute inset-0 pointer-events-none z-40">
-            {players.filter(p => p.id === animatingPlayer).map((player) => (
-              <AnimatedPlayerToken
-                key={player.id}
-                player={player}
-                isCurrent={true}
-                animationPath={animationPath}
-                onAnimationComplete={handleAnimationComplete}
-              />
-            ))}
+              return (
+                <LocationZone
+                  key={location.id}
+                  location={location}
+                  isSelected={selectedLocation === location.id}
+                  isCurrentLocation={isCurrentLocation && !animatingPlayer}
+                  moveCost={moveCost}
+                  onClick={() => handleLocationClick(location.id)}
+                >
+                  {playersHere.map((player, index) => (
+                    <PlayerToken
+                      key={player.id}
+                      player={player}
+                      index={index}
+                      isCurrent={player.id === currentPlayer?.id}
+                    />
+                  ))}
+                </LocationZone>
+              );
+            })}
           </div>
-        )}
 
-        {/* Debug overlay - shows zone boundaries and movement paths */}
-        {showDebugOverlay && (
-          <div className="absolute inset-0 pointer-events-none z-5">
-            {customZones.map(zone => (
+          {/* Animated player token layer (above location zones) */}
+          {animatingPlayer && animationPath && (
+            <div className="absolute inset-0 pointer-events-none z-40">
+              {players.filter(p => p.id === animatingPlayer).map((player) => (
+                <AnimatedPlayerToken
+                  key={player.id}
+                  player={player}
+                  isCurrent={true}
+                  animationPath={animationPath}
+                  onAnimationComplete={handleAnimationComplete}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Debug overlay - shows zone boundaries and movement paths */}
+          {showDebugOverlay && (
+            <div className="absolute inset-0 pointer-events-none z-5">
+              {customZones.map(zone => (
+                <div
+                  key={zone.id}
+                  className="absolute border-2 border-red-500/70 bg-red-500/10"
+                  style={{
+                    left: `${zone.x}%`,
+                    top: `${zone.y}%`,
+                    width: `${zone.width}%`,
+                    height: `${zone.height}%`,
+                  }}
+                >
+                  <span className="text-xs text-red-400 bg-black/70 px-1">
+                    {zone.id}
+                  </span>
+                </div>
+              ))}
               <div
-                key={zone.id}
-                className="absolute border-2 border-red-500/70 bg-red-500/10"
+                className="absolute border-2 border-yellow-400 bg-yellow-400/10"
                 style={{
-                  left: `${zone.x}%`,
-                  top: `${zone.y}%`,
-                  width: `${zone.width}%`,
-                  height: `${zone.height}%`,
+                  top: `${centerPanel.top}%`,
+                  left: `${centerPanel.left}%`,
+                  width: `${centerPanel.width}%`,
+                  height: `${centerPanel.height}%`,
                 }}
               >
-                <span className="text-xs text-red-400 bg-black/70 px-1">
-                  {zone.id}
+                <span className="text-xs text-yellow-400 bg-black/70 px-1">
+                  CENTER INFO PANEL
                 </span>
               </div>
-            ))}
-            {/* Center panel outline */}
+              <svg
+                className="absolute inset-0 w-full h-full"
+                viewBox="0 0 100 100"
+                preserveAspectRatio="none"
+              >
+                {BOARD_PATH.map((loc, i) => {
+                  const next = BOARD_PATH[(i + 1) % BOARD_PATH.length];
+                  const key = `${loc}_${next}`;
+                  const waypoints = MOVEMENT_PATHS[key] || [];
+                  const fromZone = customZones.find(z => z.id === loc);
+                  const toZone = customZones.find(z => z.id === next);
+                  if (!fromZone || !toZone) return null;
+                  const fromCenter: [number, number] = [fromZone.x + fromZone.width / 2, fromZone.y + fromZone.height - 5];
+                  const toCenter: [number, number] = [toZone.x + toZone.width / 2, toZone.y + toZone.height - 5];
+                  const allPoints = [fromCenter, ...waypoints, toCenter];
+                  return (
+                    <g key={key}>
+                      <polyline
+                        points={allPoints.map(([x, y]) => `${x},${y}`).join(' ')}
+                        fill="none"
+                        stroke={waypoints.length > 0 ? '#4ade80' : '#6b7280'}
+                        strokeWidth={0.25}
+                        strokeDasharray={waypoints.length > 0 ? 'none' : '1 0.5'}
+                        opacity={0.6}
+                      />
+                      {waypoints.map(([x, y], idx) => (
+                        <circle key={idx} cx={x} cy={y} r={0.4} fill="#4ade80" opacity={0.7} />
+                      ))}
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+          )}
+
+          {/* Center UI panel */}
+          {/* Mobile: full-width bottom sheet when location selected, hidden otherwise */}
+          {/* Desktop: always visible, positioned within the board frame */}
+          {(!isMobile || selectedLocation) && (
             <div
-              className="absolute border-2 border-yellow-400 bg-yellow-400/10"
-              style={{
+              className="absolute overflow-hidden z-10"
+              style={isMobile ? {
+                bottom: '0%',
+                left: '1%',
+                width: '98%',
+                height: '65%',
+              } : {
                 top: `${centerPanel.top}%`,
                 left: `${centerPanel.left}%`,
                 width: `${centerPanel.width}%`,
                 height: `${centerPanel.height}%`,
               }}
             >
-              <span className="text-xs text-yellow-400 bg-black/70 px-1">
-                CENTER INFO PANEL
-              </span>
+              <div className="w-full h-full overflow-hidden flex flex-col bg-card/95 rounded-t-lg">
+                {selectedLocation ? (
+                  <LocationPanel locationId={selectedLocation} />
+                ) : (
+                  <ResourcePanel />
+                )}
+              </div>
             </div>
-            {/* Movement paths overlay */}
-            <svg
-              className="absolute inset-0 w-full h-full"
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-            >
-              {BOARD_PATH.map((loc, i) => {
-                const next = BOARD_PATH[(i + 1) % BOARD_PATH.length];
-                const key = `${loc}_${next}`;
-                const waypoints = MOVEMENT_PATHS[key] || [];
-                const fromZone = customZones.find(z => z.id === loc);
-                const toZone = customZones.find(z => z.id === next);
-                if (!fromZone || !toZone) return null;
-                const fromCenter: [number, number] = [fromZone.x + fromZone.width / 2, fromZone.y + fromZone.height - 5];
-                const toCenter: [number, number] = [toZone.x + toZone.width / 2, toZone.y + toZone.height - 5];
-                const allPoints = [fromCenter, ...waypoints, toCenter];
-                return (
-                  <g key={key}>
-                    <polyline
-                      points={allPoints.map(([x, y]) => `${x},${y}`).join(' ')}
-                      fill="none"
-                      stroke={waypoints.length > 0 ? '#4ade80' : '#6b7280'}
-                      strokeWidth={0.25}
-                      strokeDasharray={waypoints.length > 0 ? 'none' : '1 0.5'}
-                      opacity={0.6}
-                    />
-                    {waypoints.map(([x, y], idx) => (
-                      <circle key={idx} cx={x} cy={y} r={0.4} fill="#4ade80" opacity={0.7} />
-                    ))}
-                  </g>
-                );
-              })}
-            </svg>
-          </div>
-        )}
+          )}
 
-        {/* Center UI panel - positioned exactly within the white frame */}
-        {/* ALL info text displays ONLY here */}
+          {/* Week and price indicator + menu button (desktop only) */}
+          {!isMobile && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+              <div className="parchment-panel px-6 py-2 flex items-center gap-6">
+                <span className="font-display text-lg">
+                  Week <span className="text-primary font-bold">{week}</span>
+                </span>
+                <span className="text-muted-foreground">|</span>
+                <span className="font-display text-lg">
+                  Market: <span className={priceModifier > 1 ? 'text-destructive' : 'text-secondary'}>
+                    {(priceModifier * 100).toFixed(0)}%
+                  </span>
+                  <span className="text-sm ml-1" title={economyTrend === 1 ? 'Economy rising' : economyTrend === -1 ? 'Economy declining' : 'Economy stable'}>
+                    {economyTrend === 1 ? '\u2191' : economyTrend === -1 ? '\u2193' : '\u2194'}
+                  </span>
+                </span>
+              </div>
+              <button
+                onClick={() => setShowGameMenu(true)}
+                className="parchment-panel p-2 hover:brightness-110"
+                title="Game Menu (Esc)"
+              >
+                <Menu className="w-5 h-5 text-card-foreground" />
+              </button>
+              <DarkModeToggle className="parchment-panel" />
+            </div>
+          )}
+
+        </div>
+      </div>
+
+      {/* Right Side Panel - desktop only */}
+      {!isMobile && (
         <div
-          className="absolute overflow-hidden z-10"
-          style={{
-            top: `${centerPanel.top}%`,
-            left: `${centerPanel.left}%`,
-            width: `${centerPanel.width}%`,
-            height: `${centerPanel.height}%`,
-          }}
+          className="relative z-30 p-[0.5%] flex flex-col flex-shrink-0 h-full"
+          style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
         >
-          <div className="w-full h-full overflow-hidden flex flex-col bg-card/95">
-            {selectedLocation ? (
-              <LocationPanel locationId={selectedLocation} />
-            ) : (
-              <ResourcePanel />
-            )}
-          </div>
+          <RightSideTabs
+            players={players}
+            currentPlayerIndex={currentPlayerIndex}
+            week={week}
+            goalSettings={goalSettings}
+            onOpenSaveMenu={() => setShowGameMenu(true)}
+            onToggleDebugOverlay={() => setShowDebugOverlay(prev => !prev)}
+            onToggleZoneEditor={() => setShowZoneEditor(true)}
+            showDebugOverlay={showDebugOverlay}
+            aiIsThinking={aiIsThinking}
+            aiSpeedMultiplier={aiSpeedMultiplier}
+            onSetAISpeed={setAISpeedMultiplier}
+            onSkipAITurn={() => setSkipAITurn(true)}
+          />
         </div>
+      )}
 
-        {/* Week and price indicator + menu button */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
-          <div className="parchment-panel px-6 py-2 flex items-center gap-6">
-            <span className="font-display text-lg">
-              Week <span className="text-primary font-bold">{week}</span>
-            </span>
-            <span className="text-muted-foreground">|</span>
-            <span className="font-display text-lg">
-              Market: <span className={priceModifier > 1 ? 'text-destructive' : 'text-secondary'}>
-                {(priceModifier * 100).toFixed(0)}%
-              </span>
-              <span className="text-sm ml-1" title={economyTrend === 1 ? 'Economy rising' : economyTrend === -1 ? 'Economy declining' : 'Economy stable'}>
-                {economyTrend === 1 ? '\u2191' : economyTrend === -1 ? '\u2193' : '\u2194'}
-              </span>
-            </span>
-          </div>
-          <button
-            onClick={() => setShowGameMenu(true)}
-            className="parchment-panel p-2 hover:brightness-110"
-            title="Game Menu (Esc)"
+      {/* Mobile Drawers */}
+      {isMobile && (
+        <>
+          <MobileDrawer
+            isOpen={showLeftDrawer}
+            onClose={() => setShowLeftDrawer(false)}
+            side="left"
+            title="Stats & Inventory"
           >
-            <Menu className="w-5 h-5 text-card-foreground" />
-          </button>
-          <DarkModeToggle className="parchment-panel" />
-        </div>
-
-        </div>
-      </div>
-
-      {/* Right Side Panel - Full viewport height */}
-      <div
-        className="relative z-30 p-[0.5%] flex flex-col flex-shrink-0 h-full"
-        style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
-      >
-        <RightSideTabs
-          players={players}
-          currentPlayerIndex={currentPlayerIndex}
-          week={week}
-          goalSettings={goalSettings}
-          onOpenSaveMenu={() => setShowGameMenu(true)}
-          onToggleDebugOverlay={() => setShowDebugOverlay(prev => !prev)}
-          onToggleZoneEditor={() => setShowZoneEditor(true)}
-          showDebugOverlay={showDebugOverlay}
-          aiIsThinking={aiIsThinking}
-          aiSpeedMultiplier={aiSpeedMultiplier}
-          onSetAISpeed={setAISpeedMultiplier}
-          onSkipAITurn={() => setSkipAITurn(true)}
-        />
-      </div>
+            {currentPlayer && (
+              <SideInfoTabs
+                player={currentPlayer}
+                goals={goalSettings}
+                isCurrentPlayer={true}
+              />
+            )}
+          </MobileDrawer>
+          <MobileDrawer
+            isOpen={showRightDrawer}
+            onClose={() => setShowRightDrawer(false)}
+            side="right"
+            title="Players & Options"
+          >
+            <RightSideTabs
+              players={players}
+              currentPlayerIndex={currentPlayerIndex}
+              week={week}
+              goalSettings={goalSettings}
+              onOpenSaveMenu={() => { setShowRightDrawer(false); setShowGameMenu(true); }}
+              onToggleDebugOverlay={() => setShowDebugOverlay(prev => !prev)}
+              onToggleZoneEditor={() => { setShowRightDrawer(false); setShowZoneEditor(true); }}
+              showDebugOverlay={showDebugOverlay}
+              aiIsThinking={aiIsThinking}
+              aiSpeedMultiplier={aiSpeedMultiplier}
+              onSetAISpeed={setAISpeedMultiplier}
+              onSkipAITurn={() => setSkipAITurn(true)}
+            />
+          </MobileDrawer>
+        </>
+      )}
 
       {/* Event Modal */}
       <EventModal
@@ -499,11 +570,11 @@ export function GameBoard() {
 
       {/* Online: Waiting for other player overlay */}
       {isWaitingForOtherPlayer && phase === 'playing' && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40">
-          <div className="parchment-panel px-6 py-3 flex items-center gap-3 shadow-lg">
+        <div className={`fixed ${isMobile ? 'bottom-2' : 'bottom-4'} left-1/2 -translate-x-1/2 z-40`}>
+          <div className={`parchment-panel ${isMobile ? 'px-3 py-2' : 'px-6 py-3'} flex items-center gap-3 shadow-lg`}>
             <Globe className="w-5 h-5 text-primary animate-pulse" />
-            <span className="font-display text-card-foreground">
-              Waiting for <strong>{currentPlayer?.name}</strong> to play...
+            <span className={`font-display text-card-foreground ${isMobile ? 'text-sm' : ''}`}>
+              Waiting for <strong>{currentPlayer?.name}</strong>...
             </span>
             <div className="flex gap-1">
               <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -516,8 +587,8 @@ export function GameBoard() {
 
       {/* Online: Connection indicator with latency */}
       {isOnline && (
-        <div className="fixed bottom-4 right-4 z-40">
-          <div className="parchment-panel px-3 py-1.5 flex items-center gap-2 text-xs">
+        <div className={`fixed ${isMobile ? 'bottom-1 right-1' : 'bottom-4 right-4'} z-40`}>
+          <div className={`parchment-panel ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'} flex items-center gap-2 text-xs`}>
             <Wifi className={`w-3 h-3 ${latency > 200 ? 'text-red-500' : latency > 100 ? 'text-yellow-500' : 'text-green-600'}`} />
             <span className="text-amber-800 font-display">
               Online {roomCodeDisplay ? `(${roomCodeDisplay})` : ''}
@@ -535,26 +606,27 @@ export function GameBoard() {
       {aiIsThinking && currentPlayer?.isAI && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/30 pointer-events-none" />
-          <div className="relative parchment-panel p-6 flex flex-col items-center gap-4">
+          <div className={`relative parchment-panel ${isMobile ? 'p-4' : 'p-6'} flex flex-col items-center gap-3`}>
             <div className="flex items-center gap-3">
-              <Bot className="w-8 h-8 text-primary animate-bounce" />
-              <Brain className="w-6 h-6 text-secondary animate-spin" style={{ animationDuration: '3s' }} />
+              <Bot className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} text-primary animate-bounce`} />
+              <Brain className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-secondary animate-spin`} style={{ animationDuration: '3s' }} />
             </div>
-            <h3 className="font-display text-xl text-card-foreground">
+            <h3 className={`font-display ${isMobile ? 'text-base' : 'text-xl'} text-card-foreground`}>
               Grimwald is Scheming...
             </h3>
-            <p className="text-sm text-muted-foreground text-center max-w-xs">
-              {aiDifficulty === 'easy' && 'Hmm, let me think about this...'}
-              {aiDifficulty === 'medium' && 'Calculating optimal strategy...'}
-              {aiDifficulty === 'hard' && 'Analyzing all possibilities with precision!'}
-            </p>
-            <div className="flex gap-1 mb-2">
+            {!isMobile && (
+              <p className="text-sm text-muted-foreground text-center max-w-xs">
+                {aiDifficulty === 'easy' && 'Hmm, let me think about this...'}
+                {aiDifficulty === 'medium' && 'Calculating optimal strategy...'}
+                {aiDifficulty === 'hard' && 'Analyzing all possibilities with precision!'}
+              </p>
+            )}
+            <div className="flex gap-1 mb-1">
               <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
               <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
               <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
-            {/* Speed controls */}
-            <div className="flex items-center gap-2 border-t border-border pt-3">
+            <div className="flex items-center gap-2 border-t border-border pt-2">
               <span className="text-xs text-muted-foreground font-display">Speed:</span>
               <button
                 onClick={() => setAISpeedMultiplier(1)}
@@ -578,7 +650,7 @@ export function GameBoard() {
                 <SkipForward className="w-3 h-3" />
               </button>
             </div>
-            <p className="text-xs text-muted-foreground">Press Space to skip</p>
+            <p className="text-[10px] text-muted-foreground">Press Space to skip</p>
           </div>
         </div>
       )}

@@ -1,5 +1,76 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Mobile Game Layout (Samsung S24 Optimization)
+
+**Task**: Adapt the game layout for mobile devices, specifically Samsung Galaxy S24 (landscape ~780×360 CSS pixels). The existing desktop 3-column layout (12% left panel + 76% board + 12% right panel) was unusable on mobile — side panels were only ~94px wide with clipped text, and the overall layout was cramped.
+
+### Mobile Layout Strategy
+
+**Breakpoint**: 1024px (below = mobile, above = desktop). Covers all phones and small tablets.
+
+**Key Decisions**:
+- Hide side panels entirely on mobile (they don't work at 94px width)
+- Game board fills full viewport width (no wasted space on side panels)
+- Compact HUD bar at top replaces both side panels with essential info
+- Location panel renders as bottom sheet overlay (65% of board height)
+- When no location selected, board is fully visible for navigation
+- Side panel content accessible via slide-out drawers (left = Stats/Inventory/Goals, right = Players/Options)
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `src/hooks/useIsMobile.ts` | Viewport width detection hook (matchMedia-based, 1024px breakpoint) |
+| `src/components/game/MobileHUD.tsx` | Compact top bar: player dot, gold/hours/health/happiness/food, week indicator, End Turn button, drawer toggles, menu button |
+| `src/components/game/MobileDrawer.tsx` | Slide-out drawer overlay with backdrop, close button, scroll support |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `GameBoard.tsx` | Mobile-aware layout: flex-col on mobile (vs flex-row desktop), conditional side panel rendering, MobileHUD at top, center panel as bottom sheet (65% height, 98% width), drawers for side panel content, responsive AI overlay and online indicators |
+| `LocationShell.tsx` | On mobile: hide full NPC portrait, show compact inline NPC avatar (28px round) + name next to tabs, full-width content area |
+
+### Mobile Layout Structure (Landscape)
+```
+┌──────────────────────────────────────────┐
+│ [📊] Player • 🪙100 ⏰60 ❤100 😊50% 🍖50% │ W1  [End Turn] [👥] [☰]
+├──────────────────────────────────────────┤
+│                                          │
+│         GAME BOARD (full width)          │  ← Board visible (top 35%)
+│         Location zones clickable         │
+│                                          │
+├──────────────────────────────────────────┤
+│                                          │
+│    LOCATION PANEL (bottom sheet)         │  ← 65% of board height
+│    Full-width, scrollable content        │
+│    Compact NPC avatar inline             │
+│                                          │
+└──────────────────────────────────────────┘
+```
+
+When no location selected, bottom sheet hidden → full board visible.
+
+### Component Details
+
+**MobileHUD**: Single-row bar showing player color dot, name (truncated), 5 resource chips (Gold, Hours, Health, Happiness, Food) with warning animations, week/market info, End Turn button, drawer toggles for Stats (left) and Players (right), plus Game Menu button.
+
+**MobileDrawer**: 288px (w-72) wide slide-out panel, max 85vw, with wood-dark header, close button, and scrollable content. Backdrop click to close. Prevents body scroll when open.
+
+**LocationShell mobile mode**: Replaces 144px NPC portrait column with a compact 28px circular avatar + NPC name inline, giving content area full panel width. Tab bar and content render normally below.
+
+### Technical Notes
+
+- `useIsMobile` hook uses `matchMedia` for efficient updates (no resize polling)
+- Side panels render conditionally with `{!isMobile && ...}` (not CSS display:none) to avoid unnecessary DOM
+- Drawers use `fixed inset-0 z-50` overlay pattern with backdrop click-to-close
+- Center panel style is computed conditionally: `isMobile ? bottomSheet : desktopPosition`
+- Week/market indicator hidden on mobile (info is in the HUD instead)
+- AI thinking overlay and online indicators have compact mobile variants
+- Build succeeds, all 112 tests pass, TypeScript clean
+
+---
+
 ## 2026-02-06 - Multiplayer Deep Audit #2: Remaining Known Issues Fix (Agent-Assisted)
 
 **Task**: Deep audit using 4 parallel agents to find all remaining bugs in the multiplayer system, then fix all 6 "Remaining Known Issues" plus additional critical/high bugs found by agents.
