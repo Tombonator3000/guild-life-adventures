@@ -50,14 +50,25 @@ Added a complete sound effects system for UI interactions and game events.
 - `useGrimwaldAI.ts` now passes `pawnValue` to `pawnAppliance()`
 - `actionGenerator.ts` includes `pawnValue: 50` in action details
 
+### ElevenLabs SFX Generation
+- `supabase/functions/elevenlabs-sfx/index.ts` — Edge function for generating SFX via ElevenLabs API
+- `src/services/sfxGenerator.ts` — Client service with predefined prompts for all game sounds
+- `src/components/admin/SFXGeneratorPanel.tsx` — Admin UI for generating and downloading SFX
+- `src/pages/SFXGenerator.tsx` — Route at `/admin/sfx`
+
 ### Files Created
 - `src/audio/sfxManager.ts`
 - `src/hooks/useSFX.ts`
 - `src/components/ui/sfx-button.tsx`
+- `supabase/functions/elevenlabs-sfx/index.ts`
+- `src/services/sfxGenerator.ts`
+- `src/components/admin/SFXGeneratorPanel.tsx`
+- `src/pages/SFXGenerator.tsx`
 
 ### Files Modified
 - `src/components/game/ActionButton.tsx` — Added SFX support
-- `src/components/game/RightSideTabs.tsx` — Added SFX volume controls
+- `src/components/game/RightSideTabs.tsx` — Added SFX volume controls + SFX Generator link in Dev tab
+- `src/App.tsx` — Added `/admin/sfx` route
 - `src/hooks/useGrimwaldAI.ts` — Fixed pawnAppliance call
 - `src/hooks/ai/actionGenerator.ts` — Added pawnValue to action details
 
