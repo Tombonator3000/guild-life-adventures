@@ -92,7 +92,7 @@ export function GameSetup() {
                     type="text"
                     value={name}
                     onChange={(e) => updateName(index, e.target.value)}
-                    className="flex-1 px-4 py-2 bg-input border border-border rounded font-body text-card-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="flex-1 px-4 py-2 bg-input border border-border rounded font-body text-amber-900 placeholder:text-amber-600/50 focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="Enter name..."
                   />
                   <button
