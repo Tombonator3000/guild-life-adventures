@@ -1,5 +1,256 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Full Game Audit (Agent Playthrough Analysis)
+
+Conducted a comprehensive audit of the entire game using 6 specialized analysis agents, each focusing on a different subsystem. Agents read all source code and simulated full playthroughs to find bugs, exploits, balance issues, and missing features.
+
+### Methodology
+- Agent 1: Turn system, movement, starvation, homeless logic
+- Agent 2: Grimwald AI decision engine and strategy
+- Agent 3: All 14 location panels and their UI/actions
+- Agent 4: Economy systems (stocks, loans, banking, work, shopping)
+- Agent 5: Dungeon, combat, quest, and equipment systems
+- Agent 6: Victory conditions, death mechanics, edge cases, game setup
+
+---
+
+### CRITICAL BUGS (14 issues)
+
+#### C1: Missing 2-hour location entry cost
+**Files:** `src/data/locations.ts:278`, `src/components/game/GameBoard.tsx:286`
+Jones reference and CLAUDE.md both state "Entering locations costs 2 hours." The `getMovementCost()` function only returns path distance (1hr/step). The +2 entry cost is never applied anywhere. Players get 6-8 extra hours per turn.
+**Fix:** Add `+ 2` to `getMovementCost()` when `from !== to`.
+
+#### C2: AI immune to all startTurn penalties
+**File:** `src/store/helpers/turnHelpers.ts:104`
+`if (!player || player.isAI) return;` causes AI to bypass: starvation (-20h), doctor visits (-10h/-4hap/-gold), homeless penalties (-5hp/-8h), apartment robbery, appliance breakage, cooking fire bonus, and arcane tome income. AI gets up to 63% more effective time per turn.
+**Fix:** Remove `player.isAI` guard. Suppress UI messages for AI separately.
+
+#### C3: Rent prepayment system non-functional
+**Files:** `src/store/helpers/economyHelpers.ts:240`, `src/store/helpers/turnHelpers.ts:519`
+`rentPrepaidWeeks` is set by `prepayRent()` but never consumed. `processWeekEnd` unconditionally increments `weeksSinceRent += 1` and never checks `rentPrepaidWeeks`. Players who prepay rent still get eviction warnings and garnishment.
+**Fix:** In `processWeekEnd`, check `rentPrepaidWeeks > 0`, decrement it, and skip `weeksSinceRent` increment.
+
+#### C4: `lockedRent` field never used in calculations
+**File:** `src/store/helpers/turnHelpers.ts:387`
+Rent debt uses `RENT_COSTS[p.housing]` ignoring `p.lockedRent`. Players who lock in a favorable rent rate get no benefit.
+**Fix:** Use `p.lockedRent > 0 ? p.lockedRent : RENT_COSTS[p.housing]`.
+
+#### C5: `processWeekEnd` can kill players without `checkDeath`
+**File:** `src/store/helpers/turnHelpers.ts:370,432`
+Health reduced by starvation (-10) and sickness (-15) in processWeekEnd, but `checkDeath` is never called. Players at 0 HP continue playing. Non-current players in multiplayer never get resurrection check.
+**Fix:** Call `checkDeath` for all players at end of `processWeekEnd`.
+
+#### C6: 44% of quests permanently inaccessible
+**Files:** `src/data/quests.ts:260-285`, `src/store/helpers/workEducationHelpers.ts:170`
+Quest `requiredEducation` checks old path-based `education` field (`fighter`, `mage`, `priest`, `business`), but the degree system (`completeDegree`) never updates this field. 8 of 18 quests are permanently blocked.
+**Fix:** Map degree completions to legacy education fields, or rewrite quests to use `DegreeId`.
+
+#### C7: Purchases succeed with insufficient gold
+**File:** `src/store/helpers/economyHelpers.ts:64-76,95-108,136-178`
+`buyItem`, `buyDurable`, `buyAppliance`, `repairAppliance`, `prepayRent`, `moveToHousing`, `buyFreshFood`, `buyLotteryTicket`, `buyTicket` all use `Math.max(0, p.gold - cost)` without checking `p.gold >= cost`. Items are added unconditionally.
+**Fix:** Add `if (p.gold < cost) return p;` guard to all purchase actions.
+
+#### C8: Multiple `eventMessage` overwrites in `startTurn`
+**File:** `src/store/helpers/turnHelpers.ts:144-310`
+6+ independent `set()` calls each overwrite `eventMessage`. If starvation AND doctor AND homeless happen, only the last message shows. `processWeekEnd` does this correctly with an array.
+**Fix:** Collect messages into array, join at end (like `processWeekEnd`).
+
+#### C9: Home location ignores `modest` and `homeless` tiers
+**File:** `src/store/helpers/turnHelpers.ts:86,107,561`
+`housing === 'noble' ? 'noble-heights' : 'slums'` sends `modest` and `homeless` players to slums. Appears in 6+ places.
+**Fix:** Extract to `getHomeLocation(housing)` utility handling all 4 tiers.
+
+#### C10: `startTurn` reads stale player data
+**File:** `src/store/helpers/turnHelpers.ts:103,252`
+Player captured once at line 103. After starvation doctor visit costs 200g, appliance breakage check at line 252 still sees old gold value. Breakage triggers when it shouldn't.
+**Fix:** Re-read player from `get()` after each major `set()`, or batch all effects into single `set()`.
+
+#### C11: Lottery expected value is +925%
+**File:** `src/store/helpers/turnHelpers.ts:492-513`
+10g ticket: 2% chance of 5000g (EV=100g) + 5% chance of 50g (EV=2.5g) = 102.5g EV per 10g ticket. Players should buy unlimited tickets every week.
+**Fix:** Reduce grand prize to ~200g, or set drop to 0.1%, or cap tickets per week.
+
+#### C12: No wage cap on raises
+**File:** `src/store/helpers/workEducationHelpers.ts:86`
+`newWage = player.currentWage + Math.ceil(player.currentWage * 0.15)` with no cap. After 20 raises from 25g/hr: ~406g/hr. Only 3 shifts needed between raises.
+**Fix:** Cap at 2-3x base wage for the job.
+
+#### C13: Double-charge on appliance breakage
+**File:** `src/store/helpers/turnHelpers.ts:261-278`
+Appliance breaks: auto-charges repair cost AND marks as broken. Player must then call `repairAppliance` which charges again. Double payment.
+**Fix:** Either auto-repair (charge once) or just mark broken (don't auto-charge).
+
+#### C14: AI uses hardcoded/fabricated prices
+**Files:** `src/hooks/useGrimwaldAI.ts:86-91,175-180,95-101,188`
+Food: 8g/25food (real best: 6g/10food). Appliances: always 300g (real: 200-1599g). Clothing: 30g/30pts (real cheapest: 25g/50pts). Housing: 50/200g (real varies). AI bypasses item system entirely.
+**Fix:** Use actual item data and store actions.
+
+---
+
+### HIGH PRIORITY BUGS (12 issues)
+
+#### H1: Eviction doesn't clear appliances or equipment
+`processWeekEnd` eviction clears `inventory` but not `durables`, `appliances`, `equippedWeapon/Armor/Shield`. `evictPlayer` in questHelpers clears `durables` but also not appliances/equipment. Inconsistent "lose all possessions."
+
+#### H2: VictoryScreen wealth calculation wrong
+**File:** `src/components/screens/VictoryScreen.tsx:46`
+Shows `gold + savings + investments`, missing `stockValue` and `loanAmount`. Doesn't match `checkVictory` formula.
+
+#### H3: No `checkDeath` after quest completion
+**File:** `src/store/helpers/questHelpers.ts:38-67`
+`completeQuest` can set health to 0 via `healthLoss` but never calls `checkDeath`. Player continues acting at 0 HP.
+
+#### H4: QuestPanel doesn't pass `dungeonFloorsCleared`
+**File:** `src/components/game/QuestPanel.tsx:85-89`
+5th parameter omitted in `canTakeQuest()`. Dungeon quests always show as locked even after clearing floors.
+
+#### H5: `payRent` allows partial payment
+**File:** `src/store/helpers/economyHelpers.ts:14-26`
+Player with 1g can "pay" 75g rent. Gold goes to 0, `weeksSinceRent` resets. Eviction timer resets for free.
+
+#### H6: Free education with 0 gold
+**File:** `src/store/helpers/workEducationHelpers.ts:152-167`
+`studyDegree` uses `Math.max(0, p.gold - cost)` without gold validation. 0g player gets free degrees.
+
+#### H7: `MAX_FLOOR_ATTEMPTS_PER_TURN` defined but never enforced
+**File:** `src/data/dungeon.ts:908`
+Constant exists but not checked. Players can run unlimited dungeon floors per turn.
+
+#### H8: Market crash checked per-player, not globally
+**File:** `src/store/helpers/turnHelpers.ts:346-363`
+`checkMarketCrash` called independently per player. In 4-player game, chance of any crash event quadruples. Should be single global roll.
+
+#### H9: AI dungeon health tracking bug
+**File:** `src/hooks/useGrimwaldAI.ts:258-259`
+Uses `totalDamage - totalHealed` instead of `startHealth - finalHealth`. Due to health capping, actual damage can differ. AI can have wrong health after dungeon runs.
+
+#### H10: AI rest doesn't increase relaxation
+**File:** `src/hooks/useGrimwaldAI.ts:196-202`
+Rest action gives happiness but never calls `modifyRelaxation`. AI relaxation decays to minimum (10) permanently.
+
+#### H11: AI career strategy doesn't advance guild rank via quests
+**File:** `src/hooks/ai/actionGenerator.ts:254-300`
+Career switch case only handles getting jobs and working. Career goal requires guild rank, which requires completing quests. AI never prioritizes quests for career.
+
+#### H12: Dual item definitions (preservation-box, scrying-mirror)
+**File:** `src/data/items.ts`
+`preservation-box` appears in APPLIANCES (876g) and ENCHANTER_ITEMS (175g). `scrying-mirror` in APPLIANCES (525g) and items (350g). Conflicting canonical prices.
+
+---
+
+### BALANCE ISSUES (10 issues)
+
+#### B1: Loan interest at 10% weekly compound creates death spiral
+1000g loan becomes 2146g in 8 weeks. Default extends 4 weeks with continued compounding. Unrecoverable debt trap.
+**Suggestion:** Cap interest at 2x original loan.
+
+#### B2: S-rank quests consume nearly 2 full turns
+80-100 hours for 200-300g. Dungeon Floor 5 gives 250-600g in 22 hours. Quests are 5-15x less profitable than dungeons.
+**Suggestion:** Increase quest rewards 2-3x or add unique rewards.
+
+#### B3: Zero-cost retreat dungeon farming exploit
+`RETREAT_HAPPINESS_PENALTY = 0`. Players farm encounters 1-3, retreat before boss, keep all gold. Floor 5 retreat run: 300-400g in 22h risk-free.
+**Suggestion:** Forfeit 50% gold on retreat.
+
+#### B4: Noble Heights rent (500g/week) nearly impossible
+Top job 25g/hr. 6h shift with bonus = 175g. Need ~3 shifts just for rent. Total 120h/week of work for rent alone (60h available).
+**Suggestion:** Reduce to 350g/week.
+
+#### B5: Dependability decays -5/week unconditionally
+Work gives +2/shift. Need 3+ shifts/week just to maintain. Very harsh treadmill.
+**Suggestion:** Only decay if player didn't work that week.
+
+#### B6: Cooking Fire (+1 happiness/turn) is overpowered
+200g one-time cost for permanent +1/turn. Over 20 turns: +20 happiness for free.
+**Suggestion:** Add diminishing returns or cap at 50 uses.
+
+#### B7: Investment withdrawal impossible
+`invest()` exists but no `withdrawInvestment()`. Invested gold is permanently locked. Only counts toward wealth goal.
+**Suggestion:** Add withdrawal with 10% early penalty.
+
+#### B8: Weekend activities are mandatory and can drain gold
+Random weekends cost 5-100g with no opt-out. Poor players can be forced into 100g Royal Banquet.
+**Suggestion:** Add "Stay Home" free option.
+
+#### B9: Rare drops only roll on first clear (5% one-shot)
+77.4% of players will never see any rare drop across all 5 floors. Missed drops permanently unobtainable.
+**Suggestion:** Allow reduced rate on repeat clears (e.g., 1%).
+
+#### B10: Guild rank progression is exponentially steep
+Requirements: 3, 10, 25, 50, 100, 200 quests. Guild Master requires 200 quests. At ~7h/quest average: 1400 hours = 24 full turns.
+**Suggestion:** Flatten curve to 3, 8, 15, 25, 40, 60.
+
+---
+
+### AI MISSING BEHAVIORS (16 issues)
+
+| # | Missing Behavior | Impact |
+|---|-----------------|--------|
+| AI-1 | No health recovery/healing action | AI slowly dies from accumulated damage |
+| AI-2 | No sickness cure action | 5% chance/week sickness, never cured |
+| AI-3 | No loan system usage | Can't survive debt emergencies |
+| AI-4 | No stock market trading | Misses wealth accumulation |
+| AI-5 | No fresh food management | Never buys Preservation Box or fresh food |
+| AI-6 | No weekend ticket purchases | Misses happiness from 25-50g tickets |
+| AI-7 | No item selling/pawning | Can't liquidate assets in emergency |
+| AI-8 | No lottery tickets | Misses positive-EV lottery (until fixed) |
+| AI-9 | Graduation only when education is weakest goal | Misses free +5hap/+5dep from ready degrees |
+| AI-10 | Only buys food at Rusty Tankard | Wastes hours traveling past closer food |
+| AI-11 | Only buys `scrying-mirror` appliance | Misses Cooking Fire (+1hap/turn), other appliances |
+| AI-12 | No route optimization | Wastes hours on redundant travel |
+| AI-13 | Can't downgrade housing when broke | Stuck paying unaffordable rent |
+| AI-14 | `efficiencyWeight` setting never used | Has no effect on AI behavior |
+| AI-15 | `priceModifier` parameter never used | AI ignores economy fluctuations |
+| AI-16 | AI clothing location wrong | Tries General Store, clothing sold at Armory |
+
+---
+
+### LOCATION PANEL ISSUES (Selected)
+
+| Location | Issue |
+|----------|-------|
+| **ForgePanel** | Every work click re-applies for job. Earnings display shows 1.33x but actual is 1.15x. No raise button. |
+| **BankPanel** | Hardcoded 50g deposit/withdraw amounts. No custom amounts. Investment has no withdrawal. Stock trades cost no time. |
+| **GeneralStore** | Durable items with `relaxation` effect type are ignored (only `happiness` and `food` handled). |
+| **PawnShop** | Gambling gives no win/loss feedback. Used weapons/shields purchased but not added to durables. |
+| **HealerPanel** | "Cure Ailments" button exists but sickness cure mechanics are unclear. Costs don't scale with priceModifier. |
+| **LandlordPanel** | Prepaid weeks displayed but non-functional (C3). Moving cost = 2x monthly rent is inconsistent. |
+| **HomePanel** | Relax/Sleep can be spammed infinitely for happiness. No cooldown. |
+| **ShadowMarket** | "Market Intel" item does nothing when purchased. |
+| **QuestPanel** | Uses old `player.education` system, not `completedDegrees` (C6). Missing `dungeonFloorsCleared` param (H4). |
+
+---
+
+### MISSING FEATURES (Jones Reference Gaps)
+
+| Feature | Jones Behavior | Current Implementation |
+|---------|---------------|----------------------|
+| **Location entry cost** | +2 hours entering any building | Not implemented |
+| **0-hour free actions** | Can buy/deposit at 0 hours inside location | Turn auto-ends at 0 hours |
+| **Auto rent deduction** | Rent deducted automatically each week | Must visit Landlord manually |
+| **Food spoilage doctor** | Spoilage triggers doctor visit | Only starvation/relaxation trigger it |
+| **Turn end on location exit** | Turn ends when leaving at 0 hours | Turn ends immediately at 0 hours |
+| **Priest education path** | Priest degrees exist in quests | No priest degrees in degree system |
+
+---
+
+### FILES AUDITED (40+ files)
+
+**Store:** `gameStore.ts`, `storeTypes.ts`, `turnHelpers.ts`, `economyHelpers.ts`, `workEducationHelpers.ts`, `questHelpers.ts`, `playerHelpers.ts`
+**AI:** `useGrimwaldAI.ts`, `useAI.ts`, `ai/actionGenerator.ts`, `ai/strategy.ts`, `ai/types.ts`
+**Data:** `dungeon.ts`, `combatResolver.ts`, `quests.ts`, `items.ts`, `education.ts`, `jobs/definitions.ts`, `jobs/utils.ts`, `locations.ts`, `events.ts`, `stocks.ts`, `weekends.ts`, `housing.ts`, `shadowfingers.ts`, `newspaper.ts`, `saveLoad.ts`
+**Components:** All 14 location panels, `GameBoard.tsx`, `CombatView.tsx`, `LocationPanel.tsx`, `GoalProgress.tsx`, `VictoryScreen.tsx`, `GameSetup.tsx`, `TutorialOverlay.tsx`
+**Types:** `game.types.ts`
+**Tests:** All 6 test files (91 tests)
+
+### Build Status
+- TypeScript: Compiles cleanly (`tsc --noEmit`)
+- Tests: 91/91 pass (`vitest run`)
+- No new code changes in this audit (research only)
+
+---
+
 ## 2026-02-06 - Zone Editor localStorage Persistence
 
 Added localStorage persistence to the Zone Editor tool so zone positions, center panel config, and movement paths survive page reloads.

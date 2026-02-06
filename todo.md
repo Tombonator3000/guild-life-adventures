@@ -127,6 +127,70 @@
 
 *No active tasks*
 
+## Full Game Audit Findings (2026-02-06)
+
+See log.md "Full Game Audit (Agent Playthrough Analysis)" for complete details with file references.
+
+### Critical Bugs (14 items — fix ASAP)
+- [ ] C1: Add 2-hour location entry cost (missing entirely, players get 6-8 free hours/turn)
+- [ ] C2: Fix AI startTurn immunity (AI skips starvation, doctor, robbery, homeless penalties)
+- [ ] C3: Fix rent prepayment system (rentPrepaidWeeks set but never consumed)
+- [ ] C4: Use lockedRent in rent calculations (field exists but ignored)
+- [ ] C5: Call checkDeath in processWeekEnd (players can have 0 HP and keep playing)
+- [ ] C6: Fix quest education requirements (44% of quests use old system, permanently blocked)
+- [ ] C7: Add gold validation to all purchase actions (can buy with 0 gold)
+- [ ] C8: Batch eventMessages in startTurn (only last message survives)
+- [ ] C9: Fix home location for modest/homeless tiers (binary noble/slums check)
+- [ ] C10: Fix stale player data in startTurn (appliance breakage uses pre-doctor gold)
+- [ ] C11: Fix lottery expected value (+925% EV — 10g ticket has 102.5g expected return)
+- [ ] C12: Add wage cap on raises (wages grow infinitely, 406g/hr after 20 raises)
+- [ ] C13: Fix double-charge on appliance breakage (auto-charges repair AND marks broken)
+- [ ] C14: Fix AI hardcoded/fabricated prices (food, appliances, clothing, housing all wrong)
+
+### High Priority Bugs (12 items)
+- [ ] H1: Clear appliances/equipment on eviction
+- [ ] H2: Fix VictoryScreen wealth calculation (missing stocks, loans)
+- [ ] H3: Add checkDeath after quest completion
+- [ ] H4: Pass dungeonFloorsCleared to QuestPanel canTakeQuest
+- [ ] H5: Validate gold before payRent (1g resets 75g rent timer)
+- [ ] H6: Validate gold before studyDegree (free education with 0g)
+- [ ] H7: Enforce MAX_FLOOR_ATTEMPTS_PER_TURN
+- [ ] H8: Make market crash a global event (not per-player roll)
+- [ ] H9: Fix AI dungeon health tracking (uses wrong formula)
+- [ ] H10: AI rest should increase relaxation
+- [ ] H11: AI career strategy should prioritize quests for guild rank
+- [ ] H12: Resolve dual item definitions (preservation-box, scrying-mirror)
+
+### Balance Issues (10 items)
+- [ ] B1: Cap loan interest at 2x original amount
+- [ ] B2: Increase quest rewards (5-15x less profitable than dungeons)
+- [ ] B3: Add retreat penalty (50% gold forfeit)
+- [ ] B4: Reduce Noble Heights rent to 350g/week
+- [ ] B5: Only decay dependability if player didn't work that week
+- [ ] B6: Nerf Cooking Fire happiness (+1/turn is too strong)
+- [ ] B7: Add investment withdrawal action
+- [ ] B8: Add "Stay Home" free weekend option
+- [ ] B9: Allow rare drops on repeat clears (1% reduced rate)
+- [ ] B10: Flatten guild rank quest requirements
+
+### AI Improvements (16 items)
+- [ ] AI-1: Add healing/health recovery actions
+- [ ] AI-2: Add sickness cure action
+- [ ] AI-3: Add loan system usage for emergencies
+- [ ] AI-4: Add stock market trading
+- [ ] AI-5: Add fresh food management
+- [ ] AI-6: Add weekend ticket purchases
+- [ ] AI-7: Add item selling/pawning in emergencies
+- [ ] AI-8: Add lottery ticket purchases
+- [ ] AI-9: Make graduation an opportunistic action (any goal)
+- [ ] AI-10: Buy food at closest store (not only Rusty Tankard)
+- [ ] AI-11: Buy varied appliances (especially Cooking Fire)
+- [ ] AI-12: Add route optimization
+- [ ] AI-13: Allow housing downgrade when broke
+- [ ] AI-14: Use efficiencyWeight setting
+- [ ] AI-15: Use priceModifier in cost calculations
+- [ ] AI-16: Fix clothing purchase location (Armory, not General Store)
+
 ## Proposed Improvements (2026-02-05 Code Audit)
 
 See log.md "Improvement Proposals (Code Audit & Gap Analysis)" for full details.
