@@ -265,6 +265,18 @@
   - AudioManager crossfades to cave music on entry, back to default on exit
   - Music persists throughout dungeon combat encounters
 
+## Completed (2026-02-06)
+
+- [x] Offline PWA Support — Progressive Web App with offline capability and installability
+  - [x] vite-plugin-pwa integration with Workbox service worker
+  - [x] Web App Manifest (name, icons, theme, landscape orientation)
+  - [x] 9 PNG icon sizes + maskable icon + Apple touch icon from SVG source
+  - [x] Service worker precaches all 64 assets (including 10MB game board)
+  - [x] Runtime CacheFirst caching for music (1yr) and images (30d)
+  - [x] usePWAInstall hook + Download button on TitleScreen
+  - [x] HTML meta tags (theme-color, apple-mobile-web-app-capable)
+  - [x] Build succeeds, 110/112 tests pass
+
 ## In Progress
 
 *No active tasks*

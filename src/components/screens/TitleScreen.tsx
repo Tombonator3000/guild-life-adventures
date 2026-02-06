@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { Sword, Shield, Scroll, Crown, Save, Trash2, Volume2, VolumeX } from 'lucide-react';
+import { Sword, Shield, Scroll, Crown, Save, Trash2, Volume2, VolumeX, Download } from 'lucide-react';
 import { hasAutoSave, getSaveSlots, formatSaveDate, deleteSave } from '@/data/saveLoad';
 import type { SaveSlotInfo } from '@/data/saveLoad';
 import { DarkModeToggle } from '@/components/game/DarkModeToggle';
 import { useAudioSettings } from '@/hooks/useMusic';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 import gameBoard from '@/assets/game-board.jpeg';
 
 export function TitleScreen() {
@@ -13,6 +14,7 @@ export function TitleScreen() {
   const [slots, setSlots] = useState<SaveSlotInfo[]>([]);
   const autoSaveExists = hasAutoSave();
   const { musicMuted, toggleMute } = useAudioSettings();
+  const { canInstall, install } = usePWAInstall();
 
   const handleContinue = () => {
     if (loadFromSlot(0)) {
@@ -102,8 +104,18 @@ export function TitleScreen() {
           Inspired by Jones in the Fast Lane
         </p>
 
-        {/* Dark mode toggle + Music mute */}
+        {/* Dark mode toggle + Music mute + Install */}
         <div className="absolute top-4 right-4 flex items-center gap-2">
+          {canInstall && (
+            <button
+              onClick={install}
+              className="p-2 rounded-lg bg-background/50 hover:bg-background/70 transition-colors text-foreground flex items-center gap-1.5"
+              title="Install app for offline play"
+            >
+              <Download className="w-5 h-5" />
+              <span className="text-xs font-display hidden sm:inline">Install</span>
+            </button>
+          )}
           <button
             onClick={toggleMute}
             className="p-2 rounded-lg bg-background/50 hover:bg-background/70 transition-colors text-foreground"
