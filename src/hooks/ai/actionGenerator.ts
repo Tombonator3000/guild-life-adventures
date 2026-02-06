@@ -618,11 +618,13 @@ export function generateActions(
       .filter(([, v]) => v && !v.isBroken)
       .map(([id]) => id);
     if (pawnableAppliances.length > 0) {
+      // Estimate pawn value as roughly 30% of enchanter price (typical pawn shop rate)
+      const pawnValue = 50; // Flat estimate; the store calculates exact value
       actions.push({
         type: 'pawn-appliance',
         priority: 70,
         description: `Pawn ${pawnableAppliances[0]} for emergency gold`,
-        details: { applianceId: pawnableAppliances[0] },
+        details: { applianceId: pawnableAppliances[0], pawnValue },
       });
     }
   }
