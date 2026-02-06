@@ -83,9 +83,9 @@ class AudioManager {
     return this.currentTrackId;
   }
 
-  /** Get current settings. */
+  /** Get current settings - returns cached immutable object for React compatibility. */
   getSettings(): AudioSettings {
-    return { ...this.settings };
+    return this.cachedSettings;
   }
 
   /** Set music volume (0-1). */
