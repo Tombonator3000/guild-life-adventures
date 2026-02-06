@@ -1,5 +1,48 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Job Market Wage Display + Dungeon Per-Encounter Time
+
+Two gameplay improvements: job listings now show real market wages, and dungeon encounters cost time individually.
+
+### 1. Job Market Wage Display
+
+**Problem:** Job listings in the Guild Hall showed the base wage (e.g. $7/h), but the actual offered wage was calculated based on economy when applying — leading to a confusing mismatch between listed and offered salary.
+
+**Fix:** Market wages are now pre-calculated when selecting an employer, using the same `calculateOfferedWage(job, priceModifier)` formula. The listing shows the real market wage the player will receive if hired.
+
+| Change | Before | After |
+|--------|--------|-------|
+| Job listing wage | Base wage ($7/h) | Market wage ($4-$18/h based on economy) |
+| Wage consistency | Listed ≠ offered | Listed = offered |
+| Hired modal text | "(Base: $7/h)" | "(Market rate at time of visit)" |
+
+### 2. Dungeon Per-Encounter Time Cost
+
+**Problem:** Full floor time (6-22 hours) was charged upfront when entering a floor. Once inside, all encounters (Fight, Continue Deeper, etc.) were free, making it impossible to leave mid-floor and do other things.
+
+**Fix:** Time is now charged per encounter. Entry costs one encounter's worth of time. Each "Continue Deeper" costs another encounter's time. Players can leave if they run out of time (keeping all earned gold, no retreat penalty).
+
+| Floor | Total Time | Per Encounter (4 enc.) |
+|-------|-----------|----------------------|
+| F1 Entrance Cavern | 6h (4h reduced) | 2h (1h reduced) |
+| F2 Goblin Tunnels | 10h (8h reduced) | 3h (2h reduced) |
+| F3 Undead Crypt | 14h (12h reduced) | 4h (3h reduced) |
+| F4 Dragon's Lair | 18h (16h reduced) | 5h (4h reduced) |
+| F5 The Abyss | 22h (20h reduced) | 6h (5h reduced) |
+
+**New "Leave Dungeon" option:** When player doesn't have enough time for the next encounter, "Continue Deeper" is replaced with "Leave Dungeon" — player keeps all gold earned so far (no 50% retreat penalty).
+
+**AI unaffected:** Grimwald AI still uses `autoResolveFloor()` which resolves all encounters at once, spending the full floor time upfront (equivalent to all encounters combined).
+
+### Files Changed
+- `src/components/game/GuildHallPanel.tsx` — pre-calculate market wages on employer select, display market wage in listing
+- `src/components/game/CombatView.tsx` — accept `onSpendTime`/`encounterTimeCost` props, charge time per encounter, add Leave Dungeon option
+- `src/components/game/CavePanel.tsx` — charge per-encounter time on entry, pass time props to CombatView, show per-encounter time in floor cards
+- `src/data/dungeon.ts` — added `getEncounterTimeCost()` helper function
+- TypeScript compiles cleanly, build succeeds, 91 tests pass
+
+---
+
 ## 2026-02-06 - Screen Size Audit & Responsive Layout Fix
 
 Fixed layout compression on non-16:9 screens (e.g. 1920×1200 laptops) and improved space utilization.
