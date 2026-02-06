@@ -1,5 +1,27 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Cave/Dungeon Music (20Cave.mp3)
+
+Added location-specific music for the Cave/Dungeon. The file `20Cave.mp3` already existed in `public/music/` but was not wired up in the music configuration.
+
+### Changes
+- **`src/audio/musicConfig.ts`**: Added `'cave'` track to `MUSIC_TRACKS` (pointing to `20Cave.mp3`) and added `'cave': 'cave'` mapping to `LOCATION_MUSIC`
+
+### How it works
+- The `useMusicController` hook in `src/hooks/useMusic.ts` automatically selects music based on the current player's `locationId`
+- When a player enters the Cave location (`locationId: 'cave'`), the AudioManager crossfades from whatever was playing to `20Cave.mp3`
+- Music persists throughout dungeon combat since the player stays at the cave location
+- When the player leaves the cave, the AudioManager crossfades back to the destination location's track (or the default `OnTheStreet` track)
+
+### Files Modified
+- `src/audio/musicConfig.ts` — Added cave track definition and location mapping
+
+### Verification
+- Build succeeds (`bun run build`)
+- 111/112 tests pass (1 pre-existing freshFood test failure, unrelated)
+
+---
+
 ## 2026-02-06 - Cave Combat Damage Fix & Dungeon Audit
 
 Full audit of cave/dungeon combat system. Found and fixed 4 bugs (1 critical, 2 fairness, 1 balance).
