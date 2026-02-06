@@ -33,11 +33,15 @@ function serializeGameState(): SerializedGameState {
     networkMode: s.networkMode,
     localPlayerId: s.localPlayerId,
     roomCode: s.roomCode,
+    selectedLocation: s.selectedLocation,
+    shadowfingersEvent: s.shadowfingersEvent,
+    applianceBreakageEvent: s.applianceBreakageEvent,
   } as SerializedGameState;
 }
 
 /** Apply state from host to local store (guest only) */
 function applyNetworkState(state: SerializedGameState) {
+  const store = useGameStore.getState();
   useGameStore.setState({
     phase: state.phase,
     currentPlayerIndex: state.currentPlayerIndex,
@@ -53,6 +57,9 @@ function applyNetworkState(state: SerializedGameState) {
     aiDifficulty: state.aiDifficulty,
     stockPrices: state.stockPrices,
     weekendEvent: state.weekendEvent,
+    // Sync event modals so guest sees robbery/breakage events
+    shadowfingersEvent: state.shadowfingersEvent as typeof store.shadowfingersEvent,
+    applianceBreakageEvent: state.applianceBreakageEvent as typeof store.applianceBreakageEvent,
   });
 }
 
@@ -77,6 +84,7 @@ function executeAction(name: string, args: unknown[]): boolean {
  * Hook for network synchronization during gameplay.
  *
  * For HOST: subscribes to store changes and broadcasts to all guests.
+ *           Validates guest actions (turn check via peerId → playerId mapping).
  * For GUEST: receives state updates and sets up action forwarding.
  * For LOCAL: no-op.
  */
@@ -91,7 +99,7 @@ export function useNetworkSync() {
     peerManager.broadcast({ type: 'state-sync', gameState: state });
   }, [networkMode]);
 
-  // Debounced broadcast
+  // Debounced broadcast — coalesces rapid store changes
   const debouncedBroadcast = useCallback(() => {
     if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
     syncTimerRef.current = setTimeout(broadcastState, 50);
@@ -118,8 +126,34 @@ export function useNetworkSync() {
       if (networkMode === 'host') {
         const msg = message as GuestMessage;
         if (msg.type === 'action') {
-          // Validate: check if it's the sender's turn
-          // (basic validation — full validation in useOnlineGame)
+          // Validate: identify the sender and check if it's their turn
+          const store = useGameStore.getState();
+          const currentPlayer = store.players[store.currentPlayerIndex];
+          const senderPlayerId = peerManager.getPlayerIdForPeer(fromPeerId);
+
+          if (!senderPlayerId) {
+            console.warn(`[NetworkSync] Unknown peer tried to act: ${fromPeerId}`);
+            peerManager.sendTo(fromPeerId, {
+              type: 'action-result',
+              requestId: msg.requestId,
+              success: false,
+              error: 'Unknown player',
+            });
+            return;
+          }
+
+          if (!currentPlayer || currentPlayer.id !== senderPlayerId) {
+            // Not this player's turn — reject silently (common during turn transitions)
+            peerManager.sendTo(fromPeerId, {
+              type: 'action-result',
+              requestId: msg.requestId,
+              success: false,
+              error: 'Not your turn',
+            });
+            return;
+          }
+
+          // Execute the validated action
           const success = executeAction(msg.name, msg.args);
           peerManager.sendTo(fromPeerId, {
             type: 'action-result',
@@ -127,13 +161,22 @@ export function useNetworkSync() {
             success,
             error: success ? undefined : 'Action failed',
           });
-          // Broadcast updated state
+          // Broadcast updated state immediately (not debounced) for responsiveness
           broadcastState();
+        } else if (msg.type === 'ping') {
+          peerManager.sendTo(fromPeerId, {
+            type: 'pong',
+            timestamp: msg.timestamp,
+          });
         }
       } else if (networkMode === 'guest') {
         const msg = message as HostMessage;
         if (msg.type === 'state-sync') {
           applyNetworkState(msg.gameState);
+        } else if (msg.type === 'action-result') {
+          if (!msg.success && msg.error !== 'Not your turn') {
+            console.warn(`[NetworkSync] Action failed: ${msg.error}`);
+          }
         }
       }
     });

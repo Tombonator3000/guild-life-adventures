@@ -355,6 +355,19 @@
   - [x] All text-muted-foreground inside wood-frame → text-parchment-dark
   - [x] Established design standard: wood-frame uses text-parchment/text-parchment-dark
 
+## Completed (2026-02-06)
+
+- [x] Online Multiplayer Deep Audit & Fix — 8 bugs fixed
+  - [x] Bug 1 (CRITICAL): No turn validation in useNetworkSync — host executed any guest action without checking turn
+  - [x] Bug 2 (CRITICAL): No peerId → playerId mapping — host couldn't identify which player sent action
+  - [x] Bug 3 (CRITICAL): HOST_INTERNAL_ACTIONS executed locally on guest — caused state divergence
+  - [x] Bug 4 (HIGH): Guest ran auto-end-turn logic — duplicate endTurn calls skipping players
+  - [x] Bug 5 (HIGH): applyNetworkState missing shadowfingersEvent/applianceBreakageEvent fields
+  - [x] Bug 6 (MEDIUM): Stale closure in useOnlineGame — new guests rejected after lobby join
+  - [x] Bug 7 (MEDIUM): game-start message missing lobby data — guest couldn't find their slot
+  - [x] Bug 8 (LOW): "Only host can broadcast" warning spammed console
+  - Build succeeds, TypeScript clean, 111/112 tests pass (1 pre-existing)
+
 ## In Progress
 
 *No active tasks*

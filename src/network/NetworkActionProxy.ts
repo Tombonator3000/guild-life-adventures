@@ -34,8 +34,9 @@ export function shouldForwardAction(actionName: string, args: unknown[]): boolea
   // Local-only actions (UI state) — execute locally on guest
   if (LOCAL_ONLY_ACTIONS.has(actionName)) return false;
 
-  // Host-internal actions should not be triggered by guests at all
-  if (HOST_INTERNAL_ACTIONS.has(actionName)) return false;
+  // Host-internal actions (startTurn, processWeekEnd, etc.) must NOT run on guest.
+  // Return true to block local execution (pretend forwarded, but don't actually send).
+  if (HOST_INTERNAL_ACTIONS.has(actionName)) return true;
 
   // Forward to host
   if (networkActionSender) {

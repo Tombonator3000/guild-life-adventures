@@ -182,10 +182,23 @@ export function useOnlineGame() {
       roomCode,
     });
 
-    // Broadcast initial game state to all guests
+    // Set peerId → playerId mapping on PeerManager for turn validation
+    const peerMap = new Map<string, string>();
+    lobbyPlayers.forEach(p => {
+      peerMap.set(p.peerId, `player-${p.slot}`);
+    });
+    peerManager.setPeerPlayerMap(peerMap);
+
+    // Broadcast initial game state + lobby data to all guests
     const gameState = serializeGameState(useGameStore.getState());
-    peerManager.broadcast({ type: 'game-start', gameState });
-  }, [isHost, lobbyPlayers, settings, roomCode]);
+    const lobby: LobbyState = {
+      roomCode,
+      hostName: localPlayerName,
+      players: lobbyPlayers,
+      settings,
+    };
+    peerManager.broadcast({ type: 'game-start', gameState, lobby });
+  }, [isHost, lobbyPlayers, settings, roomCode, localPlayerName]);
 
   // --- Guest: Send Action to Host ---
 
@@ -221,6 +234,11 @@ export function useOnlineGame() {
   }, [broadcastState]);
 
   // --- Message Handling ---
+  // Use refs to avoid stale closures — handlers reference current lobbyPlayers etc.
+  // Initialized as null, populated after the useCallback definitions below.
+  const handleHostMessageRef = useRef<((msg: GuestMessage, from: string) => void) | null>(null);
+  const handleGuestMessageRef = useRef<((msg: HostMessage) => void) | null>(null);
+  const handlePlayerDisconnectRef = useRef<((peerId: string) => void) | null>(null);
 
   useEffect(() => {
     // Status change handler
@@ -228,19 +246,19 @@ export function useOnlineGame() {
       setConnectionStatus(status);
     });
 
-    // Message handler
+    // Message handler — uses refs to always call current version
     const unsubMessage = peerManager.onMessage((message: NetworkMessage, fromPeerId: string) => {
       if (isHost) {
-        handleHostMessage(message as GuestMessage, fromPeerId);
+        handleHostMessageRef.current?.(message as GuestMessage, fromPeerId);
       } else {
-        handleGuestMessage(message as HostMessage);
+        handleGuestMessageRef.current?.(message as HostMessage);
       }
     });
 
     // Disconnect handler
     const unsubDisconnect = peerManager.onPeerDisconnect((peerId: string) => {
       if (isHost) {
-        handlePlayerDisconnect(peerId);
+        handlePlayerDisconnectRef.current?.(peerId);
       } else {
         // Host disconnected
         setConnectionStatus('error');
@@ -253,7 +271,7 @@ export function useOnlineGame() {
       unsubMessage();
       unsubDisconnect();
     };
-  // We intentionally only set up handlers once
+  // Only re-register handlers when isHost changes (refs handle callback updates)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isHost]);
 
@@ -372,10 +390,9 @@ export function useOnlineGame() {
       case 'game-start': {
         // Apply the full game state from host
         applyNetworkState(message.gameState);
-        // Find our player ID based on lobby position
-        const gameStartMessage = message as { type: 'game-start'; gameState: SerializedGameState; lobby?: LobbyState };
-        const myLobbyPlayer = lobbyPlayers.find(p => p.name === localPlayerName)
-          || gameStartMessage.lobby?.players?.find((p: LobbyPlayer) => p.name === localPlayerName);
+        // Find our player ID from lobby data (included in game-start message)
+        const myLobbyPlayer = message.lobby?.players?.find((p: LobbyPlayer) => p.name === localPlayerName)
+          || lobbyPlayers.find(p => p.name === localPlayerName);
         const mySlot = myLobbyPlayer?.slot ?? -1;
         const myPlayerId = mySlot >= 0 ? `player-${mySlot}` : null;
 
@@ -436,6 +453,11 @@ export function useOnlineGame() {
       return updated;
     });
   }, [roomCode, localPlayerName, settings]);
+
+  // Keep message handler refs current (avoids stale closures in the PeerManager listener)
+  handleHostMessageRef.current = handleHostMessage;
+  handleGuestMessageRef.current = handleGuestMessage;
+  handlePlayerDisconnectRef.current = handlePlayerDisconnect;
 
   // --- Host: Subscribe to store changes for broadcasting ---
 

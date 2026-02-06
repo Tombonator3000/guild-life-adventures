@@ -1,5 +1,70 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Online Multiplayer Deep Audit & Fix — 8 Bugs Fixed
+
+Deep audit of the WebRTC P2P multiplayer system revealed 8 critical bugs causing: opponents not seeing movements, guests unable to move on their turn, and game becoming unresponsive.
+
+### Root Cause Analysis
+
+The multiplayer architecture uses two hooks:
+- `useOnlineGame` — runs during lobby phase (OnlineLobby screen), has proper turn validation
+- `useNetworkSync` — runs during gameplay (GameBoard screen), had NO turn validation
+
+When the host starts the game, OnlineLobby unmounts (destroying useOnlineGame's validation) and GameBoard mounts (using useNetworkSync which blindly executed any guest action without checking whose turn it was).
+
+### Bugs Fixed
+
+| # | Severity | File | Bug |
+|---|----------|------|-----|
+| 1 | **CRITICAL** | `useNetworkSync.ts` | No turn validation — host executed any guest action without checking whose turn it was |
+| 2 | **CRITICAL** | `useNetworkSync.ts` | No peerId → playerId mapping — host couldn't identify which player sent an action |
+| 3 | **CRITICAL** | `NetworkActionProxy.ts` | HOST_INTERNAL_ACTIONS (startTurn, processWeekEnd, checkDeath) executed locally on guest — caused state divergence |
+| 4 | **HIGH** | `useAutoEndTurn.ts` | Guest ran auto-end-turn logic — created duplicate endTurn calls (guest + host both auto-ending) |
+| 5 | **HIGH** | `useNetworkSync.ts` | applyNetworkState missing `shadowfingersEvent` and `applianceBreakageEvent` — guest never saw robbery/breakage modals |
+| 6 | **MEDIUM** | `useOnlineGame.ts` | Stale closure in message handler — effect depended on `[isHost]` but callbacks captured `lobbyPlayers`, causing new guests to be rejected |
+| 7 | **MEDIUM** | `useOnlineGame.ts` | game-start message didn't include lobby data — guest relied on stale lobbyPlayers state to find their slot |
+| 8 | **LOW** | `PeerManager.ts` | "Only host can broadcast" warning spammed console on every store change |
+
+### Changes by File
+
+**`src/network/PeerManager.ts`**
+- Added `peerPlayerMap: Map<string, string>` — maps peerId → playerId for turn validation
+- Added `setPeerPlayerMap()` and `getPlayerIdForPeer()` methods
+- Map cleared on `destroy()`
+- Silenced "Only host can broadcast" warning (was flooding console)
+
+**`src/network/useNetworkSync.ts`** (major rewrite of message handler)
+- Added turn validation: host now identifies sender via `peerManager.getPlayerIdForPeer(fromPeerId)` and checks `currentPlayer.id === senderPlayerId` before executing
+- Unknown peers and out-of-turn actions are rejected with error messages
+- Added ping/pong handling (was missing, only useOnlineGame had it)
+- Added action-result handling for guest (was silently dropped)
+- Fixed `applyNetworkState` — now includes `shadowfingersEvent`, `applianceBreakageEvent`
+- Fixed `serializeGameState` — now includes `selectedLocation`, `shadowfingersEvent`, `applianceBreakageEvent`
+
+**`src/network/useOnlineGame.ts`**
+- `startOnlineGame()`: populates `peerManager.setPeerPlayerMap()` from lobby players
+- `startOnlineGame()`: broadcasts game-start with lobby data (not just game state)
+- Guest `game-start` handler: uses `message.lobby.players` instead of stale `lobbyPlayers` state
+- Fixed stale closure: message handlers now use refs (`handleHostMessageRef`, etc.) updated on every render
+- Added `localPlayerName` to `startOnlineGame` dependency array
+
+**`src/network/types.ts`**
+- `game-start` message now includes `lobby: LobbyState` field
+
+**`src/network/NetworkActionProxy.ts`**
+- `HOST_INTERNAL_ACTIONS` now returns `true` (blocks execution) instead of `false` (allowed local execution) on guest
+
+**`src/hooks/useAutoEndTurn.ts`**
+- Guest mode: `checkAutoReturn()` returns immediately (host handles all auto-end/death logic)
+- Prevents duplicate endTurn calls that could skip players
+
+### Build & Tests
+- TypeScript compiles cleanly
+- Build succeeds
+- 111/112 tests pass (1 pre-existing freshFood test failure)
+
+---
+
 ## 2026-02-06 - Major Refactoring: Split 6 Largest Files
 
 Refactored the 6 largest files in the codebase using parallel agents. Each monolithic file was split into focused modules with barrel re-exports for backward compatibility. All 112 tests pass, TypeScript clean, build succeeds.
