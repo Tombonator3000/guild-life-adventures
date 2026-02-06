@@ -125,160 +125,16 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         }));
       }
 
-      // === Jones-style Fresh Food + Starvation Check ===
-      // Priority: 1) regular foodLevel, 2) freshFood in Preservation Box, 3) starve
-      const hasPreservationBox = player.appliances['preservation-box'] && !player.appliances['preservation-box'].isBroken;
-      const hasRegularFood = player.foodLevel > 0;
-      const hasFreshFood = hasPreservationBox && player.freshFood > 0;
-
-      let isStarving = false;
-      if (!hasRegularFood && hasFreshFood) {
-        // Consume 1 fresh food unit instead of starving
-        set((state) => ({
-          players: state.players.map((p) =>
-            p.id === playerId
-              ? { ...p, freshFood: Math.max(0, p.freshFood - 1) }
-              : p
-          ),
-        }));
-      } else if (!hasRegularFood && !hasFreshFood) {
-        // Starving: Lose 20 Hours (1/3 of turn!) - Jones-style penalty
-        isStarving = true;
-        const STARVATION_TIME_PENALTY = 20;
-        set((state) => ({
-          players: state.players.map((p) =>
-            p.id === playerId
-              ? { ...p, timeRemaining: Math.max(0, p.timeRemaining - STARVATION_TIME_PENALTY) }
-              : p
-          ),
-        }));
-        eventMessages.push(`${player.name} is starving! Lost ${STARVATION_TIME_PENALTY} Hours searching for food.`);
-
-        // B4: Doctor Visit trigger from starvation (25% chance)
-        if (Math.random() < 0.25) {
-          const doctorCost = 30 + Math.floor(Math.random() * 171); // 30-200g
-          set((state) => ({
-            players: state.players.map((p) =>
-              p.id === playerId
-                ? {
-                    ...p,
-                    timeRemaining: Math.max(0, p.timeRemaining - 10),
-                    happiness: Math.max(0, p.happiness - 4),
-                    gold: Math.max(0, p.gold - doctorCost),
-                  }
-                : p
-            ),
-          }));
-          eventMessages.push(`${player.name} collapsed from hunger and was taken to the healer! -10 Hours, -4 Happiness, -${doctorCost}g.`);
-        }
-      }
-
-      // C10: Re-read player after potential gold changes from starvation doctor visit
-      let currentPlayer = get().players.find(p => p.id === playerId)!;
-
-      // B4: Doctor Visit trigger from low relaxation (<=15, 20% chance)
-      if (!isStarving && player.relaxation <= 15 && Math.random() < 0.20) {
-        const doctorCost = 30 + Math.floor(Math.random() * 171); // 30-200g
-        set((state) => ({
-          players: state.players.map((p) =>
-            p.id === playerId
-              ? {
-                  ...p,
-                  timeRemaining: Math.max(0, p.timeRemaining - 10),
-                  happiness: Math.max(0, p.happiness - 4),
-                  gold: Math.max(0, p.gold - doctorCost),
-                }
-              : p
-          ),
-        }));
-        eventMessages.push(`${player.name} is exhausted and collapsed! The healer charged ${doctorCost}g. -10 Hours, -4 Happiness.`);
-
-        // C10: Re-read player after gold change from relaxation doctor visit
-        currentPlayer = get().players.find(p => p.id === playerId)!;
-      }
-
-      // Fresh food spoilage: if no Preservation Box, all fresh food spoils
-      if (!hasPreservationBox && player.freshFood > 0) {
-        set((state) => ({
-          players: state.players.map((p) =>
-            p.id === playerId ? { ...p, freshFood: 0 } : p
-          ),
-        }));
-        eventMessages.push(`${player.name}'s fresh food spoiled! No Preservation Box to keep it fresh.`);
-      } else if (hasPreservationBox) {
-        // Cap fresh food to max storage
-        const hasFrostChest = player.appliances['frost-chest'] && !player.appliances['frost-chest'].isBroken;
-        const maxStorage = hasFrostChest ? 12 : 6;
-        if (player.freshFood > maxStorage) {
-          set((state) => ({
-            players: state.players.map((p) =>
-              p.id === playerId ? { ...p, freshFood: maxStorage } : p
-            ),
-          }));
-        }
-      }
-
-      // Homeless penalty: sleeping on the streets costs health and time
-      if (player.housing === 'homeless') {
-        const HOMELESS_HEALTH_PENALTY = 5;
-        const HOMELESS_TIME_PENALTY = 8;
-        set((state) => ({
-          players: state.players.map((p) =>
-            p.id === playerId
-              ? {
-                  ...p,
-                  health: Math.max(0, p.health - HOMELESS_HEALTH_PENALTY),
-                  timeRemaining: Math.max(0, p.timeRemaining - HOMELESS_TIME_PENALTY),
-                }
-              : p
-          ),
-        }));
-        eventMessages.push(`${player.name} slept on the streets. -${HOMELESS_HEALTH_PENALTY} health, -${HOMELESS_TIME_PENALTY} hours.`);
-      }
-
-      // Check for apartment robbery at the start of player's turn
-      const robberyResult = checkApartmentRobbery(player);
-
-      if (robberyResult) {
-        // Remove stolen items from player's durables
-        const newDurables = { ...player.durables };
-        for (const stolen of robberyResult.stolenItems) {
-          delete newDurables[stolen.itemId];
-        }
-
-        // Apply robbery effects (gameplay changes apply to all players)
-        set((state) => ({
-          players: state.players.map((p) =>
-            p.id === playerId
-              ? {
-                  ...p,
-                  durables: newDurables,
-                  happiness: Math.max(0, p.happiness + robberyResult.happinessLoss),
-                }
-              : p
-          ),
-        }));
-
-        // C2: Only show UI notification for non-AI players
-        if (!player.isAI) {
-          set({
-            shadowfingersEvent: {
-              type: 'apartment',
-              result: robberyResult,
-            },
-          });
-        }
-      }
-
-      // Jones-style appliance breakage check (only if player has >500 gold)
-      // C10: Use currentPlayer (fresh data) for gold check
-      if (currentPlayer.gold > 500) {
-        const applianceIds = Object.keys(currentPlayer.appliances);
+      // === Appliance breakage check FIRST (before food checks) ===
+      // Bug fix: breakage must run before fresh food/spoilage checks so that
+      // a broken Preservation Box or Frost Chest immediately affects food this turn.
+      // Uses player's gold at start of turn (before any deductions).
+      if (player.gold > 500) {
+        const applianceIds = Object.keys(player.appliances);
         for (const applianceId of applianceIds) {
-          const ownedAppliance = currentPlayer.appliances[applianceId];
-          if (!ownedAppliance.isBroken && checkApplianceBreakage(ownedAppliance.source, currentPlayer.gold)) {
+          const ownedAppliance = player.appliances[applianceId];
+          if (!ownedAppliance.isBroken && checkApplianceBreakage(ownedAppliance.source, player.gold)) {
             const repairCost = calculateRepairCost(ownedAppliance.originalPrice);
-            const appliance = getAppliance(applianceId);
 
             // C13: Mark as broken and lose happiness, but don't charge repair cost
             // Player can choose to repair at Enchanter/Market later
@@ -312,8 +168,188 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         }
       }
 
+      // Re-read player after potential appliance breakage (appliance state may have changed)
+      let currentPlayer = get().players.find(p => p.id === playerId)!;
+
+      // === Fresh food spoilage check (uses current appliance state after breakage) ===
+      const hasPreservationBox = currentPlayer.appliances['preservation-box'] && !currentPlayer.appliances['preservation-box'].isBroken;
+      let freshFoodSpoiled = false;
+
+      if (!hasPreservationBox && currentPlayer.freshFood > 0) {
+        // All fresh food spoils without a working Preservation Box
+        const spoiledAmount = currentPlayer.freshFood;
+        set((state) => ({
+          players: state.players.map((p) =>
+            p.id === playerId ? { ...p, freshFood: 0 } : p
+          ),
+        }));
+        eventMessages.push(`${currentPlayer.name}'s fresh food spoiled! No working Preservation Box to keep it fresh.`);
+        freshFoodSpoiled = true;
+
+        // Doctor visit trigger from food spoilage (25% chance, matches Jones)
+        if (Math.random() < 0.25) {
+          const doctorCost = 30 + Math.floor(Math.random() * 171); // 30-200g
+          set((state) => ({
+            players: state.players.map((p) =>
+              p.id === playerId
+                ? {
+                    ...p,
+                    timeRemaining: Math.max(0, p.timeRemaining - 10),
+                    happiness: Math.max(0, p.happiness - 4),
+                    gold: Math.max(0, p.gold - doctorCost),
+                  }
+                : p
+            ),
+          }));
+          eventMessages.push(`${currentPlayer.name} got sick from spoiled food! Healer charged ${doctorCost}g. -10 Hours, -4 Happiness.`);
+        }
+      } else if (hasPreservationBox) {
+        // Cap fresh food to max storage (Frost Chest broken = excess spoils)
+        const hasFrostChest = currentPlayer.appliances['frost-chest'] && !currentPlayer.appliances['frost-chest'].isBroken;
+        const maxStorage = hasFrostChest ? 12 : 6;
+        if (currentPlayer.freshFood > maxStorage) {
+          const spoiledUnits = currentPlayer.freshFood - maxStorage;
+          set((state) => ({
+            players: state.players.map((p) =>
+              p.id === playerId ? { ...p, freshFood: maxStorage } : p
+            ),
+          }));
+          eventMessages.push(`${spoiledUnits} units of fresh food spoiled (storage full, max ${maxStorage}).`);
+        }
+      }
+
+      // Re-read player after potential spoilage changes
+      currentPlayer = get().players.find(p => p.id === playerId)!;
+
+      // === Jones-style Fresh Food + Starvation Check ===
+      // Priority: 1) regular foodLevel, 2) freshFood in Preservation Box, 3) starve
+      const hasWorkingBox = currentPlayer.appliances['preservation-box'] && !currentPlayer.appliances['preservation-box'].isBroken;
+      const hasRegularFood = currentPlayer.foodLevel > 0;
+      const hasFreshFood = hasWorkingBox && currentPlayer.freshFood > 0;
+
+      let isStarving = false;
+      if (!hasRegularFood && hasFreshFood) {
+        // Consume 1 fresh food unit instead of starving
+        set((state) => ({
+          players: state.players.map((p) =>
+            p.id === playerId
+              ? { ...p, freshFood: Math.max(0, p.freshFood - 1) }
+              : p
+          ),
+        }));
+        eventMessages.push(`${currentPlayer.name}'s Preservation Box provided fresh food, preventing starvation.`);
+      } else if (!hasRegularFood && !hasFreshFood) {
+        // Starving: Lose 20 Hours (1/3 of turn!) - Jones-style penalty
+        isStarving = true;
+        const STARVATION_TIME_PENALTY = 20;
+        set((state) => ({
+          players: state.players.map((p) =>
+            p.id === playerId
+              ? { ...p, timeRemaining: Math.max(0, p.timeRemaining - STARVATION_TIME_PENALTY) }
+              : p
+          ),
+        }));
+        eventMessages.push(`${currentPlayer.name} is starving! Lost ${STARVATION_TIME_PENALTY} Hours searching for food.`);
+
+        // B4: Doctor Visit trigger from starvation (25% chance)
+        if (Math.random() < 0.25) {
+          const doctorCost = 30 + Math.floor(Math.random() * 171); // 30-200g
+          set((state) => ({
+            players: state.players.map((p) =>
+              p.id === playerId
+                ? {
+                    ...p,
+                    timeRemaining: Math.max(0, p.timeRemaining - 10),
+                    happiness: Math.max(0, p.happiness - 4),
+                    gold: Math.max(0, p.gold - doctorCost),
+                  }
+                : p
+            ),
+          }));
+          eventMessages.push(`${currentPlayer.name} collapsed from hunger and was taken to the healer! -10 Hours, -4 Happiness, -${doctorCost}g.`);
+        }
+      }
+
+      // C10: Re-read player after potential gold changes from starvation doctor visit
+      currentPlayer = get().players.find(p => p.id === playerId)!;
+
+      // B4: Doctor Visit trigger from low relaxation (<=15, 20% chance)
+      if (!isStarving && !freshFoodSpoiled && currentPlayer.relaxation <= 15 && Math.random() < 0.20) {
+        const doctorCost = 30 + Math.floor(Math.random() * 171); // 30-200g
+        set((state) => ({
+          players: state.players.map((p) =>
+            p.id === playerId
+              ? {
+                  ...p,
+                  timeRemaining: Math.max(0, p.timeRemaining - 10),
+                  happiness: Math.max(0, p.happiness - 4),
+                  gold: Math.max(0, p.gold - doctorCost),
+                }
+              : p
+          ),
+        }));
+        eventMessages.push(`${currentPlayer.name} is exhausted and collapsed! The healer charged ${doctorCost}g. -10 Hours, -4 Happiness.`);
+
+        // C10: Re-read player after gold change from relaxation doctor visit
+        currentPlayer = get().players.find(p => p.id === playerId)!;
+      }
+
+      // Homeless penalty: sleeping on the streets costs health and time
+      if (currentPlayer.housing === 'homeless') {
+        const HOMELESS_HEALTH_PENALTY = 5;
+        const HOMELESS_TIME_PENALTY = 8;
+        set((state) => ({
+          players: state.players.map((p) =>
+            p.id === playerId
+              ? {
+                  ...p,
+                  health: Math.max(0, p.health - HOMELESS_HEALTH_PENALTY),
+                  timeRemaining: Math.max(0, p.timeRemaining - HOMELESS_TIME_PENALTY),
+                }
+              : p
+          ),
+        }));
+        eventMessages.push(`${currentPlayer.name} slept on the streets. -${HOMELESS_HEALTH_PENALTY} health, -${HOMELESS_TIME_PENALTY} hours.`);
+      }
+
+      // Check for apartment robbery at the start of player's turn
+      const robberyResult = checkApartmentRobbery(currentPlayer);
+
+      if (robberyResult) {
+        // Remove stolen items from player's durables
+        const newDurables = { ...currentPlayer.durables };
+        for (const stolen of robberyResult.stolenItems) {
+          delete newDurables[stolen.itemId];
+        }
+
+        // Apply robbery effects (gameplay changes apply to all players)
+        set((state) => ({
+          players: state.players.map((p) =>
+            p.id === playerId
+              ? {
+                  ...p,
+                  durables: newDurables,
+                  happiness: Math.max(0, p.happiness + robberyResult.happinessLoss),
+                }
+              : p
+          ),
+        }));
+
+        // C2: Only show UI notification for non-AI players
+        if (!currentPlayer.isAI) {
+          set({
+            shadowfingersEvent: {
+              type: 'apartment',
+              result: robberyResult,
+            },
+          });
+        }
+      }
+
       // Cooking Fire happiness bonus — nerfed: only triggers every other week (even weeks)
-      const hasCookingAppliance = player.appliances['cooking-fire'] && !player.appliances['cooking-fire'].isBroken;
+      // Re-read for current appliance state
+      currentPlayer = get().players.find(p => p.id === playerId)!;
+      const hasCookingAppliance = currentPlayer.appliances['cooking-fire'] && !currentPlayer.appliances['cooking-fire'].isBroken;
       const currentWeek = get().week;
       if (hasCookingAppliance && currentWeek % 2 === 0) {
         set((state) => ({
@@ -326,7 +362,7 @@ export function createTurnActions(set: SetFn, get: GetFn) {
       }
 
       // Arcane Tome random income chance
-      const hasArcaneTome = player.appliances['arcane-tome'] && !player.appliances['arcane-tome'].isBroken;
+      const hasArcaneTome = currentPlayer.appliances['arcane-tome'] && !currentPlayer.appliances['arcane-tome'].isBroken;
       if (hasArcaneTome && Math.random() < 0.15) { // 15% chance per turn
         const income = Math.floor(Math.random() * 50) + 10; // 10-60 gold
         set((state) => ({
@@ -340,7 +376,7 @@ export function createTurnActions(set: SetFn, get: GetFn) {
       }
 
       // C8: Emit collected event messages at end of startTurn (non-AI only)
-      if (!player.isAI && eventMessages.length > 0) {
+      if (!currentPlayer.isAI && eventMessages.length > 0) {
         set({ eventMessage: eventMessages.join('\n') });
       }
     },
@@ -437,6 +473,7 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           // H1: Clear appliances and equipment on eviction
           p.durables = {};
           p.appliances = {};
+          p.freshFood = 0; // Fresh food lost with appliances
           p.equippedWeapon = null;
           p.equippedArmor = null;
           p.equippedShield = null;

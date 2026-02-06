@@ -1,5 +1,68 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Preservation Box & Frost Chest Audit (8 Bugs Fixed)
+
+Audited the fresh food preservation system (Preservation Box = Refrigerator, Frost Chest = Freezer from Jones in the Fast Lane). Compared against Jones wiki Fresh Food and Consumables mechanics. Found and fixed 8 bugs, added 20 unit tests.
+
+### Reference: Jones in the Fast Lane Fresh Food Mechanics
+- **Refrigerator** stores up to 6 Fresh Food units (12 with Freezer)
+- Fresh food prevents starvation when consumed (1 unit per week)
+- **All food spoils** if Refrigerator is missing or broken
+- **Excess spoils** immediately if over capacity (Freezer breaks → 6 cap)
+- **Food spoilage triggers doctor visit** (25% chance, -10h, -4 hap, -30-200g)
+- Refrigerator and Freezer **cannot be stolen**
+- Freezer **requires** Refrigerator
+
+### Bugs Found and Fixed
+
+| Bug | Severity | Issue | Fix |
+|-----|----------|-------|-----|
+| 1 | CRITICAL | Appliance breakage ran AFTER food checks — broken Preservation Box/Frost Chest didn't affect food until next turn | Moved breakage check before spoilage/starvation checks in `startTurn` |
+| 2 | MEDIUM | `freshFood` not cleared on eviction — counter persisted after losing all appliances | Added `p.freshFood = 0` in eviction block of `processWeekEnd` |
+| 3 | MEDIUM | No event message when fresh food prevents starvation — player didn't know their Preservation Box saved them | Added message: "Preservation Box provided fresh food, preventing starvation" |
+| 4 | MEDIUM | Food spoilage didn't trigger doctor visit — Jones triggers doctor on spoilage (was noted as known gap) | Added 25% doctor visit chance on spoilage with cost/penalty |
+| 5 | MEDIUM | InfoTabs showed max storage 12 even with broken Frost Chest — `isBroken` not checked | Added `.isBroken` check in InfoTabs fresh food progress bar |
+| 6 | LOW | Frost Chest purchasable without Preservation Box — wasted gold, no enforcement | Added prerequisite check in `buyAppliance` |
+| 7 | LOW | No message when excess food spoils from overcapacity | Added message: "X units spoiled (storage full, max Y)" |
+| 8 | LOW | UI said "Auto-consumed weekly" which was misleading — only consumed when regular food = 0 | Updated to "prevents starvation when regular food runs out" |
+
+### Correct Turn Order (After Fix)
+The `startTurn` function now processes in the correct order:
+1. Move player to home
+2. **Appliance breakage** (checks gold > 500, rolls break chance)
+3. **Fresh food spoilage** (uses current appliance state after breakage)
+4. **Starvation check** (regular food → fresh food → starve)
+5. Doctor visit triggers (starvation, spoilage, low relaxation)
+6. Homeless penalty
+7. Apartment robbery
+8. Cooking fire / Arcane tome bonuses
+
+### Files Modified (4)
+| File | Change |
+|------|--------|
+| `src/store/helpers/turnHelpers.ts` | Reordered startTurn: breakage → spoilage → starvation. Added spoilage doctor visit, fresh food consumption message, overcapacity message. Cleared freshFood on eviction. |
+| `src/store/helpers/economyHelpers.ts` | Added Frost Chest prerequisite check (requires working Preservation Box) |
+| `src/components/game/InfoTabs.tsx` | Fixed Frost Chest `isBroken` check in fresh food progress bar |
+| `src/components/game/GeneralStorePanel.tsx` | Updated misleading description text |
+
+### Files Created (1)
+| File | Purpose |
+|------|---------|
+| `src/test/freshFood.test.ts` | 20 unit tests covering buyFreshFood, starvation prevention, spoilage, eviction, Frost Chest prerequisite |
+
+### Test Coverage (20 new tests)
+- **buyFreshFood** (6 tests): basic storage, cap at 6/12, broken box rejection, broken frost chest, insufficient gold
+- **Starvation Prevention** (4 tests): fresh food consumption, regular food priority, no food starvation, stale freshFood counter
+- **Spoilage** (5 tests): no box spoilage, broken box spoilage, overcapacity cap at 6, frost chest allows 12, broken frost chest caps at 6
+- **Eviction** (1 test): freshFood cleared on eviction
+- **Frost Chest Prerequisite** (3 tests): rejected without box, allowed with box, rejected with broken box
+
+### Build Verification
+- TypeScript compiles cleanly (`tsc --noEmit`)
+- All 112 tests pass (92 existing + 20 new)
+
+---
+
 ## 2026-02-06 - Players Always Start Turn at Home (Slums or Noble Heights)
 
 Fixed `getHomeLocation()` so players always start their turn at one of the two actual housing locations, matching Jones in the Fast Lane's two-apartment system (Low-Cost Housing / Le Security Apartments).

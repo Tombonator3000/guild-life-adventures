@@ -174,6 +174,19 @@
   - Matches Jones in the Fast Lane's two-apartment system
   - Previously `modest` mapped to Landlord (rent office) and `homeless` to Rusty Tankard (tavern)
 
+## Completed (2026-02-06)
+
+- [x] Preservation Box & Frost Chest Audit — 8 bugs fixed, 20 tests added
+  - [x] Bug 1 (CRITICAL): Appliance breakage ran after food checks — broken box didn't spoil food until next turn
+  - [x] Bug 2: freshFood not cleared on eviction — counter persisted after losing all appliances
+  - [x] Bug 3: No event message when fresh food prevents starvation
+  - [x] Bug 4: Food spoilage didn't trigger doctor visit (Jones: 25% chance on spoilage)
+  - [x] Bug 5: InfoTabs showed 12 max even with broken Frost Chest (missing isBroken check)
+  - [x] Bug 6: Frost Chest purchasable without Preservation Box (no prerequisite enforcement)
+  - [x] Bug 7: No message when excess food spoils from overcapacity
+  - [x] Bug 8: Misleading "Auto-consumed weekly" description in General Store
+  - [x] 20 unit tests in src/test/freshFood.test.ts
+
 ## In Progress
 
 *No active tasks*

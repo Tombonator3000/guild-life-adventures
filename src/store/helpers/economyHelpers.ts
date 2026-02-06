@@ -158,6 +158,12 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
       if (!appliance) return 0;
       if (player.gold < price) return 0;
 
+      // Frost Chest requires Preservation Box
+      if (applianceId === 'frost-chest') {
+        const hasPreservationBox = player.appliances['preservation-box'] && !player.appliances['preservation-box'].isBroken;
+        if (!hasPreservationBox) return 0;
+      }
+
       // Check if this is first time owning this type (for happiness bonus)
       const isFirstTime = !player.applianceHistory.includes(applianceId);
       const happinessGain = isFirstTime
