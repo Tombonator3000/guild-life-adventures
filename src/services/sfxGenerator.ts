@@ -1,0 +1,105 @@
+// SFX Generation Service - calls the ElevenLabs edge function
+
+export interface SFXGenerationResult {
+  success: boolean;
+  audioUrl?: string;
+  audioBase64?: string;
+  error?: string;
+}
+
+/**
+ * Generate a sound effect using ElevenLabs API
+ * @param prompt - Description of the sound effect to generate
+ * @param duration - Optional duration in seconds (0.5-22)
+ * @param returnBase64 - If true, returns base64 for saving; if false, returns playable URL
+ */
+export async function generateSFX(
+  prompt: string,
+  duration?: number,
+  returnBase64 = false
+): Promise<SFXGenerationResult> {
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-sfx`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ prompt, duration, returnBase64 }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Request failed: ${response.status}`);
+    }
+
+    if (returnBase64) {
+      const data = await response.json();
+      return { success: true, audioBase64: data.audioBase64 };
+    }
+
+    // For playback, create a blob URL
+    const audioBlob = await response.blob();
+    const audioUrl = URL.createObjectURL(audioBlob);
+    return { success: true, audioUrl };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('SFX generation failed:', message);
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Play a generated sound effect
+ */
+export async function playSFXPreview(prompt: string, duration?: number): Promise<void> {
+  const result = await generateSFX(prompt, duration, false);
+  if (result.success && result.audioUrl) {
+    const audio = new Audio(result.audioUrl);
+    await audio.play();
+  } else {
+    throw new Error(result.error || 'Failed to generate SFX');
+  }
+}
+
+// Predefined SFX prompts for the game
+export const GAME_SFX_PROMPTS: Record<string, { prompt: string; duration?: number }> = {
+  // UI Sounds
+  'button-click': { prompt: 'Short soft wooden button click, medieval UI sound, gentle tap', duration: 0.5 },
+  'button-hover': { prompt: 'Very subtle soft hover sound, light brush, whisper quiet', duration: 0.3 },
+  'gold-button-click': { prompt: 'Satisfying golden coin tap with magical shimmer, fantasy UI confirm sound', duration: 0.6 },
+  'menu-open': { prompt: 'Parchment scroll unrolling sound, paper rustling, medieval menu open', duration: 0.8 },
+  'menu-close': { prompt: 'Parchment scroll rolling up sound, paper closing, menu dismiss', duration: 0.6 },
+  
+  // Game Actions
+  'coin-gain': { prompt: 'Fantasy gold coins clinking together, treasure gained, money received, cheerful', duration: 1.0 },
+  'coin-spend': { prompt: 'Single gold coin dropping into pouch, money spent, transaction complete', duration: 0.7 },
+  'item-buy': { prompt: 'Medieval merchant transaction, item purchased, satisfied ding with cloth rustling', duration: 1.0 },
+  'item-equip': { prompt: 'Sword sliding into sheath, armor equipping, metal clicking into place, heroic', duration: 0.8 },
+  'success': { prompt: 'Triumphant fantasy success fanfare, short magical chime, quest complete', duration: 1.2 },
+  'error': { prompt: 'Soft negative buzz, medieval wrong answer, gentle rejection sound', duration: 0.6 },
+  
+  // Movement & Locations  
+  'footstep': { prompt: 'Single footstep on stone cobblestone, medieval walking sound', duration: 0.4 },
+  'door-open': { prompt: 'Wooden tavern door creaking open, medieval door swing, entering building', duration: 1.0 },
+  
+  // Work & Education
+  'work-complete': { prompt: 'Satisfied work completion sound, hammer final hit, craft finished', duration: 0.8 },
+  'study': { prompt: 'Book pages turning, quill writing on parchment, scholarly ambient', duration: 1.0 },
+  'graduation': { prompt: 'Triumphant graduation fanfare, achievement unlocked, magical success', duration: 1.5 },
+  
+  // Combat & Dungeon
+  'sword-hit': { prompt: 'Sword clash impact, metal on metal, combat hit, fantasy battle', duration: 0.6 },
+  'damage-taken': { prompt: 'Impact grunt, damage received, armor taking hit, painful but not graphic', duration: 0.5 },
+  'victory-fanfare': { prompt: 'Heroic victory fanfare, battle won, triumphant medieval brass', duration: 2.0 },
+  'defeat': { prompt: 'Somber defeat sound, battle lost, sad descending notes, game over', duration: 1.5 },
+  
+  // Events
+  'notification': { prompt: 'Medieval bell ding, gentle notification, attention chime', duration: 0.6 },
+  'turn-start': { prompt: 'New turn beginning, page turning, ready for action, subtle hopeful', duration: 0.8 },
+  'week-end': { prompt: 'Week ending chime, time passing, clock striking, transitional sound', duration: 1.2 },
+};

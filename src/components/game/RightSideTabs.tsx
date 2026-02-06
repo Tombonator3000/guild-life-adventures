@@ -475,6 +475,20 @@ function DeveloperTab({
         </p>
       </OptionSection>
 
+      <OptionSection title="SFX Generator">
+        <a
+          href="/admin/sfx"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full flex items-center justify-center gap-2 p-2 bg-amber-100/30 hover:bg-amber-100 rounded border border-amber-300/50 text-amber-700 font-display text-xs transition-colors"
+        >
+          Open SFX Generator
+        </a>
+        <p className="text-[9px] text-amber-700 text-center mt-1">
+          Generate sound effects with ElevenLabs
+        </p>
+      </OptionSection>
+
       <OptionSection title="Shortcuts">
         <div className="space-y-0.5 text-[9px] text-amber-800">
           <ShortcutRow keys="Ctrl+Shift+D" action="Debug Overlay" />
