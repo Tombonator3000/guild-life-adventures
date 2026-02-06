@@ -10,6 +10,7 @@ import { EventModal, type GameEvent } from './EventModal';
 import { ShadowfingersModal, useShadowfingersModal } from './ShadowfingersModal';
 import { ZoneEditor, type CenterPanelConfig } from './ZoneEditor';
 import { MOVEMENT_PATHS, BOARD_PATH, type MovementWaypoint } from '@/data/locations';
+import { loadZoneConfig, saveZoneConfig, clearZoneConfig } from '@/data/zoneStorage';
 import { SideInfoTabs } from './SideInfoTabs';
 import { RightSideTabs } from './RightSideTabs';
 import { SaveLoadMenu } from './SaveLoadMenu';
@@ -57,8 +58,23 @@ export function GameBoard() {
   const [showZoneEditor, setShowZoneEditor] = useState(false);
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
   const [showGameMenu, setShowGameMenu] = useState(false);
-  const [customZones, setCustomZones] = useState<ZoneConfig[]>(ZONE_CONFIGS);
-  const [centerPanel, setCenterPanel] = useState<CenterPanelConfig>(DEFAULT_CENTER_PANEL);
+  const [customZones, setCustomZones] = useState<ZoneConfig[]>(() => {
+    const saved = loadZoneConfig();
+    return saved ? saved.zones : ZONE_CONFIGS;
+  });
+  const [centerPanel, setCenterPanel] = useState<CenterPanelConfig>(() => {
+    const saved = loadZoneConfig();
+    return saved ? saved.centerPanel : DEFAULT_CENTER_PANEL;
+  });
+
+  // Load saved movement paths on mount
+  useEffect(() => {
+    const saved = loadZoneConfig();
+    if (saved) {
+      Object.keys(MOVEMENT_PATHS).forEach(k => delete MOVEMENT_PATHS[k]);
+      Object.entries(saved.paths).forEach(([k, v]) => { MOVEMENT_PATHS[k] = v; });
+    }
+  }, []);
 
   // AI State
   const [aiIsThinking, setAiIsThinking] = useState(false);
@@ -154,13 +170,22 @@ export function GameBoard() {
     setCenterPanel(newCenterPanel);
     setShowZoneEditor(false);
     // Apply movement paths to the global MOVEMENT_PATHS object
+    const activePaths = paths || { ...MOVEMENT_PATHS };
     if (paths) {
       Object.keys(MOVEMENT_PATHS).forEach(k => delete MOVEMENT_PATHS[k]);
       Object.entries(paths).forEach(([k, v]) => { MOVEMENT_PATHS[k] = v; });
-      console.log('Movement paths updated:', paths);
     }
-    console.log('Zones updated. Copy this config to locations.ts:', zones);
-    console.log('Center panel updated:', newCenterPanel);
+    // Persist to localStorage
+    saveZoneConfig(zones, newCenterPanel, activePaths);
+    toast.success('Zone config saved to localStorage');
+  };
+
+  const handleResetZones = () => {
+    clearZoneConfig();
+    setCustomZones(ZONE_CONFIGS);
+    setCenterPanel(DEFAULT_CENTER_PANEL);
+    Object.keys(MOVEMENT_PATHS).forEach(k => delete MOVEMENT_PATHS[k]);
+    toast.success('Zone config reset to defaults');
   };
 
   // Get location with custom zones applied
@@ -542,7 +567,10 @@ export function GameBoard() {
         <ZoneEditor
           onClose={() => setShowZoneEditor(false)}
           onSave={handleSaveZones}
+          onReset={handleResetZones}
           initialCenterPanel={centerPanel}
+          initialZones={customZones}
+          initialPaths={{ ...MOVEMENT_PATHS }}
         />
       )}
 
