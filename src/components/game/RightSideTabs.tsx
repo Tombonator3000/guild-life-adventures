@@ -2,8 +2,9 @@
 // Follows the medieval parchment aesthetic with amber-800/900 text colors
 
 import { useState } from 'react';
-import { Settings, Save, Code, Users, Target, Coins, Smile, GraduationCap, TrendingUp, Crown, Skull, Bot, Play, FastForward, SkipForward, Menu, Volume2, VolumeX } from 'lucide-react';
+import { Settings, Save, Code, Users, Target, Coins, Smile, GraduationCap, TrendingUp, Crown, Skull, Bot, Play, FastForward, SkipForward, Menu, Volume2, VolumeX, Music, Sparkles } from 'lucide-react';
 import { useAudioSettings } from '@/hooks/useMusic';
+import { useSFXSettings } from '@/hooks/useSFX';
 import type { Player, GoalSettings } from '@/types/game.types';
 import { GUILD_RANK_NAMES, GUILD_RANK_INDEX, HOURS_PER_TURN } from '@/types/game.types';
 
