@@ -335,15 +335,15 @@ function ResourceRow({
     <div className={`${warning ? 'bg-destructive/15 rounded px-1 -mx-1' : ''}`}>
       <div className="flex items-center justify-between text-[11px]">
         <div className="flex items-center gap-1.5">
-          <span className="text-wood-dark">{icon}</span>
-          <span className="text-wood-dark font-medium">{label}</span>
+          <span className="text-amber-800">{icon}</span>
+          <span className="text-amber-800 font-medium">{label}</span>
         </div>
-        <span className={`font-bold ${warning ? 'text-destructive animate-pulse' : highlight ? 'text-gold-dark' : 'text-wood-dark'}`}>
+        <span className={`font-bold ${warning ? 'text-red-600 animate-pulse' : highlight ? 'text-amber-600' : 'text-amber-900'}`}>
           {value}
         </span>
       </div>
       {showBar && (
-        <div className="h-1 bg-wood/20 rounded-full mt-0.5 overflow-hidden">
+        <div className="h-1 bg-amber-900/20 rounded-full mt-0.5 overflow-hidden">
           <div
             className={`h-full ${barColor} transition-all duration-300`}
             style={{ width: `${Math.max(0, Math.min(100, (barValue / barMax) * 100))}%` }}
