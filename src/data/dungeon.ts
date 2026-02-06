@@ -904,8 +904,8 @@ export const ENCOUNTERS_PER_FLOOR = 4;
 /** Maximum dungeon floor */
 export const MAX_DUNGEON_FLOOR = 5;
 
-/** One floor attempt per turn (fatigue) */
-export const MAX_FLOOR_ATTEMPTS_PER_TURN = 1;
+/** Max floor attempts per turn (fatigue system — prevents dungeon spamming) */
+export const MAX_FLOOR_ATTEMPTS_PER_TURN = 2;
 
 /** Healing potion restores this much HP when found */
 export const HEALING_POTION_HP = 15;

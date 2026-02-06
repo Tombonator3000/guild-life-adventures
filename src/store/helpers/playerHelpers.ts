@@ -159,5 +159,15 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
         ),
       }));
     },
+
+    cureSickness: (playerId: string) => {
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? { ...p, isSick: false }
+            : p
+        ),
+      }));
+    },
   };
 }

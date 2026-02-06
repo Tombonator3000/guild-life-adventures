@@ -173,6 +173,7 @@ export interface Player {
   equippedArmor: string | null;    // Item ID of equipped armor
   equippedShield: string | null;   // Item ID of equipped shield
   dungeonFloorsCleared: number[];  // Floors cleared at least once (e.g. [1, 2, 3])
+  dungeonAttemptsThisTurn: number; // Floor attempts this turn (capped by MAX_FLOOR_ATTEMPTS_PER_TURN)
   permanentGoldBonus: number;      // Permanent % bonus to gold from work (from rare drops)
   // Stock Market (Jones-style)
   stocks: Record<string, number>;  // stockId -> shares owned

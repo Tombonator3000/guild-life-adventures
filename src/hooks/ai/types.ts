@@ -68,6 +68,16 @@ export type AIActionType =
   | 'buy-guild-pass'
   | 'take-quest'
   | 'complete-quest'
+  | 'cure-sickness'
+  | 'take-loan'
+  | 'repay-loan'
+  | 'buy-stock'
+  | 'sell-stock'
+  | 'buy-fresh-food'
+  | 'buy-ticket'
+  | 'sell-item'
+  | 'pawn-appliance'
+  | 'buy-lottery-ticket'
   | 'end-turn';
 
 export interface AIAction {

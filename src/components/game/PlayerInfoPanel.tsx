@@ -151,7 +151,7 @@ export function PlayerInfoPanel({ player, isCurrentPlayer }: PlayerInfoPanelProp
           {player.isSick && (
             <div className="flex items-center gap-1 text-xs text-destructive">
               <Skull className="w-3 h-3" />
-              <span>Sick</span>
+              <span>Sick - Visit Enchanter!</span>
             </div>
           )}
           {player.health <= 0 && (

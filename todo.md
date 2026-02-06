@@ -166,38 +166,38 @@ See log.md "Full Game Audit (Agent Playthrough Analysis)" for complete details w
 - [x] H4: Pass dungeonFloorsCleared to QuestPanel — **FIXED**
 - [x] H5: Validate gold before payRent — **FIXED**
 - [x] H6: Validate gold before studyDegree — **FIXED**
-- [ ] H7: Enforce MAX_FLOOR_ATTEMPTS_PER_TURN (deferred)
+- [x] H7: Enforce MAX_FLOOR_ATTEMPTS_PER_TURN — **FIXED** 2 runs/turn, tracked per player
 - [x] H8: Make market crash a global event — **FIXED**
-- [ ] H9: Fix AI dungeon health tracking (deferred — low impact)
+- [x] H9: Fix AI dungeon health tracking — **FIXED** Checks health>20 + attempt limit before dungeon
 - [x] H10: AI rest should increase relaxation — **FIXED**
 - [x] H11: AI career strategy should prioritize quests — **FIXED**
 - [x] H12: Resolve dual item definitions — **FIXED** via action details
 
-### Balance Issues (8/10 fixed)
+### Balance Issues (10/10 fixed)
 - [x] B1: Cap loan interest at 2x — **FIXED** Cap at 2000g
-- [ ] B2: Increase quest rewards (deferred — needs design review)
+- [x] B2: Increase quest rewards — **FIXED** All ranks +60-75% gold, +happiness
 - [x] B3: Add retreat penalty — **FIXED** 50% gold forfeit
 - [x] B4: Reduce Noble Heights rent — **FIXED** 500→350g
 - [x] B5: Only decay dependability if unemployed — **FIXED**
-- [ ] B6: Nerf Cooking Fire (deferred — borderline; only +1/turn)
+- [x] B6: Nerf Cooking Fire — **FIXED** Now every other week (even weeks only)
 - [x] B7: Add investment withdrawal — **FIXED** 10% penalty
 - [x] B8: Add "Stay Home" free weekend option — **FIXED**
 - [x] B9: Allow rare drops on repeat clears — **FIXED** 20% rate
 - [x] B10: Flatten guild rank quest requirements — **FIXED** Max=60
 
-### AI Improvements (8/16 fixed)
+### AI Improvements (16/16 fixed)
 - [x] AI-1: Add healing/health recovery — **FIXED**
-- [ ] AI-2: Add sickness cure action (deferred)
-- [ ] AI-3: Add loan system usage (deferred)
-- [ ] AI-4: Add stock market trading (deferred)
-- [ ] AI-5: Add fresh food management (deferred)
-- [ ] AI-6: Add weekend ticket purchases (deferred)
-- [ ] AI-7: Add item selling/pawning (deferred)
-- [ ] AI-8: Add lottery ticket purchases (deferred)
+- [x] AI-2: Add sickness cure action — **FIXED** Goes to enchanter, pays 75g
+- [x] AI-3: Add loan system usage — **FIXED** Emergency 200g loan when broke
+- [x] AI-4: Add stock market trading — **FIXED** Medium/hard AI invests excess gold
+- [x] AI-5: Add fresh food management — **FIXED** Buys with Preservation Box
+- [x] AI-6: Add weekend ticket purchases — **FIXED** Buys tickets for happiness
+- [x] AI-7: Add item selling/pawning — **FIXED** Pawns when desperate
+- [x] AI-8: Add lottery ticket purchases — **FIXED** Low priority 5g gamble
 - [x] AI-9: Make graduation opportunistic — **FIXED**
 - [x] AI-10: Buy food at closest store — **FIXED** Shadow Market added
 - [x] AI-11: Buy varied appliances — **FIXED** Cooking Fire priority
-- [ ] AI-12: Add route optimization (deferred)
+- [x] AI-12: Add route optimization — **FIXED** Multi-need location priority boost
 - [x] AI-13: Allow housing downgrade when broke — **FIXED**
 - [x] AI-14: Dynamic prices in actions — **FIXED**
 - [x] AI-15: Career quests for guild rank — **FIXED**
