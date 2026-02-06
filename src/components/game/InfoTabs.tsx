@@ -248,11 +248,11 @@ function InventoryTab({ player }: InventoryTabProps) {
             <div className="flex-1 h-3 bg-wood/20 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-secondary transition-all"
-                style={{ width: `${(player.freshFood / (player.appliances['frost-chest'] ? 12 : 6)) * 100}%` }}
+                style={{ width: `${(player.freshFood / (player.appliances['frost-chest'] && !player.appliances['frost-chest'].isBroken ? 12 : 6)) * 100}%` }}
               />
             </div>
             <span className="text-xs font-bold text-wood">
-              {player.freshFood}/{player.appliances['frost-chest'] ? 12 : 6}
+              {player.freshFood}/{player.appliances['frost-chest'] && !player.appliances['frost-chest'].isBroken ? 12 : 6}
             </span>
           </div>
         </div>

@@ -92,7 +92,7 @@ export function GeneralStorePanel({
               );
             })}
             <div className="text-xs text-[#8b7355] px-2 mb-1">
-              Fresh food prevents starvation. Auto-consumed weekly.
+              Fresh food prevents starvation when regular food runs out. Spoils if Preservation Box breaks.
             </div>
           </>
         )}
