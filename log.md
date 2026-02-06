@@ -1,5 +1,92 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Forge, Cave & Turn-End Bug Fixes
+
+Three critical gameplay bugs fixed: Forge work bypass, deferred cave damage, and premature turn endings.
+
+### Bug 1: Forge Work Without Guild Hall Hiring
+
+**Files:** `LocationPanel.tsx:269-311`, `ForgePanel.tsx` (no longer imported)
+
+**Problem:** ForgePanel had a "Work" button that called `setJob()` + `workShift()` in one click, letting players work at the Forge without ever being hired through the Guild Hall. This bypassed all job qualification checks (degrees, experience, dependability, clothing).
+
+**Fix:** Replaced the ForgePanel integration with the same WorkSection pattern used by Enchanter and Shadow Market:
+- Work tab at Forge only appears if player already has a Forge job (hired via Guild Hall)
+- Uses the existing `WorkSection` component which validates `jobData.location === 'Forge'`
+- If no Forge job, shows an info message directing the player to the Guild Hall
+- ForgePanel import removed from LocationPanel
+
+### Bug 2: Cave Damage Deferred & Not Deadly Enough
+
+**Files:** `CombatView.tsx:37-48,537-560,570-594`, `CavePanel.tsx:125-138`, `useGrimwaldAI.ts:319-322`, `dungeon.ts` (all floor encounters)
+
+**Problem (2a — Deferred Damage):** Health damage from dungeon encounters was tracked in local React state only (CombatView's `runState.currentHealth`). The actual game store health was only updated once at the end of the entire floor via `handleCombatComplete → modifyHealth(result.healthChange)`. This meant:
+- Players couldn't actually die mid-combat
+- All damage was batched and applied at once after the floor
+- The game state was inconsistent with what the player saw
+
+**Fix:** Added `onEncounterHealthDelta` callback prop to CombatView:
+- After each encounter fight, the health delta is immediately applied to the game store via `modifyHealth()`
+- `checkDeath()` is called after each encounter — if the player dies, combat ends immediately (forced to floor-summary)
+- `handleCombatComplete` no longer applies healthChange (set to 0, since damage is already applied per-encounter)
+
+**Problem (2b — AI Missing Death Check):** The Grimwald AI dungeon handler applied health damage via `modifyHealth()` but never called `checkDeath()` afterward. An AI at 0 HP could survive until the next turn.
+
+**Fix:** Added `checkDeath(player.id)` call after AI dungeon combat in `useGrimwaldAI.ts`.
+
+**Problem (2c — Damage Too Low):** Dungeon encounters had low base damage values that were heavily mitigated by equipment and education bonuses, making combat trivial for prepared players.
+
+**Fix:** Increased base damage across all 5 floors (~40-60% increase):
+
+| Floor | Old Damage Range | New Damage Range | Boss Old → New |
+|-------|-----------------|------------------|----------------|
+| F1 Entrance | 4-10 | 7-15 | 10 → 15 |
+| F2 Goblin | 10-18 | 15-25 | 18 → 25 |
+| F3 Undead | 15-28 | 22-38 | 28 → 38 |
+| F4 Dragon | 25-40 | 35-55 | 40 → 55 |
+| F5 Abyss | 35-55 | 50-75 | 55 → 75 |
+
+Updated `healthRisk` display values to match new damage ranges.
+
+### Bug 3: Premature Turn Ending (Time Bug)
+
+**Files:** `GameBoard.tsx:218-278`, `workEducationHelpers.ts:155,197`
+
+**Problem (3a — setTimeout Race Condition):** `checkAutoReturn()` used `setTimeout(endTurn, 500)` when time ran out. This timeout was never cancelled and had no guard against firing after the turn had already changed. Race condition scenario:
+1. Player A's time runs out → setTimeout schedules endTurn in 500ms
+2. Something else triggers endTurn first (or turn ends naturally)
+3. Player B's turn starts
+4. The stale setTimeout fires, calling endTurn() again → Player B's turn ends instantly with no actions taken
+
+**Fix:** Added `scheduledEndTurnRef` and `autoEndTimerRef` guards:
+- `scheduledEndTurnRef` tracks which playerIndex the scheduled endTurn is for — prevents scheduling twice
+- `autoEndTimerRef` stores the timer ID so it can be cleared
+- When the timer fires, it verifies `useGameStore.getState().currentPlayerIndex === currentPlayerIndex` before calling endTurn
+- A cleanup effect resets both refs and clears the timer when `currentPlayerIndex` changes
+
+**Problem (3b — Missing Math.max in Education):** `studySession()` and `studyDegree()` in workEducationHelpers.ts computed `timeRemaining: p.timeRemaining - hours` without `Math.max(0, ...)`. Although guarded by `if (p.timeRemaining < hours) return p`, a race condition with concurrent state changes could theoretically make timeRemaining go negative.
+
+**Fix:** Added `Math.max(0, ...)` to both functions for defensive safety.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/game/LocationPanel.tsx` | Replaced ForgePanel with WorkSection pattern + info message |
+| `src/components/game/CombatView.tsx` | Added `onEncounterHealthDelta` callback, applies damage per-encounter |
+| `src/components/game/CavePanel.tsx` | Added `handleEncounterHealthDelta`, passes to CombatView |
+| `src/hooks/useGrimwaldAI.ts` | Added `checkDeath()` after AI dungeon combat |
+| `src/data/dungeon.ts` | Increased baseDamage/basePower for all 5 floors + bosses |
+| `src/components/game/GameBoard.tsx` | Added endTurn race condition guards (refs + timer cleanup) |
+| `src/store/helpers/workEducationHelpers.ts` | Added Math.max(0) to studySession and studyDegree |
+
+### Build & Test
+- TypeScript compiles cleanly
+- Vite build succeeds (65 precached entries)
+- 110/112 tests pass (2 pre-existing freshFood test failures, unrelated)
+
+---
+
 ## 2026-02-06 - Multi-Platform Game Runner (GitHub Pages + Lovable)
 
 Made the game deployable and runnable from both GitHub Pages and Lovable without any manual configuration changes. Previously the game was hardcoded for Lovable's root-path deployment; now it dynamically adapts to the hosting platform.

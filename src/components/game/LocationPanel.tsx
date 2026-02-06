@@ -21,7 +21,6 @@ import { ArmoryPanel } from './ArmoryPanel';
 import { AcademyPanel } from './AcademyPanel';
 import { LandlordPanel } from './LandlordPanel';
 import { CavePanel } from './CavePanel';
-import { ForgePanel } from './ForgePanel';
 import { HomePanel } from './HomePanel';
 import { LocationShell, type LocationTab } from './LocationShell';
 import { LOCATION_NPCS } from '@/data/npcs';
@@ -266,20 +265,53 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
           ),
         }];
 
-      case 'forge':
-        return [{
-          id: 'forge-work',
+      case 'forge': {
+        const canWorkAtForge = currentJobData && currentJobData.location === 'Forge';
+        const tabs: LocationTab[] = [];
+
+        // Work tab (only if player has a Forge job via Guild Hall)
+        tabs.push({
+          id: 'work',
           label: 'Work',
-          content: (
-            <ForgePanel
+          hidden: !canWorkAtForge,
+          content: canWorkAtForge ? (
+            <WorkSection
               player={player}
-              priceModifier={priceModifier}
-              setJob={setJob}
+              locationName="Forge"
               workShift={workShift}
-              modifyHappiness={modifyHappiness}
+              variant="wood-frame"
             />
-          ),
-        }];
+          ) : null,
+        });
+
+        // If no forge job, show info message
+        if (!canWorkAtForge) {
+          tabs.push({
+            id: 'info',
+            label: 'Forge',
+            content: (
+              <div className="space-y-3">
+                <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+                  <Hammer className="w-4 h-4" /> The Forge
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  Industrial work. Hard labor but steady pay.
+                </p>
+                <div className="bg-[#2d1f0f] border border-[#8b7355] rounded p-3 text-center">
+                  <p className="text-sm text-[#e0d4b8] font-display mb-2">
+                    No Forge Job
+                  </p>
+                  <p className="text-xs text-[#a09080]">
+                    Visit the <span className="text-[#c9a227] font-bold">Guild Hall</span> to apply for a Forge position first.
+                  </p>
+                </div>
+              </div>
+            ),
+          });
+        }
+
+        return tabs;
+      }
 
       case 'academy':
         return [{

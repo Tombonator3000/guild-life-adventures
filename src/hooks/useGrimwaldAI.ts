@@ -320,6 +320,10 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
           applyRareDrop(player.id, floor.rareDrop.id);
         }
 
+        // Check for death after dungeon combat (was missing — AI could survive at 0 HP)
+        const { checkDeath } = useGameStore.getState();
+        checkDeath(player.id);
+
         console.log(`[Grimwald AI] Dungeon Floor ${floorId}: ${result.success ? 'CLEARED' : 'FAILED'}. ` +
           `+${actualGold}g, ${result.healthChange} HP. ${result.log.join(' | ')}`);
         return true;

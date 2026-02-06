@@ -152,7 +152,7 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
           return {
             ...p,
             gold: p.gold - cost,
-            timeRemaining: p.timeRemaining - hours,
+            timeRemaining: Math.max(0, p.timeRemaining - hours),
             educationProgress: newProgress,
           };
         }),
@@ -194,7 +194,7 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
           return {
             ...p,
             gold: p.gold - cost,
-            timeRemaining: p.timeRemaining - hours,
+            timeRemaining: Math.max(0, p.timeRemaining - hours),
             degreeProgress: newProgress,
           };
         }),

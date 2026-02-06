@@ -289,6 +289,17 @@
   - [x] 404.html SPA redirect for GitHub Pages routing
   - [x] All 112 tests pass, both build targets succeed
 
+## Completed (2026-02-06)
+
+- [x] Forge, Cave & Turn-End Bug Fixes — 3 critical gameplay bugs fixed
+  - [x] Bug 1: Forge work bypass — replaced ForgePanel with WorkSection (requires Guild Hall hire)
+  - [x] Bug 2a: Cave damage deferred — now applied per-encounter via onEncounterHealthDelta callback
+  - [x] Bug 2b: Mid-combat death — checkDeath called after each encounter, combat ends if player dies
+  - [x] Bug 2c: AI missing death check — added checkDeath after Grimwald dungeon combat
+  - [x] Bug 2d: Cave damage too low — increased base damage 40-60% across all 5 floors
+  - [x] Bug 3a: Turn-end race condition — added scheduledEndTurnRef + timer guards to prevent double endTurn
+  - [x] Bug 3b: Education Math.max — added Math.max(0) safety to studySession and studyDegree
+
 ## In Progress
 
 *No active tasks*

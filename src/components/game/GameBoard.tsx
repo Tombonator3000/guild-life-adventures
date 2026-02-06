@@ -90,6 +90,10 @@ export function GameBoard() {
   const [animationPath, setAnimationPath] = useState<LocationId[] | null>(null);
   const pendingMoveRef = useRef<{ playerId: string; destination: LocationId; timeCost: number; isPartial?: boolean } | null>(null);
 
+  // Guard against double endTurn — tracks which playerIndex the scheduled endTurn is for
+  const scheduledEndTurnRef = useRef<number | null>(null);
+  const autoEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Get current player BEFORE useEffects that depend on it
   const currentPlayer = useCurrentPlayer();
 
@@ -225,16 +229,30 @@ export function GameBoard() {
       if (isDead) {
         setEventMessage(`${currentPlayer.name} has died! Game over for this player.`);
         setPhase('event');
-        // Move to next player's turn after death
-        setTimeout(() => {
-          endTurn();
-        }, 100);
+        // Move to next player's turn after death — guard against double fire
+        if (scheduledEndTurnRef.current !== currentPlayerIndex) {
+          scheduledEndTurnRef.current = currentPlayerIndex;
+          if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
+          autoEndTimerRef.current = setTimeout(() => {
+            // Only fire if still the same player's turn
+            const storeIdx = useGameStore.getState().currentPlayerIndex;
+            if (storeIdx === currentPlayerIndex) {
+              endTurn();
+            }
+            scheduledEndTurnRef.current = null;
+            autoEndTimerRef.current = null;
+          }, 100);
+        }
         return true;
       }
     }
 
     // Check if time has run out
     if (currentPlayer.timeRemaining <= 0) {
+      // Guard: don't schedule a second endTurn for the same player
+      if (scheduledEndTurnRef.current === currentPlayerIndex) return true;
+      scheduledEndTurnRef.current = currentPlayerIndex;
+
       // Get player's home location based on housing
       const homeLocation: LocationId = currentPlayer.housing === 'noble' ? 'noble-heights' : 'slums';
 
@@ -243,15 +261,30 @@ export function GameBoard() {
         toast.info(`${currentPlayer.name}'s time is up! Returning home...`);
       }
 
-      // End turn automatically
-      setTimeout(() => {
-        endTurn();
+      // End turn automatically — guarded with playerIndex check
+      if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
+      autoEndTimerRef.current = setTimeout(() => {
+        const storeIdx = useGameStore.getState().currentPlayerIndex;
+        if (storeIdx === currentPlayerIndex) {
+          endTurn();
+        }
+        scheduledEndTurnRef.current = null;
+        autoEndTimerRef.current = null;
       }, 500);
       return true;
     }
 
     return false;
-  }, [currentPlayer, checkDeath, setEventMessage, setPhase, endTurn]);
+  }, [currentPlayer, checkDeath, setEventMessage, setPhase, endTurn, currentPlayerIndex]);
+
+  // Reset auto-end guard when player turn changes
+  useEffect(() => {
+    scheduledEndTurnRef.current = null;
+    if (autoEndTimerRef.current) {
+      clearTimeout(autoEndTimerRef.current);
+      autoEndTimerRef.current = null;
+    }
+  }, [currentPlayerIndex]);
 
   // Monitor time and health changes
   useEffect(() => {

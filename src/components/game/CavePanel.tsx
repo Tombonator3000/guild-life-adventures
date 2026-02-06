@@ -122,6 +122,15 @@ export function CavePanel({
     setActiveFloor(floor);
   };
 
+  // ─── Per-encounter health application (immediate damage) ──
+
+  const handleEncounterHealthDelta = (delta: number): boolean => {
+    if (delta !== 0) modifyHealth(player.id, delta);
+    // Check for death immediately after each encounter
+    const { checkDeath } = useGameStore.getState();
+    return checkDeath(player.id);
+  };
+
   // ─── Combat complete — apply results ───────────────────────
 
   const handleCombatComplete = (result: CombatRunResult) => {
@@ -130,10 +139,8 @@ export function CavePanel({
     // Apply gold earned
     if (result.goldEarned > 0) modifyGold(player.id, result.goldEarned);
 
-    // Apply actual health change (uses real HP delta, not raw totals which can include wasted overheal)
-    if (result.healthChange !== 0) modifyHealth(player.id, result.healthChange);
-
-    // Check for death after dungeon combat damage
+    // Health was already applied per-encounter via handleEncounterHealthDelta
+    // Only do a final death check in case something was missed
     const { checkDeath } = useGameStore.getState();
     checkDeath(player.id);
 
@@ -218,6 +225,7 @@ export function CavePanel({
         onCancel={() => setActiveFloor(null)}
         onSpendTime={(hours: number) => spendTime(player.id, hours)}
         encounterTimeCost={getEncounterTimeCost(activeFloor, combatStats)}
+        onEncounterHealthDelta={handleEncounterHealthDelta}
       />
     );
   }

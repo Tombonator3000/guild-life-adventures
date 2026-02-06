@@ -45,6 +45,8 @@ interface CombatViewProps {
   onSpendTime: (hours: number) => void;
   /** Time cost per encounter in hours */
   encounterTimeCost: number;
+  /** Callback to apply health change per-encounter (immediate damage to game store) */
+  onEncounterHealthDelta: (delta: number) => boolean;
 }
 
 /** Final result returned to CavePanel when combat ends */
@@ -519,7 +521,7 @@ function FloorSummaryView({
 
 // ─── Main CombatView Component ────────────────────────────────
 
-export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, encounterTimeCost }: CombatViewProps) {
+export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, encounterTimeCost, onEncounterHealthDelta }: CombatViewProps) {
   const combatStats: CombatStats = calculateCombatStats(
     player.equippedWeapon,
     player.equippedArmor,
@@ -538,8 +540,23 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
     const encounter = runState.encounters[runState.currentEncounterIndex];
     const result = resolveEncounter(encounter, combatStats, eduBonuses, runState.currentHealth);
     const newState = applyEncounterResult(runState, result);
+
+    // Apply health change immediately to game store (per-encounter, not deferred)
+    const healthDelta = newState.currentHealth - runState.currentHealth;
+    if (healthDelta !== 0) {
+      const playerDied = onEncounterHealthDelta(healthDelta);
+      if (playerDied) {
+        // Player died mid-combat — force to floor summary immediately
+        setRunState({
+          ...newState,
+          phase: 'floor-summary',
+        });
+        return;
+      }
+    }
+
     setRunState(newState);
-  }, [runState, combatStats, eduBonuses]);
+  }, [runState, combatStats, eduBonuses, onEncounterHealthDelta]);
 
   // ─── Continue to next encounter (costs time) ─────────────
 
@@ -577,14 +594,13 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
     const lootMult = getLootMultiplier(floor, player.guildRank);
     // Defeat forfeits 75% gold (worse than retreat's 50%) so retreat is always the better choice
     const defeatGoldPenalty = (!runState.bossDefeated && !runState.retreated) ? 0.25 : 1.0;
-    // Use actual HP delta instead of raw totals (totalHealed can include wasted overheal)
-    const healthChange = runState.currentHealth - runState.startHealth;
+    // healthChange=0 here because damage was already applied per-encounter via onEncounterHealthDelta
     onComplete({
       success: runState.bossDefeated,
       goldEarned: Math.floor(runState.totalGold * lootMult * defeatGoldPenalty),
       totalDamage: runState.totalDamage,
       totalHealed: runState.totalHealed,
-      healthChange,
+      healthChange: 0, // Already applied per-encounter
       isFirstClear: runState.isFirstClear && runState.bossDefeated,
       retreated: runState.retreated,
       rareDropName: runState.rareDropName,
