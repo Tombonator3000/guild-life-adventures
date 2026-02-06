@@ -1,5 +1,51 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Inventory & Info Tabs UI System
+
+Added a new tabbed info panel inspired by classic RPG inventory screens, replacing the unused center panel space when no location is selected.
+
+### Feature: InfoTabs Component
+**Reference:** Medieval RPG inventory screens with equipment slots and stats displays
+
+**Implementation:**
+- 3-tab navigation bar with medieval shield-styled buttons: Inventory, Goals, Stats
+- Tabs styled with parchment background and wood-grain accents
+- Responsive layout that fills the center panel area
+
+### Inventory Tab
+- **Equipment Grid**: Character silhouette with 3 equipment slots (Weapon, Armor, Shield)
+- **Combat Stats Summary**: Attack, Defense, Block % displayed in wood-styled bar
+- **Appliances Section**: Grid view of owned appliances with broken status indicator
+- **Stored Items**: Grid view of durables stored at apartment
+- **Fresh Food Storage**: Progress bar showing food units stored
+- **Weekend Tickets**: List of owned event tickets
+
+### Goals Tab  
+- **Victory Goals**: Reuses GoalProgress component for wealth/happiness/education/career
+- **Dungeon Progress**: Visual floor indicator (1-5) with completion status
+- **Quest Stats**: Quests completed count and Guild Pass status
+
+### Stats Tab
+- **Character Info**: Guild rank, rank level, housing status
+- **Employment Stats**: Current job, wage, shifts worked, dependability, experience
+- **Financial Stats**: Gold on hand, bank savings, investments, loan debt, gold bonus
+- **Education**: List of completed degrees
+- **Misc Stats**: Relaxation, max health, sickness status
+
+### Files Created/Modified
+| File | Changes |
+|------|---------|
+| `src/components/game/InfoTabs.tsx` | New component (450 lines) - complete tabbed info panel |
+| `src/components/game/GameBoard.tsx` | Integrated InfoTabs when no location selected |
+
+### Technical Notes
+- Uses existing design tokens from index.css (parchment, wood, gold, etc.)
+- Imports player data from existing stores and data files
+- Equipment display pulls from ARMORY_ITEMS for item details
+- Stats pull from multiple data sources (jobs, housing, items)
+
+---
+
 ## 2026-02-06 - Feature Batch B: Missing Jones Features (6 systems)
 
 Implemented 6 missing Jones in the Fast Lane features with fantasy equivalents.
