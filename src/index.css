@@ -179,19 +179,15 @@
 
   .location-zone {
     @apply absolute cursor-pointer transition-all duration-200;
-    border: 3px solid transparent;
+    border: none;
     border-radius: 8px;
   }
 
   .location-zone:hover {
-    border-color: hsl(var(--gold));
-    box-shadow: 0 0 20px hsl(var(--gold) / 0.5), inset 0 0 30px hsl(var(--gold) / 0.1);
-    background: hsl(var(--gold) / 0.1);
+    /* No visual highlight - only tooltip shows */
   }
 
   .location-zone.active {
-    border-color: hsl(var(--gold));
-    box-shadow: 0 0 30px hsl(var(--gold) / 0.7);
-    background: hsl(var(--gold) / 0.15);
+    /* No visual highlight - only tooltip shows */
   }
 }
