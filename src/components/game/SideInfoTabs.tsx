@@ -2,7 +2,7 @@
 // Combines player resource bars with Inventory, Goals, and Stats tabs
 
 import { useState } from 'react';
-import { Package, Target, BarChart3, Clock, Coins, Heart, Smile, Utensils, Home, Sparkles, Skull, Shield } from 'lucide-react';
+import { Package, Target, BarChart3, Clock, Coins, Heart, Smile, Utensils, Home, Sparkles, Skull, Shield, Shirt } from 'lucide-react';
 import type { Player, GoalSettings } from '@/types/game.types';
 import { GoalProgress } from './GoalProgress';
 import { InventoryGrid } from './InventoryGrid';
