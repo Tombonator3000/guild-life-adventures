@@ -220,12 +220,12 @@ function StatsTab({ player }: { player: Player }) {
       <StatSection title="Education">
         <StatRow icon={<GraduationCap className="w-3.5 h-3.5" />} label="Degrees" value={player.completedDegrees.length.toString()} />
         {player.completedDegrees.slice(0, 3).map(degreeId => (
-          <div key={degreeId} className="text-[9px] text-secondary-foreground pl-4 truncate font-medium">
+          <div key={degreeId} className="text-[9px] text-green-700 pl-4 truncate font-medium">
             * {degreeId.replace(/-/g, ' ')}
           </div>
         ))}
         {player.completedDegrees.length > 3 && (
-          <div className="text-[9px] text-wood/60 pl-4">
+          <div className="text-[9px] text-amber-700 pl-4">
             +{player.completedDegrees.length - 3} more
           </div>
         )}
