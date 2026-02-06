@@ -64,6 +64,9 @@ export function createQuestActions(set: SetFn, get: GetFn) {
 
       // Check for guild rank promotion
       get().promoteGuildRank(playerId);
+
+      // Check if quest health risk killed the player
+      get().checkDeath(playerId);
     },
 
     abandonQuest: (playerId: string) => {
@@ -90,6 +93,12 @@ export function createQuestActions(set: SetFn, get: GetFn) {
                 weeksSinceRent: 0,
                 inventory: [], // Lose all items
                 durables: {}, // Lose all durables too
+                appliances: {},
+                equippedWeapon: null,
+                equippedArmor: null,
+                equippedShield: null,
+                rentPrepaidWeeks: 0,
+                lockedRent: 0,
                 happiness: Math.max(0, p.happiness - 30),
               }
             : p
@@ -140,7 +149,7 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       if (!player) return;
 
       const rankOrder = ['novice', 'apprentice', 'journeyman', 'adept', 'veteran', 'elite', 'guild-master'] as const;
-      const requirements = { novice: 0, apprentice: 3, journeyman: 10, adept: 25, veteran: 50, elite: 100, 'guild-master': 200 };
+      const requirements = { novice: 0, apprentice: 3, journeyman: 8, adept: 15, veteran: 25, elite: 40, 'guild-master': 60 };
 
       const currentIndex = rankOrder.indexOf(player.guildRank);
       if (currentIndex >= rankOrder.length - 1) return; // Already max rank

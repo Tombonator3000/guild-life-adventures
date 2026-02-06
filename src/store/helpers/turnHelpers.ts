@@ -16,6 +16,16 @@ import { updateStockPrices } from '@/data/stocks';
 import { selectWeekendActivity } from '@/data/weekends';
 import type { SetFn, GetFn } from '../storeTypes';
 
+// C9: Helper to get home location for all housing tiers
+function getHomeLocation(housing: string): LocationId {
+  switch (housing) {
+    case 'noble': return 'noble-heights';
+    case 'modest': return 'landlord'; // Modest housing near landlord
+    case 'slums': return 'slums';
+    default: return 'rusty-tankard'; // Homeless sleep near tavern
+  }
+}
+
 export function createTurnActions(set: SetFn, get: GetFn) {
   return {
     endTurn: () => {
@@ -82,8 +92,8 @@ export function createTurnActions(set: SetFn, get: GetFn) {
       } else {
         // Start next player's turn (includes apartment robbery check)
         const nextPlayer = state.players[nextIndex];
-        // Move player to their home location at start of turn
-        const homeLocation: LocationId = nextPlayer.housing === 'noble' ? 'noble-heights' : 'slums';
+        // C9: Move player to their home location at start of turn
+        const homeLocation: LocationId = getHomeLocation(nextPlayer.housing);
         set({
           currentPlayerIndex: nextIndex,
           players: state.players.map((p, index) =>
@@ -101,10 +111,14 @@ export function createTurnActions(set: SetFn, get: GetFn) {
     startTurn: (playerId: string) => {
       const state = get();
       const player = state.players.find(p => p.id === playerId);
-      if (!player || player.isAI) return;
+      // C2: AI players no longer skipped - they get all the same penalties
+      if (!player) return;
 
-      // Move player to their home location at start of turn (like Jones in the Fast Lane)
-      const homeLocation: LocationId = player.housing === 'noble' ? 'noble-heights' : 'slums';
+      // C8: Collect event messages instead of overwriting with each set() call
+      const eventMessages: string[] = [];
+
+      // C9: Move player to their home location at start of turn (like Jones in the Fast Lane)
+      const homeLocation: LocationId = getHomeLocation(player.housing);
       if (player.currentLocation !== homeLocation) {
         set((state) => ({
           players: state.players.map((p) =>
@@ -141,8 +155,8 @@ export function createTurnActions(set: SetFn, get: GetFn) {
               ? { ...p, timeRemaining: Math.max(0, p.timeRemaining - STARVATION_TIME_PENALTY) }
               : p
           ),
-          eventMessage: `${player.name} is starving! Lost ${STARVATION_TIME_PENALTY} Hours searching for food.`,
         }));
+        eventMessages.push(`${player.name} is starving! Lost ${STARVATION_TIME_PENALTY} Hours searching for food.`);
 
         // B4: Doctor Visit trigger from starvation (25% chance)
         if (Math.random() < 0.25) {
@@ -158,10 +172,13 @@ export function createTurnActions(set: SetFn, get: GetFn) {
                   }
                 : p
             ),
-            eventMessage: `${player.name} collapsed from hunger and was taken to the healer! -10 Hours, -4 Happiness, -${doctorCost}g.`,
           }));
+          eventMessages.push(`${player.name} collapsed from hunger and was taken to the healer! -10 Hours, -4 Happiness, -${doctorCost}g.`);
         }
       }
+
+      // C10: Re-read player after potential gold changes from starvation doctor visit
+      let currentPlayer = get().players.find(p => p.id === playerId)!;
 
       // B4: Doctor Visit trigger from low relaxation (<=15, 20% chance)
       if (!isStarving && player.relaxation <= 15 && Math.random() < 0.20) {
@@ -177,8 +194,11 @@ export function createTurnActions(set: SetFn, get: GetFn) {
                 }
               : p
           ),
-          eventMessage: `${player.name} is exhausted and collapsed! The healer charged ${doctorCost}g. -10 Hours, -4 Happiness.`,
         }));
+        eventMessages.push(`${player.name} is exhausted and collapsed! The healer charged ${doctorCost}g. -10 Hours, -4 Happiness.`);
+
+        // C10: Re-read player after gold change from relaxation doctor visit
+        currentPlayer = get().players.find(p => p.id === playerId)!;
       }
 
       // Fresh food spoilage: if no Preservation Box, all fresh food spoils
@@ -187,8 +207,8 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           players: state.players.map((p) =>
             p.id === playerId ? { ...p, freshFood: 0 } : p
           ),
-          eventMessage: `${player.name}'s fresh food spoiled! No Preservation Box to keep it fresh.`,
         }));
+        eventMessages.push(`${player.name}'s fresh food spoiled! No Preservation Box to keep it fresh.`);
       } else if (hasPreservationBox) {
         // Cap fresh food to max storage
         const hasFrostChest = player.appliances['frost-chest'] && !player.appliances['frost-chest'].isBroken;
@@ -216,8 +236,8 @@ export function createTurnActions(set: SetFn, get: GetFn) {
                 }
               : p
           ),
-          eventMessage: `${player.name} slept on the streets. -${HOMELESS_HEALTH_PENALTY} health, -${HOMELESS_TIME_PENALTY} hours.`,
         }));
+        eventMessages.push(`${player.name} slept on the streets. -${HOMELESS_HEALTH_PENALTY} health, -${HOMELESS_TIME_PENALTY} hours.`);
       }
 
       // Check for apartment robbery at the start of player's turn
@@ -230,7 +250,7 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           delete newDurables[stolen.itemId];
         }
 
-        // Apply robbery effects
+        // Apply robbery effects (gameplay changes apply to all players)
         set((state) => ({
           players: state.players.map((p) =>
             p.id === playerId
@@ -241,23 +261,31 @@ export function createTurnActions(set: SetFn, get: GetFn) {
                 }
               : p
           ),
-          shadowfingersEvent: {
-            type: 'apartment',
-            result: robberyResult,
-          },
         }));
+
+        // C2: Only show UI notification for non-AI players
+        if (!player.isAI) {
+          set({
+            shadowfingersEvent: {
+              type: 'apartment',
+              result: robberyResult,
+            },
+          });
+        }
       }
 
       // Jones-style appliance breakage check (only if player has >500 gold)
-      if (player.gold > 500) {
-        const applianceIds = Object.keys(player.appliances);
+      // C10: Use currentPlayer (fresh data) for gold check
+      if (currentPlayer.gold > 500) {
+        const applianceIds = Object.keys(currentPlayer.appliances);
         for (const applianceId of applianceIds) {
-          const ownedAppliance = player.appliances[applianceId];
-          if (!ownedAppliance.isBroken && checkApplianceBreakage(ownedAppliance.source, player.gold)) {
+          const ownedAppliance = currentPlayer.appliances[applianceId];
+          if (!ownedAppliance.isBroken && checkApplianceBreakage(ownedAppliance.source, currentPlayer.gold)) {
             const repairCost = calculateRepairCost(ownedAppliance.originalPrice);
             const appliance = getAppliance(applianceId);
 
-            // Mark as broken and charge repair cost, lose happiness
+            // C13: Mark as broken and lose happiness, but don't charge repair cost
+            // Player can choose to repair at Enchanter/Market later
             set((state) => ({
               players: state.players.map((p) => {
                 if (p.id !== playerId) return p;
@@ -266,16 +294,21 @@ export function createTurnActions(set: SetFn, get: GetFn) {
                 return {
                   ...p,
                   appliances: newAppliances,
-                  gold: Math.max(0, p.gold - repairCost),
                   happiness: Math.max(0, p.happiness - 1),
                 };
               }),
-              applianceBreakageEvent: {
-                playerId,
-                applianceId,
-                repairCost,
-              },
             }));
+
+            // C2: Only show UI notification for non-AI players
+            if (!player.isAI) {
+              set({
+                applianceBreakageEvent: {
+                  playerId,
+                  applianceId,
+                  repairCost,
+                },
+              });
+            }
 
             // Only trigger one breakage per turn
             break;
@@ -305,8 +338,13 @@ export function createTurnActions(set: SetFn, get: GetFn) {
               ? { ...p, gold: p.gold + income }
               : p
           ),
-          eventMessage: `Your Arcane Tome generated ${income} gold through mystical knowledge!`,
         }));
+        eventMessages.push(`Your Arcane Tome generated ${income} gold through mystical knowledge!`);
+      }
+
+      // C8: Emit collected event messages at end of startTurn (non-AI only)
+      if (!player.isAI && eventMessages.length > 0) {
+        set({ eventMessage: eventMessages.join('\n') });
       }
     },
 
@@ -316,6 +354,9 @@ export function createTurnActions(set: SetFn, get: GetFn) {
       const isRentDue = newWeek % 4 === 0;
       const isClothingDegradation = newWeek % 8 === 0;
       let eventMessages: string[] = [];
+
+      // H8: Check market crash ONCE as a global event (outside player loop)
+      const crashResult = checkMarketCrash(true);
 
       // Process all players for week-end effects
       const updatedPlayers = state.players.map((player) => {
@@ -329,8 +370,10 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         // Reset newspaper for new week
         p.hasNewspaper = false;
 
-        // Dependability decay (decreases 5% each week if not working)
-        p.dependability = Math.max(0, p.dependability - 5);
+        // B5: Dependability decay only if player doesn't have a job
+        if (!p.currentJob) {
+          p.dependability = Math.max(0, p.dependability - 5);
+        }
 
         // If dependability too low, may lose job
         if (p.currentJob && p.dependability < 20) {
@@ -342,9 +385,8 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           }
         }
 
-        // Jones-style Market Crash events (affects employed players)
+        // H8: Apply global market crash result to employed players
         if (p.currentJob) {
-          const crashResult = checkMarketCrash(true);
           if (crashResult.type === 'layoff') {
             p.currentJob = null;
             p.currentWage = 0;
@@ -382,9 +424,9 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           }
         }
 
-        // Rent debt accumulation for garnishment
+        // C4: Rent debt accumulation for garnishment - use lockedRent if available
         if (p.housing !== 'homeless' && p.weeksSinceRent >= 4) {
-          const rentCost = RENT_COSTS[p.housing];
+          const rentCost = p.lockedRent > 0 ? p.lockedRent : RENT_COSTS[p.housing];
           p.rentDebt += Math.floor(rentCost * 0.25); // Add 25% of rent as debt each week
         }
 
@@ -394,6 +436,12 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           p.weeksSinceRent = 0;
           p.rentDebt = 0; // Clear debt on eviction
           p.inventory = []; // Lose all items
+          // H1: Clear appliances and equipment on eviction
+          p.durables = {};
+          p.appliances = {};
+          p.equippedWeapon = null;
+          p.equippedArmor = null;
+          p.equippedShield = null;
           p.happiness = Math.max(0, p.happiness - 30);
           if (!p.isAI) {
             eventMessages.push(`${p.name} has been evicted! All possessions lost.`);
@@ -439,6 +487,8 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         if (p.loanAmount > 0) {
           const interest = Math.ceil(p.loanAmount * 0.10);
           p.loanAmount += interest;
+          // B1: Cap loan at 2x max borrow amount (max borrow is 1000)
+          p.loanAmount = Math.min(p.loanAmount, 2000);
           p.loanWeeksRemaining = Math.max(0, p.loanWeeksRemaining - 1);
 
           // Loan default: if weeks run out, forced repayment from savings/gold
@@ -490,19 +540,21 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         }
 
         // === Lottery Drawing (Fortune's Wheel) ===
+        // C11: Fixed lottery EV - negative EV as intended
+        // EV per ticket: 0.001*500 + 0.059*20 = 0.5 + 1.18 = 1.68g per 10g ticket
         if (p.lotteryTickets > 0) {
           let lotteryWinnings = 0;
           for (let i = 0; i < p.lotteryTickets; i++) {
             const roll = Math.random();
-            if (roll < 0.02) { // 2% grand prize per ticket
-              lotteryWinnings += 5000;
-            } else if (roll < 0.07) { // 5% small prize per ticket
-              lotteryWinnings += 50;
+            if (roll < 0.001) { // 0.1% grand prize per ticket
+              lotteryWinnings += 500;
+            } else if (roll < 0.06) { // 5.9% small prize per ticket
+              lotteryWinnings += 20;
             }
           }
           if (lotteryWinnings > 0) {
             p.gold += lotteryWinnings;
-            p.happiness = Math.min(100, p.happiness + (lotteryWinnings >= 5000 ? 25 : 5));
+            p.happiness = Math.min(100, p.happiness + (lotteryWinnings >= 500 ? 25 : 5));
             if (!p.isAI) {
               eventMessages.push(`Fortune's Wheel: ${p.name} won ${lotteryWinnings}g!`);
             }
@@ -515,11 +567,30 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         // Relaxation decay (-1 per week, Jones-style)
         p.relaxation = Math.max(10, p.relaxation - 1);
 
-        // Rent tracking
-        p.weeksSinceRent += 1;
+        // C3: Rent tracking - consume prepaid weeks first
+        if (p.rentPrepaidWeeks > 0) {
+          p.rentPrepaidWeeks -= 1;
+        } else {
+          p.weeksSinceRent += 1;
+        }
 
         return p;
       });
+
+      // C5: Check for deaths after week-end processing
+      for (const p of updatedPlayers) {
+        if (!p.isGameOver && p.health <= 0) {
+          // Inline death check for processWeekEnd
+          if (p.savings >= 100) {
+            p.health = 50;
+            p.savings -= 100;
+            eventMessages.push(`${p.name} was revived by healers! 100g taken from savings.`);
+          } else {
+            p.isGameOver = true;
+            eventMessages.push(`${p.name} has perished!`);
+          }
+        }
+      }
 
       // === Update Stock Prices (Jones-style) ===
       const isMarketCrash = Math.random() < 0.05; // 5% chance of market crash
@@ -556,9 +627,9 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         return;
       }
 
-      // Move first player to their home location
+      // C9: Move first player to their home location
       const firstPlayer = updatedPlayers[firstAliveIndex];
-      const firstPlayerHome: LocationId = firstPlayer.housing === 'noble' ? 'noble-heights' : 'slums';
+      const firstPlayerHome: LocationId = getHomeLocation(firstPlayer.housing);
 
       set({
         week: newWeek,

@@ -7,6 +7,7 @@
 import type { Player, LocationId, HousingTier } from '@/types/game.types';
 import { RENT_COSTS } from '@/types/game.types';
 import { getJob } from '@/data/jobs';
+import { DEGREES } from '@/data/education';
 import { calculatePathDistance } from '@/data/locations';
 
 import type { DifficultySettings, AIAction } from './types';
@@ -50,18 +51,35 @@ export function generateActions(
 
   // 1. FOOD - Prevent starvation (-20 hours penalty is devastating)
   if (urgency.food > 0.5) {
-    const foodCost = 15; // Approximate food cost
+    const foodCost = 6; // Cheapest food option (Shadow Market mystery meat)
     if (player.gold >= foodCost) {
       if (currentLocation === 'rusty-tankard') {
         actions.push({
           type: 'buy-food',
           priority: 100, // Highest priority
           description: 'Buy food to prevent starvation',
-          details: { cost: 8, foodGain: 25 },
+          details: { cost: 12, foodGain: 15 },
+        });
+      } else if (currentLocation === 'shadow-market') {
+        // Shadow Market has cheap food too
+        actions.push({
+          type: 'buy-food',
+          priority: 98,
+          description: 'Buy food at Shadow Market',
+          details: { cost: 6, foodGain: 10 },
         });
       } else {
-        const movementCost = moveCost('rusty-tankard');
-        if (player.timeRemaining > movementCost + 2) {
+        // Go to whichever food source is closer
+        const tavernCost = moveCost('rusty-tankard');
+        const marketCost = moveCost('shadow-market');
+        if (marketCost < tavernCost && player.timeRemaining > marketCost + 2) {
+          actions.push({
+            type: 'move',
+            location: 'shadow-market',
+            priority: 93,
+            description: 'Travel to Shadow Market for cheap food',
+          });
+        } else if (player.timeRemaining > tavernCost + 2) {
           actions.push({
             type: 'move',
             location: 'rusty-tankard',
@@ -115,6 +133,28 @@ export function generateActions(
           location: moveCost('armory') < moveCost('general-store') ? 'armory' : 'general-store',
           priority: 70,
           description: 'Travel to buy clothing',
+        });
+      }
+    }
+  }
+
+  // 4. HEALTH - Visit healer if health is low
+  if (player.health < 50 && player.gold >= 30) {
+    if (currentLocation === 'enchanter') {
+      actions.push({
+        type: 'heal',
+        priority: 80,
+        description: 'Visit healer to recover health',
+        details: { cost: 30, healAmount: 25 },
+      });
+    } else {
+      const moveToHealer = moveCost('enchanter');
+      if (player.timeRemaining > moveToHealer + 2) {
+        actions.push({
+          type: 'move',
+          location: 'enchanter',
+          priority: 75,
+          description: 'Travel to healer for health recovery',
         });
       }
     }
@@ -219,21 +259,33 @@ export function generateActions(
     case 'happiness':
       // Buy things that increase happiness
       // Appliances give one-time happiness bonus
-      if (player.gold > 300 && Object.keys(player.appliances).length < 3) {
-        if (currentLocation === 'enchanter') {
-          actions.push({
-            type: 'buy-appliance',
-            priority: 65,
-            description: 'Buy magical appliance for happiness',
-            details: { applianceId: 'scrying-mirror' },
-          });
-        } else if (player.timeRemaining > moveCost('enchanter') + 2) {
-          actions.push({
-            type: 'move',
-            location: 'enchanter',
-            priority: 60,
-            description: 'Travel to buy appliances',
-          });
+      if (player.gold > 200) {
+        // Priority: Cooking Fire (+1 hap/turn), then others
+        const wantedAppliances = [
+          { id: 'cooking-fire', cost: 276, priority: 68 },
+          { id: 'scrying-mirror', cost: 525, priority: 63 },
+          { id: 'preservation-box', cost: 876, priority: 60 },
+        ];
+        for (const wanted of wantedAppliances) {
+          if (!player.appliances[wanted.id] && player.gold >= wanted.cost) {
+            if (currentLocation === 'enchanter') {
+              actions.push({
+                type: 'buy-appliance',
+                priority: wanted.priority,
+                description: `Buy ${wanted.id} for happiness/utility`,
+                details: { applianceId: wanted.id, cost: wanted.cost, source: 'enchanter' },
+              });
+              break; // Only try to buy one at a time
+            } else if (player.timeRemaining > moveCost('enchanter') + 2) {
+              actions.push({
+                type: 'move',
+                location: 'enchanter',
+                priority: wanted.priority - 5,
+                description: 'Travel to buy appliances',
+              });
+              break;
+            }
+          }
         }
       }
 
@@ -297,7 +349,41 @@ export function generateActions(
           }
         }
       }
+
+      // Take and complete quests for guild rank promotion
+      if (player.hasGuildPass && !player.activeQuest) {
+        if (currentLocation === 'guild-hall') {
+          actions.push({
+            type: 'take-quest',
+            priority: 72,
+            description: 'Take quest for guild rank',
+            details: { questId: 'patrol-e' }, // Simple quest
+          });
+        } else if (player.timeRemaining > moveCost('guild-hall') + 2) {
+          actions.push({
+            type: 'move',
+            location: 'guild-hall',
+            priority: 68,
+            description: 'Travel to guild hall for quests',
+          });
+        }
+      }
       break;
+  }
+
+  // Always check for ready graduations (free +5 happiness, +5 dependability)
+  if (currentLocation === 'academy') {
+    for (const [degreeId, degree] of Object.entries(DEGREES)) {
+      const progress = player.degreeProgress[degreeId as keyof typeof player.degreeProgress] || 0;
+      if (progress >= degree.sessionsRequired && !player.completedDegrees.includes(degreeId as any)) {
+        actions.push({
+          type: 'graduate',
+          priority: 88, // Very high - free bonuses
+          description: `Graduate from ${degree.name}`,
+          details: { degreeId },
+        });
+      }
+    }
   }
 
   // ============================================
@@ -381,6 +467,27 @@ export function generateActions(
         priority: 50,
         description: 'Travel to upgrade housing',
       });
+    }
+  }
+
+  // Downgrade housing if can't afford rent
+  if (player.housing !== 'homeless' && player.gold < RENT_COSTS[player.housing] && player.weeksSinceRent >= 3) {
+    if (player.housing === 'noble') {
+      if (currentLocation === 'landlord') {
+        actions.push({
+          type: 'downgrade-housing',
+          priority: 80,
+          description: 'Downgrade housing to save money',
+          details: { tier: 'slums' as HousingTier },
+        });
+      } else if (player.timeRemaining > moveCost('landlord') + 2) {
+        actions.push({
+          type: 'move',
+          location: 'landlord',
+          priority: 75,
+          description: 'Travel to landlord to downgrade housing',
+        });
+      }
     }
   }
 

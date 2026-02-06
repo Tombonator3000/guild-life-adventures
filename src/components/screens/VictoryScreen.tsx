@@ -1,9 +1,10 @@
 import { useGameStore } from '@/store/gameStore';
+import { calculateStockValue } from '@/data/stocks';
 import { Crown, Trophy, Scroll, Coins, Heart, GraduationCap, Star, Check, X } from 'lucide-react';
 import gameBoard from '@/assets/game-board.jpeg';
 
 export function VictoryScreen() {
-  const { setPhase, winner, players, goalSettings, eventMessage } = useGameStore();
+  const { setPhase, winner, players, goalSettings, eventMessage, stockPrices } = useGameStore();
 
   const winningPlayer = players.find(p => p.id === winner);
 
@@ -42,8 +43,9 @@ export function VictoryScreen() {
     );
   }
 
-  // Calculate player stats for display
-  const totalWealth = winningPlayer.gold + winningPlayer.savings + winningPlayer.investments;
+  // Calculate player stats for display (matches checkVictory formula)
+  const stockValue = calculateStockValue(winningPlayer.stocks, stockPrices);
+  const totalWealth = winningPlayer.gold + winningPlayer.savings + winningPlayer.investments + stockValue - winningPlayer.loanAmount;
   // Use completedDegrees for education (Jones-style: 9 points per degree)
   const totalEducation = winningPlayer.completedDegrees.length * 9;
 

@@ -46,6 +46,7 @@ export interface GameStore extends GameState {
   depositToBank: (playerId: string, amount: number) => void;
   withdrawFromBank: (playerId: string, amount: number) => void;
   invest: (playerId: string, amount: number) => void;
+  withdrawInvestment: (playerId: string, amount: number) => void;
   buyItem: (playerId: string, itemId: string, cost: number) => void;
   buyDurable: (playerId: string, itemId: string, cost: number) => void;
   sellItem: (playerId: string, itemId: string, price: number) => void;

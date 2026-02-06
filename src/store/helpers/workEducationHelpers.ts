@@ -3,7 +3,23 @@
 
 import type { EducationPath, DegreeId } from '@/types/game.types';
 import { GRADUATION_BONUSES, getDegree } from '@/data/education';
+import { getJob } from '@/data/jobs';
 import type { SetFn, GetFn } from '../storeTypes';
+
+// Map degrees to legacy education paths for quest compatibility
+const DEGREE_TO_PATH: Record<string, string> = {
+  'trade-guild': 'business',
+  'junior-academy': 'business',
+  'commerce': 'business',
+  'arcane-studies': 'mage',
+  'sage-studies': 'mage',
+  'loremaster': 'mage',
+  'alchemy': 'mage',
+  'combat-training': 'fighter',
+  'master-combat': 'fighter',
+  'scholar': 'priest',
+  'advanced-scholar': 'priest',
+};
 
 export function createWorkEducationActions(set: SetFn, get: GetFn) {
   return {
@@ -84,7 +100,12 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
 
       if (success) {
         const raiseAmount = Math.ceil(player.currentWage * 0.15); // 15% raise
-        const newWage = player.currentWage + raiseAmount;
+        const job = getJob(player.currentJob!);
+        const maxWage = job ? Math.ceil(job.baseWage * 3) : player.currentWage * 3; // Cap at 3x base
+        const newWage = Math.min(player.currentWage + raiseAmount, maxWage);
+        if (newWage <= player.currentWage) {
+          return { success: false, message: "You've reached the maximum wage for this position." };
+        }
 
         set((state) => ({
           players: state.players.map((p) =>
@@ -113,14 +134,16 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
+          if (p.gold < cost) return p;
+          if (p.timeRemaining < hours) return p;
 
           const newProgress = { ...p.educationProgress };
           newProgress[path] = (newProgress[path] || 0) + 1;
 
           return {
             ...p,
-            gold: Math.max(0, p.gold - cost),
-            timeRemaining: Math.max(0, p.timeRemaining - hours),
+            gold: p.gold - cost,
+            timeRemaining: p.timeRemaining - hours,
             educationProgress: newProgress,
           };
         }),
@@ -153,14 +176,16 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
+          if (p.gold < cost) return p;
+          if (p.timeRemaining < hours) return p;
 
           const newProgress = { ...p.degreeProgress };
           newProgress[degreeId] = (newProgress[degreeId] || 0) + 1;
 
           return {
             ...p,
-            gold: Math.max(0, p.gold - cost),
-            timeRemaining: Math.max(0, p.timeRemaining - hours),
+            gold: p.gold - cost,
+            timeRemaining: p.timeRemaining - hours,
             degreeProgress: newProgress,
           };
         }),
@@ -182,11 +207,19 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
           const newProgress = { ...p.degreeProgress };
           delete newProgress[degreeId];
 
+          // Update legacy education field for quest compatibility
+          const legacyPath = DEGREE_TO_PATH[degreeId];
+          const newEducation = { ...p.education };
+          if (legacyPath) {
+            newEducation[legacyPath as keyof typeof newEducation] = (newEducation[legacyPath as keyof typeof newEducation] || 0) + 1;
+          }
+
           // Apply graduation bonuses (like Jones)
           return {
             ...p,
             completedDegrees: newCompletedDegrees,
             degreeProgress: newProgress,
+            education: newEducation,
             happiness: Math.min(100, p.happiness + GRADUATION_BONUSES.happiness),
             dependability: Math.min(p.maxDependability, p.dependability + GRADUATION_BONUSES.dependability),
             maxDependability: p.maxDependability + GRADUATION_BONUSES.maxDependability,
