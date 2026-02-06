@@ -134,6 +134,10 @@ export function CavePanel({
     const netDamage = result.totalDamage - result.totalHealed;
     if (netDamage !== 0) modifyHealth(player.id, -netDamage);
 
+    // Check for death after dungeon combat damage
+    const { checkDeath } = useGameStore.getState();
+    checkDeath(player.id);
+
     // Apply happiness change
     if (result.happinessChange !== 0) {
       modifyHappiness(player.id, result.happinessChange);

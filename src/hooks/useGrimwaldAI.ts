@@ -18,7 +18,7 @@ import { getJob, canWorkJob } from '@/data/jobs';
 import { DEGREES } from '@/data/education';
 import { calculatePathDistance } from '@/data/locations';
 import { calculateCombatStats } from '@/data/items';
-import { getFloor, calculateEducationBonuses, getFloorTimeCost, getLootMultiplier } from '@/data/dungeon';
+import { getFloor, calculateEducationBonuses, getFloorTimeCost, getEncounterTimeCost, getLootMultiplier, ENCOUNTERS_PER_FLOOR } from '@/data/dungeon';
 import { autoResolveFloor } from '@/data/combatResolver';
 
 // Import from extracted modules
@@ -283,7 +283,9 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
           player.equippedShield,
         );
         const eduBonuses = calculateEducationBonuses(player.completedDegrees);
-        const timeCost = getFloorTimeCost(floor, combatStats);
+        // Use per-encounter time * 4 encounters (same formula as human players)
+        const encounterTime = getEncounterTimeCost(floor, combatStats);
+        const timeCost = encounterTime * ENCOUNTERS_PER_FLOOR;
         if (player.timeRemaining < timeCost) return false;
 
         spendTime(player.id, timeCost);

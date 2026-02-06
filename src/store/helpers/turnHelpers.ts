@@ -368,8 +368,9 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           return p;
         }
 
-        // Reset newspaper for new week
+        // Reset newspaper and dungeon fatigue for new week
         p.hasNewspaper = false;
+        p.dungeonAttemptsThisTurn = 0;
 
         // B5: Dependability decay only if player doesn't have a job
         if (!p.currentJob) {
@@ -638,7 +639,7 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         priceModifier: 0.7 + Math.random() * 0.6, // Random price between 0.7 and 1.3
         players: updatedPlayers.map((p, index) =>
           index === firstAliveIndex
-            ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: firstPlayerHome }
+            ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: firstPlayerHome, dungeonAttemptsThisTurn: 0 }
             : p
         ),
         rentDueWeek: isRentDue ? newWeek : state.rentDueWeek,

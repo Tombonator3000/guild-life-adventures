@@ -150,6 +150,15 @@
   - Floor cards show per-encounter time + total (e.g. "2h/encounter (6h total)")
   - AI unaffected (still auto-resolves full floor with full time cost)
 
+## Completed (2026-02-06)
+
+- [x] Cave/Dungeon Audit — 5 bugs found and fixed
+  - [x] Bug 1 (CRITICAL): dungeonAttemptsThisTurn not reset in processWeekEnd — permanent "Too fatigued" after 2 runs
+  - [x] Bug 2: No checkDeath after dungeon combat — player survived at 0 HP until next turn
+  - [x] Bug 3: Player paid 2h extra per floor vs AI due to Math.ceil rounding
+  - [x] Bug 4: Defeat kept 100% gold while retreat kept 50% (perverse incentive) — defeat now keeps 25%
+  - [x] Bug 5: Combat HP bar showed entry health instead of maxHealth — misleading at low HP
+
 ## In Progress
 
 *No active tasks*

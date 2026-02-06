@@ -1,5 +1,93 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Cave/Dungeon Audit — 5 Bugs Fixed
+
+Full audit of the cave/dungeon system. Found and fixed 5 bugs ranging from critical (permanent fatigue lock) to minor (HP display).
+
+### Bug 1 (CRITICAL): Dungeon fatigue never resets between weeks
+
+**Problem:** `dungeonAttemptsThisTurn` was NOT reset in `processWeekEnd()`. The first player of each new week kept their attempt counter from the previous week. In single-player, after 2 dungeon runs the player was permanently stuck with "Too fatigued (max attempts)" for all future weeks. In multiplayer, only player 1 (first in turn order) was affected since other players got reset via `endTurn()`.
+
+**Root cause:** `processWeekEnd()` set `timeRemaining` and `currentLocation` for the new week but forgot `dungeonAttemptsThisTurn: 0`. The `endTurn()` function (mid-week player switching) correctly reset it, but the week-boundary path did not.
+
+**Fix:** Reset `dungeonAttemptsThisTurn: 0` for ALL players in the `processWeekEnd` player mapping loop, and also for the first player in the new-week state set.
+
+| Location | Change |
+|----------|--------|
+| `turnHelpers.ts` processWeekEnd player loop | Added `p.dungeonAttemptsThisTurn = 0` |
+| `turnHelpers.ts` processWeekEnd first-player set | Added `dungeonAttemptsThisTurn: 0` |
+
+### Bug 2: No death check after dungeon combat
+
+**Problem:** After dungeon combat, `handleCombatComplete` called `modifyHealth(player.id, -netDamage)` but never called `checkDeath()`. If a player was killed in the dungeon (health → 0), death was not processed until the next turn or week-end. Other systems (quest completion) correctly called `checkDeath` after damage.
+
+**Fix:** Added `checkDeath(player.id)` call immediately after `modifyHealth` in `handleCombatComplete`.
+
+| Location | Change |
+|----------|--------|
+| `CavePanel.tsx` handleCombatComplete | Added `useGameStore.getState().checkDeath(player.id)` after modifyHealth |
+
+### Bug 3: Player pays 2h extra per floor vs AI
+
+**Problem:** Human players pay time per encounter via `getEncounterTimeCost()` which uses `Math.ceil(totalTime / 4)`. For base floor times (6, 10, 14, 18, 22h) which all have remainder 2 when divided by 4, `ceil` rounds up by 0.5h per encounter × 4 = 2h extra total. The AI used `getFloorTimeCost()` which returns the exact total, giving the AI a consistent 2h advantage per dungeon run.
+
+**Fix:** AI now uses the same per-encounter time calculation: `getEncounterTimeCost(floor, combatStats) * ENCOUNTERS_PER_FLOOR`. Both human and AI pay the same total time.
+
+| Floor | Old AI Cost | Old Player Cost | New Both Pay |
+|-------|-------------|-----------------|--------------|
+| F1 (6h base) | 6h | 8h (ceil(1.5)×4) | 8h |
+| F2 (10h base) | 10h | 12h (ceil(2.5)×4) | 12h |
+| F3 (14h base) | 14h | 16h (ceil(3.5)×4) | 16h |
+| F4 (18h base) | 18h | 20h (ceil(4.5)×4) | 20h |
+| F5 (22h base) | 22h | 24h (ceil(5.5)×4) | 24h |
+
+Note: Reduced time costs (4, 8, 12, 16, 20h) divide evenly by 4 so no rounding occurs.
+
+| Location | Change |
+|----------|--------|
+| `useGrimwaldAI.ts` explore-dungeon | Changed from `getFloorTimeCost()` to `getEncounterTimeCost() * ENCOUNTERS_PER_FLOOR` |
+| `useGrimwaldAI.ts` imports | Added `getEncounterTimeCost`, `ENCOUNTERS_PER_FLOOR` |
+
+### Bug 4: Defeat rewards more gold than retreat (perverse incentive)
+
+**Problem:** Retreat forfeited 50% gold (kept 50%), but defeat (health → 0) kept 100% gold with only a -2 happiness penalty. This created a perverse incentive where dying was more profitable than retreating. Players were better off letting their health reach 0 than using the retreat button.
+
+**Fix:** Defeat now only salvages 25% of gold (75% forfeited), making retreat (50% kept) always the better choice. Updated summary text to reflect penalties.
+
+| Outcome | Gold Before | Gold After | Happiness |
+|---------|-------------|------------|-----------|
+| Victory | 100% | 100% | +floor bonus |
+| Retreat | 50% | 50% (unchanged) | 0 |
+| Leave (no time) | 100% | 100% (unchanged) | 0 |
+| Defeat | 100% | **25%** (was 100%) | -2 |
+
+| Location | Change |
+|----------|--------|
+| `CombatView.tsx` handleFinish | Added `defeatGoldPenalty = 0.25` for defeat outcomes |
+| `CombatView.tsx` FloorSummaryView | Updated defeat text: "Only 25% of gold salvaged" |
+| `CombatView.tsx` FloorSummaryView | Updated retreat text: "50% of your earnings" |
+
+### Bug 5: Combat HP display shows entry health, not max health
+
+**Problem:** Combat views (EncounterIntro, EncounterResultView) displayed `currentHealth / startHealth` where `startHealth = player.health` at dungeon entry. If a player entered at 50/100 HP, the bar showed 50/50 (100% full), the low-health warning never triggered, and the player had no sense of their actual health status.
+
+**Fix:** Changed HP display to use `player.maxHealth` instead of `startHealth` for percentage calculation, display text, and low-health warnings.
+
+| Location | Change |
+|----------|--------|
+| `CombatView.tsx` EncounterIntro | Changed `startHealth` prop to `maxHealth`, updated all references |
+| `CombatView.tsx` EncounterResultView | Changed `startHealth` prop to `maxHealth`, updated all references |
+| `CombatView.tsx` CombatView | Pass `player.maxHealth` instead of `runState.startHealth` |
+
+### Files Changed
+- `src/store/helpers/turnHelpers.ts` — Reset dungeonAttemptsThisTurn in processWeekEnd (Bug 1)
+- `src/components/game/CavePanel.tsx` — Add checkDeath after combat (Bug 2)
+- `src/hooks/useGrimwaldAI.ts` — AI uses same per-encounter time formula (Bug 3)
+- `src/components/game/CombatView.tsx` — Defeat gold penalty + HP display fix (Bugs 4, 5)
+- TypeScript compiles cleanly, build succeeds, 91 tests pass
+
+---
+
 ## 2026-02-06 - Job Market Wage Display + Dungeon Per-Encounter Time
 
 Two gameplay improvements: job listings now show real market wages, and dungeon encounters cost time individually.
