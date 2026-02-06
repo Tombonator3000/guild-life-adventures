@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
-import { LOCATIONS, getMovementCost, ZONE_CONFIGS, getPath } from '@/data/locations';
+import { LOCATIONS, getMovementCost, getPath } from '@/data/locations';
 import { getAppliance } from '@/data/items';
 import { LocationZone } from './LocationZone';
 import { PlayerToken } from './PlayerToken';
@@ -9,28 +9,23 @@ import { ResourcePanel } from './ResourcePanel';
 import { LocationPanel } from './LocationPanel';
 import { EventModal, type GameEvent } from './EventModal';
 import { ShadowfingersModal, useShadowfingersModal } from './ShadowfingersModal';
-import { ZoneEditor, type CenterPanelConfig } from './ZoneEditor';
-import { MOVEMENT_PATHS, BOARD_PATH, type MovementWaypoint } from '@/data/locations';
-import { loadZoneConfig, saveZoneConfig, clearZoneConfig } from '@/data/zoneStorage';
+import { ZoneEditor } from './ZoneEditor';
+import { MOVEMENT_PATHS, BOARD_PATH } from '@/data/locations';
 import { SideInfoTabs } from './SideInfoTabs';
 import { RightSideTabs } from './RightSideTabs';
 import { SaveLoadMenu } from './SaveLoadMenu';
 import { TutorialOverlay } from './TutorialOverlay';
 import { DarkModeToggle } from './DarkModeToggle';
-import { useGrimwaldAI } from '@/hooks/useGrimwaldAI';
 import gameBoard from '@/assets/game-board.jpeg';
-import type { ZoneConfig, LocationId, AIDifficulty } from '@/types/game.types';
+import type { LocationId } from '@/types/game.types';
 import { toast } from 'sonner';
 import { Bot, Brain, Menu, SkipForward, FastForward, Play, Globe, Wifi } from 'lucide-react';
 import { audioManager } from '@/audio/audioManager';
 import { useNetworkSync } from '@/network/useNetworkSync';
-
-const DEFAULT_CENTER_PANEL: CenterPanelConfig = {
-  top: 22.5,
-  left: 26.7,
-  width: 46.5,
-  height: 55.5,
-};
+import { useZoneConfiguration } from '@/hooks/useZoneConfiguration';
+import { useAITurnHandler } from '@/hooks/useAITurnHandler';
+import { useAutoEndTurn } from '@/hooks/useAutoEndTurn';
+import { usePlayerAnimation } from '@/hooks/usePlayerAnimation';
 
 export function GameBoard() {
   const {
@@ -45,11 +40,7 @@ export function GameBoard() {
     phase,
     currentPlayerIndex,
     goalSettings,
-    movePlayer,
     endTurn,
-    checkDeath,
-    setEventMessage,
-    setPhase,
     aiDifficulty,
     aiSpeedMultiplier,
     setAISpeedMultiplier,
@@ -65,8 +56,8 @@ export function GameBoard() {
   const localPlayerId = useGameStore(s => s.localPlayerId);
   const roomCodeDisplay = useGameStore(s => s.roomCode);
 
-  // Get current player BEFORE useEffects that depend on it (also used for online checks)
-  const currentPlayer = players[currentPlayerIndex];
+  // Get current player
+  const currentPlayer = useCurrentPlayer();
 
   // Online mode: is it this client's turn?
   const isLocalPlayerTurn = !isOnline || (currentPlayer?.id === localPlayerId);
@@ -75,37 +66,30 @@ export function GameBoard() {
   const [showZoneEditor, setShowZoneEditor] = useState(false);
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
   const [showGameMenu, setShowGameMenu] = useState(false);
-  const [customZones, setCustomZones] = useState<ZoneConfig[]>(() => {
-    const saved = loadZoneConfig();
-    return saved ? saved.zones : ZONE_CONFIGS;
+
+  // Extracted hooks
+  const {
+    customZones,
+    centerPanel,
+    handleSaveZones,
+    handleResetZones,
+    getLocationWithCustomPosition,
+  } = useZoneConfiguration();
+
+  const { aiIsThinking } = useAITurnHandler({
+    currentPlayer,
+    phase,
+    aiDifficulty,
   });
-  const [centerPanel, setCenterPanel] = useState<CenterPanelConfig>(() => {
-    const saved = loadZoneConfig();
-    return saved ? saved.centerPanel : DEFAULT_CENTER_PANEL;
-  });
 
-  // Load saved movement paths on mount
-  useEffect(() => {
-    const saved = loadZoneConfig();
-    if (saved) {
-      Object.keys(MOVEMENT_PATHS).forEach(k => delete MOVEMENT_PATHS[k]);
-      Object.entries(saved.paths).forEach(([k, v]) => { MOVEMENT_PATHS[k] = v; });
-    }
-  }, []);
+  useAutoEndTurn();
 
-  // AI State
-  const [aiIsThinking, setAiIsThinking] = useState(false);
-  const aiTurnStartedRef = useRef(false);
-  const { runAITurn, analyzeGameState, settings: aiSettings } = useGrimwaldAI(aiDifficulty);
-
-  // Animation state for player movement
-  const [animatingPlayer, setAnimatingPlayer] = useState<string | null>(null);
-  const [animationPath, setAnimationPath] = useState<LocationId[] | null>(null);
-  const pendingMoveRef = useRef<{ playerId: string; destination: LocationId; timeCost: number; isPartial?: boolean } | null>(null);
-
-  // Guard against double endTurn — tracks which playerIndex the scheduled endTurn is for
-  const scheduledEndTurnRef = useRef<number | null>(null);
-  const autoEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const {
+    animatingPlayer,
+    animationPath,
+    handleAnimationComplete,
+    startAnimation,
+  } = usePlayerAnimation();
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -148,160 +132,7 @@ export function GameBoard() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [aiIsThinking, setSkipAITurn, showGameMenu, currentPlayer, phase, endTurn, showTutorial, setShowTutorial]);
-
-  // AI Turn Handler - triggers when it's Grimwald's turn
-  useEffect(() => {
-    if (!currentPlayer || phase !== 'playing') {
-      aiTurnStartedRef.current = false;
-      return;
-    }
-
-    // Check if it's an AI player's turn and we haven't started their turn yet
-    if (currentPlayer.isAI && !aiTurnStartedRef.current && !aiIsThinking) {
-      aiTurnStartedRef.current = true;
-      setAiIsThinking(true);
-
-      // Show toast notification that Grimwald is thinking
-      toast.info(`Grimwald is planning...`, {
-        duration: 2000,
-        icon: <Bot className="w-4 h-4" />,
-      });
-
-      // Small delay before AI starts to let the UI settle
-      setTimeout(() => {
-        runAITurn(currentPlayer);
-      }, 1000);
-    }
-
-    // Reset when it's no longer AI's turn
-    if (!currentPlayer.isAI) {
-      aiTurnStartedRef.current = false;
-      setAiIsThinking(false);
-    }
-  }, [currentPlayer, phase, aiIsThinking, runAITurn]);
-
-  // Listen for player changes to detect when AI turn ends
-  useEffect(() => {
-    if (currentPlayer && !currentPlayer.isAI) {
-      setAiIsThinking(false);
-    }
-  }, [currentPlayer?.id]);
-
-  const handleSaveZones = (zones: ZoneConfig[], newCenterPanel: CenterPanelConfig, paths?: Record<string, MovementWaypoint[]>) => {
-    setCustomZones(zones);
-    setCenterPanel(newCenterPanel);
-    setShowZoneEditor(false);
-    // Apply movement paths to the global MOVEMENT_PATHS object
-    const activePaths = paths || { ...MOVEMENT_PATHS };
-    if (paths) {
-      Object.keys(MOVEMENT_PATHS).forEach(k => delete MOVEMENT_PATHS[k]);
-      Object.entries(paths).forEach(([k, v]) => { MOVEMENT_PATHS[k] = v; });
-    }
-    // Persist to localStorage
-    saveZoneConfig(zones, newCenterPanel, activePaths);
-    toast.success('Zone config saved to localStorage');
-  };
-
-  const handleResetZones = () => {
-    clearZoneConfig();
-    setCustomZones(ZONE_CONFIGS);
-    setCenterPanel(DEFAULT_CENTER_PANEL);
-    Object.keys(MOVEMENT_PATHS).forEach(k => delete MOVEMENT_PATHS[k]);
-    toast.success('Zone config reset to defaults');
-  };
-
-  // Get location with custom zones applied
-  const getLocationWithCustomPosition = (locationId: string) => {
-    const location = LOCATIONS.find(l => l.id === locationId);
-    const customZone = customZones.find(z => z.id === locationId);
-    if (location && customZone) {
-      return {
-        ...location,
-        position: {
-          top: `${customZone.y}%`,
-          left: `${customZone.x}%`,
-          width: `${customZone.width}%`,
-          height: `${customZone.height}%`,
-        },
-      };
-    }
-    return location;
-  };
-
-  // Check if player should auto-return to housing when time runs out
-  const checkAutoReturn = useCallback(() => {
-    if (!currentPlayer) return;
-
-    // Check for death first
-    if (currentPlayer.health <= 0) {
-      const isDead = checkDeath(currentPlayer.id);
-      if (isDead) {
-        setEventMessage(`${currentPlayer.name} has died! Game over for this player.`);
-        setPhase('event');
-        // Move to next player's turn after death — guard against double fire
-        if (scheduledEndTurnRef.current !== currentPlayerIndex) {
-          scheduledEndTurnRef.current = currentPlayerIndex;
-          if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
-          autoEndTimerRef.current = setTimeout(() => {
-            // Only fire if still the same player's turn
-            const storeIdx = useGameStore.getState().currentPlayerIndex;
-            if (storeIdx === currentPlayerIndex) {
-              endTurn();
-            }
-            scheduledEndTurnRef.current = null;
-            autoEndTimerRef.current = null;
-          }, 100);
-        }
-        return true;
-      }
-    }
-
-    // Check if time has run out
-    if (currentPlayer.timeRemaining <= 0) {
-      // Guard: don't schedule a second endTurn for the same player
-      if (scheduledEndTurnRef.current === currentPlayerIndex) return true;
-      scheduledEndTurnRef.current = currentPlayerIndex;
-
-      // Get player's home location based on housing
-      const homeLocation: LocationId = currentPlayer.housing === 'noble' ? 'noble-heights' : 'slums';
-
-      // Only move if not already at home
-      if (currentPlayer.currentLocation !== homeLocation) {
-        toast.info(`${currentPlayer.name}'s time is up! Returning home...`);
-      }
-
-      // End turn automatically — guarded with playerIndex check
-      if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
-      autoEndTimerRef.current = setTimeout(() => {
-        const storeIdx = useGameStore.getState().currentPlayerIndex;
-        if (storeIdx === currentPlayerIndex) {
-          endTurn();
-        }
-        scheduledEndTurnRef.current = null;
-        autoEndTimerRef.current = null;
-      }, 500);
-      return true;
-    }
-
-    return false;
-  }, [currentPlayer, checkDeath, setEventMessage, setPhase, endTurn, currentPlayerIndex]);
-
-  // Reset auto-end guard when player turn changes
-  useEffect(() => {
-    scheduledEndTurnRef.current = null;
-    if (autoEndTimerRef.current) {
-      clearTimeout(autoEndTimerRef.current);
-      autoEndTimerRef.current = null;
-    }
-  }, [currentPlayerIndex]);
-
-  // Monitor time and health changes
-  useEffect(() => {
-    if (currentPlayer && phase === 'playing') {
-      checkAutoReturn();
-    }
-  }, [currentPlayer?.timeRemaining, currentPlayer?.health, phase, checkAutoReturn]);
+  }, [aiIsThinking, setSkipAITurn, showGameMenu, currentPlayer, phase, endTurn, showTutorial, setShowTutorial, isLocalPlayerTurn]);
 
   // Show appliance/equipment breakage notification
   useEffect(() => {
@@ -315,31 +146,6 @@ export function GameBoard() {
       dismissApplianceBreakageEvent();
     }
   }, [applianceBreakageEvent, dismissApplianceBreakageEvent]);
-
-  // Handle animation completion
-  const handleAnimationComplete = useCallback(() => {
-    const pending = pendingMoveRef.current;
-    if (pending) {
-      if (pending.isPartial) {
-        // Partial travel: move player to last reachable location, spend all time, end turn
-        movePlayer(pending.playerId, pending.destination, pending.timeCost);
-        toast.info(`Not enough time to reach destination. Turn ended.`);
-        selectLocation(null);
-        // Auto-end turn after a short delay
-        setTimeout(() => {
-          endTurn();
-        }, 300);
-      } else {
-        // Full travel: move player to destination
-        movePlayer(pending.playerId, pending.destination, pending.timeCost);
-        selectLocation(pending.destination);
-        toast.success(`Traveled to ${LOCATIONS.find(l => l.id === pending.destination)?.name}`);
-      }
-      pendingMoveRef.current = null;
-    }
-    setAnimatingPlayer(null);
-    setAnimationPath(null);
-  }, [movePlayer, selectLocation, endTurn]);
 
   // Direct travel on location click (instead of showing travel button)
   const handleLocationClick = (locationId: string) => {
@@ -376,14 +182,12 @@ export function GameBoard() {
         // Full travel: enough time to reach destination
         const path = getPath(currentPlayer.currentLocation as LocationId, locationId as LocationId);
 
-        pendingMoveRef.current = {
-          playerId: currentPlayer.id,
-          destination: locationId as LocationId,
-          timeCost: moveCost,
-        };
-
-        setAnimatingPlayer(currentPlayer.id);
-        setAnimationPath(path);
+        startAnimation(
+          currentPlayer.id,
+          locationId as LocationId,
+          moveCost,
+          path,
+        );
       } else if (currentPlayer.timeRemaining > 0) {
         // Partial travel: not enough time, but has some hours left
         // Walk as far as possible along the path, then end turn
@@ -395,15 +199,13 @@ export function GameBoard() {
           const partialPath = fullPath.slice(0, stepsCanTake + 1);
           const partialDestination = partialPath[partialPath.length - 1];
 
-          pendingMoveRef.current = {
-            playerId: currentPlayer.id,
-            destination: partialDestination,
-            timeCost: currentPlayer.timeRemaining, // Spend all remaining time
-            isPartial: true,
-          };
-
-          setAnimatingPlayer(currentPlayer.id);
-          setAnimationPath(partialPath);
+          startAnimation(
+            currentPlayer.id,
+            partialDestination,
+            currentPlayer.timeRemaining, // Spend all remaining time
+            partialPath,
+            true, // isPartial
+          );
         } else {
           toast.error('No time remaining!');
         }
@@ -427,7 +229,7 @@ export function GameBoard() {
   } : null;
 
   // Layout: Side panels fill full viewport height, board maintains aspect ratio
-  // This ensures panels use all screen space on non-16:9 displays (e.g. 1920×1200)
+  // This ensures panels use all screen space on non-16:9 displays (e.g. 1920x1200)
   // Board aspect ratio = (76% of 16:9) preserves zone alignment with background image
   const SIDE_PANEL_WIDTH_PERCENT = 12;
   const BOARD_ASPECT_RATIO = `${76 * 16} / ${100 * 9}`; // 1216/900 ≈ 1.351

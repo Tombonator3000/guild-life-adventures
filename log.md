@@ -1,5 +1,86 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Major Refactoring: Split 6 Largest Files
+
+Refactored the 6 largest files in the codebase using parallel agents. Each monolithic file was split into focused modules with barrel re-exports for backward compatibility. All 112 tests pass, TypeScript clean, build succeeds.
+
+### 1. `dungeon.ts` (946 → 5 files)
+Deleted monolithic `src/data/dungeon.ts`, replaced with `src/data/dungeon/` directory:
+| New File | Contents | Lines |
+|----------|----------|-------|
+| `types.ts` | All type/interface definitions (DungeonEncounter, DungeonFloor, RareDrop, etc.) | ~130 |
+| `encounters.ts` | Floor 1-5 encounter data + boss definitions | ~340 |
+| `floors.ts` | Education bonuses, rare drops, loot multipliers, DUNGEON_FLOORS array | ~250 |
+| `helpers.ts` | All helper functions (getFloor, checkFloorRequirements, etc.) + constants | ~230 |
+| `index.ts` | Barrel re-export | ~10 |
+
+### 2. `actionGenerator.ts` (835 → 106 + 7 action files)
+Split AI action generation into category-based modules in `src/hooks/ai/actions/`:
+| New File | Contents | Lines |
+|----------|----------|-------|
+| `actionContext.ts` | Shared ActionContext interface | ~20 |
+| `criticalNeeds.ts` | Food, rent, clothing, health actions | ~130 |
+| `goalActions.ts` | Education, wealth, happiness, career goal-oriented actions + graduation | ~270 |
+| `strategicActions.ts` | Job seeking, upgrades, work, housing, banking | ~150 |
+| `economicActions.ts` | Sickness, loans, fresh food, tickets, pawning, lottery, stocks | ~210 |
+| `questDungeonActions.ts` | Guild pass, equipment, quests, dungeon exploration | ~120 |
+| `index.ts` | Barrel re-export | ~10 |
+
+Main `actionGenerator.ts` reduced to slim orchestrator (106 lines): creates context, calls all generators, applies route optimization + mistake chance.
+
+### 3. `turnHelpers.ts` (792 → 108 + 2 helpers)
+Split turn lifecycle into 3 focused files:
+| File | Contents | Lines |
+|------|----------|-------|
+| `turnHelpers.ts` | `endTurn` logic + `createTurnActions` orchestrator + shared `getHomeLocation` | 108 |
+| `startTurnHelpers.ts` | `startTurn`: appliance breakage, food spoilage, starvation, robbery, bonuses | 336 |
+| `weekEndHelpers.ts` | `processWeekEnd`: economy cycle, player weekly processing, death checks, stocks | 376 |
+
+### 4. `GameBoard.tsx` (774 → 576 + 4 hooks)
+Extracted 4 custom hooks from the "god component":
+| New Hook | Responsibility | Lines |
+|----------|---------------|-------|
+| `useZoneConfiguration.ts` | Zone config persistence, save/reset/load, custom positions | 83 |
+| `useAITurnHandler.ts` | AI turn detection, thinking state, Grimwald toast | 58 |
+| `useAutoEndTurn.ts` | Auto-end turn on time/health depletion, death handling | 96 |
+| `usePlayerAnimation.ts` | Movement animation state, path tracking, completion handler | 70 |
+
+### 5. `CombatView.tsx` (671 → 204 + 5 combat files)
+Extracted 3 inner components + shared HealthBar into `src/components/game/combat/`:
+| New File | Contents | Lines |
+|----------|----------|-------|
+| `HealthBar.tsx` | Shared health bar with color thresholds | ~30 |
+| `EncounterIntro.tsx` | Pre-fight encounter card with stats and action button | ~150 |
+| `EncounterResultView.tsx` | Post-fight result display with continue/retreat options | ~170 |
+| `FloorSummaryView.tsx` | End-of-floor summary with encounter log and totals | ~130 |
+| `index.ts` | Barrel re-export | ~10 |
+
+### 6. `HomePanel.tsx` (614 → 121 + 4 home files)
+Extracted room scene and UI into `src/components/game/home/`:
+| New File | Contents | Lines |
+|----------|----------|-------|
+| `RoomScene.tsx` | Full room visual rendering (walls, floor, furniture, appliances, decorations) | ~400 |
+| `HomeActionBar.tsx` | Relax/Sleep/Done action buttons | ~80 |
+| `ApplianceLegend.tsx` | Bottom legend showing owned/broken appliances | ~40 |
+| `index.ts` | Barrel re-export | ~10 |
+
+### Summary
+| File | Before | After | New Files |
+|------|--------|-------|-----------|
+| `dungeon.ts` | 946 | (deleted) | 5 files in `dungeon/` |
+| `actionGenerator.ts` | 835 | 106 | 7 files in `actions/` |
+| `turnHelpers.ts` | 792 | 108 | 2 helper files |
+| `GameBoard.tsx` | 774 | 576 | 4 hooks |
+| `CombatView.tsx` | 671 | 204 | 5 files in `combat/` |
+| `HomePanel.tsx` | 614 | 121 | 4 files in `home/` |
+
+### Build & Tests
+- TypeScript compiles cleanly
+- Build succeeds
+- 112/112 tests pass
+
+---
+
 ## 2026-02-06 - Standardize Beige/Brown Text Design
 
 Text on dark brown `wood-frame` backgrounds was nearly invisible across the entire game. The root cause: `text-muted-foreground` (medium-dark brown `hsl(30 25% 35%)`) and `text-card` (light in light mode but dark in dark mode) were used on the fixed dark brown gradient background (`hsl(30 35% 35%)` → `hsl(25 40% 20%)`).
