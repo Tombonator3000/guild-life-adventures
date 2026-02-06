@@ -86,6 +86,7 @@ const createPlayer = (
   equippedArmor: null,
   equippedShield: null,
   dungeonFloorsCleared: [],
+  dungeonAttemptsThisTurn: 0,
   permanentGoldBonus: 0,
   // Stock Market
   stocks: {},

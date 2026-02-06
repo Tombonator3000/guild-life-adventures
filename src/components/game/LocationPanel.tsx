@@ -73,6 +73,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     buyLotteryTicket,
     buyTicket,
     stockPrices,
+    cureSickness,
   } = useGameStore();
   const player = useCurrentPlayer();
   const location = getLocation(locationId);
@@ -298,6 +299,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               onCureSickness={(cost, time) => {
                 modifyGold(player.id, -cost);
                 spendTime(player.id, time);
+                cureSickness(player.id);
               }}
               onBlessHealth={(cost, time) => {
                 modifyGold(player.id, -cost);
@@ -403,11 +405,19 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             onBuyUsedItem={(itemId, price) => {
               modifyGold(player.id, -price);
               spendTime(player.id, 1);
-              // Apply effects based on item
+              // Apply effects and add to inventory/durables
               if (itemId === 'used-clothes') {
                 modifyClothing(player.id, 50);
               } else if (itemId === 'used-blanket') {
                 modifyHappiness(player.id, 3);
+              } else if (itemId === 'used-sword') {
+                buyDurable(player.id, 'sword', 0); // Already paid above
+                equipItem(player.id, 'sword', 'weapon');
+                toast.success('Equipped Used Sword!');
+              } else if (itemId === 'used-shield') {
+                buyDurable(player.id, 'shield', 0); // Already paid above
+                equipItem(player.id, 'shield', 'shield');
+                toast.success('Equipped Dented Shield!');
               }
             }}
             onGamble={(stake) => {
@@ -512,7 +522,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
 
       <NewspaperModal
         newspaper={currentNewspaper}
-        onClose={() => setShowNewspaper(false)}
+        onClose={() => { setShowNewspaper(false); setCurrentNewspaper(null); }}
       />
     </>
   );

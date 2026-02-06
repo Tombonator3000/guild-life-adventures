@@ -65,6 +65,16 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     completeQuest,
     clearDungeonFloor,
     applyRareDrop,
+    cureSickness,
+    takeLoan,
+    repayLoan,
+    buyStock,
+    sellStock,
+    buyFreshFood,
+    buyTicket,
+    sellItem,
+    pawnAppliance,
+    buyLotteryTicket,
     endTurn,
   } = useGameStore();
 
@@ -259,6 +269,14 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         const floor = getFloor(floorId);
         if (!floor) return false;
 
+        // H9: Check dungeon attempts limit and health
+        const attemptsUsed = player.dungeonAttemptsThisTurn || 0;
+        if (attemptsUsed >= 2) return false; // MAX_FLOOR_ATTEMPTS_PER_TURN
+        if (player.health <= 20) return false; // Don't risk death
+
+        // H9: Require at least 1 degree for cave access
+        if (player.completedDegrees.length === 0) return false;
+
         const combatStats = calculateCombatStats(
           player.equippedWeapon,
           player.equippedArmor,
@@ -269,6 +287,17 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         if (player.timeRemaining < timeCost) return false;
 
         spendTime(player.id, timeCost);
+
+        // H7: Track dungeon attempts
+        const storeState = useGameStore.getState();
+        useGameStore.setState({
+          players: storeState.players.map(p =>
+            p.id === player.id
+              ? { ...p, dungeonAttemptsThisTurn: (p.dungeonAttemptsThisTurn || 0) + 1 }
+              : p
+          ),
+        });
+
         const isFirstClear = !player.dungeonFloorsCleared.includes(floorId);
         const lootMult = getLootMultiplier(floor, player.guildRank);
         const result = autoResolveFloor(floor, combatStats, eduBonuses, player.health, isFirstClear, lootMult);
@@ -290,6 +319,104 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         return true;
       }
 
+      // AI-2: Cure sickness at enchanter
+      case 'cure-sickness': {
+        const cost = (action.details?.cost as number) || 75;
+        if (!player.isSick || player.gold < cost || player.timeRemaining < 2) return false;
+        modifyGold(player.id, -cost);
+        spendTime(player.id, 2);
+        cureSickness(player.id);
+        return true;
+      }
+
+      // AI-3: Take a loan at the bank
+      case 'take-loan': {
+        const amount = (action.details?.amount as number) || 200;
+        if (player.loanAmount > 0) return false; // Already has a loan
+        takeLoan(player.id, amount);
+        spendTime(player.id, 1);
+        return true;
+      }
+
+      // AI-3: Repay loan
+      case 'repay-loan': {
+        const amount = (action.details?.amount as number) || player.loanAmount;
+        if (player.loanAmount <= 0 || player.gold < amount) return false;
+        repayLoan(player.id, amount);
+        spendTime(player.id, 1);
+        return true;
+      }
+
+      // AI-4: Buy stocks
+      case 'buy-stock': {
+        const stockId = action.details?.stockId as string;
+        const shares = (action.details?.shares as number) || 5;
+        const price = (action.details?.price as number) || 50;
+        const cost = shares * price;
+        if (!stockId || player.gold < cost) return false;
+        buyStock(player.id, stockId, shares);
+        spendTime(player.id, 1);
+        return true;
+      }
+
+      // AI-4: Sell stocks
+      case 'sell-stock': {
+        const stockId = action.details?.stockId as string;
+        const shares = (action.details?.shares as number) || 5;
+        if (!stockId || !player.stocks[stockId] || player.stocks[stockId] < shares) return false;
+        sellStock(player.id, stockId, shares);
+        spendTime(player.id, 1);
+        return true;
+      }
+
+      // AI-5: Buy fresh food
+      case 'buy-fresh-food': {
+        const cost = (action.details?.cost as number) || 25;
+        const units = (action.details?.units as number) || 2;
+        if (player.gold < cost) return false;
+        buyFreshFood(player.id, cost, units);
+        spendTime(player.id, 1);
+        return true;
+      }
+
+      // AI-6: Buy weekend ticket
+      case 'buy-ticket': {
+        const ticketType = action.details?.ticketType as string;
+        const cost = (action.details?.cost as number) || 30;
+        if (!ticketType || player.gold < cost) return false;
+        buyTicket(player.id, ticketType, cost);
+        spendTime(player.id, 1);
+        return true;
+      }
+
+      // AI-7: Sell inventory item at fence
+      case 'sell-item': {
+        const itemId = action.details?.itemId as string;
+        const price = (action.details?.price as number) || 10;
+        if (!itemId) return false;
+        sellItem(player.id, itemId, price);
+        spendTime(player.id, 1);
+        return true;
+      }
+
+      // AI-7: Pawn an appliance at fence
+      case 'pawn-appliance': {
+        const applianceId = action.details?.applianceId as string;
+        if (!applianceId || !player.appliances[applianceId]) return false;
+        pawnAppliance(player.id, applianceId);
+        spendTime(player.id, 1);
+        return true;
+      }
+
+      // AI-8: Buy lottery ticket
+      case 'buy-lottery-ticket': {
+        const cost = (action.details?.cost as number) || 5;
+        if (player.gold < cost) return false;
+        buyLotteryTicket(player.id, cost);
+        spendTime(player.id, 1);
+        return true;
+      }
+
       case 'end-turn':
         endTurn();
         return true;
@@ -301,7 +428,9 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
       modifyRelaxation, spendTime, studyDegree, completeDegree, setJob, payRent,
       depositToBank, withdrawFromBank, buyAppliance, moveToHousing, workShift,
       buyDurable, equipItem, buyGuildPass, takeQuest, completeQuest,
-      clearDungeonFloor, applyRareDrop, endTurn]);
+      clearDungeonFloor, applyRareDrop, cureSickness, takeLoan, repayLoan,
+      buyStock, sellStock, buyFreshFood, buyTicket, sellItem, pawnAppliance,
+      buyLotteryTicket, endTurn]);
 
   /**
    * Run the AI's turn

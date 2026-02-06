@@ -1,5 +1,64 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Deferred Issues Batch Fix + AI Improvements
+
+Major batch of fixes covering deferred issues, new AI actions, dungeon RPG improvements, and bug fixes.
+
+### Bug Fixes
+| Issue | Fix |
+|-------|-----|
+| Newspaper close button | `onClose` now clears `currentNewspaper` state — Dialog `open` prop was stuck true |
+| Sickness cure not working | Added `cureSickness` store action — `onCureSickness` handler now sets `isSick = false` |
+| Fence purchases not going to inventory | Used sword/shield from fence now added to durables and auto-equipped |
+| "Sick - Visit Healer!" unclear | Updated text to "Sick - Visit Enchanter (Cure Ailments)!" |
+
+### Game Mechanics
+| Feature | Details |
+|---------|---------|
+| H7: MAX_FLOOR_ATTEMPTS | Enforced 2 dungeon runs per turn limit. Added `dungeonAttemptsThisTurn` to Player, reset at turn start |
+| Cave access gating | Require at least 1 completed degree to enter dungeon. Shows lock screen with guidance |
+| B2: Quest rewards rebalanced | E-rank: +67%, D-rank: +65%, C-rank: +75%, B-rank: +60%, A-rank: +70%, S-rank: +67% |
+| B6: Cooking Fire nerfed | Now triggers every other week (even weeks only), halving effective bonus from +1/turn to +0.5/turn |
+| RPG equipment system | No armor: +50% damage taken. No weapon: -70% gold earned. Combat shows penalties in bonuses |
+
+### UI Changes
+| Change | Details |
+|--------|---------|
+| Player header brown text | SideInfoTabs header changed from dark wood to parchment background with `text-wood-dark` |
+| Guild rank visibility | Guild rank shown under name in `text-wood-dark/70` matching rest of panel |
+
+### AI Improvements (AI-2 through AI-8, AI-12)
+| Issue | Implementation |
+|-------|---------------|
+| AI-2: Sickness cure | Priority 92 when sick, travels to enchanter, pays 75g for cure |
+| AI-3: Loan system | Takes 200g emergency loan when gold<20 and savings<20; repays when gold exceeds loan+100 |
+| AI-4: Stock market | Medium/hard AI invests excess gold in stocks; sells when broke or doesn't need wealth |
+| AI-5: Fresh food | Buys fresh food (25g/2 units) when has Preservation Box and stock<3 |
+| AI-6: Weekend tickets | Buys tickets (jousting/theatre/bard) when happiness is weakest goal and gold>150 |
+| AI-7: Selling/pawning | Pawns appliances when desperate (gold<10 with loan); sells inventory items when gold<20 |
+| AI-8: Lottery tickets | Buys 5g ticket when gold>100 and week>3 (low priority=25) |
+| AI-12: Route optimization | Boosts move priority +5 per extra need at same location (multi-need routing) |
+| H9: AI dungeon health | AI checks dungeonAttemptsThisTurn>=2, health>20, and cave access before dungeon |
+
+### Files Changed
+- `src/components/game/LocationPanel.tsx` — newspaper close, sickness cure, fence purchases
+- `src/components/game/CavePanel.tsx` — dungeon attempts limit, cave access gating
+- `src/components/game/SideInfoTabs.tsx` — brown text styling, sick text update
+- `src/components/game/PlayerInfoPanel.tsx` — sick text update
+- `src/store/helpers/playerHelpers.ts` — added `cureSickness` action
+- `src/store/storeTypes.ts` — added `cureSickness` type
+- `src/store/gameStore.ts` — added `dungeonAttemptsThisTurn` to createPlayer
+- `src/store/helpers/turnHelpers.ts` — reset dungeon attempts, cooking fire nerf
+- `src/types/game.types.ts` — added `dungeonAttemptsThisTurn` to Player
+- `src/data/dungeon.ts` — MAX_FLOOR_ATTEMPTS_PER_TURN = 2
+- `src/data/combatResolver.ts` — no-equipment damage/gold penalties
+- `src/data/quests.ts` — rebalanced all quest rewards
+- `src/hooks/ai/types.ts` — 9 new AIActionType values
+- `src/hooks/useGrimwaldAI.ts` — 9 new action handlers + dungeon health tracking
+- `src/hooks/ai/actionGenerator.ts` — decision logic for all new AI actions + route optimization
+
+---
+
 ## 2026-02-06 - Music Placeholder Files
 
 Added placeholder MP3 files to `public/music/` folder for the audio system.

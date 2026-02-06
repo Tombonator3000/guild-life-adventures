@@ -98,7 +98,7 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           currentPlayerIndex: nextIndex,
           players: state.players.map((p, index) =>
             index === nextIndex
-              ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: homeLocation }
+              ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: homeLocation, dungeonAttemptsThisTurn: 0 }
               : p
           ),
           selectedLocation: null,
@@ -316,9 +316,10 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         }
       }
 
-      // Cooking Fire / Preservation Box per-turn happiness bonus
+      // Cooking Fire happiness bonus — nerfed: only triggers every other week (even weeks)
       const hasCookingAppliance = player.appliances['cooking-fire'] && !player.appliances['cooking-fire'].isBroken;
-      if (hasCookingAppliance) {
+      const currentWeek = get().week;
+      if (hasCookingAppliance && currentWeek % 2 === 0) {
         set((state) => ({
           players: state.players.map((p) =>
             p.id === playerId

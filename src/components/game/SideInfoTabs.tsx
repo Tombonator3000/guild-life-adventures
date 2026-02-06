@@ -36,16 +36,16 @@ export function SideInfoTabs({ player, goals, isCurrentPlayer }: SideInfoTabsPro
   return (
     <div className={`h-full flex flex-col bg-parchment rounded-lg border-2 overflow-hidden ${isCurrentPlayer ? 'border-accent' : 'border-wood-dark/50'}`}>
       {/* Player Header */}
-      <div className="flex items-center gap-2 p-2 bg-gradient-to-b from-wood-dark to-wood border-b-2 border-wood-light">
+      <div className="flex items-center gap-2 p-2 bg-parchment border-b-2 border-wood-light/50">
         <div
-          className="w-8 h-8 rounded-full border-2 border-parchment shadow-md flex-shrink-0"
+          className="w-8 h-8 rounded-full border-2 border-wood-light shadow-md flex-shrink-0"
           style={{ backgroundColor: player.color }}
         />
         <div className="min-w-0 flex-1">
-          <h3 className="font-display text-xs font-bold text-parchment truncate">
+          <h3 className="font-display text-xs font-bold text-wood-dark truncate">
             {player.name}
           </h3>
-          <p className="text-[10px] text-parchment/80 truncate">
+          <p className="text-[10px] text-wood-dark/70 truncate">
             {GUILD_RANK_NAMES[player.guildRank]}
           </p>
         </div>
@@ -57,7 +57,7 @@ export function SideInfoTabs({ player, goals, isCurrentPlayer }: SideInfoTabsPro
           {player.isSick && (
             <div className="flex items-center gap-1 text-[10px] text-destructive font-semibold">
               <Skull className="w-3 h-3" />
-              <span>Sick - Visit Healer!</span>
+              <span>Sick - Visit Enchanter (Cure Ailments)!</span>
             </div>
           )}
           {player.health <= 0 && (

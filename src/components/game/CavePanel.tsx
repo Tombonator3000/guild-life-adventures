@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { ActionButton } from './ActionButton';
 import { toast } from 'sonner';
+import { useGameStore } from '@/store/gameStore';
 import { calculateCombatStats } from '@/data/items';
 import {
   DUNGEON_FLOORS,
@@ -21,6 +22,7 @@ import {
   getDungeonProgress,
   calculateEducationBonuses,
   getFloorTimeCost,
+  MAX_FLOOR_ATTEMPTS_PER_TURN,
   type DungeonFloor,
 } from '@/data/dungeon';
 import { CombatView, type CombatRunResult } from './CombatView';
@@ -92,11 +94,29 @@ export function CavePanel({
     eduBonuses.goldBonus > 0 ||
     eduBonuses.healingPotionChance > 0;
 
+  // Cave access gating: require at least 1 completed degree
+  const hasCaveAccess = player.completedDegrees.length > 0;
+  const attemptsUsed = player.dungeonAttemptsThisTurn || 0;
+  const attemptsRemaining = MAX_FLOOR_ATTEMPTS_PER_TURN - attemptsUsed;
+
   // ─── Enter floor — switch to combat view ───────────────────
 
   const handleEnterFloor = (floor: DungeonFloor) => {
+    if (attemptsRemaining <= 0) {
+      toast.error('You are too fatigued for another dungeon run this week.');
+      return;
+    }
     const timeCost = getFloorTimeCost(floor, combatStats);
     spendTime(player.id, timeCost);
+    // Increment dungeon attempts via direct store set
+    const { players } = useGameStore.getState();
+    useGameStore.setState({
+      players: players.map(p =>
+        p.id === player.id
+          ? { ...p, dungeonAttemptsThisTurn: (p.dungeonAttemptsThisTurn || 0) + 1 }
+          : p
+      ),
+    });
     setActiveFloor(floor);
   };
 
@@ -153,6 +173,35 @@ export function CavePanel({
     setActiveFloor(null);
   };
 
+  // ─── Cave access gating ────────────────────────────────────
+
+  if (!hasCaveAccess) {
+    return (
+      <div className="space-y-3">
+        <div>
+          <h4 className="font-display text-lg text-muted-foreground flex items-center gap-2">
+            <Lock className="w-5 h-5" /> The Dungeon
+          </h4>
+          <p className="text-xs text-muted-foreground mt-1">
+            The cave entrance is sealed with ancient runes.
+          </p>
+        </div>
+        <div className="bg-[#2d1f0f] border border-[#8b7355] rounded p-4 text-center">
+          <Lock className="w-8 h-8 text-[#8b7355] mx-auto mb-2" />
+          <p className="text-sm text-[#e0d4b8] font-display mb-2">
+            Dungeon Access Locked
+          </p>
+          <p className="text-xs text-[#a09080] mb-3">
+            You must complete at least one degree at the Academy before the Guild will grant you a dungeon exploration permit.
+          </p>
+          <p className="text-xs text-amber-400">
+            Visit the Academy to begin your education.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // ─── If in combat, show combat view ────────────────────────
 
   if (activeFloor) {
@@ -180,6 +229,13 @@ export function CavePanel({
           more rewarding.
         </p>
       </div>
+
+      {/* Attempts remaining */}
+      {attemptsRemaining < MAX_FLOOR_ATTEMPTS_PER_TURN && (
+        <div className={`text-xs font-mono px-2 py-1 rounded ${attemptsRemaining <= 0 ? 'bg-red-950/40 text-red-400' : 'bg-amber-950/40 text-amber-400'}`}>
+          Dungeon Runs: {attemptsRemaining}/{MAX_FLOOR_ATTEMPTS_PER_TURN} remaining this week
+        </div>
+      )}
 
       {/* Progress bar */}
       <div className="bg-[#2d1f0f] border border-[#8b7355] rounded p-2">
@@ -281,7 +337,8 @@ export function CavePanel({
             status !== 'locked' &&
             reqCheck.canEnter &&
             player.timeRemaining >= timeCost &&
-            player.health > 10;
+            player.health > 10 &&
+            attemptsRemaining > 0;
 
           const borderColor =
             status === 'cleared'
@@ -434,11 +491,13 @@ export function CavePanel({
                         ? status === 'cleared'
                           ? `Re-enter Floor ${floor.id}`
                           : `Enter Floor ${floor.id}`
-                        : !reqCheck.canEnter
-                          ? 'Requirements not met'
-                          : player.timeRemaining < timeCost
-                            ? 'Not enough time'
-                            : 'Too injured'}
+                        : attemptsRemaining <= 0
+                          ? 'Too fatigued (max attempts)'
+                          : !reqCheck.canEnter
+                            ? 'Requirements not met'
+                            : player.timeRemaining < timeCost
+                              ? 'Not enough time'
+                              : 'Too injured'}
                     </button>
                   )}
 

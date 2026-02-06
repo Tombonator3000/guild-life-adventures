@@ -111,6 +111,15 @@ export function resolveEncounter(
   const bonusesActivated: string[] = [];
   const attackPower = combatStats.attack * (1 + eduBonuses.attackBonus);
 
+  // RPG equipment penalty: no weapon = heavily penalized attack, no armor = more damage taken
+  const hasNoWeapon = combatStats.attack <= 0;
+  const hasNoArmor = combatStats.defense <= 0;
+  const noEquipmentDamageMult = hasNoArmor ? 1.5 : 1.0; // +50% damage taken without armor
+  const noWeaponGoldMult = hasNoWeapon ? 0.3 : 1.0;     // -70% gold earned without weapon
+
+  if (hasNoWeapon) bonusesActivated.push('No weapon! (-70% gold)');
+  if (hasNoArmor) bonusesActivated.push('No armor! (+50% dmg taken)');
+
   if (eduBonuses.attackBonus > 0) {
     bonusesActivated.push(`+${Math.round(eduBonuses.attackBonus * 100)}% ATK`);
   }
@@ -142,7 +151,7 @@ export function resolveEncounter(
         disarmed = true;
         bonusesActivated.push('Trap Sense');
       } else {
-        let d = Math.floor(encounter.baseDamage * (1 - eduBonuses.damageReduction));
+        let d = Math.floor(encounter.baseDamage * (1 - eduBonuses.damageReduction) * noEquipmentDamageMult);
         d = Math.max(1, d);
         damageDealt = d;
         if (eduBonuses.damageReduction > 0) {
@@ -165,8 +174,8 @@ export function resolveEncounter(
       const playerPower = effAtk + combatStats.defense * 0.5;
       const ratio = playerPower / Math.max(1, encounter.basePower);
 
-      // Damage: inversely proportional to power ratio
-      let d = Math.floor(encounter.baseDamage * Math.max(0.3, 1 - ratio * 0.5));
+      // Damage: inversely proportional to power ratio, penalized without armor
+      let d = Math.floor(encounter.baseDamage * Math.max(0.3, 1 - ratio * 0.5) * noEquipmentDamageMult);
       d = Math.floor(d * (1 - eduBonuses.damageReduction));
 
       if (eduBonuses.damageReduction > 0) {
@@ -180,9 +189,9 @@ export function resolveEncounter(
       d = Math.max(1, d);
       damageDealt = d;
 
-      // Gold: proportional to power ratio (capped at 1.5x)
+      // Gold: proportional to power ratio (capped at 1.5x), penalized without weapon
       goldEarned = Math.floor(
-        encounter.baseGold * (1 + eduBonuses.goldBonus) * Math.min(1.5, ratio),
+        encounter.baseGold * (1 + eduBonuses.goldBonus) * Math.min(1.5, ratio) * noWeaponGoldMult,
       );
       if (eduBonuses.goldBonus > 0) {
         bonusesActivated.push(`+${Math.round(eduBonuses.goldBonus * 100)}% gold`);
