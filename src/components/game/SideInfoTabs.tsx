@@ -168,7 +168,7 @@ export function SideInfoTabs({ player, goals, isCurrentPlayer }: SideInfoTabsPro
 
       {/* Tab Content - Scrollable */}
       <div className="flex-1 overflow-y-auto p-2 min-h-0">
-        {activeTab === 'inventory' && <InventoryTab player={player} />}
+        {activeTab === 'inventory' && <InventoryGrid player={player} />}
         {activeTab === 'goals' && <GoalsTab player={player} goals={goals} />}
         {activeTab === 'stats' && <StatsTab player={player} />}
       </div>
