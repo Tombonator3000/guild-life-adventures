@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import type { Location } from '@/types/game.types';
 import { cn } from '@/lib/utils';
 
@@ -19,6 +19,20 @@ export function LocationZone({
   onClick, 
   children 
 }: LocationZoneProps) {
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMousePos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setMousePos(null);
+  };
+
   return (
     <div
       className={cn(
@@ -33,19 +47,26 @@ export function LocationZone({
         height: location.position.height,
       }}
       onClick={onClick}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
     >
-      {/* Location name tooltip */}
-      <div className={cn(
-        'absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30',
-        isSelected && 'opacity-100'
-      )}>
-        <div className="parchment-panel px-3 py-1 whitespace-nowrap">
-          <span className="font-display text-sm font-semibold">{location.name}</span>
-          {moveCost > 0 && !isCurrentLocation && (
-            <span className="ml-2 text-xs text-muted-foreground">({moveCost}h)</span>
-          )}
+      {/* Location name tooltip - follows cursor */}
+      {mousePos && (
+        <div 
+          className="absolute pointer-events-none z-50"
+          style={{
+            left: mousePos.x + 12,
+            top: mousePos.y - 10,
+          }}
+        >
+          <div className="parchment-panel px-3 py-1 whitespace-nowrap shadow-lg">
+            <span className="font-display text-sm font-semibold">{location.name}</span>
+            {moveCost > 0 && !isCurrentLocation && (
+              <span className="ml-2 text-xs text-muted-foreground">({moveCost}h)</span>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Player tokens container */}
       <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
