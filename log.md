@@ -1,5 +1,80 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Happiness Decay Rebalance (6 fixes)
+
+Happiness was draining far too fast, making the happiness goal nearly impossible to maintain. Full audit comparing current mechanics to Jones in the Fast Lane revealed 6 major balance issues.
+
+### Root Cause Analysis
+
+**Problem**: Multiple overlapping happiness drains with insufficient gains. A typical turn at week 10+ with 3 work shifts would cost -6 happiness from work alone. Weekend activities only give +1-5 back. Theft events stacked -10 to -20 happiness (Jones uses -3 to -4). Housing happiness bonuses were defined in `housing.ts` but never applied anywhere in game logic.
+
+**Comparison with Jones in the Fast Lane:**
+- Jones has NO work happiness penalty
+- Jones starvation is time-only, not happiness
+- Jones robbery: -3 (street), -4 (apartment) — our game had -10 to -20
+- Jones relaxation activities are the primary happiness source
+
+### Fixes Applied
+
+| # | Fix | File(s) | Before | After |
+|---|-----|---------|--------|-------|
+| 1 | **Apply housing happinessBonus per turn** (BUG — defined but never used) | `turnHelpers.ts`, `housing.ts` | Not applied | Homeless -3, Slums 0, Modest +2, Noble +3 per turn |
+| 2 | **Reduce work happiness penalty** | `workEducationHelpers.ts` | -0/wk1-3, -1/wk4-8, **-2/wk9+** | -0/wk1-4, **-1/wk5+** |
+| 3 | **Reduce starvation happiness penalty** | `turnHelpers.ts`, `game.types.ts` | **-15** per week | **-8** per week |
+| 4 | **Reduce theft/robbery happiness penalties** | `events.ts` | -10/-15/-20 | -3/-5/-5/-4 (Jones-aligned) |
+| 5 | **Increase relax/sleep happiness gains** | `HomePanel.tsx` | Relax +3, Sleep +5 | Relax **+5**, Sleep **+8** |
+| 6 | **Weighted weekend activity selection** | `weekends.ts` | Random (all equal) | Expensive 3x, Medium 2x, Cheap 1x weight |
+
+### Additional Event Rebalancing
+| Event | Before | After |
+|-------|--------|-------|
+| Shadowfingers pocket theft | -10 hap | -3 hap |
+| Shadowfingers major heist | -15 hap | -5 hap |
+| Bank robbery | -20 hap | -5 hap |
+| Shadow Market ambush | -15 hap | -4 hap |
+| Illness (cold) | -5 hap | -2 hap |
+| Food poisoning | -10 hap | -3 hap |
+
+### Housing Happiness Bonus Values (adjusted for actual use)
+| Tier | Old (unused) | New (applied per turn) |
+|------|-------------|----------------------|
+| Homeless | -10 | -3 |
+| Slums | 0 | 0 |
+| Modest | +3 | +2 |
+| Noble Heights | +5 | +3 |
+
+### Net Effect on Happiness Flow (typical turn, week 10+)
+
+**Before (old balance):**
+- Work 3 shifts: -6 happiness
+- Weekend activity: +2 average (random cheap)
+- Net per week: **-4 to -6** (losing happiness every turn)
+
+**After (new balance):**
+- Work 3 shifts: -3 happiness (reduced penalty)
+- Housing bonus (Slums): 0 / (Modest): +2 / (Noble): +3
+- Weekend activity: +4 average (weighted toward better)
+- Net per week (Slums): **+1 to +3** / (Modest): **+3 to +5** / (Noble): **+4 to +6**
+
+### Files Modified (8)
+| File | Change |
+|------|--------|
+| `src/store/helpers/turnHelpers.ts` | Added housing happiness bonus in startTurn, reduced starvation penalty |
+| `src/store/helpers/workEducationHelpers.ts` | Work penalty: 0/wk1-4, -1/wk5+ (was -2/wk9+) |
+| `src/types/game.types.ts` | STARVATION_HAPPINESS_PENALTY: 15 → 8 |
+| `src/data/housing.ts` | Adjusted happinessBonus values for actual use |
+| `src/data/events.ts` | All theft/robbery/illness happiness penalties reduced 50-75% |
+| `src/data/weekends.ts` | Weighted random selection (expensive 3x, medium 2x, cheap 1x) |
+| `src/components/game/HomePanel.tsx` | Relax +3→+5, Sleep +5→+8, updated tooltips |
+| `src/test/work.test.ts` | Updated happiness penalty test expectations |
+
+### Build & Test
+- TypeScript compiles cleanly
+- Vite build succeeds
+- All 112 tests pass
+
+---
+
 ## 2026-02-06 - NPC Placeholder Portraits (12 files)
 
 Created 12 placeholder portrait images for all location NPCs. Each placeholder is a 256×288 JPG with the NPC's accent color scheme, a diamond emblem with their initial, and their name/title. These replace the emoji fallbacks in the NPC portrait component.

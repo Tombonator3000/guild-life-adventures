@@ -258,7 +258,7 @@ export const RENT_INTERVAL = 4; // Rent due every 4 weeks
 export const CLOTHING_INTERVAL = 8; // Clothing degrades every 8 weeks
 export const FOOD_DEPLETION_PER_WEEK = 25; // Lose 25 food per week
 export const STARVATION_HEALTH_PENALTY = 10; // Lose 10 health when starving
-export const STARVATION_HAPPINESS_PENALTY = 15; // Lose 15 happiness when starving
+export const STARVATION_HAPPINESS_PENALTY = 8; // Lose 8 happiness when starving (reduced from 15)
 
 // Rent costs per week - increased to be a meaningful recurring expense
 export const RENT_COSTS: Record<HousingTier, number> = {

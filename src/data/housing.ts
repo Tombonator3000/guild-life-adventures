@@ -17,7 +17,7 @@ export const HOUSING_DATA: Record<HousingTier, Housing> = {
     name: 'Homeless',
     description: 'Sleeping on the streets. Dangerous and demoralizing.',
     weeklyRent: 0,
-    happinessBonus: -10,
+    happinessBonus: -3,
     theftRisk: 50,
     relaxationRate: 0, // Cannot relax while homeless
   },
@@ -35,7 +35,7 @@ export const HOUSING_DATA: Record<HousingTier, Housing> = {
     name: 'Modest Dwelling',
     description: 'A comfortable apartment in a decent area.',
     weeklyRent: 200,
-    happinessBonus: 3,
+    happinessBonus: 2,
     theftRisk: 5,
     relaxationRate: 5,
   },
@@ -44,7 +44,7 @@ export const HOUSING_DATA: Record<HousingTier, Housing> = {
     name: 'Noble Heights',
     description: 'Luxury living for the wealthy. Safe and prestigious.',
     weeklyRent: 500,
-    happinessBonus: 5,
+    happinessBonus: 3,
     theftRisk: 0,
     relaxationRate: 3, // Increased from 2 to prevent happiness spam
   },

@@ -228,6 +228,16 @@
   - All 12 locations: Aldric, Mathilda, Brynn, Gunther, Lyra, Shade, Elara, Magnus, Cave, Korr, Tomas, Whiskers
   - Replace with real art by dropping new files in `public/npcs/`
 
+## Completed (2026-02-06)
+
+- [x] Happiness Decay Rebalance — 6 fixes to prevent happiness draining too fast
+  - [x] Fix 1: Apply housing happinessBonus per turn (BUG — was defined but never used)
+  - [x] Fix 2: Reduce work happiness penalty (-2/wk9+ → -1/wk5+)
+  - [x] Fix 3: Reduce starvation happiness penalty (15 → 8)
+  - [x] Fix 4: Reduce theft/robbery happiness penalties (50-75% reduction, Jones-aligned)
+  - [x] Fix 5: Increase relax/sleep happiness gains (Relax +3→+5, Sleep +5→+8)
+  - [x] Fix 6: Weighted weekend activity selection (better activities more likely when affordable)
+
 ## In Progress
 
 *No active tasks*

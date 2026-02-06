@@ -61,25 +61,25 @@ describe('workShift', () => {
     expect(useGameStore.getState().players[0].experience).toBe(6);
   });
 
-  it('no happiness penalty in weeks 1-3', () => {
+  it('no happiness penalty in weeks 1-4', () => {
     // week is 1 by default
     const hapBefore = useGameStore.getState().players[0].happiness;
     useGameStore.getState().workShift(playerId, 6, 10);
     expect(useGameStore.getState().players[0].happiness).toBe(hapBefore);
   });
 
-  it('-1 happiness penalty in weeks 4-8', () => {
-    useGameStore.setState({ week: 5 });
+  it('no happiness penalty in week 4', () => {
+    useGameStore.setState({ week: 4 });
     const hapBefore = useGameStore.getState().players[0].happiness;
     useGameStore.getState().workShift(playerId, 6, 10);
-    expect(useGameStore.getState().players[0].happiness).toBe(hapBefore - 1);
+    expect(useGameStore.getState().players[0].happiness).toBe(hapBefore);
   });
 
-  it('-2 happiness penalty in weeks 9+', () => {
+  it('-1 happiness penalty in weeks 5+', () => {
     useGameStore.setState({ week: 10 });
     const hapBefore = useGameStore.getState().players[0].happiness;
     useGameStore.getState().workShift(playerId, 6, 10);
-    expect(useGameStore.getState().players[0].happiness).toBe(hapBefore - 2);
+    expect(useGameStore.getState().players[0].happiness).toBe(hapBefore - 1);
   });
 
   it('applies permanentGoldBonus', () => {
