@@ -232,12 +232,12 @@ export function GameSetup() {
               />
               <div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="font-display text-card-foreground">Career Rank</span>
-                  <span className="text-primary font-semibold">
+                  <span className="font-display text-amber-900">Career Rank</span>
+                  <span className="text-amber-700 font-semibold">
                     {GUILD_RANK_NAMES[GUILD_RANK_ORDER[goals.career - 1] || 'novice']}
                   </span>
                 </div>
-                <p className="text-xs text-muted-foreground mb-2">Reach this guild rank</p>
+                <p className="text-xs text-amber-700 mb-2">Reach this guild rank</p>
                 <input
                   type="range"
                   min={1}
