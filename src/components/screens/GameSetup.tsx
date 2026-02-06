@@ -61,7 +61,7 @@ export function GameSetup() {
 
       {/* Content */}
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-8">
-        <h1 className="font-display text-4xl font-bold text-foreground mb-8">
+        <h1 className="font-display text-4xl font-bold text-amber-900 mb-8">
           Prepare Your Adventure
         </h1>
 
@@ -69,7 +69,7 @@ export function GameSetup() {
           {/* Players Section */}
           <div className="parchment-panel p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display text-xl font-semibold text-card-foreground">
+              <h2 className="font-display text-xl font-semibold text-amber-900">
                 Adventurers
               </h2>
               <button
@@ -92,7 +92,7 @@ export function GameSetup() {
                     type="text"
                     value={name}
                     onChange={(e) => updateName(index, e.target.value)}
-                    className="flex-1 px-4 py-2 bg-input border border-border rounded font-body text-card-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="flex-1 px-4 py-2 bg-input border border-border rounded font-body text-amber-900 placeholder:text-amber-600/50 focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="Enter name..."
                   />
                   <button
@@ -115,8 +115,8 @@ export function GameSetup() {
                   onChange={(e) => setIncludeAI(e.target.checked)}
                   className="w-5 h-5 accent-primary"
                 />
-                <Bot className="w-5 h-5 text-muted-foreground" />
-                <span className="font-display text-card-foreground">
+                <Bot className="w-5 h-5 text-amber-700" />
+                <span className="font-display text-amber-900">
                   Include Grimwald (AI Opponent)
                 </span>
               </label>
@@ -124,7 +124,7 @@ export function GameSetup() {
               {/* AI Difficulty Selection */}
               {includeAI && (
                 <div className="mt-4 ml-8 space-y-2">
-                  <p className="text-sm text-muted-foreground mb-2">Select Grimwald's cunning:</p>
+                  <p className="text-sm text-amber-700 mb-2">Select Grimwald's cunning:</p>
                   <div className="flex gap-2">
                     {(['easy', 'medium', 'hard'] as AIDifficulty[]).map((diff) => (
                       <button
@@ -145,7 +145,7 @@ export function GameSetup() {
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground text-center mt-1">
+                  <p className="text-xs text-amber-700 text-center mt-1">
                     {AI_DIFFICULTY_DESCRIPTIONS[aiDifficulty]}
                   </p>
                 </div>
@@ -161,8 +161,8 @@ export function GameSetup() {
                   onChange={(e) => setEnableTutorial(e.target.checked)}
                   className="w-5 h-5 accent-primary"
                 />
-                <Lightbulb className="w-5 h-5 text-muted-foreground" />
-                <span className="font-display text-card-foreground">
+                <Lightbulb className="w-5 h-5 text-amber-700" />
+                <span className="font-display text-amber-900">
                   Show Tutorial (recommended for new players)
                 </span>
               </label>
@@ -171,10 +171,10 @@ export function GameSetup() {
 
           {/* Victory Goals */}
           <div className="parchment-panel p-6">
-            <h2 className="font-display text-xl font-semibold text-card-foreground mb-2">
+            <h2 className="font-display text-xl font-semibold text-amber-900 mb-2">
               Victory Goals
             </h2>
-            <p className="text-muted-foreground text-sm mb-4">
+            <p className="text-amber-700 text-sm mb-4">
               Set the targets required to win. First to reach all four goals wins!
             </p>
 
@@ -232,12 +232,12 @@ export function GameSetup() {
               />
               <div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="font-display text-card-foreground">Career Rank</span>
-                  <span className="text-primary font-semibold">
+                  <span className="font-display text-amber-900">Career Rank</span>
+                  <span className="text-amber-700 font-semibold">
                     {GUILD_RANK_NAMES[GUILD_RANK_ORDER[goals.career - 1] || 'novice']}
                   </span>
                 </div>
-                <p className="text-xs text-muted-foreground mb-2">Reach this guild rank</p>
+                <p className="text-xs text-amber-700 mb-2">Reach this guild rank</p>
                 <input
                   type="range"
                   min={1}
@@ -287,11 +287,11 @@ function GoalSlider({ label, value, onChange, min, max, step = 1, unit, descript
   return (
     <div>
       <div className="flex justify-between text-sm mb-1">
-        <span className="font-display text-card-foreground">{label}</span>
-        <span className="text-primary font-semibold">{value}{unit}</span>
+        <span className="font-display text-amber-900">{label}</span>
+        <span className="text-amber-700 font-semibold">{value}{unit}</span>
       </div>
       {description && (
-        <p className="text-xs text-muted-foreground mb-2">{description}</p>
+        <p className="text-xs text-amber-700 mb-2">{description}</p>
       )}
       <input
         type="range"

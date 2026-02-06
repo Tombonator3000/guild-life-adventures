@@ -98,21 +98,21 @@ function GoalBar({ icon, label, current, target, progress, unit, compact = false
   if (compact) {
     return (
       <div className="flex items-center gap-1">
-        <div className={`${isComplete ? 'text-secondary' : 'text-muted-foreground'}`}>
+        <div className={`${isComplete ? 'text-green-700' : 'text-amber-700'}`}>
           {icon}
         </div>
-        <span className="font-display text-[9px] w-10">{label}</span>
-        <div className="flex-1 h-1.5 bg-wood/20 rounded-full overflow-hidden">
+        <span className="font-display text-[9px] w-10 text-amber-900">{label}</span>
+        <div className="flex-1 h-1.5 bg-amber-900/20 rounded-full overflow-hidden">
           <div 
-            className={`h-full ${isComplete ? 'bg-secondary' : 'bg-primary'} transition-all`}
+            className={`h-full ${isComplete ? 'bg-green-600' : 'bg-amber-600'} transition-all`}
             style={{ width: `${progress}%` }}
           />
         </div>
-        <span className="text-[8px] text-muted-foreground w-8 text-right">
+        <span className="text-[8px] text-amber-800 w-8 text-right">
           {Math.round(progress)}%
         </span>
         {isComplete && (
-          <Target className="w-2.5 h-2.5 text-secondary" />
+          <Target className="w-2.5 h-2.5 text-green-600" />
         )}
       </div>
     );

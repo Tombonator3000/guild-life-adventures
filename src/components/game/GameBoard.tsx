@@ -11,7 +11,7 @@ import { ShadowfingersModal, useShadowfingersModal } from './ShadowfingersModal'
 import { ZoneEditor, type CenterPanelConfig } from './ZoneEditor';
 import { MOVEMENT_PATHS, BOARD_PATH, type MovementWaypoint } from '@/data/locations';
 import { SideInfoTabs } from './SideInfoTabs';
-import { TurnOrderPanel } from './TurnOrderPanel';
+import { RightSideTabs } from './RightSideTabs';
 import { SaveLoadMenu } from './SaveLoadMenu';
 import { TutorialOverlay } from './TutorialOverlay';
 import { DarkModeToggle } from './DarkModeToggle';
@@ -501,40 +501,26 @@ export function GameBoard() {
           <DarkModeToggle className="parchment-panel" />
         </div>
 
-        {/* Zone Editor button (bottom right) */}
-        <div className="absolute bottom-4 right-4 z-20 flex gap-2">
-          <button
-            onClick={() => setShowDebugOverlay(prev => !prev)}
-            className={`px-3 py-1 text-xs rounded ${
-              showDebugOverlay
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700'
-            }`}
-            title="Toggle debug overlay (Ctrl+Shift+D)"
-          >
-            Debug
-          </button>
-          <button
-            onClick={() => setShowZoneEditor(true)}
-            className="px-3 py-1 text-xs bg-blue-600/80 text-white rounded hover:bg-blue-500"
-            title="Open zone editor (Ctrl+Shift+Z)"
-          >
-            Edit Zones
-          </button>
-        </div>
         </div>
 
-        {/* Right Side Panel - Turn Order (12% of container width) */}
+        {/* Right Side Panel - Players, Options, Developer Tabs (12% of container width) */}
         <div
           className="relative z-30 p-[0.5%] flex flex-col flex-shrink-0 h-full"
           style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
         >
-          <TurnOrderPanel
+          <RightSideTabs
             players={players}
             currentPlayerIndex={currentPlayerIndex}
             week={week}
-            priceModifier={priceModifier}
             goalSettings={goalSettings}
+            onOpenSaveMenu={() => setShowGameMenu(true)}
+            onToggleDebugOverlay={() => setShowDebugOverlay(prev => !prev)}
+            onToggleZoneEditor={() => setShowZoneEditor(true)}
+            showDebugOverlay={showDebugOverlay}
+            aiIsThinking={aiIsThinking}
+            aiSpeedMultiplier={aiSpeedMultiplier}
+            onSetAISpeed={setAISpeedMultiplier}
+            onSkipAITurn={() => setSkipAITurn(true)}
           />
         </div>
       </div>

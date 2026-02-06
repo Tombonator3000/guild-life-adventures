@@ -167,10 +167,10 @@ export function TitleScreen() {
 function FeatureCard({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
     <div className="parchment-panel p-4 text-center">
-      <div className="text-primary mb-2 flex justify-center">
+      <div className="text-amber-700 mb-2 flex justify-center">
         {icon}
       </div>
-      <span className="font-display text-sm text-card-foreground">{label}</span>
+      <span className="font-display text-sm text-amber-900 font-semibold">{label}</span>
     </div>
   );
 }
