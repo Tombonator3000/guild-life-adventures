@@ -1,3 +1,5 @@
+import { playSFX, type SFXId } from '@/audio/sfxManager';
+
 export interface ActionButtonProps {
   label: string;
   cost: number;
@@ -5,12 +7,20 @@ export interface ActionButtonProps {
   reward?: number;
   disabled: boolean;
   onClick: () => void;
+  sfx?: SFXId;
 }
 
-export function ActionButton({ label, cost, time, reward, disabled, onClick }: ActionButtonProps) {
+export function ActionButton({ label, cost, time, reward, disabled, onClick, sfx = 'button-click' }: ActionButtonProps) {
+  const handleClick = () => {
+    if (!disabled) {
+      playSFX(sfx);
+    }
+    onClick();
+  };
+
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
       disabled={disabled}
       className="w-full p-2 wood-frame text-card flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
     >

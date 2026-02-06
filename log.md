@@ -1,5 +1,68 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Sound Effects System (SFX)
+
+Added a complete sound effects system for UI interactions and game events.
+
+### Architecture
+- `src/audio/sfxManager.ts` — Singleton SFXManager with audio element pooling (8 elements for overlapping sounds)
+- `src/hooks/useSFX.ts` — React hook: `useSFXSettings()` for volume/mute controls and `playSFX()` for one-off sounds
+- `src/components/ui/sfx-button.tsx` — SFXButton component, `withSFX()` wrapper, `useSFXClick()` helper
+
+### Sound Effect Library (Placeholder files needed in `/public/sfx/`)
+| Category | SFX IDs |
+|----------|---------|
+| UI Sounds | `button-click`, `button-hover`, `gold-button-click`, `menu-open`, `menu-close` |
+| Game Actions | `coin-gain`, `coin-spend`, `item-buy`, `item-equip`, `success`, `error` |
+| Movement | `footstep`, `door-open` |
+| Work/Education | `work-complete`, `study`, `graduation` |
+| Combat | `sword-hit`, `damage-taken`, `victory-fanfare`, `defeat` |
+| Events | `notification`, `turn-start`, `week-end` |
+
+### Integration Points
+- `ActionButton.tsx` — Now plays SFX on click (default: `button-click`)
+- `RightSideTabs.tsx` — Added SFX volume slider and mute toggle in Options tab
+- Settings persisted to `localStorage` key `guild-life-sfx-settings`
+
+### Suggested Locations for SFX (Prioritized)
+1. **High Priority (Core Gameplay)**
+   - Button clicks (all UI interactions)
+   - Gold gain/spend (buying, selling, earning)
+   - Movement between locations
+   - Work/study completion
+   - Turn end / week end
+
+2. **Medium Priority (Feedback)**
+   - Item equip/unequip
+   - Combat hits and damage
+   - Dungeon floor cleared
+   - Quest complete
+   - Level up / graduation
+
+3. **Low Priority (Polish)**
+   - Hover sounds on interactive elements
+   - Menu open/close
+   - Notification toasts
+   - Dice rolls / gambling
+   - Robbery events
+
+### Bug Fix: AI pawnAppliance missing argument
+- `useGrimwaldAI.ts` now passes `pawnValue` to `pawnAppliance()`
+- `actionGenerator.ts` includes `pawnValue: 50` in action details
+
+### Files Created
+- `src/audio/sfxManager.ts`
+- `src/hooks/useSFX.ts`
+- `src/components/ui/sfx-button.tsx`
+
+### Files Modified
+- `src/components/game/ActionButton.tsx` — Added SFX support
+- `src/components/game/RightSideTabs.tsx` — Added SFX volume controls
+- `src/hooks/useGrimwaldAI.ts` — Fixed pawnAppliance call
+- `src/hooks/ai/actionGenerator.ts` — Added pawnValue to action details
+
+---
+
 ## 2026-02-06 - Cave/Dungeon Audit — 5 Bugs Fixed
 
 Full audit of the cave/dungeon system. Found and fixed 5 bugs ranging from critical (permanent fatigue lock) to minor (HP display).

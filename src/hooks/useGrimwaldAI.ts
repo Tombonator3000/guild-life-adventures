@@ -404,8 +404,9 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
       // AI-7: Pawn an appliance at fence
       case 'pawn-appliance': {
         const applianceId = action.details?.applianceId as string;
+        const pawnValue = (action.details?.pawnValue as number) || 50;
         if (!applianceId || !player.appliances[applianceId]) return false;
-        pawnAppliance(player.id, applianceId);
+        pawnAppliance(player.id, applianceId, pawnValue);
         spendTime(player.id, 1);
         return true;
       }

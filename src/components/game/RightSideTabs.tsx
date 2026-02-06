@@ -2,8 +2,9 @@
 // Follows the medieval parchment aesthetic with amber-800/900 text colors
 
 import { useState } from 'react';
-import { Settings, Save, Code, Users, Target, Coins, Smile, GraduationCap, TrendingUp, Crown, Skull, Bot, Play, FastForward, SkipForward, Menu, Volume2, VolumeX } from 'lucide-react';
+import { Settings, Save, Code, Users, Target, Coins, Smile, GraduationCap, TrendingUp, Crown, Skull, Bot, Play, FastForward, SkipForward, Menu, Volume2, VolumeX, Music, Sparkles } from 'lucide-react';
 import { useAudioSettings } from '@/hooks/useMusic';
+import { useSFXSettings } from '@/hooks/useSFX';
 import type { Player, GoalSettings } from '@/types/game.types';
 import { GUILD_RANK_NAMES, GUILD_RANK_INDEX, HOURS_PER_TURN } from '@/types/game.types';
 
@@ -293,6 +294,7 @@ function OptionsTab({
   onSkipAITurn: () => void;
 }) {
   const { musicVolume, musicMuted, setVolume, toggleMute } = useAudioSettings();
+  const sfx = useSFXSettings();
 
   return (
     <div className="space-y-2">
@@ -322,7 +324,7 @@ function OptionsTab({
             }`}
             title={musicMuted ? 'Unmute music' : 'Mute music'}
           >
-            {musicMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+            {musicMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Music className="w-3.5 h-3.5" />}
           </button>
           <input
             type="range"
@@ -339,6 +341,39 @@ function OptionsTab({
           />
           <span className="text-[10px] text-amber-800 font-display w-7 text-right">
             {musicMuted ? '0' : Math.round(musicVolume * 100)}%
+          </span>
+        </div>
+      </OptionSection>
+
+      {/* SFX Controls */}
+      <OptionSection title="Sound Effects">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={sfx.toggleMute}
+            className={`p-1.5 rounded border text-xs transition-colors ${
+              sfx.sfxMuted
+                ? 'bg-red-100 border-red-300 text-red-700'
+                : 'bg-amber-200/50 border-amber-600/50 text-amber-900'
+            }`}
+            title={sfx.sfxMuted ? 'Unmute SFX' : 'Mute SFX'}
+          >
+            {sfx.sfxMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
+          </button>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={sfx.sfxMuted ? 0 : Math.round(sfx.sfxVolume * 100)}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10) / 100;
+              sfx.setVolume(v);
+              if (sfx.sfxMuted && v > 0) sfx.toggleMute();
+            }}
+            className="flex-1 h-2 accent-amber-700 cursor-pointer"
+            title={`SFX volume: ${Math.round(sfx.sfxVolume * 100)}%`}
+          />
+          <span className="text-[10px] text-amber-800 font-display w-7 text-right">
+            {sfx.sfxMuted ? '0' : Math.round(sfx.sfxVolume * 100)}%
           </span>
         </div>
       </OptionSection>
