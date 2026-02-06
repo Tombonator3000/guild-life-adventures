@@ -1,5 +1,51 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Location Panel Layout Optimization (Reduce Scrolling, Bigger NPC Portraits)
+
+Optimized the center panel layout to better utilize available space. NPC portraits are significantly bigger, header is more compact, and sub-panels fill available height instead of using restrictive max-height constraints.
+
+### Problem
+Despite the LocationShell + tab system, there was still excessive scrolling within tab content. NPC portraits were too small (96×96px) relative to the panel size, the header wasted vertical space with a two-line layout, and sub-panels had hardcoded `max-h-48`/`max-h-52` constraints that forced nested scrolling even when the panel had room to show more content.
+
+### Changes
+
+**LocationShell.tsx — Bigger NPC portraits, tighter spacing:**
+- Portrait box: `w-24 h-24` (96×96px) → `w-32 h-36` (128×144px) — 33%/50% bigger
+- Emoji font: `text-5xl` → `text-7xl` — much more prominent
+- NPC name: `text-xs` → `text-sm`
+- NPC title: `text-[10px]` → `text-[11px]`
+- Column width: `w-28` → `w-36` (112px → 144px)
+- Gap: `gap-3` → `gap-2`, tab margin: `mb-2` → `mb-1.5`
+
+**LocationPanel.tsx — Compact header, reduced padding:**
+- Padding: `p-3` → `p-2` when at a location (saves 8px total)
+- Header: two-line (title + description) → single-line with inline description
+- Title: `text-lg` → `text-sm` when at location
+- Header margin: `mb-2` → `mb-1`
+- Description only shown as second line in travel view
+
+**Sub-panels — Removed restrictive max-h constraints (7 files):**
+- QuestPanel: removed `max-h-48` on quest list
+- GuildHallPanel: removed `max-h-52` on job list, `max-h-48` on employer list
+- AcademyPanel: removed `max-h-48` on degree list
+- EnchanterPanel: removed `max-h-48` on appliance list
+- PawnShopPanel: removed `max-h-32` (×2) and `max-h-24` constraints
+
+All content now flows naturally within the `flex-1 overflow-y-auto` parent in LocationShell — single scroll context instead of nested scrollbars.
+
+### Space Savings (estimated at 1920×1080)
+- Header: ~22px saved (single line vs two lines)
+- Padding: ~8px saved (p-2 vs p-3)
+- Content: fills full remaining height instead of capped at 192-208px
+- Net: ~30px more vertical space + content expands to fill panel
+
+### Build & Test
+- TypeScript compiles cleanly
+- Vite build succeeds
+- All 112 tests pass
+
+---
+
 ## 2026-02-06 - Location Panel Layout Overhaul (Jones-Style Menu System)
 
 Redesigned all location panels to use a Jones-style menu system with NPC portraits and tab navigation. Eliminates excessive scrolling by showing only one section at a time.

@@ -231,7 +231,7 @@ export function GuildHallPanel({
           </button>
 
           <JonesSectionHeader title="AVAILABLE POSITIONS" />
-          <div className="max-h-52 overflow-y-auto space-y-1">
+          <div className="space-y-1">
             {selectedEmployer.jobs.map(job => {
               const isCurrentJob = player.currentJob === job.id;
               const marketWage = marketWages.get(job.id) ?? job.baseWage;
@@ -296,7 +296,7 @@ export function GuildHallPanel({
       <JonesPanelHeader title="Employment Office" subtitle="Guild Hall" />
       <JonesPanelContent>
         <JonesSectionHeader title="EMPLOYERS" />
-        <div className="max-h-48 overflow-y-auto">
+        <div>
           {employers.map(employer => (
             <JonesListItem
               key={employer.id}

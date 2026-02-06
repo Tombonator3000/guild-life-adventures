@@ -30,11 +30,11 @@ export function LocationShell({ npc, tabs, defaultTab }: LocationShellProps) {
   const showTabBar = visibleTabs.length > 1;
 
   return (
-    <div className="flex gap-3 h-full">
+    <div className="flex gap-2 h-full">
       {/* NPC Portrait - Left side (Jones-style) */}
-      <div className="flex-shrink-0 w-28 flex flex-col items-center">
+      <div className="flex-shrink-0 w-36 flex flex-col items-center">
         <div
-          className="w-24 h-24 rounded-lg border-2 flex items-center justify-center text-5xl mb-2 shadow-inner"
+          className="w-32 h-36 rounded-lg border-2 flex items-center justify-center text-7xl mb-1.5 shadow-inner"
           style={{
             backgroundColor: npc.bgColor,
             borderColor: npc.accentColor,
@@ -45,17 +45,17 @@ export function LocationShell({ npc, tabs, defaultTab }: LocationShellProps) {
         </div>
         <div className="text-center">
           <div
-            className="font-display text-xs font-bold leading-tight"
+            className="font-display text-sm font-bold leading-tight"
             style={{ color: npc.accentColor }}
           >
             {npc.name}
           </div>
-          <div className="text-[10px] text-[#8b7355] leading-tight">
+          <div className="text-[11px] text-[#8b7355] leading-tight">
             {npc.title}
           </div>
         </div>
         <div
-          className="mt-2 text-[10px] italic text-center leading-tight px-1"
+          className="mt-1.5 text-[11px] italic text-center leading-tight px-1"
           style={{ color: '#a09080' }}
         >
           &ldquo;{npc.greeting}&rdquo;
@@ -66,7 +66,7 @@ export function LocationShell({ npc, tabs, defaultTab }: LocationShellProps) {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Tab navigation */}
         {showTabBar && (
-          <div className="flex gap-1 mb-2 flex-wrap">
+          <div className="flex gap-1 mb-1.5 flex-wrap">
             {visibleTabs.map(tab => {
               const isActive = tab.id === activeTab;
               return (

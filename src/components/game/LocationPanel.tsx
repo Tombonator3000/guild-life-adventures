@@ -566,17 +566,17 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
 
   return (
     <>
-      <div className="parchment-panel h-full p-3 flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
-            <div>
-              <h2 className="font-display text-lg font-bold text-card-foreground leading-tight">
-                {location.name}
-              </h2>
-              <p className="text-muted-foreground text-xs">{location.description}</p>
-            </div>
+      <div className={`parchment-panel h-full flex flex-col overflow-hidden ${isHere ? 'p-2' : 'p-3'}`}>
+        {/* Header - compact single line when at location, full when traveling */}
+        <div className={`flex items-center justify-between ${isHere ? 'mb-1' : 'mb-2'}`}>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+            <h2 className={`font-display font-bold text-card-foreground leading-tight truncate ${isHere ? 'text-sm' : 'text-lg'}`}>
+              {location.name}
+            </h2>
+            {isHere && (
+              <span className="text-muted-foreground text-[11px] truncate hidden sm:inline">{location.description}</span>
+            )}
           </div>
           <button
             onClick={() => selectLocation(null)}
@@ -585,6 +585,9 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             <X className="w-4 h-4 text-muted-foreground" />
           </button>
         </div>
+        {!isHere && (
+          <p className="text-muted-foreground text-xs mb-2 ml-6">{location.description}</p>
+        )}
 
         {/* Travel or Actions */}
         <div className="flex-1 overflow-hidden">

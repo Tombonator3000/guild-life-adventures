@@ -80,7 +80,7 @@ export function EnchanterPanel({ player, priceModifier, onSpendTime }: Enchanter
         Premium enchanted items. Higher price, but lower chance to break (1/51 per turn).
       </p>
 
-      <div className="space-y-2 max-h-48 overflow-y-auto">
+      <div className="space-y-2">
         {appliances.map(appliance => {
           const price = Math.round(appliance.enchanterPrice * priceModifier);
           const alreadyOwns = !!player.appliances[appliance.id];
