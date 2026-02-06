@@ -161,8 +161,8 @@ export function GameSetup() {
                   onChange={(e) => setEnableTutorial(e.target.checked)}
                   className="w-5 h-5 accent-primary"
                 />
-                <Lightbulb className="w-5 h-5 text-muted-foreground" />
-                <span className="font-display text-card-foreground">
+                <Lightbulb className="w-5 h-5 text-amber-700" />
+                <span className="font-display text-amber-900">
                   Show Tutorial (recommended for new players)
                 </span>
               </label>
