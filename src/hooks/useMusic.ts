@@ -10,16 +10,17 @@ import {
 } from '@/audio/musicConfig';
 import type { GameState, LocationId } from '@/types/game.types';
 
+// Stable references for useSyncExternalStore to prevent infinite loops
+const subscribe = (cb: () => void) => audioManager.subscribe(cb);
+const getSnapshot = () => audioManager.getSettings();
+
 /** Subscribe to audioManager settings changes and return current settings. */
 export function useAudioSettings(): AudioSettings & {
   setVolume: (v: number) => void;
   toggleMute: () => void;
   setMuted: (m: boolean) => void;
 } {
-  const settings = useSyncExternalStore(
-    (cb) => audioManager.subscribe(cb),
-    () => audioManager.getSettings(),
-  );
+  const settings = useSyncExternalStore(subscribe, getSnapshot);
 
   return {
     ...settings,
