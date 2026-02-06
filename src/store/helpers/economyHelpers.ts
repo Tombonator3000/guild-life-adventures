@@ -16,9 +16,10 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
           const rentCost = RENT_COSTS[p.housing];
+          if (p.gold < rentCost) return p;
           return {
             ...p,
-            gold: Math.max(0, p.gold - rentCost),
+            gold: p.gold - rentCost,
             weeksSinceRent: 0,
           };
         }),
@@ -61,17 +62,31 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
       }));
     },
 
+    withdrawInvestment: (playerId: string, amount: number) => {
+      if (amount <= 0 || !Number.isFinite(amount)) return;
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          const actual = Math.min(amount, p.investments);
+          if (actual <= 0) return p;
+          // 10% early withdrawal penalty
+          const penalty = Math.floor(actual * 0.10);
+          return { ...p, gold: p.gold + actual - penalty, investments: p.investments - actual };
+        }),
+      }));
+    },
+
     buyItem: (playerId: string, itemId: string, cost: number) => {
       set((state) => ({
-        players: state.players.map((p) =>
-          p.id === playerId
-            ? {
-                ...p,
-                gold: Math.max(0, p.gold - cost),
-                inventory: [...p.inventory, itemId],
-              }
-            : p
-        ),
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          if (p.gold < cost) return p;
+          return {
+            ...p,
+            gold: p.gold - cost,
+            inventory: [...p.inventory, itemId],
+          };
+        }),
       }));
     },
 
@@ -96,11 +111,12 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
+          if (p.gold < cost) return p;
           const newDurables = { ...p.durables };
           newDurables[itemId] = (newDurables[itemId] || 0) + 1;
           return {
             ...p,
-            gold: Math.max(0, p.gold - cost),
+            gold: p.gold - cost,
             durables: newDurables,
           };
         }),
@@ -140,6 +156,7 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
 
       const appliance = getAppliance(applianceId);
       if (!appliance) return 0;
+      if (player.gold < price) return 0;
 
       // Check if this is first time owning this type (for happiness bonus)
       const isFirstTime = !player.applianceHistory.includes(applianceId);
@@ -166,7 +183,7 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
 
           return {
             ...p,
-            gold: Math.max(0, p.gold - price),
+            gold: p.gold - price,
             appliances: newAppliances,
             applianceHistory: newHistory,
             happiness: Math.min(100, p.happiness + happinessGain),
@@ -187,6 +204,7 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
       if (!ownedAppliance || !ownedAppliance.isBroken) return 0;
 
       const repairCost = calculateRepairCost(ownedAppliance.originalPrice);
+      if (player.gold < repairCost) return 0;
 
       set((state) => ({
         players: state.players.map((p) => {
@@ -200,7 +218,7 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
 
           return {
             ...p,
-            gold: Math.max(0, p.gold - repairCost),
+            gold: p.gold - repairCost,
             appliances: newAppliances,
           };
         }),
@@ -233,10 +251,11 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
+          if (p.gold < totalCost) return p;
 
           return {
             ...p,
-            gold: Math.max(0, p.gold - totalCost),
+            gold: p.gold - totalCost,
             rentPrepaidWeeks: p.rentPrepaidWeeks + weeks,
             weeksSinceRent: 0,
           };
@@ -249,10 +268,11 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
+          if (p.gold < cost) return p;
 
           return {
             ...p,
-            gold: Math.max(0, p.gold - cost),
+            gold: p.gold - cost,
             housing: tier,
             weeksSinceRent: 0,
             rentPrepaidWeeks: 0,
@@ -460,6 +480,7 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
           // Check if player has preservation box
           const hasPreservationBox = p.appliances['preservation-box'] && !p.appliances['preservation-box'].isBroken;
           if (!hasPreservationBox) return p; // Can't store without preservation box
+          if (p.gold < cost) return p;
 
           const hasFrostChest = p.appliances['frost-chest'] && !p.appliances['frost-chest'].isBroken;
           const maxStorage = hasFrostChest ? 12 : 6;
@@ -467,7 +488,7 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
 
           return {
             ...p,
-            gold: Math.max(0, p.gold - cost),
+            gold: p.gold - cost,
             freshFood: newFreshFood,
           };
         }),
@@ -478,11 +499,11 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
 
     buyLotteryTicket: (playerId: string, cost: number) => {
       set((state) => ({
-        players: state.players.map((p) =>
-          p.id === playerId
-            ? { ...p, gold: Math.max(0, p.gold - cost), lotteryTickets: p.lotteryTickets + 1 }
-            : p
-        ),
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          if (p.gold < cost) return p;
+          return { ...p, gold: p.gold - cost, lotteryTickets: p.lotteryTickets + 1 };
+        }),
       }));
     },
 
@@ -494,9 +515,10 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
           if (p.id !== playerId) return p;
           // Don't allow duplicate ticket types
           if (p.tickets.includes(ticketType)) return p;
+          if (p.gold < cost) return p;
           return {
             ...p,
-            gold: Math.max(0, p.gold - cost),
+            gold: p.gold - cost,
             tickets: [...p.tickets, ticketType],
           };
         }),

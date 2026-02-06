@@ -83,10 +83,11 @@ export function QuestPanel({ quests, player, onTakeQuest, onCompleteQuest, onAba
         ) : (
           quests.map(quest => {
             const { canTake, reason } = canTakeQuest(
-              quest, 
-              player.guildRank, 
-              player.education, 
-              player.inventory
+              quest,
+              player.guildRank,
+              player.education,
+              player.inventory,
+              player.dungeonFloorsCleared
             );
             const hasTime = player.timeRemaining >= quest.timeRequired;
             const hasHealth = player.health > quest.healthRisk;

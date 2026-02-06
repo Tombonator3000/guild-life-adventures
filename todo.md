@@ -127,6 +127,70 @@
 
 *No active tasks*
 
+## Full Game Audit Findings (2026-02-06)
+
+See log.md "Full Game Audit (Agent Playthrough Analysis)" for complete details with file references.
+
+### Critical Bugs (14/14 fixed)
+- [x] C1: Add 2-hour location entry cost — **FIXED** `getMovementCost` returns `pathDistance + 2`
+- [x] C2: Fix AI startTurn immunity — **FIXED** Removed `player.isAI` guard
+- [x] C3: Fix rent prepayment system — **FIXED** `processWeekEnd` decrements prepaidWeeks
+- [x] C4: Use lockedRent in rent calculations — **FIXED** `lockedRent > 0 ? lockedRent : RENT_COSTS`
+- [x] C5: Call checkDeath in processWeekEnd — **FIXED** Inline death check loop
+- [x] C6: Fix quest education requirements — **FIXED** `DEGREE_TO_PATH` mapping in completeDegree
+- [x] C7: Add gold validation to all purchase actions — **FIXED** 9 actions validated
+- [x] C8: Batch eventMessages in startTurn — **FIXED** Collected into array, joined at end
+- [x] C9: Fix home location for modest/homeless tiers — **FIXED** `getHomeLocation()` helper
+- [x] C10: Fix stale player data in startTurn — **FIXED** Re-read after doctor visit
+- [x] C11: Fix lottery expected value — **FIXED** EV now 1.68g per 10g ticket
+- [x] C12: Add wage cap on raises — **FIXED** Cap at 3x base job wage
+- [x] C13: Fix double-charge on appliance breakage — **FIXED** No auto gold charge
+- [x] C14: Fix AI hardcoded/fabricated prices — **FIXED** Dynamic via action.details
+
+### High Priority Bugs (10/12 fixed)
+- [x] H1: Clear appliances/equipment on eviction — **FIXED**
+- [x] H2: Fix VictoryScreen wealth calculation — **FIXED** Added stocks - loans
+- [x] H3: Add checkDeath after quest completion — **FIXED**
+- [x] H4: Pass dungeonFloorsCleared to QuestPanel — **FIXED**
+- [x] H5: Validate gold before payRent — **FIXED**
+- [x] H6: Validate gold before studyDegree — **FIXED**
+- [ ] H7: Enforce MAX_FLOOR_ATTEMPTS_PER_TURN (deferred)
+- [x] H8: Make market crash a global event — **FIXED**
+- [ ] H9: Fix AI dungeon health tracking (deferred — low impact)
+- [x] H10: AI rest should increase relaxation — **FIXED**
+- [x] H11: AI career strategy should prioritize quests — **FIXED**
+- [x] H12: Resolve dual item definitions — **FIXED** via action details
+
+### Balance Issues (8/10 fixed)
+- [x] B1: Cap loan interest at 2x — **FIXED** Cap at 2000g
+- [ ] B2: Increase quest rewards (deferred — needs design review)
+- [x] B3: Add retreat penalty — **FIXED** 50% gold forfeit
+- [x] B4: Reduce Noble Heights rent — **FIXED** 500→350g
+- [x] B5: Only decay dependability if unemployed — **FIXED**
+- [ ] B6: Nerf Cooking Fire (deferred — borderline; only +1/turn)
+- [x] B7: Add investment withdrawal — **FIXED** 10% penalty
+- [x] B8: Add "Stay Home" free weekend option — **FIXED**
+- [x] B9: Allow rare drops on repeat clears — **FIXED** 20% rate
+- [x] B10: Flatten guild rank quest requirements — **FIXED** Max=60
+
+### AI Improvements (8/16 fixed)
+- [x] AI-1: Add healing/health recovery — **FIXED**
+- [ ] AI-2: Add sickness cure action (deferred)
+- [ ] AI-3: Add loan system usage (deferred)
+- [ ] AI-4: Add stock market trading (deferred)
+- [ ] AI-5: Add fresh food management (deferred)
+- [ ] AI-6: Add weekend ticket purchases (deferred)
+- [ ] AI-7: Add item selling/pawning (deferred)
+- [ ] AI-8: Add lottery ticket purchases (deferred)
+- [x] AI-9: Make graduation opportunistic — **FIXED**
+- [x] AI-10: Buy food at closest store — **FIXED** Shadow Market added
+- [x] AI-11: Buy varied appliances — **FIXED** Cooking Fire priority
+- [ ] AI-12: Add route optimization (deferred)
+- [x] AI-13: Allow housing downgrade when broke — **FIXED**
+- [x] AI-14: Dynamic prices in actions — **FIXED**
+- [x] AI-15: Career quests for guild rank — **FIXED**
+- [x] AI-16: Fix clothing purchase location — **FIXED**
+
 ## Proposed Improvements (2026-02-05 Code Audit)
 
 See log.md "Improvement Proposals (Code Audit & Gap Analysis)" for full details.

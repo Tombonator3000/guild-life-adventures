@@ -264,7 +264,7 @@ export const RENT_COSTS: Record<HousingTier, number> = {
   homeless: 0,
   slums: 75,
   modest: 200,
-  noble: 500,
+  noble: 350,
 };
 
 // Guild Pass cost - required before taking quests

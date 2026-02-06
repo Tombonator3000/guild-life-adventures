@@ -48,6 +48,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     modifyFood,
     modifyHappiness,
     modifyClothing,
+    modifyRelaxation,
     spendTime,
     studyDegree,
     completeDegree,
@@ -83,7 +84,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
       }
 
       case 'buy-food': {
-        const cost = (action.details?.cost as number) || 8;
+        const cost = (action.details?.cost as number) || 15;
         const foodGain = (action.details?.foodGain as number) || 25;
         if (player.gold < cost) return false;
         modifyGold(player.id, -cost);
@@ -93,10 +94,11 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
       }
 
       case 'buy-clothing': {
-        const cost = (action.details?.cost as number) || 30;
+        const cost = (action.details?.cost as number) || 25;
+        const clothingGain = (action.details?.clothingGain as number) || 50;
         if (player.gold < cost) return false;
         modifyGold(player.id, -cost);
-        modifyClothing(player.id, 30);
+        modifyClothing(player.id, clothingGain);
         spendTime(player.id, 1);
         return true;
       }
@@ -172,21 +174,19 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
 
       case 'buy-appliance': {
         const applianceId = action.details?.applianceId as string;
-        if (!applianceId) return false;
-        // Simplified appliance buying
-        const cost = 300; // Approximate
-        if (player.gold < cost) return false;
-        buyAppliance(player.id, applianceId, cost, 'enchanter');
+        const cost = (action.details?.cost as number) || 300;
+        if (!applianceId || player.gold < cost) return false;
+        const source = (action.details?.source as string) || 'enchanter';
+        buyAppliance(player.id, applianceId, cost, source as any);
         spendTime(player.id, 1);
         return true;
       }
 
       case 'move-housing': {
         const tier = action.details?.tier as HousingTier;
-        if (!tier) return false;
-        const cost = tier === 'noble' ? 200 : 50;
-        if (player.gold < cost) return false;
-        const rent = RENT_COSTS[tier];
+        const cost = (action.details?.cost as number) || 200;
+        if (!tier || player.gold < cost) return false;
+        const rent = (action.details?.rent as number) || RENT_COSTS[tier];
         moveToHousing(player.id, tier, cost, rent);
         spendTime(player.id, 1);
         return true;
@@ -195,9 +195,29 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
       case 'rest': {
         const hours = (action.details?.hours as number) || 4;
         const happinessGain = (action.details?.happinessGain as number) || 5;
+        const relaxGain = (action.details?.relaxGain as number) || 3;
         if (player.timeRemaining < hours) return false;
         spendTime(player.id, hours);
         modifyHappiness(player.id, happinessGain);
+        modifyRelaxation(player.id, relaxGain);
+        return true;
+      }
+
+      case 'heal': {
+        const cost = (action.details?.cost as number) || 30;
+        const healAmount = (action.details?.healAmount as number) || 25;
+        if (player.gold < cost) return false;
+        modifyGold(player.id, -cost);
+        modifyHealth(player.id, healAmount);
+        spendTime(player.id, 2);
+        return true;
+      }
+
+      case 'downgrade-housing': {
+        const tier = action.details?.tier as HousingTier;
+        if (!tier) return false;
+        moveToHousing(player.id, tier, 0, RENT_COSTS[tier]);
+        spendTime(player.id, 1);
         return true;
       }
 
@@ -277,10 +297,11 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
       default:
         return false;
     }
-  }, [movePlayer, modifyGold, modifyHealth, modifyFood, modifyHappiness, modifyClothing, spendTime,
-      studyDegree, completeDegree, setJob, payRent, depositToBank, withdrawFromBank,
-      buyAppliance, moveToHousing, workShift, buyDurable, equipItem, buyGuildPass,
-      takeQuest, completeQuest, clearDungeonFloor, applyRareDrop, endTurn]);
+  }, [movePlayer, modifyGold, modifyHealth, modifyFood, modifyHappiness, modifyClothing,
+      modifyRelaxation, spendTime, studyDegree, completeDegree, setJob, payRent,
+      depositToBank, withdrawFromBank, buyAppliance, moveToHousing, workShift,
+      buyDurable, equipItem, buyGuildPass, takeQuest, completeQuest,
+      clearDungeonFloor, applyRareDrop, endTurn]);
 
   /**
    * Run the AI's turn

@@ -239,10 +239,13 @@ export function applyEncounterResult(
   // If player died or boss was the last encounter, go to summary
   const isLastEncounter = state.currentEncounterIndex >= state.encounters.length - 1;
 
-  // Check rare drop on first clear
+  // Check rare drop (full chance on first clear, 20% of normal on repeat)
   let rareDropName: string | null = null;
-  if (bossDefeated && state.isFirstClear) {
-    if (Math.random() < state.floor.rareDrop.dropChance) {
+  if (bossDefeated) {
+    const dropChance = state.isFirstClear
+      ? state.floor.rareDrop.dropChance
+      : state.floor.rareDrop.dropChance * 0.2; // 20% of normal on repeat
+    if (Math.random() < dropChance) {
       rareDropName = state.floor.rareDrop.name;
     }
   }
@@ -281,6 +284,7 @@ export function retreatFromDungeon(state: DungeonRunState): DungeonRunState {
     ...state,
     phase: 'floor-summary',
     retreated: true,
+    totalGold: Math.floor(state.totalGold * 0.5), // Forfeit 50% gold on retreat
   };
 }
 
