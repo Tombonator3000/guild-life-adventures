@@ -1,5 +1,47 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - NPC Placeholder Portraits (12 files)
+
+Created 12 placeholder portrait images for all location NPCs. Each placeholder is a 256×288 JPG with the NPC's accent color scheme, a diamond emblem with their initial, and their name/title. These replace the emoji fallbacks in the NPC portrait component.
+
+### Files Created (12)
+| File | NPC | Title | Accent Color |
+|------|-----|-------|-------------|
+| `public/npcs/aldric.jpg` | Aldric | Guild Master | Gold (#c9a227) |
+| `public/npcs/mathilda.jpg` | Mathilda | Head Banker | Blue (#4a9cff) |
+| `public/npcs/brynn.jpg` | Brynn | Shopkeeper | Green (#8bc34a) |
+| `public/npcs/gunther.jpg` | Gunther | Master Armorer | Red (#e57373) |
+| `public/npcs/lyra.jpg` | Lyra | Enchantress | Purple (#ba68c8) |
+| `public/npcs/shade.jpg` | Shade | Black Marketeer | Grey (#78909c) |
+| `public/npcs/elara.jpg` | Elara | Dean of Studies | Light Blue (#64b5f6) |
+| `public/npcs/magnus.jpg` | Magnus | Barkeep | Orange (#ffb74d) |
+| `public/npcs/cave.jpg` | The Cave | Dark Entrance | Dark Grey (#616161) |
+| `public/npcs/korr.jpg` | Korr | Smithmaster | Deep Orange (#ff7043) |
+| `public/npcs/tomas.jpg` | Tomas | Landlord | Brown (#a1887f) |
+| `public/npcs/whiskers.jpg` | Whiskers | Fence & Dealer | Violet (#9575cd) |
+
+### Design
+- 256×288px (2x resolution for 128×144 display size)
+- Dark background matching NPC's `bgColor`
+- Accent-colored border, banner, and bottom strip
+- Diamond emblem with initial letter in center
+- "PLACEHOLDER" label at top
+- Name and title at bottom
+- Diagonal line pattern for visual texture
+- JPEG quality 85
+
+### Integration
+- Paths match `portraitImage` fields in `src/data/npcs.ts`
+- `NpcPortrait.tsx` component loads these via `<img>` tag
+- Emoji fallback still works if images are deleted
+- Replace with real art by dropping new files with same names
+
+### Build & Test
+- Vite build succeeds
+- No code changes needed (paths already configured)
+
+---
+
 ## 2026-02-06 - Fix NPC Portrait Bug + JPG Portrait Support
 
 Fixed a bug where location panels showed only the NPC portrait (empty content area) on first visit, requiring exit and re-entry. Also added support for JPG/PNG NPC portrait images with emoji fallback.
