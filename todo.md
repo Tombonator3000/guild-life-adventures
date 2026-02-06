@@ -123,6 +123,18 @@
   - [x] "Reset Defaults" button clears localStorage and restores hardcoded values
   - [x] ZoneEditor initializes from saved state instead of hardcoded defaults
 
+## Completed (2026-02-06)
+
+- [x] Audio & Music System — background music with crossfade transitions
+  - [x] AudioManager singleton with dual-deck A/B crossfade engine
+  - [x] Music config mapping locations and screens to MP3 tracks
+  - [x] useMusicController hook drives music from game phase + player location
+  - [x] Volume slider and mute toggle in Options tab
+  - [x] Mute button on TitleScreen
+  - [x] M keyboard shortcut for mute during gameplay
+  - [x] 50% default volume, persistent settings (localStorage)
+  - [x] 7 tracks: MainTheme, OnTheStreet, GuildHall, TheSlums, EnchantersWorkshop, RustyTankard, OhWhatAWeekend
+
 ## In Progress
 
 *No active tasks*
@@ -324,7 +336,7 @@ Based on JONES_REFERENCE.md analysis:
 - [x] Balance quest rewards
 - [ ] Add more random events
 - [ ] Improve AI opponent strategies
-- [ ] Sound effects and music
+- [x] Sound effects and music — **DONE** (music system with crossfade, 7 tracks, per-location)
 
 ### UI/UX
 - [ ] Responsive design for mobile

@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { Sword, Shield, Scroll, Crown, Save, Trash2 } from 'lucide-react';
+import { Sword, Shield, Scroll, Crown, Save, Trash2, Volume2, VolumeX } from 'lucide-react';
 import { hasAutoSave, getSaveSlots, formatSaveDate, deleteSave } from '@/data/saveLoad';
 import type { SaveSlotInfo } from '@/data/saveLoad';
 import { DarkModeToggle } from '@/components/game/DarkModeToggle';
+import { useAudioSettings } from '@/hooks/useMusic';
 import gameBoard from '@/assets/game-board.jpeg';
 
 export function TitleScreen() {
@@ -11,6 +12,7 @@ export function TitleScreen() {
   const [showLoadMenu, setShowLoadMenu] = useState(false);
   const [slots, setSlots] = useState<SaveSlotInfo[]>([]);
   const autoSaveExists = hasAutoSave();
+  const { musicMuted, toggleMute } = useAudioSettings();
 
   const handleContinue = () => {
     if (loadFromSlot(0)) {
@@ -100,8 +102,15 @@ export function TitleScreen() {
           Inspired by Jones in the Fast Lane
         </p>
 
-        {/* Dark mode toggle */}
-        <div className="absolute top-4 right-4">
+        {/* Dark mode toggle + Music mute */}
+        <div className="absolute top-4 right-4 flex items-center gap-2">
+          <button
+            onClick={toggleMute}
+            className="p-2 rounded-lg bg-background/50 hover:bg-background/70 transition-colors text-foreground"
+            title={musicMuted ? 'Unmute music' : 'Mute music'}
+          >
+            {musicMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+          </button>
           <DarkModeToggle />
         </div>
       </div>

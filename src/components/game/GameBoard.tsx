@@ -21,6 +21,7 @@ import gameBoard from '@/assets/game-board.jpeg';
 import type { ZoneConfig, LocationId, AIDifficulty } from '@/types/game.types';
 import { toast } from 'sonner';
 import { Bot, Brain, Menu, SkipForward, FastForward, Play } from 'lucide-react';
+import { audioManager } from '@/audio/audioManager';
 
 const DEFAULT_CENTER_PANEL: CenterPanelConfig = {
   top: 23.4,
@@ -121,6 +122,11 @@ export function GameBoard() {
       if (e.key === 't' && !e.ctrlKey && !e.metaKey && !showGameMenu) {
         e.preventDefault();
         setShowTutorial(!showTutorial);
+      }
+      // M = Toggle music mute
+      if (e.key === 'm' && !e.ctrlKey && !e.metaKey && !showGameMenu) {
+        e.preventDefault();
+        audioManager.toggleMute();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
