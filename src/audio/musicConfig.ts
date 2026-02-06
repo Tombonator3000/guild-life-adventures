@@ -29,6 +29,7 @@ export const SCREEN_MUSIC: Record<string, string> = {
 // Location → track mapping.  Locations without a specific track use 'on-the-street'.
 export const LOCATION_MUSIC: Partial<Record<LocationId, string>> = {
   'guild-hall':       'guild-hall',
+  'bank':             'bank',
   'slums':            'the-slums',
   'enchanter':        'enchanter',
   'rusty-tankard':    'rusty-tankard',
