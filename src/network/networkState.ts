@@ -4,14 +4,6 @@
 import { useGameStore } from '@/store/gameStore';
 import type { SerializedGameState } from './types';
 
-/** All game-relevant fields to sync over the network */
-const SYNCED_GAME_FIELDS = [
-  'phase', 'currentPlayerIndex', 'players', 'week', 'priceModifier',
-  'economyTrend', 'economyCycleWeeksLeft', 'goalSettings', 'winner',
-  'eventMessage', 'rentDueWeek', 'aiDifficulty', 'stockPrices', 'weekendEvent',
-  'shadowfingersEvent', 'applianceBreakageEvent',
-] as const;
-
 /**
  * Extract serializable game state from the Zustand store.
  * Only includes gameplay-relevant fields — local UI state (selectedLocation,

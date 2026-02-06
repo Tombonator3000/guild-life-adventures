@@ -1,5 +1,6 @@
 // React hook for online multiplayer game management
 // Handles lobby phase: creating/joining rooms, player management, game start
+// Features: reconnection support, peer name tracking
 // During gameplay, useNetworkSync handles state sync (this hook only handles lobby messages)
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -31,6 +32,8 @@ export function useOnlineGame() {
     aiDifficulty: 'medium',
   });
   const [error, setError] = useState<string | null>(null);
+  // Track disconnected players that may reconnect (for UI display)
+  const [disconnectedPlayers, setDisconnectedPlayers] = useState<string[]>([]);
 
   // Track if we're in online game mode
   const isOnlineRef = useRef(false);
@@ -84,6 +87,19 @@ export function useOnlineGame() {
     }
   }, []);
 
+  // --- Guest: Attempt Reconnection ---
+
+  const attemptReconnect = useCallback(() => {
+    if (isHost) return;
+    setError(null);
+    setConnectionStatus('reconnecting');
+    const success = peerManager.attemptReconnect();
+    if (!success) {
+      setError('Cannot reconnect - no active session');
+      setConnectionStatus('error');
+    }
+  }, [isHost]);
+
   // --- Host: Start Game ---
 
   const startOnlineGame = useCallback(() => {
@@ -107,13 +123,13 @@ export function useOnlineGame() {
       roomCode,
     });
 
-    // Set peerId → playerId mapping on PeerManager for turn validation
-    // Host uses 'host' as peerId in lobby, but host actions execute locally (not via network)
+    // Set peerId -> playerId mapping on PeerManager for turn validation
+    // Also store peer names for reconnection identification
     const peerMap = new Map<string, string>();
     lobbyPlayers.forEach(p => {
       if (p.peerId !== 'host') {
-        // Only map actual remote peers (not the host itself)
         peerMap.set(p.peerId, `player-${p.slot}`);
+        peerManager.setPeerName(p.peerId, p.name);
       }
     });
     peerManager.setPeerPlayerMap(peerMap);
@@ -130,10 +146,11 @@ export function useOnlineGame() {
   }, [isHost, lobbyPlayers, settings, roomCode, localPlayerName]);
 
   // --- Message Handling ---
-  // Use refs to avoid stale closures — handlers reference current lobbyPlayers etc.
+  // Use refs to avoid stale closures
   const handleHostMessageRef = useRef<((msg: GuestMessage, from: string) => void) | null>(null);
   const handleGuestMessageRef = useRef<((msg: HostMessage) => void) | null>(null);
   const handlePlayerDisconnectRef = useRef<((peerId: string) => void) | null>(null);
+  const handlePlayerReconnectRef = useRef<((peerId: string) => void) | null>(null);
 
   useEffect(() => {
     // Status change handler
@@ -141,28 +158,20 @@ export function useOnlineGame() {
       setConnectionStatus(status);
     });
 
-    // Message handler — uses refs to always call current version
-    // Only handles LOBBY messages here. Game-phase messages (action, state-sync, movement)
-    // are handled by useNetworkSync to avoid duplicate processing.
+    // Message handler - only handles LOBBY messages
     const unsubMessage = peerManager.onMessage((message: NetworkMessage, fromPeerId: string) => {
-      const gamePhase = useGameStore.getState().phase;
       if (isHost) {
-        // Host: handle lobby messages (join, ready, leave) always
-        // Game actions (action, ping, movement-start) handled by useNetworkSync
         const msg = message as GuestMessage;
-        if (msg.type === 'join' || msg.type === 'ready' || msg.type === 'leave') {
+        if (msg.type === 'join' || msg.type === 'ready' || msg.type === 'leave' || msg.type === 'reconnect') {
           handleHostMessageRef.current?.(msg, fromPeerId);
         }
-        // Don't handle 'action', 'ping', 'movement-start' — those go to useNetworkSync
       } else {
-        // Guest: handle lobby messages (lobby-update, game-start, kicked, player-disconnected)
-        // State-sync, action-result, movement-animation handled by useNetworkSync
         const msg = message as HostMessage;
         if (msg.type === 'lobby-update' || msg.type === 'game-start' ||
-            msg.type === 'kicked' || msg.type === 'player-disconnected') {
+            msg.type === 'kicked' || msg.type === 'player-disconnected' ||
+            msg.type === 'player-reconnected') {
           handleGuestMessageRef.current?.(msg);
         }
-        // Don't handle 'state-sync', 'action-result', 'movement-animation' — those go to useNetworkSync
       }
     });
 
@@ -171,9 +180,22 @@ export function useOnlineGame() {
       if (isHost) {
         handlePlayerDisconnectRef.current?.(peerId);
       } else {
-        // Host disconnected
-        setConnectionStatus('error');
-        setError('Host disconnected');
+        // Host disconnected - try to reconnect
+        setConnectionStatus('reconnecting');
+        setError('Connection lost - attempting to reconnect...');
+        // Auto-attempt reconnection after a brief delay
+        setTimeout(() => {
+          if (peerManager.status !== 'connected') {
+            peerManager.attemptReconnect();
+          }
+        }, 2000);
+      }
+    });
+
+    // Reconnect handler (host only - fired when a guest reconnects)
+    const unsubReconnect = peerManager.onPeerReconnect((peerId: string) => {
+      if (isHost) {
+        handlePlayerReconnectRef.current?.(peerId);
       }
     });
 
@@ -181,8 +203,8 @@ export function useOnlineGame() {
       unsubStatus();
       unsubMessage();
       unsubDisconnect();
+      unsubReconnect();
     };
-  // Only re-register handlers when isHost changes (refs handle callback updates)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isHost]);
 
@@ -190,7 +212,6 @@ export function useOnlineGame() {
   const handleHostMessage = useCallback((message: GuestMessage, fromPeerId: string) => {
     switch (message.type) {
       case 'join': {
-        // Add new player to lobby
         setLobbyPlayers(prev => {
           if (prev.length >= 4) return prev; // Max 4 human players
           // Prevent duplicate names
@@ -207,6 +228,8 @@ export function useOnlineGame() {
             slot,
           };
           const updated = [...prev, newPlayer];
+          // Store peer name for reconnection
+          peerManager.setPeerName(fromPeerId, displayName);
           // Broadcast lobby update
           const lobby: LobbyState = {
             roomCode,
@@ -217,6 +240,20 @@ export function useOnlineGame() {
           peerManager.broadcast({ type: 'lobby-update', lobby });
           return updated;
         });
+        break;
+      }
+
+      case 'reconnect': {
+        // Guest is reconnecting during an active game
+        // Re-send them the current game state
+        const gameState = serializeGameState();
+        peerManager.sendTo(fromPeerId, { type: 'state-sync', gameState });
+        // Notify all clients that the player reconnected
+        const playerName = peerManager.getPeerName(fromPeerId) ?? message.playerName;
+        peerManager.broadcast({ type: 'player-reconnected', playerName });
+        // Remove from disconnected list
+        setDisconnectedPlayers(prev => prev.filter(n => n !== playerName));
+        console.log(`[OnlineGame] Player reconnected: ${playerName}`);
         break;
       }
 
@@ -254,12 +291,12 @@ export function useOnlineGame() {
       }
 
       case 'game-start': {
-        // Apply the full game state from host
-        applyNetworkState(message.gameState);
-        // Find our player ID from lobby data (included in game-start message)
-        // Use peerId matching first (reliable), fall back to name matching
-        const myLobbyPlayer = message.lobby?.players?.find((p: LobbyPlayer) => p.name === localPlayerName)
-          || lobbyPlayers.find(p => p.name === localPlayerName);
+        // Set networkMode FIRST so that any store actions triggered during
+        // applyNetworkState are correctly forwarded instead of executing locally
+        const myPeerId = peerManager.peerId;
+        // Find our slot by peerId (reliable), fall back to name matching
+        const myLobbyPlayer = message.lobby?.players?.find((p: LobbyPlayer) => p.peerId === myPeerId)
+          || message.lobby?.players?.find((p: LobbyPlayer) => p.name === localPlayerName);
         const mySlot = myLobbyPlayer?.slot ?? -1;
         const myPlayerId = mySlot >= 0 ? `player-${mySlot}` : null;
 
@@ -268,11 +305,25 @@ export function useOnlineGame() {
           localPlayerId: myPlayerId,
           roomCode: roomCode,
         });
+
+        // Apply the full game state from host AFTER networkMode is set
+        applyNetworkState(message.gameState);
         break;
       }
 
       case 'player-disconnected': {
-        console.log(`[Network] Player disconnected: ${message.playerName}`);
+        const isTemporary = message.temporary ?? false;
+        if (isTemporary) {
+          console.log(`[Network] Player temporarily disconnected: ${message.playerName} (may reconnect)`);
+        } else {
+          console.log(`[Network] Player disconnected: ${message.playerName}`);
+        }
+        break;
+      }
+
+      case 'player-reconnected': {
+        console.log(`[Network] Player reconnected: ${message.playerName}`);
+        setError(null); // Clear any reconnection error
         break;
       }
 
@@ -282,52 +333,74 @@ export function useOnlineGame() {
         break;
       }
     }
-  // lobbyPlayers is used to find our slot in game-start
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [localPlayerName, roomCode]);
 
   // Host: Handle player disconnect
   const handlePlayerDisconnect = useCallback((peerId: string) => {
-    setLobbyPlayers(prev => {
-      const disconnected = prev.find(p => p.peerId === peerId);
-      if (disconnected) {
-        peerManager.broadcast({
-          type: 'player-disconnected',
-          playerName: disconnected.name,
-        });
-      }
-      const updated = prev.filter(p => p.peerId !== peerId);
-      // Broadcast updated lobby
-      const lobby: LobbyState = {
-        roomCode,
-        hostName: localPlayerName,
-        players: updated,
-        settings,
-      };
-      peerManager.broadcast({ type: 'lobby-update', lobby });
-      return updated;
-    });
+    const phase = useGameStore.getState().phase;
+    const isInGame = phase === 'playing' || phase === 'event' || phase === 'victory';
+
+    if (isInGame && peerManager.isReconnecting(peerId)) {
+      // During active game: peer is in reconnection window, don't remove from lobby
+      const playerName = peerManager.getPeerName(peerId) ?? 'Unknown';
+      setDisconnectedPlayers(prev => [...prev, playerName]);
+      peerManager.broadcast({
+        type: 'player-disconnected',
+        playerName,
+        temporary: true,
+      });
+      console.log(`[OnlineGame] Player dropped (reconnecting): ${playerName}`);
+    } else {
+      // In lobby or reconnection window expired: remove player
+      setLobbyPlayers(prev => {
+        const disconnected = prev.find(p => p.peerId === peerId);
+        if (disconnected) {
+          peerManager.broadcast({
+            type: 'player-disconnected',
+            playerName: disconnected.name,
+          });
+          setDisconnectedPlayers(p => p.filter(n => n !== disconnected.name));
+        }
+        const updated = prev.filter(p => p.peerId !== peerId);
+        const lobby: LobbyState = {
+          roomCode,
+          hostName: localPlayerName,
+          players: updated,
+          settings,
+        };
+        peerManager.broadcast({ type: 'lobby-update', lobby });
+        return updated;
+      });
+    }
   }, [roomCode, localPlayerName, settings]);
 
-  // Keep message handler refs current (avoids stale closures in the PeerManager listener)
+  // Host: Handle player reconnection
+  const handlePlayerReconnect = useCallback((peerId: string) => {
+    const playerName = peerManager.getPeerName(peerId) ?? 'Unknown';
+    setDisconnectedPlayers(prev => prev.filter(n => n !== playerName));
+    // Re-send current game state to the reconnected peer
+    const gameState = serializeGameState();
+    peerManager.sendTo(peerId, { type: 'state-sync', gameState });
+    peerManager.broadcast({ type: 'player-reconnected', playerName });
+    console.log(`[OnlineGame] Player reconnected: ${playerName}`);
+  }, []);
+
+  // Keep message handler refs current
   handleHostMessageRef.current = handleHostMessage;
   handleGuestMessageRef.current = handleGuestMessage;
   handlePlayerDisconnectRef.current = handlePlayerDisconnect;
-
-  // NOTE: Store subscription for state broadcasting is handled by useNetworkSync only.
-  // This hook no longer subscribes to avoid duplicate broadcasts.
+  handlePlayerReconnectRef.current = handlePlayerReconnect;
 
   // --- Settings Update (host only, lobby phase only) ---
 
   const updateSettings = useCallback((newSettings: Partial<OnlineGameSettings>) => {
     if (!isHost) return;
-    // Only allow settings changes in lobby/setup phase
     const phase = useGameStore.getState().phase;
     if (phase === 'playing' || phase === 'victory') return;
 
     setSettings(prev => {
       const updated = { ...prev, ...newSettings };
-      // Broadcast to guests
       const lobby: LobbyState = {
         roomCode,
         hostName: localPlayerName,
@@ -348,6 +421,7 @@ export function useOnlineGame() {
     setRoomCode('');
     setConnectionStatus('disconnected');
     setLobbyPlayers([]);
+    setDisconnectedPlayers([]);
     setError(null);
     useGameStore.setState({
       networkMode: 'local' as const,
@@ -374,6 +448,7 @@ export function useOnlineGame() {
     localPlayerName,
     settings,
     error,
+    disconnectedPlayers,
 
     // Actions
     createRoom,
@@ -382,5 +457,6 @@ export function useOnlineGame() {
     updateSettings,
     disconnect,
     setLocalPlayerName,
+    attemptReconnect,
   };
 }

@@ -270,10 +270,10 @@ export const useGameStore = create<GameStore>((set, get) => {
 });
 
 // Auto-save: save to slot 0 whenever game state changes during play
-// Disabled for online guest mode (host is authoritative)
+// Disabled for online modes (multiplayer saves can't be restored properly)
 let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
 useGameStore.subscribe((state) => {
-  if ((state.phase === 'playing' || state.phase === 'event') && state.networkMode !== 'guest') {
+  if ((state.phase === 'playing' || state.phase === 'event') && state.networkMode === 'local') {
     // Debounce auto-save to avoid excessive writes
     if (autoSaveTimer) clearTimeout(autoSaveTimer);
     autoSaveTimer = setTimeout(() => {

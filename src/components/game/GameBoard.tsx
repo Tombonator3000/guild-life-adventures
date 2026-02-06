@@ -52,7 +52,7 @@ export function GameBoard() {
     dismissApplianceBreakageEvent,
   } = useGameStore();
   const { event: shadowfingersEvent, dismiss: dismissShadowfingers } = useShadowfingersModal();
-  const { isOnline, isGuest, networkMode, broadcastMovement, remoteAnimation, clearRemoteAnimation } = useNetworkSync();
+  const { isOnline, isGuest, networkMode, broadcastMovement, remoteAnimation, clearRemoteAnimation, latency } = useNetworkSync();
   const localPlayerId = useGameStore(s => s.localPlayerId);
   const roomCodeDisplay = useGameStore(s => s.roomCode);
 
@@ -514,13 +514,18 @@ export function GameBoard() {
         </div>
       )}
 
-      {/* Online: Connection indicator */}
+      {/* Online: Connection indicator with latency */}
       {isOnline && (
         <div className="fixed bottom-4 right-4 z-40">
           <div className="parchment-panel px-3 py-1.5 flex items-center gap-2 text-xs">
-            <Wifi className="w-3 h-3 text-green-600" />
+            <Wifi className={`w-3 h-3 ${latency > 200 ? 'text-red-500' : latency > 100 ? 'text-yellow-500' : 'text-green-600'}`} />
             <span className="text-amber-800 font-display">
               Online {roomCodeDisplay ? `(${roomCodeDisplay})` : ''}
+              {isGuest && latency > 0 && (
+                <span className={`ml-1 ${latency > 200 ? 'text-red-600' : latency > 100 ? 'text-yellow-600' : 'text-green-700'}`}>
+                  {latency}ms
+                </span>
+              )}
             </span>
           </div>
         </div>

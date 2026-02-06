@@ -1,6 +1,6 @@
 // Lightweight network sync hook for GameBoard
 // Handles state synchronization during online gameplay
-// Uses the PeerManager singleton — works across component mounts
+// Features: state sync, action proxying, movement animation, turn timeout, latency
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { peerManager } from './PeerManager';
@@ -11,11 +11,15 @@ import { ALLOWED_GUEST_ACTIONS } from './types';
 import type { NetworkMessage, GuestMessage, HostMessage } from './types';
 import type { LocationId } from '@/types/game.types';
 
+/** Turn timeout: auto-end turn after this many seconds of inactivity (0 = disabled) */
+const TURN_TIMEOUT_SECONDS = 120;
+
 /**
  * Hook for network synchronization during gameplay.
  *
  * For HOST: subscribes to store changes and broadcasts to all guests.
- *           Validates guest actions (turn check via peerId → playerId mapping).
+ *           Validates guest actions (turn check via peerId -> playerId mapping).
+ *           Enforces turn timeout for AFK players.
  * For GUEST: receives state updates and sets up action forwarding.
  * For LOCAL: no-op.
  */
@@ -23,8 +27,14 @@ export function useNetworkSync() {
   const networkMode = useGameStore(s => s.networkMode);
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Remote movement animation state — set when another player's movement should be animated
+  // Remote movement animation state
   const [remoteAnimation, setRemoteAnimation] = useState<{ playerId: string; path: LocationId[] } | null>(null);
+
+  // Latency display (guest only, in ms)
+  const [latency, setLatency] = useState(0);
+
+  // Turn timeout tracking (host only)
+  const turnTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearRemoteAnimation = useCallback(() => setRemoteAnimation(null), []);
 
@@ -44,11 +54,60 @@ export function useNetworkSync() {
     peerManager.broadcast({ type: 'state-sync', gameState: state });
   }, [networkMode]);
 
-  // Debounced broadcast — coalesces rapid store changes
+  // Debounced broadcast
   const debouncedBroadcast = useCallback(() => {
     if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
     syncTimerRef.current = setTimeout(broadcastState, 50);
   }, [broadcastState]);
+
+  // --- Turn Timeout (Host only) ---
+
+  const clearTurnTimeout = useCallback(() => {
+    if (turnTimeoutRef.current) {
+      clearTimeout(turnTimeoutRef.current);
+      turnTimeoutRef.current = null;
+    }
+  }, []);
+
+  const resetTurnTimeout = useCallback(() => {
+    if (networkMode !== 'host' || TURN_TIMEOUT_SECONDS <= 0) return;
+
+    clearTurnTimeout();
+    turnTimeoutRef.current = setTimeout(() => {
+      const store = useGameStore.getState();
+      const currentPlayer = store.players[store.currentPlayerIndex];
+      if (!currentPlayer || currentPlayer.isAI) return;
+
+      // Don't timeout host's own turn (host manages their own time)
+      if (store.localPlayerId === currentPlayer.id) return;
+
+      console.log(`[NetworkSync] Turn timeout for player: ${currentPlayer.name}`);
+
+      // Notify all clients about the timeout
+      peerManager.broadcast({ type: 'turn-timeout', playerId: currentPlayer.id });
+
+      // Auto-end the player's turn
+      store.endTurn();
+    }, TURN_TIMEOUT_SECONDS * 1000);
+  }, [networkMode, clearTurnTimeout]);
+
+  // Reset turn timeout when currentPlayerIndex changes
+  const currentPlayerIndex = useGameStore(s => s.currentPlayerIndex);
+  useEffect(() => {
+    if (networkMode === 'host') {
+      resetTurnTimeout();
+    }
+    return () => clearTurnTimeout();
+  }, [currentPlayerIndex, networkMode, resetTurnTimeout, clearTurnTimeout]);
+
+  // --- Latency polling (guest only) ---
+  useEffect(() => {
+    if (networkMode !== 'guest') return;
+    const interval = setInterval(() => {
+      setLatency(peerManager.latencyToHost);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [networkMode]);
 
   useEffect(() => {
     if (networkMode === 'local') return;
@@ -88,7 +147,6 @@ export function useNetworkSync() {
           }
 
           if (!currentPlayer || currentPlayer.id !== senderPlayerId) {
-            // Not this player's turn — reject silently (common during turn transitions)
             peerManager.sendTo(fromPeerId, {
               type: 'action-result',
               requestId: msg.requestId,
@@ -110,6 +168,9 @@ export function useNetworkSync() {
             return;
           }
 
+          // Reset turn timeout on any valid action (player is not AFK)
+          resetTurnTimeout();
+
           // Execute the validated action
           const success = executeAction(msg.name, msg.args);
           peerManager.sendTo(fromPeerId, {
@@ -118,18 +179,16 @@ export function useNetworkSync() {
             success,
             error: success ? undefined : 'Action failed',
           });
-          // Broadcast updated state immediately (not debounced) for responsiveness
+          // Broadcast updated state immediately for responsiveness
           broadcastState();
-        } else if (msg.type === 'ping') {
-          peerManager.sendTo(fromPeerId, {
-            type: 'pong',
-            timestamp: msg.timestamp,
-          });
         } else if (msg.type === 'movement-start') {
-          // Guest started a movement animation — re-broadcast to all guests and show locally
+          // Guest started a movement animation - re-broadcast to all guests and show locally
           peerManager.broadcast({ type: 'movement-animation', playerId: msg.playerId, path: msg.path });
           setRemoteAnimation({ playerId: msg.playerId, path: msg.path });
+          // Reset turn timeout (movement is activity)
+          resetTurnTimeout();
         }
+        // Note: ping/pong now handled internally by PeerManager heartbeat system
       } else if (networkMode === 'guest') {
         const msg = message as HostMessage;
         if (msg.type === 'state-sync') {
@@ -139,10 +198,19 @@ export function useNetworkSync() {
             console.warn(`[NetworkSync] Action failed: ${msg.error}`);
           }
         } else if (msg.type === 'movement-animation') {
-          // Another player started moving — animate locally if it's not our own movement
+          // Another player started moving - animate locally if it's not our own movement
           const localId = useGameStore.getState().localPlayerId;
-          if (msg.playerId !== localId) {
+          if (localId && msg.playerId !== localId) {
             setRemoteAnimation({ playerId: msg.playerId, path: msg.path });
+          } else if (!localId) {
+            // localPlayerId not set yet (shouldn't happen) - show animation anyway
+            setRemoteAnimation({ playerId: msg.playerId, path: msg.path });
+          }
+        } else if (msg.type === 'turn-timeout') {
+          const store = useGameStore.getState();
+          const player = store.players.find(p => p.id === msg.playerId);
+          if (player) {
+            console.log(`[NetworkSync] Turn timeout for: ${player.name}`);
           }
         }
       }
@@ -168,8 +236,9 @@ export function useNetworkSync() {
       if (syncTimerRef.current) {
         clearTimeout(syncTimerRef.current);
       }
+      clearTurnTimeout();
     };
-  }, [networkMode, broadcastState, debouncedBroadcast]);
+  }, [networkMode, broadcastState, debouncedBroadcast, resetTurnTimeout, clearTurnTimeout]);
 
   return {
     networkMode,
@@ -180,5 +249,6 @@ export function useNetworkSync() {
     broadcastMovement,
     remoteAnimation,
     clearRemoteAnimation,
+    latency,
   };
 }

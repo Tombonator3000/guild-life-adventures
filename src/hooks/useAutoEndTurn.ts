@@ -35,13 +35,16 @@ export function useAutoEndTurn() {
         if (currentPlayer.id === localId) {
           if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
           autoEndTimerRef.current = setTimeout(() => {
-            const storeIdx = useGameStore.getState().currentPlayerIndex;
-            if (storeIdx === currentPlayerIndex) {
+            const store = useGameStore.getState();
+            // Triple-guard: same player index, same player ID, still no time
+            if (store.currentPlayerIndex === currentPlayerIndex &&
+                store.players[store.currentPlayerIndex]?.id === localId &&
+                store.players[store.currentPlayerIndex]?.timeRemaining <= 0) {
               endTurn(); // Forwarded to host via network proxy
             }
             scheduledEndTurnRef.current = null;
             autoEndTimerRef.current = null;
-          }, 500);
+          }, 100);
         }
         return true;
       }

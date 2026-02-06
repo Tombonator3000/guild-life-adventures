@@ -1,5 +1,121 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Multiplayer Deep Audit #2: Remaining Known Issues Fix (Agent-Assisted)
+
+**Task**: Deep audit using 4 parallel agents to find all remaining bugs in the multiplayer system, then fix all 6 "Remaining Known Issues" plus additional critical/high bugs found by agents.
+
+### Audit Methodology
+
+Ran 4 specialized audit agents in parallel:
+1. **PeerManager audit** — Reconnection, heartbeat, TURN servers, error handling
+2. **useNetworkSync audit** — Turn timeout, state sync race conditions, action proxying
+3. **useOnlineGame + lobby audit** — Lobby flow, player matching, game start, victory
+4. **Store network integration audit** — Action guards, auto-save, auto-end-turn
+
+Total issues found: **35** (8 critical, 10 high, 12 medium, 5 low)
+
+### Remaining Known Issues - ALL FIXED
+
+**1. No reconnection mechanism (guest drop = game lost)** → FIXED
+- Added `attemptReconnect()` to PeerManager (guest-side)
+- Added 30-second reconnection window on host (dropped guests get time to reconnect)
+- Host stores peer names via `setPeerName()` for reconnection identification
+- Added `onPeerReconnect` event handler + `player-reconnected` message type
+- Guest auto-attempts reconnect on host disconnect (2s delay)
+- Host re-sends full game state to reconnected peer
+
+**2. No turn timeout (AFK player hangs game)** → FIXED
+- Added 120-second configurable turn timeout in `useNetworkSync` (host-enforced)
+- Resets on any valid guest action (movement or store action)
+- Skips host's own turn and AI turns
+- Broadcasts `turn-timeout` message to all clients before auto-ending turn
+- Timer resets when `currentPlayerIndex` changes
+
+**3. AI movement not animated for remote clients** → FIXED
+- Added `peerManager.broadcast({ type: 'movement-animation' })` in `useGrimwaldAI`'s `executeAction` for 'move' actions
+- Imported `getPath` from locations to compute animation path
+- Only broadcasts when `networkMode === 'host'` (AI only runs on host)
+
+**4. No latency indicators (ping implemented but unused)** → FIXED
+- PeerManager heartbeat now tracks latency from ping/pong round-trip
+- `useNetworkSync` exposes `latency` state (polls every 3s on guest)
+- GameBoard connection indicator now shows latency: green (<100ms), yellow (100-200ms), red (>200ms)
+- Wifi icon color also reflects latency quality
+
+**5. No heartbeat/keepalive between peers** → FIXED
+- Guest sends heartbeat pings every 5 seconds to host
+- Host tracks `lastPongReceived` per peer, sends pong replies
+- Host runs periodic heartbeat check: if no ping from peer in 15 seconds, force-close connection
+- Heartbeat messages handled internally by PeerManager (not propagated to game logic)
+- All intervals properly cleaned up on disconnect/destroy
+
+**6. PeerJS cloud signaling has no TURN server fallback** → FIXED
+- Added ICE server config to all PeerJS instances via `getPeerConfig()`
+- Includes Google STUN servers (stun.l.google.com:19302, stun1.l.google.com:19302)
+- Includes free TURN servers (openrelay.metered.ca on ports 80 and 443)
+- Config passed to both host and guest Peer constructors + retry constructor
+
+### Additional Bugs Fixed (from Agent Audit)
+
+**CRITICAL: Guest player ID matching by name instead of peerId**
+- File: `useOnlineGame.ts:293-310`
+- Previously used `p.name === localPlayerName` to find guest slot → could assign wrong player
+- Now uses `peerManager.peerId` to match by actual PeerJS ID, with name as fallback
+- Added `get peerId()` getter to PeerManager
+
+**HIGH: NetworkMode race condition during game start on guest**
+- File: `useOnlineGame.ts:293-310`
+- Previously `applyNetworkState()` was called BEFORE `networkMode` was set to 'guest'
+- This meant store actions during state application executed locally instead of forwarding
+- Fix: Set `networkMode: 'guest'` BEFORE calling `applyNetworkState()`
+
+**HIGH: Host can start game without guests being ready**
+- File: `OnlineLobby.tsx:94`
+- `canStart` only checked player count, ignored `isReady` flag
+- Fix: Added `allGuestsReady` check — all non-host players must be ready
+
+**HIGH: Race condition in guest auto-end-turn (500ms window)**
+- File: `useAutoEndTurn.ts:37-44`
+- 500ms delay could cause guest to send stale endTurn after host advanced turn
+- Fix: Reduced delay to 100ms + added triple-guard (player index, player ID, time check)
+
+**MEDIUM: Auto-save in multiplayer host mode**
+- File: `gameStore.ts:272-283`
+- Auto-save was active for host mode, creating multiplayer saves that can't be restored
+- Fix: Changed guard from `!== 'guest'` to `=== 'local'`
+
+**MEDIUM: Movement self-filter when localPlayerId is null**
+- File: `useNetworkSync.ts:200-205`
+- If `localPlayerId` was null, `msg.playerId !== null` was always true, showing own movement
+- Fix: Added explicit null check — show animation anyway when localPlayerId unset
+
+**MEDIUM: Dead code cleanup**
+- Removed unused `SYNCED_GAME_FIELDS` array from `networkState.ts`
+- Removed stale ping/pong handling from useNetworkSync (now handled by PeerManager heartbeat)
+- Fixed PeerManager `destroy()` to not call `setStatus()` after clearing handlers
+
+### Files Changed (10)
+
+| File | Changes |
+|------|---------|
+| `src/network/PeerManager.ts` | Heartbeat, reconnection, TURN servers, peerId getter, peer names |
+| `src/network/types.ts` | New message types: player-reconnected, reconnect, turn-timeout |
+| `src/network/useNetworkSync.ts` | Turn timeout, latency polling, heartbeat delegation |
+| `src/network/useOnlineGame.ts` | Reconnection handling, peerId matching, ready enforcement |
+| `src/network/networkState.ts` | Removed dead SYNCED_GAME_FIELDS |
+| `src/hooks/useGrimwaldAI.ts` | Broadcast AI movement animation to remote clients |
+| `src/hooks/useAutoEndTurn.ts` | Triple-guard on guest auto-end-turn, reduced delay |
+| `src/components/game/GameBoard.tsx` | Latency indicator with color-coded Wifi icon |
+| `src/components/screens/OnlineLobby.tsx` | Ready enforcement for game start |
+| `src/store/gameStore.ts` | Disabled auto-save in multiplayer host mode |
+
+### Verification
+- TypeScript: `tsc --noEmit` passes cleanly
+- Build: `vite build` succeeds (951KB JS)
+- Tests: 111 pass, 1 pre-existing failure (freshFood starvation test — unrelated to network)
+
+---
+
 ## 2026-02-06 - Online Multiplayer Deep Audit & Architecture Fix (Agent-Assisted)
 
 **Task**: Deep audit of the entire online multiplayer system using 4 parallel agents. Find bugs, missing features, architectural issues. Fix critical and high-priority problems.
