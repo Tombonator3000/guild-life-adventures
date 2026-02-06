@@ -265,7 +265,7 @@ function GoalsTab({ player, goals }: { player: Player; goals: GoalSettings }) {
                 w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold
                 ${player.dungeonFloorsCleared.includes(floor)
                   ? 'bg-secondary text-secondary-foreground'
-                  : 'bg-wood/20 text-wood/50'}
+                  : 'bg-amber-900/20 text-amber-800'}
               `}
             >
               {floor}
