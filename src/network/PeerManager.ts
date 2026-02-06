@@ -20,11 +20,23 @@ export class PeerManager {
   private _roomCode = '';
   private _status: ConnectionStatus = 'disconnected';
   private pingIntervals: Map<string, ReturnType<typeof setInterval>> = new Map();
+  /** Maps peerId → playerId (e.g. "7c8995df..." → "player-1") for turn validation */
+  private peerPlayerMap: Map<string, string> = new Map();
 
   get isHost(): boolean { return this._isHost; }
   get roomCode(): string { return this._roomCode; }
   get status(): ConnectionStatus { return this._status; }
   get connectedPeerIds(): string[] { return Array.from(this.connections.keys()); }
+
+  /** Set the peerId → playerId mapping (called when host starts game) */
+  setPeerPlayerMap(map: Map<string, string>) {
+    this.peerPlayerMap = new Map(map);
+  }
+
+  /** Look up which playerId a peer controls (returns null if unknown) */
+  getPlayerIdForPeer(peerId: string): string | null {
+    return this.peerPlayerMap.get(peerId) ?? null;
+  }
 
   // --- Event Handlers ---
 
@@ -200,7 +212,7 @@ export class PeerManager {
   /** Host: broadcast to all connected guests */
   broadcast(message: HostMessage) {
     if (!this._isHost) {
-      console.warn('[PeerManager] Only host can broadcast');
+      // Silently ignore — this can happen during component transitions
       return;
     }
     const data = message;
@@ -268,6 +280,7 @@ export class PeerManager {
     this.messageHandlers.clear();
     this.statusHandlers.clear();
     this.disconnectHandlers.clear();
+    this.peerPlayerMap.clear();
     this._isHost = false;
     this._roomCode = '';
     this.setStatus('disconnected');

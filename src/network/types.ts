@@ -30,7 +30,7 @@ export interface OnlineGameSettings {
 // Host → Guest messages
 export type HostMessage =
   | { type: 'lobby-update'; lobby: LobbyState }
-  | { type: 'game-start'; gameState: SerializedGameState }
+  | { type: 'game-start'; gameState: SerializedGameState; lobby: LobbyState }
   | { type: 'state-sync'; gameState: SerializedGameState }
   | { type: 'action-result'; requestId: string; success: boolean; error?: string }
   | { type: 'player-disconnected'; playerName: string }

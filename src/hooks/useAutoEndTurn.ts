@@ -12,6 +12,7 @@ export function useAutoEndTurn() {
     setEventMessage,
     setPhase,
     endTurn,
+    networkMode,
   } = useGameStore();
 
   // Guard against double endTurn — tracks which playerIndex the scheduled endTurn is for
@@ -21,6 +22,9 @@ export function useAutoEndTurn() {
   // Check if player should auto-return to housing when time runs out
   const checkAutoReturn = useCallback(() => {
     if (!currentPlayer) return;
+
+    // Guest mode: host handles all auto-end/death logic. Guest just displays synced state.
+    if (networkMode === 'guest') return false;
 
     // Check for death first
     if (currentPlayer.health <= 0) {
@@ -74,7 +78,7 @@ export function useAutoEndTurn() {
     }
 
     return false;
-  }, [currentPlayer, checkDeath, setEventMessage, setPhase, endTurn, currentPlayerIndex]);
+  }, [currentPlayer, checkDeath, setEventMessage, setPhase, endTurn, currentPlayerIndex, networkMode]);
 
   // Reset auto-end guard when player turn changes
   useEffect(() => {
