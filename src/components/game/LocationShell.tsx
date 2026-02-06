@@ -2,7 +2,7 @@
 // Provides: NPC portrait (left) + tab navigation + content area (right)
 // Eliminates scrolling by showing only one section at a time
 
-import { useState, type ReactNode, useCallback, cloneElement, isValidElement, Children } from 'react';
+import { useState, useEffect, type ReactNode, useCallback, cloneElement, isValidElement, Children } from 'react';
 import type { LocationNPC } from '@/data/npcs';
 import { NpcPortrait } from './NpcPortrait';
 import { BanterBubble } from './BanterBubble';
@@ -31,6 +31,14 @@ export function LocationShell({ npc, tabs, defaultTab, locationId }: LocationShe
   const { activeBanter, banterLocationId, tryTriggerBanter, dismissBanter } = useBanter();
 
   const activeContent = visibleTabs.find(t => t.id === activeTab)?.content;
+
+  // Try to trigger banter when entering a location
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      tryTriggerBanter(locationId);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [locationId, tryTriggerBanter]);
 
   // If only one tab, skip the tab bar entirely
   const showTabBar = visibleTabs.length > 1;

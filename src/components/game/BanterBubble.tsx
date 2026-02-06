@@ -43,9 +43,9 @@ export function BanterBubble({ banter, onDismiss }: BanterBubbleProps) {
   return (
     <div
       className={`
-        absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50
+        absolute top-0 left-1/2 -translate-x-1/2 z-50
         transition-all duration-300 ease-out
-        ${isVisible && !isLeaving ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}
+        ${isVisible && !isLeaving ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}
       `}
     >
       {/* Speech bubble */}
