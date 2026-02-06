@@ -2,8 +2,8 @@
 // This is a developer tool, not part of the main game UI
 
 import { useState, useCallback } from 'react';
-import { generateSFX, playSFXPreview, GAME_SFX_PROMPTS } from '@/services/sfxGenerator';
-import { Loader2, Play, Download, Wand2, Volume2 } from 'lucide-react';
+import { generateSFX, playSFXPreview, generateAllSFXAsZip, GAME_SFX_PROMPTS } from '@/services/sfxGenerator';
+import { Loader2, Play, Download, Wand2, Volume2, Archive } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface GeneratedSFX {
@@ -20,6 +20,8 @@ export function SFXGeneratorPanel() {
   const [customDuration, setCustomDuration] = useState(1);
   const [generatedSfx, setGeneratedSfx] = useState<GeneratedSFX[]>([]);
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
+  const [isGeneratingZip, setIsGeneratingZip] = useState(false);
+  const [zipProgress, setZipProgress] = useState({ current: 0, total: 0, currentId: '' });
 
   const handleGenerateSingle = useCallback(async (sfxId: string, prompt: string, duration?: number) => {
     const id = `${sfxId}-${Date.now()}`;
@@ -61,6 +63,40 @@ export function SFXGeneratorPanel() {
     toast.success('All SFX generated!');
   }, [handleGenerateSingle]);
 
+  const handleGenerateZip = useCallback(async () => {
+    setIsGeneratingZip(true);
+    setZipProgress({ current: 0, total: Object.keys(GAME_SFX_PROMPTS).length, currentId: '' });
+    
+    try {
+      const zipBlob = await generateAllSFXAsZip((current, total, sfxId, success) => {
+        setZipProgress({ current, total, currentId: sfxId });
+        if (success) {
+          toast.success(`Generated: ${sfxId}`, { duration: 1000 });
+        } else {
+          toast.error(`Failed: ${sfxId}`, { duration: 1000 });
+        }
+      });
+      
+      // Download the ZIP file
+      const url = URL.createObjectURL(zipBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'guild-life-sfx.zip';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success('ZIP file downloaded!');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`ZIP generation failed: ${message}`);
+    } finally {
+      setIsGeneratingZip(false);
+      setZipProgress({ current: 0, total: 0, currentId: '' });
+    }
+  }, []);
+
   const handlePlayPreview = useCallback(async (audioUrl: string) => {
     const audio = new Audio(audioUrl);
     await audio.play();
@@ -78,7 +114,8 @@ export function SFXGeneratorPanel() {
     try {
       await playSFXPreview(prompt, duration);
     } catch (error) {
-      toast.error('Preview failed');
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Preview failed: ${message}`);
     }
   }, []);
 
@@ -100,7 +137,7 @@ export function SFXGeneratorPanel() {
                 value={customPrompt}
                 onChange={(e) => setCustomPrompt(e.target.value)}
                 placeholder="Describe the sound effect..."
-                className="flex-1 px-3 py-2 border rounded-md text-sm"
+                className="flex-1 px-3 py-2 border rounded-md text-sm bg-background"
               />
               <input
                 type="number"
@@ -109,7 +146,7 @@ export function SFXGeneratorPanel() {
                 min={0.5}
                 max={22}
                 step={0.5}
-                className="w-20 px-3 py-2 border rounded-md text-sm"
+                className="w-20 px-3 py-2 border rounded-md text-sm bg-background"
               />
               <button
                 onClick={() => handleQuickPreview(customPrompt, customDuration)}
@@ -121,22 +158,41 @@ export function SFXGeneratorPanel() {
             </div>
           </div>
 
-          {/* Generate All Button */}
-          <button
-            onClick={handleGenerateAll}
-            disabled={isGeneratingAll}
-            className="w-full px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-md font-medium flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {isGeneratingAll ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" /> Generating All SFX...
-              </>
-            ) : (
-              <>
-                <Wand2 className="w-5 h-5" /> Generate All Game SFX ({Object.keys(GAME_SFX_PROMPTS).length} sounds)
-              </>
-            )}
-          </button>
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <button
+              onClick={handleGenerateAll}
+              disabled={isGeneratingAll || isGeneratingZip}
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-md font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isGeneratingAll ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" /> Generating...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="w-5 h-5" /> Generate All ({Object.keys(GAME_SFX_PROMPTS).length})
+                </>
+              )}
+            </button>
+            
+            <button
+              onClick={handleGenerateZip}
+              disabled={isGeneratingAll || isGeneratingZip}
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-md font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isGeneratingZip ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" /> 
+                  {zipProgress.current}/{zipProgress.total} - {zipProgress.currentId}
+                </>
+              ) : (
+                <>
+                  <Archive className="w-5 h-5" /> Generate & Download ZIP
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Predefined SFX List */}
@@ -194,7 +250,7 @@ export function SFXGeneratorPanel() {
                   )}
                   
                   {sfx.status === 'error' && (
-                    <span className="text-xs text-red-500">✗ {sfx.error}</span>
+                    <span className="text-xs text-destructive">✗ {sfx.error}</span>
                   )}
                 </div>
               ))}
@@ -206,10 +262,10 @@ export function SFXGeneratorPanel() {
         <div className="bg-muted/30 p-4 rounded-lg text-sm text-muted-foreground">
           <h3 className="font-medium mb-2">Instructions</h3>
           <ol className="list-decimal list-inside space-y-1">
-            <li>Click "Generate All Game SFX" to create all sound effects</li>
-            <li>Preview each sound by clicking the speaker icon</li>
-            <li>Download sounds you like and save to <code>/public/sfx/</code></li>
+            <li><strong>Generate & Download ZIP</strong> - Creates all SFX and downloads as a single ZIP file</li>
+            <li>Extract ZIP contents to <code>/public/sfx/</code></li>
             <li>The SFXManager will automatically load them</li>
+            <li>Or generate individually and download one by one</li>
           </ol>
         </div>
       </div>

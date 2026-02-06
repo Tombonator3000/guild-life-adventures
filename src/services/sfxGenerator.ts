@@ -1,4 +1,5 @@
 // SFX Generation Service - calls the ElevenLabs edge function
+import JSZip from 'jszip';
 
 export interface SFXGenerationResult {
   success: boolean;
@@ -19,30 +20,58 @@ export async function generateSFX(
   returnBase64 = false
 ): Promise<SFXGenerationResult> {
   try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Supabase environment variables not configured');
+    }
+
     const response = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-sfx`,
+      `${supabaseUrl}/functions/v1/elevenlabs-sfx`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
         },
         body: JSON.stringify({ prompt, duration, returnBase64 }),
       }
     );
 
+    // Check content-type BEFORE parsing
+    const contentType = response.headers.get('content-type');
+    
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Request failed: ${response.status}`);
+      // Try to get error details
+      if (contentType?.includes('application/json')) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Request failed: ${response.status}`);
+      } else {
+        const text = await response.text();
+        console.error('API returned non-JSON error:', text.substring(0, 200));
+        throw new Error(`API error ${response.status}: ${response.statusText}`);
+      }
     }
 
     if (returnBase64) {
+      if (!contentType?.includes('application/json')) {
+        const text = await response.text();
+        console.error('Expected JSON but got:', contentType, text.substring(0, 200));
+        throw new Error('Expected JSON response for base64 audio');
+      }
       const data = await response.json();
       return { success: true, audioBase64: data.audioBase64 };
     }
 
-    // For playback, create a blob URL
+    // For playback, expect audio/mpeg
+    if (!contentType?.includes('audio')) {
+      const text = await response.text();
+      console.error('Expected audio but got:', contentType, text.substring(0, 200));
+      throw new Error('Expected audio response');
+    }
+
     const audioBlob = await response.blob();
     const audioUrl = URL.createObjectURL(audioBlob);
     return { success: true, audioUrl };
@@ -64,6 +93,50 @@ export async function playSFXPreview(prompt: string, duration?: number): Promise
   } else {
     throw new Error(result.error || 'Failed to generate SFX');
   }
+}
+
+/**
+ * Generate all SFX and download as ZIP
+ */
+export async function generateAllSFXAsZip(
+  onProgress?: (current: number, total: number, sfxId: string, success: boolean) => void
+): Promise<Blob> {
+  const zip = new JSZip();
+  const entries = Object.entries(GAME_SFX_PROMPTS);
+  let successCount = 0;
+
+  for (let i = 0; i < entries.length; i++) {
+    const [sfxId, config] = entries[i];
+    
+    try {
+      const result = await generateSFX(config.prompt, config.duration, true);
+      
+      if (result.success && result.audioBase64) {
+        // Convert base64 to binary and add to zip
+        const binaryData = Uint8Array.from(atob(result.audioBase64), c => c.charCodeAt(0));
+        zip.file(`${sfxId}.mp3`, binaryData);
+        successCount++;
+        onProgress?.(i + 1, entries.length, sfxId, true);
+      } else {
+        console.error(`Failed to generate ${sfxId}:`, result.error);
+        onProgress?.(i + 1, entries.length, sfxId, false);
+      }
+    } catch (error) {
+      console.error(`Error generating ${sfxId}:`, error);
+      onProgress?.(i + 1, entries.length, sfxId, false);
+    }
+
+    // Delay between requests to avoid rate limiting
+    if (i < entries.length - 1) {
+      await new Promise(r => setTimeout(r, 1500));
+    }
+  }
+
+  if (successCount === 0) {
+    throw new Error('No SFX files were generated successfully');
+  }
+
+  return await zip.generateAsync({ type: 'blob' });
 }
 
 // Predefined SFX prompts for the game
