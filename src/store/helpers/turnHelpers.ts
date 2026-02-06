@@ -433,8 +433,28 @@ export function createTurnActions(set: SetFn, get: GetFn) {
       const isClothingDegradation = newWeek % 8 === 0;
       let eventMessages: string[] = [];
 
-      // H8: Check market crash ONCE as a global event (outside player loop)
-      const crashResult = checkMarketCrash(true);
+      // === Economy Cycle: advance trend, compute new priceModifier ===
+      let economyTrend = state.economyTrend;
+      let economyCycleWeeksLeft = state.economyCycleWeeksLeft - 1;
+
+      // Time to change trend?
+      if (economyCycleWeeksLeft <= 0) {
+        const roll = Math.random();
+        if (roll < 0.35) economyTrend = 1;       // boom
+        else if (roll < 0.70) economyTrend = 0;   // stable
+        else economyTrend = -1;                    // recession
+        economyCycleWeeksLeft = 3 + Math.floor(Math.random() * 5); // 3-7 weeks
+      }
+
+      // Drift priceModifier gradually toward trend direction
+      const drift = economyTrend * (0.02 + Math.random() * 0.04); // ±0.02-0.06
+      const noise = (Math.random() - 0.5) * 0.03; // tiny random noise ±0.015
+      const newPriceModifier = Math.max(0.75, Math.min(1.25, state.priceModifier + drift + noise));
+
+      // H8: Market crash only during recession (trend = -1) and low economy
+      const crashResult = (economyTrend === -1 && newPriceModifier < 0.9)
+        ? checkMarketCrash(true)
+        : { type: 'none' as const };
 
       // Process all players for week-end effects
       const updatedPlayers = state.players.map((player) => {
@@ -700,9 +720,10 @@ export function createTurnActions(set: SetFn, get: GetFn) {
       }
 
       // === Update Stock Prices (Jones-style) ===
-      const isMarketCrash = Math.random() < 0.05; // 5% chance of market crash
-      const newStockPrices = updateStockPrices(state.stockPrices, isMarketCrash);
-      if (isMarketCrash) {
+      // Stock crashes only during recession trend, not every week
+      const isStockCrash = economyTrend === -1 && Math.random() < 0.10; // 10% per recession week
+      const newStockPrices = updateStockPrices(state.stockPrices, isStockCrash);
+      if (isStockCrash) {
         eventMessages.push('MARKET CRASH! Stock prices have plummeted!');
       }
 
@@ -716,6 +737,9 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           phase: 'victory',
           eventMessage: 'All players have perished. Game Over!',
           stockPrices: newStockPrices,
+          priceModifier: newPriceModifier,
+          economyTrend,
+          economyCycleWeeksLeft,
         });
         return;
       }
@@ -730,6 +754,9 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           phase: 'victory',
           eventMessage: `${alivePlayers[0].name} is the last one standing and wins the game!`,
           stockPrices: newStockPrices,
+          priceModifier: newPriceModifier,
+          economyTrend,
+          economyCycleWeeksLeft,
         });
         return;
       }
@@ -741,7 +768,9 @@ export function createTurnActions(set: SetFn, get: GetFn) {
       set({
         week: newWeek,
         currentPlayerIndex: firstAliveIndex,
-        priceModifier: 0.7 + Math.random() * 0.6, // Random price between 0.7 and 1.3
+        priceModifier: newPriceModifier,
+        economyTrend,
+        economyCycleWeeksLeft,
         players: updatedPlayers.map((p, index) =>
           index === firstAliveIndex
             ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: firstPlayerHome, dungeonAttemptsThisTurn: 0 }

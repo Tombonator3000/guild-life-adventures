@@ -4,17 +4,17 @@ import type { DegreeId } from '@/types/game.types';
 import type { ClothingRequirement, Job, JobOffer, Employer, JobApplicationResult } from './types';
 import { ALL_JOBS } from './definitions';
 
-// Calculate offered wage based on economy (Jones-style: 50-250% of base)
-// The economy affects what wage is offered when applying for a job
+// Calculate offered wage based on economy (Jones-style, stabilized)
+// Economy modifier drifts gradually via cycle system (0.75-1.25 range)
+// Individual wage variance is ±30% on top of economy (was ±150%)
 export const calculateOfferedWage = (job: Job, economyModifier: number): JobOffer => {
-  // Economy modifier affects wage offers
-  // Base range is 0.5-2.5 (50%-250% of base wage)
-  // Economy modifier shifts this range
-  const baseMultiplier = 0.5 + (Math.random() * 2.0); // 0.5 to 2.5
+  // Narrowed per-application variance: 0.7-1.6 (was 0.5-2.5)
+  // Combined with economy modifier (0.75-1.25), effective range is ~0.53-2.0
+  const baseMultiplier = 0.7 + (Math.random() * 0.9); // 0.7 to 1.6
   const adjustedMultiplier = baseMultiplier * economyModifier;
 
-  // Clamp between 0.5 and 2.5
-  const finalMultiplier = Math.max(0.5, Math.min(2.5, adjustedMultiplier));
+  // Clamp between 0.5 and 2.0
+  const finalMultiplier = Math.max(0.5, Math.min(2.0, adjustedMultiplier));
   const offeredWage = Math.round(job.baseWage * finalMultiplier);
 
   return {

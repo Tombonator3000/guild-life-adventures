@@ -334,6 +334,18 @@
   - [x] "Online Multiplayer" button on TitleScreen
   - [x] Build succeeds, all 112 tests pass
 
+## Completed (2026-02-06)
+
+- [x] Economy Stabilization — gradual drift replaces random weekly priceModifier
+  - [x] Economic cycle system: trend (-1/0/1) lasting 3-7 weeks before changing
+  - [x] Gradual price drift: ±0.02-0.06 per week instead of full random reset
+  - [x] Narrowed wage offer range: 0.7-1.6× (was 0.5-2.5×)
+  - [x] Market crashes only during recession trend (was random every week)
+  - [x] Stock crashes only during recession (10% per recession week, was 5% every week)
+  - [x] Trend arrow indicator on GameBoard (↑↓↔)
+  - [x] Newspaper trend forecast text
+  - [x] Network sync and save/load updated with new economy fields
+
 ## In Progress
 
 *No active tasks*

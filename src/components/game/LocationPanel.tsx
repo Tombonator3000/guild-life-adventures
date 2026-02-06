@@ -53,6 +53,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     withdrawFromBank,
     invest,
     priceModifier,
+    economyTrend,
     week,
     takeQuest,
     completeQuest,
@@ -114,7 +115,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     const price = Math.round(NEWSPAPER_COST * priceModifier);
     modifyGold(player.id, -price);
     spendTime(player.id, NEWSPAPER_TIME);
-    const newspaper = generateNewspaper(week, priceModifier);
+    const newspaper = generateNewspaper(week, priceModifier, economyTrend);
     setCurrentNewspaper(newspaper);
     setShowNewspaper(true);
   };
@@ -479,7 +480,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
                   onClick={() => {
                     modifyGold(player.id, -shadowNewspaperPrice);
                     spendTime(player.id, NEWSPAPER_TIME);
-                    const newspaper = generateNewspaper(week, priceModifier);
+                    const newspaper = generateNewspaper(week, priceModifier, economyTrend);
                     setCurrentNewspaper(newspaper);
                     setShowNewspaper(true);
                   }}

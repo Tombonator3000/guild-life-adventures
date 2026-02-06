@@ -1,5 +1,72 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Economy Stabilization: Gradual Drift System
+
+The economy was too volatile — `priceModifier` was fully random (0.7–1.3) every single week, causing prices and wage offers to swing wildly. Combined with the per-job wage multiplier (0.5–2.5×), the effective wage range was enormous and felt unstable.
+
+### Changes
+
+**1. Economic Cycle System** (`game.types.ts`, `turnHelpers.ts`)
+- Added `economyTrend` (-1 = recession, 0 = stable, 1 = boom) and `economyCycleWeeksLeft` to GameState
+- Each cycle lasts 3–7 weeks before the trend changes
+- Trend selection: 35% boom, 35% stable, 30% recession
+
+**2. Gradual Price Drift** (`turnHelpers.ts:processWeekEnd`)
+- **Before**: `priceModifier = 0.7 + Math.random() * 0.6` (fully random each week)
+- **After**: `priceModifier += trend × (0.02-0.06) + noise(±0.015)`, clamped to 0.75–1.25
+- Prices now move smoothly in one direction for several weeks, then gradually shift
+- Players can observe trends and plan purchases accordingly
+
+**3. Narrowed Wage Offer Variance** (`jobs/utils.ts:calculateOfferedWage`)
+- **Before**: `baseMultiplier = 0.5 + random × 2.0` → range 0.5–2.5×
+- **After**: `baseMultiplier = 0.7 + random × 0.9` → range 0.7–1.6×
+- Final wage clamped to 0.5–2.0× (was 0.5–2.5×)
+- Combined with economy (0.75–1.25), effective range is ~0.53–2.0× (was ~0.35–3.25×)
+
+**4. Market Crashes Tied to Economy Trend** (`turnHelpers.ts`)
+- **Before**: 3% layoff + 5% paycut every single week regardless of economy
+- **After**: Market crashes (layoff/paycut) only occur during recession trend AND when priceModifier < 0.9
+- Stock market crashes: only during recession, 10% per recession week (was 5% every week)
+- Net effect: crashes are rarer but more thematic — they happen during downturns, not randomly during booms
+
+**5. UI: Economy Trend Indicator** (`GameBoard.tsx`)
+- Market display now shows trend arrow: ↑ (boom), ↓ (recession), ↔ (stable)
+- Tooltip explains the current trend direction
+
+**6. Newspaper Trend Info** (`newspaper.ts`, `LocationPanel.tsx`)
+- Newspaper economy articles now include trend forecast text
+- "Economists expect continued growth" / "Experts warn of further decline"
+
+### Before vs After (typical 10-week sequence)
+
+```
+BEFORE: 0.73, 1.28, 0.85, 1.19, 0.71, 1.25, 0.92, 1.30, 0.74, 1.12
+         (random jumps, no continuity)
+
+AFTER:  1.00, 1.04, 1.07, 1.10, 1.12, 1.09, 1.06, 1.03, 1.00, 0.97
+         (gradual drift with trend cycles)
+```
+
+### Files Modified
+| File | Change |
+|------|--------|
+| `src/types/game.types.ts` | Added `economyTrend`, `economyCycleWeeksLeft` to GameState |
+| `src/store/helpers/turnHelpers.ts` | Cycle-based drift replaces random priceModifier; crash gating |
+| `src/data/jobs/utils.ts` | Narrowed wage offer range (0.7–1.6, was 0.5–2.5) |
+| `src/store/gameStore.ts` | Initial state + startNewGame + loadFromSlot with new fields |
+| `src/data/newspaper.ts` | Trend forecast text in economy articles |
+| `src/components/game/GameBoard.tsx` | Trend arrow indicator (↑↓↔) |
+| `src/components/game/LocationPanel.tsx` | Pass economyTrend to newspaper |
+| `src/network/useOnlineGame.ts` | Sync new economy fields |
+| `src/network/useNetworkSync.ts` | Sync new economy fields |
+
+### Build & Tests
+- TypeScript compiles cleanly
+- Build succeeds
+- 111/112 tests pass (1 pre-existing failure in freshFood starvation test)
+
+---
+
 ## 2026-02-06 - Online Multiplayer Implementation (WebRTC P2P)
 
 Implemented full online multiplayer support using PeerJS (WebRTC) for peer-to-peer connections. Players on different devices can now play turn-based games together without any server infrastructure.

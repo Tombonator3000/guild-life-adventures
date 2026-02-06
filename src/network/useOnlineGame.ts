@@ -23,14 +23,14 @@ import { PLAYER_COLORS, AI_COLOR } from '@/types/game.types';
 /** Extract serializable game state (data only, no functions) */
 function serializeGameState(store: ReturnType<typeof useGameStore.getState>): SerializedGameState {
   const {
-    phase, currentPlayerIndex, players, week, priceModifier, goalSettings,
-    winner, eventMessage, rentDueWeek, aiDifficulty, stockPrices, weekendEvent,
+    phase, currentPlayerIndex, players, week, priceModifier, economyTrend, economyCycleWeeksLeft,
+    goalSettings, winner, eventMessage, rentDueWeek, aiDifficulty, stockPrices, weekendEvent,
     aiSpeedMultiplier, skipAITurn, showTutorial, tutorialStep,
     selectedLocation, shadowfingersEvent, applianceBreakageEvent,
   } = store;
   return {
-    phase, currentPlayerIndex, players, week, priceModifier, goalSettings,
-    winner, eventMessage, rentDueWeek, aiDifficulty, stockPrices, weekendEvent,
+    phase, currentPlayerIndex, players, week, priceModifier, economyTrend, economyCycleWeeksLeft,
+    goalSettings, winner, eventMessage, rentDueWeek, aiDifficulty, stockPrices, weekendEvent,
     aiSpeedMultiplier, skipAITurn, showTutorial, tutorialStep,
     selectedLocation, shadowfingersEvent, applianceBreakageEvent,
   } as SerializedGameState;
@@ -46,6 +46,8 @@ function applyNetworkState(state: SerializedGameState) {
     players: state.players,
     week: state.week,
     priceModifier: state.priceModifier,
+    economyTrend: state.economyTrend,
+    economyCycleWeeksLeft: state.economyCycleWeeksLeft,
     goalSettings: state.goalSettings,
     winner: state.winner,
     eventMessage: state.eventMessage,
