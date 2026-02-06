@@ -287,11 +287,11 @@ function GoalSlider({ label, value, onChange, min, max, step = 1, unit, descript
   return (
     <div>
       <div className="flex justify-between text-sm mb-1">
-        <span className="font-display text-card-foreground">{label}</span>
-        <span className="text-primary font-semibold">{value}{unit}</span>
+        <span className="font-display text-amber-900">{label}</span>
+        <span className="text-amber-700 font-semibold">{value}{unit}</span>
       </div>
       {description && (
-        <p className="text-xs text-muted-foreground mb-2">{description}</p>
+        <p className="text-xs text-amber-700 mb-2">{description}</p>
       )}
       <input
         type="range"
