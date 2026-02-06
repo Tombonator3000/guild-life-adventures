@@ -18,8 +18,9 @@ import { useGameStore, type ShadowfingersEvent } from '@/store/gameStore';
 import type { StreetRobberyResult, ApartmentRobberyResult } from '@/data/shadowfingers';
 import { Skull } from 'lucide-react';
 
-// Path to the Shadowfingers image - save the image here
-const SHADOWFINGERS_IMAGE_PATH = '/src/assets/shadowfingers.jpg';
+// Import the Shadowfingers image
+import shadowfingersImage from '@/assets/shadowfingers.jpg';
+const SHADOWFINGERS_IMAGE_PATH = shadowfingersImage;
 
 interface ShadowfingersModalProps {
   event: ShadowfingersEvent | null;
