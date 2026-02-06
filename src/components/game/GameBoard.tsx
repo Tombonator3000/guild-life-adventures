@@ -65,6 +65,9 @@ export function GameBoard() {
   const localPlayerId = useGameStore(s => s.localPlayerId);
   const roomCodeDisplay = useGameStore(s => s.roomCode);
 
+  // Get current player BEFORE useEffects that depend on it (also used for online checks)
+  const currentPlayer = players[currentPlayerIndex];
+
   // Online mode: is it this client's turn?
   const isLocalPlayerTurn = !isOnline || (currentPlayer?.id === localPlayerId);
   const isWaitingForOtherPlayer = isOnline && !isLocalPlayerTurn && !currentPlayer?.isAI;
@@ -103,9 +106,6 @@ export function GameBoard() {
   // Guard against double endTurn — tracks which playerIndex the scheduled endTurn is for
   const scheduledEndTurnRef = useRef<number | null>(null);
   const autoEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Get current player BEFORE useEffects that depend on it
-  const currentPlayer = useCurrentPlayer();
 
   // Keyboard shortcuts
   useEffect(() => {

@@ -641,7 +641,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
         {/* Travel or Actions */}
         <div className="flex-1 overflow-hidden">
           {isHere && npc && tabs ? (
-            <LocationShell key={locationId} npc={npc} tabs={tabs} />
+            <LocationShell key={locationId} npc={npc} tabs={tabs} locationId={locationId} />
           ) : isHere && tabs ? (
             <div className="overflow-y-auto h-full">
               {tabs[0]?.content}
