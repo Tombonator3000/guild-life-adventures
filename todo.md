@@ -99,6 +99,45 @@
 
 *No active tasks*
 
+## Proposed Improvements (2026-02-05 Code Audit)
+
+See log.md "Improvement Proposals (Code Audit & Gap Analysis)" for full details.
+
+### Bugs (Fix ASAP)
+- [ ] A1: Fix education progress display — GoalProgress uses old `player.education`, should use `completedDegrees * 9`
+- [ ] A2: Fix earnings display — WorkSection shows 33% bonus, actual calc uses 15%
+- [ ] A3: Fix async imports in store actions — race condition risk in applyRareDrop & quest helpers
+- [ ] A4: Decide on consistent modifyMaxHealth behavior
+
+### Missing Jones Features
+- [ ] B1: Stock Market / Trading System (regular stocks + T-Bills)
+- [ ] B2: Loan System (bank loans with interest)
+- [ ] B3: Weekend System (ticket events, appliance weekends, random weekends)
+- [ ] B4: Doctor Visit triggers (starvation → doctor, low relaxation → doctor)
+- [ ] B5: Fresh Food storage system (Refrigerator/Freezer units)
+- [ ] B6: Lottery Tickets
+
+### Gameplay
+- [ ] C1: Save/Load game state (localStorage) — **highest usability gap**
+- [ ] C2: Tutorial / new player guidance
+- [ ] C3: Rebalance work happiness penalty for early game
+- [ ] C4: Game speed control / skip AI turn
+- [ ] C5: Improve raise request system (less punishing)
+
+### UI/UX
+- [ ] D1: Mobile/responsive layout
+- [ ] D2: Tooltips for all buttons and icons
+- [ ] D3: Keyboard shortcuts for common actions
+- [ ] D4: Confirmation dialogs for expensive actions
+- [ ] D5: Dark mode
+
+### Technical Debt
+- [ ] E1: Write real unit tests (victory, earnings, education, AI) — **zero coverage currently**
+- [ ] E2: Deduplicate GUILD_PASS_COST constant
+- [ ] E3: Add input validation to banking actions
+- [ ] E4: Use LocationId type instead of string in location functions
+- [ ] E5: Clean up legacy education system references
+
 ## Completed (Phase 3 - Cave UI Overhaul)
 
 - [x] Replace CavePanel explore/rest with floor selection interface

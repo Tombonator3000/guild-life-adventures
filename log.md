@@ -44,6 +44,191 @@ The async callbacks meant `set()` state updates happened in a later microtask, r
 ### Verification
 - Build passes (`npx vite build`)
 - Tests pass (`npx vitest run`)
+## 2026-02-05 - Improvement Proposals (Code Audit & Gap Analysis)
+
+A full codebase audit and gap analysis against JONES_REFERENCE.md was performed. Below are categorized improvement proposals, from highest to lowest priority.
+
+---
+
+### Category A: Bugs & Logic Errors (Fix ASAP)
+
+#### A1. Education Progress Display Mismatch (HIGH)
+**Files**: `src/components/game/GoalProgress.tsx:17`, `src/store/helpers/questHelpers.ts:180`
+
+**Problem**: GoalProgress shows education using the OLD `player.education` map:
+```typescript
+const totalEducation = Object.values(player.education).reduce((sum, level) => sum + level, 0);
+```
+But victory checking (`checkVictory`) uses the NEW `player.completedDegrees` system:
+```typescript
+const totalEducation = player.completedDegrees.length * 9;
+```
+Players see a misleading progress bar that doesn't match actual win conditions.
+
+**Fix**: Replace the education calculation in GoalProgress.tsx with `player.completedDegrees.length * 9`.
+
+#### A2. Work Earnings Display Mismatch (MEDIUM)
+**Files**: `src/components/game/WorkSection.tsx:24`, `src/store/helpers/workEducationHelpers.ts:20`
+
+**Problem**: WorkSection displays earnings using a 33% bonus multiplier:
+```typescript
+const earnings = Math.ceil(jobData.hoursPerShift * 1.33 * player.currentWage);
+```
+But actual workShift calculation uses 15% bonus:
+```typescript
+const bonusHours = hours >= 6 ? Math.ceil(hours * 1.15) : hours;
+```
+Players see higher expected earnings than they actually receive.
+
+**Fix**: Update WorkSection to use `1.15` multiplier, or better yet, extract the bonus calculation to a shared utility.
+
+#### A3. Async Imports in Store Actions — Race Conditions (HIGH)
+**Files**: `src/store/helpers/economyHelpers.ts:319`, `src/store/helpers/questHelpers.ts:42`
+
+**Problem**: `applyRareDrop` and quest helpers use `import(...).then()` inside action creators. The state update happens asynchronously — the function returns before the drop is applied. If other state changes happen in the meantime, state could be corrupted.
+
+**Fix**: Convert dynamic imports to static imports at the top of the file. The dungeon and quest data modules are small and always needed when these actions run.
+
+#### A4. modifyMaxHealth Logic (LOW-MEDIUM)
+**File**: `src/store/helpers/playerHelpers.ts:127`
+
+**Problem**: When maxHealth increases, current health is clamped to the new max but not increased to take advantage of the new capacity. This is technically correct (health doesn't magically fill), but `applyRareDrop` for `permanent_max_health` (economyHelpers.ts:343-344) does increase both — creating inconsistent behavior between the two code paths.
+
+**Fix**: Decide on one behavior and apply it consistently. If max health increases should also heal, update `modifyMaxHealth` to match `applyRareDrop`.
+
+---
+
+### Category B: Missing Jones Features (Gameplay Gaps)
+
+Based on JONES_REFERENCE.md, these core Jones mechanics are not yet implemented:
+
+#### B1. Stock Market / Trading System (LARGE)
+Jones has a full stock market at the Bank: regular stocks with economy-driven price fluctuation, and risk-free T-Bills (3% sell fee, no crash risk). T-Bills count toward Liquid Assets and can't be robbed or wiped by market crashes. This is a major wealth management feature that adds strategic depth.
+
+**Scope**: New BankPanel section, stock price simulation per turn, buy/sell UI, T-Bill vs. regular stock choice, crash effects on stocks.
+
+#### B2. Loan System (MEDIUM)
+Jones allows bank loans with interest and repayment schedules. Failed loan requests cost happiness. This creates an early-game financing option — borrow for education or equipment, pay back with job earnings.
+
+**Scope**: New BankPanel section, loan state on Player, interest calculation per turn, garnishment on default.
+
+#### B3. Weekend System (MEDIUM-LARGE)
+Between turns, Jones has automatic weekend activities: ticket-based (Baseball/Theatre/Concert), durable-triggered (20% chance per appliance), and random weekends. Costs range from $5-100. This creates a happiness income/drain mechanic and makes appliance ownership more meaningful.
+
+**Scope**: Weekend event generator, ticket items, weekend result display between turns, appliance weekend triggers.
+
+#### B4. Doctor Visit Triggers (SMALL)
+In Jones, starvation, food spoilage, and low relaxation can trigger a Doctor Visit: -10 hours, -4 happiness, -$30-200. Currently the game has a Healer location but no automatic doctor visits from starvation/relaxation.
+
+**Fix**: Add doctor visit checks in `processWeekEnd` when starvation or low relaxation is detected.
+
+#### B5. Fresh Food Storage System (MEDIUM)
+Jones has Refrigerator (stores 6 Fresh Food units) and Freezer (12 units). Fresh food from the grocery store prevents starvation and spoils without proper storage. Currently, Guild Life has a simpler foodLevel percentage system.
+
+**Scope**: Would require reworking the food system from percentage to unit-based, adding food inventory, spoilage checks.
+
+#### B6. Lottery Tickets (SMALL)
+Jones has lottery tickets as a gambling mechanic. Fixed price, chance to win big ($5,000). Fun, low-effort addition.
+
+**Scope**: New item at Shadow Market or General Store, random draw on weekend/turn end.
+
+---
+
+### Category C: Gameplay & Balance Improvements
+
+#### C1. Save/Load Game State (HIGH PRIORITY)
+**Currently missing entirely.** Games are lost on page refresh. This is the single biggest usability gap.
+
+**Implementation**: Serialize Zustand store to localStorage. Add save/load buttons. Auto-save at turn end. Allow multiple save slots.
+
+#### C2. No Tutorial or New Player Guidance
+The game has many interconnected systems (housing, jobs, education, food, equipment, dungeon, quests, guild ranks) with no in-game explanation. New players will be lost.
+
+**Options**:
+- First-turn tutorial overlay highlighting key locations
+- "Advisor" tooltip system explaining each panel
+- Quick-start guide accessible from title screen
+
+#### C3. Work Happiness Penalty Too Harsh Early Game
+Working costs -2 happiness per shift (workEducationHelpers.ts:47). In early game with low wages, players lose happiness faster than they can earn it through other means. Consider scaling the penalty based on job satisfaction or wage level.
+
+#### C4. No Game Speed Control for AI Turns
+Grimwald AI has hardcoded delays (300-800ms per action, up to 15 actions per turn). No way to skip or speed up. Long AI turns can be tedious.
+
+**Fix**: Add a "Skip AI Turn" button or speed multiplier setting.
+
+#### C5. Raise Request System Could Be Improved
+The raise system (workEducationHelpers.ts:57-99) has a -10 dependability penalty on failure, which is very punishing. Jones lets you re-apply for your current job at the Employment Office to get the current market rate — no penalty.
+
+---
+
+### Category D: UI/UX Improvements
+
+#### D1. No Mobile/Responsive Layout
+The game board and panels are designed for desktop. No responsive breakpoints for mobile or tablet. The game board image requires a large viewport.
+
+#### D2. Missing Tooltips
+Buttons and icons throughout the game have no hover tooltips. Players must experiment to understand what each action does.
+
+#### D3. No Keyboard Shortcuts
+No keyboard navigation for common actions (end turn, work, study, etc.). Would improve power-user experience significantly.
+
+#### D4. No Undo for Misclicks
+Accidentally clicking a location starts travel immediately. No confirmation dialog for expensive or time-consuming actions. A simple "Are you sure?" for travel when time is low would prevent frustration.
+
+#### D5. Dark Mode
+Not critical but commonly requested. Tailwind makes this straightforward with `dark:` variants.
+
+---
+
+### Category E: Technical Debt & Code Quality
+
+#### E1. Zero Real Test Coverage (CRITICAL)
+**File**: `src/test/example.test.ts` — contains only `expect(true).toBe(true)`.
+
+No tests for: state mutations, victory conditions, financial calculations, education progression, death system, robbery logic, AI decision engine. Any refactoring or balance change risks introducing silent regressions.
+
+**Priority tests to write:**
+1. `checkVictory()` — all goal combinations
+2. `workShift()` — earnings, garnishment, bonus calculations
+3. `processWeekEnd()` — starvation, rent, appliance breakage
+4. `completeDegree()` — prerequisite validation, graduation bonuses
+5. AI action generation — priority scoring, critical needs detection
+
+#### E2. Duplicate GUILD_PASS_COST Constant
+**Files**: `src/store/helpers/questHelpers.ts:14` and `src/types/game.types.ts:242`
+
+Hardcoded `500` in two places. Should import from a single source.
+
+#### E3. Input Validation Missing in Banking
+**File**: `src/store/helpers/economyHelpers.ts:25-50`
+
+`depositToBank` and `withdrawFromBank` don't validate that amounts are positive. Negative amounts would exploit the system (deposit -100 = free gold). The UI prevents this, but the store should be self-protecting.
+
+#### E4. Type Safety in Location Functions
+**File**: `src/data/locations.ts:278`
+
+`getMovementCost` accepts `string` instead of `LocationId`. Invalid location IDs silently return 0 instead of producing a type error.
+
+#### E5. Legacy Education System Code
+GoalProgress.tsx and potentially other components still reference `player.education` (old system) instead of `player.completedDegrees` (new system). Dead code paths should be cleaned up.
+
+---
+
+### Summary: Recommended Priority Order
+
+| Priority | Item | Effort | Impact |
+|----------|------|--------|--------|
+| 1 | A1: Fix education progress display | Small | High — players see wrong progress |
+| 2 | A2: Fix earnings display | Small | Medium — misleading UI |
+| 3 | A3: Fix async imports | Small | High — prevents race conditions |
+| 4 | C1: Save/load game | Medium | Critical — games lost on refresh |
+| 5 | E1: Write core tests | Medium | High — safety net for all future work |
+| 6 | B1: Stock market | Large | High — major strategic depth |
+| 7 | B3: Weekend system | Medium | Medium — happiness/economy depth |
+| 8 | B2: Loan system | Medium | Medium — early-game financing |
+| 9 | C2: Tutorial/guidance | Medium | Medium — new player retention |
+| 10 | D1: Mobile responsive | Large | Medium — broader audience |
 
 ---
 
