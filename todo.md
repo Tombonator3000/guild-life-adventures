@@ -128,18 +128,18 @@ See log.md "Improvement Proposals (Code Audit & Gap Analysis)" for full details.
 - [x] B6: Lottery Tickets — **DONE**
 
 ### Gameplay
-- [ ] C1: Save/Load game state (localStorage) — **highest usability gap**
-- [ ] C2: Tutorial / new player guidance
-- [ ] C3: Rebalance work happiness penalty for early game
-- [ ] C4: Game speed control / skip AI turn
-- [ ] C5: Improve raise request system (less punishing)
+- [x] C1: Save/Load game state (localStorage) — **DONE** Auto-save + 3 manual slots
+- [x] C2: Tutorial / new player guidance — **DONE** 9-step tutorial overlay
+- [x] C3: Rebalance work happiness penalty for early game — **DONE** Scaled by week
+- [x] C4: Game speed control / skip AI turn — **DONE** 1x/3x/skip controls
+- [x] C5: Improve raise request system (less punishing) — **DONE** -3 dep instead of -10
 
 ### UI/UX
 - [ ] D1: Mobile/responsive layout
-- [ ] D2: Tooltips for all buttons and icons
-- [ ] D3: Keyboard shortcuts for common actions
-- [ ] D4: Confirmation dialogs for expensive actions
-- [ ] D5: Dark mode
+- [x] D2: Tooltips for all buttons and icons — **DONE** Title attributes + shortcut hints
+- [x] D3: Keyboard shortcuts for common actions — **DONE** E/Esc/Space/T
+- [x] D4: Confirmation dialogs for expensive actions — **DONE** ConfirmDialog component
+- [x] D5: Dark mode — **DONE** Toggle with localStorage persistence
 
 ### Technical Debt
 - [ ] E1: Write real unit tests (victory, earnings, education, AI) — **zero coverage currently**

@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { PLAYER_COLORS, GUILD_RANK_NAMES, GUILD_RANK_ORDER, AI_DIFFICULTY_NAMES, AI_DIFFICULTY_DESCRIPTIONS, type AIDifficulty } from '@/types/game.types';
-import { Plus, Minus, Bot, Play, Brain, Zap, Crown } from 'lucide-react';
+import { Plus, Minus, Bot, Play, Brain, Zap, Crown, Lightbulb } from 'lucide-react';
 import gameBoard from '@/assets/game-board.jpeg';
 
 export function GameSetup() {
-  const { startNewGame, setPhase } = useGameStore();
+  const { startNewGame, setPhase, setShowTutorial, setTutorialStep } = useGameStore();
   const [playerNames, setPlayerNames] = useState<string[]>(['Adventurer 1']);
   const [includeAI, setIncludeAI] = useState(false);
+  const [enableTutorial, setEnableTutorial] = useState(true);
   const [aiDifficulty, setAIDifficulty] = useState<AIDifficulty>('medium');
   const [goals, setGoals] = useState({
     wealth: 5000,
@@ -36,6 +37,10 @@ export function GameSetup() {
 
   const handleStart = () => {
     startNewGame(playerNames, includeAI, goals, aiDifficulty);
+    if (enableTutorial) {
+      setTutorialStep(0);
+      setShowTutorial(true);
+    }
   };
 
   // Preset game lengths
@@ -145,6 +150,22 @@ export function GameSetup() {
                   </p>
                 </div>
               )}
+            </div>
+
+            {/* Tutorial Toggle */}
+            <div className="mt-4 pt-4 border-t border-border">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={enableTutorial}
+                  onChange={(e) => setEnableTutorial(e.target.checked)}
+                  className="w-5 h-5 accent-primary"
+                />
+                <Lightbulb className="w-5 h-5 text-muted-foreground" />
+                <span className="font-display text-card-foreground">
+                  Show Tutorial (recommended for new players)
+                </span>
+              </label>
             </div>
           </div>
 

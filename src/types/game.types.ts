@@ -209,6 +209,12 @@ export interface GameState {
   stockPrices: Record<string, number>;
   // Weekend event result for display
   weekendEvent: WeekendEventResult | null;
+  // AI speed control
+  aiSpeedMultiplier: number;
+  skipAITurn: boolean;
+  // Tutorial state
+  showTutorial: boolean;
+  tutorialStep: number;
 }
 
 // Weekend event result for display between turns

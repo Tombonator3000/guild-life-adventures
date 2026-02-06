@@ -300,6 +300,26 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
       const state = useGameStore.getState();
       currentPlayer = state.players.find(p => p.id === player.id) || currentPlayer;
 
+      // Check skip request
+      if (state.skipAITurn) {
+        console.log(`[Grimwald AI] Turn skipped by player`);
+        // Execute remaining actions instantly without delays
+        let emergencyLimit = 30;
+        while (emergencyLimit > 0) {
+          const fastState = useGameStore.getState();
+          const fastPlayer = fastState.players.find(p => p.id === player.id);
+          if (!fastPlayer || fastPlayer.timeRemaining < 1 || fastPlayer.isGameOver) break;
+          const fastActions = generateActions(fastPlayer, goalSettings, settings, fastState.week, fastState.priceModifier);
+          if (fastActions[0].type === 'end-turn') break;
+          await executeAction(fastPlayer, fastActions[0]);
+          emergencyLimit--;
+        }
+        useGameStore.setState({ skipAITurn: false });
+        endTurn();
+        isExecutingRef.current = false;
+        return;
+      }
+
       // Check exit conditions
       if (actionsRemaining <= 0 || currentPlayer.timeRemaining < 1 || currentPlayer.isGameOver) {
         console.log(`[Grimwald AI] Turn complete. Actions: ${actionLogRef.current.join(' -> ')}`);
@@ -340,12 +360,16 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         actionsRemaining--;
       }
 
-      // Continue with next action after delay
-      setTimeout(step, settings.decisionDelay);
+      // Continue with next action after delay (respect speed multiplier)
+      const speedMult = useGameStore.getState().aiSpeedMultiplier || 1;
+      const adjustedDelay = Math.max(50, Math.floor(settings.decisionDelay / speedMult));
+      setTimeout(step, adjustedDelay);
     };
 
     // Start the turn
-    setTimeout(step, settings.decisionDelay);
+    const speedMult = useGameStore.getState().aiSpeedMultiplier || 1;
+    const adjustedDelay = Math.max(50, Math.floor(settings.decisionDelay / speedMult));
+    setTimeout(step, adjustedDelay);
   }, [difficulty, settings, goalSettings, executeAction, endTurn]);
 
   /**

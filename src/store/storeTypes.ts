@@ -95,6 +95,19 @@ export interface GameStore extends GameState {
   buyTicket: (playerId: string, ticketType: string, cost: number) => void;
   // Weekend event display
   dismissWeekendEvent: () => void;
+  // Save/Load
+  saveToSlot: (slot: number, slotName?: string) => boolean;
+  loadFromSlot: (slot: number) => boolean;
+  // AI speed control
+  aiSpeedMultiplier: number;
+  setAISpeedMultiplier: (multiplier: number) => void;
+  skipAITurn: boolean;
+  setSkipAITurn: (skip: boolean) => void;
+  // Tutorial
+  showTutorial: boolean;
+  tutorialStep: number;
+  setShowTutorial: (show: boolean) => void;
+  setTutorialStep: (step: number) => void;
 }
 
 // Zustand set/get function types
