@@ -145,7 +145,7 @@ export function GameSetup() {
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground text-center mt-1">
+                  <p className="text-xs text-amber-700 text-center mt-1">
                     {AI_DIFFICULTY_DESCRIPTIONS[aiDifficulty]}
                   </p>
                 </div>
