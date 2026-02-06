@@ -91,7 +91,9 @@ export function OnlineLobby() {
     }
   }, [phase, view]);
 
-  const canStart = lobbyPlayers.length >= 2 || settings.includeAI;
+  // All non-host players must be ready, and need at least 2 players (or AI)
+  const allGuestsReady = lobbyPlayers.filter(p => p.peerId !== 'host').every(p => p.isReady);
+  const canStart = (lobbyPlayers.length >= 2 || settings.includeAI) && allGuestsReady;
 
   return (
     <div className="relative min-h-screen overflow-hidden">

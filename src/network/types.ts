@@ -33,14 +33,17 @@ export type HostMessage =
   | { type: 'game-start'; gameState: SerializedGameState; lobby: LobbyState }
   | { type: 'state-sync'; gameState: SerializedGameState }
   | { type: 'action-result'; requestId: string; success: boolean; error?: string }
-  | { type: 'player-disconnected'; playerName: string }
+  | { type: 'player-disconnected'; playerName: string; temporary?: boolean }
+  | { type: 'player-reconnected'; playerName: string }
   | { type: 'kicked'; reason: string }
   | { type: 'pong'; timestamp: number }
-  | { type: 'movement-animation'; playerId: string; path: LocationId[] };
+  | { type: 'movement-animation'; playerId: string; path: LocationId[] }
+  | { type: 'turn-timeout'; playerId: string };
 
 // Guest → Host messages
 export type GuestMessage =
   | { type: 'join'; playerName: string }
+  | { type: 'reconnect'; playerName: string }
   | { type: 'ready'; isReady: boolean }
   | { type: 'action'; requestId: string; name: string; args: unknown[] }
   | { type: 'ping'; timestamp: number }

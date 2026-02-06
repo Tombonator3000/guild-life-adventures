@@ -16,7 +16,8 @@ import type { Player, HousingTier, DegreeId, EquipmentSlot } from '@/types/game.
 import { RENT_COSTS, GUILD_PASS_COST } from '@/types/game.types';
 import { getJob, canWorkJob } from '@/data/jobs';
 import { DEGREES } from '@/data/education';
-import { calculatePathDistance } from '@/data/locations';
+import { calculatePathDistance, getPath } from '@/data/locations';
+import { peerManager } from '@/network/PeerManager';
 import { calculateCombatStats } from '@/data/items';
 import { getFloor, calculateEducationBonuses, getFloorTimeCost, getEncounterTimeCost, getLootMultiplier, ENCOUNTERS_PER_FLOOR } from '@/data/dungeon';
 import { autoResolveFloor } from '@/data/combatResolver';
@@ -89,6 +90,12 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         if (!action.location) return false;
         const cost = calculatePathDistance(player.currentLocation, action.location);
         if (player.timeRemaining < cost) return false;
+        // Broadcast AI movement animation to remote clients
+        const networkMode = useGameStore.getState().networkMode;
+        if (networkMode === 'host') {
+          const path = getPath(player.currentLocation, action.location);
+          peerManager.broadcast({ type: 'movement-animation', playerId: player.id, path });
+        }
         movePlayer(player.id, action.location, cost);
         return true;
       }
