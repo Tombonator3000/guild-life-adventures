@@ -61,10 +61,22 @@ export function usePlayerAnimation() {
     setAnimationPath(path);
   }, []);
 
+  // Start a visual-only animation for a remote player (no movePlayer on completion)
+  const startRemoteAnimation = useCallback((
+    playerId: string,
+    path: LocationId[],
+  ) => {
+    // Don't set pendingMoveRef — remote animations are purely visual.
+    // When handleAnimationComplete fires, pendingMoveRef is null so it just clears state.
+    setAnimatingPlayer(playerId);
+    setAnimationPath(path);
+  }, []);
+
   return {
     animatingPlayer,
     animationPath,
     handleAnimationComplete,
     startAnimation,
+    startRemoteAnimation,
   };
 }

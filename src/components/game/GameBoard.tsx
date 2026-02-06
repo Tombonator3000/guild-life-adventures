@@ -52,7 +52,7 @@ export function GameBoard() {
     dismissApplianceBreakageEvent,
   } = useGameStore();
   const { event: shadowfingersEvent, dismiss: dismissShadowfingers } = useShadowfingersModal();
-  const { isOnline, isGuest, networkMode } = useNetworkSync();
+  const { isOnline, isGuest, networkMode, broadcastMovement, remoteAnimation, clearRemoteAnimation } = useNetworkSync();
   const localPlayerId = useGameStore(s => s.localPlayerId);
   const roomCodeDisplay = useGameStore(s => s.roomCode);
 
@@ -89,6 +89,7 @@ export function GameBoard() {
     animationPath,
     handleAnimationComplete,
     startAnimation,
+    startRemoteAnimation,
   } = usePlayerAnimation();
 
   // Keyboard shortcuts
@@ -147,6 +148,14 @@ export function GameBoard() {
     }
   }, [applianceBreakageEvent, dismissApplianceBreakageEvent]);
 
+  // Remote movement animation: when another player moves in online mode, animate their token
+  useEffect(() => {
+    if (remoteAnimation && !animatingPlayer) {
+      startRemoteAnimation(remoteAnimation.playerId, remoteAnimation.path);
+      clearRemoteAnimation();
+    }
+  }, [remoteAnimation, animatingPlayer, startRemoteAnimation, clearRemoteAnimation]);
+
   // Direct travel on location click (instead of showing travel button)
   const handleLocationClick = (locationId: string) => {
     if (!currentPlayer) return;
@@ -188,6 +197,9 @@ export function GameBoard() {
           moveCost,
           path,
         );
+        if (isOnline) {
+          broadcastMovement(currentPlayer.id, path);
+        }
       } else if (currentPlayer.timeRemaining > 0) {
         // Partial travel: not enough time, but has some hours left
         // Walk as far as possible along the path, then end turn
@@ -206,6 +218,9 @@ export function GameBoard() {
             partialPath,
             true, // isPartial
           );
+          if (isOnline) {
+            broadcastMovement(currentPlayer.id, partialPath);
+          }
         } else {
           toast.error('No time remaining!');
         }
