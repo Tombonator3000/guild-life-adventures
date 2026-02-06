@@ -53,6 +53,8 @@ export interface CombatRunResult {
   goldEarned: number;
   totalDamage: number;
   totalHealed: number;
+  /** Actual health change (negative = damage, positive = net heal). Uses real HP delta, not raw totals. */
+  healthChange: number;
   isFirstClear: boolean;
   retreated: boolean;
   rareDropName: string | null;
@@ -575,11 +577,14 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
     const lootMult = getLootMultiplier(floor, player.guildRank);
     // Defeat forfeits 75% gold (worse than retreat's 50%) so retreat is always the better choice
     const defeatGoldPenalty = (!runState.bossDefeated && !runState.retreated) ? 0.25 : 1.0;
+    // Use actual HP delta instead of raw totals (totalHealed can include wasted overheal)
+    const healthChange = runState.currentHealth - runState.startHealth;
     onComplete({
       success: runState.bossDefeated,
       goldEarned: Math.floor(runState.totalGold * lootMult * defeatGoldPenalty),
       totalDamage: runState.totalDamage,
       totalHealed: runState.totalHealed,
+      healthChange,
       isFirstClear: runState.isFirstClear && runState.bossDefeated,
       retreated: runState.retreated,
       rareDropName: runState.rareDropName,

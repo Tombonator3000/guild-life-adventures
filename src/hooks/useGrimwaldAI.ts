@@ -304,20 +304,24 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         const lootMult = getLootMultiplier(floor, player.guildRank);
         const result = autoResolveFloor(floor, combatStats, eduBonuses, player.health, isFirstClear, lootMult);
 
-        // Apply results
-        if (result.goldEarned > 0) modifyGold(player.id, result.goldEarned);
-        const netDamage = result.totalDamage - result.totalHealed;
-        if (netDamage !== 0) modifyHealth(player.id, -netDamage);
+        // Apply results (match player penalties: 25% gold on defeat, -2 happiness on defeat)
+        const defeatGoldMult = (!result.bossDefeated) ? 0.25 : 1.0;
+        const actualGold = Math.floor(result.goldEarned * defeatGoldMult);
+        if (actualGold > 0) modifyGold(player.id, actualGold);
+        // Use actual HP delta (not raw totals which can include wasted overheal)
+        if (result.healthChange !== 0) modifyHealth(player.id, result.healthChange);
         if (result.bossDefeated && isFirstClear) {
           clearDungeonFloor(player.id, floorId);
           modifyHappiness(player.id, floor.happinessOnClear);
+        } else if (!result.bossDefeated) {
+          modifyHappiness(player.id, -2); // Defeat penalty (same as player)
         }
         if (result.rareDropName) {
           applyRareDrop(player.id, floor.rareDrop.id);
         }
 
         console.log(`[Grimwald AI] Dungeon Floor ${floorId}: ${result.success ? 'CLEARED' : 'FAILED'}. ` +
-          `+${result.goldEarned}g, -${result.totalDamage} HP. ${result.log.join(' | ')}`);
+          `+${actualGold}g, ${result.healthChange} HP. ${result.log.join(' | ')}`);
         return true;
       }
 

@@ -250,6 +250,14 @@
   - [x] Eviction message now lists destroyed equipment and appliances by name
   - [x] Appliance breakage toast notification (was stored in state but never displayed)
 
+## Completed (2026-02-06)
+
+- [x] Cave Combat Damage Fix & Dungeon Audit — 4 issues fixed
+  - [x] Bug 1 (CRITICAL): Player/AI not taking correct damage — `totalHealed` included wasted overheal, causing net damage to be underestimated (or negative). Fixed with `healthChange = currentHealth - startHealth`
+  - [x] Bug 2 (FAIRNESS): AI kept 100% gold on defeat (player kept 25%). Fixed with `defeatGoldMult`
+  - [x] Bug 3 (FAIRNESS): AI had no happiness penalty on defeat (player lost -2). Fixed
+  - [x] Balance: Added Mushroom Grotto (+8 HP, Floor 2) and Sanctified Pool (+12 HP, Floor 3) healing encounters
+
 ## In Progress
 
 *No active tasks*

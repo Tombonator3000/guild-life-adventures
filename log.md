@@ -1,5 +1,65 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-06 - Cave Combat Damage Fix & Dungeon Audit
+
+Full audit of cave/dungeon combat system. Found and fixed 4 bugs (1 critical, 2 fairness, 1 balance).
+
+### Bug 1 (CRITICAL): Player/AI Not Taking Correct Damage After Combat
+
+**Files:** `CavePanel.tsx:134`, `CombatView.tsx:51-61,578`, `combatResolver.ts:333-341`, `useGrimwaldAI.ts:309`
+
+**Problem:** After dungeon combat ended, health change was calculated as `netDamage = totalDamage - totalHealed`, then applied as `modifyHealth(player.id, -netDamage)`. But `totalHealed` counted ALL healing attempted — including healing that was wasted because the player was already near max health. Since `applyEncounterResult()` correctly caps health at `startHealth`, the internal combat health was accurate, but the post-combat application used the inflated `totalHealed` value.
+
+**Example:** Enter with 100 HP. Take 5 damage (→95). Heal 15 (→100, capped; 10 wasted). Take 10 damage (→90). At end: `totalDamage=15, totalHealed=15, netDamage=0`. Player exits with 100 HP instead of 90 HP. In extreme cases with Alchemy potions, player could GAIN health from combat.
+
+**Fix:** Added `healthChange` field to both `CombatRunResult` and `AutoResolveResult` interfaces. Calculated as `currentHealth - startHealth` (the real HP delta from the combat run). Both `CavePanel.handleCombatComplete()` and AI's dungeon handler now use `healthChange` instead of the buggy `totalDamage - totalHealed`.
+
+### Bug 2 (FAIRNESS): AI Missing 25% Defeat Gold Penalty
+
+**File:** `useGrimwaldAI.ts:307-310`
+
+**Problem:** When the player is defeated in combat, they keep only 25% of gold earned (`defeatGoldPenalty = 0.25` in CombatView). The AI kept 100% of gold on defeat — `modifyGold(player.id, result.goldEarned)` with no penalty applied.
+
+**Fix:** Added `defeatGoldMult = (!result.bossDefeated) ? 0.25 : 1.0` before applying gold. AI now keeps 25% on defeat, same as player.
+
+### Bug 3 (FAIRNESS): AI Missing -2 Defeat Happiness Penalty
+
+**File:** `useGrimwaldAI.ts:311-317`
+
+**Problem:** When the player is defeated, they lose 2 happiness (CombatView line 572). The AI had no happiness consequence for defeat — only happiness was applied on successful first clears.
+
+**Fix:** Added `else if (!result.bossDefeated) modifyHappiness(player.id, -2)` to match player penalty.
+
+### Balance: Added Healing Encounters to Floors 2-3
+
+**File:** `dungeon.ts`
+
+**Problem:** Only Floor 1 had a healing encounter (Healing Spring, +10 HP). Floors 2-5 had zero healing encounters. With damage scaling from 10-55 per encounter on higher floors, non-Alchemy players had no way to recover mid-floor.
+
+**Fix:** Added healing encounters to Floor 2 and Floor 3 encounter pools:
+- Floor 2: Mushroom Grotto (+8 HP) — earthy cave setting
+- Floor 3: Sanctified Pool (+12 HP) — blessed water in the crypt
+- Floors 4-5: No healing added (intentionally brutal, require preparation)
+
+With 5 encounters in the pool (3 picked randomly), there's ~49% chance of getting a healing encounter per run.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/data/combatResolver.ts` | Added `healthChange` to `AutoResolveResult`; computed from `currentHealth - startHealth` |
+| `src/components/game/CombatView.tsx` | Added `healthChange` to `CombatRunResult`; computed in `handleFinish` |
+| `src/components/game/CavePanel.tsx` | Uses `result.healthChange` instead of `totalDamage - totalHealed` |
+| `src/hooks/useGrimwaldAI.ts` | Uses `result.healthChange`; added 25% defeat gold penalty; added -2 defeat happiness |
+| `src/data/dungeon.ts` | Added Mushroom Grotto (Floor 2) and Sanctified Pool (Floor 3) healing encounters |
+
+### Build & Test
+- TypeScript compiles cleanly
+- Vite build succeeds
+- All 112 tests pass
+
+---
+
 ## 2026-02-06 - Partial Travel & Equipment Loss Notifications
 
 Two gameplay improvements matching Jones in the Fast Lane behavior.
