@@ -106,6 +106,7 @@ const createPlayer = (
   lockedRent: 0,
   // Death/Game Over state
   isGameOver: false,
+  wasResurrectedThisWeek: false,
   // Combat & Equipment
   equippedWeapon: null,
   equippedArmor: null,

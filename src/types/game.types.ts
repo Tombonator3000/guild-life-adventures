@@ -169,6 +169,7 @@ export interface Player {
   lockedRent: number; // Locked-in rent price (0 = not locked, uses current rate)
   // Death/Game Over state
   isGameOver: boolean; // True if player has died and is out of the game
+  wasResurrectedThisWeek: boolean; // Prevents double resurrection exploit
   // Combat & Equipment system
   equippedWeapon: string | null;   // Item ID of equipped weapon
   equippedArmor: string | null;    // Item ID of equipped armor

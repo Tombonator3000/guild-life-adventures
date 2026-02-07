@@ -474,13 +474,20 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         console.log(`[Grimwald AI] Turn skipped by player`);
         // Execute remaining actions instantly without delays
         let emergencyLimit = 30;
+        let consecutiveFailures = 0;
         while (emergencyLimit > 0) {
           const fastState = useGameStore.getState();
           const fastPlayer = fastState.players.find(p => p.id === player.id);
           if (!fastPlayer || fastPlayer.timeRemaining < 1 || fastPlayer.isGameOver) break;
           const fastActions = generateActions(fastPlayer, goalSettings, settings, fastState.week, fastState.priceModifier);
           if (fastActions[0].type === 'end-turn') break;
-          await executeAction(fastPlayer, fastActions[0]);
+          const success = await executeAction(fastPlayer, fastActions[0]);
+          if (!success) {
+            consecutiveFailures++;
+            if (consecutiveFailures >= 3) break; // Bail if stuck in failure loop
+          } else {
+            consecutiveFailures = 0;
+          }
           emergencyLimit--;
         }
         useGameStore.setState({ skipAITurn: false });
@@ -520,13 +527,19 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
 
       // Execute action
       const success = await executeAction(currentPlayer, bestAction);
+      actionsRemaining--;
 
       if (!success) {
         console.log(`[Grimwald AI] Action failed: ${bestAction.description}`);
-        // Try next action
-        actionsRemaining--;
-      } else {
-        actionsRemaining--;
+      }
+
+      // Re-check death immediately after action execution
+      const postActionPlayer = useGameStore.getState().players.find(p => p.id === player.id);
+      if (!postActionPlayer || postActionPlayer.isGameOver || postActionPlayer.health <= 0) {
+        console.log(`[Grimwald AI] Player died during action, ending turn immediately`);
+        endTurn();
+        isExecutingRef.current = false;
+        return;
       }
 
       // Continue with next action after delay (respect speed multiplier)

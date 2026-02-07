@@ -18,6 +18,7 @@ import { TutorialOverlay } from './TutorialOverlay';
 import { DarkModeToggle } from './DarkModeToggle';
 import { MobileHUD } from './MobileHUD';
 import { MobileDrawer } from './MobileDrawer';
+import { TurnTransition } from './TurnTransition';
 import gameBoard from '@/assets/game-board.jpeg';
 import type { LocationId } from '@/types/game.types';
 import { toast } from 'sonner';
@@ -71,7 +72,23 @@ export function GameBoard() {
   const [showGameMenu, setShowGameMenu] = useState(false);
   const [showLeftDrawer, setShowLeftDrawer] = useState(false);
   const [showRightDrawer, setShowRightDrawer] = useState(false);
+  const [showTurnTransition, setShowTurnTransition] = useState(false);
+  const [lastHumanPlayerId, setLastHumanPlayerId] = useState<string | null>(null);
   const isMobile = useIsMobile();
+
+  // Privacy screen between turns in local multiplayer (2+ human players)
+  const humanPlayers = players.filter(p => !p.isAI && !p.isGameOver);
+  const isMultiHuman = !isOnline && humanPlayers.length >= 2;
+
+  useEffect(() => {
+    if (!currentPlayer || !isMultiHuman || currentPlayer.isAI) return;
+
+    // Show transition when switching from one human player to another
+    if (lastHumanPlayerId && lastHumanPlayerId !== currentPlayer.id && phase === 'playing') {
+      setShowTurnTransition(true);
+    }
+    setLastHumanPlayerId(currentPlayer.id);
+  }, [currentPlayer?.id, phase]);
 
   // Extracted hooks
   const {
@@ -600,6 +617,14 @@ export function GameBoard() {
             </span>
           </div>
         </div>
+      )}
+
+      {/* Turn Transition Privacy Screen (local multiplayer) */}
+      {showTurnTransition && currentPlayer && !currentPlayer.isAI && (
+        <TurnTransition
+          player={currentPlayer}
+          onReady={() => setShowTurnTransition(false)}
+        />
       )}
 
       {/* AI Thinking Overlay with speed controls */}

@@ -40,6 +40,30 @@
 - Tests: 112/112 passing (7 test files)
 - Backwards compatible: Legacy single-AI games still work via `includeAI` flag
 
+### Deep Audit Phase 2: Critical Bug Fixes
+
+4 parallel audit agents reviewed the entire codebase (~5,000+ lines across 30+ files). Total findings: **87 issues** across all severity levels. Fixed the most critical ones:
+
+| Fix | Severity | Description |
+|-----|----------|-------------|
+| **Double resurrection exploit** | CRITICAL | Player could be resurrected twice per week (checkDeath + processWeekEnd). Added `wasResurrectedThisWeek` flag, reset per week |
+| **Preservation Box duplicates** | CRITICAL | Item defined in both APPLIANCES (876g) and ENCHANTER_ITEMS (175g). Removed duplicates from ENCHANTER_ITEMS; APPLIANCES is canonical |
+| **Guild rank requirements mismatch** | HIGH | promoteGuildRank had hardcoded values (3,8,15,25,40,60) different from GUILD_RANK_REQUIREMENTS constant (3,10,25,50,100,200). Now uses the constant |
+| **AI skip turn infinite loop** | CRITICAL | Emergency skip loop had no failure protection. Added consecutive failure counter, bails after 3 failures |
+| **Dead AI continues acting** | HIGH | AI could execute 1-2 more actions after death before next iteration checked. Added immediate death check after each action |
+| **Hardcoded quest ID in AI** | HIGH | AI career goal used hardcoded 'patrol-e' instead of calling getBestQuest(). Now uses dynamic quest selection |
+| **Privacy screen for local multiplayer** | MAJOR | Added TurnTransition component - shows "Pass the device to [Player]" screen between human turns in local multiplayer |
+
+### Remaining Audit Findings (Not Yet Fixed)
+
+**Game Store** (12 issues): Price parameter validation on purchases, appliance breakage gold gate at 500g, infinite loan extension loop, starvation penalty inconsistency (20hrs vs 10hp)
+
+**Items/Data** (18 issues): Quest education requirements reference non-existent paths, Frost Chest/Arcane Tome not purchasable anywhere, housing tier 'modest' defined but not implemented
+
+**AI System** (45 issues): No difficulty-based decision thresholds, stale player state during async execution, no rent prepayment/appliance repair logic, equipment upgrade list hardcoded, no competition awareness
+
+**UI/Multiplayer** (27 issues): Network state persists after victory, event modal dismissal desync, mobile HUD missing turn indicator, dead player tokens show same as alive, keyboard shortcuts trigger in modals
+
 ---
 
 ## 2026-02-06 - Mobile Game Layout (Samsung S24 Optimization)
