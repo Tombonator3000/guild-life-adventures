@@ -1,5 +1,64 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-07 - Merchant Tab Navigation for Armory, Shadow Market & The Fence
+
+**Task**: Add tab navigation to three merchant locations (Armory, Shadow Market, The Fence) to split their product categories into separate tabs, improving UI layout and eliminating excessive scrolling.
+
+### Changes
+
+#### Armory — 4 tabs (was 1 scrollable panel)
+
+| Tab | Content |
+|-----|---------|
+| **Clothing** | Peasant Garb, Common Clothes, Fine Clothes, Noble Attire, Guild Uniform |
+| **Weapons** | Combat stats header + all weapon items (Dagger → Enchanted Blade) |
+| **Armor** | Combat stats header + all armor items (Leather → Enchanted Plate) |
+| **Shields** | Combat stats header + all shield items (Buckler → Enchanted Shield) |
+| **Work** | (hidden unless player has Armory job) |
+
+Combat stats summary (ATK/DEF/BLK + equipped items) shown on Weapons/Armor/Shields tabs for context.
+
+#### Shadow Market — 4 tabs (was 1 scrollable panel)
+
+| Tab | Content |
+|-----|---------|
+| **Goods** | Newspaper (discount) + Mystery Meat, Stolen Goods, Market Intel |
+| **Fortune's Wheel** | Lottery ticket purchase + ticket count + grand prize info |
+| **Weekend** | Weekend event tickets (festival, tournament, etc.) |
+| **Magical Items** | Used appliances with 1/36 break chance warning |
+| **Work** | (hidden unless player has Shadow Market job) |
+
+#### The Fence — 3 tabs (was 1 scrollable panel)
+
+| Tab | Content |
+|-----|---------|
+| **Used Goods** | Sell player items + buy used equipment (Used Sword, Worn Clothes, etc.) |
+| **Magical Items** | Pawn owned appliances + buy pawned magical items (50% off, 1/36 break) |
+| **Gambling** | Low Stakes (10g), High Stakes (50g), All or Nothing (100g) |
+
+### Implementation
+
+- Added optional `section` prop to `ArmoryPanel`, `ShadowMarketPanel`, and `PawnShopPanel`
+- When `section` is set, panels render only that section without JonesPanel wrapper (tab-friendly)
+- When `section` is omitted, panels render full legacy layout (backwards-compatible)
+- Updated `LocationPanel.tsx` to define multiple `LocationTab[]` for each location
+- All tabs use existing `LocationShell` tab navigation system (already battle-tested on Enchanter, Guild Hall)
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `src/components/game/ArmoryPanel.tsx` | Added `section` prop, extracted `combatStatsHeader` and `footerNote`, section-specific rendering |
+| `src/components/game/ShadowMarketPanel.tsx` | Added `section` prop, extracted `renderGoods/Lottery/Tickets/Appliances` helpers |
+| `src/components/game/PawnShopPanel.tsx` | Added `section` prop, extracted `renderSellItems/UsedGoods/PawnAppliances/BuyPawnedItems/Gambling` helpers |
+| `src/components/game/LocationPanel.tsx` | Updated `armory`, `shadow-market`, `fence` cases from single-tab to multi-tab definitions |
+
+### Build & Test Results
+- TypeScript: Clean (0 errors)
+- Build: Succeeds (972KB bundle)
+
+---
+
 ## 2026-02-07 - Academy Validation, Shadow Market Fix, AI Fix, Salary Stabilization
 
 **Task**: Four-part audit — validate academy courses/job mappings, fix non-functional Shadow Market item, fix multi-AI players standing still, and stabilize Guild Hall salary display.

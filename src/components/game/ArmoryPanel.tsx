@@ -5,11 +5,12 @@ import {
   JonesPanelContent,
   JonesSectionHeader,
   JonesMenuItem,
-  JonesInfoRow,
 } from './JonesStylePanel';
 import { WorkSection } from './WorkSection';
 import { ARMORY_ITEMS, getItemPrice, calculateCombatStats, getItem } from '@/data/items';
 import { toast } from 'sonner';
+
+export type ArmorySection = 'clothing' | 'weapons' | 'armor' | 'shields';
 
 interface ArmoryPanelProps {
   player: Player;
@@ -22,6 +23,7 @@ interface ArmoryPanelProps {
   buyDurable: (playerId: string, itemId: string, cost: number) => void;
   equipItem: (playerId: string, itemId: string, slot: EquipmentSlot) => void;
   unequipItem: (playerId: string, slot: EquipmentSlot) => void;
+  section?: ArmorySection;
 }
 
 export function ArmoryPanel({
@@ -35,6 +37,7 @@ export function ArmoryPanel({
   buyDurable,
   equipItem,
   unequipItem,
+  section,
 }: ArmoryPanelProps) {
   const combatStats = calculateCombatStats(
     player.equippedWeapon,
@@ -59,9 +62,10 @@ export function ArmoryPanel({
     items: typeof ARMORY_ITEMS,
     slot: EquipmentSlot,
     equippedId: string | null,
+    showHeader = true,
   ) => (
     <>
-      <JonesSectionHeader title={title} />
+      {showHeader && <JonesSectionHeader title={title} />}
       {items.map(item => {
         const price = getItemPrice(item, priceModifier);
         const owns = (player.durables[item.id] || 0) > 0;
@@ -143,26 +147,92 @@ export function ArmoryPanel({
     </>
   );
 
+  const combatStatsHeader = (
+    <div className="bg-[#2d1f0f] border border-[#8b7355] rounded p-2 mb-2">
+      <div className="text-xs text-[#a09080] uppercase tracking-wide mb-1">Combat Stats</div>
+      <div className="flex gap-4 font-mono text-sm">
+        <span className="text-red-400">⚔ ATK: {combatStats.attack}</span>
+        <span className="text-blue-400">🛡 DEF: {combatStats.defense}</span>
+        {combatStats.blockChance > 0 && (
+          <span className="text-yellow-400">BLK: {Math.round(combatStats.blockChance * 100)}%</span>
+        )}
+      </div>
+      <div className="flex gap-3 mt-1 text-xs text-[#8b7355]">
+        <span>W: {player.equippedWeapon ? getItem(player.equippedWeapon)?.name : 'None'}</span>
+        <span>A: {player.equippedArmor ? getItem(player.equippedArmor)?.name : 'None'}</span>
+        <span>S: {player.equippedShield ? getItem(player.equippedShield)?.name : 'None'}</span>
+      </div>
+    </div>
+  );
+
+  const footerNote = (
+    <div className="mt-2 text-xs text-[#8b7355] px-2">
+      1 hour per purchase • Click owned items to equip/unequip
+    </div>
+  );
+
+  // Tabbed mode: render only the specified section without JonesPanel wrapper
+  if (section) {
+    switch (section) {
+      case 'clothing':
+        return (
+          <div>
+            {clothingItems.map(item => {
+              const price = getItemPrice(item, priceModifier);
+              const canAfford = player.gold >= price && player.timeRemaining >= 1;
+              return (
+                <JonesMenuItem
+                  key={item.id}
+                  label={item.name}
+                  price={price}
+                  disabled={!canAfford}
+                  onClick={() => {
+                    modifyGold(player.id, -price);
+                    spendTime(player.id, 1);
+                    if (item.effect?.type === 'clothing') {
+                      modifyClothing(player.id, item.effect.value);
+                    }
+                    toast.success(`Purchased ${item.name}!`);
+                  }}
+                />
+              );
+            })}
+            {footerNote}
+          </div>
+        );
+      case 'weapons':
+        return (
+          <div>
+            {combatStatsHeader}
+            {renderEquipSection('WEAPONS', weaponItems, 'weapon', player.equippedWeapon, false)}
+            {footerNote}
+          </div>
+        );
+      case 'armor':
+        return (
+          <div>
+            {combatStatsHeader}
+            {renderEquipSection('ARMOR', armorItems, 'armor', player.equippedArmor, false)}
+            {footerNote}
+          </div>
+        );
+      case 'shields':
+        return (
+          <div>
+            {combatStatsHeader}
+            {renderEquipSection('SHIELDS', shieldItems, 'shield', player.equippedShield, false)}
+            {footerNote}
+          </div>
+        );
+    }
+  }
+
+  // Full mode (legacy): render everything in JonesPanel
   return (
     <JonesPanel>
       <JonesPanelHeader title="Armory" subtitle="Equipment & Clothing" />
       <JonesPanelContent>
-        {/* Combat Stats Summary */}
-        <div className="bg-[#2d1f0f] border border-[#8b7355] rounded p-2 mb-2">
-          <div className="text-xs text-[#a09080] uppercase tracking-wide mb-1">Combat Stats</div>
-          <div className="flex gap-4 font-mono text-sm">
-            <span className="text-red-400">⚔ ATK: {combatStats.attack}</span>
-            <span className="text-blue-400">🛡 DEF: {combatStats.defense}</span>
-            {combatStats.blockChance > 0 && (
-              <span className="text-yellow-400">BLK: {Math.round(combatStats.blockChance * 100)}%</span>
-            )}
-          </div>
-          <div className="flex gap-3 mt-1 text-xs text-[#8b7355]">
-            <span>W: {player.equippedWeapon ? getItem(player.equippedWeapon)?.name : 'None'}</span>
-            <span>A: {player.equippedArmor ? getItem(player.equippedArmor)?.name : 'None'}</span>
-            <span>S: {player.equippedShield ? getItem(player.equippedShield)?.name : 'None'}</span>
-          </div>
-        </div>
+        {combatStatsHeader}
 
         {/* Clothing */}
         <JonesSectionHeader title="CLOTHING" />
@@ -196,9 +266,7 @@ export function ArmoryPanel({
         {/* Shields */}
         {renderEquipSection('SHIELDS', shieldItems, 'shield', player.equippedShield)}
 
-        <div className="mt-2 text-xs text-[#8b7355] px-2">
-          1 hour per purchase • Click owned items to equip/unequip
-        </div>
+        {footerNote}
 
         {/* Work button for armory employees */}
         <WorkSection
