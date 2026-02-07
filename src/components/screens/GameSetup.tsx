@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { PLAYER_COLORS, GUILD_RANK_NAMES, GUILD_RANK_ORDER, AI_DIFFICULTY_NAMES, AI_DIFFICULTY_DESCRIPTIONS, type AIDifficulty } from '@/types/game.types';
-import { Plus, Minus, Bot, Play, Brain, Zap, Crown, Lightbulb } from 'lucide-react';
+import { PLAYER_COLORS, GUILD_RANK_NAMES, GUILD_RANK_ORDER, AI_DIFFICULTY_NAMES, AI_DIFFICULTY_DESCRIPTIONS, AI_OPPONENTS, type AIDifficulty, type AIConfig } from '@/types/game.types';
+import { Plus, Minus, Bot, Play, Brain, Zap, Crown, Lightbulb, Trash2 } from 'lucide-react';
 import gameBoard from '@/assets/game-board.jpeg';
+
+const MAX_TOTAL_PLAYERS = 4;
 
 export function GameSetup() {
   const { startNewGame, setPhase, setShowTutorial, setTutorialStep } = useGameStore();
   const [playerNames, setPlayerNames] = useState<string[]>(['Adventurer 1']);
-  const [includeAI, setIncludeAI] = useState(false);
+  const [aiOpponents, setAiOpponents] = useState<AIConfig[]>([]);
   const [enableTutorial, setEnableTutorial] = useState(true);
-  const [aiDifficulty, setAIDifficulty] = useState<AIDifficulty>('medium');
   const [goals, setGoals] = useState({
     wealth: 5000,
     happiness: 100,
@@ -17,8 +18,11 @@ export function GameSetup() {
     career: 4,
   });
 
+  const totalPlayers = playerNames.length + aiOpponents.length;
+  const canAddMore = totalPlayers < MAX_TOTAL_PLAYERS;
+
   const addPlayer = () => {
-    if (playerNames.length < 4) {
+    if (canAddMore) {
       setPlayerNames([...playerNames, `Adventurer ${playerNames.length + 1}`]);
     }
   };
@@ -35,8 +39,38 @@ export function GameSetup() {
     setPlayerNames(newNames);
   };
 
+  const addAIOpponent = () => {
+    if (canAddMore) {
+      const aiIndex = aiOpponents.length;
+      const defaultName = AI_OPPONENTS[aiIndex]?.name || `AI ${aiIndex + 1}`;
+      setAiOpponents([...aiOpponents, { name: defaultName, difficulty: 'medium' }]);
+    }
+  };
+
+  const removeAIOpponent = (index: number) => {
+    setAiOpponents(aiOpponents.filter((_, i) => i !== index));
+  };
+
+  const updateAIName = (index: number, name: string) => {
+    const updated = [...aiOpponents];
+    updated[index] = { ...updated[index], name };
+    setAiOpponents(updated);
+  };
+
+  const updateAIDifficulty = (index: number, difficulty: AIDifficulty) => {
+    const updated = [...aiOpponents];
+    updated[index] = { ...updated[index], difficulty };
+    setAiOpponents(updated);
+  };
+
   const handleStart = () => {
-    startNewGame(playerNames, includeAI, goals, aiDifficulty);
+    startNewGame(
+      playerNames,
+      false, // legacy includeAI flag - not used when aiConfigs provided
+      goals,
+      'medium', // legacy aiDifficulty
+      aiOpponents.length > 0 ? aiOpponents : undefined
+    );
     if (enableTutorial) {
       setTutorialStep(0);
       setShowTutorial(true);
@@ -53,7 +87,7 @@ export function GameSetup() {
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* Background */}
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center opacity-30"
         style={{ backgroundImage: `url(${gameBoard})` }}
       />
@@ -74,8 +108,9 @@ export function GameSetup() {
               </h2>
               <button
                 onClick={addPlayer}
-                disabled={playerNames.length >= 4}
+                disabled={!canAddMore}
                 className="p-2 wood-frame text-parchment hover:brightness-110 disabled:opacity-50"
+                title="Add human player"
               >
                 <Plus className="w-5 h-5" />
               </button>
@@ -84,7 +119,7 @@ export function GameSetup() {
             <div className="space-y-3">
               {playerNames.map((name, index) => (
                 <div key={index} className="flex items-center gap-3">
-                  <div 
+                  <div
                     className="w-10 h-10 rounded-full border-2 border-wood-light flex-shrink-0"
                     style={{ backgroundColor: PLAYER_COLORS[index].value }}
                   />
@@ -106,49 +141,89 @@ export function GameSetup() {
               ))}
             </div>
 
-            {/* AI Opponent */}
+            {/* AI Opponents Section */}
             <div className="mt-4 pt-4 border-t border-border">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={includeAI}
-                  onChange={(e) => setIncludeAI(e.target.checked)}
-                  className="w-5 h-5 accent-primary"
-                />
-                <Bot className="w-5 h-5 text-amber-700" />
-                <span className="font-display text-amber-900">
-                  Include Grimwald (AI Opponent)
-                </span>
-              </label>
-
-              {/* AI Difficulty Selection */}
-              {includeAI && (
-                <div className="mt-4 ml-8 space-y-2">
-                  <p className="text-sm text-amber-700 mb-2">Select Grimwald's cunning:</p>
-                  <div className="flex gap-2">
-                    {(['easy', 'medium', 'hard'] as AIDifficulty[]).map((diff) => (
-                      <button
-                        key={diff}
-                        onClick={() => setAIDifficulty(diff)}
-                        className={`flex-1 p-2 rounded border transition-all ${
-                          aiDifficulty === diff
-                            ? 'border-primary bg-primary/20 text-primary'
-                            : 'border-border bg-background/50 text-muted-foreground hover:border-primary/50'
-                        }`}
-                      >
-                        <div className="flex flex-col items-center gap-1">
-                          {diff === 'easy' && <Brain className="w-4 h-4" />}
-                          {diff === 'medium' && <Zap className="w-4 h-4" />}
-                          {diff === 'hard' && <Crown className="w-4 h-4" />}
-                          <span className="text-xs font-display">{AI_DIFFICULTY_NAMES[diff]}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                  <p className="text-xs text-amber-700 text-center mt-1">
-                    {AI_DIFFICULTY_DESCRIPTIONS[aiDifficulty]}
-                  </p>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Bot className="w-5 h-5 text-amber-700" />
+                  <span className="font-display text-amber-900">
+                    AI Opponents ({aiOpponents.length})
+                  </span>
                 </div>
+                <button
+                  onClick={addAIOpponent}
+                  disabled={!canAddMore}
+                  className="p-2 wood-frame text-parchment hover:brightness-110 disabled:opacity-50 flex items-center gap-1"
+                  title="Add AI opponent"
+                >
+                  <Bot className="w-4 h-4" />
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+
+              {aiOpponents.length === 0 && (
+                <p className="text-sm text-amber-700/60 italic ml-7">
+                  No AI opponents. Click + to add one.
+                </p>
+              )}
+
+              <div className="space-y-3">
+                {aiOpponents.map((ai, index) => {
+                  const aiDef = AI_OPPONENTS[index] || AI_OPPONENTS[0];
+                  return (
+                    <div key={index} className="bg-background/30 rounded p-3 border border-border/50">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div
+                          className="w-10 h-10 rounded-full border-2 border-wood-light flex-shrink-0 flex items-center justify-center"
+                          style={{ backgroundColor: aiDef.color }}
+                        >
+                          <Bot className="w-5 h-5 text-white/80" />
+                        </div>
+                        <input
+                          type="text"
+                          value={ai.name}
+                          onChange={(e) => updateAIName(index, e.target.value)}
+                          className="flex-1 px-3 py-1.5 bg-input border border-border rounded font-body text-amber-900 text-sm placeholder:text-amber-600/50 focus:outline-none focus:ring-2 focus:ring-primary"
+                          placeholder="AI name..."
+                        />
+                        <button
+                          onClick={() => removeAIOpponent(index)}
+                          className="p-1.5 text-destructive hover:bg-destructive/10 rounded"
+                          title="Remove AI"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      {/* Per-AI Difficulty */}
+                      <div className="flex gap-1.5 ml-[52px]">
+                        {(['easy', 'medium', 'hard'] as AIDifficulty[]).map((diff) => (
+                          <button
+                            key={diff}
+                            onClick={() => updateAIDifficulty(index, diff)}
+                            className={`flex-1 px-2 py-1 rounded border text-xs transition-all ${
+                              ai.difficulty === diff
+                                ? 'border-primary bg-primary/20 text-primary font-semibold'
+                                : 'border-border bg-background/50 text-muted-foreground hover:border-primary/50'
+                            }`}
+                          >
+                            <div className="flex items-center justify-center gap-1">
+                              {diff === 'easy' && <Brain className="w-3 h-3" />}
+                              {diff === 'medium' && <Zap className="w-3 h-3" />}
+                              {diff === 'hard' && <Crown className="w-3 h-3" />}
+                              <span>{AI_DIFFICULTY_NAMES[diff]}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {aiOpponents.length > 0 && (
+                <p className="text-xs text-amber-700/60 mt-2 ml-7">
+                  {totalPlayers}/4 total players. Each AI plays independently.
+                </p>
               )}
             </div>
 

@@ -6,7 +6,8 @@ import type {
   DegreeId,
   AIDifficulty,
 } from '@/types/game.types';
-import { PLAYER_COLORS, AI_COLOR, HOURS_PER_TURN } from '@/types/game.types';
+import { PLAYER_COLORS, AI_COLOR, AI_OPPONENTS, HOURS_PER_TURN } from '@/types/game.types';
+import type { AIConfig } from '@/types/game.types';
 import { getInitialStockPrices } from '@/data/stocks';
 import { saveGame, loadGame } from '@/data/saveLoad';
 import { createPlayerActions } from './helpers/playerHelpers';
@@ -45,11 +46,13 @@ const createPlayer = (
   id: string,
   name: string,
   color: string,
-  isAI: boolean = false
+  isAI: boolean = false,
+  aiDifficulty?: AIDifficulty
 ): Player => ({
   id,
   name,
   color,
+  aiDifficulty: isAI ? (aiDifficulty || 'medium') : undefined,
   gold: 100,
   health: 100,
   maxHealth: 100,
@@ -103,6 +106,7 @@ const createPlayer = (
   lockedRent: 0,
   // Death/Game Over state
   isGameOver: false,
+  wasResurrectedThisWeek: false,
   // Combat & Equipment
   equippedWeapon: null,
   equippedArmor: null,
@@ -168,7 +172,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     roomCode: null as string | null,
 
     // Game setup (not network-wrapped — guarded explicitly)
-    startNewGame: (playerNames, includeAI, goals, aiDifficulty = 'medium') => {
+    startNewGame: (playerNames, includeAI, goals, aiDifficulty = 'medium', aiConfigs) => {
       // Block on guest clients — only host/local can start a new game
       if (get().networkMode === 'guest') return;
       const players: Player[] = playerNames.map((name, index) =>
@@ -180,8 +184,21 @@ export const useGameStore = create<GameStore>((set, get) => {
         )
       );
 
-      if (includeAI) {
-        players.push(createPlayer('ai-grimwald', 'Grimwald', AI_COLOR.value, true));
+      // Support multiple AI opponents via aiConfigs, or single via legacy includeAI
+      if (aiConfigs && aiConfigs.length > 0) {
+        aiConfigs.forEach((config, i) => {
+          const aiDef = AI_OPPONENTS[i] || AI_OPPONENTS[0];
+          players.push(createPlayer(
+            aiDef.id,
+            config.name || aiDef.name,
+            aiDef.color,
+            true,
+            config.difficulty
+          ));
+        });
+      } else if (includeAI) {
+        // Legacy single-AI path (backwards compatible)
+        players.push(createPlayer('ai-grimwald', 'Grimwald', AI_COLOR.value, true, aiDifficulty));
       }
 
       set({

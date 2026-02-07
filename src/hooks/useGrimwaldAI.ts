@@ -14,7 +14,7 @@ import { useCallback, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import type { Player, HousingTier, DegreeId, EquipmentSlot } from '@/types/game.types';
 import { RENT_COSTS, GUILD_PASS_COST } from '@/types/game.types';
-import { getJob, canWorkJob } from '@/data/jobs';
+import { getJob, canWorkJob, calculateOfferedWage } from '@/data/jobs';
 import { DEGREES } from '@/data/education';
 import { calculatePathDistance, getPath } from '@/data/locations';
 import { peerManager } from '@/network/PeerManager';
@@ -83,7 +83,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
    * Execute a single AI action
    */
   const executeAction = useCallback(async (player: Player, action: AIAction): Promise<boolean> => {
-    actionLogRef.current.push(`Grimwald: ${action.description}`);
+    actionLogRef.current.push(`${player.name}: ${action.description}`);
 
     switch (action.type) {
       case 'move': {
@@ -156,17 +156,18 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         if (!canWorkJob(job, player.completedDegrees, player.clothingCondition, player.experience, player.dependability)) {
           return false;
         }
-        // Set the job with a random wage offer (50-250% of base)
-        const wageMultiplier = 0.5 + Math.random() * 2.0;
-        const offeredWage = Math.round(job.baseWage * wageMultiplier);
-        setJob(player.id, jobId, offeredWage);
+        // Use same economy-based wage calculation as human players
+        const priceModifier = useGameStore.getState().priceModifier;
+        const offer = calculateOfferedWage(job, priceModifier);
+        setJob(player.id, jobId, offer.offeredWage);
         spendTime(player.id, 1);
         return true;
       }
 
       case 'pay-rent': {
         if (player.housing === 'homeless') return false;
-        const cost = RENT_COSTS[player.housing];
+        // Use locked-in rent if available, otherwise current rate
+        const cost = player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing];
         if (player.gold < cost) return false;
         payRent(player.id);
         spendTime(player.id, 1);
@@ -391,7 +392,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         const cost = (action.details?.cost as number) || 25;
         const units = (action.details?.units as number) || 2;
         if (player.gold < cost) return false;
-        buyFreshFood(player.id, cost, units);
+        buyFreshFood(player.id, units, cost);
         spendTime(player.id, 1);
         return true;
       }
@@ -473,13 +474,20 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         console.log(`[Grimwald AI] Turn skipped by player`);
         // Execute remaining actions instantly without delays
         let emergencyLimit = 30;
+        let consecutiveFailures = 0;
         while (emergencyLimit > 0) {
           const fastState = useGameStore.getState();
           const fastPlayer = fastState.players.find(p => p.id === player.id);
           if (!fastPlayer || fastPlayer.timeRemaining < 1 || fastPlayer.isGameOver) break;
           const fastActions = generateActions(fastPlayer, goalSettings, settings, fastState.week, fastState.priceModifier);
           if (fastActions[0].type === 'end-turn') break;
-          await executeAction(fastPlayer, fastActions[0]);
+          const success = await executeAction(fastPlayer, fastActions[0]);
+          if (!success) {
+            consecutiveFailures++;
+            if (consecutiveFailures >= 3) break; // Bail if stuck in failure loop
+          } else {
+            consecutiveFailures = 0;
+          }
           emergencyLimit--;
         }
         useGameStore.setState({ skipAITurn: false });
@@ -519,13 +527,19 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
 
       // Execute action
       const success = await executeAction(currentPlayer, bestAction);
+      actionsRemaining--;
 
       if (!success) {
         console.log(`[Grimwald AI] Action failed: ${bestAction.description}`);
-        // Try next action
-        actionsRemaining--;
-      } else {
-        actionsRemaining--;
+      }
+
+      // Re-check death immediately after action execution
+      const postActionPlayer = useGameStore.getState().players.find(p => p.id === player.id);
+      if (!postActionPlayer || postActionPlayer.isGameOver || postActionPlayer.health <= 0) {
+        console.log(`[Grimwald AI] Player died during action, ending turn immediately`);
+        endTurn();
+        isExecutingRef.current = false;
+        return;
       }
 
       // Continue with next action after delay (respect speed multiplier)

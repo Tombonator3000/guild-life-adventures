@@ -2,7 +2,7 @@
 // takeQuest, completeQuest, abandonQuest, checkDeath, promoteGuildRank, evictPlayer, checkVictory
 
 import type { LocationId, HousingTier } from '@/types/game.types';
-import { GUILD_PASS_COST } from '@/types/game.types';
+import { GUILD_PASS_COST, GUILD_RANK_ORDER, GUILD_RANK_REQUIREMENTS } from '@/types/game.types';
 import { getQuest } from '@/data/quests';
 import { calculateStockValue } from '@/data/stocks';
 import type { SetFn, GetFn } from '../storeTypes';
@@ -113,8 +113,8 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       if (!player || player.isGameOver) return false;
 
       if (player.health <= 0) {
-        // Check for resurrection (if has savings)
-        if (player.savings >= 100) {
+        // Check for resurrection (if has savings and wasn't already resurrected this week)
+        if (player.savings >= 100 && !player.wasResurrectedThisWeek) {
           set((state) => ({
             players: state.players.map((p) =>
               p.id === playerId
@@ -123,6 +123,7 @@ export function createQuestActions(set: SetFn, get: GetFn) {
                     health: 50,
                     savings: p.savings - 100,
                     currentLocation: 'enchanter' as LocationId,
+                    wasResurrectedThisWeek: true, // Prevent double resurrection
                   }
                 : p
             ),
@@ -148,14 +149,12 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       const player = state.players.find(p => p.id === playerId);
       if (!player) return;
 
-      const rankOrder = ['novice', 'apprentice', 'journeyman', 'adept', 'veteran', 'elite', 'guild-master'] as const;
-      const requirements = { novice: 0, apprentice: 3, journeyman: 8, adept: 15, veteran: 25, elite: 40, 'guild-master': 60 };
-
+      const rankOrder = GUILD_RANK_ORDER;
       const currentIndex = rankOrder.indexOf(player.guildRank);
       if (currentIndex >= rankOrder.length - 1) return; // Already max rank
 
       const nextRank = rankOrder[currentIndex + 1];
-      const required = requirements[nextRank];
+      const required = GUILD_RANK_REQUIREMENTS[nextRank];
 
       if (player.completedQuests >= required) {
         set((state) => ({

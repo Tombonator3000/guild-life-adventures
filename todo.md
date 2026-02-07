@@ -1,5 +1,56 @@
 # Guild Life Adventures - Todo List
 
+## Completed (2026-02-07)
+
+- [x] Multi-AI opponent support — up to 4 named AI players
+  - Grimwald, Seraphina, Thornwick, Morgath with unique colors
+  - Per-AI difficulty (Easy/Medium/Hard)
+  - Revamped GameSetup UI with add/remove/configure per AI
+  - Each AI plays with independent strategy based on its difficulty
+  - Backwards compatible with legacy single-AI flag
+
+- [x] Deep audit bug fixes — 13 bugs found and fixed
+  - payRent ignoring lockedRent price
+  - AI buyFreshFood parameter order swapped (cost/units)
+  - AI immune to street robbery (gameplay effects now apply)
+  - startTurn overwriting processWeekEnd event messages
+  - AI apply-job using random wage instead of economy-based priceModifier
+  - AI pay-rent ignoring lockedRent
+  - Double resurrection exploit (wasResurrectedThisWeek flag)
+  - Preservation Box duplicate definitions removed from ENCHANTER_ITEMS
+  - Guild rank requirements mismatch (hardcoded vs constant)
+  - AI skip turn infinite loop protection
+  - Dead AI continues acting after death
+  - Hardcoded quest ID 'patrol-e' in AI career goal
+  - Privacy screen between local multiplayer turns
+
+## Backlog (From Deep Audit)
+
+### Critical/High Priority
+- [ ] Add price validation to all buy functions (buyItem, buyDurable, buyTicket)
+- [ ] Fix starvation penalties inconsistency (20hrs at turn-start vs 10hp at week-end)
+- [ ] Implement loan default limits (prevent infinite extensions)
+- [ ] Quest education requirements reference non-existent paths
+- [ ] Make Frost Chest and Arcane Tome actually purchasable
+- [ ] Reset network state on victory screen (soft lock bug)
+- [ ] Fix event modal dismissal desync in online multiplayer
+
+### Medium Priority
+- [ ] AI: Add difficulty-based decision thresholds (currently only speed differs)
+- [ ] AI: Add rent prepayment and appliance repair logic
+- [ ] AI: Add competition awareness (check other players' progress)
+- [ ] Mobile HUD: Add turn indicator and player color
+- [ ] Dead player tokens visual distinction
+- [ ] Fix keyboard shortcuts triggering inside modals
+- [ ] Remove or implement housing tier 'modest'
+
+### Low Priority
+- [ ] Forge job teaser without actual implementation
+- [ ] Player name duplicate/length validation
+- [ ] Victory screen leaderboard for multi-player
+- [ ] Spectator mode for dead players
+- [ ] AI stock market strategy (buy low, sell high)
+
 ## Completed (2026-02-05)
 
 - [x] Full economy & happiness audit — all values rebalanced

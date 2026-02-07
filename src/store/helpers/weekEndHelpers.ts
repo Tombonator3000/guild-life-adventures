@@ -50,9 +50,10 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
           return p;
         }
 
-        // Reset newspaper and dungeon fatigue for new week
+        // Reset newspaper, dungeon fatigue, and resurrection flag for new week
         p.hasNewspaper = false;
         p.dungeonAttemptsThisTurn = 0;
+        p.wasResurrectedThisWeek = false;
 
         // B5: Dependability decay only if player doesn't have a job
         if (!p.currentJob) {
@@ -290,10 +291,14 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
       });
 
       // C5: Check for deaths after week-end processing
+      // Only resurrect if player wasn't already resurrected during their turn (checkDeath)
       for (const p of updatedPlayers) {
         if (!p.isGameOver && p.health <= 0) {
-          // Inline death check for processWeekEnd
-          if (p.savings >= 100) {
+          // Skip resurrection if already resurrected this week (prevents double resurrection exploit)
+          if (p.wasResurrectedThisWeek) {
+            p.isGameOver = true;
+            eventMessages.push(`${p.name} could not be saved a second time and has perished!`);
+          } else if (p.savings >= 100) {
             p.health = 50;
             p.savings -= 100;
             eventMessages.push(`${p.name} was revived by healers! 100g taken from savings.`);

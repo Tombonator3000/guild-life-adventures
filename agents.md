@@ -2,11 +2,26 @@
 
 ## Overview
 
-This document describes the AI system and agent logic in Guild Life Adventures. The AI opponent "Grimwald" is inspired by "Jones" from the classic Sierra game "Jones in the Fast Lane" (1991).
+This document describes the AI system and agent logic in Guild Life Adventures. The AI opponents are inspired by "Jones" from the classic Sierra game "Jones in the Fast Lane" (1991).
 
-## AI Opponent: Grimwald
+## Multi-AI Opponent System
 
-Grimwald is the computer-controlled player that uses strategic decision-making to compete against human players. Unlike simple reactive AI, Grimwald uses goal-oriented planning to pursue victory.
+The game supports up to 4 total players (any mix of human and AI). Each AI opponent plays independently with its own name, color, and difficulty level.
+
+### AI Opponents
+
+| Name | Color | ID |
+|------|-------|----|
+| Grimwald | Pearl (#E5E5E5) | ai-grimwald |
+| Seraphina | Violet (#A78BFA) | ai-seraphina |
+| Thornwick | Teal (#14B8A6) | ai-thornwick |
+| Morgath | Rose (#F43F5E) | ai-morgath |
+
+Each AI uses the same Grimwald AI engine but with its own per-player difficulty setting stored in `player.aiDifficulty`.
+
+## AI Decision Engine
+
+The AI uses strategic decision-making to compete against human players. Unlike simple reactive AI, it uses goal-oriented planning to pursue victory.
 
 ### Difficulty Levels
 

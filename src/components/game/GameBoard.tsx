@@ -18,6 +18,7 @@ import { TutorialOverlay } from './TutorialOverlay';
 import { DarkModeToggle } from './DarkModeToggle';
 import { MobileHUD } from './MobileHUD';
 import { MobileDrawer } from './MobileDrawer';
+import { TurnTransition } from './TurnTransition';
 import gameBoard from '@/assets/game-board.jpeg';
 import type { LocationId } from '@/types/game.types';
 import { toast } from 'sonner';
@@ -71,7 +72,23 @@ export function GameBoard() {
   const [showGameMenu, setShowGameMenu] = useState(false);
   const [showLeftDrawer, setShowLeftDrawer] = useState(false);
   const [showRightDrawer, setShowRightDrawer] = useState(false);
+  const [showTurnTransition, setShowTurnTransition] = useState(false);
+  const [lastHumanPlayerId, setLastHumanPlayerId] = useState<string | null>(null);
   const isMobile = useIsMobile();
+
+  // Privacy screen between turns in local multiplayer (2+ human players)
+  const humanPlayers = players.filter(p => !p.isAI && !p.isGameOver);
+  const isMultiHuman = !isOnline && humanPlayers.length >= 2;
+
+  useEffect(() => {
+    if (!currentPlayer || !isMultiHuman || currentPlayer.isAI) return;
+
+    // Show transition when switching from one human player to another
+    if (lastHumanPlayerId && lastHumanPlayerId !== currentPlayer.id && phase === 'playing') {
+      setShowTurnTransition(true);
+    }
+    setLastHumanPlayerId(currentPlayer.id);
+  }, [currentPlayer?.id, phase]);
 
   // Extracted hooks
   const {
@@ -602,6 +619,14 @@ export function GameBoard() {
         </div>
       )}
 
+      {/* Turn Transition Privacy Screen (local multiplayer) */}
+      {showTurnTransition && currentPlayer && !currentPlayer.isAI && (
+        <TurnTransition
+          player={currentPlayer}
+          onReady={() => setShowTurnTransition(false)}
+        />
+      )}
+
       {/* AI Thinking Overlay with speed controls */}
       {aiIsThinking && currentPlayer?.isAI && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -612,13 +637,13 @@ export function GameBoard() {
               <Brain className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-secondary animate-spin`} style={{ animationDuration: '3s' }} />
             </div>
             <h3 className={`font-display ${isMobile ? 'text-base' : 'text-xl'} text-card-foreground`}>
-              Grimwald is Scheming...
+              {currentPlayer?.name || 'AI'} is Scheming...
             </h3>
             {!isMobile && (
               <p className="text-sm text-muted-foreground text-center max-w-xs">
-                {aiDifficulty === 'easy' && 'Hmm, let me think about this...'}
-                {aiDifficulty === 'medium' && 'Calculating optimal strategy...'}
-                {aiDifficulty === 'hard' && 'Analyzing all possibilities with precision!'}
+                {(currentPlayer?.aiDifficulty || aiDifficulty) === 'easy' && 'Hmm, let me think about this...'}
+                {(currentPlayer?.aiDifficulty || aiDifficulty) === 'medium' && 'Calculating optimal strategy...'}
+                {(currentPlayer?.aiDifficulty || aiDifficulty) === 'hard' && 'Analyzing all possibilities with precision!'}
               </p>
             )}
             <div className="flex gap-1 mb-1">

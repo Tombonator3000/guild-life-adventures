@@ -524,6 +524,8 @@ export const ARMORY_ITEMS: Item[] = [
 
 // Enchanter items (Socket City equivalent) - Durable magical items
 // Happiness values reduced to prevent easy happiness accumulation
+// Enchanter non-appliance items (appliances like Preservation Box, Scrying Mirror
+// are managed separately via APPLIANCES array with source tracking & breakage)
 export const ENCHANTER_ITEMS: Item[] = [
   {
     id: 'glow-orb',
@@ -541,24 +543,6 @@ export const ENCHANTER_ITEMS: Item[] = [
     basePrice: 120,
     effect: { type: 'happiness', value: 3 },
     description: 'Keeps your home warm without fire.',
-    isDurable: true,
-  },
-  {
-    id: 'preservation-box',
-    name: 'Preservation Box',
-    category: 'magic',
-    basePrice: 175,
-    effect: { type: 'happiness', value: 2 },
-    description: 'Keeps food fresh indefinitely.',
-    isDurable: true,
-  },
-  {
-    id: 'scrying-mirror',
-    name: 'Scrying Mirror',
-    category: 'magic',
-    basePrice: 350,
-    effect: { type: 'happiness', value: 4 },
-    description: 'See distant places and people.',
     isDurable: true,
   },
   {

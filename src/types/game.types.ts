@@ -158,6 +158,7 @@ export interface Player {
   applianceHistory: string[]; // List of appliance types ever owned (for happiness bonus tracking)
   inventory: string[];
   isAI: boolean;
+  aiDifficulty?: AIDifficulty; // Per-AI difficulty (only set for AI players)
   activeQuest: string | null; // Current quest ID
   hasGuildPass: boolean; // Has purchased Guild Pass (required for quests)
   hasNewspaper: boolean; // Has purchased newspaper this week
@@ -168,6 +169,7 @@ export interface Player {
   lockedRent: number; // Locked-in rent price (0 = not locked, uses current rate)
   // Death/Game Over state
   isGameOver: boolean; // True if player has died and is out of the game
+  wasResurrectedThisWeek: boolean; // Prevents double resurrection exploit
   // Combat & Equipment system
   equippedWeapon: string | null;   // Item ID of equipped weapon
   equippedArmor: string | null;    // Item ID of equipped armor
@@ -326,13 +328,26 @@ export const PLAYER_COLORS = [
 
 export const AI_COLOR = { name: 'Pearl', value: '#E5E5E5' };
 
+// Multiple AI opponent definitions (up to 4 AI players)
+export const AI_OPPONENTS = [
+  { id: 'ai-grimwald', name: 'Grimwald', color: '#E5E5E5' },   // Pearl
+  { id: 'ai-seraphina', name: 'Seraphina', color: '#A78BFA' },  // Violet
+  { id: 'ai-thornwick', name: 'Thornwick', color: '#14B8A6' },   // Teal
+  { id: 'ai-morgath', name: 'Morgath', color: '#F43F5E' },       // Rose
+] as const;
+
+export interface AIConfig {
+  name: string;
+  difficulty: AIDifficulty;
+}
+
 // AI Difficulty levels (Jones-style)
 export type AIDifficulty = 'easy' | 'medium' | 'hard';
 
 export const AI_DIFFICULTY_NAMES: Record<AIDifficulty, string> = {
-  easy: 'Novice Grimwald',
-  medium: 'Cunning Grimwald',
-  hard: 'Master Grimwald',
+  easy: 'Novice',
+  medium: 'Cunning',
+  hard: 'Master',
 };
 
 export const AI_DIFFICULTY_DESCRIPTIONS: Record<AIDifficulty, string> = {

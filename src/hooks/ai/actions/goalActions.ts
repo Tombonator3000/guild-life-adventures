@@ -216,12 +216,13 @@ export function generateGoalActions(ctx: ActionContext): AIAction[] {
 
       // Take and complete quests for guild rank promotion
       if (player.hasGuildPass && !player.activeQuest) {
-        if (currentLocation === 'guild-hall') {
+        const bestQuest = getBestQuest(player, settings);
+        if (currentLocation === 'guild-hall' && bestQuest) {
           actions.push({
             type: 'take-quest',
             priority: 72,
             description: 'Take quest for guild rank',
-            details: { questId: 'patrol-e' }, // Simple quest
+            details: { questId: bestQuest },
           });
         } else if (player.timeRemaining > moveCost('guild-hall') + 2) {
           actions.push({

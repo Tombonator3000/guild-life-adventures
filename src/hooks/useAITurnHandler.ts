@@ -8,15 +8,18 @@ import React from 'react';
 interface UseAITurnHandlerParams {
   currentPlayer: Player | undefined;
   phase: string;
-  aiDifficulty: AIDifficulty;
+  aiDifficulty: AIDifficulty; // Fallback for legacy single-AI games
 }
 
 export function useAITurnHandler({ currentPlayer, phase, aiDifficulty }: UseAITurnHandlerParams) {
   const [aiIsThinking, setAiIsThinking] = useState(false);
   const aiTurnStartedRef = useRef(false);
-  const { runAITurn, analyzeGameState, settings: aiSettings } = useGrimwaldAI(aiDifficulty);
 
-  // AI Turn Handler - triggers when it's Grimwald's turn
+  // Use per-player difficulty if available, otherwise fall back to global setting
+  const effectiveDifficulty = currentPlayer?.aiDifficulty ?? aiDifficulty;
+  const { runAITurn, analyzeGameState, settings: aiSettings } = useGrimwaldAI(effectiveDifficulty);
+
+  // AI Turn Handler - triggers when it's any AI player's turn
   useEffect(() => {
     if (!currentPlayer || phase !== 'playing') {
       aiTurnStartedRef.current = false;
@@ -28,8 +31,8 @@ export function useAITurnHandler({ currentPlayer, phase, aiDifficulty }: UseAITu
       aiTurnStartedRef.current = true;
       setAiIsThinking(true);
 
-      // Show toast notification that Grimwald is thinking
-      toast.info(`Grimwald is planning...`, {
+      // Show toast notification with the AI's actual name
+      toast.info(`${currentPlayer.name} is planning...`, {
         duration: 2000,
         icon: React.createElement(Bot, { className: 'w-4 h-4' }),
       });

@@ -15,7 +15,8 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
-          const rentCost = RENT_COSTS[p.housing];
+          // Use locked-in rent if available, otherwise current rate
+          const rentCost = p.lockedRent > 0 ? p.lockedRent : RENT_COSTS[p.housing];
           if (p.gold < rentCost) return p;
           return {
             ...p,
