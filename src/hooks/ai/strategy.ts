@@ -28,15 +28,15 @@ export function calculateGoalProgress(
   const educationPoints = player.completedDegrees.length * 9;
   const educationProgress = Math.min(1, educationPoints / goals.education);
 
-  const rankOrder = ['novice', 'apprentice', 'journeyman', 'adept', 'veteran', 'elite', 'guild-master'];
-  const currentRank = rankOrder.indexOf(player.guildRank) + 1;
-  const careerProgress = Math.min(1, currentRank / goals.career);
+  // Career = dependability (Jones-style), 0 if no job
+  const careerValue = player.currentJob ? player.dependability : 0;
+  const careerProgress = Math.min(1, careerValue / goals.career);
 
   return {
     wealth: { current: totalWealth, target: goals.wealth, progress: wealthProgress },
     happiness: { current: player.happiness, target: goals.happiness, progress: happinessProgress },
     education: { current: educationPoints, target: goals.education, progress: educationProgress },
-    career: { current: currentRank, target: goals.career, progress: careerProgress },
+    career: { current: careerValue, target: goals.career, progress: careerProgress },
     overall: (wealthProgress + happinessProgress + educationProgress + careerProgress) / 4,
   };
 }

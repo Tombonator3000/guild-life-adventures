@@ -147,7 +147,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       wealth: 5000,
       happiness: 75,   // Reduced from 100 - happiness is harder to accumulate now
       education: 45,   // 45 points = 5 degrees (each degree = 9 pts, Jones-style)
-      career: 4,
+      career: 75,      // Dependability target (Jones-style: career = dependability)
     },
     winner: null,
     eventMessage: null,
@@ -282,7 +282,10 @@ export const useGameStore = create<GameStore>((set, get) => {
         priceModifier: gs.priceModifier,
         economyTrend: gs.economyTrend ?? 0,
         economyCycleWeeksLeft: gs.economyCycleWeeksLeft ?? 4,
-        goalSettings: gs.goalSettings,
+        // Migrate old saves: career was guild rank 1-7, now dependability 10-100
+        goalSettings: gs.goalSettings.career <= 7
+          ? { ...gs.goalSettings, career: Math.round(gs.goalSettings.career * 100 / 7) }
+          : gs.goalSettings,
         winner: gs.winner,
         eventMessage: null,
         rentDueWeek: gs.rentDueWeek,

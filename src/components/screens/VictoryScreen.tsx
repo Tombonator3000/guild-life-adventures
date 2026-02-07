@@ -53,9 +53,9 @@ export function VictoryScreen() {
   const wealthMet = totalWealth >= goalSettings.wealth;
   const happinessMet = winningPlayer.happiness >= goalSettings.happiness;
   const educationMet = totalEducation >= goalSettings.education;
-  const rankIndex = ['novice', 'apprentice', 'journeyman', 'adept', 'veteran', 'elite', 'guild-master']
-    .indexOf(winningPlayer.guildRank) + 1;
-  const careerMet = rankIndex >= goalSettings.career;
+  // Career = dependability (Jones-style), 0 if no job
+  const careerValue = winningPlayer.currentJob ? winningPlayer.dependability : 0;
+  const careerMet = careerValue >= goalSettings.career;
   const allGoalsMet = wealthMet && happinessMet && educationMet && careerMet;
 
   return (
@@ -131,9 +131,9 @@ export function VictoryScreen() {
             />
             <StatItem
               icon={<Crown className="w-5 h-5 text-purple-500" />}
-              label="Guild Rank"
-              value={winningPlayer.guildRank.replace('-', ' ').toUpperCase()}
-              goal={`Rank ${goalSettings.career}+`}
+              label="Career"
+              value={`${careerValue} dep`}
+              goal={`Goal: ${goalSettings.career}+`}
               isMet={careerMet}
             />
           </div>

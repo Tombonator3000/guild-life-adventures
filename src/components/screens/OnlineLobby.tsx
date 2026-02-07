@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useOnlineGame } from '@/network/useOnlineGame';
 import { isValidRoomCode } from '@/network/roomCodes';
-import { PLAYER_COLORS, GUILD_RANK_NAMES, GUILD_RANK_ORDER, AI_DIFFICULTY_NAMES } from '@/types/game.types';
+import { PLAYER_COLORS, AI_DIFFICULTY_NAMES } from '@/types/game.types';
 import type { AIDifficulty } from '@/types/game.types';
 import {
   Globe, Users, Copy, Check, ArrowLeft, Play, Wifi, WifiOff,
@@ -344,19 +344,19 @@ export function OnlineLobby() {
               {/* Quick presets */}
               <div className="flex gap-2 mb-3">
                 <button
-                  onClick={() => updateSettings({ goals: { wealth: 2000, happiness: 75, education: 18, career: 2 } })}
+                  onClick={() => updateSettings({ goals: { wealth: 2000, happiness: 75, education: 18, career: 50 } })}
                   className="flex-1 p-1.5 wood-frame text-parchment text-xs font-display hover:brightness-110"
                 >
                   Quick
                 </button>
                 <button
-                  onClick={() => updateSettings({ goals: { wealth: 5000, happiness: 100, education: 45, career: 4 } })}
+                  onClick={() => updateSettings({ goals: { wealth: 5000, happiness: 100, education: 45, career: 75 } })}
                   className="flex-1 p-1.5 wood-frame text-parchment text-xs font-display hover:brightness-110"
                 >
                   Standard
                 </button>
                 <button
-                  onClick={() => updateSettings({ goals: { wealth: 10000, happiness: 100, education: 90, career: 7 } })}
+                  onClick={() => updateSettings({ goals: { wealth: 10000, happiness: 100, education: 90, career: 100 } })}
                   className="flex-1 p-1.5 wood-frame text-parchment text-xs font-display hover:brightness-110"
                 >
                   Epic
@@ -378,7 +378,7 @@ export function OnlineLobby() {
                 <div className="flex justify-between">
                   <span className="text-amber-700">Career</span>
                   <span className="text-amber-900 font-semibold">
-                    {GUILD_RANK_NAMES[GUILD_RANK_ORDER[settings.goals.career - 1] || 'novice']}
+                    {settings.goals.career} dep
                   </span>
                 </div>
               </div>
@@ -445,7 +445,7 @@ export function OnlineLobby() {
                   <span>Wealth: {settings.goals.wealth}g</span>
                   <span>Happiness: {settings.goals.happiness}%</span>
                   <span>Education: {Math.floor(settings.goals.education / 9)} degrees</span>
-                  <span>Career: {GUILD_RANK_NAMES[GUILD_RANK_ORDER[settings.goals.career - 1] || 'novice']}</span>
+                  <span>Career: {settings.goals.career} dep</span>
                   {settings.includeAI && <span className="col-span-2">AI: {AI_DIFFICULTY_NAMES[settings.aiDifficulty]}</span>}
                 </div>
               </div>

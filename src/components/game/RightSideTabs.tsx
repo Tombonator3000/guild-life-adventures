@@ -6,7 +6,7 @@ import { Settings, Save, Code, Users, Target, Coins, Smile, GraduationCap, Trend
 import { useAudioSettings } from '@/hooks/useMusic';
 import { useSFXSettings } from '@/hooks/useSFX';
 import type { Player, GoalSettings } from '@/types/game.types';
-import { GUILD_RANK_NAMES, GUILD_RANK_INDEX, HOURS_PER_TURN } from '@/types/game.types';
+import { HOURS_PER_TURN } from '@/types/game.types';
 
 type TabId = 'players' | 'options' | 'developer';
 
@@ -122,7 +122,7 @@ export function RightSideTabs({
           </div>
           <div className="flex items-center gap-1 text-amber-900">
             <TrendingUp className="w-3 h-3 text-amber-700" />
-            <span>Rank {goalSettings.career}</span>
+            <span>Dep {goalSettings.career}</span>
           </div>
         </div>
       </div>
@@ -183,7 +183,8 @@ function PlayersTab({
         const happinessProgress = Math.min(100, (player.happiness / goalSettings.happiness) * 100);
         const educationTotal = player.completedDegrees.length * 9;
         const educationProgress = Math.min(100, (educationTotal / goalSettings.education) * 100);
-        const careerProgress = Math.min(100, (GUILD_RANK_INDEX[player.guildRank] / goalSettings.career) * 100);
+        const careerValue = player.currentJob ? player.dependability : 0;
+        const careerProgress = Math.min(100, (careerValue / goalSettings.career) * 100);
         const overallProgress = (wealthProgress + happinessProgress + educationProgress + careerProgress) / 4;
 
         return (

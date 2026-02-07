@@ -1,5 +1,77 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-07 - Career Goal Fix (Dependability) & Dungeon Victory Contributions
+
+**Task**: Two gameplay issues — (1) Career goal was based on guild rank (quests) instead of dependability (Jones-style), making it disconnected from actual job performance. A Forge Manager player showed only 25% career despite being a top-tier employee. (2) Dungeon clears gave no career/dependability bonus toward victory goals.
+
+### Fix 1: Career Goal = Dependability (Jones-style)
+
+**Problem**: Career victory goal used guild rank index (1-7), which only advances by completing quests. Per JONES_REFERENCE.md, career should equal the Dependability stat and be 0 if unemployed. A player with a top job (Forge Manager, 28g/hr) showed 25% career because they hadn't completed enough quests.
+
+**Fix**: Changed career goal from guild rank to dependability, matching the original Jones in the Fast Lane design.
+
+| Aspect | Before | After |
+|--------|--------|-------|
+| Career metric | Guild rank (1-7) | Dependability (0-100) |
+| Career if no job | Still counted guild rank | 0 (must be employed) |
+| Default goal | 4 (Adept rank) | 75 dependability |
+| Quick preset | 2 (Apprentice) | 50 dependability |
+| Epic preset | 7 (Guild Master) | 100 dependability |
+| Slider | Rank 1-7 | Dep 10-100 (step 5) |
+
+**Ways dependability increases:**
+- +2 per work shift (working consistently)
+- +5 per degree graduation
+- +3 to +15 per dungeon floor clear (new, see Fix 2)
+
+**Files changed:**
+
+| File | Change |
+|------|--------|
+| `src/store/helpers/questHelpers.ts` | checkVictory: `careerMet = player.currentJob && player.dependability >= goals.career` |
+| `src/components/game/GoalProgress.tsx` | Progress bar shows dependability value, 0 if no job |
+| `src/components/screens/VictoryScreen.tsx` | Final stats show dependability, not guild rank |
+| `src/components/screens/GameSetup.tsx` | Career slider: dependability 10-100, presets updated |
+| `src/components/screens/OnlineLobby.tsx` | Preset goals updated, display shows dep instead of rank |
+| `src/store/gameStore.ts` | Default career=75, save migration (old career ≤7 → ×100/7) |
+| `src/hooks/ai/strategy.ts` | AI calculates career progress from dependability |
+| `src/components/game/TurnOrderPanel.tsx` | Career progress uses dependability |
+| `src/components/game/RightSideTabs.tsx` | Career progress uses dependability |
+| `src/test/victory.test.ts` | 3 career tests (dependability-based, 0-if-no-job, incremental) |
+
+### Fix 2: Dungeon Clears Give Dependability (Career Contribution)
+
+**Problem**: Clearing dungeon floors gave gold (wealth) and happiness, but nothing toward career. Now that career = dependability, dungeon clears contribute to career progress.
+
+**Fix**: Added `dependabilityOnClear` to dungeon floor definitions. Applied on first clear in `clearDungeonFloor` action.
+
+| Floor | Name | Dependability Bonus |
+|-------|------|-------------------|
+| 1 | Entrance Cavern | +3 |
+| 2 | Goblin Tunnels | +5 |
+| 3 | Undead Crypt | +7 |
+| 4 | Dragon's Lair | +10 |
+| 5 | The Abyss | +15 |
+| **Total** | | **+40** |
+
+Combined with starting dependability (50) and work shifts (+2 each), clearing all 5 dungeon floors gives +40 dep — a meaningful career boost but not enough alone for the default 75 goal.
+
+**Files changed:**
+
+| File | Change |
+|------|--------|
+| `src/data/dungeon/types.ts` | Added `dependabilityOnClear: number` to DungeonFloor interface |
+| `src/data/dungeon/floors.ts` | Added dependabilityOnClear values (3/5/7/10/15) per floor |
+| `src/store/helpers/economyHelpers.ts` | clearDungeonFloor applies dependability bonus on first clear |
+| `src/components/game/CavePanel.tsx` | Toast shows dep bonus on first clear |
+
+### Build & Test Results
+- TypeScript: Clean (0 errors)
+- Build: Succeeds (972KB bundle)
+- Tests: 150/152 pass (2 pre-existing failures in freshFood.test.ts)
+
+---
+
 ## 2026-02-07 - Merchant Tab Navigation for Armory, Shadow Market & The Fence
 
 **Task**: Add tab navigation to three merchant locations (Armory, Shadow Market, The Fence) to split their product categories into separate tabs, improving UI layout and eliminating excessive scrolling.

@@ -164,10 +164,12 @@ export function CavePanel({
     }
 
     if (result.success) {
+      const firstClearBonus = result.isFirstClear
+        ? `, +${activeFloor.happinessOnClear} happiness, +${activeFloor.dependabilityOnClear} dep`
+        : '';
       toast.success(
         `Floor ${activeFloor.id}: ${activeFloor.name} — ${result.isFirstClear ? 'CLEARED!' : 'Completed!'} ` +
-          `+${result.goldEarned}g, -${result.totalDamage} HP` +
-          (result.isFirstClear ? `, +${activeFloor.happinessOnClear} happiness` : ''),
+          `+${result.goldEarned}g, -${result.totalDamage} HP` + firstClearBonus,
         { duration: 5000 },
       );
     } else if (result.retreated) {

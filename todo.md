@@ -2,6 +2,14 @@
 
 ## Completed (2026-02-07)
 
+- [x] Career Goal Fix — Career now uses dependability (Jones-style) instead of guild rank
+  - Career = dependability stat, 0 if unemployed (matches Jones in the Fast Lane)
+  - Default goal changed from rank 4 to 75 dependability
+  - All UI, tests, AI, save migration updated
+- [x] Dungeon Victory Contributions — Dungeon floor clears now give +3/5/7/10/15 dependability
+  - Added `dependabilityOnClear` to DungeonFloor type and all 5 floor definitions
+  - Total +40 dependability across all 5 floors (contributing to career goal)
+
 - [x] Academy Course & Job Validation — 6 issues fixed, 2 missing jobs added
   - Added missing `researcher` job (Advanced Scholar → 16g/hr at Academy)
   - Added missing `merchant-assistant` job (Commerce → 12g/hr at General Store)

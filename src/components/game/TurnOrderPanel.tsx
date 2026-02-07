@@ -1,5 +1,5 @@
 import { Player, GoalSettings } from '@/types/game.types';
-import { GUILD_RANK_NAMES, HOURS_PER_TURN, GUILD_RANK_INDEX } from '@/types/game.types';
+import { HOURS_PER_TURN } from '@/types/game.types';
 import { Crown, Users, Target, TrendingUp, GraduationCap, Smile, Coins, Clock, Skull, Bot } from 'lucide-react';
 
 interface TurnOrderPanelProps {
@@ -38,7 +38,8 @@ export function TurnOrderPanel({
           const happinessProgress = Math.min(100, (player.happiness / goalSettings.happiness) * 100);
           const educationTotal = player.completedDegrees.length * 9;
           const educationProgress = Math.min(100, (educationTotal / goalSettings.education) * 100);
-          const careerProgress = Math.min(100, (GUILD_RANK_INDEX[player.guildRank] / goalSettings.career) * 100);
+          const careerValue = player.currentJob ? player.dependability : 0;
+          const careerProgress = Math.min(100, (careerValue / goalSettings.career) * 100);
           const overallProgress = (wealthProgress + happinessProgress + educationProgress + careerProgress) / 4;
 
           return (
@@ -143,7 +144,7 @@ export function TurnOrderPanel({
           </div>
           <div className="flex items-center gap-1">
             <TrendingUp className="w-3 h-3 text-secondary" />
-            <span>Rank {goalSettings.career}</span>
+            <span>Dep {goalSettings.career}</span>
           </div>
         </div>
       </div>
