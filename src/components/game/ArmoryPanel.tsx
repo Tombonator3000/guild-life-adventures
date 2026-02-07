@@ -45,6 +45,10 @@ export function ArmoryPanel({
     player.equippedShield,
   );
 
+  // In tabbed mode, use dark text on light parchment background
+  const darkText = !!section;
+  const largeText = !!section;
+
   const clothingItems = ARMORY_ITEMS.filter(item => item.effect?.type === 'clothing');
   const weaponItems = ARMORY_ITEMS.filter(item => item.equipSlot === 'weapon');
   const armorItems = ARMORY_ITEMS.filter(item => item.equipSlot === 'armor');
@@ -81,10 +85,14 @@ export function ArmoryPanel({
         if (stats?.blockChance) statParts.push(`${Math.round(stats.blockChance * 100)}% BLK`);
         const statLabel = statParts.join(', ');
 
+        const textSize = largeText ? 'text-base' : 'text-sm';
+        const textColor = darkText ? 'text-[#3d2a14]' : 'text-[#8b7355]';
+        const hoverBg = darkText ? 'hover:bg-[#d4c4a8]' : 'hover:bg-[#5c4a32]';
+
         if (!meetsFloorReq) {
           return (
             <div key={item.id} className="py-1 px-2 opacity-40">
-              <div className="font-mono text-sm text-[#8b7355]">
+              <div className={`font-mono ${textSize} ${textColor}`}>
                 🔒 {item.name} ({statLabel}) — Floor {item.requiresFloorCleared} required
               </div>
             </div>
@@ -106,19 +114,19 @@ export function ArmoryPanel({
                 }}
                 className={`w-full text-left py-1 px-2 rounded transition-colors ${
                   isEquipped
-                    ? 'bg-[#2a5c3a] border border-[#4a9c5a]'
-                    : 'hover:bg-[#5c4a32]'
+                    ? darkText ? 'bg-[#b8d4b8] border border-[#4a9c5a]' : 'bg-[#2a5c3a] border border-[#4a9c5a]'
+                    : hoverBg
                 }`}
               >
-                <div className="flex items-baseline w-full font-mono text-sm">
-                  <span className={isEquipped ? 'text-[#a0d8b0] font-bold' : 'text-[#e0d4b8]'}>
+                <div className={`flex items-baseline w-full font-mono ${textSize}`}>
+                  <span className={isEquipped ? (darkText ? 'text-[#2a5c3a] font-bold' : 'text-[#a0d8b0] font-bold') : (darkText ? 'text-[#3d2a14]' : 'text-[#e0d4b8]')}>
                     {isEquipped ? '⚔ ' : '  '}{item.name}
                   </span>
                   <span className="flex-1"></span>
-                  <span className="text-xs text-[#a09080] ml-2">{statLabel}</span>
+                  <span className={`text-xs ${darkText ? 'text-[#6b5a42]' : 'text-[#a09080]'} ml-2`}>{statLabel}</span>
                   <span className="ml-2 text-xs">
                     {isEquipped ? (
-                      <span className="text-[#a0d8b0]">[EQUIPPED]</span>
+                      <span className={darkText ? 'text-[#2a5c3a]' : 'text-[#a0d8b0]'}>[EQUIPPED]</span>
                     ) : (
                       <span className="text-gold">[EQUIP]</span>
                     )}
@@ -130,6 +138,8 @@ export function ArmoryPanel({
                 label={`${item.name} (${statLabel})`}
                 price={price}
                 disabled={!canAfford}
+                darkText={darkText}
+                largeText={largeText}
                 onClick={() => {
                   modifyGold(player.id, -price);
                   spendTime(player.id, 1);
@@ -148,16 +158,16 @@ export function ArmoryPanel({
   );
 
   const combatStatsHeader = (
-    <div className="bg-[#2d1f0f] border border-[#8b7355] rounded p-2 mb-2">
-      <div className="text-xs text-[#a09080] uppercase tracking-wide mb-1">Combat Stats</div>
-      <div className="flex gap-4 font-mono text-sm">
-        <span className="text-red-400">⚔ ATK: {combatStats.attack}</span>
-        <span className="text-blue-400">🛡 DEF: {combatStats.defense}</span>
+    <div className={`${darkText ? 'bg-[#e8dcc8] border-[#8b7355]' : 'bg-[#2d1f0f] border-[#8b7355]'} border rounded p-2 mb-2`}>
+      <div className={`text-xs ${darkText ? 'text-[#6b5a42]' : 'text-[#a09080]'} uppercase tracking-wide mb-1`}>Combat Stats</div>
+      <div className={`flex gap-4 font-mono ${largeText ? 'text-base' : 'text-sm'}`}>
+        <span className="text-red-600">⚔ ATK: {combatStats.attack}</span>
+        <span className="text-blue-700">🛡 DEF: {combatStats.defense}</span>
         {combatStats.blockChance > 0 && (
-          <span className="text-yellow-400">BLK: {Math.round(combatStats.blockChance * 100)}%</span>
+          <span className="text-yellow-700">BLK: {Math.round(combatStats.blockChance * 100)}%</span>
         )}
       </div>
-      <div className="flex gap-3 mt-1 text-xs text-[#8b7355]">
+      <div className={`flex gap-3 mt-1 text-xs ${darkText ? 'text-[#6b5a42]' : 'text-[#8b7355]'}`}>
         <span>W: {player.equippedWeapon ? getItem(player.equippedWeapon)?.name : 'None'}</span>
         <span>A: {player.equippedArmor ? getItem(player.equippedArmor)?.name : 'None'}</span>
         <span>S: {player.equippedShield ? getItem(player.equippedShield)?.name : 'None'}</span>
@@ -166,7 +176,7 @@ export function ArmoryPanel({
   );
 
   const footerNote = (
-    <div className="mt-2 text-xs text-[#8b7355] px-2">
+    <div className={`mt-2 text-xs ${darkText ? 'text-[#6b5a42]' : 'text-[#8b7355]'} px-2`}>
       1 hour per purchase • Click owned items to equip/unequip
     </div>
   );
@@ -186,6 +196,8 @@ export function ArmoryPanel({
                   label={item.name}
                   price={price}
                   disabled={!canAfford}
+                  darkText={darkText}
+                  largeText={largeText}
                   onClick={() => {
                     modifyGold(player.id, -price);
                     spendTime(player.id, 1);

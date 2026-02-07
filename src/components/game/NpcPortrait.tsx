@@ -6,15 +6,22 @@ import type { LocationNPC } from '@/data/npcs';
 
 interface NpcPortraitProps {
   npc: LocationNPC;
+  size?: 'normal' | 'large';
 }
 
-export function NpcPortrait({ npc }: NpcPortraitProps) {
+const SIZES = {
+  normal: 'w-32 h-36',
+  large: 'w-40 h-48',
+};
+
+export function NpcPortrait({ npc, size = 'normal' }: NpcPortraitProps) {
   const [imgFailed, setImgFailed] = useState(false);
   const showImage = npc.portraitImage && !imgFailed;
+  const sizeClass = SIZES[size];
 
   return (
     <div
-      className="w-32 h-36 rounded-lg border-2 flex items-center justify-center overflow-hidden mb-1.5 shadow-inner"
+      className={`${sizeClass} rounded-lg border-2 flex items-center justify-center overflow-hidden mb-1.5 shadow-inner`}
       style={{
         backgroundColor: npc.bgColor,
         borderColor: npc.accentColor,

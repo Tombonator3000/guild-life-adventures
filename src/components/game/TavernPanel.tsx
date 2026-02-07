@@ -29,33 +29,36 @@ export function TavernPanel({
   workShift,
 }: TavernPanelProps) {
   return (
-    <JonesPanel>
+    <JonesPanel className="h-full flex flex-col">
       <JonesPanelHeader title="The Rusty Tankard" subtitle="Tavern & Eatery" />
-      <JonesPanelContent>
-        {TAVERN_ITEMS.map(item => {
-          const price = getItemPrice(item, priceModifier);
-          const canAfford = player.gold >= price && player.timeRemaining >= 1;
-          return (
-            <JonesMenuItem
-              key={item.id}
-              label={item.name}
-              price={price}
-              disabled={!canAfford}
-              onClick={() => {
-                modifyGold(player.id, -price);
-                spendTime(player.id, 1);
-                if (item.effect?.type === 'food') {
-                  modifyFood(player.id, item.effect.value);
-                }
-                if (item.effect?.type === 'happiness') {
-                  modifyHappiness(player.id, item.effect.value);
-                }
-                toast.success(`Purchased ${item.name}`);
-              }}
-            />
-          );
-        })}
-        <div className="mt-2 text-xs text-[#8b7355] px-2">
+      <JonesPanelContent className="flex-1 flex flex-col justify-center">
+        <div className="space-y-1">
+          {TAVERN_ITEMS.map(item => {
+            const price = getItemPrice(item, priceModifier);
+            const canAfford = player.gold >= price && player.timeRemaining >= 1;
+            return (
+              <JonesMenuItem
+                key={item.id}
+                label={item.name}
+                price={price}
+                disabled={!canAfford}
+                largeText
+                onClick={() => {
+                  modifyGold(player.id, -price);
+                  spendTime(player.id, 1);
+                  if (item.effect?.type === 'food') {
+                    modifyFood(player.id, item.effect.value);
+                  }
+                  if (item.effect?.type === 'happiness') {
+                    modifyHappiness(player.id, item.effect.value);
+                  }
+                  toast.success(`Purchased ${item.name}`);
+                }}
+              />
+            );
+          })}
+        </div>
+        <div className="mt-3 text-sm text-[#8b7355] px-2">
           1 hour per purchase
         </div>
 

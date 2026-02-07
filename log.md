@@ -1,5 +1,85 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-07 - Store Layout Redesign (General Store, Shadow Market, Armory, Rusty Tankard)
+
+**Task**: Redesign multiple store location panels for better layout, readability, and Jones-style accuracy.
+
+### 1. General Store — Jones-style Black's Market Redesign
+
+**Problem**: General Store sold too many items not matching Jones Black's Market (candles, blanket, music box, furniture). Layout didn't match the original game.
+
+**Fix**: Stripped down to Jones-authentic items only: food provisions, newspaper, and lottery tickets.
+
+| Change | Before | After |
+|--------|--------|-------|
+| Food items | 5 food items | 5 food items (unchanged) |
+| Other items | Candles ($12), Wool Blanket ($30), Music Box ($75) | Newspaper + Fortune's Wheel Ticket |
+| Lottery tickets | Not available here | Now purchasable at General Store |
+| Fresh food | Shown if Preservation Box | Unchanged |
+| NPC portrait | Normal size (128×144px) | Large size (160×192px) |
+
+**Items removed from General Store**: Bundle of Candles, Wool Blanket, Music Box, Quality Furniture. These are still available at other locations (Enchanter's Workshop, Shadow Market).
+
+### 2. Shadow Market & Armory — Text Visibility Fix
+
+**Problem**: In tabbed mode, items rendered with light cream text (`#e0d4b8`) on light parchment background, making text nearly invisible. NPC portraits too small.
+
+**Fix**: Added `darkText` and `largeText` props to JonesMenuItem and JonesInfoRow components. Tabbed sections now use dark brown text (`#3d2a14`) with gold prices (`#8b6914`) for readability on light parchment backgrounds.
+
+| Element | Before | After |
+|---------|--------|-------|
+| Item text | `#e0d4b8` (light cream, invisible) | `#3d2a14` (dark brown, readable) |
+| Price text | `text-gold` (faint on light bg) | `#8b6914` (darker gold, readable) |
+| Hover effect | `bg-[#5c4a32]` (dark hover) | `bg-[#d4c4a8]` (light brown hover) |
+| Text size | `text-sm` (14px) | `text-base` (16px) |
+| NPC portrait | Normal (128×144px) | Large (160×192px) |
+| Portrait column | w-36 (144px) | w-44 (176px) |
+| Combat stats (Armory) | Dark bg `#2d1f0f` | Light bg `#e8dcc8` for parchment compat |
+| Equipped items (Armory) | Dark green `#2a5c3a` | Light green `#b8d4b8` for parchment compat |
+
+### 3. Rusty Tankard — Larger Layout
+
+**Problem**: NPC portrait was standard size (128×144px) and food items didn't fill the panel, leaving unused space.
+
+**Fix**:
+- NPC portrait enlarged to 160×192px (large variant)
+- Food items use `largeText` (text-base) for bigger menu text
+- JonesPanel uses `h-full flex flex-col` with content area `flex-1 justify-center` to fill available space
+- Footer text increased to `text-sm`
+
+### Implementation Details
+
+**New component props added:**
+
+| Component | New Props | Purpose |
+|-----------|-----------|---------|
+| `JonesMenuItem` | `darkText?: boolean`, `largeText?: boolean` | Dark brown text for light bg, larger text size |
+| `JonesInfoRow` | `darkText?: boolean`, `largeText?: boolean` | Same for info rows |
+| `NpcPortrait` | `size?: 'normal' \| 'large'` | Normal (128×144) vs large (160×192) portrait |
+| `LocationShell` | `largePortrait?: boolean` | Passes large size to NpcPortrait, wider portrait column |
+
+**Locations using large portraits:** General Store, Shadow Market, Armory, Rusty Tankard.
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `src/components/game/GeneralStorePanel.tsx` | Removed non-food items, added lottery tickets, added `buyLotteryTicket` prop |
+| `src/components/game/ShadowMarketPanel.tsx` | Added darkText/largeText to all tabbed section items |
+| `src/components/game/ArmoryPanel.tsx` | Added darkText/largeText, adapted combat stats and equipped items for light bg |
+| `src/components/game/TavernPanel.tsx` | Added largeText to items, h-full layout with justify-center |
+| `src/components/game/JonesStylePanel.tsx` | Added darkText/largeText props to JonesMenuItem and JonesInfoRow |
+| `src/components/game/NpcPortrait.tsx` | Added size prop with normal/large variants |
+| `src/components/game/LocationShell.tsx` | Added largePortrait prop, wider portrait column when enabled |
+| `src/components/game/LocationPanel.tsx` | Pass buyLotteryTicket to GeneralStore, largePortrait for 4 locations |
+
+### Build & Test Results
+- TypeScript: Clean (0 errors)
+- Build: Succeeds (974KB bundle)
+- Tests: 152/152 pass
+
+---
+
 ## 2026-02-07 - Career Goal Fix (Dependability) & Dungeon Victory Contributions
 
 **Task**: Two gameplay issues — (1) Career goal was based on guild rank (quests) instead of dependability (Jones-style), making it disconnected from actual job performance. A Forge Manager player showed only 25% career despite being a top-tier employee. (2) Dungeon clears gave no career/dependability bonus toward victory goals.

@@ -22,6 +22,7 @@ interface GeneralStorePanelProps {
   workShift: (playerId: string, hours: number, wage: number) => void;
   onBuyNewspaper: () => void;
   buyFreshFood: (playerId: string, units: number, cost: number) => void;
+  buyLotteryTicket: (playerId: string, cost: number) => void;
 }
 
 export function GeneralStorePanel({
@@ -34,8 +35,10 @@ export function GeneralStorePanel({
   workShift,
   onBuyNewspaper,
   buyFreshFood,
+  buyLotteryTicket,
 }: GeneralStorePanelProps) {
   const newspaperPrice = Math.round(NEWSPAPER_COST * priceModifier);
+  const lotteryPrice = Math.round(10 * priceModifier);
 
   const hasPreservationBox = player.appliances['preservation-box'] && !player.appliances['preservation-box'].isBroken;
   const hasFrostChest = player.appliances['frost-chest'] && !player.appliances['frost-chest'].isBroken;
@@ -97,33 +100,26 @@ export function GeneralStorePanel({
           </>
         )}
 
-        <JonesSectionHeader title="OTHER ITEMS" />
+        <JonesSectionHeader title="OTHER GOODS" />
         <JonesMenuItem
           label="Newspaper"
           price={newspaperPrice}
           disabled={player.gold < newspaperPrice || player.timeRemaining < NEWSPAPER_TIME}
           onClick={onBuyNewspaper}
         />
-        {GENERAL_STORE_ITEMS.filter(item => item.effect?.type !== 'food' && !item.isFreshFood).slice(0, 3).map(item => {
-          const price = getItemPrice(item, priceModifier);
-          const canAfford = player.gold >= price && player.timeRemaining >= 1;
-          return (
-            <JonesMenuItem
-              key={item.id}
-              label={item.name}
-              price={price}
-              disabled={!canAfford}
-              onClick={() => {
-                modifyGold(player.id, -price);
-                spendTime(player.id, 1);
-                if (item.effect?.type === 'happiness') {
-                  modifyHappiness(player.id, item.effect.value);
-                }
-                toast.success(`Purchased ${item.name}`);
-              }}
-            />
-          );
-        })}
+        <JonesMenuItem
+          label="Fortune's Wheel Ticket"
+          price={lotteryPrice}
+          disabled={player.gold < lotteryPrice || player.timeRemaining < 1}
+          onClick={() => {
+            buyLotteryTicket(player.id, lotteryPrice);
+            spendTime(player.id, 1);
+            toast.success(`Bought Fortune's Wheel ticket! (${player.lotteryTickets + 1} tickets this week)`);
+          }}
+        />
+        {player.lotteryTickets > 0 && (
+          <JonesInfoRow label="Tickets this week:" value={`${player.lotteryTickets}`} />
+        )}
         <div className="mt-2 text-xs text-[#8b7355] px-2">
           1 hour per purchase
         </div>
