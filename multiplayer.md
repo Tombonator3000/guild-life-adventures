@@ -213,11 +213,25 @@ Host subscribes to Zustand store changes. On any change during `playing`, `event
 | `LOCAL_ONLY_ACTIONS` | Execute locally on guest (UI state) | selectLocation, dismissEvent |
 | `HOST_INTERNAL_ACTIONS` | Blocked entirely on guest | startTurn, processWeekEnd, checkDeath |
 
-### Cross-Player Validation
+### Cross-Player Validation (Deep Scan)
 
-When a guest sends an action, the host checks:
-1. `args[0]` (if it's a string starting with `player-`) must match the sender's playerId
-2. This prevents guests from modifying other players' state
+When a guest sends an action, the host scans **ALL** argument positions for player-id strings:
+1. Every `args[i]` that is a string starting with `player-` must match the sender's playerId
+2. This prevents guests from modifying other players' state via ANY argument position
+3. All current ALLOWED_GUEST_ACTIONS use playerId at args[0], but the deep scan catches regressions
+
+### Argument Bounds Validation
+
+The host validates arguments for security-sensitive raw modifier actions:
+- `modifyGold`: max +500 per call (no legitimate action gives more)
+- `modifyHealth`: max ±100 per call
+- `modifyHappiness`: max ±50 per call
+- `modifyFood`, `modifyClothing`: max ±100 per call
+- `modifyMaxHealth`: max ±25 per call
+- `modifyRelaxation`: max ±20 per call
+- `setJob`: wage max 100g/hr, must be non-negative
+- `workShift`: validates hours (0-60) and wage vs. player's current wage (max 1.5x)
+- All numeric args checked for `isFinite()` to block NaN/Infinity attacks
 
 ### Turn Validation
 
@@ -264,6 +278,50 @@ When a guest disconnects:
 ### Close Handler Race Condition Fix
 
 Old connection's `close` event only triggers cleanup if `this.connections.get(peerId) === conn` (prevents a late close handler from deleting a new reconnected connection).
+
+---
+
+## Host Migration
+
+### Overview
+
+When the host disconnects and can't reconnect, the game automatically elects a new host from the remaining guests. This eliminates the single point of failure.
+
+### Election Protocol
+
+```
+Host disconnects
+  -> Guest detects loss (heartbeat timeout: 15s)
+  -> Auto-reconnect attempt (2s delay)
+  -> Migration timer starts (10s total)
+  -> If still not connected after 10s:
+    -> Each guest checks: "Am I the successor?"
+    -> Successor = guest with lowest slot number (from stored lobby data)
+    -> YES (I'm successor):
+      1. peerManager.promoteToHost() — reuse existing PeerJS instance
+      2. Set up peer→player mapping for remaining guests
+      3. Switch store to networkMode: 'host'
+      4. Wait for other guests to reconnect
+    -> NO (I'm a follower):
+      1. Wait 3s for successor to set up
+      2. peerManager.connectToNewHost(successorPeerId)
+      3. Send { type: 'reconnect', playerName }
+      4. Receive state-sync from new host
+```
+
+### Key Implementation Details
+
+- **Lobby data stored at game start**: Each guest stores all `LobbyPlayer[]` data (including peerIds and slots) for migration
+- **Successor's peerId is known**: All guests have it from the lobby data
+- **PeerJS instance reused**: Successor's peer instance can accept incoming connections immediately
+- **3-second setup delay**: Non-successor guests wait before connecting to give the successor time to promote
+- **Game state preserved**: The successor's local copy (from last state-sync) becomes the authoritative state
+
+### Limitations
+
+- If the successor also disconnects during migration, the game is lost
+- Brief interruption during the 10s + 3s migration window
+- AI turns may be skipped during migration if the host was running AI logic
 
 ---
 
@@ -334,16 +392,19 @@ Guest tracks pending actions via `trackPendingAction(requestId)`:
 
 ## Test Coverage
 
-### Test File: `src/test/multiplayer.test.ts` (32 tests)
+### Test File: `src/test/multiplayer.test.ts` (39 tests)
 
 | Category | Tests | What's Tested |
 |----------|-------|--------------|
 | Room Codes | 6 | Generation, charset validation, PeerJS ID conversion, validation |
+| Room Code Crypto | 2 | crypto.getRandomValues() works, high-entropy distribution |
 | Action Categories | 5 | Whitelist/blacklist disjointness, expected actions in each category |
+| Cross-Player Validation | 2 | All actions use playerId at args[0], endTurn special case |
 | Action Proxy | 4 | Local/host/guest mode behavior, LOCAL_ONLY, HOST_INTERNAL blocking |
 | State Serialization | 7 | Field presence, player data, apply/dismiss/clear/reset |
 | executeAction | 3 | Valid/invalid/non-function actions |
 | Pending Actions | 2 | Track/resolve lifecycle, cleanup |
+| Argument Validation | 3 | Raw modifiers in whitelist, non-existent action handling, HOST_INTERNAL existence |
 | Network Guards | 3 | Guest startNewGame block, save/load block, dismiss tracking |
 
 ### What's NOT Tested (requires browser/WebRTC)
@@ -374,6 +435,8 @@ Guest tracks pending actions via `trackPendingAction(requestId)`:
 | Signaling reconnect timeout | 15000ms | PeerManager.ts | PeerJS server reconnection |
 | State sync debounce | 50ms | useNetworkSync.ts | Broadcast coalescing |
 | Zombie skip grace period | 5000ms | useNetworkSync.ts | Wait before auto-skipping disconnected player |
+| Host migration timeout | 10000ms | useOnlineGame.ts | Time before triggering host migration |
+| Migration connection delay | 3000ms | useOnlineGame.ts | Follower wait before connecting to new host |
 
 ---
 
@@ -384,21 +447,25 @@ Guest tracks pending actions via `trackPendingAction(requestId)`:
 1. **Full state broadcast**: Every state change sends the entire game state (~5-10KB). Efficient for small player counts but doesn't scale to spectators or large games.
 2. **No message ordering**: WebRTC DataChannel is reliable but actions could theoretically arrive out of order in edge cases.
 3. **No action rollback**: If a guest action fails on the host, the guest relies on the next state sync to correct their local view.
-4. **Single point of failure**: If the host crashes, the game is lost. No host migration.
 
 ### Known Bugs
 
-1. **Cross-player validation is incomplete**: Only checks `args[0]` for playerId format. Actions with playerId in other argument positions could bypass the check.
-2. **Room code uses Math.random()**: Not cryptographically secure. Low risk for a game but predictable room codes are theoretically possible.
-3. **Event modal timing**: Race condition between guest dismissing an event and host state sync can cause brief flicker in edge cases.
+1. **Event modal timing**: Race condition between guest dismissing an event and host state sync can cause brief flicker in edge cases.
+
+### Fixed in Audit (2026-02-07)
+
+1. **Cross-player validation**: Now scans ALL argument positions (was only args[0])
+2. **Room codes**: Now use `crypto.getRandomValues()` (was `Math.random()`)
+3. **Dead code**: Removed dead loop in `skipZombieTurn` (wasted CPU)
+4. **Argument validation**: Added server-side bounds checking for raw stat modifiers
+5. **Host migration**: Implemented automatic successor election on host disconnect
 
 ### Missing Features
 
 1. **Spectator mode**: No way to watch without playing.
-2. **Host migration**: If host disconnects, game ends.
-3. **Chat/emotes**: No in-game communication.
-4. **Matchmaking**: No automatic room finding.
-5. **Game resume**: Online games can't be saved/loaded.
+2. **Chat/emotes**: No in-game communication.
+3. **Matchmaking**: No automatic room finding.
+4. **Game resume**: Online games can't be saved/loaded.
 
 ---
 
@@ -410,9 +477,12 @@ Guest tracks pending actions via `trackPendingAction(requestId)`:
 - [ ] Implement action sequence numbers for ordering guarantees
 
 ### Priority 2: Reliability
-- [ ] Host migration (elect new host on disconnect)
+- [x] Host migration (elect new host on disconnect) — **DONE**
+- [x] Cross-player validation deep scan — **DONE**
+- [x] Argument bounds validation for raw modifiers — **DONE**
 - [ ] Save/load for online games (host saves, guests can rejoin)
 - [ ] Action rollback on failure (optimistic updates with correction)
+- [ ] Chain host migration (if successor also disconnects, elect next successor)
 
 ### Priority 3: Features
 - [ ] Spectator mode
@@ -451,5 +521,5 @@ Guest tracks pending actions via `trackPendingAction(requestId)`:
 
 ---
 
-*Last updated: 2026-02-07*
-*Total multiplayer code: ~1,930 lines across 7 files + 32 tests*
+*Last updated: 2026-02-07 (audit + host migration + security hardening)*
+*Total multiplayer code: ~2,150 lines across 7 files + 39 tests*

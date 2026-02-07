@@ -11,6 +11,89 @@ import { ALLOWED_GUEST_ACTIONS } from './types';
 import type { NetworkMessage, GuestMessage, HostMessage } from './types';
 import type { LocationId } from '@/types/game.types';
 
+/**
+ * Server-side argument validation for dangerous guest actions.
+ * Prevents a malicious guest from sending crafted messages to exploit raw
+ * stat modifiers (modifyGold, modifyHealth, etc.) that are in the whitelist
+ * because UI components call them directly.
+ *
+ * Returns an error string if invalid, or null if OK.
+ */
+function validateActionArgs(name: string, args: unknown[], store: ReturnType<typeof useGameStore.getState>): string | null {
+  const playerId = typeof args[0] === 'string' ? args[0] : null;
+  const player = playerId ? store.players.find(p => p.id === playerId) : null;
+
+  switch (name) {
+    // Raw stat modifiers: cap magnitude to prevent abuse
+    case 'modifyGold': {
+      const amount = args[1];
+      if (typeof amount !== 'number' || !isFinite(amount)) return 'Invalid amount';
+      // Block adding more than 500 gold at once (no legitimate action gives that much)
+      // Negative amounts (spending) are fine — the store validates gold >= 0
+      if (amount > 500) return 'Gold amount too large';
+      return null;
+    }
+    case 'modifyHealth': {
+      const amount = args[1];
+      if (typeof amount !== 'number' || !isFinite(amount)) return 'Invalid amount';
+      if (Math.abs(amount as number) > 100) return 'Health amount too large';
+      return null;
+    }
+    case 'modifyHappiness': {
+      const amount = args[1];
+      if (typeof amount !== 'number' || !isFinite(amount)) return 'Invalid amount';
+      if (Math.abs(amount as number) > 50) return 'Happiness amount too large';
+      return null;
+    }
+    case 'modifyFood': {
+      const amount = args[1];
+      if (typeof amount !== 'number' || !isFinite(amount)) return 'Invalid amount';
+      if (Math.abs(amount as number) > 100) return 'Food amount too large';
+      return null;
+    }
+    case 'modifyClothing': {
+      const amount = args[1];
+      if (typeof amount !== 'number' || !isFinite(amount)) return 'Invalid amount';
+      if (Math.abs(amount as number) > 100) return 'Clothing amount too large';
+      return null;
+    }
+    case 'modifyMaxHealth': {
+      const amount = args[1];
+      if (typeof amount !== 'number' || !isFinite(amount)) return 'Invalid amount';
+      if (Math.abs(amount as number) > 25) return 'MaxHealth amount too large';
+      return null;
+    }
+    case 'modifyRelaxation': {
+      const amount = args[1];
+      if (typeof amount !== 'number' || !isFinite(amount)) return 'Invalid amount';
+      if (Math.abs(amount as number) > 20) return 'Relaxation amount too large';
+      return null;
+    }
+    // Job assignment: validate wage is reasonable (base jobs pay max ~25g/hr)
+    case 'setJob': {
+      const wage = args[2];
+      if (typeof wage === 'number' && (wage < 0 || wage > 100 || !isFinite(wage))) {
+        return 'Invalid wage';
+      }
+      return null;
+    }
+    // Work shift: validate hours and wage
+    case 'workShift': {
+      const hours = args[1];
+      const wage = args[2];
+      if (typeof hours !== 'number' || hours < 0 || hours > 60) return 'Invalid hours';
+      if (typeof wage !== 'number' || wage < 0 || wage > 100 || !isFinite(wage)) return 'Invalid wage';
+      // Cross-check: player should actually have this job at this wage
+      if (player && player.currentWage > 0 && wage > player.currentWage * 1.5) {
+        return 'Wage exceeds player current wage';
+      }
+      return null;
+    }
+    default:
+      return null;
+  }
+}
+
 /** Turn timeout: auto-end turn after this many seconds of inactivity (0 = disabled) */
 const TURN_TIMEOUT_SECONDS = 120;
 
@@ -145,24 +228,19 @@ export function useNetworkSync() {
     // Host's own turn is never a zombie
     if (store.localPlayerId === currentPlayer.id) return;
 
-    // Find the peerId for the current player
-    const allPeers = peerManager.connectedPeerIds;
     const currentPlayerId = currentPlayer.id;
 
-    // Check if this player's peer is disconnected or reconnecting
-    let isZombie = false;
-    for (const [, playerId] of Array.from(peerManager.peerLatencies.keys()).map(peerId => [peerId, peerManager.getPlayerIdForPeer(peerId)] as [string, string | null])) {
-      // We can't iterate peerPlayerMap directly — check via connectedPeerIds
-    }
-    // Simpler approach: check if any connected peer maps to this player
+    // Check if any connected peer maps to this player
     let peerFound = false;
-    for (const peerId of allPeers) {
+    for (const peerId of peerManager.connectedPeerIds) {
       if (peerManager.getPlayerIdForPeer(peerId) === currentPlayerId) {
         peerFound = true;
         break;
       }
     }
-    // Also check disconnectedPeersRef
+
+    // Check if this player's peer is in the disconnected set
+    let isZombie = false;
     for (const peerId of disconnectedPeersRef.current) {
       if (peerManager.getPlayerIdForPeer(peerId) === currentPlayerId) {
         isZombie = true;
@@ -277,20 +355,38 @@ export function useNetworkSync() {
             return;
           }
 
-          // Validate that the action's target playerId matches the sender
+          // Validate that ALL player-id arguments match the sender
           // (prevents a guest from modifying another player's state)
-          if (Array.isArray(msg.args) && msg.args.length > 0 && typeof msg.args[0] === 'string') {
-            const targetPlayerId = msg.args[0];
-            if (targetPlayerId !== senderPlayerId && targetPlayerId.startsWith('player-')) {
-              console.warn(`[NetworkSync] Blocked cross-player action: ${msg.name} from ${senderPlayerId} targeting ${targetPlayerId}`);
-              peerManager.sendTo(fromPeerId, {
-                type: 'action-result',
-                requestId: msg.requestId,
-                success: false,
-                error: 'Cannot target other players',
-              });
-              return;
+          // Scans every argument position for future-proofing — currently all
+          // ALLOWED_GUEST_ACTIONS use playerId at args[0], but this check
+          // catches any position to prevent regressions.
+          if (Array.isArray(msg.args)) {
+            for (let i = 0; i < msg.args.length; i++) {
+              const arg = msg.args[i];
+              if (typeof arg === 'string' && arg.startsWith('player-') && arg !== senderPlayerId) {
+                console.warn(`[NetworkSync] Blocked cross-player action: ${msg.name} from ${senderPlayerId} targeting ${arg} at args[${i}]`);
+                peerManager.sendTo(fromPeerId, {
+                  type: 'action-result',
+                  requestId: msg.requestId,
+                  success: false,
+                  error: 'Cannot target other players',
+                });
+                return;
+              }
             }
+          }
+
+          // Validate action arguments (prevents abuse of raw stat modifiers)
+          const argError = validateActionArgs(msg.name, msg.args, store);
+          if (argError) {
+            console.warn(`[NetworkSync] Blocked invalid action args: ${msg.name} — ${argError}`);
+            peerManager.sendTo(fromPeerId, {
+              type: 'action-result',
+              requestId: msg.requestId,
+              success: false,
+              error: argError,
+            });
+            return;
           }
 
           // Reset turn timeout on any valid action (player is not AFK)
