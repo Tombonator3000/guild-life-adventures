@@ -5960,6 +5960,136 @@ Guild rank gating properly prevents rushing high-reward quests.
 
 ---
 
+## 2026-02-07 - Deep Multiplayer Network Audit & Bug Fixes
+
+### Overview
+Conducted a comprehensive audit of the entire online multiplayer system using 5 parallel specialized agents. Found ~70+ issues across all severity levels. Fixed all CRITICAL and HIGH issues, plus most MEDIUM/LOW ones. All 112 tests pass, TypeScript compiles cleanly, and production build succeeds.
+
+### Audit Methodology
+Launched 5 parallel audit agents covering:
+1. **PeerManager.ts + roomCodes.ts** — WebRTC connection management
+2. **useNetworkSync.ts + NetworkActionProxy.ts + networkState.ts** — State sync & action proxying
+3. **useOnlineGame.ts + OnlineLobby.tsx** — Lobby management & UI
+4. **gameStore.ts + GameBoard.tsx** — Store network integration
+5. **Test coverage** — Multiplayer test gaps
+
+### CRITICAL Fixes (6)
+
+1. **peerManager destroyed on lobby unmount** (`useOnlineGame.ts`)
+   - The cleanup effect called `peerManager.destroy()` when OnlineLobby unmounted — which happens when transitioning from lobby to gameplay. This killed ALL networking at game start.
+   - Fix: Check `networkMode` before destroying; only destroy if not in active game.
+
+2. **Guests joined with isReady: false but no ready button exists** (`useOnlineGame.ts`)
+   - New guests joined with `isReady: false` but the UI had no ready toggle button, making game start impossible.
+   - Fix: Changed default to `isReady: true` for new guests.
+
+3. **Player slots not reassigned after lobby leave** (`useOnlineGame.ts`)
+   - When a player left the lobby, remaining players kept their original slot indices, causing gaps in player IDs at game start.
+   - Fix: Reassign slots sequentially after filtering out disconnected player.
+
+4. **No playerId validation — guest can target any player** (`useNetworkSync.ts`)
+   - Guests could send actions targeting other players' state (e.g., `modifyGold('player-0', 9999)`). No server-side validation existed.
+   - Fix: Added check that `msg.args[0]` matches `senderPlayerId` before executing.
+
+5. **Close handler race condition** (`PeerManager.ts`)
+   - When a guest reconnected, the old connection's `close` handler fired and deleted the new connection from the map.
+   - Fix: Guard close handler with `this.connections.get(peerId) !== conn` check.
+
+6. **Guest never sends reconnect message** (`PeerManager.ts`)
+   - `attemptReconnect()` reconnected the WebRTC data channel but never sent a `reconnect` message, so the host didn't know who reconnected.
+   - Fix: Send reconnect message with stored player name after connecting. Added 15s timeout for signaling server reconnection.
+
+### HIGH Fixes (6)
+
+7. **startNewGame not guarded for guests** (`gameStore.ts`)
+   - Guest could trigger `startNewGame` locally, corrupting state.
+   - Fix: Added `if (get().networkMode === 'guest') return;` guard.
+
+8. **movement-start no sender validation** (`useNetworkSync.ts`)
+   - Any guest could broadcast fake movement animations for other players.
+   - Fix: Verify sender peerId matches the playerId in the message.
+
+9. **Event modal flicker on guest** (`networkState.ts`)
+   - When guest dismissed an event modal, the next state sync from host re-applied the event, causing flicker.
+   - Fix: Implemented `dismissedEvents` Set tracking. `applyNetworkState` skips syncing events the guest has locally dismissed.
+
+10. **Turn timeout fires during non-playing phases** (`useNetworkSync.ts`)
+    - Turn timeout could fire during event modals or victory screen.
+    - Fix: Added `store.phase !== 'playing'` guard.
+
+11. **Host graceful shutdown missing** (`useOnlineGame.ts`)
+    - Host could close room without notifying guests, leaving them in limbo.
+    - Fix: Broadcast 'kicked' message before destroying. Guest sends 'leave' message on disconnect.
+
+12. **5th player rejected silently** (`useOnlineGame.ts`)
+    - When a 5th player tried to join a full room, they were silently ignored.
+    - Fix: Send 'kicked' message with "Room is full" reason.
+
+### MEDIUM Fixes (7)
+
+13. **Lobby colors used index instead of assigned color** (`OnlineLobby.tsx`)
+    - Fix: Use `p.color` from lobby player data instead of `PLAYER_COLORS[i]?.value`.
+
+14. **Dead useEffect with empty body** (`OnlineLobby.tsx`)
+    - Removed empty useEffect that did nothing.
+
+15. **Unused import** (`OnlineLobby.tsx`)
+    - Removed `AI_DIFFICULTY_DESCRIPTIONS` import.
+
+16. **Latency polling unnecessary re-renders** (`useNetworkSync.ts`)
+    - Latency setState called every 3s even when value unchanged.
+    - Fix: Compare before setting.
+
+17. **Double state broadcast after guest action** (`useNetworkSync.ts`)
+    - Host sent immediate broadcast AND debounced broadcast after executing guest action.
+    - Fix: Removed immediate broadcast; debounced subscription handles it.
+
+18. **loadFromSlot/saveToSlot corruption risk** (`gameStore.ts`)
+    - Loading saves during online game could corrupt network state.
+    - Fix: Guard both with `networkMode !== 'local'` check.
+
+19. **Guest heartbeat timeout** (`PeerManager.ts`)
+    - Guest had no way to detect if host stopped responding (only host monitored keepalive).
+    - Fix: Added guest-side heartbeat timeout that triggers reconnection.
+
+### LOW Fixes (3)
+
+20. **Retry path missing disconnect handler** (`PeerManager.ts`)
+    - When host retried peer creation, the new peer's connection handler didn't set up disconnect handlers.
+    - Fix: Extracted `setupHostPeerHandlers()` method used in both paths.
+
+21. **Guest stores reconnect player name** (`useOnlineGame.ts`)
+    - Added `peerManager.setReconnectPlayerName(playerName)` so reconnection can identify the player.
+
+22. **Event dismiss tracking for guests** (`gameStore.ts`)
+    - Dismiss actions now call `markEventDismissed()` for guests so networkState can skip re-syncing dismissed events.
+
+### Known Issues NOT Fixed (architectural/external)
+
+- **TURN servers deprecated**: `openrelay.metered.ca` TURN servers are dead/deprecated. Requires external infrastructure to fix.
+- **No multiplayer test coverage**: Zero test files cover networking. Would need mock PeerJS/WebRTC infrastructure.
+- **No action result timeout on guest**: Guest waits indefinitely for host response.
+- **No message schema validation**: Runtime type checking of network messages not implemented.
+- **No rate limiting on guest actions**: Could spam host with rapid actions.
+- **negotiateRaise arbitrary wage**: No bounds validation (partially covered by playerId check).
+- **Room code uses Math.random()**: Not cryptographically secure (low risk for game).
+- **Zombie disconnected players**: Cause 2-min turn timeout stalls per turn.
+
+### Files Modified
+- `src/network/PeerManager.ts` — Close handler race fix, reconnect message, guest heartbeat, handler extraction
+- `src/network/useOnlineGame.ts` — Unmount fix, ready state, slot reassignment, graceful shutdown, 5th player rejection
+- `src/network/useNetworkSync.ts` — PlayerId validation, movement validation, turn timeout guard, double broadcast removal, latency optimization
+- `src/network/networkState.ts` — Event dismissal tracking system, modal flicker prevention
+- `src/store/gameStore.ts` — Guest guards on startNewGame/save/load, event dismiss tracking
+- `src/components/screens/OnlineLobby.tsx` — Dead code removal, color fix
+
+### Verification
+- ✅ TypeScript: Compiles cleanly (`npx tsc --noEmit`)
+- ✅ Tests: 112/112 passing (`npx vitest run`)
+- ✅ Build: Production build succeeds (`bun run build`)
+
+---
+
 ## Log Template
 
 ```markdown

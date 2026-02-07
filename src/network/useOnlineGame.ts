@@ -78,7 +78,8 @@ export function useOnlineGame() {
       setIsHost(false);
       isOnlineRef.current = true;
 
-      // Send join message to host
+      // Store name for reconnection and send join message to host
+      peerManager.setReconnectPlayerName(playerName);
       peerManager.sendToHost({ type: 'join', playerName });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to join room';
@@ -213,7 +214,11 @@ export function useOnlineGame() {
     switch (message.type) {
       case 'join': {
         setLobbyPlayers(prev => {
-          if (prev.length >= 4) return prev; // Max 4 human players
+          if (prev.length >= 4) {
+            // Room is full — notify the rejected guest
+            peerManager.sendTo(fromPeerId, { type: 'kicked', reason: 'Room is full (max 4 players)' });
+            return prev;
+          }
           // Prevent duplicate names
           const existingName = prev.find(p => p.name === message.playerName);
           const displayName = existingName
@@ -224,7 +229,7 @@ export function useOnlineGame() {
             peerId: fromPeerId,
             name: displayName,
             color: PLAYER_COLORS[slot]?.value || '#888888',
-            isReady: false,
+            isReady: true,
             slot,
           };
           const updated = [...prev, newPlayer];
@@ -362,7 +367,13 @@ export function useOnlineGame() {
           });
           setDisconnectedPlayers(p => p.filter(n => n !== disconnected.name));
         }
-        const updated = prev.filter(p => p.peerId !== peerId);
+        const filtered = prev.filter(p => p.peerId !== peerId);
+        // Reassign slots sequentially so player IDs stay correct at game start
+        const updated = filtered.map((p, i) => ({
+          ...p,
+          slot: i,
+          color: PLAYER_COLORS[i]?.value || '#888888',
+        }));
         const lobby: LobbyState = {
           roomCode,
           hostName: localPlayerName,
@@ -415,8 +426,15 @@ export function useOnlineGame() {
   // --- Disconnect ---
 
   const disconnect = useCallback(() => {
+    // Notify peers before destroying
+    if (peerManager.isHost) {
+      peerManager.broadcast({ type: 'kicked', reason: 'Host closed the room' });
+    } else {
+      peerManager.sendToHost({ type: 'leave' });
+    }
     isOnlineRef.current = false;
-    peerManager.destroy();
+    // Brief delay to allow messages to flush before destroying
+    setTimeout(() => peerManager.destroy(), 50);
     setIsHost(false);
     setRoomCode('');
     setConnectionStatus('disconnected');
@@ -430,10 +448,13 @@ export function useOnlineGame() {
     });
   }, []);
 
-  // Cleanup on unmount
+  // Cleanup on unmount — only destroy if we're actually leaving online mode
+  // (NOT when transitioning from lobby to gameplay, which also unmounts this component)
   useEffect(() => {
     return () => {
-      if (isOnlineRef.current) {
+      const state = useGameStore.getState();
+      const isActiveGame = state.networkMode === 'host' || state.networkMode === 'guest';
+      if (isOnlineRef.current && !isActiveGame) {
         peerManager.destroy();
       }
     };

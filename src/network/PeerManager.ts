@@ -65,6 +65,10 @@ export class PeerManager {
   private reconnectingPeers: Map<string, ReturnType<typeof setTimeout>> = new Map();
   /** Stored player names for reconnecting peers */
   private peerNames: Map<string, string> = new Map();
+  /** Guest's own player name for reconnection identification */
+  private _reconnectPlayerName: string | null = null;
+  /** Guest-side heartbeat timeout timer */
+  private guestHeartbeatTimeout: ReturnType<typeof setTimeout> | null = null;
 
   get isHost(): boolean { return this._isHost; }
   get roomCode(): string { return this._roomCode; }
@@ -100,6 +104,11 @@ export class PeerManager {
   /** Get a peer's stored player name */
   getPeerName(peerId: string): string | null {
     return this.peerNames.get(peerId) ?? null;
+  }
+
+  /** Store this guest's own player name (for reconnection identification) */
+  setReconnectPlayerName(name: string) {
+    this._reconnectPlayerName = name;
   }
 
   // --- Event Handlers ---
@@ -173,18 +182,7 @@ export class PeerManager {
           this._roomCode = generateRoomCode();
           const newPeerId = roomCodeToPeerId(this._roomCode);
           this.peer = new Peer(newPeerId, this.getPeerConfig());
-          this.peer.on('open', () => {
-            this.setStatus('connected');
-            this.startHeartbeatCheck();
-            resolve(this._roomCode);
-          });
-          this.peer.on('connection', (conn) => {
-            this.handleIncomingConnection(conn);
-          });
-          this.peer.on('error', (retryErr) => {
-            this.setStatus('error');
-            reject(retryErr);
-          });
+          this.setupHostPeerHandlers(resolve, reject);
         } else {
           this.setStatus('error');
           reject(err);
@@ -233,7 +231,7 @@ export class PeerManager {
     hostPeerId: string,
     resolve?: () => void,
     reject?: (err: Error) => void,
-  ) {
+  ): void {
     if (!this.peer) {
       reject?.(new Error('No peer instance'));
       return;
@@ -290,20 +288,64 @@ export class PeerManager {
     this.setStatus('reconnecting');
     console.log('[PeerManager] Attempting reconnection to host...');
 
+    const doReconnect = () => {
+      this.connectToHost(hostPeerId, () => {
+        // After reconnecting, send a reconnect message so host re-syncs state
+        const storedName = this._reconnectPlayerName ?? 'Unknown';
+        this.sendToHost({ type: 'reconnect', playerName: storedName });
+      });
+    };
+
     // If signaling server connection was lost, reconnect that first
     if (this.peer.disconnected) {
       this.peer.reconnect();
-      // Wait for signaling server, then connect to host
+      // Timeout for signaling server reconnection
+      let signalingResolved = false;
       const onOpen = () => {
+        if (signalingResolved) return;
+        signalingResolved = true;
         this.peer?.off('open', onOpen);
-        this.connectToHost(hostPeerId);
+        doReconnect();
       };
       this.peer.on('open', onOpen);
+      // Timeout: if signaling server doesn't reconnect in 15 seconds, give up
+      setTimeout(() => {
+        if (!signalingResolved) {
+          signalingResolved = true;
+          this.peer?.off('open', onOpen);
+          this.setStatus('error');
+          console.error('[PeerManager] Signaling server reconnection timed out');
+        }
+      }, 15000);
     } else {
-      this.connectToHost(hostPeerId);
+      doReconnect();
     }
 
     return true;
+  }
+
+  /** Shared event handler setup for host peer (used by createRoom and retry path) */
+  private setupHostPeerHandlers(
+    resolve: (code: string) => void,
+    reject: (err: Error) => void,
+  ) {
+    if (!this.peer) return;
+    this.peer.on('open', () => {
+      this.setStatus('connected');
+      this.startHeartbeatCheck();
+      resolve(this._roomCode);
+    });
+    this.peer.on('connection', (conn) => {
+      this.handleIncomingConnection(conn);
+    });
+    this.peer.on('error', (retryErr) => {
+      this.setStatus('error');
+      reject(retryErr);
+    });
+    this.peer.on('disconnected', () => {
+      this.setStatus('reconnecting');
+      this.peer?.reconnect();
+    });
   }
 
   // --- Connection Management ---
@@ -348,6 +390,10 @@ export class PeerManager {
     });
 
     conn.on('close', () => {
+      // Only clean up if this is still the active connection for this peer
+      // (prevents race condition where old close handler deletes a new reconnected connection)
+      if (this.connections.get(peerId) !== conn) return;
+
       this.connections.delete(peerId);
       this.clearHeartbeat(peerId);
       this._peerLatency.delete(peerId);
@@ -427,6 +473,10 @@ export class PeerManager {
       }
     }, HEARTBEAT_INTERVAL);
     this.heartbeatIntervals.set(peerId, id);
+    // Start guest-side heartbeat timeout on first connection
+    if (!this._isHost) {
+      this.resetGuestHeartbeatTimeout();
+    }
   }
 
   /** Host: periodically check if all peers are still alive */
@@ -479,17 +529,32 @@ export class PeerManager {
     }
 
     if (!this._isHost && 'type' in message && message.type === 'pong') {
-      // Guest received pong from host -> calculate latency
+      // Guest received pong from host -> calculate latency and reset heartbeat timeout
       const sent = (message as { timestamp: number }).timestamp;
       const latency = Date.now() - sent;
       this._peerLatency.set(fromPeerId, latency);
       // Update host entry for general latency queries
       const hostPeerId = roomCodeToPeerId(this._roomCode);
       this._peerLatency.set(hostPeerId, latency);
+      // Reset guest-side heartbeat timeout (host is responsive)
+      this.resetGuestHeartbeatTimeout();
       return true;
     }
 
     return false;
+  }
+
+  /** Guest-side: reset the heartbeat timeout (called when pong received) */
+  private resetGuestHeartbeatTimeout() {
+    if (this._isHost) return;
+    if (this.guestHeartbeatTimeout) clearTimeout(this.guestHeartbeatTimeout);
+    this.guestHeartbeatTimeout = setTimeout(() => {
+      if (this._isHost || this._status !== 'connected') return;
+      console.warn('[PeerManager] Host heartbeat timeout — no pong received');
+      this.setStatus('reconnecting');
+      // Attempt reconnection
+      this.attemptReconnect();
+    }, HEARTBEAT_TIMEOUT);
   }
 
   /** Get guest's latency to host (guest-side only, in ms) */
@@ -508,6 +573,10 @@ export class PeerManager {
     this.stopHeartbeatCheck();
     this.lastPongReceived.clear();
     this._peerLatency.clear();
+    if (this.guestHeartbeatTimeout) {
+      clearTimeout(this.guestHeartbeatTimeout);
+      this.guestHeartbeatTimeout = null;
+    }
 
     // Clear reconnection timers
     this.reconnectingPeers.forEach((timer) => clearTimeout(timer));
