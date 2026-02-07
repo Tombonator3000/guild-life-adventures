@@ -315,7 +315,8 @@ export const SHADOW_MARKET_ITEMS: Item[] = [
     name: 'Market Intel',
     category: 'luxury',
     basePrice: 50,
-    description: 'Information about upcoming price changes.',
+    effect: { type: 'happiness', value: 5 },
+    description: 'Insider trade secrets. Knowledge is power. +5 Happiness.',
   },
   // Weekend event tickets
   {

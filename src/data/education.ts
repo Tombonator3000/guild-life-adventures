@@ -30,7 +30,7 @@ export const DEGREES: Record<DegreeId, Degree> = {
     costPerSession: 5,
     hoursPerSession: 6,
     educationPoints: 9,
-    unlocksJobs: ['shop-clerk', 'market-vendor', 'apprentice-smith'],
+    unlocksJobs: ['shop-clerk', 'market-vendor', 'apprentice-smith', 'assistant-clerk', 'tavern-chef'],
   },
   'junior-academy': {
     id: 'junior-academy',
@@ -41,7 +41,7 @@ export const DEGREES: Record<DegreeId, Degree> = {
     costPerSession: 5,
     hoursPerSession: 6,
     educationPoints: 9,
-    unlocksJobs: ['scribe', 'assistant-clerk'],
+    unlocksJobs: ['scribe', 'library-assistant', 'bank-teller'],
   },
 
   // === TRADE GUILD PATH ===
@@ -65,7 +65,7 @@ export const DEGREES: Record<DegreeId, Degree> = {
     costPerSession: 8,
     hoursPerSession: 6,
     educationPoints: 9,
-    unlocksJobs: ['city-guard', 'caravan-guard'],
+    unlocksJobs: ['city-guard', 'caravan-guard', 'journeyman-smith'],
   },
   'master-combat': {
     id: 'master-combat',
@@ -89,7 +89,7 @@ export const DEGREES: Record<DegreeId, Degree> = {
     costPerSession: 10,
     hoursPerSession: 6,
     educationPoints: 9,
-    unlocksJobs: ['teacher', 'library-assistant'],
+    unlocksJobs: ['teacher'],
   },
   'advanced-scholar': {
     id: 'advanced-scholar',
@@ -133,7 +133,7 @@ export const DEGREES: Record<DegreeId, Degree> = {
     costPerSession: 10,
     hoursPerSession: 6,
     educationPoints: 9,
-    unlocksJobs: ['merchant-assistant', 'guild-accountant', 'shop-manager'],
+    unlocksJobs: ['guild-accountant', 'shop-manager', 'tavern-manager', 'merchant-assistant'],
   },
 
   // === COMBINATION DEGREES ===

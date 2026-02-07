@@ -119,6 +119,20 @@ export const MARKET_JOBS: Job[] = [
     description: 'Assist customers and stock shelves.',
     careerLevel: 2,
   },
+  // Requires Commerce
+  {
+    id: 'merchant-assistant',
+    name: 'Merchant Assistant',
+    location: 'General Store',
+    baseWage: 12,
+    hoursPerShift: 6,
+    requiredDegrees: ['commerce'],
+    requiredClothing: 'dress',
+    requiredExperience: 30,
+    requiredDependability: 40,
+    description: 'Assist senior merchants with trade negotiations and inventory.',
+    careerLevel: 4,
+  },
   {
     id: 'shop-manager',
     name: 'Shop Manager',
@@ -316,6 +330,20 @@ export const ACADEMY_JOBS: Job[] = [
     requiredDependability: 58,
     description: 'Deliver advanced lectures on specialized topics.',
     careerLevel: 7,
+  },
+  // Requires Advanced Scholar
+  {
+    id: 'researcher',
+    name: 'Researcher',
+    location: 'Academy',
+    baseWage: 16,
+    hoursPerShift: 6,
+    requiredDegrees: ['advanced-scholar'],
+    requiredClothing: 'dress',
+    requiredExperience: 45,
+    requiredDependability: 50,
+    description: 'Conduct scholarly research and publish findings.',
+    careerLevel: 6,
   },
   // Like Jones Professor - requires Research degree
   {

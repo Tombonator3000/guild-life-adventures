@@ -1,5 +1,71 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-07 - Academy Validation, Shadow Market Fix, AI Fix, Salary Stabilization
+
+**Task**: Four-part audit — validate academy courses/job mappings, fix non-functional Shadow Market item, fix multi-AI players standing still, and stabilize Guild Hall salary display.
+
+### Task 1: Academy Course & Job Validation
+
+Performed complete audit of all 11 degrees and 46+ jobs. Found and fixed 6 issues:
+
+| Issue | Severity | Fix |
+|-------|----------|-----|
+| Missing `researcher` job definition | HIGH | Added to Academy jobs (16g/hr, requires advanced-scholar, career level 6) |
+| Missing `merchant-assistant` job definition | HIGH | Added to General Store jobs (12g/hr, requires commerce, career level 4) |
+| `assistant-clerk` listed under wrong degree | MEDIUM | Moved from junior-academy to trade-guild unlocksJobs (matches actual job requirement) |
+| `bank-teller`, `tavern-chef`, `tavern-manager`, `journeyman-smith` missing from unlocksJobs | MEDIUM | Added to their respective degree unlocksJobs |
+| `library-assistant` duplicated in scholar + junior-academy | LOW | Removed from scholar (only requires junior-academy) |
+
+**Education → Job Complete Mapping:**
+
+| Degree | Path | Cost | Jobs Unlocked |
+|--------|------|------|---------------|
+| Trade Guild Certificate | Starting | 50g | Shop Clerk (6g), Market Vendor (10g), Apprentice Smith (6g), Assistant Clerk (7g), Head Chef (10g) |
+| Junior Academy Diploma | Starting | 50g | Scribe (8g), Library Assistant (7g), Bank Teller (9g) |
+| Arcane Studies | Trade Guild → | 80g | Enchantment Assistant (11g), Scroll Copier (7g) |
+| Combat Training | Trade Guild → | 80g | City Guard (8g), Caravan Guard (12g), Journeyman Smith (10g) |
+| Master Combat | Combat Training → | 120g | Arena Fighter (16g), Weapons Instructor (19g), Master Smith (18g), Forge Manager (23g*) |
+| Scholar | Junior Academy → | 100g | Teacher (14g) |
+| Advanced Scholar | Scholar → | 150g | Senior Teacher (17g), Researcher (16g) |
+| Sage Studies | Advanced Scholar → | 200g | Academy Lecturer (18g) |
+| Loremaster | Sage Studies → | 250g | Sage (20g), Court Advisor (21g) |
+| Commerce | Junior Academy → | 100g | Guild Accountant (14g), Shop Manager (16g), Tavern Manager (14g), Merchant Assistant (12g) |
+| Alchemy | Arcane + Jr. Academy | 150g | Alchemist (15g), Potion Brewer (13g) |
+
+*Multi-degree jobs: Forge Manager (master-combat+commerce), Guild Administrator (commerce+master-combat, 22g), Guild Treasurer (scholar+commerce, 22g), Guild Master's Assistant (commerce+master-combat+loremaster, 25g)
+
+### Task 2: Shadow Market — Market Intel Fix
+
+**Bug**: Market Intel (50g) had no game effect — no code handled it at all. Pure placeholder.
+
+**Fix**: Added `effect: { type: 'happiness', value: 5 }` to the item definition. The ShadowMarketPanel already handles happiness effects generically, so the item now works automatically. At 10g per happiness point, it's in line with other Shadow Market item pricing.
+
+### Task 3: Multi-AI Players Standing Still (BUG FIX)
+
+**Bug**: When multiple AI players (Seraphina, Thornwick, Morgath) played in sequence, only the first AI would take actions. All subsequent AI players stood still until their turn timed out.
+
+**Root cause**: In `useAITurnHandler.ts`, the `aiIsThinking` state was only reset when transitioning from an AI player to a human player (`!currentPlayer.isAI`). When transitioning from one AI to another AI, `aiIsThinking` remained `true`, blocking the next AI from starting its turn.
+
+**Fix**: Added `lastAIPlayerIdRef` to track which AI player last acted. When `currentPlayer.id` changes to a different AI player, the state is now properly reset:
+- `aiIsThinking` → false (allows new AI to trigger)
+- `aiTurnStartedRef` → false (allows new AI turn to start)
+- Both the main `useEffect` and the `currentPlayer?.id` listener handle the reset
+
+### Task 4: Guild Hall Salary Fluctuation Fix
+
+**Bug**: Wages shown in Guild Hall changed randomly when clicking the same employer multiple times in the same turn. Players expected stable prices within a visit.
+
+**Root cause**: `calculateOfferedWage()` in `jobs/utils.ts` uses `Math.random()` on every call. The GuildHallPanel recalculated wages on each employer click via `handleSelectEmployer()`, producing new random values each time.
+
+**Fix**: Replaced per-click wage calculation with `useMemo` that pre-calculates ALL wages for ALL jobs when the component mounts. Wages are now stable for the entire Guild Hall visit and only regenerate when `priceModifier` changes (weekly economy update). This matches the Jones in the Fast Lane behavior where wage offers are consistent within a turn.
+
+### Build & Test Results
+- TypeScript: Clean (0 errors)
+- Build: Succeeds (965KB bundle)
+- Tests: 149/151 pass (2 pre-existing failures in freshFood.test.ts)
+
+---
+
 ## 2026-02-07 - Multiplayer Deep Audit: Rate Limiting, Zombie Fix, TURN, Tests & Docs
 
 **Task**: Deep audit of the online multiplayer system. Fix known issues (TURN servers, rate limiting, zombie players, test coverage), create comprehensive multiplayer documentation, and add first multiplayer test suite.
