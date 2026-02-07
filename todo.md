@@ -2,6 +2,15 @@
 
 ## Completed (2026-02-07)
 
+- [x] Store Layout Redesign — General Store, Shadow Market, Armory, Rusty Tankard
+  - General Store: Jones-style Black's Market — removed candles/blanket/music box, added lottery tickets
+  - Shadow Market & Armory: Dark brown text on parchment bg, larger text (text-base)
+  - All 4 locations: Larger NPC portraits (160×192px), wider portrait columns
+  - Rusty Tankard: Items fill center panel with justify-center layout
+  - New JonesMenuItem/JonesInfoRow props: darkText, largeText
+  - New NpcPortrait size prop: normal/large
+  - New LocationShell largePortrait prop
+
 - [x] Career Goal Fix — Career now uses dependability (Jones-style) instead of guild rank
   - Career = dependability stat, 0 if unemployed (matches Jones in the Fast Lane)
   - Default goal changed from rank 4 to 75 dependability

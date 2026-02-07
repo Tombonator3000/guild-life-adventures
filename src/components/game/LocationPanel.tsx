@@ -365,6 +365,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               workShift={workShift}
               onBuyNewspaper={handleBuyNewspaper}
               buyFreshFood={buyFreshFood}
+              buyLotteryTicket={buyLotteryTicket}
             />
           ),
         }];
@@ -700,7 +701,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
         {/* Travel or Actions */}
         <div className="flex-1 overflow-hidden">
           {isHere && npc && tabs ? (
-            <LocationShell key={locationId} npc={npc} tabs={tabs} locationId={locationId} />
+            <LocationShell key={locationId} npc={npc} tabs={tabs} locationId={locationId} largePortrait={locationId === 'shadow-market' || locationId === 'armory' || locationId === 'rusty-tankard' || locationId === 'general-store'} />
           ) : isHere && tabs ? (
             <div className="overflow-y-auto h-full">
               {tabs[0]?.content}

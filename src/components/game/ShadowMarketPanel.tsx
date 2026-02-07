@@ -91,8 +91,12 @@ export function ShadowMarketPanel({
   const lotteryItems = SHADOW_MARKET_ITEMS.filter(i => i.isLotteryTicket);
   const ticketItems = SHADOW_MARKET_ITEMS.filter(i => i.isTicket);
 
+  // In tabbed mode, use dark text on light parchment background
+  const darkText = !!section;
+  const largeText = !!section;
+
   const footerNote = (
-    <div className="mt-2 text-xs text-[#8b7355] px-2">
+    <div className={`mt-2 text-xs ${darkText ? 'text-[#6b5a42]' : 'text-[#8b7355]'} px-2`}>
       1 hour per purchase
     </div>
   );
@@ -109,6 +113,8 @@ export function ShadowMarketPanel({
             price={price}
             disabled={!canAfford}
             onClick={() => handleBuyItem(item, price)}
+            darkText={darkText}
+            largeText={largeText}
           />
         );
       })}
@@ -118,7 +124,7 @@ export function ShadowMarketPanel({
   const renderLottery = () => (
     <>
       {player.lotteryTickets > 0 && (
-        <JonesInfoRow label="Tickets this week:" value={`${player.lotteryTickets}`} />
+        <JonesInfoRow label="Tickets this week:" value={`${player.lotteryTickets}`} darkText={darkText} largeText={largeText} />
       )}
       {lotteryItems.map(item => {
         const price = Math.round(getItemPrice(item, priceModifier * 0.7));
@@ -130,10 +136,12 @@ export function ShadowMarketPanel({
             price={price}
             disabled={!canAfford}
             onClick={() => handleBuyItem(item, price)}
+            darkText={darkText}
+            largeText={largeText}
           />
         );
       })}
-      <div className="text-xs text-[#8b7355] px-2 mb-1">
+      <div className={`text-xs ${darkText ? 'text-[#6b5a42]' : 'text-[#8b7355]'} px-2 mb-1`}>
         Drawing at week end. Grand prize: 5,000g!
       </div>
     </>
@@ -153,6 +161,8 @@ export function ShadowMarketPanel({
             disabled={!canAfford || alreadyOwns}
             highlight={alreadyOwns}
             onClick={() => handleBuyItem(item, price)}
+            darkText={darkText}
+            largeText={largeText}
           />
         );
       })}
@@ -161,7 +171,7 @@ export function ShadowMarketPanel({
 
   const renderAppliances = () => (
     <>
-      <div className="text-xs text-[#a09080] px-2 mb-1 flex items-center gap-1">
+      <div className={`text-xs ${darkText ? 'text-[#8b6914]' : 'text-[#a09080]'} px-2 mb-1 flex items-center gap-1`}>
         <AlertTriangle className="w-3 h-3" />
         Higher break chance (1/36)
       </div>
@@ -182,6 +192,8 @@ export function ShadowMarketPanel({
             disabled={!canAfford || alreadyOwns}
             highlight={alreadyOwns}
             onClick={() => handleBuyAppliance(appliance.id, price)}
+            darkText={darkText}
+            largeText={largeText}
           />
         );
       })}

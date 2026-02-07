@@ -13,6 +13,8 @@ interface JonesMenuItemProps {
   onClick?: () => void;
   highlight?: boolean;
   className?: string;
+  darkText?: boolean; // Use dark brown text for light backgrounds
+  largeText?: boolean; // Use larger text (text-base instead of text-sm)
 }
 
 // Single menu item with dotted line connecting to price
@@ -24,21 +26,32 @@ export function JonesMenuItem({
   onClick,
   highlight = false,
   className = '',
+  darkText = false,
+  largeText = false,
 }: JonesMenuItemProps) {
+  const textSize = largeText ? 'text-base' : 'text-sm';
+  const textColor = highlight
+    ? 'text-gold font-bold'
+    : darkText
+      ? 'text-[#3d2a14]'
+      : 'text-[#e0d4b8]';
+  const hoverBg = darkText ? 'hover:bg-[#d4c4a8]' : 'hover:bg-[#5c4a32]';
+  const dotColor = darkText ? 'border-[#8b7355]' : 'border-[#8b7355]';
+
   const content = (
     <div
       className={`
-        flex items-baseline w-full font-mono text-sm
+        flex items-baseline w-full font-mono ${textSize}
         ${disabled ? 'opacity-50' : ''}
-        ${highlight ? 'text-gold font-bold' : 'text-[#e0d4b8]'}
+        ${textColor}
         ${className}
       `}
     >
       <span className="whitespace-nowrap">{label}</span>
       {price !== undefined && (
         <>
-          <span className="flex-1 border-b border-dotted border-[#8b7355] mx-1 mb-1"></span>
-          <span className="whitespace-nowrap text-gold font-bold">
+          <span className={`flex-1 border-b border-dotted ${dotColor} mx-1 mb-1`}></span>
+          <span className={`whitespace-nowrap font-bold ${darkText ? 'text-[#8b6914]' : 'text-gold'}`}>
             ${price}{suffix}
           </span>
         </>
@@ -51,7 +64,7 @@ export function JonesMenuItem({
       <button
         onClick={onClick}
         disabled={disabled}
-        className="w-full text-left py-1 px-2 hover:bg-[#5c4a32] transition-colors rounded"
+        className={`w-full text-left py-1 px-2 ${hoverBg} transition-colors rounded`}
       >
         {content}
       </button>
@@ -236,13 +249,16 @@ interface JonesInfoRowProps {
   label: string;
   value: string | number;
   valueClass?: string;
+  darkText?: boolean;
+  largeText?: boolean;
 }
 
-export function JonesInfoRow({ label, value, valueClass = '' }: JonesInfoRowProps) {
+export function JonesInfoRow({ label, value, valueClass = '', darkText = false, largeText = false }: JonesInfoRowProps) {
+  const textSize = largeText ? 'text-base' : 'text-sm';
   return (
-    <div className="flex justify-between items-baseline font-mono text-sm py-0.5 px-2">
-      <span className="text-[#a09080]">{label}</span>
-      <span className={`text-[#e0d4b8] font-bold ${valueClass}`}>{value}</span>
+    <div className={`flex justify-between items-baseline font-mono ${textSize} py-0.5 px-2`}>
+      <span className={darkText ? 'text-[#6b5a42]' : 'text-[#a09080]'}>{label}</span>
+      <span className={`font-bold ${darkText ? 'text-[#3d2a14]' : 'text-[#e0d4b8]'} ${valueClass}`}>{value}</span>
     </div>
   );
 }
