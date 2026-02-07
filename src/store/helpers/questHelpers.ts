@@ -189,10 +189,9 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       const totalEducation = player.completedDegrees.length * 9;
       const educationMet = totalEducation >= goals.education;
 
-      // Check career rank (guild rank)
-      const rankIndex = ['novice', 'apprentice', 'journeyman', 'adept', 'veteran', 'elite', 'guild-master']
-        .indexOf(player.guildRank) + 1;
-      const careerMet = rankIndex >= goals.career;
+      // Check career (Jones-style: dependability stat, 0 if no job)
+      const careerValue = player.currentJob ? player.dependability : 0;
+      const careerMet = careerValue >= goals.career;
 
       if (wealthMet && happinessMet && educationMet && careerMet) {
         set({

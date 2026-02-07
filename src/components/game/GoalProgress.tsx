@@ -1,6 +1,5 @@
-import { Coins, Smile, GraduationCap, Shield, Target } from 'lucide-react';
+import { Coins, Smile, GraduationCap, Briefcase, Target } from 'lucide-react';
 import type { Player, GoalSettings } from '@/types/game.types';
-import { GUILD_RANK_INDEX } from '@/types/game.types';
 import { calculateStockValue } from '@/data/stocks';
 import { useGameStore } from '@/store/gameStore';
 
@@ -23,8 +22,9 @@ export function GoalProgress({ player, goals, compact = false }: GoalProgressPro
   const totalEducation = player.completedDegrees.length * 9;
   const educationProgress = Math.min(100, (totalEducation / goals.education) * 100);
   
-  const rankIndex = GUILD_RANK_INDEX[player.guildRank];
-  const careerProgress = Math.min(100, (rankIndex / goals.career) * 100);
+  // Career = dependability (Jones-style), 0 if no job
+  const careerValue = player.currentJob ? player.dependability : 0;
+  const careerProgress = Math.min(100, (careerValue / goals.career) * 100);
 
   const allGoalsMet = 
     wealthProgress >= 100 && 
@@ -61,10 +61,10 @@ export function GoalProgress({ player, goals, compact = false }: GoalProgressPro
         unit=""
         compact={compact}
       />
-      <GoalBar 
-        icon={<Shield className={compact ? "w-3 h-3" : "w-4 h-4"} />}
+      <GoalBar
+        icon={<Briefcase className={compact ? "w-3 h-3" : "w-4 h-4"} />}
         label="Career"
-        current={rankIndex}
+        current={careerValue}
         target={goals.career}
         progress={careerProgress}
         unit=""

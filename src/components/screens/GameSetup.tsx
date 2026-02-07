@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { PLAYER_COLORS, GUILD_RANK_NAMES, GUILD_RANK_ORDER, AI_DIFFICULTY_NAMES, AI_DIFFICULTY_DESCRIPTIONS, AI_OPPONENTS, type AIDifficulty, type AIConfig } from '@/types/game.types';
+import { PLAYER_COLORS, AI_DIFFICULTY_NAMES, AI_DIFFICULTY_DESCRIPTIONS, AI_OPPONENTS, type AIDifficulty, type AIConfig } from '@/types/game.types';
 import { Plus, Minus, Bot, Play, Brain, Zap, Crown, Lightbulb, Trash2 } from 'lucide-react';
 import gameBoard from '@/assets/game-board.jpeg';
 
@@ -15,7 +15,7 @@ export function GameSetup() {
     wealth: 5000,
     happiness: 100,
     education: 45,   // 45 points = 5 degrees (each degree = 9 pts)
-    career: 4,
+    career: 75,      // Dependability target (Jones-style)
   });
 
   const totalPlayers = playerNames.length + aiOpponents.length;
@@ -79,9 +79,9 @@ export function GameSetup() {
 
   // Preset game lengths (education in points: each degree = 9 pts)
   const presets = {
-    quick: { wealth: 2000, happiness: 75, education: 18, career: 2 },    // 2 degrees
-    standard: { wealth: 5000, happiness: 100, education: 45, career: 4 }, // 5 degrees
-    epic: { wealth: 10000, happiness: 100, education: 90, career: 7 },    // 10 degrees
+    quick: { wealth: 2000, happiness: 75, education: 18, career: 50 },     // 2 degrees
+    standard: { wealth: 5000, happiness: 100, education: 45, career: 75 }, // 5 degrees
+    epic: { wealth: 10000, happiness: 100, education: 90, career: 100 },   // 10 degrees
   };
 
   return (
@@ -307,16 +307,17 @@ export function GameSetup() {
               />
               <div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="font-display text-amber-900">Career Rank</span>
+                  <span className="font-display text-amber-900">Career</span>
                   <span className="text-amber-700 font-semibold">
-                    {GUILD_RANK_NAMES[GUILD_RANK_ORDER[goals.career - 1] || 'novice']}
+                    {goals.career} Dependability
                   </span>
                 </div>
-                <p className="text-xs text-amber-700 mb-2">Reach this guild rank</p>
+                <p className="text-xs text-amber-700 mb-2">Build career through work and adventure</p>
                 <input
                   type="range"
-                  min={1}
-                  max={7}
+                  min={10}
+                  max={100}
+                  step={5}
                   value={goals.career}
                   onChange={(e) => setGoals({ ...goals, career: Number(e.target.value) })}
                   className="w-full accent-primary"

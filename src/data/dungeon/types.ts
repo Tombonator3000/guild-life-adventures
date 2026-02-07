@@ -120,6 +120,8 @@ export interface DungeonFloor {
   healthRisk: [number, number];
   /** Happiness bonus for clearing this floor */
   happinessOnClear: number;
+  /** Dependability bonus for clearing this floor (first clear only) */
+  dependabilityOnClear: number;
   /** Rare drop available on this floor */
   rareDrop: RareDrop;
   /** Guild rank affects loot multiplier */

@@ -325,16 +325,18 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
 
     clearDungeonFloor: (playerId: string, floorId: number) => {
       set((state) => ({
-        players: state.players.map((p) =>
-          p.id === playerId
-            ? {
-                ...p,
-                dungeonFloorsCleared: p.dungeonFloorsCleared.includes(floorId)
-                  ? p.dungeonFloorsCleared
-                  : [...p.dungeonFloorsCleared, floorId],
-              }
-            : p
-        ),
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          if (p.dungeonFloorsCleared.includes(floorId)) return p;
+          // First clear: add floor + dependability bonus
+          const floor = DUNGEON_FLOORS.find(f => f.id === floorId);
+          const depBonus = floor?.dependabilityOnClear ?? 0;
+          return {
+            ...p,
+            dungeonFloorsCleared: [...p.dungeonFloorsCleared, floorId],
+            dependability: Math.min(p.maxDependability, p.dependability + depBonus),
+          };
+        }),
       }));
     },
 
