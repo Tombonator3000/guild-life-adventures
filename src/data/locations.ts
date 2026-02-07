@@ -96,6 +96,12 @@ export const ZONE_CONFIGS: ZoneConfig[] = [
   { id: 'bank', x: 10.9, y: 55.8, width: 14.6, height: 17.0 },
 ];
 
+// Board aspect ratio for the game board container
+// Side panels take 12% each (24% total), leaving 76% of viewport width for the board
+// This ratio ensures the board fills available space well on 16:9 screens
+// Both GameBoard and ZoneEditor MUST use this same value for zone alignment
+export const BOARD_ASPECT_RATIO = `${76 * 16} / ${100 * 9}`; // 1216/900 ≈ 1.351
+
 // Movement paths between adjacent locations
 // Each key is "fromId_toId" in clockwise BOARD_PATH order
 // Values are arrays of [x, y] waypoints (percentages) between zone centers

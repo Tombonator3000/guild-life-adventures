@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
-import { LOCATIONS, getMovementCost, getPath } from '@/data/locations';
+import { LOCATIONS, getMovementCost, getPath, BOARD_ASPECT_RATIO } from '@/data/locations';
 import { getAppliance } from '@/data/items';
 import { LocationZone } from './LocationZone';
 import { PlayerToken } from './PlayerToken';
@@ -269,9 +269,8 @@ export function GameBoard() {
 
   // Layout: Side panels fill full viewport height, board maintains aspect ratio
   // This ensures panels use all screen space on non-16:9 displays (e.g. 1920x1200)
-  // Board aspect ratio = (76% of 16:9) preserves zone alignment with background image
+  // BOARD_ASPECT_RATIO imported from locations.ts (shared with ZoneEditor)
   const SIDE_PANEL_WIDTH_PERCENT = 12;
-  const BOARD_ASPECT_RATIO = `${76 * 16} / ${100 * 9}`; // 1216/900 ≈ 1.351
 
   return (
     <div className={`w-screen h-screen overflow-hidden bg-background flex ${isMobile ? 'flex-col' : 'flex-row'}`}>
@@ -316,10 +315,11 @@ export function GameBoard() {
             maxHeight: '100%',
           }}
         >
-          {/* Game board background */}
+          {/* Game board background - 100% 100% ensures image fills container exactly */}
+          {/* so percentage-based overlays (zones, center panel) align with the image */}
           <div
-            className="absolute inset-0 bg-contain bg-center bg-no-repeat"
-            style={{ backgroundImage: `url(${gameBoard})` }}
+            className="absolute inset-0 bg-no-repeat"
+            style={{ backgroundImage: `url(${gameBoard})`, backgroundSize: '100% 100%' }}
           />
 
           {/* Location zones overlay */}

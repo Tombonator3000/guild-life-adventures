@@ -517,6 +517,14 @@
 - [x] 7 new multiplayer tests (32→39 total)
 - [x] multiplayer.md fully updated with audit findings and new features
 
+- [x] Fix Center Panel Alignment — zone editor + game board aspect ratio mismatch
+  - ZoneEditor used `aspect-video` (16:9) while GameBoard used custom 1.351:1 ratio
+  - `bg-contain` created ~9.4% vertical gaps between image and container
+  - Exported shared `BOARD_ASPECT_RATIO` constant, both files now use same ratio
+  - Changed `bg-contain` → `backgroundSize: 100% 100%` in both GameBoard and ZoneEditor
+  - Unified DEFAULT_CENTER_PANEL values between ZoneEditor and useZoneConfiguration
+  - Build passes, 152 tests pass
+
 ## In Progress
 
 *No active tasks*

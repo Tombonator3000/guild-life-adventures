@@ -1,5 +1,41 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-07 - Fix Center Panel Alignment (Zone Editor + GameBoard)
+
+**Task**: Center panel doesn't stretch edge-to-edge with game background, especially on laptop screens.
+
+### Root Cause Analysis
+
+Two bugs found:
+
+1. **Aspect ratio mismatch between ZoneEditor and GameBoard**:
+   - ZoneEditor used `aspect-video` (16:9 = 1.778) — Tailwind class
+   - GameBoard used `1216/900` (= 1.351) — inline style
+   - Actual game-board.jpeg is 5056×3392 (= 1.491)
+   - All three ratios differed, so zones configured in the editor didn't match the game
+
+2. **`bg-contain` created gaps around background image**:
+   - Image (1.491 aspect) inside container (1.351 aspect) with `bg-contain` left ~9.4% vertical gap
+   - Center panel and zones used % of container, but image didn't fill container
+   - Overlay positions misaligned with background features
+
+### Fix
+
+| File | Change |
+|------|--------|
+| `src/data/locations.ts` | Exported shared `BOARD_ASPECT_RATIO` constant |
+| `src/components/game/GameBoard.tsx` | Imported shared constant (removed local duplicate), changed `bg-contain` → `backgroundSize: '100% 100%'` |
+| `src/components/game/ZoneEditor.tsx` | Imported shared constant, replaced `aspect-video` class with shared ratio, changed `bg-contain` → `backgroundSize: '100% 100%'` |
+| `src/components/game/ZoneEditor.tsx` | Unified DEFAULT_CENTER_PANEL values (was top:23.4/height:53.4, now top:22.5/height:55.5 matching useZoneConfiguration.ts) |
+
+**Result**: Background image now fills container 100% in both editor and game. Zone percentages map identically between editor and gameplay. Center panel aligns with background on all screen sizes.
+
+**Note**: Users with saved zone configs in localStorage may need to recalibrate via Zone Editor (Ctrl+Shift+Z) → Apply & Save, since the background rendering changed.
+
+- Build succeeds, all 152 tests pass, TypeScript clean
+
+---
+
 ## 2026-02-07 - Store Layout Redesign (General Store, Shadow Market, Armory, Rusty Tankard)
 
 **Task**: Redesign multiple store location panels for better layout, readability, and Jones-style accuracy.

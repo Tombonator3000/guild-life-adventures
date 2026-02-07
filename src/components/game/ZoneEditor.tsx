@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { ZONE_CONFIGS, BOARD_PATH, MOVEMENT_PATHS } from '@/data/locations';
+import { ZONE_CONFIGS, BOARD_PATH, MOVEMENT_PATHS, BOARD_ASPECT_RATIO } from '@/data/locations';
 import { hasSavedZoneConfig } from '@/data/zoneStorage';
 import type { ZoneConfig, LocationId } from '@/types/game.types';
 import type { MovementWaypoint } from '@/data/locations';
@@ -22,10 +22,10 @@ interface ZoneEditorProps {
 }
 
 const DEFAULT_CENTER_PANEL: CenterPanelConfig = {
-  top: 23.4,
+  top: 22.5,
   left: 26.7,
   width: 46.5,
-  height: 53.4,
+  height: 55.5,
 };
 
 // Get adjacent location pairs (edges in the ring)
@@ -431,8 +431,8 @@ ${pathsStr}`;
         <div className="flex-1 p-4 flex items-center justify-center">
           <div
             ref={containerRef}
-            className="relative w-full max-w-[1400px] aspect-video bg-contain bg-center bg-no-repeat cursor-crosshair"
-            style={{ backgroundImage: `url(${gameBoard})` }}
+            className="relative w-full max-w-[1400px] bg-no-repeat cursor-crosshair"
+            style={{ backgroundImage: `url(${gameBoard})`, backgroundSize: '100% 100%', aspectRatio: BOARD_ASPECT_RATIO }}
             onMouseMove={handleMouseMove}
             onClick={handleBoardClick}
           >
