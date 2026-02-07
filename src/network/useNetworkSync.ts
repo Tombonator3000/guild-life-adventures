@@ -78,6 +78,9 @@ export function useNetworkSync() {
       const currentPlayer = store.players[store.currentPlayerIndex];
       if (!currentPlayer || currentPlayer.isAI) return;
 
+      // Don't timeout during non-playing phases (event modals, victory screen)
+      if (store.phase !== 'playing') return;
+
       // Don't timeout host's own turn (host manages their own time)
       if (store.localPlayerId === currentPlayer.id) return;
 
@@ -104,7 +107,10 @@ export function useNetworkSync() {
   useEffect(() => {
     if (networkMode !== 'guest') return;
     const interval = setInterval(() => {
-      setLatency(peerManager.latencyToHost);
+      setLatency(prev => {
+        const current = peerManager.latencyToHost;
+        return current === prev ? prev : current;
+      });
     }, 3000);
     return () => clearInterval(interval);
   }, [networkMode]);
@@ -168,6 +174,22 @@ export function useNetworkSync() {
             return;
           }
 
+          // Validate that the action's target playerId matches the sender
+          // (prevents a guest from modifying another player's state)
+          if (Array.isArray(msg.args) && msg.args.length > 0 && typeof msg.args[0] === 'string') {
+            const targetPlayerId = msg.args[0];
+            if (targetPlayerId !== senderPlayerId && targetPlayerId.startsWith('player-')) {
+              console.warn(`[NetworkSync] Blocked cross-player action: ${msg.name} from ${senderPlayerId} targeting ${targetPlayerId}`);
+              peerManager.sendTo(fromPeerId, {
+                type: 'action-result',
+                requestId: msg.requestId,
+                success: false,
+                error: 'Cannot target other players',
+              });
+              return;
+            }
+          }
+
           // Reset turn timeout on any valid action (player is not AFK)
           resetTurnTimeout();
 
@@ -179,14 +201,18 @@ export function useNetworkSync() {
             success,
             error: success ? undefined : 'Action failed',
           });
-          // Broadcast updated state immediately for responsiveness
-          broadcastState();
+          // State broadcast is handled by the debounced store subscription (50ms)
+          // No need for an immediate duplicate broadcast here
         } else if (msg.type === 'movement-start') {
-          // Guest started a movement animation - re-broadcast to all guests and show locally
-          peerManager.broadcast({ type: 'movement-animation', playerId: msg.playerId, path: msg.path });
-          setRemoteAnimation({ playerId: msg.playerId, path: msg.path });
-          // Reset turn timeout (movement is activity)
-          resetTurnTimeout();
+          // Validate sender matches the playerId in the message
+          const moveSenderId = peerManager.getPlayerIdForPeer(fromPeerId);
+          if (moveSenderId && msg.playerId === moveSenderId) {
+            // Guest started a movement animation - re-broadcast to all guests and show locally
+            peerManager.broadcast({ type: 'movement-animation', playerId: msg.playerId, path: msg.path });
+            setRemoteAnimation({ playerId: msg.playerId, path: msg.path });
+            // Reset turn timeout (movement is activity)
+            resetTurnTimeout();
+          }
         }
         // Note: ping/pong now handled internally by PeerManager heartbeat system
       } else if (networkMode === 'guest') {

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useOnlineGame } from '@/network/useOnlineGame';
 import { isValidRoomCode } from '@/network/roomCodes';
-import { PLAYER_COLORS, GUILD_RANK_NAMES, GUILD_RANK_ORDER, AI_DIFFICULTY_NAMES, AI_DIFFICULTY_DESCRIPTIONS } from '@/types/game.types';
+import { PLAYER_COLORS, GUILD_RANK_NAMES, GUILD_RANK_ORDER, AI_DIFFICULTY_NAMES } from '@/types/game.types';
 import type { AIDifficulty } from '@/types/game.types';
 import {
   Globe, Users, Copy, Check, ArrowLeft, Play, Wifi, WifiOff,
@@ -82,14 +82,6 @@ export function OnlineLobby() {
       setView('menu');
     }
   };
-
-  // Transition to game when game starts (guest side)
-  const phase = useGameStore(s => s.phase);
-  useEffect(() => {
-    if (phase === 'playing' && (view === 'guest-lobby' || view === 'host-lobby')) {
-      // Game has started, GameBoard will render
-    }
-  }, [phase, view]);
 
   // All non-host players must be ready, and need at least 2 players (or AI)
   const allGuestsReady = lobbyPlayers.filter(p => p.peerId !== 'host').every(p => p.isReady);
@@ -288,7 +280,7 @@ export function OnlineLobby() {
                   <div key={p.peerId} className="flex items-center gap-3 p-2 rounded bg-background/50">
                     <div
                       className="w-8 h-8 rounded-full border-2 border-wood-light flex-shrink-0"
-                      style={{ backgroundColor: PLAYER_COLORS[i]?.value || '#888' }}
+                      style={{ backgroundColor: p.color || '#888' }}
                     />
                     <span className="font-display text-amber-900 flex-1">{p.name}</span>
                     {p.peerId === 'host' && (
@@ -433,7 +425,7 @@ export function OnlineLobby() {
                   <div key={p.peerId} className="flex items-center gap-3 p-2 rounded bg-background/50">
                     <div
                       className="w-8 h-8 rounded-full border-2 border-wood-light flex-shrink-0"
-                      style={{ backgroundColor: PLAYER_COLORS[i]?.value || '#888' }}
+                      style={{ backgroundColor: p.color || '#888' }}
                     />
                     <span className="font-display text-amber-900 flex-1">{p.name}</span>
                     {p.peerId === 'host' && (

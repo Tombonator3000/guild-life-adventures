@@ -15,6 +15,7 @@ import { createTurnActions } from './helpers/turnHelpers';
 import { createWorkEducationActions } from './helpers/workEducationHelpers';
 import { createQuestActions } from './helpers/questHelpers';
 import { forwardIfGuest } from '@/network/NetworkActionProxy';
+import { markEventDismissed } from '@/network/networkState';
 import type { GameStore } from './storeTypes';
 
 /**
@@ -166,8 +167,10 @@ export const useGameStore = create<GameStore>((set, get) => {
     localPlayerId: null as string | null,
     roomCode: null as string | null,
 
-    // Game setup
+    // Game setup (not network-wrapped — guarded explicitly)
     startNewGame: (playerNames, includeAI, goals, aiDifficulty = 'medium') => {
+      // Block on guest clients — only host/local can start a new game
+      if (get().networkMode === 'guest') return;
       const players: Player[] = playerNames.map((name, index) =>
         createPlayer(
           `player-${index}`,
@@ -219,22 +222,38 @@ export const useGameStore = create<GameStore>((set, get) => {
     // Simple UI actions
     setPhase: (phase) => set({ phase }),
     selectLocation: (location) => set({ selectedLocation: location }),
-    dismissEvent: () => set({ eventMessage: null, phase: 'playing' }),
-    dismissShadowfingersEvent: () => set({ shadowfingersEvent: null }),
+    dismissEvent: () => {
+      if (get().networkMode === 'guest') markEventDismissed('eventMessage');
+      set({ eventMessage: null, phase: 'playing' });
+    },
+    dismissShadowfingersEvent: () => {
+      if (get().networkMode === 'guest') markEventDismissed('shadowfingersEvent');
+      set({ shadowfingersEvent: null });
+    },
     setEventMessage: (message) => set({ eventMessage: message }),
 
     // Appliance breakage event state
     applianceBreakageEvent: null,
-    dismissApplianceBreakageEvent: () => set({ applianceBreakageEvent: null }),
+    dismissApplianceBreakageEvent: () => {
+      if (get().networkMode === 'guest') markEventDismissed('applianceBreakageEvent');
+      set({ applianceBreakageEvent: null });
+    },
     // Weekend event state
-    dismissWeekendEvent: () => set({ weekendEvent: null }),
+    dismissWeekendEvent: () => {
+      if (get().networkMode === 'guest') markEventDismissed('weekendEvent');
+      set({ weekendEvent: null });
+    },
 
     // Save/Load
     saveToSlot: (slot: number, slotName?: string) => {
+      // Block manual saves during online games
+      if (get().networkMode !== 'local') return false;
       const state = get();
       return saveGame(state, slot, slotName);
     },
     loadFromSlot: (slot: number) => {
+      // Block save loading during online games to prevent state corruption
+      if (get().networkMode !== 'local') return false;
       const data = loadGame(slot);
       if (!data) return false;
       const gs = data.gameState;
