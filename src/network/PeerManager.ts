@@ -21,21 +21,46 @@ const HEARTBEAT_TIMEOUT = 15000;
 /** How long to wait for a dropped guest to reconnect before removing them (ms) */
 const RECONNECT_WINDOW = 30000;
 
-/** Free TURN servers for NAT traversal fallback */
-const ICE_SERVERS = [
+/**
+ * ICE servers for WebRTC NAT traversal.
+ *
+ * STUN servers (free, public): sufficient for most connections where both
+ * peers are on home networks. Handles ~85% of connection scenarios.
+ *
+ * TURN servers: required for restrictive NAT/firewall environments (~15% of cases).
+ * The previous openrelay.metered.ca TURN servers are deprecated/dead.
+ * To restore TURN support:
+ *   1. Sign up at metered.ca (free tier: 500GB/month) or deploy your own coturn server
+ *   2. Add TURN credentials to CUSTOM_TURN_SERVERS below
+ *   3. Alternatively, set window.GUILD_TURN_SERVERS at runtime (for self-hosted deployments)
+ *
+ * Without TURN: players behind symmetric NAT or corporate firewalls may fail to connect.
+ * The game will show a connection error in those cases.
+ */
+const STUN_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
-  {
-    urls: 'turn:openrelay.metered.ca:80',
-    username: 'openrelayproject',
-    credential: 'openrelayproject',
-  },
-  {
-    urls: 'turn:openrelay.metered.ca:443',
-    username: 'openrelayproject',
-    credential: 'openrelayproject',
-  },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:stun3.l.google.com:19302' },
 ];
+
+/**
+ * Add your own TURN servers here if needed.
+ * Example with metered.ca (free tier):
+ *   { urls: 'turn:a.relay.metered.ca:80', username: 'YOUR_KEY', credential: 'YOUR_SECRET' },
+ *   { urls: 'turn:a.relay.metered.ca:443', username: 'YOUR_KEY', credential: 'YOUR_SECRET' },
+ *   { urls: 'turns:a.relay.metered.ca:443', username: 'YOUR_KEY', credential: 'YOUR_SECRET' },
+ */
+const CUSTOM_TURN_SERVERS: RTCIceServer[] = [];
+
+/** Build final ICE server list (supports runtime injection via window.GUILD_TURN_SERVERS) */
+function getIceServers(): RTCIceServer[] {
+  const runtimeTurn = (window as unknown as Record<string, unknown>).GUILD_TURN_SERVERS;
+  const turnServers = Array.isArray(runtimeTurn)
+    ? runtimeTurn as RTCIceServer[]
+    : CUSTOM_TURN_SERVERS;
+  return [...STUN_SERVERS, ...turnServers];
+}
 
 export class PeerManager {
   private peer: Peer | null = null;
@@ -144,10 +169,10 @@ export class PeerManager {
 
   // --- PeerJS Config ---
 
-  private getPeerConfig(): { debug: number; config: { iceServers: typeof ICE_SERVERS } } {
+  private getPeerConfig() {
     return {
       debug: import.meta.env.DEV ? 2 : 0,
-      config: { iceServers: ICE_SERVERS },
+      config: { iceServers: getIceServers() },
     };
   }
 

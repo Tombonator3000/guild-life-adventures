@@ -5,7 +5,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { peerManager } from './PeerManager';
 import { useGameStore } from '@/store/gameStore';
-import { setNetworkActionSender } from './NetworkActionProxy';
+import { setNetworkActionSender, trackPendingAction, resolveAction } from './NetworkActionProxy';
 import { serializeGameState, applyNetworkState, executeAction } from './networkState';
 import { ALLOWED_GUEST_ACTIONS } from './types';
 import type { NetworkMessage, GuestMessage, HostMessage } from './types';
@@ -13,6 +13,44 @@ import type { LocationId } from '@/types/game.types';
 
 /** Turn timeout: auto-end turn after this many seconds of inactivity (0 = disabled) */
 const TURN_TIMEOUT_SECONDS = 120;
+
+/** Max guest actions per second (rate limiting) */
+const GUEST_ACTION_RATE_LIMIT = 10;
+/** Rate limit window in ms */
+const RATE_LIMIT_WINDOW = 1000;
+
+/** Per-peer rate limiter: tracks action timestamps within the sliding window */
+const peerActionTimestamps = new Map<string, number[]>();
+
+/** Check if a peer has exceeded the rate limit. Returns true if action should be blocked. */
+function isRateLimited(peerId: string): boolean {
+  const now = Date.now();
+  let timestamps = peerActionTimestamps.get(peerId);
+  if (!timestamps) {
+    timestamps = [];
+    peerActionTimestamps.set(peerId, timestamps);
+  }
+  // Remove timestamps outside the window
+  const cutoff = now - RATE_LIMIT_WINDOW;
+  while (timestamps.length > 0 && timestamps[0] < cutoff) {
+    timestamps.shift();
+  }
+  if (timestamps.length >= GUEST_ACTION_RATE_LIMIT) {
+    return true;
+  }
+  timestamps.push(now);
+  return false;
+}
+
+/** Clear rate limit tracking for a peer (on disconnect) */
+export function clearRateLimit(peerId: string) {
+  peerActionTimestamps.delete(peerId);
+}
+
+/** Clear all rate limit tracking */
+export function clearAllRateLimits() {
+  peerActionTimestamps.clear();
+}
 
 /**
  * Hook for network synchronization during gameplay.
@@ -94,14 +132,66 @@ export function useNetworkSync() {
     }, TURN_TIMEOUT_SECONDS * 1000);
   }, [networkMode, clearTurnTimeout]);
 
+  // Track disconnected peer IDs (for zombie player detection)
+  const disconnectedPeersRef = useRef(new Set<string>());
+
+  // Check if the current player is a disconnected zombie
+  const skipZombieTurn = useCallback(() => {
+    if (networkMode !== 'host') return;
+    const store = useGameStore.getState();
+    const currentPlayer = store.players[store.currentPlayerIndex];
+    if (!currentPlayer || currentPlayer.isAI) return;
+    if (store.phase !== 'playing') return;
+    // Host's own turn is never a zombie
+    if (store.localPlayerId === currentPlayer.id) return;
+
+    // Find the peerId for the current player
+    const allPeers = peerManager.connectedPeerIds;
+    const currentPlayerId = currentPlayer.id;
+
+    // Check if this player's peer is disconnected or reconnecting
+    let isZombie = false;
+    for (const [, playerId] of Array.from(peerManager.peerLatencies.keys()).map(peerId => [peerId, peerManager.getPlayerIdForPeer(peerId)] as [string, string | null])) {
+      // We can't iterate peerPlayerMap directly — check via connectedPeerIds
+    }
+    // Simpler approach: check if any connected peer maps to this player
+    let peerFound = false;
+    for (const peerId of allPeers) {
+      if (peerManager.getPlayerIdForPeer(peerId) === currentPlayerId) {
+        peerFound = true;
+        break;
+      }
+    }
+    // Also check disconnectedPeersRef
+    for (const peerId of disconnectedPeersRef.current) {
+      if (peerManager.getPlayerIdForPeer(peerId) === currentPlayerId) {
+        isZombie = true;
+        break;
+      }
+    }
+
+    if (!peerFound || isZombie) {
+      console.log(`[NetworkSync] Zombie turn detected for ${currentPlayer.name} — auto-skipping`);
+      peerManager.broadcast({ type: 'turn-timeout', playerId: currentPlayer.id });
+      store.endTurn();
+    }
+  }, [networkMode]);
+
   // Reset turn timeout when currentPlayerIndex changes
   const currentPlayerIndex = useGameStore(s => s.currentPlayerIndex);
   useEffect(() => {
     if (networkMode === 'host') {
+      // Check for zombie turns first (auto-skip disconnected players)
+      // Use a small delay to let state settle after endTurn
+      const zombieCheck = setTimeout(() => skipZombieTurn(), 100);
       resetTurnTimeout();
+      return () => {
+        clearTimeout(zombieCheck);
+        clearTurnTimeout();
+      };
     }
     return () => clearTurnTimeout();
-  }, [currentPlayerIndex, networkMode, resetTurnTimeout, clearTurnTimeout]);
+  }, [currentPlayerIndex, networkMode, resetTurnTimeout, clearTurnTimeout, skipZombieTurn]);
 
   // --- Latency polling (guest only) ---
   useEffect(() => {
@@ -122,6 +212,7 @@ export function useNetworkSync() {
     if (networkMode === 'guest') {
       setNetworkActionSender((actionName: string, args: unknown[]) => {
         const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        trackPendingAction(requestId);
         peerManager.sendToHost({
           type: 'action',
           requestId,
@@ -148,6 +239,18 @@ export function useNetworkSync() {
               requestId: msg.requestId,
               success: false,
               error: 'Unknown player',
+            });
+            return;
+          }
+
+          // Rate limiting: block rapid-fire actions
+          if (isRateLimited(fromPeerId)) {
+            console.warn(`[NetworkSync] Rate limited peer: ${fromPeerId}`);
+            peerManager.sendTo(fromPeerId, {
+              type: 'action-result',
+              requestId: msg.requestId,
+              success: false,
+              error: 'Rate limited — too many actions',
             });
             return;
           }
@@ -207,11 +310,18 @@ export function useNetworkSync() {
           // Validate sender matches the playerId in the message
           const moveSenderId = peerManager.getPlayerIdForPeer(fromPeerId);
           if (moveSenderId && msg.playerId === moveSenderId) {
-            // Guest started a movement animation - re-broadcast to all guests and show locally
-            peerManager.broadcast({ type: 'movement-animation', playerId: msg.playerId, path: msg.path });
-            setRemoteAnimation({ playerId: msg.playerId, path: msg.path });
-            // Reset turn timeout (movement is activity)
-            resetTurnTimeout();
+            // Validate path: must be a reasonable length (max 14 locations in ring, half = 7 steps)
+            // Allow a small buffer for edge cases, but block absurd paths
+            const MAX_PATH_LENGTH = 16;
+            if (!Array.isArray(msg.path) || msg.path.length === 0 || msg.path.length > MAX_PATH_LENGTH) {
+              console.warn(`[NetworkSync] Invalid movement path length from ${fromPeerId}: ${msg.path?.length}`);
+            } else {
+              // Guest started a movement animation - re-broadcast to all guests and show locally
+              peerManager.broadcast({ type: 'movement-animation', playerId: msg.playerId, path: msg.path });
+              setRemoteAnimation({ playerId: msg.playerId, path: msg.path });
+              // Reset turn timeout (movement is activity)
+              resetTurnTimeout();
+            }
           }
         }
         // Note: ping/pong now handled internally by PeerManager heartbeat system
@@ -220,6 +330,7 @@ export function useNetworkSync() {
         if (msg.type === 'state-sync') {
           applyNetworkState(msg.gameState);
         } else if (msg.type === 'action-result') {
+          resolveAction(msg.requestId);
           if (!msg.success && msg.error !== 'Not your turn') {
             console.warn(`[NetworkSync] Action failed: ${msg.error}`);
           }
@@ -242,6 +353,34 @@ export function useNetworkSync() {
       }
     });
 
+    // --- Host: track peer disconnects for zombie detection ---
+    let unsubDisconnect: (() => void) | undefined;
+    let unsubReconnect: (() => void) | undefined;
+    if (networkMode === 'host') {
+      unsubDisconnect = peerManager.onPeerDisconnect((peerId: string) => {
+        disconnectedPeersRef.current.add(peerId);
+        clearRateLimit(peerId);
+        // Check if it's the disconnected player's turn — auto-skip
+        const store = useGameStore.getState();
+        const currentPlayer = store.players[store.currentPlayerIndex];
+        const disconnectedPlayerId = peerManager.getPlayerIdForPeer(peerId);
+        if (currentPlayer && currentPlayer.id === disconnectedPlayerId && store.phase === 'playing') {
+          // Give a brief window for reconnection before skipping
+          setTimeout(() => {
+            if (disconnectedPeersRef.current.has(peerId)) {
+              console.log(`[NetworkSync] Disconnected player's turn — auto-skipping ${currentPlayer.name}`);
+              peerManager.broadcast({ type: 'turn-timeout', playerId: currentPlayer.id });
+              store.endTurn();
+            }
+          }, 5000); // 5 second grace period
+        }
+      });
+
+      unsubReconnect = peerManager.onPeerReconnect((peerId: string) => {
+        disconnectedPeersRef.current.delete(peerId);
+      });
+    }
+
     // --- Host: subscribe to store changes for broadcasting ---
     let unsubStore: (() => void) | undefined;
     if (networkMode === 'host') {
@@ -256,6 +395,8 @@ export function useNetworkSync() {
     return () => {
       unsubMessage();
       unsubStore?.();
+      unsubDisconnect?.();
+      unsubReconnect?.();
       if (networkMode === 'guest') {
         setNetworkActionSender(null);
       }
@@ -263,6 +404,7 @@ export function useNetworkSync() {
         clearTimeout(syncTimerRef.current);
       }
       clearTurnTimeout();
+      clearAllRateLimits();
     };
   }, [networkMode, broadcastState, debouncedBroadcast, resetTurnTimeout, clearTurnTimeout]);
 
