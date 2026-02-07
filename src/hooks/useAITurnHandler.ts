@@ -14,6 +14,7 @@ interface UseAITurnHandlerParams {
 export function useAITurnHandler({ currentPlayer, phase, aiDifficulty }: UseAITurnHandlerParams) {
   const [aiIsThinking, setAiIsThinking] = useState(false);
   const aiTurnStartedRef = useRef(false);
+  const lastAIPlayerIdRef = useRef<string | null>(null);
 
   // Use per-player difficulty if available, otherwise fall back to global setting
   const effectiveDifficulty = currentPlayer?.aiDifficulty ?? aiDifficulty;
@@ -23,12 +24,20 @@ export function useAITurnHandler({ currentPlayer, phase, aiDifficulty }: UseAITu
   useEffect(() => {
     if (!currentPlayer || phase !== 'playing') {
       aiTurnStartedRef.current = false;
+      lastAIPlayerIdRef.current = null;
       return;
+    }
+
+    // Reset state when switching between different AI players
+    if (currentPlayer.isAI && lastAIPlayerIdRef.current && lastAIPlayerIdRef.current !== currentPlayer.id) {
+      aiTurnStartedRef.current = false;
+      setAiIsThinking(false);
     }
 
     // Check if it's an AI player's turn and we haven't started their turn yet
     if (currentPlayer.isAI && !aiTurnStartedRef.current && !aiIsThinking) {
       aiTurnStartedRef.current = true;
+      lastAIPlayerIdRef.current = currentPlayer.id;
       setAiIsThinking(true);
 
       // Show toast notification with the AI's actual name
@@ -46,14 +55,22 @@ export function useAITurnHandler({ currentPlayer, phase, aiDifficulty }: UseAITu
     // Reset when it's no longer AI's turn
     if (!currentPlayer.isAI) {
       aiTurnStartedRef.current = false;
+      lastAIPlayerIdRef.current = null;
       setAiIsThinking(false);
     }
   }, [currentPlayer, phase, aiIsThinking, runAITurn]);
 
-  // Listen for player changes to detect when AI turn ends
+  // Listen for player changes to detect when AI turn ends or switches
   useEffect(() => {
-    if (currentPlayer && !currentPlayer.isAI) {
+    if (!currentPlayer) return;
+    if (!currentPlayer.isAI) {
       setAiIsThinking(false);
+      aiTurnStartedRef.current = false;
+      lastAIPlayerIdRef.current = null;
+    } else if (lastAIPlayerIdRef.current && lastAIPlayerIdRef.current !== currentPlayer.id) {
+      // Different AI player's turn - reset so the new AI can start
+      setAiIsThinking(false);
+      aiTurnStartedRef.current = false;
     }
   }, [currentPlayer?.id]);
 

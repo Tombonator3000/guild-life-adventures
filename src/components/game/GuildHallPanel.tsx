@@ -2,7 +2,7 @@
 // Shows list of employers, then jobs when clicking an employer
 // Players apply for jobs and get accepted/rejected based on qualifications
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Briefcase, ChevronLeft, GraduationCap, Shirt, Clock, Star, X, Check } from 'lucide-react';
 import {
   getEmployers,
@@ -50,19 +50,22 @@ export function GuildHallPanel({
     isRaise?: boolean;
     oldWage?: number;
   } | null>(null);
-  // Pre-calculated market wages for the selected employer's jobs
-  const [marketWages, setMarketWages] = useState<Map<string, number>>(new Map());
-
   const employers = getEmployers();
 
-  const handleSelectEmployer = (employer: Employer) => {
-    // Pre-calculate market wages for all jobs at this employer
+  // Pre-calculate ALL wages once per visit (stable within a turn)
+  // Wages only regenerate when priceModifier changes (weekly economy update)
+  const marketWages = useMemo(() => {
     const wages = new Map<string, number>();
-    for (const job of employer.jobs) {
-      const offer = calculateOfferedWage(job, priceModifier);
-      wages.set(job.id, offer.offeredWage);
+    for (const employer of employers) {
+      for (const job of employer.jobs) {
+        const offer = calculateOfferedWage(job, priceModifier);
+        wages.set(job.id, offer.offeredWage);
+      }
     }
-    setMarketWages(wages);
+    return wages;
+  }, [priceModifier]);
+
+  const handleSelectEmployer = (employer: Employer) => {
     setSelectedEmployer(employer);
   };
 

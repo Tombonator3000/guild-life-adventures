@@ -2,6 +2,24 @@
 
 ## Completed (2026-02-07)
 
+- [x] Academy Course & Job Validation — 6 issues fixed, 2 missing jobs added
+  - Added missing `researcher` job (Advanced Scholar → 16g/hr at Academy)
+  - Added missing `merchant-assistant` job (Commerce → 12g/hr at General Store)
+  - Fixed `assistant-clerk` degree mapping (moved to trade-guild, matching actual requirement)
+  - Added 4 missing jobs to unlocksJobs (bank-teller, tavern-chef, tavern-manager, journeyman-smith)
+  - Removed duplicate library-assistant from scholar unlocksJobs
+  - Full degree→job mapping documented in log.md
+
+- [x] Shadow Market: Market Intel now functional — gives +5 happiness (was pure placeholder)
+
+- [x] Multi-AI standing still bug fixed — non-Grimwald AI players now take actions
+  - Root cause: aiIsThinking state not reset between consecutive AI players
+  - Added lastAIPlayerIdRef tracking for proper state reset between AI turns
+
+- [x] Guild Hall salary stabilization — wages no longer fluctuate on same-turn re-entry
+  - Pre-calculate all wages via useMemo on mount (stable per priceModifier)
+  - Wages only change when weekly economy updates
+
 - [x] Multiplayer Deep Audit & Fixes — 7 bugs fixed, 32 tests added, multiplayer.md created
   - Rate limiting on guest actions (10/sec sliding window)
   - Zombie disconnected players auto-skipped (5s grace period)
