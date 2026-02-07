@@ -329,8 +329,13 @@ export function createStartTurn(set: SetFn, get: GetFn) {
       }
 
       // C8: Emit collected event messages at end of startTurn (non-AI only)
+      // Append to existing eventMessage (e.g. from processWeekEnd) rather than overwriting
       if (!currentPlayer.isAI && eventMessages.length > 0) {
-        set({ eventMessage: eventMessages.join('\n') });
+        const existing = get().eventMessage;
+        const combined = existing
+          ? existing + '\n' + eventMessages.join('\n')
+          : eventMessages.join('\n');
+        set({ eventMessage: combined, phase: 'event' });
       }
   };
 }

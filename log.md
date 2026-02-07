@@ -1,5 +1,47 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-07 - Multiplayer AI Opponents + Deep Audit Bug Fixes
+
+**Task**: Implement local multiplayer with multiple AI opponents (up to 4 total players) and perform a deep audit of game mechanics, fixing all bugs found.
+
+### Multiplayer AI System (Multi-Agent Support)
+
+**Changes**:
+1. **AI_OPPONENTS config** (`game.types.ts`): Added 4 named AI opponents (Grimwald, Seraphina, Thornwick, Morgath) with unique colors (Pearl, Violet, Teal, Rose)
+2. **AIConfig type** (`game.types.ts`): New interface for per-AI configuration (name + difficulty)
+3. **Per-player aiDifficulty** (`game.types.ts`): Added `aiDifficulty?: AIDifficulty` field to Player type - each AI can have different difficulty (Easy/Medium/Hard)
+4. **GameSetup UI revamp** (`GameSetup.tsx`): Replaced single "Include Grimwald" checkbox with full multi-AI management:
+   - "Add AI Opponent" button to add up to fill 4 total players
+   - Each AI shows colored avatar, editable name, per-AI difficulty selector
+   - Remove button per AI
+   - Player count indicator (X/4 total)
+5. **startNewGame updated** (`gameStore.ts`): Accepts `aiConfigs: AIConfig[]` parameter for multiple AI with per-AI difficulty, while maintaining backwards compatibility with legacy single-AI `includeAI` flag
+6. **AI Turn Handler** (`useAITurnHandler.ts`): Reads difficulty from `currentPlayer.aiDifficulty` (per-player) instead of global setting. Toast shows actual AI name, not hardcoded "Grimwald"
+7. **GameBoard** (`GameBoard.tsx`): "Scheming" overlay shows current AI player's name and correct difficulty text
+
+### Bug Fixes Found in Deep Audit
+
+| Bug | File | Fix |
+|-----|------|-----|
+| **payRent ignores lockedRent** | `economyHelpers.ts:18` | Now checks `p.lockedRent > 0 ? p.lockedRent : RENT_COSTS[p.housing]` |
+| **AI buyFreshFood swapped params** | `useGrimwaldAI.ts:394` | Fixed `buyFreshFood(id, cost, units)` → `buyFreshFood(id, units, cost)` |
+| **AI immune to street robbery** | `playerHelpers.ts:35` | Removed `!isAI` guard on robbery check; gameplay effects now apply to AI too (only UI modal suppressed) |
+| **startTurn overwrites weekEnd events** | `startTurnHelpers.ts:332` | Changed from `set({ eventMessage })` to appending to existing messages with `\n` separator |
+| **AI apply-job uses random wage** | `useGrimwaldAI.ts:160` | Was `0.5 + Math.random() * 2.0`; now uses `calculateOfferedWage(job, priceModifier)` matching human player wage formula |
+| **AI pay-rent ignores lockedRent** | `useGrimwaldAI.ts:169` | Same fix as store: uses lockedRent when available |
+
+### Deep Audit Findings (Additional Issues Identified)
+
+- **Flaky test**: `freshFood.test.ts` "starves when no Preservation Box" occasionally fails due to 25% random doctor visit during food spoilage (RNG-dependent, not a code bug)
+- **AI_DIFFICULTY_NAMES shortened**: Changed from "Novice Grimwald"/"Cunning Grimwald"/"Master Grimwald" to "Novice"/"Cunning"/"Master" (AI-name-independent)
+
+### Testing
+- TypeScript: Clean compile (0 errors)
+- Tests: 112/112 passing (7 test files)
+- Backwards compatible: Legacy single-AI games still work via `includeAI` flag
+
+---
+
 ## 2026-02-06 - Mobile Game Layout (Samsung S24 Optimization)
 
 **Task**: Adapt the game layout for mobile devices, specifically Samsung Galaxy S24 (landscape ~780×360 CSS pixels). The existing desktop 3-column layout (12% left panel + 76% board + 12% right panel) was unusable on mobile — side panels were only ~94px wide with clipped text, and the overall layout was cramped.

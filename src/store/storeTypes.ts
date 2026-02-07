@@ -11,6 +11,7 @@ import type {
   GuildRank,
   ApplianceSource,
   AIDifficulty,
+  AIConfig,
   GoalSettings,
   EquipmentSlot,
 } from '@/types/game.types';
@@ -24,7 +25,7 @@ export interface ShadowfingersEvent {
 
 // Full store interface used by helpers
 export interface GameStore extends GameState {
-  startNewGame: (playerNames: string[], includeAI: boolean, goals: GoalSettings, aiDifficulty?: AIDifficulty) => void;
+  startNewGame: (playerNames: string[], includeAI: boolean, goals: GoalSettings, aiDifficulty?: AIDifficulty, aiConfigs?: AIConfig[]) => void;
   movePlayer: (playerId: string, location: LocationId, timeCost: number) => void;
   spendTime: (playerId: string, hours: number) => void;
   modifyGold: (playerId: string, amount: number) => void;

@@ -1,5 +1,22 @@
 # Guild Life Adventures - Todo List
 
+## Completed (2026-02-07)
+
+- [x] Multi-AI opponent support — up to 4 named AI players
+  - Grimwald, Seraphina, Thornwick, Morgath with unique colors
+  - Per-AI difficulty (Easy/Medium/Hard)
+  - Revamped GameSetup UI with add/remove/configure per AI
+  - Each AI plays with independent strategy based on its difficulty
+  - Backwards compatible with legacy single-AI flag
+
+- [x] Deep audit bug fixes — 6 bugs found and fixed
+  - payRent ignoring lockedRent price
+  - AI buyFreshFood parameter order swapped (cost/units)
+  - AI immune to street robbery (gameplay effects now apply)
+  - startTurn overwriting processWeekEnd event messages
+  - AI apply-job using random wage instead of economy-based priceModifier
+  - AI pay-rent ignoring lockedRent
+
 ## Completed (2026-02-05)
 
 - [x] Full economy & happiness audit — all values rebalanced

@@ -30,9 +30,9 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
         ),
       }));
 
-      // Check for street robbery when leaving bank or shadow-market
+      // Check for street robbery when leaving bank or shadow-market (applies to all players)
       const updatedPlayer = get().players.find(p => p.id === playerId);
-      if (updatedPlayer && !updatedPlayer.isAI) {
+      if (updatedPlayer) {
         const robberyResult = checkStreetRobbery(
           { ...updatedPlayer, currentLocation: previousLocation }, // Use previous location for check
           previousLocation,
@@ -40,7 +40,7 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
         );
 
         if (robberyResult) {
-          // Apply robbery effects
+          // Apply robbery effects (gameplay effects apply to ALL players including AI)
           set((state) => ({
             players: state.players.map((p) =>
               p.id === playerId
@@ -51,10 +51,13 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
                   }
                 : p
             ),
-            shadowfingersEvent: {
-              type: 'street',
-              result: robberyResult,
-            },
+            // Only show UI event for human players
+            ...(updatedPlayer.isAI ? {} : {
+              shadowfingersEvent: {
+                type: 'street' as const,
+                result: robberyResult,
+              },
+            }),
           }));
         }
       }

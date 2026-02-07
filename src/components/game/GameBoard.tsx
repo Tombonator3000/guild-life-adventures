@@ -612,13 +612,13 @@ export function GameBoard() {
               <Brain className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-secondary animate-spin`} style={{ animationDuration: '3s' }} />
             </div>
             <h3 className={`font-display ${isMobile ? 'text-base' : 'text-xl'} text-card-foreground`}>
-              Grimwald is Scheming...
+              {currentPlayer?.name || 'AI'} is Scheming...
             </h3>
             {!isMobile && (
               <p className="text-sm text-muted-foreground text-center max-w-xs">
-                {aiDifficulty === 'easy' && 'Hmm, let me think about this...'}
-                {aiDifficulty === 'medium' && 'Calculating optimal strategy...'}
-                {aiDifficulty === 'hard' && 'Analyzing all possibilities with precision!'}
+                {(currentPlayer?.aiDifficulty || aiDifficulty) === 'easy' && 'Hmm, let me think about this...'}
+                {(currentPlayer?.aiDifficulty || aiDifficulty) === 'medium' && 'Calculating optimal strategy...'}
+                {(currentPlayer?.aiDifficulty || aiDifficulty) === 'hard' && 'Analyzing all possibilities with precision!'}
               </p>
             )}
             <div className="flex gap-1 mb-1">
