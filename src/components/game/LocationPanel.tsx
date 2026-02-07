@@ -369,25 +369,56 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
           ),
         }];
 
-      case 'armory':
-        return [{
-          id: 'equipment',
-          label: 'Equipment',
-          content: (
-            <ArmoryPanel
-              player={player}
-              priceModifier={priceModifier}
-              modifyGold={modifyGold}
-              spendTime={spendTime}
-              modifyClothing={modifyClothing}
-              modifyHappiness={modifyHappiness}
-              workShift={workShift}
-              buyDurable={buyDurable}
-              equipItem={equipItem}
-              unequipItem={unequipItem}
-            />
-          ),
-        }];
+      case 'armory': {
+        const canWorkAtArmory = currentJobData && currentJobData.location === 'Armory';
+        const armoryProps = {
+          player,
+          priceModifier,
+          modifyGold,
+          spendTime,
+          modifyClothing,
+          modifyHappiness,
+          workShift,
+          buyDurable,
+          equipItem,
+          unequipItem,
+        };
+        return [
+          {
+            id: 'clothing',
+            label: 'Clothing',
+            content: <ArmoryPanel {...armoryProps} section="clothing" />,
+          },
+          {
+            id: 'weapons',
+            label: 'Weapons',
+            content: <ArmoryPanel {...armoryProps} section="weapons" />,
+          },
+          {
+            id: 'armor',
+            label: 'Armor',
+            content: <ArmoryPanel {...armoryProps} section="armor" />,
+          },
+          {
+            id: 'shields',
+            label: 'Shields',
+            content: <ArmoryPanel {...armoryProps} section="shields" />,
+          },
+          {
+            id: 'work',
+            label: 'Work',
+            hidden: !canWorkAtArmory,
+            content: (
+              <WorkSection
+                player={player}
+                locationName="Armory"
+                workShift={workShift}
+                variant="jones"
+              />
+            ),
+          },
+        ];
+      }
 
       case 'enchanter': {
         const tabs: LocationTab[] = [
@@ -465,11 +496,22 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
 
       case 'shadow-market': {
         const shadowNewspaperPrice = Math.round(NEWSPAPER_COST * priceModifier * 0.5);
+        const canWorkAtShadowMarket = currentJobData && currentJobData.location === 'Shadow Market';
+        const shadowMarketProps = {
+          player,
+          priceModifier,
+          onSpendTime: (hours: number) => spendTime(player.id, hours),
+          onModifyGold: (amount: number) => modifyGold(player.id, amount),
+          onModifyHappiness: (amount: number) => modifyHappiness(player.id, amount),
+          onModifyFood: (amount: number) => modifyFood(player.id, amount),
+          buyLotteryTicket,
+          buyTicket,
+        };
 
-        const tabs: LocationTab[] = [
+        return [
           {
-            id: 'market',
-            label: 'Market',
+            id: 'goods',
+            label: 'Goods',
             content: (
               <div className="space-y-3">
                 <ActionButton
@@ -485,23 +527,29 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
                     setShowNewspaper(true);
                   }}
                 />
-                <ShadowMarketPanel
-                  player={player}
-                  priceModifier={priceModifier}
-                  onSpendTime={(hours) => spendTime(player.id, hours)}
-                  onModifyGold={(amount) => modifyGold(player.id, amount)}
-                  onModifyHappiness={(amount) => modifyHappiness(player.id, amount)}
-                  onModifyFood={(amount) => modifyFood(player.id, amount)}
-                  buyLotteryTicket={buyLotteryTicket}
-                  buyTicket={buyTicket}
-                />
+                <ShadowMarketPanel {...shadowMarketProps} section="goods" />
               </div>
             ),
           },
           {
+            id: 'lottery',
+            label: "Fortune's Wheel",
+            content: <ShadowMarketPanel {...shadowMarketProps} section="lottery" />,
+          },
+          {
+            id: 'tickets',
+            label: 'Weekend',
+            content: <ShadowMarketPanel {...shadowMarketProps} section="tickets" />,
+          },
+          {
+            id: 'appliances',
+            label: 'Magical Items',
+            content: <ShadowMarketPanel {...shadowMarketProps} section="appliances" />,
+          },
+          {
             id: 'work',
             label: 'Work',
-            hidden: !(currentJobData && currentJobData.location === 'Shadow Market'),
+            hidden: !canWorkAtShadowMarket,
             content: (
               <WorkSection
                 player={player}
@@ -512,56 +560,67 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             ),
           },
         ];
-        return tabs;
       }
 
-      case 'fence':
-        return [{
-          id: 'fence',
-          label: 'Trade',
-          content: (
-            <PawnShopPanel
-              player={player}
-              priceModifier={priceModifier}
-              onSellItem={(itemId, price) => {
-                sellItem(player.id, itemId, price);
-                spendTime(player.id, 1);
-              }}
-              onBuyUsedItem={(itemId, price) => {
-                modifyGold(player.id, -price);
-                spendTime(player.id, 1);
-                if (itemId === 'used-clothes') {
-                  modifyClothing(player.id, 50);
-                } else if (itemId === 'used-blanket') {
-                  modifyHappiness(player.id, 3);
-                } else if (itemId === 'used-sword') {
-                  buyDurable(player.id, 'sword', 0);
-                  equipItem(player.id, 'sword', 'weapon');
-                  toast.success('Equipped Used Sword!');
-                } else if (itemId === 'used-shield') {
-                  buyDurable(player.id, 'shield', 0);
-                  equipItem(player.id, 'shield', 'shield');
-                  toast.success('Equipped Dented Shield!');
-                }
-              }}
-              onGamble={(stake) => {
-                modifyGold(player.id, -stake);
-                spendTime(player.id, stake >= 100 ? 3 : 2);
+      case 'fence': {
+        const fenceProps = {
+          player,
+          priceModifier,
+          onSellItem: (itemId: string, price: number) => {
+            sellItem(player.id, itemId, price);
+            spendTime(player.id, 1);
+          },
+          onBuyUsedItem: (itemId: string, price: number) => {
+            modifyGold(player.id, -price);
+            spendTime(player.id, 1);
+            if (itemId === 'used-clothes') {
+              modifyClothing(player.id, 50);
+            } else if (itemId === 'used-blanket') {
+              modifyHappiness(player.id, 3);
+            } else if (itemId === 'used-sword') {
+              buyDurable(player.id, 'sword', 0);
+              equipItem(player.id, 'sword', 'weapon');
+              toast.success('Equipped Used Sword!');
+            } else if (itemId === 'used-shield') {
+              buyDurable(player.id, 'shield', 0);
+              equipItem(player.id, 'shield', 'shield');
+              toast.success('Equipped Dented Shield!');
+            }
+          },
+          onGamble: (stake: number) => {
+            modifyGold(player.id, -stake);
+            spendTime(player.id, stake >= 100 ? 3 : 2);
 
-                let winChance = stake === 10 ? 0.4 : stake === 50 ? 0.3 : 0.2;
-                let winAmount = stake === 10 ? 25 : stake === 50 ? 150 : 400;
+            const winChance = stake === 10 ? 0.4 : stake === 50 ? 0.3 : 0.2;
+            const winAmount = stake === 10 ? 25 : stake === 50 ? 150 : 400;
 
-                if (Math.random() < winChance) {
-                  modifyGold(player.id, winAmount);
-                  modifyHappiness(player.id, stake >= 100 ? 25 : stake >= 50 ? 15 : 5);
-                } else {
-                  modifyHappiness(player.id, stake >= 100 ? -20 : stake >= 50 ? -10 : -3);
-                }
-              }}
-              onSpendTime={(hours) => spendTime(player.id, hours)}
-            />
-          ),
-        }];
+            if (Math.random() < winChance) {
+              modifyGold(player.id, winAmount);
+              modifyHappiness(player.id, stake >= 100 ? 25 : stake >= 50 ? 15 : 5);
+            } else {
+              modifyHappiness(player.id, stake >= 100 ? -20 : stake >= 50 ? -10 : -3);
+            }
+          },
+          onSpendTime: (hours: number) => spendTime(player.id, hours),
+        };
+        return [
+          {
+            id: 'trade',
+            label: 'Used Goods',
+            content: <PawnShopPanel {...fenceProps} section="trade" />,
+          },
+          {
+            id: 'magical',
+            label: 'Magical Items',
+            content: <PawnShopPanel {...fenceProps} section="magical" />,
+          },
+          {
+            id: 'gambling',
+            label: 'Gambling',
+            content: <PawnShopPanel {...fenceProps} section="gambling" />,
+          },
+        ];
+      }
 
       case 'cave':
         return [{

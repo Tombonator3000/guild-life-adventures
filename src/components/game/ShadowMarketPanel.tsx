@@ -16,6 +16,8 @@ import {
   JonesInfoRow,
 } from './JonesStylePanel';
 
+export type ShadowMarketSection = 'goods' | 'lottery' | 'tickets' | 'appliances';
+
 interface ShadowMarketPanelProps {
   player: Player;
   priceModifier: number;
@@ -25,6 +27,7 @@ interface ShadowMarketPanelProps {
   onModifyFood: (amount: number) => void;
   buyLotteryTicket: (playerId: string, cost: number) => void;
   buyTicket: (playerId: string, ticketType: string, cost: number) => void;
+  section?: ShadowMarketSection;
 }
 
 export function ShadowMarketPanel({
@@ -36,6 +39,7 @@ export function ShadowMarketPanel({
   onModifyFood,
   buyLotteryTicket,
   buyTicket,
+  section,
 }: ShadowMarketPanelProps) {
   const { buyAppliance } = useGameStore();
   const appliances = getMarketAppliances();
@@ -87,91 +91,134 @@ export function ShadowMarketPanel({
   const lotteryItems = SHADOW_MARKET_ITEMS.filter(i => i.isLotteryTicket);
   const ticketItems = SHADOW_MARKET_ITEMS.filter(i => i.isTicket);
 
+  const footerNote = (
+    <div className="mt-2 text-xs text-[#8b7355] px-2">
+      1 hour per purchase
+    </div>
+  );
+
+  const renderGoods = () => (
+    <>
+      {regularItems.map(item => {
+        const price = Math.round(getItemPrice(item, priceModifier * 0.7));
+        const canAfford = player.gold >= price && player.timeRemaining >= 1;
+        return (
+          <JonesMenuItem
+            key={item.id}
+            label={item.name}
+            price={price}
+            disabled={!canAfford}
+            onClick={() => handleBuyItem(item, price)}
+          />
+        );
+      })}
+    </>
+  );
+
+  const renderLottery = () => (
+    <>
+      {player.lotteryTickets > 0 && (
+        <JonesInfoRow label="Tickets this week:" value={`${player.lotteryTickets}`} />
+      )}
+      {lotteryItems.map(item => {
+        const price = Math.round(getItemPrice(item, priceModifier * 0.7));
+        const canAfford = player.gold >= price && player.timeRemaining >= 1;
+        return (
+          <JonesMenuItem
+            key={item.id}
+            label={item.name}
+            price={price}
+            disabled={!canAfford}
+            onClick={() => handleBuyItem(item, price)}
+          />
+        );
+      })}
+      <div className="text-xs text-[#8b7355] px-2 mb-1">
+        Drawing at week end. Grand prize: 5,000g!
+      </div>
+    </>
+  );
+
+  const renderTickets = () => (
+    <>
+      {ticketItems.map(item => {
+        const price = Math.round(getItemPrice(item, priceModifier * 0.7));
+        const canAfford = player.gold >= price && player.timeRemaining >= 1;
+        const alreadyOwns = item.ticketType ? player.tickets.includes(item.ticketType) : false;
+        return (
+          <JonesMenuItem
+            key={item.id}
+            label={item.name}
+            price={price}
+            disabled={!canAfford || alreadyOwns}
+            highlight={alreadyOwns}
+            onClick={() => handleBuyItem(item, price)}
+          />
+        );
+      })}
+    </>
+  );
+
+  const renderAppliances = () => (
+    <>
+      <div className="text-xs text-[#a09080] px-2 mb-1 flex items-center gap-1">
+        <AlertTriangle className="w-3 h-3" />
+        Higher break chance (1/36)
+      </div>
+      {appliances.map(appliance => {
+        const price = Math.round((appliance.marketPrice || 0) * priceModifier);
+        const alreadyOwns = !!player.appliances[appliance.id];
+        const canAfford = player.gold >= price && player.timeRemaining >= 1;
+        const isFirstPurchase = !player.applianceHistory.includes(appliance.id);
+        const happinessNote = isFirstPurchase && appliance.happinessMarket > 0
+          ? ` (+${appliance.happinessMarket} Hap)`
+          : '';
+
+        return (
+          <JonesMenuItem
+            key={appliance.id}
+            label={`${appliance.name}${happinessNote}`}
+            price={price}
+            disabled={!canAfford || alreadyOwns}
+            highlight={alreadyOwns}
+            onClick={() => handleBuyAppliance(appliance.id, price)}
+          />
+        );
+      })}
+    </>
+  );
+
+  // Tabbed mode: render only the specified section
+  if (section) {
+    switch (section) {
+      case 'goods':
+        return <div>{renderGoods()}{footerNote}</div>;
+      case 'lottery':
+        return <div>{renderLottery()}{footerNote}</div>;
+      case 'tickets':
+        return <div>{renderTickets()}{footerNote}</div>;
+      case 'appliances':
+        return <div>{renderAppliances()}{footerNote}</div>;
+    }
+  }
+
+  // Full mode (legacy): render all sections
   return (
     <JonesPanel>
       <JonesPanelHeader title="Shadow Market" subtitle="Discount Goods" />
       <JonesPanelContent>
         <JonesSectionHeader title="BLACK MARKET GOODS" />
-        {regularItems.map(item => {
-          const price = Math.round(getItemPrice(item, priceModifier * 0.7)); // 30% cheaper
-          const canAfford = player.gold >= price && player.timeRemaining >= 1;
-          return (
-            <JonesMenuItem
-              key={item.id}
-              label={item.name}
-              price={price}
-              disabled={!canAfford}
-              onClick={() => handleBuyItem(item, price)}
-            />
-          );
-        })}
+        {renderGoods()}
 
         <JonesSectionHeader title="FORTUNE'S WHEEL" />
-        {player.lotteryTickets > 0 && (
-          <JonesInfoRow label="Tickets this week:" value={`${player.lotteryTickets}`} />
-        )}
-        {lotteryItems.map(item => {
-          const price = Math.round(getItemPrice(item, priceModifier * 0.7));
-          const canAfford = player.gold >= price && player.timeRemaining >= 1;
-          return (
-            <JonesMenuItem
-              key={item.id}
-              label={item.name}
-              price={price}
-              disabled={!canAfford}
-              onClick={() => handleBuyItem(item, price)}
-            />
-          );
-        })}
-        <div className="text-xs text-[#8b7355] px-2 mb-1">
-          Drawing at week end. Grand prize: 5,000g!
-        </div>
+        {renderLottery()}
 
         <JonesSectionHeader title="WEEKEND TICKETS" />
-        {ticketItems.map(item => {
-          const price = Math.round(getItemPrice(item, priceModifier * 0.7));
-          const canAfford = player.gold >= price && player.timeRemaining >= 1;
-          const alreadyOwns = item.ticketType ? player.tickets.includes(item.ticketType) : false;
-          return (
-            <JonesMenuItem
-              key={item.id}
-              label={item.name}
-              price={price}
-              disabled={!canAfford || alreadyOwns}
-              highlight={alreadyOwns}
-              onClick={() => handleBuyItem(item, price)}
-            />
-          );
-        })}
+        {renderTickets()}
 
         <JonesSectionHeader title="USED MAGICAL ITEMS" />
-        <div className="text-xs text-[#a09080] px-2 mb-1 flex items-center gap-1">
-          <AlertTriangle className="w-3 h-3" />
-          Higher break chance (1/36)
-        </div>
-        {appliances.map(appliance => {
-          const price = Math.round((appliance.marketPrice || 0) * priceModifier);
-          const alreadyOwns = !!player.appliances[appliance.id];
-          const canAfford = player.gold >= price && player.timeRemaining >= 1;
-          const isFirstPurchase = !player.applianceHistory.includes(appliance.id);
-          const happinessNote = isFirstPurchase && appliance.happinessMarket > 0
-            ? ` (+${appliance.happinessMarket} Hap)`
-            : '';
-
-          return (
-            <JonesMenuItem
-              key={appliance.id}
-              label={`${appliance.name}${happinessNote}`}
-              price={price}
-              disabled={!canAfford || alreadyOwns}
-              highlight={alreadyOwns}
-              onClick={() => handleBuyAppliance(appliance.id, price)}
-            />
-          );
-        })}
-        <div className="mt-2 text-xs text-[#8b7355] px-2">
-          1 hour per purchase
-        </div>
+        {renderAppliances()}
+        {footerNote}
       </JonesPanelContent>
     </JonesPanel>
   );
