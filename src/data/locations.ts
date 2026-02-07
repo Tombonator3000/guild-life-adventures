@@ -80,20 +80,20 @@ export const getPath = (from: LocationId, to: LocationId): LocationId[] => {
 // These can be edited to fine-tune zone positions
 // Coordinates are percentages relative to the board container
 export const ZONE_CONFIGS: ZoneConfig[] = [
-  { id: 'noble-heights', x: 10.6, y: 0.3, width: 15.2, height: 30.2 },
-  { id: 'landlord', x: 30.9, y: 2.5, width: 9.9, height: 18.9 },
-  { id: 'slums', x: 41.9, y: 1.1, width: 18.2, height: 21.2 },
-  { id: 'fence', x: 61.1, y: 0.0, width: 13.1, height: 20.6 },
-  { id: 'general-store', x: 11.0, y: 35.9, width: 15.2, height: 18.9 },
-  { id: 'shadow-market', x: 74.7, y: 0.8, width: 14.9, height: 18.8 },
-  { id: 'rusty-tankard', x: 74.9, y: 20.9, width: 14.4, height: 19.6 },
-  { id: 'armory', x: 74.9, y: 41.0, width: 14.3, height: 22.7 },
-  { id: 'forge', x: 11.9, y: 74.3, width: 13.3, height: 25.2 },
-  { id: 'guild-hall', x: 26.9, y: 77.0, width: 14.3, height: 23.0 },
-  { id: 'cave', x: 45.0, y: 78.0, width: 10.0, height: 22.0 },
-  { id: 'academy', x: 58.9, y: 77.0, width: 14.8, height: 22.8 },
-  { id: 'enchanter', x: 74.6, y: 65.0, width: 15.0, height: 35.0 },
-  { id: 'bank', x: 10.9, y: 55.8, width: 14.6, height: 17.0 },
+  { id: 'noble-heights', x: 1.1, y: 0.0, width: 18.1, height: 32.7 },
+  { id: 'landlord', x: 25.4, y: 1.6, width: 12.8, height: 18.7 },
+  { id: 'slums', x: 41.1, y: 0.7, width: 19.1, height: 21.0 },
+  { id: 'fence', x: 63.3, y: 0.9, width: 14.7, height: 20.0 },
+  { id: 'general-store', x: 3.1, y: 33.9, width: 16.7, height: 20.2 },
+  { id: 'shadow-market', x: 80.1, y: 0.9, width: 18.0, height: 18.9 },
+  { id: 'rusty-tankard', x: 79.4, y: 21.0, width: 18.1, height: 19.6 },
+  { id: 'armory', x: 80.6, y: 41.9, width: 15.4, height: 20.5 },
+  { id: 'forge', x: 3.8, y: 73.8, width: 17.7, height: 26.1 },
+  { id: 'guild-hall', x: 23.6, y: 77.0, width: 14.3, height: 23.0 },
+  { id: 'cave', x: 43.1, y: 78.0, width: 12.2, height: 22.0 },
+  { id: 'academy', x: 60.3, y: 77.8, width: 17.9, height: 16.1 },
+  { id: 'enchanter', x: 80.0, y: 64.8, width: 14.6, height: 29.2 },
+  { id: 'bank', x: 1.1, y: 54.8, width: 18.1, height: 18.7 },
 ];
 
 // Board aspect ratio for the game board container

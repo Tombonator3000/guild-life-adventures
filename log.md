@@ -1,5 +1,34 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-07 - Update Default Zone Configurations
+
+**Task**: Set new default ZONE_CONFIGS and CENTER_PANEL_CONFIG values based on fine-tuned zone editor output.
+
+### Changes
+
+| File | Change |
+|------|--------|
+| `src/data/locations.ts` | Updated all 14 ZONE_CONFIGS entries with new x/y/width/height values - zones now better align with game board artwork |
+| `src/hooks/useZoneConfiguration.ts` | Updated DEFAULT_CENTER_PANEL: top 22.5→22.6, left 26.7→20.8, width 46.5→58.5, height 55.5→54.7 |
+| `src/components/game/ZoneEditor.tsx` | Same DEFAULT_CENTER_PANEL update to keep both files in sync |
+
+### Key coordinate changes (old → new)
+- **noble-heights**: x 10.6→1.1, width 15.2→18.1, height 30.2→32.7 (wider, taller, shifted left to board edge)
+- **general-store**: x 11.0→3.1, width 15.2→16.7 (shifted left to board edge)
+- **bank**: x 10.9→1.1, width 14.6→18.1 (shifted left to board edge)
+- **forge**: x 11.9→3.8, width 13.3→17.7 (shifted left, wider)
+- **shadow-market**: x 74.7→80.1, width 14.9→18.0 (shifted right to board edge)
+- **rusty-tankard**: x 74.9→79.4, width 14.4→18.1 (shifted right)
+- **armory**: x 74.9→80.6, width 14.3→15.4 (shifted right to board edge)
+- **enchanter**: x 74.6→80.0, width 15.0→14.6 (shifted right)
+- **center panel**: left 26.7→20.8, width 46.5→58.5 (wider to fill gap between zone columns)
+
+MOVEMENT_PATHS remains empty (no change needed).
+
+Build verified: production build succeeds with no errors.
+
+---
+
 ## 2026-02-07 - Fix Center Panel Alignment (Zone Editor + GameBoard)
 
 **Task**: Center panel doesn't stretch edge-to-edge with game background, especially on laptop screens.

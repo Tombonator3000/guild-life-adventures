@@ -22,10 +22,10 @@ interface ZoneEditorProps {
 }
 
 const DEFAULT_CENTER_PANEL: CenterPanelConfig = {
-  top: 22.5,
-  left: 26.7,
-  width: 46.5,
-  height: 55.5,
+  top: 22.6,
+  left: 20.8,
+  width: 58.5,
+  height: 54.7,
 };
 
 // Get adjacent location pairs (edges in the ring)
