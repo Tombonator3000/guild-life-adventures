@@ -1,5 +1,81 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-07 - Multiplayer Deep Audit: Rate Limiting, Zombie Fix, TURN, Tests & Docs
+
+**Task**: Deep audit of the online multiplayer system. Fix known issues (TURN servers, rate limiting, zombie players, test coverage), create comprehensive multiplayer documentation, and add first multiplayer test suite.
+
+### Audit Methodology
+Used specialized agents to perform a thorough code review of all 7 network files (~1,800 lines). Cross-referenced with previous audit findings and known issues from the backlog.
+
+### Fixes Applied (7)
+
+| Fix | Severity | Description |
+|-----|----------|-------------|
+| **Rate limiting on guest actions** | HIGH | Added per-peer sliding window rate limiter (10 actions/sec). Prevents action spam flooding the host. Blocked actions receive error response. Limits cleared on disconnect. |
+| **Zombie disconnected player turn stalls** | HIGH | Disconnected players no longer stall the game. Host auto-skips after 5s grace period when it's a disconnected player's turn. Turn change checks also detect and skip zombies. |
+| **TURN server deprecation** | HIGH | Removed dead `openrelay.metered.ca` TURN servers. Added 4 Google STUN servers. Created extensible TURN config with `CUSTOM_TURN_SERVERS` array and `window.GUILD_TURN_SERVERS` runtime injection for self-hosted deployments. |
+| **Dismissed events persistence** | MEDIUM | Dismissed event tracking now auto-clears on turn change and new week. Added `resetNetworkState()` called on disconnect/game-end. Prevents stale dismissed events across sessions. |
+| **Movement animation validation** | MEDIUM | Host validates movement path length before re-broadcasting (max 16 steps). Blocks absurd paths that would cause visual glitches on other clients. |
+| **Action result timeout for guests** | MEDIUM | Guest tracks pending actions with 10s timeout. Timed-out actions are logged and cleaned up. Prevents indefinite waits if host crashes mid-action. |
+| **Network state cleanup on disconnect** | MEDIUM | `resetNetworkState()` called on disconnect and unmount cleanup. Clears dismissed events, sync tracking indices. Prevents state pollution across game sessions. |
+
+### Multiplayer Test Suite (NEW)
+
+Created `src/test/multiplayer.test.ts` — **32 tests** across 7 categories:
+
+| Category | Tests | Coverage |
+|----------|-------|----------|
+| Room Codes | 6 | Generation, charset, PeerJS ID conversion, validation |
+| Action Categories | 5 | Whitelist/blacklist disjointness, expected actions |
+| Action Proxy | 4 | Local/host/guest forwarding behavior |
+| State Serialization | 7 | Serialize/deserialize, dismissed events, turn-change clear |
+| executeAction | 3 | Valid/invalid/non-function actions |
+| Pending Actions | 2 | Track/resolve lifecycle, cleanup |
+| Network Guards | 3 | Guest startNewGame block, save/load block, dismiss tracking |
+
+### Multiplayer Documentation (NEW)
+
+Created `multiplayer.md` — comprehensive reference document covering:
+- Architecture overview (host-authoritative P2P model)
+- Complete file map with line counts and purposes
+- Connection flow (room create, join, game start, gameplay loop)
+- Full message protocol (10 host->guest types, 7 guest->host types)
+- State synchronization mechanics (serialization, dismissed events, broadcast trigger)
+- Security & validation (action whitelist, cross-player checks, turn validation)
+- Turn management (timeout, zombie detection)
+- Reconnection system (guest reconnect, host window, race condition fixes)
+- ICE/TURN configuration (3 options for adding TURN servers)
+- Rate limiting details
+- Configuration constants reference table
+- Known issues & limitations catalog
+- Future work roadmap
+- Troubleshooting guide
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `src/network/PeerManager.ts` | Replaced deprecated TURN servers with STUN-only + extensible TURN config |
+| `src/network/useNetworkSync.ts` | Added rate limiting, zombie detection, movement validation, action tracking |
+| `src/network/NetworkActionProxy.ts` | Added pending action tracking with timeout |
+| `src/network/networkState.ts` | Added auto-clear on turn change, resetNetworkState() |
+| `src/network/useOnlineGame.ts` | Added resetNetworkState on disconnect/unmount |
+| `src/test/multiplayer.test.ts` | NEW: 32 multiplayer tests |
+| `multiplayer.md` | NEW: Comprehensive multiplayer documentation |
+
+### Verification
+- TypeScript: Compiles cleanly (`tsc --noEmit`)
+- Tests: 144/144 passing (112 existing + 32 new multiplayer tests)
+- Build: Production build succeeds (`bun run build`)
+
+### Known Issues Left for Future Work
+- TURN servers need new infrastructure (documented 3 options in multiplayer.md)
+- No E2E multiplayer tests (requires browser-based WebRTC mocking)
+- Cross-player action validation only checks args[0] (incomplete)
+- No host migration (single point of failure)
+- Room code uses Math.random() (not cryptographically secure)
+
+---
+
 ## 2026-02-07 - Multiplayer AI Opponents + Deep Audit Bug Fixes
 
 **Task**: Implement local multiplayer with multiple AI opponents (up to 4 total players) and perform a deep audit of game mechanics, fixing all bugs found.

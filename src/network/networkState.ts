@@ -17,6 +17,18 @@ export function clearDismissedEvents() {
   dismissedEvents.clear();
 }
 
+/** Track the last known currentPlayerIndex to clear dismissed events on turn change */
+let lastSyncedPlayerIndex = -1;
+/** Track the last known week to clear dismissed events on new week */
+let lastSyncedWeek = -1;
+
+/** Reset all network state tracking (call on game end / new game / disconnect) */
+export function resetNetworkState() {
+  dismissedEvents.clear();
+  lastSyncedPlayerIndex = -1;
+  lastSyncedWeek = -1;
+}
+
 /**
  * Extract serializable game state from the Zustand store.
  * Only includes gameplay-relevant fields — local UI state (selectedLocation,
@@ -55,9 +67,17 @@ export function serializeGameState(): SerializedGameState {
  * Apply state from host to local Zustand store (guest only).
  * Preserves local UI state (selectedLocation, tutorial, AI speed).
  * Skips event fields that the guest has locally dismissed (prevents modal flicker).
+ * Auto-clears dismissed events on turn change and new week to prevent stale state.
  */
 export function applyNetworkState(state: SerializedGameState) {
   const store = useGameStore.getState();
+
+  // Clear dismissed events on turn change or new week (prevents persistence bugs)
+  if (state.currentPlayerIndex !== lastSyncedPlayerIndex || state.week !== lastSyncedWeek) {
+    dismissedEvents.clear();
+    lastSyncedPlayerIndex = state.currentPlayerIndex;
+    lastSyncedWeek = state.week ?? -1;
+  }
 
   // Build the update object
   const update: Record<string, unknown> = {

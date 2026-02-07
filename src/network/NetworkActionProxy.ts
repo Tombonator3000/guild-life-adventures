@@ -11,8 +11,55 @@ type ActionSender = (actionName: string, args: unknown[]) => void;
 // Global reference to the network action sender (set by useOnlineGame hook)
 let networkActionSender: ActionSender | null = null;
 
+/** Track pending actions to detect timeouts (requestId -> timestamp) */
+const pendingActions = new Map<string, number>();
+/** Timeout for guest action responses (ms) */
+const ACTION_RESPONSE_TIMEOUT = 10000;
+/** Interval for checking timed-out actions */
+let actionTimeoutChecker: ReturnType<typeof setInterval> | null = null;
+
+/** Start checking for timed-out actions */
+function startActionTimeoutChecker() {
+  if (actionTimeoutChecker) return;
+  actionTimeoutChecker = setInterval(() => {
+    const now = Date.now();
+    for (const [requestId, timestamp] of pendingActions) {
+      if (now - timestamp > ACTION_RESPONSE_TIMEOUT) {
+        console.warn(`[NetworkProxy] Action timed out (no response from host): ${requestId}`);
+        pendingActions.delete(requestId);
+      }
+    }
+    // Stop checker when no more pending actions
+    if (pendingActions.size === 0 && actionTimeoutChecker) {
+      clearInterval(actionTimeoutChecker);
+      actionTimeoutChecker = null;
+    }
+  }, 2000);
+}
+
+/** Track a sent action for timeout detection */
+export function trackPendingAction(requestId: string) {
+  pendingActions.set(requestId, Date.now());
+  startActionTimeoutChecker();
+}
+
+/** Mark an action as resolved (response received) */
+export function resolveAction(requestId: string) {
+  pendingActions.delete(requestId);
+}
+
+/** Clear all pending actions (on disconnect/cleanup) */
+export function clearPendingActions() {
+  pendingActions.clear();
+  if (actionTimeoutChecker) {
+    clearInterval(actionTimeoutChecker);
+    actionTimeoutChecker = null;
+  }
+}
+
 export function setNetworkActionSender(sender: ActionSender | null) {
   networkActionSender = sender;
+  if (!sender) clearPendingActions();
 }
 
 /**

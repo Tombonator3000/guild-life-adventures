@@ -2,6 +2,17 @@
 
 ## Completed (2026-02-07)
 
+- [x] Multiplayer Deep Audit & Fixes — 7 bugs fixed, 32 tests added, multiplayer.md created
+  - Rate limiting on guest actions (10/sec sliding window)
+  - Zombie disconnected players auto-skipped (5s grace period)
+  - TURN server deprecation handled (STUN-only + extensible TURN config)
+  - Dismissed events persistence across sessions fixed (auto-clear on turn/week change)
+  - Movement animation path validation (max 16 steps)
+  - Action result timeout for guests (10s timeout tracking)
+  - Network state cleanup on disconnect/game-end
+  - 32 multiplayer unit tests in src/test/multiplayer.test.ts
+  - Comprehensive multiplayer.md reference document
+
 - [x] Multi-AI opponent support — up to 4 named AI players
   - Grimwald, Seraphina, Thornwick, Morgath with unique colors
   - Per-AI difficulty (Easy/Medium/Hard)
@@ -32,8 +43,8 @@
 - [ ] Implement loan default limits (prevent infinite extensions)
 - [ ] Quest education requirements reference non-existent paths
 - [ ] Make Frost Chest and Arcane Tome actually purchasable
-- [ ] Reset network state on victory screen (soft lock bug)
-- [ ] Fix event modal dismissal desync in online multiplayer
+- [x] Reset network state on victory screen (soft lock bug) — **FIXED** resetNetworkState() on disconnect
+- [x] Fix event modal dismissal desync in online multiplayer — **FIXED** auto-clear on turn/week change
 
 ### Medium Priority
 - [ ] AI: Add difficulty-based decision thresholds (currently only speed differs)

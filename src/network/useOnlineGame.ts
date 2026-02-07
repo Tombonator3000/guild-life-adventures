@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { peerManager } from './PeerManager';
 import { useGameStore } from '@/store/gameStore';
-import { serializeGameState, applyNetworkState } from './networkState';
+import { serializeGameState, applyNetworkState, resetNetworkState } from './networkState';
 import type {
   LobbyPlayer,
   LobbyState,
@@ -433,6 +433,8 @@ export function useOnlineGame() {
       peerManager.sendToHost({ type: 'leave' });
     }
     isOnlineRef.current = false;
+    // Clean up network state tracking (dismissed events, sync indices)
+    resetNetworkState();
     // Brief delay to allow messages to flush before destroying
     setTimeout(() => peerManager.destroy(), 50);
     setIsHost(false);
@@ -455,6 +457,7 @@ export function useOnlineGame() {
       const state = useGameStore.getState();
       const isActiveGame = state.networkMode === 'host' || state.networkMode === 'guest';
       if (isOnlineRef.current && !isActiveGame) {
+        resetNetworkState();
         peerManager.destroy();
       }
     };
