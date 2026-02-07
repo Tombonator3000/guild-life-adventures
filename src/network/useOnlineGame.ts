@@ -1,6 +1,6 @@
 // React hook for online multiplayer game management
 // Handles lobby phase: creating/joining rooms, player management, game start
-// Features: reconnection support, peer name tracking
+// Features: reconnection support, peer name tracking, host migration
 // During gameplay, useNetworkSync handles state sync (this hook only handles lobby messages)
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -15,8 +15,12 @@ import type {
   HostMessage,
   GuestMessage,
   ConnectionStatus,
+  SerializedGameState,
 } from './types';
 import { PLAYER_COLORS } from '@/types/game.types';
+
+/** Time to wait for host reconnection before triggering host migration (ms) */
+const HOST_MIGRATION_TIMEOUT = 10000;
 
 // --- Main Hook ---
 
@@ -37,6 +41,13 @@ export function useOnlineGame() {
 
   // Track if we're in online game mode
   const isOnlineRef = useRef(false);
+
+  // Store lobby data for host migration (all peer IDs and slots)
+  const storedLobbyRef = useRef<LobbyPlayer[]>([]);
+  // Host migration timeout timer
+  const hostMigrationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track if host migration is in progress
+  const [isMigrating, setIsMigrating] = useState(false);
 
   // --- Host: Create Room ---
 
@@ -124,6 +135,9 @@ export function useOnlineGame() {
       roomCode,
     });
 
+    // Store lobby data for potential host migration
+    storedLobbyRef.current = lobbyPlayers;
+
     // Set peerId -> playerId mapping on PeerManager for turn validation
     // Also store peer names for reconnection identification
     const peerMap = new Map<string, string>();
@@ -152,6 +166,7 @@ export function useOnlineGame() {
   const handleGuestMessageRef = useRef<((msg: HostMessage) => void) | null>(null);
   const handlePlayerDisconnectRef = useRef<((peerId: string) => void) | null>(null);
   const handlePlayerReconnectRef = useRef<((peerId: string) => void) | null>(null);
+  const performHostMigrationRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     // Status change handler
@@ -170,7 +185,7 @@ export function useOnlineGame() {
         const msg = message as HostMessage;
         if (msg.type === 'lobby-update' || msg.type === 'game-start' ||
             msg.type === 'kicked' || msg.type === 'player-disconnected' ||
-            msg.type === 'player-reconnected') {
+            msg.type === 'player-reconnected' || msg.type === 'host-migrated') {
           handleGuestMessageRef.current?.(msg);
         }
       }
@@ -181,7 +196,7 @@ export function useOnlineGame() {
       if (isHost) {
         handlePlayerDisconnectRef.current?.(peerId);
       } else {
-        // Host disconnected - try to reconnect
+        // Host disconnected - try to reconnect first
         setConnectionStatus('reconnecting');
         setError('Connection lost - attempting to reconnect...');
         // Auto-attempt reconnection after a brief delay
@@ -190,6 +205,14 @@ export function useOnlineGame() {
             peerManager.attemptReconnect();
           }
         }, 2000);
+
+        // Start host migration timer: if still not connected after timeout, migrate
+        if (hostMigrationTimerRef.current) clearTimeout(hostMigrationTimerRef.current);
+        hostMigrationTimerRef.current = setTimeout(() => {
+          if (peerManager.status !== 'connected') {
+            performHostMigrationRef.current?.();
+          }
+        }, HOST_MIGRATION_TIMEOUT);
       }
     });
 
@@ -305,6 +328,9 @@ export function useOnlineGame() {
         const mySlot = myLobbyPlayer?.slot ?? -1;
         const myPlayerId = mySlot >= 0 ? `player-${mySlot}` : null;
 
+        // Store lobby data for host migration (need all peer IDs and slots)
+        storedLobbyRef.current = message.lobby?.players ?? [];
+
         useGameStore.setState({
           networkMode: 'guest' as const,
           localPlayerId: myPlayerId,
@@ -313,6 +339,18 @@ export function useOnlineGame() {
 
         // Apply the full game state from host AFTER networkMode is set
         applyNetworkState(message.gameState);
+        break;
+      }
+
+      case 'host-migrated': {
+        // A new host has taken over — connect to them
+        const migMsg = message as { type: 'host-migrated'; newHostPeerId: string; gameState: SerializedGameState };
+        console.log(`[OnlineGame] Host migrated to peer: ${migMsg.newHostPeerId}`);
+        setIsMigrating(false);
+        setError(null);
+        // Apply the game state from the new host
+        applyNetworkState(migMsg.gameState);
+        setConnectionStatus('connected');
         break;
       }
 
@@ -397,11 +435,97 @@ export function useOnlineGame() {
     console.log(`[OnlineGame] Player reconnected: ${playerName}`);
   }, []);
 
+  // --- Host Migration ---
+  // When the original host disconnects and can't reconnect, elect a new host.
+  // The guest with the lowest slot number (excluding host slot 0) becomes the new host.
+  // Other guests connect to the new host's existing PeerJS peerId.
+  const performHostMigration = useCallback(() => {
+    const myPeerId = peerManager.peerId;
+    const lobby = storedLobbyRef.current;
+    if (!myPeerId || lobby.length === 0) {
+      setError('Host migration failed — no lobby data');
+      return;
+    }
+
+    // Find non-host lobby players, sorted by slot (lowest first)
+    const candidates = lobby
+      .filter(p => p.peerId !== 'host')
+      .sort((a, b) => a.slot - b.slot);
+
+    if (candidates.length === 0) {
+      setError('Host migration failed — no other players');
+      return;
+    }
+
+    const successor = candidates[0];
+    const amISuccessor = successor.peerId === myPeerId;
+
+    setIsMigrating(true);
+    console.log(`[OnlineGame] Host migration: successor is ${successor.name} (${successor.peerId}), I am ${amISuccessor ? 'the successor' : 'a follower'}`);
+
+    if (amISuccessor) {
+      // I am the new host — promote myself
+      const promoted = peerManager.promoteToHost();
+      if (!promoted) {
+        setError('Host migration failed — could not promote to host');
+        setIsMigrating(false);
+        return;
+      }
+
+      setIsHost(true);
+      setError(null);
+      setIsMigrating(false);
+
+      // Set up peer→player mapping for the new host (excluding old host, excluding myself)
+      const peerMap = new Map<string, string>();
+      lobby.forEach(p => {
+        if (p.peerId !== 'host' && p.peerId !== myPeerId) {
+          peerMap.set(p.peerId, `player-${p.slot}`);
+          peerManager.setPeerName(p.peerId, p.name);
+        }
+      });
+      peerManager.setPeerPlayerMap(peerMap);
+
+      // Update store to host mode (keep current game state as authoritative)
+      const myPlayerId = useGameStore.getState().localPlayerId;
+      useGameStore.setState({
+        networkMode: 'host' as const,
+        localPlayerId: myPlayerId,
+      });
+
+      console.log(`[OnlineGame] Promoted to host. Waiting for ${candidates.length - 1} guests to reconnect.`);
+
+      // The other guests will reconnect to our peerId via the reconnect message handler
+      // (already handled by handleHostMessage 'reconnect' case)
+    } else {
+      // I am not the successor — connect to the new host
+      const newHostPeerId = successor.peerId;
+      console.log(`[OnlineGame] Connecting to new host: ${newHostPeerId}`);
+
+      // Wait a moment for the successor to set up, then connect
+      setTimeout(async () => {
+        try {
+          await peerManager.connectToNewHost(newHostPeerId);
+          setIsMigrating(false);
+          setError(null);
+          setConnectionStatus('connected');
+          console.log(`[OnlineGame] Connected to new host: ${successor.name}`);
+        } catch (err) {
+          console.error('[OnlineGame] Failed to connect to new host:', err);
+          setError('Failed to connect to new host');
+          setIsMigrating(false);
+          setConnectionStatus('error');
+        }
+      }, 3000); // Give the successor time to promote
+    }
+  }, []);
+
   // Keep message handler refs current
   handleHostMessageRef.current = handleHostMessage;
   handleGuestMessageRef.current = handleGuestMessage;
   handlePlayerDisconnectRef.current = handlePlayerDisconnect;
   handlePlayerReconnectRef.current = handlePlayerReconnect;
+  performHostMigrationRef.current = performHostMigration;
 
   // --- Settings Update (host only, lobby phase only) ---
 
@@ -426,6 +550,11 @@ export function useOnlineGame() {
   // --- Disconnect ---
 
   const disconnect = useCallback(() => {
+    // Clear any pending host migration
+    if (hostMigrationTimerRef.current) {
+      clearTimeout(hostMigrationTimerRef.current);
+      hostMigrationTimerRef.current = null;
+    }
     // Notify peers before destroying
     if (peerManager.isHost) {
       peerManager.broadcast({ type: 'kicked', reason: 'Host closed the room' });
@@ -473,6 +602,7 @@ export function useOnlineGame() {
     settings,
     error,
     disconnectedPlayers,
+    isMigrating,
 
     // Actions
     createRoom,

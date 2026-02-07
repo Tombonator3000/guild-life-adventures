@@ -38,7 +38,8 @@ export type HostMessage =
   | { type: 'kicked'; reason: string }
   | { type: 'pong'; timestamp: number }
   | { type: 'movement-animation'; playerId: string; path: LocationId[] }
-  | { type: 'turn-timeout'; playerId: string };
+  | { type: 'turn-timeout'; playerId: string }
+  | { type: 'host-migrated'; newHostPeerId: string; gameState: SerializedGameState };
 
 // Guest → Host messages
 export type GuestMessage =

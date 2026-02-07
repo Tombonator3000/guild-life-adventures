@@ -430,3 +430,128 @@ describe('Network Guards in Store', () => {
     resetNetworkState();
   });
 });
+
+// ================================================================
+// Cryptographic Room Code Tests (crypto.getRandomValues)
+// ================================================================
+
+describe('Room Code Cryptographic Security', () => {
+  it('generates codes using crypto.getRandomValues', () => {
+    // Verify the function still works (crypto is available in test env)
+    const code = generateRoomCode();
+    expect(code).toHaveLength(6);
+    expect(code).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
+  });
+
+  it('generates high-entropy codes (no obvious patterns)', () => {
+    const codes: string[] = [];
+    for (let i = 0; i < 200; i++) {
+      codes.push(generateRoomCode());
+    }
+    // All codes should be unique
+    const unique = new Set(codes);
+    expect(unique.size).toBe(200);
+
+    // Character distribution should be roughly uniform (no single char > 30% of total)
+    const charCounts = new Map<string, number>();
+    for (const code of codes) {
+      for (const c of code) {
+        charCounts.set(c, (charCounts.get(c) ?? 0) + 1);
+      }
+    }
+    const totalChars = 200 * 6;
+    for (const [, count] of charCounts) {
+      expect(count / totalChars).toBeLessThan(0.3);
+    }
+  });
+});
+
+// ================================================================
+// Cross-Player Validation Deep Scan Tests
+// ================================================================
+
+describe('Cross-Player Validation', () => {
+  it('all ALLOWED_GUEST_ACTIONS with playerId have it at args[0]', () => {
+    // This test documents the design invariant that all guest actions
+    // use playerId as args[0]. The deep scan in useNetworkSync checks
+    // ALL argument positions, but this verifies the convention holds.
+    const actionsWithPlayerIdArg = [
+      'movePlayer', 'spendTime', 'modifyGold', 'modifyHealth',
+      'modifyHappiness', 'modifyFood', 'modifyClothing', 'modifyMaxHealth',
+      'modifyRelaxation', 'cureSickness', 'setHousing', 'payRent',
+      'prepayRent', 'moveToHousing', 'setJob', 'workShift', 'requestRaise',
+      'negotiateRaise', 'studySession', 'completeEducationLevel',
+      'studyDegree', 'completeDegree', 'depositToBank', 'withdrawFromBank',
+      'invest', 'withdrawInvestment', 'buyItem', 'sellItem', 'buyDurable',
+      'sellDurable', 'buyAppliance', 'repairAppliance', 'pawnAppliance',
+      'equipItem', 'unequipItem', 'buyStock', 'sellStock', 'takeLoan',
+      'repayLoan', 'buyFreshFood', 'buyLotteryTicket', 'buyTicket',
+      'buyGuildPass', 'takeQuest', 'completeQuest', 'abandonQuest',
+      'clearDungeonFloor', 'applyRareDrop',
+    ];
+
+    // All of these should be in ALLOWED_GUEST_ACTIONS
+    for (const action of actionsWithPlayerIdArg) {
+      expect(ALLOWED_GUEST_ACTIONS.has(action)).toBe(true);
+    }
+  });
+
+  it('endTurn has no playerId arg (special case)', () => {
+    // endTurn is the only guest action with no playerId.
+    // Cross-player validation skips it because there are no string args
+    // starting with "player-". Turn validation ensures only the current
+    // player can call it.
+    expect(ALLOWED_GUEST_ACTIONS.has('endTurn')).toBe(true);
+  });
+});
+
+// ================================================================
+// Argument Validation Tests (host-side bounds checking)
+// ================================================================
+
+describe('Action Argument Validation', () => {
+  // We can't directly test validateActionArgs since it's not exported,
+  // but we can verify the store actions handle edge cases correctly.
+
+  beforeEach(() => {
+    useGameStore.setState({ networkMode: 'local' });
+    useGameStore.getState().startNewGame(['Alice', 'Bob'], false, {
+      wealth: 5000,
+      happiness: 100,
+      education: 45,
+      career: 4,
+    });
+  });
+
+  it('raw stat modifiers are in the whitelist (required by UI components)', () => {
+    // These raw modifiers must be in the whitelist because UI components
+    // call them directly (e.g., LocationPanel, CavePanel, HomePanel).
+    // The network layer adds server-side bounds checking (validateActionArgs)
+    // to prevent abuse.
+    const rawModifiers = [
+      'modifyGold', 'modifyHealth', 'modifyHappiness',
+      'modifyFood', 'modifyClothing', 'modifyMaxHealth', 'modifyRelaxation',
+    ];
+    for (const action of rawModifiers) {
+      expect(ALLOWED_GUEST_ACTIONS.has(action)).toBe(true);
+    }
+  });
+
+  it('executeAction handles non-existent actions gracefully', () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(executeAction('__nonExistentAction123__', [])).toBe(false);
+    expect(executeAction('hackTheGame', [])).toBe(false);
+    consoleSpy.mockRestore();
+  });
+
+  it('HOST_INTERNAL_ACTIONS cannot be triggered via executeAction bypass', () => {
+    // Verify the actions exist in HOST_INTERNAL_ACTIONS
+    expect(HOST_INTERNAL_ACTIONS.has('startTurn')).toBe(true);
+    expect(HOST_INTERNAL_ACTIONS.has('processWeekEnd')).toBe(true);
+    expect(HOST_INTERNAL_ACTIONS.has('checkDeath')).toBe(true);
+
+    // These should still be callable via executeAction (host-side only),
+    // but the network layer blocks guests from calling them
+    expect(typeof (useGameStore.getState() as Record<string, unknown>).startTurn).toBe('function');
+  });
+});

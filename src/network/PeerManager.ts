@@ -589,6 +589,81 @@ export class PeerManager {
     return this._peerLatency.get(hostPeerId) ?? 0;
   }
 
+  // --- Host Migration ---
+
+  /**
+   * Promote this guest peer to become the new host.
+   * Called during host migration when the original host disconnects.
+   * The existing PeerJS instance is reused — other guests connect to this peer's ID.
+   */
+  promoteToHost(): boolean {
+    if (this._isHost) return false;
+    if (!this.peer) return false;
+
+    this._isHost = true;
+
+    // Clear old host connection (it's dead)
+    this.connections.forEach((conn) => {
+      try { conn.close(); } catch { /* ignore */ }
+    });
+    this.connections.clear();
+    this.lastPongReceived.clear();
+    this._peerLatency.clear();
+
+    // Stop guest heartbeat
+    this.heartbeatIntervals.forEach((id) => clearInterval(id));
+    this.heartbeatIntervals.clear();
+    if (this.guestHeartbeatTimeout) {
+      clearTimeout(this.guestHeartbeatTimeout);
+      this.guestHeartbeatTimeout = null;
+    }
+
+    // Start accepting incoming connections (host mode)
+    this.peer.on('connection', (conn) => {
+      this.handleIncomingConnection(conn);
+    });
+
+    // Start host heartbeat check
+    this.startHeartbeatCheck();
+    this.setStatus('connected');
+
+    console.log(`[PeerManager] Promoted to host. PeerId: ${this.peer.id}`);
+    return true;
+  }
+
+  /**
+   * Connect to a new host peer (used by non-successor guests during host migration).
+   * Returns a promise that resolves when connected.
+   */
+  connectToNewHost(newHostPeerId: string): Promise<void> {
+    if (this._isHost) return Promise.reject(new Error('Cannot connect: already host'));
+    if (!this.peer) return Promise.reject(new Error('No peer instance'));
+
+    // Close old host connection
+    this.connections.forEach((conn) => {
+      try { conn.close(); } catch { /* ignore */ }
+    });
+    this.connections.clear();
+
+    // Stop old heartbeat
+    this.heartbeatIntervals.forEach((id) => clearInterval(id));
+    this.heartbeatIntervals.clear();
+    if (this.guestHeartbeatTimeout) {
+      clearTimeout(this.guestHeartbeatTimeout);
+      this.guestHeartbeatTimeout = null;
+    }
+
+    return new Promise((resolve, reject) => {
+      this.setStatus('reconnecting');
+      this.connectToHost(newHostPeerId, () => {
+        // Send reconnect message to the new host
+        const storedName = this._reconnectPlayerName ?? 'Unknown';
+        this.sendToHost({ type: 'reconnect', playerName: storedName });
+        resolve();
+      }, reject);
+    });
+  }
+
   // --- Cleanup ---
 
   destroy() {

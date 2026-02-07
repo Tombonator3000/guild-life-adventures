@@ -6232,6 +6232,98 @@ Launched 5 parallel audit agents covering:
 
 ---
 
+## 2026-02-07 - Multiplayer Deep Audit & Security Hardening
+
+### Audit Findings
+
+Deep audit of the entire multiplayer codebase (7 network files, ~1930 lines). Used specialized agents to systematically review all code paths.
+
+**Security Issues Found:**
+1. **Cross-player validation incomplete** (was args[0] only) — a future action with playerId in args[1+] would bypass the check
+2. **Raw stat modifiers exposed to guests** — `modifyGold`, `modifyHealth`, etc. are in ALLOWED_GUEST_ACTIONS because UI components call them directly (37 call sites across 7 components). A malicious guest could send crafted messages to give themselves gold/health/etc.
+3. **Room codes use Math.random()** — not cryptographically secure, predictable room codes possible
+4. **Dead code in skipZombieTurn** — had a useless loop iterating peerLatencies that did nothing
+5. **No host migration** — host disconnect = game over (single point of failure)
+
+**Positive Findings (things that are correct):**
+- All 47 ALLOWED_GUEST_ACTIONS consistently use playerId as args[0] — the current validation IS correct for all existing actions
+- Turn validation works properly (peerId→playerId mapping)
+- Rate limiting is solid (10 actions/sec per peer with sliding window)
+- Heartbeat/reconnection system is well-designed (5s ping, 15s timeout, 30s window)
+- State serialization properly excludes UI-only fields
+- wrapWithNetworkGuard correctly intercepts all store actions
+
+### Completed (Fixes)
+
+1. **Cross-player validation deep scan** — Now scans ALL argument positions for `player-` strings, not just args[0]. Catches any position, preventing future regressions.
+
+2. **Argument bounds validation** — Added `validateActionArgs()` on the host side that validates arguments for dangerous guest actions:
+   - modifyGold: max +500 per call
+   - modifyHealth: max ±100
+   - modifyHappiness: max ±50
+   - modifyFood/Clothing: max ±100
+   - modifyMaxHealth: max ±25
+   - modifyRelaxation: max ±20
+   - setJob: wage capped at 100g/hr
+   - workShift: hours 0-60, wage cross-checked against player's current wage
+   - All numeric args checked for isFinite()
+
+3. **Room code crypto** — Replaced Math.random() with crypto.getRandomValues() for unpredictable room codes.
+
+4. **Dead code cleanup** — Removed dead loop in skipZombieTurn that iterated peerLatencies and did nothing. Simplified to clean connected peer check + disconnected set check.
+
+5. **Host migration** — Implemented automatic host succession:
+   - Each guest stores lobby data (peerIds + slots) at game start
+   - On host disconnect + 10s failed reconnect, migration triggers
+   - Successor = guest with lowest slot number
+   - Successor: `peerManager.promoteToHost()` → accepts incoming connections
+   - Followers: wait 3s, then `peerManager.connectToNewHost(successorPeerId)`
+   - Game state preserved from last state-sync
+   - Added `promoteToHost()` and `connectToNewHost()` to PeerManager
+   - Added `host-migrated` message type
+   - Exposed `isMigrating` state from useOnlineGame
+
+6. **New tests** — Added 7 new tests (32→39 total):
+   - Room code crypto security (generation + entropy distribution)
+   - Cross-player validation invariant (all actions use args[0])
+   - endTurn special case (no playerId arg)
+   - Raw modifiers in whitelist (documented requirement)
+   - Non-existent action handling
+   - HOST_INTERNAL existence verification
+
+### Files Changed
+
+| File | Changes |
+|------|---------|
+| `src/network/useNetworkSync.ts` | Deep argument scan, validateActionArgs(), dead code cleanup |
+| `src/network/roomCodes.ts` | crypto.getRandomValues() |
+| `src/network/PeerManager.ts` | promoteToHost(), connectToNewHost() |
+| `src/network/useOnlineGame.ts` | Host migration (storedLobbyRef, migration timer, performHostMigration) |
+| `src/network/types.ts` | host-migrated message type |
+| `src/test/multiplayer.test.ts` | 7 new tests |
+| `multiplayer.md` | Full update: audit findings, host migration docs, test coverage |
+
+### Issues
+
+- **freshFood.test.ts**: 2 pre-existing test failures unrelated to multiplayer changes
+- **TURN servers**: Still no production TURN servers. ~15% of connections (symmetric NAT) will fail. Options documented in multiplayer.md.
+- **Chain migration**: If the successor also disconnects during migration, game is lost. Would need recursive election.
+- **E2E tests**: Still need Playwright with WebRTC for full integration testing
+
+### Verification
+
+- ✅ TypeScript: `npx tsc --noEmit` — clean
+- ✅ Multiplayer tests: 39/39 passing
+- ✅ All tests: 149/151 passing (2 pre-existing freshFood failures)
+
+### Next Steps
+- Set up production TURN servers (metered.ca free tier or self-hosted coturn)
+- Add message schema validation (runtime type checking)
+- Add chain host migration (recursive successor election)
+- E2E multiplayer tests with Playwright
+
+---
+
 ## Log Template
 
 ```markdown

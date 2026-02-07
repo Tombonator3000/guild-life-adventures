@@ -467,6 +467,21 @@
   - [x] AI overlay, online indicators, and waiting overlay have compact mobile variants
   - [x] Build succeeds, all 112 tests pass, TypeScript clean
 
+## Completed (2026-02-07) — Multiplayer Security Audit & Host Migration
+
+- [x] Deep audit of all 7 network files (~1930 lines) — 5 issues found and fixed
+- [x] Cross-player validation deep scan — now checks ALL argument positions (was args[0] only)
+- [x] Argument bounds validation — host-side caps on modifyGold(+500), modifyHealth(±100), etc.
+- [x] Room code crypto — crypto.getRandomValues() replaces Math.random()
+- [x] Dead code cleanup — removed useless loop in skipZombieTurn
+- [x] **Host migration** — automatic successor election on host disconnect
+  - Lobby data stored for migration (all peerIds + slots)
+  - PeerManager.promoteToHost() and connectToNewHost() methods
+  - 10s migration timeout, 3s follower connection delay
+  - Successor = lowest slot guest
+- [x] 7 new multiplayer tests (32→39 total)
+- [x] multiplayer.md fully updated with audit findings and new features
+
 ## In Progress
 
 *No active tasks*
