@@ -163,6 +163,17 @@ export function generateGoalActions(ctx: ActionContext): AIAction[] {
             description: 'Rest to recover happiness',
             details: { hours: 4, happinessGain: 5 },
           });
+        } else {
+          // Travel home to rest when happiness is low
+          const homeMoveCost = moveCost(homeLocation as Parameters<typeof moveCost>[0]);
+          if (player.timeRemaining > homeMoveCost + 4) {
+            actions.push({
+              type: 'move',
+              location: homeLocation as Parameters<typeof moveCost>[0],
+              priority: 40,
+              description: 'Travel home to rest',
+            });
+          }
         }
       }
       break;

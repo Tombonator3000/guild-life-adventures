@@ -1,5 +1,74 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-08 - AI Agent Balance Audit & 8 Fixes
+
+**Task**: Use AI agents to play through the game, find imbalances, bugs, and missing features. Fix all issues found.
+
+### Methodology
+
+Performed comprehensive analysis of:
+- All AI agent logic (strategy.ts, actionGenerator.ts, 5 action category files, useGrimwaldAI.ts)
+- Game balance (economy, education ROI, victory path math, housing, dungeons, quests)
+- Week-end processing (starvation, rent, theft, loans, weekends, aging)
+- Turn-start processing (breakage, spoilage, starvation time penalty, robbery)
+- Test coverage gaps
+
+### Bugs Found & Fixed (8 fixes)
+
+| # | Bug | File | Severity | Fix |
+|---|-----|------|----------|-----|
+| 1 | **AI rent urgency triggers too late** — `> 0.5` threshold meant AI only acted at 3+ weeks overdue (urgency=1.0), not at 2 weeks (urgency=0.5). Left little time before eviction. | `criticalNeeds.ts:67` | HIGH | Changed `> 0.5` to `>= 0.5` |
+| 2 | **AI pawning priority inversion** — Heal action (priority 80) selected before pawn (priority 70) when gold < 10. Heal costs 30g which AI can't afford, wasting turn. Also: no move-to-fence action when broke elsewhere. | `economicActions.ts:122-146` | HIGH | Pawn priority → 85, threshold → gold<30, added move-to-fence action (priority 82), sell priority → 78 |
+| 3 | **AI housing upgrade blocked for easy AI** — `shouldUpgradeHousing` required `aggressiveness > 0.5`, which easy AI (0.3) never meets. Easy AI suffered repeated robbery losses. | `strategy.ts:148` | MEDIUM | Easy AI upgrades when 3+ valuables at risk. Medium/hard upgrade when any valuables present. |
+| 4 | **AI loan repayment too conservative** — Required gold > loanAmount + 100 buffer before repaying. 10% weekly compound interest made delays very costly. | `economicActions.ts:63` | MEDIUM | Reduced buffer from 100 to 50 |
+| 5 | **Week-end starvation double penalty** — Players starving got -10 HP / -8 happiness at week-end AND -20 hours at turn-start. Jones only has the -20 hours penalty. Double penalty made starvation excessively punishing. | `weekEndHelpers.ts:107-113` | HIGH | Removed week-end health/happiness penalty. Turn-start -20 hours + doctor visit (25% chance) is sufficient. |
+| 6 | **AI goal specialization too weak** — AI always focused on weakest goal equally, never "sprinted" a near-complete goal. Human players exploit this by finishing one goal at a time. | `strategy.ts:47-57` | MEDIUM | AI now sprints goals >= 80% complete before falling back to weakest goal. |
+| 7 | **AI failed action tracking** — Failed actions could be re-selected on next cycle, wasting turns in failure loops. | `useGrimwaldAI.ts:40,462,512-536` | MEDIUM | Track failed action keys per turn. Filter them from viable actions. Clear on turn start. |
+| 8 | **AI rest path missing travel** — Happiness goal rest action only triggered if AI was already at home. No move-to-home action generated. | `goalActions.ts:157-167` | LOW | Added move-to-home action (priority 40) when not at home and happiness < 40. |
+
+### Balance Analysis Summary
+
+Key findings from playthrough simulation (documented for future reference):
+
+| System | Assessment | Notes |
+|--------|-----------|-------|
+| Time Management | Tight but fair | 60 hours/turn forces strategic choices between work/education/errands |
+| Housing | Working | Slums (75g/wk) vs Noble (350g/wk) creates meaningful risk/cost tradeoff |
+| Education ROI | Fair | 7-10 week break-even, but graduates unlock 2-3x better jobs |
+| Jobs | Good | Clear 4→25 g/hr progression tied to education |
+| Quests | Good | Gold/time ratios competitive with equivalent-tier jobs after Feb-06 rebalance |
+| Income vs Expenses | OK | Early game tight but manageable with floor sweeper + slums |
+| Dungeon | Niche | High-risk, high-reward. Equipment gate limits to mid/late game |
+| Victory Paths | Improved | Sprint logic makes multi-goal games more achievable for AI |
+| AI Competitiveness | Improved | 8 fixes address the most exploitable AI weaknesses |
+
+### Remaining Known Issues (Backlog)
+
+- AI doesn't track investments field when buying stocks (wealth calculation includes it but field never updated by store)
+- AI hardcoded equipment/appliance costs (may drift from actual market prices)
+- AI job upgrade threshold (1.2x) is arbitrary but functional
+- No combat system tests (entire dungeon resolver untested)
+- No robbery system tests
+- No quest system tests
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/hooks/ai/actions/criticalNeeds.ts` | Rent urgency threshold `>` → `>=` |
+| `src/hooks/ai/actions/economicActions.ts` | Pawn priority 70→85, threshold gold<10→<30, added move-to-fence, loan buffer 100→50, sell priority 65→78 |
+| `src/hooks/ai/strategy.ts` | Housing upgrade: removed aggressiveness gate for easy AI (uses 3+ valuables threshold). Goal sprint: returns near-complete (>=80%) goals before weakest goal. |
+| `src/hooks/ai/actions/goalActions.ts` | Added move-to-home for rest when happiness < 40 |
+| `src/hooks/useGrimwaldAI.ts` | Failed action tracking: `failedActionsRef`, filtered from viable actions, cleared on turn start |
+| `src/store/helpers/weekEndHelpers.ts` | Removed duplicate starvation HP/happiness penalty (Jones only has -20 hours at turn start) |
+
+### Test Results
+- 171 tests pass (no changes needed)
+- TypeScript compiles cleanly
+- Build succeeds
+
+---
+
 ## 2026-02-08 - Options Menu & Age System Made Optional
 
 **Task**: Make age system opt-in (not default). Create full Options menu accessible from TitleScreen and in-game menu.
