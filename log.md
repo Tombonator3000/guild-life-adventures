@@ -1,5 +1,338 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-08 - Game Improvement Proposals (Gameplay, Quests, Cave, General)
+
+Comprehensive analysis of potential improvements across all game systems. Based on full review of current state: 5 dungeon floors, 17 quests, 43 jobs, 11 degrees, 15 locations, weather system, age system, online multiplayer, and AI opponents.
+
+---
+
+### CATEGORY A: CAVE / DUNGEON IMPROVEMENTS
+
+#### A1: Dungeon Floor 6 — "The Forgotten Temple" (NEW CONTENT)
+
+Currently the dungeon ends at Floor 5 (The Abyss / Azrathor). Post-endgame players have no dungeon challenge left. A 6th floor would serve as an ultra-endgame challenge.
+
+**Concept:**
+- **Floor 6: The Forgotten Temple** — ancient ruins beyond the Abyss, sealed by divine magic
+- Requirements: All 5 floors cleared, enchanted blade + enchanted plate + tower shield, 50+ ATK, 45+ DEF, Loremaster degree
+- Time cost: 26 hours (demanding — nearly half a turn)
+- Encounters: Temple Guardians (100 power), Divine Traps (60 damage), Celestial Constructs (90 power), Sacred Vault (300g treasure)
+- Boss: **The Archon** (140 power, 90 damage, 500g)
+- Rare drop: **Archon's Crown** — +30 happiness, +10 max HP, +10% permanent gold bonus
+- Rewards: +25 happiness, +20 dependability on clear
+
+**Why:** Gives endgame players a reason to keep pushing. The Loremaster requirement forces full academic investment before attempting the ultimate challenge.
+
+---
+
+#### A2: Dungeon Events / Random Modifiers
+
+Currently every dungeon run plays identically. Add per-run modifiers that change the experience.
+
+**Dungeon Modifier Examples (1 random modifier per run):**
+| Modifier | Effect |
+|----------|--------|
+| Cursed Halls | +25% enemy power, +50% gold rewards |
+| Lucky Day | Double rare drop chance (5% → 10%) |
+| Weakened Wards | -20% enemy power, -20% gold rewards |
+| Treasure Fever | +2 treasure encounters replace 2 combat encounters |
+| Blood Moon | Healing encounters removed, +30% gold |
+| Spirit Guide | Education bonuses doubled |
+
+**Why:** Increases replayability of cleared floors. Players re-run floors for gold — modifiers make each run feel different.
+
+---
+
+#### A3: Dungeon Companion System
+
+Before entering a dungeon, player can hire a temporary companion at the Cave entrance for gold.
+
+| Companion | Cost | Effect | Duration |
+|-----------|------|--------|----------|
+| Torchbearer | 20g | Reveals traps (-50% trap damage) | 1 floor |
+| Battle Mercenary | 50g | +15 ATK for the floor | 1 floor |
+| Healer Acolyte | 40g | Heal +10 HP after each encounter | 1 floor |
+| Treasure Hunter | 30g | +25% gold find | 1 floor |
+
+**Why:** Creates gold-for-advantage trade-offs. Low-geared players can hire help; rich players can skip. Ties economy to dungeon progression.
+
+---
+
+#### A4: Dungeon Leaderboard / Best Times
+
+Track personal bests for each floor: fastest clear, most gold earned, fewest HP lost. Display in CavePanel.
+
+**Why:** Encourages optimization and replayability. Low implementation cost (just track stats on Player).
+
+---
+
+#### A5: Mini-Boss Encounters (Non-Floor)
+
+Add random "wandering boss" encounters when re-running cleared floors (15% chance). Stronger than regular encounters but weaker than floor bosses. Drop bonus gold and 2% rare drop chance.
+
+**Why:** Makes re-farming more interesting. Currently re-runs are monotonous.
+
+---
+
+### CATEGORY B: QUEST SYSTEM IMPROVEMENTS
+
+#### B1: Quest Chains (Multi-Part Quests)
+
+Currently all 17 quests are standalone. Add quest chains where completing one unlocks the next.
+
+**Example Chain: "The Dragon Conspiracy" (3 parts)**
+1. **Part 1: Strange Rumors** (D-rank) — Investigate rumors at the tavern. 8h, 35g, +2 hap. Unlocks Part 2.
+2. **Part 2: Dragon Scouts** (B-rank) — Track dragon scouts in the cave. 14h, 100g, +5 hap. Requires Floor 2 cleared. Unlocks Part 3.
+3. **Part 3: Dragon's Bargain** (A-rank) — Negotiate with the Elder Dragon. 20h, 250g, +12 hap. Requires Floor 4 cleared. Chain completion bonus: +500g, +20 hap, unique title.
+
+**Example Chain: "The Scholar's Secret" (3 parts)**
+1. **Part 1: Old Manuscripts** (E-rank) — Retrieve documents from Academy. 4h, 20g. Requires Junior Academy.
+2. **Part 2: Deciphering** (C-rank) — Study the ancient text. 10h, 60g. Requires Scholar degree.
+3. **Part 3: The Hidden Library** (A-rank) — Find the legendary archive. 18h, 200g, +15 hap. Requires Loremaster. Chain bonus: Permanent +1 lesson reduction (extra credit equivalent).
+
+**Why:** Creates long-term goals beyond single quests. Encourages different playstyles (combat chains vs academic chains). Chain bonuses provide unique rewards not available elsewhere.
+
+---
+
+#### B2: Repeatable Daily Bounties
+
+Add 3 rotating "bounty board" quests at the Guild Hall that refresh every week. Simpler than regular quests, always available regardless of guild rank.
+
+| Bounty Type | Time | Gold | Requirements |
+|-------------|------|------|-------------|
+| Cave Patrol | 4h | 15g + 2 hap | Any weapon |
+| Market Delivery | 3h | 10g + 1 hap | None |
+| Guard Shift | 5h | 20g + 1 hap | Combat Training |
+
+**Why:** Provides consistent small income for early-game players before they can afford the Guild Pass (500g). Fills the "I have 4 hours left and nothing to do" gap.
+
+---
+
+#### B3: Quest Difficulty Scaling
+
+Scale quest rewards/difficulty based on player level. A player with 5 dungeon floors cleared doing a D-rank quest should get a slight bonus.
+
+**Formula:** `goldReward * (1 + floorsCleared * 0.05)` — max +25% bonus for full dungeon clear.
+
+**Why:** Prevents high-level quests from feeling pointless. Keeps lower-rank quests viable for gold when higher ranks aren't available.
+
+---
+
+#### B4: Quest Failure Consequences
+
+Currently failing a quest (running out of time) has no penalty. Add mild consequences:
+- Failed quest: -2 happiness, -3 dependability, can't retake same quest for 2 weeks
+- Creates risk/reward: Take on hard quests for big rewards, but failure sets you back
+
+**Why:** Makes quest selection strategic rather than "always take the highest rank available."
+
+---
+
+#### B5: Guild Reputation System
+
+Track successful/failed quest completions. Every 5 successful quests grants a reputation bonus:
+- 5 quests: +5% quest gold bonus
+- 10 quests: +10% quest gold bonus, unlock exclusive quest
+- 20 quests: +15% quest gold bonus, NPC banter acknowledges your fame
+- 50 quests: "Legendary Adventurer" title, +20% quest gold bonus
+
+**Why:** Long-term progression within the quest system. Makes completing many quests feel rewarding beyond immediate gold.
+
+---
+
+### CATEGORY C: GAMEPLAY IMPROVEMENTS
+
+#### C1: Seasonal Events / Festivals
+
+Add seasonal festivals that occur every 12 weeks (3 months in-game). Each lasts 2 weeks.
+
+| Festival | Effects |
+|----------|---------|
+| Harvest Festival | Food -30% cost, +3 happiness/wk, special tavern menu |
+| Winter Solstice | Movement +1h/step, appliances never break, +5 hap if at home |
+| Spring Tournament | Arena at Cave (combat for prizes), weapon tempering -50% cost |
+| Midsummer Fair | All shops open lottery, weekend activities double happiness |
+
+**Why:** Creates rhythm to the game year. Players plan around festival timing for optimal purchases/actions.
+
+---
+
+#### C2: NPC Relationship / Favor System
+
+Track player interactions with each NPC. Visiting locations builds rapport (1 favor point per visit, max 50).
+
+| Favor Level | Bonus |
+|-------------|-------|
+| 10 (Familiar) | 5% discount at this location |
+| 20 (Friendly) | Unique banter lines, 10% discount |
+| 30 (Trusted) | Exclusive items/services unlocked |
+| 50 (Legendary) | 15% discount, free repairs, bonus banter |
+
+**Why:** Rewards loyalty to specific locations. Creates interesting routing decisions — do you always go to the cheapest option, or build rapport at a specific NPC for long-term benefits?
+
+---
+
+#### C3: Skill / Talent System
+
+Add passive skills that unlock through gameplay actions (not degrees).
+
+| Skill | Unlock Condition | Effect |
+|-------|-----------------|--------|
+| Haggler | Buy 20 items | 5% discount on all purchases |
+| Dungeon Veteran | Clear 10 dungeon floors (total) | +10% dungeon gold |
+| Scholar's Mind | Complete 5 degrees | -1 hour per study session |
+| Iron Constitution | Survive 3 starvation events | Starvation penalty reduced to -15h |
+| Lucky Streak | Win lottery once | +1% lottery win chance |
+| Social Butterfly | Visit all 15 locations in one turn | +5 happiness |
+
+**Why:** Rewards diverse gameplay. Players who explore multiple systems get passive bonuses.
+
+---
+
+#### C4: Rival System Enhancement
+
+When playing against AI, the AI should occasionally target the same quest/job as the player. Add competitive mechanics:
+- AI takes a quest → that quest becomes unavailable for 1 week
+- AI applies for same job → employer picks the one with better stats
+- Newspaper reports AI achievements ("Grimwald cleared Floor 3!")
+
+**Why:** Makes the AI feel like a real competitor rather than a parallel player. Adds urgency to quest/job decisions.
+
+---
+
+#### C5: Insurance System (Bank)
+
+Buy insurance policies at the Bank to mitigate risks:
+
+| Policy | Weekly Cost | Coverage |
+|--------|------------|----------|
+| Theft Insurance | 15g/wk | Reimburse 50% of stolen goods value |
+| Health Insurance | 10g/wk | Doctor visits cost 50% less |
+| Equipment Insurance | 20g/wk | Broken appliances auto-repaired (no cost) |
+
+**Why:** Creates gold-for-safety trade-off. Rich players can insure their assets; poor players take the risk.
+
+---
+
+#### C6: Achievements / Trophy System
+
+Track lifetime achievements across games (persisted in localStorage):
+
+| Achievement | Condition | Reward |
+|-------------|-----------|--------|
+| First Blood | Clear dungeon Floor 1 | Unlock golden player token |
+| Master Scholar | Earn all 11 degrees | Unlock star border |
+| Tycoon | Accumulate 10,000g total wealth | Unlock crown icon |
+| Speed Runner | Win in under 20 weeks | Unlock "Fast Lane" title |
+| Dragon Slayer | Clear all 5 dungeon floors | Unlock dragon token |
+| Social Climber | Reach Guild Master rank | Unlock purple nameplate |
+
+**Why:** Adds meta-progression across games. Gives players goals beyond the current match.
+
+---
+
+#### C7: Random Encounter Events During Travel
+
+Currently movement is just paying hours. Add a 10% chance of random events per 3+ location steps traveled:
+
+| Event | Effect |
+|-------|--------|
+| Found Coin Purse | +5-15g |
+| Helped a Traveler | +2 happiness, +1 dependability |
+| Pickpocketed! | -10-30g (if carrying gold) |
+| Street Performer | +1 happiness (free) |
+| Weather Delay | +1 hour travel cost |
+| Shortcut Found | -2 hours from travel (minimum 1) |
+
+**Why:** Makes movement more interesting. Currently it's just a time tax.
+
+---
+
+#### C8: Night/Day Cycle
+
+Divide each 60-hour turn into Day (first 40h) and Night (last 20h).
+
+| Time | Effect |
+|------|--------|
+| Day (0-40h) | Normal prices, all services available |
+| Night (40-60h) | Shadow Market -10% prices, Tavern +2 happiness, Cave +20% gold, other shops closed (work still available) |
+
+**Why:** Creates strategic timing decisions. Do you visit the Shadow Market early or save it for night bonuses?
+
+---
+
+### CATEGORY D: BALANCE & QUALITY OF LIFE
+
+#### D1: Starvation Penalty Consistency
+Currently starvation is -20h at turn start but there's also a -10hp week-end penalty. Should be one or the other. Recommend: keep -20h only (Jones-accurate), remove health penalty.
+
+#### D2: Frost Chest / Arcane Tome Accessibility
+Frost Chest and Arcane Tome are listed in data but not always purchasable. Ensure they appear in Enchanter shop.
+
+#### D3: Loan Default Limits
+Currently loans can be extended infinitely. Add max 3 extensions, then forced collection (sell durables, garnish wages).
+
+#### D4: Quest Education Requirements
+Some quest requirements reference non-existent education paths (e.g., "priest level 2"). Should map to actual degrees (Sage Studies, Advanced Scholar).
+
+#### D5: Dead Player Visual Distinction
+Dead players' tokens on the board should be visually different (greyed out, smaller, or ghost-like).
+
+#### D6: Keyboard Shortcuts in Modals
+Currently keyboard shortcuts trigger inside modals (e.g., pressing 'E' while reading an event could end turn). Add focus trapping.
+
+#### D7: Victory Leaderboard for Multi-Player
+Track final scores (gold, happiness, education, career) for all players on victory screen. Show who was closest.
+
+---
+
+### CATEGORY E: CAVE-SPECIFIC QUALITY OF LIFE
+
+#### E1: Equipment Preview Before Combat
+Show a detailed power comparison before entering a floor: "Your Power: X vs Floor Recommended: Y — Chance: Good/Fair/Risky."
+
+#### E2: Dungeon Run History
+Track last 5 dungeon runs per floor: gold earned, HP lost, encounters faced, time spent. Shows in CavePanel.
+
+#### E3: Auto-Equip Best Gear Before Dungeon
+Add a "Best Loadout" button that auto-equips the strongest owned weapon/armor/shield before entering.
+
+#### E4: Post-Combat Loot Summary
+After clearing a floor, show a detailed loot breakdown: base gold, education bonuses, guild rank multiplier, weather bonus, modifier bonus. Helps players understand the reward system.
+
+#### E5: Dungeon Shortcuts (Unlockable)
+After clearing Floor 3, unlock a shortcut from Floor 1 to Floor 3 (skip Floor 2). Saves time on re-runs. After clearing Floor 5, unlock shortcut to Floor 4.
+
+**Why:** Reduces tedium of re-running early floors for gold.
+
+---
+
+### PRIORITIZED IMPLEMENTATION ORDER
+
+**Tier 1 — High Impact, Moderate Effort:**
+1. A2: Dungeon Random Modifiers (best replayability boost)
+2. B1: Quest Chains (biggest content addition)
+3. C7: Random Travel Events (makes movement interesting)
+4. B2: Repeatable Bounties (fills early-game gap)
+5. D1-D4: Balance fixes (bugs/inconsistencies)
+
+**Tier 2 — High Impact, Higher Effort:**
+6. A1: Floor 6 (endgame content)
+7. C1: Seasonal Festivals (rhythm/variety)
+8. C6: Achievements (meta-progression)
+9. A3: Dungeon Companions (economy-dungeon tie)
+
+**Tier 3 — Nice to Have:**
+10. B5: Guild Reputation (quest depth)
+11. C2: NPC Favor System (location loyalty)
+12. C3: Skill/Talent System (passive progression)
+13. E1-E5: Cave QoL (convenience)
+14. C8: Night/Day Cycle (strategic depth)
+15. C5: Insurance System (economy depth)
+16. C4: Rival Enhancement (AI competition)
+
+---
+
 ## 2026-02-08 - Banter Speech Bubble Overhaul
 
 Moved NPC banter display from a tiny bubble inside the location panel to a **large, prominent speech bubble overlay above the center panel** on the game board. Much bigger text, mood-based colored glow effects, and NPC name label. Also massively expanded banter content and added context-aware lines.

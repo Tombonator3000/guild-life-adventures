@@ -637,6 +637,46 @@
 
 *No active tasks*
 
+## Proposed Improvements (2026-02-08 Analysis)
+
+Full details with design specs in log.md "Game Improvement Proposals (Gameplay, Quests, Cave, General)"
+
+### Tier 1 — High Impact, Moderate Effort
+- [ ] A2: Dungeon Random Modifiers — per-run random modifier (Cursed Halls, Lucky Day, Blood Moon, etc.)
+- [ ] B1: Quest Chains — multi-part quests (e.g., "The Dragon Conspiracy" 3-part chain)
+- [ ] C7: Random Travel Events — 10% chance of random event during 3+ step travel
+- [ ] B2: Repeatable Daily Bounties — 3 rotating weekly bounty board quests at Guild Hall
+- [ ] D1: Fix starvation penalty consistency (-20h only, remove -10hp week-end duplicate)
+- [ ] D2: Make Frost Chest & Arcane Tome actually purchasable at Enchanter
+- [ ] D3: Implement loan default limits (max 3 extensions, then forced collection)
+- [ ] D4: Fix quest education requirements (priest level → actual degrees)
+
+### Tier 2 — High Impact, Higher Effort
+- [ ] A1: Dungeon Floor 6 "The Forgotten Temple" — ultra-endgame floor with Loremaster requirement
+- [ ] C1: Seasonal Festivals — Harvest Festival, Winter Solstice, Spring Tournament, Midsummer Fair (every 12 weeks)
+- [ ] C6: Achievements / Trophy System — lifetime achievements persisted in localStorage
+- [ ] A3: Dungeon Companion System — hire companions before dungeon runs (Torchbearer, Mercenary, Healer, Treasure Hunter)
+- [ ] B4: Quest Failure Consequences — -2 happiness, -3 dependability, 2-week cooldown on failed quests
+
+### Tier 3 — Nice to Have
+- [ ] B5: Guild Reputation System — quest completion tracking with milestone bonuses (+5/10/15/20% gold)
+- [ ] C2: NPC Relationship / Favor System — location loyalty discounts (5-15%)
+- [ ] C3: Skill / Talent System — passive unlocks from gameplay actions (Haggler, Dungeon Veteran, etc.)
+- [ ] E1: Equipment Preview Before Combat — power comparison display
+- [ ] E2: Dungeon Run History — track last 5 runs per floor
+- [ ] E3: Auto-Equip Best Gear button in CavePanel
+- [ ] E4: Post-Combat Loot Summary breakdown
+- [ ] E5: Dungeon Shortcuts — skip early floors after clearing later ones
+- [ ] A4: Dungeon Leaderboard / Best Times — personal best tracking
+- [ ] A5: Mini-Boss Encounters — 15% wandering boss on re-runs
+- [ ] B3: Quest Difficulty Scaling — rewards scale with player progression
+- [ ] C4: AI Rival Enhancement — competitive quest/job targeting
+- [ ] C5: Insurance System at Bank — theft, health, equipment policies
+- [ ] C8: Night/Day Cycle — different bonuses in last 20h of turn
+- [ ] D5: Dead player visual distinction (greyed out tokens)
+- [ ] D6: Keyboard shortcuts focus trapping inside modals
+- [ ] D7: Victory leaderboard for multi-player
+
 ## Full Game Audit Findings (2026-02-06)
 
 See log.md "Full Game Audit (Agent Playthrough Analysis)" for complete details with file references.
