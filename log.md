@@ -7610,6 +7610,59 @@ Split monolithic economy actions into 5 domain-specific files:
 
 ---
 
+## 2026-02-08 - Thunderstorm & Fog Effects + Free Bank Services
+
+### Weather Visual Effects
+
+Added enhanced visual effects for two weather types:
+
+#### Thunderstorm Effects (`ThunderstormLayer`)
+- **Lightning flashes**: Two overlapping full-screen white/blue radial gradient flashes with staggered timing (7s and 11s cycles)
+- **Lightning bolts**: Two bolt shapes using CSS `clipPath` polygons with zigzag patterns, glow effect via `filter: blur(1px)`
+- **Dark storm overlay**: Subtle dark blue overlay with pulsing opacity (8s cycle) to simulate overcast conditions
+- **Mix blend mode**: `screen` blend mode on flashes for realistic light-on-dark effect
+
+#### Enchanted Fog Effects (`EnchantedFogLayer`)
+- **Dense low fog band**: 60% height gradient from bottom with blur(30px), 18s drift cycle
+- **Mid-level wisps**: Radial gradient blob at 40% viewport height with 25s drift
+- **Upper thin fog**: Top-down gradient for overhead atmosphere, 12s vertical drift
+- **Magical glow**: Subtle blue-tinted radial glow within fog (6s pulse)
+
+#### WeatherOverlay Changes
+- Added `weatherType` prop (optional `WeatherType`) to distinguish thunderstorm rain from harvest rain
+- `ThunderstormLayer` renders only when `weatherType === 'thunderstorm'`
+- `EnchantedFogLayer` renders only when `weatherType === 'enchanted-fog'`
+
+### Free Bank Services
+
+Removed all time costs from banking operations. Deposit, withdraw, invest, buy/sell stocks, take/repay loans no longer consume hours.
+
+| Action | Old Time Cost | New Time Cost |
+|--------|---------------|---------------|
+| Deposit to Bank | 1 hour | Free |
+| Withdraw from Bank | 1 hour | Free |
+| Invest | 1 hour | Free |
+| Buy Stock | 2 hours | Free |
+| Sell Stock | 2 hours | Free |
+| Take Loan | 1 hour | Free |
+| Repay Loan | 1 hour | Free |
+| See Broker | Requires 2h | No requirement |
+| Loan Office | Requires 1h | No requirement |
+
+### Files Changed
+| File | Changes |
+|------|---------|
+| `src/components/game/WeatherOverlay.tsx` | Added `weatherType` prop, `ThunderstormLayer` (lightning flashes + bolts + dark overlay), `EnchantedFogLayer` (dense fog + wisps + magical glow) |
+| `src/components/game/GameBoard.tsx` | Pass `weatherType={weather?.type}` to WeatherOverlay |
+| `src/components/game/BankPanel.tsx` | Removed all `spendTime()` calls, removed `timeRemaining` checks, updated help text |
+| `src/components/game/LocationPanel.tsx` | Removed `spendTime` prop from BankPanel |
+| `src/hooks/useGrimwaldAI.ts` | Removed `spendTime()` from deposit-bank, withdraw-bank, take-loan, repay-loan, buy-stock, sell-stock AI actions |
+
+### Build & Tests
+Build succeeds, 171 tests pass.
+
+---
+
 ## Log Template
 
 ```markdown

@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 
 interface BankPanelProps {
   player: Player;
-  spendTime: (playerId: string, hours: number) => void;
+  spendTime?: (playerId: string, hours: number) => void;
   depositToBank: (playerId: string, amount: number) => void;
   withdrawFromBank: (playerId: string, amount: number) => void;
   invest: (playerId: string, amount: number) => void;
@@ -26,7 +26,6 @@ type BankView = 'main' | 'broker' | 'loans';
 
 export function BankPanel({
   player,
-  spendTime,
   depositToBank,
   withdrawFromBank,
   invest,
@@ -55,8 +54,8 @@ export function BankPanel({
         {STOCKS.map(stock => {
           const price = stockPrices[stock.id] || stock.basePrice;
           const owned = player.stocks[stock.id] || 0;
-          const canBuy = player.gold >= price && player.timeRemaining >= 2;
-          const canSell = owned > 0 && player.timeRemaining >= 2;
+          const canBuy = player.gold >= price;
+          const canSell = owned > 0;
 
           return (
             <div key={stock.id} className="px-2 py-1.5 border-b border-[#8b7355]">
@@ -73,7 +72,6 @@ export function BankPanel({
                   <button
                     onClick={() => {
                       buyStock(player.id, stock.id, 1);
-                      spendTime(player.id, 2);
                       toast.success(`Bought 1 share of ${stock.name}!`);
                     }}
                     disabled={!canBuy}
@@ -84,7 +82,6 @@ export function BankPanel({
                   <button
                     onClick={() => {
                       sellStock(player.id, stock.id, 1);
-                      spendTime(player.id, 2);
                       const sellPrice = stock.isTBill ? Math.floor(price * 0.97) : price;
                       toast.success(`Sold 1 share for ${sellPrice}g!`);
                     }}
@@ -99,7 +96,7 @@ export function BankPanel({
           );
         })}
         <div className="mt-2 text-xs text-[#6b5a42] px-2">
-          2 hours per transaction. Crown Bonds never lose value.
+          No time cost. Crown Bonds never lose value.
         </div>
         <div className="mt-2 px-2">
           <JonesButton label="BACK" onClick={() => setView('main')} variant="secondary" />
@@ -136,7 +133,6 @@ export function BankPanel({
                   largeText
                   onClick={() => {
                     repayLoan(player.id, actual);
-                    spendTime(player.id, 1);
                     toast.success(`Repaid ${actual}g on your loan!`);
                   }}
                 />
@@ -149,7 +145,6 @@ export function BankPanel({
               largeText
               onClick={() => {
                 repayLoan(player.id, player.loanAmount);
-                spendTime(player.id, 1);
                 toast.success('Loan fully repaid!');
               }}
             />
@@ -165,12 +160,10 @@ export function BankPanel({
                 key={amount}
                 label={`Borrow ${amount}g`}
                 price={amount}
-                disabled={player.timeRemaining < 1}
                 darkText
                 largeText
                 onClick={() => {
                   takeLoan(player.id, amount);
-                  spendTime(player.id, 1);
                   toast.success(`Loan of ${amount}g approved! Repay within 8 weeks.`);
                 }}
               />
@@ -178,7 +171,7 @@ export function BankPanel({
           </>
         )}
         <div className="mt-2 text-xs text-[#6b5a42] px-2">
-          {hasLoan ? 'Unpaid loans accrue 10% interest weekly.' : 'Only one loan at a time. 10% weekly interest.'}
+          {hasLoan ? 'Unpaid loans accrue 10% interest weekly. No time cost.' : 'Only one loan at a time. 10% weekly interest. No time cost.'}
         </div>
         <div className="mt-2 px-2">
           <JonesButton label="BACK" onClick={() => setView('main')} variant="secondary" />
@@ -200,35 +193,32 @@ export function BankPanel({
       <JonesMenuItem
         label="Deposit 50 Gold"
         price={50}
-        disabled={player.gold < 50 || player.timeRemaining < 1}
+        disabled={player.gold < 50}
         darkText
         largeText
         onClick={() => {
           depositToBank(player.id, 50);
-          spendTime(player.id, 1);
           toast.success('Deposited 50 gold!');
         }}
       />
       <JonesMenuItem
         label="Withdraw 50 Gold"
-        disabled={player.savings < 50 || player.timeRemaining < 1}
+        disabled={player.savings < 50}
         darkText
         largeText
         onClick={() => {
           withdrawFromBank(player.id, 50);
-          spendTime(player.id, 1);
           toast.success('Withdrew 50 gold!');
         }}
       />
       <JonesMenuItem
         label="Invest 100 Gold"
         price={100}
-        disabled={player.gold < 100 || player.timeRemaining < 1}
+        disabled={player.gold < 100}
         darkText
         largeText
         onClick={() => {
           invest(player.id, 100);
-          spendTime(player.id, 1);
           toast.success('Invested 100 gold!');
         }}
       />
@@ -236,21 +226,19 @@ export function BankPanel({
       <JonesSectionHeader title="SERVICES" />
       <JonesMenuItem
         label="See the Broker (Stocks)"
-        disabled={player.timeRemaining < 2}
         darkText
         largeText
         onClick={() => setView('broker')}
       />
       <JonesMenuItem
         label={player.loanAmount > 0 ? `Loan Office (Owe: ${player.loanAmount}g)` : 'Loan Office'}
-        disabled={player.timeRemaining < 1}
         darkText
         largeText
         onClick={() => setView('loans')}
       />
 
       <div className="mt-2 text-xs text-[#6b5a42] px-2">
-        1 hour per transaction, 2 hours for broker
+        Banking services are free — no time cost.
       </div>
     </div>
   );

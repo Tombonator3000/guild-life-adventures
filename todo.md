@@ -618,6 +618,21 @@
   - useMusicController already handles victory phase via SCREEN_MUSIC lookup
   - Build succeeds, 171 tests pass
 
+- [x] Thunderstorm Visual Effects — lightning flashes, bolts, and dark storm overlay
+  - ThunderstormLayer: Two staggered lightning flashes (7s/11s), two bolt shapes via clipPath, dark overlay
+  - WeatherOverlay: Added weatherType prop to distinguish thunderstorm from harvest-rain
+  - GameBoard: Passes weather.type to WeatherOverlay
+
+- [x] Enchanted Fog Visual Effects — dense atmospheric fog with magical glow
+  - EnchantedFogLayer: Dense bottom fog band, mid-level wisps, upper thin fog, subtle blue glow
+  - Renders only for enchanted-fog weather type
+
+- [x] Free Bank Services — all banking operations now cost 0 hours
+  - Removed spendTime calls from BankPanel (deposit, withdraw, invest, stocks, loans)
+  - Removed timeRemaining checks from all banking buttons
+  - Updated AI (useGrimwaldAI.ts) to not spend time on banking actions
+  - Build succeeds, 171 tests pass
+
 ## In Progress
 
 *No active tasks*

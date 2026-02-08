@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
-import type { WeatherParticle } from '@/data/weather';
+import type { WeatherParticle, WeatherType } from '@/data/weather';
 
 interface WeatherOverlayProps {
   particle: WeatherParticle | null;
+  weatherType?: WeatherType;
 }
 
 /** Number of particles to render per weather type */
@@ -18,7 +19,7 @@ const PARTICLE_COUNTS: Record<WeatherParticle, number> = {
  * Full-screen weather particle overlay. Renders CSS-animated particles
  * layered over the game board. pointer-events: none so it doesn't block clicks.
  */
-export function WeatherOverlay({ particle }: WeatherOverlayProps) {
+export function WeatherOverlay({ particle, weatherType }: WeatherOverlayProps) {
   if (!particle) return null;
 
   const count = PARTICLE_COUNTS[particle];
@@ -62,6 +63,8 @@ export function WeatherOverlay({ particle }: WeatherOverlayProps) {
         {/* Extra layer for fog and heatwave */}
         {particle === 'fog' && <FogLayer />}
         {particle === 'heatwave' && <HeatwaveLayer />}
+        {weatherType === 'thunderstorm' && <ThunderstormLayer />}
+        {weatherType === 'enchanted-fog' && <EnchantedFogLayer />}
       </div>
     </>
   );
@@ -263,6 +266,189 @@ function HeatwaveLayer() {
           inset: 0,
           background: 'linear-gradient(to top, rgba(255,140,0,0.05), transparent 60%)',
           animation: 'heat-shimmer 4s ease-in-out infinite',
+        }}
+      />
+    </>
+  );
+}
+
+/** Thunderstorm layer — lightning flashes + dark overlay */
+function ThunderstormLayer() {
+  return (
+    <>
+      <style>{`
+        @keyframes lightning-flash-1 {
+          0%, 100% { opacity: 0; }
+          1% { opacity: 0.7; }
+          2% { opacity: 0; }
+          3% { opacity: 0.4; }
+          4% { opacity: 0; }
+          30% { opacity: 0; }
+          31% { opacity: 0.5; }
+          32% { opacity: 0.1; }
+          33% { opacity: 0.3; }
+          34% { opacity: 0; }
+        }
+        @keyframes lightning-flash-2 {
+          0%, 100% { opacity: 0; }
+          15% { opacity: 0; }
+          16% { opacity: 0.6; }
+          17% { opacity: 0; }
+          18% { opacity: 0.3; }
+          19% { opacity: 0; }
+          55% { opacity: 0; }
+          56% { opacity: 0.4; }
+          57% { opacity: 0; }
+        }
+        @keyframes storm-darken {
+          0% { opacity: 0.12; }
+          50% { opacity: 0.18; }
+          100% { opacity: 0.12; }
+        }
+        @keyframes lightning-bolt {
+          0%, 100% { opacity: 0; }
+          1% { opacity: 0.9; }
+          3% { opacity: 0; }
+          30% { opacity: 0; }
+          31% { opacity: 0.7; }
+          33% { opacity: 0; }
+        }
+      `}</style>
+      {/* Dark storm overlay */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(to bottom, rgba(20,20,40,0.20), rgba(10,10,30,0.10), rgba(20,20,40,0.15))',
+          animation: 'storm-darken 8s ease-in-out infinite',
+        }}
+      />
+      {/* Lightning flash 1 — full screen white flash */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'radial-gradient(ellipse at 30% 20%, rgba(200,210,255,0.9), rgba(150,170,255,0.3) 50%, transparent 80%)',
+          animation: 'lightning-flash-1 7s ease-out infinite',
+          mixBlendMode: 'screen',
+        }}
+      />
+      {/* Lightning flash 2 — offset timing */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'radial-gradient(ellipse at 70% 15%, rgba(220,230,255,0.8), rgba(160,180,255,0.2) 50%, transparent 80%)',
+          animation: 'lightning-flash-2 11s ease-out infinite',
+          mixBlendMode: 'screen',
+        }}
+      />
+      {/* Lightning bolt shape */}
+      <div
+        style={{
+          position: 'absolute',
+          left: '25%',
+          top: '0',
+          width: '3px',
+          height: '40%',
+          background: 'linear-gradient(to bottom, rgba(255,255,255,0.9), rgba(180,200,255,0.6), transparent)',
+          animation: 'lightning-bolt 7s ease-out infinite',
+          filter: 'blur(1px)',
+          clipPath: 'polygon(50% 0%, 70% 30%, 40% 35%, 80% 70%, 55% 72%, 90% 100%, 10% 55%, 45% 50%, 20% 25%, 55% 20%)',
+          transform: 'scaleX(15)',
+        }}
+      />
+      {/* Second bolt */}
+      <div
+        style={{
+          position: 'absolute',
+          right: '30%',
+          top: '0',
+          width: '3px',
+          height: '35%',
+          background: 'linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(180,200,255,0.5), transparent)',
+          animation: 'lightning-bolt 11s ease-out 2s infinite',
+          filter: 'blur(1px)',
+          clipPath: 'polygon(50% 0%, 30% 25%, 65% 30%, 20% 65%, 45% 68%, 10% 100%, 85% 60%, 55% 55%, 75% 30%, 40% 25%)',
+          transform: 'scaleX(12)',
+        }}
+      />
+    </>
+  );
+}
+
+/** Enhanced fog layer — dense atmospheric fog with visibility reduction */
+function EnchantedFogLayer() {
+  return (
+    <>
+      <style>{`
+        @keyframes enchanted-fog-1 {
+          0% { transform: translateX(-15%) translateY(0); opacity: 0.15; }
+          33% { transform: translateX(5%) translateY(-3vh); opacity: 0.25; }
+          66% { transform: translateX(-5%) translateY(2vh); opacity: 0.18; }
+          100% { transform: translateX(-15%) translateY(0); opacity: 0.15; }
+        }
+        @keyframes enchanted-fog-2 {
+          0% { transform: translateX(10%) translateY(2vh); opacity: 0.10; }
+          50% { transform: translateX(-10%) translateY(-2vh); opacity: 0.20; }
+          100% { transform: translateX(10%) translateY(2vh); opacity: 0.10; }
+        }
+        @keyframes enchanted-fog-3 {
+          0% { transform: translateY(0); opacity: 0.12; }
+          50% { transform: translateY(-5vh); opacity: 0.22; }
+          100% { transform: translateY(0); opacity: 0.12; }
+        }
+        @keyframes enchanted-glow {
+          0%, 100% { opacity: 0; }
+          50% { opacity: 0.06; }
+        }
+      `}</style>
+      {/* Dense low fog band */}
+      <div
+        style={{
+          position: 'absolute',
+          left: '-10%',
+          right: '-10%',
+          bottom: '0',
+          height: '60%',
+          background: 'linear-gradient(to top, rgba(180,190,220,0.30), rgba(170,180,210,0.15), transparent)',
+          animation: 'enchanted-fog-1 18s ease-in-out infinite',
+          filter: 'blur(30px)',
+        }}
+      />
+      {/* Mid-level fog wisps */}
+      <div
+        style={{
+          position: 'absolute',
+          left: '-10%',
+          right: '-10%',
+          top: '20%',
+          height: '50%',
+          background: 'radial-gradient(ellipse at 40% 50%, rgba(190,200,230,0.20), transparent 60%)',
+          animation: 'enchanted-fog-2 25s ease-in-out infinite',
+          filter: 'blur(25px)',
+        }}
+      />
+      {/* Upper thin fog */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(to bottom, rgba(180,190,215,0.10), rgba(170,180,210,0.08), transparent 40%)',
+          animation: 'enchanted-fog-3 12s ease-in-out infinite',
+        }}
+      />
+      {/* Subtle magical glow within the fog */}
+      <div
+        style={{
+          position: 'absolute',
+          left: '20%',
+          top: '40%',
+          width: '30%',
+          height: '30%',
+          background: 'radial-gradient(circle, rgba(140,160,255,0.08), transparent 70%)',
+          animation: 'enchanted-glow 6s ease-in-out infinite',
+          filter: 'blur(20px)',
         }}
       />
     </>
