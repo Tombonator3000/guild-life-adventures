@@ -114,6 +114,15 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "Housing market's tight. You're lucky to have a place.", mood: 'warning' },
   ],
 
+  'graveyard': [
+    { text: "The dead have much to teach... if you listen.", mood: 'mysterious' },
+    { text: "Another one risen. The spirits are generous today.", mood: 'friendly' },
+    { text: "Don't disturb the old graves. Those ones don't come back friendly.", mood: 'warning' },
+    { text: "I've dug more holes than I can count. Filled a few back in, too.", mood: 'grumpy' },
+    { text: "They say the cemetery is haunted. I say it's just... lively.", mood: 'gossip' },
+    { text: "The fog rolls in thick some nights. Best not to wander alone.", mood: 'warning' },
+  ],
+
   'fence': [
     { text: "Buy, sell, or take a gamble? I'm your guy.", mood: 'friendly' },
     { text: "Got something valuable? I'll give you a fair price. Mostly.", mood: 'gossip' },

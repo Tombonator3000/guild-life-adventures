@@ -6,6 +6,7 @@ import type { Location, ZoneConfig, LocationId } from '@/types/game.types';
 export const BOARD_PATH: LocationId[] = [
   'noble-heights',    // Top left
   'general-store',    // Left side (below noble-heights)
+  'graveyard',        // Left side (right of general-store)
   'bank',             // Left side (below general-store)
   'forge',            // Bottom left
   'guild-hall',       // Bottom
@@ -85,6 +86,7 @@ export const ZONE_CONFIGS: ZoneConfig[] = [
   { id: 'slums', x: 41.1, y: 0.7, width: 20.2, height: 19.7 },
   { id: 'fence', x: 63.3, y: 0.9, width: 14.5, height: 18.9 },
   { id: 'general-store', x: 3.1, y: 33.9, width: 16.7, height: 20.2 },
+  { id: 'graveyard', x: 21.0, y: 33.0, width: 14.0, height: 18.0 },
   { id: 'shadow-market', x: 80.1, y: 0.9, width: 18.0, height: 18.9 },
   { id: 'rusty-tankard', x: 81.1, y: 22.3, width: 16.1, height: 18.2 },
   { id: 'armory', x: 80.6, y: 41.9, width: 13.9, height: 18.7 },
@@ -110,7 +112,8 @@ export type MovementWaypoint = [number, number];
 
 export const MOVEMENT_PATHS: Record<string, MovementWaypoint[]> = {
   'noble-heights_general-store': [[5.6, 51.4], [5.6, 51.4]],
-  'general-store_bank': [[19.9, 69.5]],
+  'general-store_graveyard': [[20.0, 48.0]],
+  'graveyard_bank': [[19.0, 62.0]],
   'bank_forge': [[3.6, 88.8]],
   'forge_guild-hall': [[22.7, 92.8]],
   'guild-hall_cave': [[37.2, 93.3]],
@@ -220,6 +223,13 @@ export const LOCATIONS: Location[] = [
     description: 'Food, supplies, and everyday necessities.',
     position: zoneToPosition(ZONE_CONFIGS.find(z => z.id === 'general-store')!),
     actions: ['buy-food', 'buy-supplies'],
+  },
+  {
+    id: 'graveyard',
+    name: 'The Graveyard',
+    description: 'A somber cemetery where fallen adventurers are laid to rest... and sometimes rise again.',
+    position: zoneToPosition(ZONE_CONFIGS.find(z => z.id === 'graveyard')!),
+    actions: ['pray', 'mourn', 'resurrect'],
   },
   {
     id: 'shadow-market',

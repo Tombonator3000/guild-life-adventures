@@ -1,5 +1,42 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-08 - New Zone: The Graveyard
+
+Added a 15th location to the game board: **The Graveyard** — a somber cemetery to the right of the General Store where fallen adventurers are resurrected.
+
+### Gameplay
+- **Resurrection spawn point**: Players who die now respawn at the Graveyard instead of the Enchanter. Costs 100g from savings, restores 50 HP.
+- **Cemetery services** (when visiting):
+  - **Pray at the Graves**: +5 Happiness (10g base, 2h)
+  - **Meditate Among the Dead**: +5 Relaxation (15g base, 3h)
+  - **Spirit Blessing**: +5 Max HP (200g base, 4h)
+
+### Board Path (15 locations)
+Noble Heights → General Store → **Graveyard** → Bank → Forge → Guild Hall → Cave → Academy → Enchanter → Armory → Rusty Tankard → Shadow Market → Fence → Slums → Landlord → (loop)
+
+### NPC
+- **Morthos** the Gravedigger — frame color: dark green (#2a3a2a), subtitle: "Cemetery & Resurrection"
+
+### Files Changed
+| File | Changes |
+|------|---------|
+| `src/types/game.types.ts` | Added `'graveyard'` to `LocationId` union type |
+| `src/data/locations.ts` | Added to `BOARD_PATH` (between general-store and bank), `ZONE_CONFIGS` (x:21, y:33, 14×18%), `MOVEMENT_PATHS` (general-store↔graveyard, graveyard↔bank), and `LOCATIONS` array |
+| `src/data/npcs.ts` | Added Morthos NPC entry for graveyard |
+| `src/data/banter.ts` | Added 6 banter lines for graveyard (mysterious/warning/grumpy/gossip moods) |
+| `src/store/helpers/questHelpers.ts` | Changed resurrection location from `'enchanter'` to `'graveyard'`; updated event message |
+| `src/components/game/GraveyardPanel.tsx` | **NEW** — Cemetery panel with resurrection info, prayer, meditation, spirit blessing |
+| `src/components/game/LocationPanel.tsx` | Added `case 'graveyard'` with GraveyardPanel import and wiring |
+| `src/test/gameActions.test.ts` | Updated resurrection test to expect `'graveyard'` location |
+
+### Zone Editor
+The graveyard zone is automatically available in the visual zone editor (reads from `ZONE_CONFIGS` and `BOARD_PATH` dynamically). Movement path editing between general-store↔graveyard and graveyard↔bank works via the paths mode.
+
+### Build & Tests
+Build succeeds, 171 tests pass.
+
+---
+
 ## 2026-02-08 - Victory Music — 19Winner.mp3
 
 Added dedicated victory music track. When a player wins the game (all goals achieved, last player standing, or all players perished), `19Winner.mp3` now plays instead of the weekend track.

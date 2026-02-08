@@ -21,6 +21,7 @@ import { ArmoryPanel } from './ArmoryPanel';
 import { AcademyPanel } from './AcademyPanel';
 import { LandlordPanel } from './LandlordPanel';
 import { CavePanel } from './CavePanel';
+import { GraveyardPanel } from './GraveyardPanel';
 import { HomePanel } from './HomePanel';
 import { LocationShell, type LocationTab, type WorkInfo } from './LocationShell';
 import { LOCATION_NPCS } from '@/data/npcs';
@@ -577,6 +578,33 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
           },
         ];
       }
+
+      case 'graveyard':
+        return [{
+          id: 'cemetery',
+          label: 'Cemetery',
+          content: (
+            <GraveyardPanel
+              player={player}
+              priceModifier={priceModifier}
+              onPray={(cost, happinessGain, time) => {
+                modifyGold(player.id, -cost);
+                modifyHappiness(player.id, happinessGain);
+                spendTime(player.id, time);
+              }}
+              onMourn={(cost, relaxationGain, time) => {
+                modifyGold(player.id, -cost);
+                modifyRelaxation(player.id, relaxationGain);
+                spendTime(player.id, time);
+              }}
+              onBlessMaxHealth={(cost, maxHealthGain, time) => {
+                modifyGold(player.id, -cost);
+                modifyMaxHealth(player.id, maxHealthGain);
+                spendTime(player.id, time);
+              }}
+            />
+          ),
+        }];
 
       case 'cave':
         return [{

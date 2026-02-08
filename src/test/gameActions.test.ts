@@ -125,7 +125,7 @@ describe('Death and resurrection', () => {
     const p = useGameStore.getState().players[0];
     expect(p.health).toBe(50);
     expect(p.savings).toBe(0); // Cost 100
-    expect(p.currentLocation).toBe('enchanter');
+    expect(p.currentLocation).toBe('graveyard');
   });
 
   it('marks game over when no savings', () => {
