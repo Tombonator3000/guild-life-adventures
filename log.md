@@ -7485,6 +7485,52 @@ Deep audit of the entire multiplayer codebase (7 network files, ~1930 lines). Us
 
 ---
 
+## 2026-02-08 - Refactor Complex Code (Agent-Assisted)
+
+Refactored the 3 largest complex files in the codebase using parallel agents. Total: 2,159 lines of monolithic code broken into 15 focused modules.
+
+### GameBoard.tsx (730 → 444 lines)
+
+Extracted 5 modules from the main game board component:
+
+| New File | Lines | Purpose |
+|----------|-------|---------|
+| `src/components/game/GameBoardHeader.tsx` | 64 | Desktop top bar (week/market/weather + menu) |
+| `src/components/game/GameBoardOverlays.tsx` | 137 | AI thinking, online waiting, connection indicator, turn transition overlays |
+| `src/components/game/DebugOverlay.tsx` | 81 | Zone boundary and movement path debug visualization |
+| `src/hooks/useGameBoardKeyboard.ts` | 73 | Keyboard shortcuts hook (Escape, Enter, arrow keys) |
+| `src/hooks/useLocationClick.ts` | 127 | Location click handler + event conversion hook |
+
+### ZoneEditor.tsx (803 → 86 lines)
+
+Extracted 4 modules from the zone/path editor:
+
+| New File | Lines | Purpose |
+|----------|-------|---------|
+| `src/hooks/useZoneEditorState.ts` | 323 | All state, refs, handlers, derived values |
+| `src/components/game/ZoneEditorToolbar.tsx` | 102 | Header bar with mode toggle, buttons, checkboxes |
+| `src/components/game/ZoneEditorBoard.tsx` | 236 | Board view with grid, SVG paths, zone overlays |
+| `src/components/game/ZoneEditorProperties.tsx` | 284 | Right side properties panel (zone + path modes) |
+
+### economyHelpers.ts (626 → 16 line barrel)
+
+Split monolithic economy actions into 5 domain-specific files:
+
+| New File | Lines | Actions |
+|----------|-------|---------|
+| `src/store/helpers/economy/bankingHelpers.ts` | 109 | payRent, deposit, withdraw, invest, prepayRent, moveToHousing |
+| `src/store/helpers/economy/itemHelpers.ts` | 125 | buyItem, sellItem, buyDurable, sellDurable, buyTicket, buyLotteryTicket, buyFreshFood |
+| `src/store/helpers/economy/applianceHelpers.ts` | 111 | buyAppliance, repairAppliance, pawnAppliance |
+| `src/store/helpers/economy/equipmentHelpers.ts` | 200 | equipItem, unequipItem, clearDungeonFloor, applyRareDrop, temperEquipment, forgeRepair, salvage |
+| `src/store/helpers/economy/stockLoanHelpers.ts` | 92 | buyStock, sellStock, takeLoan, repayLoan |
+
+### Verification
+- ✅ TypeScript: `npx tsc --noEmit` — clean
+- ✅ All tests: 171/171 passing
+- ✅ No behavioral changes — pure structural refactoring
+
+---
+
 ## Log Template
 
 ```markdown
