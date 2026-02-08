@@ -15,14 +15,14 @@ export function VictoryScreen() {
   // Handle case where all players perished
   if (!winningPlayer) {
     return (
-      <div className="relative min-h-screen overflow-hidden">
+      <div className="relative min-h-screen-safe overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${gameBoard})` }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/80 to-background/95" />
 
-        <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4">
+        <div className="relative z-10 min-h-screen-safe flex flex-col items-center justify-center px-4">
           <div className="text-center mb-8">
             <Scroll className="w-20 h-20 text-muted-foreground mx-auto mb-4" />
             <h1 className="font-display text-5xl md:text-6xl font-bold text-foreground mb-4">
@@ -60,7 +60,7 @@ export function VictoryScreen() {
   const allGoalsMet = wealthMet && happinessMet && educationMet && careerMet;
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen-safe overflow-hidden">
       {/* Background with overlay */}
       <div
         className="absolute inset-0 bg-cover bg-center"
@@ -69,7 +69,7 @@ export function VictoryScreen() {
       <div className="absolute inset-0 bg-gradient-to-b from-amber-900/70 via-amber-800/60 to-background/90" />
 
       {/* Content */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4">
+      <div className="relative z-10 min-h-screen-safe flex flex-col items-center justify-center px-4">
         {/* Victory Banner */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-4 mb-6">

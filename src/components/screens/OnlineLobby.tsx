@@ -88,7 +88,7 @@ export function OnlineLobby() {
   const canStart = (lobbyPlayers.length >= 2 || settings.includeAI) && allGuestsReady;
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen-safe overflow-hidden">
       {/* Background */}
       <div
         className="absolute inset-0 bg-cover bg-center opacity-30"
@@ -96,7 +96,7 @@ export function OnlineLobby() {
       />
       <div className="absolute inset-0 bg-background/80" />
 
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-8">
+      <div className="relative z-10 min-h-screen-safe flex flex-col items-center justify-center px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-2">

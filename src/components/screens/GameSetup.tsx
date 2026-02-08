@@ -85,7 +85,7 @@ export function GameSetup() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen-safe overflow-hidden">
       {/* Background */}
       <div
         className="absolute inset-0 bg-cover bg-center opacity-30"
@@ -94,7 +94,7 @@ export function GameSetup() {
       <div className="absolute inset-0 bg-background/80" />
 
       {/* Content */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-8">
+      <div className="relative z-10 min-h-screen-safe flex flex-col items-center justify-center px-4 py-8">
         <h1 className="font-display text-4xl font-bold text-amber-900 mb-8">
           Prepare Your Adventure
         </h1>

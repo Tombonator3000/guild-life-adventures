@@ -633,6 +633,16 @@
   - Updated AI (useGrimwaldAI.ts) to not spend time on banking actions
   - Build succeeds, 171 tests pass
 
+- [x] iPad PWA Compatibility — 6 issues fixed for iPad/iOS PWA support
+  - [x] Added `viewport-fit=cover` to viewport meta tag (required for notched iPads)
+  - [x] Added safe-area-inset CSS utility classes (notch, home indicator, status bar)
+  - [x] Fixed 100vh issue — `min-h-screen-safe` / `h-screen-safe` using `100dvh` with fallback
+  - [x] iOS install guide — device detection + 3-step "Add to Home Screen" modal
+  - [x] iOS standalone mode detection (`navigator.standalone`)
+  - [x] UpdateBanner safe-area-aware bottom positioning
+  - [x] Applied to all screens: TitleScreen, GameSetup, GameBoard, VictoryScreen, OnlineLobby
+  - [x] Build succeeds, 171 tests pass
+
 ## In Progress
 
 *No active tasks*

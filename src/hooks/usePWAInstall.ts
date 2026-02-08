@@ -5,15 +5,36 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
+function isIOSDevice(): boolean {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function isInStandaloneMode(): boolean {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+    ('standalone' in window.navigator && (navigator as unknown as { standalone: boolean }).standalone === true);
+}
+
 export function usePWAInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [canInstall, setCanInstall] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [showIOSGuide, setShowIOSGuide] = useState(false);
 
   useEffect(() => {
-    // Check if already installed (standalone mode)
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    // Check if already installed (standalone mode on any platform)
+    if (isInStandaloneMode()) {
       setIsInstalled(true);
+      return;
+    }
+
+    const ios = isIOSDevice();
+    setIsIOS(ios);
+
+    // On iOS, beforeinstallprompt is never fired — show manual install guide instead
+    if (ios) {
+      setCanInstall(true);
       return;
     }
 
@@ -39,6 +60,12 @@ export function usePWAInstall() {
   }, []);
 
   const install = useCallback(async () => {
+    // On iOS, show the manual install guide
+    if (isIOS) {
+      setShowIOSGuide(true);
+      return false;
+    }
+
     if (!deferredPrompt) return false;
 
     await deferredPrompt.prompt();
@@ -51,7 +78,11 @@ export function usePWAInstall() {
 
     setDeferredPrompt(null);
     return outcome === 'accepted';
-  }, [deferredPrompt]);
+  }, [deferredPrompt, isIOS]);
 
-  return { canInstall, isInstalled, install };
+  const dismissIOSGuide = useCallback(() => {
+    setShowIOSGuide(false);
+  }, []);
+
+  return { canInstall, isInstalled, install, isIOS, showIOSGuide, dismissIOSGuide };
 }
