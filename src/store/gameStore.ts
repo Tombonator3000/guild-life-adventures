@@ -6,7 +6,7 @@ import type {
   DegreeId,
   AIDifficulty,
 } from '@/types/game.types';
-import { PLAYER_COLORS, AI_COLOR, AI_OPPONENTS, HOURS_PER_TURN } from '@/types/game.types';
+import { PLAYER_COLORS, AI_COLOR, AI_OPPONENTS, HOURS_PER_TURN, STARTING_AGE } from '@/types/game.types';
 import type { AIConfig } from '@/types/game.types';
 import { getInitialStockPrices } from '@/data/stocks';
 import { saveGame, loadGame } from '@/data/saveLoad';
@@ -53,6 +53,7 @@ const createPlayer = (
   name,
   color,
   aiDifficulty: isAI ? (aiDifficulty || 'medium') : undefined,
+  age: STARTING_AGE,
   gold: 100,
   health: 100,
   maxHealth: 100,

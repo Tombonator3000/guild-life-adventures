@@ -125,6 +125,7 @@ export interface Player {
   id: string;
   name: string;
   color: string;
+  age: number;             // Player age in years (starts at 18, ages 1 year per 4 weeks)
   gold: number;
   health: number;
   maxHealth: number;
@@ -257,6 +258,26 @@ export interface Quest {
   healthRisk: number;
   happinessReward: number;
 }
+
+// Age system constants
+export const STARTING_AGE = 18;        // Players start at age 18
+export const AGE_INTERVAL = 4;         // Age 1 year every 4 weeks (same as rent cycle)
+export const WORK_HAPPINESS_AGE = 45;  // Age when work starts causing extra happiness drain
+export const HEALTH_CRISIS_AGE = 50;   // Age when random health crises can occur
+export const HEALTH_CRISIS_CHANCE = 0.03; // 3% weekly chance of age-related health crisis
+export const HEALTH_CRISIS_DAMAGE = 15;   // HP lost from age-related health crisis
+
+// Birthday milestone effects
+export const AGE_MILESTONES: Record<number, { happiness?: number; maxHealth?: number; dependability?: number; message: string }> = {
+  21: { happiness: 5, message: 'Coming of age! The world feels full of possibility.' },
+  25: { maxHealth: 2, message: 'In the prime of youth — stronger than ever.' },
+  30: { happiness: 5, dependability: 5, message: 'A seasoned adventurer — wisdom comes with experience.' },
+  40: { maxHealth: -2, happiness: 3, message: 'Middle age arrives — wiser, but the body begins to slow.' },
+  50: { maxHealth: -5, happiness: 5, message: 'A half-century lived — aches and wisdom in equal measure.' },
+};
+// Ages 60+ lose -3 maxHealth every birthday (handled in code, not in table)
+export const ELDER_AGE = 60;
+export const ELDER_HEALTH_DECAY = 3;
 
 // Jones-style: Each turn has 60 Hours (time points)
 export const HOURS_PER_TURN = 60;

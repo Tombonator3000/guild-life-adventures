@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { Sword, Shield, Scroll, Crown, Save, Trash2, Volume2, VolumeX, Download, Globe } from 'lucide-react';
+import { Sword, Shield, Scroll, Crown, Save, Trash2, Volume2, VolumeX, Download, Globe, Settings } from 'lucide-react';
 import { hasAutoSave, getSaveSlots, formatSaveDate, deleteSave } from '@/data/saveLoad';
 import type { SaveSlotInfo } from '@/data/saveLoad';
 import { DarkModeToggle } from '@/components/game/DarkModeToggle';
+import { OptionsMenu } from '@/components/game/OptionsMenu';
 import { useAudioSettings } from '@/hooks/useMusic';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import gameBoard from '@/assets/game-board.jpeg';
@@ -11,6 +12,7 @@ import gameBoard from '@/assets/game-board.jpeg';
 export function TitleScreen() {
   const { setPhase, loadFromSlot } = useGameStore();
   const [showLoadMenu, setShowLoadMenu] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
   const [slots, setSlots] = useState<SaveSlotInfo[]>([]);
   const autoSaveExists = hasAutoSave();
   const { musicMuted, toggleMute } = useAudioSettings();
@@ -105,6 +107,14 @@ export function TitleScreen() {
             <Save className="w-4 h-4" />
             Load Saved Game
           </button>
+
+          <button
+            onClick={() => setShowOptions(true)}
+            className="text-muted-foreground hover:text-foreground text-sm font-display flex items-center gap-2 mt-1 transition-colors"
+          >
+            <Settings className="w-4 h-4" />
+            Options
+          </button>
         </div>
 
         {/* Footer */}
@@ -188,6 +198,11 @@ export function TitleScreen() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Options Modal */}
+      {showOptions && (
+        <OptionsMenu onClose={() => setShowOptions(false)} />
       )}
     </div>
   );

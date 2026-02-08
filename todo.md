@@ -525,6 +525,29 @@
   - Unified DEFAULT_CENTER_PANEL values between ZoneEditor and useZoneConfiguration
   - Build passes, 152 tests pass
 
+## Completed (2026-02-08)
+
+- [x] Age System — player aging with birthday milestones, elder effects, and UI
+  - [x] `age: number` field on Player (starts at 18), ages 1 year per 4 weeks
+  - [x] Birthday milestones: age 21 (+5 hap), 25 (+2 maxHP), 30 (+5 hap/+5 dep), 40 (-2 maxHP/+3 hap), 50 (-5 maxHP/+5 hap)
+  - [x] Elder decay: age 60+ loses 3 maxHealth per birthday (floor at 10)
+  - [x] Health crises: age 50+ has 3% weekly chance of -15 HP
+  - [x] Work fatigue: age 45+ gets extra -1 happiness on long shifts (6+ hours)
+  - [x] AI: health threshold scales with age, capped at 80% maxHealth (prevents infinite loop)
+  - [x] UI: age shown in PlayerInfoPanel, SideInfoTabs, InfoTabs, VictoryScreen
+  - [x] Save migration v1→v2: adds age to old saves based on week count
+  - [x] 19 new tests in `src/test/age.test.ts`
+
+- [x] Age System Bug Audit — 7 bugs found and fixed during playthrough
+  - [x] Bug 1: AI infinite healing loop at elder ages (maxHP < heal threshold)
+  - [x] Bug 2: modifyMaxHealth floor inconsistency (50 → 10, matching aging floor)
+  - [x] Bug 3: Unused Cake import in PlayerInfoPanel
+  - [x] Bug 5: Work happiness penalty stacking too harsh at 45+ (now only long shifts)
+  - [x] Bug 7: Truthiness check for milestone.maxHealth would skip value 0
+  - [x] Bug 8: Milestones at 60+ suppressed elder decay (now independent)
+  - [x] Flaky test: freshFood starvation test (mocked Math.random for determinism)
+  - Build passes, 171 tests pass (19 new)
+
 ## In Progress
 
 *No active tasks*

@@ -2,6 +2,7 @@ import { Player } from '@/types/game.types';
 import { GUILD_RANK_NAMES, HOURS_PER_TURN } from '@/types/game.types';
 import { Coins, Heart, Smile, Clock, Utensils, Shirt, Shield, Briefcase, Home, Sparkles, Skull } from 'lucide-react';
 import { HOUSING_DATA } from '@/data/housing';
+import { getGameOption } from '@/data/gameOptions';
 
 interface PlayerInfoPanelProps {
   player: Player;
@@ -10,6 +11,7 @@ interface PlayerInfoPanelProps {
 
 export function PlayerInfoPanel({ player, isCurrentPlayer }: PlayerInfoPanelProps) {
   const housingName = player.housing !== 'homeless' ? HOUSING_DATA[player.housing]?.name : 'Homeless';
+  const agingEnabled = getGameOption('enableAging');
 
   // Warning states
   const healthWarning = player.health <= 20;
@@ -30,7 +32,7 @@ export function PlayerInfoPanel({ player, isCurrentPlayer }: PlayerInfoPanelProp
             {player.name}
           </h3>
           <p className="text-xs text-muted-foreground truncate">
-            {GUILD_RANK_NAMES[player.guildRank]}
+            {GUILD_RANK_NAMES[player.guildRank]}{agingEnabled ? ` · Age ${player.age ?? 18}` : ''}
           </p>
         </div>
       </div>

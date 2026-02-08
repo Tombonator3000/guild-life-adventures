@@ -5,7 +5,7 @@
 
 import type { GameState } from '@/types/game.types';
 
-const SAVE_VERSION = 1;
+const SAVE_VERSION = 2;
 const STORAGE_PREFIX = 'guild-life-';
 const AUTO_SAVE_KEY = `${STORAGE_PREFIX}autosave`;
 const SAVE_SLOT_KEY = (slot: number) => `${STORAGE_PREFIX}save-${slot}`;
@@ -61,10 +61,18 @@ export function loadGame(slot: number = 0): SaveData | null {
 
     const saveData: SaveData = JSON.parse(raw);
 
-    // Version check
-    if (saveData.version !== SAVE_VERSION) {
-      console.warn(`[Save] Save version mismatch: ${saveData.version} vs ${SAVE_VERSION}`);
-      // For now, still attempt to load - future versions may need migration
+    // Version migration
+    if (saveData.version < 2) {
+      // v1 → v2: Add age field to players (default 18 + weeks/4)
+      if (saveData.gameState?.players) {
+        for (const p of saveData.gameState.players as Record<string, unknown>[]) {
+          if (p.age === undefined) {
+            // Estimate age from game week: starting age + weeks elapsed / 4
+            p.age = 18 + Math.floor((saveData.week || 1) / 4);
+          }
+        }
+      }
+      saveData.version = 2;
     }
 
     return saveData;
