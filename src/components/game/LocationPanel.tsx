@@ -660,6 +660,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
       <div className="h-full">
         <HomePanel
           player={player}
+          locationId={locationId}
           spendTime={spendTime}
           modifyHappiness={modifyHappiness}
           modifyHealth={modifyHealth}

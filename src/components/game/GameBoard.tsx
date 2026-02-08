@@ -7,7 +7,8 @@ import { PlayerToken } from './PlayerToken';
 import { AnimatedPlayerToken } from './AnimatedPlayerToken';
 import { ResourcePanel } from './ResourcePanel';
 import { LocationPanel } from './LocationPanel';
-import { EventModal, type GameEvent } from './EventModal';
+import { type GameEvent } from './EventModal';
+import { EventPanel } from './EventPanel';
 import { ShadowfingersModal, useShadowfingersModal } from './ShadowfingersModal';
 import { ZoneEditor } from './ZoneEditor';
 import { MOVEMENT_PATHS, BOARD_PATH } from '@/data/locations';
@@ -440,9 +441,9 @@ export function GameBoard() {
           )}
 
           {/* Center UI panel */}
-          {/* Mobile: full-width bottom sheet when location selected, hidden otherwise */}
+          {/* Mobile: full-width bottom sheet when location selected or event, hidden otherwise */}
           {/* Desktop: always visible, positioned within the board frame */}
-          {(!isMobile || selectedLocation) && (
+          {(!isMobile || selectedLocation || (phase === 'event' && currentEvent)) && (
             <div
               className="absolute overflow-hidden z-10"
               style={isMobile ? {
@@ -458,7 +459,9 @@ export function GameBoard() {
               }}
             >
               <div className="w-full h-full overflow-hidden flex flex-col bg-card/95 rounded-t-lg">
-                {selectedLocation ? (
+                {phase === 'event' && currentEvent ? (
+                  <EventPanel event={currentEvent} onDismiss={dismissEvent} />
+                ) : selectedLocation ? (
                   <LocationPanel locationId={selectedLocation} />
                 ) : (
                   <ResourcePanel />
@@ -561,12 +564,6 @@ export function GameBoard() {
           </MobileDrawer>
         </>
       )}
-
-      {/* Event Modal */}
-      <EventModal
-        event={phase === 'event' ? currentEvent : null}
-        onDismiss={dismissEvent}
-      />
 
       {/* Shadowfingers Robbery Modal */}
       <ShadowfingersModal

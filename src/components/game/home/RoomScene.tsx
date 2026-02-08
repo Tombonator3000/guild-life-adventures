@@ -42,242 +42,31 @@ interface RoomSceneProps {
 export function RoomScene({
   isNoble,
   isSlums,
-  wallColor,
-  wallAccent,
-  floorColor,
-  floorAccent,
   ownedAppliances,
   brokenAppliances,
   ownedDurables,
   relaxation,
 }: RoomSceneProps) {
+  const bgImage = isNoble
+    ? `${import.meta.env.BASE_URL}locations/noble-heights.png`
+    : `${import.meta.env.BASE_URL}locations/slums.png`;
+
   return (
     <div className="flex-1 relative overflow-hidden" style={{ minHeight: 0 }}>
-      {/* Back wall */}
+      {/* Background image */}
       <div
         className="absolute inset-0"
         style={{
-          background: `linear-gradient(180deg, ${wallAccent} 0%, ${wallColor} 60%, ${floorColor} 60%, ${floorAccent} 100%)`,
+          backgroundImage: `url(${bgImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
         }}
       />
 
-      {/* Wall texture / pattern - stone for slums, wallpaper for noble */}
-      {isSlums && (
-        <>
-          {/* Cracks in the wall */}
-          <div className="absolute" style={{ top: '15%', left: '20%', width: '2px', height: '20%', background: '#1a1410', opacity: 0.4, transform: 'rotate(15deg)' }} />
-          <div className="absolute" style={{ top: '10%', left: '65%', width: '1px', height: '15%', background: '#1a1410', opacity: 0.3, transform: 'rotate(-10deg)' }} />
-          <div className="absolute" style={{ top: '25%', left: '75%', width: '2px', height: '12%', background: '#1a1410', opacity: 0.3, transform: 'rotate(5deg)' }} />
-        </>
-      )}
-
-      {isNoble && (
-        <>
-          {/* Decorative wallpaper pattern */}
-          <div className="absolute" style={{ top: '5%', left: '5%', right: '5%', height: '2px', background: '#8a6aaa', opacity: 0.3 }} />
-          <div className="absolute" style={{ top: '15%', left: '5%', right: '5%', height: '1px', background: '#8a6aaa', opacity: 0.2 }} />
-          <div className="absolute" style={{ top: '25%', left: '5%', right: '5%', height: '2px', background: '#8a6aaa', opacity: 0.3 }} />
-        </>
-      )}
-
-      {/* Floor line / baseboard */}
+      {/* Slight overlay for readability of overlaid items */}
       <div
-        className="absolute left-0 right-0"
-        style={{
-          top: '60%',
-          height: '3px',
-          background: isNoble ? '#8a6aaa' : '#2d1f0f',
-        }}
-      />
-
-      {/* Floor planks */}
-      {[0, 1, 2, 3].map(i => (
-        <div
-          key={`plank-${i}`}
-          className="absolute"
-          style={{
-            top: `${68 + i * 10}%`,
-            left: 0,
-            right: 0,
-            height: '1px',
-            background: isNoble ? 'rgba(138,106,170,0.15)' : 'rgba(26,20,16,0.3)',
-          }}
-        />
-      ))}
-
-      {/* Window */}
-      <div
-        className="absolute"
-        style={{
-          top: '8%',
-          left: '38%',
-          width: '24%',
-          height: '35%',
-          background: isNoble
-            ? 'linear-gradient(180deg, #7ba3c9 0%, #a8c8e8 50%, #c5dff0 100%)'
-            : 'linear-gradient(180deg, #4a6070 0%, #5a7888 50%, #6a8898 100%)',
-          border: `3px solid ${isNoble ? '#8a6aaa' : '#5c4a32'}`,
-          borderRadius: '2px',
-        }}
-      >
-        {/* Window cross */}
-        <div className="absolute left-1/2 top-0 bottom-0 w-[2px] -translate-x-1/2" style={{ background: isNoble ? '#8a6aaa' : '#5c4a32' }} />
-        <div className="absolute top-1/2 left-0 right-0 h-[2px] -translate-y-1/2" style={{ background: isNoble ? '#8a6aaa' : '#5c4a32' }} />
-        {/* Moon/sun */}
-        <div
-          className="absolute"
-          style={{
-            top: '15%',
-            right: '15%',
-            width: '18%',
-            height: '24%',
-            borderRadius: '50%',
-            background: isNoble ? '#f0e68c' : '#c0c0c0',
-            opacity: 0.8,
-          }}
-        />
-      </div>
-
-      {/* "Home Sweet Home" sign */}
-      <div
-        className="absolute text-center"
-        style={{
-          top: '12%',
-          left: '5%',
-          width: '28%',
-          padding: 'clamp(2px, 0.5vw, 6px) clamp(4px, 0.8vw, 10px)',
-          background: isNoble ? '#f5eedd' : '#d4c8a0',
-          border: `2px solid ${isNoble ? '#8a6aaa' : '#8b7355'}`,
-          borderRadius: '2px',
-          transform: 'rotate(-2deg)',
-          fontSize: 'clamp(0.45rem, 1vw, 0.65rem)',
-          color: isNoble ? '#4a3568' : '#3d3224',
-          fontWeight: 'bold',
-          fontFamily: 'serif',
-          letterSpacing: '0.05em',
-        }}
-      >
-        {isNoble ? '~ Noble Living ~' : 'Home Sweet Home'}
-      </div>
-
-      {/* Door */}
-      <div
-        className="absolute"
-        style={{
-          top: '18%',
-          right: '6%',
-          width: '12%',
-          height: '42%',
-          background: isNoble
-            ? 'linear-gradient(180deg, #6b4e2e 0%, #5a3e1e 100%)'
-            : 'linear-gradient(180deg, #4a3828 0%, #3a2818 100%)',
-          border: `2px solid ${isNoble ? '#8a6aaa' : '#2d1f0f'}`,
-          borderRadius: '2px 2px 0 0',
-        }}
-      >
-        {/* Door handle */}
-        <div
-          className="absolute"
-          style={{
-            top: '50%',
-            right: '15%',
-            width: '12%',
-            height: '6%',
-            borderRadius: '50%',
-            background: isNoble ? '#c9a227' : '#8b7355',
-          }}
-        />
-      </div>
-
-      {/* Bed/Sleeping area */}
-      <div
-        className="absolute"
-        style={{
-          bottom: '42%',
-          left: '28%',
-          width: '30%',
-          height: '16%',
-          background: isNoble
-            ? 'linear-gradient(180deg, #8b4a6d 0%, #6b3a5d 100%)'
-            : 'linear-gradient(180deg, #8b7355 0%, #6b5a42 100%)',
-          border: `2px solid ${isNoble ? '#a05a7d' : '#5c4a32'}`,
-          borderRadius: '3px',
-        }}
-      >
-        {/* Pillow */}
-        <div
-          className="absolute"
-          style={{
-            top: '15%',
-            left: '5%',
-            width: '25%',
-            height: '65%',
-            borderRadius: '4px',
-            background: isNoble ? '#e8d8e8' : '#c8b898',
-          }}
-        />
-        {/* Blanket pattern */}
-        {isNoble && (
-          <div
-            className="absolute"
-            style={{
-              top: '20%',
-              right: '5%',
-              width: '60%',
-              height: '60%',
-              borderRadius: '2px',
-              background: 'repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(138,106,170,0.3) 4px, rgba(138,106,170,0.3) 8px)',
-            }}
-          />
-        )}
-      </div>
-
-      {/* Table/Desk area */}
-      <div
-        className="absolute"
-        style={{
-          bottom: '40%',
-          left: '5%',
-          width: '16%',
-          height: '10%',
-          background: isNoble ? '#7d5e3e' : '#5a4430',
-          border: `1px solid ${isNoble ? '#6b4e2e' : '#4a3420'}`,
-          borderRadius: '2px',
-        }}
-      />
-      {/* Table legs */}
-      <div className="absolute" style={{ bottom: '34%', left: '6%', width: '2%', height: '6%', background: isNoble ? '#6b4e2e' : '#4a3420' }} />
-      <div className="absolute" style={{ bottom: '34%', left: '18%', width: '2%', height: '6%', background: isNoble ? '#6b4e2e' : '#4a3420' }} />
-
-      {/* Chair/Seat */}
-      <div
-        className="absolute"
-        style={{
-          bottom: '40%',
-          right: '22%',
-          width: '14%',
-          height: '12%',
-          background: isNoble
-            ? 'linear-gradient(180deg, #8b4a4a 0%, #6b3a3a 100%)'
-            : 'linear-gradient(180deg, #6b5a42 0%, #5a4a32 100%)',
-          border: `1px solid ${isNoble ? '#a05555' : '#4a3a22'}`,
-          borderRadius: '3px 3px 0 0',
-        }}
-      />
-      {/* Chair back */}
-      <div
-        className="absolute"
-        style={{
-          bottom: '50%',
-          right: '24%',
-          width: '10%',
-          height: '10%',
-          background: isNoble
-            ? 'linear-gradient(180deg, #9b5a5a 0%, #8b4a4a 100%)'
-            : 'linear-gradient(180deg, #7b6a52 0%, #6b5a42 100%)',
-          border: `1px solid ${isNoble ? '#a05555' : '#4a3a22'}`,
-          borderRadius: '3px 3px 0 0',
-        }}
+        className="absolute inset-0"
+        style={{ background: 'rgba(0,0,0,0.15)' }}
       />
 
       {/* Owned appliances rendered in the room */}
@@ -353,65 +142,6 @@ export function RoomScene({
         );
       })}
 
-      {/* Slums: Rats */}
-      {isSlums && (
-        <>
-          <div
-            className="absolute animate-pulse"
-            style={{ bottom: '8%', left: '8%', fontSize: 'clamp(0.6rem, 1.2vw, 1rem)', opacity: 0.6, zIndex: 6 }}
-            title="A rat scurries by..."
-          >
-            {'\u{1F400}'}
-          </div>
-          <div
-            className="absolute"
-            style={{ bottom: '5%', right: '15%', fontSize: 'clamp(0.5rem, 1vw, 0.8rem)', opacity: 0.4, zIndex: 6, transform: 'scaleX(-1)' }}
-          >
-            {'\u{1F400}'}
-          </div>
-        </>
-      )}
-
-      {/* Noble: Decorative elements */}
-      {isNoble && (
-        <>
-          {/* Chandelier */}
-          <div
-            className="absolute"
-            style={{ top: '2%', left: '45%', fontSize: 'clamp(1rem, 2vw, 1.6rem)', transform: 'translateX(-50%)', zIndex: 6 }}
-          >
-            {'\u{1F56F}\u{FE0F}'}
-          </div>
-          {/* Rug on floor */}
-          <div
-            className="absolute"
-            style={{
-              bottom: '12%',
-              left: '25%',
-              width: '50%',
-              height: '14%',
-              background: 'radial-gradient(ellipse, rgba(138,74,74,0.4) 0%, rgba(107,58,93,0.2) 70%, transparent 100%)',
-              borderRadius: '50%',
-              zIndex: 3,
-            }}
-          />
-          {/* Painting on wall */}
-          <div
-            className="absolute"
-            style={{
-              top: '10%',
-              right: '22%',
-              width: '10%',
-              height: '14%',
-              background: 'linear-gradient(180deg, #4a6040 0%, #3a5030 50%, #5a7050 100%)',
-              border: '2px solid #c9a227',
-              borderRadius: '1px',
-              zIndex: 6,
-            }}
-          />
-        </>
-      )}
-
       {/* Empty room hint */}
       {ownedAppliances.length === 0 && ownedDurables.length === 0 && (
         <div
@@ -420,11 +150,12 @@ export function RoomScene({
             bottom: '18%',
             left: '50%',
             transform: 'translateX(-50%)',
-            color: isNoble ? '#8a6aaa' : '#6b5a42',
+            color: '#f0e8d8',
             fontSize: 'clamp(0.5rem, 0.9vw, 0.7rem)',
             fontStyle: 'italic',
-            opacity: 0.6,
+            opacity: 0.8,
             zIndex: 10,
+            textShadow: '0 1px 3px rgba(0,0,0,0.8)',
           }}
         >
           Your home is quite bare...
@@ -438,8 +169,8 @@ export function RoomScene({
           top: '4%',
           right: '4%',
           fontSize: 'clamp(0.45rem, 0.8vw, 0.6rem)',
-          color: '#a09080',
-          background: 'rgba(0,0,0,0.5)',
+          color: '#e0d8c8',
+          background: 'rgba(0,0,0,0.6)',
           padding: 'clamp(1px, 0.3vw, 3px) clamp(3px, 0.6vw, 6px)',
           borderRadius: '2px',
           zIndex: 10,
