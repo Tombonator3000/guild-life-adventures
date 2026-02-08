@@ -612,6 +612,12 @@
   - Placeholder MP3 in `public/music/` (replace with real track)
   - AudioManager crossfades to Noble Heights music on location entry
 
+- [x] Victory Music — `19Winner.mp3` plays when a player wins the game
+  - Added `'winner'` track to `MUSIC_TRACKS` in `src/audio/musicConfig.ts`
+  - Changed `SCREEN_MUSIC.victory` from `'weekend'` to `'winner'`
+  - useMusicController already handles victory phase via SCREEN_MUSIC lookup
+  - Build succeeds, 171 tests pass
+
 ## In Progress
 
 *No active tasks*

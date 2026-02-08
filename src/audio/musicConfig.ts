@@ -19,13 +19,14 @@ export const MUSIC_TRACKS: Record<string, MusicTrack> = {
   'weekend':          { id: 'weekend',          file: '18OhWhatAWeekend.mp3',     label: 'Oh What a Weekend' },
   'noble-heights':    { id: 'noble-heights',    file: '10Noble-Heights.mp3',      label: 'Noble Heights' },
   'cave':             { id: 'cave',             file: '20Cave.mp3',               label: 'The Cave' },
+  'winner':           { id: 'winner',           file: '19Winner.mp3',             label: 'Victory' },
 };
 
 // Screen-level music (menus, setup, victory)
 export const SCREEN_MUSIC: Record<string, string> = {
   title:   'main-theme',
   setup:   'main-theme',
-  victory: 'weekend',
+  victory: 'winner',
 };
 
 // Location → track mapping.  Locations without a specific track use 'on-the-street'.
