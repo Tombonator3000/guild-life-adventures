@@ -43,7 +43,7 @@ export function useAI() {
 
     // Priority 2: Pay rent if overdue
     if (player.weeksSinceRent >= 3 && player.housing !== 'homeless') {
-      const rentCost = RENT_COSTS[player.housing];
+      const rentCost = player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing];
       if (player.gold >= rentCost) {
         if (player.currentLocation !== 'landlord') {
           return { type: 'move', location: 'landlord' };

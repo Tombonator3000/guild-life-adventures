@@ -1,5 +1,77 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-08 - Housing Cost Audit — 5 bugs found and fixed
+
+**Task**: Audit the housing system for fairness, cost balance, and correctness.
+
+### Audit Analysis
+
+#### Income vs Housing Cost at Each Game Stage
+
+| Stage | Job | Income/week | Slums (75g) | Noble (350g) | Food (~50g) | Surplus (Slums) | Surplus (Noble) |
+|-------|-----|------------|-------------|--------------|-------------|-----------------|-----------------|
+| Early | Floor Sweeper (4g/hr) | ~165g | 75g | — | 50g | **~40g** | — |
+| Mid | Market Vendor (10g/hr) | ~414g | 75g | 350g | 50g | **~289g** | **~14g** |
+| High | Teacher (14g/hr) | ~580g | 75g | 350g | 50g | **~455g** | **~180g** |
+| Top | Guild Admin (22g/hr) | ~910g | 75g | 350g | 50g | **~785g** | **~510g** |
+
+*Income assumes ~6 shifts/week at 6h each with 1.15 work bonus, economy modifier 1.0*
+
+#### Verdict: Is Housing Fair?
+
+**Slums (75g/week)**: Well-balanced. Entry-level jobs barely cover costs with a small surplus, creating tension without being impossible. The robbery risk (25% theft chance per turn, scaled by relaxation) adds meaningful risk-vs-cost trade-off.
+
+**Noble Heights (350g/week actual)**: Reasonable for mid-tier players (14g+/hr jobs). The move from Slums to Noble is a significant milestone — you need ~350g surplus after food. Benefits (0% theft, +3 happiness/turn, faster relaxation) justify the premium.
+
+**Homeless (0g)**: Severe penalties (-5 HP, -8 hrs, -3 happiness per turn, 3x robbery) make this an effective deterrent. Not unfair — it's a death spiral that motivates housing urgency. Getting OUT of homelessness costs only 150g (Slums deposit at 1.0 economy), which is achievable in 1-2 turns of work.
+
+**Move-in deposit (2x weekly rent)**: Slums = 150g, Noble = 700g at 1.0 economy. Fair gating.
+
+#### Bugs Found
+
+| # | Severity | Issue | File | Fix |
+|---|----------|-------|------|-----|
+| 1 | **HIGH** | HOUSING_DATA.weeklyRent for Noble = 500g but RENT_COSTS = 350g (B4 fix was only applied to RENT_COSTS) | `housing.ts:46` | Synced to 350g |
+| 2 | **MEDIUM** | `modest` tier shown in LandlordPanel as move option, but `getHomeLocation()` sends modest players to Slums. Jones only has 2 housing tiers. | `LandlordPanel.tsx:120` | Filtered out `modest` from move options |
+| 3 | **MEDIUM** | AI rent affordability check uses `RENT_COSTS[housing]` ignoring `lockedRent` — AI may travel to landlord but fail to pay if locked rent is higher | `criticalNeeds.ts:69` | Uses `lockedRent > 0 ? lockedRent : RENT_COSTS[housing]` |
+| 4 | **MEDIUM** | AI housing downgrade check uses `RENT_COSTS` instead of effective rent — may not downgrade when it should | `strategicActions.ts:111` | Same fix as #3 |
+| 5 | **LOW** | Dead code: `canAffordHousing()`, `getUpgradeOptions()`, `getDowngradeOptions()` never called, `canAffordHousing` uses wrong formula (8x rent vs actual 2x) | `housing.ts:57-71` | Removed |
+
+#### Bug 1 Detail: Noble Rent Display Mismatch
+
+Before fix, when a player moved to Noble Heights:
+1. LandlordPanel showed **500g/week** (from HOUSING_DATA.weeklyRent)
+2. Deposit charged was **1000g** (500 × 2)
+3. Rent locked in at **500g/week**
+4. But fallback RENT_COSTS was only **350g/week**
+
+After fix: HOUSING_DATA.weeklyRent synced to 350g. Display now matches actual cost. Deposit = 700g at 1.0 economy.
+
+#### Bug 3 Detail: AI Rent Check Mismatch
+
+Scenario: AI moves to Noble at economy 1.5, locks in rent at 525g/week.
+- `criticalNeeds.ts` checked `RENT_COSTS['noble'] = 350` → "can afford with 400g"
+- AI travels to landlord, execution tries `lockedRent = 525` → "can't afford", wastes turn
+- Now fixed: action generation uses same effective rent as execution
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/data/housing.ts` | Noble weeklyRent 500→350; removed 3 dead functions |
+| `src/components/game/LandlordPanel.tsx` | Filter out `modest` from housing move options |
+| `src/hooks/ai/actions/criticalNeeds.ts` | Rent check uses `lockedRent` when available |
+| `src/hooks/ai/actions/strategicActions.ts` | Downgrade check uses `lockedRent` when available |
+| `src/hooks/useAI.ts` | Legacy AI rent check uses `lockedRent` when available |
+
+### Verification
+
+- TypeScript compiles cleanly (`tsc --noEmit`)
+- Production build succeeds (65 precached entries)
+- All 171 tests pass
+
+---
+
 ## 2026-02-08 - Auto-Update Check for Installed PWA
 
 **Task**: Add auto-update detection and user notification for the offline/installed PWA version of the game.

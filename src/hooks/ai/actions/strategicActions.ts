@@ -108,7 +108,8 @@ export function generateStrategicActions(ctx: ActionContext): AIAction[] {
   }
 
   // Downgrade housing if can't afford rent
-  if (player.housing !== 'homeless' && player.gold < RENT_COSTS[player.housing] && player.weeksSinceRent >= 3) {
+  const effectiveRent = player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing];
+  if (player.housing !== 'homeless' && player.gold < effectiveRent && player.weeksSinceRent >= 3) {
     if (player.housing === 'noble') {
       if (currentLocation === 'landlord') {
         actions.push({
