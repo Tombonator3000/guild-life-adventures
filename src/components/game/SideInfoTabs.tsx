@@ -6,6 +6,7 @@ import { Package, Target, BarChart3, Clock, Coins, Heart, Smile, Utensils, Home,
 import type { Player, GoalSettings } from '@/types/game.types';
 import { GoalProgress } from './GoalProgress';
 import { InventoryGrid } from './InventoryGrid';
+import { getGameOption } from '@/data/gameOptions';
 import { GUILD_RANK_NAMES, GUILD_RANK_INDEX, HOURS_PER_TURN } from '@/types/game.types';
 import { HOUSING_DATA } from '@/data/housing';
 import { getJob } from '@/data/jobs';
@@ -46,7 +47,7 @@ export function SideInfoTabs({ player, goals, isCurrentPlayer }: SideInfoTabsPro
             {player.name}
           </h3>
           <p className="text-[10px] text-wood-dark/70 truncate">
-            {GUILD_RANK_NAMES[player.guildRank]} · Age {player.age ?? 18}
+            {GUILD_RANK_NAMES[player.guildRank]}{getGameOption('enableAging') ? ` · Age ${player.age ?? 18}` : ''}
           </p>
         </div>
       </div>

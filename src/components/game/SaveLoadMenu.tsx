@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { Save, FolderOpen, Trash2, X, Home } from 'lucide-react';
+import { Save, FolderOpen, Trash2, X, Home, Settings } from 'lucide-react';
 import { getSaveSlots, formatSaveDate, deleteSave } from '@/data/saveLoad';
 import type { SaveSlotInfo } from '@/data/saveLoad';
 import { toast } from 'sonner';
+import { OptionsMenu } from '@/components/game/OptionsMenu';
 
 interface SaveLoadMenuProps {
   onClose: () => void;
@@ -12,6 +13,7 @@ interface SaveLoadMenuProps {
 export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
   const { saveToSlot, loadFromSlot, setPhase } = useGameStore();
   const [mode, setMode] = useState<'save' | 'load'>('save');
+  const [showOptions, setShowOptions] = useState(false);
   const [slots, setSlots] = useState<SaveSlotInfo[]>(() => getSaveSlots());
 
   const refreshSlots = () => setSlots(getSaveSlots());
@@ -145,8 +147,14 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
           })}
         </div>
 
-        {/* Quit to title */}
-        <div className="mt-4 pt-4 border-t border-border">
+        {/* Options + Quit */}
+        <div className="mt-4 pt-4 border-t border-border space-y-2">
+          <button
+            onClick={() => setShowOptions(true)}
+            className="w-full p-2 rounded border border-border bg-background/50 text-muted-foreground hover:text-foreground hover:border-foreground/30 font-display text-sm flex items-center justify-center gap-2"
+          >
+            <Settings className="w-4 h-4" /> Options
+          </button>
           <button
             onClick={handleQuitToTitle}
             className="w-full p-2 rounded border border-border bg-background/50 text-muted-foreground hover:text-foreground hover:border-foreground/30 font-display text-sm flex items-center justify-center gap-2"
@@ -154,6 +162,11 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
             <Home className="w-4 h-4" /> Save & Return to Title
           </button>
         </div>
+
+        {/* Options Modal (rendered on top of game menu) */}
+        {showOptions && (
+          <OptionsMenu onClose={() => setShowOptions(false)} />
+        )}
       </div>
     </div>
   );

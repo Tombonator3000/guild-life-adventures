@@ -2,6 +2,7 @@ import { useGameStore } from '@/store/gameStore';
 import { calculateStockValue } from '@/data/stocks';
 import { Crown, Trophy, Scroll, Coins, Heart, GraduationCap, Star, Check, X } from 'lucide-react';
 import gameBoard from '@/assets/game-board.jpeg';
+import { getGameOption } from '@/data/gameOptions';
 
 export function VictoryScreen() {
   const { setPhase, winner, players, goalSettings, eventMessage, stockPrices } = useGameStore();
@@ -99,9 +100,11 @@ export function VictoryScreen() {
                 ? 'has achieved all victory goals!'
                 : 'wins the game!'}
           </p>
-          <p className="font-display text-sm text-muted-foreground/70 mt-1">
-            Age {winningPlayer.age ?? 18} at time of victory
-          </p>
+          {getGameOption('enableAging') && (
+            <p className="font-display text-sm text-muted-foreground/70 mt-1">
+              Age {winningPlayer.age ?? 18} at time of victory
+            </p>
+          )}
         </div>
 
         {/* Stats Display */}

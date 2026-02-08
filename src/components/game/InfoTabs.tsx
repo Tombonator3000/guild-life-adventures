@@ -8,6 +8,7 @@ import { GoalProgress } from './GoalProgress';
 import { ARMORY_ITEMS, GENERAL_STORE_ITEMS, getAppliance } from '@/data/items';
 import { GUILD_RANK_NAMES, GUILD_RANK_INDEX } from '@/types/game.types';
 import { HOUSING_DATA } from '@/data/housing';
+import { getGameOption } from '@/data/gameOptions';
 import { getJob } from '@/data/jobs';
 
 type TabId = 'inventory' | 'goals' | 'stats';
@@ -390,7 +391,9 @@ function StatsTab({ player }: StatsTabProps) {
       {/* Core Stats */}
       <div className="bg-parchment-dark/30 rounded-lg p-3 border border-wood-light/30">
         <h3 className="font-display text-sm font-bold text-wood mb-2">Character</h3>
-        <StatRow label="Age" value={`${player.age ?? 18}`} />
+        {getGameOption('enableAging') && (
+          <StatRow label="Age" value={`${player.age ?? 18}`} />
+        )}
         <StatRow label="Guild Rank" value={GUILD_RANK_NAMES[player.guildRank]} />
         <StatRow label="Rank Level" value={`${GUILD_RANK_INDEX[player.guildRank]}/7`} />
         <StatRow label="Housing" value={housingName} />

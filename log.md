@@ -1,5 +1,64 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-08 - Options Menu & Age System Made Optional
+
+**Task**: Make age system opt-in (not default). Create full Options menu accessible from TitleScreen and in-game menu.
+
+### Options System Architecture
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| `GameOptions` interface | `src/data/gameOptions.ts` | Centralized options with localStorage persistence |
+| `useGameOptions` hook | `src/hooks/useGameOptions.ts` | React hook with `useSyncExternalStore` |
+| `OptionsMenu` component | `src/components/game/OptionsMenu.tsx` | Full tabbed options modal |
+| `getGameOption()` | `src/data/gameOptions.ts` | Non-React access for game logic helpers |
+
+### Options Available
+
+| Category | Option | Default | Description |
+|----------|--------|---------|-------------|
+| **Gameplay** | Player Aging | OFF | Birthday milestones, elder decay, health crises |
+| **Gameplay** | Weather Events | ON | Random weather/economy events |
+| **Gameplay** | Permadeath | ON | Permanent death vs respawn |
+| **Audio** | Music | ON | Background music with volume slider |
+| **Audio** | Sound Effects | ON | SFX with volume slider |
+| **Display** | Dark Mode | ON | Dark/light theme toggle |
+| **Display** | Event Animations | ON | Animate event popups |
+| **Display** | Compact UI | OFF | Smaller stat displays |
+| **Display** | Turn Notifications | ON | Turn-change notifications |
+| **Speed** | Auto-End Turn | OFF | Auto-end when hours spent |
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/data/gameOptions.ts` | **NEW** — GameOptions interface, localStorage persistence, subscription system |
+| `src/hooks/useGameOptions.ts` | **NEW** — React hook for options |
+| `src/components/game/OptionsMenu.tsx` | **NEW** — Full tabbed options modal (Gameplay, Audio, Display, Speed) |
+| `src/components/screens/TitleScreen.tsx` | Added Options button + OptionsMenu modal |
+| `src/components/game/SaveLoadMenu.tsx` | Added Options button + OptionsMenu modal (in-game access) |
+| `src/store/helpers/weekEndHelpers.ts` | Age logic wrapped in `getGameOption('enableAging')` guard |
+| `src/store/helpers/workEducationHelpers.ts` | Work age penalty guarded by `enableAging` option |
+| `src/hooks/ai/actions/criticalNeeds.ts` | AI age threshold guarded by `enableAging` option |
+| `src/components/game/PlayerInfoPanel.tsx` | Age display conditional on `enableAging` |
+| `src/components/game/SideInfoTabs.tsx` | Age display conditional on `enableAging` |
+| `src/components/game/InfoTabs.tsx` | Age display conditional on `enableAging` |
+| `src/components/screens/VictoryScreen.tsx` | Age display conditional on `enableAging` |
+| `src/test/age.test.ts` | Tests now enable aging via `setGameOption('enableAging', true)` |
+
+### Key Design Decisions
+- **Age is OFF by default** — players must opt in via Options > Gameplay > Player Aging
+- **Options persist across sessions** via localStorage (`guild-life-options` key)
+- **Non-React access** via `getGameOption()` for use in store helpers (no hook dependency)
+- **Audio settings** surface in Options UI but remain managed by their own systems (audioManager, sfxManager)
+- **Reset Defaults** button with confirmation to restore all options
+
+### Test Results
+- 171 tests pass (including 19 age tests with aging enabled)
+- Build succeeds
+
+---
+
 ## 2026-02-08 - Age System Implementation & Bug Audit
 
 **Task**: Implement player age mechanic, play through the game to find bugs, fix all issues found.

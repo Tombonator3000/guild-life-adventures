@@ -1,10 +1,13 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { useGameStore } from '@/store/gameStore';
 import { STARTING_AGE, AGE_INTERVAL, ELDER_AGE, ELDER_HEALTH_DECAY, HEALTH_CRISIS_AGE, HEALTH_CRISIS_DAMAGE } from '@/types/game.types';
+import { setGameOption } from '@/data/gameOptions';
 
 let playerId: string;
 
 function resetAndStart() {
+  // Enable aging for all age tests
+  setGameOption('enableAging', true);
   const store = useGameStore.getState();
   store.startNewGame(['TestPlayer'], false, { wealth: 5000, happiness: 75, education: 45, career: 75 });
   playerId = useGameStore.getState().players[0].id;

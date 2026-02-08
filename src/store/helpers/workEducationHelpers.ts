@@ -5,6 +5,7 @@ import type { EducationPath, DegreeId } from '@/types/game.types';
 import { GRADUATION_BONUSES, getDegree } from '@/data/education';
 import { WORK_HAPPINESS_AGE } from '@/types/game.types';
 import { getJob } from '@/data/jobs';
+import { getGameOption } from '@/data/gameOptions';
 import type { SetFn, GetFn } from '../storeTypes';
 
 // Map degrees to legacy education paths for quest compatibility
@@ -60,9 +61,10 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
           // Work happiness penalty scales with game progression:
           // Weeks 1-4: no penalty (let players get established)
           // Weeks 5+: -1 happiness (mild fatigue)
-          // Age 45+: extra -1 happiness on long shifts (6+ hours, aging body finds work harder)
+          // Age 45+ (if aging enabled): extra -1 happiness on long shifts (6+ hours)
           const basePenalty = gameWeek <= 4 ? 0 : 1;
-          const agePenalty = ((p.age ?? 18) >= WORK_HAPPINESS_AGE && hours >= 6) ? 1 : 0;
+          const agingEnabled = getGameOption('enableAging');
+          const agePenalty = (agingEnabled && (p.age ?? 18) >= WORK_HAPPINESS_AGE && hours >= 6) ? 1 : 0;
           const happinessPenalty = basePenalty + agePenalty;
 
           return {
