@@ -16,7 +16,8 @@ export type LocationId =
   | 'forge'
   | 'bank'
   | 'general-store'
-  | 'cave';
+  | 'cave'
+  | 'graveyard';
 
 // Zone configuration for the game board
 // Coordinates are percentages relative to the board container

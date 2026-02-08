@@ -122,12 +122,12 @@ export function createQuestActions(set: SetFn, get: GetFn) {
                     ...p,
                     health: 50,
                     savings: p.savings - 100,
-                    currentLocation: 'enchanter' as LocationId,
+                    currentLocation: 'graveyard' as LocationId,
                     wasResurrectedThisWeek: true, // Prevent double resurrection
                   }
                 : p
             ),
-            eventMessage: "The healers have revived you! 100 gold was taken from your savings.",
+            eventMessage: "You fell in battle but the spirits of the Graveyard have restored you! 100 gold was taken from your savings.",
           }));
           return false;
         }
