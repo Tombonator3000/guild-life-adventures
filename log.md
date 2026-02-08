@@ -1,5 +1,94 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-08 - Jones Pricing Audit — Rent & Appliance Price Corrections
+
+### Problem
+
+In Jones in the Fast Lane, the Rent Office shows prices **per month** (e.g., "Rent Security Apartment $498"). Our game charged rent **per week**. Since wages are 1:1 between the games ($4-25/hr = 4-25g/hr), this made Noble Heights nearly 3x more expensive than Jones's equivalent.
+
+### Analysis: Jones vs Guild Life Economy
+
+#### Rent Comparison (before fix)
+
+| Housing | Jones (monthly) | Jones (weekly equiv.) | Our Game (weekly) | Ratio vs Jones |
+|---------|----------------|----------------------|-------------------|----------------|
+| Low-Cost / Slums | ~$325/mo | ~$81/wk | 75g/wk | 0.93x — OK |
+| Security / Noble | ~$498/mo | ~$125/wk | **350g/wk** | **2.8x — TOO HIGH** |
+
+#### Income vs Rent (before fix)
+
+| Stage | Job | Income/wk | Noble 350g/wk | Noble % of income |
+|-------|-----|-----------|---------------|-------------------|
+| Entry | Floor Sweeper (4g/hr) | ~165g | 350g | **212% — impossible** |
+| Mid | Market Vendor (10g/hr) | ~414g | 350g | **85% — barely survive** |
+| High | Teacher (14g/hr) | ~580g | 350g | 60% — tight |
+| Top | Guild Admin (22g/hr) | ~910g | 350g | 38% — OK |
+
+#### Appliance Comparison (before fix)
+
+| Appliance | Jones Price | Our Price | Status |
+|-----------|-----------|-----------|--------|
+| VCR / Memory Crystal (enchanter) | **$333** | **475g** | 1.43x — too high |
+| VCR / Memory Crystal (market) | **$250** | **300g** | 1.2x — slightly high |
+| All other appliances | Match | Match | OK |
+
+### Changes
+
+#### 1. Noble Heights Rent: 350g → 120g/week
+- **RENT_COSTS.noble**: 350 → 120 in `game.types.ts`
+- **HOUSING_DATA.noble.weeklyRent**: 350 → 120 in `housing.ts`
+- Deposit drops from 700g to 240g (2× weekly rent)
+- Monthly equivalent: 480g (matches Jones's $498/month)
+- Jones ratio preserved: Security/Low-Cost = $498/$325 = 1.53x → Our 120/75 = 1.6x
+
+#### 2. Modest Dwelling Rent: 200g → 95g/week
+- **RENT_COSTS.modest**: 200 → 95 in `game.types.ts`
+- **HOUSING_DATA.modest.weeklyRent**: 200 → 95 in `housing.ts`
+- Was MORE expensive than Noble after the Noble fix — corrected to be between Slums (75) and Noble (120)
+- Note: Modest is hidden from LandlordPanel (Jones only has 2 tiers)
+
+#### 3. Memory Crystal Prices: Jones VCR alignment
+- **Enchanter price**: 475g → 333g (matches Jones Socket City VCR at $333)
+- **Market price**: 300g → 250g (matches Jones Z-Mart VCR at $250)
+
+### Economy After Fix
+
+| Stage | Job | Income/wk | Noble 120g/wk | Noble % of income |
+|-------|-----|-----------|---------------|-------------------|
+| Entry | Floor Sweeper (4g/hr) | ~165g | 120g | 73% — can't really afford (correct!) |
+| Mid | Market Vendor (10g/hr) | ~414g | 120g | **29% — comfortable** |
+| High | Teacher (14g/hr) | ~580g | 120g | **21% — good** |
+| Top | Guild Admin (22g/hr) | ~910g | 120g | **13% — very comfortable** |
+
+This matches Jones proportions where mid-level workers can comfortably afford Security Apartments (~30% of income).
+
+### Items NOT Changed (already match Jones)
+
+| Item | Jones | Ours | Status |
+|------|-------|------|--------|
+| Scrying Mirror (Color TV) | $525/$450 | 525g/450g | ✓ |
+| Music Box (Stereo) | $325/$350 | 325g/350g | ✓ |
+| Cooking Fire (Microwave) | $276/$200 | 276g/200g | ✓ |
+| Preservation Box (Refrigerator) | $876/$650 | 876g/650g | ✓ |
+| Arcane Tome (Computer) | $1599 | 1599g | ✓ |
+| All wages | $4-25/hr | 4-25g/hr | ✓ |
+| Education (starting) | $50 total | 50g total | ✓ |
+| Food, clothing, equipment | Proportional | Proportional | ✓ |
+
+### AI Impact
+- `shouldUpgradeHousing()` threshold of `gold > 300` still works (240g deposit + buffer)
+- AI downgrade logic uses dynamic `effectiveRent` (auto-adjusts)
+- No AI code changes needed
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `src/types/game.types.ts` | RENT_COSTS noble 350→120, modest 200→95 |
+| `src/data/housing.ts` | HOUSING_DATA noble weeklyRent 350→120, modest 200→95 |
+| `src/data/items.ts` | Memory Crystal enchanterPrice 475→333, marketPrice 300→250 |
+
+Build passes, 171 tests pass.
+
 ## 2026-02-08 - Location Backgrounds, Event Panel, & For Rent Display
 
 ### Changes

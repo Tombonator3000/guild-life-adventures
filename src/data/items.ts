@@ -69,8 +69,8 @@ export const APPLIANCES: Appliance[] = [
   {
     id: 'memory-crystal',
     name: 'Memory Crystal',
-    enchanterPrice: 475,
-    marketPrice: 300,
+    enchanterPrice: 333,
+    marketPrice: 250,
     happinessEnchanter: 2,
     happinessMarket: 1,
     description: 'Stores and replays magical recordings. Like having your own theater.',

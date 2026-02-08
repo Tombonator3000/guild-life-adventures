@@ -293,8 +293,8 @@ export const STARVATION_HAPPINESS_PENALTY = 8; // Lose 8 happiness when starving
 export const RENT_COSTS: Record<HousingTier, number> = {
   homeless: 0,
   slums: 75,
-  modest: 200,
-  noble: 350,
+  modest: 95,
+  noble: 120,
 };
 
 // Guild Pass cost - required before taking quests
