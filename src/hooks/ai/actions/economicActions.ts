@@ -59,8 +59,9 @@ export function generateEconomicActions(ctx: ActionContext): AIAction[] {
     }
   }
 
-  // Repay loan when have plenty of gold (avoid interest)
-  if (player.loanAmount > 0 && player.gold > player.loanAmount + 100) {
+  // Repay loan when have enough gold (avoid compounding interest)
+  // Reduced buffer from 100 to 50 — 10% weekly interest makes delays costly
+  if (player.loanAmount > 0 && player.gold > player.loanAmount + 50) {
     if (currentLocation === 'bank') {
       actions.push({
         type: 'repay-loan',
@@ -118,19 +119,34 @@ export function generateEconomicActions(ctx: ActionContext): AIAction[] {
   // ============================================
   // AI-7: ITEM SELLING / PAWNING
   // ============================================
-  // Pawn appliances when desperately broke
-  if (player.gold < 10 && player.loanAmount > 0 && currentLocation === 'fence') {
+  // Pawn appliances when broke — priority 85 (above healing at 80)
+  // AI can't heal if it can't afford 30g, so pawning must come first
+  // Widened threshold: gold < 30 (was 10) — pawn before completely broke
+  // Removed loanAmount requirement — pawn whenever gold is critically low
+  if (player.gold < 30 && currentLocation === 'fence') {
     const pawnableAppliances = Object.entries(player.appliances)
       .filter(([, v]) => v && !v.isBroken)
       .map(([id]) => id);
     if (pawnableAppliances.length > 0) {
-      // Estimate pawn value as roughly 30% of enchanter price (typical pawn shop rate)
       const pawnValue = 50; // Flat estimate; the store calculates exact value
       actions.push({
         type: 'pawn-appliance',
-        priority: 70,
+        priority: 85,
         description: `Pawn ${pawnableAppliances[0]} for emergency gold`,
         details: { applianceId: pawnableAppliances[0], pawnValue },
+      });
+    }
+  }
+
+  // Move to fence for pawning when broke and not already there
+  if (player.gold < 30 && currentLocation !== 'fence') {
+    const hasPawnableAppliance = Object.values(player.appliances).some(v => v && !v.isBroken);
+    if (hasPawnableAppliance && player.timeRemaining > moveCost('fence') + 2) {
+      actions.push({
+        type: 'move',
+        location: 'fence',
+        priority: 82,
+        description: 'Travel to fence to pawn appliance for gold',
       });
     }
   }
@@ -139,7 +155,7 @@ export function generateEconomicActions(ctx: ActionContext): AIAction[] {
   if (player.gold < 20 && player.inventory.length > 0 && currentLocation === 'fence') {
     actions.push({
       type: 'sell-item',
-      priority: 65,
+      priority: 78,
       description: `Sell ${player.inventory[0]} at fence`,
       details: { itemId: player.inventory[0], price: 10 },
     });

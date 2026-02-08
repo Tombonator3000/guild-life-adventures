@@ -103,14 +103,9 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
         // Food depletion
         p.foodLevel = Math.max(0, p.foodLevel - 25);
 
-        // Starvation effects (reduced happiness penalty — Jones uses time penalty, not happiness)
-        if (p.foodLevel === 0) {
-          p.health = Math.max(0, p.health - 10);
-          p.happiness = Math.max(0, p.happiness - 8);
-          if (!p.isAI) {
-            eventMessages.push(`${p.name} is starving! -10 health, -8 happiness.`);
-          }
-        }
+        // Starvation note: Jones only penalizes -20 hours at turn start (handled in startTurnHelpers).
+        // Week-end just depletes food — no additional health/happiness penalty here.
+        // The turn-start -20 hours + potential doctor visit is already severe enough.
 
         // Clothing degradation
         if (isClothingDegradation) {

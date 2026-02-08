@@ -42,7 +42,13 @@ export function calculateGoalProgress(
 }
 
 /**
- * Find the goal with lowest progress (what the AI should focus on)
+ * Find the goal the AI should focus on.
+ *
+ * Strategy: If any goal is >= 80% complete, sprint it to 100% first.
+ * This prevents the AI from spreading effort across all goals equally
+ * when it could finish one quickly and reduce the remaining work.
+ *
+ * If no goal is near completion, focus on the weakest goal (lowest progress).
  */
 export function getWeakestGoal(progress: GoalProgress): 'wealth' | 'happiness' | 'education' | 'career' {
   const goals = [
@@ -52,6 +58,16 @@ export function getWeakestGoal(progress: GoalProgress): 'wealth' | 'happiness' |
     { name: 'career' as const, progress: progress.career.progress },
   ];
 
+  // Sprint: if any goal is >= 80% but not yet complete, prioritize finishing it
+  const nearComplete = goals
+    .filter(g => g.progress >= 0.8 && g.progress < 1.0)
+    .sort((a, b) => b.progress - a.progress); // highest first (closest to done)
+
+  if (nearComplete.length > 0) {
+    return nearComplete[0].name;
+  }
+
+  // Otherwise focus on weakest goal
   goals.sort((a, b) => a.progress - b.progress);
   return goals[0].name;
 }
@@ -138,14 +154,20 @@ export function getNextDegree(player: Player, settings: DifficultySettings): Deg
 export function shouldUpgradeHousing(player: Player, settings: DifficultySettings): boolean {
   if (player.housing === 'noble') return false;
 
-  // Strategic AI considers robbery risk
+  // All AI should consider robbery risk when they have valuables
   const hasValuables = Object.keys(player.durables).length > 0 ||
                        Object.keys(player.appliances).length > 0 ||
                        player.gold > 500;
 
   const canAffordNoble = player.gold > 300; // First month + buffer
 
-  return hasValuables && canAffordNoble && settings.aggressiveness > 0.5;
+  // Strategic AI (medium/hard) upgrades proactively when they have valuables
+  // Easy AI upgrades when they have 3+ valuables at risk (more conservative)
+  if (settings.aggressiveness > 0.5) {
+    return hasValuables && canAffordNoble;
+  }
+  const valuableCount = Object.keys(player.durables).length + Object.keys(player.appliances).length;
+  return valuableCount >= 3 && canAffordNoble;
 }
 
 /**

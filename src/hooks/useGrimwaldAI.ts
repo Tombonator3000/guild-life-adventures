@@ -39,6 +39,8 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
   const settings = DIFFICULTY_SETTINGS[difficulty];
   const isExecutingRef = useRef(false);
   const actionLogRef = useRef<string[]>([]);
+  // Track actions that failed this turn to avoid re-attempting them
+  const failedActionsRef = useRef<Set<string>>(new Set());
 
   const {
     goalSettings,
@@ -458,6 +460,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     if (isExecutingRef.current) return;
     isExecutingRef.current = true;
     actionLogRef.current = [];
+    failedActionsRef.current.clear(); // Reset failed action tracking for new turn
 
     console.log(`[Grimwald AI] Starting turn (${difficulty} difficulty)`);
 
@@ -515,8 +518,12 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         state.priceModifier
       );
 
-      // Get best action
-      const bestAction = actions[0];
+      // Filter out actions that already failed this turn (prevent re-attempting)
+      const actionKey = (a: AIAction) => `${a.type}:${a.location || ''}:${a.details?.degreeId || a.details?.jobId || a.details?.itemId || ''}`;
+      const viableActions = actions.filter(a => a.type === 'end-turn' || !failedActionsRef.current.has(actionKey(a)));
+
+      // Get best viable action (fall back to full list if all filtered)
+      const bestAction = viableActions.length > 0 ? viableActions[0] : actions[0];
 
       if (bestAction.type === 'end-turn') {
         console.log(`[Grimwald AI] Ending turn. Log: ${actionLogRef.current.join(' -> ')}`);
@@ -530,6 +537,8 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
       actionsRemaining--;
 
       if (!success) {
+        // Track failed action to avoid re-attempting this turn
+        failedActionsRef.current.add(actionKey(bestAction));
         console.log(`[Grimwald AI] Action failed: ${bestAction.description}`);
       }
 

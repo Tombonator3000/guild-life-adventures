@@ -216,6 +216,10 @@ Based on Jones AI from "Jones in the Fast Lane" (Sierra, 1991):
 - [x] Strategic planning (education/career paths)
 - [x] Resource management
 - [x] Banking strategy
+- [x] Goal sprint logic (prioritize near-complete goals >= 80%)
+- [x] Failed action tracking (prevent re-attempting failed actions per turn)
+- [x] Emergency pawning when broke (priority 85, move-to-fence)
+- [x] Housing upgrade for all difficulty levels
 - [ ] Personality variants (aggressive, defensive, balanced)
 - [ ] Learning from player strategies
 - [ ] Multiplayer AI support (multiple Grimwalds)

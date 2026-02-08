@@ -548,6 +548,17 @@
   - [x] Flaky test: freshFood starvation test (mocked Math.random for determinism)
   - Build passes, 171 tests pass (19 new)
 
+- [x] AI Agent Balance Audit — 8 bugs/imbalances found and fixed
+  - [x] Fix 1: AI rent urgency threshold (> → >=) — triggers 1 week earlier, prevents surprise eviction
+  - [x] Fix 2: AI pawning priority inversion — pawn (85) now above heal (80) when broke, added move-to-fence
+  - [x] Fix 3: AI housing upgrade for easy difficulty — easy AI now upgrades when 3+ valuables at risk
+  - [x] Fix 4: AI loan repayment buffer reduced (100→50) — less interest wasted
+  - [x] Fix 5: Week-end starvation double penalty removed — Jones only has -20hrs at turn start
+  - [x] Fix 6: AI goal specialization — sprint goals >=80% complete before weakest goal
+  - [x] Fix 7: AI failed action tracking — prevents re-attempting failed actions within same turn
+  - [x] Fix 8: AI happiness rest path — added move-to-home when not at home
+  - Build passes, 171 tests pass
+
 ## In Progress
 
 *No active tasks*
