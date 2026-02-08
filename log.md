@@ -1,5 +1,51 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-08 - Standardize Location Design
+
+Redesigned all location panels to follow a consistent design philosophy inspired by the HomePanel (Noble Heights Estate) style. Every location now has:
+
+1. **Colored header bar** (top) — unique gradient per location with location name and subtitle
+2. **Parchment content area** (center) — cream/beige background (#f0e8d8) with dark brown text, NPC portrait on the left, tabbed content on the right
+3. **Colored footer bar** (bottom) — work shift button when player has a job at this location, styled like HomePanel's action bar
+
+### Design Changes
+- Each NPC now has `frameColor`, `frameDark`, `frameBorder`, and `subtitle` data for location-specific frame styling
+- Tabs now use parchment-colored styling (light bg, dark text) instead of dark brown tabs
+- Work sections moved from individual tabs to a centralized footer bar in LocationShell
+- All panels switched from dark `JonesPanel` wrappers to dark-text-on-parchment mode
+
+### Files Changed
+| File | Changes |
+|------|---------|
+| `src/data/npcs.ts` | Added `frameColor`, `frameDark`, `frameBorder`, `subtitle` to LocationNPC interface and all 12 NPC entries |
+| `src/components/game/LocationShell.tsx` | Complete redesign: added header bar, parchment content background, footer work bar; new `WorkInfo` interface, `locationName` prop |
+| `src/components/game/LocationPanel.tsx` | Added centralized `getWorkInfo()` for footer bar; removed work tabs from forge/armory/enchanter/shadow-market; removed `WorkSection` import; passes `locationName` and `workInfo` to LocationShell |
+| `src/components/game/TavernPanel.tsx` | Removed `JonesPanel`/`JonesPanelHeader` wrapper and `WorkSection`; all items use `darkText`/`largeText` mode |
+| `src/components/game/GeneralStorePanel.tsx` | Removed `JonesPanel`/`JonesPanelHeader` wrapper and `WorkSection`; all items use `darkText`/`largeText` |
+| `src/components/game/BankPanel.tsx` | Removed `JonesPanel`/`JonesPanelHeader` wrapper and `WorkSection`; switched all views to dark text on parchment |
+| `src/components/game/AcademyPanel.tsx` | Removed `JonesPanel`/`JonesPanelHeader` wrapper and `WorkSection`; all items use `darkText`/`largeText` |
+| `src/components/game/GuildHallPanel.tsx` | Removed `JonesPanel`/`JonesPanelHeader` wrapper; switched to dark text styling throughout |
+| `src/components/game/ArmoryPanel.tsx` | Removed `workShift` prop and `WorkSection` import; removed legacy full-mode JonesPanel |
+| `src/components/game/JonesStylePanel.tsx` | Added `darkText` prop to `JonesListItem` component |
+
+### Frame Colors by Location
+| Location | Frame Color | Border |
+|----------|------------|--------|
+| Guild Hall | Forest green (#2a5c3a) | #4a8a5a |
+| Bank | Deep blue (#2a3a5c) | #4a6a9a |
+| General Store | Earth green (#3a4a2a) | #5a7a3a |
+| Armory | Dark crimson (#5c2a2a) | #8a4a4a |
+| Enchanter | Mystic purple (#4a2a5c) | #7a4a8a |
+| Shadow Market | Charcoal (#3a3a42) | #5a5a6a |
+| Academy | Royal blue (#2a3a5c) | #4a6a9a |
+| Rusty Tankard | Deep amber (#5c3a1a) | #8a6a3a |
+| Cave | Near-black (#2a2a2a) | #4a4a4a |
+| Forge | Fiery brown (#5c3010) | #8a5020 |
+| Landlord | Warm grey (#3a3532) | #5a5550 |
+| Fence | Dark plum (#3a2a42) | #5a4a6a |
+
+---
+
 ## 2026-02-08 - Noble Heights Location Music
 
 Added `10Noble-Heights.mp3` as location-specific music for Noble Heights. When a player is at Noble Heights, the music system crossfades to this track (same pattern as The Slums, Guild Hall, Cave, etc.).
