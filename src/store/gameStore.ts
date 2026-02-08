@@ -9,6 +9,7 @@ import type {
 import { PLAYER_COLORS, AI_COLOR, AI_OPPONENTS, HOURS_PER_TURN, STARTING_AGE } from '@/types/game.types';
 import type { AIConfig } from '@/types/game.types';
 import { getInitialStockPrices } from '@/data/stocks';
+import { CLEAR_WEATHER } from '@/data/weather';
 import { saveGame, loadGame } from '@/data/saveLoad';
 import { createPlayerActions } from './helpers/playerHelpers';
 import { createEconomyActions } from './helpers/economyHelpers';
@@ -160,6 +161,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     aiDifficulty: 'medium' as AIDifficulty,
     stockPrices: getInitialStockPrices(),
     weekendEvent: null,
+    weather: { ...CLEAR_WEATHER },
 
     // AI speed control
     aiSpeedMultiplier: 1,
@@ -221,6 +223,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         aiDifficulty,
         stockPrices: getInitialStockPrices(),
         weekendEvent: null,
+        weather: { ...CLEAR_WEATHER },
       });
     },
 
@@ -297,6 +300,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         aiDifficulty: gs.aiDifficulty,
         stockPrices: gs.stockPrices || getInitialStockPrices(),
         weekendEvent: null,
+        weather: gs.weather || { ...CLEAR_WEATHER },
       });
       return true;
     },

@@ -51,6 +51,7 @@ export function serializeGameState(): SerializedGameState {
     aiDifficulty: s.aiDifficulty,
     stockPrices: s.stockPrices,
     weekendEvent: s.weekendEvent,
+    weather: s.weather,
     // Network identity — included for game-start init, not applied on regular sync
     networkMode: s.networkMode,
     localPlayerId: s.localPlayerId,
@@ -92,6 +93,7 @@ export function applyNetworkState(state: SerializedGameState) {
     rentDueWeek: state.rentDueWeek,
     aiDifficulty: state.aiDifficulty,
     stockPrices: state.stockPrices,
+    weather: state.weather,
   };
 
   // Only sync event fields if the guest hasn't locally dismissed them

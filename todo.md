@@ -596,6 +596,15 @@
   - [x] All other prices verified correct vs Jones (wages, appliances, food, education, clothing)
   - Build passes, 171 tests pass
 
+- [x] Weather Events System — rare weather with CSS particle effects
+  - 5 weather types: Snowstorm (snow), Thunderstorm (rain), Drought (heatwave), Enchanted Fog (fog), Harvest Rain (light rain)
+  - ~8% chance per week, lasts 1-3 weeks
+  - Effects: movement cost modifier, price multiplier, happiness per week, food spoilage
+  - CSS particle animations: 60 snowflakes, 80 raindrops, fog layers, heat shimmer
+  - Guarded by `enableWeatherEvents` game option
+  - Weather indicator in top bar, network sync, save/load support
+  - Build succeeds, 171 tests pass
+
 ## In Progress
 
 *No active tasks*

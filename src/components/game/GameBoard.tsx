@@ -20,6 +20,7 @@ import { DarkModeToggle } from './DarkModeToggle';
 import { MobileHUD } from './MobileHUD';
 import { MobileDrawer } from './MobileDrawer';
 import { TurnTransition } from './TurnTransition';
+import { WeatherOverlay } from './WeatherOverlay';
 import { UpdateBanner } from './UpdateBanner';
 import gameBoard from '@/assets/game-board.jpeg';
 import type { LocationId } from '@/types/game.types';
@@ -32,6 +33,17 @@ import { useAITurnHandler } from '@/hooks/useAITurnHandler';
 import { useAutoEndTurn } from '@/hooks/useAutoEndTurn';
 import { usePlayerAnimation } from '@/hooks/usePlayerAnimation';
 import { useIsMobile } from '@/hooks/useIsMobile';
+
+function getWeatherIcon(type: string): string {
+  switch (type) {
+    case 'snowstorm': return '\u2744\uFE0F'; // snowflake
+    case 'thunderstorm': return '\u26C8\uFE0F'; // cloud with lightning and rain
+    case 'drought': return '\u2600\uFE0F'; // sun
+    case 'enchanted-fog': return '\uD83C\uDF2B\uFE0F'; // fog
+    case 'harvest-rain': return '\uD83C\uDF27\uFE0F'; // cloud with rain
+    default: return '';
+  }
+}
 
 export function GameBoard() {
   const {
@@ -56,6 +68,7 @@ export function GameBoard() {
     setShowTutorial,
     applianceBreakageEvent,
     dismissApplianceBreakageEvent,
+    weather,
   } = useGameStore();
   const { event: shadowfingersEvent, dismiss: dismissShadowfingers } = useShadowfingersModal();
   const { isOnline, isGuest, networkMode, broadcastMovement, remoteAnimation, clearRemoteAnimation, latency } = useNetworkSync();
@@ -211,7 +224,12 @@ export function GameBoard() {
       }
     } else {
       // Travel directly to the location with animation
-      const moveCost = getMovementCost(currentPlayer.currentLocation, locationId as LocationId);
+      const baseMoveCost = getMovementCost(currentPlayer.currentLocation, locationId as LocationId);
+      const travelPath = getPath(currentPlayer.currentLocation as LocationId, locationId as LocationId);
+      const weatherExtraCost = (baseMoveCost > 0 && weather?.movementCostExtra)
+        ? travelPath.length * weather.movementCostExtra
+        : 0;
+      const moveCost = baseMoveCost + weatherExtraCost;
 
       if (currentPlayer.timeRemaining >= moveCost) {
         // Full travel: enough time to reach destination
@@ -331,9 +349,14 @@ export function GameBoard() {
               const playersHere = players.filter(
                 p => p.currentLocation === location.id && p.id !== animatingPlayer
               );
-              const moveCost = currentPlayer
+              const baseMoveCost = currentPlayer
                 ? getMovementCost(currentPlayer.currentLocation, location.id)
                 : 0;
+              // Weather adds extra hours per step of movement (not entry cost)
+              const weatherExtra = (baseMoveCost > 0 && weather?.movementCostExtra)
+                ? getPath(currentPlayer!.currentLocation as LocationId, location.id as LocationId).length * weather.movementCostExtra
+                : 0;
+              const moveCost = baseMoveCost + weatherExtra;
               const isCurrentLocation = currentPlayer?.currentLocation === location.id;
 
               return (
@@ -372,6 +395,9 @@ export function GameBoard() {
               ))}
             </div>
           )}
+
+          {/* Weather particle overlay */}
+          <WeatherOverlay particle={weather?.particle ?? null} />
 
           {/* Debug overlay - shows zone boundaries and movement paths */}
           {showDebugOverlay && (
@@ -486,6 +512,15 @@ export function GameBoard() {
                     {economyTrend === 1 ? '\u2191' : economyTrend === -1 ? '\u2193' : '\u2194'}
                   </span>
                 </span>
+                {weather && weather.type !== 'clear' && (
+                  <>
+                    <span className="text-muted-foreground">|</span>
+                    <span className="font-display text-sm" title={weather.description}>
+                      {getWeatherIcon(weather.type)} {weather.name}
+                      <span className="text-xs text-muted-foreground ml-1">({weather.weeksRemaining}w)</span>
+                    </span>
+                  </>
+                )}
               </div>
               <button
                 onClick={() => setShowGameMenu(true)}
