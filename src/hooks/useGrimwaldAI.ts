@@ -181,7 +181,6 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         const amount = (action.details?.amount as number) || 100;
         if (player.gold < amount) return false;
         depositToBank(player.id, amount);
-        spendTime(player.id, 1);
         return true;
       }
 
@@ -189,7 +188,6 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         const amount = (action.details?.amount as number) || 100;
         if (player.savings < amount) return false;
         withdrawFromBank(player.id, Math.min(amount, player.savings));
-        spendTime(player.id, 1);
         return true;
       }
 
@@ -369,7 +367,6 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         const amount = (action.details?.amount as number) || 200;
         if (player.loanAmount > 0) return false; // Already has a loan
         takeLoan(player.id, amount);
-        spendTime(player.id, 1);
         return true;
       }
 
@@ -378,7 +375,6 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         const amount = (action.details?.amount as number) || player.loanAmount;
         if (player.loanAmount <= 0 || player.gold < amount) return false;
         repayLoan(player.id, amount);
-        spendTime(player.id, 1);
         return true;
       }
 
@@ -390,7 +386,6 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         const cost = shares * price;
         if (!stockId || player.gold < cost) return false;
         buyStock(player.id, stockId, shares);
-        spendTime(player.id, 1);
         return true;
       }
 
@@ -400,7 +395,6 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         const shares = (action.details?.shares as number) || 5;
         if (!stockId || !player.stocks[stockId] || player.stocks[stockId] < shares) return false;
         sellStock(player.id, stockId, shares);
-        spendTime(player.id, 1);
         return true;
       }
 

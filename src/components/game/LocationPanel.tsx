@@ -341,7 +341,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
           content: (
             <BankPanel
               player={player}
-              spendTime={spendTime}
               depositToBank={depositToBank}
               withdrawFromBank={withdrawFromBank}
               invest={invest}

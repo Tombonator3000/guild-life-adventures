@@ -274,7 +274,7 @@ export function GameBoard() {
           )}
 
           {/* Weather particle overlay */}
-          <WeatherOverlay particle={weather?.particle ?? null} />
+          <WeatherOverlay particle={weather?.particle ?? null} weatherType={weather?.type} />
 
           {/* Debug overlay - shows zone boundaries and movement paths */}
           <DebugOverlay
