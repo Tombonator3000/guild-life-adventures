@@ -1,30 +1,30 @@
 // useBanter hook - Manages NPC banter state and cooldowns
+// Uses banterStore for shared state between LocationShell (trigger) and GameBoard (display)
 
-import { useState, useCallback, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import type { LocationId } from '@/types/game.types';
-import { 
-  getRandomBanter, 
-  shouldTriggerBanter, 
+import type { Player } from '@/types/game.types';
+import { LOCATION_NPCS } from '@/data/npcs';
+import {
+  getRandomBanter,
+  getContextBanter,
+  shouldTriggerBanter,
   BANTER_COOLDOWN,
-  type BanterLine 
 } from '@/data/banter';
-
-interface BanterState {
-  activeBanter: BanterLine | null;
-  locationId: LocationId | null;
-}
+import { useBanterStore } from '@/store/banterStore';
 
 export function useBanter() {
-  const [banterState, setBanterState] = useState<BanterState>({
-    activeBanter: null,
-    locationId: null,
-  });
-  
+  const { activeBanter, locationId: banterLocationId, npcName, setBanter, clearBanter } = useBanterStore();
+
   // Track cooldowns per location
   const cooldownsRef = useRef<Map<LocationId, number>>(new Map());
 
   // Try to trigger banter for a location
-  const tryTriggerBanter = useCallback((locationId: LocationId) => {
+  const tryTriggerBanter = useCallback((
+    locationId: LocationId,
+    player?: Player,
+    allPlayers?: Player[],
+  ) => {
     // Check cooldown
     const lastBanter = cooldownsRef.current.get(locationId) || 0;
     const now = Date.now();
@@ -37,29 +37,36 @@ export function useBanter() {
       return; // Didn't roll high enough
     }
 
-    // Get random banter line
-    const banter = getRandomBanter(locationId);
+    // 40% chance for context-aware banter if player data is available
+    let banter = null;
+    if (player && allPlayers && Math.random() < 0.4) {
+      banter = getContextBanter(locationId, player, allPlayers);
+    }
+
+    // Fallback to static random banter
+    if (!banter) {
+      banter = getRandomBanter(locationId);
+    }
     if (!banter) return;
 
-    // Set cooldown and show banter
+    // Get NPC name for display
+    const npc = LOCATION_NPCS[locationId];
+    const name = npc?.name || 'Someone';
+
+    // Set cooldown and show banter via shared store
     cooldownsRef.current.set(locationId, now);
-    setBanterState({
-      activeBanter: banter,
-      locationId,
-    });
-  }, []);
+    setBanter(banter, locationId, name);
+  }, [setBanter]);
 
   // Dismiss current banter
   const dismissBanter = useCallback(() => {
-    setBanterState({
-      activeBanter: null,
-      locationId: null,
-    });
-  }, []);
+    clearBanter();
+  }, [clearBanter]);
 
   return {
-    activeBanter: banterState.activeBanter,
-    banterLocationId: banterState.locationId,
+    activeBanter,
+    banterLocationId,
+    npcName,
     tryTriggerBanter,
     dismissBanter,
   };
