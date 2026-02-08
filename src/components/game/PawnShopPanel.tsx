@@ -38,7 +38,7 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
   const renderSellItems = () => (
     player.inventory.length > 0 ? (
       <div>
-        <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+        <h4 className="font-display text-sm text-[#6b5a42] flex items-center gap-2 mb-2">
           <Package className="w-4 h-4" /> Sell Your Items
         </h4>
         <div className="space-y-2">
@@ -50,12 +50,12 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
                 key={`${itemId}-${index}`}
                 onClick={() => onSellItem(itemId, sellPrice)}
                 disabled={player.timeRemaining < 1}
-                className="w-full p-2 wood-frame text-parchment flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
-                <span className="font-display font-semibold">{item?.name || itemId}</span>
+                <span className="font-display font-semibold text-[#3d2a14]">{item?.name || itemId}</span>
                 <div className="flex items-center gap-3 text-xs">
-                  <span className="text-secondary">+{sellPrice}g</span>
-                  <span className="text-time">1h</span>
+                  <span className="text-[#2a7a2a]">+{sellPrice}g</span>
+                  <span className="text-[#6b5a42]">1h</span>
                 </div>
               </button>
             );
@@ -67,7 +67,7 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
 
   const renderUsedGoods = () => (
     <div>
-      <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+      <h4 className="font-display text-sm text-[#6b5a42] flex items-center gap-2 mb-2">
         <ShoppingBag className="w-4 h-4" /> Used Goods
       </h4>
       <div className="space-y-2">
@@ -78,12 +78,12 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
               key={item.id}
               onClick={() => onBuyUsedItem(item.id, price)}
               disabled={player.gold < price || player.timeRemaining < 1}
-              className="w-full p-2 wood-frame text-parchment flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
-              <span className="font-display font-semibold">{item.name}</span>
+              <span className="font-display font-semibold text-[#3d2a14]">{item.name}</span>
               <div className="flex items-center gap-3 text-xs">
-                <span className="text-gold">-{price}g</span>
-                <span className="text-time">1h</span>
+                <span className="text-[#8b6914]">-{price}g</span>
+                <span className="text-[#6b5a42]">1h</span>
               </div>
             </button>
           );
@@ -95,10 +95,10 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
   const renderPawnAppliances = () => (
     Object.keys(player.appliances).length > 0 ? (
       <div>
-        <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+        <h4 className="font-display text-sm text-[#6b5a42] flex items-center gap-2 mb-2">
           <Sparkles className="w-4 h-4" /> Pawn Your Appliances
         </h4>
-        <p className="text-xs text-muted-foreground mb-2">
+        <p className="text-xs text-[#6b5a42] mb-2">
           Get 40% of original price. -1 Happiness.
         </p>
         <div className="space-y-2">
@@ -114,15 +114,15 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
                   toast.success(`Pawned ${appliance?.name} for ${pawnValue} gold`);
                 }}
                 disabled={player.timeRemaining < 1}
-                className="w-full p-2 wood-frame text-parchment flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
-                <span className="font-display font-semibold">
+                <span className="font-display font-semibold text-[#3d2a14]">
                   {appliance?.name || applianceId}
                   {owned.isBroken && <span className="text-destructive ml-1">(Broken)</span>}
                 </span>
                 <div className="flex items-center gap-3 text-xs">
-                  <span className="text-secondary">+{pawnValue}g</span>
-                  <span className="text-time">1h</span>
+                  <span className="text-[#2a7a2a]">+{pawnValue}g</span>
+                  <span className="text-[#6b5a42]">1h</span>
                 </div>
               </button>
             );
@@ -134,10 +134,10 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
 
   const renderBuyPawnedItems = () => (
     <div>
-      <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+      <h4 className="font-display text-sm text-[#6b5a42] flex items-center gap-2 mb-2">
         <Sparkles className="w-4 h-4" /> Pawned Magical Items
       </h4>
-      <p className="text-xs text-muted-foreground flex items-center gap-1 mb-2">
+      <p className="text-xs text-[#6b5a42] flex items-center gap-1 mb-2">
         <AlertTriangle className="w-3 h-3 text-warning" />
         50% off, but 1/36 break chance. No happiness bonus.
       </p>
@@ -155,15 +155,15 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
                 toast.success(`Bought ${appliance.name} from pawn shop!`);
               }}
               disabled={player.gold < salePrice || player.timeRemaining < 1 || alreadyOwns}
-              className="w-full p-2 wood-frame text-parchment flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
-              <span className="font-display font-semibold">
+              <span className="font-display font-semibold text-[#3d2a14]">
                 {appliance.name}
                 {alreadyOwns && <span className="text-secondary ml-1">(Owned)</span>}
               </span>
               <div className="flex items-center gap-3 text-xs">
-                <span className="text-gold">-{salePrice}g</span>
-                <span className="text-time">1h</span>
+                <span className="text-[#8b6914]">-{salePrice}g</span>
+                <span className="text-[#6b5a42]">1h</span>
               </div>
             </button>
           );
@@ -174,52 +174,52 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
 
   const renderGambling = () => (
     <div>
-      <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+      <h4 className="font-display text-sm text-[#6b5a42] flex items-center gap-2 mb-2">
         <Dices className="w-4 h-4" /> Games of Chance
       </h4>
       <div className="space-y-2">
         <button
           onClick={() => onGamble(10)}
           disabled={player.gold < 10 || player.timeRemaining < 2}
-          className="w-full p-2 wood-frame text-parchment flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
           <div className="flex items-center gap-2">
-            <Dices className="w-4 h-4" />
-            <span className="font-display font-semibold">Low Stakes (10g)</span>
+            <Dices className="w-4 h-4 text-[#6b5a42]" />
+            <span className="font-display font-semibold text-[#3d2a14]">Low Stakes (10g)</span>
           </div>
           <div className="flex items-center gap-3 text-xs">
-            <span className="text-parchment-dark">40% win: +25g</span>
-            <span className="text-time">2h</span>
+            <span className="text-[#6b5a42]">40% win: +25g</span>
+            <span className="text-[#6b5a42]">2h</span>
           </div>
         </button>
 
         <button
           onClick={() => onGamble(50)}
           disabled={player.gold < 50 || player.timeRemaining < 2}
-          className="w-full p-2 wood-frame text-parchment flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
           <div className="flex items-center gap-2">
-            <Dices className="w-4 h-4" />
-            <span className="font-display font-semibold">High Stakes (50g)</span>
+            <Dices className="w-4 h-4 text-[#6b5a42]" />
+            <span className="font-display font-semibold text-[#3d2a14]">High Stakes (50g)</span>
           </div>
           <div className="flex items-center gap-3 text-xs">
-            <span className="text-parchment-dark">30% win: +150g</span>
-            <span className="text-time">2h</span>
+            <span className="text-[#6b5a42]">30% win: +150g</span>
+            <span className="text-[#6b5a42]">2h</span>
           </div>
         </button>
 
         <button
           onClick={() => onGamble(100)}
           disabled={player.gold < 100 || player.timeRemaining < 3}
-          className="w-full p-2 wood-frame text-parchment flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
           <div className="flex items-center gap-2">
-            <Dices className="w-4 h-4" />
-            <span className="font-display font-semibold">All or Nothing (100g)</span>
+            <Dices className="w-4 h-4 text-[#6b5a42]" />
+            <span className="font-display font-semibold text-[#3d2a14]">All or Nothing (100g)</span>
           </div>
           <div className="flex items-center gap-3 text-xs">
-            <span className="text-parchment-dark">20% win: +400g</span>
-            <span className="text-time">3h</span>
+            <span className="text-[#6b5a42]">20% win: +400g</span>
+            <span className="text-[#6b5a42]">3h</span>
           </div>
         </button>
       </div>

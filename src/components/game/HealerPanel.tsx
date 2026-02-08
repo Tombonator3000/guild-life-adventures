@@ -20,20 +20,20 @@ const HEALING_OPTIONS = [
 export function HealerPanel({ player, priceModifier, onHeal, onCureSickness, onBlessHealth }: HealerPanelProps) {
   return (
     <div className="space-y-4">
-      <div className="wood-frame p-3 text-parchment">
-        <div className="flex items-center justify-between">
+      <div className="bg-[#e0d4b8] border border-[#8b7355] rounded p-3">
+        <div className="flex items-center justify-between text-[#3d2a14]">
           <span>Current Health:</span>
           <span className="font-bold">{player.health}/{player.maxHealth}</span>
         </div>
-        <div className="w-full bg-muted rounded-full h-2 mt-2">
-          <div 
+        <div className="w-full bg-[#c8b898] rounded-full h-2 mt-2">
+          <div
             className="bg-destructive h-2 rounded-full transition-all"
             style={{ width: `${(player.health / player.maxHealth) * 100}%` }}
           />
         </div>
       </div>
 
-      <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+      <h4 className="font-display text-sm text-[#6b5a42] flex items-center gap-2 mb-2">
         <Heart className="w-4 h-4" /> Healing Services
       </h4>
       
@@ -50,23 +50,23 @@ export function HealerPanel({ player, priceModifier, onHeal, onCureSickness, onB
               key={option.id}
               onClick={() => onHeal(cost, option.healthGain, option.time)}
               disabled={isDisabled}
-              className="w-full p-2 wood-frame text-parchment flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
               <div className="flex items-center gap-2">
                 <Heart className="w-4 h-4 text-destructive" />
-                <span className="font-display font-semibold">{option.name}</span>
+                <span className="font-display font-semibold text-[#3d2a14]">{option.name}</span>
               </div>
               <div className="flex items-center gap-3 text-xs">
                 <span className="text-secondary">+{effectiveHeal} HP</span>
-                <span className="text-gold">-{cost}g</span>
-                <span className="text-time">{option.time}h</span>
+                <span className="text-[#8b6914]">-{cost}g</span>
+                <span className="text-[#6b5a42]">{option.time}h</span>
               </div>
             </button>
           );
         })}
       </div>
 
-      <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2 mt-4">
+      <h4 className="font-display text-sm text-[#6b5a42] flex items-center gap-2 mb-2 mt-4">
         <Sparkles className="w-4 h-4" /> Special Services
       </h4>
 
@@ -78,11 +78,11 @@ export function HealerPanel({ player, priceModifier, onHeal, onCureSickness, onB
         >
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-primary" />
-            <span className="font-display font-semibold">Cure Ailments</span>
+            <span className="font-display font-semibold text-[#3d2a14]">Cure Ailments</span>
           </div>
           <div className="flex items-center gap-3 text-xs">
-            <span className="text-gold">-75g</span>
-            <span className="text-time">2h</span>
+            <span className="text-[#8b6914]">-75g</span>
+            <span className="text-[#6b5a42]">2h</span>
           </div>
         </button>
 
@@ -93,11 +93,11 @@ export function HealerPanel({ player, priceModifier, onHeal, onCureSickness, onB
         >
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4 text-secondary" />
-            <span className="font-display font-semibold">Health Blessing (+10 Max HP)</span>
+            <span className="font-display font-semibold text-[#3d2a14]">Health Blessing (+10 Max HP)</span>
           </div>
           <div className="flex items-center gap-3 text-xs">
-            <span className="text-gold">-150g</span>
-            <span className="text-time">4h</span>
+            <span className="text-[#8b6914]">-150g</span>
+            <span className="text-[#6b5a42]">4h</span>
           </div>
         </button>
       </div>

@@ -28,10 +28,10 @@ export function PlayerInfoPanel({ player, isCurrentPlayer }: PlayerInfoPanelProp
           style={{ backgroundColor: player.color }}
         />
         <div className="min-w-0 flex-1">
-          <h3 className="font-display text-sm font-bold text-card-foreground truncate">
+          <h3 className="font-display text-sm font-bold text-[#3d2a14] truncate">
             {player.name}
           </h3>
-          <p className="text-xs text-muted-foreground truncate">
+          <p className="text-xs text-[#6b5a42] truncate">
             {GUILD_RANK_NAMES[player.guildRank]}{agingEnabled ? ` · Age ${player.age ?? 18}` : ''}
           </p>
         </div>
@@ -135,7 +135,7 @@ export function PlayerInfoPanel({ player, isCurrentPlayer }: PlayerInfoPanelProp
           icon={<Home className="w-3.5 h-3.5" />}
           label="Home"
           value={housingName}
-          color="text-muted-foreground"
+          color="text-[#6b5a42]"
         />
 
         {/* Experience */}
@@ -196,7 +196,7 @@ function StatRow({
       <div className="flex items-center justify-between text-xs">
         <div className="flex items-center gap-1">
           <span className={color}>{icon}</span>
-          <span className="text-muted-foreground">{label}</span>
+          <span className="text-[#6b5a42]">{label}</span>
         </div>
         <span className={`font-bold ${color} ${warning ? 'animate-pulse' : ''}`}>{value}</span>
       </div>
