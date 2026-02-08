@@ -1,71 +1,369 @@
-import type { Player, DegreeId } from '@/types/game.types';
-import { Hammer } from 'lucide-react';
-import { getJobOffers, FORGE_JOBS } from '@/data/jobs';
+import type { Player, EquipmentSlot } from '@/types/game.types';
+import { Hammer, Wrench, Recycle } from 'lucide-react';
+import {
+  ARMORY_ITEMS,
+  getItem,
+  getItemPrice,
+  getTemperCost,
+  getSalvageValue,
+  TEMPER_BONUS,
+  TEMPER_TIME,
+  getAppliance,
+  APPLIANCES,
+  calculateRepairCost,
+  calculateCombatStats,
+} from '@/data/items';
+import { toast } from 'sonner';
+
+export type ForgeSection = 'smithing' | 'repairs' | 'salvage';
 
 interface ForgePanelProps {
   player: Player;
   priceModifier: number;
-  setJob: (playerId: string, jobId: string, wage: number) => void;
-  workShift: (playerId: string, hours: number, wage: number) => void;
+  spendTime: (playerId: string, hours: number) => void;
   modifyHappiness: (playerId: string, amount: number) => void;
+  temperEquipment: (playerId: string, itemId: string, slot: EquipmentSlot, cost: number) => void;
+  forgeRepairAppliance: (playerId: string, applianceId: string) => number;
+  salvageEquipment: (playerId: string, itemId: string, slot: EquipmentSlot, value: number) => void;
+  section: ForgeSection;
 }
 
 export function ForgePanel({
   player,
   priceModifier,
-  setJob,
-  workShift,
+  spendTime,
   modifyHappiness,
+  temperEquipment,
+  forgeRepairAppliance,
+  salvageEquipment,
+  section,
 }: ForgePanelProps) {
-  const forgeJobOffers = getJobOffers(
-    player.completedDegrees as DegreeId[],
-    player.clothingCondition,
-    player.experience,
-    player.dependability,
-    priceModifier
-  ).filter(j => FORGE_JOBS.some(fj => fj.id === j.id));
+  switch (section) {
+    case 'smithing':
+      return <SmithingSection player={player} priceModifier={priceModifier} spendTime={spendTime} modifyHappiness={modifyHappiness} temperEquipment={temperEquipment} />;
+    case 'repairs':
+      return <RepairsSection player={player} spendTime={spendTime} forgeRepairAppliance={forgeRepairAppliance} />;
+    case 'salvage':
+      return <SalvageSection player={player} priceModifier={priceModifier} spendTime={spendTime} salvageEquipment={salvageEquipment} />;
+  }
+}
+
+// === SMITHING (Equipment Tempering) ===
+
+function SmithingSection({
+  player,
+  priceModifier,
+  spendTime,
+  modifyHappiness,
+  temperEquipment,
+}: {
+  player: Player;
+  priceModifier: number;
+  spendTime: (playerId: string, hours: number) => void;
+  modifyHappiness: (playerId: string, amount: number) => void;
+  temperEquipment: (playerId: string, itemId: string, slot: EquipmentSlot, cost: number) => void;
+}) {
+  // Get combat stats including temper bonuses
+  const getEffectiveStats = () => {
+    const base = calculateCombatStats(player.equippedWeapon, player.equippedArmor, player.equippedShield);
+    let attack = base.attack;
+    let defense = base.defense;
+    let blockChance = base.blockChance;
+
+    if (player.equippedWeapon && player.temperedItems.includes(player.equippedWeapon)) {
+      attack += TEMPER_BONUS.weapon.attack;
+    }
+    if (player.equippedArmor && player.temperedItems.includes(player.equippedArmor)) {
+      defense += TEMPER_BONUS.armor.defense;
+    }
+    if (player.equippedShield && player.temperedItems.includes(player.equippedShield)) {
+      defense += TEMPER_BONUS.shield.defense;
+      blockChance += TEMPER_BONUS.shield.blockChance;
+    }
+    return { attack, defense, blockChance };
+  };
+
+  const stats = getEffectiveStats();
+
+  // Get all equipment the player owns (weapons, armor, shields)
+  const ownedEquipment = ARMORY_ITEMS.filter(
+    item => item.equipSlot && (player.durables[item.id] || 0) > 0
+  );
+
+  const hasEquipment = ownedEquipment.length > 0;
 
   return (
     <div className="space-y-2">
-      <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
-        <Hammer className="w-4 h-4" /> Forge Work
-      </h4>
-      <p className="text-xs text-muted-foreground mb-2">
-        Apply for forge jobs or work your current shift
-      </p>
-      {forgeJobOffers.length === 0 ? (
-        <p className="text-xs text-muted-foreground">
-          No forge positions available. Need Trade Guild or Combat Training certificates.
-        </p>
+      {/* Combat stats display */}
+      <div className="bg-[#e8dcc8] border-[#8b7355] border rounded p-2">
+        <div className="text-xs text-[#6b5a42] uppercase tracking-wide mb-1">Current Combat Stats</div>
+        <div className="flex gap-4 font-mono text-sm">
+          <span className="text-red-700">ATK: {stats.attack}</span>
+          <span className="text-blue-700">DEF: {stats.defense}</span>
+          {stats.blockChance > 0 && (
+            <span className="text-yellow-700">BLK: {Math.round(stats.blockChance * 100)}%</span>
+          )}
+        </div>
+      </div>
+
+      {!hasEquipment ? (
+        <div className="bg-[#e8dcc8] border border-[#8b7355] rounded p-3 text-center">
+          <p className="text-sm text-[#3d2a14] font-display mb-1">No Equipment to Temper</p>
+          <p className="text-xs text-[#6b5a42]">
+            Buy weapons or armor at the <span className="text-[#c9a227] font-bold">Armory</span> first.
+          </p>
+        </div>
       ) : (
-        forgeJobOffers.map(offer => {
-          const earnings = Math.ceil(offer.hoursPerShift * 1.33 * offer.offeredWage);
+        ownedEquipment.map(item => {
+          const slot = item.equipSlot!;
+          const isTempered = player.temperedItems.includes(item.id);
+          const cost = Math.round(getTemperCost(item) * priceModifier);
+          const time = TEMPER_TIME[slot];
+          const canAfford = player.gold >= cost && player.timeRemaining >= time;
+          const bonus = TEMPER_BONUS[slot];
+
+          // Build bonus label
+          const bonusParts: string[] = [];
+          if ('attack' in bonus) bonusParts.push(`+${bonus.attack} ATK`);
+          if ('defense' in bonus) bonusParts.push(`+${bonus.defense} DEF`);
+          if ('blockChance' in bonus) bonusParts.push(`+${Math.round(bonus.blockChance * 100)}% BLK`);
+          const bonusLabel = bonusParts.join(', ');
+
           return (
-            <div key={offer.id} className="wood-frame p-2 text-parchment">
-              <div className="flex justify-between items-center">
-                <span className="font-display font-semibold text-sm">{offer.name}</span>
-                <span className="text-gold font-bold">{offer.offeredWage}g/h</span>
-              </div>
-              <div className="flex justify-between items-center mt-1">
-                <span className="text-xs text-parchment-dark">
-                  {offer.hoursPerShift}h shift → {earnings}g
-                </span>
+            <div key={item.id} className="py-1 px-1">
+              {isTempered ? (
+                <div className="bg-[#b8d4b8] border border-[#4a9c5a] rounded py-1.5 px-2">
+                  <div className="flex items-baseline w-full font-mono text-base">
+                    <span className="text-[#2a5c3a] font-bold">
+                      Tempered {item.name}
+                    </span>
+                    <span className="flex-1" />
+                    <span className="text-xs text-[#2a5c3a] ml-2">{bonusLabel}</span>
+                    <span className="ml-2 text-xs text-[#2a5c3a]">[DONE]</span>
+                  </div>
+                </div>
+              ) : (
                 <button
                   onClick={() => {
-                    setJob(player.id, offer.id, offer.offeredWage);
-                    workShift(player.id, offer.hoursPerShift, offer.offeredWage);
-                    modifyHappiness(player.id, -3); // Forge work is hard
+                    temperEquipment(player.id, item.id, slot, cost);
+                    spendTime(player.id, time);
+                    modifyHappiness(player.id, 2);
+                    toast.success(`Tempered ${item.name}! ${bonusLabel}`);
                   }}
-                  disabled={player.timeRemaining < offer.hoursPerShift}
-                  className="gold-button text-xs py-1 px-2 disabled:opacity-50"
+                  disabled={!canAfford}
+                  className="w-full text-left py-1.5 px-2 rounded transition-colors hover:bg-[#d4c4a8] disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Work
+                  <div className="flex items-baseline w-full font-mono text-base">
+                    <span className="text-[#3d2a14]">
+                      {item.name}
+                    </span>
+                    <span className="flex-1" />
+                    <span className="text-xs text-[#6b5a42] ml-2">{bonusLabel}</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-0.5">
+                    <span className="text-xs text-[#6b5a42]">{time}h work</span>
+                    <span className="text-sm font-bold text-[#c9a227]">{cost}g</span>
+                  </div>
                 </button>
-              </div>
+              )}
             </div>
           );
         })
       )}
+
+      <div className="mt-1 text-xs text-[#6b5a42] px-2">
+        Each piece can be tempered once for a permanent stat boost.
+      </div>
+    </div>
+  );
+}
+
+// === REPAIRS (Appliance Repair — cheaper than Enchanter) ===
+
+function RepairsSection({
+  player,
+  spendTime,
+  forgeRepairAppliance,
+}: {
+  player: Player;
+  spendTime: (playerId: string, hours: number) => void;
+  forgeRepairAppliance: (playerId: string, applianceId: string) => number;
+}) {
+  const FORGE_REPAIR_TIME = 3;
+
+  // Get all owned appliances (broken and working)
+  const ownedApplianceIds = Object.keys(player.appliances);
+  const brokenAppliances = ownedApplianceIds.filter(
+    id => player.appliances[id].isBroken
+  );
+
+  return (
+    <div className="space-y-2">
+      <div className="bg-[#e8dcc8] border-[#8b7355] border rounded p-2">
+        <div className="text-xs text-[#6b5a42] uppercase tracking-wide mb-1">Forge Repairs</div>
+        <p className="text-xs text-[#6b5a42]">
+          Repair broken appliances for <span className="font-bold text-[#2a5c3a]">half the cost</span> of the Enchanter, but it takes {FORGE_REPAIR_TIME} hours.
+        </p>
+      </div>
+
+      {brokenAppliances.length === 0 ? (
+        <div className="bg-[#e8dcc8] border border-[#8b7355] rounded p-3 text-center">
+          <p className="text-sm text-[#3d2a14] font-display mb-1">Nothing Broken</p>
+          <p className="text-xs text-[#6b5a42]">
+            All your appliances are working fine.
+          </p>
+        </div>
+      ) : (
+        brokenAppliances.map(applianceId => {
+          const owned = player.appliances[applianceId];
+          const appliance = getAppliance(applianceId);
+          if (!appliance) return null;
+
+          const fullRepairCost = calculateRepairCost(owned.originalPrice);
+          const forgeCost = Math.max(5, Math.floor(fullRepairCost * 0.5));
+          const canAfford = player.gold >= forgeCost && player.timeRemaining >= FORGE_REPAIR_TIME;
+
+          return (
+            <div key={applianceId} className="py-1 px-1">
+              <button
+                onClick={() => {
+                  const cost = forgeRepairAppliance(player.id, applianceId);
+                  if (cost > 0) {
+                    spendTime(player.id, FORGE_REPAIR_TIME);
+                    toast.success(`Repaired ${appliance.name} for ${cost}g at the Forge!`);
+                  }
+                }}
+                disabled={!canAfford}
+                className="w-full text-left py-1.5 px-2 rounded transition-colors hover:bg-[#d4c4a8] disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <div className="flex items-baseline w-full font-mono text-base">
+                  <span className="text-red-700 font-bold">
+                    {appliance.name}
+                  </span>
+                  <span className="flex-1" />
+                  <span className="text-xs text-red-600 ml-2">[BROKEN]</span>
+                </div>
+                <div className="flex items-center justify-between mt-0.5">
+                  <span className="text-xs text-[#6b5a42]">{FORGE_REPAIR_TIME}h repair</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs line-through text-[#a09080]">~{fullRepairCost}g</span>
+                    <span className="text-sm font-bold text-[#2a5c3a]">~{forgeCost}g</span>
+                  </div>
+                </div>
+              </button>
+            </div>
+          );
+        })
+      )}
+
+      {/* Show all working appliances as greyed out */}
+      {ownedApplianceIds.filter(id => !player.appliances[id].isBroken).length > 0 && (
+        <div className="mt-1">
+          <div className="text-xs text-[#6b5a42] px-2 mb-1">Working appliances:</div>
+          {ownedApplianceIds.filter(id => !player.appliances[id].isBroken).map(id => {
+            const appliance = getAppliance(id);
+            if (!appliance) return null;
+            return (
+              <div key={id} className="py-0.5 px-2 opacity-50">
+                <span className="font-mono text-sm text-[#3d2a14]">
+                  {appliance.name} <span className="text-[#2a5c3a] text-xs">[OK]</span>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// === SALVAGE (Equipment Selling — better than Fence) ===
+
+function SalvageSection({
+  player,
+  priceModifier,
+  spendTime,
+  salvageEquipment,
+}: {
+  player: Player;
+  priceModifier: number;
+  spendTime: (playerId: string, hours: number) => void;
+  salvageEquipment: (playerId: string, itemId: string, slot: EquipmentSlot, value: number) => void;
+}) {
+  const SALVAGE_TIME = 1;
+
+  // Get all equipment the player owns
+  const ownedEquipment = ARMORY_ITEMS.filter(
+    item => item.equipSlot && (player.durables[item.id] || 0) > 0
+  );
+
+  const hasEquipment = ownedEquipment.length > 0;
+
+  return (
+    <div className="space-y-2">
+      <div className="bg-[#e8dcc8] border-[#8b7355] border rounded p-2">
+        <div className="text-xs text-[#6b5a42] uppercase tracking-wide mb-1">Forge Salvage</div>
+        <p className="text-xs text-[#6b5a42]">
+          Melt down equipment for <span className="font-bold text-[#c9a227]">60% value</span> (vs 40% at The Fence). Takes {SALVAGE_TIME}h per item.
+        </p>
+      </div>
+
+      {!hasEquipment ? (
+        <div className="bg-[#e8dcc8] border border-[#8b7355] rounded p-3 text-center">
+          <p className="text-sm text-[#3d2a14] font-display mb-1">No Equipment to Salvage</p>
+          <p className="text-xs text-[#6b5a42]">
+            You don't own any weapons, armor, or shields.
+          </p>
+        </div>
+      ) : (
+        ownedEquipment.map(item => {
+          const slot = item.equipSlot!;
+          const salvageValue = getSalvageValue(item, priceModifier);
+          const isEquipped = player.equippedWeapon === item.id || player.equippedArmor === item.id || player.equippedShield === item.id;
+          const canAfford = player.timeRemaining >= SALVAGE_TIME;
+          const fenceValue = Math.round(item.basePrice * 0.4 * priceModifier);
+
+          return (
+            <div key={item.id} className="py-1 px-1">
+              <button
+                onClick={() => {
+                  salvageEquipment(player.id, item.id, slot, salvageValue);
+                  spendTime(player.id, SALVAGE_TIME);
+                  toast.success(`Salvaged ${item.name} for ${salvageValue}g!`);
+                }}
+                disabled={!canAfford}
+                className="w-full text-left py-1.5 px-2 rounded transition-colors hover:bg-[#d4c4a8] disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <div className="flex items-baseline w-full font-mono text-base">
+                  <span className="text-[#3d2a14]">
+                    {isEquipped ? '* ' : ''}{item.name}
+                  </span>
+                  <span className="flex-1" />
+                  {item.equipStats && (
+                    <span className="text-xs text-[#6b5a42] ml-2">
+                      {item.equipStats.attack ? `+${item.equipStats.attack} ATK` : ''}
+                      {item.equipStats.defense ? `+${item.equipStats.defense} DEF` : ''}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between mt-0.5">
+                  <span className="text-xs text-[#6b5a42]">
+                    {SALVAGE_TIME}h{isEquipped ? ' (will unequip)' : ''}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs line-through text-[#a09080]">{fenceValue}g fence</span>
+                    <span className="text-sm font-bold text-[#c9a227]">{salvageValue}g</span>
+                  </div>
+                </div>
+              </button>
+            </div>
+          );
+        })
+      )}
+
+      <div className="mt-1 text-xs text-[#6b5a42] px-2">
+        * = currently equipped (will be unequipped on salvage)
+      </div>
     </div>
   );
 }

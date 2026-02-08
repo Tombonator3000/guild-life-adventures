@@ -6,7 +6,7 @@
  */
 
 import { getFloor, getFloorTimeCost } from '@/data/dungeon';
-import { calculateCombatStats } from '@/data/items';
+import { calculateCombatStats, ARMORY_ITEMS, getTemperCost, TEMPER_TIME } from '@/data/items';
 import type { AIAction } from '../types';
 import {
   getBestDungeonFloor,
@@ -21,7 +21,7 @@ import type { ActionContext } from './actionContext';
  */
 export function generateQuestDungeonActions(ctx: ActionContext): AIAction[] {
   const actions: AIAction[] = [];
-  const { player, settings, currentLocation, moveCost, weakestGoal } = ctx;
+  const { player, settings, currentLocation, moveCost, weakestGoal, priceModifier } = ctx;
 
   // ============================================
   // DUNGEON & QUEST ACTIONS
@@ -62,6 +62,33 @@ export function generateQuestDungeonActions(ctx: ActionContext): AIAction[] {
         priority: 50,
         description: 'Travel to armory to buy equipment',
       });
+    }
+  }
+
+  // Temper equipment at the Forge (prioritize if at forge and has untempered gear)
+  const untemperedEquipment = ARMORY_ITEMS.filter(
+    item => item.equipSlot && (player.durables[item.id] || 0) > 0 && !player.temperedItems.includes(item.id)
+  );
+  if (untemperedEquipment.length > 0) {
+    const bestToTemper = untemperedEquipment[0]; // Temper first available
+    const temperCost = Math.round(getTemperCost(bestToTemper) * priceModifier);
+    const temperTime = TEMPER_TIME[bestToTemper.equipSlot!];
+    if (player.gold >= temperCost && player.timeRemaining >= temperTime + 2) {
+      if (currentLocation === 'forge') {
+        actions.push({
+          type: 'temper-equipment',
+          priority: 52,
+          description: `Temper ${bestToTemper.name} at Forge`,
+          details: { itemId: bestToTemper.id, slot: bestToTemper.equipSlot, cost: temperCost },
+        });
+      } else if (player.timeRemaining > moveCost('forge') + temperTime) {
+        actions.push({
+          type: 'move',
+          location: 'forge',
+          priority: 48,
+          description: 'Travel to forge to temper equipment',
+        });
+      }
     }
   }
 
@@ -117,7 +144,7 @@ export function generateQuestDungeonActions(ctx: ActionContext): AIAction[] {
     } else {
       // Use actual floor time cost instead of hardcoded 6
       const targetFloor = getFloor(dungeonFloor);
-      const combatStats = calculateCombatStats(player.equippedWeapon, player.equippedArmor, player.equippedShield);
+      const combatStats = calculateCombatStats(player.equippedWeapon, player.equippedArmor, player.equippedShield, player.temperedItems);
       const floorTime = targetFloor ? getFloorTimeCost(targetFloor, combatStats) : 6;
       if (player.timeRemaining > moveCost('cave') + floorTime) {
         actions.push({

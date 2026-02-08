@@ -43,6 +43,7 @@ export function ArmoryPanel({
     player.equippedWeapon,
     player.equippedArmor,
     player.equippedShield,
+    player.temperedItems,
   );
 
   // In tabbed mode, use dark text on light parchment background

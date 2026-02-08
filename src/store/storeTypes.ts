@@ -97,6 +97,10 @@ export interface GameStore extends GameState {
   buyLotteryTicket: (playerId: string, cost: number) => void;
   // Ticket actions
   buyTicket: (playerId: string, ticketType: string, cost: number) => void;
+  // Forge actions
+  temperEquipment: (playerId: string, itemId: string, slot: EquipmentSlot, cost: number) => void;
+  forgeRepairAppliance: (playerId: string, applianceId: string) => number;
+  salvageEquipment: (playerId: string, itemId: string, slot: EquipmentSlot, value: number) => void;
   // Weekend event display
   dismissWeekendEvent: () => void;
   // Save/Load

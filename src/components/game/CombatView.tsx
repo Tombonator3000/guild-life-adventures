@@ -59,6 +59,7 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
     player.equippedWeapon,
     player.equippedArmor,
     player.equippedShield,
+    player.temperedItems,
   );
   const eduBonuses: EducationBonuses = calculateEducationBonuses(player.completedDegrees);
   const isFirstClear = !player.dungeonFloorsCleared.includes(floor.id);

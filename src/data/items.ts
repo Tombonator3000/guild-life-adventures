@@ -678,6 +678,32 @@ export const canBeStolen = (itemId: string): boolean => {
   return item ? (item.isDurable === true && item.isUnstealable !== true) : false;
 };
 
+// === Forge Tempering ===
+
+// Temper cost: ~60% of base price, minimum 30g
+export const getTemperCost = (item: Item): number => {
+  return Math.max(30, Math.round(item.basePrice * 0.6));
+};
+
+// Temper bonus values
+export const TEMPER_BONUS = {
+  weapon: { attack: 5 },
+  armor: { defense: 5 },
+  shield: { defense: 3, blockChance: 0.05 },
+} as const;
+
+// Time cost for tempering (hours)
+export const TEMPER_TIME = {
+  weapon: 3,
+  armor: 3,
+  shield: 2,
+} as const;
+
+// Salvage return: 60% of base price
+export const getSalvageValue = (item: Item, priceModifier: number): number => {
+  return Math.round(item.basePrice * 0.6 * priceModifier);
+};
+
 // Get all equippable items by slot
 export const getEquipmentBySlot = (slot: EquipmentSlot): Item[] => {
   return ALL_ITEMS.filter(item => item.equipSlot === slot);
@@ -690,10 +716,12 @@ export const getEquipStats = (itemId: string): EquipmentStats | undefined => {
 };
 
 // Calculate total combat stats for a player's equipment
+// Includes temper bonuses when temperedItems array is provided
 export const calculateCombatStats = (
   equippedWeapon: string | null,
   equippedArmor: string | null,
   equippedShield: string | null,
+  temperedItems?: string[],
 ): { attack: number; defense: number; blockChance: number } => {
   let attack = 0;
   let defense = 0;
@@ -702,16 +730,26 @@ export const calculateCombatStats = (
   if (equippedWeapon) {
     const stats = getEquipStats(equippedWeapon);
     if (stats) attack += stats.attack || 0;
+    if (temperedItems?.includes(equippedWeapon)) {
+      attack += TEMPER_BONUS.weapon.attack;
+    }
   }
   if (equippedArmor) {
     const stats = getEquipStats(equippedArmor);
     if (stats) defense += stats.defense || 0;
+    if (temperedItems?.includes(equippedArmor)) {
+      defense += TEMPER_BONUS.armor.defense;
+    }
   }
   if (equippedShield) {
     const stats = getEquipStats(equippedShield);
     if (stats) {
       defense += stats.defense || 0;
       blockChance = stats.blockChance || 0;
+    }
+    if (temperedItems?.includes(equippedShield)) {
+      defense += TEMPER_BONUS.shield.defense;
+      blockChance += TEMPER_BONUS.shield.blockChance;
     }
   }
 

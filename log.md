@@ -1,5 +1,199 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-08 - Forge Gameplay Enhancement Implementation
+
+### Changes Implemented
+
+Transformed the Forge from a 1-tab workplace into a 4-tab location with unique mechanics.
+
+#### 1. Equipment Tempering (Smithing Tab)
+- Permanently boost owned equipment stats: +5 ATK (weapons), +5 DEF (armor), +3 DEF/+5% BLK (shields)
+- Each item can only be tempered once
+- Cost: ~60% of item base price + 2-3 hours
+- Temper bonuses apply in all combat (dungeon + auto-resolve)
+- Shows combat stats with temper bonuses, green [DONE] for tempered items
+- +2 happiness for each tempering
+
+#### 2. Forge Repairs (Repairs Tab)
+- Repair broken appliances at 50% of Enchanter cost
+- Takes 3 hours (vs 1h at Enchanter)
+- Creates time vs money trade-off for broken appliance routing
+- Shows all owned appliances with status (broken vs OK)
+
+#### 3. Equipment Salvage (Salvage Tab)
+- Sell weapons/armor/shields for 60% value (vs 40% at The Fence)
+- Takes 1 hour per item
+- Auto-unequips salvaged items
+- Removes temper status on salvage
+- Shows fence price comparison for each item
+
+#### 4. Work Tab (existing, shown only if hired at Forge)
+
+### NPC Window Changes
+- Added `xl` portrait size (w-52 h-60) to NpcPortrait component
+- All locations now use xl NPC portraits for bigger, more prominent NPC display
+- LocationShell supports `xlPortrait` prop (w-56 column)
+
+### AI Integration
+- Grimwald AI can now temper equipment at the Forge (priority 52, below equipment buying)
+- AI will travel to Forge to temper untempered equipment when affordable
+- All AI combat stat calculations include temper bonuses
+
+### Files Changed
+
+| File | Changes |
+|------|---------|
+| `src/types/game.types.ts` | Added `temperedItems: string[]` to Player |
+| `src/data/items.ts` | Added temper cost, salvage value, TEMPER_BONUS/TEMPER_TIME constants; updated calculateCombatStats with temper support |
+| `src/store/storeTypes.ts` | Added `temperEquipment`, `forgeRepairAppliance`, `salvageEquipment` to GameStore |
+| `src/store/gameStore.ts` | Added `temperedItems: []` to createPlayer |
+| `src/store/helpers/economyHelpers.ts` | Implemented 3 forge actions |
+| `src/components/game/ForgePanel.tsx` | Complete rewrite: 3 sections (Smithing, Repairs, Salvage) |
+| `src/components/game/LocationPanel.tsx` | Forge now has 4 tabs, all locations use xlPortrait |
+| `src/components/game/LocationShell.tsx` | Added `xlPortrait` prop support |
+| `src/components/game/NpcPortrait.tsx` | Added `xl` size (w-52 h-60) |
+| `src/components/game/CavePanel.tsx` | Pass temperedItems to calculateCombatStats |
+| `src/components/game/CombatView.tsx` | Pass temperedItems to calculateCombatStats |
+| `src/components/game/ArmoryPanel.tsx` | Pass temperedItems to calculateCombatStats |
+| `src/hooks/useGrimwaldAI.ts` | Added temper-equipment action executor, temperedItems in combat |
+| `src/hooks/ai/strategy.ts` | temperedItems in combat stat calculations |
+| `src/hooks/ai/actions/questDungeonActions.ts` | AI temper-equipment action generation |
+
+### Test Results
+- 171 tests pass (all green)
+- TypeScript check clean
+- Production build succeeds
+
+---
+
+## 2026-02-08 - Forge Gameplay Enhancement Analysis
+
+### Problem
+
+The Forge is the most one-dimensional location in the game. It currently only has jobs (work shifts), while every other location offers multiple functions:
+
+| Location | Functions | Tabs |
+|----------|-----------|------|
+| Guild Hall | Jobs + Quests + Work | 3 |
+| Enchanter | Healing + Appliances + Work | 3 |
+| Armory | Clothing + Weapons + Armor + Shields + Work | 5 |
+| Cave | 5 dungeon floors with combat | N/A |
+| Bank | Deposits + Stocks + Loans | 3 |
+| Shadow Market | Items + Lottery + Tickets + Work | 2 |
+| **Forge** | **Work only** | **1-2** |
+
+In Jones in the Fast Lane, the Factory was also just a workplace. But in a fantasy setting, a Forge (blacksmith) has far more potential.
+
+### Current Forge State
+
+- **NPC**: Korr the Smithmaster
+- **Tabs**: Work (if hired) or Info message ("Visit Guild Hall to apply")
+- **Jobs**: 5 positions (Forge Laborer 4g/hr → Forge Manager 23g/hr)
+- **Unique mechanics**: None
+- **Reason to visit without a job**: None
+
+### Analysis: What Makes Locations Interesting
+
+1. **Economic function** — buying/selling creates strategic decisions (Armory, General Store, Shadow Market)
+2. **Unique mechanics** — systems only available at that location (Bank stocks, Cave dungeon, Academy degrees)
+3. **Trade-offs vs other locations** — "cheaper here but slower" creates routing decisions (Enchanter vs Shadow Market appliances)
+4. **Progression gating** — content unlocks over time (Cave floor requirements, Academy prerequisites)
+
+The Forge has none of these. It's a workplace with no reason to visit unless you work there.
+
+### Proposals (Ranked by Impact vs Complexity)
+
+#### Proposal 1: Equipment Tempering ⭐ HIGH IMPACT
+
+Visit the Forge to permanently enhance owned equipment:
+
+| Enhancement | Effect | Cost (scales with tier) | Time |
+|-------------|--------|------------------------|------|
+| Sharpen Weapon | +5 ATK permanent | 50-300g | 3h |
+| Reinforce Armor | +5 DEF permanent | 50-300g | 3h |
+| Fortify Shield | +5% block permanent | 40-200g | 2h |
+
+Rules:
+- Each item can only be tempered **once** (prevents infinite stacking)
+- Must have the item equipped
+- Cost scales with item base price (~60% of item cost)
+- Adds "Tempered" prefix to item name
+- Strategic: temper cheap items early, or save gold for high-tier items
+
+**Why it works**: Creates a unique reason to visit the Forge that no other location provides. Synergizes with Armory (buy equipment) → Forge (enhance it) → Cave (use it). Adds depth to equipment progression without new item types.
+
+#### Proposal 2: Appliance Repair (Forge Alternative)
+
+Forge can repair broken appliances as an alternative to Enchanter:
+
+| Repair At | Cost | Time |
+|-----------|------|------|
+| Enchanter | Full repair cost | 1h |
+| Forge | 50% of repair cost | 3h |
+
+**Why it works**: Creates a meaningful routing decision — save gold at the Forge or save time at the Enchanter. Thematically fits: a blacksmith can fix mechanical/magical devices.
+
+#### Proposal 3: Equipment Salvage
+
+Sell equipment at the Forge for better returns than The Fence:
+
+| Sell At | Return | Time |
+|---------|--------|------|
+| The Fence | 40% of base price | 0h |
+| Forge Salvage | 60% of base price | 1h |
+
+Restricted to weapons/armor/shields only (not general durables). Creates trade-off: convenience (Fence) vs value (Forge).
+
+#### Proposal 4: Commission Custom Items (Future)
+
+Forge-exclusive equipment not available at Armory:
+- **Forgemaster's Hammer**: +20 ATK, +5 DEF (hybrid weapon)
+- **Masterwork Chainmail**: +25 DEF (between tiers)
+- **Ember Shield**: +12 DEF, +15% block
+- Requires education (Trade Guild, Combat Training) or Forge job level
+
+#### Proposal 5: Smithing Mini-Challenge (Future)
+
+Non-combat gold-making alternative to the Cave:
+- Pay materials + time to attempt smithing
+- Success: Profit + happiness + XP
+- Failure: Lose materials
+- Success rate based on education and experience
+
+#### Proposal 6: Metal Ore Trading (Future)
+
+Economy mini-game with fluctuating ore prices.
+
+### Recommendation
+
+**Implement Proposals 1 + 2 + 3** as a single batch. This gives the Forge 4 tabs:
+
+1. **Smithing** — Equipment tempering/enhancement (unique mechanic)
+2. **Repairs** — Appliance repair (cheaper but slower than Enchanter)
+3. **Salvage** — Equipment selling (better than Fence)
+4. **Work** — Existing, only if hired via Guild Hall
+
+This is the best balance of:
+- New unique mechanics (tempering) that create strategic depth
+- Trade-offs with existing locations (Forge vs Enchanter, Forge vs Fence)
+- Synergy with existing systems (equipment, appliances, economy)
+- Reasonable implementation scope (no new data types, reuses existing patterns)
+
+### Estimated Changes
+
+| File | Changes |
+|------|---------|
+| `src/components/game/LocationPanel.tsx` | Forge tabs: Smithing, Repairs, Salvage, Work |
+| `src/components/game/ForgePanel.tsx` | Rewrite: tempering UI, repair list, salvage list |
+| `src/data/items.ts` | Add `isTempered` tracking, temper cost calculation |
+| `src/types/game.types.ts` | Add `temperedItems: string[]` to Player |
+| `src/store/gameStore.ts` | Add `temperEquipment`, `salvageEquipment` actions |
+| `src/store/helpers/` | Forge helper functions |
+| `src/hooks/ai/` | AI: temper equipment, repair at forge |
+| `src/test/` | Forge tempering + salvage tests |
+
+---
+
 ## 2026-02-08 - Jones Pricing Audit — Rent & Appliance Price Corrections
 
 ### Problem

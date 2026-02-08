@@ -26,9 +26,10 @@ interface LocationShellProps {
   defaultTab?: string;
   locationId: LocationId; // Needed for banter
   largePortrait?: boolean; // Use larger NPC portrait (for stores like Armory, Shadow Market, Tavern)
+  xlPortrait?: boolean; // Use extra-large NPC portrait
 }
 
-export function LocationShell({ npc, tabs, defaultTab, locationId, largePortrait = false }: LocationShellProps) {
+export function LocationShell({ npc, tabs, defaultTab, locationId, largePortrait = false, xlPortrait = false }: LocationShellProps) {
   const visibleTabs = tabs.filter(t => !t.hidden);
   const [activeTab, setActiveTab] = useState(defaultTab || visibleTabs[0]?.id || '');
   const { activeBanter, banterLocationId, tryTriggerBanter, dismissBanter } = useBanter();
@@ -70,13 +71,13 @@ export function LocationShell({ npc, tabs, defaultTab, locationId, largePortrait
     <div className="flex gap-2 h-full">
       {/* NPC Portrait - Left side (Jones-style), hidden on mobile */}
       {!isMobile && (
-        <div className={`flex-shrink-0 ${largePortrait ? 'w-44' : 'w-36'} flex flex-col items-center relative`}>
+        <div className={`flex-shrink-0 ${xlPortrait ? 'w-56' : largePortrait ? 'w-44' : 'w-36'} flex flex-col items-center relative`}>
           {/* Banter bubble */}
           {showBanter && (
             <BanterBubble banter={activeBanter} onDismiss={dismissBanter} />
           )}
 
-          <NpcPortrait npc={npc} size={largePortrait ? 'large' : 'normal'} />
+          <NpcPortrait npc={npc} size={xlPortrait ? 'xl' : largePortrait ? 'large' : 'normal'} />
           <div className="text-center">
             <div
               className="font-display text-sm font-bold leading-tight"

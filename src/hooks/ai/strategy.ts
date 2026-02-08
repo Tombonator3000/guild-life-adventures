@@ -222,6 +222,7 @@ export function getBestDungeonFloor(player: Player, settings: DifficultySettings
     player.equippedWeapon,
     player.equippedArmor,
     player.equippedShield,
+    player.temperedItems,
   );
 
   if (player.health < 40) return null;
@@ -278,6 +279,7 @@ export function getNextEquipmentUpgrade(player: Player): { itemId: string; cost:
     player.equippedWeapon,
     player.equippedArmor,
     player.equippedShield,
+    player.temperedItems,
   );
 
   const weaponUpgrades = [

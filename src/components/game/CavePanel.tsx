@@ -82,6 +82,7 @@ export function CavePanel({
     player.equippedWeapon,
     player.equippedArmor,
     player.equippedShield,
+    player.temperedItems,
   );
   const eduBonuses = calculateEducationBonuses(player.completedDegrees);
   const progress = getDungeonProgress(player.dungeonFloorsCleared);

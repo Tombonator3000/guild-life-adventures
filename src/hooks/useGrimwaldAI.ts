@@ -78,6 +78,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     sellItem,
     pawnAppliance,
     buyLotteryTicket,
+    temperEquipment,
     endTurn,
   } = useGameStore();
 
@@ -252,6 +253,19 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         return true;
       }
 
+      case 'temper-equipment': {
+        const itemId = action.details?.itemId as string;
+        const cost = (action.details?.cost as number) || 0;
+        const slot = (action.details?.slot as string) || 'weapon';
+        if (!itemId || player.gold < cost) return false;
+        if (player.temperedItems.includes(itemId)) return false;
+        temperEquipment(player.id, itemId, slot as EquipmentSlot, cost);
+        const temperTime = slot === 'shield' ? 2 : 3;
+        spendTime(player.id, temperTime);
+        modifyHappiness(player.id, 2);
+        return true;
+      }
+
       case 'buy-guild-pass': {
         if (player.hasGuildPass || player.gold < GUILD_PASS_COST) return false;
         buyGuildPass(player.id);
@@ -291,6 +305,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
           player.equippedWeapon,
           player.equippedArmor,
           player.equippedShield,
+          player.temperedItems,
         );
         const eduBonuses = calculateEducationBonuses(player.completedDegrees);
         // Use per-encounter time * 4 encounters (same formula as human players)
