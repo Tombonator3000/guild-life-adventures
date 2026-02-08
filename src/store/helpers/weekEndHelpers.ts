@@ -2,7 +2,17 @@
 // Extracted from turnHelpers.ts — see that file for the orchestrator (createTurnActions)
 
 import type { LocationId } from '@/types/game.types';
-import { HOURS_PER_TURN, RENT_COSTS } from '@/types/game.types';
+import {
+  HOURS_PER_TURN,
+  RENT_COSTS,
+  AGE_INTERVAL,
+  AGE_MILESTONES,
+  ELDER_AGE,
+  ELDER_HEALTH_DECAY,
+  HEALTH_CRISIS_AGE,
+  HEALTH_CRISIS_CHANCE,
+  HEALTH_CRISIS_DAMAGE,
+} from '@/types/game.types';
 import { checkWeeklyTheft, checkMarketCrash } from '@/data/events';
 import { getItem } from '@/data/items';
 import { updateStockPrices } from '@/data/stocks';
@@ -279,6 +289,53 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
 
         // Relaxation decay (-1 per week, Jones-style)
         p.relaxation = Math.max(10, p.relaxation - 1);
+
+        // === Age System: age 1 year every AGE_INTERVAL weeks ===
+        const isBirthday = newWeek % AGE_INTERVAL === 0;
+        if (isBirthday) {
+          p.age = (p.age ?? 18) + 1;
+          const newAge = p.age;
+
+          // Apply elder health decay FIRST (age 60+), then milestone bonuses on top
+          // This ensures milestones at 60+ don't silently suppress elder decay
+          if (newAge >= ELDER_AGE) {
+            p.maxHealth = Math.max(10, p.maxHealth - ELDER_HEALTH_DECAY);
+            p.health = Math.min(p.health, p.maxHealth);
+          }
+
+          // Check for milestone birthday effects
+          const milestone = AGE_MILESTONES[newAge];
+          if (milestone) {
+            if (milestone.happiness !== undefined && milestone.happiness !== 0) {
+              p.happiness = Math.max(0, Math.min(100, p.happiness + milestone.happiness));
+            }
+            if (milestone.maxHealth !== undefined && milestone.maxHealth !== 0) {
+              p.maxHealth = Math.max(10, p.maxHealth + milestone.maxHealth);
+              p.health = Math.min(p.health, p.maxHealth);
+            }
+            if (milestone.dependability !== undefined && milestone.dependability !== 0) {
+              p.dependability = Math.min(p.maxDependability, p.dependability + milestone.dependability);
+            }
+            if (!p.isAI) {
+              eventMessages.push(`🎂 ${p.name} turns ${newAge}! ${milestone.message}`);
+            }
+          } else if (newAge >= ELDER_AGE) {
+            // Elder without a milestone — just show the age message
+            if (!p.isAI) {
+              eventMessages.push(`🎂 ${p.name} turns ${newAge}. The years weigh heavier... (-${ELDER_HEALTH_DECAY} max health)`);
+            }
+          } else if (!p.isAI) {
+            eventMessages.push(`🎂 Happy birthday! ${p.name} turns ${newAge}.`);
+          }
+        }
+
+        // Age-related weekly health crisis (age 50+, 3% chance)
+        if ((p.age ?? 18) >= HEALTH_CRISIS_AGE && Math.random() < HEALTH_CRISIS_CHANCE) {
+          p.health = Math.max(0, p.health - HEALTH_CRISIS_DAMAGE);
+          if (!p.isAI) {
+            eventMessages.push(`${p.name} suffers an age-related health crisis! -${HEALTH_CRISIS_DAMAGE} health.`);
+          }
+        }
 
         // C3: Rent tracking - consume prepaid weeks first
         if (p.rentPrepaidWeeks > 0) {

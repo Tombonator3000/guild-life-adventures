@@ -1,5 +1,71 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-08 - Age System Implementation & Bug Audit
+
+**Task**: Implement player age mechanic, play through the game to find bugs, fix all issues found.
+
+### Age System Design
+
+Players now age over time, adding a natural game timer and life-stage effects:
+
+| Feature | Detail |
+|---------|--------|
+| Starting age | 18 (configurable via `STARTING_AGE`) |
+| Aging rate | +1 year every 4 weeks (rent cycle, `AGE_INTERVAL`) |
+| Birthday milestones | Age 21, 25, 30, 40, 50 with unique effects |
+| Elder decay | Age 60+: -3 maxHealth every birthday |
+| Health crises | Age 50+: 3% weekly chance of -15 health |
+| Work fatigue | Age 45+: extra -1 happiness on long work shifts (6+ hours) |
+
+### Birthday Milestone Effects
+
+| Age | Effects | Message |
+|-----|---------|---------|
+| 21 | +5 happiness | "Coming of age! The world feels full of possibility." |
+| 25 | +2 maxHealth | "In the prime of youth — stronger than ever." |
+| 30 | +5 happiness, +5 dependability | "A seasoned adventurer — wisdom comes with experience." |
+| 40 | -2 maxHealth, +3 happiness | "Middle age arrives — wiser, but the body begins to slow." |
+| 50 | -5 maxHealth, +5 happiness | "A half-century lived — aches and wisdom in equal measure." |
+| 60+ | -3 maxHealth per birthday | "The years weigh heavier..." |
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/types/game.types.ts` | Added `age: number` to Player interface; added age constants (`STARTING_AGE`, `AGE_INTERVAL`, `AGE_MILESTONES`, `ELDER_AGE`, `ELDER_HEALTH_DECAY`, `WORK_HAPPINESS_AGE`, `HEALTH_CRISIS_AGE/CHANCE/DAMAGE`) |
+| `src/store/gameStore.ts` | Initialize `age: STARTING_AGE` in createPlayer |
+| `src/store/helpers/weekEndHelpers.ts` | Added aging logic in processWeekEnd: birthday milestones, elder decay, health crises |
+| `src/store/helpers/workEducationHelpers.ts` | Added age-based work happiness penalty for 45+ on long shifts |
+| `src/store/helpers/playerHelpers.ts` | Fixed modifyMaxHealth floor: 50 → 10 (consistent with aging floor) |
+| `src/hooks/ai/actions/criticalNeeds.ts` | AI health threshold scales with age (40+ → threshold 65), capped at 80% of maxHealth to prevent infinite heal loop |
+| `src/components/game/PlayerInfoPanel.tsx` | Added age display in player header ("Guild Rank · Age 18") |
+| `src/components/game/SideInfoTabs.tsx` | Added age display in player header |
+| `src/components/game/InfoTabs.tsx` | Added "Age" row in Character section |
+| `src/components/screens/VictoryScreen.tsx` | Shows "Age X at time of victory" |
+| `src/data/saveLoad.ts` | Bumped SAVE_VERSION 1→2; added v1→v2 migration (adds age to old saves based on week) |
+| `src/test/age.test.ts` | **NEW** — 19 age system tests (init, aging, milestones, elder decay, health crisis, work penalty) |
+| `src/test/freshFood.test.ts` | Fixed pre-existing flaky test: mocked Math.random in Starvation Prevention tests |
+
+### Bugs Found & Fixed (Playthrough Audit)
+
+| # | Severity | Description | Fix |
+|---|----------|-------------|-----|
+| 1 | Medium | AI infinite healing loop at elder ages — maxHealth drops below age threshold (65), AI permanently stuck visiting healer | Cap threshold to `Math.min(rawThreshold, maxHealth*0.8)` |
+| 2 | Medium | maxHealth floor inconsistency — aging allows floor of 10 but modifyMaxHealth had floor of 50, causing unexpected jumps | Changed modifyMaxHealth floor from 50 to 10 |
+| 3 | Low | Unused `Cake` import in PlayerInfoPanel.tsx | Removed |
+| 5 | Design | Work happiness penalty stacking -2/shift for age 45+ could soft-lock happiness goal | Age penalty only applies on long shifts (6+ hours) |
+| 7 | Edge | Truthiness check `if (milestone.maxHealth)` would skip value 0 | Changed to `!== undefined && !== 0` |
+| 8 | Edge | Adding milestones at age 60+ would suppress elder decay | Elder decay now applied BEFORE milestone bonuses (independent) |
+| - | Flaky | freshFood starvation test failed randomly when doctor visit (25% chance) triggered | Added `vi.spyOn(Math, 'random').mockReturnValue(0.99)` |
+
+### Test Results
+
+- **171 tests pass** (152 existing + 19 new age tests)
+- **0 failures** (fixed pre-existing flaky freshFood test)
+- Production build succeeds
+
+---
+
 ## 2026-02-07 - Setup Default Zone Configurations with Movement Paths
 
 **Task**: Set new standard default ZONE_CONFIGS, CENTER_PANEL_CONFIG, and MOVEMENT_PATHS from fine-tuned zone editor output.

@@ -30,7 +30,7 @@ export function PlayerInfoPanel({ player, isCurrentPlayer }: PlayerInfoPanelProp
             {player.name}
           </h3>
           <p className="text-xs text-muted-foreground truncate">
-            {GUILD_RANK_NAMES[player.guildRank]}
+            {GUILD_RANK_NAMES[player.guildRank]} · Age {player.age ?? 18}
           </p>
         </div>
       </div>

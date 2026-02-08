@@ -110,7 +110,11 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
   }
 
   // 4. HEALTH - Visit healer if health is low
-  if (player.health < 50 && player.gold >= 30) {
+  // Older players (40+) are more cautious about health and seek healing earlier
+  // Cap threshold to maxHealth to prevent infinite healing loop at elder ages
+  const rawAgeThreshold = (player.age ?? 18) >= 40 ? 65 : 50;
+  const ageHealthThreshold = Math.min(rawAgeThreshold, Math.floor(player.maxHealth * 0.8));
+  if (player.health < ageHealthThreshold && player.gold >= 30) {
     if (currentLocation === 'enchanter') {
       actions.push({
         type: 'heal',

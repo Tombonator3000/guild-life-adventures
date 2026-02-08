@@ -46,7 +46,7 @@ export function SideInfoTabs({ player, goals, isCurrentPlayer }: SideInfoTabsPro
             {player.name}
           </h3>
           <p className="text-[10px] text-wood-dark/70 truncate">
-            {GUILD_RANK_NAMES[player.guildRank]}
+            {GUILD_RANK_NAMES[player.guildRank]} · Age {player.age ?? 18}
           </p>
         </div>
       </div>

@@ -390,6 +390,7 @@ function StatsTab({ player }: StatsTabProps) {
       {/* Core Stats */}
       <div className="bg-parchment-dark/30 rounded-lg p-3 border border-wood-light/30">
         <h3 className="font-display text-sm font-bold text-wood mb-2">Character</h3>
+        <StatRow label="Age" value={`${player.age ?? 18}`} />
         <StatRow label="Guild Rank" value={GUILD_RANK_NAMES[player.guildRank]} />
         <StatRow label="Rank Level" value={`${GUILD_RANK_INDEX[player.guildRank]}/7`} />
         <StatRow label="Housing" value={housingName} />

@@ -99,6 +99,9 @@ export function VictoryScreen() {
                 ? 'has achieved all victory goals!'
                 : 'wins the game!'}
           </p>
+          <p className="font-display text-sm text-muted-foreground/70 mt-1">
+            Age {winningPlayer.age ?? 18} at time of victory
+          </p>
         </div>
 
         {/* Stats Display */}

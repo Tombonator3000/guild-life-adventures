@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { useGameStore } from '@/store/gameStore';
 
 let playerId: string;
@@ -180,7 +180,16 @@ describe('Fresh Food - buyFreshFood', () => {
 });
 
 describe('Fresh Food - Starvation Prevention', () => {
-  beforeEach(resetAndStart);
+  beforeEach(() => {
+    resetAndStart();
+    // Mock Math.random to return high value (>0.25) to prevent random doctor visits,
+    // sickness, robbery, and other random events from affecting deterministic tests
+    vi.spyOn(Math, 'random').mockReturnValue(0.99);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
   it('consumes 1 fresh food unit when regular food is empty', () => {
     givePreservationBox();

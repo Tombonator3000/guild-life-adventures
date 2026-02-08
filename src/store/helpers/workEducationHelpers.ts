@@ -3,6 +3,7 @@
 
 import type { EducationPath, DegreeId } from '@/types/game.types';
 import { GRADUATION_BONUSES, getDegree } from '@/data/education';
+import { WORK_HAPPINESS_AGE } from '@/types/game.types';
 import { getJob } from '@/data/jobs';
 import type { SetFn, GetFn } from '../storeTypes';
 
@@ -59,8 +60,10 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
           // Work happiness penalty scales with game progression:
           // Weeks 1-4: no penalty (let players get established)
           // Weeks 5+: -1 happiness (mild fatigue)
-          // Reduced from -2 at week 9+ — was too punishing, made happiness unwinnable
-          const happinessPenalty = gameWeek <= 4 ? 0 : 1;
+          // Age 45+: extra -1 happiness on long shifts (6+ hours, aging body finds work harder)
+          const basePenalty = gameWeek <= 4 ? 0 : 1;
+          const agePenalty = ((p.age ?? 18) >= WORK_HAPPINESS_AGE && hours >= 6) ? 1 : 0;
+          const happinessPenalty = basePenalty + agePenalty;
 
           return {
             ...p,
