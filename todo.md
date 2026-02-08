@@ -605,6 +605,13 @@
   - Weather indicator in top bar, network sync, save/load support
   - Build succeeds, 171 tests pass
 
+## Completed (2026-02-08)
+
+- [x] Noble Heights Location Music — `10Noble-Heights.mp3` plays when player is at Noble Heights
+  - Added track to `MUSIC_TRACKS` and `LOCATION_MUSIC` in `src/audio/musicConfig.ts`
+  - Placeholder MP3 in `public/music/` (replace with real track)
+  - AudioManager crossfades to Noble Heights music on location entry
+
 ## In Progress
 
 *No active tasks*

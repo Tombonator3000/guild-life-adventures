@@ -17,6 +17,7 @@ export const MUSIC_TRACKS: Record<string, MusicTrack> = {
   'enchanter':        { id: 'enchanter',        file: '11EnchantersWorkshop.mp3', label: "Enchanter's Workshop" },
   'rusty-tankard':    { id: 'rusty-tankard',    file: '13rustytankard.mp3',       label: 'The Rusty Tankard' },
   'weekend':          { id: 'weekend',          file: '18OhWhatAWeekend.mp3',     label: 'Oh What a Weekend' },
+  'noble-heights':    { id: 'noble-heights',    file: '10Noble-Heights.mp3',      label: 'Noble Heights' },
   'cave':             { id: 'cave',             file: '20Cave.mp3',               label: 'The Cave' },
 };
 
@@ -34,6 +35,7 @@ export const LOCATION_MUSIC: Partial<Record<LocationId, string>> = {
   'slums':            'the-slums',
   'enchanter':        'enchanter',
   'rusty-tankard':    'rusty-tankard',
+  'noble-heights':    'noble-heights',
   'cave':             'cave',
 };
 

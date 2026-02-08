@@ -1,5 +1,25 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-08 - Noble Heights Location Music
+
+Added `10Noble-Heights.mp3` as location-specific music for Noble Heights. When a player is at Noble Heights, the music system crossfades to this track (same pattern as The Slums, Guild Hall, Cave, etc.).
+
+### Changes
+| File | Changes |
+|------|---------|
+| `src/audio/musicConfig.ts` | Added `noble-heights` track to `MUSIC_TRACKS` and `LOCATION_MUSIC` mapping |
+| `public/music/10Noble-Heights.mp3` | **NEW** — placeholder MP3 (replace with real track) |
+
+### How It Works
+- `MUSIC_TRACKS` defines the track: `{ id: 'noble-heights', file: '10Noble-Heights.mp3', label: 'Noble Heights' }`
+- `LOCATION_MUSIC` maps LocationId `'noble-heights'` → track id `'noble-heights'`
+- `useMusicController` hook automatically plays this track when `playerLocation === 'noble-heights'`
+- AudioManager handles crossfade transition (1500ms) from previous track
+
+Build succeeds, 171 tests pass.
+
+---
+
 ## 2026-02-08 - Weather Events System Implementation
 
 ### Overview
