@@ -588,6 +588,14 @@
   - Crossfades to weekend track on event display, returns to location music on dismiss
   - Build succeeds, 171 tests pass
 
+- [x] Jones Pricing Audit — Rent & Appliance Price Corrections
+  - [x] Noble Heights rent: 350g/wk → 120g/wk (Jones Security is $498/month ≈ $125/week)
+  - [x] Modest Dwelling rent: 200g/wk → 95g/wk (was more expensive than Noble after fix)
+  - [x] Memory Crystal enchanter: 475g → 333g (Jones VCR Socket City = $333)
+  - [x] Memory Crystal market: 300g → 250g (Jones VCR Z-Mart = $250)
+  - [x] All other prices verified correct vs Jones (wages, appliances, food, education, clothing)
+  - Build passes, 171 tests pass
+
 ## In Progress
 
 *No active tasks*

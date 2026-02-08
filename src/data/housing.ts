@@ -34,7 +34,7 @@ export const HOUSING_DATA: Record<HousingTier, Housing> = {
     tier: 'modest',
     name: 'Modest Dwelling',
     description: 'A comfortable apartment in a decent area.',
-    weeklyRent: 200,
+    weeklyRent: 95,
     happinessBonus: 2,
     theftRisk: 5,
     relaxationRate: 5,
@@ -43,7 +43,7 @@ export const HOUSING_DATA: Record<HousingTier, Housing> = {
     tier: 'noble',
     name: 'Noble Heights',
     description: 'Luxury living for the wealthy. Safe and prestigious.',
-    weeklyRent: 350,
+    weeklyRent: 120,
     happinessBonus: 3,
     theftRisk: 0,
     relaxationRate: 3, // Increased from 2 to prevent happiness spam
