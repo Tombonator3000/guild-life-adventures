@@ -48,8 +48,8 @@ export function RoomScene({
   relaxation,
 }: RoomSceneProps) {
   const bgImage = isNoble
-    ? `${import.meta.env.BASE_URL}locations/noble-heights.png`
-    : `${import.meta.env.BASE_URL}locations/slums.png`;
+    ? `${import.meta.env.BASE_URL}locations/noble-heights.jpg`
+    : `${import.meta.env.BASE_URL}locations/slums.jpg`;
 
   return (
     <div className="flex-1 relative overflow-hidden" style={{ minHeight: 0 }}>

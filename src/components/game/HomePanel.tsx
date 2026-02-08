@@ -33,7 +33,7 @@ export function HomePanel({
 
   // Player doesn't rent here — show "For Rent" display
   if (!rentsHere) {
-    const forRentImage = `${import.meta.env.BASE_URL}locations/for-rent.png`;
+    const forRentImage = `${import.meta.env.BASE_URL}locations/for-rent.jpg`;
     const locationName = locationId === 'noble-heights' ? 'Noble Heights' : 'The Slums';
     return (
       <div className="h-full flex flex-col overflow-hidden select-none" style={{ background: '#1a1410' }}>
