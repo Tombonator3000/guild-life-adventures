@@ -80,6 +80,7 @@ interface JonesListItemProps {
   onClick?: () => void;
   active?: boolean;
   className?: string;
+  darkText?: boolean;
 }
 
 // Simple list item (for employers, education options, etc.)
@@ -89,13 +90,21 @@ export function JonesListItem({
   onClick,
   active = false,
   className = '',
+  darkText = false,
 }: JonesListItemProps) {
+  const textColor = active
+    ? 'text-gold font-bold'
+    : darkText
+      ? 'text-[#3d2a14]'
+      : 'text-[#e0d4b8]';
+  const hoverBg = darkText ? 'hover:bg-[#d4c4a8]' : 'hover:bg-[#5c4a32]';
+
   const content = (
     <div
       className={`
         font-mono text-sm
         ${disabled ? 'opacity-50' : ''}
-        ${active ? 'text-gold font-bold' : 'text-[#e0d4b8]'}
+        ${textColor}
         ${className}
       `}
     >
@@ -108,7 +117,7 @@ export function JonesListItem({
       <button
         onClick={onClick}
         disabled={disabled}
-        className="w-full text-left py-1 px-2 hover:bg-[#5c4a32] transition-colors rounded"
+        className={`w-full text-left py-1 px-2 ${hoverBg} transition-colors rounded`}
       >
         {content}
       </button>

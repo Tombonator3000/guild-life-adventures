@@ -1,13 +1,9 @@
 import type { Player } from '@/types/game.types';
 import {
-  JonesPanel,
-  JonesPanelHeader,
-  JonesPanelContent,
   JonesSectionHeader,
   JonesMenuItem,
   JonesInfoRow,
 } from './JonesStylePanel';
-import { WorkSection } from './WorkSection';
 import { GENERAL_STORE_ITEMS, getItemPrice } from '@/data/items';
 import { NEWSPAPER_COST, NEWSPAPER_TIME } from '@/data/newspaper';
 import { toast } from 'sonner';
@@ -19,7 +15,6 @@ interface GeneralStorePanelProps {
   spendTime: (playerId: string, hours: number) => void;
   modifyFood: (playerId: string, amount: number) => void;
   modifyHappiness: (playerId: string, amount: number) => void;
-  workShift: (playerId: string, hours: number, wage: number) => void;
   onBuyNewspaper: () => void;
   buyFreshFood: (playerId: string, units: number, cost: number) => void;
   buyLotteryTicket: (playerId: string, cost: number) => void;
@@ -32,7 +27,6 @@ export function GeneralStorePanel({
   spendTime,
   modifyFood,
   modifyHappiness,
-  workShift,
   onBuyNewspaper,
   buyFreshFood,
   buyLotteryTicket,
@@ -45,93 +39,90 @@ export function GeneralStorePanel({
   const maxFreshFood = hasFrostChest ? 12 : hasPreservationBox ? 6 : 0;
 
   return (
-    <JonesPanel>
-      <JonesPanelHeader title="General Store" subtitle="Provisions & Sundries" />
-      <JonesPanelContent>
-        <JonesSectionHeader title="FOOD & PROVISIONS" />
-        {GENERAL_STORE_ITEMS.filter(item => item.effect?.type === 'food' && !item.isFreshFood).map(item => {
-          const price = getItemPrice(item, priceModifier);
-          const canAfford = player.gold >= price && player.timeRemaining >= 1;
-          return (
-            <JonesMenuItem
-              key={item.id}
-              label={item.name}
-              price={price}
-              disabled={!canAfford}
-              onClick={() => {
-                modifyGold(player.id, -price);
-                spendTime(player.id, 1);
-                if (item.effect?.type === 'food') {
-                  modifyFood(player.id, item.effect.value);
-                }
-                toast.success(`Purchased ${item.name}`);
-              }}
-            />
-          );
-        })}
+    <div>
+      <JonesSectionHeader title="FOOD & PROVISIONS" />
+      {GENERAL_STORE_ITEMS.filter(item => item.effect?.type === 'food' && !item.isFreshFood).map(item => {
+        const price = getItemPrice(item, priceModifier);
+        const canAfford = player.gold >= price && player.timeRemaining >= 1;
+        return (
+          <JonesMenuItem
+            key={item.id}
+            label={item.name}
+            price={price}
+            disabled={!canAfford}
+            darkText
+            largeText
+            onClick={() => {
+              modifyGold(player.id, -price);
+              spendTime(player.id, 1);
+              if (item.effect?.type === 'food') {
+                modifyFood(player.id, item.effect.value);
+              }
+              toast.success(`Purchased ${item.name}`);
+            }}
+          />
+        );
+      })}
 
-        {/* Fresh Food Section - only show if player has Preservation Box */}
-        {hasPreservationBox && (
-          <>
-            <JonesSectionHeader title="FRESH FOOD (STORED)" />
-            <JonesInfoRow label="Stored:" value={`${player.freshFood}/${maxFreshFood} units`} />
-            {GENERAL_STORE_ITEMS.filter(item => item.isFreshFood).map(item => {
-              const price = getItemPrice(item, priceModifier);
-              const units = item.freshFoodUnits || 0;
-              const spaceLeft = maxFreshFood - player.freshFood;
-              const canAfford = player.gold >= price && player.timeRemaining >= 1 && spaceLeft > 0;
-              return (
-                <JonesMenuItem
-                  key={item.id}
-                  label={`${item.name} (+${units} units)`}
-                  price={price}
-                  disabled={!canAfford}
-                  onClick={() => {
-                    buyFreshFood(player.id, units, price);
-                    spendTime(player.id, 1);
-                    toast.success(`Stored ${Math.min(units, spaceLeft)} fresh food units!`);
-                  }}
-                />
-              );
-            })}
-            <div className="text-xs text-[#8b7355] px-2 mb-1">
-              Fresh food prevents starvation when regular food runs out. Spoils if Preservation Box breaks.
-            </div>
-          </>
-        )}
+      {/* Fresh Food Section - only show if player has Preservation Box */}
+      {hasPreservationBox && (
+        <>
+          <JonesSectionHeader title="FRESH FOOD (STORED)" />
+          <JonesInfoRow label="Stored:" value={`${player.freshFood}/${maxFreshFood} units`} darkText largeText />
+          {GENERAL_STORE_ITEMS.filter(item => item.isFreshFood).map(item => {
+            const price = getItemPrice(item, priceModifier);
+            const units = item.freshFoodUnits || 0;
+            const spaceLeft = maxFreshFood - player.freshFood;
+            const canAfford = player.gold >= price && player.timeRemaining >= 1 && spaceLeft > 0;
+            return (
+              <JonesMenuItem
+                key={item.id}
+                label={`${item.name} (+${units} units)`}
+                price={price}
+                disabled={!canAfford}
+                darkText
+                largeText
+                onClick={() => {
+                  buyFreshFood(player.id, units, price);
+                  spendTime(player.id, 1);
+                  toast.success(`Stored ${Math.min(units, spaceLeft)} fresh food units!`);
+                }}
+              />
+            );
+          })}
+          <div className="text-xs text-[#6b5a42] px-2 mb-1">
+            Fresh food prevents starvation when regular food runs out. Spoils if Preservation Box breaks.
+          </div>
+        </>
+      )}
 
-        <JonesSectionHeader title="OTHER GOODS" />
-        <JonesMenuItem
-          label="Newspaper"
-          price={newspaperPrice}
-          disabled={player.gold < newspaperPrice || player.timeRemaining < NEWSPAPER_TIME}
-          onClick={onBuyNewspaper}
-        />
-        <JonesMenuItem
-          label="Fortune's Wheel Ticket"
-          price={lotteryPrice}
-          disabled={player.gold < lotteryPrice || player.timeRemaining < 1}
-          onClick={() => {
-            buyLotteryTicket(player.id, lotteryPrice);
-            spendTime(player.id, 1);
-            toast.success(`Bought Fortune's Wheel ticket! (${player.lotteryTickets + 1} tickets this week)`);
-          }}
-        />
-        {player.lotteryTickets > 0 && (
-          <JonesInfoRow label="Tickets this week:" value={`${player.lotteryTickets}`} />
-        )}
-        <div className="mt-2 text-xs text-[#8b7355] px-2">
-          1 hour per purchase
-        </div>
-
-        {/* Work button for store employees */}
-        <WorkSection
-          player={player}
-          locationName="General Store"
-          workShift={workShift}
-          variant="jones"
-        />
-      </JonesPanelContent>
-    </JonesPanel>
+      <JonesSectionHeader title="OTHER GOODS" />
+      <JonesMenuItem
+        label="Newspaper"
+        price={newspaperPrice}
+        disabled={player.gold < newspaperPrice || player.timeRemaining < NEWSPAPER_TIME}
+        darkText
+        largeText
+        onClick={onBuyNewspaper}
+      />
+      <JonesMenuItem
+        label="Fortune's Wheel Ticket"
+        price={lotteryPrice}
+        disabled={player.gold < lotteryPrice || player.timeRemaining < 1}
+        darkText
+        largeText
+        onClick={() => {
+          buyLotteryTicket(player.id, lotteryPrice);
+          spendTime(player.id, 1);
+          toast.success(`Bought Fortune's Wheel ticket! (${player.lotteryTickets + 1} tickets this week)`);
+        }}
+      />
+      {player.lotteryTickets > 0 && (
+        <JonesInfoRow label="Tickets this week:" value={`${player.lotteryTickets}`} darkText largeText />
+      )}
+      <div className="mt-2 text-xs text-[#6b5a42] px-2">
+        1 hour per purchase
+      </div>
+    </div>
   );
 }

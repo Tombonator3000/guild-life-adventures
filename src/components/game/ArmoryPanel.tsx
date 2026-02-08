@@ -1,12 +1,8 @@
 import type { Player, EquipmentSlot } from '@/types/game.types';
 import {
-  JonesPanel,
-  JonesPanelHeader,
-  JonesPanelContent,
   JonesSectionHeader,
   JonesMenuItem,
 } from './JonesStylePanel';
-import { WorkSection } from './WorkSection';
 import { ARMORY_ITEMS, getItemPrice, calculateCombatStats, getItem } from '@/data/items';
 import { toast } from 'sonner';
 
@@ -19,7 +15,6 @@ interface ArmoryPanelProps {
   spendTime: (playerId: string, hours: number) => void;
   modifyClothing: (playerId: string, amount: number) => void;
   modifyHappiness: (playerId: string, amount: number) => void;
-  workShift: (playerId: string, hours: number, wage: number) => void;
   buyDurable: (playerId: string, itemId: string, cost: number) => void;
   equipItem: (playerId: string, itemId: string, slot: EquipmentSlot) => void;
   unequipItem: (playerId: string, slot: EquipmentSlot) => void;
@@ -33,7 +28,6 @@ export function ArmoryPanel({
   spendTime,
   modifyClothing,
   modifyHappiness,
-  workShift,
   buyDurable,
   equipItem,
   unequipItem,
@@ -240,55 +234,32 @@ export function ArmoryPanel({
     }
   }
 
-  // Full mode (legacy): render everything in JonesPanel
+  // Fallback: default to clothing
   return (
-    <JonesPanel>
-      <JonesPanelHeader title="Armory" subtitle="Equipment & Clothing" />
-      <JonesPanelContent>
-        {combatStatsHeader}
-
-        {/* Clothing */}
-        <JonesSectionHeader title="CLOTHING" />
-        {clothingItems.map(item => {
-          const price = getItemPrice(item, priceModifier);
-          const canAfford = player.gold >= price && player.timeRemaining >= 1;
-          return (
-            <JonesMenuItem
-              key={item.id}
-              label={item.name}
-              price={price}
-              disabled={!canAfford}
-              onClick={() => {
-                modifyGold(player.id, -price);
-                spendTime(player.id, 1);
-                if (item.effect?.type === 'clothing') {
-                  modifyClothing(player.id, item.effect.value);
-                }
-                toast.success(`Purchased ${item.name}!`);
-              }}
-            />
-          );
-        })}
-
-        {/* Weapons */}
-        {renderEquipSection('WEAPONS', weaponItems, 'weapon', player.equippedWeapon)}
-
-        {/* Armor */}
-        {renderEquipSection('ARMOR', armorItems, 'armor', player.equippedArmor)}
-
-        {/* Shields */}
-        {renderEquipSection('SHIELDS', shieldItems, 'shield', player.equippedShield)}
-
-        {footerNote}
-
-        {/* Work button for armory employees */}
-        <WorkSection
-          player={player}
-          locationName="Armory"
-          workShift={workShift}
-          variant="jones"
-        />
-      </JonesPanelContent>
-    </JonesPanel>
+    <div>
+      {clothingItems.map(item => {
+        const price = getItemPrice(item, priceModifier);
+        const canAfford = player.gold >= price && player.timeRemaining >= 1;
+        return (
+          <JonesMenuItem
+            key={item.id}
+            label={item.name}
+            price={price}
+            disabled={!canAfford}
+            darkText
+            largeText
+            onClick={() => {
+              modifyGold(player.id, -price);
+              spendTime(player.id, 1);
+              if (item.effect?.type === 'clothing') {
+                modifyClothing(player.id, item.effect.value);
+              }
+              toast.success(`Purchased ${item.name}!`);
+            }}
+          />
+        );
+      })}
+      {footerNote}
+    </div>
   );
 }

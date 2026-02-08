@@ -14,7 +14,6 @@ import { EnchanterPanel } from './EnchanterPanel';
 import { ShadowMarketPanel } from './ShadowMarketPanel';
 import { getAvailableQuests } from '@/data/quests';
 import { ActionButton } from './ActionButton';
-import { WorkSection } from './WorkSection';
 import { TavernPanel } from './TavernPanel';
 import { BankPanel } from './BankPanel';
 import { GeneralStorePanel } from './GeneralStorePanel';
@@ -23,7 +22,7 @@ import { AcademyPanel } from './AcademyPanel';
 import { LandlordPanel } from './LandlordPanel';
 import { CavePanel } from './CavePanel';
 import { HomePanel } from './HomePanel';
-import { LocationShell, type LocationTab } from './LocationShell';
+import { LocationShell, type LocationTab, type WorkInfo } from './LocationShell';
 import { LOCATION_NPCS } from '@/data/npcs';
 import { useState } from 'react';
 import { NewspaperModal } from './NewspaperModal';
@@ -32,6 +31,20 @@ import { toast } from 'sonner';
 interface LocationPanelProps {
   locationId: LocationId;
 }
+
+// Map location ID to the job location name used in jobs.ts
+const JOB_LOCATION_MAP: Record<string, string> = {
+  'guild-hall': 'Guild Hall',
+  'bank': 'Bank',
+  'forge': 'Forge',
+  'academy': 'Academy',
+  'general-store': 'General Store',
+  'armory': 'Armory',
+  'enchanter': 'Enchanter',
+  'shadow-market': 'Shadow Market',
+  'rusty-tankard': 'Rusty Tankard',
+  'fence': 'Fence',
+};
 
 export function LocationPanel({ locationId }: LocationPanelProps) {
   const {
@@ -124,8 +137,26 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     setShowNewspaper(true);
   };
 
-  // Check if player has a job at this location (for Work tab)
+  // Check if player has a job at this location (for footer work bar)
   const currentJobData = player.currentJob ? getJob(player.currentJob) : null;
+
+  // Build work info for the standardized footer bar
+  const getWorkInfo = (): WorkInfo | null => {
+    const jobLocationName = JOB_LOCATION_MAP[locationId];
+    if (!currentJobData || !jobLocationName || currentJobData.location !== jobLocationName) return null;
+    const earnings = Math.floor(currentJobData.hoursPerShift * player.currentWage * 1.15);
+    return {
+      jobName: currentJobData.name,
+      wage: player.currentWage,
+      hoursPerShift: currentJobData.hoursPerShift,
+      earnings,
+      canWork: player.timeRemaining >= currentJobData.hoursPerShift,
+      onWork: () => {
+        workShift(player.id, currentJobData.hoursPerShift, player.currentWage);
+        toast.success(`Worked a shift at ${currentJobData.name}!`);
+      },
+    };
+  };
 
   // Build tabs for each location
   const getLocationTabs = (): LocationTab[] | null => {
@@ -154,14 +185,14 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             />
           ) : (
             <div className="space-y-3">
-              <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
+              <h4 className="font-display text-sm text-[#6b5a42] flex items-center gap-2 mb-2">
                 <ScrollText className="w-4 h-4" /> Guild Quest Board
               </h4>
-              <p className="text-sm text-muted-foreground mb-3">
+              <p className="text-sm text-[#6b5a42] mb-3">
                 You need a <span className="font-bold text-[#c9a227]">Guild Pass</span> to access the quest board.
               </p>
-              <div className="text-center bg-black/20 p-2 rounded mb-2">
-                <span className="text-xs text-muted-foreground">Guild Pass Cost:</span>
+              <div className="text-center bg-[#e0d4b8] p-2 rounded mb-2 border border-[#8b7355]">
+                <span className="text-xs text-[#6b5a42]">Guild Pass Cost:</span>
                 <span className="font-bold text-[#c9a227] ml-2">{GUILD_PASS_COST}g</span>
               </div>
               <button
@@ -202,47 +233,36 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
           ),
         });
 
-        // Work tab (only if job is at Guild Hall)
+        // Work tab (only if job is at Guild Hall) - shows raise option
         tabs.push({
           id: 'work',
           label: 'Work',
           hidden: !canWorkAtGuildHall,
           content: canWorkAtGuildHall && currentJobData ? (
             <div className="space-y-3">
-              <div className="bg-[#3d3224] border border-[#8b7355] rounded p-3">
-                <h4 className="font-display text-sm text-[#e0d4b8] flex items-center gap-2 mb-2">
+              <div className="bg-[#e0d4b8] border border-[#8b7355] rounded p-3">
+                <h4 className="font-display text-sm text-[#3d2a14] flex items-center gap-2 mb-2">
                   <Briefcase className="w-4 h-4" /> {currentJobData.name}
                 </h4>
                 <div className="flex justify-between text-sm font-mono mb-1">
-                  <span className="text-[#a09080]">Wage:</span>
+                  <span className="text-[#6b5a42]">Wage:</span>
                   <span className="font-bold text-[#c9a227]">{player.currentWage}g/hour</span>
                 </div>
                 <div className="flex justify-between text-sm font-mono mb-3">
-                  <span className="text-[#a09080]">Shift earnings:</span>
-                  <span className="font-bold text-[#c9a227]">{Math.ceil(currentJobData.hoursPerShift * 1.33 * player.currentWage)}g</span>
+                  <span className="text-[#6b5a42]">Shift earnings:</span>
+                  <span className="font-bold text-[#c9a227]">{Math.floor(currentJobData.hoursPerShift * player.currentWage * 1.15)}g</span>
                 </div>
                 <div className="flex gap-2">
-                  <ActionButton
-                    label={`Work Shift (+${Math.ceil(currentJobData.hoursPerShift * 1.33 * player.currentWage)}g)`}
-                    cost={0}
-                    time={currentJobData.hoursPerShift}
-                    disabled={player.timeRemaining < currentJobData.hoursPerShift}
-                    onClick={() => {
-                      workShift(player.id, currentJobData.hoursPerShift, player.currentWage);
-                    }}
-                  />
                   <button
                     onClick={() => {
                       const result = requestRaise(player.id);
-                      toast(result.success ? result.message : result.message, {
-                        description: result.success ? '🎉' : '😔',
-                      });
+                      toast(result.success ? result.message : result.message);
                     }}
                     className="gold-button text-xs py-1 px-2 flex items-center gap-1"
                     disabled={player.dependability < 40 || (player.shiftsWorkedSinceHire || 0) < MIN_SHIFTS_FOR_RAISE}
                     title={(player.shiftsWorkedSinceHire || 0) < MIN_SHIFTS_FOR_RAISE ? `Work ${MIN_SHIFTS_FOR_RAISE} shifts first (${player.shiftsWorkedSinceHire || 0}/${MIN_SHIFTS_FOR_RAISE})` : 'Request a raise'}
                   >
-                    <TrendingUp className="w-3 h-3" /> Raise
+                    <TrendingUp className="w-3 h-3" /> Request Raise
                   </button>
                 </div>
               </div>
@@ -265,13 +285,11 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               spendTime={spendTime}
               modifyFood={modifyFood}
               modifyHappiness={modifyHappiness}
-              workShift={workShift}
             />
           ),
         }];
 
       case 'forge': {
-        const canWorkAtForge = currentJobData && currentJobData.location === 'Forge';
         const forgeProps = {
           player,
           priceModifier,
@@ -298,19 +316,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             label: 'Salvage',
             content: <ForgePanel {...forgeProps} section="salvage" />,
           },
-          {
-            id: 'work',
-            label: 'Work',
-            hidden: !canWorkAtForge,
-            content: canWorkAtForge ? (
-              <WorkSection
-                player={player}
-                locationName="Forge"
-                workShift={workShift}
-                variant="wood-frame"
-              />
-            ) : null,
-          },
         ];
       }
 
@@ -324,7 +329,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               priceModifier={priceModifier}
               studyDegree={studyDegree}
               completeDegree={completeDegree}
-              workShift={workShift}
             />
           ),
         }];
@@ -340,7 +344,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               depositToBank={depositToBank}
               withdrawFromBank={withdrawFromBank}
               invest={invest}
-              workShift={workShift}
               buyStock={buyStock}
               sellStock={sellStock}
               takeLoan={takeLoan}
@@ -362,7 +365,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               spendTime={spendTime}
               modifyFood={modifyFood}
               modifyHappiness={modifyHappiness}
-              workShift={workShift}
               onBuyNewspaper={handleBuyNewspaper}
               buyFreshFood={buyFreshFood}
               buyLotteryTicket={buyLotteryTicket}
@@ -371,7 +373,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
         }];
 
       case 'armory': {
-        const canWorkAtArmory = currentJobData && currentJobData.location === 'Armory';
         const armoryProps = {
           player,
           priceModifier,
@@ -379,7 +380,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
           spendTime,
           modifyClothing,
           modifyHappiness,
-          workShift,
           buyDurable,
           equipItem,
           unequipItem,
@@ -405,24 +405,11 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             label: 'Shields',
             content: <ArmoryPanel {...armoryProps} section="shields" />,
           },
-          {
-            id: 'work',
-            label: 'Work',
-            hidden: !canWorkAtArmory,
-            content: (
-              <WorkSection
-                player={player}
-                locationName="Armory"
-                workShift={workShift}
-                variant="jones"
-              />
-            ),
-          },
         ];
       }
 
       case 'enchanter': {
-        const tabs: LocationTab[] = [
+        return [
           {
             id: 'healing',
             label: 'Healing',
@@ -459,45 +446,26 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               />
             ),
           },
-          {
-            id: 'work',
-            label: 'Work',
-            hidden: !(currentJobData && currentJobData.location === 'Enchanter'),
-            content: (
-              <WorkSection
-                player={player}
-                locationName="Enchanter"
-                workShift={workShift}
-                variant="jones"
-              />
-            ),
-          },
         ];
-        return tabs;
       }
 
-      case 'landlord': {
-        const tabs: LocationTab[] = [
-          {
-            id: 'housing',
-            label: 'Housing',
-            content: (
-              <LandlordPanel
-                player={player}
-                priceModifier={priceModifier}
-                spendTime={spendTime}
-                prepayRent={prepayRent}
-                moveToHousing={moveToHousing}
-              />
-            ),
-          },
-        ];
-        return tabs;
-      }
+      case 'landlord':
+        return [{
+          id: 'housing',
+          label: 'Housing',
+          content: (
+            <LandlordPanel
+              player={player}
+              priceModifier={priceModifier}
+              spendTime={spendTime}
+              prepayRent={prepayRent}
+              moveToHousing={moveToHousing}
+            />
+          ),
+        }];
 
       case 'shadow-market': {
         const shadowNewspaperPrice = Math.round(NEWSPAPER_COST * priceModifier * 0.5);
-        const canWorkAtShadowMarket = currentJobData && currentJobData.location === 'Shadow Market';
         const shadowMarketProps = {
           player,
           priceModifier,
@@ -546,19 +514,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             id: 'appliances',
             label: 'Magical Items',
             content: <ShadowMarketPanel {...shadowMarketProps} section="appliances" />,
-          },
-          {
-            id: 'work',
-            label: 'Work',
-            hidden: !canWorkAtShadowMarket,
-            content: (
-              <WorkSection
-                player={player}
-                locationName="Shadow Market"
-                workShift={workShift}
-                variant="jones"
-              />
-            ),
           },
         ];
       }
@@ -645,7 +600,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
           id: 'default',
           label: 'Info',
           content: (
-            <p className="text-muted-foreground text-center py-4">
+            <p className="text-[#6b5a42] text-center py-4">
               This location is under construction...
             </p>
           ),
@@ -653,7 +608,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     }
   };
 
-  // Home locations get a full-panel visual room display (Jones-style)
+  // Home locations get a full-panel visual room display (special case)
   const isHomeLocation = locationId === 'noble-heights' || locationId === 'slums';
   if (isHomeLocation && isHere) {
     return (
@@ -673,42 +628,45 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
 
   const npc = LOCATION_NPCS[locationId];
   const tabs = getLocationTabs();
+  const workInfo = isHere ? getWorkInfo() : null;
 
   return (
     <>
-      <div className={`parchment-panel h-full flex flex-col overflow-hidden ${isHere ? 'p-2' : 'p-3'}`}>
-        {/* Header - compact single line when at location, full when traveling */}
-        <div className={`flex items-center justify-between ${isHere ? 'mb-1' : 'mb-2'}`}>
-          <div className="flex items-center gap-1.5 min-w-0">
-            <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-            <h2 className={`font-display font-bold text-card-foreground leading-tight truncate ${isHere ? 'text-sm' : 'text-lg'}`}>
-              {location.name}
-            </h2>
-            {isHere && (
-              <span className="text-muted-foreground text-[11px] truncate hidden sm:inline">{location.description}</span>
-            )}
+      <div className={`h-full flex flex-col overflow-hidden ${isHere ? '' : 'parchment-panel p-3'}`}>
+        {/* When at location: full LocationShell with header/footer */}
+        {isHere && npc && tabs ? (
+          <LocationShell
+            key={locationId}
+            npc={npc}
+            tabs={tabs}
+            locationId={locationId}
+            locationName={location.name}
+            xlPortrait
+            workInfo={workInfo}
+          />
+        ) : isHere && tabs ? (
+          <div className="overflow-y-auto h-full">
+            {tabs[0]?.content}
           </div>
-          <button
-            onClick={() => selectLocation(null)}
-            className="p-1 hover:bg-muted rounded-lg transition-colors flex-shrink-0"
-          >
-            <X className="w-4 h-4 text-muted-foreground" />
-          </button>
-        </div>
-        {!isHere && (
-          <p className="text-muted-foreground text-xs mb-2 ml-6">{location.description}</p>
-        )}
-
-        {/* Travel or Actions */}
-        <div className="flex-1 overflow-hidden">
-          {isHere && npc && tabs ? (
-            <LocationShell key={locationId} npc={npc} tabs={tabs} locationId={locationId} xlPortrait />
-          ) : isHere && tabs ? (
-            <div className="overflow-y-auto h-full">
-              {tabs[0]?.content}
+        ) : (
+          /* Travel view - not at location */
+          <>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+                <h2 className="font-display font-bold text-card-foreground leading-tight truncate text-lg">
+                  {location.name}
+                </h2>
+              </div>
+              <button
+                onClick={() => selectLocation(null)}
+                className="p-1 hover:bg-muted rounded-lg transition-colors flex-shrink-0"
+              >
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
             </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full">
+            <p className="text-muted-foreground text-xs mb-2 ml-6">{location.description}</p>
+            <div className="flex flex-col items-center justify-center flex-1">
               <div className="flex items-center gap-2 text-muted-foreground mb-4">
                 <Clock className="w-5 h-5" />
                 <span>Travel time: {moveCost} hours</span>
@@ -728,8 +686,8 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
                 <p className="text-destructive text-sm mt-2">No time remaining!</p>
               )}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
 
       <NewspaperModal
