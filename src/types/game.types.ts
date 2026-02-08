@@ -189,6 +189,8 @@ export interface Player {
   freshFood: number;               // Units of fresh food in storage (max 6, or 12 with frost chest)
   // Lottery
   lotteryTickets: number;          // Number of lottery tickets for this week's drawing
+  // Forge tempering
+  temperedItems: string[];         // Item IDs that have been tempered at the Forge (once per item)
 }
 
 export interface GoalSettings {

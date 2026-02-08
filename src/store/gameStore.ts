@@ -126,6 +126,8 @@ const createPlayer = (
   freshFood: 0,
   // Lottery
   lotteryTickets: 0,
+  // Forge tempering
+  temperedItems: [],
 });
 
 export const useGameStore = create<GameStore>((set, get) => {

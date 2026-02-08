@@ -6,12 +6,13 @@ import type { LocationNPC } from '@/data/npcs';
 
 interface NpcPortraitProps {
   npc: LocationNPC;
-  size?: 'normal' | 'large';
+  size?: 'normal' | 'large' | 'xl';
 }
 
 const SIZES = {
   normal: 'w-32 h-36',
   large: 'w-40 h-48',
+  xl: 'w-52 h-60',
 };
 
 export function NpcPortrait({ npc, size = 'normal' }: NpcPortraitProps) {

@@ -5,6 +5,7 @@ import { GUILD_PASS_COST } from '@/types/game.types';
 import { MapPin, Clock, ArrowRight, X, Briefcase, Newspaper, TrendingUp, ScrollText, Scroll, Sword, ShieldHalf, Heart, Sparkles, Package, ShoppingBag, Dices, Coins, Home, GraduationCap, Hammer } from 'lucide-react';
 import { getJob } from '@/data/jobs';
 import { GuildHallPanel } from './GuildHallPanel';
+import { ForgePanel } from './ForgePanel';
 import { NEWSPAPER_COST, NEWSPAPER_TIME, generateNewspaper } from '@/data/newspaper';
 import { QuestPanel } from './QuestPanel';
 import { HealerPanel } from './HealerPanel';
@@ -78,6 +79,9 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     stockPrices,
     cureSickness,
     endTurn,
+    temperEquipment,
+    forgeRepairAppliance,
+    salvageEquipment,
   } = useGameStore();
   const player = useCurrentPlayer();
   const location = getLocation(locationId);
@@ -268,50 +272,46 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
 
       case 'forge': {
         const canWorkAtForge = currentJobData && currentJobData.location === 'Forge';
-        const tabs: LocationTab[] = [];
+        const forgeProps = {
+          player,
+          priceModifier,
+          spendTime: (id: string, hours: number) => spendTime(id, hours),
+          modifyHappiness: (id: string, amount: number) => modifyHappiness(id, amount),
+          temperEquipment,
+          forgeRepairAppliance,
+          salvageEquipment,
+        };
 
-        // Work tab (only if player has a Forge job via Guild Hall)
-        tabs.push({
-          id: 'work',
-          label: 'Work',
-          hidden: !canWorkAtForge,
-          content: canWorkAtForge ? (
-            <WorkSection
-              player={player}
-              locationName="Forge"
-              workShift={workShift}
-              variant="wood-frame"
-            />
-          ) : null,
-        });
-
-        // If no forge job, show info message
-        if (!canWorkAtForge) {
-          tabs.push({
-            id: 'info',
-            label: 'Forge',
-            content: (
-              <div className="space-y-3">
-                <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2 mb-2">
-                  <Hammer className="w-4 h-4" /> The Forge
-                </h4>
-                <p className="text-xs text-muted-foreground">
-                  Industrial work. Hard labor but steady pay.
-                </p>
-                <div className="bg-[#2d1f0f] border border-[#8b7355] rounded p-3 text-center">
-                  <p className="text-sm text-[#e0d4b8] font-display mb-2">
-                    No Forge Job
-                  </p>
-                  <p className="text-xs text-[#a09080]">
-                    Visit the <span className="text-[#c9a227] font-bold">Guild Hall</span> to apply for a Forge position first.
-                  </p>
-                </div>
-              </div>
-            ),
-          });
-        }
-
-        return tabs;
+        return [
+          {
+            id: 'smithing',
+            label: 'Smithing',
+            content: <ForgePanel {...forgeProps} section="smithing" />,
+          },
+          {
+            id: 'repairs',
+            label: 'Repairs',
+            content: <ForgePanel {...forgeProps} section="repairs" />,
+          },
+          {
+            id: 'salvage',
+            label: 'Salvage',
+            content: <ForgePanel {...forgeProps} section="salvage" />,
+          },
+          {
+            id: 'work',
+            label: 'Work',
+            hidden: !canWorkAtForge,
+            content: canWorkAtForge ? (
+              <WorkSection
+                player={player}
+                locationName="Forge"
+                workShift={workShift}
+                variant="wood-frame"
+              />
+            ) : null,
+          },
+        ];
       }
 
       case 'academy':
@@ -702,7 +702,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
         {/* Travel or Actions */}
         <div className="flex-1 overflow-hidden">
           {isHere && npc && tabs ? (
-            <LocationShell key={locationId} npc={npc} tabs={tabs} locationId={locationId} largePortrait={locationId === 'shadow-market' || locationId === 'armory' || locationId === 'rusty-tankard' || locationId === 'general-store'} />
+            <LocationShell key={locationId} npc={npc} tabs={tabs} locationId={locationId} xlPortrait />
           ) : isHere && tabs ? (
             <div className="overflow-y-auto h-full">
               {tabs[0]?.content}

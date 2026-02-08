@@ -1,5 +1,71 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-08 - Forge Gameplay Enhancement Implementation
+
+### Changes Implemented
+
+Transformed the Forge from a 1-tab workplace into a 4-tab location with unique mechanics.
+
+#### 1. Equipment Tempering (Smithing Tab)
+- Permanently boost owned equipment stats: +5 ATK (weapons), +5 DEF (armor), +3 DEF/+5% BLK (shields)
+- Each item can only be tempered once
+- Cost: ~60% of item base price + 2-3 hours
+- Temper bonuses apply in all combat (dungeon + auto-resolve)
+- Shows combat stats with temper bonuses, green [DONE] for tempered items
+- +2 happiness for each tempering
+
+#### 2. Forge Repairs (Repairs Tab)
+- Repair broken appliances at 50% of Enchanter cost
+- Takes 3 hours (vs 1h at Enchanter)
+- Creates time vs money trade-off for broken appliance routing
+- Shows all owned appliances with status (broken vs OK)
+
+#### 3. Equipment Salvage (Salvage Tab)
+- Sell weapons/armor/shields for 60% value (vs 40% at The Fence)
+- Takes 1 hour per item
+- Auto-unequips salvaged items
+- Removes temper status on salvage
+- Shows fence price comparison for each item
+
+#### 4. Work Tab (existing, shown only if hired at Forge)
+
+### NPC Window Changes
+- Added `xl` portrait size (w-52 h-60) to NpcPortrait component
+- All locations now use xl NPC portraits for bigger, more prominent NPC display
+- LocationShell supports `xlPortrait` prop (w-56 column)
+
+### AI Integration
+- Grimwald AI can now temper equipment at the Forge (priority 52, below equipment buying)
+- AI will travel to Forge to temper untempered equipment when affordable
+- All AI combat stat calculations include temper bonuses
+
+### Files Changed
+
+| File | Changes |
+|------|---------|
+| `src/types/game.types.ts` | Added `temperedItems: string[]` to Player |
+| `src/data/items.ts` | Added temper cost, salvage value, TEMPER_BONUS/TEMPER_TIME constants; updated calculateCombatStats with temper support |
+| `src/store/storeTypes.ts` | Added `temperEquipment`, `forgeRepairAppliance`, `salvageEquipment` to GameStore |
+| `src/store/gameStore.ts` | Added `temperedItems: []` to createPlayer |
+| `src/store/helpers/economyHelpers.ts` | Implemented 3 forge actions |
+| `src/components/game/ForgePanel.tsx` | Complete rewrite: 3 sections (Smithing, Repairs, Salvage) |
+| `src/components/game/LocationPanel.tsx` | Forge now has 4 tabs, all locations use xlPortrait |
+| `src/components/game/LocationShell.tsx` | Added `xlPortrait` prop support |
+| `src/components/game/NpcPortrait.tsx` | Added `xl` size (w-52 h-60) |
+| `src/components/game/CavePanel.tsx` | Pass temperedItems to calculateCombatStats |
+| `src/components/game/CombatView.tsx` | Pass temperedItems to calculateCombatStats |
+| `src/components/game/ArmoryPanel.tsx` | Pass temperedItems to calculateCombatStats |
+| `src/hooks/useGrimwaldAI.ts` | Added temper-equipment action executor, temperedItems in combat |
+| `src/hooks/ai/strategy.ts` | temperedItems in combat stat calculations |
+| `src/hooks/ai/actions/questDungeonActions.ts` | AI temper-equipment action generation |
+
+### Test Results
+- 171 tests pass (all green)
+- TypeScript check clean
+- Production build succeeds
+
+---
+
 ## 2026-02-08 - Forge Gameplay Enhancement Analysis
 
 ### Problem

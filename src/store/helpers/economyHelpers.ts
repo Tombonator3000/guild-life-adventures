@@ -4,7 +4,7 @@
 
 import type { HousingTier, ApplianceSource, EquipmentSlot } from '@/types/game.types';
 import { RENT_COSTS } from '@/types/game.types';
-import { getAppliance, calculateRepairCost } from '@/data/items';
+import { getAppliance, calculateRepairCost, TEMPER_BONUS } from '@/data/items';
 import { DUNGEON_FLOORS } from '@/data/dungeon';
 import { getSellPrice } from '@/data/stocks';
 import type { SetFn, GetFn } from '../storeTypes';
@@ -529,6 +529,95 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
             ...p,
             gold: p.gold - cost,
             tickets: [...p.tickets, ticketType],
+          };
+        }),
+      }));
+    },
+
+    // === Forge Actions ===
+
+    // Temper equipment: permanently boost stats (+5 ATK/DEF or +5% BLK)
+    temperEquipment: (playerId: string, itemId: string, slot: EquipmentSlot, cost: number) => {
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          if (p.gold < cost) return p;
+          // Can only temper once per item
+          if (p.temperedItems.includes(itemId)) return p;
+          // Must own the item
+          if (!p.durables[itemId] || p.durables[itemId] <= 0) return p;
+
+          return {
+            ...p,
+            gold: p.gold - cost,
+            temperedItems: [...p.temperedItems, itemId],
+          };
+        }),
+      }));
+    },
+
+    // Forge repair: fix broken appliance at 50% of normal cost, takes 3h
+    forgeRepairAppliance: (playerId: string, applianceId: string): number => {
+      const state = get();
+      const player = state.players.find(p => p.id === playerId);
+      if (!player) return 0;
+
+      const ownedAppliance = player.appliances[applianceId];
+      if (!ownedAppliance || !ownedAppliance.isBroken) return 0;
+
+      const fullRepairCost = calculateRepairCost(ownedAppliance.originalPrice);
+      const forgeCost = Math.max(5, Math.floor(fullRepairCost * 0.5));
+      if (player.gold < forgeCost) return 0;
+
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+
+          const newAppliances = { ...p.appliances };
+          newAppliances[applianceId] = {
+            ...newAppliances[applianceId],
+            isBroken: false,
+          };
+
+          return {
+            ...p,
+            gold: p.gold - forgeCost,
+            appliances: newAppliances,
+          };
+        }),
+      }));
+
+      return forgeCost;
+    },
+
+    // Salvage equipment: sell weapons/armor/shields for 60% value (better than Fence's 40%)
+    salvageEquipment: (playerId: string, itemId: string, slot: EquipmentSlot, value: number) => {
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          if (!p.durables[itemId] || p.durables[itemId] <= 0) return p;
+
+          const newDurables = { ...p.durables };
+          newDurables[itemId] = newDurables[itemId] - 1;
+          if (newDurables[itemId] === 0) delete newDurables[itemId];
+
+          // Unequip if salvaging equipped item
+          const unequip: Partial<typeof p> = {};
+          if (!newDurables[itemId]) {
+            if (p.equippedWeapon === itemId) unequip.equippedWeapon = null;
+            if (p.equippedArmor === itemId) unequip.equippedArmor = null;
+            if (p.equippedShield === itemId) unequip.equippedShield = null;
+          }
+
+          // Remove from tempered list if salvaged
+          const newTempered = p.temperedItems.filter(id => id !== itemId || (newDurables[itemId] && newDurables[itemId] > 0));
+
+          return {
+            ...p,
+            ...unequip,
+            gold: p.gold + value,
+            durables: newDurables,
+            temperedItems: newTempered,
           };
         }),
       }));
