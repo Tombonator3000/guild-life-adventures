@@ -7,11 +7,11 @@ import { OnlineLobby } from '@/components/screens/OnlineLobby';
 import { useMusicController } from '@/hooks/useMusic';
 
 const Index = () => {
-  const { phase } = useGameStore();
+  const { phase, eventMessage } = useGameStore();
   const currentPlayer = useCurrentPlayer();
 
   // Drive background music based on game phase and player location
-  useMusicController(phase, currentPlayer?.currentLocation ?? null);
+  useMusicController(phase, currentPlayer?.currentLocation ?? null, eventMessage);
 
   switch (phase) {
     case 'title':

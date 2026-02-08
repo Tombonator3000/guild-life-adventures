@@ -581,6 +581,13 @@
   - [x] Bug 5 (LOW): Dead code canAffordHousing/getUpgradeOptions/getDowngradeOptions — removed
   - Balance verdict: Slums (75g) fair, Noble (350g) fair for mid-tier+, homeless penalties harsh but motivating
 
+## Completed (2026-02-08)
+
+- [x] Weekend Event Music — `18OhWhatAWeekend.mp3` plays during weekend events
+  - `useMusicController` accepts optional `eventMessage`, detects "Weekend:" prefix
+  - Crossfades to weekend track on event display, returns to location music on dismiss
+  - Build succeeds, 171 tests pass
+
 ## In Progress
 
 *No active tasks*

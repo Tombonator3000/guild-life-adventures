@@ -7061,6 +7061,26 @@ Deep audit of the entire multiplayer codebase (7 network files, ~1930 lines). Us
 
 ---
 
+## 2026-02-08 - Weekend Event Music
+
+### Completed
+- Weekend music (`18OhWhatAWeekend.mp3`) now plays during weekend events
+  - Previously only used on the victory screen
+  - `useMusicController` now accepts optional `eventMessage` parameter
+  - When `phase === 'event'` and the message contains "Weekend:", the weekend track crossfades in
+  - When the event is dismissed and phase returns to 'playing', location-based music resumes
+  - `Index.tsx` passes `eventMessage` from the store to the hook
+
+### Files Modified
+- `src/hooks/useMusic.ts` — Added `eventMessage` parameter, weekend event detection in track selection
+- `src/pages/Index.tsx` — Passes `eventMessage` from store to `useMusicController`
+
+### Verification
+- ✅ Build succeeds
+- ✅ All 171 tests pass
+
+---
+
 ## Log Template
 
 ```markdown

@@ -37,14 +37,17 @@ export function useAudioSettings(): AudioSettings & {
 export function useMusicController(
   phase: GameState['phase'],
   playerLocation: LocationId | null,
+  eventMessage?: string | null,
 ) {
   useEffect(() => {
     // Determine which track to play
     let trackId: string | undefined;
 
     if (phase === 'playing' || phase === 'event') {
-      // In-game: use location-specific track or default
-      if (playerLocation) {
+      // Weekend events get their own music
+      if (phase === 'event' && eventMessage && eventMessage.includes('Weekend:')) {
+        trackId = 'weekend';
+      } else if (playerLocation) {
         trackId = LOCATION_MUSIC[playerLocation] ?? DEFAULT_GAME_TRACK;
       } else {
         trackId = DEFAULT_GAME_TRACK;
@@ -57,7 +60,7 @@ export function useMusicController(
     if (trackId) {
       audioManager.play(trackId);
     }
-  }, [phase, playerLocation]);
+  }, [phase, playerLocation, eventMessage]);
 }
 
 /** Play a specific one-off track (e.g. weekend event). */
