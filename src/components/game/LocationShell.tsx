@@ -6,9 +6,9 @@
 import { useState, useEffect, type ReactNode, useCallback, isValidElement } from 'react';
 import type { LocationNPC } from '@/data/npcs';
 import { NpcPortrait } from './NpcPortrait';
-import { BanterBubble } from './BanterBubble';
 import { useBanter } from '@/hooks/useBanter';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import type { LocationId } from '@/types/game.types';
 
 export interface LocationTab {
@@ -52,18 +52,20 @@ export function LocationShell({
 }: LocationShellProps) {
   const visibleTabs = tabs.filter(t => !t.hidden);
   const [activeTab, setActiveTab] = useState(defaultTab || visibleTabs[0]?.id || '');
-  const { activeBanter, banterLocationId, tryTriggerBanter, dismissBanter } = useBanter();
+  const { tryTriggerBanter } = useBanter();
   const isMobile = useIsMobile();
+  const currentPlayer = useCurrentPlayer();
+  const players = useGameStore(s => s.players);
 
   const activeContent = visibleTabs.find(t => t.id === activeTab)?.content;
 
-  // Try to trigger banter when entering a location
+  // Try to trigger banter when entering a location (with player context for context-aware lines)
   useEffect(() => {
     const timer = setTimeout(() => {
-      tryTriggerBanter(locationId);
+      tryTriggerBanter(locationId, currentPlayer ?? undefined, players);
     }, 600);
     return () => clearTimeout(timer);
-  }, [locationId, tryTriggerBanter]);
+  }, [locationId, tryTriggerBanter, currentPlayer, players]);
 
   // If only one tab, skip the tab bar entirely
   const showTabBar = visibleTabs.length > 1;
@@ -83,9 +85,6 @@ export function LocationShell({
       </div>
     );
   };
-
-  // Check if banter should show for this location
-  const showBanter = activeBanter && banterLocationId === locationId;
 
   return (
     <div className="flex flex-col h-full overflow-hidden" style={{ background: '#1a1410' }}>
@@ -117,11 +116,6 @@ export function LocationShell({
         {/* NPC Portrait - Left side, hidden on mobile */}
         {!isMobile && (
           <div className={`flex-shrink-0 ${xlPortrait ? 'w-56' : largePortrait ? 'w-44' : 'w-36'} flex flex-col items-center relative`}>
-            {/* Banter bubble */}
-            {showBanter && (
-              <BanterBubble banter={activeBanter} onDismiss={dismissBanter} />
-            )}
-
             <NpcPortrait npc={npc} size={xlPortrait ? 'xl' : largePortrait ? 'large' : 'normal'} />
             <div className="text-center">
               <div
@@ -171,9 +165,6 @@ export function LocationShell({
               >
                 {npc.name}
               </span>
-              {showBanter && (
-                <BanterBubble banter={activeBanter} onDismiss={dismissBanter} />
-              )}
             </div>
           )}
 

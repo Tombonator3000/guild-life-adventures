@@ -1,27 +1,28 @@
-// BanterBubble - Speech bubble for NPC banter
-// Appears above NPC portrait when triggered
+// BanterBubble - Large speech bubble displayed above the center panel
+// Shows NPC banter as a prominent, easy-to-read overlay on the game board
 
 import { useEffect, useState } from 'react';
 import type { BanterLine } from '@/data/banter';
 
 interface BanterBubbleProps {
   banter: BanterLine;
+  npcName: string;
   onDismiss: () => void;
 }
 
-export function BanterBubble({ banter, onDismiss }: BanterBubbleProps) {
+export function BanterBubble({ banter, npcName, onDismiss }: BanterBubbleProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
 
   useEffect(() => {
     // Animate in
     const showTimer = setTimeout(() => setIsVisible(true), 50);
-    
-    // Auto-dismiss after 4 seconds
+
+    // Auto-dismiss after 5 seconds
     const dismissTimer = setTimeout(() => {
       setIsLeaving(true);
-      setTimeout(onDismiss, 300);
-    }, 4000);
+      setTimeout(onDismiss, 400);
+    }, 5000);
 
     return () => {
       clearTimeout(showTimer);
@@ -29,53 +30,127 @@ export function BanterBubble({ banter, onDismiss }: BanterBubbleProps) {
     };
   }, [onDismiss]);
 
-  // Mood-based styling
-  const moodStyles = {
-    friendly: 'bg-[#3d5a3d] border-[#6b8e6b]',
-    grumpy: 'bg-[#5a4a3a] border-[#8b7355]',
-    mysterious: 'bg-[#3a3a5a] border-[#6b6b8e]',
-    gossip: 'bg-[#5a3a5a] border-[#8e6b8e]',
-    warning: 'bg-[#5a3a3a] border-[#8e6b6b]',
+  // Mood-based styling — background gradient + border + glow
+  const moodStyles: Record<string, { bg: string; border: string; glow: string; icon: string }> = {
+    friendly: {
+      bg: 'linear-gradient(135deg, #2a4a2a 0%, #3d6a3d 50%, #2a4a2a 100%)',
+      border: '#6b9e6b',
+      glow: 'rgba(107, 158, 107, 0.4)',
+      icon: '\u263A', // smiley
+    },
+    grumpy: {
+      bg: 'linear-gradient(135deg, #4a3a2a 0%, #6a5040 50%, #4a3a2a 100%)',
+      border: '#9b8365',
+      glow: 'rgba(155, 131, 101, 0.4)',
+      icon: '\uD83D\uDE20', // angry face
+    },
+    mysterious: {
+      bg: 'linear-gradient(135deg, #2a2a4a 0%, #3d3d6a 50%, #2a2a4a 100%)',
+      border: '#7b7bae',
+      glow: 'rgba(123, 123, 174, 0.5)',
+      icon: '\u2728', // sparkles
+    },
+    gossip: {
+      bg: 'linear-gradient(135deg, #4a2a4a 0%, #6a3d6a 50%, #4a2a4a 100%)',
+      border: '#ae7bae',
+      glow: 'rgba(174, 123, 174, 0.4)',
+      icon: '\uD83D\uDDE3', // speaking head
+    },
+    warning: {
+      bg: 'linear-gradient(135deg, #4a2a2a 0%, #6a3d3d 50%, #4a2a2a 100%)',
+      border: '#ae7b7b',
+      glow: 'rgba(174, 123, 123, 0.4)',
+      icon: '\u26A0', // warning
+    },
   };
 
-  const moodStyle = moodStyles[banter.mood || 'friendly'];
+  const mood = banter.mood || 'friendly';
+  const style = moodStyles[mood] || moodStyles.friendly;
 
   return (
     <div
       className={`
-        absolute top-0 left-1/2 -translate-x-1/2 z-50
-        transition-all duration-300 ease-out
-        ${isVisible && !isLeaving ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}
+        pointer-events-auto cursor-pointer
+        transition-all duration-400 ease-out
+        ${isVisible && !isLeaving
+          ? 'opacity-100 translate-y-0 scale-100'
+          : isLeaving
+            ? 'opacity-0 -translate-y-4 scale-95'
+            : 'opacity-0 translate-y-4 scale-95'
+        }
       `}
+      onClick={() => {
+        setIsLeaving(true);
+        setTimeout(onDismiss, 300);
+      }}
+      title="Click to dismiss"
     >
       {/* Speech bubble */}
       <div
-        className={`
-          relative px-3 py-2 rounded-lg border-2 shadow-lg
-          max-w-[200px] min-w-[120px]
-          ${moodStyle}
-        `}
+        className="relative rounded-xl border-2 shadow-2xl"
+        style={{
+          background: style.bg,
+          borderColor: style.border,
+          boxShadow: `0 8px 32px ${style.glow}, 0 4px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)`,
+          padding: 'clamp(10px, 2vw, 20px) clamp(14px, 2.5vw, 28px)',
+          maxWidth: 'clamp(260px, 40vw, 480px)',
+          minWidth: 'clamp(180px, 25vw, 280px)',
+        }}
       >
-        {/* Text */}
-        <p className="text-[11px] text-[#e0d4b8] leading-tight italic">
-          "{banter.text}"
+        {/* NPC name label */}
+        <div
+          className="font-display font-bold uppercase tracking-wider mb-1"
+          style={{
+            color: style.border,
+            fontSize: 'clamp(0.55rem, 1.1vw, 0.8rem)',
+            textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+          }}
+        >
+          {style.icon} {npcName} says:
+        </div>
+
+        {/* Banter text — large and readable */}
+        <p
+          className="italic leading-relaxed"
+          style={{
+            color: '#e8dcc8',
+            fontSize: 'clamp(0.8rem, 1.6vw, 1.15rem)',
+            textShadow: '0 1px 3px rgba(0,0,0,0.6)',
+            lineHeight: '1.5',
+          }}
+        >
+          &ldquo;{banter.text}&rdquo;
         </p>
 
-        {/* Speech bubble tail */}
+        {/* Speech bubble tail (triangle pointing down) */}
         <div
-          className={`
-            absolute top-full left-1/2 -translate-x-1/2 -mt-px
-            w-0 h-0 
-            border-l-[8px] border-l-transparent
-            border-r-[8px] border-r-transparent
-            border-t-[8px]
-          `}
+          className="absolute left-1/2 -translate-x-1/2"
           style={{
-            borderTopColor: banter.mood === 'friendly' ? '#3d5a3d' :
-                           banter.mood === 'grumpy' ? '#5a4a3a' :
-                           banter.mood === 'mysterious' ? '#3a3a5a' :
-                           banter.mood === 'gossip' ? '#5a3a5a' :
-                           banter.mood === 'warning' ? '#5a3a3a' : '#3d5a3d',
+            top: '100%',
+            width: 0,
+            height: 0,
+            borderLeft: '12px solid transparent',
+            borderRight: '12px solid transparent',
+            borderTop: `14px solid ${style.border}`,
+            filter: `drop-shadow(0 4px 6px ${style.glow})`,
+          }}
+        />
+        {/* Inner tail (matches background) */}
+        <div
+          className="absolute left-1/2 -translate-x-1/2"
+          style={{
+            top: 'calc(100% - 2px)',
+            width: 0,
+            height: 0,
+            borderLeft: '10px solid transparent',
+            borderRight: '10px solid transparent',
+            borderTop: '12px solid #3d5a3d',
+            borderTopColor:
+              mood === 'friendly' ? '#3d6a3d' :
+              mood === 'grumpy' ? '#6a5040' :
+              mood === 'mysterious' ? '#3d3d6a' :
+              mood === 'gossip' ? '#6a3d6a' :
+              mood === 'warning' ? '#6a3d3d' : '#3d6a3d',
           }}
         />
       </div>

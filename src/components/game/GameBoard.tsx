@@ -18,6 +18,8 @@ import { TutorialOverlay } from './TutorialOverlay';
 import { MobileHUD } from './MobileHUD';
 import { MobileDrawer } from './MobileDrawer';
 import { WeatherOverlay } from './WeatherOverlay';
+import { BanterBubble } from './BanterBubble';
+import { useBanterStore } from '@/store/banterStore';
 import { UpdateBanner } from './UpdateBanner';
 import { GameBoardHeader } from './GameBoardHeader';
 import { GameBoardOverlays } from './GameBoardOverlays';
@@ -283,6 +285,9 @@ export function GameBoard() {
             visible={showDebugOverlay}
           />
 
+          {/* Banter speech bubble - large overlay above center panel */}
+          <BoardBanterOverlay centerPanel={centerPanel} isMobile={isMobile} />
+
           {/* Center UI panel */}
           {/* Mobile: full-width bottom sheet when location selected or event, hidden otherwise */}
           {/* Desktop: always visible, positioned within the board frame */}
@@ -439,6 +444,40 @@ export function GameBoard() {
 
       {/* PWA Update Notification */}
       <UpdateBanner />
+    </div>
+  );
+}
+
+// Banter overlay — positioned above the center panel on the board
+function BoardBanterOverlay({ centerPanel, isMobile }: {
+  centerPanel: { top: number; left: number; width: number; height: number };
+  isMobile: boolean;
+}) {
+  const { activeBanter, npcName, clearBanter } = useBanterStore();
+
+  if (!activeBanter || !npcName) return null;
+
+  return (
+    <div
+      className="absolute z-20 pointer-events-none flex items-end justify-center"
+      style={isMobile ? {
+        bottom: '66%',
+        left: '5%',
+        width: '90%',
+        height: 'auto',
+        paddingBottom: '8px',
+      } : {
+        top: `${Math.max(centerPanel.top - 18, 1)}%`,
+        left: `${centerPanel.left}%`,
+        width: `${centerPanel.width}%`,
+        height: `${Math.min(18, centerPanel.top)}%`,
+      }}
+    >
+      <BanterBubble
+        banter={activeBanter}
+        npcName={npcName}
+        onDismiss={clearBanter}
+      />
     </div>
   );
 }

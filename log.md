@@ -1,5 +1,49 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-08 - Banter Speech Bubble Overhaul
+
+Moved NPC banter display from a tiny bubble inside the location panel to a **large, prominent speech bubble overlay above the center panel** on the game board. Much bigger text, mood-based colored glow effects, and NPC name label. Also massively expanded banter content and added context-aware lines.
+
+### UI Changes
+- **BanterBubble** completely redesigned: large rounded speech bubble with mood-based gradient backgrounds, glowing borders, and prominent text (clamp 0.8rem–1.15rem)
+- Banter now renders as a **z-20 overlay above the center panel** on the game board (was z-50 inside NPC portrait column)
+- Shows NPC name ("Aldric says:", "Mathilda says:") with mood icon
+- Speech bubble tail points down toward the center panel
+- Click to dismiss, auto-dismiss after 5 seconds (was 4s)
+- Fade-in from below with scale, fade-out upward with shrink
+- Works on both desktop (positioned above center panel) and mobile (above bottom sheet)
+
+### Banter Content Expansion
+- **Static banter lines doubled**: ~60 → ~150 lines across all 13 locations
+- Every location now has 10–14 unique banter lines (was 4–7)
+- New lines for all locations: guild-hall, bank, general-store, armory, enchanter, shadow-market, academy, rusty-tankard, cave, forge, landlord, graveyard, fence
+
+### Context-Aware Banter (NEW)
+- Added `getContextBanter()` — generates banter reflecting actual game state
+- 40% chance to pick a context line when player data is available, falls back to static
+- **Player achievement banter**: dungeon floors cleared, degrees earned, wealth level, job status, dependability, health, housing, quest count, age
+- **AI opponent banter**: NPCs gossip about AI players' progress — their dungeon clears, degrees, wealth, jobs, happiness, housing, guild pass
+- **Competitive banter**: warns when AI is ahead, praises when player leads
+
+### Architecture
+- New `src/store/banterStore.ts` — tiny zustand store for shared banter state (activeBanter, locationId, npcName)
+- `useBanter` hook now uses shared store instead of local state; accepts optional player/allPlayers args for context
+- `LocationShell` triggers banter (with player context) but no longer renders the bubble
+- `GameBoard` renders `BoardBanterOverlay` — reads from banterStore and positions bubble above center panel
+- Banter chance raised to 30% (was 25%), cooldown lowered to 25s (was 30s) for more frequent variety
+
+### Files Changed
+| File | Changes |
+|------|---------|
+| `src/store/banterStore.ts` | **NEW** — Zustand store for shared banter state |
+| `src/data/banter.ts` | Doubled static lines (~150 total), added `getContextBanter()` with player/AI-aware generation |
+| `src/hooks/useBanter.ts` | Uses banterStore, passes NPC name, supports context banter with player args |
+| `src/components/game/BanterBubble.tsx` | Complete redesign — large speech bubble with mood gradients, glow, NPC name, bigger text |
+| `src/components/game/LocationShell.tsx` | Removed BanterBubble rendering; passes player context to trigger |
+| `src/components/game/GameBoard.tsx` | Added BoardBanterOverlay component positioned above center panel (z-20) |
+
+---
+
 ## 2026-02-08 - New Zone: The Graveyard
 
 Added a 15th location to the game board: **The Graveyard** — a somber cemetery to the right of the General Store where fallen adventurers are resurrected.
