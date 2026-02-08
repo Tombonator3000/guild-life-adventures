@@ -45,11 +45,11 @@ export function EnchanterPanel({ player, priceModifier, onSpendTime }: Enchanter
     <div className="space-y-4">
       {/* Repair Section */}
       {brokenAppliances.length > 0 && (
-        <div className="wood-frame p-3 text-parchment">
+        <div className="bg-[#e0d4b8] border border-[#8b7355] rounded p-3">
           <h4 className="font-display text-sm text-destructive flex items-center gap-2 mb-2">
             <Wrench className="w-4 h-4" /> Broken Appliances
           </h4>
-          <p className="text-xs text-parchment-dark mb-2">
+          <p className="text-xs text-[#6b5a42] mb-2">
             Your appliances need repair! Cost varies based on original price.
           </p>
           <div className="space-y-2">
@@ -57,7 +57,7 @@ export function EnchanterPanel({ player, priceModifier, onSpendTime }: Enchanter
               const estimatedCost = Math.floor(item.originalPrice / 10); // Rough estimate
               return (
                 <div key={item.id} className="flex justify-between items-center">
-                  <span className="text-sm">{item.appliance?.name}</span>
+                  <span className="text-sm text-[#3d2a14]">{item.appliance?.name}</span>
                   <button
                     onClick={() => handleRepair(item.id)}
                     disabled={player.gold < estimatedCost || player.timeRemaining < 2}
@@ -73,10 +73,10 @@ export function EnchanterPanel({ player, priceModifier, onSpendTime }: Enchanter
       )}
 
       {/* Shop Section */}
-      <h4 className="font-display text-sm text-muted-foreground flex items-center gap-2">
+      <h4 className="font-display text-sm text-[#6b5a42] flex items-center gap-2">
         <Sparkles className="w-4 h-4" /> Magical Appliances
       </h4>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-[#6b5a42]">
         Premium enchanted items. Higher price, but lower chance to break (1/51 per turn).
       </p>
 
@@ -87,17 +87,17 @@ export function EnchanterPanel({ player, priceModifier, onSpendTime }: Enchanter
           const isFirstPurchase = !player.applianceHistory.includes(appliance.id);
 
           return (
-            <div key={appliance.id} className="wood-frame p-2 text-parchment">
+            <div key={appliance.id} className="bg-[#e0d4b8] border border-[#8b7355] rounded p-2">
               <div className="flex justify-between items-start mb-1">
                 <div>
-                  <span className="font-display font-semibold text-sm">{appliance.name}</span>
+                  <span className="font-display font-semibold text-sm text-[#3d2a14]">{appliance.name}</span>
                   {alreadyOwns && (
                     <span className="ml-2 text-xs text-secondary">(Owned)</span>
                   )}
                 </div>
-                <span className="text-gold font-bold">{price}g</span>
+                <span className="text-[#8b6914] font-bold">{price}g</span>
               </div>
-              <p className="text-xs text-parchment-dark mb-2">{appliance.description}</p>
+              <p className="text-xs text-[#6b5a42] mb-2">{appliance.description}</p>
               <div className="flex justify-between items-center">
                 <div className="text-xs">
                   {isFirstPurchase && appliance.happinessEnchanter > 0 && (
@@ -107,7 +107,7 @@ export function EnchanterPanel({ player, priceModifier, onSpendTime }: Enchanter
                     <span className="text-secondary ml-2">+1/turn</span>
                   )}
                   {appliance.canGenerateIncome && (
-                    <span className="text-gold ml-2">Income chance</span>
+                    <span className="text-[#8b6914] ml-2">Income chance</span>
                   )}
                 </div>
                 <button

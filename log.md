@@ -1,5 +1,32 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-08 - Fix Location Layout Fonts & Player Info Panel
+
+Fixed inconsistent text colors and backgrounds in Enchanter's Workshop, The Fence, and Landlord's Office. These three locations used `wood-frame text-parchment` (dark background, light text) and `text-muted-foreground` headers, while the rest of the game (Tavern, General Store, etc.) uses brown text on beige parchment backgrounds. Also fixed the PlayerInfoPanel where name/rank/age was white text on beige background.
+
+### Design Standard Applied
+- **Section headers**: `text-[#6b5a42]` (medium brown) — replaces `text-muted-foreground`
+- **Item names**: `text-[#3d2a14]` (dark brown) — replaces inherited light text
+- **Costs/prices**: `text-[#8b6914]` (gold-brown) — replaces `text-gold` (which targets dark backgrounds)
+- **Time labels**: `text-[#6b5a42]` (medium brown) — replaces `text-time`
+- **Positive values**: `text-[#2a7a2a]` (green) — replaces `text-secondary`
+- **Item containers**: `bg-[#e0d4b8] border border-[#8b7355] rounded` — replaces `wood-frame text-parchment`
+- **Info boxes**: Same parchment style with `text-[#3d2a14]` base text
+
+### Files Changed
+| File | Changes |
+|------|---------|
+| `src/components/game/EnchanterPanel.tsx` | Broken appliances section: `wood-frame text-parchment` → parchment bg with brown text; appliance cards: same treatment; section headers: `text-muted-foreground` → `text-[#6b5a42]` |
+| `src/components/game/HealerPanel.tsx` | Health info box: `wood-frame text-parchment` → parchment bg with brown text; healing buttons: same; section headers: `text-muted-foreground` → `text-[#6b5a42]`; all text colors updated to brown palette |
+| `src/components/game/PawnShopPanel.tsx` | All 10+ buttons: `wood-frame text-parchment` → parchment bg with brown text; all 6 section headers: `text-muted-foreground` → `text-[#6b5a42]`; gambling text: `text-parchment-dark` → `text-[#6b5a42]`; all item names get `text-[#3d2a14]` |
+| `src/components/game/LandlordPanel.tsx` | Housing info box: `wood-frame text-parchment` → parchment bg with brown text; rent payment buttons: added `darkText` prop; section headers: `text-muted-foreground` → `text-[#6b5a42]`; housing option cards: same parchment treatment |
+| `src/components/game/ActionButton.tsx` | Added `darkText` prop for parchment-background mode (brown text, parchment bg, brown cost/time labels) |
+| `src/components/game/PlayerInfoPanel.tsx` | Player name: `text-card-foreground` → `text-[#3d2a14]`; rank/age: `text-muted-foreground` → `text-[#6b5a42]`; stat labels: `text-muted-foreground` → `text-[#6b5a42]`; home value: same |
+
+Build succeeds, 171 tests pass.
+
+---
+
 ## 2026-02-08 - Standardize Location Design
 
 Redesigned all location panels to follow a consistent design philosophy inspired by the HomePanel (Noble Heights Estate) style. Every location now has:
