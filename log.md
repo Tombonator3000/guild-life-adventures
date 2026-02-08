@@ -1,5 +1,51 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-08 - Auto-Update Check for Installed PWA
+
+**Task**: Add auto-update detection and user notification for the offline/installed PWA version of the game.
+
+### Problem
+
+The existing PWA setup used `registerType: "autoUpdate"` which silently updated the service worker in the background. Users had no visibility into when a new version was available and had to manually refresh or reopen the app to get updates. There was no periodic check for new versions either.
+
+### Solution
+
+Switched to a `prompt`-based update flow with user notification:
+
+1. **vite.config.ts**: Changed `registerType` from `"autoUpdate"` to `"prompt"` — gives user control over when to apply updates instead of silent background replacement.
+
+2. **useAppUpdate hook** (`src/hooks/useAppUpdate.ts`): Uses `useRegisterSW` from `virtual:pwa-register/react` to detect when a new service worker is waiting. Registers a periodic update check every 60 minutes via `registration.update()`.
+
+3. **UpdateBanner component** (`src/components/game/UpdateBanner.tsx`): Non-intrusive fixed banner at bottom-center of screen. Shows when `needRefresh` is true with a spinning refresh icon and "Update Now" button. Uses parchment-panel styling to match game aesthetic.
+
+4. **Integration**: UpdateBanner added to both TitleScreen and GameBoard so users see the notification regardless of which screen they're on.
+
+### How It Works
+
+1. Service worker checks for updates on page load and every 60 minutes thereafter
+2. When a new version is detected, `needRefresh` becomes true
+3. A parchment-styled banner slides up: "A new version is available!" with "Update Now" button
+4. Clicking "Update Now" calls `updateServiceWorker(true)` which activates the new SW and reloads the page
+5. If user ignores the banner, it persists until they click update or the page is refreshed
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `vite.config.ts` | `registerType: "autoUpdate"` → `"prompt"` |
+| `src/hooks/useAppUpdate.ts` | **NEW** — hook using `useRegisterSW` with 60-min periodic check |
+| `src/components/game/UpdateBanner.tsx` | **NEW** — parchment-panel update notification banner |
+| `src/components/screens/TitleScreen.tsx` | Added UpdateBanner import and render |
+| `src/components/game/GameBoard.tsx` | Added UpdateBanner import and render |
+
+### Verification
+
+- TypeScript compiles cleanly (`tsc --noEmit`)
+- Production build succeeds (65 precached entries)
+- All 171 tests pass
+
+---
+
 ## 2026-02-08 - AI Agent Balance Audit & 8 Fixes
 
 **Task**: Use AI agents to play through the game, find imbalances, bugs, and missing features. Fix all issues found.

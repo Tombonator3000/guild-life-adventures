@@ -30,7 +30,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && lovableTaggerPlugin,
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       includeAssets: [
         "favicon.ico",
         "apple-touch-icon.png",

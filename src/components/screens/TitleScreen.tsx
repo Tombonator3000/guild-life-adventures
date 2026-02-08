@@ -7,6 +7,7 @@ import { DarkModeToggle } from '@/components/game/DarkModeToggle';
 import { OptionsMenu } from '@/components/game/OptionsMenu';
 import { useAudioSettings } from '@/hooks/useMusic';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { UpdateBanner } from '@/components/game/UpdateBanner';
 import gameBoard from '@/assets/game-board.jpeg';
 
 export function TitleScreen() {
@@ -204,6 +205,9 @@ export function TitleScreen() {
       {showOptions && (
         <OptionsMenu onClose={() => setShowOptions(false)} />
       )}
+
+      {/* PWA Update Notification */}
+      <UpdateBanner />
     </div>
   );
 }
