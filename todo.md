@@ -527,6 +527,13 @@
 
 ## Completed (2026-02-08)
 
+- [x] Location Backgrounds, Event Panel, & For Rent Display
+  - [x] RoomScene: Replaced CSS-drawn room with background images (noble-heights.png, slums.png)
+  - [x] EventPanel: Weekend events render inline in center panel (not Dialog overlay)
+  - [x] For Rent: Unrented housing locations show "For Rent" image with Landlord redirect
+  - [x] Placeholder images in public/locations/ (replace with actual art)
+  - [x] Build succeeds, 171 tests pass
+
 - [x] Auto-Update Check for Installed PWA
   - [x] Changed `registerType` from `autoUpdate` to `prompt` in vite.config.ts
   - [x] Created `useAppUpdate` hook with `useRegisterSW` + 60-minute periodic update check

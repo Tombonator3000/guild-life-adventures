@@ -1,10 +1,11 @@
-import type { Player } from '@/types/game.types';
+import type { Player, LocationId } from '@/types/game.types';
 import { HOUSING_DATA } from '@/data/housing';
 import { JonesButton } from './JonesStylePanel';
 import { RoomScene, HomeActionBar, ApplianceLegend } from './home';
 
 interface HomePanelProps {
   player: Player;
+  locationId: LocationId;
   spendTime: (playerId: string, hours: number) => void;
   modifyHappiness: (playerId: string, amount: number) => void;
   modifyHealth: (playerId: string, amount: number) => void;
@@ -12,14 +13,68 @@ interface HomePanelProps {
   onDone: () => void;
 }
 
+/** Check if the player actually rents at this housing location */
+function playerRentsHere(housing: string, locationId: LocationId): boolean {
+  if (locationId === 'noble-heights') return housing === 'noble';
+  if (locationId === 'slums') return housing === 'slums' || housing === 'modest';
+  return false;
+}
+
 export function HomePanel({
   player,
+  locationId,
   spendTime,
   modifyHappiness,
   modifyHealth,
   modifyRelaxation,
   onDone,
 }: HomePanelProps) {
+  const rentsHere = playerRentsHere(player.housing, locationId);
+
+  // Player doesn't rent here — show "For Rent" display
+  if (!rentsHere) {
+    const forRentImage = `${import.meta.env.BASE_URL}locations/for-rent.jpg`;
+    const locationName = locationId === 'noble-heights' ? 'Noble Heights' : 'The Slums';
+    return (
+      <div className="h-full flex flex-col overflow-hidden select-none" style={{ background: '#1a1410' }}>
+        <div
+          className="flex-1 relative overflow-hidden flex items-center justify-center"
+          style={{
+            backgroundImage: `url(${forRentImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.3)' }} />
+          <div className="relative z-10 text-center p-4">
+            <h2
+              className="font-display text-xl font-bold mb-2"
+              style={{ color: '#f0e8d8', textShadow: '0 2px 6px rgba(0,0,0,0.8)' }}
+            >
+              {locationName}
+            </h2>
+            <p
+              className="text-sm"
+              style={{ color: '#d4c8a0', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
+            >
+              Visit the Landlord's Office to rent this place.
+            </p>
+          </div>
+        </div>
+        <div
+          className="shrink-0 flex items-center justify-center py-2 px-3"
+          style={{
+            background: 'linear-gradient(180deg, #3d3224 0%, #2d2218 100%)',
+            borderTop: '2px solid #8b7355',
+          }}
+        >
+          <JonesButton label="DONE" onClick={onDone} />
+        </div>
+      </div>
+    );
+  }
+
+  // Homeless player at slums — no home to show
   if (player.housing === 'homeless') {
     return (
       <div className="h-full flex flex-col items-center justify-center bg-[#1a1410] p-4">

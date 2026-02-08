@@ -1,5 +1,50 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-08 - Location Backgrounds, Event Panel, & For Rent Display
+
+### Changes
+
+#### 1. Housing Location Background Images
+- **RoomScene.tsx**: Replaced all CSS-drawn room graphics (walls, floor, window, door, bed, furniture, decorations) with full background images
+- Noble Heights uses `public/locations/noble-heights.png` (replace with actual image)
+- The Slums uses `public/locations/slums.png` (replace with actual image)
+- Appliance/durable emoji overlays and relaxation display retained on top of the background image
+- Slight dark overlay (15% opacity) for readability of overlaid items
+- Text shadow added to "empty room" hint for visibility on photographic backgrounds
+
+#### 2. Weekend Event Modal → Center Panel Inline
+- **EventPanel.tsx**: New inline event component that renders inside the center panel (replaces Dialog-based EventModal)
+- **GameBoard.tsx**: Events now render in the center panel area instead of a full-screen Dialog overlay
+- Center panel becomes visible on mobile during events (previously hidden unless a location was selected)
+- EventModal.tsx retained for its `GameEvent` type export only
+- Layout: icon → title → description → effects → Continue button, all centered within center panel
+
+#### 3. "For Rent" Display for Unrented Housing
+- **HomePanel.tsx**: Added `locationId` prop and `playerRentsHere()` check
+- When a player visits a housing location they don't rent (e.g., noble player visits slums, or homeless player visits any housing), shows "For Rent" background image with location name and "Visit the Landlord's Office" message
+- Uses `public/locations/for-rent.png` as background (replace with actual image)
+- Logic: Noble Heights requires `housing === 'noble'`; Slums requires `housing === 'slums'` or `'modest'`
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `src/components/game/home/RoomScene.tsx` | Replaced CSS room with background image |
+| `src/components/game/HomePanel.tsx` | Added locationId prop, For Rent display, playerRentsHere logic |
+| `src/components/game/LocationPanel.tsx` | Pass locationId to HomePanel |
+| `src/components/game/EventPanel.tsx` | New: inline event panel for center panel |
+| `src/components/game/GameBoard.tsx` | Event renders in center panel, removed EventModal usage |
+| `public/locations/noble-heights.png` | Placeholder (replace with actual image) |
+| `public/locations/slums.png` | Placeholder (replace with actual image) |
+| `public/locations/for-rent.png` | Placeholder (replace with actual image) |
+
+### Image Replacement
+Place actual images at these paths to replace placeholders:
+- `public/locations/noble-heights.png` — Noble Heights room ("Sanctuary" image)
+- `public/locations/slums.png` — The Slums room ("God's Grace" image)
+- `public/locations/for-rent.png` — "For Rent" sign image
+
+Build passes, 171 tests pass.
+
 ## 2026-02-08 - Housing Cost Audit — 5 bugs found and fixed
 
 **Task**: Audit the housing system for fairness, cost balance, and correctness.
