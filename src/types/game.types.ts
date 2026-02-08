@@ -1,5 +1,7 @@
 // Guild Life - Game Types (based on Jones in the Fast Lane)
 
+import type { WeatherState } from '@/data/weather';
+
 export type LocationId =
   | 'noble-heights'
   | 'landlord'
@@ -217,6 +219,8 @@ export interface GameState {
   stockPrices: Record<string, number>;
   // Weekend event result for display
   weekendEvent: WeekendEventResult | null;
+  // Weather system (rare weather events with particle effects)
+  weather: WeatherState;
   // AI speed control
   aiSpeedMultiplier: number;
   skipAITurn: boolean;

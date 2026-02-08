@@ -18,6 +18,8 @@ import { getGameOption } from '@/data/gameOptions';
 import { getItem } from '@/data/items';
 import { updateStockPrices } from '@/data/stocks';
 import { selectWeekendActivity } from '@/data/weekends';
+import { advanceWeather, CLEAR_WEATHER } from '@/data/weather';
+import type { WeatherState } from '@/data/weather';
 import type { SetFn, GetFn } from '../storeTypes';
 import { getHomeLocation } from './turnHelpers';
 
@@ -51,6 +53,28 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
       const crashResult = (economyTrend === -1 && newPriceModifier < 0.9)
         ? checkMarketCrash(true)
         : { type: 'none' as const };
+
+      // === Weather System: advance weather, announce changes ===
+      let newWeather: WeatherState;
+      if (getGameOption('enableWeatherEvents')) {
+        const prevWeather = state.weather || { ...CLEAR_WEATHER };
+        newWeather = advanceWeather(prevWeather);
+
+        // Announce weather changes
+        if (newWeather.type !== prevWeather.type) {
+          if (newWeather.type !== 'clear') {
+            eventMessages.push(`Weather: ${newWeather.name}! ${newWeather.description}`);
+          } else if (prevWeather.type !== 'clear') {
+            eventMessages.push('The weather has cleared. Fair skies return to Guildholm.');
+          }
+        }
+      } else {
+        newWeather = { ...CLEAR_WEATHER };
+      }
+
+      // Apply weather price multiplier on top of economy drift
+      const weatherAdjustedPrice = newPriceModifier * newWeather.priceMultiplier;
+      const finalPriceModifier = Math.max(0.70, Math.min(1.35, weatherAdjustedPrice));
 
       // Process all players for week-end effects
       const updatedPlayers = state.players.map((player) => {
@@ -106,6 +130,24 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
         // Starvation note: Jones only penalizes -20 hours at turn start (handled in startTurnHelpers).
         // Week-end just depletes food — no additional health/happiness penalty here.
         // The turn-start -20 hours + potential doctor visit is already severe enough.
+
+        // === Weather effects on players ===
+        if (newWeather.type !== 'clear') {
+          // Per-week happiness effect
+          if (newWeather.happinessPerWeek !== 0) {
+            p.happiness = Math.max(0, Math.min(100, p.happiness + newWeather.happinessPerWeek));
+          }
+          // Drought food spoilage: chance to lose 1 fresh food unit
+          if (newWeather.foodSpoilageChance > 0 && p.freshFood > 0) {
+            if (Math.random() < newWeather.foodSpoilageChance) {
+              const lost = Math.min(p.freshFood, 1 + Math.floor(Math.random() * 2)); // lose 1-2 units
+              p.freshFood -= lost;
+              if (!p.isAI) {
+                eventMessages.push(`${p.name}: The ${newWeather.name.toLowerCase()} spoiled ${lost} unit(s) of fresh food!`);
+              }
+            }
+          }
+        }
 
         // Clothing degradation
         if (isClothingDegradation) {
@@ -382,9 +424,10 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
           phase: 'victory',
           eventMessage: 'All players have perished. Game Over!',
           stockPrices: newStockPrices,
-          priceModifier: newPriceModifier,
+          priceModifier: finalPriceModifier,
           economyTrend,
           economyCycleWeeksLeft,
+          weather: newWeather,
         });
         return;
       }
@@ -399,9 +442,10 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
           phase: 'victory',
           eventMessage: `${alivePlayers[0].name} is the last one standing and wins the game!`,
           stockPrices: newStockPrices,
-          priceModifier: newPriceModifier,
+          priceModifier: finalPriceModifier,
           economyTrend,
           economyCycleWeeksLeft,
+          weather: newWeather,
         });
         return;
       }
@@ -413,9 +457,10 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
       set({
         week: newWeek,
         currentPlayerIndex: firstAliveIndex,
-        priceModifier: newPriceModifier,
+        priceModifier: finalPriceModifier,
         economyTrend,
         economyCycleWeeksLeft,
+        weather: newWeather,
         players: updatedPlayers.map((p, index) =>
           index === firstAliveIndex
             ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: firstPlayerHome, dungeonAttemptsThisTurn: 0 }

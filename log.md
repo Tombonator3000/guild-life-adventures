@@ -1,5 +1,60 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-08 - Weather Events System Implementation
+
+### Overview
+Implemented a rare weather events system with CSS particle effects. Weather changes are
+checked weekly (~8% chance) and affect gameplay through movement costs, prices, happiness,
+and food spoilage. Controlled by the existing `enableWeatherEvents` game option toggle.
+
+### Weather Types (5 types + clear)
+
+| Weather | Particle | Chance | Duration | Movement | Prices | Happiness | Special |
+|---------|----------|--------|----------|----------|--------|-----------|---------|
+| Clear | none | 92%/wk | - | normal | 1.0x | 0 | - |
+| Snowstorm | snow | ~1.6% | 1-3 wk | +1h/step | 1.10x | -2/wk | Thieves stay indoors |
+| Thunderstorm | rain | ~1.6% | 1-3 wk | +1h/step | 1.05x | -1/wk | Darkness favors thieves |
+| Drought | heatwave | ~1.6% | 1-3 wk | normal | 1.15x | -2/wk | 25% chance fresh food spoils |
+| Enchanted Fog | fog | ~1.6% | 1-3 wk | +1h/step | 0.95x | +3/wk | Mystical invigorating effect |
+| Harvest Rain | light rain | ~1.6% | 1-3 wk | normal | 0.90x | +2/wk | Food plentiful, prices drop |
+
+### Particle Effects
+- **Snow**: 60 white particles with drift, rotation, and glow — falling slowly with wind sway
+- **Rain**: 80 elongated droplets falling fast at a slight angle
+- **Light Rain**: 40 softer droplets with fade-in/fade-out
+- **Heatwave**: 20 rising heat shimmer orbs + ambient bottom gradient
+- **Fog**: 12 large blurred fog patches + two slow-drifting translucent overlay layers
+
+### Gameplay Integration
+- Weather advances each week in `processWeekEnd` (guarded by `enableWeatherEvents` option)
+- Price modifier: weather multiplier applied on top of economy drift (clamped 0.70-1.35)
+- Movement cost: extra hours per step applied in GameBoard zone display + click handler
+- Per-player effects: happiness delta and food spoilage chance applied in player loop
+- Event messages announce weather changes ("Weather: Snowstorm! ..." / "The weather has cleared.")
+- Weather indicator in top bar shows icon + name + weeks remaining
+
+### Files Changed
+
+| File | Changes |
+|------|---------|
+| `src/data/weather.ts` | **NEW** — WeatherType, WeatherState, rollWeatherEvent(), advanceWeather() |
+| `src/components/game/WeatherOverlay.tsx` | **NEW** — CSS particle effects for all 5 weather types |
+| `src/types/game.types.ts` | Added `weather: WeatherState` to GameState interface |
+| `src/store/gameStore.ts` | Initial weather state, startNewGame reset, save/load migration |
+| `src/store/helpers/weekEndHelpers.ts` | Weather advance, per-player effects, price modifier |
+| `src/components/game/GameBoard.tsx` | WeatherOverlay render, weather-adjusted move costs, top bar indicator |
+| `src/network/networkState.ts` | Weather field in serialize/apply for multiplayer sync |
+
+### Technical Details
+- Particle count per type: snow=60, rain=80, light-rain=40, heatwave=20, fog=12
+- All particles use CSS animations (no JS animation loop) — zero runtime cost
+- `pointer-events: none` on overlay so particles don't block board interactions
+- `useMemo` stabilizes particle random offsets across re-renders
+- Weather state persists in save/load (falls back to CLEAR_WEATHER for old saves)
+- Build succeeds, 171 tests pass, TypeScript clean
+
+---
+
 ## 2026-02-08 - Forge Gameplay Enhancement Implementation
 
 ### Changes Implemented
