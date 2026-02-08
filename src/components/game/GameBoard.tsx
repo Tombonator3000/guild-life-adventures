@@ -19,6 +19,7 @@ import { DarkModeToggle } from './DarkModeToggle';
 import { MobileHUD } from './MobileHUD';
 import { MobileDrawer } from './MobileDrawer';
 import { TurnTransition } from './TurnTransition';
+import { UpdateBanner } from './UpdateBanner';
 import gameBoard from '@/assets/game-board.jpeg';
 import type { LocationId } from '@/types/game.types';
 import { toast } from 'sonner';
@@ -689,6 +690,9 @@ export function GameBoard() {
       {showTutorial && currentPlayer && !currentPlayer.isAI && (
         <TutorialOverlay onClose={() => setShowTutorial(false)} />
       )}
+
+      {/* PWA Update Notification */}
+      <UpdateBanner />
     </div>
   );
 }

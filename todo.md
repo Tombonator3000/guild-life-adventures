@@ -527,6 +527,13 @@
 
 ## Completed (2026-02-08)
 
+- [x] Auto-Update Check for Installed PWA
+  - [x] Changed `registerType` from `autoUpdate` to `prompt` in vite.config.ts
+  - [x] Created `useAppUpdate` hook with `useRegisterSW` + 60-minute periodic update check
+  - [x] Created `UpdateBanner` component — parchment-panel notification with "Update Now" button
+  - [x] Integrated banner in TitleScreen and GameBoard
+  - [x] Build succeeds, 171 tests pass
+
 - [x] Age System — player aging with birthday milestones, elder effects, and UI
   - [x] `age: number` field on Player (starts at 18), ages 1 year per 4 weeks
   - [x] Birthday milestones: age 21 (+5 hap), 25 (+2 maxHP), 30 (+5 hap/+5 dep), 40 (-2 maxHP/+3 hap), 50 (-5 maxHP/+5 hap)
