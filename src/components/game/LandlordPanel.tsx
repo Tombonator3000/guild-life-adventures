@@ -117,7 +117,7 @@ export function LandlordPanel({
         Moving locks in the current market rent rate.
       </p>
       <div className="space-y-2">
-        {HOUSING_TIERS.filter(t => t !== player.housing && t !== 'homeless').map(tier => {
+        {HOUSING_TIERS.filter(t => t !== player.housing && t !== 'homeless' && t !== 'modest').map(tier => {
           const housing = HOUSING_DATA[tier];
           const tierMarketRent = Math.round(housing.weeklyRent * priceModifier);
           const moveCost = tierMarketRent * 2; // First month + deposit

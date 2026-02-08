@@ -88,7 +88,7 @@
 - [ ] Mobile HUD: Add turn indicator and player color
 - [ ] Dead player tokens visual distinction
 - [ ] Fix keyboard shortcuts triggering inside modals
-- [ ] Remove or implement housing tier 'modest'
+- [x] Remove or implement housing tier 'modest' — **FIXED** Hidden from LandlordPanel (Jones 2-tier system)
 
 ### Low Priority
 - [ ] Forge job teaser without actual implementation
@@ -565,6 +565,14 @@
   - [x] Fix 7: AI failed action tracking — prevents re-attempting failed actions within same turn
   - [x] Fix 8: AI happiness rest path — added move-to-home when not at home
   - Build passes, 171 tests pass
+
+- [x] Housing Cost Audit — 5 bugs found and fixed
+  - [x] Bug 1 (HIGH): HOUSING_DATA noble weeklyRent=500 disagrees with RENT_COSTS=350 — synced to 350
+  - [x] Bug 2 (MEDIUM): `modest` tier shown in LandlordPanel but half-implemented — hidden from move options
+  - [x] Bug 3 (MEDIUM): AI rent check uses RENT_COSTS ignoring lockedRent — fixed in criticalNeeds.ts
+  - [x] Bug 4 (MEDIUM): AI downgrade check uses RENT_COSTS ignoring lockedRent — fixed in strategicActions.ts
+  - [x] Bug 5 (LOW): Dead code canAffordHousing/getUpgradeOptions/getDowngradeOptions — removed
+  - Balance verdict: Slums (75g) fair, Noble (350g) fair for mid-tier+, homeless penalties harsh but motivating
 
 ## In Progress
 

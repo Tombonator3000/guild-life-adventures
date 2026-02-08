@@ -43,7 +43,7 @@ export const HOUSING_DATA: Record<HousingTier, Housing> = {
     tier: 'noble',
     name: 'Noble Heights',
     description: 'Luxury living for the wealthy. Safe and prestigious.',
-    weeklyRent: 500,
+    weeklyRent: 350,
     happinessBonus: 3,
     theftRisk: 0,
     relaxationRate: 3, // Increased from 2 to prevent happiness spam
@@ -54,18 +54,3 @@ export const HOUSING_TIERS: HousingTier[] = ['homeless', 'slums', 'modest', 'nob
 
 export const getHousing = (tier: HousingTier): Housing => HOUSING_DATA[tier];
 
-export const canAffordHousing = (tier: HousingTier, gold: number): boolean => {
-  // Need first month rent plus deposit (2x rent)
-  const housing = HOUSING_DATA[tier];
-  return gold >= housing.weeklyRent * 8; // 2 months upfront
-};
-
-export const getUpgradeOptions = (currentTier: HousingTier): HousingTier[] => {
-  const currentIndex = HOUSING_TIERS.indexOf(currentTier);
-  return HOUSING_TIERS.slice(currentIndex + 1);
-};
-
-export const getDowngradeOptions = (currentTier: HousingTier): HousingTier[] => {
-  const currentIndex = HOUSING_TIERS.indexOf(currentTier);
-  return HOUSING_TIERS.slice(0, currentIndex);
-};

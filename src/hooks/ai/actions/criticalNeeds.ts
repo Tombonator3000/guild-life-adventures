@@ -66,7 +66,7 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
   // 2. RENT - Prevent eviction (huge penalty)
   // Trigger at >= 0.5 (2 weeks overdue) instead of > 0.5 to give AI time to travel and pay
   if (urgency.rent >= 0.5 && player.housing !== 'homeless') {
-    const rentCost = RENT_COSTS[player.housing];
+    const rentCost = player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing];
     if (player.gold >= rentCost) {
       if (currentLocation === 'landlord') {
         actions.push({
