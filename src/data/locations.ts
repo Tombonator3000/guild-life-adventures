@@ -80,19 +80,19 @@ export const getPath = (from: LocationId, to: LocationId): LocationId[] => {
 // These can be edited to fine-tune zone positions
 // Coordinates are percentages relative to the board container
 export const ZONE_CONFIGS: ZoneConfig[] = [
-  { id: 'noble-heights', x: 1.1, y: 0.0, width: 18.1, height: 32.7 },
+  { id: 'noble-heights', x: 1.1, y: 0.0, width: 18.2, height: 26.4 },
   { id: 'landlord', x: 25.4, y: 1.6, width: 12.8, height: 18.7 },
-  { id: 'slums', x: 41.1, y: 0.7, width: 19.1, height: 21.0 },
-  { id: 'fence', x: 63.3, y: 0.9, width: 14.7, height: 20.0 },
+  { id: 'slums', x: 41.1, y: 0.7, width: 20.2, height: 19.7 },
+  { id: 'fence', x: 63.3, y: 0.9, width: 14.5, height: 18.9 },
   { id: 'general-store', x: 3.1, y: 33.9, width: 16.7, height: 20.2 },
   { id: 'shadow-market', x: 80.1, y: 0.9, width: 18.0, height: 18.9 },
-  { id: 'rusty-tankard', x: 79.4, y: 21.0, width: 18.1, height: 19.6 },
-  { id: 'armory', x: 80.6, y: 41.9, width: 15.4, height: 20.5 },
-  { id: 'forge', x: 3.8, y: 73.8, width: 17.7, height: 26.1 },
-  { id: 'guild-hall', x: 23.6, y: 77.0, width: 14.3, height: 23.0 },
-  { id: 'cave', x: 43.1, y: 78.0, width: 12.2, height: 22.0 },
+  { id: 'rusty-tankard', x: 81.1, y: 22.3, width: 16.1, height: 18.2 },
+  { id: 'armory', x: 80.6, y: 41.9, width: 13.9, height: 18.7 },
+  { id: 'forge', x: 4.6, y: 76.7, width: 17.7, height: 15.2 },
+  { id: 'guild-hall', x: 23.2, y: 76.3, width: 15.7, height: 16.3 },
+  { id: 'cave', x: 41.9, y: 78.8, width: 15.5, height: 14.9 },
   { id: 'academy', x: 60.3, y: 77.8, width: 17.9, height: 16.1 },
-  { id: 'enchanter', x: 80.0, y: 64.8, width: 14.6, height: 29.2 },
+  { id: 'enchanter', x: 80.5, y: 67.0, width: 14.4, height: 26.1 },
   { id: 'bank', x: 1.1, y: 54.8, width: 18.1, height: 18.7 },
 ];
 
@@ -108,7 +108,22 @@ export const BOARD_ASPECT_RATIO = `${76 * 16} / ${100 * 9}`; // 1216/900 ≈ 1.3
 // When traveling counter-clockwise, waypoints are reversed automatically
 export type MovementWaypoint = [number, number];
 
-export const MOVEMENT_PATHS: Record<string, MovementWaypoint[]> = {};
+export const MOVEMENT_PATHS: Record<string, MovementWaypoint[]> = {
+  'noble-heights_general-store': [[5.6, 51.4], [5.6, 51.4]],
+  'general-store_bank': [[19.9, 69.5]],
+  'bank_forge': [[3.6, 88.8]],
+  'forge_guild-hall': [[22.7, 92.8]],
+  'guild-hall_cave': [[37.2, 93.3]],
+  'cave_academy': [[59.9, 93.4]],
+  'academy_enchanter': [[79.5, 94.2]],
+  'enchanter_armory': [[97.0, 78.0]],
+  'armory_rusty-tankard': [[96.8, 52.1]],
+  'rusty-tankard_shadow-market': [[81.8, 33.4], [81.8, 33.4]],
+  'shadow-market_fence': [[78.7, 21.0]],
+  'fence_slums': [[62.3, 20.1]],
+  'slums_landlord': [[40.4, 19.7]],
+  'landlord_noble-heights': [[22.2, 20.5]],
+};
 
 // Get the movement path key for two adjacent locations (always clockwise order)
 export const getPathKey = (from: LocationId, to: LocationId): { key: string; reversed: boolean } => {

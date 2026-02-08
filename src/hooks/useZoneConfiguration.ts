@@ -8,9 +8,9 @@ import { toast } from 'sonner';
 
 const DEFAULT_CENTER_PANEL: CenterPanelConfig = {
   top: 22.6,
-  left: 20.8,
-  width: 58.5,
-  height: 54.7,
+  left: 22.0,
+  width: 56.4,
+  height: 53.6,
 };
 
 export function useZoneConfiguration() {

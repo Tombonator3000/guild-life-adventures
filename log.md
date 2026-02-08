@@ -1,5 +1,43 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-07 - Setup Default Zone Configurations with Movement Paths
+
+**Task**: Set new standard default ZONE_CONFIGS, CENTER_PANEL_CONFIG, and MOVEMENT_PATHS from fine-tuned zone editor output.
+
+### Changes
+
+| File | Change |
+|------|--------|
+| `src/data/locations.ts` | Updated 10 of 14 ZONE_CONFIGS entries with refined x/y/width/height values; zones now tighter-fit to game board artwork |
+| `src/data/locations.ts` | Populated MOVEMENT_PATHS with 14 edge waypoints (was empty `{}`); all adjacent location pairs now have movement paths |
+| `src/hooks/useZoneConfiguration.ts` | Updated DEFAULT_CENTER_PANEL: left 20.8→22.0, width 58.5→56.4, height 54.7→53.6 |
+| `src/components/game/ZoneEditor.tsx` | Same DEFAULT_CENTER_PANEL update to keep both files in sync |
+
+### ZONE_CONFIGS coordinate changes (old → new)
+- **noble-heights**: width 18.1→18.2, height 32.7→26.4 (shorter, slightly wider)
+- **slums**: width 19.1→20.2, height 21.0→19.7 (wider, shorter)
+- **fence**: width 14.7→14.5, height 20.0→18.9 (slightly smaller)
+- **rusty-tankard**: x 79.4→81.1, y 21.0→22.3, width 18.1→16.1, height 19.6→18.2 (shifted right, smaller)
+- **armory**: width 15.4→13.9, height 20.5→18.7 (smaller)
+- **forge**: x 3.8→4.6, y 73.8→76.7, height 26.1→15.2 (shifted down, much shorter)
+- **guild-hall**: x 23.6→23.2, y 77.0→76.3, width 14.3→15.7, height 23.0→16.3 (wider, shorter)
+- **cave**: x 43.1→41.9, y 78.0→78.8, width 12.2→15.5, height 22.0→14.9 (wider, shorter)
+- **enchanter**: x 80.0→80.5, y 64.8→67.0, width 14.6→14.4, height 29.2→26.1 (shifted down, shorter)
+- **Unchanged**: landlord, general-store, shadow-market, academy, bank
+
+### CENTER_PANEL_CONFIG changes (old → new)
+- left: 20.8 → 22.0
+- width: 58.5 → 56.4
+- height: 54.7 → 53.6
+- top: 22.6 (unchanged)
+
+### MOVEMENT_PATHS (new - 14 edges with waypoints)
+All 14 adjacent location pairs now have waypoints defined for smooth player movement animation around the board ring. Previously the paths object was empty, causing players to teleport between zone centers.
+
+Build verified: production build succeeds with no errors.
+
+---
+
 ## 2026-02-07 - Update Default Zone Configurations
 
 **Task**: Set new default ZONE_CONFIGS and CENTER_PANEL_CONFIG values based on fine-tuned zone editor output.
