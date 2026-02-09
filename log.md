@@ -9444,3 +9444,37 @@ Build succeeds, 171 tests pass.
 ### Next Steps
 - Upcoming tasks
 ```
+
+## 2026-02-09 - Fix Landlord Closed Image Not Displaying
+
+### Summary
+The `closed.jpg` image shown when the Landlord's office is closed during non-rent weeks was displaying as a broken image icon. The file existed at `public/locations/closed.jpg` but wasn't being loaded.
+
+### Root Cause
+The `<img>` tag in `LocationPanel.tsx` used a hardcoded root-relative path:
+```tsx
+src="/locations/closed.jpg"
+```
+
+This works in local dev (where base URL is `/`) but breaks on GitHub Pages where the base URL is `/guild-life-adventures/`. The browser looked for the image at `https://tombonator3000.github.io/locations/closed.jpg` instead of `https://tombonator3000.github.io/guild-life-adventures/locations/closed.jpg`.
+
+All other location images (for-rent.jpg, noble-heights.jpg, slums.jpg, Forge.jpg) correctly use the `import.meta.env.BASE_URL` prefix.
+
+### Fix
+Changed `LocationPanel.tsx` line 473:
+```tsx
+// Before (broken):
+src="/locations/closed.jpg"
+
+// After (fixed):
+src={`${import.meta.env.BASE_URL}locations/closed.jpg`}
+```
+
+### Files Changed
+| File | Changes |
+|------|---------|
+| `src/components/game/LocationPanel.tsx` | Fixed closed.jpg image path to use `import.meta.env.BASE_URL` |
+
+### Build & Tests
+- Build: passes
+- No other hardcoded `/locations/` paths found in source code

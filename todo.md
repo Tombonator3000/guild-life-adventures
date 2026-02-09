@@ -813,6 +813,10 @@
   - [x] Fixed background images from absolute to fixed (stay in place when scrolling)
   - Build passes, 171 tests pass
 
+- [x] Fix Landlord Closed Image — closed.jpg not showing due to hardcoded path missing BASE_URL
+  - Changed `src="/locations/closed.jpg"` → `src={import.meta.env.BASE_URL + "locations/closed.jpg"}`
+  - Same pattern as all other location images (for-rent.jpg, noble-heights.jpg, slums.jpg)
+
 ## In Progress
 
 *No active tasks*
