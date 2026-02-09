@@ -1,7 +1,7 @@
 // Guild Life - Dungeon Encounter Data
-// All encounter definitions for floors 1-5, including bosses
+// All encounter definitions for floors 1-6, including bosses and mini-bosses
 
-import type { DungeonEncounter } from './types';
+import type { DungeonEncounter, MiniBoss } from './types';
 
 // ============================================================
 // Floor 1: Entrance Cavern
@@ -346,4 +346,146 @@ export const FLOOR_5_BOSS: DungeonEncounter = {
   baseGold: 300,
   requiresArcane: true,
   flavorText: 'Azrathor laughs, his voice echoing from every direction. "You dare enter MY domain?"',
+};
+
+// ============================================================
+// Floor 6: The Forgotten Temple
+// ============================================================
+
+export const FLOOR_6_ENCOUNTERS: DungeonEncounter[] = [
+  {
+    id: 'f6-temple-guardians',
+    name: 'Temple Guardians',
+    description: 'Animated stone statues, eyes blazing with divine fire, stand eternal watch.',
+    type: 'combat',
+    difficulty: 'hard',
+    basePower: 100,
+    baseDamage: 70,
+    baseGold: 120,
+    flavorText: 'The statues grind to life, their stone swords humming with ancient power.',
+  },
+  {
+    id: 'f6-divine-ward',
+    name: 'Divine Ward',
+    description: 'A barrier of pure light sears all who pass without knowledge of the old ways.',
+    type: 'trap',
+    difficulty: 'hard',
+    basePower: 0,
+    baseDamage: 60,
+    baseGold: 0,
+    isDisarmable: true,
+    flavorText: 'Runes flare across the corridor. Only those trained in ancient lore can deactivate them.',
+  },
+  {
+    id: 'f6-spectral-priests',
+    name: 'Spectral High Priests',
+    description: 'The ghosts of the temple\'s clergy, still performing their rituals in death.',
+    type: 'combat',
+    difficulty: 'hard',
+    basePower: 95,
+    baseDamage: 65,
+    baseGold: 100,
+    requiresArcane: true,
+    flavorText: 'They chant in unison, each syllable a wave of spectral force.',
+  },
+  {
+    id: 'f6-temple-reliquary',
+    name: 'Temple Reliquary',
+    description: 'A sealed chamber of sacred artifacts, untouched for millennia.',
+    type: 'treasure',
+    difficulty: 'easy',
+    basePower: 0,
+    baseDamage: 0,
+    baseGold: 250,
+    flavorText: 'Gold chalices, gem-encrusted icons, and sacred texts fill every shelf.',
+  },
+  {
+    id: 'f6-sanctum-font',
+    name: 'Sanctum Font',
+    description: 'A font of sacred water, still blessed after centuries of neglect.',
+    type: 'healing',
+    difficulty: 'easy',
+    basePower: 0,
+    baseDamage: -18,
+    baseGold: 0,
+    flavorText: 'The water glows with warm golden light. Your wounds close as you drink.',
+  },
+];
+
+export const FLOOR_6_BOSS: DungeonEncounter = {
+  id: 'f6-boss-the-archon',
+  name: 'The Archon',
+  description: 'An immortal being of divine wrath, the last guardian of the Forgotten Temple. Wings of light and a crown of stars.',
+  type: 'boss',
+  difficulty: 'boss',
+  basePower: 140,
+  baseDamage: 95,
+  baseGold: 500,
+  requiresArcane: true,
+  flavorText: '"You have read the ancient texts. You know what I am. KNEEL, or be unmade."',
+};
+
+// ============================================================
+// Mini-Bosses (wandering bosses, 15% chance on re-runs)
+// Each floor has its own mini-boss themed to that floor
+// ============================================================
+
+export const MINI_BOSSES: Record<number, MiniBoss> = {
+  1: {
+    id: 'mb-cave-troll',
+    name: 'Cave Troll',
+    description: 'A lumbering troll that has wandered into the upper caverns.',
+    flavorText: 'The ground shakes with each step. It smells you before it sees you.',
+    basePower: 14,
+    baseDamage: 12,
+    baseGold: 20,
+  },
+  2: {
+    id: 'mb-goblin-shaman',
+    name: 'Goblin Shaman',
+    description: 'A goblin witch doctor, crackling with stolen magic.',
+    flavorText: 'Bones rattle on its staff as it speaks words of power.',
+    basePower: 28,
+    baseDamage: 20,
+    baseGold: 35,
+    requiresArcane: true,
+  },
+  3: {
+    id: 'mb-death-knight',
+    name: 'Death Knight',
+    description: 'A fallen paladin, armored in black plate and wielding a cursed blade.',
+    flavorText: 'Its hollow laugh echoes through the crypt as it draws its sword.',
+    basePower: 45,
+    baseDamage: 32,
+    baseGold: 65,
+  },
+  4: {
+    id: 'mb-drake-matriarch',
+    name: 'Drake Matriarch',
+    description: 'The mother of the drake pack, larger and fiercer than any other.',
+    flavorText: 'She spreads her wings wide, shielding her brood. You must go through her.',
+    basePower: 65,
+    baseDamage: 45,
+    baseGold: 120,
+  },
+  5: {
+    id: 'mb-void-reaver',
+    name: 'Void Reaver',
+    description: 'A creature born from the gaps between planes, all teeth and claws.',
+    flavorText: 'Reality tears open and something wrong crawls through.',
+    basePower: 90,
+    baseDamage: 60,
+    baseGold: 200,
+    requiresArcane: true,
+  },
+  6: {
+    id: 'mb-fallen-archon',
+    name: 'Fallen Archon',
+    description: 'A lesser archon, corrupted by centuries of isolation in the temple.',
+    flavorText: 'Its wings are tattered, its halo cracked. But its fury is undiminished.',
+    basePower: 115,
+    baseDamage: 75,
+    baseGold: 350,
+    requiresArcane: true,
+  },
 };

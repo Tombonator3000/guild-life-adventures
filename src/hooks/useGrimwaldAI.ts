@@ -325,7 +325,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
 
         const isFirstClear = !player.dungeonFloorsCleared.includes(floorId);
         const lootMult = getLootMultiplier(floor, player.guildRank);
-        const result = autoResolveFloor(floor, combatStats, eduBonuses, player.health, isFirstClear, lootMult);
+        const result = autoResolveFloor(floor, combatStats, eduBonuses, player.health, isFirstClear, lootMult, player.dungeonFloorsCleared);
 
         // Apply results (match player penalties: 25% gold on defeat, -2 happiness on defeat)
         const defeatGoldMult = (!result.bossDefeated) ? 0.25 : 1.0;

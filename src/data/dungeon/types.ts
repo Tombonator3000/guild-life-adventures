@@ -57,8 +57,63 @@ export interface FloorRequirements {
   minimumAttack: number;
   /** Minimum total defense power required */
   minimumDefense: number;
+  /** Degrees that must be completed to enter this floor */
+  requiredDegrees?: DegreeId[];
   /** Degrees that help but aren't required */
   recommendedDegrees: DegreeId[];
+}
+
+/** Dungeon run modifier (random per-run effect for variety) */
+export interface DungeonModifier {
+  id: string;
+  name: string;
+  description: string;
+  /** Multiplier to damage taken (1.0 = normal, 1.3 = +30%) */
+  damageMult: number;
+  /** Multiplier to gold earned (1.0 = normal, 1.5 = +50%) */
+  goldMult: number;
+  /** Multiplier to enemy power (1.0 = normal, 1.5 = +50%) */
+  enemyPowerMult: number;
+  /** Multiplier to rare drop chance (1.0 = normal, 1.25 = +25%) */
+  rareDropMult: number;
+  /** If true, healing encounters are disabled */
+  disableHealing: boolean;
+  /** If true, traps cannot be disarmed */
+  disableDisarm: boolean;
+  /** Additional damage reduction (additive, 0.2 = -20% dmg taken) */
+  bonusDamageReduction: number;
+  /** Additional healing multiplier (1.5 = +50% more healing) */
+  healingMult: number;
+  /** CSS color for UI display */
+  color: string;
+  /** Icon for UI display */
+  icon: string;
+}
+
+/** Personal best record for a dungeon floor */
+export interface DungeonRecord {
+  /** Most gold earned in a single run */
+  bestGold: number;
+  /** Fewest encounters worth of time spent (lower = faster) */
+  bestEncounters: number;
+  /** Total number of runs on this floor */
+  runs: number;
+  /** Total gold earned across all runs */
+  totalGold: number;
+}
+
+/** Mini-boss definition (wandering boss that appears on re-runs) */
+export interface MiniBoss {
+  id: string;
+  name: string;
+  description: string;
+  flavorText: string;
+  /** Base power (between regular encounters and floor boss) */
+  basePower: number;
+  baseDamage: number;
+  baseGold: number;
+  /** If true, requires arcane to deal full damage */
+  requiresArcane?: boolean;
 }
 
 /** Rare drop definition */

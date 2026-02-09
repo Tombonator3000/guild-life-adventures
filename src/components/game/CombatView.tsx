@@ -1,6 +1,7 @@
 // Guild Life - Combat View
 // Phase 4: Encounter-by-encounter combat interface
 // Shows individual encounters with fight/retreat options and animated results
+// Supports dungeon modifiers and mini-boss encounters
 
 import { useState, useCallback } from 'react';
 import { Sparkles } from 'lucide-react';
@@ -50,6 +51,8 @@ export interface CombatRunResult {
   rareDropName: string | null;
   happinessChange: number;
   encounterLog: EncounterResult[];
+  /** Number of encounters completed (for leaderboard) */
+  encountersCompleted: number;
 }
 
 // ─── Main CombatView Component ────────────────────────────────
@@ -65,14 +68,14 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
   const isFirstClear = !player.dungeonFloorsCleared.includes(floor.id);
 
   const [runState, setRunState] = useState<DungeonRunState>(() =>
-    initDungeonRun(floor, player.health, isFirstClear),
+    initDungeonRun(floor, player.health, isFirstClear, player.dungeonFloorsCleared),
   );
 
   // ─── Fight current encounter ──────────────────────────────
 
   const handleFight = useCallback(() => {
     const encounter = runState.encounters[runState.currentEncounterIndex];
-    const result = resolveEncounter(encounter, combatStats, eduBonuses, runState.currentHealth);
+    const result = resolveEncounter(encounter, combatStats, eduBonuses, runState.currentHealth, runState.modifier);
     const newState = applyEncounterResult(runState, result);
 
     // Apply health change immediately to game store (per-encounter, not deferred)
@@ -140,6 +143,7 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
       rareDropName: runState.rareDropName,
       happinessChange,
       encounterLog: runState.results,
+      encountersCompleted: runState.results.length,
     });
   }, [runState, floor, onComplete]);
 
@@ -165,6 +169,25 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
           </span>
         )}
       </div>
+
+      {/* Active modifier banner */}
+      {runState.modifier && (
+        <div
+          className="text-xs font-mono px-2 py-1 rounded border flex items-center gap-1.5"
+          style={{ borderColor: runState.modifier.color, color: runState.modifier.color, backgroundColor: `${runState.modifier.color}15` }}
+        >
+          <span>{runState.modifier.icon}</span>
+          <span className="font-bold">{runState.modifier.name}</span>
+          <span className="text-[#a09080]">— {runState.modifier.description}</span>
+        </div>
+      )}
+
+      {/* Mini-boss warning */}
+      {runState.hasMiniBoss && runState.phase === 'encounter-intro' && runState.currentEncounterIndex === 0 && (
+        <div className="text-xs font-mono px-2 py-1 rounded border border-amber-600 bg-amber-950/30 text-amber-400">
+          A wandering mini-boss has been spotted on this floor!
+        </div>
+      )}
 
       {/* Phase-specific view */}
       {runState.phase === 'encounter-intro' && currentEncounter && (

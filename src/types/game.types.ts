@@ -181,6 +181,8 @@ export interface Player {
   dungeonFloorsCleared: number[];  // Floors cleared at least once (e.g. [1, 2, 3])
   dungeonAttemptsThisTurn: number; // Floor attempts this turn (capped by MAX_FLOOR_ATTEMPTS_PER_TURN)
   permanentGoldBonus: number;      // Permanent % bonus to gold from work (from rare drops)
+  // Dungeon leaderboard records (best gold, runs per floor)
+  dungeonRecords: Record<number, { bestGold: number; bestEncounters: number; runs: number; totalGold: number }>;
   // Stock Market (Jones-style)
   stocks: Record<string, number>;  // stockId -> shares owned
   // Loan System (Jones-style)

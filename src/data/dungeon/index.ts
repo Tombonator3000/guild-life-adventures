@@ -13,18 +13,27 @@ export type {
   RareDropEffect,
   EducationDungeonBonus,
   DungeonFloor,
+  DungeonModifier,
+  DungeonRecord,
+  MiniBoss,
 } from './types';
 
 export {
   EDUCATION_DUNGEON_BONUSES,
   DUNGEON_FLOORS,
+  DUNGEON_MODIFIERS,
 } from './floors';
+
+export {
+  MINI_BOSSES,
+} from './encounters';
 
 export {
   ENCOUNTERS_PER_FLOOR,
   MAX_DUNGEON_FLOOR,
   MAX_FLOOR_ATTEMPTS_PER_TURN,
   HEALING_POTION_HP,
+  MINI_BOSS_CHANCE,
   getFloor,
   getAllFloors,
   checkFloorRequirements,
@@ -35,4 +44,10 @@ export {
   getEncounterTimeCost,
   getHighestAvailableFloor,
   getDungeonProgress,
+  rollDungeonModifier,
+  getAllModifiers,
+  getMiniBoss,
+  shouldSpawnMiniBoss,
+  miniBossToEncounter,
+  updateDungeonRecord,
 } from './helpers';

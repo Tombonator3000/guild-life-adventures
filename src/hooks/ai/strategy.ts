@@ -238,6 +238,7 @@ export function getBestDungeonFloor(player: Player, settings: DifficultySettings
       player.equippedWeapon,
       player.equippedArmor,
       combatStats,
+      player.completedDegrees,
     );
 
     if (!check.canEnter) continue;
