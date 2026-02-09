@@ -73,6 +73,8 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     takeQuest,
     completeQuest,
     abandonQuest,
+    takeChainQuest,
+    takeBounty,
     buyGuildPass,
     sellItem,
     setJob,
@@ -171,43 +173,46 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
 
         const tabs: LocationTab[] = [];
 
-        // Quest tab
+        // Quest tab — bounties always visible, quests/chains require Guild Pass
         tabs.push({
           id: 'quests',
           label: 'Quests',
           badge: player.activeQuest ? '!' : undefined,
-          content: player.hasGuildPass ? (
-            <QuestPanel
-              quests={availableQuests}
-              player={player}
-              onTakeQuest={(questId) => takeQuest(player.id, questId)}
-              onCompleteQuest={() => completeQuest(player.id)}
-              onAbandonQuest={() => abandonQuest(player.id)}
-            />
-          ) : (
+          content: (
             <div className="space-y-3">
-              <h4 className="font-display text-sm text-[#6b5a42] flex items-center gap-2 mb-2">
-                <ScrollText className="w-4 h-4" /> Guild Quest Board
-              </h4>
-              <p className="text-sm text-[#6b5a42] mb-3">
-                You need a <span className="font-bold text-[#c9a227]">Guild Pass</span> to access the quest board.
-              </p>
-              <div className="text-center bg-[#e0d4b8] p-2 rounded mb-2 border border-[#8b7355]">
-                <span className="text-xs text-[#6b5a42]">Guild Pass Cost:</span>
-                <span className="font-bold text-[#c9a227] ml-2">{GUILD_PASS_COST}g</span>
-              </div>
-              <button
-                onClick={() => {
-                  buyGuildPass(player.id);
-                  toast.success('Guild Pass acquired! You can now take quests.');
-                }}
-                disabled={player.gold < GUILD_PASS_COST}
-                className="w-full gold-button py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {player.gold < GUILD_PASS_COST
-                  ? `Need ${GUILD_PASS_COST - player.gold}g more`
-                  : `Buy Guild Pass (${GUILD_PASS_COST}g)`}
-              </button>
+              {!player.hasGuildPass && (
+                <div className="space-y-2 mb-3">
+                  <p className="text-sm text-[#6b5a42]">
+                    <span className="font-bold text-[#c9a227]">Guild Pass</span> required for quests and chains. Bounties are free!
+                  </p>
+                  <div className="text-center bg-[#e0d4b8] p-2 rounded border border-[#8b7355]">
+                    <span className="text-xs text-[#6b5a42]">Guild Pass Cost:</span>
+                    <span className="font-bold text-[#c9a227] ml-2">{GUILD_PASS_COST}g</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      buyGuildPass(player.id);
+                      toast.success('Guild Pass acquired! You can now take quests.');
+                    }}
+                    disabled={player.gold < GUILD_PASS_COST}
+                    className="w-full gold-button py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {player.gold < GUILD_PASS_COST
+                      ? `Need ${GUILD_PASS_COST - player.gold}g more`
+                      : `Buy Guild Pass (${GUILD_PASS_COST}g)`}
+                  </button>
+                </div>
+              )}
+              <QuestPanel
+                quests={availableQuests}
+                player={player}
+                week={week}
+                onTakeQuest={(questId) => takeQuest(player.id, questId)}
+                onCompleteQuest={() => completeQuest(player.id)}
+                onAbandonQuest={() => abandonQuest(player.id)}
+                onTakeChainQuest={(chainId) => takeChainQuest(player.id, chainId)}
+                onTakeBounty={(bountyId) => takeBounty(player.id, bountyId)}
+              />
             </div>
           ),
         });

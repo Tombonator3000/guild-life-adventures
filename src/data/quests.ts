@@ -323,3 +323,272 @@ export function canTakeQuest(
 export function getQuest(id: string): Quest | undefined {
   return QUESTS.find(q => q.id === id);
 }
+
+// ============================================================
+// B1: Quest Chains — multi-part quests with sequential steps
+// ============================================================
+
+export interface QuestChainStep {
+  id: string;
+  name: string;
+  description: string;
+  rank: QuestRank;
+  goldReward: number;
+  timeRequired: number;
+  healthRisk: number;
+  happinessReward: number;
+  requiredEducation?: { path: EducationPath; level: number };
+  requiresDungeonFloor?: number;
+}
+
+export interface QuestChain {
+  id: string;
+  name: string;
+  description: string;
+  steps: QuestChainStep[];
+  /** Bonus gold awarded on completing all steps */
+  completionBonusGold: number;
+  /** Bonus happiness awarded on completing all steps */
+  completionBonusHappiness: number;
+  /** Minimum guild rank to start the chain */
+  requiredGuildRank: GuildRank;
+}
+
+export const QUEST_CHAINS: QuestChain[] = [
+  {
+    id: 'dragon-conspiracy',
+    name: 'The Dragon Conspiracy',
+    description: 'A shadowy plot involving the dragon clans threatens the kingdom.',
+    requiredGuildRank: 'journeyman',
+    completionBonusGold: 200,
+    completionBonusHappiness: 15,
+    steps: [
+      {
+        id: 'dragon-conspiracy-1',
+        name: 'Whispers of Fire',
+        description: 'Strange burn marks appear across the city. Investigate the source.',
+        rank: 'C',
+        goldReward: 75,
+        timeRequired: 10,
+        healthRisk: 10,
+        happinessReward: 4,
+      },
+      {
+        id: 'dragon-conspiracy-2',
+        name: 'The Smuggler\'s Trail',
+        description: 'Follow the trail of dragon-forged weapons to a smuggling ring.',
+        rank: 'B',
+        goldReward: 130,
+        timeRequired: 14,
+        healthRisk: 25,
+        happinessReward: 6,
+        requiredEducation: { path: 'fighter', level: 1 },
+      },
+      {
+        id: 'dragon-conspiracy-3',
+        name: 'Lair of the Conspirators',
+        description: 'Confront the conspirators in their hidden lair beneath the mountains.',
+        rank: 'A',
+        goldReward: 250,
+        timeRequired: 20,
+        healthRisk: 45,
+        happinessReward: 10,
+        requiresDungeonFloor: 3,
+      },
+    ],
+  },
+  {
+    id: 'scholars-secret',
+    name: 'The Scholar\'s Secret',
+    description: 'A dying scholar entrusts you with clues to forbidden knowledge.',
+    requiredGuildRank: 'apprentice',
+    completionBonusGold: 150,
+    completionBonusHappiness: 12,
+    steps: [
+      {
+        id: 'scholars-secret-1',
+        name: 'The Coded Journal',
+        description: 'Decipher the late scholar\'s encrypted journal.',
+        rank: 'D',
+        goldReward: 45,
+        timeRequired: 8,
+        healthRisk: 0,
+        happinessReward: 3,
+        requiredEducation: { path: 'mage', level: 1 },
+      },
+      {
+        id: 'scholars-secret-2',
+        name: 'The Hidden Library',
+        description: 'Locate the secret library beneath the Academy.',
+        rank: 'C',
+        goldReward: 85,
+        timeRequired: 12,
+        healthRisk: 15,
+        happinessReward: 5,
+      },
+      {
+        id: 'scholars-secret-3',
+        name: 'The Forbidden Ritual',
+        description: 'Use the forbidden knowledge to seal an ancient breach.',
+        rank: 'B',
+        goldReward: 150,
+        timeRequired: 16,
+        healthRisk: 30,
+        happinessReward: 8,
+        requiredEducation: { path: 'mage', level: 2 },
+      },
+    ],
+  },
+];
+
+export function getQuestChain(chainId: string): QuestChain | undefined {
+  return QUEST_CHAINS.find(c => c.id === chainId);
+}
+
+/** Get the next step for a player in a chain, or null if chain is complete */
+export function getNextChainStep(
+  chainId: string,
+  chainProgress: Record<string, number>
+): QuestChainStep | null {
+  const chain = getQuestChain(chainId);
+  if (!chain) return null;
+  const stepsCompleted = chainProgress[chainId] || 0;
+  if (stepsCompleted >= chain.steps.length) return null;
+  return chain.steps[stepsCompleted];
+}
+
+/** Check if a player can start or continue a chain */
+export function canTakeChainStep(
+  chain: QuestChain,
+  step: QuestChainStep,
+  guildRank: GuildRank,
+  education: Record<EducationPath, number>,
+  dungeonFloorsCleared?: number[]
+): { canTake: boolean; reason?: string } {
+  // Check guild rank for chain
+  const rankIndex = GUILD_RANK_ORDER.indexOf(guildRank);
+  const requiredIndex = GUILD_RANK_ORDER.indexOf(chain.requiredGuildRank);
+  if (rankIndex < requiredIndex) {
+    return { canTake: false, reason: `Requires ${chain.requiredGuildRank} rank` };
+  }
+
+  // Check step education requirement
+  if (step.requiredEducation) {
+    const playerLevel = education[step.requiredEducation.path] || 0;
+    if (playerLevel < step.requiredEducation.level) {
+      return {
+        canTake: false,
+        reason: `Requires ${step.requiredEducation.path} level ${step.requiredEducation.level}`,
+      };
+    }
+  }
+
+  // Check dungeon floor requirement
+  const cleared = dungeonFloorsCleared || [];
+  if (step.requiresDungeonFloor && !cleared.includes(step.requiresDungeonFloor)) {
+    return { canTake: false, reason: `Requires Dungeon Floor ${step.requiresDungeonFloor} cleared` };
+  }
+
+  return { canTake: true };
+}
+
+// ============================================================
+// B2: Repeatable Bounties — 3 rotating weekly bounties
+// ============================================================
+
+export interface Bounty {
+  id: string;
+  name: string;
+  description: string;
+  goldReward: number;
+  timeRequired: number;
+  healthRisk: number;
+  happinessReward: number;
+}
+
+const BOUNTY_POOL: Bounty[] = [
+  { id: 'bounty-rats', name: 'Cellar Rats', description: 'Clear rats from a merchant\'s cellar.', goldReward: 12, timeRequired: 3, healthRisk: 3, happinessReward: 1 },
+  { id: 'bounty-patrol', name: 'Night Patrol', description: 'Patrol the streets after dark.', goldReward: 18, timeRequired: 4, healthRisk: 5, happinessReward: 1 },
+  { id: 'bounty-herbs', name: 'Herb Collection', description: 'Gather herbs for the healers.', goldReward: 10, timeRequired: 3, healthRisk: 0, happinessReward: 2 },
+  { id: 'bounty-delivery', name: 'Urgent Parcel', description: 'Deliver a time-sensitive parcel.', goldReward: 14, timeRequired: 3, healthRisk: 0, happinessReward: 1 },
+  { id: 'bounty-escort', name: 'Traveler Escort', description: 'Escort a traveler to the gate.', goldReward: 20, timeRequired: 5, healthRisk: 8, happinessReward: 2 },
+  { id: 'bounty-cleanup', name: 'Rubble Clearing', description: 'Clear debris from a collapsed stall.', goldReward: 15, timeRequired: 4, healthRisk: 3, happinessReward: 1 },
+  { id: 'bounty-gather', name: 'Mushroom Foraging', description: 'Forage rare mushrooms from the cave mouth.', goldReward: 16, timeRequired: 4, healthRisk: 5, happinessReward: 2 },
+  { id: 'bounty-lost-item', name: 'Lost Heirloom', description: 'Find a lost ring in the slums.', goldReward: 22, timeRequired: 5, healthRisk: 0, happinessReward: 2 },
+  { id: 'bounty-sparring', name: 'Sparring Partner', description: 'Spar with a guard recruit at the Armory.', goldReward: 18, timeRequired: 4, healthRisk: 10, happinessReward: 1 },
+];
+
+/** Get 3 bounties for a given week (deterministic rotation based on week number) */
+export function getWeeklyBounties(week: number): Bounty[] {
+  // Use week to deterministically pick 3 bounties
+  const offset = ((week - 1) * 3) % BOUNTY_POOL.length;
+  const result: Bounty[] = [];
+  for (let i = 0; i < 3; i++) {
+    result.push(BOUNTY_POOL[(offset + i) % BOUNTY_POOL.length]);
+  }
+  return result;
+}
+
+export function getBounty(id: string): Bounty | undefined {
+  return BOUNTY_POOL.find(b => b.id === id);
+}
+
+// ============================================================
+// B3: Quest Difficulty Scaling — rewards scale with dungeon progress
+// ============================================================
+
+/** Calculate scaled gold reward based on player's dungeon progression */
+export function getScaledQuestGold(baseGold: number, floorsCleared: number[]): number {
+  // +10% gold per dungeon floor cleared, max +60%
+  const bonus = Math.min(floorsCleared.length * 0.10, 0.60);
+  return Math.round(baseGold * (1 + bonus));
+}
+
+/** Calculate scaled happiness reward based on dungeon progression */
+export function getScaledQuestHappiness(baseHappiness: number, floorsCleared: number[]): number {
+  // +1 happiness per 2 floors cleared
+  const bonus = Math.floor(floorsCleared.length / 2);
+  return baseHappiness + bonus;
+}
+
+// ============================================================
+// B5: Guild Reputation — milestone bonuses
+// ============================================================
+
+export interface ReputationMilestone {
+  threshold: number;
+  title: string;
+  goldBonusPct: number; // % bonus to quest gold
+  description: string;
+}
+
+export const REPUTATION_MILESTONES: ReputationMilestone[] = [
+  { threshold: 5,  title: 'Known Adventurer',    goldBonusPct: 5,  description: '+5% quest gold' },
+  { threshold: 10, title: 'Trusted Agent',        goldBonusPct: 10, description: '+10% quest gold' },
+  { threshold: 20, title: 'Renowned Hero',        goldBonusPct: 15, description: '+15% quest gold' },
+  { threshold: 50, title: 'Legendary Champion',   goldBonusPct: 20, description: '+20% quest gold' },
+];
+
+/** Get the current reputation milestone for a given reputation score */
+export function getReputationMilestone(reputation: number): ReputationMilestone | null {
+  let best: ReputationMilestone | null = null;
+  for (const m of REPUTATION_MILESTONES) {
+    if (reputation >= m.threshold) best = m;
+  }
+  return best;
+}
+
+/** Get the gold bonus multiplier from reputation (e.g., 1.10 for +10%) */
+export function getReputationGoldMultiplier(reputation: number): number {
+  const milestone = getReputationMilestone(reputation);
+  if (!milestone) return 1.0;
+  return 1 + milestone.goldBonusPct / 100;
+}
+
+/** Get the next milestone the player hasn't reached yet */
+export function getNextReputationMilestone(reputation: number): ReputationMilestone | null {
+  for (const m of REPUTATION_MILESTONES) {
+    if (reputation < m.threshold) return m;
+  }
+  return null;
+}

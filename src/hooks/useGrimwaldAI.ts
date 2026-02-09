@@ -65,6 +65,8 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     equipItem,
     buyGuildPass,
     takeQuest,
+    takeChainQuest,
+    takeBounty,
     completeQuest,
     clearDungeonFloor,
     applyRareDrop,
@@ -274,7 +276,26 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
       case 'take-quest': {
         const questId = action.details?.questId as string;
         if (!questId || player.activeQuest) return false;
+        if (player.questCooldownWeeksLeft > 0) return false;
         takeQuest(player.id, questId);
+        spendTime(player.id, 1);
+        return true;
+      }
+
+      case 'take-chain-quest': {
+        const chainId = action.details?.chainId as string;
+        if (!chainId || player.activeQuest) return false;
+        if (player.questCooldownWeeksLeft > 0) return false;
+        takeChainQuest(player.id, chainId);
+        spendTime(player.id, 1);
+        return true;
+      }
+
+      case 'take-bounty': {
+        const bountyId = action.details?.bountyId as string;
+        if (!bountyId || player.activeQuest) return false;
+        if (player.completedBountiesThisWeek.includes(bountyId)) return false;
+        takeBounty(player.id, bountyId);
         spendTime(player.id, 1);
         return true;
       }
@@ -457,7 +478,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
   }, [movePlayer, modifyGold, modifyHealth, modifyFood, modifyHappiness, modifyClothing,
       modifyRelaxation, spendTime, studyDegree, completeDegree, setJob, payRent,
       depositToBank, withdrawFromBank, buyAppliance, moveToHousing, workShift,
-      buyDurable, equipItem, buyGuildPass, takeQuest, completeQuest,
+      buyDurable, equipItem, buyGuildPass, takeQuest, takeChainQuest, takeBounty, completeQuest,
       clearDungeonFloor, applyRareDrop, cureSickness, takeLoan, repayLoan,
       buyStock, sellStock, buyFreshFood, buyTicket, sellItem, pawnAppliance,
       buyLotteryTicket, endTurn]);

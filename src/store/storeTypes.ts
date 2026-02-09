@@ -58,6 +58,12 @@ export interface GameStore extends GameState {
   takeQuest: (playerId: string, questId: string) => void;
   completeQuest: (playerId: string) => void;
   abandonQuest: (playerId: string) => void;
+  // Quest Chain actions (B1)
+  takeChainQuest: (playerId: string, chainId: string) => void;
+  completeChainQuest: (playerId: string) => void;
+  // Bounty actions (B2)
+  takeBounty: (playerId: string, bountyId: string) => void;
+  completeBounty: (playerId: string) => void;
   evictPlayer: (playerId: string) => void;
   checkDeath: (playerId: string) => boolean;
   promoteGuildRank: (playerId: string) => void;

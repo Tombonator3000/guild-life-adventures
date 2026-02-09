@@ -67,6 +67,8 @@ export type AIActionType =
   | 'explore-dungeon'
   | 'buy-guild-pass'
   | 'take-quest'
+  | 'take-chain-quest'
+  | 'take-bounty'
   | 'complete-quest'
   | 'cure-sickness'
   | 'take-loan'

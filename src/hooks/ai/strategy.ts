@@ -9,7 +9,14 @@ import { getAvailableJobs, getJob, ALL_JOBS, canWorkJob, type Job } from '@/data
 import { getAvailableDegrees, type Degree } from '@/data/education';
 import { DUNGEON_FLOORS, checkFloorRequirements, getFloorTimeCost, calculateEducationBonuses } from '@/data/dungeon';
 import { calculateCombatStats } from '@/data/items';
-import { getAvailableQuests, canTakeQuest } from '@/data/quests';
+import {
+  getAvailableQuests,
+  canTakeQuest,
+  getWeeklyBounties,
+  QUEST_CHAINS,
+  getNextChainStep,
+  canTakeChainStep,
+} from '@/data/quests';
 
 import type { DifficultySettings, GoalProgress, ResourceUrgency } from './types';
 
@@ -330,10 +337,12 @@ export function shouldBuyGuildPass(player: Player, settings: DifficultySettings)
 
 /**
  * Get the best quest the AI should take.
+ * Also considers quest cooldown (B4).
  */
 export function getBestQuest(player: Player, settings: DifficultySettings): string | null {
   if (!player.hasGuildPass) return null;
   if (player.activeQuest) return null;
+  if (player.questCooldownWeeksLeft > 0) return null; // B4: cooldown
 
   const available = getAvailableQuests(player.guildRank);
   const takeable = available.filter((q) => {
@@ -355,4 +364,53 @@ export function getBestQuest(player: Player, settings: DifficultySettings): stri
   }
 
   return takeable[0].id;
+}
+
+/**
+ * Get the best bounty the AI should take (B2).
+ * Bounties don't require Guild Pass.
+ */
+export function getBestBounty(player: Player, week: number): string | null {
+  if (player.activeQuest) return null;
+
+  const bounties = getWeeklyBounties(week);
+  const takeable = bounties.filter(b => {
+    if (player.completedBountiesThisWeek.includes(b.id)) return false;
+    if (b.timeRequired > player.timeRemaining) return false;
+    if (b.healthRisk > player.health - 20) return false;
+    return true;
+  });
+
+  if (takeable.length === 0) return null;
+
+  // Pick highest gold/time ratio
+  takeable.sort((a, b) => (b.goldReward / b.timeRequired) - (a.goldReward / a.timeRequired));
+  return takeable[0].id;
+}
+
+/**
+ * Get the best chain quest the AI should take (B1).
+ * Requires Guild Pass. Strategic AI prefers chains for the completion bonus.
+ */
+export function getBestChainQuest(player: Player, settings: DifficultySettings): string | null {
+  if (!player.hasGuildPass) return null;
+  if (player.activeQuest) return null;
+  if (player.questCooldownWeeksLeft > 0) return null;
+
+  // Only strategic AI pursues chains
+  if (settings.planningDepth < 2) return null;
+
+  for (const chain of QUEST_CHAINS) {
+    const step = getNextChainStep(chain.id, player.questChainProgress);
+    if (!step) continue; // chain complete
+
+    const check = canTakeChainStep(chain, step, player.guildRank, player.education, player.dungeonFloorsCleared);
+    if (!check.canTake) continue;
+    if (step.timeRequired > player.timeRemaining) continue;
+    if (step.healthRisk > player.health - 20) continue;
+
+    return chain.id;
+  }
+
+  return null;
 }

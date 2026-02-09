@@ -2,7 +2,7 @@
  * Grimwald AI - Quest & Dungeon Actions
  *
  * Generates actions for guild pass purchase, equipment upgrades,
- * quest management, and dungeon exploration.
+ * quest management (B1 chains, B2 bounties), and dungeon exploration.
  */
 
 import { getFloor, getFloorTimeCost } from '@/data/dungeon';
@@ -13,6 +13,8 @@ import {
   getNextEquipmentUpgrade,
   shouldBuyGuildPass,
   getBestQuest,
+  getBestBounty,
+  getBestChainQuest,
 } from '../strategy';
 import type { ActionContext } from './actionContext';
 
@@ -92,9 +94,29 @@ export function generateQuestDungeonActions(ctx: ActionContext): AIAction[] {
     }
   }
 
+  // B1: Take chain quest (strategic AI prefers chains for bonus gold)
+  const bestChain = getBestChainQuest(player, settings);
+  if (bestChain) {
+    if (currentLocation === 'guild-hall') {
+      actions.push({
+        type: 'take-chain-quest',
+        priority: 63, // slightly higher than regular quests
+        description: `Take chain quest: ${bestChain}`,
+        details: { chainId: bestChain },
+      });
+    } else if (player.timeRemaining > moveCost('guild-hall') + 2) {
+      actions.push({
+        type: 'move',
+        location: 'guild-hall',
+        priority: 57,
+        description: 'Travel to guild hall for chain quest',
+      });
+    }
+  }
+
   // Take quest if at guild hall and have pass
   const bestQuest = getBestQuest(player, settings);
-  if (bestQuest) {
+  if (bestQuest && !bestChain) { // prefer chain over regular quest
     if (currentLocation === 'guild-hall') {
       actions.push({
         type: 'take-quest',
@@ -112,7 +134,28 @@ export function generateQuestDungeonActions(ctx: ActionContext): AIAction[] {
     }
   }
 
-  // Complete active quest
+  // B2: Take bounty (no Guild Pass needed, lower priority than quests)
+  const week = ctx.week ?? 1;
+  const bestBounty = getBestBounty(player, week);
+  if (bestBounty && !bestQuest && !bestChain) {
+    if (currentLocation === 'guild-hall') {
+      actions.push({
+        type: 'take-bounty',
+        priority: 45,
+        description: `Take bounty: ${bestBounty}`,
+        details: { bountyId: bestBounty },
+      });
+    } else if (player.timeRemaining > moveCost('guild-hall') + 2) {
+      actions.push({
+        type: 'move',
+        location: 'guild-hall',
+        priority: 40,
+        description: 'Travel to guild hall for bounty',
+      });
+    }
+  }
+
+  // Complete active quest (handles regular, chain, and bounty)
   if (player.activeQuest && currentLocation === 'guild-hall') {
     actions.push({
       type: 'complete-quest',
