@@ -1,5 +1,33 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Updated Default Zone Configurations
+
+### Zone Config Overhaul
+
+Updated the default `ZONE_CONFIGS`, `MOVEMENT_PATHS` in `src/data/locations.ts` to match refined board layout.
+
+**ZONE_CONFIGS changes:**
+- `noble-heights`: width 18.2→19.3, height 26.4→24.5 (slightly wider, shorter)
+- `general-store`: repositioned from (3.1, 33.9) to (6.4, 35.3), width 16.7→14.4, height 20.2→18.0
+- `graveyard`: moved from center-left (21.0, 33.0, 14.0×18.0) to far-left edge (0.0, 24.7, 5.6×17.0) — now a narrow strip on the left border
+- `bank`: minor adjustment from (1.1, 54.8, 18.1×18.7) to (1.3, 55.4, 17.9×17.7)
+- Zone order updated: graveyard moved from 6th to last position in array
+
+**MOVEMENT_PATHS changes:**
+- Added `noble-heights_general-store` direct path: [[5.6, 51.4], [5.6, 51.4]]
+- Updated `general-store_bank` waypoint: from [[5.6, 51.4], [5.6, 62.0]] to [[19.9, 69.5]]
+- Updated `noble-heights_graveyard` path: from [[15.0, 30.0]] to [[13.0, 31.6], [5.1, 38.3], [5.1, 38.3]] (3-waypoint path to new graveyard position)
+- Updated `graveyard_general-store` path: from [[15.0, 42.0]] to [[5.6, 52.6]]
+
+**CENTER_PANEL_CONFIG:** unchanged (top: 22.6, left: 22.0, width: 56.4, height: 53.6)
+
+**Files changed:**
+- `src/data/locations.ts` — ZONE_CONFIGS and MOVEMENT_PATHS updated
+
+**Tests:** All 171 tests passing (9 test files)
+
+---
+
 ## 2026-02-09 - Guild Rank Promotion Bug Fix & Quest Panel UI Redesign
 
 ### Bug Fix: Legendary Champion Can't Start Journeyman Quests
