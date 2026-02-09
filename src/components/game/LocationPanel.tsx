@@ -225,6 +225,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             <GuildHallPanel
               player={player}
               priceModifier={priceModifier}
+              week={week}
               onHireJob={(jobId, wage) => {
                 setJob(player.id, jobId, wage);
                 const job = getJob(jobId);

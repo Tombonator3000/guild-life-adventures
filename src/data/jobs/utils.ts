@@ -4,18 +4,50 @@ import type { DegreeId } from '@/types/game.types';
 import type { ClothingRequirement, Job, JobOffer, Employer, JobApplicationResult } from './types';
 import { ALL_JOBS } from './definitions';
 
-// Calculate offered wage based on economy (Jones-style, stabilized)
+// Minimum wage floor per career level — ensures higher-tier jobs always pay more
+// than lower-tier jobs regardless of economy fluctuations
+const CAREER_LEVEL_WAGE_FLOOR: Record<number, number> = {
+  1: 3,    // Entry Level: Floor Sweeper, Forge Laborer, Dishwasher
+  2: 5,    // Junior: Shop Clerk, Apprentice Smith, Library Assistant
+  3: 7,    // Associate: Bank Teller, City Guard, Market Vendor
+  4: 9,    // Mid-Level: Enchantment Assistant, Journeyman Smith
+  5: 11,   // Senior: Teacher, Guild Accountant, Tavern Manager
+  6: 13,   // Lead: Alchemist, Arena Fighter, Researcher
+  7: 16,   // Expert: Master Smith, Weapons Instructor, Academy Lecturer
+  8: 18,   // Executive: Sage, Guild Treasurer, Guild Administrator
+  9: 21,   // Director: Forge Manager
+  10: 23,  // Master: Guild Master's Assistant
+};
+
+// Deterministic hash for per-job-per-week wage noise
+// Returns a value between 0 and 1, stable for the same (jobId, week) pair
+function hashWageNoise(jobId: string, week: number): number {
+  let hash = 0;
+  const seed = `wage-${jobId}-w${week}`;
+  for (let i = 0; i < seed.length; i++) {
+    hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
+  }
+  return (Math.abs(hash) % 10000) / 10000; // 0.0 to 0.9999
+}
+
+// Calculate offered wage based on economy (stabilized v2)
 // Economy modifier drifts gradually via cycle system (0.75-1.25 range)
-// Individual wage variance is ±30% on top of economy (was ±150%)
-export const calculateOfferedWage = (job: Job, economyModifier: number): JobOffer => {
-  // Narrowed per-application variance: 0.7-1.6 (was 0.5-2.5)
-  // Combined with economy modifier (0.75-1.25), effective range is ~0.53-2.0
-  const baseMultiplier = 0.7 + (Math.random() * 0.9); // 0.7 to 1.6
+// Individual wage noise is ±10% per job per week (deterministic, not random)
+// Career level floors prevent higher-tier jobs from paying less than lower-tier
+export const calculateOfferedWage = (job: Job, economyModifier: number, week: number = 0): JobOffer => {
+  // Deterministic per-job-per-week noise: ±10% (was ±45% random)
+  // Uses hash so the same job shows the same wage all week
+  const noise = hashWageNoise(job.id, week);
+  const baseMultiplier = 0.90 + (noise * 0.20); // 0.90 to 1.10
   const adjustedMultiplier = baseMultiplier * economyModifier;
 
-  // Clamp between 0.5 and 2.0
-  const finalMultiplier = Math.max(0.5, Math.min(2.0, adjustedMultiplier));
-  const offeredWage = Math.round(job.baseWage * finalMultiplier);
+  // Clamp between 0.75 and 1.35 (was 0.5-2.0 — much narrower now)
+  const finalMultiplier = Math.max(0.75, Math.min(1.35, adjustedMultiplier));
+  const rawWage = Math.round(job.baseWage * finalMultiplier);
+
+  // Enforce career level wage floor — higher career level = higher minimum wage
+  const wageFloor = CAREER_LEVEL_WAGE_FLOOR[job.careerLevel] ?? 3;
+  const offeredWage = Math.max(wageFloor, rawWage);
 
   return {
     ...job,
@@ -30,10 +62,11 @@ export const getJobOffers = (
   clothingLevel: number,
   experience: number,
   dependability: number,
-  economyModifier: number
+  economyModifier: number,
+  week: number = 0
 ): JobOffer[] => {
   const availableJobs = getAvailableJobs(completedDegrees, clothingLevel, experience, dependability);
-  return availableJobs.map(job => calculateOfferedWage(job, economyModifier));
+  return availableJobs.map(job => calculateOfferedWage(job, economyModifier, week));
 };
 
 // Get jobs by location

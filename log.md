@@ -1,5 +1,127 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Salary Stabilization & Job/Education Balance Audit
+
+Fixed wild salary fluctuations, ensured proper wage hierarchy from entry to top jobs, and audited education-to-job mapping for fairness.
+
+### Problem 1: Wild Salary Fluctuations
+
+Wages could swing from 26g to 13g between visits to the Guild Hall within the same week. The old system used `Math.random()` with a wide 0.7-1.6× multiplier on every wage calculation, combined with the economy modifier (0.75-1.25×), giving an effective range of 0.5-2.0× base wage.
+
+**Root cause**: `calculateOfferedWage()` in `jobs/utils.ts` used `Math.random()` on every call. Even though wages were memoized per mount via `useMemo`, re-entering the Guild Hall (remount) re-rolled all wages.
+
+**Fix**: Replaced random variance with deterministic per-job-per-week hash function:
+- New `hashWageNoise(jobId, week)` returns 0-1 deterministically — same job shows same wage all week
+- Narrowed per-job noise from ±45% (0.7-1.6) to ±10% (0.90-1.10)
+- Narrowed clamp range from 0.5-2.0 to 0.75-1.35
+- Economy modifier (0.75-1.25) is now the primary driver of wage changes
+- Wages only change at week boundaries (when economy drifts), not between visits
+
+**Effective wage range comparison**:
+| | Before | After |
+|---|--------|-------|
+| Per-job noise | ±45% random | ±10% deterministic |
+| Economy range | 0.75-1.25 | 0.75-1.25 (unchanged) |
+| Total effective | 0.5-2.0× base | 0.67-1.35× base |
+| 14g job range | 7-28g | 10-19g |
+| Week-to-week change | Random re-roll | Gradual drift |
+
+### Problem 2: Mid-Tier Jobs Paying Less Than Entry Jobs
+
+Because each job got its own random multiplier, a mid-tier job could roll low (0.5×) while an entry job rolled high (2.0×), completely inverting the hierarchy.
+
+**Fix**: Added `CAREER_LEVEL_WAGE_FLOOR` — minimum wage per career level (1-10):
+```
+Level 1 (Entry): 3g min    Level 6 (Lead): 13g min
+Level 2 (Junior): 5g min   Level 7 (Expert): 16g min
+Level 3 (Associate): 7g min Level 8 (Executive): 18g min
+Level 4 (Mid-Level): 9g min Level 9 (Director): 21g min
+Level 5 (Senior): 11g min  Level 10 (Master): 23g min
+```
+Higher career level jobs can never pay less than the floor, regardless of economy conditions.
+
+### Problem 3: Education Path ROI Imbalances
+
+Several jobs were underpaid relative to the education investment required:
+
+| Job | Old Wage | New Wage | Issue |
+|-----|----------|----------|-------|
+| Scroll Copier | 7g (L2) | **9g (L3)** | Required Arcane Studies (130g) but paid same as Library Assistant (50g investment) |
+| City Guard | 8g | **10g** | Required Combat Training (130g) but paid less than Bank Teller (50g investment), plus 8h shifts |
+| Apprentice Smith | 6g | **8g** | Required Trade Guild + 8h shifts but paid same as Shop Clerk (6h shifts) |
+| Shop Clerk | 6g | **7g** | Required Trade Guild but paid same as degree-less Barmaid |
+| Enchantment Assistant | 11g | **12g** | Arcane Studies path ROI boost |
+| Potion Brewer | 13g | **14g** | Alchemy path (280g total investment) deserved better mid-tier reward |
+
+Career level corrections (jobs with exp/dep/clothing requirements reclassified from Entry to Junior):
+
+| Job | Old Level | New Level | Reason |
+|-----|-----------|-----------|--------|
+| Errand Runner | 1 (Entry) | **2 (Junior)** | Requires casual clothing + 10 exp + 20 dep |
+| Tavern Cook | 1 (Entry) | **2 (Junior)** | Requires casual clothing + 10 exp + 20 dep |
+| Bank Janitor | 1 (Entry) | **2 (Junior)** | Requires casual clothing + 10 exp + 20 dep |
+
+### Education Path Audit Results
+
+Full education → job progression verified:
+
+**No Degree → Entry (4-6g)**:
+Floor Sweeper 4g, Forge Laborer 4g, Dishwasher 4g, Porter 4g, Cook 5g, Runner 5g, Janitor 6g, Barmaid 6g
+
+**Trade Guild (50g) → Junior (7-10g)**:
+Shop Clerk 7g, Asst Clerk 7g, Apprentice Smith 8g, Market Vendor 10g, Head Chef 10g
+
+**Junior Academy (50g) → Junior-Associate (7-9g)**:
+Library Asst 7g, Scribe 8g, Bank Teller 9g
+
+**Arcane Studies (130g total) → Associate-Mid (9-12g)**:
+Scroll Copier 9g, Enchantment Asst 12g
+
+**Combat Training (130g total) → Associate-Mid (10-12g)**:
+City Guard 10g, Journeyman Smith 10g, Caravan Guard 12g
+
+**Commerce (150g total) → Mid-Senior (12-16g)**:
+Merchant Asst 12g, Guild Accountant 14g, Tavern Manager 14g, Shop Manager 16g
+
+**Scholar (150g total) → Senior (14g)**:
+Teacher 14g
+
+**Alchemy (280g total) → Senior-Lead (14-15g)**:
+Potion Brewer 14g, Alchemist 15g
+
+**Master Combat (250g total) → Lead-Expert (16-19g)**:
+Arena Fighter 16g, Master Smith 18g, Weapons Instructor 19g
+
+**Advanced Scholar (300g total) → Lead (16-17g)**:
+Researcher 16g, Senior Teacher 17g
+
+**Sage Studies (500g total) → Expert (18g)**:
+Academy Lecturer 18g
+
+**Loremaster (750g total) → Executive (20-21g)**:
+Sage 20g, Court Advisor 21g
+
+**Commerce + Master Combat (~400g) → Executive (22-23g)**:
+Guild Administrator 22g, Forge Manager 23g
+
+**Scholar + Commerce (~250g) → Executive (22g)**:
+Guild Treasurer 22g
+
+**Commerce + Master Combat + Loremaster (~1000g) → Master (25g)**:
+Guild Master's Assistant 25g
+
+**Verdict**: Every education path now provides a clear wage increase that justifies the investment. Higher investment = higher ceiling. No dead-end paths.
+
+### Files Modified
+
+- `src/data/jobs/utils.ts` — Replaced random wage with deterministic hash, added career level wage floors, `calculateOfferedWage` now accepts `week` parameter
+- `src/data/jobs/definitions.ts` — 9 job balance adjustments (6 wage increases, 3 career level corrections)
+- `src/components/game/GuildHallPanel.tsx` — Added `week` prop, passed to `calculateOfferedWage`
+- `src/components/game/LocationPanel.tsx` — Passes `week` to `GuildHallPanel`
+- `src/hooks/useGrimwaldAI.ts` — AI uses `week` for `calculateOfferedWage` (same formula as human players)
+
+**Build succeeds, 171 tests pass, TypeScript clean.**
+
 ## 2026-02-09 - Graveyard Path Reorder & NPC Portrait Fix
 
 Reordered the board path around the graveyard to match the visual layout of the game board.
