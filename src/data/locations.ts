@@ -81,12 +81,11 @@ export const getPath = (from: LocationId, to: LocationId): LocationId[] => {
 // These can be edited to fine-tune zone positions
 // Coordinates are percentages relative to the board container
 export const ZONE_CONFIGS: ZoneConfig[] = [
-  { id: 'noble-heights', x: 1.1, y: 0.0, width: 18.2, height: 26.4 },
+  { id: 'noble-heights', x: 1.1, y: 0.0, width: 19.3, height: 24.5 },
   { id: 'landlord', x: 25.4, y: 1.6, width: 12.8, height: 18.7 },
   { id: 'slums', x: 41.1, y: 0.7, width: 20.2, height: 19.7 },
   { id: 'fence', x: 63.3, y: 0.9, width: 14.5, height: 18.9 },
-  { id: 'general-store', x: 3.1, y: 33.9, width: 16.7, height: 20.2 },
-  { id: 'graveyard', x: 21.0, y: 33.0, width: 14.0, height: 18.0 },
+  { id: 'general-store', x: 6.4, y: 35.3, width: 14.4, height: 18.0 },
   { id: 'shadow-market', x: 80.1, y: 0.9, width: 18.0, height: 18.9 },
   { id: 'rusty-tankard', x: 81.1, y: 22.3, width: 16.1, height: 18.2 },
   { id: 'armory', x: 80.6, y: 41.9, width: 13.9, height: 18.7 },
@@ -95,7 +94,8 @@ export const ZONE_CONFIGS: ZoneConfig[] = [
   { id: 'cave', x: 41.9, y: 78.8, width: 15.5, height: 14.9 },
   { id: 'academy', x: 60.3, y: 77.8, width: 17.9, height: 16.1 },
   { id: 'enchanter', x: 80.5, y: 67.0, width: 14.4, height: 26.1 },
-  { id: 'bank', x: 1.1, y: 54.8, width: 18.1, height: 18.7 },
+  { id: 'bank', x: 1.3, y: 55.4, width: 17.9, height: 17.7 },
+  { id: 'graveyard', x: 0.0, y: 24.7, width: 5.6, height: 17.0 },
 ];
 
 // Board aspect ratio for the game board container
@@ -111,9 +111,8 @@ export const BOARD_ASPECT_RATIO = `${76 * 16} / ${100 * 9}`; // 1216/900 ≈ 1.3
 export type MovementWaypoint = [number, number];
 
 export const MOVEMENT_PATHS: Record<string, MovementWaypoint[]> = {
-  'noble-heights_graveyard': [[15.0, 30.0]],
-  'graveyard_general-store': [[15.0, 42.0]],
-  'general-store_bank': [[5.6, 51.4], [5.6, 62.0]],
+  'noble-heights_general-store': [[5.6, 51.4], [5.6, 51.4]],
+  'general-store_bank': [[19.9, 69.5]],
   'bank_forge': [[3.6, 88.8]],
   'forge_guild-hall': [[22.7, 92.8]],
   'guild-hall_cave': [[37.2, 93.3]],
@@ -126,6 +125,8 @@ export const MOVEMENT_PATHS: Record<string, MovementWaypoint[]> = {
   'fence_slums': [[62.3, 20.1]],
   'slums_landlord': [[40.4, 19.7]],
   'landlord_noble-heights': [[22.2, 20.5]],
+  'noble-heights_graveyard': [[13.0, 31.6], [5.1, 38.3], [5.1, 38.3]],
+  'graveyard_general-store': [[5.6, 52.6]],
 };
 
 // Get the movement path key for two adjacent locations (always clockwise order)
