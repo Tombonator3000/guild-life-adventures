@@ -552,6 +552,6 @@ describe('Action Argument Validation', () => {
 
     // These should still be callable via executeAction (host-side only),
     // but the network layer blocks guests from calling them
-    expect(typeof (useGameStore.getState() as Record<string, unknown>).startTurn).toBe('function');
+    expect(typeof (useGameStore.getState() as unknown as Record<string, unknown>).startTurn).toBe('function');
   });
 });

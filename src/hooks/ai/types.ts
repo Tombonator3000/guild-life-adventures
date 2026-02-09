@@ -64,6 +64,7 @@ export type AIActionType =
   | 'rest'
   | 'heal'
   | 'buy-equipment'
+  | 'temper-equipment'
   | 'explore-dungeon'
   | 'buy-guild-pass'
   | 'take-quest'

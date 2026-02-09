@@ -209,7 +209,7 @@
   }
 
   .location-zone:hover {
-    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23d4a537' stroke-width='2'%3E%3Cpath d='M3 12h4l3 9 4-18 3 9h4'/%3E%3C/svg%3E") 12 12, pointer;
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 20L14 10M14 10L20 4M14 10L10 14' stroke='%23d4a537' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M17 7L19 5' stroke='%23d4a537' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M7 13L5 15L9 19L11 17' stroke='%23d4a537' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='6' cy='18' r='1.5' fill='%23d4a537'/%3E%3C/svg%3E") 4 20, pointer;
   }
 
   .location-zone.active {

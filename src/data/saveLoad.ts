@@ -65,7 +65,7 @@ export function loadGame(slot: number = 0): SaveData | null {
     if (saveData.version < 2) {
       // v1 → v2: Add age field to players (default 18 + weeks/4)
       if (saveData.gameState?.players) {
-        for (const p of saveData.gameState.players as Record<string, unknown>[]) {
+        for (const p of saveData.gameState.players as unknown as Record<string, unknown>[]) {
           if (p.age === undefined) {
             // Estimate age from game week: starting age + weeks elapsed / 4
             p.age = 18 + Math.floor((saveData.week || 1) / 4);
@@ -78,7 +78,7 @@ export function loadGame(slot: number = 0): SaveData | null {
     if (saveData.version < 3) {
       // v2 → v3: Add quest system B-features fields
       if (saveData.gameState?.players) {
-        for (const p of saveData.gameState.players as Record<string, unknown>[]) {
+        for (const p of saveData.gameState.players as unknown as Record<string, unknown>[]) {
           if (p.questChainProgress === undefined) p.questChainProgress = {};
           if (p.completedBountiesThisWeek === undefined) p.completedBountiesThisWeek = [];
           if (p.questCooldownWeeksLeft === undefined) p.questCooldownWeeksLeft = 0;
