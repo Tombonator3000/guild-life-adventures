@@ -1,5 +1,41 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Verification: AI Modal, Speech Bubble, Landlord Restriction
+
+### Verification of 3 Features (All Confirmed Implemented)
+
+Verified that the following 3 features from the previous session are **actually implemented** in code:
+
+#### 1. AI Scheming Modal — Larger with AI Portrait
+**File:** `src/components/game/GameBoardOverlays.tsx:84-146`
+- Modal dimensions: `min-w-[360px]` desktop / `min-w-[280px]` mobile, `p-8` padding
+- `CharacterPortrait` component renders AI portrait at 96px (desktop) / 72px (mobile)
+- Spinning `Brain` icon badge at bottom-right of portrait
+- Title text enlarged to `text-2xl`, bounce dots at `w-2.5 h-2.5`
+- Speed controls (1x/3x/Skip) below with `w-3.5 h-3.5` icons
+
+#### 2. Speech Bubble Tail Points at NPC Portrait
+**File:** `src/components/game/BanterBubble.tsx:125-157`
+- Triangle tail positioned at `top: 100%`, `left: clamp(32px, 15%, 64px)`
+- Points down-left toward the NPC portrait column in LocationShell
+- Double-layer tail technique: outer border-colored triangle + inner background-colored triangle
+- Mood-based coloring (friendly/grumpy/mysterious/gossip/warning)
+
+#### 3. Landlord Rent Week Restriction
+**Files:**
+- `src/components/game/LocationPanel.tsx:461-506` — Player UI
+- `src/hooks/ai/actions/criticalNeeds.ts:66-95` — AI rent payment
+- `src/hooks/ai/actions/strategicActions.ts:91-135` — AI housing actions
+
+**Rules:**
+- Rent weeks: `(week + 1) % 4 === 0` (every 4th week)
+- Emergency access: `weeksSinceRent >= 3` (3+ weeks overdue)
+- "Office Closed" message with countdown to next rent week
+- Prepaid weeks info still shown when closed
+- AI uses identical gating logic for rent payment, housing upgrade, and housing downgrade
+
+---
+
 ## 2026-02-09 - Game Audio: SFX System, Ambient Sounds & Web Audio Synth
 
 ### Complete 3-Layer Audio System
