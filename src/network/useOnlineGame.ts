@@ -31,7 +31,7 @@ export function useOnlineGame() {
   const [lobbyPlayers, setLobbyPlayers] = useState<LobbyPlayer[]>([]);
   const [localPlayerName, setLocalPlayerName] = useState('');
   const [settings, setSettings] = useState<OnlineGameSettings>({
-    goals: { wealth: 5000, happiness: 100, education: 45, career: 4 },
+    goals: { wealth: 5000, happiness: 100, education: 45, career: 4, adventure: 0 },
     includeAI: false,
     aiDifficulty: 'medium',
   });

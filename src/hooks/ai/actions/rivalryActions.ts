@@ -17,7 +17,10 @@ import type { Player } from '@/types/game.types';
  */
 function getRivalFocus(rival: Player, goals: ActionContext['goals']): 'wealth' | 'happiness' | 'education' | 'career' {
   const progress = calculateGoalProgress(rival, goals);
-  return getWeakestGoal(progress);
+  const weakest = getWeakestGoal(progress);
+  // Filter out 'adventure' since AI rivalry only tracks the 4 core goals
+  if (weakest === 'adventure') return 'wealth';
+  return weakest;
 }
 
 /**

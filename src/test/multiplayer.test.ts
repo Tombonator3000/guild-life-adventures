@@ -205,6 +205,7 @@ describe('Network State Serialization', () => {
       happiness: 100,
       education: 45,
       career: 4,
+      adventure: 0,
     });
     resetNetworkState();
   });
@@ -317,6 +318,7 @@ describe('executeAction', () => {
       happiness: 100,
       education: 45,
       career: 4,
+      adventure: 0,
     });
   });
 
@@ -378,6 +380,7 @@ describe('Network Guards in Store', () => {
       happiness: 100,
       education: 45,
       career: 4,
+      adventure: 0,
     });
   });
 
@@ -391,6 +394,7 @@ describe('Network Guards in Store', () => {
       happiness: 50,
       education: 9,
       career: 1,
+      adventure: 0,
     });
 
     const playersAfter = useGameStore.getState().players;
@@ -520,6 +524,7 @@ describe('Action Argument Validation', () => {
       happiness: 100,
       education: 45,
       career: 4,
+      adventure: 0,
     });
   });
 
