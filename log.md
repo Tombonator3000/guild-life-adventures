@@ -1,5 +1,114 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Standalone Exe / Steam Distribution Research
+
+### Summary
+
+Researched all practical options for packaging Guild Life Adventures as a standalone desktop executable for distribution on Steam (or similar platforms). The game is built with React 18 + Vite + TypeScript, using PeerJS for WebRTC multiplayer, Web Audio for music/SFX, and localStorage for saves.
+
+### Framework Comparison
+
+| Framework | Bundle Size | WebRTC/PeerJS | Steam Overlay | Steamworks SDK | Maturity | Verdict |
+|-----------|-------------|---------------|---------------|----------------|----------|---------|
+| **Electron** | ~120-150 MB | Full support | Yes (workaround) | steamworks.js (mature) | High | **RECOMMENDED** |
+| NW.js | ~120-150 MB | Full support | Yes (workaround) | Greenworks/steamworks.js | High | Viable backup |
+| Tauri | ~2-10 MB | **Broken on Linux** | **No** | Rust only | Medium | Not suitable |
+| Neutralinojs | ~0.5-2 MB | **Broken on Linux** | **No** | None | Low | Not suitable |
+| Capacitor Desktop | ~120 MB | Full (via Electron) | Yes | Via Electron | Medium | Unnecessary layer |
+| Gluon | Tiny | Depends on system browser | No | None | Very Low | Too immature |
+| Direct WebView2 | ~5-10 MB | Windows only | **No** | Custom C++ | N/A | Windows only |
+
+### Recommendation: Electron
+
+Electron is the clear winner for Guild Life Adventures because:
+
+1. **PeerJS/WebRTC works out of the box** — Chromium has best-in-class WebRTC on all platforms. Tauri and Neutralinojs fail on Linux.
+2. **Steam Overlay works** — with a well-documented repaint workaround. Tauri, Neutralinojs, and WebView2 all fail.
+3. **Steamworks SDK integration is mature** — `steamworks.js` provides achievements, friends, cloud saves with TypeScript definitions.
+4. **First-class Vite support** — `electron-vite` provides Vite + React + TypeScript integration with HMR.
+5. **Proven commercial success** — Game Dev Tycoon (94% positive, 22k+ reviews), Curious Expedition (200k+ units sold), Screeps, Wayward all shipped as HTML5 games on Steam.
+6. **Bundle size is irrelevant for Steam** — Steam games routinely exceed 1 GB. 120 MB is fine.
+7. **Web Audio, localStorage, Zustand, Tailwind** — all work unchanged since Electron IS Chromium.
+
+### Why NOT Tauri
+
+Despite being much smaller (2-10 MB), Tauri has two deal-breaking issues:
+- **Steam Overlay does not work** — confirmed in Tauri issue tracker (#6196). Steam overlay hooks into DirectX/OpenGL, not native WebViews.
+- **WebRTC broken on Linux** — WebKitGTK does not ship WebRTC support (#13143). Kills PeerJS multiplayer.
+- **Inconsistent rendering** — three different browser engines across platforms (Chromium on Windows, WebKit on macOS/Linux).
+
+### What Would Need to Change (Electron Migration)
+
+| Current | Electron Adaptation |
+|---------|-------------------|
+| Vite build | Use `electron-vite` (wraps Vite for Electron dual-process) |
+| Zustand | Works unchanged in renderer process |
+| Tailwind + shadcn/ui | Works unchanged |
+| PeerJS/WebRTC | Works unchanged (full Chromium) |
+| Web Audio | Works unchanged |
+| Service Worker (PWA) | Can keep, but less needed in desktop app |
+| localStorage saves | Migrate to Node.js `fs` for Steam Cloud Save support |
+| Bun | Still used for dev; electron-builder handles packaging |
+
+### Key Libraries for Electron + Steam
+
+| Library | Purpose |
+|---------|---------|
+| `electron-vite` | Vite integration for Electron (HMR, dual-process) |
+| `electron-builder` | Packaging into Windows/Mac/Linux installers |
+| `steamworks.js` | Steamworks SDK: achievements, friends, cloud saves, overlay |
+| `steamworks-ffi-node` | Alternative to steamworks.js (FFI-based, no C++ compilation) |
+
+### Steam Store Requirements
+
+1. **Steamworks Partner Account** — create at partner.steamgames.com
+2. **Steam Direct Fee** — $100 USD per game (recoupable after $1,000 revenue)
+3. **Legal/Financial Setup** — bank info, tax info, identity verification
+4. **Store Page** — must be "Coming Soon" for at least 2 weeks before launch
+5. **Build Review** — submit near-final build, 3-5 business day review
+6. **30-day waiting period** between paying fee and being able to release
+7. **Content Rules** — no crypto/NFTs, no external store links, in-app purchases must use Steam Wallet
+
+### Steam Overlay Workaround for Electron
+
+Steam overlay needs constant screen repaints. Since our game has animations (player movement, weather effects, etc.), this mostly works. For fully static screens (title, settings), a full-screen transparent canvas with `requestAnimationFrame` loop forces repaints.
+
+Required Electron flags:
+- `--in-process-gpu`
+- `--disable-direct-composition`
+
+### Electron Setup Steps (High-Level)
+
+1. Install `electron` + `electron-vite` + `electron-builder`
+2. Create `electron/main.ts` (main process — window management, Steamworks init)
+3. Create `electron/preload.ts` (bridge between main and renderer)
+4. Configure `electron-vite` in `electron.vite.config.ts`
+5. Move save game system from localStorage to file system (for Steam Cloud Saves)
+6. Add `steamworks.js` for achievements/overlay
+7. Configure `electron-builder` for Windows (NSIS/MSI), macOS (.dmg), Linux (.AppImage/.deb)
+8. Upload via `steamcmd` (NOT Steam GUI uploader — it breaks macOS symlinks)
+9. Test with Steamworks App ID 480 ("Spacewar") during development
+
+### Successful HTML5 Games on Steam (References)
+
+- **Game Dev Tycoon** — 94% positive, 22k+ reviews (originally NW.js, now Electron)
+- **Curious Expedition** — 200k+ units sold (switched NW.js → Electron for performance)
+- **Screeps** — MMO RTS (NW.js + Greenworks)
+- **Wayward** — Survival game (Electron + Greenworks)
+
+### Alternative Distribution (Non-Steam)
+
+- **itch.io** — simpler, no $100 fee, open to all, Electron or just plain web
+- **Epic Games Store** — higher barrier than Steam, but accepts Electron games
+- **GOG** — DRM-free focus, accepts Electron games
+- **Direct download** — use `electron-updater` for auto-updates
+
+### Build Status
+
+- Research only, no code changes
+
+---
+
 ## 2026-02-09 - Multiplayer Portrait Selection
 
 ### Summary

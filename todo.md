@@ -852,6 +852,31 @@
 
 *No active tasks*
 
+## Standalone Exe / Steam Distribution (Research Complete 2026-02-09)
+
+### Decision: Electron is the recommended framework
+
+- [x] Research all framework options (Electron, Tauri, NW.js, Neutralinojs, etc.)
+- [x] Evaluate Steam overlay compatibility
+- [x] Evaluate WebRTC/PeerJS compatibility for multiplayer
+- [x] Evaluate Steamworks SDK integration options
+- [x] Document Steam store submission requirements
+- [x] Log findings to log.md
+
+### Implementation Steps (When Ready)
+
+- [ ] Set up Electron + electron-vite project structure
+- [ ] Create `electron/main.ts` (window management, Steamworks init)
+- [ ] Create `electron/preload.ts` (IPC bridge)
+- [ ] Configure electron-builder for Win/Mac/Linux packaging
+- [ ] Migrate save games from localStorage to file system (Node.js fs)
+- [ ] Integrate `steamworks.js` for achievements/overlay/cloud saves
+- [ ] Add Steam overlay repaint workaround for static screens
+- [ ] Register Steamworks Partner account ($100 Steam Direct fee)
+- [ ] Create Steam store page (2+ weeks before launch)
+- [ ] Submit build for Steam review
+- [ ] Test with Steamworks App ID 480 (Spacewar) during development
+
 ## Proposed Improvements (2026-02-08 Analysis)
 
 Full details with design specs in log.md "Game Improvement Proposals (Gameplay, Quests, Cave, General)"
