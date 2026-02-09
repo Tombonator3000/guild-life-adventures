@@ -119,6 +119,7 @@ export function useOnlineGame() {
 
     const store = useGameStore.getState();
     const playerNames = lobbyPlayers.map(p => p.name);
+    const playerPortraits = lobbyPlayers.map(p => p.portraitId ?? null);
 
     // Create the game using the existing startNewGame action
     store.startNewGame(
@@ -126,6 +127,8 @@ export function useOnlineGame() {
       settings.includeAI,
       settings.goals,
       settings.aiDifficulty,
+      undefined,       // aiConfigs — online lobby uses legacy single-AI
+      playerPortraits,
     );
 
     // Set network state on the store
@@ -178,7 +181,7 @@ export function useOnlineGame() {
     const unsubMessage = peerManager.onMessage((message: NetworkMessage, fromPeerId: string) => {
       if (isHost) {
         const msg = message as GuestMessage;
-        if (msg.type === 'join' || msg.type === 'ready' || msg.type === 'leave' || msg.type === 'reconnect') {
+        if (msg.type === 'join' || msg.type === 'ready' || msg.type === 'leave' || msg.type === 'reconnect' || msg.type === 'portrait-select') {
           handleHostMessageRef.current?.(msg, fromPeerId);
         }
       } else {
@@ -289,6 +292,23 @@ export function useOnlineGame() {
         setLobbyPlayers(prev => {
           const updated = prev.map(p =>
             p.peerId === fromPeerId ? { ...p, isReady: message.isReady } : p
+          );
+          const lobby: LobbyState = {
+            roomCode,
+            hostName: localPlayerName,
+            players: updated,
+            settings,
+          };
+          peerManager.broadcast({ type: 'lobby-update', lobby });
+          return updated;
+        });
+        break;
+      }
+
+      case 'portrait-select': {
+        setLobbyPlayers(prev => {
+          const updated = prev.map(p =>
+            p.peerId === fromPeerId ? { ...p, portraitId: message.portraitId } : p
           );
           const lobby: LobbyState = {
             roomCode,
@@ -547,6 +567,30 @@ export function useOnlineGame() {
     });
   }, [isHost, roomCode, localPlayerName, lobbyPlayers]);
 
+  // --- Portrait Update ---
+
+  const updatePortrait = useCallback((portraitId: string | null) => {
+    if (isHost) {
+      // Host updates locally and broadcasts
+      setLobbyPlayers(prev => {
+        const updated = prev.map(p =>
+          p.peerId === 'host' ? { ...p, portraitId } : p
+        );
+        const lobby: LobbyState = {
+          roomCode,
+          hostName: localPlayerName,
+          players: updated,
+          settings,
+        };
+        peerManager.broadcast({ type: 'lobby-update', lobby });
+        return updated;
+      });
+    } else {
+      // Guest sends portrait selection to host
+      peerManager.sendToHost({ type: 'portrait-select', portraitId });
+    }
+  }, [isHost, roomCode, localPlayerName, settings]);
+
   // --- Disconnect ---
 
   const disconnect = useCallback(() => {
@@ -609,6 +653,7 @@ export function useOnlineGame() {
     joinRoom,
     startOnlineGame,
     updateSettings,
+    updatePortrait,
     disconnect,
     setLocalPlayerName,
     attemptReconnect,

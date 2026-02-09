@@ -1,5 +1,50 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Multiplayer Portrait Selection
+
+### Summary
+
+Added character portrait selection to the online multiplayer lobby. Both host and guest players can now click their avatar in the player list to open the portrait picker modal and choose from the 8 available character portraits (Warrior, Mage, Rogue, Cleric, Ranger, Bard, Paladin, Merchant). Portrait selections are synced via WebRTC to all lobby participants and passed to the game state on game start.
+
+### Changes
+
+**`src/network/types.ts`**
+- Added `portraitId?: string | null` to `LobbyPlayer` interface
+- Added `portrait-select` guest message type (`{ type: 'portrait-select'; portraitId: string | null }`)
+
+**`src/network/useOnlineGame.ts`**
+- Host message handler: added `portrait-select` case — updates lobby player's portraitId and broadcasts `lobby-update`
+- Added `updatePortrait(portraitId)` function — host updates locally + broadcasts; guest sends `portrait-select` message to host
+- `startOnlineGame()` now extracts `portraitId` from each lobby player and passes the portrait array to `startNewGame()`
+- Added `portrait-select` to lobby message filter in the message handler effect
+- Exposed `updatePortrait` in hook return
+
+**`src/components/screens/OnlineLobby.tsx`**
+- Imported `CharacterPortrait` and `PortraitPicker` components
+- Replaced plain colored circles with `CharacterPortrait` (36px) for all players in both host and guest lobby views
+- Own portrait is clickable (opens portrait picker modal)
+- Other players' portraits shown as non-interactive
+- Portrait picker modal renders outside the scrollable lobby container (fixed z-100 overlay)
+- Added `showPortraitPicker` state and `handlePortraitSelect` handler
+
+### Network Flow
+
+1. Player clicks their portrait in lobby → `setShowPortraitPicker(true)`
+2. Selects portrait in picker → `handlePortraitSelect(portraitId)`
+3. If **host**: Updates `lobbyPlayers` state directly, broadcasts `lobby-update` to all guests
+4. If **guest**: Sends `{ type: 'portrait-select', portraitId }` to host
+5. Host receives `portrait-select` → updates that guest's `portraitId` in lobby, broadcasts `lobby-update`
+6. All clients see updated portrait in the player list
+7. On game start: `lobbyPlayers.map(p => p.portraitId ?? null)` passed to `startNewGame()` as `playerPortraits`
+
+### Build Status
+
+- TypeScript compiles cleanly
+- Build succeeds
+- All 171 tests pass
+
+---
+
 ## 2026-02-09 - Death Modal & Credits Screen
 
 ### Summary

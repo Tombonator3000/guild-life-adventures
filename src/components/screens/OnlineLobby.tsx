@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useOnlineGame } from '@/network/useOnlineGame';
 import { isValidRoomCode } from '@/network/roomCodes';
@@ -8,6 +8,8 @@ import {
   Globe, Users, Copy, Check, ArrowLeft, Play, Wifi, WifiOff,
   Loader2, Bot, Brain, Zap, Crown, UserPlus,
 } from 'lucide-react';
+import { CharacterPortrait } from '@/components/game/CharacterPortrait';
+import { PortraitPicker } from '@/components/game/PortraitPicker';
 import gameBoard from '@/assets/game-board.jpeg';
 
 type LobbyView = 'menu' | 'creating' | 'joining' | 'host-lobby' | 'guest-lobby';
@@ -26,6 +28,7 @@ export function OnlineLobby() {
     joinRoom,
     startOnlineGame,
     updateSettings,
+    updatePortrait,
     disconnect,
     setLocalPlayerName,
   } = useOnlineGame();
@@ -35,6 +38,7 @@ export function OnlineLobby() {
   const [codeInput, setCodeInput] = useState('');
   const [copied, setCopied] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [showPortraitPicker, setShowPortraitPicker] = useState(false);
 
   // --- Actions ---
 
@@ -82,6 +86,18 @@ export function OnlineLobby() {
       setView('menu');
     }
   };
+
+  const handlePortraitSelect = (portraitId: string | null) => {
+    updatePortrait(portraitId);
+    setShowPortraitPicker(false);
+  };
+
+  // Find this player's data in the lobby
+  const myLobbyPlayer = lobbyPlayers.find(p =>
+    isHost ? p.peerId === 'host' : p.name === localPlayerName
+  );
+  const myPortraitId = myLobbyPlayer?.portraitId ?? null;
+  const myColor = myLobbyPlayer?.color || PLAYER_COLORS[0].value;
 
   // All non-host players must be ready, and need at least 2 players (or AI)
   const allGuestsReady = lobbyPlayers.filter(p => p.peerId !== 'host').every(p => p.isReady);
@@ -276,24 +292,37 @@ export function OnlineLobby() {
                 Players ({lobbyPlayers.length}/4)
               </h2>
               <div className="space-y-2">
-                {lobbyPlayers.map((p, i) => (
-                  <div key={p.peerId} className="flex items-center gap-3 p-2 rounded bg-background/50">
-                    <div
-                      className="w-8 h-8 rounded-full border-2 border-wood-light flex-shrink-0"
-                      style={{ backgroundColor: p.color || '#888' }}
-                    />
-                    <span className="font-display text-amber-900 flex-1">{p.name}</span>
-                    {p.peerId === 'host' && (
-                      <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded font-display">Host</span>
-                    )}
-                    {p.isReady && p.peerId !== 'host' && (
-                      <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded font-display">Ready</span>
-                    )}
-                  </div>
-                ))}
+                {lobbyPlayers.map((p) => {
+                  const isMe = p.peerId === 'host';
+                  return (
+                    <div key={p.peerId} className="flex items-center gap-3 p-2 rounded bg-background/50">
+                      <button
+                        onClick={isMe ? () => setShowPortraitPicker(true) : undefined}
+                        className={`flex-shrink-0 rounded-full ${isMe ? 'hover:ring-2 hover:ring-primary transition-all cursor-pointer' : ''}`}
+                        title={isMe ? 'Choose portrait' : undefined}
+                        disabled={!isMe}
+                      >
+                        <CharacterPortrait
+                          portraitId={p.portraitId ?? null}
+                          playerColor={p.color || '#888'}
+                          playerName={p.name}
+                          size={36}
+                          isAI={false}
+                        />
+                      </button>
+                      <span className="font-display text-amber-900 flex-1">{p.name}</span>
+                      {p.peerId === 'host' && (
+                        <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded font-display">Host</span>
+                      )}
+                      {p.isReady && p.peerId !== 'host' && (
+                        <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded font-display">Ready</span>
+                      )}
+                    </div>
+                  );
+                })}
                 {lobbyPlayers.length < 4 && (
                   <div className="flex items-center gap-3 p-2 rounded border border-dashed border-border/50 text-muted-foreground">
-                    <div className="w-8 h-8 rounded-full border-2 border-dashed border-border/50 flex-shrink-0" />
+                    <div className="w-9 h-9 rounded-full border-2 border-dashed border-border/50 flex-shrink-0" />
                     <span className="text-sm italic">Waiting for player...</span>
                   </div>
                 )}
@@ -421,21 +450,34 @@ export function OnlineLobby() {
                 Players
               </h2>
               <div className="space-y-2">
-                {lobbyPlayers.map((p, i) => (
-                  <div key={p.peerId} className="flex items-center gap-3 p-2 rounded bg-background/50">
-                    <div
-                      className="w-8 h-8 rounded-full border-2 border-wood-light flex-shrink-0"
-                      style={{ backgroundColor: p.color || '#888' }}
-                    />
-                    <span className="font-display text-amber-900 flex-1">{p.name}</span>
-                    {p.peerId === 'host' && (
-                      <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded font-display">Host</span>
-                    )}
-                    {p.name === localPlayerName && (
-                      <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded font-display">You</span>
-                    )}
-                  </div>
-                ))}
+                {lobbyPlayers.map((p) => {
+                  const isMe = p.name === localPlayerName;
+                  return (
+                    <div key={p.peerId} className="flex items-center gap-3 p-2 rounded bg-background/50">
+                      <button
+                        onClick={isMe ? () => setShowPortraitPicker(true) : undefined}
+                        className={`flex-shrink-0 rounded-full ${isMe ? 'hover:ring-2 hover:ring-primary transition-all cursor-pointer' : ''}`}
+                        title={isMe ? 'Choose portrait' : undefined}
+                        disabled={!isMe}
+                      >
+                        <CharacterPortrait
+                          portraitId={p.portraitId ?? null}
+                          playerColor={p.color || '#888'}
+                          playerName={p.name}
+                          size={36}
+                          isAI={false}
+                        />
+                      </button>
+                      <span className="font-display text-amber-900 flex-1">{p.name}</span>
+                      {p.peerId === 'host' && (
+                        <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded font-display">Host</span>
+                      )}
+                      {isMe && (
+                        <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded font-display">You</span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Settings display (read-only for guests) */}
@@ -469,6 +511,17 @@ export function OnlineLobby() {
           </div>
         )}
       </div>
+
+      {/* Portrait Picker Modal */}
+      {showPortraitPicker && (
+        <PortraitPicker
+          selectedPortraitId={myPortraitId}
+          playerColor={myColor}
+          playerName={localPlayerName}
+          onSelect={handlePortraitSelect}
+          onClose={() => setShowPortraitPicker(false)}
+        />
+      )}
     </div>
   );
 }
