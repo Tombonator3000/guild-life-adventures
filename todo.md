@@ -843,6 +843,11 @@
   - CharacterPortrait replaces plain colored circles in lobby player list
   - Build passes, 171 tests pass
 
+- [x] iPad Board Stretch & Credits Music Fix
+  - Board: removed aspect ratio lock, board now fills 100% available space (no more black bars on iPad)
+  - Credits: audioManager.stop() on mount, audioManager.play('main-theme') on unmount (no music overlap)
+  - Build passes, 171 tests pass
+
 ## In Progress
 
 *No active tasks*

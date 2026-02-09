@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
-import { LOCATIONS, getMovementCost, getPath, BOARD_ASPECT_RATIO } from '@/data/locations';
+import { LOCATIONS, getMovementCost, getPath } from '@/data/locations';
 import { getAppliance } from '@/data/items';
 import { LocationZone } from './LocationZone';
 import { PlayerToken } from './PlayerToken';
@@ -172,9 +172,6 @@ export function GameBoard() {
     broadcastMovement,
   });
 
-  // Layout: Side panels fill full viewport height, board maintains aspect ratio
-  // This ensures panels use all screen space on non-16:9 displays (e.g. 1920x1200)
-  // BOARD_ASPECT_RATIO imported from locations.ts (shared with ZoneEditor)
   const SIDE_PANEL_WIDTH_PERCENT = 12;
 
   return (
@@ -210,15 +207,11 @@ export function GameBoard() {
         </div>
       )}
 
-      {/* Board area - centers the aspect-ratio-locked board within remaining space */}
+      {/* Board area - fills all available space (no aspect ratio lock) */}
+      {/* Image stretches via backgroundSize 100% 100%, zones use percentage positioning */}
       <div className="flex-1 flex items-center justify-center min-w-0 min-h-0">
         <div
-          className="relative"
-          style={{
-            width: '100%',
-            aspectRatio: BOARD_ASPECT_RATIO,
-            maxHeight: '100%',
-          }}
+          className="relative w-full h-full"
         >
           {/* Game board background - 100% 100% ensures image fills container exactly */}
           {/* so percentage-based overlays (zones, center panel) align with the image */}
