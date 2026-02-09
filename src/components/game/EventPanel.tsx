@@ -1,7 +1,9 @@
 // Inline event panel that renders inside the center panel (not a Dialog overlay)
 
+import { useEffect } from 'react';
 import { AlertTriangle, Skull, Home, Coins, Heart, Utensils } from 'lucide-react';
 import type { GameEvent } from './EventModal';
+import { playSFX } from '@/audio/sfxManager';
 
 interface EventPanelProps {
   event: GameEvent;
@@ -9,6 +11,19 @@ interface EventPanelProps {
 }
 
 export function EventPanel({ event, onDismiss }: EventPanelProps) {
+  // Play appropriate SFX when event panel appears
+  useEffect(() => {
+    switch (event.type) {
+      case 'death': playSFX('death'); break;
+      case 'theft': playSFX('robbery'); break;
+      case 'eviction': playSFX('error'); break;
+      case 'sickness': playSFX('damage-taken'); break;
+      case 'starvation': playSFX('error'); break;
+      case 'bonus': playSFX('coin-gain'); break;
+      default: playSFX('notification'); break;
+    }
+  }, [event.type]);
+
   const getIcon = () => {
     switch (event.type) {
       case 'theft':

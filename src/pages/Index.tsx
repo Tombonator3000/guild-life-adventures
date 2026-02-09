@@ -5,6 +5,7 @@ import { GameBoard } from '@/components/game/GameBoard';
 import { VictoryScreen } from '@/components/screens/VictoryScreen';
 import { OnlineLobby } from '@/components/screens/OnlineLobby';
 import { useMusicController } from '@/hooks/useMusic';
+import { useAmbientController } from '@/hooks/useAmbient';
 
 const Index = () => {
   const { phase, eventMessage } = useGameStore();
@@ -12,6 +13,9 @@ const Index = () => {
 
   // Drive background music based on game phase and player location
   useMusicController(phase, currentPlayer?.currentLocation ?? null, eventMessage);
+
+  // Drive ambient environmental sounds based on player location
+  useAmbientController(phase, currentPlayer?.currentLocation ?? null);
 
   switch (phase) {
     case 'title':

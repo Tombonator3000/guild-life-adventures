@@ -1,6 +1,7 @@
 // Guild Life - Healer's Sanctuary Panel
 
 import { Heart, Sparkles, Shield } from 'lucide-react';
+import { playSFX } from '@/audio/sfxManager';
 import type { Player } from '@/types/game.types';
 
 interface HealerPanelProps {
@@ -48,7 +49,7 @@ export function HealerPanel({ player, priceModifier, onHeal, onCureSickness, onB
           return (
             <button
               key={option.id}
-              onClick={() => onHeal(cost, option.healthGain, option.time)}
+              onClick={() => { playSFX('heal'); onHeal(cost, option.healthGain, option.time); }}
               disabled={isDisabled}
               className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
@@ -72,7 +73,7 @@ export function HealerPanel({ player, priceModifier, onHeal, onCureSickness, onB
 
       <div className="space-y-2">
         <button
-          onClick={() => onCureSickness(75, 2)}
+          onClick={() => { playSFX('heal'); onCureSickness(75, 2); }}
           disabled={player.gold < 75 || player.timeRemaining < 2}
           className="w-full p-2 wood-frame text-parchment flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
@@ -87,7 +88,7 @@ export function HealerPanel({ player, priceModifier, onHeal, onCureSickness, onB
         </button>
 
         <button
-          onClick={() => onBlessHealth(150, 4)}
+          onClick={() => { playSFX('heal'); onBlessHealth(150, 4); }}
           disabled={player.gold < 150 || player.timeRemaining < 4}
           className="w-full p-2 wood-frame text-parchment flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >

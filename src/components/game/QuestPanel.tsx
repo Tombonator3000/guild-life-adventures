@@ -3,6 +3,7 @@
 // difficulty scaling indicators (B3), cooldown display (B4), reputation (B5)
 
 import { AlertTriangle, Check, X, Trophy } from 'lucide-react';
+import { playSFX } from '@/audio/sfxManager';
 import type { Quest } from '@/data/quests';
 import {
   QUEST_RANK_INFO,
@@ -197,7 +198,7 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
             <div className="flex gap-2 ml-auto">
               <JonesButton
                 label={`Complete ${activeQuestData.type === 'bounty' ? 'Bounty' : 'Quest'}`}
-                onClick={onCompleteQuest}
+                onClick={() => { playSFX('quest-complete'); onCompleteQuest(); }}
                 disabled={player.timeRemaining < activeQuestData.timeRequired}
                 variant="primary"
               />
@@ -257,7 +258,7 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
                 ) : (
                   <JonesButton
                     label="Accept Bounty"
-                    onClick={() => onTakeBounty(bounty.id)}
+                    onClick={() => { playSFX('quest-accept'); onTakeBounty(bounty.id); }}
                     disabled={isDisabled}
                     variant="secondary"
                   />
@@ -325,7 +326,7 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
                     {!isComplete && (
                       <JonesButton
                         label={`Accept Step ${stepsCompleted + 1}`}
-                        onClick={() => onTakeChainQuest(chain.id)}
+                        onClick={() => { playSFX('quest-accept'); onTakeChainQuest(chain.id); }}
                         disabled={isDisabled}
                         variant={canStart.canTake ? 'primary' : 'secondary'}
                       />
@@ -388,7 +389,7 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
                   </span>
                   <JonesButton
                     label="Accept Quest"
-                    onClick={() => onTakeQuest(quest.id)}
+                    onClick={() => { playSFX('quest-accept'); onTakeQuest(quest.id); }}
                     disabled={isDisabled}
                     variant={canTake ? 'primary' : 'secondary'}
                   />

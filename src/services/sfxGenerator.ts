@@ -175,4 +175,19 @@ export const GAME_SFX_PROMPTS: Record<string, { prompt: string; duration?: numbe
   'notification': { prompt: 'Medieval bell ding, gentle notification, attention chime', duration: 0.6 },
   'turn-start': { prompt: 'New turn beginning, page turning, ready for action, subtle hopeful', duration: 0.8 },
   'week-end': { prompt: 'Week ending chime, time passing, clock striking, transitional sound', duration: 1.2 },
+
+  // New game event sounds
+  'robbery': { prompt: 'Dark sneaky thief stealing, coins falling, sinister chuckle, medieval robbery alert', duration: 1.2 },
+  'heal': { prompt: 'Magical healing spell, warm shimmer, fantasy restoration, gentle sparkle ascending', duration: 1.0 },
+  'quest-accept': { prompt: 'Parchment scroll unrolling with wax seal stamp, quest accepted, adventure begins', duration: 0.8 },
+  'quest-complete': { prompt: 'Triumphant quest completion, medieval brass fanfare, achievement unlocked, reward received', duration: 1.5 },
+  'level-up': { prompt: 'Glorious level up fanfare, ascending magical chimes, power gained, fantasy promotion', duration: 1.5 },
+  'appliance-break': { prompt: 'Medieval device breaking, gears crunching, pottery smashing, something broke', duration: 1.0 },
+  'dice-roll': { prompt: 'Wooden dice rolling on table, medieval gambling, bouncing dice, tavern game', duration: 1.0 },
+  'death': { prompt: 'Dark somber death sound, descending ominous tones, spirit departing, medieval funeral bell', duration: 2.0 },
+  'resurrection': { prompt: 'Magical resurrection spell, ascending bright tones, life restored, divine miracle', duration: 1.5 },
+  'rent-paid': { prompt: 'Gold coins placed on counter, official receipt stamp, medieval transaction complete', duration: 0.8 },
+  'weather-thunder': { prompt: 'Distant thunder rolling across sky, medieval storm approaching, atmospheric rumble', duration: 2.0 },
+  'festival': { prompt: 'Medieval festival celebration, crowd cheering, music and merriment, festive horns', duration: 1.5 },
+  'travel-event': { prompt: 'Mysterious encounter on the road, adventure chime, medieval traveler alert', duration: 0.8 },
 };

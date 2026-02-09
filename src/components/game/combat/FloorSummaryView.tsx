@@ -1,9 +1,11 @@
 // Guild Life - Floor Summary View
 // Shows end-of-floor results with encounter log and totals
 
+import { useEffect } from 'react';
 import type { DungeonRunState } from '@/data/combatResolver';
 import { getEncounterIcon } from '@/data/combatResolver';
 import type { DungeonFloor } from '@/data/dungeon';
+import { playSFX } from '@/audio/sfxManager';
 
 interface FloorSummaryViewProps {
   state: DungeonRunState;
@@ -18,6 +20,13 @@ export function FloorSummaryView({
 }: FloorSummaryViewProps) {
   const success = state.bossDefeated;
   const netHealing = state.totalHealed;
+
+  // Play result SFX
+  useEffect(() => {
+    if (success) playSFX('victory-fanfare');
+    else if (state.retreated) playSFX('notification');
+    else playSFX('defeat');
+  }, [success, state.retreated]);
 
   return (
     <div className="space-y-3 animate-in fade-in duration-300">

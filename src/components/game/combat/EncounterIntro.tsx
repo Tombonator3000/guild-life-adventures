@@ -2,6 +2,7 @@
 // Shows the upcoming encounter with stats and an action button
 
 import { Heart, Swords, Sparkles } from 'lucide-react';
+import { playSFX } from '@/audio/sfxManager';
 import type { DungeonRunState } from '@/data/combatResolver';
 import { getEncounterIcon, getEncounterAction } from '@/data/combatResolver';
 import { HealthBar } from './HealthBar';
@@ -139,7 +140,7 @@ export function EncounterIntro({
                 ? 'bg-gradient-to-r from-cyan-800 to-cyan-700 hover:from-cyan-700 hover:to-cyan-600 text-cyan-100 border border-cyan-600/50'
                 : 'bg-gradient-to-r from-amber-800 to-amber-700 hover:from-amber-700 hover:to-amber-600 text-[#e0d4b8] border border-amber-600/50'
         }`}
-        onClick={onFight}
+        onClick={() => { playSFX('sword-hit'); onFight(); }}
       >
         <span className="flex items-center justify-center gap-2">
           {(encounter.type === 'combat' || encounter.type === 'boss') && (

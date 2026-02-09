@@ -2,9 +2,10 @@
 // Follows the medieval parchment aesthetic with amber-800/900 text colors
 
 import { useState } from 'react';
-import { Settings, Save, Code, Users, Target, Coins, Smile, GraduationCap, TrendingUp, Crown, Skull, Bot, Play, FastForward, SkipForward, Menu, Volume2, VolumeX, Music, Sparkles, Trophy } from 'lucide-react';
+import { Settings, Save, Code, Users, Target, Coins, Smile, GraduationCap, TrendingUp, Crown, Skull, Bot, Play, FastForward, SkipForward, Menu, Volume2, VolumeX, Music, Sparkles, Trophy, Bell } from 'lucide-react';
 import { useAudioSettings } from '@/hooks/useMusic';
 import { useSFXSettings } from '@/hooks/useSFX';
+import { useAmbientSettings } from '@/hooks/useAmbient';
 import { AchievementsPanel } from './AchievementsPanel';
 import { CharacterPortrait } from './CharacterPortrait';
 import type { Player, GoalSettings } from '@/types/game.types';
@@ -305,6 +306,7 @@ function OptionsTab({
 }) {
   const { musicVolume, musicMuted, setVolume, toggleMute } = useAudioSettings();
   const sfx = useSFXSettings();
+  const ambient = useAmbientSettings();
 
   return (
     <div className="space-y-2">
@@ -351,6 +353,39 @@ function OptionsTab({
           />
           <span className="text-[10px] text-amber-800 font-display w-7 text-right">
             {musicMuted ? '0' : Math.round(musicVolume * 100)}%
+          </span>
+        </div>
+      </OptionSection>
+
+      {/* Ambient Controls */}
+      <OptionSection title="Ambient Sounds">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={ambient.toggleMute}
+            className={`p-1.5 rounded border text-xs transition-colors ${
+              ambient.ambientMuted
+                ? 'bg-red-100 border-red-300 text-red-700'
+                : 'bg-amber-200/50 border-amber-600/50 text-amber-900'
+            }`}
+            title={ambient.ambientMuted ? 'Unmute ambient' : 'Mute ambient'}
+          >
+            {ambient.ambientMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
+          </button>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={ambient.ambientMuted ? 0 : Math.round(ambient.ambientVolume * 100)}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10) / 100;
+              ambient.setVolume(v);
+              if (ambient.ambientMuted && v > 0) ambient.toggleMute();
+            }}
+            className="flex-1 h-2 accent-amber-700 cursor-pointer"
+            title={`Ambient volume: ${Math.round(ambient.ambientVolume * 100)}%`}
+          />
+          <span className="text-[10px] text-amber-800 font-display w-7 text-right">
+            {ambient.ambientMuted ? '0' : Math.round(ambient.ambientVolume * 100)}%
           </span>
         </div>
       </OptionSection>

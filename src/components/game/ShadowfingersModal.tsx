@@ -4,7 +4,7 @@
 // NOTE: To display the Shadowfingers image, save the provided image to:
 // src/assets/shadowfingers.jpg
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { useGameStore, type ShadowfingersEvent } from '@/store/gameStore';
 import type { StreetRobberyResult, ApartmentRobberyResult } from '@/data/shadowfingers';
 import { Skull } from 'lucide-react';
+import { playSFX } from '@/audio/sfxManager';
 
 // Import the Shadowfingers image
 import shadowfingersImage from '@/assets/shadowfingers.jpg';
@@ -29,6 +30,11 @@ interface ShadowfingersModalProps {
 
 export function ShadowfingersModal({ event, onDismiss }: ShadowfingersModalProps) {
   const [imageError, setImageError] = useState(false);
+
+  // Play robbery SFX when modal opens
+  useEffect(() => {
+    if (event) playSFX('robbery');
+  }, [event]);
 
   if (!event) return null;
 

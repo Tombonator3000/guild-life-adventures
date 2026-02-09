@@ -2,6 +2,7 @@ import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { getLocation, getMovementCost, getPath } from '@/data/locations';
 import type { LocationId } from '@/types/game.types';
 import { GUILD_PASS_COST } from '@/types/game.types';
+import { playSFX } from '@/audio/sfxManager';
 import { MapPin, Clock, ArrowRight, X, Briefcase, Newspaper, TrendingUp, ScrollText, Scroll, Sword, ShieldHalf, Heart, Sparkles, Package, ShoppingBag, Dices, Coins, Home, GraduationCap, Hammer } from 'lucide-react';
 import { getJob } from '@/data/jobs';
 import { GuildHallPanel } from './GuildHallPanel';
@@ -132,6 +133,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
   };
 
   const handleBuyNewspaper = () => {
+    playSFX('item-buy');
     const price = Math.round(NEWSPAPER_COST * priceModifier);
     modifyGold(player.id, -price);
     spendTime(player.id, NEWSPAPER_TIME);
@@ -191,6 +193,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
                   </div>
                   <button
                     onClick={() => {
+                      playSFX('success');
                       buyGuildPass(player.id);
                       toast.success('Guild Pass acquired! You can now take quests.');
                     }}
