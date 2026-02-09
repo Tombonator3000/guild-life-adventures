@@ -17,8 +17,6 @@ export const APARTMENT_ROBBERY_HAPPINESS_LOSS = -4;
 // Locations that trigger street robbery when leaving
 export const STREET_ROBBERY_LOCATIONS: LocationId[] = ['bank', 'shadow-market'];
 
-// Shadowfingers image path
-export const SHADOWFINGERS_IMAGE = '/src/assets/shadowfingers.jpg';
 
 export interface StreetRobberyResult {
   occurred: boolean;
