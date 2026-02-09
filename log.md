@@ -1,5 +1,51 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Remove Dark Mode & Fix Text Visibility
+
+### Problem
+When dark mode was enabled (default), all text became white/light and nearly invisible against the game's parchment/card backgrounds. The player name in the upper left corner (SideInfoTabs) was invisible because `text-wood-dark` referenced a non-existent Tailwind color. Dark mode conflicted with the game's medieval parchment aesthetic.
+
+### Solution
+Removed dark mode entirely. The game now always uses the light/parchment theme with brown text — matching the intended medieval aesthetic.
+
+### Changes
+
+#### 1. Removed dark mode CSS overrides
+**File:** `src/index.css`
+- Deleted the entire `.dark { ... }` block (38 lines) that overrode all CSS variables with dark variants
+- Added missing `--wood-dark: 25 45% 15%` CSS variable (used by multiple components but never defined)
+
+#### 2. Removed DarkModeToggle component
+**File:** `src/components/game/DarkModeToggle.tsx` — **Deleted**
+- Removed the toggle that added/removed `.dark` class on `<html>` and persisted to localStorage
+
+#### 3. Removed DarkModeToggle from all UI locations
+- **`src/components/game/GameBoardHeader.tsx`** — Removed toggle from top bar
+- **`src/components/screens/TitleScreen.tsx`** — Removed toggle from top-right corner
+- **`src/components/game/OptionsMenu.tsx`** — Removed "Dark Mode" row from Display tab
+
+#### 4. Removed `dark` class from HTML root
+**File:** `index.html`
+- Changed `<html lang="en" class="dark">` to `<html lang="en">`
+- Updated `theme-color` meta from `#1a1a2e` (dark blue) to `#2e1f0f` (dark brown)
+
+#### 5. Added missing `wood-dark` Tailwind color
+**File:** `tailwind.config.ts`
+- Added `dark: "hsl(var(--wood-dark))"` to the `wood` color definition
+- Removed `darkMode: ["class"]` configuration
+- Fixes `text-wood-dark` used in: SideInfoTabs (player name), PlayerInfoPanel, RightSideTabs, MobileHUD, MobileDrawer, TurnOrderPanel
+
+#### 6. Removed dark: prefix from UI components
+- **`src/components/ui/alert.tsx`** — Removed `dark:border-destructive`
+- **`src/components/ui/chart.tsx`** — Removed `.dark` theme selector
+
+### Build Status
+- TypeScript compiles cleanly
+- Vite build succeeds
+- All 171 tests pass
+
+---
+
 ## 2026-02-09 - GitHub Pages Standalone Deployment Audit & Fix
 
 ### Goal

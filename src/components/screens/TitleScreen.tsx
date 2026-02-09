@@ -3,7 +3,6 @@ import { useGameStore } from '@/store/gameStore';
 import { Sword, Shield, Scroll, Crown, Save, Trash2, Volume2, VolumeX, Download, Globe, Settings, Share, Plus, X } from 'lucide-react';
 import { hasAutoSave, getSaveSlots, formatSaveDate, deleteSave } from '@/data/saveLoad';
 import type { SaveSlotInfo } from '@/data/saveLoad';
-import { DarkModeToggle } from '@/components/game/DarkModeToggle';
 import { OptionsMenu } from '@/components/game/OptionsMenu';
 import { useAudioSettings } from '@/hooks/useMusic';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
@@ -123,7 +122,7 @@ export function TitleScreen() {
           Inspired by Jones in the Fast Lane
         </p>
 
-        {/* Dark mode toggle + Music mute + Install */}
+        {/* Music mute + Install */}
         <div className="absolute top-4 right-4 flex items-center gap-2">
           {canInstall && (
             <button
@@ -142,7 +141,6 @@ export function TitleScreen() {
           >
             {musicMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
           </button>
-          <DarkModeToggle />
         </div>
       </div>
 
