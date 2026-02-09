@@ -733,6 +733,14 @@
   - Emergency access when 3+ weeks overdue
   - AI rent/housing actions gated by same rule
 
+- [x] GitHub Pages Standalone Deployment — game fully runnable from GitHub without Lovable
+  - Verified all asset paths use `import.meta.env.BASE_URL` (18+ categories checked)
+  - Added `.nojekyll` to GitHub Actions workflow (prevents Jekyll ignoring `_`-prefixed files)
+  - Removed dead hardcoded path `SHADOWFINGERS_IMAGE` from shadowfingers.ts
+  - GitHub Actions auto-deploys on push to main
+  - URL: `https://tombonator3000.github.io/guild-life-adventures/`
+  - Build passes, 171 tests pass
+
 ## In Progress
 
 *No active tasks*

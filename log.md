@@ -1,5 +1,80 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - GitHub Pages Standalone Deployment Audit & Fix
+
+### Goal
+Make the game fully runnable from GitHub Pages without depending on Lovable for hosting. The game should be deployable by simply pushing to `main` — GitHub Actions builds and deploys automatically.
+
+### Current Architecture (Already in Place)
+The project was already set up for dual-target deployment (Lovable + GitHub Pages) from 2026-02-06. This session verified and hardened the setup.
+
+- **`vite.config.ts`**: `DEPLOY_TARGET=github` env var sets base path to `/guild-life-adventures/`
+- **`package.json`**: `build:github` script sets the env var automatically
+- **`BrowserRouter`**: Uses `import.meta.env.BASE_URL` for basename (works with any base path)
+- **`lovable-tagger`**: Optional devDependency with try/catch in vite.config.ts — installs from npm, only activates in dev mode
+- **GitHub Actions**: `.github/workflows/deploy-github-pages.yml` — builds and deploys on push to `main`
+
+### Audit Findings
+
+#### Asset Path Scan (18+ categories)
+All asset references in the codebase use `import.meta.env.BASE_URL` prefix correctly:
+- Audio: `sfxManager.ts`, `audioManager.ts`, `ambientManager.ts`
+- NPC portraits: `NpcPortrait.tsx`, `LocationShell.tsx`
+- Character portraits: `CharacterPortrait.tsx`
+- Location backgrounds: `HomePanel.tsx`, `RoomScene.tsx`
+- Game board: Imported via module (`@/assets/game-board.jpeg`)
+
+**1 dead code issue found and fixed**: `SHADOWFINGERS_IMAGE` in `shadowfingers.ts` had hardcoded `/src/assets/shadowfingers.jpg` — unused (component imports image directly). Removed.
+
+#### Build Verification
+- `DEPLOY_TARGET=github vite build` succeeds
+- Output correctly uses `/guild-life-adventures/` base path in all references
+- PWA manifest `start_url` and `scope` correctly set
+- Service worker precaches 86 entries (20.9 MB including game board)
+
+### Fixes Applied
+
+#### 1. Added `.nojekyll` to GitHub Actions Workflow
+**File:** `.github/workflows/deploy-github-pages.yml`
+- GitHub Pages uses Jekyll by default, which ignores files/directories starting with `_`
+- Vite may produce `_`-prefixed chunks — `.nojekyll` prevents this issue
+- Added `touch dist/.nojekyll` step after 404.html copy
+
+#### 2. Removed Dead Hardcoded Path
+**File:** `src/data/shadowfingers.ts`
+- Removed unused `SHADOWFINGERS_IMAGE = '/src/assets/shadowfingers.jpg'` export
+- The actual component (`ShadowfingersModal.tsx`) correctly imports the image via module
+
+### How to Deploy from GitHub Pages
+
+#### One-Time Setup (in GitHub repo settings)
+1. Go to repository **Settings** → **Pages**
+2. Under **Source**, select **GitHub Actions**
+3. That's it — the workflow is already in `.github/workflows/deploy-github-pages.yml`
+
+#### Deployment
+- **Automatic**: Push to `main` branch → workflow builds and deploys
+- **Manual**: Go to **Actions** → "Deploy to GitHub Pages" → **Run workflow**
+
+#### Local Development (no Lovable needed)
+```bash
+bun install          # Install dependencies
+bun run dev          # Start dev server on http://localhost:8080
+bun run build        # Build for local/Lovable (base: /)
+bun run build:github # Build for GitHub Pages (base: /guild-life-adventures/)
+bun run test         # Run 171 tests
+```
+
+### Game URL
+After enabling GitHub Pages: `https://tombonator3000.github.io/guild-life-adventures/`
+
+### Build Status
+- TypeScript compiles cleanly
+- All 171 tests pass
+- Both `build` and `build:github` targets succeed
+
+---
+
 ## 2026-02-09 - GitHub Update / PWA Caching Diagnosis & Fix
 
 ### Problem
