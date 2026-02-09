@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { Sword, Shield, Scroll, Crown, Save, Trash2, Volume2, VolumeX, Download, Globe, Settings, Info, Share, Plus, X } from 'lucide-react';
+import { Sword, Shield, Scroll, Crown, Save, Trash2, Volume2, VolumeX, Download, Globe, Settings, Info, Share, Plus, X, BookOpen } from 'lucide-react';
 import { hasAutoSave, getSaveSlots, formatSaveDate, deleteSave } from '@/data/saveLoad';
 import type { SaveSlotInfo } from '@/data/saveLoad';
 import { OptionsMenu } from '@/components/game/OptionsMenu';
+import { UserManual } from '@/components/game/UserManual';
 import { CreditsScreen } from '@/components/screens/CreditsScreen';
 import { useAudioSettings } from '@/hooks/useMusic';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
@@ -14,6 +15,7 @@ export function TitleScreen() {
   const { setPhase, loadFromSlot } = useGameStore();
   const [showLoadMenu, setShowLoadMenu] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  const [showManual, setShowManual] = useState(false);
   const [showCredits, setShowCredits] = useState(false);
   const [slots, setSlots] = useState<SaveSlotInfo[]>([]);
   const autoSaveExists = hasAutoSave();
@@ -119,6 +121,14 @@ export function TitleScreen() {
           </button>
 
           <button
+            onClick={() => setShowManual(true)}
+            className="text-gold hover:text-gold-dark text-sm font-display flex items-center gap-2 mt-1 transition-colors"
+          >
+            <BookOpen className="w-4 h-4" />
+            Manual
+          </button>
+
+          <button
             onClick={() => setShowCredits(true)}
             className="text-gold hover:text-gold-dark text-sm font-display flex items-center gap-2 mt-1 transition-colors"
           >
@@ -212,6 +222,11 @@ export function TitleScreen() {
       {/* Options Modal */}
       {showOptions && (
         <OptionsMenu onClose={() => setShowOptions(false)} />
+      )}
+
+      {/* Manual Modal */}
+      {showManual && (
+        <UserManual onClose={() => setShowManual(false)} />
       )}
 
       {/* PWA Update Notification */}

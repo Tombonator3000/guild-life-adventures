@@ -6,8 +6,9 @@
 import { useState } from 'react';
 import {
   X, Settings, Gamepad2, Volume2, VolumeX, Monitor,
-  Gauge, RotateCcw, Cake, Skull, Zap, Eye, Layout, Bell, Timer, Sparkles,
+  Gauge, RotateCcw, Cake, Skull, Zap, Eye, Layout, Bell, Timer, Sparkles, BookOpen,
 } from 'lucide-react';
+import { UserManual } from '@/components/game/UserManual';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
@@ -34,6 +35,7 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
   const { needRefresh, updateApp, checkForUpdates } = useAppUpdate();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [showManual, setShowManual] = useState(false);
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'gameplay', label: 'Gameplay', icon: <Gamepad2 className="w-4 h-4" /> },
@@ -93,6 +95,13 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
 
         {/* Footer */}
         <div className="px-6 py-3 border-t border-border space-y-2">
+          {/* Manual Button */}
+          <button
+            onClick={() => setShowManual(true)}
+            className="w-full flex items-center justify-center gap-2 p-2 rounded border border-border bg-background/50 text-muted-foreground hover:text-foreground hover:border-foreground/30 font-display text-sm transition-colors"
+          >
+            <BookOpen className="w-4 h-4" /> Adventurer's Manual
+          </button>
           {/* Version & Update Row */}
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-muted-foreground font-display">
@@ -156,6 +165,11 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
           </div>
         </div>
       </div>
+
+      {/* Manual Modal (rendered on top) */}
+      {showManual && (
+        <UserManual onClose={() => setShowManual(false)} />
+      )}
     </div>
   );
 }

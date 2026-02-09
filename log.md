@@ -1,5 +1,39 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Adventurer's Manual (User Manual)
+
+### Summary
+
+Added a comprehensive, in-game user manual ("Adventurer's Manual") accessible from three places: the Options menu, the Game Menu (ESC), and the Title Screen. The manual is a full-screen parchment-panel overlay with 15 chapters covering all game mechanics.
+
+### What Was Done
+
+- **Created `src/components/game/UserManual.tsx`** — Full-screen manual component with:
+  - 15 navigable chapters: Welcome, Getting Started, The Board, Turns & Time, Jobs & Career, Education, Housing, Items & Shops, Health & Food, Combat & Dungeon, Economy, Crime & Theft, Weekends, Victory, Tips & Strategy
+  - Horizontal chapter navigation bar with icons
+  - Previous/Next footer navigation with page counter
+  - Reusable styled sub-components (H1, H2, P, Tip, Table) for consistent formatting
+  - Responsive tables with all game data (locations, jobs, degrees, items, weapons, armor, dungeon floors, housing tiers, etc.)
+  - Strategy tips and common mistakes section
+  - AI opponent personality descriptions
+  - Keyboard shortcut reference
+
+- **Modified `src/components/game/OptionsMenu.tsx`** — Added "Adventurer's Manual" button in the footer section, renders UserManual modal on top
+- **Modified `src/components/game/SaveLoadMenu.tsx`** — Added "Manual" button alongside "Options" button in the Game Menu (ESC), renders UserManual modal on top
+- **Modified `src/components/screens/TitleScreen.tsx`** — Added "Manual" button between Options and About in the main menu
+
+### Access Points
+- **Title Screen**: Manual button in main menu
+- **In-Game (ESC)**: Manual button next to Options in the Game Menu
+- **Options**: "Adventurer's Manual" button at the bottom of the Options panel
+
+### Technical Notes
+- Follows existing UI patterns: parchment-panel, wood-frame, z-50 fixed overlay
+- No new dependencies added
+- Build passes cleanly (TypeScript + Vite)
+
+---
+
 ## 2026-02-09 - Standalone Exe / Steam Distribution Research
 
 ### Summary
