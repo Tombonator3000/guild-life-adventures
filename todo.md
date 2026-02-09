@@ -645,6 +645,13 @@
 
 ## Completed (2026-02-09)
 
+- [x] Adventure Goal Victory Goals Integration — 4 fixes for adventure goal visibility
+  - GameSetup: Dynamic goal count text ("four" → "five" when adventure enabled)
+  - GameSetup: Presets preserve adventure setting instead of resetting to 0
+  - PlayersTab: Overall progress % includes adventure when enabled (was /4, now /5)
+  - TurnOrderPanel: Same overall progress fix
+  - Build passes, 171 tests pass
+
 - [x] Guild Pass Quest Requirement — all quests hidden until Guild Pass purchased
   - Quest tab shows only "Guild Pass Required" prompt with purchase button when no pass
   - Bounties now require Guild Pass (previously were free)

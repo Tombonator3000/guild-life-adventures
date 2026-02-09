@@ -303,25 +303,25 @@ export function GameSetup() {
               Victory Goals
             </h2>
             <p className="text-amber-700 text-sm mb-4">
-              Set the targets required to win. First to reach all four goals wins!
+              Set the targets required to win. First to reach all {goals.adventure > 0 ? 'five' : 'four'} goals wins!
             </p>
 
             {/* Preset buttons */}
             <div className="flex gap-2 mb-4">
               <button
-                onClick={() => setGoals(presets.quick)}
+                onClick={() => setGoals({ ...presets.quick, adventure: goals.adventure })}
                 className="flex-1 p-2 wood-frame text-parchment text-sm font-display hover:brightness-110"
               >
                 Quick Game
               </button>
               <button
-                onClick={() => setGoals(presets.standard)}
+                onClick={() => setGoals({ ...presets.standard, adventure: goals.adventure })}
                 className="flex-1 p-2 wood-frame text-parchment text-sm font-display hover:brightness-110"
               >
                 Standard
               </button>
               <button
-                onClick={() => setGoals(presets.epic)}
+                onClick={() => setGoals({ ...presets.epic, adventure: goals.adventure })}
                 className="flex-1 p-2 wood-frame text-parchment text-sm font-display hover:brightness-110"
               >
                 Epic Quest
