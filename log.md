@@ -1,5 +1,65 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - AI Scheming Modal, Speech Bubble, & Landlord Restriction
+
+### 1. AI Scheming Modal Expansion
+
+Expanded the "...is Scheming" modal to be larger and added the AI character portrait.
+
+**Changes:**
+- Modal is now wider (`min-w-[360px]` desktop, `min-w-[280px]` mobile) with more padding (`p-8`/`p-5`)
+- AI character portrait (96px desktop, 72px mobile) shown at top using `CharacterPortrait` component
+- Small Brain icon badge in bottom-right corner of portrait (spinning animation)
+- Title text increased to `text-2xl` desktop / `text-lg` mobile
+- Flavor text now shown on mobile too (was desktop-only)
+- Speed control buttons slightly larger (`w-3.5 h-3.5` icons)
+- Animated dots slightly larger (`w-2.5 h-2.5`)
+- Overall vertical spacing increased (`gap-4`)
+
+**Modified File:** `src/components/game/GameBoardOverlays.tsx`
+
+### 2. Speech Bubble Points at NPC Portrait
+
+Repositioned the banter speech bubble tail/tab to point toward the NPC portrait instead of center-bottom.
+
+**Changes:**
+- Bubble tail moved from `left-1/2 -translate-x-1/2` (center) to `left: clamp(32px, 15%, 64px)` (left-aligned, above portrait)
+- Tail shape adjusted to be asymmetric (8px left / 14px right borders) for a more natural "coming from portrait" look
+- Overlay container changed from `justify-center` to `justify-start` with `paddingLeft: 2%` to position bubble over the portrait column
+- Mobile layout unchanged (still centered since portrait is inline)
+
+**Modified Files:**
+- `src/components/game/BanterBubble.tsx` — tail positioning
+- `src/components/game/GameBoard.tsx` — `BoardBanterOverlay` alignment
+
+### 3. Landlord Only Open During Rent Week
+
+The Landlord's office is now only accessible during rent collection weeks (every 4th week cycle) or when the player is urgently behind on rent (3+ weeks overdue). This makes the garnished wages punishment more effective.
+
+**Design:**
+- Rent is collected at end of every 4th week (`(week + 1) % 4 === 0`)
+- Landlord is open during that week so players can pay before collection
+- If `weeksSinceRent >= 3` (player is behind), Landlord is open as emergency access
+- During closed weeks, shows "Office Closed" with info on when next rent week is
+- Shows prepaid weeks remaining if any
+
+**AI Integration:**
+- AI critical needs (pay-rent, move-to-landlord) gated by `isLandlordOpen` check
+- AI strategic actions (housing upgrade/downgrade) also gated
+- Legacy simple AI already only visits landlord at `weeksSinceRent >= 3` (compatible)
+
+**Modified Files:**
+- `src/components/game/LocationPanel.tsx` — rent week check with closed state UI
+- `src/hooks/ai/actions/criticalNeeds.ts` — landlord open check for rent actions
+- `src/hooks/ai/actions/strategicActions.ts` — landlord open check for housing actions
+
+### Build & Test Results
+- TypeScript compiles clean (`tsc --noEmit`)
+- Build succeeds
+- All 171 tests pass
+
+---
+
 ## 2026-02-09 - Character Portrait System
 
 ### Feature: Player & AI Character Portraits

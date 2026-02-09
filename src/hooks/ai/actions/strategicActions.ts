@@ -88,8 +88,13 @@ export function generateStrategicActions(ctx: ActionContext): AIAction[] {
     }
   }
 
+  // Housing upgrade/downgrade only when landlord is open (rent week or urgent)
+  const isRentWeek = (ctx.week + 1) % 4 === 0;
+  const hasUrgentRent = player.weeksSinceRent >= 3;
+  const isLandlordOpen = isRentWeek || hasUrgentRent;
+
   // Housing upgrade consideration
-  if (shouldUpgradeHousing(player, settings)) {
+  if (shouldUpgradeHousing(player, settings) && isLandlordOpen) {
     if (currentLocation === 'landlord') {
       actions.push({
         type: 'move-housing',

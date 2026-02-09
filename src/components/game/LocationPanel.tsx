@@ -455,7 +455,38 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
         ];
       }
 
-      case 'landlord':
+      case 'landlord': {
+        // Landlord is only open during rent weeks (every 4th week cycle)
+        // This makes garnished wages punishment effective if player forgets/can't visit in time
+        const isRentWeek = (week + 1) % 4 === 0;
+        const hasUrgentRent = player.weeksSinceRent >= 3; // Behind on rent — allow emergency visit
+        const isLandlordOpen = isRentWeek || hasUrgentRent;
+
+        if (!isLandlordOpen) {
+          const weeksUntilRentWeek = (4 - ((week + 1) % 4)) % 4 || 4;
+          return [{
+            id: 'housing',
+            label: 'Housing',
+            content: (
+              <div className="flex flex-col items-center justify-center py-8 gap-3">
+                <Home className="w-10 h-10 text-[#8b7355] opacity-50" />
+                <h4 className="font-display text-lg text-[#3d2a14]">Office Closed</h4>
+                <p className="text-sm text-[#6b5a42] text-center max-w-xs">
+                  The Landlord&apos;s office is only open during rent collection weeks.
+                </p>
+                <p className="text-xs text-[#8b7355] text-center">
+                  Next rent week in <strong>{weeksUntilRentWeek}</strong> week{weeksUntilRentWeek !== 1 ? 's' : ''}.
+                </p>
+                {player.rentPrepaidWeeks > 0 && (
+                  <p className="text-xs text-[#2a7a2a] text-center">
+                    You have {player.rentPrepaidWeeks} prepaid week{player.rentPrepaidWeeks !== 1 ? 's' : ''} remaining.
+                  </p>
+                )}
+              </div>
+            ),
+          }];
+        }
+
         return [{
           id: 'housing',
           label: 'Housing',
@@ -469,6 +500,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             />
           ),
         }];
+      }
 
       case 'shadow-market': {
         const shadowNewspaperPrice = Math.round(NEWSPAPER_COST * priceModifier * 0.5);

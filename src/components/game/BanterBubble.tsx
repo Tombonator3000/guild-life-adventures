@@ -122,29 +122,31 @@ export function BanterBubble({ banter, npcName, onDismiss }: BanterBubbleProps) 
           &ldquo;{banter.text}&rdquo;
         </p>
 
-        {/* Speech bubble tail (triangle pointing down) */}
+        {/* Speech bubble tail (triangle pointing down-left, toward NPC portrait) */}
         <div
-          className="absolute left-1/2 -translate-x-1/2"
+          className="absolute"
           style={{
             top: '100%',
+            left: 'clamp(32px, 15%, 64px)',
             width: 0,
             height: 0,
-            borderLeft: '12px solid transparent',
-            borderRight: '12px solid transparent',
-            borderTop: `14px solid ${style.border}`,
+            borderLeft: '8px solid transparent',
+            borderRight: '14px solid transparent',
+            borderTop: `16px solid ${style.border}`,
             filter: `drop-shadow(0 4px 6px ${style.glow})`,
           }}
         />
         {/* Inner tail (matches background) */}
         <div
-          className="absolute left-1/2 -translate-x-1/2"
+          className="absolute"
           style={{
             top: 'calc(100% - 2px)',
+            left: 'calc(clamp(32px, 15%, 64px) + 2px)',
             width: 0,
             height: 0,
-            borderLeft: '10px solid transparent',
-            borderRight: '10px solid transparent',
-            borderTop: '12px solid #3d5a3d',
+            borderLeft: '6px solid transparent',
+            borderRight: '12px solid transparent',
+            borderTop: '14px solid #3d5a3d',
             borderTopColor:
               mood === 'friendly' ? '#3d6a3d' :
               mood === 'grumpy' ? '#6a5040' :

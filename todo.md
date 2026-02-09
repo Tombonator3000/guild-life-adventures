@@ -720,6 +720,13 @@
   - [x] Backwards compatible: null portraitId = colored circle fallback
   - Build passes, 171 tests pass
 
+- [x] AI Scheming Modal Expansion — larger modal with AI character portrait
+- [x] Speech Bubble Points at NPC Portrait — tail repositioned to left side above portrait
+- [x] Landlord Rent Week Restriction — Landlord only open during rent collection weeks
+  - Office closed with info message during non-rent weeks
+  - Emergency access when 3+ weeks overdue
+  - AI rent/housing actions gated by same rule
+
 ## In Progress
 
 *No active tasks*

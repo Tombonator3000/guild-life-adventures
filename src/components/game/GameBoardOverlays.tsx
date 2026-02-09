@@ -1,6 +1,7 @@
 import type { Player } from '@/types/game.types';
 import type { AIDifficulty } from '@/types/game.types';
 import { TurnTransition } from './TurnTransition';
+import { CharacterPortrait } from './CharacterPortrait';
 import { Bot, Brain, SkipForward, FastForward, Play, Globe, Wifi } from 'lucide-react';
 
 export function GameBoardOverlays({
@@ -84,48 +85,59 @@ export function GameBoardOverlays({
       {aiIsThinking && currentPlayer?.isAI && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/30 pointer-events-none" />
-          <div className={`relative parchment-panel ${isMobile ? 'p-4' : 'p-6'} flex flex-col items-center gap-3`}>
-            <div className="flex items-center gap-3">
-              <Bot className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} text-primary animate-bounce`} />
-              <Brain className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-secondary animate-spin`} style={{ animationDuration: '3s' }} />
+          <div className={`relative parchment-panel ${isMobile ? 'p-5 min-w-[280px]' : 'p-8 min-w-[360px]'} flex flex-col items-center gap-4`}>
+            {/* AI Portrait */}
+            <div className="relative">
+              <CharacterPortrait
+                portraitId={currentPlayer?.portraitId || null}
+                playerColor={currentPlayer?.color || '#E5E5E5'}
+                playerName={currentPlayer?.name || 'AI'}
+                size={isMobile ? 72 : 96}
+                isAI
+              />
+              <div className="absolute -bottom-1 -right-1 bg-amber-100 rounded-full p-1 border-2 border-amber-600">
+                <Brain className="w-4 h-4 text-amber-700 animate-spin" style={{ animationDuration: '3s' }} />
+              </div>
             </div>
-            <h3 className={`font-display ${isMobile ? 'text-base' : 'text-xl'} text-card-foreground`}>
-              {currentPlayer?.name || 'AI'} is Scheming...
-            </h3>
-            {!isMobile && (
-              <p className="text-sm text-muted-foreground text-center max-w-xs">
-                {(currentPlayer?.aiDifficulty || aiDifficulty) === 'easy' && 'Hmm, let me think about this...'}
-                {(currentPlayer?.aiDifficulty || aiDifficulty) === 'medium' && 'Calculating optimal strategy...'}
-                {(currentPlayer?.aiDifficulty || aiDifficulty) === 'hard' && 'Analyzing all possibilities with precision!'}
-              </p>
-            )}
-            <div className="flex gap-1 mb-1">
-              <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+
+            <div className="flex items-center gap-2">
+              <Bot className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-primary animate-bounce`} />
+              <h3 className={`font-display ${isMobile ? 'text-lg' : 'text-2xl'} text-card-foreground tracking-wide`}>
+                {currentPlayer?.name || 'AI'} is Scheming...
+              </h3>
             </div>
-            <div className="flex items-center gap-2 border-t border-border pt-2">
+            <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground text-center max-w-xs`}>
+              {(currentPlayer?.aiDifficulty || aiDifficulty) === 'easy' && 'Hmm, let me think about this...'}
+              {(currentPlayer?.aiDifficulty || aiDifficulty) === 'medium' && 'Calculating optimal strategy...'}
+              {(currentPlayer?.aiDifficulty || aiDifficulty) === 'hard' && 'Analyzing all possibilities with precision!'}
+            </p>
+            <div className="flex gap-1.5 mb-1">
+              <span className="w-2.5 h-2.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-2.5 h-2.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-2.5 h-2.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+            <div className="flex items-center gap-2 border-t border-border pt-3 w-full justify-center">
               <span className="text-xs text-muted-foreground font-display">Speed:</span>
               <button
                 onClick={() => setAISpeedMultiplier(1)}
                 className={`p-1.5 rounded text-xs ${aiSpeedMultiplier === 1 ? 'bg-primary/30 text-primary' : 'bg-background/50 text-muted-foreground hover:text-foreground'}`}
                 title="Normal speed"
               >
-                <Play className="w-3 h-3" />
+                <Play className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => setAISpeedMultiplier(3)}
                 className={`p-1.5 rounded text-xs ${aiSpeedMultiplier === 3 ? 'bg-primary/30 text-primary' : 'bg-background/50 text-muted-foreground hover:text-foreground'}`}
                 title="Fast (3x)"
               >
-                <FastForward className="w-3 h-3" />
+                <FastForward className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => setSkipAITurn(true)}
                 className="p-1.5 rounded text-xs bg-background/50 text-muted-foreground hover:text-foreground"
                 title="Skip turn (Space)"
               >
-                <SkipForward className="w-3 h-3" />
+                <SkipForward className="w-3.5 h-3.5" />
               </button>
             </div>
             <p className="text-[10px] text-muted-foreground">Press Space to skip</p>
