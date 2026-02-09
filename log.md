@@ -9586,3 +9586,46 @@ src={`${import.meta.env.BASE_URL}locations/closed.jpg`}
 ### Build & Tests
 - Build: passes
 - No other hardcoded `/locations/` paths found in source code
+
+---
+
+## 2026-02-09 - iPad Board Stretch & Credits Music Fix
+
+### Summary
+Two fixes:
+1. **iPad board stretch**: Removed aspect ratio lock from game board so it fills available screen space on iPad (eliminates black bars above/below the board)
+2. **Credits music overlap**: Menu music (main theme) now stops when credits screen opens, preventing both tracks from playing simultaneously
+
+### Fix 1: iPad Board Stretch (Black Bars)
+
+**Problem**: The game board container used a fixed `aspectRatio: BOARD_ASPECT_RATIO` (1216/900 ≈ 1.351), optimized for 16:9 screens. On iPad (~4:3 aspect ratio), the board filled the width but left black bars above and below because `maxHeight: '100%'` constrained it.
+
+**Solution**: Removed the aspect ratio constraint. The board container now uses `w-full h-full` to fill all available space. The board image already used `backgroundSize: '100% 100%'` and all zone overlays use percentage-based positioning, so everything aligns correctly regardless of screen ratio.
+
+```tsx
+// Before:
+style={{
+  width: '100%',
+  aspectRatio: BOARD_ASPECT_RATIO,
+  maxHeight: '100%',
+}}
+
+// After:
+className="relative w-full h-full"
+```
+
+### Fix 2: Credits Music Overlap
+
+**Problem**: The CreditsScreen created a separate `HTMLAudioElement` to play a random track during credits, but didn't stop the AudioManager singleton which continued playing the title screen's main theme. Both tracks played simultaneously.
+
+**Solution**: Added `audioManager.stop()` on credits mount, and `audioManager.play('main-theme')` on credits unmount to restore the menu music.
+
+### Files Changed
+| File | Changes |
+|------|---------|
+| `src/components/game/GameBoard.tsx` | Removed `BOARD_ASPECT_RATIO` import, removed aspect ratio + maxHeight style, board now fills 100% width and height |
+| `src/components/screens/CreditsScreen.tsx` | Import `audioManager`, stop on mount, restart `main-theme` on unmount |
+
+### Build & Tests
+- Build: passes
+- All 171 tests pass

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import guildLogo from '@/assets/Guild-Life-Logo.jpg';
+import { audioManager } from '@/audio/audioManager';
 
 // All music tracks available in the game
 const MUSIC_FILES = [
@@ -150,8 +151,11 @@ export function CreditsScreen({ onClose }: CreditsScreenProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [scrollComplete, setScrollComplete] = useState(false);
 
-  // Pick a random music track and play it
+  // Stop menu music, pick a random credits track, and play it
   useEffect(() => {
+    // Stop the AudioManager's menu music so it doesn't overlap
+    audioManager.stop();
+
     const baseUrl = import.meta.env.BASE_URL;
     const randomTrack = MUSIC_FILES[Math.floor(Math.random() * MUSIC_FILES.length)];
     const audio = new Audio(baseUrl + randomTrack);
@@ -174,6 +178,8 @@ export function CreditsScreen({ onClose }: CreditsScreenProps) {
       audio.pause();
       audio.src = '';
       audioRef.current = null;
+      // Restart menu music when credits close
+      audioManager.play('main-theme');
     };
   }, []);
 
