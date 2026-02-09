@@ -196,6 +196,14 @@ export interface Player {
   lotteryTickets: number;          // Number of lottery tickets for this week's drawing
   // Forge tempering
   temperedItems: string[];         // Item IDs that have been tempered at the Forge (once per item)
+  // Quest Chain progress (B1)
+  questChainProgress: Record<string, number>; // chainId → steps completed (0-indexed)
+  // Repeatable Bounties (B2)
+  completedBountiesThisWeek: string[];        // bounty IDs completed this week (reset weekly)
+  // Quest Failure Consequences (B4)
+  questCooldownWeeksLeft: number;             // weeks until player can take quests again (0 = no cooldown)
+  // Guild Reputation (B5)
+  guildReputation: number;                    // total quest+bounty+chain completions for reputation milestones
 }
 
 export interface GoalSettings {

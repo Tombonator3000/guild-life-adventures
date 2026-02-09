@@ -1,9 +1,22 @@
 // Quest and game status helpers
 // takeQuest, completeQuest, abandonQuest, checkDeath, promoteGuildRank, evictPlayer, checkVictory
+// B1: takeChainQuest, completeChainQuest
+// B2: takeBounty, completeBounty
+// B3: Quest difficulty scaling (applied in completeQuest/completeChainQuest/completeBounty)
+// B4: Quest failure consequences (applied in abandonQuest)
+// B5: Guild reputation (incremented on quest/chain/bounty completion)
 
 import type { LocationId, HousingTier } from '@/types/game.types';
 import { GUILD_PASS_COST, GUILD_RANK_ORDER, GUILD_RANK_REQUIREMENTS } from '@/types/game.types';
-import { getQuest } from '@/data/quests';
+import {
+  getQuest,
+  getQuestChain,
+  getNextChainStep,
+  getBounty,
+  getScaledQuestGold,
+  getScaledQuestHappiness,
+  getReputationGoldMultiplier,
+} from '@/data/quests';
 import { calculateStockValue } from '@/data/stocks';
 import type { SetFn, GetFn } from '../storeTypes';
 
@@ -26,6 +39,12 @@ export function createQuestActions(set: SetFn, get: GetFn) {
     },
 
     takeQuest: (playerId: string, questId: string) => {
+      const state = get();
+      const player = state.players.find(p => p.id === playerId);
+      if (!player) return;
+      // B4: Check quest cooldown
+      if (player.questCooldownWeeksLeft > 0) return;
+
       set((state) => ({
         players: state.players.map((p) =>
           p.id === playerId
@@ -40,6 +59,18 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       const player = state.players.find(p => p.id === playerId);
       if (!player || !player.activeQuest) return;
 
+      // Check if active quest is a chain step
+      if (player.activeQuest.startsWith('chain:')) {
+        get().completeChainQuest(playerId);
+        return;
+      }
+
+      // Check if active quest is a bounty
+      if (player.activeQuest.startsWith('bounty:')) {
+        get().completeBounty(playerId);
+        return;
+      }
+
       const quest = getQuest(player.activeQuest);
       if (!quest) return;
 
@@ -47,16 +78,25 @@ export function createQuestActions(set: SetFn, get: GetFn) {
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
 
+          // B3: Scale rewards based on dungeon progression
+          const scaledGold = getScaledQuestGold(quest.goldReward, p.dungeonFloorsCleared);
+          const scaledHappiness = getScaledQuestHappiness(quest.happinessReward, p.dungeonFloorsCleared);
+
+          // B5: Apply reputation gold multiplier
+          const repMultiplier = getReputationGoldMultiplier(p.guildReputation);
+          const finalGold = Math.round(scaledGold * repMultiplier);
+
           // Apply quest rewards and risks
           const healthLoss = Math.random() < 0.5 ? quest.healthRisk : Math.floor(quest.healthRisk / 2);
 
           return {
             ...p,
-            gold: p.gold + quest.goldReward,
+            gold: p.gold + finalGold,
             health: Math.max(0, p.health - healthLoss),
-            happiness: Math.min(100, p.happiness + quest.happinessReward),
+            happiness: Math.min(100, p.happiness + scaledHappiness),
             timeRemaining: Math.max(0, p.timeRemaining - quest.timeRequired),
             completedQuests: p.completedQuests + 1,
+            guildReputation: p.guildReputation + 1,
             activeQuest: null,
           };
         }),
@@ -70,17 +110,167 @@ export function createQuestActions(set: SetFn, get: GetFn) {
     },
 
     abandonQuest: (playerId: string) => {
+      // B4: Quest Failure Consequences — -2 happiness, -3 dependability, 2-week cooldown
       set((state) => ({
         players: state.players.map((p) =>
           p.id === playerId
             ? {
                 ...p,
                 activeQuest: null,
-                happiness: Math.max(0, p.happiness - 5), // Penalty for abandoning
+                happiness: Math.max(0, p.happiness - 2),
+                dependability: Math.max(0, p.dependability - 3),
+                questCooldownWeeksLeft: 2,
               }
             : p
         ),
       }));
+    },
+
+    // ============================================================
+    // B1: Quest Chain actions
+    // ============================================================
+
+    takeChainQuest: (playerId: string, chainId: string) => {
+      const state = get();
+      const player = state.players.find(p => p.id === playerId);
+      if (!player) return;
+      if (player.activeQuest) return; // already has active quest
+      if (player.questCooldownWeeksLeft > 0) return; // B4: cooldown
+
+      const chain = getQuestChain(chainId);
+      if (!chain) return;
+
+      const step = getNextChainStep(chainId, player.questChainProgress);
+      if (!step) return; // chain complete
+
+      // Store as "chain:<chainId>" so completeQuest knows to delegate
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? { ...p, activeQuest: `chain:${chainId}` }
+            : p
+        ),
+      }));
+    },
+
+    completeChainQuest: (playerId: string) => {
+      const state = get();
+      const player = state.players.find(p => p.id === playerId);
+      if (!player || !player.activeQuest) return;
+
+      const chainId = player.activeQuest.replace('chain:', '');
+      const chain = getQuestChain(chainId);
+      if (!chain) return;
+
+      const stepsCompleted = player.questChainProgress[chainId] || 0;
+      const step = chain.steps[stepsCompleted];
+      if (!step) return;
+
+      const isLastStep = stepsCompleted + 1 >= chain.steps.length;
+
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+
+          // B3: Scale rewards
+          const scaledGold = getScaledQuestGold(step.goldReward, p.dungeonFloorsCleared);
+          const scaledHappiness = getScaledQuestHappiness(step.happinessReward, p.dungeonFloorsCleared);
+          // B5: Reputation multiplier
+          const repMultiplier = getReputationGoldMultiplier(p.guildReputation);
+          let finalGold = Math.round(scaledGold * repMultiplier);
+          let finalHappiness = scaledHappiness;
+
+          // Chain completion bonus
+          if (isLastStep) {
+            finalGold += chain.completionBonusGold;
+            finalHappiness += chain.completionBonusHappiness;
+          }
+
+          const healthLoss = Math.random() < 0.5 ? step.healthRisk : Math.floor(step.healthRisk / 2);
+
+          const newChainProgress = { ...p.questChainProgress, [chainId]: stepsCompleted + 1 };
+
+          return {
+            ...p,
+            gold: p.gold + finalGold,
+            health: Math.max(0, p.health - healthLoss),
+            happiness: Math.min(100, p.happiness + finalHappiness),
+            timeRemaining: Math.max(0, p.timeRemaining - step.timeRequired),
+            completedQuests: p.completedQuests + 1,
+            guildReputation: p.guildReputation + (isLastStep ? 3 : 1), // chain completion = 3 rep
+            activeQuest: null,
+            questChainProgress: newChainProgress,
+          };
+        }),
+      }));
+
+      // Check for guild rank promotion
+      get().promoteGuildRank(playerId);
+
+      // Check death
+      get().checkDeath(playerId);
+    },
+
+    // ============================================================
+    // B2: Bounty actions
+    // ============================================================
+
+    takeBounty: (playerId: string, bountyId: string) => {
+      const state = get();
+      const player = state.players.find(p => p.id === playerId);
+      if (!player) return;
+      if (player.activeQuest) return; // already has active quest
+      // Bounties don't require Guild Pass
+      // Check if already completed this bounty this week
+      if (player.completedBountiesThisWeek.includes(bountyId)) return;
+
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? { ...p, activeQuest: `bounty:${bountyId}` }
+            : p
+        ),
+      }));
+    },
+
+    completeBounty: (playerId: string) => {
+      const state = get();
+      const player = state.players.find(p => p.id === playerId);
+      if (!player || !player.activeQuest) return;
+
+      const bountyId = player.activeQuest.replace('bounty:', '');
+      const bounty = getBounty(bountyId);
+      if (!bounty) return;
+
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+
+          // B3: Scale rewards (bounties scale too, but from a lower base)
+          const scaledGold = getScaledQuestGold(bounty.goldReward, p.dungeonFloorsCleared);
+          // B5: Reputation multiplier
+          const repMultiplier = getReputationGoldMultiplier(p.guildReputation);
+          const finalGold = Math.round(scaledGold * repMultiplier);
+
+          const healthLoss = Math.random() < 0.5 ? bounty.healthRisk : Math.floor(bounty.healthRisk / 2);
+
+          return {
+            ...p,
+            gold: p.gold + finalGold,
+            health: Math.max(0, p.health - healthLoss),
+            happiness: Math.min(100, p.happiness + bounty.happinessReward),
+            timeRemaining: Math.max(0, p.timeRemaining - bounty.timeRequired),
+            guildReputation: p.guildReputation + 1,
+            activeQuest: null,
+            completedBountiesThisWeek: [...p.completedBountiesThisWeek, bountyId],
+          };
+        }),
+      }));
+
+      // Bounties don't count toward completedQuests (no guild rank from bounties)
+
+      // Check death
+      get().checkDeath(playerId);
     },
 
     evictPlayer: (playerId: string) => {

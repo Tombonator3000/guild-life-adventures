@@ -85,10 +85,16 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
           return p;
         }
 
-        // Reset newspaper, dungeon fatigue, and resurrection flag for new week
+        // Reset newspaper, dungeon fatigue, resurrection flag, and bounties for new week
         p.hasNewspaper = false;
         p.dungeonAttemptsThisTurn = 0;
         p.wasResurrectedThisWeek = false;
+        // B2: Reset weekly bounty completions
+        p.completedBountiesThisWeek = [];
+        // B4: Decrement quest cooldown
+        if (p.questCooldownWeeksLeft > 0) {
+          p.questCooldownWeeksLeft -= 1;
+        }
 
         // B5: Dependability decay only if player doesn't have a job
         if (!p.currentJob) {

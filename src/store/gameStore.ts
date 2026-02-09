@@ -130,6 +130,11 @@ const createPlayer = (
   lotteryTickets: 0,
   // Forge tempering
   temperedItems: [],
+  // Quest system B-features
+  questChainProgress: {},
+  completedBountiesThisWeek: [],
+  questCooldownWeeksLeft: 0,
+  guildReputation: 0,
 });
 
 export const useGameStore = create<GameStore>((set, get) => {

@@ -1,5 +1,74 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Kategori B: Quest System (B1-B5)
+
+Implemented all 5 quest system features from the B-category proposals.
+
+### B1: Quest Chains — Multi-part quests
+- Added `QuestChain` and `QuestChainStep` interfaces in `src/data/quests.ts`
+- Two quest chains: **"The Dragon Conspiracy"** (3 steps, C/B/A rank, 200g bonus) and **"The Scholar's Secret"** (3 steps, D/C/B rank, 150g bonus)
+- Player tracks progress via `questChainProgress: Record<string, number>` (chainId to steps completed)
+- Store actions: `takeChainQuest(playerId, chainId)`, `completeChainQuest(playerId)`
+- Active chain quests stored as `"chain:<chainId>"` in `player.activeQuest`
+- Chain completion bonus: +3 guild reputation (vs +1 for regular quest)
+- AI strategy: Strategic AI (medium/hard) prefers chains over regular quests for the completion bonus
+
+### B2: Repeatable Bounties — 3 rotating weekly bounties
+- Pool of 9 bounty templates (Cellar Rats, Night Patrol, Herb Collection, etc.) in `BOUNTY_POOL`
+- `getWeeklyBounties(week)` returns 3 deterministically-rotated bounties per week
+- **No Guild Pass required** — bounties are free for all players
+- Each bounty can be completed once per week; resets in `weekEndHelpers.ts`
+- Player tracks via `completedBountiesThisWeek: string[]`
+- Store actions: `takeBounty(playerId, bountyId)`, `completeBounty(playerId)`
+- Active bounties stored as `"bounty:<bountyId>"` in `player.activeQuest`
+- Bounties don't count toward `completedQuests` (no guild rank from bounties)
+- AI picks bounties when no quest/chain is available
+
+### B3: Quest Difficulty Scaling
+- `getScaledQuestGold(baseGold, floorsCleared)`: +10% per dungeon floor, max +60%
+- `getScaledQuestHappiness(baseHappiness, floorsCleared)`: +1 happiness per 2 floors
+- Applied to all quest types (regular, chain, bounty) in `questHelpers.ts`
+- UI shows green bonus indicators like "+35g (+5)" when scaling is active
+
+### B4: Quest Failure Consequences
+- Abandoning a quest: **-2 happiness, -3 dependability, 2-week cooldown**
+- `questCooldownWeeksLeft` decremented weekly in `weekEndHelpers.ts`
+- During cooldown: cannot take quests or chain quests (bounties still allowed)
+- AI respects cooldown; strategy checks `questCooldownWeeksLeft > 0`
+- UI shows cooldown warning with weeks remaining
+
+### B5: Guild Reputation
+- `guildReputation` tracks total quest+chain+bounty completions
+- Milestones at 5 (Known Adventurer, +5% gold), 10 (Trusted Agent, +10%), 20 (Renowned Hero, +15%), 50 (Legendary Champion, +20%)
+- `getReputationGoldMultiplier()` applied on top of difficulty scaling
+- UI: Reputation bar with progress toward next milestone, title display
+- Chain completion = 3 rep, regular quest/bounty = 1 rep each
+
+### Files Changed
+
+| File | Changes |
+|------|---------|
+| `src/types/game.types.ts` | Added `questChainProgress`, `completedBountiesThisWeek`, `questCooldownWeeksLeft`, `guildReputation` to Player |
+| `src/data/quests.ts` | Added QuestChain data, Bounty pool, scaling functions, reputation milestones |
+| `src/store/helpers/questHelpers.ts` | New actions: takeChainQuest, completeChainQuest, takeBounty, completeBounty; modified: completeQuest (scaling+rep), abandonQuest (B4 consequences), takeQuest (cooldown check) |
+| `src/store/helpers/weekEndHelpers.ts` | Reset `completedBountiesThisWeek`, decrement `questCooldownWeeksLeft` |
+| `src/store/storeTypes.ts` | Added `takeChainQuest`, `completeChainQuest`, `takeBounty`, `completeBounty` signatures |
+| `src/store/gameStore.ts` | Init new Player fields with defaults |
+| `src/components/game/QuestPanel.tsx` | Full rewrite: bounty board, chain quests, reputation bar, cooldown warning, scaling indicators |
+| `src/components/game/LocationPanel.tsx` | Pass new props (week, onTakeChainQuest, onTakeBounty); bounties visible without Guild Pass |
+| `src/hooks/ai/strategy.ts` | Added `getBestBounty()`, `getBestChainQuest()`; updated `getBestQuest()` for cooldown |
+| `src/hooks/ai/actions/questDungeonActions.ts` | Added take-chain-quest, take-bounty action generation |
+| `src/hooks/ai/types.ts` | Added `take-chain-quest`, `take-bounty` to AIActionType |
+| `src/hooks/useGrimwaldAI.ts` | Added case handlers for take-chain-quest, take-bounty; destructured new store actions |
+| `src/data/saveLoad.ts` | v2→v3 migration: add B-feature fields to saved players |
+| `src/network/types.ts` | Added new actions to `ALLOWED_GUEST_ACTIONS` |
+
+### Test Results
+- All 171 tests pass
+- Production build succeeds (1080 kB bundle)
+
+---
+
 ## 2026-02-09 - Zone Editor Graveyard Fix & Gold Frame Removal
 
 Two UI fixes applied:

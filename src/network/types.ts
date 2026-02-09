@@ -180,7 +180,11 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   // Quests & Dungeon
   'buyGuildPass',
   'takeQuest',
+  'takeChainQuest',
+  'takeBounty',
   'completeQuest',
+  'completeBounty',
+  'completeChainQuest',
   'abandonQuest',
   'clearDungeonFloor',
   'applyRareDrop',

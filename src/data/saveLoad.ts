@@ -5,7 +5,7 @@
 
 import type { GameState } from '@/types/game.types';
 
-const SAVE_VERSION = 2;
+const SAVE_VERSION = 3;
 const STORAGE_PREFIX = 'guild-life-';
 const AUTO_SAVE_KEY = `${STORAGE_PREFIX}autosave`;
 const SAVE_SLOT_KEY = (slot: number) => `${STORAGE_PREFIX}save-${slot}`;
@@ -73,6 +73,19 @@ export function loadGame(slot: number = 0): SaveData | null {
         }
       }
       saveData.version = 2;
+    }
+
+    if (saveData.version < 3) {
+      // v2 → v3: Add quest system B-features fields
+      if (saveData.gameState?.players) {
+        for (const p of saveData.gameState.players as Record<string, unknown>[]) {
+          if (p.questChainProgress === undefined) p.questChainProgress = {};
+          if (p.completedBountiesThisWeek === undefined) p.completedBountiesThisWeek = [];
+          if (p.questCooldownWeeksLeft === undefined) p.questCooldownWeeksLeft = 0;
+          if (p.guildReputation === undefined) p.guildReputation = (p.completedQuests as number) || 0;
+        }
+      }
+      saveData.version = 3;
     }
 
     return saveData;
