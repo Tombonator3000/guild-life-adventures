@@ -1,5 +1,4 @@
 import { Menu } from 'lucide-react';
-import { DarkModeToggle } from './DarkModeToggle';
 import type { WeatherState } from '@/data/weather';
 
 function getWeatherIcon(type: string): string {
@@ -58,7 +57,6 @@ export function GameBoardHeader({
       >
         <Menu className="w-5 h-5 text-card-foreground" />
       </button>
-      <DarkModeToggle className="parchment-panel" />
     </div>
   );
 }

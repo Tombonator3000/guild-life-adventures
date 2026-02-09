@@ -17,7 +17,6 @@ import { useSFXSettings } from '@/hooks/useSFX';
 import { useAmbientSettings } from '@/hooks/useAmbient';
 import { useAppUpdate } from '@/hooks/useAppUpdate';
 import { getBuildVersion } from '@/components/game/UpdateBanner';
-import { DarkModeToggle } from '@/components/game/DarkModeToggle';
 import type { GameOptions } from '@/data/gameOptions';
 
 type Tab = 'gameplay' | 'audio' | 'display' | 'speed';
@@ -340,16 +339,6 @@ function DisplayTab({
 }) {
   return (
     <div className="space-y-4">
-      <SectionHeader title="Appearance" />
-
-      <OptionRow
-        icon={<Monitor className="w-4 h-4 text-primary" />}
-        label="Dark Mode"
-        description="Toggle between dark and light theme."
-        control={<DarkModeToggle className="!bg-transparent !p-0" />}
-      />
-
-      <Separator />
       <SectionHeader title="Interface" />
 
       <OptionRow

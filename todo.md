@@ -741,6 +741,18 @@
   - URL: `https://tombonator3000.github.io/guild-life-adventures/`
   - Build passes, 171 tests pass
 
+## Completed (2026-02-09)
+
+- [x] Remove Dark Mode & Fix Text Visibility — all text now brown/visible
+  - Deleted DarkModeToggle component and all 3 usage sites (GameBoardHeader, TitleScreen, OptionsMenu)
+  - Removed `.dark` CSS block (38 lines) from index.css
+  - Removed `dark` class from `<html>` in index.html
+  - Added missing `--wood-dark` CSS variable and `wood.dark` Tailwind color
+  - Fixed invisible player name in SideInfoTabs (`text-wood-dark` was referencing undefined color)
+  - Removed `darkMode: ["class"]` from tailwind.config.ts
+  - Removed `dark:` prefix from alert.tsx and chart.tsx
+  - Build passes, 171 tests pass
+
 ## In Progress
 
 *No active tasks*
@@ -879,7 +891,7 @@ See log.md "Improvement Proposals (Code Audit & Gap Analysis)" for full details.
 - [x] D2: Tooltips for all buttons and icons — **DONE** Title attributes + shortcut hints
 - [x] D3: Keyboard shortcuts for common actions — **DONE** E/Esc/Space/T
 - [x] D4: Confirmation dialogs for expensive actions — **DONE** ConfirmDialog component
-- [x] D5: Dark mode — **DONE** Toggle with localStorage persistence
+- [x] D5: Dark mode — **REMOVED** (conflicted with parchment aesthetic, all text now always brown)
 
 ### Technical Debt
 - [x] E1: Write real unit tests (victory, earnings, education, AI) — **DONE** 91 tests across 5 files
@@ -988,7 +1000,7 @@ Based on JONES_REFERENCE.md analysis:
 - [x] Responsive design for mobile — **DONE** (mobile layout for Samsung S24)
 - [ ] Animations for player movement
 - [ ] Tooltips for all buttons
-- [ ] Dark mode support
+- [x] Dark mode support — **REMOVED** (game uses fixed parchment/brown theme)
 - [x] Zone Editor for visual positioning (Ctrl+Shift+Z)
 - [x] Debug overlay for zone boundaries (Ctrl+Shift+D)
 - [x] Movement path drawing in Zone Editor (roads instead of straight lines)

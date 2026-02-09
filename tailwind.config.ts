@@ -1,7 +1,6 @@
 import type { Config } from "tailwindcss";
 
 export default {
-  darkMode: ["class"],
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   prefix: "",
   theme: {
@@ -73,6 +72,7 @@ export default {
         wood: {
           DEFAULT: "hsl(var(--wood))",
           light: "hsl(var(--wood-light))",
+          dark: "hsl(var(--wood-dark))",
         },
         health: "hsl(var(--health))",
         happiness: "hsl(var(--happiness))",
