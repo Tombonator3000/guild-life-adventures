@@ -1,5 +1,30 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Guild Pass Quest Requirement
+
+### Summary
+All quest activities (regular quests, quest chains, AND bounties) now require a Guild Pass before they become visible or accessible. Previously bounties were available without a pass.
+
+### Changes
+
+1. **LocationPanel.tsx** — Quest tab now shows ONLY the Guild Pass purchase prompt when player doesn't have a pass. The entire QuestPanel is hidden (not rendered) until the pass is purchased. Added a Scroll icon and descriptive text explaining what the pass unlocks.
+
+2. **questHelpers.ts** — Added `if (!player.hasGuildPass) return;` guard to `takeBounty()`. Previously bounties explicitly skipped this check ("Bounties don't require Guild Pass" comment removed).
+
+3. **AI strategy.ts** — `getBestBounty()` now returns null if `!player.hasGuildPass`, matching the new requirement. AI must buy a guild pass before attempting any bounties.
+
+4. **AI questDungeonActions.ts** — Updated comment to reflect bounties now require Guild Pass.
+
+### Rationale
+Players should not be able to grind quests/bounties from the start. The 500g Guild Pass acts as a gate that forces early-game focus on jobs and income before unlocking the quest system. This applies uniformly to all quest types.
+
+### Build & Tests
+- TypeScript: clean (tsc --noEmit)
+- Build: passes
+- Tests: 171/171 pass
+
+---
+
 ## 2026-02-09 - Mid-Movement Destination Redirect & Debug Tools Expansion
 
 ### 1. Mid-Movement Destination Redirect

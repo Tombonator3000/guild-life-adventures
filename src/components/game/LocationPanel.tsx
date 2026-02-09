@@ -174,18 +174,22 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
 
         const tabs: LocationTab[] = [];
 
-        // Quest tab — bounties always visible, quests/chains require Guild Pass
+        // Quest tab — all quests hidden until Guild Pass is purchased
         tabs.push({
           id: 'quests',
           label: 'Quests',
           badge: player.activeQuest ? '!' : undefined,
           content: (
             <div className="space-y-3">
-              {!player.hasGuildPass && (
-                <div className="space-y-2 mb-3">
-                  <p className="text-sm text-[#6b5a42]">
-                    <span className="font-bold text-[#c9a227]">Guild Pass</span> required for quests and chains. Bounties are free!
-                  </p>
+              {!player.hasGuildPass ? (
+                <div className="space-y-3 py-4">
+                  <div className="text-center">
+                    <Scroll className="w-10 h-10 mx-auto text-[#c9a227] mb-2" />
+                    <h4 className="font-display text-lg text-[#3d2a14] mb-1">Guild Pass Required</h4>
+                    <p className="text-sm text-[#6b5a42] max-w-xs mx-auto">
+                      Purchase a Guild Pass to access quests, bounties, and quest chains from the Adventurer&apos;s Guild.
+                    </p>
+                  </div>
                   <div className="text-center bg-[#e0d4b8] p-2 rounded border border-[#8b7355]">
                     <span className="text-xs text-[#6b5a42]">Guild Pass Cost:</span>
                     <span className="font-bold text-[#c9a227] ml-2">{GUILD_PASS_COST}g</span>
@@ -204,17 +208,18 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
                       : `Buy Guild Pass (${GUILD_PASS_COST}g)`}
                   </button>
                 </div>
+              ) : (
+                <QuestPanel
+                  quests={availableQuests}
+                  player={player}
+                  week={week}
+                  onTakeQuest={(questId) => takeQuest(player.id, questId)}
+                  onCompleteQuest={() => completeQuest(player.id)}
+                  onAbandonQuest={() => abandonQuest(player.id)}
+                  onTakeChainQuest={(chainId) => takeChainQuest(player.id, chainId)}
+                  onTakeBounty={(bountyId) => takeBounty(player.id, bountyId)}
+                />
               )}
-              <QuestPanel
-                quests={availableQuests}
-                player={player}
-                week={week}
-                onTakeQuest={(questId) => takeQuest(player.id, questId)}
-                onCompleteQuest={() => completeQuest(player.id)}
-                onAbandonQuest={() => abandonQuest(player.id)}
-                onTakeChainQuest={(chainId) => takeChainQuest(player.id, chainId)}
-                onTakeBounty={(bountyId) => takeBounty(player.id, bountyId)}
-              />
             </div>
           ),
         });

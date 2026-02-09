@@ -381,9 +381,10 @@ export function getBestQuest(player: Player, settings: DifficultySettings): stri
 
 /**
  * Get the best bounty the AI should take (B2).
- * Bounties don't require Guild Pass.
+ * Requires Guild Pass (all quest activities require it).
  */
 export function getBestBounty(player: Player, week: number): string | null {
+  if (!player.hasGuildPass) return null;
   if (player.activeQuest) return null;
 
   const bounties = getWeeklyBounties(week);

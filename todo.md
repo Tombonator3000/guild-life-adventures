@@ -645,6 +645,13 @@
 
 ## Completed (2026-02-09)
 
+- [x] Guild Pass Quest Requirement — all quests hidden until Guild Pass purchased
+  - Quest tab shows only "Guild Pass Required" prompt with purchase button when no pass
+  - Bounties now require Guild Pass (previously were free)
+  - Added guard to `takeBounty()` store action
+  - AI `getBestBounty()` now checks for Guild Pass before considering bounties
+  - Build passes, 171 tests pass
+
 - [x] Dummy Audio Files — 52 placeholder MP3s for SFX and ambient systems
   - 36 SFX files in `public/sfx/` (matching `SFX_LIBRARY` in sfxManager.ts)
   - 16 ambient files in `public/ambient/` (matching `AMBIENT_TRACKS` in ambientConfig.ts)
