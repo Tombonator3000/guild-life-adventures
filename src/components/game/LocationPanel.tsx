@@ -470,7 +470,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             content: (
               <div className="flex flex-col items-center justify-center py-4 gap-3">
                 <img
-                  src="/locations/closed.jpg"
+                  src={`${import.meta.env.BASE_URL}locations/closed.jpg`}
                   alt="Office Closed"
                   className="w-full max-w-[240px] rounded-lg border border-[#8b7355] shadow-md"
                 />
