@@ -10,6 +10,7 @@ export interface LobbyPlayer {
   color: string;
   isReady: boolean;
   slot: number; // Player slot index (0-3)
+  portraitId?: string | null; // Character portrait selection
 }
 
 export interface LobbyState {
@@ -49,6 +50,7 @@ export type GuestMessage =
   | { type: 'action'; requestId: string; name: string; args: unknown[] }
   | { type: 'ping'; timestamp: number }
   | { type: 'leave' }
+  | { type: 'portrait-select'; portraitId: string | null }
   | { type: 'movement-start'; playerId: string; path: LocationId[] };
 
 export type NetworkMessage = HostMessage | GuestMessage;

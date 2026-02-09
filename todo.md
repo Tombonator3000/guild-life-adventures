@@ -832,6 +832,17 @@
   - Humorous credits text: Tom Husby & Claude, tech stack thanks, bug history
   - Build passes, 171 tests pass
 
+## Completed (2026-02-09)
+
+- [x] Multiplayer Portrait Selection — portrait picker in online multiplayer lobby
+  - Added `portraitId` to `LobbyPlayer` network type
+  - New `portrait-select` guest→host message type
+  - Host and guest can click their avatar to open portrait picker
+  - Portraits synced via lobby-update broadcasts
+  - Portrait selections passed to `startNewGame()` on game start
+  - CharacterPortrait replaces plain colored circles in lobby player list
+  - Build passes, 171 tests pass
+
 ## In Progress
 
 *No active tasks*
