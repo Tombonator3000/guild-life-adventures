@@ -5,8 +5,8 @@ import type { Location, ZoneConfig, LocationId } from '@/types/game.types';
 // Full lap around the board costs approximately 10-14 Hours
 export const BOARD_PATH: LocationId[] = [
   'noble-heights',    // Top left
-  'general-store',    // Left side (below noble-heights)
-  'graveyard',        // Left side (right of general-store)
+  'graveyard',        // Below noble-heights
+  'general-store',    // Left side (below graveyard)
   'bank',             // Left side (below general-store)
   'forge',            // Bottom left
   'guild-hall',       // Bottom
@@ -111,9 +111,9 @@ export const BOARD_ASPECT_RATIO = `${76 * 16} / ${100 * 9}`; // 1216/900 ≈ 1.3
 export type MovementWaypoint = [number, number];
 
 export const MOVEMENT_PATHS: Record<string, MovementWaypoint[]> = {
-  'noble-heights_general-store': [[5.6, 51.4], [5.6, 51.4]],
-  'general-store_graveyard': [[20.0, 48.0]],
-  'graveyard_bank': [[19.0, 62.0]],
+  'noble-heights_graveyard': [[15.0, 30.0]],
+  'graveyard_general-store': [[15.0, 42.0]],
+  'general-store_bank': [[5.6, 51.4], [5.6, 62.0]],
   'bank_forge': [[3.6, 88.8]],
   'forge_guild-hall': [[22.7, 92.8]],
   'guild-hall_cave': [[37.2, 93.3]],

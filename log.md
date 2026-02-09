@@ -1,5 +1,29 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Graveyard Path Reorder & NPC Portrait Fix
+
+Reordered the board path around the graveyard to match the visual layout of the game board.
+
+### Board Path Change
+- **Before**: noble-heights → general-store → graveyard → bank
+- **After**: noble-heights → graveyard → general-store → bank
+- Graveyard is visually located directly below Noble Heights and before General Store on the board
+- The path now matches the physical layout of the game board image
+
+### Movement Paths Updated
+- Replaced `noble-heights_general-store`, `general-store_graveyard`, `graveyard_bank` path keys
+- New keys: `noble-heights_graveyard`, `graveyard_general-store`, `general-store_bank`
+- Waypoints adjusted for the new adjacency
+- Travel time unchanged: each edge = 1 step (+ 2h entry cost), max distance = 7 steps
+
+### NPC Portrait Fix
+- Fixed case mismatch: `npcs/morthos.jpg` → `npcs/Morthos.jpg` (matching actual filename on disk)
+- Morthos.jpg now correctly used as the Graveyard NPC portrait
+
+**Files modified:**
+- `src/data/locations.ts` — BOARD_PATH order, MOVEMENT_PATHS keys/waypoints
+- `src/data/npcs.ts` — Fixed Morthos portrait image path case
+
 ## 2026-02-09 - Gameplay Features C1, C4, C6, C7
 
 Implemented 4 gameplay features from the C-category proposals.
