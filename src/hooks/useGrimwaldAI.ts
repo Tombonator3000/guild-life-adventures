@@ -21,6 +21,7 @@ import { peerManager } from '@/network/PeerManager';
 import { calculateCombatStats } from '@/data/items';
 import { getFloor, calculateEducationBonuses, getFloorTimeCost, getEncounterTimeCost, getLootMultiplier, ENCOUNTERS_PER_FLOOR } from '@/data/dungeon';
 import { autoResolveFloor } from '@/data/combatResolver';
+import { FESTIVALS } from '@/data/festivals';
 
 // Import from extracted modules
 import { DIFFICULTY_SETTINGS } from '@/hooks/ai/types';
@@ -349,8 +350,13 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         const result = autoResolveFloor(floor, combatStats, eduBonuses, player.health, isFirstClear, lootMult, player.dungeonFloorsCleared);
 
         // Apply results (match player penalties: 25% gold on defeat, -2 happiness on defeat)
+        // C1: Festival dungeon gold multiplier
+        const festivalId = useGameStore.getState().activeFestival;
+        const festivalDungeonMult = festivalId
+          ? (FESTIVALS.find(f => f.id === festivalId)?.dungeonGoldMultiplier ?? 1.0)
+          : 1.0;
         const defeatGoldMult = (!result.bossDefeated) ? 0.25 : 1.0;
-        const actualGold = Math.floor(result.goldEarned * defeatGoldMult);
+        const actualGold = Math.floor(result.goldEarned * defeatGoldMult * festivalDungeonMult);
         if (actualGold > 0) modifyGold(player.id, actualGold);
         // Use actual HP delta (not raw totals which can include wasted overheal)
         if (result.healthChange !== 0) modifyHealth(player.id, result.healthChange);

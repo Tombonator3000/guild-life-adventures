@@ -20,6 +20,9 @@ import { updateStockPrices } from '@/data/stocks';
 import { selectWeekendActivity } from '@/data/weekends';
 import { advanceWeather, CLEAR_WEATHER } from '@/data/weather';
 import type { WeatherState } from '@/data/weather';
+import { getActiveFestival } from '@/data/festivals';
+import type { FestivalId } from '@/data/festivals';
+import { updateAchievementStats } from '@/data/achievements';
 import type { SetFn, GetFn } from '../storeTypes';
 import { getHomeLocation } from './turnHelpers';
 
@@ -27,6 +30,8 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
   return () => {
       const state = get();
       const newWeek = state.week + 1;
+      // C6: Track weeks played for achievements
+      updateAchievementStats({ totalWeeksPlayed: 1 });
       const isRentDue = newWeek % 4 === 0;
       const isClothingDegradation = newWeek % 8 === 0;
       let eventMessages: string[] = [];
@@ -74,7 +79,20 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
 
       // Apply weather price multiplier on top of economy drift
       const weatherAdjustedPrice = newPriceModifier * newWeather.priceMultiplier;
-      const finalPriceModifier = Math.max(0.70, Math.min(1.35, weatherAdjustedPrice));
+
+      // === Seasonal Festival check ===
+      let activeFestivalId: FestivalId | null = null;
+      const festival = getGameOption('enableFestivals') ? getActiveFestival(newWeek) : null;
+      if (festival) {
+        activeFestivalId = festival.id;
+        eventMessages.push(festival.eventMessage);
+        // C6: Track festival attendance for achievements
+        updateAchievementStats({ festivalsAttended: 1 });
+      }
+
+      // Apply festival price multiplier on top of weather+economy
+      const festivalPriceMult = festival ? festival.priceMultiplier : 1.0;
+      const finalPriceModifier = Math.max(0.70, Math.min(1.35, weatherAdjustedPrice * festivalPriceMult));
 
       // Process all players for week-end effects
       const updatedPlayers = state.players.map((player) => {
@@ -152,6 +170,30 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
                 eventMessages.push(`${p.name}: The ${newWeather.name.toLowerCase()} spoiled ${lost} unit(s) of fresh food!`);
               }
             }
+          }
+        }
+
+        // === Festival effects on players ===
+        if (festival) {
+          if (festival.happinessBonus !== 0) {
+            p.happiness = Math.max(0, Math.min(100, p.happiness + festival.happinessBonus));
+          }
+          if (festival.goldEffect !== 0) {
+            p.gold = Math.max(0, p.gold + festival.goldEffect);
+          }
+          if (festival.dependabilityBonus !== 0 && p.currentJob) {
+            p.dependability = Math.min(p.maxDependability, p.dependability + festival.dependabilityBonus);
+          }
+          // Education bonus: add progress to all in-progress degrees
+          if (festival.educationBonus > 0) {
+            const newDegreeProgress = { ...p.degreeProgress };
+            for (const degreeId of Object.keys(newDegreeProgress)) {
+              const current = newDegreeProgress[degreeId as keyof typeof newDegreeProgress] || 0;
+              if (current > 0) {
+                newDegreeProgress[degreeId as keyof typeof newDegreeProgress] = current + festival.educationBonus;
+              }
+            }
+            p.degreeProgress = newDegreeProgress;
           }
         }
 
@@ -434,6 +476,7 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
           economyTrend,
           economyCycleWeeksLeft,
           weather: newWeather,
+          activeFestival: activeFestivalId,
         });
         return;
       }
@@ -452,6 +495,7 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
           economyTrend,
           economyCycleWeeksLeft,
           weather: newWeather,
+          activeFestival: activeFestivalId,
         });
         return;
       }
@@ -467,6 +511,7 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
         economyTrend,
         economyCycleWeeksLeft,
         weather: newWeather,
+        activeFestival: activeFestivalId,
         players: updatedPlayers.map((p, index) =>
           index === firstAliveIndex
             ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: firstPlayerHome, dungeonAttemptsThisTurn: 0 }

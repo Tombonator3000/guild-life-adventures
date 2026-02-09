@@ -1,6 +1,7 @@
 import type { EquipmentSlot } from '@/types/game.types';
 import { calculateRepairCost } from '@/data/items';
 import { DUNGEON_FLOORS } from '@/data/dungeon';
+import { updateAchievementStats, checkAchievements } from '@/data/achievements';
 import type { SetFn, GetFn } from '../../storeTypes';
 
 export function createEquipmentActions(set: SetFn, get: GetFn) {
@@ -54,6 +55,12 @@ export function createEquipmentActions(set: SetFn, get: GetFn) {
           };
         }),
       }));
+      // C6: Track dungeon floor clear for achievements
+      const player = get().players.find(p => p.id === playerId);
+      if (player && !player.isAI) {
+        updateAchievementStats({ totalDungeonFloorsCleared: 1, bossesDefeated: 1 });
+        checkAchievements({ dungeonFloorsCleared: player.dungeonFloorsCleared.length });
+      }
     },
 
     applyRareDrop: (playerId: string, dropId: string) => {

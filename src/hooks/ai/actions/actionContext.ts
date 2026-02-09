@@ -18,4 +18,6 @@ export interface ActionContext {
   progress: GoalProgress;
   urgency: ResourceUrgency;
   weakestGoal: 'wealth' | 'happiness' | 'education' | 'career';
+  /** C4: Other players for rivalry awareness (empty = no rivals) */
+  rivals: Player[];
 }

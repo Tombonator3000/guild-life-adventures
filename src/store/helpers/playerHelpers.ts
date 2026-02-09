@@ -6,6 +6,7 @@ import type { SetFn, GetFn } from '../storeTypes';
 import {
   checkStreetRobbery,
 } from '@/data/shadowfingers';
+import { rollTravelEvent, formatTravelEvent } from '@/data/travelEvents';
 
 export function createPlayerActions(set: SetFn, get: GetFn) {
   return {
@@ -59,6 +60,39 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
               },
             }),
           }));
+        }
+      }
+
+      // C7: Random travel events (10% chance on 3+ step trips)
+      // timeCost roughly equals steps traveled (1 hr/step + 2 hr entry)
+      const stepsTraveled = Math.max(0, timeCost - 2); // Subtract entry cost
+      const travelEvent = rollTravelEvent(stepsTraveled);
+      if (travelEvent) {
+        const currentPlayer = get().players.find(p => p.id === playerId);
+        if (currentPlayer) {
+          // Apply travel event effects
+          set((state) => ({
+            players: state.players.map((p) => {
+              if (p.id !== playerId) return p;
+              return {
+                ...p,
+                gold: Math.max(0, p.gold + travelEvent.goldEffect),
+                happiness: Math.max(0, Math.min(100, p.happiness + travelEvent.happinessEffect)),
+                timeRemaining: Math.max(0, p.timeRemaining - travelEvent.timeCost),
+                health: Math.max(0, Math.min(p.maxHealth, p.health + travelEvent.healthEffect)),
+              };
+            }),
+          }));
+
+          // Show travel event to human players
+          if (!currentPlayer.isAI) {
+            const message = `Travel Event: ${travelEvent.name} — ${formatTravelEvent(travelEvent)}`;
+            const existing = get().eventMessage;
+            set({
+              eventMessage: existing ? existing + '\n' + message : message,
+              phase: 'event',
+            });
+          }
         }
       }
     },

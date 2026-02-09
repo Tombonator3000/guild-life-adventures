@@ -18,6 +18,7 @@ import {
   getReputationGoldMultiplier,
 } from '@/data/quests';
 import { calculateStockValue } from '@/data/stocks';
+import { checkAchievements, updateAchievementStats } from '@/data/achievements';
 import type { SetFn, GetFn } from '../storeTypes';
 
 export function createQuestActions(set: SetFn, get: GetFn) {
@@ -101,6 +102,16 @@ export function createQuestActions(set: SetFn, get: GetFn) {
           };
         }),
       }));
+
+      // C6: Track quest completion for achievements
+      const updatedPlayer = get().players.find(p => p.id === playerId);
+      if (updatedPlayer && !updatedPlayer.isAI) {
+        updateAchievementStats({ totalQuestsCompleted: 1, totalGoldEarned: quest.goldReward });
+        checkAchievements({
+          completedQuests: updatedPlayer.completedQuests,
+          guildRank: updatedPlayer.guildRank,
+        });
+      }
 
       // Check for guild rank promotion
       get().promoteGuildRank(playerId);
@@ -383,7 +394,38 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       const careerValue = player.currentJob ? player.dependability : 0;
       const careerMet = careerValue >= goals.career;
 
+      // C6: Check achievements on every victory check (covers turn-end milestones)
+      if (!player.isAI) {
+        checkAchievements({
+          gold: player.gold,
+          totalWealth,
+          happiness: player.happiness,
+          completedDegrees: player.completedDegrees.length,
+          completedQuests: player.completedQuests,
+          dungeonFloorsCleared: player.dungeonFloorsCleared.length,
+          guildRank: player.guildRank,
+          housing: player.housing,
+          week: state.week,
+          isVictory: false,
+        });
+      }
+
       if (wealthMet && happinessMet && educationMet && careerMet) {
+        // C6: Record victory achievement + stats
+        if (!player.isAI) {
+          updateAchievementStats({ gamesWon: 1 });
+          checkAchievements({
+            totalWealth,
+            happiness: player.happiness,
+            completedDegrees: player.completedDegrees.length,
+            completedQuests: player.completedQuests,
+            dungeonFloorsCleared: player.dungeonFloorsCleared.length,
+            guildRank: player.guildRank,
+            housing: player.housing,
+            week: state.week,
+            isVictory: true,
+          });
+        }
         set({
           winner: playerId,
           phase: 'victory',

@@ -7,6 +7,7 @@
 
 import type { Player } from '@/types/game.types';
 import { calculatePathDistance } from '@/data/locations';
+import { useGameStore } from '@/store/gameStore';
 
 import type { DifficultySettings, AIAction } from './types';
 import {
@@ -21,6 +22,7 @@ import {
   generateStrategicActions,
   generateEconomicActions,
   generateQuestDungeonActions,
+  generateRivalryActions,
 } from './actions';
 
 /**
@@ -38,6 +40,10 @@ export function generateActions(
   const weakestGoal = getWeakestGoal(progress);
   const currentLocation = player.currentLocation;
 
+  // C4: Get rival players for competitive awareness
+  const allPlayers = useGameStore.getState().players;
+  const rivals = allPlayers.filter(p => p.id !== player.id && !p.isGameOver);
+
   // Helper to calculate movement cost
   const moveCost = (to: Parameters<typeof calculatePathDistance>[1]) =>
     calculatePathDistance(currentLocation, to);
@@ -54,6 +60,7 @@ export function generateActions(
     progress,
     urgency,
     weakestGoal,
+    rivals,
   };
 
   // Collect actions from all category generators
@@ -63,6 +70,7 @@ export function generateActions(
     ...generateStrategicActions(ctx),
     ...generateEconomicActions(ctx),
     ...generateQuestDungeonActions(ctx),
+    ...generateRivalryActions(ctx),
   ];
 
   // ============================================

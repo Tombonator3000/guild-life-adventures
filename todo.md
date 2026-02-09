@@ -643,6 +643,44 @@
   - [x] Applied to all screens: TitleScreen, GameSetup, GameBoard, VictoryScreen, OnlineLobby
   - [x] Build succeeds, 171 tests pass
 
+## Completed (2026-02-09)
+
+- [x] C1: Seasonal Festivals — 4 festivals every 12 weeks with unique effects
+  - Created `src/data/festivals.ts` — Harvest Festival, Winter Solstice, Spring Tournament, Midsummer Fair
+  - Festival cycle: one every 12 weeks, rotating in order
+  - Effects: happiness bonus, gold bonus, price multiplier, education bonus, dependability bonus, wage multiplier, dungeon gold multiplier
+  - Integrated into `processWeekEnd` — festival effects applied to all players
+  - Festival wage multiplier in `workShift` (e.g., Midsummer Fair +15%)
+  - Festival dungeon gold multiplier in `CombatView` and AI dungeon handler
+  - Added `enableFestivals` game option with toggle in OptionsMenu
+  - Added `activeFestival` to GameState, save/load, and network sync
+
+- [x] C4: AI Rival Enhancement — AI competes for quests/jobs
+  - Created `src/hooks/ai/actions/rivalryActions.ts` — competitive AI behavior
+  - AI analyzes rival players' progress, identifies biggest threat
+  - Rivalry actions: steal rival's job, race for quests, block education, aggressive banking
+  - Only active on medium/hard difficulty (planningDepth >= 2)
+  - Added `rivals: Player[]` to ActionContext for all action generators
+  - Integrated into main action generator pipeline
+
+- [x] C6: Achievements — meta-progression across multiple games
+  - Created `src/data/achievements.ts` — 24 achievements across 6 categories
+  - Categories: Wealth, Combat, Education, Social, Exploration, Mastery
+  - Persisted in localStorage across games
+  - Cumulative stats tracked: gamesWon, totalGoldEarned, totalQuestsCompleted, totalDegreesEarned, etc.
+  - Achievement checks at: victory, quest completion, degree completion, dungeon clear, festival attendance
+  - Created `src/hooks/useAchievements.ts` — React hook with useSyncExternalStore
+  - Created `src/components/game/AchievementsPanel.tsx` — UI panel with progress bar
+  - Added "Achievements" tab to RightSideTabs
+
+- [x] C7: Random Travel Events — random events during travel (10% chance)
+  - Created `src/data/travelEvents.ts` — 10 travel events (positive, negative, mixed)
+  - 10% chance on trips of 3+ steps
+  - Events: Found Coin Purse, Wandering Merchant, Hidden Shortcut, Street Bard, Pickpocket, Muddy Road, etc.
+  - Effects: gold, happiness, time, health changes
+  - Integrated into `movePlayer` in playerHelpers.ts
+  - Travel event message shown to human players via eventMessage/phase system
+
 ## In Progress
 
 *No active tasks*
@@ -654,7 +692,7 @@ Full details with design specs in log.md "Game Improvement Proposals (Gameplay, 
 ### Tier 1 — High Impact, Moderate Effort
 - [x] A2: Dungeon Random Modifiers — per-run random modifier (Cursed Halls, Lucky Day, Blood Moon, etc.) **DONE 2026-02-09**
 - [ ] B1: Quest Chains — multi-part quests (e.g., "The Dragon Conspiracy" 3-part chain)
-- [ ] C7: Random Travel Events — 10% chance of random event during 3+ step travel
+- [x] C7: Random Travel Events — 10% chance of random event during 3+ step travel **DONE 2026-02-09**
 - [ ] B2: Repeatable Daily Bounties — 3 rotating weekly bounty board quests at Guild Hall
 - [ ] D1: Fix starvation penalty consistency (-20h only, remove -10hp week-end duplicate)
 - [ ] D2: Make Frost Chest & Arcane Tome actually purchasable at Enchanter
@@ -663,8 +701,8 @@ Full details with design specs in log.md "Game Improvement Proposals (Gameplay, 
 
 ### Tier 2 — High Impact, Higher Effort
 - [x] A1: Dungeon Floor 6 "The Forgotten Temple" — ultra-endgame floor with Loremaster requirement **DONE 2026-02-09**
-- [ ] C1: Seasonal Festivals — Harvest Festival, Winter Solstice, Spring Tournament, Midsummer Fair (every 12 weeks)
-- [ ] C6: Achievements / Trophy System — lifetime achievements persisted in localStorage
+- [x] C1: Seasonal Festivals — Harvest Festival, Winter Solstice, Spring Tournament, Midsummer Fair (every 12 weeks) **DONE 2026-02-09**
+- [x] C6: Achievements / Trophy System — lifetime achievements persisted in localStorage **DONE 2026-02-09**
 - [ ] A3: Dungeon Companion System — hire companions before dungeon runs (Torchbearer, Mercenary, Healer, Treasure Hunter)
 - [ ] B4: Quest Failure Consequences — -2 happiness, -3 dependability, 2-week cooldown on failed quests
 
@@ -680,7 +718,7 @@ Full details with design specs in log.md "Game Improvement Proposals (Gameplay, 
 - [x] A4: Dungeon Leaderboard / Best Times — personal best tracking **DONE 2026-02-09**
 - [x] A5: Mini-Boss Encounters — 15% wandering boss on re-runs **DONE 2026-02-09**
 - [ ] B3: Quest Difficulty Scaling — rewards scale with player progression
-- [ ] C4: AI Rival Enhancement — competitive quest/job targeting
+- [x] C4: AI Rival Enhancement — competitive quest/job targeting **DONE 2026-02-09**
 - [ ] C5: Insurance System at Bank — theft, health, equipment policies
 - [ ] C8: Night/Day Cycle — different bonuses in last 20h of turn
 - [ ] D5: Dead player visual distinction (greyed out tokens)

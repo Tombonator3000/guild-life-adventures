@@ -2,13 +2,14 @@
 // Follows the medieval parchment aesthetic with amber-800/900 text colors
 
 import { useState } from 'react';
-import { Settings, Save, Code, Users, Target, Coins, Smile, GraduationCap, TrendingUp, Crown, Skull, Bot, Play, FastForward, SkipForward, Menu, Volume2, VolumeX, Music, Sparkles } from 'lucide-react';
+import { Settings, Save, Code, Users, Target, Coins, Smile, GraduationCap, TrendingUp, Crown, Skull, Bot, Play, FastForward, SkipForward, Menu, Volume2, VolumeX, Music, Sparkles, Trophy } from 'lucide-react';
 import { useAudioSettings } from '@/hooks/useMusic';
 import { useSFXSettings } from '@/hooks/useSFX';
+import { AchievementsPanel } from './AchievementsPanel';
 import type { Player, GoalSettings } from '@/types/game.types';
 import { HOURS_PER_TURN } from '@/types/game.types';
 
-type TabId = 'players' | 'options' | 'developer';
+type TabId = 'players' | 'achievements' | 'options' | 'developer';
 
 interface TabConfig {
   id: TabId;
@@ -18,6 +19,7 @@ interface TabConfig {
 
 const TABS: TabConfig[] = [
   { id: 'players', label: 'PLAYERS', icon: <Users className="w-4 h-4" /> },
+  { id: 'achievements', label: 'ACHIEVE', icon: <Trophy className="w-4 h-4" /> },
   { id: 'options', label: 'OPTIONS', icon: <Settings className="w-4 h-4" /> },
   { id: 'developer', label: 'DEV', icon: <Code className="w-4 h-4" /> },
 ];
@@ -83,6 +85,9 @@ export function RightSideTabs({
             currentPlayerIndex={currentPlayerIndex} 
             goalSettings={goalSettings}
           />
+        )}
+        {activeTab === 'achievements' && (
+          <AchievementsPanel />
         )}
         {activeTab === 'options' && (
           <OptionsTab
