@@ -687,6 +687,16 @@
   - Integrated into `movePlayer` in playerHelpers.ts
   - Travel event message shown to human players via eventMessage/phase system
 
+## Completed (2026-02-09)
+
+- [x] Salary Stabilization & Job/Education Balance Audit — 3 systemic fixes
+  - [x] Fix 1: Replaced random wage variance (±45%) with deterministic per-job-per-week hash (±10%)
+  - [x] Fix 2: Added career level wage floors — higher-tier jobs can never pay less than lower-tier
+  - [x] Fix 3: Rebalanced 9 underpaid jobs (Scroll Copier, City Guard, Apprentice Smith, Shop Clerk, etc.)
+  - [x] Corrected 3 career level misclassifications (Errand Runner, Tavern Cook, Bank Janitor: L1→L2)
+  - [x] Full education → job progression audit — all paths verified fair and logical
+  - Build passes, 171 tests pass
+
 ## In Progress
 
 *No active tasks*

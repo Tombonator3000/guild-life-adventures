@@ -27,6 +27,7 @@ import {
 interface GuildHallPanelProps {
   player: Player;
   priceModifier: number;
+  week: number;
   onHireJob: (jobId: string, wage: number) => void;
   onNegotiateRaise: (newWage: number) => void;
   onSpendTime: (hours: number) => void;
@@ -35,6 +36,7 @@ interface GuildHallPanelProps {
 export function GuildHallPanel({
   player,
   priceModifier,
+  week,
   onHireJob,
   onNegotiateRaise,
   onSpendTime,
@@ -49,17 +51,17 @@ export function GuildHallPanel({
   } | null>(null);
   const employers = getEmployers();
 
-  // Pre-calculate ALL wages once per visit (stable within a turn)
+  // Pre-calculate ALL wages once per week (deterministic per job per week)
   const marketWages = useMemo(() => {
     const wages = new Map<string, number>();
     for (const employer of employers) {
       for (const job of employer.jobs) {
-        const offer = calculateOfferedWage(job, priceModifier);
+        const offer = calculateOfferedWage(job, priceModifier, week);
         wages.set(job.id, offer.offeredWage);
       }
     }
     return wages;
-  }, [priceModifier]);
+  }, [priceModifier, week]);
 
   const handleSelectEmployer = (employer: Employer) => {
     setSelectedEmployer(employer);
@@ -76,7 +78,7 @@ export function GuildHallPanel({
     );
 
     if (result.success) {
-      const offeredWage = marketWages.get(job.id) ?? calculateOfferedWage(job, priceModifier).offeredWage;
+      const offeredWage = marketWages.get(job.id) ?? calculateOfferedWage(job, priceModifier, week).offeredWage;
       setApplicationResult({ job, result, offeredWage });
     } else {
       setApplicationResult({ job, result });

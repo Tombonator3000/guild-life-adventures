@@ -163,8 +163,8 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
           return false;
         }
         // Use same economy-based wage calculation as human players
-        const priceModifier = useGameStore.getState().priceModifier;
-        const offer = calculateOfferedWage(job, priceModifier);
+        const { priceModifier, week } = useGameStore.getState();
+        const offer = calculateOfferedWage(job, priceModifier, week);
         setJob(player.id, jobId, offer.offeredWage);
         spendTime(player.id, 1);
         return true;
