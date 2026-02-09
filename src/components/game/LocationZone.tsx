@@ -37,8 +37,7 @@ export function LocationZone({
     <div
       className={cn(
         'location-zone group',
-        isSelected && 'active',
-        isCurrentLocation && 'ring-2 ring-primary ring-offset-2 ring-offset-transparent'
+        isSelected && 'active'
       )}
       style={{
         top: location.position.top,
@@ -73,10 +72,6 @@ export function LocationZone({
         {children}
       </div>
 
-      {/* Current location indicator */}
-      {isCurrentLocation && (
-        <div className="absolute inset-0 border-2 border-primary rounded-lg animate-pulse-gold pointer-events-none" />
-      )}
     </div>
   );
 }

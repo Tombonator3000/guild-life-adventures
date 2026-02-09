@@ -13,10 +13,17 @@ const DEFAULT_CENTER_PANEL: CenterPanelConfig = {
   height: 53.6,
 };
 
+// Merge saved zones with current ZONE_CONFIGS so newly added locations always appear
+function mergeWithDefaults(savedZones: ZoneConfig[]): ZoneConfig[] {
+  const savedIds = new Set(savedZones.map(z => z.id));
+  const missing = ZONE_CONFIGS.filter(z => !savedIds.has(z.id));
+  return missing.length > 0 ? [...savedZones, ...missing] : savedZones;
+}
+
 export function useZoneConfiguration() {
   const [customZones, setCustomZones] = useState<ZoneConfig[]>(() => {
     const saved = loadZoneConfig();
-    return saved ? saved.zones : ZONE_CONFIGS;
+    return saved ? mergeWithDefaults(saved.zones) : ZONE_CONFIGS;
   });
 
   const [centerPanel, setCenterPanel] = useState<CenterPanelConfig>(() => {

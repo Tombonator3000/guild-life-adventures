@@ -1,5 +1,38 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Zone Editor Graveyard Fix & Gold Frame Removal
+
+Two UI fixes applied:
+
+### Fix 1: Graveyard missing from Zone Editor
+
+The graveyard location was defined in `ZONE_CONFIGS` but didn't appear in the Zone Editor's layout or location list when a previously saved zone config existed in localStorage.
+
+**Root cause**: `useZoneConfiguration` and `useZoneEditorState` loaded saved zones from localStorage without merging with current `ZONE_CONFIGS`. If the save was created before graveyard was added, it was missing.
+
+**Fix**: Added merge logic in both hooks — any location in `ZONE_CONFIGS` not present in the saved config is appended automatically.
+
+| File | Change |
+|------|--------|
+| `src/hooks/useZoneConfiguration.ts` | Added `mergeWithDefaults()` — merges saved zones with ZONE_CONFIGS so new locations always appear |
+| `src/hooks/useZoneEditorState.ts` | Same merge logic in initial state — missing ZONE_CONFIGS entries appended to initialZones |
+
+### Fix 2: Removed gold frame around current location
+
+The pulsing gold border/ring around the player's current location has been removed.
+
+| File | Change |
+|------|--------|
+| `src/components/game/LocationZone.tsx` | Removed `ring-2 ring-primary ring-offset-2` classes and the `animate-pulse-gold` overlay div |
+
+### Testing
+
+- TypeScript: compiles clean
+- Build: succeeds
+- Tests: 171/171 passing
+
+---
+
 ## 2026-02-09 - Cave/Dungeon Category A Features (A1, A2, A4, A5)
 
 Implemented four major dungeon system expansions: Floor 6, random modifiers, leaderboard, and mini-bosses.
