@@ -9629,3 +9629,26 @@ className="relative w-full h-full"
 ### Build & Tests
 - Build: passes
 - All 171 tests pass
+
+---
+
+## Fix Start Menu Text Visibility (2026-02-09)
+
+### Problem
+On the TitleScreen, several text elements used `text-muted-foreground` which blended into the dark background overlay, making them invisible or very hard to read:
+- "A Fantasy Life Simulator" subtitle
+- "Load Saved Game" button
+- "Options" button
+- "About" button
+- "Inspired by Jones in the Fast Lane" footer
+
+### Solution
+Changed all affected text from `text-muted-foreground` to `text-gold` (the project's gold color: `hsl(45, 85%, 55%)`). Hover states on buttons changed from `hover:text-foreground` to `hover:text-gold-dark` for a cohesive gold theme.
+
+### Files Changed
+| File | Changes |
+|------|---------|
+| `src/components/screens/TitleScreen.tsx` | Changed 5 text elements from `text-muted-foreground` to `text-gold`, hover states to `text-gold-dark` |
+
+### Build & Tests
+- Build: passes

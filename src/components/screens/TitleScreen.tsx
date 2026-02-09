@@ -63,7 +63,7 @@ export function TitleScreen() {
           <h1 className="font-display text-6xl md:text-8xl font-bold text-foreground mb-4 tracking-wider">
             GUILD LIFE
           </h1>
-          <p className="font-display text-xl md:text-2xl text-muted-foreground tracking-widest">
+          <p className="font-display text-xl md:text-2xl text-gold tracking-widest">
             A Fantasy Life Simulator
           </p>
         </div>
@@ -104,7 +104,7 @@ export function TitleScreen() {
 
           <button
             onClick={handleShowLoad}
-            className="text-muted-foreground hover:text-foreground text-sm font-display flex items-center gap-2 mt-2 transition-colors"
+            className="text-gold hover:text-gold-dark text-sm font-display flex items-center gap-2 mt-2 transition-colors"
           >
             <Save className="w-4 h-4" />
             Load Saved Game
@@ -112,7 +112,7 @@ export function TitleScreen() {
 
           <button
             onClick={() => setShowOptions(true)}
-            className="text-muted-foreground hover:text-foreground text-sm font-display flex items-center gap-2 mt-1 transition-colors"
+            className="text-gold hover:text-gold-dark text-sm font-display flex items-center gap-2 mt-1 transition-colors"
           >
             <Settings className="w-4 h-4" />
             Options
@@ -120,7 +120,7 @@ export function TitleScreen() {
 
           <button
             onClick={() => setShowCredits(true)}
-            className="text-muted-foreground hover:text-foreground text-sm font-display flex items-center gap-2 mt-1 transition-colors"
+            className="text-gold hover:text-gold-dark text-sm font-display flex items-center gap-2 mt-1 transition-colors"
           >
             <Info className="w-4 h-4" />
             About
@@ -128,7 +128,7 @@ export function TitleScreen() {
         </div>
 
         {/* Footer */}
-        <p className="absolute bottom-8 text-muted-foreground text-sm font-display">
+        <p className="absolute bottom-8 text-gold text-sm font-display">
           Inspired by Jones in the Fast Lane
         </p>
 
