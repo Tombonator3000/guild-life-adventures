@@ -2,6 +2,7 @@ import { useGameStore } from '@/store/gameStore';
 import { calculateStockValue } from '@/data/stocks';
 import { Crown, Trophy, Scroll, Coins, Heart, GraduationCap, Star, Check, X, Compass } from 'lucide-react';
 import gameBoard from '@/assets/game-board.jpeg';
+import { VictoryEffects } from '@/components/game/VictoryEffects';
 import { getGameOption } from '@/data/gameOptions';
 
 export function VictoryScreen() {
@@ -64,6 +65,8 @@ export function VictoryScreen() {
 
   return (
     <div className="relative min-h-screen-safe overflow-hidden">
+      {/* Confetti & Fireworks */}
+      <VictoryEffects />
       {/* Background with overlay */}
       <div
         className="absolute inset-0 bg-cover bg-center"

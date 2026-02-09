@@ -344,19 +344,19 @@ export function OnlineLobby() {
               {/* Quick presets */}
               <div className="flex gap-2 mb-3">
                 <button
-                  onClick={() => updateSettings({ goals: { wealth: 2000, happiness: 75, education: 18, career: 50 } })}
+                  onClick={() => updateSettings({ goals: { wealth: 2000, happiness: 75, education: 18, career: 50, adventure: 0 } })}
                   className="flex-1 p-1.5 wood-frame text-parchment text-xs font-display hover:brightness-110"
                 >
                   Quick
                 </button>
                 <button
-                  onClick={() => updateSettings({ goals: { wealth: 5000, happiness: 100, education: 45, career: 75 } })}
+                  onClick={() => updateSettings({ goals: { wealth: 5000, happiness: 100, education: 45, career: 75, adventure: 0 } })}
                   className="flex-1 p-1.5 wood-frame text-parchment text-xs font-display hover:brightness-110"
                 >
                   Standard
                 </button>
                 <button
-                  onClick={() => updateSettings({ goals: { wealth: 10000, happiness: 100, education: 90, career: 100 } })}
+                  onClick={() => updateSettings({ goals: { wealth: 10000, happiness: 100, education: 90, career: 100, adventure: 0 } })}
                   className="flex-1 p-1.5 wood-frame text-parchment text-xs font-display hover:brightness-110"
                 >
                   Epic
