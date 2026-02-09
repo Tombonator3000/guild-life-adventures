@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { useGameOptions } from '@/hooks/useGameOptions';
 import { useAudioSettings } from '@/hooks/useMusic';
 import { useSFXSettings } from '@/hooks/useSFX';
+import { useAmbientSettings } from '@/hooks/useAmbient';
 import { DarkModeToggle } from '@/components/game/DarkModeToggle';
 import type { GameOptions } from '@/data/gameOptions';
 
@@ -28,6 +29,7 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
   const { options, setOption, resetOptions } = useGameOptions();
   const audio = useAudioSettings();
   const sfx = useSFXSettings();
+  const ambient = useAmbientSettings();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
@@ -76,7 +78,7 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
             <GameplayTab options={options} setOption={setOption} />
           )}
           {activeTab === 'audio' && (
-            <AudioTab audio={audio} sfx={sfx} />
+            <AudioTab audio={audio} sfx={sfx} ambient={ambient} />
           )}
           {activeTab === 'display' && (
             <DisplayTab options={options} setOption={setOption} />
@@ -192,9 +194,11 @@ function GameplayTab({
 function AudioTab({
   audio,
   sfx,
+  ambient,
 }: {
   audio: ReturnType<typeof useAudioSettings>;
   sfx: ReturnType<typeof useSFXSettings>;
+  ambient: ReturnType<typeof useAmbientSettings>;
 }) {
   return (
     <div className="space-y-4">
@@ -221,6 +225,37 @@ function AudioTab({
           <Slider
             value={[audio.musicVolume * 100]}
             onValueChange={([v]) => audio.setVolume(v / 100)}
+            min={0}
+            max={100}
+            step={5}
+          />
+        </div>
+      )}
+
+      <Separator />
+      <SectionHeader title="Ambient Sounds" />
+
+      <OptionRow
+        icon={ambient.ambientMuted ? <VolumeX className="w-4 h-4 text-muted-foreground" /> : <Bell className="w-4 h-4 text-amber-500" />}
+        label="Ambient Sounds"
+        description="Environmental sounds per location (forge, tavern, cave, etc.)."
+        control={
+          <Switch
+            checked={!ambient.ambientMuted}
+            onCheckedChange={(v) => ambient.setMuted(!v)}
+          />
+        }
+      />
+
+      {!ambient.ambientMuted && (
+        <div className="pl-8 pr-2">
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+            <span>Volume</span>
+            <span>{Math.round(ambient.ambientVolume * 100)}%</span>
+          </div>
+          <Slider
+            value={[ambient.ambientVolume * 100]}
+            onValueChange={([v]) => ambient.setVolume(v / 100)}
             min={0}
             max={100}
             step={5}

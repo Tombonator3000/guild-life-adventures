@@ -1,5 +1,112 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Game Audio: SFX System, Ambient Sounds & Web Audio Synth
+
+### Complete 3-Layer Audio System
+
+Built a full SFX and ambient audio system with Web Audio API synthesized fallback, so the game has immediate sound effects without requiring MP3 files.
+
+### 1. Web Audio Synthesizer (synthSFX.ts)
+
+Created a procedural sound synthesizer using the Web Audio API that generates 36 different sound effects programmatically. When MP3 files aren't present in `public/sfx/`, the SFXManager automatically falls back to synth sounds.
+
+**Sound categories:**
+- **UI Sounds** (5): button-click, button-hover, gold-button-click, menu-open, menu-close
+- **Game Actions** (6): coin-gain, coin-spend, item-buy, item-equip, success, error
+- **Movement** (2): footstep, door-open
+- **Work & Education** (3): work-complete, study, graduation
+- **Combat** (4): sword-hit, damage-taken, victory-fanfare, defeat
+- **Events** (3): notification, turn-start, week-end
+- **New Sounds** (13): robbery, heal, quest-accept, quest-complete, level-up, appliance-break, dice-roll, death, resurrection, rent-paid, weather-thunder, festival, travel-event
+
+**New File:** `src/audio/synthSFX.ts`
+
+### 2. Ambient Sound System
+
+Created a separate ambient audio layer that plays environmental/atmospheric loops per location, independent of the music system.
+
+- **AmbientManager** — Singleton with A/B crossfade (800ms), separate volume/mute controls
+- **16 ambient tracks** defined for all locations: Noble Heights (garden/fountain), Forge (hammer/fire), Cave (dripping water/echoes), Tavern (crowd/mugs), Shadow Market (whispers), etc.
+- **useAmbientController** hook drives ambient automatically from game state, same pattern as useMusicController
+- Ambient stops on menu screens, plays per-location during gameplay
+- Settings persisted to localStorage (`guild-life-ambient-settings`)
+
+**New Files:**
+- `src/audio/ambientConfig.ts` — Ambient track definitions and location mappings
+- `src/audio/ambientManager.ts` — Singleton ambient audio manager
+- `src/hooks/useAmbient.ts` — React hooks for ambient settings and controller
+
+### 3. SFX Manager Upgrade
+
+Updated the SFXManager with:
+- **MP3 → Synth fallback**: Tries MP3 file first, if load fails, uses Web Audio synth automatically
+- **Failed file caching**: Tracks which MP3s failed so subsequent plays go straight to synth (no flicker)
+- **13 new SFX types** added to the library (robbery, heal, quest-accept, etc.)
+
+**Modified File:** `src/audio/sfxManager.ts`
+
+### 4. SFX Wired Into Game Components
+
+Added SFX triggers to all major game events:
+
+| Component | SFX Trigger |
+|-----------|-------------|
+| ShadowfingersModal | `robbery` on modal open |
+| EventPanel | Type-specific: `death`, `robbery`, `damage-taken`, `error`, `coin-gain`, `notification` |
+| CombatView | `damage-taken` on hit, `coin-gain` on loot, `heal` on healing |
+| EncounterIntro | `sword-hit` on fight button |
+| FloorSummaryView | `victory-fanfare`, `notification`, or `defeat` based on outcome |
+| TurnTransition | `turn-start` on multiplayer turn switch |
+| QuestPanel | `quest-accept` on accept, `quest-complete` on complete |
+| HealerPanel | `heal` on all healing/cure/bless actions |
+| LandlordPanel | `rent-paid` on rent buttons, `door-open` on housing move |
+| GuildHallPanel | `success` on accepting job/raise |
+| LocationPanel | `door-open` on entering location, `item-buy` on newspaper, `success` on guild pass |
+| useLocationClick | `footstep` on travel start, `door-open` on location entry |
+
+**Modified Files:**
+- `src/components/game/ShadowfingersModal.tsx`
+- `src/components/game/EventPanel.tsx`
+- `src/components/game/CombatView.tsx`
+- `src/components/game/combat/EncounterIntro.tsx`
+- `src/components/game/combat/FloorSummaryView.tsx`
+- `src/components/game/TurnTransition.tsx`
+- `src/components/game/QuestPanel.tsx`
+- `src/components/game/HealerPanel.tsx`
+- `src/components/game/LandlordPanel.tsx`
+- `src/components/game/GuildHallPanel.tsx`
+- `src/components/game/LocationPanel.tsx`
+- `src/hooks/useLocationClick.ts`
+
+### 5. Ambient Controls in UI
+
+Added ambient volume/mute controls to:
+- **OptionsMenu** (full modal) — New "Ambient Sounds" section between Music and SFX
+- **RightSideTabs** (in-game sidebar) — New ambient slider with Bell icon
+
+**Modified Files:**
+- `src/components/game/OptionsMenu.tsx`
+- `src/components/game/RightSideTabs.tsx`
+
+### 6. SFX Generator Updated
+
+Added ElevenLabs prompts for all 13 new SFX types in the SFX Generator panel, so real MP3s can be generated later.
+
+**Modified File:** `src/services/sfxGenerator.ts`
+
+### Integration Point: Index.tsx
+
+Added `useAmbientController` alongside `useMusicController` in the root `Index` component.
+
+**Modified File:** `src/pages/Index.tsx`
+
+### Build & Test Results
+- TypeScript compiles clean (`tsc --noEmit`)
+- Build succeeds
+- All 171 tests pass
+
+---
+
 ## 2026-02-09 - AI Scheming Modal, Speech Bubble, & Landlord Restriction
 
 ### 1. AI Scheming Modal Expansion

@@ -4,6 +4,7 @@
 
 import { useState, useMemo } from 'react';
 import { Briefcase, ChevronLeft, GraduationCap, Shirt, Clock, Star, X, Check } from 'lucide-react';
+import { playSFX } from '@/audio/sfxManager';
 import {
   getEmployers,
   calculateOfferedWage,
@@ -100,6 +101,7 @@ export function GuildHallPanel({
 
   const handleAcceptJob = () => {
     if (applicationResult && applicationResult.result.success && applicationResult.offeredWage) {
+      playSFX('success');
       if (applicationResult.isRaise) {
         onNegotiateRaise(applicationResult.offeredWage);
       } else {

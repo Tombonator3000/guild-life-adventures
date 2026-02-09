@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import { Shield } from 'lucide-react';
 import type { Player } from '@/types/game.types';
 import { CharacterPortrait } from './CharacterPortrait';
+import { playSFX } from '@/audio/sfxManager';
 
 interface TurnTransitionProps {
   player: Player;
@@ -12,6 +14,10 @@ interface TurnTransitionProps {
  * Prevents players from seeing each other's resources/state.
  */
 export function TurnTransition({ player, onReady }: TurnTransitionProps) {
+  useEffect(() => {
+    playSFX('turn-start');
+  }, []);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
       <div className="parchment-panel p-8 flex flex-col items-center gap-4 max-w-sm mx-4">

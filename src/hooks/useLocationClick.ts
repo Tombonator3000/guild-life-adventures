@@ -3,6 +3,7 @@ import { getMovementCost, getPath } from '@/data/locations';
 import { type GameEvent } from '@/components/game/EventModal';
 import type { LocationId } from '@/types/game.types';
 import { toast } from 'sonner';
+import { playSFX } from '@/audio/sfxManager';
 
 export function useLocationClick({
   animatingPlayer,
@@ -56,6 +57,7 @@ export function useLocationClick({
       if (selectedLocation === locationId) {
         selectLocation(null);
       } else {
+        playSFX('door-open');
         selectLocation(locationId as LocationId);
       }
     } else {
@@ -70,6 +72,7 @@ export function useLocationClick({
       if (currentPlayer.timeRemaining >= moveCost) {
         // Full travel: enough time to reach destination
         const path = getPath(currentPlayer.currentLocation as LocationId, locationId as LocationId);
+        playSFX('footstep');
 
         startAnimation(
           currentPlayer.id,

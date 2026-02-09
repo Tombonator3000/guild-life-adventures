@@ -4,6 +4,7 @@ import { Coins, Home, Lock } from 'lucide-react';
 import { ActionButton } from './ActionButton';
 import { HOUSING_DATA, HOUSING_TIERS } from '@/data/housing';
 import { toast } from 'sonner';
+import { playSFX } from '@/audio/sfxManager';
 
 interface LandlordPanelProps {
   player: Player;
@@ -78,6 +79,7 @@ export function LandlordPanel({
               time={1}
               disabled={player.gold < effectiveRent || player.timeRemaining < 1}
               darkText
+              sfx="rent-paid"
               onClick={() => {
                 prepayRent(player.id, 1, effectiveRent);
                 spendTime(player.id, 1);
@@ -90,6 +92,7 @@ export function LandlordPanel({
               time={1}
               disabled={player.gold < effectiveRent * 4 || player.timeRemaining < 1}
               darkText
+              sfx="rent-paid"
               onClick={() => {
                 prepayRent(player.id, 4, effectiveRent * 4);
                 spendTime(player.id, 1);
@@ -102,6 +105,7 @@ export function LandlordPanel({
               time={1}
               disabled={player.gold < effectiveRent * 8 || player.timeRemaining < 1}
               darkText
+              sfx="rent-paid"
               onClick={() => {
                 prepayRent(player.id, 8, effectiveRent * 8);
                 spendTime(player.id, 1);
@@ -139,6 +143,7 @@ export function LandlordPanel({
               </div>
               <button
                 onClick={() => {
+                  playSFX('door-open');
                   moveToHousing(player.id, tier, moveCost, tierMarketRent);
                   spendTime(player.id, 4);
                   toast.success(`Moved to ${housing.name}! Rent locked at ${tierMarketRent}g/week.`);

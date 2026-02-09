@@ -3,8 +3,9 @@
 // Shows individual encounters with fight/retreat options and animated results
 // Supports dungeon modifiers and mini-boss encounters
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
+import { playSFX } from '@/audio/sfxManager';
 import type { DungeonFloor } from '@/data/dungeon';
 import { getLootMultiplier } from '@/data/dungeon';
 import { FESTIVALS } from '@/data/festivals';
@@ -93,6 +94,11 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
         return;
       }
     }
+
+    // Play combat SFX
+    if (result.damageDealt > 0) playSFX('damage-taken');
+    if (result.goldEarned > 0) playSFX('coin-gain');
+    if (result.healed > 0) playSFX('heal');
 
     setRunState(newState);
   }, [runState, combatStats, eduBonuses, onEncounterHealthDelta]);
