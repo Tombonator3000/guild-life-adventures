@@ -1,5 +1,68 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Death Modal & Credits Screen
+
+### Summary
+Two new features: (1) Death modal overlay when player HP reaches 0, with permadeath OFF respawn support, and (2) About/Credits screen accessible from the title menu with rolling text, Guild-Life-Logo.jpg background, and random music playback.
+
+### Feature 1: Death Modal
+
+When a player's health drops to 0, a dramatic full-screen death modal now appears with:
+- Dark blood-red radial gradient overlay
+- Animated skull icon with pulsing glow
+- "YOU ARE DEAD" title in red with drop shadow
+- Player name and narrative death message
+- Respawn/permadeath info line
+- Context-appropriate dismiss button ("Rise Again" or "Accept Your Fate")
+
+**Death flow (3 paths):**
+
+1. **Has savings (100g+)**: Resurrected at Graveyard with 50 HP, 100g deducted from savings. Modal shows "The spirits restored you!" message.
+2. **Permadeath OFF**: Free respawn at Graveyard with 20 HP. Modal shows "death is not the end" message. No gold cost.
+3. **Permadeath ON (no savings)**: Permanent elimination. `isGameOver = true`. Modal shows "no coming back" message.
+
+**AI players**: Death events set `eventMessage` instead of `deathEvent` (no modal for AI turns).
+
+### Feature 2: Credits / About Screen
+
+New "About" button on TitleScreen opens a full-screen credits sequence:
+- **Background**: Guild-Life-Logo.jpg (the two adventurers running artwork)
+- **Dark overlay** (70% opacity) for text readability
+- **Auto-scrolling credits** at 40px/sec with fade-in/fade-out mask
+- **Random music**: Picks a random track from all 11 game music files and plays it on loop
+- **Close button** (X) in top right, plus "click anywhere to close" after scroll completes
+
+Credits content includes humorous/snarky sections:
+- Created By: Tom Husby & Claude
+- Programming, Game Design, Art Direction, Music & Sound
+- AI Opponents & Notable NPCs
+- Technical Achievements & Bugs Squashed
+- Special Thanks (React, TypeScript, Vite, etc.)
+- Development Stats, Legal disclaimers
+- Closing message
+
+### Changes
+
+| File | Changes |
+|------|---------|
+| `src/types/game.types.ts` | Added `DeathEvent` interface and `deathEvent` field to `GameState` |
+| `src/store/storeTypes.ts` | Added `dismissDeathEvent` action to `GameStore` |
+| `src/store/gameStore.ts` | Added `deathEvent: null` initial state, `dismissDeathEvent` action, reset on load |
+| `src/store/helpers/questHelpers.ts` | Rewrote `checkDeath()` — 3-path death flow with `deathEvent`, permadeath OFF respawn (20 HP at graveyard) |
+| `src/components/game/DeathModal.tsx` | **NEW** — Full-screen death overlay modal component |
+| `src/components/game/GameBoard.tsx` | Import and render `DeathModal` when `deathEvent` is set |
+| `src/components/game/OptionsMenu.tsx` | Updated permadeath description to mention 20 HP graveyard respawn |
+| `src/network/networkState.ts` | Added `deathEvent` to network state serialization and deserialization |
+| `src/components/screens/CreditsScreen.tsx` | **NEW** — Rolling credits screen with logo background and random MP3 |
+| `src/components/screens/TitleScreen.tsx` | Added "About" button and `CreditsScreen` integration |
+
+### Build & Tests
+- TypeScript: clean
+- Build: passes
+- Tests: 171/171 pass
+
+---
+
 ## 2026-02-09 - Fix Mobile Game Startup (iPad & Android)
 
 ### Summary

@@ -6,8 +6,9 @@
 // B4: Quest failure consequences (applied in abandonQuest)
 // B5: Guild reputation (incremented on quest/chain/bounty completion)
 
-import type { LocationId, HousingTier } from '@/types/game.types';
+import type { LocationId, HousingTier, DeathEvent } from '@/types/game.types';
 import { GUILD_PASS_COST, GUILD_RANK_ORDER, GUILD_RANK_REQUIREMENTS } from '@/types/game.types';
+import { getGameOption } from '@/data/gameOptions';
 import {
   getQuest,
   getQuestChain,
@@ -317,8 +318,17 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       if (!player || player.isGameOver) return false;
 
       if (player.health <= 0) {
+        const enablePermadeath = getGameOption('enablePermadeath');
+
         // Check for resurrection (if has savings and wasn't already resurrected this week)
         if (player.savings >= 100 && !player.wasResurrectedThisWeek) {
+          const deathEvent: DeathEvent = {
+            playerId,
+            playerName: player.name,
+            isPermadeath: false,
+            wasResurrected: true,
+            message: "You fell in battle but the spirits of the Graveyard have restored you!\n\n100 gold was taken from your savings.",
+          };
           set((state) => ({
             players: state.players.map((p) =>
               p.id === playerId
@@ -327,21 +337,64 @@ export function createQuestActions(set: SetFn, get: GetFn) {
                     health: 50,
                     savings: p.savings - 100,
                     currentLocation: 'graveyard' as LocationId,
-                    wasResurrectedThisWeek: true, // Prevent double resurrection
+                    wasResurrectedThisWeek: true,
                   }
                 : p
             ),
-            eventMessage: "You fell in battle but the spirits of the Graveyard have restored you! 100 gold was taken from your savings.",
+            deathEvent: player.isAI ? null : deathEvent,
+            eventMessage: player.isAI
+              ? `${player.name} fell but was resurrected at the Graveyard! 100g taken from savings.`
+              : null,
           }));
           return false;
         }
-        // Player dies - mark as game over
+
+        // Permadeath OFF: respawn at graveyard with 20 HP (no cost)
+        if (!enablePermadeath) {
+          const deathEvent: DeathEvent = {
+            playerId,
+            playerName: player.name,
+            isPermadeath: false,
+            wasResurrected: false,
+            message: "Your body crumbles to the ground... but death is not the end.\n\nThe ancient magic of the Graveyard pulls your spirit back from the void. You awaken among the tombstones, weakened but alive.",
+          };
+          set((state) => ({
+            players: state.players.map((p) =>
+              p.id === playerId
+                ? {
+                    ...p,
+                    health: 20,
+                    currentLocation: 'graveyard' as LocationId,
+                    wasResurrectedThisWeek: true,
+                  }
+                : p
+            ),
+            deathEvent: player.isAI ? null : deathEvent,
+            eventMessage: player.isAI
+              ? `${player.name} died but was resurrected at the Graveyard with 20 HP.`
+              : null,
+          }));
+          return false;
+        }
+
+        // Permadeath ON: player is permanently eliminated
+        const deathEvent: DeathEvent = {
+          playerId,
+          playerName: player.name,
+          isPermadeath: true,
+          wasResurrected: false,
+          message: "The cold embrace of death claims you. There is no coming back.\n\nYour adventure ends here, brave soul. May the next adventurer fare better.",
+        };
         set((state) => ({
           players: state.players.map((p) =>
             p.id === playerId
               ? { ...p, isGameOver: true }
               : p
           ),
+          deathEvent: player.isAI ? null : deathEvent,
+          eventMessage: player.isAI
+            ? `${player.name} has perished! Permadeath claimed another soul.`
+            : null,
         }));
         return true; // Player is dead
       }

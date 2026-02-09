@@ -216,6 +216,15 @@ export interface GoalSettings {
   adventure: number;   // Target adventure points (quests + dungeon floors), 0 = disabled
 }
 
+// Death event for modal display
+export interface DeathEvent {
+  playerId: string;
+  playerName: string;
+  isPermadeath: boolean;  // True if permadeath is ON and player is permanently eliminated
+  wasResurrected: boolean; // True if auto-resurrected (had savings)
+  message: string;
+}
+
 export interface GameState {
   phase: 'title' | 'setup' | 'playing' | 'victory' | 'event' | 'online-lobby';
   currentPlayerIndex: number;
@@ -237,6 +246,8 @@ export interface GameState {
   weather: WeatherState;
   // Seasonal festival active this week (null = no festival)
   activeFestival: FestivalId | null;
+  // Death event for modal display
+  deathEvent: DeathEvent | null;
   // AI speed control
   aiSpeedMultiplier: number;
   skipAITurn: boolean;

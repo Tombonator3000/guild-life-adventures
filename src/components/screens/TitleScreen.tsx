@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { Sword, Shield, Scroll, Crown, Save, Trash2, Volume2, VolumeX, Download, Globe, Settings, Share, Plus, X } from 'lucide-react';
+import { Sword, Shield, Scroll, Crown, Save, Trash2, Volume2, VolumeX, Download, Globe, Settings, Info, Share, Plus, X } from 'lucide-react';
 import { hasAutoSave, getSaveSlots, formatSaveDate, deleteSave } from '@/data/saveLoad';
 import type { SaveSlotInfo } from '@/data/saveLoad';
 import { OptionsMenu } from '@/components/game/OptionsMenu';
+import { CreditsScreen } from '@/components/screens/CreditsScreen';
 import { useAudioSettings } from '@/hooks/useMusic';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { UpdateBanner } from '@/components/game/UpdateBanner';
@@ -13,6 +14,7 @@ export function TitleScreen() {
   const { setPhase, loadFromSlot } = useGameStore();
   const [showLoadMenu, setShowLoadMenu] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  const [showCredits, setShowCredits] = useState(false);
   const [slots, setSlots] = useState<SaveSlotInfo[]>([]);
   const autoSaveExists = hasAutoSave();
   const { musicMuted, toggleMute } = useAudioSettings();
@@ -115,6 +117,14 @@ export function TitleScreen() {
             <Settings className="w-4 h-4" />
             Options
           </button>
+
+          <button
+            onClick={() => setShowCredits(true)}
+            className="text-muted-foreground hover:text-foreground text-sm font-display flex items-center gap-2 mt-1 transition-colors"
+          >
+            <Info className="w-4 h-4" />
+            About
+          </button>
         </div>
 
         {/* Footer */}
@@ -206,6 +216,11 @@ export function TitleScreen() {
 
       {/* PWA Update Notification */}
       <UpdateBanner />
+
+      {/* Credits / About Screen */}
+      {showCredits && (
+        <CreditsScreen onClose={() => setShowCredits(false)} />
+      )}
 
       {/* iOS PWA Install Guide */}
       {showIOSGuide && (

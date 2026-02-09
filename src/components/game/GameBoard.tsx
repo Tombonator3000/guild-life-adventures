@@ -9,6 +9,7 @@ import { ResourcePanel } from './ResourcePanel';
 import { LocationPanel } from './LocationPanel';
 import { EventPanel } from './EventPanel';
 import { ShadowfingersModal, useShadowfingersModal } from './ShadowfingersModal';
+import { DeathModal } from './DeathModal';
 import { ZoneEditor } from './ZoneEditor';
 import { MOVEMENT_PATHS } from '@/data/locations';
 import { SideInfoTabs } from './SideInfoTabs';
@@ -58,6 +59,8 @@ export function GameBoard() {
     setShowTutorial,
     applianceBreakageEvent,
     dismissApplianceBreakageEvent,
+    deathEvent,
+    dismissDeathEvent,
     weather,
   } = useGameStore();
   const { event: shadowfingersEvent, dismiss: dismissShadowfingers } = useShadowfingersModal();
@@ -443,6 +446,14 @@ export function GameBoard() {
       {/* Tutorial Overlay */}
       {showTutorial && currentPlayer && !currentPlayer.isAI && (
         <TutorialOverlay onClose={() => setShowTutorial(false)} />
+      )}
+
+      {/* Death Modal */}
+      {deathEvent && (
+        <DeathModal
+          event={deathEvent}
+          onDismiss={dismissDeathEvent}
+        />
       )}
 
       {/* PWA Update Notification */}

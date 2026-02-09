@@ -85,6 +85,8 @@ export interface GameStore extends GameState {
   moveToHousing: (playerId: string, tier: HousingTier, cost: number, lockInRent: number) => void;
   applianceBreakageEvent: { playerId: string; applianceId: string; repairCost: number } | null;
   dismissApplianceBreakageEvent: () => void;
+  // Death event modal
+  dismissDeathEvent: () => void;
   // Equipment actions
   equipItem: (playerId: string, itemId: string, slot: EquipmentSlot) => void;
   unequipItem: (playerId: string, slot: EquipmentSlot) => void;
