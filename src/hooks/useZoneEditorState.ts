@@ -47,7 +47,13 @@ interface UseZoneEditorStateProps {
 }
 
 export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPanel, initialZones, initialPaths }: UseZoneEditorStateProps) {
-  const [zones, setZones] = useState<ZoneConfig[]>(initialZones ? [...initialZones] : [...ZONE_CONFIGS]);
+  const [zones, setZones] = useState<ZoneConfig[]>(() => {
+    if (!initialZones) return [...ZONE_CONFIGS];
+    // Merge with defaults so newly added locations always appear
+    const savedIds = new Set(initialZones.map(z => z.id));
+    const missing = ZONE_CONFIGS.filter(z => !savedIds.has(z.id));
+    return missing.length > 0 ? [...initialZones, ...missing] : [...initialZones];
+  });
   const [selectedZone, setSelectedZone] = useState<LocationId | 'center-panel' | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragMode, setDragMode] = useState<'move' | 'resize' | null>(null);
