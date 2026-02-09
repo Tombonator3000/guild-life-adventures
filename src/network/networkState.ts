@@ -56,9 +56,10 @@ export function serializeGameState(): SerializedGameState {
     networkMode: s.networkMode,
     localPlayerId: s.localPlayerId,
     roomCode: s.roomCode,
-    // Event modals (so guests see robbery/breakage events)
+    // Event modals (so guests see robbery/breakage/death events)
     shadowfingersEvent: s.shadowfingersEvent,
     applianceBreakageEvent: s.applianceBreakageEvent,
+    deathEvent: s.deathEvent,
     // Excluded: selectedLocation, showTutorial, tutorialStep,
     //   aiSpeedMultiplier, skipAITurn — these are local UI preferences
   } as SerializedGameState;
@@ -133,6 +134,13 @@ export function applyNetworkState(state: SerializedGameState) {
   } else if (state.weekendEvent == null) {
     update.weekendEvent = null;
     dismissedEvents.delete('weekendEvent');
+  }
+
+  if (!dismissedEvents.has('deathEvent')) {
+    update.deathEvent = (state as Record<string, unknown>).deathEvent ?? null;
+  } else if ((state as Record<string, unknown>).deathEvent == null) {
+    update.deathEvent = null;
+    dismissedEvents.delete('deathEvent');
   }
 
   useGameStore.setState(update);

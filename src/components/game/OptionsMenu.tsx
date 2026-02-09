@@ -212,7 +212,7 @@ function GameplayTab({
       <OptionRow
         icon={<Skull className="w-4 h-4 text-destructive" />}
         label="Permadeath"
-        description="Players who die are permanently eliminated. When off, players always respawn."
+        description="Players who die are permanently eliminated. When off, players respawn at the Graveyard with 20 HP."
         control={
           <Switch
             checked={options.enablePermadeath}

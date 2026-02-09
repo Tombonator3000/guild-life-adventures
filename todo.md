@@ -817,6 +817,21 @@
   - Changed `src="/locations/closed.jpg"` → `src={import.meta.env.BASE_URL + "locations/closed.jpg"}`
   - Same pattern as all other location images (for-rent.jpg, noble-heights.jpg, slums.jpg)
 
+- [x] Death Modal — dramatic overlay when player HP reaches 0
+  - Full-screen dark red overlay with animated skull, "YOU ARE DEAD" title
+  - 3 death paths: resurrection (100g savings), free respawn (permadeath OFF, 20 HP at graveyard), permanent death
+  - `DeathEvent` type, `deathEvent` state field, `dismissDeathEvent` action
+  - Network sync support for online multiplayer
+  - AI deaths use eventMessage instead of modal
+
+- [x] Credits / About Screen — rolling text on title menu
+  - "About" button on TitleScreen opens full-screen credits sequence
+  - Guild-Life-Logo.jpg as background with dark overlay
+  - Auto-scrolling credits at 40px/sec with fade mask
+  - Random MP3 from 11 game tracks plays during credits
+  - Humorous credits text: Tom Husby & Claude, tech stack thanks, bug history
+  - Build passes, 171 tests pass
+
 ## In Progress
 
 *No active tasks*

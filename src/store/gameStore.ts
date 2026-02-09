@@ -175,6 +175,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     weekendEvent: null,
     weather: { ...CLEAR_WEATHER },
     activeFestival: null,
+    deathEvent: null,
 
     // AI speed control
     aiSpeedMultiplier: 1,
@@ -241,6 +242,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         weekendEvent: null,
         weather: { ...CLEAR_WEATHER },
         activeFestival: null,
+        deathEvent: null,
       });
     },
 
@@ -271,6 +273,12 @@ export const useGameStore = create<GameStore>((set, get) => {
       set({ shadowfingersEvent: null });
     },
     setEventMessage: (message) => set({ eventMessage: message }),
+
+    // Death event modal
+    dismissDeathEvent: () => {
+      if (get().networkMode === 'guest') markEventDismissed('deathEvent');
+      set({ deathEvent: null });
+    },
 
     // Appliance breakage event state
     applianceBreakageEvent: null,
@@ -323,6 +331,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         weekendEvent: null,
         weather: gs.weather || { ...CLEAR_WEATHER },
         activeFestival: gs.activeFestival || null,
+        deathEvent: null,
       });
       return true;
     },
