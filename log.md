@@ -1,5 +1,65 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Fix Ambient Sounds Not Playing
+
+### Problem
+Ambient environmental sounds (cave drips, tavern crowd, forge hammering, etc.) were never audible during gameplay despite the full audio pipeline being implemented and 8 real MP3 files added to `public/ambient/`.
+
+### Root Cause Analysis
+
+**Primary bug: `currentTrackId` set before `play()` succeeds**
+In `ambientManager.crossfadeTo()`, `this.currentTrackId = trackId` was set BEFORE `HTMLAudioElement.play()` was called. When the browser blocked autoplay (play() rejected), the manager already thought the track was "playing." Subsequent calls to `play()` with the same trackId hit the early-return guard (`if (trackId === this.currentTrackId) return`) and silently did nothing.
+
+**Why music worked but ambient didn't:**
+Music starts playing on the title screen (phase='title'). When the user clicks "Play Game," the phase changes to 'setup' — triggering a *different* track ID. By then the user has interacted, so the new play() succeeds. Ambient only starts on phase='playing', and if that first play is blocked, the same trackId keeps getting requested (player stays at home location) with no recovery.
+
+**Secondary issues:**
+1. **No autoplay resume** — No mechanism to retry playback after user interaction unblocks audio
+2. **Silent error handling** — `playPromise.catch(() => {})` swallowed all errors with no logging
+3. **Very low effective volume** — Default 0.4 × baseVolume 0.2 = 8% effective volume for quietest tracks
+4. **PWA missing ambient cache** — `vite.config.ts` `includeAssets` didn't include `ambient/*.mp3` or `sfx/*.mp3`
+
+### Fixes Applied
+
+#### 1. Autoplay retry in `play()` method
+**Files:** `ambientManager.ts`, `audioManager.ts`
+- When `play(trackId)` is called with same trackId as current, now checks if the active deck is actually paused
+- If paused with a src set (autoplay was blocked), retries `deck.play()` instead of silently returning
+- This handles the case where React's useEffect re-fires with the same location
+
+#### 2. User interaction resume listener
+**Files:** `ambientManager.ts`, `audioManager.ts`
+- When `crossfadeTo()` play promise rejects (autoplay blocked), registers one-shot event listeners on `click`, `touchstart`, `keydown`
+- On next user interaction, retries playing the blocked deck
+- Listeners are cleaned up on stop(), new crossfade, or successful resume
+- Added `console.warn()` when autoplay is blocked (visible in browser DevTools)
+
+#### 3. Volume increase
+**File:** `ambientConfig.ts`
+- Default ambient volume: 0.4 → 0.6 (60%)
+- Minimum per-track baseVolume: 0.2 → 0.3 (for bank, academy, shadow, fence, landlord, street, graveyard)
+- Effective minimum volume now: 0.6 × 0.3 = 18% (was 0.4 × 0.2 = 8%)
+
+#### 4. PWA asset caching
+**File:** `vite.config.ts`
+- Added `"ambient/*.mp3"` and `"sfx/*.mp3"` to `includeAssets`
+- PWA precache: 86 → 138 entries
+
+### Audio File Status
+Real ambient MP3 files (8/16):
+- cave-ambient.mp3 (236KB), forge-ambient.mp3 (236KB), graveyard-ambient.mp3 (236KB)
+- landlord-ambient.mp3 (157KB), shadow-ambient.mp3 (157KB), slums-ambient.mp3 (157KB)
+- street-ambient.mp3 (157KB), tavern-ambient.mp3 (157KB)
+
+Placeholder silent MP3s (8/16): academy, armory, bank, enchanter, fence, guild, market, noble
+
+### Build Status
+- TypeScript compiles cleanly
+- Vite build succeeds
+- All 171 tests pass
+
+---
+
 ## 2026-02-09 - Remove Dark Mode & Fix Text Visibility
 
 ### Problem

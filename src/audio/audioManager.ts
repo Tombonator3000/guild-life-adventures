@@ -42,6 +42,7 @@ class AudioManager {
   private cachedSettings: AudioSettings;
   private fadeInterval: ReturnType<typeof setInterval> | null = null;
   private listeners: Array<() => void> = [];
+  private resumeCleanup: (() => void) | null = null;
 
   constructor() {
     this.deckA = new Audio();
@@ -59,9 +60,16 @@ class AudioManager {
 
   // --- Public API ---
 
-  /** Play a track by ID. If the same track is already playing, do nothing. */
+  /** Play a track by ID. Retries if same track was blocked by autoplay. */
   play(trackId: string) {
-    if (trackId === this.currentTrackId) return;
+    if (trackId === this.currentTrackId) {
+      // Same track requested — retry if the active deck is paused (autoplay blocked)
+      const deck = this.getActiveDeck();
+      if (deck.paused && deck.src) {
+        deck.play().catch(() => {});
+      }
+      return;
+    }
 
     const track = MUSIC_TRACKS[trackId];
     if (!track) return;
@@ -74,6 +82,7 @@ class AudioManager {
   stop() {
     if (!this.currentTrackId) return;
     this.currentTrackId = null;
+    this.clearResumeListener();
     this.fadeOut(this.getActiveDeck());
     this.fadeOut(this.getInactiveDeck());
   }
@@ -147,12 +156,44 @@ class AudioManager {
     this.getActiveDeck().volume = vol;
   }
 
+  private clearResumeListener() {
+    if (this.resumeCleanup) {
+      this.resumeCleanup();
+      this.resumeCleanup = null;
+    }
+  }
+
+  /** Register a one-shot user interaction listener to resume blocked playback. */
+  private registerResumeListener(deck: HTMLAudioElement, trackId: string) {
+    this.clearResumeListener();
+
+    const resume = () => {
+      if (this.currentTrackId === trackId && deck.paused && deck.src) {
+        deck.play().catch(() => {});
+      }
+      cleanup();
+    };
+
+    const cleanup = () => {
+      document.removeEventListener('click', resume);
+      document.removeEventListener('touchstart', resume);
+      document.removeEventListener('keydown', resume);
+      this.resumeCleanup = null;
+    };
+
+    document.addEventListener('click', resume, { once: true });
+    document.addEventListener('touchstart', resume, { once: true });
+    document.addEventListener('keydown', resume, { once: true });
+    this.resumeCleanup = cleanup;
+  }
+
   private crossfadeTo(url: string, trackId: string) {
     // Cancel any ongoing fade
     if (this.fadeInterval) {
       clearInterval(this.fadeInterval);
       this.fadeInterval = null;
     }
+    this.clearResumeListener();
 
     const oldDeck = this.getActiveDeck();
     // Switch active deck
@@ -170,7 +211,9 @@ class AudioManager {
     const playPromise = newDeck.play();
     if (playPromise) {
       playPromise.catch(() => {
-        // Autoplay blocked — we'll retry on next user interaction
+        // Autoplay blocked — register listener to resume on next user interaction
+        console.warn(`[Music] Autoplay blocked for "${trackId}", will resume on user interaction`);
+        this.registerResumeListener(newDeck, trackId);
       });
     }
 
