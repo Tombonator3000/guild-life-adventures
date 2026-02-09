@@ -167,7 +167,7 @@ export const LOCATION_NPCS: Partial<Record<LocationId, LocationNPC>> = {
     name: 'Morthos',
     title: 'Gravedigger',
     portrait: '\u{1FAA6}',
-    portraitImage: 'npcs/morthos.jpg',
+    portraitImage: 'npcs/Morthos.jpg',
     greeting: 'The dead rest here... mostly.',
     bgColor: '#1a1a1a',
     accentColor: '#6b7b6b',

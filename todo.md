@@ -645,6 +645,12 @@
 
 ## Completed (2026-02-09)
 
+- [x] Graveyard Path Reorder — path now matches visual board layout
+  - Board path changed: noble-heights → graveyard → general-store (was noble-heights → general-store → graveyard)
+  - Movement paths updated with new adjacency keys and waypoints
+  - Travel time unchanged (1 step per edge, fair and consistent)
+  - Fixed Morthos.jpg NPC portrait case mismatch (morthos.jpg → Morthos.jpg)
+
 - [x] C1: Seasonal Festivals — 4 festivals every 12 weeks with unique effects
   - Created `src/data/festivals.ts` — Harvest Festival, Winter Solstice, Spring Tournament, Midsummer Fair
   - Festival cycle: one every 12 weeks, rotating in order
