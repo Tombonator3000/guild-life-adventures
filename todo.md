@@ -645,6 +645,15 @@
 
 ## Completed (2026-02-09)
 
+- [x] Bounty Board Tab & Quest Guild Pass Gate
+  - Guild Hall tabs: Jobs (default) | Bounties | Quests | Work
+  - Quests tab hidden until Guild Pass purchased (was visible with prompt)
+  - Bounties reverted to free (no Guild Pass required)
+  - New BountyBoardPanel component with guild pass purchase, reputation bar, bounty board
+  - QuestPanel exports ReputationBar/ScaledRewardDisplay for reuse
+  - AI getBestBounty() no longer requires Guild Pass
+  - Build passes, 171 tests pass
+
 - [x] Adventure Goal Victory Goals Integration — 4 fixes for adventure goal visibility
   - GameSetup: Dynamic goal count text ("four" → "five" when adventure enabled)
   - GameSetup: Presets preserve adventure setting instead of resetting to 0

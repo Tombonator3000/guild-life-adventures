@@ -232,7 +232,7 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       const state = get();
       const player = state.players.find(p => p.id === playerId);
       if (!player) return;
-      if (!player.hasGuildPass) return; // Guild Pass required for all quest activities
+      // Bounties are free — no Guild Pass required
       if (player.activeQuest) return; // already has active quest
       // Check if already completed this bounty this week
       if (player.completedBountiesThisWeek.includes(bountyId)) return;

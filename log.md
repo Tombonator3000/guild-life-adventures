@@ -1,5 +1,54 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Bounty Board Tab & Quest Guild Pass Gate
+
+### Summary
+Guild Hall now has 3 tabs: **Jobs** (default) | **Bounties** | **Quests**. Jobs are shown first when entering. Quests tab is hidden until Guild Pass is purchased. Bounties are free (no Guild Pass required).
+
+### Changes
+
+1. **New `BountyBoardPanel.tsx`** — Standalone component for the Bounties tab
+   - Guild Pass purchase prompt (always shown when no pass)
+   - Reputation bar
+   - Active bounty completion UI (when a bounty is in progress)
+   - Weekly bounty board (3 rotating bounties)
+
+2. **`LocationPanel.tsx`** — Guild Hall tab restructure
+   - Tab order: Jobs (default), Bounties, Quests, Work
+   - Quests tab: `hidden: !player.hasGuildPass` — completely invisible without Guild Pass
+   - Bounties tab: always visible, badge `!` when bounty is active
+   - Quests tab: badge `!` when quest/chain is active (not bounties)
+   - Removed `GUILD_PASS_COST` and `Scroll` imports (moved to BountyBoardPanel)
+
+3. **`QuestPanel.tsx`** — Bounty board removed, exports added
+   - Removed bounty board section from "no active quest" view
+   - Skip active quest display when active quest is a bounty (handled by BountyBoardPanel)
+   - Exported `ReputationBar` and `ScaledRewardDisplay` for reuse
+   - Removed `hasGuildPass` guard around quest chains (tab itself is hidden)
+
+4. **`questHelpers.ts`** — Bounty Guild Pass guard reverted
+   - Removed `if (!player.hasGuildPass) return;` from `takeBounty()`
+   - Bounties are free — no Guild Pass required (matches original design)
+
+5. **AI `strategy.ts`** — Bounty Guild Pass check reverted
+   - `getBestBounty()` no longer checks for Guild Pass
+   - AI can take bounties without buying a pass first
+
+6. **AI `questDungeonActions.ts`** — Comment updated to reflect free bounties
+
+### Rationale
+- Jobs should be the first thing a new player sees at Guild Hall (most important early-game)
+- Bounties provide accessible income without the 500g Guild Pass gate
+- Quests and chains are the premium content gated behind Guild Pass
+- Separating bounties from quests reduces tab content scrolling
+
+### Build & Tests
+- TypeScript: clean
+- Build: passes
+- Tests: 171/171 pass
+
+---
+
 ## 2026-02-09 - Adventure Goal Victory Goals Integration
 
 ### Summary

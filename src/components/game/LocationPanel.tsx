@@ -1,14 +1,14 @@
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { getLocation, getMovementCost, getPath } from '@/data/locations';
 import type { LocationId } from '@/types/game.types';
-import { GUILD_PASS_COST } from '@/types/game.types';
 import { playSFX } from '@/audio/sfxManager';
-import { MapPin, Clock, ArrowRight, X, Briefcase, Newspaper, TrendingUp, ScrollText, Scroll, Sword, ShieldHalf, Heart, Sparkles, Package, ShoppingBag, Dices, Coins, Home, GraduationCap, Hammer } from 'lucide-react';
+import { MapPin, Clock, ArrowRight, X, Briefcase, Newspaper, TrendingUp, ScrollText, Sword, ShieldHalf, Heart, Sparkles, Package, ShoppingBag, Dices, Coins, Home, GraduationCap, Hammer } from 'lucide-react';
 import { getJob } from '@/data/jobs';
 import { GuildHallPanel } from './GuildHallPanel';
 import { ForgePanel } from './ForgePanel';
 import { NEWSPAPER_COST, NEWSPAPER_TIME, generateNewspaper } from '@/data/newspaper';
 import { QuestPanel } from './QuestPanel';
+import { BountyBoardPanel } from './BountyBoardPanel';
 import { HealerPanel } from './HealerPanel';
 import { PawnShopPanel } from './PawnShopPanel';
 import { EnchanterPanel } from './EnchanterPanel';
@@ -171,60 +171,12 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
         const availableQuests = getAvailableQuests(player.guildRank);
         const canWorkAtGuildHall = currentJobData && currentJobData.location === 'Guild Hall';
         const MIN_SHIFTS_FOR_RAISE = 3;
+        const hasActiveBounty = player.activeQuest?.startsWith('bounty:') ?? false;
+        const hasActiveQuestOrChain = player.activeQuest && !hasActiveBounty;
 
         const tabs: LocationTab[] = [];
 
-        // Quest tab — all quests hidden until Guild Pass is purchased
-        tabs.push({
-          id: 'quests',
-          label: 'Quests',
-          badge: player.activeQuest ? '!' : undefined,
-          content: (
-            <div className="space-y-3">
-              {!player.hasGuildPass ? (
-                <div className="space-y-3 py-4">
-                  <div className="text-center">
-                    <Scroll className="w-10 h-10 mx-auto text-[#c9a227] mb-2" />
-                    <h4 className="font-display text-lg text-[#3d2a14] mb-1">Guild Pass Required</h4>
-                    <p className="text-sm text-[#6b5a42] max-w-xs mx-auto">
-                      Purchase a Guild Pass to access quests, bounties, and quest chains from the Adventurer&apos;s Guild.
-                    </p>
-                  </div>
-                  <div className="text-center bg-[#e0d4b8] p-2 rounded border border-[#8b7355]">
-                    <span className="text-xs text-[#6b5a42]">Guild Pass Cost:</span>
-                    <span className="font-bold text-[#c9a227] ml-2">{GUILD_PASS_COST}g</span>
-                  </div>
-                  <button
-                    onClick={() => {
-                      playSFX('success');
-                      buyGuildPass(player.id);
-                      toast.success('Guild Pass acquired! You can now take quests.');
-                    }}
-                    disabled={player.gold < GUILD_PASS_COST}
-                    className="w-full gold-button py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {player.gold < GUILD_PASS_COST
-                      ? `Need ${GUILD_PASS_COST - player.gold}g more`
-                      : `Buy Guild Pass (${GUILD_PASS_COST}g)`}
-                  </button>
-                </div>
-              ) : (
-                <QuestPanel
-                  quests={availableQuests}
-                  player={player}
-                  week={week}
-                  onTakeQuest={(questId) => takeQuest(player.id, questId)}
-                  onCompleteQuest={() => completeQuest(player.id)}
-                  onAbandonQuest={() => abandonQuest(player.id)}
-                  onTakeChainQuest={(chainId) => takeChainQuest(player.id, chainId)}
-                  onTakeBounty={(bountyId) => takeBounty(player.id, bountyId)}
-                />
-              )}
-            </div>
-          ),
-        });
-
-        // Employment tab
+        // Jobs tab (default — shown first)
         tabs.push({
           id: 'employment',
           label: 'Jobs',
@@ -243,6 +195,47 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
                 toast.success(`Salary increased to ${newWage}g/hour!`);
               }}
               onSpendTime={(hours) => spendTime(player.id, hours)}
+            />
+          ),
+        });
+
+        // Bounties tab — always visible, bounties are free (no Guild Pass needed)
+        tabs.push({
+          id: 'bounties',
+          label: 'Bounties',
+          badge: hasActiveBounty ? '!' : undefined,
+          content: (
+            <BountyBoardPanel
+              player={player}
+              week={week}
+              onTakeBounty={(bountyId) => takeBounty(player.id, bountyId)}
+              onCompleteQuest={() => completeQuest(player.id)}
+              onAbandonQuest={() => abandonQuest(player.id)}
+              onBuyGuildPass={() => {
+                playSFX('success');
+                buyGuildPass(player.id);
+                toast.success('Guild Pass acquired! You can now take quests.');
+              }}
+            />
+          ),
+        });
+
+        // Quests tab — hidden until Guild Pass is purchased
+        tabs.push({
+          id: 'quests',
+          label: 'Quests',
+          badge: hasActiveQuestOrChain ? '!' : undefined,
+          hidden: !player.hasGuildPass,
+          content: (
+            <QuestPanel
+              quests={availableQuests}
+              player={player}
+              week={week}
+              onTakeQuest={(questId) => takeQuest(player.id, questId)}
+              onCompleteQuest={() => completeQuest(player.id)}
+              onAbandonQuest={() => abandonQuest(player.id)}
+              onTakeChainQuest={(chainId) => takeChainQuest(player.id, chainId)}
+              onTakeBounty={(bountyId) => takeBounty(player.id, bountyId)}
             />
           ),
         });
