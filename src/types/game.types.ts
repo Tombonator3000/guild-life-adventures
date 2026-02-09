@@ -213,6 +213,7 @@ export interface GoalSettings {
   happiness: number;   // Target happiness %
   education: number;   // Target education levels
   career: number;      // Target guild rank (1-7)
+  adventure: number;   // Target adventure points (quests + dungeon floors), 0 = disabled
 }
 
 export interface GameState {

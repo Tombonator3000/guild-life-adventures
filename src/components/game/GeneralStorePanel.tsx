@@ -43,7 +43,7 @@ export function GeneralStorePanel({
       <JonesSectionHeader title="FOOD & PROVISIONS" />
       {GENERAL_STORE_ITEMS.filter(item => item.effect?.type === 'food' && !item.isFreshFood).map(item => {
         const price = getItemPrice(item, priceModifier);
-        const canAfford = player.gold >= price && player.timeRemaining >= 1;
+        const canAfford = player.gold >= price;
         return (
           <JonesMenuItem
             key={item.id}
@@ -54,7 +54,6 @@ export function GeneralStorePanel({
             largeText
             onClick={() => {
               modifyGold(player.id, -price);
-              spendTime(player.id, 1);
               if (item.effect?.type === 'food') {
                 modifyFood(player.id, item.effect.value);
               }
@@ -73,7 +72,7 @@ export function GeneralStorePanel({
             const price = getItemPrice(item, priceModifier);
             const units = item.freshFoodUnits || 0;
             const spaceLeft = maxFreshFood - player.freshFood;
-            const canAfford = player.gold >= price && player.timeRemaining >= 1 && spaceLeft > 0;
+            const canAfford = player.gold >= price && spaceLeft > 0;
             return (
               <JonesMenuItem
                 key={item.id}
@@ -84,7 +83,6 @@ export function GeneralStorePanel({
                 largeText
                 onClick={() => {
                   buyFreshFood(player.id, units, price);
-                  spendTime(player.id, 1);
                   toast.success(`Stored ${Math.min(units, spaceLeft)} fresh food units!`);
                 }}
               />
@@ -100,7 +98,7 @@ export function GeneralStorePanel({
       <JonesMenuItem
         label="Newspaper"
         price={newspaperPrice}
-        disabled={player.gold < newspaperPrice || player.timeRemaining < NEWSPAPER_TIME}
+        disabled={player.gold < newspaperPrice}
         darkText
         largeText
         onClick={onBuyNewspaper}
@@ -108,21 +106,17 @@ export function GeneralStorePanel({
       <JonesMenuItem
         label="Fortune's Wheel Ticket"
         price={lotteryPrice}
-        disabled={player.gold < lotteryPrice || player.timeRemaining < 1}
+        disabled={player.gold < lotteryPrice}
         darkText
         largeText
         onClick={() => {
           buyLotteryTicket(player.id, lotteryPrice);
-          spendTime(player.id, 1);
           toast.success(`Bought Fortune's Wheel ticket! (${player.lotteryTickets + 1} tickets this week)`);
         }}
       />
       {player.lotteryTickets > 0 && (
         <JonesInfoRow label="Tickets this week:" value={`${player.lotteryTickets}`} darkText largeText />
       )}
-      <div className="mt-2 text-xs text-[#6b5a42] px-2">
-        1 hour per purchase
-      </div>
     </div>
   );
 }

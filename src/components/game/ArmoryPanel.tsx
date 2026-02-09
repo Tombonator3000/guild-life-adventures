@@ -69,7 +69,7 @@ export function ArmoryPanel({
         const price = getItemPrice(item, priceModifier);
         const owns = (player.durables[item.id] || 0) > 0;
         const isEquipped = equippedId === item.id;
-        const canAfford = player.gold >= price && player.timeRemaining >= 1;
+        const canAfford = player.gold >= price;
         const meetsFloorReq = canPurchaseEquipment(item);
         const stats = item.equipStats;
 
@@ -137,7 +137,6 @@ export function ArmoryPanel({
                 largeText={largeText}
                 onClick={() => {
                   modifyGold(player.id, -price);
-                  spendTime(player.id, 1);
                   buyDurable(player.id, item.id, 0); // Gold already deducted
                   if (item.effect?.type === 'happiness') {
                     modifyHappiness(player.id, item.effect.value);
@@ -172,7 +171,7 @@ export function ArmoryPanel({
 
   const footerNote = (
     <div className={`mt-2 text-xs ${darkText ? 'text-[#6b5a42]' : 'text-[#8b7355]'} px-2`}>
-      1 hour per purchase • Click owned items to equip/unequip
+      Click owned items to equip/unequip
     </div>
   );
 
@@ -184,7 +183,7 @@ export function ArmoryPanel({
           <div>
             {clothingItems.map(item => {
               const price = getItemPrice(item, priceModifier);
-              const canAfford = player.gold >= price && player.timeRemaining >= 1;
+              const canAfford = player.gold >= price;
               return (
                 <JonesMenuItem
                   key={item.id}
@@ -195,7 +194,6 @@ export function ArmoryPanel({
                   largeText={largeText}
                   onClick={() => {
                     modifyGold(player.id, -price);
-                    spendTime(player.id, 1);
                     if (item.effect?.type === 'clothing') {
                       modifyClothing(player.id, item.effect.value);
                     }
@@ -204,7 +202,6 @@ export function ArmoryPanel({
                 />
               );
             })}
-            {footerNote}
           </div>
         );
       case 'weapons':
@@ -239,7 +236,7 @@ export function ArmoryPanel({
     <div>
       {clothingItems.map(item => {
         const price = getItemPrice(item, priceModifier);
-        const canAfford = player.gold >= price && player.timeRemaining >= 1;
+        const canAfford = player.gold >= price;
         return (
           <JonesMenuItem
             key={item.id}
@@ -250,7 +247,6 @@ export function ArmoryPanel({
             largeText
             onClick={() => {
               modifyGold(player.id, -price);
-              spendTime(player.id, 1);
               if (item.effect?.type === 'clothing') {
                 modifyClothing(player.id, item.effect.value);
               }
@@ -259,7 +255,6 @@ export function ArmoryPanel({
           />
         );
       })}
-      {footerNote}
     </div>
   );
 }

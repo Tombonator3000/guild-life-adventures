@@ -8,7 +8,7 @@ let playerId: string;
 
 function resetAndStart() {
   const store = useGameStore.getState();
-  store.startNewGame(['TestPlayer'], false, { wealth: 5000, happiness: 75, education: 45, career: 4 });
+  store.startNewGame(['TestPlayer'], false, { wealth: 5000, happiness: 75, education: 45, career: 4, adventure: 0 });
   playerId = useGameStore.getState().players[0].id;
 }
 
@@ -29,7 +29,7 @@ describe('Game setup', () => {
   });
 
   it('creates AI player when includeAI is true', () => {
-    useGameStore.getState().startNewGame(['Human'], true, { wealth: 5000, happiness: 75, education: 45, career: 4 });
+    useGameStore.getState().startNewGame(['Human'], true, { wealth: 5000, happiness: 75, education: 45, career: 4, adventure: 0 });
     const state = useGameStore.getState();
     expect(state.players).toHaveLength(2);
     expect(state.players[1].name).toBe('Grimwald');

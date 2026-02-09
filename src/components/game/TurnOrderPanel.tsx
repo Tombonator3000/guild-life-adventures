@@ -1,6 +1,6 @@
 import { Player, GoalSettings } from '@/types/game.types';
 import { HOURS_PER_TURN } from '@/types/game.types';
-import { Crown, Users, Target, TrendingUp, GraduationCap, Smile, Coins, Clock, Skull, Bot } from 'lucide-react';
+import { Crown, Users, Target, TrendingUp, GraduationCap, Smile, Coins, Clock, Skull, Bot, Compass } from 'lucide-react';
 import { CharacterPortrait } from './CharacterPortrait';
 
 interface TurnOrderPanelProps {
@@ -150,6 +150,12 @@ export function TurnOrderPanel({
             <TrendingUp className="w-3 h-3 text-secondary" />
             <span>Dep {goalSettings.career}</span>
           </div>
+          {(goalSettings.adventure ?? 0) > 0 && (
+            <div className="flex items-center gap-1 col-span-2">
+              <Compass className="w-3 h-3 text-emerald-500" />
+              <span>Adv {goalSettings.adventure}</span>
+            </div>
+          )}
         </div>
       </div>
 

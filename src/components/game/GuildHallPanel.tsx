@@ -69,7 +69,6 @@ export function GuildHallPanel({
   };
 
   const handleApply = (job: Job) => {
-    onSpendTime(1);
     const result = applyForJob(
       job,
       player.completedDegrees as DegreeId[],
@@ -89,7 +88,6 @@ export function GuildHallPanel({
   const handleRequestRaise = (job: Job) => {
     const marketWage = marketWages.get(job.id);
     if (!marketWage || marketWage <= player.currentWage) return;
-    onSpendTime(1);
     setApplicationResult({
       job,
       result: { success: true },
@@ -265,14 +263,13 @@ export function GuildHallPanel({
                     <JonesButton
                       label="Request Raise"
                       onClick={() => handleRequestRaise(job)}
-                      disabled={player.timeRemaining < 1}
                       variant="primary"
                     />
                   ) : (
                     <JonesButton
                       label={isCurrentJob ? 'Current' : 'Apply'}
                       onClick={() => handleApply(job)}
-                      disabled={isCurrentJob || player.timeRemaining < 1}
+                      disabled={isCurrentJob}
                       variant="secondary"
                     />
                   )}

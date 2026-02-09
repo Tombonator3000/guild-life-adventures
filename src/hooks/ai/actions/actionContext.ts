@@ -9,7 +9,7 @@ import type { DifficultySettings, GoalProgress, ResourceUrgency, AIAction } from
 
 export interface ActionContext {
   player: Player;
-  goals: { wealth: number; happiness: number; education: number; career: number };
+  goals: { wealth: number; happiness: number; education: number; career: number; adventure?: number };
   settings: DifficultySettings;
   week: number;
   priceModifier: number;
@@ -17,7 +17,7 @@ export interface ActionContext {
   moveCost: (to: LocationId) => number;
   progress: GoalProgress;
   urgency: ResourceUrgency;
-  weakestGoal: 'wealth' | 'happiness' | 'education' | 'career';
+  weakestGoal: 'wealth' | 'happiness' | 'education' | 'career' | 'adventure';
   /** C4: Other players for rivalry awareness (empty = no rivals) */
   rivals: Player[];
 }

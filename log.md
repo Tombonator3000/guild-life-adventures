@@ -1,5 +1,60 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Adventure Victory Goal, Landlord Closed Image, Guild Pass Bug Fix, Free Shopping
+
+### 1. New Victory Goal: Adventure (Optional)
+Added an optional 5th victory goal — **Adventure** — that gives purpose to quests and dungeon exploration.
+
+**How it works:**
+- Adventure score = quests completed + unique dungeon floors cleared
+- Configurable in Game Setup with an enable/disable toggle and a slider (3–25 pts)
+- When disabled (default, adventure=0), no effect on victory
+- When enabled, players must reach the adventure target alongside the existing 4 goals
+- AI (Grimwald) supports the adventure goal: will prioritize quests + dungeon when adventure is the weakest goal
+- Displayed in GoalProgress bars, VictoryScreen stats, RightSideTabs, and TurnOrderPanel
+
+**Files changed:**
+- `src/types/game.types.ts` — added `adventure` to `GoalSettings`
+- `src/store/gameStore.ts` — default goalSettings + save/load migration
+- `src/store/helpers/questHelpers.ts` — checkVictory includes adventure check
+- `src/components/game/GoalProgress.tsx` — adventure progress bar
+- `src/components/screens/GameSetup.tsx` — adventure toggle + slider
+- `src/components/screens/VictoryScreen.tsx` — adventure stat display
+- `src/components/game/RightSideTabs.tsx` — adventure in "Goals to Win"
+- `src/components/game/TurnOrderPanel.tsx` — adventure in goal summary
+- `src/hooks/ai/types.ts` — GoalProgress includes adventure
+- `src/hooks/ai/strategy.ts` — calculateGoalProgress + getWeakestGoal updated
+- `src/hooks/ai/actions/actionContext.ts` — weakestGoal union includes 'adventure'
+- `src/hooks/ai/actions/goalActions.ts` — case 'adventure' AI actions
+- All test files — added `adventure: 0` to goal objects
+
+### 2. Landlord Closed: Show closed.jpg
+When the Landlord's office is closed (non-rent week), the `closed.jpg` image is now displayed instead of just a text icon.
+
+**File:** `src/components/game/LocationPanel.tsx` — replaced Home icon with `<img src="/locations/closed.jpg">` in the landlord closed state.
+
+### 3. Bug Fix: Guild Quest Without Guild Pass
+**Bug:** Players could take guild quests and chain quests without owning a Guild Pass. The UI conditionally hid the quest buttons, but the store functions `takeQuest` and `takeChainQuest` had no guild pass validation — allowing direct calls (e.g., from network or console) to bypass the check.
+
+**Fix:** Added `if (!player.hasGuildPass) return;` guard to both `takeQuest` and `takeChainQuest` in `src/store/helpers/questHelpers.ts`. Bounties intentionally remain available without a Guild Pass (by design).
+
+### 4. Free Shopping and Job Browsing (Jones-style)
+Following Jones in the Fast Lane rules: once you enter a location (costs 2h to enter), activities inside like buying items and browsing jobs are free — no additional time cost. Only work, study, and relaxation cost time.
+
+**Removed spendTime from:**
+- **GuildHallPanel** — applying for jobs and requesting raises no longer costs 1h
+- **GeneralStorePanel** — buying food, fresh food, lottery tickets no longer costs 1h
+- **ArmoryPanel** — buying weapons, armor, shields, clothing no longer costs 1h
+- **EnchanterPanel** — buying appliances no longer costs 1h
+- **ShadowMarketPanel** — buying goods, lottery tickets, event tickets, appliances no longer costs 1h
+- **TavernPanel** — buying food/drink no longer costs 1h
+- **PawnShopPanel** — pawning and buying items no longer costs 1h
+- **LocationPanel** — buying newspaper (both General Store and Shadow Market) no longer costs time; fence sell/buy no longer costs 1h
+
+**Kept time costs for:** work shifts, studying, forge tempering/repair/salvage, enchanter repairs, gambling, dungeon exploration.
+
+---
+
 ## 2026-02-09 - Remove Dark Mode & Fix Text Visibility
 
 ### Problem

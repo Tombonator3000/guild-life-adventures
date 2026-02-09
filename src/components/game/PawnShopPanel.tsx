@@ -49,13 +49,11 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
               <button
                 key={`${itemId}-${index}`}
                 onClick={() => onSellItem(itemId, sellPrice)}
-                disabled={player.timeRemaining < 1}
                 className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 <span className="font-display font-semibold text-[#3d2a14]">{item?.name || itemId}</span>
                 <div className="flex items-center gap-3 text-xs">
                   <span className="text-[#2a7a2a]">+{sellPrice}g</span>
-                  <span className="text-[#6b5a42]">1h</span>
                 </div>
               </button>
             );
@@ -77,7 +75,7 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
             <button
               key={item.id}
               onClick={() => onBuyUsedItem(item.id, price)}
-              disabled={player.gold < price || player.timeRemaining < 1}
+              disabled={player.gold < price}
               className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
               <span className="font-display font-semibold text-[#3d2a14]">{item.name}</span>
@@ -110,10 +108,8 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
                 key={applianceId}
                 onClick={() => {
                   pawnAppliance(player.id, applianceId, pawnValue);
-                  onSpendTime(1);
                   toast.success(`Pawned ${appliance?.name} for ${pawnValue} gold`);
                 }}
-                disabled={player.timeRemaining < 1}
                 className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 <span className="font-display font-semibold text-[#3d2a14]">
@@ -122,7 +118,6 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
                 </span>
                 <div className="flex items-center gap-3 text-xs">
                   <span className="text-[#2a7a2a]">+{pawnValue}g</span>
-                  <span className="text-[#6b5a42]">1h</span>
                 </div>
               </button>
             );
@@ -151,10 +146,9 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
               key={appliance.id}
               onClick={() => {
                 buyAppliance(player.id, appliance.id, salePrice, 'pawn');
-                onSpendTime(1);
                 toast.success(`Bought ${appliance.name} from pawn shop!`);
               }}
-              disabled={player.gold < salePrice || player.timeRemaining < 1 || alreadyOwns}
+              disabled={player.gold < salePrice || alreadyOwns}
               className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
               <span className="font-display font-semibold text-[#3d2a14]">

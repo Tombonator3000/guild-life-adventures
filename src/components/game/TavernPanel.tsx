@@ -28,7 +28,7 @@ export function TavernPanel({
       <div className="space-y-1">
         {TAVERN_ITEMS.map(item => {
           const price = getItemPrice(item, priceModifier);
-          const canAfford = player.gold >= price && player.timeRemaining >= 1;
+          const canAfford = player.gold >= price;
           return (
             <JonesMenuItem
               key={item.id}
@@ -39,7 +39,6 @@ export function TavernPanel({
               largeText
               onClick={() => {
                 modifyGold(player.id, -price);
-                spendTime(player.id, 1);
                 if (item.effect?.type === 'food') {
                   modifyFood(player.id, item.effect.value);
                 }
@@ -51,9 +50,6 @@ export function TavernPanel({
             />
           );
         })}
-      </div>
-      <div className="mt-3 text-sm text-[#6b5a42] px-2">
-        1 hour per purchase
       </div>
     </div>
   );

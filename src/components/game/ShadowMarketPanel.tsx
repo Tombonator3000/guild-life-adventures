@@ -46,7 +46,6 @@ export function ShadowMarketPanel({
 
   const handleBuyAppliance = (applianceId: string, price: number) => {
     const happinessGain = buyAppliance(player.id, applianceId, price, 'market');
-    onSpendTime(1);
     const appliance = getAppliance(applianceId);
     if (happinessGain > 0) {
       toast.success(`Purchased ${appliance?.name}! +${happinessGain} Happiness`);
@@ -58,7 +57,6 @@ export function ShadowMarketPanel({
   const handleBuyItem = (item: typeof SHADOW_MARKET_ITEMS[0], price: number) => {
     if (item.isLotteryTicket) {
       buyLotteryTicket(player.id, price);
-      onSpendTime(1);
       toast.success(`Bought Fortune's Wheel ticket! (${player.lotteryTickets + 1} tickets for this week)`);
       return;
     }
@@ -69,13 +67,11 @@ export function ShadowMarketPanel({
         return;
       }
       buyTicket(player.id, item.ticketType, price);
-      onSpendTime(1);
       toast.success(`Bought ${item.name}! Use it this weekend.`);
       return;
     }
 
     onModifyGold(-price);
-    onSpendTime(1);
 
     if (item.effect?.type === 'food') {
       onModifyFood(item.effect.value);
@@ -95,17 +91,13 @@ export function ShadowMarketPanel({
   const darkText = !!section;
   const largeText = !!section;
 
-  const footerNote = (
-    <div className={`mt-2 text-xs ${darkText ? 'text-[#6b5a42]' : 'text-[#8b7355]'} px-2`}>
-      1 hour per purchase
-    </div>
-  );
+  const footerNote = null;
 
   const renderGoods = () => (
     <>
       {regularItems.map(item => {
         const price = Math.round(getItemPrice(item, priceModifier * 0.7));
-        const canAfford = player.gold >= price && player.timeRemaining >= 1;
+        const canAfford = player.gold >= price;
         return (
           <JonesMenuItem
             key={item.id}
@@ -128,7 +120,7 @@ export function ShadowMarketPanel({
       )}
       {lotteryItems.map(item => {
         const price = Math.round(getItemPrice(item, priceModifier * 0.7));
-        const canAfford = player.gold >= price && player.timeRemaining >= 1;
+        const canAfford = player.gold >= price;
         return (
           <JonesMenuItem
             key={item.id}
@@ -151,7 +143,7 @@ export function ShadowMarketPanel({
     <>
       {ticketItems.map(item => {
         const price = Math.round(getItemPrice(item, priceModifier * 0.7));
-        const canAfford = player.gold >= price && player.timeRemaining >= 1;
+        const canAfford = player.gold >= price;
         const alreadyOwns = item.ticketType ? player.tickets.includes(item.ticketType) : false;
         return (
           <JonesMenuItem
@@ -178,7 +170,7 @@ export function ShadowMarketPanel({
       {appliances.map(appliance => {
         const price = Math.round((appliance.marketPrice || 0) * priceModifier);
         const alreadyOwns = !!player.appliances[appliance.id];
-        const canAfford = player.gold >= price && player.timeRemaining >= 1;
+        const canAfford = player.gold >= price;
         const isFirstPurchase = !player.applianceHistory.includes(appliance.id);
         const happinessNote = isFirstPurchase && appliance.happinessMarket > 0
           ? ` (+${appliance.happinessMarket} Hap)`

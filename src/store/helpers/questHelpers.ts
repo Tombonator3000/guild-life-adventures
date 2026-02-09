@@ -43,6 +43,7 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       const state = get();
       const player = state.players.find(p => p.id === playerId);
       if (!player) return;
+      if (!player.hasGuildPass) return; // Guild Pass required for quests
       // B4: Check quest cooldown
       if (player.questCooldownWeeksLeft > 0) return;
 
@@ -145,6 +146,7 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       const state = get();
       const player = state.players.find(p => p.id === playerId);
       if (!player) return;
+      if (!player.hasGuildPass) return; // Guild Pass required for chain quests
       if (player.activeQuest) return; // already has active quest
       if (player.questCooldownWeeksLeft > 0) return; // B4: cooldown
 
@@ -406,6 +408,11 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       const careerValue = player.currentJob ? player.dependability : 0;
       const careerMet = careerValue >= goals.career;
 
+      // Check adventure goal (optional — 0 means disabled)
+      // Adventure score = quests completed + unique dungeon floors cleared
+      const adventureValue = player.completedQuests + player.dungeonFloorsCleared.length;
+      const adventureMet = goals.adventure <= 0 || adventureValue >= goals.adventure;
+
       // C6: Check achievements on every victory check (covers turn-end milestones)
       if (!player.isAI) {
         checkAchievements({
@@ -422,7 +429,7 @@ export function createQuestActions(set: SetFn, get: GetFn) {
         });
       }
 
-      if (wealthMet && happinessMet && educationMet && careerMet) {
+      if (wealthMet && happinessMet && educationMet && careerMet && adventureMet) {
         // C6: Record victory achievement + stats
         if (!player.isAI) {
           updateAchievementStats({ gamesWon: 1 });
