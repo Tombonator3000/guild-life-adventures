@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { Save, FolderOpen, Trash2, X, Home, Settings } from 'lucide-react';
+import { Save, FolderOpen, Trash2, X, Home, Settings, BookOpen } from 'lucide-react';
 import { getSaveSlots, formatSaveDate, deleteSave } from '@/data/saveLoad';
 import type { SaveSlotInfo } from '@/data/saveLoad';
 import { toast } from 'sonner';
 import { OptionsMenu } from '@/components/game/OptionsMenu';
+import { UserManual } from '@/components/game/UserManual';
 
 interface SaveLoadMenuProps {
   onClose: () => void;
@@ -14,6 +15,7 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
   const { saveToSlot, loadFromSlot, setPhase } = useGameStore();
   const [mode, setMode] = useState<'save' | 'load'>('save');
   const [showOptions, setShowOptions] = useState(false);
+  const [showManual, setShowManual] = useState(false);
   const [slots, setSlots] = useState<SaveSlotInfo[]>(() => getSaveSlots());
 
   const refreshSlots = () => setSlots(getSaveSlots());
@@ -147,14 +149,22 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
           })}
         </div>
 
-        {/* Options + Quit */}
+        {/* Options + Manual + Quit */}
         <div className="mt-4 pt-4 border-t border-border space-y-2">
-          <button
-            onClick={() => setShowOptions(true)}
-            className="w-full p-2 rounded border border-border bg-background/50 text-muted-foreground hover:text-foreground hover:border-foreground/30 font-display text-sm flex items-center justify-center gap-2"
-          >
-            <Settings className="w-4 h-4" /> Options
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowOptions(true)}
+              className="flex-1 p-2 rounded border border-border bg-background/50 text-muted-foreground hover:text-foreground hover:border-foreground/30 font-display text-sm flex items-center justify-center gap-2"
+            >
+              <Settings className="w-4 h-4" /> Options
+            </button>
+            <button
+              onClick={() => setShowManual(true)}
+              className="flex-1 p-2 rounded border border-border bg-background/50 text-muted-foreground hover:text-foreground hover:border-foreground/30 font-display text-sm flex items-center justify-center gap-2"
+            >
+              <BookOpen className="w-4 h-4" /> Manual
+            </button>
+          </div>
           <button
             onClick={handleQuitToTitle}
             className="w-full p-2 rounded border border-border bg-background/50 text-muted-foreground hover:text-foreground hover:border-foreground/30 font-display text-sm flex items-center justify-center gap-2"
@@ -166,6 +176,10 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
         {/* Options Modal (rendered on top of game menu) */}
         {showOptions && (
           <OptionsMenu onClose={() => setShowOptions(false)} />
+        )}
+        {/* Manual Modal (rendered on top of game menu) */}
+        {showManual && (
+          <UserManual onClose={() => setShowManual(false)} />
         )}
       </div>
     </div>
