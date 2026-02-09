@@ -39,6 +39,7 @@ class AmbientManager {
   private cachedSettings: AmbientSettings;
   private fadeInterval: ReturnType<typeof setInterval> | null = null;
   private listeners: Array<() => void> = [];
+  private resumeCleanup: (() => void) | null = null;
 
   constructor() {
     this.deckA = new Audio();
@@ -54,9 +55,17 @@ class AmbientManager {
 
   // --- Public API ---
 
-  /** Play an ambient track by ID. If same track is playing, do nothing. */
+  /** Play an ambient track by ID. Retries if same track was blocked by autoplay. */
   play(trackId: string) {
-    if (trackId === this.currentTrackId) return;
+    if (trackId === this.currentTrackId) {
+      // Same track requested — but if the active deck is paused (autoplay was blocked),
+      // retry playback instead of silently returning
+      const deck = this.getActiveDeck();
+      if (deck.paused && deck.src) {
+        deck.play().catch(() => {});
+      }
+      return;
+    }
 
     const track = AMBIENT_TRACKS[trackId];
     if (!track) return;
@@ -69,6 +78,7 @@ class AmbientManager {
   stop() {
     if (!this.currentTrackId) return;
     this.currentTrackId = null;
+    this.clearResumeListener();
     this.fadeOut(this.getActiveDeck());
     this.fadeOut(this.getInactiveDeck());
   }
@@ -142,11 +152,44 @@ class AmbientManager {
     this.getActiveDeck().volume = vol;
   }
 
+  private clearResumeListener() {
+    if (this.resumeCleanup) {
+      this.resumeCleanup();
+      this.resumeCleanup = null;
+    }
+  }
+
+  /** Register a one-shot user interaction listener to resume blocked playback. */
+  private registerResumeListener(deck: HTMLAudioElement, trackId: string) {
+    this.clearResumeListener();
+
+    const resume = () => {
+      // Only retry if this is still the track we want to play
+      if (this.currentTrackId === trackId && deck.paused && deck.src) {
+        deck.play().catch(() => {});
+      }
+      cleanup();
+    };
+
+    const cleanup = () => {
+      document.removeEventListener('click', resume);
+      document.removeEventListener('touchstart', resume);
+      document.removeEventListener('keydown', resume);
+      this.resumeCleanup = null;
+    };
+
+    document.addEventListener('click', resume, { once: true });
+    document.addEventListener('touchstart', resume, { once: true });
+    document.addEventListener('keydown', resume, { once: true });
+    this.resumeCleanup = cleanup;
+  }
+
   private crossfadeTo(url: string, trackId: string, baseVolume: number) {
     if (this.fadeInterval) {
       clearInterval(this.fadeInterval);
       this.fadeInterval = null;
     }
+    this.clearResumeListener();
 
     const oldDeck = this.getActiveDeck();
     this.activeDeck = this.activeDeck === 'A' ? 'B' : 'A';
@@ -162,7 +205,9 @@ class AmbientManager {
     const playPromise = newDeck.play();
     if (playPromise) {
       playPromise.catch(() => {
-        // Autoplay blocked — ambient will start on next user interaction
+        // Autoplay blocked — register listener to resume on next user interaction
+        console.warn(`[Ambient] Autoplay blocked for "${trackId}", will resume on user interaction`);
+        this.registerResumeListener(newDeck, trackId);
       });
     }
 

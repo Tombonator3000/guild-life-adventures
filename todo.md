@@ -753,6 +753,16 @@
   - Removed `dark:` prefix from alert.tsx and chart.tsx
   - Build passes, 171 tests pass
 
+## Completed (2026-02-09)
+
+- [x] Fix Ambient Sounds Not Playing — 4 bugs found and fixed
+  - [x] Bug 1 (PRIMARY): currentTrackId set before play() succeeds → autoplay-blocked tracks never retry
+  - [x] Bug 2: No resume mechanism after autoplay block → added click/touch/keydown resume listeners
+  - [x] Bug 3: Very low effective volume (8% minimum) → raised to 18% minimum
+  - [x] Bug 4: PWA missing ambient/*.mp3 and sfx/*.mp3 in includeAssets → added
+  - Same fixes applied to audioManager.ts (music) for consistency
+  - Build passes, 171 tests pass
+
 ## In Progress
 
 *No active tasks*

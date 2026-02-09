@@ -39,6 +39,8 @@ export default defineConfig(({ mode }) => ({
         "apple-touch-icon.png",
         "icon.svg",
         "music/*.mp3",
+        "ambient/*.mp3",
+        "sfx/*.mp3",
         "npcs/*.jpg",
       ],
       manifest: {
