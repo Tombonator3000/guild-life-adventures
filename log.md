@@ -1,5 +1,64 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Fix Mobile Game Startup (iPad & Android)
+
+### Summary
+Game was not starting on iPad and Android devices from the GitHub Pages URL. Investigation found 5 issues affecting mobile browsers — all fixed.
+
+### Root Cause Analysis
+1. **CSS `@import` blocking render** (PRIMARY): Google Fonts loaded via CSS `@import` in `index.css`, which is render-blocking — the browser won't apply ANY styles until the imported font CSS finishes downloading. On slow mobile connections or restricted networks, this causes a blank white screen.
+2. **`overflow-hidden` preventing scroll**: All screen components (TitleScreen, GameSetup, VictoryScreen, OnlineLobby) used `overflow-hidden` on their outer container. On mobile landscape or small screens, content exceeds viewport height and was unscrollable, making the "Begin Adventure" / "Start" buttons unreachable.
+3. **No error boundary**: If any component threw a JS error on mobile (e.g., browser compatibility), the entire app showed a blank white screen with no feedback.
+4. **No mobile touch optimizations**: Missing `touch-action: manipulation` caused 300ms click delay on older mobile browsers. Custom SVG sword cursor was parsed (but not used) on touch devices. No `:active` feedback for touch interactions.
+5. **Background images as absolute overlays**: Background images used `absolute inset-0` which broke when the outer container scrolled — backgrounds scrolled with content instead of staying fixed.
+
+### Fixes
+
+1. **Move Google Fonts to HTML `<link>` with `preconnect`** (`index.html`, `index.css`)
+   - Removed `@import url('fonts.googleapis.com/...')` from `index.css`
+   - Added `<link rel="preconnect">` for `fonts.googleapis.com` and `fonts.gstatic.com`
+   - Added `<link rel="stylesheet">` for Google Fonts in HTML `<head>`
+   - Browser now loads fonts in parallel with CSS instead of sequentially
+   - `display=swap` means fallback fonts show immediately while custom fonts load
+
+2. **Make all screen containers scrollable** (`TitleScreen.tsx`, `GameSetup.tsx`, `VictoryScreen.tsx`, `OnlineLobby.tsx`)
+   - Changed `overflow-hidden` → `overflow-x-hidden overflow-y-auto` on all 5 outer containers
+   - Changed background `absolute inset-0` → `fixed inset-0` so backgrounds stay fixed while content scrolls
+   - Content is now always accessible on any viewport size
+
+3. **Add top-level React Error Boundary** (`App.tsx`)
+   - `ErrorBoundary` class component wraps entire app
+   - Shows game-themed error screen with error message instead of blank white page
+   - "Clear Cache & Reload" button clears service worker caches and reloads
+   - Uses inline styles (no CSS dependency) to always render even if CSS fails
+
+4. **Add mobile touch optimizations** (`index.css`)
+   - Added `touch-action: manipulation` on all interactive elements (button, a, input, select, etc.)
+   - Eliminates 300ms click delay on older mobile browsers
+   - Added `-webkit-tap-highlight-color: transparent` on body
+   - Added `touch-action: manipulation` on `.location-zone`
+   - Moved custom SVG sword cursor inside `@media (hover: hover) and (pointer: fine)` — only shows on mouse-pointer devices
+   - Added `.location-zone:active` opacity feedback for touch
+   - Added `@media (hover: none)` active states for `.wood-frame` and `.gold-button` — touch users get visual feedback
+
+### Files Changed
+| File | Changes |
+|------|---------|
+| `index.html` | Added Google Fonts `<link>` tags with `preconnect` hints |
+| `src/index.css` | Removed `@import`, added touch-action/tap-highlight/mobile media queries |
+| `src/App.tsx` | Added ErrorBoundary class component wrapping entire app |
+| `src/components/screens/TitleScreen.tsx` | `overflow-hidden` → scrollable, `absolute` bg → `fixed` |
+| `src/components/screens/GameSetup.tsx` | `overflow-hidden` → scrollable, `absolute` bg → `fixed` |
+| `src/components/screens/VictoryScreen.tsx` | `overflow-hidden` → scrollable, `absolute` bg → `fixed` (2 instances) |
+| `src/components/screens/OnlineLobby.tsx` | `overflow-hidden` → scrollable, `absolute` bg → `fixed` |
+
+### Build & Tests
+- TypeScript: clean
+- Build: passes (GitHub Pages target verified)
+- Tests: 171/171 pass
+
+---
+
 ## 2026-02-09 - Bounty Board Tab & Quest Guild Pass Gate
 
 ### Summary

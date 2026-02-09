@@ -803,6 +803,16 @@
   - Player state controls (cure sickness, max health, guild pass, guild rank)
   - Teleport to any of 15 board locations (0 time cost)
 
+## Completed (2026-02-09)
+
+- [x] Fix Mobile Game Startup (iPad & Android) — 5 issues fixed
+  - [x] Moved Google Fonts from CSS @import to HTML <link> (render-blocking fix)
+  - [x] Made all screen containers scrollable on mobile (overflow-hidden → overflow-y-auto)
+  - [x] Added top-level React Error Boundary (prevents blank white screen on JS errors)
+  - [x] Added mobile touch optimizations (touch-action, tap-highlight, active states)
+  - [x] Fixed background images from absolute to fixed (stay in place when scrolling)
+  - Build passes, 171 tests pass
+
 ## In Progress
 
 *No active tasks*

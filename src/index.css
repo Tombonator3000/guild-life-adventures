@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+/* Google Fonts loaded via <link> in index.html (avoids render-blocking CSS @import) */
 
 @tailwind base;
 @tailwind components;
@@ -85,6 +85,13 @@
   body {
     @apply bg-background text-foreground font-body;
     font-feature-settings: "rlig" 1, "calt" 1;
+    /* Prevent mobile browsers from blocking touch events with double-tap-to-zoom */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Eliminate 300ms click delay on mobile for all interactive elements */
+  button, a, [role="button"], input, select, textarea, label {
+    touch-action: manipulation;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -169,13 +176,34 @@
     @apply absolute cursor-default transition-all duration-200;
     border: none;
     border-radius: 8px;
+    /* Ensure touch events work on mobile */
+    touch-action: manipulation;
   }
 
-  .location-zone:hover {
-    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='32' viewBox='0 0 24 32'%3E%3C!-- Blade --%3E%3Cpath d='M12 0 L14 2 L14 18 L12 20 L10 18 L10 2 Z' fill='%23c0c0c0' stroke='%23808080' stroke-width='0.5'/%3E%3Cpath d='M12 0 L12 20' stroke='%23e8e8e8' stroke-width='1'/%3E%3C!-- Guard --%3E%3Crect x='6' y='18' width='12' height='3' rx='1' fill='%23d4a537' stroke='%23b8860b' stroke-width='0.5'/%3E%3C!-- Handle --%3E%3Crect x='10' y='21' width='4' height='8' fill='%238B4513' stroke='%23654321' stroke-width='0.5'/%3E%3Cpath d='M10 22 L14 22 M10 24 L14 24 M10 26 L14 26 M10 28 L14 28' stroke='%23654321' stroke-width='0.5'/%3E%3C!-- Pommel --%3E%3Ccircle cx='12' cy='31' r='2' fill='%23d4a537' stroke='%23b8860b' stroke-width='0.5'/%3E%3C/svg%3E") 12 0, pointer;
+  /* Custom sword cursor only on devices with mouse pointer (not touch) */
+  @media (hover: hover) and (pointer: fine) {
+    .location-zone:hover {
+      cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='32' viewBox='0 0 24 32'%3E%3C!-- Blade --%3E%3Cpath d='M12 0 L14 2 L14 18 L12 20 L10 18 L10 2 Z' fill='%23c0c0c0' stroke='%23808080' stroke-width='0.5'/%3E%3Cpath d='M12 0 L12 20' stroke='%23e8e8e8' stroke-width='1'/%3E%3C!-- Guard --%3E%3Crect x='6' y='18' width='12' height='3' rx='1' fill='%23d4a537' stroke='%23b8860b' stroke-width='0.5'/%3E%3C!-- Handle --%3E%3Crect x='10' y='21' width='4' height='8' fill='%238B4513' stroke='%23654321' stroke-width='0.5'/%3E%3Cpath d='M10 22 L14 22 M10 24 L14 24 M10 26 L14 26 M10 28 L14 28' stroke='%23654321' stroke-width='0.5'/%3E%3C!-- Pommel --%3E%3Ccircle cx='12' cy='31' r='2' fill='%23d4a537' stroke='%23b8860b' stroke-width='0.5'/%3E%3C/svg%3E") 12 0, pointer;
+    }
+  }
+
+  /* Touch feedback for location zones on mobile */
+  .location-zone:active {
+    opacity: 0.85;
   }
 
   .location-zone.active {
     /* No visual highlight - only tooltip shows */
+  }
+
+  /* Touch feedback for wood-frame buttons on mobile (supplement :hover) */
+  @media (hover: none) {
+    .wood-frame:active {
+      filter: brightness(1.1);
+    }
+    .gold-button:active {
+      filter: brightness(1.1);
+      box-shadow: var(--shadow-glow-gold), 0 0 30px hsl(45 85% 55% / 0.4);
+    }
   }
 }
