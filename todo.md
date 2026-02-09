@@ -709,6 +709,17 @@
   - [x] Full education → job progression audit — all paths verified fair and logical
   - Build passes, 171 tests pass
 
+- [x] Character Portrait System — player & AI character portraits
+  - [x] 8 player portraits (Warrior, Mage, Rogue, Cleric, Ranger, Bard, Paladin, Merchant)
+  - [x] 4 AI portraits (Grimwald, Seraphina, Thornwick, Morgath)
+  - [x] Portrait picker modal in GameSetup (click colored circle to choose)
+  - [x] SVG placeholder art with unique class silhouettes
+  - [x] JPG support: drop files into public/portraits/ to replace placeholders
+  - [x] Portraits shown in game board tokens (static + animated)
+  - [x] Portraits shown in all UI panels (7 components updated)
+  - [x] Backwards compatible: null portraitId = colored circle fallback
+  - Build passes, 171 tests pass
+
 ## In Progress
 
 *No active tasks*

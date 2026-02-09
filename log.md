@@ -1,5 +1,61 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Character Portrait System
+
+### Feature: Player & AI Character Portraits
+
+Added a full character portrait system where players and AI opponents can choose portrait art that represents their character. Portraits appear in the setup screen, on the game board tokens, and across all UI panels.
+
+**Portrait System:**
+- 8 player portraits: Warrior, Mage, Rogue, Cleric, Ranger, Bard, Paladin, Merchant
+- 4 AI portraits: Grimwald, Seraphina, Thornwick, Morgath (auto-assigned by default)
+- Generated SVG placeholders with unique silhouettes per class (helmet, wizard hat, hood, halo, etc.)
+- JPG image support: drop files into `public/portraits/` to replace placeholders
+- Falls back to colored circle with initial if no portrait selected
+
+**Setup Screen:**
+- Click the colored circle next to player name to open portrait picker
+- Portrait picker modal shows all 8 portraits in a grid + "None" option
+- AI opponents get default portraits matching their character (configurable)
+- Portraits stored in `AIConfig.portraitId` and passed to `startNewGame`
+
+**Game Board & UI Integration:**
+- `CharacterPortrait` component used everywhere (replaces plain color dots)
+- `PlayerToken` (32px static) and `AnimatedPlayerToken` (40px animated) show portraits
+- Updated 7 UI panels: PlayerInfoPanel, TurnOrderPanel, SideInfoTabs, RightSideTabs, ResourcePanel, MobileHUD, TurnTransition
+
+**Data Model:**
+- Added `portraitId: string | null` to Player interface
+- Added `portraitId?: string` to AIConfig interface
+- `createPlayer()` accepts optional portraitId parameter
+- `startNewGame()` accepts optional `playerPortraits` array
+- Backwards compatible: null portraitId shows color circle fallback
+
+**New Files:**
+- `src/data/portraits.ts` — Portrait definitions, categories, helpers
+- `src/components/game/CharacterPortrait.tsx` — Portrait renderer (image + SVG fallback)
+- `src/components/game/PortraitPicker.tsx` — Modal portrait selection grid
+- `public/portraits/` — Directory for JPG portrait art (placeholder-ready)
+
+**Modified Files:**
+- `src/types/game.types.ts` — Added portraitId to Player and AIConfig
+- `src/store/gameStore.ts` — Updated createPlayer and startNewGame
+- `src/store/storeTypes.ts` — Updated startNewGame signature
+- `src/components/screens/GameSetup.tsx` — Portrait picker integration
+- `src/components/game/PlayerToken.tsx` — Uses CharacterPortrait
+- `src/components/game/AnimatedPlayerToken.tsx` — Uses CharacterPortrait
+- `src/components/game/PlayerInfoPanel.tsx` — Portrait in header
+- `src/components/game/TurnOrderPanel.tsx` — Portrait in turn list
+- `src/components/game/SideInfoTabs.tsx` — Portrait in header
+- `src/components/game/RightSideTabs.tsx` — Portrait in player list
+- `src/components/game/ResourcePanel.tsx` — Portrait in header
+- `src/components/game/MobileHUD.tsx` — Portrait in HUD bar
+- `src/components/game/TurnTransition.tsx` — Portrait in privacy screen
+
+**Tests:** All 171 tests passing (9 test files). Build succeeds.
+
+---
+
 ## 2026-02-09 - Updated Default Zone Configurations
 
 ### Zone Config Overhaul

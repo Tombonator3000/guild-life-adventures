@@ -3,6 +3,7 @@ import type { Player, LocationId } from '@/types/game.types';
 import { getAnimationPoints } from '@/data/locations';
 import { cn } from '@/lib/utils';
 import type { MovementWaypoint } from '@/data/locations';
+import { CharacterPortrait } from './CharacterPortrait';
 
 interface AnimatedPlayerTokenProps {
   player: Player;
@@ -78,13 +79,12 @@ export function AnimatedPlayerToken({
   return (
     <div
       className={cn(
-        'absolute w-10 h-10 rounded-full border-3 border-white shadow-xl z-50',
+        'absolute w-10 h-10 rounded-full shadow-xl z-50',
         'transition-all duration-150 ease-in-out',
         isCurrent && 'ring-2 ring-yellow-400 ring-offset-1 animate-bounce',
         animationPath && 'scale-110'
       )}
       style={{
-        backgroundColor: player.color,
         left: `${position.x}%`,
         top: `${position.y}%`,
         transform: 'translate(-50%, -50%)',
@@ -92,18 +92,13 @@ export function AnimatedPlayerToken({
       }}
       title={player.name}
     >
-      {player.isAI && (
-        <div className="w-full h-full flex items-center justify-center">
-          <span className="text-xs font-bold text-white drop-shadow-md">AI</span>
-        </div>
-      )}
-      {!player.isAI && (
-        <div className="w-full h-full flex items-center justify-center">
-          <span className="text-xs font-bold text-white drop-shadow-md">
-            {player.name.charAt(0).toUpperCase()}
-          </span>
-        </div>
-      )}
+      <CharacterPortrait
+        portraitId={player.portraitId}
+        playerColor={player.color}
+        playerName={player.name}
+        size={40}
+        isAI={player.isAI}
+      />
     </div>
   );
 }

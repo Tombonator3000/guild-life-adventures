@@ -1,6 +1,7 @@
 import { Player, GoalSettings } from '@/types/game.types';
 import { HOURS_PER_TURN } from '@/types/game.types';
 import { Crown, Users, Target, TrendingUp, GraduationCap, Smile, Coins, Clock, Skull, Bot } from 'lucide-react';
+import { CharacterPortrait } from './CharacterPortrait';
 
 interface TurnOrderPanelProps {
   players: Player[];
@@ -65,10 +66,13 @@ export function TurnOrderPanel({
                   )}
                 </div>
 
-                {/* Player color dot */}
-                <div
-                  className="w-4 h-4 rounded-full border-2 border-wood-light flex-shrink-0"
-                  style={{ backgroundColor: player.color }}
+                {/* Player portrait */}
+                <CharacterPortrait
+                  portraitId={player.portraitId}
+                  playerColor={player.color}
+                  playerName={player.name}
+                  size={16}
+                  isAI={player.isAI}
                 />
 
                 {/* Name and status */}

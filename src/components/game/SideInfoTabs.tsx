@@ -10,6 +10,7 @@ import { getGameOption } from '@/data/gameOptions';
 import { GUILD_RANK_NAMES, GUILD_RANK_INDEX, HOURS_PER_TURN } from '@/types/game.types';
 import { HOUSING_DATA } from '@/data/housing';
 import { getJob } from '@/data/jobs';
+import { CharacterPortrait } from './CharacterPortrait';
 
 type TabId = 'stats' | 'inventory' | 'goals';
 
@@ -38,9 +39,13 @@ export function SideInfoTabs({ player, goals, isCurrentPlayer }: SideInfoTabsPro
     <div className={`h-full flex flex-col bg-parchment rounded-lg border-2 overflow-hidden ${isCurrentPlayer ? 'border-accent' : 'border-wood-dark/50'}`}>
       {/* Player Header */}
       <div className="flex items-center gap-2 p-2 bg-parchment border-b-2 border-wood-light/50">
-        <div
-          className="w-8 h-8 rounded-full border-2 border-wood-light shadow-md flex-shrink-0"
-          style={{ backgroundColor: player.color }}
+        <CharacterPortrait
+          portraitId={player.portraitId}
+          playerColor={player.color}
+          playerName={player.name}
+          size={32}
+          isAI={player.isAI}
+          className="shadow-md flex-shrink-0"
         />
         <div className="min-w-0 flex-1">
           <h3 className="font-display text-xs font-bold text-wood-dark truncate">

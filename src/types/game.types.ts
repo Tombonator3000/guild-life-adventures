@@ -129,6 +129,7 @@ export interface Player {
   id: string;
   name: string;
   color: string;
+  portraitId: string | null; // Character portrait ID (null = use color circle fallback)
   age: number;             // Player age in years (starts at 18, ages 1 year per 4 weeks)
   gold: number;
   health: number;
@@ -380,6 +381,7 @@ export const AI_OPPONENTS = [
 export interface AIConfig {
   name: string;
   difficulty: AIDifficulty;
+  portraitId?: string;
 }
 
 // AI Difficulty levels (Jones-style)

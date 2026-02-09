@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { PLAYER_COLORS, AI_DIFFICULTY_NAMES, AI_DIFFICULTY_DESCRIPTIONS, AI_OPPONENTS, type AIDifficulty, type AIConfig } from '@/types/game.types';
+import { PLAYER_COLORS, AI_DIFFICULTY_NAMES, AI_OPPONENTS, type AIDifficulty, type AIConfig } from '@/types/game.types';
 import { Plus, Minus, Bot, Play, Brain, Zap, Crown, Lightbulb, Trash2 } from 'lucide-react';
+import { CharacterPortrait } from '@/components/game/CharacterPortrait';
+import { PortraitPicker } from '@/components/game/PortraitPicker';
+import { getDefaultAIPortrait } from '@/data/portraits';
 import gameBoard from '@/assets/game-board.jpeg';
 
 const MAX_TOTAL_PLAYERS = 4;
@@ -9,8 +12,11 @@ const MAX_TOTAL_PLAYERS = 4;
 export function GameSetup() {
   const { startNewGame, setPhase, setShowTutorial, setTutorialStep } = useGameStore();
   const [playerNames, setPlayerNames] = useState<string[]>(['Adventurer 1']);
+  const [playerPortraits, setPlayerPortraits] = useState<(string | null)[]>([null]);
   const [aiOpponents, setAiOpponents] = useState<AIConfig[]>([]);
   const [enableTutorial, setEnableTutorial] = useState(true);
+  const [portraitPickerIndex, setPortraitPickerIndex] = useState<number | null>(null);
+  const [portraitPickerType, setPortraitPickerType] = useState<'human' | 'ai'>('human');
   const [goals, setGoals] = useState({
     wealth: 5000,
     happiness: 100,
@@ -24,12 +30,14 @@ export function GameSetup() {
   const addPlayer = () => {
     if (canAddMore) {
       setPlayerNames([...playerNames, `Adventurer ${playerNames.length + 1}`]);
+      setPlayerPortraits([...playerPortraits, null]);
     }
   };
 
   const removePlayer = (index: number) => {
     if (playerNames.length > 1) {
       setPlayerNames(playerNames.filter((_, i) => i !== index));
+      setPlayerPortraits(playerPortraits.filter((_, i) => i !== index));
     }
   };
 
@@ -39,11 +47,17 @@ export function GameSetup() {
     setPlayerNames(newNames);
   };
 
+  const updatePlayerPortrait = (index: number, portraitId: string | null) => {
+    const newPortraits = [...playerPortraits];
+    newPortraits[index] = portraitId;
+    setPlayerPortraits(newPortraits);
+  };
+
   const addAIOpponent = () => {
     if (canAddMore) {
       const aiIndex = aiOpponents.length;
       const defaultName = AI_OPPONENTS[aiIndex]?.name || `AI ${aiIndex + 1}`;
-      setAiOpponents([...aiOpponents, { name: defaultName, difficulty: 'medium' }]);
+      setAiOpponents([...aiOpponents, { name: defaultName, difficulty: 'medium', portraitId: getDefaultAIPortrait(aiIndex) }]);
     }
   };
 
@@ -63,13 +77,35 @@ export function GameSetup() {
     setAiOpponents(updated);
   };
 
+  const updateAIPortrait = (index: number, portraitId: string | null) => {
+    const updated = [...aiOpponents];
+    updated[index] = { ...updated[index], portraitId: portraitId ?? undefined };
+    setAiOpponents(updated);
+  };
+
+  const openPortraitPicker = (index: number, type: 'human' | 'ai') => {
+    setPortraitPickerIndex(index);
+    setPortraitPickerType(type);
+  };
+
+  const handlePortraitSelect = (portraitId: string | null) => {
+    if (portraitPickerIndex === null) return;
+    if (portraitPickerType === 'human') {
+      updatePlayerPortrait(portraitPickerIndex, portraitId);
+    } else {
+      updateAIPortrait(portraitPickerIndex, portraitId);
+    }
+    setPortraitPickerIndex(null);
+  };
+
   const handleStart = () => {
     startNewGame(
       playerNames,
       false, // legacy includeAI flag - not used when aiConfigs provided
       goals,
       'medium', // legacy aiDifficulty
-      aiOpponents.length > 0 ? aiOpponents : undefined
+      aiOpponents.length > 0 ? aiOpponents : undefined,
+      playerPortraits
     );
     if (enableTutorial) {
       setTutorialStep(0);
@@ -119,10 +155,19 @@ export function GameSetup() {
             <div className="space-y-3">
               {playerNames.map((name, index) => (
                 <div key={index} className="flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-full border-2 border-wood-light flex-shrink-0"
-                    style={{ backgroundColor: PLAYER_COLORS[index].value }}
-                  />
+                  <button
+                    onClick={() => openPortraitPicker(index, 'human')}
+                    className="flex-shrink-0 rounded-full hover:ring-2 hover:ring-primary transition-all cursor-pointer"
+                    title="Choose portrait"
+                  >
+                    <CharacterPortrait
+                      portraitId={playerPortraits[index]}
+                      playerColor={PLAYER_COLORS[index].value}
+                      playerName={name}
+                      size={40}
+                      isAI={false}
+                    />
+                  </button>
                   <input
                     type="text"
                     value={name}
@@ -173,12 +218,19 @@ export function GameSetup() {
                   return (
                     <div key={index} className="bg-background/30 rounded p-3 border border-border/50">
                       <div className="flex items-center gap-3 mb-2">
-                        <div
-                          className="w-10 h-10 rounded-full border-2 border-wood-light flex-shrink-0 flex items-center justify-center"
-                          style={{ backgroundColor: aiDef.color }}
+                        <button
+                          onClick={() => openPortraitPicker(index, 'ai')}
+                          className="flex-shrink-0 rounded-full hover:ring-2 hover:ring-primary transition-all cursor-pointer"
+                          title="Choose portrait"
                         >
-                          <Bot className="w-5 h-5 text-white/80" />
-                        </div>
+                          <CharacterPortrait
+                            portraitId={ai.portraitId || getDefaultAIPortrait(index)}
+                            playerColor={aiDef.color}
+                            playerName={ai.name}
+                            size={40}
+                            isAI={true}
+                          />
+                        </button>
                         <input
                           type="text"
                           value={ai.name}
@@ -344,6 +396,29 @@ export function GameSetup() {
           </div>
         </div>
       </div>
+
+      {/* Portrait Picker Modal */}
+      {portraitPickerIndex !== null && (
+        <PortraitPicker
+          selectedPortraitId={
+            portraitPickerType === 'human'
+              ? playerPortraits[portraitPickerIndex]
+              : aiOpponents[portraitPickerIndex]?.portraitId || null
+          }
+          playerColor={
+            portraitPickerType === 'human'
+              ? PLAYER_COLORS[portraitPickerIndex].value
+              : (AI_OPPONENTS[portraitPickerIndex] || AI_OPPONENTS[0]).color
+          }
+          playerName={
+            portraitPickerType === 'human'
+              ? playerNames[portraitPickerIndex]
+              : aiOpponents[portraitPickerIndex]?.name || 'AI'
+          }
+          onSelect={handlePortraitSelect}
+          onClose={() => setPortraitPickerIndex(null)}
+        />
+      )}
     </div>
   );
 }

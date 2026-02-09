@@ -1,5 +1,6 @@
 import { Shield } from 'lucide-react';
 import type { Player } from '@/types/game.types';
+import { CharacterPortrait } from './CharacterPortrait';
 
 interface TurnTransitionProps {
   player: Player;
@@ -19,9 +20,12 @@ export function TurnTransition({ player, onReady }: TurnTransitionProps) {
           Pass the device to
         </h2>
         <div className="flex items-center gap-3">
-          <div
-            className="w-8 h-8 rounded-full border-2 border-wood-light"
-            style={{ backgroundColor: player.color }}
+          <CharacterPortrait
+            portraitId={player.portraitId}
+            playerColor={player.color}
+            playerName={player.name}
+            size={32}
+            isAI={player.isAI}
           />
           <span className="font-display text-xl text-primary font-bold">
             {player.name}

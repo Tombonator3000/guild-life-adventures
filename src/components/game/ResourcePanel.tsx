@@ -2,6 +2,7 @@ import { useCurrentPlayer, useGameStore } from '@/store/gameStore';
 import { Coins, Heart, Smile, Clock, Utensils, Shirt, Shield, Briefcase } from 'lucide-react';
 import { GUILD_RANK_NAMES, HOURS_PER_TURN } from '@/types/game.types';
 import { GoalProgress } from './GoalProgress';
+import { CharacterPortrait } from './CharacterPortrait';
 
 export function ResourcePanel() {
   const player = useCurrentPlayer();
@@ -14,9 +15,13 @@ export function ResourcePanel() {
       {/* Player header */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <div
-            className="w-8 h-8 rounded-full border-3 border-wood-light shadow-lg flex-shrink-0"
-            style={{ backgroundColor: player.color }}
+          <CharacterPortrait
+            portraitId={player.portraitId}
+            playerColor={player.color}
+            playerName={player.name}
+            size={32}
+            isAI={player.isAI}
+            className="shadow-lg flex-shrink-0"
           />
           <div>
             <h2 className="font-display text-lg font-bold text-card-foreground leading-tight">
