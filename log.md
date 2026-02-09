@@ -1,5 +1,62 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Dummy Audio Files (SFX + Ambient Placeholders)
+
+### Task
+Created placeholder (silent) MP3 files for all 52 audio assets referenced by the SFX and ambient sound systems. These serve as drop-in placeholders until real audio assets are produced.
+
+### Files Created
+
+#### public/sfx/ — 36 Sound Effect Files (~4KB each, ~1s silent MP3)
+
+| Category | Files |
+|----------|-------|
+| **UI Sounds** | button-click.mp3, button-hover.mp3, gold-button-click.mp3, menu-open.mp3, menu-close.mp3 |
+| **Game Actions** | coin-gain.mp3, coin-spend.mp3, item-buy.mp3, item-equip.mp3, success.mp3, error.mp3 |
+| **Movement** | footstep.mp3, door-open.mp3 |
+| **Work & Education** | work-complete.mp3, study.mp3, graduation.mp3 |
+| **Combat & Dungeon** | sword-hit.mp3, damage-taken.mp3, victory-fanfare.mp3, defeat.mp3 |
+| **Turn Events** | notification.mp3, turn-start.mp3, week-end.mp3 |
+| **Game Events** | robbery.mp3, heal.mp3, quest-accept.mp3, quest-complete.mp3, level-up.mp3, appliance-break.mp3, dice-roll.mp3, death.mp3, resurrection.mp3, rent-paid.mp3, weather-thunder.mp3, festival.mp3, travel-event.mp3 |
+
+All 36 files match `SFX_LIBRARY` in `src/audio/sfxManager.ts`.
+
+#### public/ambient/ — 16 Ambient Loop Files (~4KB each, ~1s silent MP3)
+
+| Track | Label |
+|-------|-------|
+| noble-ambient.mp3 | Noble Gardens |
+| market-ambient.mp3 | Market Bustle |
+| bank-ambient.mp3 | Bank Interior |
+| forge-ambient.mp3 | Forge Workshop |
+| guild-ambient.mp3 | Adventurer Crowd |
+| cave-ambient.mp3 | Cave Depths |
+| academy-ambient.mp3 | Quiet Study |
+| enchanter-ambient.mp3 | Arcane Workshop |
+| armory-ambient.mp3 | Armory Clatter |
+| tavern-ambient.mp3 | Tavern Crowd |
+| shadow-ambient.mp3 | Dark Alley |
+| fence-ambient.mp3 | Pawn Shop |
+| slums-ambient.mp3 | Slum Streets |
+| landlord-ambient.mp3 | Rent Office |
+| street-ambient.mp3 | Town Streets (default) |
+| graveyard-ambient.mp3 | Graveyard |
+
+All 16 files match `AMBIENT_TRACKS` in `src/audio/ambientConfig.ts`.
+
+### Technical Details
+- Each file is a minimal valid MP3 with ID3v2 header + 38 silent MPEG1 Layer3 frames (~1 second)
+- Size: ~4KB per file (total ~208KB for all 52 files)
+- Format: MPEG1, Layer3, 32kbps, 44100Hz
+- The SFX system (`sfxManager.ts`) will load these MP3s; since they're silent, the Web Audio API synth fallback (`synthSFX.ts`) will still be the primary sound source until real assets are added
+- The ambient system (`ambientManager.ts`) will load these and play silent loops until real ambient tracks are added
+- To replace: drop real MP3 files with the same names into the respective directories
+
+### Audio System Summary (existing)
+- **Music**: 11 tracks in `public/music/` (3-6.5 MB each) — fully functional
+- **SFX**: 36 placeholder files in `public/sfx/` + synth fallback — **NEW**
+- **Ambient**: 16 placeholder files in `public/ambient/` — **NEW**
+
 ## 2026-02-09 - Verification: AI Modal, Speech Bubble, Landlord Restriction
 
 ### Verification of 3 Features (All Confirmed Implemented)

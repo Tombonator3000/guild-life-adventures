@@ -645,6 +645,12 @@
 
 ## Completed (2026-02-09)
 
+- [x] Dummy Audio Files — 52 placeholder MP3s for SFX and ambient systems
+  - 36 SFX files in `public/sfx/` (matching `SFX_LIBRARY` in sfxManager.ts)
+  - 16 ambient files in `public/ambient/` (matching `AMBIENT_TRACKS` in ambientConfig.ts)
+  - Minimal silent MP3s (~4KB each), replace with real assets by dropping files in place
+  - Synth fallback (synthSFX.ts) remains primary SFX source until real MP3s added
+
 - [x] Guild Rank Promotion Bug Fix — Legendary Champion couldn't start journeyman quests
   - Root cause: `promoteGuildRank()` used `completedQuests` (only from regular quests) instead of `guildReputation` (from all quest-like activities)
   - Fix: Changed to use `guildReputation`, added multi-rank promotion loop, added promotion after bounty completion
