@@ -64,8 +64,13 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
   }
 
   // 2. RENT - Prevent eviction (huge penalty)
+  // Landlord is only open during rent weeks (every 4th week) or when urgently behind (3+ weeks overdue)
   // Trigger at >= 0.5 (2 weeks overdue) instead of > 0.5 to give AI time to travel and pay
-  if (urgency.rent >= 0.5 && player.housing !== 'homeless') {
+  const isRentWeek = (ctx.week + 1) % 4 === 0;
+  const hasUrgentRent = player.weeksSinceRent >= 3;
+  const isLandlordOpen = isRentWeek || hasUrgentRent;
+
+  if (urgency.rent >= 0.5 && player.housing !== 'homeless' && isLandlordOpen) {
     const rentCost = player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing];
     if (player.gold >= rentCost) {
       if (currentLocation === 'landlord') {

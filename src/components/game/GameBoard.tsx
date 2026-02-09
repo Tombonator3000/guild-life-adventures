@@ -459,7 +459,7 @@ function BoardBanterOverlay({ centerPanel, isMobile }: {
 
   return (
     <div
-      className="absolute z-20 pointer-events-none flex items-end justify-center"
+      className="absolute z-20 pointer-events-none flex items-end justify-start"
       style={isMobile ? {
         bottom: '66%',
         left: '5%',
@@ -471,6 +471,7 @@ function BoardBanterOverlay({ centerPanel, isMobile }: {
         left: `${centerPanel.left}%`,
         width: `${centerPanel.width}%`,
         height: `${Math.min(18, centerPanel.top)}%`,
+        paddingLeft: '2%',
       }}
     >
       <BanterBubble
