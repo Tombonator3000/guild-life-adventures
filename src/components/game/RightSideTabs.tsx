@@ -200,7 +200,11 @@ function PlayersTab({
         const educationProgress = Math.min(100, (educationTotal / goalSettings.education) * 100);
         const careerValue = player.currentJob ? player.dependability : 0;
         const careerProgress = Math.min(100, (careerValue / goalSettings.career) * 100);
-        const overallProgress = (wealthProgress + happinessProgress + educationProgress + careerProgress) / 4;
+        const adventureEnabled = (goalSettings.adventure ?? 0) > 0;
+        const adventureValue = player.completedQuests + player.dungeonFloorsCleared.length;
+        const adventureProgress = adventureEnabled ? Math.min(100, (adventureValue / goalSettings.adventure) * 100) : 0;
+        const goalCount = adventureEnabled ? 5 : 4;
+        const overallProgress = (wealthProgress + happinessProgress + educationProgress + careerProgress + (adventureEnabled ? adventureProgress : 0)) / goalCount;
 
         return (
           <div

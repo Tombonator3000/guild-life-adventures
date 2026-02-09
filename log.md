@@ -1,5 +1,30 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Adventure Goal Victory Goals Integration
+
+### Summary
+
+When playing with Adventure Goal enabled, it was not fully integrated into the victory goals displays. Fixed 4 issues:
+
+### Changes
+
+1. **GameSetup.tsx**: Victory Goals description now says "all five goals" when adventure is enabled (was hardcoded "four")
+2. **GameSetup.tsx**: Preset buttons (Quick/Standard/Epic) now preserve the current adventure setting instead of resetting it to 0
+3. **RightSideTabs.tsx**: PlayersTab overall progress % now includes adventure progress when enabled (was dividing by 4 only)
+4. **TurnOrderPanel.tsx**: Same fix — overall progress % now includes adventure progress when enabled
+
+### Files Modified
+
+- `src/components/screens/GameSetup.tsx` — dynamic goal count text + preset preservation
+- `src/components/game/RightSideTabs.tsx` — PlayersTab overallProgress includes adventure
+- `src/components/game/TurnOrderPanel.tsx` — overallProgress includes adventure
+
+### Build & Test
+
+- Build passes, 171 tests pass
+
+---
+
 ## 2026-02-09 - Guild Pass Quest Requirement
 
 ### Summary
