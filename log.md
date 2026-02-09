@@ -1,5 +1,62 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - GitHub Update / PWA Caching Diagnosis & Fix
+
+### Problem
+User reported that recently added features (ambient sound controls in Options panel, AI character portrait in scheming modal) were not visible in their running game. Updates from GitHub didn't seem to take effect.
+
+### Diagnosis
+1. **Code is correct**: Both ambient sound controls (`RightSideTabs.tsx:360-391`, `OptionsMenu.tsx:235-264`) and AI portrait (`GameBoardOverlays.tsx:90-101`) are fully implemented and the build succeeds.
+2. **User's running version is stale**: Screenshots showed an older build without these features.
+3. **Root cause — PWA caching**: The service worker (`registerType: "prompt"`) caches all assets. Updates were only checked every **60 minutes**, and required the user to notice and click "Update Now" on a small banner at the bottom of the screen.
+4. **No version indicator**: There was no way for the user to verify which build version they were running.
+
+### Fixes Applied
+
+#### 1. PWA Update Check — 60min → 5min + immediate check on load
+**File:** `src/hooks/useAppUpdate.ts`
+- Reduced `UPDATE_CHECK_INTERVAL_MS` from 60 minutes to 5 minutes
+- Added immediate `registration.update()` call on service worker registration
+- Added `checkForUpdates()` method for manual update checking from UI
+- Wrapped `updateApp` with `useCallback` for stable reference
+
+#### 2. Build Version Timestamp
+**File:** `vite.config.ts`
+- Added `define: { __BUILD_TIME__: JSON.stringify(new Date().toISOString()) }` — injects build timestamp at compile time
+
+**File:** `src/vite-env.d.ts`
+- Added `declare const __BUILD_TIME__: string` type declaration
+
+#### 3. Update Banner — More Prominent
+**File:** `src/components/game/UpdateBanner.tsx`
+- Larger icon (w-5 h-5), bolder text, added subtitle "Click to update and see latest features"
+- Added `border-2 border-primary/50` for visual prominence
+- Exported `getBuildVersion()` utility function — formats build timestamp for display
+
+#### 4. Options Menu — Version Display + Manual Update Check
+**File:** `src/components/game/OptionsMenu.tsx`
+- Footer now shows "Build: DD Mon YYYY HH:MM" timestamp
+- "Update Available — Click to Install" link when update is detected (animated pulse)
+- "Check for Updates" button with spinning icon when no update pending
+- Imported `useAppUpdate` hook and `getBuildVersion` utility
+
+#### 5. Right Sidebar — Version Display
+**File:** `src/components/game/RightSideTabs.tsx`
+- Added "Build: ..." version line at bottom of Options tab
+- Imported `getBuildVersion` from UpdateBanner
+
+### What Users Should Do
+1. **If using PWA (installed app)**: Open the game, wait a few seconds for the update check, then click "Update Now" when the banner appears. Alternatively, open Options → "Check for Updates".
+2. **If using browser**: Hard refresh (Ctrl+Shift+R / Cmd+Shift+R) to bypass cache.
+3. **If deployed via Lovable**: Ensure Lovable has pulled the latest from GitHub and triggered a new build.
+4. **If deployed via GitHub Pages**: Check that the GitHub Actions workflow ran successfully on the latest push to main.
+
+### Build Status
+- Build succeeds, 171 tests pass
+- Files changed: 5 (`useAppUpdate.ts`, `UpdateBanner.tsx`, `OptionsMenu.tsx`, `RightSideTabs.tsx`, `vite.config.ts`, `vite-env.d.ts`)
+
+---
+
 ## 2026-02-09 - Dummy Audio Files (SFX + Ambient Placeholders)
 
 ### Task

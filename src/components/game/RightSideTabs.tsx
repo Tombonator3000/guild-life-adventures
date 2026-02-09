@@ -8,6 +8,7 @@ import { useSFXSettings } from '@/hooks/useSFX';
 import { useAmbientSettings } from '@/hooks/useAmbient';
 import { AchievementsPanel } from './AchievementsPanel';
 import { CharacterPortrait } from './CharacterPortrait';
+import { getBuildVersion } from './UpdateBanner';
 import type { Player, GoalSettings } from '@/types/game.types';
 import { HOURS_PER_TURN } from '@/types/game.types';
 
@@ -465,6 +466,13 @@ function OptionsTab({
           <ShortcutRow keys="M" action="Mute Music" />
         </div>
       </OptionSection>
+
+      {/* Build Version */}
+      <div className="text-center pt-1">
+        <span className="text-[8px] text-amber-600/60 font-display">
+          Build: {getBuildVersion()}
+        </span>
+      </div>
     </div>
   );
 }

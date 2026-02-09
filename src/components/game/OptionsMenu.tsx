@@ -15,6 +15,8 @@ import { useGameOptions } from '@/hooks/useGameOptions';
 import { useAudioSettings } from '@/hooks/useMusic';
 import { useSFXSettings } from '@/hooks/useSFX';
 import { useAmbientSettings } from '@/hooks/useAmbient';
+import { useAppUpdate } from '@/hooks/useAppUpdate';
+import { getBuildVersion } from '@/components/game/UpdateBanner';
 import { DarkModeToggle } from '@/components/game/DarkModeToggle';
 import type { GameOptions } from '@/data/gameOptions';
 
@@ -30,7 +32,9 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
   const audio = useAudioSettings();
   const sfx = useSFXSettings();
   const ambient = useAmbientSettings();
+  const { needRefresh, updateApp, checkForUpdates } = useAppUpdate();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'gameplay', label: 'Gameplay', icon: <Gamepad2 className="w-4 h-4" /> },
@@ -89,38 +93,68 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-3 border-t border-border">
-          {showResetConfirm ? (
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-destructive font-display">Reset all options?</span>
+        <div className="px-6 py-3 border-t border-border space-y-2">
+          {/* Version & Update Row */}
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-muted-foreground font-display">
+              Build: {getBuildVersion()}
+            </span>
+            {needRefresh ? (
               <button
-                onClick={() => { resetOptions(); setShowResetConfirm(false); }}
-                className="px-2 py-1 bg-destructive/20 text-destructive rounded text-xs font-display hover:bg-destructive/30"
+                onClick={updateApp}
+                className="flex items-center gap-1 text-xs text-primary font-display font-bold animate-pulse hover:underline"
               >
-                Yes, Reset
+                <RotateCcw className="w-3 h-3" />
+                Update Available — Click to Install
               </button>
+            ) : (
               <button
-                onClick={() => setShowResetConfirm(false)}
-                className="px-2 py-1 bg-background/50 text-muted-foreground rounded text-xs font-display hover:bg-background/70"
+                onClick={() => {
+                  setCheckingUpdate(true);
+                  checkForUpdates();
+                  setTimeout(() => setCheckingUpdate(false), 3000);
+                }}
+                className="flex items-center gap-1 text-[10px] text-muted-foreground font-display hover:text-foreground transition-colors"
               >
-                Cancel
+                <RotateCcw className={`w-3 h-3 ${checkingUpdate ? 'animate-spin' : ''}`} />
+                {checkingUpdate ? 'Checking...' : 'Check for Updates'}
               </button>
-            </div>
-          ) : (
+            )}
+          </div>
+          {/* Actions Row */}
+          <div className="flex items-center justify-between">
+            {showResetConfirm ? (
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-destructive font-display">Reset all options?</span>
+                <button
+                  onClick={() => { resetOptions(); setShowResetConfirm(false); }}
+                  className="px-2 py-1 bg-destructive/20 text-destructive rounded text-xs font-display hover:bg-destructive/30"
+                >
+                  Yes, Reset
+                </button>
+                <button
+                  onClick={() => setShowResetConfirm(false)}
+                  className="px-2 py-1 bg-background/50 text-muted-foreground rounded text-xs font-display hover:bg-background/70"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowResetConfirm(true)}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground font-display transition-colors"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Reset Defaults
+              </button>
+            )}
             <button
-              onClick={() => setShowResetConfirm(true)}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground font-display transition-colors"
+              onClick={onClose}
+              className="px-6 py-2 wood-frame text-parchment font-display text-sm hover:brightness-110"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              Reset Defaults
+              Done
             </button>
-          )}
-          <button
-            onClick={onClose}
-            className="px-6 py-2 wood-frame text-parchment font-display text-sm hover:brightness-110"
-          >
-            Done
-          </button>
+          </div>
         </div>
       </div>
     </div>
