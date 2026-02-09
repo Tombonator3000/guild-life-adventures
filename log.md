@@ -1,5 +1,48 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Mid-Movement Destination Redirect & Debug Tools Expansion
+
+### 1. Mid-Movement Destination Redirect
+Players can now click a different location while their token is animating along a path. Instead of being locked into the original destination, clicking a new location cancels the current animation and starts a new one from the player's original position to the new destination.
+
+**How it works:**
+- During animation, `movePlayer()` has not yet been called (state unchanged)
+- Clicking a new location recalculates the path from the player's current (actual) location
+- `pathVersion` counter forces AnimatedPlayerToken to remount, resetting internal animation state
+- Full travel, partial travel, and weather cost adjustments all work with redirects
+- Online multiplayer: broadcasts new movement path to other players on redirect
+
+**Files changed:**
+| File | Changes |
+|------|---------|
+| `src/hooks/usePlayerAnimation.ts` | Added `pathVersion` state, `redirectAnimation()` function |
+| `src/hooks/useLocationClick.ts` | Accept `redirectAnimation` prop; during animation allow redirect to new destination instead of blocking clicks |
+| `src/components/game/GameBoard.tsx` | Pass `redirectAnimation` and `pathVersion` to hooks/components; use `pathVersion` in AnimatedPlayerToken key |
+
+### 2. Debug Tools Expansion (Developer Tab)
+Added comprehensive debug/test tools to the Developer tab for testing all game events and mechanics.
+
+**New debug tools:**
+- **Weather Control** — Set any weather type (Snowstorm, Thunderstorm, Drought, Enchanted Fog, Harvest Rain) or clear. Weather persists until manually cleared (99 weeks).
+- **Victory & Game** — Trigger Win (gives 10000g + 1000 happiness + victory check), Check Victory, Force Week End, Force Start Turn, Force End Turn
+- **Festivals** — Activate any of 4 seasonal festivals (Harvest, Solstice, Tournament, Fair) or clear
+- **Resources** — Quick buttons for gold (+/-500, +5000), health (+/-50, full), happiness (+50), food (+50), clothing (+50), time (+20h), relaxation (+20)
+- **Events** — Trigger test event message, robbery event, weekend event, doctor visit, dismiss event
+- **Player State** — Cure sickness, +20 max health, buy guild pass, promote guild rank
+- **Teleport** — Instantly move to any of the 15 board locations (0 time cost)
+
+**Files changed:**
+| File | Changes |
+|------|---------|
+| `src/components/game/RightSideTabs.tsx` | Rewrote DeveloperTab with 9 debug sections; added `useGameStore` import and `LOCATIONS_LIST` data |
+| `src/store/gameStore.ts` | Added `setDebugWeather()` and `setDebugFestival()` actions; imported WeatherType/WeatherParticle/FESTIVALS |
+| `src/store/storeTypes.ts` | Added `setDebugWeather` and `setDebugFestival` to GameStore interface |
+
+### Build & Tests
+TypeScript compiles cleanly, 171 tests pass.
+
+---
+
 ## 2026-02-09 - Adventure Victory Goal, Landlord Closed Image, Guild Pass Bug Fix, Free Shopping
 
 ### 1. New Victory Goal: Adventure (Optional)

@@ -763,6 +763,23 @@
   - Same fixes applied to audioManager.ts (music) for consistency
   - Build passes, 171 tests pass
 
+## Completed (2026-02-09)
+
+- [x] Mid-Movement Destination Redirect — click new location while token is moving to change destination
+  - usePlayerAnimation: pathVersion state + redirectAnimation function
+  - useLocationClick: allows redirect during animation instead of blocking
+  - GameBoard: passes redirect props, uses pathVersion as AnimatedPlayerToken key
+  - Works with full travel, partial travel, weather costs, and online multiplayer
+
+- [x] Debug Tools Expansion — comprehensive developer panel for testing game events
+  - Weather control (all 5 types + clear)
+  - Victory & game controls (trigger win, check victory, force week end, force turns)
+  - Festival controls (all 4 festivals + clear)
+  - Resource controls (gold, health, happiness, food, clothing, time, relaxation)
+  - Event triggers (event message, robbery, weekend, doctor visit)
+  - Player state controls (cure sickness, max health, guild pass, guild rank)
+  - Teleport to any of 15 board locations (0 time cost)
+
 ## In Progress
 
 *No active tasks*
