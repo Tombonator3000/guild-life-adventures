@@ -41,13 +41,13 @@ export function TitleScreen() {
   };
 
   return (
-    <div className="relative min-h-screen-safe overflow-hidden">
+    <div className="relative min-h-screen-safe overflow-x-hidden overflow-y-auto">
       {/* Background with overlay */}
       <div
-        className="absolute inset-0 bg-cover bg-center"
+        className="fixed inset-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${gameBoard})` }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background/90" />
+      <div className="fixed inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background/90" />
 
       {/* Content */}
       <div className="relative z-10 min-h-screen-safe flex flex-col items-center justify-center px-4">

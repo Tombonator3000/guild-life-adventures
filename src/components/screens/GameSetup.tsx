@@ -122,15 +122,15 @@ export function GameSetup() {
   };
 
   return (
-    <div className="relative min-h-screen-safe overflow-hidden">
+    <div className="relative min-h-screen-safe overflow-x-hidden overflow-y-auto">
       {/* Background */}
       <div
-        className="absolute inset-0 bg-cover bg-center opacity-30"
+        className="fixed inset-0 bg-cover bg-center opacity-30"
         style={{ backgroundImage: `url(${gameBoard})` }}
       />
-      <div className="absolute inset-0 bg-background/80" />
+      <div className="fixed inset-0 bg-background/80" />
 
-      {/* Content */}
+      {/* Content — scrollable on mobile; centered only when content fits viewport */}
       <div className="relative z-10 min-h-screen-safe flex flex-col items-center justify-center px-4 py-8">
         <h1 className="font-display text-4xl font-bold text-amber-900 mb-8">
           Prepare Your Adventure
