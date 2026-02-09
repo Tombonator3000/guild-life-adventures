@@ -1,5 +1,54 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-08 - iPad PWA Compatibility Fixes
+
+Audit and fix of Progressive Web App for iPad/iOS compatibility. The PWA was functional on Android/desktop but had several issues on iPad.
+
+### Issues Found & Fixed
+
+| # | Severity | Issue | Fix |
+|---|----------|-------|-----|
+| 1 | **HIGH** | Missing `viewport-fit=cover` in viewport meta tag | Added to `index.html` — required for notched iPads to extend content into safe areas |
+| 2 | **HIGH** | No safe-area-inset CSS handling | Added `safe-area-*` utility classes in `index.css` — prevents UI from hiding behind notch/home indicator |
+| 3 | **MEDIUM** | `100vh` includes address bar on iOS Safari | Added `h-screen-safe` / `min-h-screen-safe` CSS classes using `100dvh` with `100vh` fallback |
+| 4 | **MEDIUM** | `beforeinstallprompt` not supported on iOS — Install button never shown | Added iOS device detection + manual install guide modal (Share > Add to Home Screen) |
+| 5 | **LOW** | `navigator.standalone` not checked for installed state on iOS | Added iOS standalone mode detection in `usePWAInstall` |
+| 6 | **LOW** | UpdateBanner `bottom-4` fixed positioning clips on notched iPads | Changed to `max(1rem, env(safe-area-inset-bottom))` |
+
+### Files Changed
+
+| File | Changes |
+|------|---------|
+| `index.html` | Added `viewport-fit=cover` to viewport meta tag |
+| `src/index.css` | Added safe-area utility classes (`safe-area-top/bottom/left/right/all`), `h-screen-safe`, `min-h-screen-safe` |
+| `src/hooks/usePWAInstall.ts` | iOS device detection, `navigator.standalone` check, `showIOSGuide` state, `dismissIOSGuide` callback |
+| `src/components/screens/TitleScreen.tsx` | iOS install guide modal (3-step Share > Add to Home Screen), uses new hook fields |
+| `src/components/game/GameBoard.tsx` | `h-screen` → `h-screen-safe`, added `safe-area-all` class |
+| `src/components/screens/GameSetup.tsx` | `min-h-screen` → `min-h-screen-safe` (2 occurrences) |
+| `src/components/screens/VictoryScreen.tsx` | `min-h-screen` → `min-h-screen-safe` (4 occurrences) |
+| `src/components/screens/OnlineLobby.tsx` | `min-h-screen` → `min-h-screen-safe` (2 occurrences) |
+| `src/components/game/UpdateBanner.tsx` | Fixed bottom positioning for safe area inset |
+
+### iPad PWA Status After Fix
+
+| Component | Before | After |
+|-----------|--------|-------|
+| Viewport meta | Missing viewport-fit | `viewport-fit=cover` |
+| Safe areas (notch/home indicator) | Content clipped | Properly padded |
+| 100vh height | Includes Safari toolbar | Dynamic viewport height |
+| Install button on iOS | Never shown | Shows + guides user through manual install |
+| Standalone detection (iOS) | Only `display-mode: standalone` | Also checks `navigator.standalone` |
+| UpdateBanner on notched iPad | Could clip bottom | Safe-area aware |
+
+### Technical Notes
+
+- **`viewport-fit=cover`**: Extends the web content to fill the entire screen including areas behind the notch and home indicator. Combined with `env(safe-area-inset-*)` CSS to add padding back where needed.
+- **`100dvh` (dynamic viewport height)**: On iOS Safari, `100vh` includes the address bar area which causes layout overflow. `100dvh` adjusts dynamically when the address bar shows/hides. We use `100vh` as fallback for older browsers.
+- **iOS PWA detection**: iPad identifies as `MacIntel` with `maxTouchPoints > 1` since iPadOS 13. The `navigator.standalone` property is Apple-specific and indicates if the page runs in "Add to Home Screen" mode.
+- Build succeeds, 171 tests pass.
+
+---
+
 ## 2026-02-08 - Game Improvement Proposals (Gameplay, Quests, Cave, General)
 
 Comprehensive analysis of potential improvements across all game systems. Based on full review of current state: 5 dungeon floors, 17 quests, 43 jobs, 11 degrees, 15 locations, weather system, age system, online multiplayer, and AI opponents.

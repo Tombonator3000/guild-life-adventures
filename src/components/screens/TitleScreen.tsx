@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { Sword, Shield, Scroll, Crown, Save, Trash2, Volume2, VolumeX, Download, Globe, Settings } from 'lucide-react';
+import { Sword, Shield, Scroll, Crown, Save, Trash2, Volume2, VolumeX, Download, Globe, Settings, Share, Plus, X } from 'lucide-react';
 import { hasAutoSave, getSaveSlots, formatSaveDate, deleteSave } from '@/data/saveLoad';
 import type { SaveSlotInfo } from '@/data/saveLoad';
 import { DarkModeToggle } from '@/components/game/DarkModeToggle';
@@ -17,7 +17,7 @@ export function TitleScreen() {
   const [slots, setSlots] = useState<SaveSlotInfo[]>([]);
   const autoSaveExists = hasAutoSave();
   const { musicMuted, toggleMute } = useAudioSettings();
-  const { canInstall, install } = usePWAInstall();
+  const { canInstall, install, isIOS, showIOSGuide, dismissIOSGuide } = usePWAInstall();
 
   const handleContinue = () => {
     if (loadFromSlot(0)) {
@@ -42,7 +42,7 @@ export function TitleScreen() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen-safe overflow-hidden">
       {/* Background with overlay */}
       <div
         className="absolute inset-0 bg-cover bg-center"
@@ -51,7 +51,7 @@ export function TitleScreen() {
       <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background/90" />
 
       {/* Content */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4">
+      <div className="relative z-10 min-h-screen-safe flex flex-col items-center justify-center px-4">
         {/* Logo/Title */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-4 mb-4">
@@ -129,10 +129,10 @@ export function TitleScreen() {
             <button
               onClick={install}
               className="p-2 rounded-lg bg-background/50 hover:bg-background/70 transition-colors text-foreground flex items-center gap-1.5"
-              title="Install app for offline play"
+              title={isIOS ? 'How to install on iPad/iPhone' : 'Install app for offline play'}
             >
               <Download className="w-5 h-5" />
-              <span className="text-xs font-display hidden sm:inline">Install</span>
+              <span className="text-xs font-display hidden sm:inline">{isIOS ? 'Install' : 'Install'}</span>
             </button>
           )}
           <button
@@ -208,6 +208,49 @@ export function TitleScreen() {
 
       {/* PWA Update Notification */}
       <UpdateBanner />
+
+      {/* iOS PWA Install Guide */}
+      {showIOSGuide && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60" onClick={dismissIOSGuide} />
+          <div className="relative parchment-panel p-6 w-full max-w-sm mx-4">
+            <button
+              onClick={dismissIOSGuide}
+              className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-card-foreground"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h2 className="font-display text-xl text-card-foreground mb-4 text-center">
+              Install on iPad / iPhone
+            </h2>
+            <div className="space-y-4 text-sm text-card-foreground">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center font-display font-bold text-primary">1</div>
+                <p>Tap the <Share className="w-4 h-4 inline -mt-0.5" /> <strong>Share</strong> button in Safari's toolbar</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center font-display font-bold text-primary">2</div>
+                <p>Scroll down and tap <Plus className="w-4 h-4 inline -mt-0.5" /> <strong>Add to Home Screen</strong></p>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center font-display font-bold text-primary">3</div>
+                <p>Tap <strong>Add</strong> to install Guild Life as an app</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-4 text-center">
+              The app will run fullscreen with offline support.
+            </p>
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={dismissIOSGuide}
+                className="px-6 py-2 wood-frame text-parchment font-display text-sm hover:brightness-110"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

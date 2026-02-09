@@ -7,7 +7,7 @@ export function UpdateBanner() {
   if (!needRefresh) return null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-4 fade-in duration-300">
+    <div className="fixed left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-4 fade-in duration-300" style={{ bottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
       <div className="parchment-panel px-5 py-3 flex items-center gap-3 shadow-lg">
         <RefreshCw className="w-4 h-4 text-primary animate-spin" style={{ animationDuration: '3s' }} />
         <span className="font-display text-sm text-card-foreground">

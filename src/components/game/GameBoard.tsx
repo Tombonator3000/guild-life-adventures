@@ -172,7 +172,7 @@ export function GameBoard() {
   const SIDE_PANEL_WIDTH_PERCENT = 12;
 
   return (
-    <div className={`w-screen h-screen overflow-hidden bg-background flex ${isMobile ? 'flex-col' : 'flex-row'}`}>
+    <div className={`w-screen h-screen-safe overflow-hidden bg-background flex safe-area-all ${isMobile ? 'flex-col' : 'flex-row'}`}>
       {/* Mobile HUD - compact top bar (mobile only) */}
       {isMobile && currentPlayer && (
         <MobileHUD
