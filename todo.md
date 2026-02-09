@@ -645,6 +645,18 @@
 
 ## Completed (2026-02-09)
 
+- [x] Guild Rank Promotion Bug Fix — Legendary Champion couldn't start journeyman quests
+  - Root cause: `promoteGuildRank()` used `completedQuests` (only from regular quests) instead of `guildReputation` (from all quest-like activities)
+  - Fix: Changed to use `guildReputation`, added multi-rank promotion loop, added promotion after bounty completion
+  - Build passes, 171 tests pass
+
+- [x] Quest Panel UI Redesign — matches job listing style from Guild Hall
+  - Replaced dark wood-frame cards with light parchment cards (bg-[#e0d4b8])
+  - Replaced gold-button CSS with JonesButton component (same as job Apply buttons)
+  - JonesSectionHeader for bounty/chain/quest section headers
+  - Compact layout with stats inline, button on right side
+  - Build passes, 171 tests pass
+
 - [x] Graveyard Path Reorder — path now matches visual board layout
   - Board path changed: noble-heights → graveyard → general-store (was noble-heights → general-store → graveyard)
   - Movement paths updated with new adjacency keys and waypoints

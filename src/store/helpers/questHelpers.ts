@@ -278,7 +278,8 @@ export function createQuestActions(set: SetFn, get: GetFn) {
         }),
       }));
 
-      // Bounties don't count toward completedQuests (no guild rank from bounties)
+      // Bounties contribute to guildReputation which drives guild rank promotion
+      get().promoteGuildRank(playerId);
 
       // Check death
       get().checkDeath(playerId);
@@ -351,20 +352,31 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       if (!player) return;
 
       const rankOrder = GUILD_RANK_ORDER;
-      const currentIndex = rankOrder.indexOf(player.guildRank);
+      let currentIndex = rankOrder.indexOf(player.guildRank);
       if (currentIndex >= rankOrder.length - 1) return; // Already max rank
 
-      const nextRank = rankOrder[currentIndex + 1];
-      const required = GUILD_RANK_REQUIREMENTS[nextRank];
+      // Loop to handle multiple rank-ups at once (e.g., bounties pushed past several thresholds)
+      let newRank = player.guildRank;
+      while (currentIndex < rankOrder.length - 1) {
+        const nextRank = rankOrder[currentIndex + 1];
+        const required = GUILD_RANK_REQUIREMENTS[nextRank];
+        // Use guildReputation (incremented by quests, chain steps, AND bounties)
+        if (player.guildReputation >= required) {
+          newRank = nextRank;
+          currentIndex++;
+        } else {
+          break;
+        }
+      }
 
-      if (player.completedQuests >= required) {
+      if (newRank !== player.guildRank) {
         set((state) => ({
           players: state.players.map((p) =>
             p.id === playerId
-              ? { ...p, guildRank: nextRank }
+              ? { ...p, guildRank: newRank }
               : p
           ),
-          eventMessage: `Congratulations! You have been promoted to ${nextRank.charAt(0).toUpperCase() + nextRank.slice(1)}!`,
+          eventMessage: `Congratulations! You have been promoted to ${newRank.charAt(0).toUpperCase() + newRank.slice(1)}!`,
         }));
       }
     },
