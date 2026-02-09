@@ -9,6 +9,7 @@ export interface GameOptions {
   // === Gameplay ===
   enableAging: boolean;        // Player aging system (birthdays, elder decay, health crises)
   enableWeatherEvents: boolean; // Random weather events affecting gameplay
+  enableFestivals: boolean;    // Seasonal festivals every 12 weeks
   enablePermadeath: boolean;   // Players die permanently (vs respawn at cost)
 
   // === Display ===
@@ -27,6 +28,7 @@ const DEFAULT_OPTIONS: GameOptions = {
   // Gameplay
   enableAging: false,           // Off by default — opt-in feature
   enableWeatherEvents: true,
+  enableFestivals: true,
   enablePermadeath: true,
 
   // Display

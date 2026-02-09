@@ -168,6 +168,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     stockPrices: getInitialStockPrices(),
     weekendEvent: null,
     weather: { ...CLEAR_WEATHER },
+    activeFestival: null,
 
     // AI speed control
     aiSpeedMultiplier: 1,
@@ -230,6 +231,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         stockPrices: getInitialStockPrices(),
         weekendEvent: null,
         weather: { ...CLEAR_WEATHER },
+        activeFestival: null,
       });
     },
 
@@ -307,6 +309,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         stockPrices: gs.stockPrices || getInitialStockPrices(),
         weekendEvent: null,
         weather: gs.weather || { ...CLEAR_WEATHER },
+        activeFestival: gs.activeFestival || null,
       });
       return true;
     },

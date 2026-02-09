@@ -1,5 +1,140 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Gameplay Features C1, C4, C6, C7
+
+Implemented 4 gameplay features from the C-category proposals.
+
+### C1: Seasonal Festivals (4 festivals every 12 weeks)
+
+Created `src/data/festivals.ts` with 4 seasonal festivals that rotate every 12 weeks:
+
+1. **Harvest Festival** (wk 12, 60, ...) — +5 happiness, prices -15% (abundant goods)
+2. **Winter Solstice** (wk 24, 72, ...) — +3 happiness, +2 study progress, +3 dependability
+3. **Spring Tournament** (wk 36, 84, ...) — +3 happiness, dungeon gold +50%
+4. **Midsummer Fair** (wk 48, 96, ...) — +5 happiness, +10g, wages +15%
+
+**Integration points:**
+- `processWeekEnd` in `weekEndHelpers.ts` — checks for festival, applies effects to all players
+- `workShift` in `workEducationHelpers.ts` — festival wage multiplier (Midsummer Fair)
+- `CombatView.tsx` — festival dungeon gold multiplier (Spring Tournament)
+- `useGrimwaldAI.ts` — AI dungeon handler uses festival multiplier
+- `gameOptions.ts` — `enableFestivals` toggle (default: on)
+- `OptionsMenu.tsx` — UI toggle for festivals
+- `GameState` — `activeFestival: FestivalId | null` synced, saved, loaded
+
+**Files created:**
+- `src/data/festivals.ts` — festival definitions, cycle logic, getActiveFestival()
+
+**Files modified:**
+- `src/types/game.types.ts` — added `activeFestival` to GameState
+- `src/store/gameStore.ts` — initial state, reset, save/load
+- `src/store/helpers/weekEndHelpers.ts` — festival check + effects in processWeekEnd
+- `src/store/helpers/workEducationHelpers.ts` — festival wage multiplier in workShift
+- `src/components/game/CombatView.tsx` — festival dungeon gold multiplier
+- `src/hooks/useGrimwaldAI.ts` — AI dungeon festival multiplier
+- `src/data/gameOptions.ts` — enableFestivals option
+- `src/components/game/OptionsMenu.tsx` — festivals toggle
+
+### C4: AI Rival Enhancement (competitive AI)
+
+Created `src/hooks/ai/actions/rivalryActions.ts` — new AI action generator that makes the AI compete with human players.
+
+**Rivalry behaviors (medium/hard AI only):**
+- **Job stealing**: AI analyzes rival's job, applies for it if qualified and better-paying
+- **Quest racing**: When rival is quest-focused and threatening, AI grabs quests first
+- **Education blocking**: Boosts study priority when rival is education-focused
+- **Aggressive banking**: Deposits more gold to protect savings when rival focuses on wealth
+
+**How it works:**
+1. AI identifies the most threatening rival (highest overall goal progress)
+2. Checks if rival is close to winning (any goal >= 85% or overall >= 70%)
+3. Generates rivalry actions with competitive priorities
+4. Actions integrate with existing priority system (higher priority = more likely)
+
+**Files created:**
+- `src/hooks/ai/actions/rivalryActions.ts` — rivalry action generator
+
+**Files modified:**
+- `src/hooks/ai/actions/actionContext.ts` — added `rivals: Player[]` to ActionContext
+- `src/hooks/ai/actions/index.ts` — barrel export for rivalryActions
+- `src/hooks/ai/actionGenerator.ts` — passes rivals to context, calls generateRivalryActions
+
+### C6: Achievements (meta-progression across games)
+
+Created a persistent achievement system that tracks progress across multiple play sessions.
+
+**24 achievements across 6 categories:**
+- **Wealth** (4): First Hundred, Wealthy Merchant, Guildholm Tycoon, Gold Hoarder
+- **Combat** (4): Into the Depths, Dungeon Delver, Dungeon Master, Boss Slayer
+- **Education** (3): Scholar, Academic, Grand Scholar
+- **Social** (4): Adventurer, Seasoned Adventurer, Guild Master, Noble Life
+- **Exploration** (4): Festival Goer, Festival Fanatic, Survivor, Veteran
+- **Mastery** (5): Victory!, Speed Runner, Champion, Pure Joy, Completionist (hidden)
+
+**Cumulative stats tracked:**
+gamesWon, gamesPlayed, totalGoldEarned, totalQuestsCompleted, totalDegreesEarned, totalDungeonFloorsCleared, totalWeeksPlayed, highestHappiness, highestWealth, totalJobsHeld, bossesDefeated, festivalsAttended
+
+**Integration points:**
+- `checkVictory` — checks all achievements on every victory check + records win
+- `completeQuest` — tracks quest completion stats
+- `completeDegree` — tracks degree completion stats
+- `clearDungeonFloor` — tracks dungeon stats
+- `processWeekEnd` — tracks weeks played + festival attendance
+
+**Files created:**
+- `src/data/achievements.ts` — achievement definitions, localStorage persistence, check/unlock logic
+- `src/hooks/useAchievements.ts` — React hook with useSyncExternalStore
+- `src/components/game/AchievementsPanel.tsx` — UI panel with category grouping
+
+**Files modified:**
+- `src/store/helpers/questHelpers.ts` — achievement checks in checkVictory, completeQuest
+- `src/store/helpers/workEducationHelpers.ts` — achievement checks in completeDegree
+- `src/store/helpers/economy/equipmentHelpers.ts` — achievement checks in clearDungeonFloor
+- `src/store/helpers/weekEndHelpers.ts` — achievement stats for weeks/festivals
+- `src/components/game/RightSideTabs.tsx` — added Achievements tab with Trophy icon
+
+### C7: Random Travel Events (10% chance during travel)
+
+Created `src/data/travelEvents.ts` with 10 travel events that trigger randomly during movement.
+
+**Travel events (10 total):**
+
+*Positive:*
+- Found Coin Purse (+15-35g, +2 hap)
+- Wandering Merchant (+3 hap, +5 HP)
+- Hidden Shortcut (+1 hap, +2 hours saved)
+- Street Bard (+5 hap, -1 hour)
+
+*Negative:*
+- Pickpocket! (-10-30g, -3 hap)
+- Muddy Road (-2 hap, -1 hr, -5 HP)
+- Took a Wrong Turn (-1 hap, -2 hrs)
+- Aggressive Stray Dog (-2 hap, -1 hr, -3 HP)
+
+*Mixed:*
+- Injured Traveler (+10g, +4 hap, -2 hrs)
+- Old Map Fragment (+25g, +3 hap, -3 hrs)
+
+**Trigger conditions:**
+- 10% chance per trip
+- Only on trips of 3+ steps
+- Applies to both human and AI players (UI notification for humans only)
+
+**Files created:**
+- `src/data/travelEvents.ts` — event definitions, rollTravelEvent(), formatTravelEvent()
+
+**Files modified:**
+- `src/store/helpers/playerHelpers.ts` — travel event check after movement in movePlayer
+
+### Technical Notes
+
+- TypeScript compiles cleanly (tsc --noEmit passes with 0 errors)
+- All new features use existing patterns (Zustand actions, SetFn/GetFn, localStorage persistence)
+- Festival and achievement systems follow weather system pattern for consistency
+- No breaking changes to existing save format (new fields have null/default fallbacks)
+
+---
+
 ## 2026-02-09 - Kategori B: Quest System (B1-B5)
 
 Implemented all 5 quest system features from the B-category proposals.

@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import {
   X, Settings, Gamepad2, Volume2, VolumeX, Monitor,
-  Gauge, RotateCcw, Cake, Skull, Zap, Eye, Layout, Bell, Timer,
+  Gauge, RotateCcw, Cake, Skull, Zap, Eye, Layout, Bell, Timer, Sparkles,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
@@ -158,6 +158,18 @@ function GameplayTab({
           <Switch
             checked={options.enableWeatherEvents}
             onCheckedChange={(v) => setOption('enableWeatherEvents', v)}
+          />
+        }
+      />
+
+      <OptionRow
+        icon={<Sparkles className="w-4 h-4 text-purple-500" />}
+        label="Seasonal Festivals"
+        description="4 festivals every 12 weeks with unique effects on the economy and gameplay."
+        control={
+          <Switch
+            checked={options.enableFestivals}
+            onCheckedChange={(v) => setOption('enableFestivals', v)}
           />
         }
       />

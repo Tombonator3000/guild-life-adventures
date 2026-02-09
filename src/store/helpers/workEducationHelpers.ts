@@ -6,6 +6,8 @@ import { GRADUATION_BONUSES, getDegree } from '@/data/education';
 import { WORK_HAPPINESS_AGE } from '@/types/game.types';
 import { getJob } from '@/data/jobs';
 import { getGameOption } from '@/data/gameOptions';
+import { FESTIVALS } from '@/data/festivals';
+import { updateAchievementStats, checkAchievements } from '@/data/achievements';
 import type { SetFn, GetFn } from '../storeTypes';
 
 // Map degrees to legacy education paths for quest compatibility
@@ -36,7 +38,12 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
 
           // Work bonus: all shifts get a flat 15% efficiency bonus on earnings
           // Applied to earnings directly (not hours) so all shift lengths benefit equally
-          let earnings = Math.floor(hours * effectiveWage * 1.15);
+          // C1: Festival wage multiplier (e.g. Midsummer Fair +15%)
+          const festivalId = get().activeFestival;
+          const festivalWageMult = festivalId
+            ? (FESTIVALS.find(f => f.id === festivalId)?.wageMultiplier ?? 1.0)
+            : 1.0;
+          let earnings = Math.floor(hours * effectiveWage * 1.15 * festivalWageMult);
 
           // Apply permanent gold bonus from rare drops (e.g., Goblin's Lucky Coin)
           if (p.permanentGoldBonus > 0) {
@@ -241,6 +248,12 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
           };
         }),
       }));
+      // C6: Track degree completion for achievements
+      const updatedPlayer = get().players.find(p => p.id === playerId);
+      if (updatedPlayer && !updatedPlayer.isAI) {
+        updateAchievementStats({ totalDegreesEarned: 1 });
+        checkAchievements({ completedDegrees: updatedPlayer.completedDegrees.length });
+      }
     },
   };
 }

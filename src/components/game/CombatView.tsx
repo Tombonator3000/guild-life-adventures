@@ -7,6 +7,8 @@ import { useState, useCallback } from 'react';
 import { Sparkles } from 'lucide-react';
 import type { DungeonFloor } from '@/data/dungeon';
 import { getLootMultiplier } from '@/data/dungeon';
+import { FESTIVALS } from '@/data/festivals';
+import { useGameStore } from '@/store/gameStore';
 import { calculateCombatStats } from '@/data/items';
 import { calculateEducationBonuses } from '@/data/dungeon';
 import type { Player } from '@/types/game.types';
@@ -131,10 +133,15 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
     const lootMult = getLootMultiplier(floor, player.guildRank);
     // Defeat forfeits 75% gold (worse than retreat's 50%) so retreat is always the better choice
     const defeatGoldPenalty = (!runState.bossDefeated && !runState.retreated) ? 0.25 : 1.0;
+    // C1: Festival dungeon gold multiplier (e.g. Spring Tournament +50%)
+    const festivalId = useGameStore.getState().activeFestival;
+    const festivalDungeonMult = festivalId
+      ? (FESTIVALS.find(f => f.id === festivalId)?.dungeonGoldMultiplier ?? 1.0)
+      : 1.0;
     // healthChange=0 here because damage was already applied per-encounter via onEncounterHealthDelta
     onComplete({
       success: runState.bossDefeated,
-      goldEarned: Math.floor(runState.totalGold * lootMult * defeatGoldPenalty),
+      goldEarned: Math.floor(runState.totalGold * lootMult * defeatGoldPenalty * festivalDungeonMult),
       totalDamage: runState.totalDamage,
       totalHealed: runState.totalHealed,
       healthChange: 0, // Already applied per-encounter

@@ -1,6 +1,7 @@
 // Guild Life - Game Types (based on Jones in the Fast Lane)
 
 import type { WeatherState } from '@/data/weather';
+import type { FestivalId } from '@/data/festivals';
 
 export type LocationId =
   | 'noble-heights'
@@ -232,6 +233,8 @@ export interface GameState {
   weekendEvent: WeekendEventResult | null;
   // Weather system (rare weather events with particle effects)
   weather: WeatherState;
+  // Seasonal festival active this week (null = no festival)
+  activeFestival: FestivalId | null;
   // AI speed control
   aiSpeedMultiplier: number;
   skipAITurn: boolean;

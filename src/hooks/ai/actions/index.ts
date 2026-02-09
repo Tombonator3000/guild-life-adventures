@@ -10,3 +10,4 @@ export { generateGoalActions } from './goalActions';
 export { generateStrategicActions } from './strategicActions';
 export { generateEconomicActions } from './economicActions';
 export { generateQuestDungeonActions } from './questDungeonActions';
+export { generateRivalryActions } from './rivalryActions';
