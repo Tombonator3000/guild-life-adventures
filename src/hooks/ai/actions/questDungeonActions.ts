@@ -134,7 +134,7 @@ export function generateQuestDungeonActions(ctx: ActionContext): AIAction[] {
     }
   }
 
-  // B2: Take bounty (no Guild Pass needed, lower priority than quests)
+  // B2: Take bounty (Guild Pass required, lower priority than quests)
   const week = ctx.week ?? 1;
   const bestBounty = getBestBounty(player, week);
   if (bestBounty && !bestQuest && !bestChain) {
