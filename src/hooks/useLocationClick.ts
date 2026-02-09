@@ -10,12 +10,20 @@ export function useLocationClick({
   isOnline,
   isLocalPlayerTurn,
   startAnimation,
+  redirectAnimation,
   broadcastMovement,
 }: {
   animatingPlayer: string | null;
   isOnline: boolean;
   isLocalPlayerTurn: boolean;
   startAnimation: (
+    playerId: string,
+    destination: LocationId,
+    moveCost: number,
+    path: LocationId[],
+    isPartial?: boolean,
+  ) => void;
+  redirectAnimation: (
     playerId: string,
     destination: LocationId,
     moveCost: number,
@@ -36,8 +44,49 @@ export function useLocationClick({
   const handleLocationClick = (locationId: string) => {
     if (!currentPlayer) return;
 
-    // Don't allow clicks during animation
-    if (animatingPlayer) return;
+    // During animation: allow the animating player to redirect to a new destination
+    if (animatingPlayer) {
+      if (animatingPlayer === currentPlayer.id && locationId !== currentPlayer.currentLocation) {
+        // Recalculate path from original location (movePlayer hasn't been called yet)
+        const baseMoveCost = getMovementCost(currentPlayer.currentLocation, locationId as LocationId);
+        const travelPath = getPath(currentPlayer.currentLocation as LocationId, locationId as LocationId);
+        const weatherExtraCost = (baseMoveCost > 0 && weather?.movementCostExtra)
+          ? travelPath.length * weather.movementCostExtra
+          : 0;
+        const moveCost = baseMoveCost + weatherExtraCost;
+
+        if (currentPlayer.timeRemaining >= moveCost) {
+          playSFX('footstep');
+          redirectAnimation(
+            currentPlayer.id,
+            locationId as LocationId,
+            moveCost,
+            travelPath,
+          );
+          if (isOnline) {
+            broadcastMovement(currentPlayer.id, travelPath);
+          }
+        } else if (currentPlayer.timeRemaining > 0) {
+          const fullPath = getPath(currentPlayer.currentLocation as LocationId, locationId as LocationId);
+          const stepsCanTake = currentPlayer.timeRemaining;
+          if (stepsCanTake > 0 && fullPath.length > 1) {
+            const partialPath = fullPath.slice(0, stepsCanTake + 1);
+            const partialDestination = partialPath[partialPath.length - 1];
+            redirectAnimation(
+              currentPlayer.id,
+              partialDestination,
+              currentPlayer.timeRemaining,
+              partialPath,
+              true,
+            );
+            if (isOnline) {
+              broadcastMovement(currentPlayer.id, partialPath);
+            }
+          }
+        }
+      }
+      return;
+    }
 
     // Online mode: only allow clicks when it's this client's turn
     if (isOnline && !isLocalPlayerTurn) {

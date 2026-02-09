@@ -116,8 +116,10 @@ export function GameBoard() {
   const {
     animatingPlayer,
     animationPath,
+    pathVersion,
     handleAnimationComplete,
     startAnimation,
+    redirectAnimation,
     startRemoteAnimation,
   } = usePlayerAnimation();
 
@@ -163,6 +165,7 @@ export function GameBoard() {
     isOnline,
     isLocalPlayerTurn,
     startAnimation,
+    redirectAnimation,
     broadcastMovement,
   });
 
@@ -265,7 +268,7 @@ export function GameBoard() {
             <div className="absolute inset-0 pointer-events-none z-40">
               {players.filter(p => p.id === animatingPlayer).map((player) => (
                 <AnimatedPlayerToken
-                  key={player.id}
+                  key={`${player.id}-${pathVersion}`}
                   player={player}
                   isCurrent={true}
                   animationPath={animationPath}

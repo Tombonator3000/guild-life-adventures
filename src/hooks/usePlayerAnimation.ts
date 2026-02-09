@@ -16,6 +16,7 @@ export function usePlayerAnimation() {
 
   const [animatingPlayer, setAnimatingPlayer] = useState<string | null>(null);
   const [animationPath, setAnimationPath] = useState<LocationId[] | null>(null);
+  const [pathVersion, setPathVersion] = useState(0);
   const pendingMoveRef = useRef<PendingMove | null>(null);
 
   // Handle animation completion
@@ -59,6 +60,28 @@ export function usePlayerAnimation() {
     };
     setAnimatingPlayer(playerId);
     setAnimationPath(path);
+    setPathVersion(v => v + 1);
+  }, []);
+
+  // Redirect animation mid-movement to a new destination.
+  // The player state hasn't changed yet (movePlayer called only on completion),
+  // so we restart the animation from the player's original location.
+  const redirectAnimation = useCallback((
+    playerId: string,
+    destination: LocationId,
+    timeCost: number,
+    path: LocationId[],
+    isPartial?: boolean,
+  ) => {
+    pendingMoveRef.current = {
+      playerId,
+      destination,
+      timeCost,
+      isPartial,
+    };
+    // Increment pathVersion to force AnimatedPlayerToken remount (resets internal refs)
+    setPathVersion(v => v + 1);
+    setAnimationPath(path);
   }, []);
 
   // Start a visual-only animation for a remote player (no movePlayer on completion)
@@ -70,13 +93,16 @@ export function usePlayerAnimation() {
     // When handleAnimationComplete fires, pendingMoveRef is null so it just clears state.
     setAnimatingPlayer(playerId);
     setAnimationPath(path);
+    setPathVersion(v => v + 1);
   }, []);
 
   return {
     animatingPlayer,
     animationPath,
+    pathVersion,
     handleAnimationComplete,
     startAnimation,
+    redirectAnimation,
     startRemoteAnimation,
   };
 }

@@ -10,6 +10,8 @@ import { PLAYER_COLORS, AI_COLOR, AI_OPPONENTS, HOURS_PER_TURN, STARTING_AGE } f
 import type { AIConfig } from '@/types/game.types';
 import { getInitialStockPrices } from '@/data/stocks';
 import { CLEAR_WEATHER } from '@/data/weather';
+import type { WeatherType, WeatherParticle } from '@/data/weather';
+import { FESTIVALS } from '@/data/festivals';
 import { saveGame, loadGame } from '@/data/saveLoad';
 import { createPlayerActions } from './helpers/playerHelpers';
 import { createEconomyActions } from './helpers/economyHelpers';
@@ -332,6 +334,49 @@ export const useGameStore = create<GameStore>((set, get) => {
     // Tutorial
     setShowTutorial: (show: boolean) => set({ showTutorial: show }),
     setTutorialStep: (step: number) => set({ tutorialStep: step }),
+
+    // Debug actions (developer panel only)
+    setDebugWeather: (type: string) => {
+      if (type === 'clear') {
+        set({ weather: { ...CLEAR_WEATHER } });
+      } else {
+        // Import weather events data to set specific weather
+        const weatherMap: Record<string, { name: string; description: string; particle: string | null; movementCostExtra: number; priceMultiplier: number; happinessPerWeek: number; robberyMultiplier: number; foodSpoilageChance: number }> = {
+          'snowstorm': { name: 'Snowstorm', description: 'DEBUG: Forced snowstorm.', particle: 'snow', movementCostExtra: 1, priceMultiplier: 1.10, happinessPerWeek: -2, robberyMultiplier: 0.5, foodSpoilageChance: 0 },
+          'thunderstorm': { name: 'Thunderstorm', description: 'DEBUG: Forced thunderstorm.', particle: 'rain', movementCostExtra: 1, priceMultiplier: 1.05, happinessPerWeek: -1, robberyMultiplier: 1.5, foodSpoilageChance: 0 },
+          'drought': { name: 'Drought', description: 'DEBUG: Forced drought.', particle: 'heatwave', movementCostExtra: 0, priceMultiplier: 1.15, happinessPerWeek: -2, robberyMultiplier: 1.0, foodSpoilageChance: 0.25 },
+          'enchanted-fog': { name: 'Enchanted Fog', description: 'DEBUG: Forced fog.', particle: 'fog', movementCostExtra: 1, priceMultiplier: 0.95, happinessPerWeek: 3, robberyMultiplier: 1.2, foodSpoilageChance: 0 },
+          'harvest-rain': { name: 'Harvest Rain', description: 'DEBUG: Forced rain.', particle: 'light-rain', movementCostExtra: 0, priceMultiplier: 0.90, happinessPerWeek: 2, robberyMultiplier: 1.0, foodSpoilageChance: 0 },
+        };
+        const data = weatherMap[type];
+        if (data) {
+          set({
+            weather: {
+              type: type as WeatherType,
+              name: data.name,
+              description: data.description,
+              weeksRemaining: 99, // Persist until manually cleared
+              particle: data.particle as WeatherParticle | null,
+              movementCostExtra: data.movementCostExtra,
+              priceMultiplier: data.priceMultiplier,
+              happinessPerWeek: data.happinessPerWeek,
+              robberyMultiplier: data.robberyMultiplier,
+              foodSpoilageChance: data.foodSpoilageChance,
+            },
+          });
+        }
+      }
+    },
+    setDebugFestival: (festivalId: string | null) => {
+      if (!festivalId) {
+        set({ activeFestival: null });
+      } else {
+        const festival = FESTIVALS.find(f => f.id === festivalId);
+        if (festival) {
+          set({ activeFestival: festival.id });
+        }
+      }
+    },
   };
 });
 

@@ -122,6 +122,9 @@ export interface GameStore extends GameState {
   tutorialStep: number;
   setShowTutorial: (show: boolean) => void;
   setTutorialStep: (step: number) => void;
+  // Debug actions (developer panel)
+  setDebugWeather: (type: string) => void;
+  setDebugFestival: (festivalId: string | null) => void;
 }
 
 // Zustand set/get function types
