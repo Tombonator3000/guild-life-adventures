@@ -1,5 +1,37 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Guild Rank Promotion Bug Fix & Quest Panel UI Redesign
+
+### Bug Fix: Legendary Champion Can't Start Journeyman Quests
+
+**Root cause:** `promoteGuildRank()` in `questHelpers.ts` used `player.completedQuests` to determine rank promotion, but `completedQuests` was only incremented by regular quests and chain steps — NOT by bounties. Meanwhile `guildReputation` IS incremented by all quest-like activities (regular quests +1, chain steps +1/+3, bounties +1). A player doing lots of bounties would accumulate high reputation (50 = "Legendary Champion" shown in the UI) but their actual `guildRank` stayed low because `completedQuests` count was low.
+
+**Fixes applied:**
+1. Changed `promoteGuildRank()` to use `guildReputation` instead of `completedQuests` for rank promotion checks
+2. Made promotion loop through multiple ranks at once (handles case where bounties push past several thresholds at once)
+3. Added `promoteGuildRank()` call after bounty completion (was missing entirely)
+
+**Files changed:**
+- `src/store/helpers/questHelpers.ts` — promoteGuildRank logic + completeBounty integration
+
+### UI Redesign: Quest Panel Matches Job Layout
+
+Redesigned QuestPanel (bounties, quest chains, regular quests) to use the same visual style as the GuildHallPanel job listings:
+- Replaced dark `wood-frame` cards with light parchment cards (`bg-[#e0d4b8]`, `border-[#8b7355]`)
+- Replaced `gold-button` CSS buttons with `JonesButton` component (same as job Apply/Request Raise buttons)
+- Replaced section headers (icon + text) with `JonesSectionHeader` component (brown bar style)
+- Dark text on light background, consistent with job listings
+- Compact layout with stats/requirements inline, button on the right side
+- Active quest card highlighted with gold border (same as current job highlight)
+- Cleaned up unused imports (Clock, Heart, Coins, Scroll, Star, Shield, QuestChainStep, Bounty, getNextChainStep)
+
+**Files changed:**
+- `src/components/game/QuestPanel.tsx` — full UI redesign
+
+**Verification:** TypeScript clean, build succeeds, 171/171 tests pass.
+
+---
+
 ## 2026-02-09 - Salary Stabilization & Job/Education Balance Audit
 
 Fixed wild salary fluctuations, ensured proper wage hierarchy from entry to top jobs, and audited education-to-job mapping for fairness.
