@@ -35,7 +35,7 @@ interface QuestPanelProps {
   onTakeBounty: (bountyId: string) => void;
 }
 
-function ScaledRewardDisplay({ baseGold, baseHappiness, player }: { baseGold: number; baseHappiness: number; player: Player }) {
+export function ScaledRewardDisplay({ baseGold, baseHappiness, player }: { baseGold: number; baseHappiness: number; player: Player }) {
   const scaledGold = getScaledQuestGold(baseGold, player.dungeonFloorsCleared);
   const repMult = getReputationGoldMultiplier(player.guildReputation);
   const finalGold = Math.round(scaledGold * repMult);
@@ -55,7 +55,7 @@ function ScaledRewardDisplay({ baseGold, baseHappiness, player }: { baseGold: nu
   );
 }
 
-function ReputationBar({ player }: { player: Player }) {
+export function ReputationBar({ player }: { player: Player }) {
   const current = getReputationMilestone(player.guildReputation);
   const next = getNextReputationMilestone(player.guildReputation);
 
@@ -168,7 +168,8 @@ function resolveActiveQuest(player: Player, week: number): {
 export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest, onAbandonQuest, onTakeChainQuest, onTakeBounty }: QuestPanelProps) {
   const activeQuestData = resolveActiveQuest(player, week);
 
-  if (activeQuestData) {
+  // Bounties are handled by BountyBoardPanel — skip active bounty display here
+  if (activeQuestData && activeQuestData.type !== 'bounty') {
     const rankInfo = QUEST_RANK_INFO[activeQuestData.rank as keyof typeof QUEST_RANK_INFO] || { name: activeQuestData.rank, color: 'text-muted-foreground' };
 
     return (
@@ -216,8 +217,7 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
     );
   }
 
-  // No active quest — show bounties, chains, and regular quests
-  const bounties = getWeeklyBounties(week);
+  // No active quest/chain — show chains and regular quests (bounties are in BountyBoardPanel)
 
   return (
     <div className="space-y-2">
@@ -227,40 +227,64 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
         <CooldownWarning weeksLeft={player.questCooldownWeeksLeft} />
       )}
 
-      {/* Bounty Board — available without Guild Pass */}
-      <JonesSectionHeader title="BOUNTY BOARD (WEEKLY)" />
+      {/* Quest Chains */}
+      <JonesSectionHeader title="QUEST CHAINS" />
       <div className="space-y-1">
-        {bounties.map(bounty => {
-          const alreadyDone = player.completedBountiesThisWeek.includes(bounty.id);
+        {QUEST_CHAINS.map(chain => {
+          const stepsCompleted = player.questChainProgress[chain.id] || 0;
+          const isComplete = stepsCompleted >= chain.steps.length;
+          const nextStep = isComplete ? null : chain.steps[stepsCompleted];
+          const canStart = nextStep ? canTakeChainStep(chain, nextStep, player.guildRank, player.education, player.dungeonFloorsCleared) : { canTake: false };
           const hasActiveQuest = !!player.activeQuest;
-          const hasTime = player.timeRemaining >= bounty.timeRequired;
-          const hasHealth = player.health > bounty.healthRisk;
-          const isDisabled = alreadyDone || hasActiveQuest || !hasTime || !hasHealth;
+          const hasCooldown = player.questCooldownWeeksLeft > 0;
+          const hasTime = nextStep ? player.timeRemaining >= nextStep.timeRequired : false;
+          const isDisabled = isComplete || !canStart.canTake || hasActiveQuest || hasCooldown || !hasTime;
 
           return (
-            <div key={bounty.id} className={`bg-[#e0d4b8] border p-2 rounded ${alreadyDone ? 'border-green-500' : 'border-[#8b7355]'}`}>
+            <div key={chain.id} className={`bg-[#e0d4b8] border p-2 rounded ${isComplete ? 'border-green-500' : 'border-[#8b7355]'}`}>
               <div className="flex justify-between items-baseline">
-                <span className="font-mono text-sm text-[#3d2a14]">{bounty.name}</span>
-                <span className="font-mono text-sm text-[#8b6914] font-bold">+{getScaledQuestGold(bounty.goldReward, player.dungeonFloorsCleared)}g</span>
+                <span className="font-mono text-sm text-[#3d2a14]">{chain.name}</span>
+                <span className="font-mono text-xs text-purple-700 font-bold">Chain ({stepsCompleted}/{chain.steps.length})</span>
               </div>
-              <p className="text-xs text-[#6b5a42] mt-0.5 line-clamp-1">{bounty.description}</p>
-              <div className="flex items-center gap-2 text-xs text-[#6b5a42] mt-1">
-                <span>{bounty.timeRequired}h</span>
-                {bounty.healthRisk > 0 && <span className="text-red-600">-{bounty.healthRisk}HP</span>}
-                <span>+{bounty.happinessReward}hap</span>
-              </div>
+              <p className="text-xs text-[#6b5a42] mt-0.5">{chain.description}</p>
+
+              {isComplete ? (
+                <div className="flex items-center gap-1 text-xs text-green-600 font-mono font-bold mt-1">
+                  <Check className="w-3 h-3" /> Chain Complete!
+                </div>
+              ) : nextStep && (
+                <>
+                  <div className="text-xs text-[#6b5a42] mt-1">
+                    Step {stepsCompleted + 1}: <span className="text-[#3d2a14] font-bold">{nextStep.name}</span> — {nextStep.description}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs mt-1">
+                    <ScaledRewardDisplay baseGold={nextStep.goldReward} baseHappiness={nextStep.happinessReward} player={player} />
+                    <span className="text-[#6b5a42]">{nextStep.timeRequired}h</span>
+                    {nextStep.healthRisk > 0 && <span className="text-red-600">-{nextStep.healthRisk}HP</span>}
+                  </div>
+                  {stepsCompleted + 1 >= chain.steps.length && (
+                    <div className="text-xs text-[#8b6914] mt-1">
+                      Chain Bonus: +{chain.completionBonusGold}g, +{chain.completionBonusHappiness}hap
+                    </div>
+                  )}
+                  {!canStart.canTake && canStart.reason && (
+                    <div className="flex items-center gap-1 text-xs text-red-600 mt-1">
+                      <AlertTriangle className="w-3 h-3" /> {canStart.reason}
+                    </div>
+                  )}
+                </>
+              )}
+
               <div className="flex justify-between items-center mt-1">
-                <span className="text-xs text-[#8b7355]">Bounty</span>
-                {alreadyDone ? (
-                  <span className="flex items-center gap-1 text-xs text-green-600 font-mono font-bold">
-                    <Check className="w-3 h-3" /> Done
-                  </span>
-                ) : (
+                <span className="text-xs text-[#8b7355]">
+                  {isComplete ? '' : `Requires ${chain.requiredGuildRank} rank`}
+                </span>
+                {!isComplete && (
                   <JonesButton
-                    label="Accept Bounty"
-                    onClick={() => { playSFX('quest-accept'); onTakeBounty(bounty.id); }}
+                    label={`Accept Step ${stepsCompleted + 1}`}
+                    onClick={() => { playSFX('quest-accept'); onTakeChainQuest(chain.id); }}
                     disabled={isDisabled}
-                    variant="secondary"
+                    variant={canStart.canTake ? 'primary' : 'secondary'}
                   />
                 )}
               </div>
@@ -268,76 +292,6 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
           );
         })}
       </div>
-
-      {/* Quest Chains — requires Guild Pass */}
-      {player.hasGuildPass && (
-        <>
-          <JonesSectionHeader title="QUEST CHAINS" />
-          <div className="space-y-1">
-            {QUEST_CHAINS.map(chain => {
-              const stepsCompleted = player.questChainProgress[chain.id] || 0;
-              const isComplete = stepsCompleted >= chain.steps.length;
-              const nextStep = isComplete ? null : chain.steps[stepsCompleted];
-              const canStart = nextStep ? canTakeChainStep(chain, nextStep, player.guildRank, player.education, player.dungeonFloorsCleared) : { canTake: false };
-              const hasActiveQuest = !!player.activeQuest;
-              const hasCooldown = player.questCooldownWeeksLeft > 0;
-              const hasTime = nextStep ? player.timeRemaining >= nextStep.timeRequired : false;
-              const isDisabled = isComplete || !canStart.canTake || hasActiveQuest || hasCooldown || !hasTime;
-
-              return (
-                <div key={chain.id} className={`bg-[#e0d4b8] border p-2 rounded ${isComplete ? 'border-green-500' : 'border-[#8b7355]'}`}>
-                  <div className="flex justify-between items-baseline">
-                    <span className="font-mono text-sm text-[#3d2a14]">{chain.name}</span>
-                    <span className="font-mono text-xs text-purple-700 font-bold">Chain ({stepsCompleted}/{chain.steps.length})</span>
-                  </div>
-                  <p className="text-xs text-[#6b5a42] mt-0.5">{chain.description}</p>
-
-                  {isComplete ? (
-                    <div className="flex items-center gap-1 text-xs text-green-600 font-mono font-bold mt-1">
-                      <Check className="w-3 h-3" /> Chain Complete!
-                    </div>
-                  ) : nextStep && (
-                    <>
-                      <div className="text-xs text-[#6b5a42] mt-1">
-                        Step {stepsCompleted + 1}: <span className="text-[#3d2a14] font-bold">{nextStep.name}</span> — {nextStep.description}
-                      </div>
-                      <div className="flex items-center gap-2 text-xs mt-1">
-                        <ScaledRewardDisplay baseGold={nextStep.goldReward} baseHappiness={nextStep.happinessReward} player={player} />
-                        <span className="text-[#6b5a42]">{nextStep.timeRequired}h</span>
-                        {nextStep.healthRisk > 0 && <span className="text-red-600">-{nextStep.healthRisk}HP</span>}
-                      </div>
-                      {stepsCompleted + 1 >= chain.steps.length && (
-                        <div className="text-xs text-[#8b6914] mt-1">
-                          Chain Bonus: +{chain.completionBonusGold}g, +{chain.completionBonusHappiness}hap
-                        </div>
-                      )}
-                      {!canStart.canTake && canStart.reason && (
-                        <div className="flex items-center gap-1 text-xs text-red-600 mt-1">
-                          <AlertTriangle className="w-3 h-3" /> {canStart.reason}
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                  <div className="flex justify-between items-center mt-1">
-                    <span className="text-xs text-[#8b7355]">
-                      {isComplete ? '' : `Requires ${chain.requiredGuildRank} rank`}
-                    </span>
-                    {!isComplete && (
-                      <JonesButton
-                        label={`Accept Step ${stepsCompleted + 1}`}
-                        onClick={() => { playSFX('quest-accept'); onTakeChainQuest(chain.id); }}
-                        disabled={isDisabled}
-                        variant={canStart.canTake ? 'primary' : 'secondary'}
-                      />
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
 
       {/* Regular Quests */}
       <JonesSectionHeader title="AVAILABLE QUESTS" />
