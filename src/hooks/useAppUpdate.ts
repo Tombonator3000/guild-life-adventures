@@ -1,6 +1,7 @@
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { useCallback } from 'react';
 
-const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000; // Check for updates every 60 minutes
+const UPDATE_CHECK_INTERVAL_MS = 5 * 60 * 1000; // Check for updates every 5 minutes
 
 export function useAppUpdate() {
   const {
@@ -9,6 +10,8 @@ export function useAppUpdate() {
   } = useRegisterSW({
     onRegisteredSW(_swUrl, registration) {
       if (!registration) return;
+      // Check immediately on registration
+      registration.update();
       // Periodic update check
       setInterval(() => {
         registration.update();
@@ -16,9 +19,15 @@ export function useAppUpdate() {
     },
   });
 
-  const updateApp = () => {
+  const updateApp = useCallback(() => {
     updateServiceWorker(true);
-  };
+  }, [updateServiceWorker]);
 
-  return { needRefresh, updateApp };
+  const checkForUpdates = useCallback(() => {
+    navigator.serviceWorker?.getRegistration().then((reg) => {
+      reg?.update();
+    });
+  }, []);
+
+  return { needRefresh, updateApp, checkForUpdates };
 }
