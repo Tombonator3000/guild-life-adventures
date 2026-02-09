@@ -6,6 +6,7 @@ import { Settings, Save, Code, Users, Target, Coins, Smile, GraduationCap, Trend
 import { useAudioSettings } from '@/hooks/useMusic';
 import { useSFXSettings } from '@/hooks/useSFX';
 import { AchievementsPanel } from './AchievementsPanel';
+import { CharacterPortrait } from './CharacterPortrait';
 import type { Player, GoalSettings } from '@/types/game.types';
 import { HOURS_PER_TURN } from '@/types/game.types';
 
@@ -215,10 +216,13 @@ function PlayersTab({
                 )}
               </div>
 
-              {/* Player color dot */}
-              <div
-                className="w-4 h-4 rounded-full border-2 border-amber-700/30 flex-shrink-0"
-                style={{ backgroundColor: player.color }}
+              {/* Player portrait */}
+              <CharacterPortrait
+                portraitId={player.portraitId}
+                playerColor={player.color}
+                playerName={player.name}
+                size={16}
+                isAI={player.isAI}
               />
 
               {/* Name and status */}

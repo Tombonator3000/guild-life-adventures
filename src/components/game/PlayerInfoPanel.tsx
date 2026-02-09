@@ -3,6 +3,7 @@ import { GUILD_RANK_NAMES, HOURS_PER_TURN } from '@/types/game.types';
 import { Coins, Heart, Smile, Clock, Utensils, Shirt, Shield, Briefcase, Home, Sparkles, Skull } from 'lucide-react';
 import { HOUSING_DATA } from '@/data/housing';
 import { getGameOption } from '@/data/gameOptions';
+import { CharacterPortrait } from './CharacterPortrait';
 
 interface PlayerInfoPanelProps {
   player: Player;
@@ -23,9 +24,13 @@ export function PlayerInfoPanel({ player, isCurrentPlayer }: PlayerInfoPanelProp
     <div className={`h-full flex flex-col p-[4%] bg-card/95 rounded-lg border-2 ${isCurrentPlayer ? 'border-primary' : 'border-wood-dark/50'}`}>
       {/* Player Header */}
       <div className="flex items-center gap-2 mb-2 pb-2 border-b border-border">
-        <div
-          className="w-8 h-8 rounded-full border-3 border-wood-light shadow-md flex-shrink-0"
-          style={{ backgroundColor: player.color }}
+        <CharacterPortrait
+          portraitId={player.portraitId}
+          playerColor={player.color}
+          playerName={player.name}
+          size={32}
+          isAI={player.isAI}
+          className="shadow-md flex-shrink-0"
         />
         <div className="min-w-0 flex-1">
           <h3 className="font-display text-sm font-bold text-[#3d2a14] truncate">

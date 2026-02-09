@@ -1,5 +1,6 @@
 import { Coins, Clock, Heart, Smile, Utensils, BarChart3, Users, Menu } from 'lucide-react';
 import type { Player } from '@/types/game.types';
+import { CharacterPortrait } from './CharacterPortrait';
 
 interface MobileHUDProps {
   player: Player;
@@ -37,11 +38,14 @@ export function MobileHUD({
         <BarChart3 className="w-4 h-4" />
       </button>
 
-      {/* Player dot + name */}
+      {/* Player portrait + name */}
       <div className="flex items-center gap-1 min-w-0">
-        <div
-          className="w-4 h-4 rounded-full border border-wood-light flex-shrink-0"
-          style={{ backgroundColor: player.color }}
+        <CharacterPortrait
+          portraitId={player.portraitId}
+          playerColor={player.color}
+          playerName={player.name}
+          size={16}
+          isAI={player.isAI}
         />
         <span className="font-display text-[10px] text-parchment truncate max-w-[50px]">
           {player.name}

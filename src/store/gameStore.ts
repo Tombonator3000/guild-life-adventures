@@ -18,6 +18,7 @@ import { createWorkEducationActions } from './helpers/workEducationHelpers';
 import { createQuestActions } from './helpers/questHelpers';
 import { forwardIfGuest } from '@/network/NetworkActionProxy';
 import { markEventDismissed } from '@/network/networkState';
+import { getDefaultAIPortrait } from '@/data/portraits';
 import type { GameStore } from './storeTypes';
 
 /**
@@ -48,11 +49,13 @@ const createPlayer = (
   name: string,
   color: string,
   isAI: boolean = false,
-  aiDifficulty?: AIDifficulty
+  aiDifficulty?: AIDifficulty,
+  portraitId?: string | null
 ): Player => ({
   id,
   name,
   color,
+  portraitId: portraitId ?? null,
   aiDifficulty: isAI ? (aiDifficulty || 'medium') : undefined,
   age: STARTING_AGE,
   gold: 100,
@@ -184,7 +187,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     roomCode: null as string | null,
 
     // Game setup (not network-wrapped — guarded explicitly)
-    startNewGame: (playerNames, includeAI, goals, aiDifficulty = 'medium', aiConfigs) => {
+    startNewGame: (playerNames, includeAI, goals, aiDifficulty = 'medium', aiConfigs, playerPortraits) => {
       // Block on guest clients — only host/local can start a new game
       if (get().networkMode === 'guest') return;
       const players: Player[] = playerNames.map((name, index) =>
@@ -192,7 +195,9 @@ export const useGameStore = create<GameStore>((set, get) => {
           `player-${index}`,
           name,
           PLAYER_COLORS[index].value,
-          false
+          false,
+          undefined,
+          playerPortraits?.[index] ?? null
         )
       );
 
@@ -205,12 +210,13 @@ export const useGameStore = create<GameStore>((set, get) => {
             config.name || aiDef.name,
             aiDef.color,
             true,
-            config.difficulty
+            config.difficulty,
+            config.portraitId ?? getDefaultAIPortrait(i)
           ));
         });
       } else if (includeAI) {
         // Legacy single-AI path (backwards compatible)
-        players.push(createPlayer('ai-grimwald', 'Grimwald', AI_COLOR.value, true, aiDifficulty));
+        players.push(createPlayer('ai-grimwald', 'Grimwald', AI_COLOR.value, true, aiDifficulty, 'ai-grimwald'));
       }
 
       set({
