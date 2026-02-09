@@ -1,4 +1,4 @@
-import { Coins, Smile, GraduationCap, Briefcase, Target } from 'lucide-react';
+import { Coins, Smile, GraduationCap, Briefcase, Target, Compass } from 'lucide-react';
 import type { Player, GoalSettings } from '@/types/game.types';
 import { calculateStockValue } from '@/data/stocks';
 import { useGameStore } from '@/store/gameStore';
@@ -15,26 +15,32 @@ export function GoalProgress({ player, goals, compact = false }: GoalProgressPro
   const stockValue = calculateStockValue(player.stocks, stockPrices);
   const totalWealth = player.gold + player.savings + player.investments + stockValue - player.loanAmount;
   const wealthProgress = Math.min(100, (totalWealth / goals.wealth) * 100);
-  
+
   const happinessProgress = Math.min(100, (player.happiness / goals.happiness) * 100);
-  
+
   // Use completedDegrees * 9 to match checkVictory calculation (Jones-style)
   const totalEducation = player.completedDegrees.length * 9;
   const educationProgress = Math.min(100, (totalEducation / goals.education) * 100);
-  
+
   // Career = dependability (Jones-style), 0 if no job
   const careerValue = player.currentJob ? player.dependability : 0;
   const careerProgress = Math.min(100, (careerValue / goals.career) * 100);
 
-  const allGoalsMet = 
-    wealthProgress >= 100 && 
-    happinessProgress >= 100 && 
-    educationProgress >= 100 && 
-    careerProgress >= 100;
+  // Adventure = quests completed + dungeon floors cleared (optional goal, 0 = disabled)
+  const adventureEnabled = goals.adventure > 0;
+  const adventureValue = player.completedQuests + player.dungeonFloorsCleared.length;
+  const adventureProgress = adventureEnabled ? Math.min(100, (adventureValue / goals.adventure) * 100) : 100;
+
+  const allGoalsMet =
+    wealthProgress >= 100 &&
+    happinessProgress >= 100 &&
+    educationProgress >= 100 &&
+    careerProgress >= 100 &&
+    adventureProgress >= 100;
 
   return (
     <div className={compact ? "space-y-1" : "space-y-2"}>
-      <GoalBar 
+      <GoalBar
         icon={<Coins className={compact ? "w-3 h-3" : "w-4 h-4"} />}
         label="Wealth"
         current={totalWealth}
@@ -43,7 +49,7 @@ export function GoalProgress({ player, goals, compact = false }: GoalProgressPro
         unit="g"
         compact={compact}
       />
-      <GoalBar 
+      <GoalBar
         icon={<Smile className={compact ? "w-3 h-3" : "w-4 h-4"} />}
         label="Happiness"
         current={player.happiness}
@@ -52,7 +58,7 @@ export function GoalProgress({ player, goals, compact = false }: GoalProgressPro
         unit="%"
         compact={compact}
       />
-      <GoalBar 
+      <GoalBar
         icon={<GraduationCap className={compact ? "w-3 h-3" : "w-4 h-4"} />}
         label="Education"
         current={totalEducation}
@@ -70,6 +76,17 @@ export function GoalProgress({ player, goals, compact = false }: GoalProgressPro
         unit=""
         compact={compact}
       />
+      {adventureEnabled && (
+        <GoalBar
+          icon={<Compass className={compact ? "w-3 h-3" : "w-4 h-4"} />}
+          label="Adventure"
+          current={adventureValue}
+          target={goals.adventure}
+          progress={adventureProgress}
+          unit=""
+          compact={compact}
+        />
+      )}
 
       {allGoalsMet && (
         <div className={`${compact ? 'mt-1 p-1' : 'mt-3 p-2'} bg-gold/20 border border-gold rounded-lg text-center animate-pulse-gold`}>
@@ -103,7 +120,7 @@ function GoalBar({ icon, label, current, target, progress, unit, compact = false
         </div>
         <span className="font-display text-[9px] w-10 text-amber-900">{label}</span>
         <div className="flex-1 h-1.5 bg-amber-900/20 rounded-full overflow-hidden">
-          <div 
+          <div
             className={`h-full ${isComplete ? 'bg-green-600' : 'bg-amber-600'} transition-all`}
             style={{ width: `${progress}%` }}
           />
@@ -125,7 +142,7 @@ function GoalBar({ icon, label, current, target, progress, unit, compact = false
       </div>
       <span className="font-display text-xs w-16">{label}</span>
       <div className="flex-1 resource-bar h-2">
-        <div 
+        <div
           className={`resource-fill ${isComplete ? 'bg-secondary' : 'bg-primary'}`}
           style={{ width: `${progress}%` }}
         />

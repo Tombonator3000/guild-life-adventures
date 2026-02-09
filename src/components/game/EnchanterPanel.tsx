@@ -25,7 +25,6 @@ export function EnchanterPanel({ player, priceModifier, onSpendTime }: Enchanter
 
   const handleBuyAppliance = (applianceId: string, price: number) => {
     const happinessGain = buyAppliance(player.id, applianceId, price, 'enchanter');
-    onSpendTime(1);
     const appliance = getAppliance(applianceId);
     if (happinessGain > 0) {
       toast.success(`Purchased ${appliance?.name}! +${happinessGain} Happiness`);
@@ -112,10 +111,10 @@ export function EnchanterPanel({ player, priceModifier, onSpendTime }: Enchanter
                 </div>
                 <button
                   onClick={() => handleBuyAppliance(appliance.id, price)}
-                  disabled={player.gold < price || player.timeRemaining < 1 || alreadyOwns}
+                  disabled={player.gold < price || alreadyOwns}
                   className="gold-button text-xs py-1 px-2 disabled:opacity-50"
                 >
-                  {alreadyOwns ? 'Owned' : 'Buy (1h)'}
+                  {alreadyOwns ? 'Owned' : 'Buy'}
                 </button>
               </div>
             </div>

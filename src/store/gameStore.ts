@@ -161,6 +161,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       happiness: 75,   // Reduced from 100 - happiness is harder to accumulate now
       education: 45,   // 45 points = 5 degrees (each degree = 9 pts, Jones-style)
       career: 75,      // Dependability target (Jones-style: career = dependability)
+      adventure: 0,    // Adventure points (quests + dungeon floors), 0 = disabled
     },
     winner: null,
     eventMessage: null,
@@ -303,9 +304,13 @@ export const useGameStore = create<GameStore>((set, get) => {
         economyTrend: gs.economyTrend ?? 0,
         economyCycleWeeksLeft: gs.economyCycleWeeksLeft ?? 4,
         // Migrate old saves: career was guild rank 1-7, now dependability 10-100
-        goalSettings: gs.goalSettings.career <= 7
-          ? { ...gs.goalSettings, career: Math.round(gs.goalSettings.career * 100 / 7) }
-          : gs.goalSettings,
+        // Also ensure adventure field exists (added in v3, defaults to 0 = disabled)
+        goalSettings: {
+          ...(gs.goalSettings.career <= 7
+            ? { ...gs.goalSettings, career: Math.round(gs.goalSettings.career * 100 / 7) }
+            : gs.goalSettings),
+          adventure: gs.goalSettings.adventure ?? 0,
+        },
         winner: gs.winner,
         eventMessage: null,
         rentDueWeek: gs.rentDueWeek,

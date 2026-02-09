@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { PLAYER_COLORS, AI_DIFFICULTY_NAMES, AI_OPPONENTS, type AIDifficulty, type AIConfig } from '@/types/game.types';
-import { Plus, Minus, Bot, Play, Brain, Zap, Crown, Lightbulb, Trash2 } from 'lucide-react';
+import { Plus, Minus, Bot, Play, Brain, Zap, Crown, Lightbulb, Trash2, Compass } from 'lucide-react';
 import { CharacterPortrait } from '@/components/game/CharacterPortrait';
 import { PortraitPicker } from '@/components/game/PortraitPicker';
 import { getDefaultAIPortrait } from '@/data/portraits';
@@ -22,6 +22,7 @@ export function GameSetup() {
     happiness: 100,
     education: 45,   // 45 points = 5 degrees (each degree = 9 pts)
     career: 75,      // Dependability target (Jones-style)
+    adventure: 0,    // Adventure points (quests + dungeon floors), 0 = disabled
   });
 
   const totalPlayers = playerNames.length + aiOpponents.length;
@@ -115,9 +116,9 @@ export function GameSetup() {
 
   // Preset game lengths (education in points: each degree = 9 pts)
   const presets = {
-    quick: { wealth: 2000, happiness: 75, education: 18, career: 50 },     // 2 degrees
-    standard: { wealth: 5000, happiness: 100, education: 45, career: 75 }, // 5 degrees
-    epic: { wealth: 10000, happiness: 100, education: 90, career: 100 },   // 10 degrees
+    quick: { wealth: 2000, happiness: 75, education: 18, career: 50, adventure: 0 },     // 2 degrees
+    standard: { wealth: 5000, happiness: 100, education: 45, career: 75, adventure: 0 }, // 5 degrees
+    epic: { wealth: 10000, happiness: 100, education: 90, career: 100, adventure: 0 },   // 10 degrees
   };
 
   return (
@@ -375,6 +376,48 @@ export function GameSetup() {
                   className="w-full accent-primary"
                 />
               </div>
+            </div>
+
+            {/* Optional Adventure Goal */}
+            <div className="mt-4 pt-4 border-t border-border">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Compass className="w-5 h-5 text-amber-700" />
+                  <span className="font-display text-amber-900">Adventure Goal</span>
+                  <span className="text-xs text-amber-600">(Optional)</span>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <span className="text-xs text-amber-700">{goals.adventure > 0 ? 'Enabled' : 'Disabled'}</span>
+                  <input
+                    type="checkbox"
+                    checked={goals.adventure > 0}
+                    onChange={(e) => setGoals({ ...goals, adventure: e.target.checked ? 10 : 0 })}
+                    className="w-4 h-4 accent-primary"
+                  />
+                </label>
+              </div>
+              {goals.adventure > 0 && (
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="font-display text-amber-900">Adventure Target</span>
+                    <span className="text-amber-700 font-semibold">
+                      {goals.adventure} pts
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-700 mb-2">
+                    Quests completed + dungeon floors cleared (current max: ~24)
+                  </p>
+                  <input
+                    type="range"
+                    min={3}
+                    max={25}
+                    step={1}
+                    value={goals.adventure}
+                    onChange={(e) => setGoals({ ...goals, adventure: Number(e.target.value) })}
+                    className="w-full accent-primary"
+                  />
+                </div>
+              )}
             </div>
           </div>
 

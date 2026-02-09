@@ -2,7 +2,7 @@
 // Follows the medieval parchment aesthetic with amber-800/900 text colors
 
 import { useState } from 'react';
-import { Settings, Save, Code, Users, Target, Coins, Smile, GraduationCap, TrendingUp, Crown, Skull, Bot, Play, FastForward, SkipForward, Menu, Volume2, VolumeX, Music, Sparkles, Trophy, Bell } from 'lucide-react';
+import { Settings, Save, Code, Users, Target, Coins, Smile, GraduationCap, TrendingUp, Crown, Skull, Bot, Play, FastForward, SkipForward, Menu, Volume2, VolumeX, Music, Sparkles, Trophy, Bell, Compass } from 'lucide-react';
 import { useAudioSettings } from '@/hooks/useMusic';
 import { useSFXSettings } from '@/hooks/useSFX';
 import { useAmbientSettings } from '@/hooks/useAmbient';
@@ -132,6 +132,12 @@ export function RightSideTabs({
             <TrendingUp className="w-3 h-3 text-amber-700" />
             <span>Dep {goalSettings.career}</span>
           </div>
+          {(goalSettings.adventure ?? 0) > 0 && (
+            <div className="flex items-center gap-1 text-amber-900 col-span-2">
+              <Compass className="w-3 h-3 text-amber-700" />
+              <span>Adv {goalSettings.adventure}</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

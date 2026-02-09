@@ -25,7 +25,7 @@ import type { DifficultySettings, GoalProgress, ResourceUrgency } from './types'
  */
 export function calculateGoalProgress(
   player: Player,
-  goals: { wealth: number; happiness: number; education: number; career: number }
+  goals: { wealth: number; happiness: number; education: number; career: number; adventure?: number }
 ): GoalProgress {
   const totalWealth = player.gold + player.savings + player.investments;
   const wealthProgress = Math.min(1, totalWealth / goals.wealth);
@@ -39,12 +39,21 @@ export function calculateGoalProgress(
   const careerValue = player.currentJob ? player.dependability : 0;
   const careerProgress = Math.min(1, careerValue / goals.career);
 
+  // Adventure = quests + dungeon floors (optional, 0 = disabled)
+  const adventureTarget = goals.adventure ?? 0;
+  const adventureValue = player.completedQuests + player.dungeonFloorsCleared.length;
+  const adventureProgress = adventureTarget > 0 ? Math.min(1, adventureValue / adventureTarget) : 1;
+
+  const goalCount = adventureTarget > 0 ? 5 : 4;
+  const totalProgress = wealthProgress + happinessProgress + educationProgress + careerProgress + (adventureTarget > 0 ? adventureProgress : 0);
+
   return {
     wealth: { current: totalWealth, target: goals.wealth, progress: wealthProgress },
     happiness: { current: player.happiness, target: goals.happiness, progress: happinessProgress },
     education: { current: educationPoints, target: goals.education, progress: educationProgress },
     career: { current: careerValue, target: goals.career, progress: careerProgress },
-    overall: (wealthProgress + happinessProgress + educationProgress + careerProgress) / 4,
+    adventure: { current: adventureValue, target: adventureTarget, progress: adventureProgress },
+    overall: totalProgress / goalCount,
   };
 }
 
@@ -57,13 +66,17 @@ export function calculateGoalProgress(
  *
  * If no goal is near completion, focus on the weakest goal (lowest progress).
  */
-export function getWeakestGoal(progress: GoalProgress): 'wealth' | 'happiness' | 'education' | 'career' {
-  const goals = [
-    { name: 'wealth' as const, progress: progress.wealth.progress },
-    { name: 'happiness' as const, progress: progress.happiness.progress },
-    { name: 'education' as const, progress: progress.education.progress },
-    { name: 'career' as const, progress: progress.career.progress },
+export function getWeakestGoal(progress: GoalProgress): 'wealth' | 'happiness' | 'education' | 'career' | 'adventure' {
+  const goals: { name: 'wealth' | 'happiness' | 'education' | 'career' | 'adventure'; progress: number }[] = [
+    { name: 'wealth', progress: progress.wealth.progress },
+    { name: 'happiness', progress: progress.happiness.progress },
+    { name: 'education', progress: progress.education.progress },
+    { name: 'career', progress: progress.career.progress },
   ];
+  // Only include adventure if enabled (target > 0)
+  if (progress.adventure.target > 0) {
+    goals.push({ name: 'adventure', progress: progress.adventure.progress });
+  }
 
   // Sprint: if any goal is >= 80% but not yet complete, prioritize finishing it
   const nearComplete = goals

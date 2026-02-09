@@ -9,7 +9,7 @@ function resetAndStart() {
   // Enable aging for all age tests
   setGameOption('enableAging', true);
   const store = useGameStore.getState();
-  store.startNewGame(['TestPlayer'], false, { wealth: 5000, happiness: 75, education: 45, career: 75 });
+  store.startNewGame(['TestPlayer'], false, { wealth: 5000, happiness: 75, education: 45, career: 75, adventure: 0 });
   playerId = useGameStore.getState().players[0].id;
 }
 

@@ -1,6 +1,6 @@
 import { useGameStore } from '@/store/gameStore';
 import { calculateStockValue } from '@/data/stocks';
-import { Crown, Trophy, Scroll, Coins, Heart, GraduationCap, Star, Check, X } from 'lucide-react';
+import { Crown, Trophy, Scroll, Coins, Heart, GraduationCap, Star, Check, X, Compass } from 'lucide-react';
 import gameBoard from '@/assets/game-board.jpeg';
 import { getGameOption } from '@/data/gameOptions';
 
@@ -57,7 +57,10 @@ export function VictoryScreen() {
   // Career = dependability (Jones-style), 0 if no job
   const careerValue = winningPlayer.currentJob ? winningPlayer.dependability : 0;
   const careerMet = careerValue >= goalSettings.career;
-  const allGoalsMet = wealthMet && happinessMet && educationMet && careerMet;
+  const adventureEnabled = (goalSettings.adventure ?? 0) > 0;
+  const adventureValue = winningPlayer.completedQuests + winningPlayer.dungeonFloorsCleared.length;
+  const adventureMet = !adventureEnabled || adventureValue >= goalSettings.adventure;
+  const allGoalsMet = wealthMet && happinessMet && educationMet && careerMet && adventureMet;
 
   return (
     <div className="relative min-h-screen-safe overflow-hidden">
@@ -142,6 +145,15 @@ export function VictoryScreen() {
               goal={`Goal: ${goalSettings.career}+`}
               isMet={careerMet}
             />
+            {adventureEnabled && (
+              <StatItem
+                icon={<Compass className="w-5 h-5 text-emerald-500" />}
+                label="Adventure"
+                value={`${adventureValue} pts`}
+                goal={`Goal: ${goalSettings.adventure}`}
+                isMet={adventureMet}
+              />
+            )}
           </div>
         </div>
 

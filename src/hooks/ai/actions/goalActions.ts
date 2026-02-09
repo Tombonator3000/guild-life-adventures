@@ -245,6 +245,65 @@ export function generateGoalActions(ctx: ActionContext): AIAction[] {
         }
       }
       break;
+
+    case 'adventure':
+      // Focus on quests and dungeon exploration for adventure points
+      // Buy guild pass if needed
+      if (!player.hasGuildPass && player.gold >= 100) {
+        if (currentLocation === 'guild-hall') {
+          actions.push({
+            type: 'buy-guild-pass',
+            priority: 85,
+            description: 'Buy Guild Pass for quests',
+          });
+        } else if (player.timeRemaining > moveCost('guild-hall') + 2) {
+          actions.push({
+            type: 'move',
+            location: 'guild-hall',
+            priority: 80,
+            description: 'Travel to guild hall for guild pass',
+          });
+        }
+      }
+
+      // Take quests
+      if (player.hasGuildPass && !player.activeQuest) {
+        const bestQuest = getBestQuest(player, settings);
+        if (currentLocation === 'guild-hall' && bestQuest) {
+          actions.push({
+            type: 'take-quest',
+            priority: 82,
+            description: 'Take quest for adventure points',
+            details: { questId: bestQuest },
+          });
+        } else if (player.timeRemaining > moveCost('guild-hall') + 2) {
+          actions.push({
+            type: 'move',
+            location: 'guild-hall',
+            priority: 78,
+            description: 'Travel to guild hall for quests',
+          });
+        }
+      }
+
+      // Explore dungeon
+      if (player.timeRemaining >= 8) {
+        if (currentLocation === 'cave') {
+          actions.push({
+            type: 'explore-dungeon',
+            priority: 80,
+            description: 'Explore dungeon for adventure points',
+          });
+        } else if (player.timeRemaining > moveCost('cave') + 8) {
+          actions.push({
+            type: 'move',
+            location: 'cave',
+            priority: 75,
+            description: 'Travel to cave for dungeon exploration',
+          });
+        }
+      }
+      break;
   }
 
   // Always check for ready graduations (free +5 happiness, +5 dependability)

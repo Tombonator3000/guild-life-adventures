@@ -97,6 +97,7 @@ export interface GoalProgress {
   happiness: { current: number; target: number; progress: number };
   education: { current: number; target: number; progress: number };
   career: { current: number; target: number; progress: number };
+  adventure: { current: number; target: number; progress: number }; // 0 target = disabled
   overall: number; // Average progress toward all goals
 }
 

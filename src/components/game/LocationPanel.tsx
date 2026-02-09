@@ -136,7 +136,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     playSFX('item-buy');
     const price = Math.round(NEWSPAPER_COST * priceModifier);
     modifyGold(player.id, -price);
-    spendTime(player.id, NEWSPAPER_TIME);
     const newspaper = generateNewspaper(week, priceModifier, economyTrend);
     setCurrentNewspaper(newspaper);
     setShowNewspaper(true);
@@ -471,8 +470,12 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             id: 'housing',
             label: 'Housing',
             content: (
-              <div className="flex flex-col items-center justify-center py-8 gap-3">
-                <Home className="w-10 h-10 text-[#8b7355] opacity-50" />
+              <div className="flex flex-col items-center justify-center py-4 gap-3">
+                <img
+                  src="/locations/closed.jpg"
+                  alt="Office Closed"
+                  className="w-full max-w-[240px] rounded-lg border border-[#8b7355] shadow-md"
+                />
                 <h4 className="font-display text-lg text-[#3d2a14]">Office Closed</h4>
                 <p className="text-sm text-[#6b5a42] text-center max-w-xs">
                   The Landlord&apos;s office is only open during rent collection weeks.
@@ -527,11 +530,10 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
                 <ActionButton
                   label="Buy Newspaper (Discount)"
                   cost={shadowNewspaperPrice}
-                  time={NEWSPAPER_TIME}
-                  disabled={player.gold < shadowNewspaperPrice || player.timeRemaining < NEWSPAPER_TIME}
+                  time={0}
+                  disabled={player.gold < shadowNewspaperPrice}
                   onClick={() => {
                     modifyGold(player.id, -shadowNewspaperPrice);
-                    spendTime(player.id, NEWSPAPER_TIME);
                     const newspaper = generateNewspaper(week, priceModifier, economyTrend);
                     setCurrentNewspaper(newspaper);
                     setShowNewspaper(true);
@@ -565,11 +567,9 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
           priceModifier,
           onSellItem: (itemId: string, price: number) => {
             sellItem(player.id, itemId, price);
-            spendTime(player.id, 1);
           },
           onBuyUsedItem: (itemId: string, price: number) => {
             modifyGold(player.id, -price);
-            spendTime(player.id, 1);
             if (itemId === 'used-clothes') {
               modifyClothing(player.id, 50);
             } else if (itemId === 'used-blanket') {

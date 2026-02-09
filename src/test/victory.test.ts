@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useGameStore } from '@/store/gameStore';
 
-function resetAndStart(goals = { wealth: 1000, happiness: 50, education: 9, career: 60 }) {
+function resetAndStart(goals = { wealth: 1000, happiness: 50, education: 9, career: 60, adventure: 0 }) {
   const store = useGameStore.getState();
   store.startNewGame(['TestPlayer'], false, goals);
   return useGameStore.getState().players[0].id;
@@ -20,14 +20,14 @@ describe('checkVictory', () => {
   });
 
   it('returns false when only wealth goal is met', () => {
-    const playerId = resetAndStart({ wealth: 100, happiness: 80, education: 9, career: 60 });
+    const playerId = resetAndStart({ wealth: 100, happiness: 80, education: 9, career: 60, adventure: 0 });
     // Player starts with 100 gold, so wealth is met but other goals not
     const result = useGameStore.getState().checkVictory(playerId);
     expect(result).toBe(false);
   });
 
   it('returns true when all goals are met', () => {
-    const playerId = resetAndStart({ wealth: 50, happiness: 40, education: 0, career: 40 });
+    const playerId = resetAndStart({ wealth: 50, happiness: 40, education: 0, career: 40, adventure: 0 });
     // Player starts: gold=100 (>= 50), happiness=50 (>= 40), education=0 (>= 0)
     // Career: need job + dependability >= 40. Give job + dep=50.
     useGameStore.setState((state) => ({
@@ -42,7 +42,7 @@ describe('checkVictory', () => {
   });
 
   it('counts wealth as gold + savings + investments + stocks - loans', () => {
-    const playerId = resetAndStart({ wealth: 500, happiness: 40, education: 0, career: 40 });
+    const playerId = resetAndStart({ wealth: 500, happiness: 40, education: 0, career: 40, adventure: 0 });
     // Give job + dependability so career is met
     useGameStore.setState((state) => ({
       players: state.players.map(p =>
@@ -62,7 +62,7 @@ describe('checkVictory', () => {
   });
 
   it('counts education as completedDegrees * 9', () => {
-    const playerId = resetAndStart({ wealth: 50, happiness: 40, education: 18, career: 40 });
+    const playerId = resetAndStart({ wealth: 50, happiness: 40, education: 18, career: 40, adventure: 0 });
     // Give job + dependability so career is met
     useGameStore.setState((state) => ({
       players: state.players.map(p =>
@@ -81,7 +81,7 @@ describe('checkVictory', () => {
   });
 
   it('counts career as dependability (0 if no job)', () => {
-    const playerId = resetAndStart({ wealth: 50, happiness: 40, education: 0, career: 60 });
+    const playerId = resetAndStart({ wealth: 50, happiness: 40, education: 0, career: 60, adventure: 0 });
     // Player starts with dependability=50 but no job, so career=0. Need career >= 60.
     expect(useGameStore.getState().checkVictory(playerId)).toBe(false);
 
@@ -105,7 +105,7 @@ describe('checkVictory', () => {
   });
 
   it('career is 0 when player has no job', () => {
-    const playerId = resetAndStart({ wealth: 50, happiness: 40, education: 0, career: 10 });
+    const playerId = resetAndStart({ wealth: 50, happiness: 40, education: 0, career: 10, adventure: 0 });
     // Player has dependability=50 but no job -> career value = 0
     useGameStore.setState((state) => ({
       players: state.players.map(p =>
@@ -125,7 +125,7 @@ describe('checkVictory', () => {
   });
 
   it('subtracts loan amount from wealth', () => {
-    const playerId = resetAndStart({ wealth: 200, happiness: 40, education: 0, career: 40 });
+    const playerId = resetAndStart({ wealth: 200, happiness: 40, education: 0, career: 40, adventure: 0 });
     // Give job + dependability so career is met
     useGameStore.setState((state) => ({
       players: state.players.map(p =>
