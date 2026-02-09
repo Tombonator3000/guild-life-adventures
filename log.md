@@ -1,5 +1,95 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-09 - Cave/Dungeon Category A Features (A1, A2, A4, A5)
+
+Implemented four major dungeon system expansions: Floor 6, random modifiers, leaderboard, and mini-bosses.
+
+### A1: Floor 6 "The Forgotten Temple"
+
+Ultra-endgame floor requiring Loremaster degree (first floor with required degrees, not just recommended).
+
+| Detail | Value |
+|--------|-------|
+| Boss | The Archon (Power 140, baseDamage 95, 500g base) |
+| Requirements | Floor 5 cleared, Enchanted Blade, Enchanted Plate, 45+ ATK, 50+ DEF, **Loremaster degree** |
+| Time Cost | 28h (24h reduced) |
+| Gold Range | 400-1000g |
+| Health Risk | 90-150 dmg |
+| Rewards | +30 happiness, +20 dependability on first clear |
+| Rare Drop | Archon's Crown (5%) — +30 happiness, +8 to all stat caps |
+| Encounters | Temple Guardians, Divine Ward (disarmable trap), Spectral High Priests (arcane), Temple Reliquary (treasure), Sanctum Font (healing) |
+
+Also added Loremaster education bonus: +15% ATK, +20% gold in dungeon.
+
+### A2: Dungeon Random Modifiers
+
+60% chance per run to get a random modifier that changes combat dynamics.
+
+| Modifier | Effect |
+|----------|--------|
+| Cursed Halls | +30% damage taken, +50% gold |
+| Lucky Day | +25% rare drop chance, +25% gold |
+| Blood Moon | Enemies +50% power, +100% gold, no healing |
+| Echoing Darkness | Traps can't be disarmed, +20% gold |
+| Blessed Ground | -20% damage taken, healing +50% |
+| Fortune's Favor | 2x treasure gold, +50% rare drop |
+| Weakened Wards | Enemies -30% power, -30% gold |
+
+Modifiers affect all encounter types: combat damage, gold, healing, traps. Shown as colored banner in CombatView.
+
+### A4: Dungeon Leaderboard
+
+Per-player, per-floor tracking of dungeon performance.
+
+| Tracked | Description |
+|---------|-------------|
+| Best Gold | Highest gold earned in a single run |
+| Best Encounters | Fewest encounters to complete (for speedrunners) |
+| Total Runs | Number of times this floor has been run |
+| Total Gold | Cumulative gold earned across all runs |
+
+Records displayed in collapsible "Dungeon Records" section in CavePanel, and per-floor in expanded floor details.
+
+### A5: Mini-Boss Encounters
+
+15% chance for a wandering mini-boss to appear on re-runs (floors already cleared).
+
+| Floor | Mini-Boss | Power | Gold |
+|-------|-----------|-------|------|
+| F1 | Cave Troll | 14 | 20g |
+| F2 | Goblin Shaman (arcane) | 28 | 35g |
+| F3 | Death Knight | 45 | 65g |
+| F4 | Drake Matriarch | 65 | 120g |
+| F5 | Void Reaver (arcane) | 90 | 200g |
+| F6 | Fallen Archon (arcane) | 115 | 350g |
+
+Mini-bosses replace one regular combat encounter. They use boss difficulty for damage calculation, giving higher risk/reward on re-runs.
+
+### Files Changed
+
+| File | Changes |
+|------|---------|
+| `src/data/dungeon/types.ts` | Added `requiredDegrees` to FloorRequirements, `DungeonModifier`, `DungeonRecord`, `MiniBoss` types |
+| `src/data/dungeon/encounters.ts` | Added Floor 6 encounters (5 + boss), 6 mini-boss definitions |
+| `src/data/dungeon/floors.ts` | Added Floor 6 definition, Archon's Crown rare drop, Loremaster edu bonus, 7 dungeon modifiers |
+| `src/data/dungeon/helpers.ts` | Updated MAX_DUNGEON_FLOOR to 6, added modifier/mini-boss/leaderboard functions, updated generateFloorEncounters for mini-bosses, added completedDegrees param to checkFloorRequirements |
+| `src/data/dungeon/index.ts` | Re-exported all new types and functions |
+| `src/data/combatResolver.ts` | Added modifier support to resolveEncounter, initDungeonRun, autoResolveFloor; added modifier/hasMiniBoss to DungeonRunState |
+| `src/types/game.types.ts` | Added `dungeonRecords` to Player interface |
+| `src/store/gameStore.ts` | Initialized `dungeonRecords: {}` in default player |
+| `src/components/game/CombatView.tsx` | Pass modifier to resolveEncounter, show modifier banner and mini-boss warning, added encountersCompleted to result |
+| `src/components/game/CavePanel.tsx` | Pass completedDegrees to checkFloorRequirements, dynamic progress bar (6 floors), leaderboard section, mini-boss/modifier hints per floor, Floor 6 golden glow styling, record update on combat complete |
+| `src/hooks/ai/strategy.ts` | Pass completedDegrees to checkFloorRequirements in getBestDungeonFloor |
+| `src/hooks/useGrimwaldAI.ts` | Pass floorsCleared to autoResolveFloor for mini-boss support |
+
+### Testing
+
+- TypeScript: compiles clean (`tsc --noEmit` = 0 errors)
+- Tests: 171/171 passing
+- Lint: no new errors (all pre-existing)
+
+---
+
 ## 2026-02-08 - iPad PWA Compatibility Fixes
 
 Audit and fix of Progressive Web App for iPad/iOS compatibility. The PWA was functional on Android/desktop but had several issues on iPad.

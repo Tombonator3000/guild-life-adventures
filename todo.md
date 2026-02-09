@@ -652,7 +652,7 @@
 Full details with design specs in log.md "Game Improvement Proposals (Gameplay, Quests, Cave, General)"
 
 ### Tier 1 — High Impact, Moderate Effort
-- [ ] A2: Dungeon Random Modifiers — per-run random modifier (Cursed Halls, Lucky Day, Blood Moon, etc.)
+- [x] A2: Dungeon Random Modifiers — per-run random modifier (Cursed Halls, Lucky Day, Blood Moon, etc.) **DONE 2026-02-09**
 - [ ] B1: Quest Chains — multi-part quests (e.g., "The Dragon Conspiracy" 3-part chain)
 - [ ] C7: Random Travel Events — 10% chance of random event during 3+ step travel
 - [ ] B2: Repeatable Daily Bounties — 3 rotating weekly bounty board quests at Guild Hall
@@ -662,7 +662,7 @@ Full details with design specs in log.md "Game Improvement Proposals (Gameplay, 
 - [ ] D4: Fix quest education requirements (priest level → actual degrees)
 
 ### Tier 2 — High Impact, Higher Effort
-- [ ] A1: Dungeon Floor 6 "The Forgotten Temple" — ultra-endgame floor with Loremaster requirement
+- [x] A1: Dungeon Floor 6 "The Forgotten Temple" — ultra-endgame floor with Loremaster requirement **DONE 2026-02-09**
 - [ ] C1: Seasonal Festivals — Harvest Festival, Winter Solstice, Spring Tournament, Midsummer Fair (every 12 weeks)
 - [ ] C6: Achievements / Trophy System — lifetime achievements persisted in localStorage
 - [ ] A3: Dungeon Companion System — hire companions before dungeon runs (Torchbearer, Mercenary, Healer, Treasure Hunter)
@@ -677,8 +677,8 @@ Full details with design specs in log.md "Game Improvement Proposals (Gameplay, 
 - [ ] E3: Auto-Equip Best Gear button in CavePanel
 - [ ] E4: Post-Combat Loot Summary breakdown
 - [ ] E5: Dungeon Shortcuts — skip early floors after clearing later ones
-- [ ] A4: Dungeon Leaderboard / Best Times — personal best tracking
-- [ ] A5: Mini-Boss Encounters — 15% wandering boss on re-runs
+- [x] A4: Dungeon Leaderboard / Best Times — personal best tracking **DONE 2026-02-09**
+- [x] A5: Mini-Boss Encounters — 15% wandering boss on re-runs **DONE 2026-02-09**
 - [ ] B3: Quest Difficulty Scaling — rewards scale with player progression
 - [ ] C4: AI Rival Enhancement — competitive quest/job targeting
 - [ ] C5: Insurance System at Bank — theft, health, equipment policies

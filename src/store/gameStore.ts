@@ -116,6 +116,7 @@ const createPlayer = (
   dungeonFloorsCleared: [],
   dungeonAttemptsThisTurn: 0,
   permanentGoldBonus: 0,
+  dungeonRecords: {},
   // Stock Market
   stocks: {},
   // Loans

@@ -11,6 +11,8 @@ import {
   Heart,
   BookOpen,
   AlertTriangle,
+  Trophy,
+  Star,
 } from 'lucide-react';
 import { ActionButton } from './ActionButton';
 import { toast } from 'sonner';
@@ -24,6 +26,8 @@ import {
   getFloorTimeCost,
   getEncounterTimeCost,
   MAX_FLOOR_ATTEMPTS_PER_TURN,
+  MAX_DUNGEON_FLOOR,
+  updateDungeonRecord,
   type DungeonFloor,
 } from '@/data/dungeon';
 import { CombatView, type CombatRunResult } from './CombatView';
@@ -77,6 +81,7 @@ export function CavePanel({
 }: CavePanelProps) {
   const [expandedFloor, setExpandedFloor] = useState<number | null>(null);
   const [activeFloor, setActiveFloor] = useState<DungeonFloor | null>(null);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
 
   const combatStats = calculateCombatStats(
     player.equippedWeapon,
@@ -86,7 +91,7 @@ export function CavePanel({
   );
   const eduBonuses = calculateEducationBonuses(player.completedDegrees);
   const progress = getDungeonProgress(player.dungeonFloorsCleared);
-  const progressPct = (progress.totalFloorsCleared / 5) * 100;
+  const progressPct = (progress.totalFloorsCleared / MAX_DUNGEON_FLOOR) * 100;
 
   const hasAnyBonus =
     eduBonuses.canDisarmTraps ||
@@ -100,6 +105,8 @@ export function CavePanel({
   const hasCaveAccess = player.completedDegrees.length > 0;
   const attemptsUsed = player.dungeonAttemptsThisTurn || 0;
   const attemptsRemaining = MAX_FLOOR_ATTEMPTS_PER_TURN - attemptsUsed;
+
+  const dungeonRecords = player.dungeonRecords || {};
 
   // ─── Enter floor — switch to combat view ───────────────────
 
@@ -163,6 +170,27 @@ export function CavePanel({
         { duration: 6000 },
       );
     }
+
+    // Update dungeon leaderboard records
+    const { players } = useGameStore.getState();
+    useGameStore.setState({
+      players: players.map(p => {
+        if (p.id !== player.id) return p;
+        const currentRecords = p.dungeonRecords || {};
+        const updatedRecord = updateDungeonRecord(
+          currentRecords[activeFloor.id],
+          result.goldEarned,
+          result.encountersCompleted,
+        );
+        return {
+          ...p,
+          dungeonRecords: {
+            ...currentRecords,
+            [activeFloor.id]: updatedRecord,
+          },
+        };
+      }),
+    });
 
     if (result.success) {
       const firstClearBonus = result.isFirstClear
@@ -260,7 +288,7 @@ export function CavePanel({
         <div className="flex justify-between text-xs text-[#a09080] mb-1">
           <span>Dungeon Progress</span>
           <span className="text-[#e0d4b8]">
-            {progress.totalFloorsCleared}/5 Floors
+            {progress.totalFloorsCleared}/{MAX_DUNGEON_FLOOR} Floors
           </span>
         </div>
         <div className="h-2 bg-black/40 rounded-full overflow-hidden">
@@ -335,6 +363,47 @@ export function CavePanel({
         </div>
       )}
 
+      {/* Dungeon Leaderboard */}
+      {Object.keys(dungeonRecords).length > 0 && (
+        <div className="bg-[#1a1a2e] border border-[#4a4a7a] rounded">
+          <button
+            className="w-full flex items-center gap-2 p-2 text-left hover:bg-white/5 transition-colors"
+            onClick={() => setShowLeaderboard(!showLeaderboard)}
+          >
+            {showLeaderboard ? (
+              <ChevronDown className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+            ) : (
+              <ChevronRight className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+            )}
+            <Trophy className="w-3.5 h-3.5 text-amber-400" />
+            <span className="text-xs text-amber-400 font-display">Dungeon Records</span>
+          </button>
+          {showLeaderboard && (
+            <div className="px-2 pb-2 space-y-1">
+              {DUNGEON_FLOORS.map(floor => {
+                const record = dungeonRecords[floor.id];
+                if (!record) return null;
+                return (
+                  <div key={floor.id} className="flex items-center gap-2 text-xs font-mono">
+                    <span className="text-[#8b7355] w-5">F{floor.id}</span>
+                    <span className="text-[#e0d4b8] flex-1 truncate">{floor.name}</span>
+                    <span className="text-[#c9a227]" title="Best gold in single run">
+                      <Star className="w-3 h-3 inline" /> {record.bestGold}g
+                    </span>
+                    <span className="text-[#a09080]" title="Total runs">
+                      {record.runs}x
+                    </span>
+                    <span className="text-[#a09080]" title="Total gold earned">
+                      ({record.totalGold}g total)
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Floor selection */}
       <div className="space-y-1.5">
         {DUNGEON_FLOORS.map((floor) => {
@@ -349,6 +418,7 @@ export function CavePanel({
             player.equippedWeapon,
             player.equippedArmor,
             combatStats,
+            player.completedDegrees,
           );
           const totalTimeCost = getFloorTimeCost(floor, combatStats);
           const encounterTime = getEncounterTimeCost(floor, combatStats);
@@ -375,10 +445,13 @@ export function CavePanel({
                 ? 'bg-gray-950/30'
                 : 'bg-[#2d1f0f]';
 
+          // Floor 6 gets a special golden glow
+          const isUltraEndgame = floor.id === 6;
+
           return (
             <div
               key={floor.id}
-              className={`border border-[#8b7355] ${borderColor} border-l-4 rounded ${bgColor}`}
+              className={`border border-[#8b7355] ${borderColor} border-l-4 rounded ${bgColor} ${isUltraEndgame ? 'ring-1 ring-amber-500/30' : ''}`}
             >
               {/* Floor header — clickable */}
               <button
@@ -392,10 +465,10 @@ export function CavePanel({
                 ) : (
                   <ChevronRight className="w-3.5 h-3.5 text-[#8b7355] flex-shrink-0" />
                 )}
-                <span className="text-xs font-mono text-[#8b7355] w-5">
+                <span className={`text-xs font-mono w-5 ${isUltraEndgame ? 'text-amber-400' : 'text-[#8b7355]'}`}>
                   F{floor.id}
                 </span>
-                <span className="text-sm text-[#e0d4b8] flex-1 truncate">
+                <span className={`text-sm flex-1 truncate ${isUltraEndgame ? 'text-amber-300 font-display' : 'text-[#e0d4b8]'}`}>
                   {floor.name}
                 </span>
 
@@ -457,6 +530,18 @@ export function CavePanel({
                     (5%)
                   </div>
 
+                  {/* Re-run mini-boss hint */}
+                  {player.dungeonFloorsCleared.includes(floor.id) && (
+                    <div className="text-xs text-amber-600">
+                      ★ 15% chance of wandering mini-boss on re-runs
+                    </div>
+                  )}
+
+                  {/* Dungeon modifier info */}
+                  <div className="text-xs text-[#8b7355]">
+                    ⚡ Random modifier may apply (60% chance per run)
+                  </div>
+
                   {/* Requirements check */}
                   {status === 'available' && (
                     <div className="space-y-0.5">
@@ -490,6 +575,14 @@ export function CavePanel({
                   {status === 'cleared' && (
                     <div className="text-xs text-green-400">
                       ✓ Floor cleared! Run again for gold.
+                    </div>
+                  )}
+
+                  {/* Personal best */}
+                  {dungeonRecords[floor.id] && (
+                    <div className="text-xs text-[#c9a227] flex items-center gap-1">
+                      <Trophy className="w-3 h-3" />
+                      Best: {dungeonRecords[floor.id].bestGold}g | Runs: {dungeonRecords[floor.id].runs} | Total: {dungeonRecords[floor.id].totalGold}g
                     </div>
                   )}
 
