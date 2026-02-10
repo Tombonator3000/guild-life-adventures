@@ -96,6 +96,7 @@ export const LOCAL_ONLY_ACTIONS = new Set([
   'dismissShadowfingersEvent',
   'dismissApplianceBreakageEvent',
   'dismissWeekendEvent',
+  'dismissDeathEvent',
   'setEventMessage',
   'setShowTutorial',
   'setTutorialStep',
@@ -104,6 +105,8 @@ export const LOCAL_ONLY_ACTIONS = new Set([
   'saveToSlot',
   'loadFromSlot',
   'setPhase',
+  'setDebugWeather',
+  'setDebugFestival',
 ]);
 
 // Actions that are host-internal (triggered by game logic, not by player UI).
@@ -167,6 +170,9 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'pawnAppliance',
   'equipItem',
   'unequipItem',
+  'temperEquipment',
+  'forgeRepairAppliance',
+  'salvageEquipment',
 
   // Stocks & Loans
   'buyStock',

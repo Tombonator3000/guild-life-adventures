@@ -8,13 +8,21 @@ const CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
  * Generate a 6-character room code using cryptographically secure randomness.
  * Used as the PeerJS peer ID for the host.
  * Produces ~29^6 ≈ 594M possible codes.
+ * Uses rejection sampling to eliminate modulo bias (256 % 29 != 0).
  */
 export function generateRoomCode(): string {
-  const bytes = new Uint8Array(6);
-  crypto.getRandomValues(bytes);
+  // Largest multiple of CHARS.length (29) that fits in a byte: 29 * 8 = 232
+  const limit = CHARS.length * Math.floor(256 / CHARS.length); // 232
   let code = '';
-  for (let i = 0; i < 6; i++) {
-    code += CHARS[bytes[i] % CHARS.length];
+  while (code.length < 6) {
+    const bytes = new Uint8Array(8); // Request extra to reduce re-rolls
+    crypto.getRandomValues(bytes);
+    for (let i = 0; i < bytes.length && code.length < 6; i++) {
+      if (bytes[i] < limit) {
+        code += CHARS[bytes[i] % CHARS.length];
+      }
+      // Reject bytes >= 232 to avoid modulo bias
+    }
   }
   return code;
 }

@@ -245,11 +245,16 @@ export function useOnlineGame() {
             peerManager.sendTo(fromPeerId, { type: 'kicked', reason: 'Room is full (max 4 players)' });
             return prev;
           }
+          // Sanitize player name: trim, cap at 20 chars, strip control characters
+          const sanitized = (typeof message.playerName === 'string' ? message.playerName : 'Guest')
+            .trim()
+            .replace(/[\x00-\x1F\x7F]/g, '')
+            .slice(0, 20) || 'Guest';
           // Prevent duplicate names
-          const existingName = prev.find(p => p.name === message.playerName);
+          const existingName = prev.find(p => p.name === sanitized);
           const displayName = existingName
-            ? `${message.playerName} (${prev.length})`
-            : message.playerName;
+            ? `${sanitized} (${prev.length})`
+            : sanitized;
           const slot = prev.length;
           const newPlayer: LobbyPlayer = {
             peerId: fromPeerId,

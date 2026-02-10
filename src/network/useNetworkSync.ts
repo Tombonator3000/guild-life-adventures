@@ -89,6 +89,17 @@ function validateActionArgs(name: string, args: unknown[], store: ReturnType<typ
       }
       return null;
     }
+    // Equipment actions: validate cost/value bounds
+    case 'temperEquipment': {
+      const cost = args[3];
+      if (typeof cost !== 'number' || !isFinite(cost) || cost < 0 || cost > 1000) return 'Invalid temper cost';
+      return null;
+    }
+    case 'salvageEquipment': {
+      const value = args[3];
+      if (typeof value !== 'number' || !isFinite(value) || value < 0 || value > 2000) return 'Invalid salvage value';
+      return null;
+    }
     default:
       return null;
   }

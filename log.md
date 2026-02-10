@@ -1,5 +1,96 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-10 - Multiplayer Improvement Audit & Security Hardening
+
+### Overview
+
+Deep audit of all 7 multiplayer network files (~2,150 lines) plus 39 existing tests. Found 7 issues (1 critical, 3 high, 3 medium) and fixed all of them. Added 5 new tests (39→44 total).
+
+### Issues Found & Fixed
+
+#### Bug 1 (CRITICAL): `activeFestival` not synced over network
+- **Impact:** Guests never see festivals — missing wage multipliers, happiness bonuses, gold bonuses, and festival UI indicator during multiplayer
+- **Root cause:** `activeFestival` field was added to `GameState` (game.types.ts:248) for the festival system but never added to `serializeGameState()` or `applyNetworkState()` in networkState.ts
+- **Fix:** Added `activeFestival` to both `serializeGameState()` return object and `applyNetworkState()` update object
+- **File:** `src/network/networkState.ts`
+
+#### Bug 2 (HIGH): `dismissDeathEvent` missing from LOCAL_ONLY_ACTIONS
+- **Impact:** When a guest dismisses the death modal, the action is forwarded to the host (which rejects it since it's not in ALLOWED_GUEST_ACTIONS). The death modal re-appears on the next 50ms state sync, causing infinite modal flicker.
+- **Root cause:** The `dismissDeathEvent` action was added to the store (gameStore.ts:278) with correct guest-mode `markEventDismissed` handling, but was never added to the LOCAL_ONLY_ACTIONS set in types.ts. The other 4 dismiss actions (dismissEvent, dismissShadowfingersEvent, dismissApplianceBreakageEvent, dismissWeekendEvent) were correctly listed.
+- **Fix:** Added `'dismissDeathEvent'` to LOCAL_ONLY_ACTIONS
+- **File:** `src/network/types.ts`
+
+#### Bug 3 (HIGH): 3 equipment actions missing from ALLOWED_GUEST_ACTIONS
+- **Impact:** Guests cannot use Forge tempering, Forge appliance repair, or Armory/Fence equipment salvage in online multiplayer. Clicking these buttons does nothing (action silently forwarded and rejected by host).
+- **Missing actions:**
+  - `temperEquipment` (Forge: +5 ATK/DEF boost, equipmentHelpers.ts:121)
+  - `forgeRepairAppliance` (Forge: 50% cost repair, equipmentHelpers.ts:141)
+  - `salvageEquipment` (Fence: sell equipment for 60%, equipmentHelpers.ts:175)
+- **Root cause:** These 3 actions were added in a recent equipment expansion but the ALLOWED_GUEST_ACTIONS whitelist was not updated
+- **Fix:** Added all 3 to ALLOWED_GUEST_ACTIONS + added host-side argument validation for temperEquipment (cost ≤ 1000g) and salvageEquipment (value ≤ 2000g)
+- **Files:** `src/network/types.ts`, `src/network/useNetworkSync.ts`
+
+#### Bug 4 (HIGH): Debug actions not categorized for network mode
+- **Impact:** In guest mode, debug panel actions (`setDebugWeather`, `setDebugFestival`) are forwarded to host → rejected → wasted network round-trip. Debug changes on guest are immediately overwritten by next state sync.
+- **Fix:** Added `'setDebugWeather'` and `'setDebugFestival'` to LOCAL_ONLY_ACTIONS
+- **File:** `src/network/types.ts`
+
+#### Bug 5 (MEDIUM): No lobby player name validation
+- **Impact:** Malicious guest could send extremely long names (crash UI layout), control characters (break text rendering), or empty strings
+- **Fix:** Host-side name sanitization on join: trim whitespace, strip control chars (\x00-\x1F, \x7F), cap at 20 characters, default to "Guest" if empty
+- **File:** `src/network/useOnlineGame.ts`
+
+#### Bug 6 (MEDIUM): Room code modulo bias
+- **Impact:** `bytes[i] % 29` with uint8 (0-255) produces non-uniform distribution. Characters at index 0-22 have 9/256 probability while 23-28 have 8/256 (~12.5% bias). Reduces effective entropy from 29^6 to slightly less.
+- **Fix:** Rejection sampling — bytes ≥ 232 (29*8) are discarded and re-rolled. Extra bytes requested per batch to minimize re-rolls.
+- **File:** `src/network/roomCodes.ts`
+
+#### Bug 7 (MEDIUM): No argument validation for equipment actions
+- **Impact:** A crafted guest message could call `temperEquipment` or `salvageEquipment` with arbitrary cost/value amounts, potentially granting unlimited gold
+- **Fix:** Added `validateActionArgs` cases: temperEquipment cost capped at 1000g, salvageEquipment value capped at 2000g, both checked for isFinite
+- **File:** `src/network/useNetworkSync.ts`
+
+### Security Assessment
+
+#### Strengths
+- Host-authoritative model with full state sync prevents most cheating
+- ALLOWED_GUEST_ACTIONS whitelist (now 48 actions) blocks internal game logic calls
+- Cross-player validation deep scan checks ALL argument positions
+- Rate limiting (10 actions/sec) prevents spam/DoS
+- Argument bounds validation on all raw stat modifiers
+- Turn validation via peerId→playerId mapping
+- Crypto room codes (now with rejection sampling)
+- Host migration on disconnect
+
+#### Remaining Attack Surface (documented, not exploitable for game-breaking advantage)
+1. **No message schema validation** — malformed messages could crash handlers (PeerJS serialization provides some protection)
+2. **No lobby join rate limiting** — join/leave cycling possible (mitigated by 4-player room limit)
+3. **PeerJS signaling server dependency** — no self-hosted fallback
+4. **No TURN servers** — ~15% of NAT configurations can't connect
+5. **Full state broadcast size** — ~5-10KB per change, efficient for 4 players but doesn't scale
+
+### Tests Added
+- `LOCAL_ONLY_ACTIONS includes all dismiss actions` — verifies all 5 dismiss actions are listed
+- `LOCAL_ONLY_ACTIONS includes debug actions` — verifies setDebugWeather/setDebugFestival
+- `ALLOWED_GUEST_ACTIONS includes equipment actions` — verifies temperEquipment/forgeRepairAppliance/salvageEquipment
+- `generates uniformly distributed codes (no modulo bias)` — statistical distribution test
+- `applyNetworkState syncs activeFestival` — round-trip serialization test
+
+### Files Changed
+- `src/network/networkState.ts` — activeFestival sync (serialize + apply)
+- `src/network/types.ts` — dismissDeathEvent in LOCAL_ONLY, 3 equipment actions in ALLOWED_GUEST, debug actions in LOCAL_ONLY
+- `src/network/useNetworkSync.ts` — temperEquipment/salvageEquipment argument validation
+- `src/network/useOnlineGame.ts` — lobby name sanitization
+- `src/network/roomCodes.ts` — rejection sampling for unbiased room codes
+- `src/test/multiplayer.test.ts` — 5 new tests (39→44 total)
+
+### Build & Tests
+- 176 tests pass (all 9 test files)
+- Production build succeeds
+- TypeScript clean
+
+---
+
 ## 2026-02-10 - Remove Location Entry Delay & Enhanced Rain Effect
 
 ### Remove 2-Hour Entry Cost
