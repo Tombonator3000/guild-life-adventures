@@ -885,6 +885,15 @@
   - Heavy rain (thunderstorm) vs light rain (harvest-rain) intensity variants
   - Build passes, 171 tests pass
 
+- [x] Gameplay Balance & Feature Batch — 6 changes
+  - [x] Scaled resurrection cost based on wealth (100g base + 10% of wealth above 500g, max 2000g)
+  - [x] Shadowfingers increased steal chance for rich players (1.5x-2.5x at 1000g+ carried gold)
+  - [x] Happiness penalty (-8) on resurrection (paid and free respawn)
+  - [x] Adventure Goal added to Online Multiplayer lobby (toggle + slider, presets preserve setting)
+  - [x] Job blocking between players (can't take job held by another active player, AI respects too)
+  - [x] Removed "Invest 100 Gold" from banking services (stocks/broker is the real investment system)
+  - Build passes, 171 tests pass
+
 ## In Progress
 
 *No active tasks*

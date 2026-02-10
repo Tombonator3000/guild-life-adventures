@@ -320,14 +320,20 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       if (player.health <= 0) {
         const enablePermadeath = getGameOption('enablePermadeath');
 
+        // Resurrection cost scales with total wealth (gold + savings)
+        // Base cost 100g, plus 10% of total wealth above 500g (min 100, max 2000)
+        const totalWealth = player.gold + player.savings;
+        const scaledCost = Math.min(2000, Math.max(100, 100 + Math.floor((Math.max(0, totalWealth - 500)) * 0.10)));
+        const resurrectionHappinessPenalty = 8;
+
         // Check for resurrection (if has savings and wasn't already resurrected this week)
-        if (player.savings >= 100 && !player.wasResurrectedThisWeek) {
+        if (player.savings >= scaledCost && !player.wasResurrectedThisWeek) {
           const deathEvent: DeathEvent = {
             playerId,
             playerName: player.name,
             isPermadeath: false,
             wasResurrected: true,
-            message: "You fell in battle but the spirits of the Graveyard have restored you!\n\n100 gold was taken from your savings.",
+            message: `You fell in battle but the spirits of the Graveyard have restored you!\n\n${scaledCost} gold was taken from your savings.\nThe trauma of death weighs on your spirit (-${resurrectionHappinessPenalty} happiness).`,
           };
           set((state) => ({
             players: state.players.map((p) =>
@@ -335,7 +341,8 @@ export function createQuestActions(set: SetFn, get: GetFn) {
                 ? {
                     ...p,
                     health: 50,
-                    savings: p.savings - 100,
+                    savings: p.savings - scaledCost,
+                    happiness: Math.max(0, p.happiness - resurrectionHappinessPenalty),
                     currentLocation: 'graveyard' as LocationId,
                     wasResurrectedThisWeek: true,
                   }
@@ -343,20 +350,20 @@ export function createQuestActions(set: SetFn, get: GetFn) {
             ),
             deathEvent: player.isAI ? null : deathEvent,
             eventMessage: player.isAI
-              ? `${player.name} fell but was resurrected at the Graveyard! 100g taken from savings.`
+              ? `${player.name} fell but was resurrected at the Graveyard! ${scaledCost}g taken from savings.`
               : null,
           }));
           return false;
         }
 
-        // Permadeath OFF: respawn at graveyard with 20 HP (no cost)
+        // Permadeath OFF: respawn at graveyard with 20 HP (no gold cost, but happiness penalty)
         if (!enablePermadeath) {
           const deathEvent: DeathEvent = {
             playerId,
             playerName: player.name,
             isPermadeath: false,
             wasResurrected: false,
-            message: "Your body crumbles to the ground... but death is not the end.\n\nThe ancient magic of the Graveyard pulls your spirit back from the void. You awaken among the tombstones, weakened but alive.",
+            message: `Your body crumbles to the ground... but death is not the end.\n\nThe ancient magic of the Graveyard pulls your spirit back from the void. You awaken among the tombstones, weakened but alive.\nThe trauma of death weighs on your spirit (-${resurrectionHappinessPenalty} happiness).`,
           };
           set((state) => ({
             players: state.players.map((p) =>
@@ -364,6 +371,7 @@ export function createQuestActions(set: SetFn, get: GetFn) {
                 ? {
                     ...p,
                     health: 20,
+                    happiness: Math.max(0, p.happiness - resurrectionHappinessPenalty),
                     currentLocation: 'graveyard' as LocationId,
                     wasResurrectedThisWeek: true,
                   }

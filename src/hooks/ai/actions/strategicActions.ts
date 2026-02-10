@@ -21,7 +21,7 @@ import type { ActionContext } from './actionContext';
  */
 export function generateStrategicActions(ctx: ActionContext): AIAction[] {
   const actions: AIAction[] = [];
-  const { player, settings, currentLocation, moveCost, progress } = ctx;
+  const { player, settings, currentLocation, moveCost, progress, rivals } = ctx;
 
   // ============================================
   // GENERAL STRATEGIC ACTIONS (Always consider)
@@ -29,7 +29,7 @@ export function generateStrategicActions(ctx: ActionContext): AIAction[] {
 
   // Get a job if we don't have one
   if (!player.currentJob && player.timeRemaining > 8) {
-    const bestJob = getBestAvailableJob(player);
+    const bestJob = getBestAvailableJob(player, rivals);
     if (bestJob) {
       if (currentLocation === 'guild-hall') {
         actions.push({
@@ -52,7 +52,7 @@ export function generateStrategicActions(ctx: ActionContext): AIAction[] {
   // Consider upgrading job if better one available
   if (player.currentJob) {
     const currentJob = getJob(player.currentJob);
-    const bestJob = getBestAvailableJob(player);
+    const bestJob = getBestAvailableJob(player, rivals);
     if (currentJob && bestJob && bestJob.baseWage > currentJob.baseWage * 1.2) {
       if (currentLocation === 'guild-hall') {
         actions.push({

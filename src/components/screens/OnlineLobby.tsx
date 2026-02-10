@@ -373,19 +373,19 @@ export function OnlineLobby() {
               {/* Quick presets */}
               <div className="flex gap-2 mb-3">
                 <button
-                  onClick={() => updateSettings({ goals: { wealth: 2000, happiness: 75, education: 18, career: 50, adventure: 0 } })}
+                  onClick={() => updateSettings({ goals: { wealth: 2000, happiness: 75, education: 18, career: 50, adventure: settings.goals.adventure } })}
                   className="flex-1 p-1.5 wood-frame text-parchment text-xs font-display hover:brightness-110"
                 >
                   Quick
                 </button>
                 <button
-                  onClick={() => updateSettings({ goals: { wealth: 5000, happiness: 100, education: 45, career: 75, adventure: 0 } })}
+                  onClick={() => updateSettings({ goals: { wealth: 5000, happiness: 100, education: 45, career: 75, adventure: settings.goals.adventure } })}
                   className="flex-1 p-1.5 wood-frame text-parchment text-xs font-display hover:brightness-110"
                 >
                   Standard
                 </button>
                 <button
-                  onClick={() => updateSettings({ goals: { wealth: 10000, happiness: 100, education: 90, career: 100, adventure: 0 } })}
+                  onClick={() => updateSettings({ goals: { wealth: 10000, happiness: 100, education: 90, career: 100, adventure: settings.goals.adventure } })}
                   className="flex-1 p-1.5 wood-frame text-parchment text-xs font-display hover:brightness-110"
                 >
                   Epic
@@ -411,6 +411,36 @@ export function OnlineLobby() {
                   </span>
                 </div>
               </div>
+              {/* Adventure Goal Toggle */}
+              <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-amber-700 text-sm">Adventure Goal</span>
+                  <span className="text-xs text-amber-600">(Optional)</span>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <span className="text-xs text-amber-700">{settings.goals.adventure > 0 ? `${settings.goals.adventure} pts` : 'Off'}</span>
+                  <input
+                    type="checkbox"
+                    checked={settings.goals.adventure > 0}
+                    onChange={(e) => updateSettings({ goals: { ...settings.goals, adventure: e.target.checked ? 10 : 0 } })}
+                    className="w-4 h-4 accent-primary"
+                  />
+                </label>
+              </div>
+              {settings.goals.adventure > 0 && (
+                <div className="mt-2">
+                  <input
+                    type="range"
+                    min={3}
+                    max={25}
+                    step={1}
+                    value={settings.goals.adventure}
+                    onChange={(e) => updateSettings({ goals: { ...settings.goals, adventure: Number(e.target.value) } })}
+                    className="w-full accent-primary"
+                  />
+                  <p className="text-xs text-amber-600 mt-1">Quests completed + dungeon floors cleared</p>
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}

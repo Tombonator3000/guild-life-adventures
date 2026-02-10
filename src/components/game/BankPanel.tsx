@@ -14,7 +14,6 @@ interface BankPanelProps {
   spendTime?: (playerId: string, hours: number) => void;
   depositToBank: (playerId: string, amount: number) => void;
   withdrawFromBank: (playerId: string, amount: number) => void;
-  invest: (playerId: string, amount: number) => void;
   buyStock: (playerId: string, stockId: string, shares: number) => void;
   sellStock: (playerId: string, stockId: string, shares: number) => void;
   takeLoan: (playerId: string, amount: number) => void;
@@ -28,7 +27,6 @@ export function BankPanel({
   player,
   depositToBank,
   withdrawFromBank,
-  invest,
   buyStock,
   sellStock,
   takeLoan,
@@ -211,18 +209,6 @@ export function BankPanel({
           toast.success('Withdrew 50 gold!');
         }}
       />
-      <JonesMenuItem
-        label="Invest 100 Gold"
-        price={100}
-        disabled={player.gold < 100}
-        darkText
-        largeText
-        onClick={() => {
-          invest(player.id, 100);
-          toast.success('Invested 100 gold!');
-        }}
-      />
-
       <JonesSectionHeader title="SERVICES" />
       <JonesMenuItem
         label="See the Broker (Stocks)"
