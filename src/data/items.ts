@@ -595,36 +595,38 @@ export const TAVERN_ITEMS: Item[] = [
 ];
 
 // Academy items - Educational durables that CANNOT be stolen by Shadowfingers
+// Sold at Shadow Market (scholarly texts from... questionable sources)
+// Owning these reduces study sessions needed (Extra Credit system from Jones)
 export const ACADEMY_ITEMS: Item[] = [
   {
     id: 'encyclopedia',
-    name: 'Encyclopedia',
+    name: 'Tome of All Knowledge',
     category: 'education',
     basePrice: 200,
     effect: { type: 'happiness', value: 2 },
-    description: 'A comprehensive book of knowledge. Helps with studies.',
+    description: 'A vast compendium of lore. Reduces study sessions needed. (-1 session with all 3 scholar items)',
     isDurable: true,
-    isUnstealable: true, // Cannot be stolen by Shadowfingers
+    isUnstealable: true,
   },
   {
     id: 'dictionary',
-    name: 'Dictionary',
+    name: 'Lexicon of the Ancients',
     category: 'education',
     basePrice: 100,
     effect: { type: 'happiness', value: 1 },
-    description: 'Contains definitions of every word. Essential for scholars.',
+    description: 'Translations of every tongue, living and dead. (-1 session with all 3 scholar items)',
     isDurable: true,
-    isUnstealable: true, // Cannot be stolen by Shadowfingers
+    isUnstealable: true,
   },
   {
     id: 'atlas',
-    name: 'Atlas',
+    name: 'Cartographer\'s Codex',
     category: 'education',
     basePrice: 150,
     effect: { type: 'happiness', value: 1 },
-    description: 'Maps of the known world. Aids in quest planning.',
+    description: 'Maps of every realm, charted and uncharted. (-1 session with all 3 scholar items)',
     isDurable: true,
-    isUnstealable: true, // Cannot be stolen by Shadowfingers
+    isUnstealable: true,
   },
 ];
 

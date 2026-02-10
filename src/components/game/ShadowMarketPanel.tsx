@@ -3,8 +3,8 @@
 // Also sells lottery tickets (Fortune's Wheel) and weekend event tickets
 
 import { useGameStore } from '@/store/gameStore';
-import { getMarketAppliances, getAppliance, SHADOW_MARKET_ITEMS, getItemPrice } from '@/data/items';
-import { AlertTriangle } from 'lucide-react';
+import { getMarketAppliances, getAppliance, SHADOW_MARKET_ITEMS, ACADEMY_ITEMS, getItemPrice } from '@/data/items';
+import { AlertTriangle, BookOpen } from 'lucide-react';
 import type { Player } from '@/types/game.types';
 import { toast } from 'sonner';
 import {
@@ -16,7 +16,7 @@ import {
   JonesInfoRow,
 } from './JonesStylePanel';
 
-export type ShadowMarketSection = 'goods' | 'lottery' | 'tickets' | 'appliances';
+export type ShadowMarketSection = 'goods' | 'lottery' | 'tickets' | 'appliances' | 'scholar';
 
 interface ShadowMarketPanelProps {
   player: Player;
@@ -41,7 +41,7 @@ export function ShadowMarketPanel({
   buyTicket,
   section,
 }: ShadowMarketPanelProps) {
-  const { buyAppliance } = useGameStore();
+  const { buyAppliance, buyDurable } = useGameStore();
   const appliances = getMarketAppliances();
 
   const handleBuyAppliance = (applianceId: string, price: number) => {
@@ -161,6 +161,35 @@ export function ShadowMarketPanel({
     </>
   );
 
+  const renderScholarItems = () => (
+    <>
+      <div className={`text-xs ${darkText ? 'text-[#6b5a42]' : 'text-[#8b7355]'} px-2 mb-1 flex items-center gap-1`}>
+        <BookOpen className="w-3 h-3" />
+        Own all 3 to reduce study sessions by 1
+      </div>
+      {ACADEMY_ITEMS.map(item => {
+        const price = Math.round(getItemPrice(item, priceModifier * 0.85));
+        const alreadyOwns = !!player.durables[item.id];
+        const canAfford = player.gold >= price;
+        return (
+          <JonesMenuItem
+            key={item.id}
+            label={item.name}
+            price={price}
+            disabled={!canAfford || alreadyOwns}
+            highlight={alreadyOwns}
+            onClick={() => {
+              buyDurable(player.id, item.id, price);
+              toast.success(`Purchased ${item.name}!`);
+            }}
+            darkText={darkText}
+            largeText={largeText}
+          />
+        );
+      })}
+    </>
+  );
+
   const renderAppliances = () => (
     <>
       <div className={`text-xs ${darkText ? 'text-[#8b6914]' : 'text-[#a09080]'} px-2 mb-1 flex items-center gap-1`}>
@@ -203,6 +232,8 @@ export function ShadowMarketPanel({
         return <div>{renderTickets()}{footerNote}</div>;
       case 'appliances':
         return <div>{renderAppliances()}{footerNote}</div>;
+      case 'scholar':
+        return <div>{renderScholarItems()}{footerNote}</div>;
     }
   }
 
@@ -219,6 +250,9 @@ export function ShadowMarketPanel({
 
         <JonesSectionHeader title="WEEKEND TICKETS" />
         {renderTickets()}
+
+        <JonesSectionHeader title="SCHOLAR TEXTS" />
+        {renderScholarItems()}
 
         <JonesSectionHeader title="USED MAGICAL ITEMS" />
         {renderAppliances()}
