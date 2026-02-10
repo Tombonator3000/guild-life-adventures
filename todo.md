@@ -858,6 +858,12 @@
   - Fixes seraphina.jpg and other portraits not showing after a previous portrait load failure
   - Added `useEffect` reset in CharacterPortrait.tsx
 
+- [x] Refactor weekEndHelpers.ts — split 530-line god-function into 16 focused helpers
+  - 4 global system processors: advanceEconomy, advanceWeatherSystem, checkFestival, calculateFinalPrice
+  - 12 per-player processors: resetWeeklyFlags, processEmployment, processNeeds, processWeatherOnPlayer, processFestivalOnPlayer, processHousing, processFinances, processSickness, processLoans, processLeisure, processAging, updateRentTracking
+  - Pipeline orchestrator: processPlayerWeekEnd, processDeathChecks
+  - Zero behavior changes — 171 tests pass, build succeeds
+
 ## In Progress
 
 *No active tasks*
