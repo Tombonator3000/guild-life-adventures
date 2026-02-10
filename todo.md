@@ -968,15 +968,15 @@ Tier 2: Web Speech API — browser native fallback (zero setup)
 Tier 3: No narration (text only — current behavior)
 ```
 
-### Phase 1: Web Speech API Fallback (Zero Dependencies)
+### Phase 1: Web Speech API Fallback (Zero Dependencies) — DONE 2026-02-10
 
-- [ ] Create `src/audio/speechNarrator.ts` — SpeechSynthesis singleton with voice selection + bug workarounds
-- [ ] Implement preferred voice selection (en-GB priority: Google UK English > Microsoft Daniel > Apple Daniel > any en-GB > any en)
-- [ ] Add `narrationMode: 'off' | 'web-speech' | 'kokoro'` to game options
-- [ ] Add Narration section to OptionsMenu Audio tab (off by default, voice picker, volume/speed sliders)
-- [ ] Create `useNarration` hook — trigger on NPC greetings, weekend events, quest text, location arrival
-- [ ] Gate first `speak()` behind user gesture (Chrome 71+ requirement)
-- [ ] Add bug workarounds (utterance GC fix, cancel/speak delay, voiceschanged async loading)
+- [x] Create `src/audio/speechNarrator.ts` — SpeechSynthesis singleton with voice selection + bug workarounds
+- [x] Implement preferred voice selection (en-GB priority: Google UK English > Microsoft Daniel > Apple Daniel > any en-GB > any en)
+- [x] Add narration settings to speechNarrator.ts (enabled, volume, rate, voiceURI — persisted in localStorage)
+- [x] Add Narration section to OptionsMenu Audio tab (off by default, voice picker, volume/speed sliders)
+- [x] Create `useNarration` hook — trigger on NPC greetings, weekend events, event messages, location arrival
+- [x] Gate first `speak()` behind user gesture (Chrome 71+ requirement)
+- [x] Add bug workarounds (utterance GC fix, cancel/speak delay, voiceschanged async loading)
 - [ ] (Optional) Evaluate `easy-speech` npm package for cross-browser normalization
 
 ### Phase 2: Kokoro TTS (Primary Neural Engine)

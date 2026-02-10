@@ -1,5 +1,64 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-10 - Web Speech API Voice Narration (Implementation)
+
+### Overview
+
+Implemented browser-native voice narration using the Web Speech API (SpeechSynthesis). Zero dependencies — no npm packages, no API keys, no model downloads. NPCs, events, and weekend activities are read aloud when enabled in Options > Audio.
+
+### Architecture
+
+```
+speechNarrator.ts (singleton) ← useNarration.ts (hooks) ← Index.tsx (controller) + OptionsMenu.tsx (UI)
+```
+
+- **Tier 2 in the narration stack**: Falls below Kokoro TTS (future) but above text-only
+- **Off by default** — user must enable in Options > Audio > Voice Narration
+- **Settings persisted** in localStorage (`guild-life-narration-settings`)
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `src/audio/speechNarrator.ts` | Singleton wrapping SpeechSynthesis API with voice selection, bug workarounds, settings persistence |
+| `src/hooks/useNarration.ts` | `useNarrationSettings` (Options UI binding) + `useNarrationController` (game event narration driver) |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/components/game/OptionsMenu.tsx` | Added Voice Narration section to Audio tab (enable toggle, voice picker, volume slider, speed slider) |
+| `src/pages/Index.tsx` | Added `useNarrationController` alongside music/ambient controllers |
+
+### Features
+
+1. **Smart voice selection** — en-GB priority: Google UK English Male > Google UK English Female > Microsoft Daniel > Apple Daniel > any en-GB > any English > default
+2. **NPC greeting narration** — speaks NPC greeting when arriving at a location
+3. **Event message narration** — speaks weather events, robbery alerts, festival announcements
+4. **Weekend event narration** — speaks weekend activity descriptions
+5. **Voice picker** — dropdown of all available English voices (filtered from browser)
+6. **Volume & speed sliders** — adjustable 0-100% volume, 0.5x-2.0x speed
+7. **User gesture gate** — first speech unlocked on click/tap/keydown (Chrome 71+ requirement)
+
+### Bug Workarounds Implemented
+
+| Bug | Workaround |
+|-----|-----------|
+| Chrome 15s cutoff | Game text is short (<200 chars), non-issue |
+| Utterance GC kills `onend` | Store reference in `currentUtterance` module var |
+| `cancel()` swallows next `speak()` | 300ms delay between cancel and new speak |
+| Firefox utterance reuse | Always create new `SpeechSynthesisUtterance` per call |
+| Voices load async (Chrome) | `voiceschanged` event + 3s timeout fallback |
+| User gesture required | Global click/touch/keydown listener, gate on `userGestureReceived` |
+| Browser not supported | `isSupported` check, fallback message in UI |
+
+### Build & Tests
+- TypeScript: compiles cleanly (tsc --noEmit)
+- Build: passes (vite build)
+- Tests: 176/176 pass (no new tests needed — Web Speech API is browser-only)
+
+---
+
 ## 2026-02-10 - Web Speech API Research (Voice Narration Fallback)
 
 ### Context
