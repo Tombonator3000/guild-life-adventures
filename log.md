@@ -1,5 +1,34 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-10 - UI Positioning, SFX Fix, Portrait Fix
+
+### Summary
+
+Three fixes: moved the Week/Market HUD display higher to the upper edge of the game board, fixed MP3 sound effects being permanently ignored after browser autoplay block, and fixed AI portrait images (including Seraphina) not displaying when `imageError` state persisted across portrait changes.
+
+### What Was Done
+
+- **GameBoardHeader positioning** (`src/components/game/GameBoardHeader.tsx`)
+  - Changed `top-4` (16px) to `top-1` (4px) — moves Week/Market display to the upper edge of the board
+  - Matches user request for the HUD to sit at the top edge
+
+- **SFX autoplay bug fix** (`src/audio/sfxManager.ts`)
+  - **Root cause**: When the browser blocks autoplay (common before first user interaction), `play().catch()` permanently added the SFX ID to `failedFiles`, causing all future plays to skip the MP3 and use Web Audio synth fallback instead
+  - **Fix**: Now checks `err.name === 'NotAllowedError'` — autoplay blocks use synth once but don't mark the file as permanently failed, so the next user-initiated play retries the real MP3
+  - All 36 MP3 files in `public/sfx/` verified to match `SFX_LIBRARY` definitions
+  - 20 components call `playSFX()` — the system was already wired up, just the autoplay bug prevented MP3s from ever playing
+
+- **Portrait imageError persistence fix** (`src/components/game/CharacterPortrait.tsx`)
+  - **Root cause**: `useState(false)` for `imageError` was never reset when `portraitId` changed — if any portrait failed to load, the error state persisted and showed the SVG placeholder even for valid images
+  - **Fix**: Added `useEffect` that resets `imageError` to `false` whenever `portraitId` changes
+  - `seraphina.jpg` (80KB) exists in `public/portraits/` and is correctly defined in `AI_PORTRAITS` as `ai-seraphina` with path `portraits/seraphina.jpg`
+
+### Technical Notes
+- TypeScript compiles cleanly (`tsc --noEmit` passes)
+- No new dependencies added
+
+---
+
 ## 2026-02-09 - Adventurer's Manual (User Manual)
 
 ### Summary

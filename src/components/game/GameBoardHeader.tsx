@@ -26,7 +26,7 @@ export function GameBoardHeader({
   onOpenMenu: () => void;
 }) {
   return (
-    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+    <div className="absolute top-1 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
       <div className="parchment-panel px-6 py-2 flex items-center gap-6">
         <span className="font-display text-lg">
           Week <span className="text-primary font-bold">{week}</span>

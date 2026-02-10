@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getPortrait, type PortraitDefinition } from '@/data/portraits';
 
 interface CharacterPortraitProps {
@@ -25,6 +25,11 @@ export function CharacterPortrait({
 }: CharacterPortraitProps) {
   const [imageError, setImageError] = useState(false);
   const portrait = getPortrait(portraitId);
+
+  // Reset error state when portrait changes (e.g., different AI player)
+  useEffect(() => {
+    setImageError(false);
+  }, [portraitId]);
 
   // If no portrait selected, show colored circle with initial
   if (!portrait) {

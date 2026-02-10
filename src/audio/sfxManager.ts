@@ -141,10 +141,17 @@ class SFXManager {
     // Play (handle autoplay restrictions silently)
     const playPromise = audio.play();
     if (playPromise) {
-      playPromise.catch(() => {
-        // MP3 failed (file missing or autoplay blocked) — fall back to synth
-        this.failedFiles.add(sfxId);
-        playSynthSFX(sfxId, effectiveVolume);
+      playPromise.catch((err) => {
+        // Only mark as permanently failed for actual load errors, not autoplay blocks
+        if (err?.name === 'NotAllowedError') {
+          // Autoplay blocked by browser — use synth this time but don't mark as failed
+          // so next user-initiated play will retry the MP3
+          playSynthSFX(sfxId, effectiveVolume);
+        } else {
+          // Real load error — mark as failed, use synth from now on
+          this.failedFiles.add(sfxId);
+          playSynthSFX(sfxId, effectiveVolume);
+        }
       });
     }
 
