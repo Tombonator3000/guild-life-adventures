@@ -848,6 +848,16 @@
   - Credits: audioManager.stop() on mount, audioManager.play('main-theme') on unmount (no music overlap)
   - Build passes, 171 tests pass
 
+## Completed (2026-02-10)
+
+- [x] GameBoardHeader positioning — moved Week/Market display from `top-4` to `top-1` (upper edge)
+- [x] SFX autoplay bug fix — MP3s no longer permanently marked as failed after browser autoplay block
+  - Distinguished `NotAllowedError` (autoplay blocked) from real load errors
+  - All 36 MP3 files in public/sfx/ verified matching SFX_LIBRARY
+- [x] Portrait imageError persistence fix — reset `imageError` state when `portraitId` changes
+  - Fixes seraphina.jpg and other portraits not showing after a previous portrait load failure
+  - Added `useEffect` reset in CharacterPortrait.tsx
+
 ## In Progress
 
 *No active tasks*
