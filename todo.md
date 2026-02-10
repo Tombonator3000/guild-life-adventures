@@ -850,6 +850,22 @@
 
 ## Completed (2026-02-10)
 
+- [x] Extra Credit System — scholar items + study session reduction
+  - Renamed Encyclopedia/Dictionary/Atlas to fantasy names (Tome of All Knowledge, Lexicon of the Ancients, Cartographer's Codex)
+  - Added to Shadow Market → Scholar Texts tab
+  - `getEffectiveSessionsRequired()` in education.ts: Arcane Tome -1, all 3 scholars -1, both -2
+  - Academy UI shows reduced sessions with green indicator
+  - User Manual updated with new names and purchase location
+
+- [x] Enhanced Rain Effects — improved visibility + screen water droplets
+  - Increased streak count, width, and opacity for better rain visibility
+  - Added water droplets that slide down screen (window rain effect)
+  - Droplets have realistic head shape, trailing water streak, variable speed/size
+
+- [x] Death/Resurrection Graveyard Fix — show graveyard panel after death
+  - `dismissDeathEvent` now sets `selectedLocation: 'graveyard'` when player respawns at graveyard
+  - Player sees Graveyard services immediately instead of "Travel to..." button
+
 - [x] GameBoardHeader positioning — moved Week/Market display from `top-4` to `top-1` (upper edge)
 - [x] SFX autoplay bug fix — MP3s no longer permanently marked as failed after browser autoplay block
   - Distinguished `NotAllowedError` (autoplay blocked) from real load errors

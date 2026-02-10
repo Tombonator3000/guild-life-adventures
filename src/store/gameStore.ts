@@ -277,6 +277,16 @@ export const useGameStore = create<GameStore>((set, get) => {
     // Death event modal
     dismissDeathEvent: () => {
       if (get().networkMode === 'guest') markEventDismissed('deathEvent');
+      // After death/resurrection, show the Graveyard panel if player is there
+      const state = get();
+      const deathEvt = state.deathEvent;
+      if (deathEvt && !deathEvt.isPermadeath) {
+        const player = state.players.find(p => p.id === deathEvt.playerId);
+        if (player?.currentLocation === 'graveyard') {
+          set({ deathEvent: null, selectedLocation: 'graveyard' });
+          return;
+        }
+      }
       set({ deathEvent: null });
     },
 

@@ -552,6 +552,11 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             content: <ShadowMarketPanel {...shadowMarketProps} section="tickets" />,
           },
           {
+            id: 'scholar',
+            label: 'Scholar Texts',
+            content: <ShadowMarketPanel {...shadowMarketProps} section="scholar" />,
+          },
+          {
             id: 'appliances',
             label: 'Magical Items',
             content: <ShadowMarketPanel {...shadowMarketProps} section="appliances" />,

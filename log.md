@@ -1,5 +1,73 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-10 - Extra Credit System, Rain Enhancement & Death/Graveyard Fix
+
+### Task 1: Scholar Items at Shadow Market + Extra Credit System
+
+Implemented the Jones-style Extra Credit system where owning certain items reduces study sessions needed per degree.
+
+**Items renamed to fantasy theme and now sold at Shadow Market:**
+- Encyclopedia → **Tome of All Knowledge** (200g)
+- Dictionary → **Lexicon of the Ancients** (100g)
+- Atlas → **Cartographer's Codex** (150g)
+
+These items were previously defined in `ACADEMY_ITEMS` but never sold at any shop. Now available at Shadow Market → Scholar Texts tab (at 85% of base price).
+
+**Extra Credit bonus calculation:**
+- Arcane Tome (appliance): -1 session (9 instead of 10)
+- All 3 scholar items: -1 session (9 instead of 10)
+- Arcane Tome + all 3 scholar items: -2 sessions (8 instead of 10, 20% savings!)
+- Matches Jones in the Fast Lane (Computer = Arcane Tome, Encyclopedia+Dictionary+Atlas = scholar items)
+
+**Academy UI updated:**
+- Shows "Extra Credit: X sessions per degree" when player has bonus
+- Progress bars show reduced requirement with green (-N) indicator
+- Graduation triggers at effective sessions, not base 10
+
+**Files changed:**
+- `src/data/items.ts` — Renamed 3 ACADEMY_ITEMS to fantasy names, updated descriptions
+- `src/data/education.ts` — Added `getEffectiveSessionsRequired()`, `SCHOLAR_ITEM_IDS`, `ARCANE_TOME_ID`
+- `src/components/game/AcademyPanel.tsx` — Uses effective sessions, shows Extra Credit indicator
+- `src/components/game/ShadowMarketPanel.tsx` — Added `scholar` section type, renders ACADEMY_ITEMS
+- `src/components/game/LocationPanel.tsx` — Added Scholar Texts tab to Shadow Market location
+- `src/components/game/UserManual.tsx` — Updated item names and added Shadow Market purchase tip
+
+### Task 2: Enhanced Rain Visual Effects
+
+Improved rain visibility and added water droplets that slide down the screen like rain on a window.
+
+**Changes:**
+- Increased rain streak count (40→50 heavy, 20→25 light) and widened streaks (1→1.5px heavy)
+- Boosted base rain opacity (0.4→0.5 heavy, 0.25→0.3 light)
+- Darkened wet overlay for more atmospheric feel
+- **New: Screen droplets** — water beads that slide down the screen with:
+  - Realistic rounded droplet head with radial gradient highlight
+  - Thin water trail behind each droplet
+  - Variable sizes (3-8px), speeds (4-10s), and wobble
+  - 18 droplets in heavy rain, 10 in light rain
+  - Smooth CSS animation with fade in/out
+
+**Files changed:**
+- `src/components/game/WeatherOverlay.tsx` — Enhanced RainLayer with droplet system, increased streak visibility
+
+### Task 3: Death/Resurrection Graveyard Display Fix
+
+After dying and being resurrected at the Graveyard, the player now sees the Graveyard panel directly instead of a "Travel to..." button.
+
+**Root cause:** `dismissDeathEvent` only cleared the death modal but didn't update `selectedLocation`. After death, `currentLocation` was correctly set to `'graveyard'`, but the center panel showed nothing (or required clicking the graveyard zone to see its panel).
+
+**Fix:** `dismissDeathEvent` now checks if the player was resurrected (non-permadeath) and is at the Graveyard, and sets `selectedLocation: 'graveyard'` so the Graveyard panel with services (pray, meditate, spirit blessing) appears immediately.
+
+**Files changed:**
+- `src/store/gameStore.ts` — `dismissDeathEvent` sets selectedLocation to graveyard on resurrection
+
+### Build & Tests
+- 176 tests pass (all 9 test files)
+- TypeScript compiles cleanly (tsc --noEmit)
+- Production build blocked by pre-existing workbox-build npm registry issue (unrelated to changes)
+
+---
+
 ## 2026-02-10 - Multiplayer Improvement Audit & Security Hardening
 
 ### Overview

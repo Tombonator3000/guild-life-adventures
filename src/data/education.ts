@@ -201,3 +201,39 @@ export const GRADUATION_BONUSES = {
 export const MAX_DEGREES = ALL_DEGREES.length; // 11 degrees like Jones
 export const MAX_EDUCATION_POINTS = MAX_DEGREES * 9; // 99 points max
 
+// === Extra Credit System (Jones-style lesson reduction) ===
+// Owning certain items reduces the number of study sessions needed per degree.
+// - Arcane Tome alone: -1 session (9 instead of 10)
+// - All 3 scholar items (Tome of All Knowledge + Lexicon + Codex): -1 session (9 instead of 10)
+// - Arcane Tome + all 3 scholar items: -2 sessions (8 instead of 10, 20% savings)
+export const SCHOLAR_ITEM_IDS = ['encyclopedia', 'dictionary', 'atlas'] as const;
+export const ARCANE_TOME_ID = 'arcane-tome'; // Appliance ID
+
+/**
+ * Calculate the effective sessions required for a degree based on owned items.
+ * @param baseRequired The base sessionsRequired from the degree definition (normally 10)
+ * @param ownedDurables Array of durable item IDs the player owns
+ * @param ownedAppliances Array of appliance IDs the player owns (not broken)
+ * @returns Adjusted sessions required (8-10)
+ */
+export const getEffectiveSessionsRequired = (
+  baseRequired: number,
+  ownedDurables: string[],
+  ownedAppliances: string[],
+): number => {
+  let reduction = 0;
+
+  // Arcane Tome (appliance): -1 session
+  if (ownedAppliances.includes(ARCANE_TOME_ID)) {
+    reduction += 1;
+  }
+
+  // All 3 scholar items: -1 session
+  const hasAllScholarItems = SCHOLAR_ITEM_IDS.every(id => ownedDurables.includes(id));
+  if (hasAllScholarItems) {
+    reduction += 1;
+  }
+
+  return Math.max(1, baseRequired - reduction);
+};
+

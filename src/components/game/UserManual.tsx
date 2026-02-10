@@ -546,13 +546,14 @@ function EducationChapter() {
         headers={['Items Owned', 'Sessions Required']}
         rows={[
           ['None', '10'],
-          ['Arcane Tome', '9'],
-          ['Encyclopedia + Dictionary + Atlas (all 3)', '9'],
+          ['Arcane Tome (appliance)', '9'],
+          ['Tome of All Knowledge + Lexicon of the Ancients + Cartographer\'s Codex (all 3)', '9'],
           ['All 4 items above', '8 (20% savings!)'],
         ]}
       />
 
       <Tip>
+        Scholar texts (Tome, Lexicon, Codex) are sold at the Shadow Market's Scholar Texts tab.
         Start with Trade Guild Certificate or Junior Academy Diploma — they're cheap
         and unlock important early jobs. The two starting degrees open different
         career paths, so pick based on your strategy.
@@ -911,9 +912,9 @@ function CrimeChapter() {
 
       <H2>Items That Cannot Be Stolen</H2>
       <P>
-        Some large items are too heavy for Shadowfingers: Computer (Arcane Tome),
-        Preservation Box, Frost Chest, cooking appliances, Encyclopedia, Dictionary,
-        and Atlas.
+        Some large items are too heavy for Shadowfingers: Arcane Tome,
+        Preservation Box, Frost Chest, cooking appliances, Tome of All Knowledge,
+        Lexicon of the Ancients, and Cartographer's Codex.
       </P>
 
       <Tip>

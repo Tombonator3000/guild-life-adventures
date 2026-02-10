@@ -114,8 +114,8 @@ function getSizeVariance(p: WeatherParticle): number {
 function getBaseOpacity(p: WeatherParticle): number {
   switch (p) {
     case 'snow': return 0.6;
-    case 'rain': return 0.4;
-    case 'light-rain': return 0.25;
+    case 'rain': return 0.5;
+    case 'light-rain': return 0.3;
     case 'heatwave': return 0.08;
     case 'fog': return 0.04;
   }
@@ -273,10 +273,11 @@ function HeatwaveLayer() {
   );
 }
 
-/** Rain layer — wet overlay, diagonal streaks, and splash ripples at the bottom */
+/** Rain layer — wet overlay, diagonal streaks, splash ripples, and screen droplets */
 function RainLayer({ heavy }: { heavy: boolean }) {
-  const streakCount = heavy ? 40 : 20;
-  const splashCount = heavy ? 24 : 12;
+  const streakCount = heavy ? 50 : 25;
+  const splashCount = heavy ? 28 : 14;
+  const dropletCount = heavy ? 18 : 10;
 
   // Pre-generate stable random positions
   const streaks = useMemo(() =>
@@ -284,8 +285,8 @@ function RainLayer({ heavy }: { heavy: boolean }) {
       id: i,
       left: Math.random() * 110 - 5,
       delay: Math.random() * 2,
-      duration: 0.4 + Math.random() * 0.4,
-      opacity: 0.06 + Math.random() * (heavy ? 0.12 : 0.06),
+      duration: 0.3 + Math.random() * 0.35,
+      opacity: 0.08 + Math.random() * (heavy ? 0.15 : 0.08),
     })),
   [streakCount, heavy]);
 
@@ -298,6 +299,21 @@ function RainLayer({ heavy }: { heavy: boolean }) {
       duration: 0.6 + Math.random() * 0.6,
     })),
   [splashCount]);
+
+  // Water droplets that slide down the screen (like rain on a window)
+  const droplets = useMemo(() =>
+    Array.from({ length: dropletCount }, (_, i) => ({
+      id: i,
+      left: Math.random() * 98 + 1,
+      startTop: -2 - Math.random() * 5,
+      delay: Math.random() * 12,
+      duration: 4 + Math.random() * 6,
+      size: 3 + Math.random() * 5,
+      wobble: (Math.random() - 0.5) * 3,
+      opacity: 0.15 + Math.random() * (heavy ? 0.25 : 0.15),
+      trailLength: 15 + Math.random() * 25,
+    })),
+  [dropletCount, heavy]);
 
   return (
     <>
@@ -312,8 +328,14 @@ function RainLayer({ heavy }: { heavy: boolean }) {
           100% { transform: scale(1); opacity: 0; }
         }
         @keyframes rain-wet-pulse {
-          0%, 100% { opacity: ${heavy ? 0.10 : 0.05}; }
-          50% { opacity: ${heavy ? 0.16 : 0.08}; }
+          0%, 100% { opacity: ${heavy ? 0.12 : 0.06}; }
+          50% { opacity: ${heavy ? 0.20 : 0.10}; }
+        }
+        @keyframes droplet-slide {
+          0% { top: -5%; opacity: 0; }
+          3% { opacity: 1; }
+          85% { opacity: 0.8; }
+          100% { top: 105%; opacity: 0; }
         }
       `}</style>
       {/* Dark wet overlay */}
@@ -322,8 +344,8 @@ function RainLayer({ heavy }: { heavy: boolean }) {
           position: 'absolute',
           inset: 0,
           background: heavy
-            ? 'linear-gradient(to bottom, rgba(30,40,60,0.12), rgba(20,30,50,0.08), rgba(30,40,60,0.14))'
-            : 'linear-gradient(to bottom, rgba(40,50,70,0.06), rgba(30,40,60,0.04), rgba(40,50,70,0.07))',
+            ? 'linear-gradient(to bottom, rgba(30,40,60,0.15), rgba(20,30,50,0.10), rgba(30,40,60,0.18))'
+            : 'linear-gradient(to bottom, rgba(40,50,70,0.08), rgba(30,40,60,0.05), rgba(40,50,70,0.09))',
           animation: `rain-wet-pulse 6s ease-in-out infinite`,
         }}
       />
@@ -335,10 +357,10 @@ function RainLayer({ heavy }: { heavy: boolean }) {
             position: 'absolute',
             left: `${s.left}%`,
             top: '-10%',
-            width: '1px',
-            height: heavy ? '8vh' : '5vh',
+            width: heavy ? '1.5px' : '1px',
+            height: heavy ? '10vh' : '6vh',
             opacity: s.opacity,
-            background: 'linear-gradient(to bottom, transparent, rgba(180,210,255,0.5), transparent)',
+            background: 'linear-gradient(to bottom, transparent, rgba(180,210,255,0.6), transparent)',
             animation: `rain-streak ${s.duration}s linear ${s.delay}s infinite`,
           }}
         />
@@ -354,10 +376,51 @@ function RainLayer({ heavy }: { heavy: boolean }) {
             width: '8px',
             height: '3px',
             borderRadius: '50%',
-            border: '1px solid rgba(180,210,255,0.3)',
+            border: '1px solid rgba(180,210,255,0.35)',
             animation: `rain-splash ${s.duration}s ease-out ${s.delay}s infinite`,
           }}
         />
+      ))}
+      {/* Water droplets sliding down the screen (window rain effect) */}
+      {droplets.map((d) => (
+        <div
+          key={`droplet-${d.id}`}
+          style={{
+            position: 'absolute',
+            left: `${d.left}%`,
+            top: `${d.startTop}%`,
+            width: `${d.size}px`,
+            animation: `droplet-slide ${d.duration}s ease-in ${d.delay}s infinite`,
+            pointerEvents: 'none',
+          }}
+        >
+          {/* Droplet head — round water bead */}
+          <div
+            style={{
+              width: `${d.size}px`,
+              height: `${d.size * 1.3}px`,
+              borderRadius: '50% 50% 50% 50% / 40% 40% 60% 60%',
+              background: `radial-gradient(ellipse at 35% 30%, rgba(220,235,255,${d.opacity + 0.1}), rgba(160,200,240,${d.opacity * 0.6}))`,
+              boxShadow: `0 0 ${d.size * 0.5}px rgba(160,200,240,${d.opacity * 0.4})`,
+              position: 'relative',
+              zIndex: 1,
+              transform: `translateX(${d.wobble}px)`,
+            }}
+          />
+          {/* Droplet trail — thin water streak behind */}
+          <div
+            style={{
+              position: 'absolute',
+              top: `-${d.trailLength}px`,
+              left: `${d.size * 0.35}px`,
+              width: `${Math.max(1, d.size * 0.3)}px`,
+              height: `${d.trailLength}px`,
+              background: `linear-gradient(to bottom, transparent, rgba(180,210,250,${d.opacity * 0.3}), rgba(180,210,250,${d.opacity * 0.5}))`,
+              borderRadius: '1px',
+              transform: `translateX(${d.wobble * 0.5}px)`,
+            }}
+          />
+        </div>
       ))}
     </>
   );
