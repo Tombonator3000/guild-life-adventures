@@ -1,5 +1,70 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-10 - Refactor useGrimwaldAI.ts executeAction (Complex Code Refactoring)
+
+### Summary
+
+Refactored the 390-line, 34-case `executeAction` switch statement in `useGrimwaldAI.ts` into a handler-map pattern in a new `actionExecutor.ts` module. Zero behavior changes — all 171 tests pass, build succeeds, TypeScript clean.
+
+### Problem
+
+`executeAction` in `useGrimwaldAI.ts` was a single `useCallback` containing a monolithic switch statement with 34 cases (lines 91-490). Each case handled a different AI action type (move, buy-food, work, study, apply-job, explore-dungeon, etc.). Issues:
+
+- **Readability**: 390 lines inside a single switch made it hard to find specific action logic
+- **Maintainability**: Adding a new action required editing deep inside the switch and updating a 35-item useCallback dependency array
+- **Testability**: Individual action handlers couldn't be tested in isolation
+- **Coupling**: The hook destructured 35+ store actions individually, creating a massive dependency list
+
+### What Was Done
+
+**Created `src/hooks/ai/actionExecutor.ts`:**
+- Defined `StoreActions` interface — bundles all 37 store actions the AI needs into a single typed object
+- Extracted each switch case into a named handler function, organized by category:
+  - Movement: `handleMove`
+  - Resource purchases: `handleBuyFood`, `handleBuyClothing`, `handleBuyFreshFood`, `handleBuyTicket`, `handleBuyLotteryTicket`
+  - Employment: `handleWork`, `handleApplyJob`
+  - Education: `handleStudy`, `handleGraduate`
+  - Housing & Rent: `handlePayRent`, `handleMoveHousing`, `handleDowngradeHousing`
+  - Banking & Finance: `handleDepositBank`, `handleWithdrawBank`, `handleTakeLoan`, `handleRepayLoan`, `handleBuyStock`, `handleSellStock`
+  - Health & Recovery: `handleRest`, `handleHeal`, `handleCureSickness`
+  - Equipment & Items: `handleBuyAppliance`, `handleBuyEquipment`, `handleTemperEquipment`, `handleSellItem`, `handlePawnAppliance`
+  - Quests & Guild: `handleBuyGuildPass`, `handleTakeQuest`, `handleTakeChainQuest`, `handleTakeBounty`, `handleCompleteQuest`
+  - Dungeon: `handleExploreDungeon`
+  - Turn Control: `handleEndTurn`
+- Created `ACTION_HANDLERS` record mapping `AIActionType` to handler functions
+- Created `executeAIAction()` — simple dispatch function that looks up the handler and calls it
+
+**Simplified `useGrimwaldAI.ts`:**
+- Replaced 35+ individual store action destructuring with a single `const store = useGameStore()`
+- Created `storeActions` object via `useMemo` to bundle actions
+- Replaced the 390-line `executeAction` switch with a 3-line function that delegates to `executeAIAction`
+- Reduced file from 627 lines to 227 lines (64% reduction)
+- Simplified useCallback dependency array from 35 items to 1 (`storeActions`)
+
+### Result
+
+| Metric | Before | After |
+|--------|--------|-------|
+| useGrimwaldAI.ts lines | 627 | 227 |
+| executeAction function | 390-line switch (34 cases) | 3-line dispatch |
+| useCallback deps | 35 individual functions | 1 object |
+| Action handlers | Inlined in switch | 34 named functions in actionExecutor.ts |
+| Adding new action | Edit deep switch + update dep array | Add handler function + 1 map entry |
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/hooks/ai/actionExecutor.ts` | **NEW** — 34 action handlers + StoreActions interface + handler map |
+| `src/hooks/useGrimwaldAI.ts` | Replaced 400-line switch with delegated dispatch |
+
+### Verification
+
+- TypeScript compiles cleanly (`tsc --noEmit`)
+- All 171 tests pass
+- Production build succeeds
+- No behavior changes — all action handlers preserve exact same logic
+
 ## 2026-02-10 - Refactor weekEndHelpers.ts (Complex Code Refactoring)
 
 ### Summary
