@@ -6,6 +6,7 @@
  */
 
 import { getFloor, getFloorTimeCost } from '@/data/dungeon';
+import { FESTIVALS } from '@/data/festivals';
 import { calculateCombatStats, ARMORY_ITEMS, getTemperCost, TEMPER_TIME } from '@/data/items';
 import type { AIAction } from '../types';
 import {
@@ -23,7 +24,13 @@ import type { ActionContext } from './actionContext';
  */
 export function generateQuestDungeonActions(ctx: ActionContext): AIAction[] {
   const actions: AIAction[] = [];
-  const { player, settings, currentLocation, moveCost, weakestGoal, priceModifier } = ctx;
+  const { player, settings, currentLocation, moveCost, weakestGoal, priceModifier, activeFestival } = ctx;
+
+  // Festival-aware dungeon priority bonus
+  const festivalDungeonMult = activeFestival
+    ? (FESTIVALS.find(f => f.id === activeFestival)?.dungeonGoldMultiplier ?? 1.0)
+    : 1.0;
+  const festivalDungeonBonus = festivalDungeonMult > 1.0 ? 8 : 0; // Boost dungeon priority during gold festivals
 
   // ============================================
   // DUNGEON & QUEST ACTIONS
@@ -180,7 +187,7 @@ export function generateQuestDungeonActions(ctx: ActionContext): AIAction[] {
     if (currentLocation === 'cave') {
       actions.push({
         type: 'explore-dungeon',
-        priority: 58 + (weakestGoal === 'wealth' ? 10 : 0),
+        priority: 58 + (weakestGoal === 'wealth' ? 10 : 0) + festivalDungeonBonus,
         description: `Explore dungeon floor ${dungeonFloor}`,
         details: { floorId: dungeonFloor },
       });

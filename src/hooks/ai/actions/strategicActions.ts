@@ -70,7 +70,7 @@ export function generateStrategicActions(ctx: ActionContext): AIAction[] {
     const job = getJob(player.currentJob);
     if (job && player.timeRemaining >= job.hoursPerShift) {
       const jobLocation = getJobLocation(job);
-      if (currentLocation === jobLocation || currentLocation === 'guild-hall') {
+      if (currentLocation === jobLocation) {
         actions.push({
           type: 'work',
           priority: 50 + (progress.wealth.progress < 0.5 ? 20 : 0),
@@ -100,7 +100,7 @@ export function generateStrategicActions(ctx: ActionContext): AIAction[] {
         type: 'move-housing',
         priority: 55,
         description: 'Upgrade to Noble Heights',
-        details: { tier: 'noble' as HousingTier },
+        details: { tier: 'noble' as HousingTier, cost: Math.round(RENT_COSTS.noble * ctx.priceModifier), rent: RENT_COSTS.noble },
       });
     } else if (player.timeRemaining > moveCost('landlord') + 2) {
       actions.push({

@@ -17,7 +17,25 @@ The game supports up to 4 total players (any mix of human and AI). Each AI oppon
 | Thornwick | Teal (#14B8A6) | ai-thornwick |
 | Morgath | Rose (#F43F5E) | ai-morgath |
 
-Each AI uses the same Grimwald AI engine but with its own per-player difficulty setting stored in `player.aiDifficulty`.
+Each AI uses the same Grimwald AI engine but with its own per-player difficulty setting stored in `player.aiDifficulty`. Each AI also has a **unique personality** that modifies their decision-making weights and playstyle.
+
+### AI Personality Profiles
+
+| Name | Personality | Preferred Goal | Key Traits |
+|------|-------------|----------------|------------|
+| Grimwald | The Generalist | Career | Balanced in all areas, adapts to game demands |
+| Seraphina | The Scholar | Education | +50% education focus, cautious, low risk tolerance |
+| Thornwick | The Merchant | Wealth | +50% wealth focus, aggressive banking, stock market savvy |
+| Morgath | The Warrior | Adventure | +60% combat/dungeon focus, high risk tolerance, brave |
+
+Each personality has weight multipliers that scale action priorities:
+- `education` — Study/graduation priority
+- `wealth` — Work/banking priority
+- `combat` — Dungeon/equipment priority
+- `social` — Happiness/rest/appliance priority
+- `caution` — Health/healing caution level
+- `rivalry` — Competitive action intensity
+- `gambling` — Lottery/stock risk tolerance
 
 ## AI Decision Engine
 
@@ -155,9 +173,15 @@ Safety limits prevent infinite loops (max 15 actions per turn).
 | File | Purpose |
 |------|---------|
 | `src/hooks/useGrimwaldAI.ts` | Main AI decision engine (19 action types) |
-| `src/hooks/ai/types.ts` | AI types, difficulty settings, action types |
+| `src/hooks/ai/types.ts` | AI types, difficulty settings, personality profiles |
 | `src/hooks/ai/strategy.ts` | Pure strategy functions (dungeon, quest, equipment) |
-| `src/hooks/ai/actionGenerator.ts` | Priority-based action generation |
+| `src/hooks/ai/actionGenerator.ts` | Priority-based action generation, personality weighting, time-budget awareness |
+| `src/hooks/ai/actions/criticalNeeds.ts` | Food, rent, clothing, health actions |
+| `src/hooks/ai/actions/goalActions.ts` | Goal-oriented actions (education, wealth, happiness, career, adventure) |
+| `src/hooks/ai/actions/strategicActions.ts` | Job seeking, housing, banking |
+| `src/hooks/ai/actions/economicActions.ts` | Sickness, loans, stocks, pawning, lottery |
+| `src/hooks/ai/actions/questDungeonActions.ts` | Quests, bounties, dungeon, equipment |
+| `src/hooks/ai/actions/rivalryActions.ts` | Competitive behaviors (C4) |
 | `src/hooks/useAI.ts` | Legacy simple AI (deprecated) |
 | `src/store/gameStore.ts` | Game state and actions |
 | `src/types/game.types.ts` | TypeScript types including AIDifficulty |
@@ -220,7 +244,10 @@ Based on Jones AI from "Jones in the Fast Lane" (Sierra, 1991):
 - [x] Failed action tracking (prevent re-attempting failed actions per turn)
 - [x] Emergency pawning when broke (priority 85, move-to-fence)
 - [x] Housing upgrade for all difficulty levels
-- [ ] Personality variants (aggressive, defensive, balanced)
+- [x] Personality variants (Grimwald=balanced, Seraphina=scholar, Thornwick=merchant, Morgath=warrior)
+- [x] Weather/festival awareness in AI decisions
+- [x] Time-budget awareness (early vs late turn priorities)
+- [x] Smart stock market intelligence (actual prices, undervalued detection, T-Bill safety)
+- [x] Improved mistake system (3 mistake types: oversight, classic swap, impulsive)
 - [ ] Learning from player strategies
-- [ ] Multiplayer AI support (multiple Grimwalds)
 - [ ] Difficulty auto-adjustment based on player performance

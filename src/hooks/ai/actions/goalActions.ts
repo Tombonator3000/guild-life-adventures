@@ -14,6 +14,7 @@ import {
   calculateBankingStrategy,
   getJobLocation,
   getBestQuest,
+  getBestDungeonFloor,
 } from '../strategy';
 import type { ActionContext } from './actionContext';
 
@@ -78,7 +79,7 @@ export function generateGoalActions(ctx: ActionContext): AIAction[] {
         const job = getJob(player.currentJob);
         if (job && player.timeRemaining >= job.hoursPerShift) {
           const jobLocation = getJobLocation(job);
-          if (currentLocation === jobLocation || currentLocation === 'guild-hall') {
+          if (currentLocation === jobLocation) {
             actions.push({
               type: 'work',
               priority: 80,
@@ -207,7 +208,7 @@ export function generateGoalActions(ctx: ActionContext): AIAction[] {
         const job = getJob(player.currentJob);
         if (job && player.timeRemaining >= job.hoursPerShift) {
           const jobLocation = getJobLocation(job);
-          if (currentLocation === jobLocation || currentLocation === 'guild-hall') {
+          if (currentLocation === jobLocation) {
             actions.push({
               type: 'work',
               priority: 75,
@@ -246,10 +247,10 @@ export function generateGoalActions(ctx: ActionContext): AIAction[] {
       }
       break;
 
-    case 'adventure':
+    case 'adventure': {
       // Focus on quests and dungeon exploration for adventure points
-      // Buy guild pass if needed
-      if (!player.hasGuildPass && player.gold >= 100) {
+      // Buy guild pass if needed (GUILD_PASS_COST = 500g, keep buffer)
+      if (!player.hasGuildPass && player.gold >= 600) {
         if (currentLocation === 'guild-hall') {
           actions.push({
             type: 'buy-guild-pass',
@@ -268,13 +269,13 @@ export function generateGoalActions(ctx: ActionContext): AIAction[] {
 
       // Take quests
       if (player.hasGuildPass && !player.activeQuest) {
-        const bestQuest = getBestQuest(player, settings);
-        if (currentLocation === 'guild-hall' && bestQuest) {
+        const adventureQuest = getBestQuest(player, settings);
+        if (currentLocation === 'guild-hall' && adventureQuest) {
           actions.push({
             type: 'take-quest',
             priority: 82,
             description: 'Take quest for adventure points',
-            details: { questId: bestQuest },
+            details: { questId: adventureQuest },
           });
         } else if (player.timeRemaining > moveCost('guild-hall') + 2) {
           actions.push({
@@ -286,13 +287,15 @@ export function generateGoalActions(ctx: ActionContext): AIAction[] {
         }
       }
 
-      // Explore dungeon
-      if (player.timeRemaining >= 8) {
+      // Explore dungeon (use getBestDungeonFloor for proper floor selection with floorId)
+      const adventureDungeonFloor = getBestDungeonFloor(player, settings);
+      if (adventureDungeonFloor !== null) {
         if (currentLocation === 'cave') {
           actions.push({
             type: 'explore-dungeon',
             priority: 80,
-            description: 'Explore dungeon for adventure points',
+            description: `Explore dungeon floor ${adventureDungeonFloor} for adventure`,
+            details: { floorId: adventureDungeonFloor },
           });
         } else if (player.timeRemaining > moveCost('cave') + 8) {
           actions.push({
@@ -304,6 +307,7 @@ export function generateGoalActions(ctx: ActionContext): AIAction[] {
         }
       }
       break;
+    }
   }
 
   // Always check for ready graduations (free +5 happiness, +5 dependability)

@@ -1,5 +1,74 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-10 - AI Opponent Audit: Intelligence & Personality Overhaul
+
+### Audit: AI Opponents (Grimwald, Seraphina, Thornwick, Morgath)
+
+Comprehensive audit of the AI opponent system. Found 7 bugs, identified multiple intelligence gaps, and implemented a personality system to differentiate opponents.
+
+### Bugs Fixed (7)
+
+1. **Adventure goal guild pass cost wrong** — `goalActions.ts` used `player.gold >= 100` but GUILD_PASS_COST is 500g. Fixed to `>= 600` (with buffer).
+2. **Adventure goal dungeon missing floorId** — The adventure case created `explore-dungeon` action without `floorId` in details, causing `handleExploreDungeon` to always fail (`if (!floorId) return false`). Now uses `getBestDungeonFloor()`.
+3. **getBestBounty missing Guild Pass check** — `strategy.ts` `getBestBounty()` didn't check `player.hasGuildPass`, contradicting the store-level guard. AI wasted time traveling to guild hall for bounties it couldn't take.
+4. **Stock market used hardcoded fake stock** — AI bought `guild-shares` at price 50 (doesn't exist). Replaced with intelligent stock picking using actual `stockPrices` from game state — buys undervalued stocks (hard AI), T-Bills for safety (medium), and profit-takes when overvalued.
+5. **Housing upgrade missing cost/rent details** — `strategicActions.ts` `move-housing` action lacked `cost` and `rent` in details, falling back to executor defaults. Now passes actual rent from `RENT_COSTS` with `priceModifier`.
+6. **Rivalry study action hardcoded cost/hours** — `rivalryActions.ts` used `{ cost: 5, hours: 6 }` instead of reading from `DEGREES[degreeId]`. Fixed to use actual degree data.
+7. **Work at guild-hall for non-guild-hall jobs** — In `goalActions.ts` and `strategicActions.ts`, work actions checked `currentLocation === jobLocation || currentLocation === 'guild-hall'`. You can't work a tavern job from the guild hall. Removed the guild-hall fallback.
+
+### New Feature: AI Personality System
+
+Each AI opponent now has a **unique personality profile** that modifies their decision priorities:
+
+| Opponent | Personality | Key Weights |
+|----------|-------------|-------------|
+| Grimwald | The Generalist | All 1.0 — balanced, adapts to demands |
+| Seraphina | The Scholar | Education 1.5×, Caution 1.4×, Combat 0.7×, Gambling 0.5× |
+| Thornwick | The Merchant | Wealth 1.5×, Gambling 1.5×, Rivalry 1.3×, Social 0.7× |
+| Morgath | The Warrior | Combat 1.6×, Caution 0.7×, Education 0.7×, Social 0.6× |
+
+Personality affects: `preferredGoal`, `goldBuffer`, `foodCaution`, `dungeonRiskTolerance`.
+Applied via `applyPersonalityWeights()` in actionGenerator after all actions are collected.
+Personality lookup uses `AI_ID_TO_PERSONALITY` map keyed by player ID.
+
+### New Feature: Weather & Festival Awareness
+
+- Movement cost calculation now includes weather `movementCostExtra` (additive hours per step)
+- Dungeon exploration gets +8 priority bonus during festivals with `dungeonGoldMultiplier > 1.0`
+- `ActionContext` now includes `weatherMoveCostMult`, `activeFestival`, `turnTimeRatio`
+
+### New Feature: Time-Budget Awareness
+
+- **Late in turn** (< 25% time remaining / < 15 hours): Quick errands boosted +8, long activities (study/dungeon) penalized -10
+- **Early in turn** (> 80% time remaining / > 48 hours): High-value activities (work/study/dungeon/quests) boosted +5
+
+### Improved: Mistake System
+
+Replaced simple "swap top 2 actions" with 3 realistic mistake types:
+- **40% — Oversight**: Best action drops to position 2-4 (forgot about it)
+- **30% — Classic swap**: Top two actions swapped (old behavior)
+- **30% — Impulsive**: Random mid-tier action gets boosted to top (spur-of-the-moment)
+
+### Improved: Stock Market Intelligence
+
+AI now uses actual `stockPrices` from game state instead of hardcoded values:
+- **Hard AI**: Buys undervalued stocks (current < 85% of base price) for profit potential
+- **Medium AI**: Prefers T-Bills (Crown Bonds) for safe, robbery-proof wealth storage
+- **Personality-aware**: Gambling weight affects stock type preference and share counts
+- **Smart selling**: Sells when overvalued (> 150% of base), broke, or not wealth-focused
+
+**Files changed:**
+- `src/hooks/ai/types.ts` — Added `AIPersonality`, `AI_PERSONALITIES`, `AI_ID_TO_PERSONALITY`, `getAIPersonality()`
+- `src/hooks/ai/actionGenerator.ts` — Added personality weighting, time-budget awareness, weather-aware movement, improved mistakes
+- `src/hooks/ai/actions/actionContext.ts` — Added `personality`, `weatherMoveCostMult`, `activeFestival`, `turnTimeRatio` to context
+- `src/hooks/ai/actions/goalActions.ts` — Fixed adventure guild pass cost, dungeon floorId, work location check
+- `src/hooks/ai/actions/strategicActions.ts` — Fixed work location check, housing upgrade cost/rent details
+- `src/hooks/ai/actions/economicActions.ts` — Rewrote stock market AI with actual price intelligence
+- `src/hooks/ai/actions/questDungeonActions.ts` — Added festival dungeon bonus awareness
+- `src/hooks/ai/actions/rivalryActions.ts` — Fixed study cost/hours to use actual degree data
+- `src/hooks/ai/strategy.ts` — Added Guild Pass check to `getBestBounty()`
+- `agents.md` — Updated with personality profiles, new features, file inventory
+
 ## 2026-02-10 - Extra Credit System, Rain Enhancement & Death/Graveyard Fix
 
 ### Task 1: Scholar Items at Shadow Market + Extra Credit System

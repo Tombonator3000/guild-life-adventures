@@ -108,3 +108,140 @@ export interface ResourceUrgency {
   health: number;
   housing: number; // Urgency to upgrade housing (for robbery protection)
 }
+
+// ============================================
+// AI PERSONALITY SYSTEM
+// ============================================
+
+/**
+ * Personality profiles that differentiate AI opponents beyond just difficulty.
+ * Each AI opponent has a unique personality that modifies their priority weights.
+ */
+export type AIPersonalityId = 'grimwald' | 'seraphina' | 'thornwick' | 'morgath';
+
+export interface AIPersonality {
+  id: AIPersonalityId;
+  name: string;
+  description: string;
+  // Priority weight multipliers (1.0 = normal, >1 = favored, <1 = deprioritized)
+  weights: {
+    education: number;    // Study/graduation priority multiplier
+    wealth: number;       // Work/banking priority multiplier
+    combat: number;       // Dungeon/equipment priority multiplier
+    social: number;       // Happiness/rest/appliance priority multiplier
+    caution: number;      // Health/healing/insurance priority multiplier (higher = more cautious)
+    rivalry: number;      // Competitive actions multiplier
+    gambling: number;     // Lottery/stocks risk tolerance
+  };
+  // Goal preference: which goal this personality naturally gravitates toward
+  // Used as tiebreaker when goals are equally weighted
+  preferredGoal: 'wealth' | 'happiness' | 'education' | 'career' | 'adventure';
+  // Banking behavior: fraction of gold to keep on hand (vs depositing)
+  goldBuffer: number; // 0-1, higher = keeps more gold on hand
+  // How early to start buying food (threshold multiplier for food urgency)
+  foodCaution: number; // 1.0 = normal, 1.5 = buys food earlier
+  // Risk threshold for dungeon exploration (multiplier on health check)
+  dungeonRiskTolerance: number; // 1.0 = normal, 0.7 = braver, 1.3 = more cautious
+}
+
+/**
+ * Four unique AI personalities matching the four AI opponents.
+ *
+ * Grimwald: Balanced generalist — good at everything, master of nothing
+ * Seraphina: The Scholar — prioritizes education, cautious, long-term planning
+ * Thornwick: The Merchant — prioritizes wealth, aggressive banking, stock savvy
+ * Morgath: The Warrior — prioritizes combat/adventure, risk-taker, dungeon focus
+ */
+export const AI_PERSONALITIES: Record<AIPersonalityId, AIPersonality> = {
+  grimwald: {
+    id: 'grimwald',
+    name: 'Grimwald',
+    description: 'Balanced generalist — adapts to whatever the game demands',
+    weights: {
+      education: 1.0,
+      wealth: 1.0,
+      combat: 1.0,
+      social: 1.0,
+      caution: 1.0,
+      rivalry: 1.0,
+      gambling: 1.0,
+    },
+    preferredGoal: 'career',
+    goldBuffer: 0.3,
+    foodCaution: 1.0,
+    dungeonRiskTolerance: 1.0,
+  },
+  seraphina: {
+    id: 'seraphina',
+    name: 'Seraphina',
+    description: 'The Scholar — invests heavily in education and plays it safe',
+    weights: {
+      education: 1.5,    // +50% education priority
+      wealth: 0.8,       // Less focused on pure wealth
+      combat: 0.7,       // Avoids dungeon until well-prepared
+      social: 1.2,       // Values happiness and rest
+      caution: 1.4,      // Very cautious about health
+      rivalry: 0.7,      // Less competitive, more cooperative
+      gambling: 0.5,     // Low risk tolerance
+    },
+    preferredGoal: 'education',
+    goldBuffer: 0.4,          // Keeps more gold for tuition
+    foodCaution: 1.3,         // Buys food earlier
+    dungeonRiskTolerance: 1.4, // Needs more health before dungeon
+  },
+  thornwick: {
+    id: 'thornwick',
+    name: 'Thornwick',
+    description: 'The Merchant — maximizes gold, aggressive banking and stocks',
+    weights: {
+      education: 0.8,    // Education mainly for job unlocks
+      wealth: 1.5,       // +50% wealth priority
+      combat: 0.9,       // Dungeons mainly for gold
+      social: 0.7,       // Less focus on happiness activities
+      caution: 0.9,      // Slightly less cautious
+      rivalry: 1.3,      // Very competitive
+      gambling: 1.5,     // High risk tolerance, loves stocks
+    },
+    preferredGoal: 'wealth',
+    goldBuffer: 0.2,          // Deposits aggressively, keeps less on hand
+    foodCaution: 0.9,         // Slightly later food buying
+    dungeonRiskTolerance: 0.9, // Takes slightly more risk for gold
+  },
+  morgath: {
+    id: 'morgath',
+    name: 'Morgath',
+    description: 'The Warrior — seeks combat, equipment, and adventure',
+    weights: {
+      education: 0.7,    // Minimum education (combat training focus)
+      wealth: 0.9,       // Money is for equipment
+      combat: 1.6,       // +60% dungeon/equipment priority
+      social: 0.6,       // Least interested in social activities
+      caution: 0.7,      // Low caution, high risk
+      rivalry: 1.2,      // Competitive but focused on own path
+      gambling: 1.2,     // Moderate risk tolerance
+    },
+    preferredGoal: 'adventure',
+    goldBuffer: 0.25,          // Spends gold on equipment
+    foodCaution: 0.8,          // Tough, buys food later
+    dungeonRiskTolerance: 0.6, // Very brave, enters dungeon at lower health
+  },
+};
+
+/**
+ * Map AI opponent IDs to personality IDs.
+ */
+export const AI_ID_TO_PERSONALITY: Record<string, AIPersonalityId> = {
+  'ai-grimwald': 'grimwald',
+  'ai-seraphina': 'seraphina',
+  'ai-thornwick': 'thornwick',
+  'ai-morgath': 'morgath',
+};
+
+/**
+ * Get personality for an AI player by their player ID.
+ * Falls back to grimwald (balanced) if no match.
+ */
+export function getAIPersonality(playerId: string): AIPersonality {
+  const personalityId = AI_ID_TO_PERSONALITY[playerId] || 'grimwald';
+  return AI_PERSONALITIES[personalityId];
+}
