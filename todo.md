@@ -921,6 +921,14 @@
   - 5 new multiplayer tests (39→44 total)
   - Build passes, 176 tests pass
 
+- [x] Refactor LocationPanel.tsx — extract 514-line getLocationTabs() switch into factory pattern
+  - Created `src/components/game/locationTabs.tsx` with 13 location tab factory functions
+  - `LocationTabContext` interface bundles all store actions + state for factories
+  - `TAB_FACTORIES` record replaces 14-case switch with O(1) lookup
+  - `getLocationTabs()` reduced from 514 lines to 3-line lookup
+  - LocationPanel.tsx reduced from 770 → 207 lines (-73%)
+  - Zero behavior changes — 176 tests pass, build succeeds
+
 ## In Progress
 
 *No active tasks*
