@@ -243,9 +243,11 @@ export function getContextBanter(
   // --- Player achievement banter ---
 
   // Player cleared dungeon floors
-  if (player.dungeonFloorsCleared.length >= 5) {
-    candidates.push({ text: `All five dungeon floors cleared? You're braver than you look!`, mood: 'friendly' });
-    candidates.push({ text: `They're calling you the Dungeon Conqueror. Not bad, not bad at all.`, mood: 'gossip' });
+  if (player.dungeonFloorsCleared.length >= 6) {
+    candidates.push({ text: `All six dungeon floors cleared? Including the Forgotten Temple? You're a legend!`, mood: 'friendly' });
+    candidates.push({ text: `They're calling you the Dungeon Conqueror. The Temple bows to no one — except you.`, mood: 'gossip' });
+  } else if (player.dungeonFloorsCleared.length >= 5) {
+    candidates.push({ text: `Five dungeon floors? Only the Forgotten Temple remains. Do you dare?`, mood: 'friendly' });
   } else if (player.dungeonFloorsCleared.length >= 3) {
     candidates.push({ text: `Three floors of the dungeon? Most adventurers stop at one.`, mood: 'friendly' });
   }

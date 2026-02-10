@@ -332,17 +332,17 @@ function GoalsTab({ player, goals }: GoalsTabProps) {
         <h3 className="font-display text-sm font-bold text-wood mb-2">Dungeon Progress</h3>
         <div className="flex items-center gap-2 mb-2">
           <div className="flex-1 h-3 bg-wood/20 rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full bg-accent transition-all"
-              style={{ width: `${(player.dungeonFloorsCleared.length / 5) * 100}%` }}
+              style={{ width: `${(player.dungeonFloorsCleared.length / 6) * 100}%` }}
             />
           </div>
           <span className="text-xs font-bold text-wood">
-            {player.dungeonFloorsCleared.length}/5
+            {player.dungeonFloorsCleared.length}/6
           </span>
         </div>
         <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map(floor => (
+          {[1, 2, 3, 4, 5, 6].map(floor => (
             <div
               key={floor}
               className={`

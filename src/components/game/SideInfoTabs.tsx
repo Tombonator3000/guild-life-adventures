@@ -254,17 +254,17 @@ function GoalsTab({ player, goals }: { player: Player; goals: GoalSettings }) {
       <StatSection title="Dungeon">
         <div className="flex items-center gap-1 mb-1">
           <div className="flex-1 h-1.5 bg-amber-900/20 rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full bg-accent transition-all"
-              style={{ width: `${(player.dungeonFloorsCleared.length / 5) * 100}%` }}
+              style={{ width: `${(player.dungeonFloorsCleared.length / 6) * 100}%` }}
             />
           </div>
           <span className="text-[10px] font-bold text-amber-900">
-            {player.dungeonFloorsCleared.length}/5
+            {player.dungeonFloorsCleared.length}/6
           </span>
         </div>
         <div className="flex gap-0.5 justify-center">
-          {[1, 2, 3, 4, 5].map(floor => (
+          {[1, 2, 3, 4, 5, 6].map(floor => (
             <div
               key={floor}
               className={`
