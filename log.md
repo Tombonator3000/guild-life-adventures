@@ -1,5 +1,408 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-10 - Created electron.md (Electron Build & Distribution Guide)
+
+### Overview
+
+Created `electron.md` — a comprehensive step-by-step guide for compiling Guild Life Adventures into a standalone desktop application using Electron and distributing it on itch.io.
+
+### What's in electron.md
+
+The document covers 11 phases from initial setup to Steam integration:
+
+1. **Project setup** — install Electron dependencies, create directory structure
+2. **Main process** — `electron/main/index.ts` with BrowserWindow, IPC, fullscreen (F11)
+3. **Preload script** — secure context bridge with platform detection and window controls
+4. **electron.vite.config.ts** — triple config for main/preload/renderer with `externalizeDepsPlugin()`
+5. **package.json changes** — scripts, electron-builder config (NSIS/DMG/AppImage), extraResources for audio
+6. **Runtime detection** — TypeScript declarations for `window.electronAPI`, conditional UI guidance
+7. **Build & test** — `dev:electron` (HMR), `build:win`/`build:linux`/`build:mac`, full test checklist
+8. **itch.io distribution** — butler CLI install, push workflow, channel naming, page setup
+9. **App updates** — butler delta updates, in-app update check via itch.io API, electron-updater for direct distribution
+10. **GitHub Actions CI/CD** — multi-platform build matrix, automatic butler push on tag
+11. **Steam integration** — steamworks.js setup, overlay workaround, steamcmd upload, timeline
+
+Also includes: complete folder structure diagram, troubleshooting section (8 common issues), reference links table.
+
+### Key Design Decisions
+
+- **Dual build system**: `vite.config.ts` (web) and `electron.vite.config.ts` (desktop) coexist — web version unaffected
+- **Zero React changes**: The entire `src/` directory works unchanged in Electron
+- **itch.io first, Steam later**: Free to publish, no code signing needed, butler handles delta updates
+- **Security**: `contextIsolation: true`, `nodeIntegration: false`, `webSecurity: true`
+- **extraResources**: Music, ambient, SFX, NPC portraits bundled in production build
+
+### Files Created
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| `electron.md` | ~580 | Complete Electron build and distribution guide |
+
+---
+
+## 2026-02-10 - Game Compilation & Distribution Research (Deep Dive)
+
+### Overview
+
+Comprehensive research into compiling Guild Life Adventures into a downloadable standalone executable that can be installed on Windows, macOS, and Linux machines without depending on GitHub, Lovable, or any web hosting. This extends the earlier 2026-02-09 research with current version numbers, practical step-by-step instructions, distribution platform analysis, and cost breakdowns.
+
+### Framework Comparison (Updated February 2026)
+
+| Framework | Latest Version | Bundle Size | WebRTC/PeerJS | Steam Overlay | Steamworks SDK | Verdict |
+|-----------|---------------|-------------|---------------|---------------|----------------|---------|
+| **Electron** | **40.2.1** (Chromium M144) | ~150-200 MB | Full support | Yes (workaround) | steamworks.js 0.4.0 | **RECOMMENDED** |
+| NW.js | ~0.86 | ~150 MB | Full support | Yes (workaround) | Greenworks (unmaintained) | Viable backup |
+| **Tauri 2.x** | 2.x stable | ~5-15 MB | **Broken on Linux** | **No (confirmed)** | Rust only | **NOT suitable** |
+| Neutralinojs | 5.x | ~0.5-2 MB | **Broken on Linux** | **No** | None | NOT suitable |
+
+### Tauri 2.x Update: Still NOT Suitable
+
+Despite Tauri 2.x reaching stable release, two critical deal-breakers remain unresolved:
+
+1. **WebRTC broken on Linux** — WebKitGTK (Tauri's Linux WebView) does not ship WebRTC support. PeerJS multiplayer would not work. Issue #13143 tagged "status: upstream" — blocked by WebKitGTK, not Tauri. One developer compiled custom WebKitGTK with experimental WebRTC on NixOS, but this is not distributable.
+
+2. **Steam Overlay does not work** — Confirmed in Tauri issue #6196 (open since Feb 2023, no resolution). Root cause: WebView2 on Windows creates a separate `msedgewebview2.exe` process with no DirectX device in the app process. Steam overlay hooks DirectX 7-12/OpenGL/Metal/Vulkan — none of which WebView2 exposes. Microsoft confirmed this is a fundamental architectural limitation.
+
+3. **Inconsistent rendering** — Three different browser engines across platforms (Chromium via WebView2 on Windows, WebKit on macOS/Linux). Guild Life Adventures uses many CSS features that could render differently.
+
+### Recommendation: Electron 40 + electron-vite 5.0 + electron-builder 26.7
+
+**Electron remains the clear winner** for these reasons:
+
+1. **PeerJS/WebRTC works out of the box** — Full Chromium on all platforms
+2. **Steam Overlay works** — with `--in-process-gpu` + `--disable-direct-composition` flags
+3. **steamworks.js 0.4.0** — mature, Rust-based via napi-rs, TypeScript definitions, works with Electron 30+
+4. **electron-vite 5.0** — native Vite integration for Electron (HMR, dual-process build)
+5. **electron-builder 26.7** — cross-platform packaging (NSIS/DMG/AppImage), auto-updates, code signing
+6. **Proven commercial success** — Game Dev Tycoon (94% positive, 22k+ reviews), Curious Expedition (200k+ units), Screeps, Wayward
+7. **All existing tech works unchanged** — Web Audio, localStorage, Zustand, Tailwind, shadcn/ui, PeerJS — Electron IS Chromium
+
+### Key Libraries (Current Versions)
+
+| Library | Version | Purpose |
+|---------|---------|---------|
+| `electron` | 40.2.1 | Desktop shell (Chromium M144 + Node.js) |
+| `electron-vite` | 5.0.0 | Vite integration for Electron (triple config: main/preload/renderer) |
+| `electron-builder` | 26.7.0 | Packaging into Windows/Mac/Linux installers |
+| `steamworks.js` | 0.4.0 | Steamworks SDK: achievements, friends, cloud saves, overlay |
+
+### Practical Migration Steps
+
+#### Step 1: Install Electron Dependencies
+
+```bash
+bun add -D electron electron-vite electron-builder
+```
+
+#### Step 2: Create Electron Main Process
+
+Create `electron/main/index.ts`:
+```ts
+import { app, BrowserWindow } from 'electron'
+import path from 'path'
+
+function createWindow() {
+  const win = new BrowserWindow({
+    width: 1280,
+    height: 720,
+    fullscreenable: true,
+    webPreferences: {
+      preload: path.join(__dirname, '../preload/index.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  })
+
+  // Dev mode: load Vite dev server; Production: load built HTML
+  if (process.env.ELECTRON_RENDERER_URL) {
+    win.loadURL(process.env.ELECTRON_RENDERER_URL)
+  } else {
+    win.loadFile(path.join(__dirname, '../renderer/index.html'))
+  }
+}
+
+app.whenReady().then(createWindow)
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit()
+})
+```
+
+#### Step 3: Create Preload Script
+
+Create `electron/preload/index.ts`:
+```ts
+import { contextBridge } from 'electron'
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  platform: process.platform,
+  isElectron: true,
+})
+```
+
+#### Step 4: Create `electron.vite.config.ts`
+
+```ts
+import { defineConfig } from 'electron-vite'
+import react from '@vitejs/plugin-react-swc'
+import path from 'path'
+
+export default defineConfig({
+  main: {
+    build: {
+      rollupOptions: {
+        input: 'electron/main/index.ts',
+      },
+    },
+  },
+  preload: {
+    build: {
+      rollupOptions: {
+        input: 'electron/preload/index.ts',
+      },
+    },
+  },
+  renderer: {
+    root: '.',
+    build: {
+      rollupOptions: {
+        input: 'index.html',
+      },
+    },
+    plugins: [react()],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
+    },
+  },
+})
+```
+
+#### Step 5: Add Scripts and Build Config to `package.json`
+
+```json
+{
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev:electron": "electron-vite dev",
+    "build:electron": "electron-vite build",
+    "build:win": "electron-vite build && electron-builder --win",
+    "build:mac": "electron-vite build && electron-builder --mac",
+    "build:linux": "electron-vite build && electron-builder --linux",
+    "build:all": "electron-vite build && electron-builder --win --mac --linux"
+  },
+  "build": {
+    "appId": "com.guildlife.adventures",
+    "productName": "Guild Life Adventures",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "public/pwa-512x512.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "public/pwa-512x512.png"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "public/pwa-512x512.png",
+      "category": "Game"
+    }
+  }
+}
+```
+
+#### Step 6: Resulting Folder Structure
+
+```
+guild-life-adventures/
+├── electron/                    # NEW
+│   ├── main/
+│   │   └── index.ts            # Electron main process
+│   └── preload/
+│       └── index.ts            # Context bridge
+├── src/                         # UNCHANGED — existing React app
+│   ├── components/
+│   ├── data/
+│   ├── hooks/
+│   ├── store/
+│   ├── types/
+│   └── ...
+├── index.html                   # UNCHANGED
+├── electron.vite.config.ts      # NEW — Electron build config
+├── vite.config.ts               # KEEP — still used for web builds (GitHub Pages, PWA)
+├── package.json                 # MODIFIED — add electron scripts + build config
+├── out/                         # GENERATED — electron-vite build output
+└── release/                     # GENERATED — electron-builder packages
+    ├── Guild Life Adventures Setup 1.0.0.exe    # Windows NSIS installer
+    ├── Guild Life Adventures-1.0.0.dmg          # macOS disk image
+    └── Guild Life Adventures-1.0.0.AppImage     # Linux AppImage
+```
+
+#### What Changes in the React App: NOTHING
+
+The existing React app (`src/`, `index.html`, Tailwind, Zustand, PeerJS, Web Audio) works unchanged because Electron IS Chromium. The `vite.config.ts` stays for web builds; `electron.vite.config.ts` is for desktop builds. Both can coexist.
+
+#### Optional: Detect Electron at Runtime
+
+```ts
+// In any component
+const isElectron = window.electronAPI?.isElectron ?? false
+```
+
+This enables conditionally showing/hiding features (e.g., hide PWA install button in Electron).
+
+### Steam Integration (When Ready)
+
+#### Prerequisites
+1. Steamworks Partner Account at partner.steamgames.com
+2. Steam Direct fee: $100 per game (recoupable after $1,000 revenue)
+3. Legal/financial setup: bank info, tax info, identity verification
+4. Store page "Coming Soon" for at least 2 weeks before launch
+5. Build review: 3-5 business days
+6. 30-day waiting period between paying fee and releasing
+
+#### Steamworks SDK Integration
+
+```bash
+bun add steamworks.js
+```
+
+In `electron/main/index.ts`:
+```ts
+import { init, electronEnableSteamOverlay } from 'steamworks.js'
+
+// Enable Steam overlay (call before BrowserWindow creation)
+electronEnableSteamOverlay()
+
+// Initialize with your App ID (480 = Spacewar test app during development)
+const client = init(480)
+console.log('Steam user:', client.localplayer.getName())
+```
+
+Required Electron flags for Steam overlay:
+- `app.commandLine.appendSwitch('in-process-gpu')`
+- `app.commandLine.appendSwitch('disable-direct-composition')`
+
+#### Steam Cloud Saves (Future Migration)
+
+Current saves use localStorage. For Steam Cloud Saves, migrate to Node.js `fs` writing to the Steam user data directory. This is optional — localStorage continues to work in Electron.
+
+### Distribution Platform Comparison
+
+| Platform | Fee | Revenue Split (Dev/Store) | Auto-Updates | Audience | Code Signing Required? |
+|----------|-----|--------------------------|-------------|----------|----------------------|
+| **Steam** | $100/title | 70/30 | Yes (Steam client) | Largest PC platform | No (launcher handles trust) |
+| **itch.io** | Free | 90-100/0-10 (configurable) | Via itch app only | Indie-focused | No |
+| **GOG** | Free (if accepted) | 70/30 | Via GOG Galaxy | DRM-free niche, curated | No |
+| **Epic Games Store** | $100/title | 88/12 (best split) | Yes (EGS client) | 68M active users | No |
+| **GameJolt** | Free | 90-100/0-10 | No | Small, young audience | No |
+| **Direct download** | Hosting + signing | 100/0 (minus payment processor) | Via electron-updater | Your own traffic | YES (essential) |
+
+### itch.io Distribution with Butler CLI
+
+```bash
+# Install butler (download from itch.io/docs/butler/)
+butler login
+
+# Build Electron packages
+bun run build:win && bun run build:linux
+
+# Push to itch.io (butler handles compression + delta patches)
+butler push release/win-unpacked tombonator3000/guild-life-adventures:windows
+butler push release/linux-unpacked tombonator3000/guild-life-adventures:linux
+butler push release/mac tombonator3000/guild-life-adventures:mac
+
+# Optional: version tagging
+butler push release/win-unpacked tombonator3000/guild-life-adventures:windows --userversion 1.0.0
+```
+
+Butler uses binary diffing — subsequent pushes only upload changed bytes. Maximum uncompressed build size: 30 GB. itch.io app provides auto-updates for end users.
+
+### Code Signing Costs (If Doing Direct Distribution)
+
+| Platform | Option | Annual Cost |
+|----------|--------|-------------|
+| **Windows** | Microsoft Trusted Signing (Azure) | $120/year ($9.99/month) |
+| **Windows** | OV Certificate (SSL.com, Sectigo) | $200-300/year |
+| **macOS** | Apple Developer Program | $99/year |
+| **Both** | Windows + macOS combined | $219/year minimum |
+
+**Important February 2026 changes:**
+- EV certificates no longer provide instant SmartScreen bypass (since March 2024). All certificates build reputation organically through download volume.
+- Code signing certificate validity capped at 460 days (starting Feb 20, 2026).
+- macOS notarization is mandatory since Catalina. Without Apple Developer Program ($99/yr), Gatekeeper blocks the app.
+- **For Steam/itch.io/GOG/EGS distribution, code signing is NOT required** — the launcher handles trust. Only needed for direct website downloads.
+
+### Cross-Platform Build Matrix
+
+| Build Host | Windows Target | macOS Target | Linux Target |
+|-----------|---------------|-------------|-------------|
+| **macOS** | Yes (via Wine/Docker) | Yes (native) | Yes (via Docker) |
+| **Linux** | Yes (via Wine/Docker) | **No** (needs macOS) | Yes (native) |
+| **Windows** | Yes (native) | **No** (needs macOS) | Yes (via Docker/WSL) |
+
+macOS builds require a Mac (or macOS CI runner) due to Apple code signing and notarization requirements. Docker image `electronuserland/builder:wine` enables Windows + Linux cross-compilation from Linux.
+
+### Recommended GitHub Actions CI/CD
+
+```yaml
+name: Build Desktop
+on:
+  push:
+    tags: ['v*']
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npx electron-vite build
+      - run: npx electron-builder --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.os }}
+          path: release/*
+```
+
+### Recommended Distribution Strategy
+
+1. **Primary: Steam** — largest audience, discovery tools, wishlists, proven for indie games. $100 fee.
+2. **Secondary: itch.io** — free, easy, great for indie community, early access, demos. Developer-configurable revenue split.
+3. **Aspirational: GOG** — curated platform, DRM-free audience. Submit at gog.com/indie.
+4. **Optional: Epic Games Store** — best revenue split (88/12), growing platform. $100 fee.
+5. **Supplementary: Direct website** — full control, 100% revenue, but requires code signing ($219/yr) and self-marketing.
+
+### Successful HTML5 Games on Steam (Proof of Concept)
+
+| Game | Rating | Units | Framework |
+|------|--------|-------|-----------|
+| Game Dev Tycoon | 94% positive, 22k+ reviews | — | Electron (originally NW.js) |
+| Curious Expedition | — | 200k+ sold | Electron (migrated from NW.js) |
+| Screeps | — | — | NW.js + Greenworks |
+| Wayward | — | — | Electron + Greenworks |
+
+### Files Changed
+
+None — research only session. Implementation steps documented above for when ready to proceed.
+
+---
+
 ## 2026-02-10 - Forge Tempering Fix, Dungeon 6-Floor Display, Inventory Overhaul
 
 ### Overview

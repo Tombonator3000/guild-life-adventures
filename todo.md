@@ -1000,30 +1000,63 @@ Tier 3: No narration (text only — current behavior)
 - [ ] (Optional) Add voice cloning option via ElevenLabs for custom narrator voice
 - [ ] (Optional) Add NPC-specific voice presets (pitch/rate tweaks per character)
 
-## Standalone Exe / Steam Distribution (Research Complete 2026-02-09)
+## Standalone Exe / Steam Distribution (Research Updated 2026-02-10)
 
-### Decision: Electron is the recommended framework
+### Decision: Electron 40 + electron-vite 5.0 + electron-builder 26.7
 
-- [x] Research all framework options (Electron, Tauri, NW.js, Neutralinojs, etc.)
-- [x] Evaluate Steam overlay compatibility
-- [x] Evaluate WebRTC/PeerJS compatibility for multiplayer
-- [x] Evaluate Steamworks SDK integration options
-- [x] Document Steam store submission requirements
-- [x] Log findings to log.md
+- [x] Research all framework options (Electron, Tauri 2.x, NW.js, Neutralinojs)
+- [x] Evaluate Steam overlay compatibility (Electron: works, Tauri: confirmed broken)
+- [x] Evaluate WebRTC/PeerJS compatibility (Electron: full, Tauri Linux: broken)
+- [x] Evaluate Steamworks SDK integration (steamworks.js 0.4.0, napi-rs, Electron 30+ compatible)
+- [x] Document Steam store submission requirements ($100 fee, 30-day wait, 2-week Coming Soon)
+- [x] Research distribution platforms (Steam, itch.io, GOG, Epic, GameJolt, direct)
+- [x] Research code signing costs (Windows: $120/yr Azure, macOS: $99/yr Apple)
+- [x] Research cross-platform build matrix (macOS builds need Mac, rest can cross-compile)
+- [x] Log detailed findings to log.md (2026-02-10 entry with step-by-step instructions)
 
-### Implementation Steps (When Ready)
+### Phase 1: Basic Electron Packaging (No Steam)
 
-- [ ] Set up Electron + electron-vite project structure
-- [ ] Create `electron/main.ts` (window management, Steamworks init)
-- [ ] Create `electron/preload.ts` (IPC bridge)
-- [ ] Configure electron-builder for Win/Mac/Linux packaging
-- [ ] Migrate save games from localStorage to file system (Node.js fs)
-- [ ] Integrate `steamworks.js` for achievements/overlay/cloud saves
-- [ ] Add Steam overlay repaint workaround for static screens
+- [ ] Install `electron` + `electron-vite` + `electron-builder` as dev dependencies
+- [ ] Create `electron/main/index.ts` (BrowserWindow, load renderer, fullscreen support)
+- [ ] Create `electron/preload/index.ts` (contextBridge with platform detection)
+- [ ] Create `electron.vite.config.ts` (triple config: main/preload/renderer)
+- [ ] Add `dev:electron`, `build:electron`, `build:win`, `build:mac`, `build:linux` scripts
+- [ ] Configure electron-builder in package.json (appId, productName, NSIS/DMG/AppImage)
+- [ ] Test dev mode: `bun run dev:electron` (Vite HMR inside Electron)
+- [ ] Test production build: `bun run build:win` (or linux/mac)
+- [ ] Verify: WebRTC multiplayer, Web Audio, saves, all features work in Electron
+- [ ] Add runtime Electron detection (`window.electronAPI?.isElectron`)
+- [ ] Hide PWA install button when running in Electron
+
+### Phase 2: Distribution (itch.io — Free, No Code Signing)
+
+- [ ] Create itch.io game page at itch.io
+- [ ] Install butler CLI
+- [ ] Push Windows build: `butler push release/win-unpacked user/guild-life:windows`
+- [ ] Push Linux build: `butler push release/linux-unpacked user/guild-life:linux`
+- [ ] Test download and install on clean machine
+- [ ] Set up GitHub Actions CI for automated butler pushes on tag
+
+### Phase 3: Steam Integration
+
 - [ ] Register Steamworks Partner account ($100 Steam Direct fee)
-- [ ] Create Steam store page (2+ weeks before launch)
-- [ ] Submit build for Steam review
+- [ ] Create Steam store page (must be "Coming Soon" 2+ weeks before launch)
+- [ ] Install `steamworks.js` and add to `electron/main/index.ts`
+- [ ] Add Steam overlay flags (`--in-process-gpu`, `--disable-direct-composition`)
+- [ ] Add `requestAnimationFrame` repaint loop for static screens (title, settings)
+- [ ] Map in-game achievements to Steam achievements
 - [ ] Test with Steamworks App ID 480 (Spacewar) during development
+- [ ] Optional: Migrate saves from localStorage to Node.js `fs` for Steam Cloud Saves
+- [ ] Submit build for Steam review (3-5 business days)
+- [ ] Upload via `steamcmd` (NOT Steam GUI uploader)
+
+### Phase 4: macOS + Code Signing (Optional)
+
+- [ ] Apple Developer Program enrollment ($99/year)
+- [ ] Generate Developer ID Application certificate
+- [ ] Configure electron-builder for macOS code signing + notarization
+- [ ] Windows code signing via Microsoft Trusted Signing ($9.99/month) if doing direct distribution
+- [ ] Set up GitHub Actions with macOS runner for signed builds
 
 ## Proposed Improvements (2026-02-08 Analysis)
 
