@@ -1,5 +1,83 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-10 - Refactor weekEndHelpers.ts (Complex Code Refactoring)
+
+### Summary
+
+Refactored `src/store/helpers/weekEndHelpers.ts` from a single 530-line god-function into 16 focused helper functions with a clean pipeline orchestrator. Zero behavior changes — all 171 tests pass, build succeeds, TypeScript clean.
+
+### Problem
+
+`createProcessWeekEnd()` was a single closure containing ~500 lines of game logic handling 15+ different systems inline:
+- Economy cycle, weather, festivals (global)
+- Per-player: weekly resets, employment, food/clothing, weather effects, festival effects, housing/eviction, investments/savings/theft, sickness, loans, weekends, lottery, relaxation, aging, rent tracking
+- Post-player: death checks, stock prices, game-over conditions
+
+This made it extremely difficult to understand, test, or modify any individual system without reading the entire function.
+
+### What Was Done
+
+**Extracted 4 global system processors:**
+- `advanceEconomy()` — trend changes, price drift, crash check
+- `advanceWeatherSystem()` — weather advancement + announcement messages
+- `checkFestival()` — seasonal festival activation + achievements
+- `calculateFinalPrice()` — economy × weather × festival price calculation
+
+**Extracted 12 per-player processors:**
+- `resetWeeklyFlags()` — newspaper, dungeon fatigue, resurrection, bounties, cooldown
+- `processEmployment()` — dependability decay, job loss, market crash effects
+- `processNeeds()` — food depletion, clothing degradation
+- `processWeatherOnPlayer()` — happiness changes, food spoilage
+- `processFestivalOnPlayer()` — happiness, gold, dependability, education bonuses
+- `processHousing()` — rent debt accumulation, eviction
+- `processFinances()` — investments, savings interest, Shadowfingers theft
+- `processSickness()` — random illness check
+- `processLoans()` — interest, forced repayment on default
+- `processLeisure()` — weekends, lottery, relaxation decay
+- `processAging()` — birthdays, milestones, elder decay, health crises
+- `updateRentTracking()` — prepaid weeks / overdue counter
+
+**Created pipeline orchestrator:**
+- `processPlayerWeekEnd()` calls all 12 per-player processors in sequence
+- `processDeathChecks()` handles post-processing resurrection/death
+- `WeekEndContext` interface passes shared context to all processors
+- `EconomyUpdate` interface for economy state
+
+**Main orchestrator reduced to 6 clear steps:**
+1. Advance global systems (economy, weather, festivals)
+2. Process all players (via pipeline)
+3. Death checks
+4. Stock price updates
+5. Game-over condition checks
+6. New week setup
+
+### Structure
+
+```
+Before: 1 exported function, ~500-line closure, 0 internal helpers
+After:  1 exported function (~100 lines), 16 focused helpers, 2 type interfaces
+```
+
+Each helper function is:
+- Named descriptively (immediately clear what it does)
+- Small enough to read in one screen (15-50 lines)
+- Single-responsibility (one game system per function)
+- Documented with JSDoc comments
+- Preserves all original behavior exactly (including edge cases like rent debt accumulating on eviction week)
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/store/helpers/weekEndHelpers.ts` | Refactored from 532 → 643 lines (same logic, better structure) |
+
+### Verification
+
+- TypeScript: `tsc --noEmit` — clean, no errors
+- Tests: 171/171 pass (9 test files)
+- Build: production build succeeds
+- No new dependencies or files created
+
 ## 2026-02-10 - UI Positioning, SFX Fix, Portrait Fix
 
 ### Summary
