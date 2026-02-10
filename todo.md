@@ -864,6 +864,16 @@
   - Pipeline orchestrator: processPlayerWeekEnd, processDeathChecks
   - Zero behavior changes — 171 tests pass, build succeeds
 
+## Completed (2026-02-10)
+
+- [x] Refactor useGrimwaldAI.ts executeAction — 34-case switch → handler map pattern
+  - Created `src/hooks/ai/actionExecutor.ts` with 34 named handler functions
+  - Defined `StoreActions` interface bundling 37 store actions
+  - `ACTION_HANDLERS` record maps AIActionType → handler function
+  - useGrimwaldAI.ts reduced from 627 → 227 lines (64% reduction)
+  - useCallback dependency array reduced from 35 items → 1 object
+  - Zero behavior changes — 171 tests pass, build succeeds
+
 ## In Progress
 
 *No active tasks*
