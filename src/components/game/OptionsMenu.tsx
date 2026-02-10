@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import {
   X, Settings, Gamepad2, Volume2, VolumeX, Monitor,
-  Gauge, RotateCcw, Cake, Skull, Zap, Eye, Layout, Bell, Timer, Sparkles, BookOpen,
+  Gauge, RotateCcw, Cake, Skull, Zap, Eye, Layout, Bell, Timer, Sparkles, BookOpen, Speech,
 } from 'lucide-react';
 import { UserManual } from '@/components/game/UserManual';
 import { Switch } from '@/components/ui/switch';
@@ -16,6 +16,7 @@ import { useGameOptions } from '@/hooks/useGameOptions';
 import { useAudioSettings } from '@/hooks/useMusic';
 import { useSFXSettings } from '@/hooks/useSFX';
 import { useAmbientSettings } from '@/hooks/useAmbient';
+import { useNarrationSettings } from '@/hooks/useNarration';
 import { useAppUpdate } from '@/hooks/useAppUpdate';
 import { getBuildVersion } from '@/components/game/UpdateBanner';
 import type { GameOptions } from '@/data/gameOptions';
@@ -32,6 +33,7 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
   const audio = useAudioSettings();
   const sfx = useSFXSettings();
   const ambient = useAmbientSettings();
+  const narration = useNarrationSettings();
   const { needRefresh, updateApp, checkForUpdates } = useAppUpdate();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
@@ -83,7 +85,7 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
             <GameplayTab options={options} setOption={setOption} />
           )}
           {activeTab === 'audio' && (
-            <AudioTab audio={audio} sfx={sfx} ambient={ambient} />
+            <AudioTab audio={audio} sfx={sfx} ambient={ambient} narration={narration} />
           )}
           {activeTab === 'display' && (
             <DisplayTab options={options} setOption={setOption} />
@@ -242,11 +244,15 @@ function AudioTab({
   audio,
   sfx,
   ambient,
+  narration,
 }: {
   audio: ReturnType<typeof useAudioSettings>;
   sfx: ReturnType<typeof useSFXSettings>;
   ambient: ReturnType<typeof useAmbientSettings>;
+  narration: ReturnType<typeof useNarrationSettings>;
 }) {
+  const voices = narration.isSupported ? narration.getEnglishVoices() : [];
+
   return (
     <div className="space-y-4">
       <SectionHeader title="Music" />
@@ -338,6 +344,86 @@ function AudioTab({
             max={100}
             step={5}
           />
+        </div>
+      )}
+
+      <Separator />
+      <SectionHeader title="Voice Narration" />
+
+      {narration.isSupported ? (
+        <>
+          <OptionRow
+            icon={<Speech className="w-4 h-4 text-emerald-500" />}
+            label="Voice Narration"
+            description="NPC greetings, events, and weekend activities read aloud."
+            control={
+              <Switch
+                checked={narration.enabled}
+                onCheckedChange={(v) => narration.setEnabled(v)}
+              />
+            }
+          />
+
+          {narration.enabled && (
+            <div className="pl-8 pr-2 space-y-3">
+              {/* Voice picker */}
+              {voices.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                    <span>Voice</span>
+                  </div>
+                  <select
+                    value={narration.voiceURI}
+                    onChange={(e) => narration.setVoice(e.target.value)}
+                    className="w-full text-xs p-1.5 rounded border border-border bg-background/50 text-card-foreground font-display"
+                  >
+                    <option value="">Auto (best available)</option>
+                    {voices.map((v) => (
+                      <option key={v.voiceURI} value={v.voiceURI}>
+                        {v.name} ({v.lang}){v.localService ? '' : ' (online)'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Volume slider */}
+              <div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                  <span>Volume</span>
+                  <span>{Math.round(narration.volume * 100)}%</span>
+                </div>
+                <Slider
+                  value={[narration.volume * 100]}
+                  onValueChange={([v]) => narration.setVolume(v / 100)}
+                  min={0}
+                  max={100}
+                  step={5}
+                />
+              </div>
+
+              {/* Speed slider */}
+              <div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                  <span>Speed</span>
+                  <span>{narration.rate.toFixed(1)}x</span>
+                </div>
+                <Slider
+                  value={[narration.rate * 100]}
+                  onValueChange={([v]) => narration.setRate(v / 100)}
+                  min={50}
+                  max={200}
+                  step={10}
+                />
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="p-3 rounded-lg bg-background/30 border border-border/50">
+          <p className="text-xs text-muted-foreground font-display">
+            Voice narration is not supported by this browser.
+          </p>
         </div>
       )}
     </div>

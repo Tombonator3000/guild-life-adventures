@@ -959,19 +959,38 @@
 
 ## Voice Narration System (Research Complete 2026-02-10)
 
-### Recommended: Kokoro TTS (Client-Side) + Pre-Generated Key Lines
+### Architecture: Tiered Fallback System
 
-### Implementation Steps (When Ready)
+```
+Tier 0: Pre-generated MP3 assets (key NPC lines, tutorial, location intros)
+Tier 1: Kokoro TTS via kokoro-js (if user enabled + model downloaded)
+Tier 2: Web Speech API — browser native fallback (zero setup)
+Tier 3: No narration (text only — current behavior)
+```
 
-- [ ] Add narration settings to `gameOptions.ts` (narrationEnabled: false, narrationVoice, narrationVolume)
-- [ ] Add Narration section to OptionsMenu Audio tab (toggle off by default, voice picker, volume slider)
-- [ ] Install `kokoro-js` and create lazy-loading wrapper (only downloads 160MB model when enabled)
+### Phase 1: Web Speech API Fallback (Zero Dependencies) — DONE 2026-02-10
+
+- [x] Create `src/audio/speechNarrator.ts` — SpeechSynthesis singleton with voice selection + bug workarounds
+- [x] Implement preferred voice selection (en-GB priority: Google UK English > Microsoft Daniel > Apple Daniel > any en-GB > any en)
+- [x] Add narration settings to speechNarrator.ts (enabled, volume, rate, voiceURI — persisted in localStorage)
+- [x] Add Narration section to OptionsMenu Audio tab (off by default, voice picker, volume/speed sliders)
+- [x] Create `useNarration` hook — trigger on NPC greetings, weekend events, event messages, location arrival
+- [x] Gate first `speak()` behind user gesture (Chrome 71+ requirement)
+- [x] Add bug workarounds (utterance GC fix, cancel/speak delay, voiceschanged async loading)
+- [ ] (Optional) Evaluate `easy-speech` npm package for cross-browser normalization
+
+### Phase 2: Kokoro TTS (Primary Neural Engine)
+
+- [ ] Install `kokoro-js` and create lazy-loading wrapper (160MB model, cached)
 - [ ] Create Web Worker for non-blocking TTS synthesis
-- [ ] Create `useNarration` hook to trigger narration on game events
 - [ ] Add IndexedDB cache for generated audio (keyed by text hash)
-- [ ] Hook into location arrival, quest text, event messages, and tutorial
+- [ ] Fall back to Web Speech API when Kokoro not loaded
+
+### Phase 3: Pre-Generated Audio (Enhancement)
+
 - [ ] (Optional) Pre-generate key narration lines via ElevenLabs as static MP3 assets
 - [ ] (Optional) Add voice cloning option via ElevenLabs for custom narrator voice
+- [ ] (Optional) Add NPC-specific voice presets (pitch/rate tweaks per character)
 
 ## Standalone Exe / Steam Distribution (Research Complete 2026-02-09)
 

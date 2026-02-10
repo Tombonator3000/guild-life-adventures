@@ -6,9 +6,10 @@ import { VictoryScreen } from '@/components/screens/VictoryScreen';
 import { OnlineLobby } from '@/components/screens/OnlineLobby';
 import { useMusicController } from '@/hooks/useMusic';
 import { useAmbientController } from '@/hooks/useAmbient';
+import { useNarrationController } from '@/hooks/useNarration';
 
 const Index = () => {
-  const { phase, eventMessage } = useGameStore();
+  const { phase, eventMessage, selectedLocation, weekendEvent } = useGameStore();
   const currentPlayer = useCurrentPlayer();
 
   // Drive background music based on game phase and player location
@@ -16,6 +17,9 @@ const Index = () => {
 
   // Drive ambient environmental sounds based on player location
   useAmbientController(phase, currentPlayer?.currentLocation ?? null);
+
+  // Drive voice narration (Web Speech API) for NPC greetings, events, weekends
+  useNarrationController(phase, selectedLocation, eventMessage, weekendEvent);
 
   switch (phase) {
     case 'title':
