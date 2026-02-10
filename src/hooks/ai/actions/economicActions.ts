@@ -6,6 +6,8 @@
  * lottery tickets, and stock market.
  */
 
+import { useGameStore } from '@/store/gameStore';
+import { STOCKS, getSellPrice } from '@/data/stocks';
 import type { AIAction } from '../types';
 import type { ActionContext } from './actionContext';
 
@@ -176,33 +178,90 @@ export function generateEconomicActions(ctx: ActionContext): AIAction[] {
   }
 
   // ============================================
-  // AI-4: STOCK MARKET (only for medium/hard AI)
+  // AI-4: STOCK MARKET (uses actual prices from game state)
   // ============================================
+  const stockPrices = useGameStore.getState().stockPrices || {};
+  const personalityGambling = ctx.personality.weights.gambling;
+
   if (settings.planningDepth >= 2 && player.gold > 300 && weakestGoal === 'wealth') {
     if (currentLocation === 'bank') {
-      // Buy stocks with excess gold
-      const stocksToBuy = player.gold > 500 ? 10 : 5;
-      actions.push({
-        type: 'buy-stock',
-        priority: 40,
-        description: 'Invest in stocks',
-        details: { stockId: 'guild-shares', shares: stocksToBuy, price: 50 },
-      });
+      // Smart stock picking: evaluate each stock using actual prices
+      // Strategic AI (hard) prefers undervalued stocks; medium prefers safe T-Bills
+      let bestStock: { id: string; shares: number; price: number } | null = null;
+
+      for (const stock of STOCKS) {
+        const currentPrice = stockPrices[stock.id] ?? stock.basePrice;
+        if (currentPrice <= 0) continue;
+
+        const maxShares = Math.floor((player.gold - 200) / currentPrice); // Keep 200g buffer
+        if (maxShares < 1) continue;
+
+        if (settings.planningDepth >= 3) {
+          // Hard AI: buy undervalued stocks (current < base) for potential gains
+          if (!stock.isTBill && currentPrice < stock.basePrice * 0.85) {
+            const sharesToBuy = Math.min(maxShares, 10);
+            bestStock = { id: stock.id, shares: sharesToBuy, price: currentPrice };
+            break; // Buy the first undervalued stock
+          }
+        }
+
+        // Medium/Hard AI: T-Bills for safe wealth storage (robbery-proof)
+        if (stock.isTBill && !bestStock) {
+          const sharesToBuy = Math.min(maxShares, personalityGambling > 1.0 ? 3 : 5);
+          bestStock = { id: stock.id, shares: sharesToBuy, price: currentPrice };
+        }
+      }
+
+      // Fallback: if personality is a gambler and no T-Bill, pick cheapest regular stock
+      if (!bestStock && personalityGambling >= 1.2) {
+        const cheapest = STOCKS
+          .filter(s => !s.isTBill && (stockPrices[s.id] ?? s.basePrice) > 0)
+          .sort((a, b) => (stockPrices[a.id] ?? a.basePrice) - (stockPrices[b.id] ?? b.basePrice))[0];
+        if (cheapest) {
+          const price = stockPrices[cheapest.id] ?? cheapest.basePrice;
+          const shares = Math.min(Math.floor((player.gold - 200) / price), 5);
+          if (shares > 0) {
+            bestStock = { id: cheapest.id, shares, price };
+          }
+        }
+      }
+
+      if (bestStock) {
+        actions.push({
+          type: 'buy-stock',
+          priority: 40,
+          description: `Invest in ${bestStock.id} (${bestStock.shares} shares @ ${bestStock.price}g)`,
+          details: { stockId: bestStock.id, shares: bestStock.shares, price: bestStock.price },
+        });
+      }
     }
   }
 
-  // Sell stocks if need gold or have enough profit
+  // Sell stocks: when need gold, when stock is overvalued, or when not focused on wealth
   const ownedStockCount = Object.values(player.stocks).reduce((a, b) => a + b, 0);
-  if (ownedStockCount > 0 && (player.gold < 50 || weakestGoal !== 'wealth')) {
-    if (currentLocation === 'bank') {
-      const firstStock = Object.entries(player.stocks).find(([, v]) => v > 0);
-      if (firstStock) {
+  if (ownedStockCount > 0 && currentLocation === 'bank') {
+    for (const [stockId, shares] of Object.entries(player.stocks)) {
+      if (shares <= 0) continue;
+      const stock = STOCKS.find(s => s.id === stockId);
+      if (!stock) continue;
+
+      const currentPrice = stockPrices[stockId] ?? stock.basePrice;
+      const sellProceeds = getSellPrice(stockId, shares, currentPrice);
+
+      // Sell reasons: broke (emergency), stock overvalued (profit-taking), or not wealth-focused
+      const isBroke = player.gold < 50;
+      const isOvervalued = !stock.isTBill && currentPrice > stock.basePrice * 1.5;
+      const notWealthFocused = weakestGoal !== 'wealth';
+
+      if (isBroke || isOvervalued || notWealthFocused) {
+        const sellShares = isBroke ? shares : (isOvervalued ? Math.ceil(shares / 2) : shares);
         actions.push({
           type: 'sell-stock',
-          priority: player.gold < 50 ? 70 : 35,
-          description: `Sell ${firstStock[0]} stocks`,
-          details: { stockId: firstStock[0], shares: firstStock[1] },
+          priority: isBroke ? 70 : (isOvervalued ? 45 : 35),
+          description: `Sell ${sellShares} ${stockId} shares (${sellProceeds}g)`,
+          details: { stockId, shares: sellShares },
         });
+        break; // Only sell one stock type per action cycle
       }
     }
   }
