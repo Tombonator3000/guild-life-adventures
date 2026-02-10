@@ -953,6 +953,14 @@
   - Enhancement: Pre-generate key narration with ElevenLabs voice cloning ($5 one-time)
   - Full details with pricing, architecture, and implementation plan in log.md
 
+- [x] Refactor RightSideTabs.tsx — extract 822-line monolith into 6 focused files
+  - Created `src/components/game/tabs/` with PlayersTab, OptionsTab, DeveloperTab, OptionSection, AudioVolumeControl
+  - Deduplicated 3 identical audio volume controls into reusable AudioVolumeControl component
+  - DeveloperTab split into 7 sub-section components (Weather, Victory, Festival, Resource, Event, PlayerState, Teleport)
+  - Extracted `calculateOverallProgress()` pure function for goal progress
+  - RightSideTabs.tsx reduced from 822 → 174 lines (79% reduction)
+  - Zero behavior changes — 176 tests pass, build succeeds
+
 ## In Progress
 
 *No active tasks*
