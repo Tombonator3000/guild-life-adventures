@@ -64,8 +64,7 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
       }
 
       // C7: Random travel events (10% chance on 3+ step trips)
-      // timeCost roughly equals steps traveled (1 hr/step + 2 hr entry)
-      const stepsTraveled = Math.max(0, timeCost - 2); // Subtract entry cost
+      const stepsTraveled = timeCost; // 1 hr/step
       const travelEvent = rollTravelEvent(stepsTraveled);
       if (travelEvent) {
         const currentPlayer = get().players.find(p => p.id === playerId);

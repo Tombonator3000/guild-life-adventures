@@ -874,6 +874,17 @@
   - useCallback dependency array reduced from 35 items → 1 object
   - Zero behavior changes — 171 tests pass, build succeeds
 
+- [x] Remove 2-hour location entry delay — movement now costs only path distance (1 hr/step)
+  - `getMovementCost()` returns `calculatePathDistance()` directly (removed `+ 2`)
+  - playerHelpers travel event step calc updated (no longer subtracts 2)
+  - CLAUDE.md updated, comments cleaned up
+- [x] Enhanced Rain Effect — visible rain overlay draws over screen during rain weather
+  - New `RainLayer` component: wet overlay, diagonal streaks, splash ripples at bottom
+  - Rain particle count 80→120, light-rain 40→60
+  - Rain particles larger and more visible (opacity/size increased)
+  - Heavy rain (thunderstorm) vs light rain (harvest-rain) intensity variants
+  - Build passes, 171 tests pass
+
 ## In Progress
 
 *No active tasks*

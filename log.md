@@ -1,5 +1,40 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-10 - Remove Location Entry Delay & Enhanced Rain Effect
+
+### Remove 2-Hour Entry Cost
+
+Previously, entering any location cost 2 hours on top of the travel time (1 hour per step). This has been removed — movement now costs only the path distance (1 hour per step).
+
+**Files changed:**
+- `src/data/locations.ts` — `getMovementCost()` now returns `calculatePathDistance()` directly (removed `+ 2`)
+- `src/store/helpers/playerHelpers.ts` — Travel event step calculation no longer subtracts 2 (entry cost removed)
+- `src/hooks/useLocationClick.ts` — Updated comment (no entry cost for partial travel)
+- `src/components/game/GameBoard.tsx` — Updated comment (weather cost per step only)
+- `CLAUDE.md` — Removed "Entering locations costs 2 hours" from game mechanics documentation
+
+**Impact:** Players gain ~2 hours per trip, making the game slightly faster-paced. Travel events still trigger on 3+ step trips.
+
+### Enhanced Rain Effect
+
+Added a dedicated `RainLayer` component to `WeatherOverlay.tsx` that renders over the screen during rain weather types (thunderstorm and harvest-rain). The effect includes:
+
+1. **Dark wet overlay** — subtle semi-transparent darkening that pulses slowly
+2. **Diagonal rain streaks** — long thin animated lines falling at a slight angle (40 for heavy rain / 20 for light)
+3. **Splash ripples** — small expanding ellipses at the bottom of the screen (24 heavy / 12 light)
+4. **More particles** — rain particle count increased from 80→120, light-rain from 40→60
+5. **Higher visibility** — rain particle opacity increased (0.3→0.4 base), particle size increased (1→1.5 base)
+6. **Richer color** — rain gradient now starts with a subtle blue tint instead of full transparency
+
+Heavy rain (thunderstorm) gets larger streaks, more splashes, and a darker overlay. Light rain (harvest-rain) gets a softer, gentler version.
+
+**Files changed:**
+- `src/components/game/WeatherOverlay.tsx` — New `RainLayer` component, increased particle counts/opacity/size for rain types
+
+Build succeeds, 171 tests pass.
+
+---
+
 ## 2026-02-10 - Refactor useGrimwaldAI.ts executeAction (Complex Code Refactoring)
 
 ### Summary

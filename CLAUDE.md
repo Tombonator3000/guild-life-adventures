@@ -54,7 +54,6 @@ src/
 ### Turn System
 - Each turn = 1 week with 60 hours
 - Movement costs 1 hour per location step
-- Entering locations costs 2 hours
 - Starvation penalty: -20 hours if no food at turn start
 
 ### Victory Goals

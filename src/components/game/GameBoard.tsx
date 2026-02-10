@@ -230,7 +230,7 @@ export function GameBoard() {
               const baseMoveCost = currentPlayer
                 ? getMovementCost(currentPlayer.currentLocation, location.id)
                 : 0;
-              // Weather adds extra hours per step of movement (not entry cost)
+              // Weather adds extra hours per step of movement
               const weatherExtra = (baseMoveCost > 0 && weather?.movementCostExtra)
                 ? getPath(currentPlayer!.currentLocation as LocationId, location.id as LocationId).length * weather.movementCostExtra
                 : 0;

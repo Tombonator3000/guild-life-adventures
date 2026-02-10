@@ -136,7 +136,7 @@ export function useLocationClick({
         // Partial travel: not enough time, but has some hours left
         // Walk as far as possible along the path, then end turn
         const fullPath = getPath(currentPlayer.currentLocation as LocationId, locationId as LocationId);
-        const stepsCanTake = currentPlayer.timeRemaining; // Each step costs 1 hour (no entry cost for partial)
+        const stepsCanTake = currentPlayer.timeRemaining; // Each step costs 1 hour
 
         if (stepsCanTake > 0 && fullPath.length > 1) {
           // Take only the steps we can afford (path includes starting location at index 0)
