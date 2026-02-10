@@ -129,6 +129,32 @@ export function rollWeatherEvent(): WeatherState | null {
   };
 }
 
+// ============================================================
+// Weather ↔ Festival Conflict Resolution
+// ============================================================
+// Some weather types are thematically/mechanically contradictory with festivals.
+// When both would be active, the festival (deterministic) takes priority and
+// conflicting weather is cleared.
+
+import type { FestivalId } from '@/data/festivals';
+
+/** Map of weather types to the festivals they conflict with */
+const WEATHER_FESTIVAL_CONFLICTS: Partial<Record<WeatherType, FestivalId[]>> = {
+  // Drought = scorching land, food prices soar — contradicts Harvest Festival's abundance & cheap goods
+  'drought': ['harvest-festival'],
+  // Snowstorm in midsummer or during harvest makes no thematic sense
+  'snowstorm': ['midsummer-fair', 'harvest-festival'],
+};
+
+/**
+ * Check if a weather type conflicts with a festival.
+ * When they conflict, the festival takes priority (festivals are deterministic schedule events).
+ */
+export function isWeatherFestivalConflict(weatherType: WeatherType, festivalId: FestivalId): boolean {
+  const conflicts = WEATHER_FESTIVAL_CONFLICTS[weatherType];
+  return conflicts ? conflicts.includes(festivalId) : false;
+}
+
 /**
  * Advance weather by one week. Decrements duration and clears if expired.
  * If weather expired and enableWeatherEvents is on, rolls for new weather.

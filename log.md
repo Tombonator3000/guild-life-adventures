@@ -1,5 +1,216 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-10 - Weather-Festival Conflict Fix & Complete Event Catalog
+
+### Task 1: Fix Weather-Festival Conflict (Drought + Harvest Festival)
+
+**Problem**: Weather events and festivals were completely independent systems with no conflict resolution. This meant contradictory combinations could occur simultaneously — most notably, Drought ("A scorching drought dries the land. Food prices soar") displaying alongside Harvest Festival ("All prices reduced by 15% this week!"). Mechanically the price multipliers stacked (1.15 × 0.85 = ~0.98), but the messaging was confusing and thematically absurd.
+
+**Root Cause**: In `weekEndHelpers.ts`, `advanceWeatherSystem()` and `checkFestival()` were called independently with no cross-check.
+
+**Fix**:
+
+1. **Added conflict map** (`src/data/weather.ts`):
+   - `WEATHER_FESTIVAL_CONFLICTS` defines which weather types conflict with which festivals
+   - `isWeatherFestivalConflict(weatherType, festivalId)` exported helper function
+   - Conflict pairs:
+     - `drought` ↔ `harvest-festival` (scorching land vs abundant cheap harvest)
+     - `snowstorm` ↔ `midsummer-fair` (snow in summer)
+     - `snowstorm` ↔ `harvest-festival` (snow kills crops)
+
+2. **Conflict resolution in orchestrator** (`src/store/helpers/weekEndHelpers.ts`):
+   - Festival is now checked FIRST (it's deterministic, every 12 weeks)
+   - After weather is rolled, if it conflicts with the active festival, weather is cleared
+   - If previous weather was active and gets cleared by festival, a thematic message is shown: "The [Festival] celebrations dispel the [weather]. Fair skies return!"
+   - If the conflicting weather was just rolled this tick, it's silently suppressed (no message)
+
+**Files Changed**:
+- `src/data/weather.ts` — Added `WEATHER_FESTIVAL_CONFLICTS`, `isWeatherFestivalConflict()`, imported `FestivalId` type
+- `src/store/helpers/weekEndHelpers.ts` — Imported `isWeatherFestivalConflict`, reordered festival before weather, added conflict resolution block
+
+**Tests**: 176 pass, TypeScript clean, build succeeds.
+
+### Task 2: Complete Event Catalog
+
+All events/random occurrences that can happen in Guild Life Adventures:
+
+---
+
+#### A. Weather Events (src/data/weather.ts)
+~8% chance per week, duration 1-3 weeks. Guarded by `enableWeatherEvents` option.
+
+| # | Weather Type | Effects | Visual |
+|---|-------------|---------|--------|
+| 1 | **Snowstorm** | +1 movement cost, +10% prices, -2 happiness/wk, 50% less robbery | Snow particles |
+| 2 | **Thunderstorm** | +1 movement cost, +5% prices, -1 happiness/wk, +50% robbery | Rain + lightning |
+| 3 | **Drought** | +15% prices, -2 happiness/wk, 25% food spoilage chance | Heat shimmer |
+| 4 | **Enchanted Fog** | +1 movement cost, -5% prices, +3 happiness/wk, +20% robbery | Fog layers |
+| 5 | **Harvest Rain** | -10% prices, +2 happiness/wk | Light rain |
+
+#### B. Seasonal Festivals (src/data/festivals.ts)
+Deterministic every 12 weeks. Guarded by `enableFestivals` option.
+
+| # | Festival | Week | Effects |
+|---|---------|------|---------|
+| 6 | **Harvest Festival** | 12, 60, 108... | +5 happiness, -15% prices |
+| 7 | **Winter Solstice** | 24, 72, 120... | +3 happiness, +2 study sessions, +3 dependability |
+| 8 | **Spring Tournament** | 36, 84, 132... | +3 happiness, +50% dungeon gold |
+| 9 | **Midsummer Fair** | 48, 96, 144... | +5 happiness, +10g, +15% wages |
+
+#### C. Shadowfingers Robbery (src/data/shadowfingers.ts)
+
+| # | Event | Trigger | Chance |
+|---|-------|---------|--------|
+| 10 | **Street Robbery (Bank)** | Leaving bank with gold, week ≥4 | ~3.2% (×3 if homeless, ×1.5-2.5 if 1000g+) |
+| 11 | **Street Robbery (Shadow Market)** | Leaving shadow market with gold, week ≥4 | ~2% (×3 if homeless) |
+| 12 | **Apartment Robbery** | Living in slums with durables, per turn | 1/(relaxation+1), ~2-9% |
+
+#### D. Weekly Theft (src/data/events.ts — checkWeeklyTheft)
+
+| # | Event | Condition | Chance | Effect |
+|---|-------|-----------|--------|--------|
+| 13 | **Shadowfingers Theft** | Homeless/slums, 20+ gold | 25% (×1.5 if homeless) | -50g, -3 happiness |
+| 14 | **Shadowfingers Major Heist** | Homeless/slums, 100+ gold | 10% (×1.5 if homeless) | -100g, -5 happiness |
+
+#### E. Random Location Events (src/data/events.ts — checkForEvent)
+
+| # | Event | Condition | Chance | Effect |
+|---|-------|-----------|--------|--------|
+| 15 | **Bank Robbery** | At bank, 200+ gold | 20% | -100g, -5 happiness |
+| 16 | **Shadow Market Ambush** | At shadow market, 150+ gold | 25% | -75g, -4 happiness |
+| 17 | **Pickpocket** | At shadow market/fence, 10+ gold | 15% | -25g |
+| 18 | **Lucky Find** | Anywhere | 5% | +30g, +5 happiness |
+| 19 | **Guild Bonus** | At guild hall | 3% | +50g, +10 happiness |
+| 20 | **Generous Tip** | Anywhere | 10% | +15g, +3 happiness |
+| 21 | **Economic Boom** | Anywhere | 10% | +5 happiness |
+| 22 | **Economic Crash** | Anywhere | 8% | -5 happiness |
+| 23 | **Illness** | Homeless/slums | 5% | -15 HP, -2 happiness |
+| 24 | **Food Poisoning** | At shadow market/tavern | 8% | -20 HP, -3 happiness |
+| 25 | **Clothing Torn** | Anywhere | 5% | -20 clothing |
+
+#### F. Market Crash Events (src/data/events.ts — checkMarketCrash)
+Only during recession trend + low economy.
+
+| # | Event | Chance | Effect |
+|---|-------|--------|--------|
+| 26 | **Pay Cut** | 5% per week during recession | -20% wages, -10 happiness |
+| 27 | **Layoff** | 3% per week during recession | Lose job, -20 happiness |
+
+#### G. Travel Events (src/data/travelEvents.ts)
+10% chance on trips of 3+ steps.
+
+| # | Event | Type | Effect |
+|---|-------|------|--------|
+| 28 | **Found Coin Purse** | Positive | +15-34g, +2 happiness |
+| 29 | **Wandering Merchant** | Positive | +3 happiness, +5 HP |
+| 30 | **Hidden Shortcut** | Positive | +2 hours saved, +1 happiness |
+| 31 | **Street Bard** | Positive | +5 happiness, -1 hour |
+| 32 | **Pickpocket** | Negative | -10 to -30g, -3 happiness |
+| 33 | **Muddy Road** | Negative | -5 HP, -2 happiness, -1 hour |
+| 34 | **Took a Wrong Turn** | Negative | -1 happiness, -2 hours |
+| 35 | **Aggressive Stray Dog** | Negative | -3 HP, -2 happiness, -1 hour |
+| 36 | **Injured Traveler** | Mixed | +10g, +4 happiness, -2 hours |
+| 37 | **Old Map Fragment** | Mixed | +25g, +3 happiness, -3 hours |
+
+#### H. Weekend Events (src/data/weekends.ts)
+One activity selected each week-end in processWeekEnd.
+
+**Ticket Weekends** (purchased at Rusty Tankard):
+
+| # | Event | Cost | Happiness |
+|---|-------|------|-----------|
+| 38 | **Jousting Tournament** | 25g (ticket) | +8 |
+| 39 | **Theatre Performance** | 40g (ticket) | +10 |
+| 40 | **Bard Concert** | 50g (ticket) | +12 |
+
+**Durable Weekends** (20% chance per owned appliance):
+
+| # | Event | Appliance | Happiness |
+|---|-------|-----------|-----------|
+| 41 | **Scrying Session** | Scrying Mirror | +3 |
+| 42 | **Memory Crystal Replay** | Memory Crystal | +3 |
+| 43 | **Music Box Concert** | Music Box | +4 |
+| 44 | **Cooking Weekend** | Cooking Fire | +3 (-5g) |
+| 45 | **Arcane Study** | Arcane Tome | +2 |
+
+**Random Weekends** (fallback, 26 activities):
+
+| # | Tier | Activities | Cost Range | Happiness |
+|---|------|-----------|------------|-----------|
+| 46-55 | **Cheap** (10) | Walk, Fishing, Market, Street Food, Nap, People Watch, Cards, Gardening, Ales, Campfire | 0-15g | +1 to +3 |
+| 56-65 | **Medium** (10) | Feast, Horse Riding, Archery, Fortune Teller, Bathhouse, Arena, River Cruise, Dance, Museum, Picnic | 15-55g | +3 to +6 |
+| 66-71 | **Expensive** (6) | Grand Ball, Royal Spa, Noble Hunt, Boat Cruise, Royal Banquet, Grand Magic Show | 50-100g | +7 to +12 |
+| 72 | **Fallback** | Stayed Home | 0g | +1 |
+
+#### I. Dungeon Random Modifiers (src/data/dungeon/floors.ts)
+One modifier per dungeon run (random).
+
+| # | Modifier | Effect |
+|---|---------|--------|
+| 73 | **Cursed Halls** | +30% damage taken, +50% gold |
+| 74 | **Lucky Day** | +25% rare drop, +25% gold |
+| 75 | **Blood Moon** | Enemies +50% power, +100% gold, no healing |
+| 76 | **Echoing Darkness** | Traps can't be disarmed, +20% gold |
+| 77 | **Blessed Ground** | -20% damage, +50% healing |
+| 78 | **Fortune's Favor** | Treasure 2x gold, +50% rare drop |
+| 79 | **Weakened Wards** | Enemies -30% power, -30% gold |
+
+#### J. Doctor Visit Events (src/store/helpers/startTurnHelpers.ts)
+Triggered at turn start under specific conditions.
+
+| # | Event | Trigger | Chance | Effect |
+|---|-------|---------|--------|--------|
+| 80 | **Starvation Doctor Visit** | Food = 0, no fresh food | 25% | -30 to -200g, -10 hours, -4 happiness |
+| 81 | **Spoiled Food Doctor Visit** | Fresh food spoils (drought) | 25% | -30 to -200g, -10 hours, -4 happiness |
+| 82 | **Exhaustion Doctor Visit** | Relaxation ≤ 15 | 20% | -30 to -200g, -10 hours, -4 happiness |
+
+#### K. Weekly Passive Events (src/store/helpers/weekEndHelpers.ts)
+
+| # | Event | Trigger | Chance | Effect |
+|---|-------|---------|--------|--------|
+| 83 | **Random Sickness** | Any player | 5%/week | Sick status, -15 HP |
+| 84 | **Clothing Degradation** | Every 8 weeks | 100% | -25 clothing condition |
+| 85 | **Lottery Win (Grand)** | Has lottery tickets | 0.1%/ticket | +500g, +25 happiness |
+| 86 | **Lottery Win (Small)** | Has lottery tickets | 5.9%/ticket | +20g, +5 happiness |
+| 87 | **Appliance Breakage** | Own appliances | 1/51 enchanter, 1/36 market | Appliance becomes broken |
+| 88 | **Eviction** | 8 weeks unpaid rent | 100% | Lose all possessions, -30 happiness |
+| 89 | **Job Firing** | Dependability < 20 | 100% | Lose job |
+| 90 | **Stock Market Crash** | Recession trend | 10%/week | All stock prices plummet |
+
+#### L. Age Events (src/store/helpers/weekEndHelpers.ts)
+
+| # | Event | Trigger | Effect |
+|---|-------|---------|--------|
+| 91 | **Birthday Milestone (21)** | Age 21 | +5 happiness |
+| 92 | **Birthday Milestone (25)** | Age 25 | +2 max HP |
+| 93 | **Birthday Milestone (30)** | Age 30 | +5 happiness, +5 dependability |
+| 94 | **Birthday Milestone (40)** | Age 40 | -2 max HP, +3 happiness |
+| 95 | **Birthday Milestone (50)** | Age 50 | -5 max HP, +5 happiness |
+| 96 | **Elder Decay** | Age 60+ birthday | -3 max HP per birthday |
+| 97 | **Health Crisis** | Age 50+, weekly | 3% chance, -15 HP |
+
+#### M. Death & Resurrection Events
+
+| # | Event | Trigger | Effect |
+|---|-------|---------|--------|
+| 98 | **Death** | HP reaches 0 | Game over or resurrection |
+| 99 | **Paid Resurrection** | Dead + 100g+ savings | -100g (base, scales with wealth), +50 HP, -8 happiness |
+| 100 | **Free Respawn** | Dead, no savings, permadeath OFF | 20 HP at graveyard, -8 happiness |
+| 101 | **Permanent Death** | Dead, no savings, permadeath ON | Game over |
+
+#### N. Starvation & Homeless Penalties (Turn Start)
+
+| # | Event | Trigger | Effect |
+|---|-------|---------|--------|
+| 102 | **Starvation** | Food = 0 at turn start | -20 hours |
+| 103 | **Homeless Penalties** | No housing | -5 HP, -8 hours, 3x robbery chance |
+
+---
+
+**Total: 103 distinct events/occurrences across 14 categories.**
+
+---
+
 ## 2026-02-10 - Menu Readability, Music Volume & Voice Narration Research
 
 ### Task 1: Save/Load Menu Text Readability
