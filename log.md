@@ -1,5 +1,216 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-10 - Web Speech API Research (Voice Narration Fallback)
+
+### Context
+
+Previous research (earlier today) recommended **Kokoro TTS** (client-side, `kokoro-js`) as the primary narration engine, with **ElevenLabs** for pre-generated key lines. This follow-up research evaluates the **Web Speech API (SpeechSynthesis)** as a zero-setup browser-native fallback — requiring no npm packages, no model downloads, no API keys.
+
+### What Is the Web Speech API?
+
+The `window.speechSynthesis` API is a browser-native TTS engine built into all modern browsers since 2018. It provides text-to-speech synthesis with no dependencies, no cost, and no setup. You create a `SpeechSynthesisUtterance`, set text/voice/rate/pitch/volume, and call `speechSynthesis.speak()`.
+
+### Browser Support
+
+| Browser | Support | Since |
+|---------|---------|-------|
+| Chrome | Full | v33+ (2014) |
+| Firefox | Full | v49+ (2016) |
+| Safari | Full | v7.1+ (2014) |
+| Edge | Full | v14+ |
+| iOS Safari | Yes (with caveats) | iOS 7+ |
+| Android Chrome | Yes (with caveats) | Yes |
+
+### Preferred Voices for Guild Life Adventures
+
+The user's preferred voices and their actual availability:
+
+| Voice | Browser/OS | Lang | Type | Quality |
+|-------|-----------|------|------|---------|
+| **Google UK English Male** | Chrome Desktop only | en-GB | Cloud (`localService: false`) | Good — requires internet |
+| **Google UK English Female** | Chrome Desktop only | en-GB | Cloud (`localService: false`) | Good — requires internet |
+| **Microsoft David** | Windows (all browsers) | en-US | Local SAPI | Decent — works offline |
+| **Microsoft Daniel** | Windows 11 / Edge | en-GB | Local Natural (downloadable) | Good — works offline after download |
+| **Apple Daniel** | macOS/iOS Safari | en-GB | Local | Decent — always available on Apple |
+| **Microsoft Hazel** | Windows (all browsers) | en-GB | Local SAPI | Decent — works offline |
+| **Microsoft Sonia Online** | Edge only | en-GB | Cloud | Good — requires internet |
+
+**Key finding**: No single voice is available across all browsers. The Google UK English voices only exist in Chrome Desktop. Microsoft voices only exist on Windows. Apple voices only exist on Apple platforms. A voice preference system with intelligent fallback is required.
+
+### Recommended Voice Selection Algorithm
+
+```
+Priority order for en-GB fantasy narration:
+1. "Google UK English Male" (Chrome Desktop — best quality for en-GB)
+2. "Google UK English Female" (Chrome Desktop — alternate)
+3. "Microsoft Daniel" (Windows 11 / Edge — en-GB Natural)
+4. "Microsoft Sonia Online (Natural)" (Edge — en-GB)
+5. "Daniel" (Apple platforms — en-GB)
+6. "Microsoft Hazel Desktop" (Windows — en-GB SAPI)
+7. Any voice where voice.lang === "en-GB"
+8. Any voice where voice.lang.startsWith("en")
+9. Default system voice (last resort)
+```
+
+### API Parameters
+
+| Property | Range | Default | Notes |
+|----------|-------|---------|-------|
+| `text` | Up to 32,767 chars (spec) | `""` | Keep under 200 chars for Chrome reliability |
+| `lang` | BCP 47 tag | `""` | Use `"en-GB"` for British English |
+| `voice` | From `getVoices()` | null | Must be set after voices load |
+| `rate` | 0.1 – 10.0 | 1.0 | 0.85–0.95 recommended for fantasy narration |
+| `pitch` | 0.0 – 2.0 | 1.0 | 0.8–0.9 for deeper male voice, 1.1 for female |
+| `volume` | 0.0 – 1.0 | 1.0 | Tied to narration volume slider |
+
+### Requires No Setup — Confirmed
+
+- No npm packages needed
+- No API keys or accounts
+- No model downloads (unlike Kokoro's 160MB model)
+- No server infrastructure
+- Works offline with local voices
+- Google cloud voices in Chrome do send text to Google servers but cost nothing
+
+### Critical Bugs & Workarounds
+
+#### Bug 1: Chrome 15-Second Cutoff (Chromium Issue #679437)
+Speech stops after ~15 seconds on Chrome Desktop. Google voices most affected.
+- **Workaround A (Desktop)**: Pause/resume timer every 14 seconds
+- **Workaround B (Universal)**: Chunk text into sentences < 200 characters
+- **Note**: Pause/resume workaround **breaks on Android Chrome** (speech never resumes)
+- **For our game**: NPC dialog and event text is already short (1-3 sentences), so this is largely a non-issue
+
+#### Bug 2: `onend` Event Not Firing (GC Issue)
+Browser garbage-collects utterance before `onend` fires.
+- **Workaround**: Store utterance reference in module scope (e.g., `this.currentUtterance = utterance`)
+
+#### Bug 3: `cancel()` Swallows Next `speak()`
+Calling `cancel()` then immediately `speak()` silently drops the new utterance.
+- **Workaround**: 500ms delay between `cancel()` and next `speak()`
+
+#### Bug 4: Firefox Utterance Not Reusable
+Cannot reuse the same `SpeechSynthesisUtterance` object.
+- **Workaround**: Always create a new utterance per `speak()` call
+
+#### Bug 5: Voice Loading Is Asynchronous (Chrome/Edge)
+`getVoices()` returns empty array on first call in Chromium browsers.
+- **Workaround**: Listen for `voiceschanged` event + setTimeout fallback:
+```
+1. Try getVoices() immediately (works in Firefox)
+2. Listen for 'voiceschanged' event (Chrome/Edge/Safari)
+3. Set 3-second timeout as fallback
+```
+
+#### Bug 6: iOS Mute Switch Silences TTS
+Physical mute switch on iPhone/iPad silences SpeechSynthesis entirely.
+- **No workaround** — must inform user
+
+#### Bug 7: User Gesture Required
+`speak()` must be called from a user click/tap in Chrome 71+ and all iOS browsers.
+- **Workaround**: Gate first TTS call behind a user interaction (e.g., game start, location click, "Enable Narration" button)
+
+### Quality Assessment
+
+| Tier | Source | Quality | Cost |
+|------|--------|---------|------|
+| 1 (Best) | ElevenLabs pre-generated MP3s | Near-human | $5 one-time |
+| 2 | Kokoro TTS (client-side) | Good neural TTS | Free (160MB model) |
+| 3 | Google Chrome cloud voices | Decent | Free (browser-native) |
+| 3 | Microsoft Edge Online voices | Decent | Free (browser-native) |
+| 4 | OS local voices (SAPI, Apple) | Robotic-to-decent | Free |
+| 5 | eSpeak (Linux fallback) | Very robotic | Free |
+
+**Verdict**: Web Speech API is Tier 3-4 quality. For a fantasy game, the slightly robotic quality of older voices can be embraced as "medieval text-to-speech" character. Google UK English voices in Chrome are actually quite good for game dialog.
+
+### Comparison: Web Speech API vs Kokoro TTS
+
+| Feature | Web Speech API | Kokoro TTS (kokoro-js) |
+|---------|---------------|----------------------|
+| **Setup** | Zero — browser native | npm install + 160MB model download |
+| **Cost** | Free | Free |
+| **Quality** | Decent (varies by browser) | Good (neural, consistent) |
+| **Voice count** | Varies (1-100+ depending on OS) | 21 built-in English voices |
+| **Consistency** | Very inconsistent across browsers | Same everywhere |
+| **Offline** | Yes (local voices only) | Yes (after model cached) |
+| **Bundle size** | 0 KB | ~160MB model (lazy-loaded) |
+| **First-use latency** | Instant | Model download + init |
+| **User gesture needed** | Yes (first call) | No |
+| **Chrome 15s bug** | Yes | No |
+| **Web Worker support** | No (main thread only) | Yes |
+| **Best for** | Quick fallback, zero-config | Primary narration engine |
+
+### Recommended Architecture: Tiered Fallback System
+
+```
+Tier 0: Pre-generated MP3 assets (key NPC lines, tutorial, location intros)
+  ↓ (if text not pre-generated)
+Tier 1: Kokoro TTS via kokoro-js (if user has enabled + model downloaded)
+  ↓ (if kokoro not available / not enabled)
+Tier 2: Web Speech API (browser native fallback)
+  ↓ (if speechSynthesis not available)
+Tier 3: No narration (text only — current behavior)
+```
+
+### Web Speech API — Game Integration Points
+
+For Guild Life Adventures, the Web Speech API would narrate:
+
+| Event | Example Text | Priority |
+|-------|-------------|----------|
+| **NPC Greetings** | "Welcome to the Guild Hall, adventurer!" | High — short text, ideal for TTS |
+| **Weekend Events** | "You spend the weekend at the Fighting Pits..." | High — atmospheric narration |
+| **Quest Descriptions** | "A merchant has lost his cargo in the caves..." | Medium |
+| **Location Arrival** | "You arrive at the Shadow Market..." | Medium |
+| **Event Messages** | "A snowstorm batters Guildholm!" | Medium |
+| **Tutorial Steps** | "Click a location on the board to travel there" | Low (pre-generated MP3 preferred) |
+| **Combat Narration** | "You deal 15 damage to the Goblin Chief!" | Low (too frequent, use sparingly) |
+
+### Voice Settings UI (Options Menu)
+
+Proposed settings for when implementation begins:
+
+```
+[Audio Tab]
+  Music Volume: [slider 0-100%]
+  SFX Volume: [slider 0-100%]
+  Ambient Volume: [slider 0-100%]
+
+  Narration: [OFF] / Web Speech / Kokoro (if installed)
+  Narration Voice: [dropdown — populated from available voices]
+  Narration Volume: [slider 0-100%]
+  Narration Speed: [slider 0.5x - 2.0x]
+```
+
+### Useful Libraries
+
+- **[EasySpeech](https://github.com/leaonline/easy-speech)**: Normalizes cross-browser SpeechSynthesis differences into a single API. Handles voiceschanged, utterance GC, cancel/speak race conditions. ~8KB gzipped. Worth evaluating to avoid hand-rolling all workarounds.
+- **[web-speech-recommended-voices](https://github.com/HadrienGardeur/web-speech-recommended-voices)**: Curated JSON lists of recommended voices per language/platform.
+
+### Conclusion
+
+**Web Speech API is an excellent zero-cost, zero-setup fallback** for voice narration. It works in all browsers, requires no installation, and handles short game dialog (NPC greetings, events, quests) well. The quality ranges from "good" (Google Chrome voices) to "adequate" (OS local voices) for a fantasy game context.
+
+**Key constraint**: Voice availability is unpredictable across browsers, so the implementation must have a smart voice selection algorithm with graceful degradation. The Chrome 15-second bug is mostly irrelevant for our short game text.
+
+**Recommendation**: Use Web Speech API as Tier 2 fallback behind Kokoro TTS. For the simplest first implementation, Web Speech API alone would provide immediate narration capability with zero dependencies — just add a `useNarration` hook that wraps `window.speechSynthesis`.
+
+### Implementation Steps (Web Speech API Fallback)
+
+- [ ] Create `src/audio/speechNarrator.ts` — singleton wrapping SpeechSynthesis with voice selection, chunking, bug workarounds
+- [ ] Add voice loading with `voiceschanged` event + timeout fallback
+- [ ] Implement preferred voice selection algorithm (en-GB priority list)
+- [ ] Add `narrationMode: 'off' | 'web-speech' | 'kokoro'` to game options
+- [ ] Add Narration section to OptionsMenu Audio tab (off by default, voice picker, volume/speed sliders)
+- [ ] Create `useNarration` hook — trigger narration on NPC greetings, weekend events, quest text, location arrival
+- [ ] Gate first `speak()` call behind user gesture (button click)
+- [ ] Store utterance references to prevent GC (Bug 2 workaround)
+- [ ] Add 500ms cancel-before-speak delay (Bug 3 workaround)
+- [ ] (Optional) Evaluate `easy-speech` npm package to simplify cross-browser handling
+- [ ] (Optional) Add NPC-specific voice presets (pitch/rate tweaks per NPC character)
+
+---
+
 ## 2026-02-10 - Weather-Festival Conflict Fix & Complete Event Catalog
 
 ### Task 1: Fix Weather-Festival Conflict (Drought + Harvest Festival)
