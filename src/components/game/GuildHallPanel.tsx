@@ -27,6 +27,7 @@ import {
 
 interface GuildHallPanelProps {
   player: Player;
+  allPlayers?: Player[];
   priceModifier: number;
   week: number;
   onHireJob: (jobId: string, wage: number) => void;
@@ -36,6 +37,7 @@ interface GuildHallPanelProps {
 
 export function GuildHallPanel({
   player,
+  allPlayers,
   priceModifier,
   week,
   onHireJob,
@@ -231,15 +233,22 @@ export function GuildHallPanel({
             const marketWage = marketWages.get(job.id) ?? job.baseWage;
             const canGetRaise = isCurrentJob && marketWage > player.currentWage;
 
+            // Check if another player already holds this job
+            const jobHolder = allPlayers?.find(
+              p => p.id !== player.id && !p.isGameOver && p.currentJob === job.id
+            );
+            const isTakenByOther = !!jobHolder;
+
             return (
               <div
                 key={job.id}
-                className={`bg-[#e0d4b8] border p-2 rounded ${isCurrentJob ? 'border-[#c9a227] ring-1 ring-[#c9a227]' : 'border-[#8b7355]'}`}
+                className={`bg-[#e0d4b8] border p-2 rounded ${isCurrentJob ? 'border-[#c9a227] ring-1 ring-[#c9a227]' : isTakenByOther ? 'border-red-400 opacity-70' : 'border-[#8b7355]'}`}
               >
                 <div className="flex justify-between items-baseline">
                   <span className="font-mono text-sm text-[#3d2a14]">
                     {job.name}
                     {isCurrentJob && <span className="text-[#c9a227] ml-1">(Current)</span>}
+                    {isTakenByOther && <span className="text-red-600 ml-1">(Taken)</span>}
                   </span>
                   <span className="font-mono text-sm text-[#c9a227] font-bold">
                     ${marketWage}/h
@@ -248,6 +257,11 @@ export function GuildHallPanel({
                 {isCurrentJob && canGetRaise && (
                   <div className="text-xs text-green-600 mt-0.5">
                     Your wage: ${player.currentWage}/h — Market rate is higher!
+                  </div>
+                )}
+                {isTakenByOther && (
+                  <div className="text-xs text-red-600 mt-0.5">
+                    Position held by {jobHolder.name}
                   </div>
                 )}
                 <div className="text-xs text-[#6b5a42] mt-1">
@@ -267,9 +281,9 @@ export function GuildHallPanel({
                     />
                   ) : (
                     <JonesButton
-                      label={isCurrentJob ? 'Current' : 'Apply'}
+                      label={isCurrentJob ? 'Current' : isTakenByOther ? 'Taken' : 'Apply'}
                       onClick={() => handleApply(job)}
-                      disabled={isCurrentJob}
+                      disabled={isCurrentJob || isTakenByOther}
                       variant="secondary"
                     />
                   )}

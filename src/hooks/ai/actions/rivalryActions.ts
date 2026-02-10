@@ -5,7 +5,7 @@
  * that rival players are pursuing. Only active on medium/hard difficulty.
  */
 
-import { getJob, getAvailableJobs, canWorkJob, type Job } from '@/data/jobs';
+import { getJob } from '@/data/jobs';
 import { getAvailableQuests, canTakeQuest } from '@/data/quests';
 import { calculateGoalProgress, getWeakestGoal } from '../strategy';
 import type { AIAction, GoalProgress } from '../types';
@@ -61,40 +61,8 @@ export function generateRivalryActions(ctx: ActionContext): AIAction[] {
   const threatIsClose = isRivalThreatening(biggestThreat, goals);
   const rivalFocus = getRivalFocus(biggestThreat, goals);
 
-  // === RIVALRY: Steal rival's job if it's better than ours ===
-  // If a rival has a high-paying job the AI qualifies for, steal it
-  if (biggestThreat.currentJob && settings.aggressiveness > 0.5) {
-    const rivalJob = getJob(biggestThreat.currentJob);
-    if (rivalJob) {
-      const canTake = canWorkJob(
-        rivalJob,
-        player.completedDegrees,
-        player.clothingCondition,
-        player.experience,
-        player.dependability
-      );
-      const ourWage = player.currentWage || 0;
-      // Steal job if it pays more than our current job (or if rival is threatening)
-      if (canTake && (rivalJob.baseWage > ourWage * 1.1 || threatIsClose)) {
-        const rivalPriority = threatIsClose ? 72 : 58;
-        if (currentLocation === 'guild-hall') {
-          actions.push({
-            type: 'apply-job',
-            priority: rivalPriority,
-            description: `Steal ${biggestThreat.name}'s job: ${rivalJob.name}`,
-            details: { jobId: rivalJob.id },
-          });
-        } else if (player.timeRemaining > moveCost('guild-hall') + 2) {
-          actions.push({
-            type: 'move',
-            location: 'guild-hall',
-            priority: rivalPriority - 5,
-            description: `Travel to steal ${biggestThreat.name}'s job`,
-          });
-        }
-      }
-    }
-  }
+  // === RIVALRY: Job stealing removed — jobs held by other players are now blocked ===
+  // Players cannot take a job that another player currently holds.
 
   // === RIVALRY: Compete for quests ===
   // If a rival is quest-focused, try to grab available quests first

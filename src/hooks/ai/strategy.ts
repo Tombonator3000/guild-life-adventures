@@ -122,8 +122,9 @@ export function calculateResourceUrgency(player: Player): ResourceUrgency {
 
 /**
  * Get the best job the AI can currently apply for
+ * Filters out jobs already held by other players (job blocking)
  */
-export function getBestAvailableJob(player: Player): Job | null {
+export function getBestAvailableJob(player: Player, rivals?: Player[]): Job | null {
   const availableJobs = getAvailableJobs(
     player.completedDegrees,
     player.clothingCondition,
@@ -131,10 +132,16 @@ export function getBestAvailableJob(player: Player): Job | null {
     player.dependability
   );
 
-  if (availableJobs.length === 0) return null;
+  // Filter out jobs held by other active players
+  const takenJobIds = new Set(
+    (rivals ?? []).filter(p => !p.isGameOver && p.currentJob).map(p => p.currentJob!)
+  );
+  const openJobs = availableJobs.filter(j => !takenJobIds.has(j.id));
+
+  if (openJobs.length === 0) return null;
 
   // Sort by wage and pick the best
-  return availableJobs.sort((a, b) => b.baseWage - a.baseWage)[0];
+  return openJobs.sort((a, b) => b.baseWage - a.baseWage)[0];
 }
 
 /**

@@ -10002,3 +10002,99 @@ Changed all affected text from `text-muted-foreground` to `text-gold` (the proje
 
 ### Build & Tests
 - Build: passes
+
+---
+
+## 2026-02-10: Gameplay Balance & Feature Batch
+
+### 1. Scaled Resurrection Cost (Wealth-Based)
+**Problem:** Flat 100g resurrection cost was trivial for wealthy players, making death meaningless mid-to-late game.
+
+**Solution:** Resurrection cost now scales with total wealth (gold + savings):
+- **Base cost:** 100g (unchanged for poor players)
+- **Scaling:** +10% of total wealth above 500g
+- **Cap:** Maximum 2000g
+- **Formula:** `min(2000, max(100, 100 + floor((totalWealth - 500) * 0.10)))`
+- **Examples:** 500g total = 100g cost, 1500g total = 200g, 5000g total = 550g, 20000g+ = 2000g
+
+**Files Changed:**
+| File | Changes |
+|------|---------|
+| `src/store/helpers/questHelpers.ts` | `checkDeath()` — dynamic `scaledCost` replaces hardcoded 100g for both paid and free resurrection paths |
+
+### 2. Shadowfingers Rich Player Targeting
+**Problem:** Shadowfingers robbery chance was the same regardless of how much gold a player carried, making it easy to safely carry large sums.
+
+**Solution:** Players carrying 1000+ gold on hand get increased street robbery chance:
+- **1000g:** 1.5x base robbery chance
+- **2000g:** 2.0x base robbery chance
+- **3000g+:** 2.5x base robbery chance (capped)
+- **Formula:** `min(2.5, 1.5 + (gold - 1000) / 2000)`
+- Stacks with homeless multiplier (3x)
+
+**Files Changed:**
+| File | Changes |
+|------|---------|
+| `src/data/shadowfingers.ts` | `checkStreetRobbery()` — added rich player multiplier after homeless check |
+
+### 3. Happiness Penalty on Resurrection
+**Problem:** Dying and being resurrected had no happiness cost, making death a minor inconvenience rather than a setback.
+
+**Solution:** All resurrection paths now apply a -8 happiness penalty:
+- **Paid resurrection** (savings >= cost): -8 happiness + gold cost
+- **Free respawn** (permadeath OFF): -8 happiness, no gold cost
+- **Permadeath ON:** No happiness penalty (player is eliminated)
+- Message updated to show "The trauma of death weighs on your spirit"
+
+**Files Changed:**
+| File | Changes |
+|------|---------|
+| `src/store/helpers/questHelpers.ts` | Both resurrection branches in `checkDeath()` now reduce happiness by `resurrectionHappinessPenalty` (8) |
+
+### 4. Adventure Goal in Online Multiplayer
+**Problem:** Adventure Goal was only configurable in local GameSetup but not in the Online Lobby, so online multiplayer games couldn't use it.
+
+**Solution:** Added adventure goal toggle + slider to OnlineLobby host settings:
+- Checkbox to enable/disable (same as GameSetup)
+- Slider for target (3-25 points) when enabled
+- Quick/Standard/Epic presets now preserve current adventure setting (don't reset to 0)
+- Shows "Quests completed + dungeon floors cleared" description
+
+**Files Changed:**
+| File | Changes |
+|------|---------|
+| `src/components/screens/OnlineLobby.tsx` | Added adventure toggle/slider in Victory Goals section; presets preserve adventure value |
+
+### 5. Job Blocking Between Players
+**Problem:** Multiple players could hold the same job simultaneously, which isn't realistic and removes strategic competition.
+
+**Solution:** Jobs held by another active player are now blocked:
+- **UI:** Taken jobs show "(Taken)" label, "Position held by [name]", red border, disabled Apply button
+- **AI:** `getBestAvailableJob()` now filters out jobs held by rivals
+- **Rivalry:** AI job-stealing rivalry action removed (can no longer take held jobs)
+
+**Files Changed:**
+| File | Changes |
+|------|---------|
+| `src/components/game/GuildHallPanel.tsx` | Added `allPlayers` prop, job holder check, UI for taken jobs |
+| `src/components/game/LocationPanel.tsx` | Pass `players` array to GuildHallPanel as `allPlayers` |
+| `src/hooks/ai/strategy.ts` | `getBestAvailableJob()` now accepts optional `rivals` param, filters taken jobs |
+| `src/hooks/ai/actions/strategicActions.ts` | Pass `rivals` to `getBestAvailableJob()` calls |
+| `src/hooks/ai/actions/goalActions.ts` | Pass `rivals` to `getBestAvailableJob()` calls |
+| `src/hooks/ai/actions/rivalryActions.ts` | Removed job-stealing rivalry action (incompatible with blocking); cleaned up unused imports |
+
+### 6. Removed "Invest 100 Gold" from Banking
+**Problem:** "Invest 100 Gold" button in banking services was redundant — the stock broker (stocks) is the real investment system. The old invest function (0.5% weekly return) was confusing alongside the broker.
+
+**Solution:** Removed the "Invest 100 Gold" menu item from BankPanel. Cleaned up unused `invest` prop from BankPanel and LocationPanel.
+
+**Files Changed:**
+| File | Changes |
+|------|---------|
+| `src/components/game/BankPanel.tsx` | Removed "Invest 100 Gold" JonesMenuItem, removed `invest` prop |
+| `src/components/game/LocationPanel.tsx` | Removed `invest` from store destructuring and BankPanel prop |
+
+### Build & Tests
+- TypeScript: compiles cleanly (tsc --noEmit)
+- Build: passes (vite build)
+- Tests: 171/171 pass

@@ -22,7 +22,7 @@ import type { ActionContext } from './actionContext';
  */
 export function generateGoalActions(ctx: ActionContext): AIAction[] {
   const actions: AIAction[] = [];
-  const { player, settings, currentLocation, moveCost, progress, weakestGoal } = ctx;
+  const { player, settings, currentLocation, moveCost, progress, weakestGoal, rivals } = ctx;
 
   // ============================================
   // GOAL-ORIENTED ACTIONS
@@ -182,7 +182,7 @@ export function generateGoalActions(ctx: ActionContext): AIAction[] {
       // Focus on getting better jobs and building dependability
       // First, make sure we have a job
       if (!player.currentJob) {
-        const bestJob = getBestAvailableJob(player);
+        const bestJob = getBestAvailableJob(player, rivals);
         if (bestJob) {
           if (currentLocation === 'guild-hall') {
             actions.push({

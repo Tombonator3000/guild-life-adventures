@@ -82,6 +82,13 @@ export function checkStreetRobbery(
     robberyChance *= HOMELESS_ROBBERY_MULTIPLIER;
   }
 
+  // Rich players carrying 1000+ gold attract more attention from Shadowfingers
+  // 1.5x chance at 1000g, scaling up to 2.5x at 3000g+
+  if (player.gold >= 1000) {
+    const richMultiplier = Math.min(2.5, 1.5 + (player.gold - 1000) / 2000);
+    robberyChance *= richMultiplier;
+  }
+
   // Roll for robbery
   if (Math.random() >= robberyChance) {
     return null; // No robbery this time

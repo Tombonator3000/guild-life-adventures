@@ -67,7 +67,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     moveToHousing,
     depositToBank,
     withdrawFromBank,
-    invest,
     priceModifier,
     economyTrend,
     week,
@@ -99,6 +98,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     temperEquipment,
     forgeRepairAppliance,
     salvageEquipment,
+    players,
   } = useGameStore();
   const player = useCurrentPlayer();
   const location = getLocation(locationId);
@@ -183,6 +183,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
           content: (
             <GuildHallPanel
               player={player}
+              allPlayers={players}
               priceModifier={priceModifier}
               week={week}
               onHireJob={(jobId, wage) => {
@@ -349,7 +350,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
               player={player}
               depositToBank={depositToBank}
               withdrawFromBank={withdrawFromBank}
-              invest={invest}
               buyStock={buyStock}
               sellStock={sellStock}
               takeLoan={takeLoan}
