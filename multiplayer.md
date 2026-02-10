@@ -392,16 +392,16 @@ Guest tracks pending actions via `trackPendingAction(requestId)`:
 
 ## Test Coverage
 
-### Test File: `src/test/multiplayer.test.ts` (39 tests)
+### Test File: `src/test/multiplayer.test.ts` (44 tests)
 
 | Category | Tests | What's Tested |
 |----------|-------|--------------|
-| Room Codes | 6 | Generation, charset validation, PeerJS ID conversion, validation |
+| Room Codes | 7 | Generation, charset validation, PeerJS ID conversion, validation, uniform distribution |
 | Room Code Crypto | 2 | crypto.getRandomValues() works, high-entropy distribution |
-| Action Categories | 5 | Whitelist/blacklist disjointness, expected actions in each category |
+| Action Categories | 8 | Whitelist/blacklist disjointness, expected actions, dismiss actions, debug actions, equipment actions |
 | Cross-Player Validation | 2 | All actions use playerId at args[0], endTurn special case |
 | Action Proxy | 4 | Local/host/guest mode behavior, LOCAL_ONLY, HOST_INTERNAL blocking |
-| State Serialization | 7 | Field presence, player data, apply/dismiss/clear/reset |
+| State Serialization | 8 | Field presence, player data, apply/dismiss/clear/reset, activeFestival sync |
 | executeAction | 3 | Valid/invalid/non-function actions |
 | Pending Actions | 2 | Track/resolve lifecycle, cleanup |
 | Argument Validation | 3 | Raw modifiers in whitelist, non-existent action handling, HOST_INTERNAL existence |
@@ -459,6 +459,16 @@ Guest tracks pending actions via `trackPendingAction(requestId)`:
 3. **Dead code**: Removed dead loop in `skipZombieTurn` (wasted CPU)
 4. **Argument validation**: Added server-side bounds checking for raw stat modifiers
 5. **Host migration**: Implemented automatic successor election on host disconnect
+
+### Fixed in Audit (2026-02-10)
+
+1. **activeFestival desync**: Festival state now synced — guests see festival effects (wage/gold/happiness bonuses)
+2. **dismissDeathEvent**: Added to LOCAL_ONLY_ACTIONS — death modal no longer flickers on guest dismiss
+3. **Equipment actions**: temperEquipment, forgeRepairAppliance, salvageEquipment added to ALLOWED_GUEST_ACTIONS
+4. **Debug actions**: setDebugWeather, setDebugFestival added to LOCAL_ONLY_ACTIONS
+5. **Lobby name validation**: Player names sanitized (20 char max, control chars stripped)
+6. **Room code bias**: Rejection sampling eliminates modulo bias for uniform distribution
+7. **Equipment argument validation**: temperEquipment cost capped at 1000g, salvageEquipment value capped at 2000g
 
 ### Missing Features
 
@@ -521,5 +531,5 @@ Guest tracks pending actions via `trackPendingAction(requestId)`:
 
 ---
 
-*Last updated: 2026-02-07 (audit + host migration + security hardening)*
-*Total multiplayer code: ~2,150 lines across 7 files + 39 tests*
+*Last updated: 2026-02-10 (second audit + 7 fixes + security hardening)*
+*Total multiplayer code: ~2,180 lines across 7 files + 44 tests*

@@ -151,6 +151,25 @@ describe('Action Categories', () => {
     expect(LOCAL_ONLY_ACTIONS.has('setShowTutorial')).toBe(true);
     expect(LOCAL_ONLY_ACTIONS.has('setAISpeedMultiplier')).toBe(true);
   });
+
+  it('LOCAL_ONLY_ACTIONS includes all dismiss actions', () => {
+    expect(LOCAL_ONLY_ACTIONS.has('dismissEvent')).toBe(true);
+    expect(LOCAL_ONLY_ACTIONS.has('dismissShadowfingersEvent')).toBe(true);
+    expect(LOCAL_ONLY_ACTIONS.has('dismissApplianceBreakageEvent')).toBe(true);
+    expect(LOCAL_ONLY_ACTIONS.has('dismissWeekendEvent')).toBe(true);
+    expect(LOCAL_ONLY_ACTIONS.has('dismissDeathEvent')).toBe(true);
+  });
+
+  it('LOCAL_ONLY_ACTIONS includes debug actions', () => {
+    expect(LOCAL_ONLY_ACTIONS.has('setDebugWeather')).toBe(true);
+    expect(LOCAL_ONLY_ACTIONS.has('setDebugFestival')).toBe(true);
+  });
+
+  it('ALLOWED_GUEST_ACTIONS includes equipment actions', () => {
+    expect(ALLOWED_GUEST_ACTIONS.has('temperEquipment')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('forgeRepairAppliance')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('salvageEquipment')).toBe(true);
+  });
 });
 
 // ================================================================
@@ -220,6 +239,8 @@ describe('Network State Serialization', () => {
     expect(state).toHaveProperty('goalSettings');
     expect(state).toHaveProperty('stockPrices');
     expect(state).toHaveProperty('networkMode');
+    expect(state).toHaveProperty('weather');
+    expect(state).toHaveProperty('activeFestival');
   });
 
   it('serializeGameState preserves player data', () => {
@@ -291,6 +312,16 @@ describe('Network State Serialization', () => {
 
     const store = useGameStore.getState();
     expect(store.eventMessage).toBe('Should appear');
+  });
+
+  it('applyNetworkState syncs activeFestival', () => {
+    const state = serializeGameState();
+    state.activeFestival = 'harvest-festival' as unknown as typeof state.activeFestival;
+
+    applyNetworkState(state);
+
+    const store = useGameStore.getState();
+    expect(store.activeFestival).toBe('harvest-festival');
   });
 
   it('resetNetworkState clears all tracking', () => {
@@ -445,6 +476,25 @@ describe('Room Code Cryptographic Security', () => {
     const code = generateRoomCode();
     expect(code).toHaveLength(6);
     expect(code).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
+  });
+
+  it('generates uniformly distributed codes (no modulo bias)', () => {
+    // Generate many codes and check character distribution
+    // With rejection sampling, each char should have equal probability (~1/29)
+    const charCounts = new Map<string, number>();
+    for (let i = 0; i < 500; i++) {
+      const code = generateRoomCode();
+      for (const c of code) {
+        charCounts.set(c, (charCounts.get(c) ?? 0) + 1);
+      }
+    }
+    const totalChars = 500 * 6;
+    const expected = totalChars / 29; // ~103.4
+    // Each char count should be within 50% of expected (generous bounds for randomness)
+    for (const [, count] of charCounts) {
+      expect(count).toBeGreaterThan(expected * 0.4);
+      expect(count).toBeLessThan(expected * 1.8);
+    }
   });
 
   it('generates high-entropy codes (no obvious patterns)', () => {

@@ -894,6 +894,17 @@
   - [x] Removed "Invest 100 Gold" from banking services (stocks/broker is the real investment system)
   - Build passes, 171 tests pass
 
+- [x] Multiplayer Improvement Audit & Security Hardening — 7 bugs fixed, 5 tests added
+  - [x] Bug 1 (CRITICAL): activeFestival not synced — guests missed festival effects (wage/gold/happiness bonuses)
+  - [x] Bug 2 (HIGH): dismissDeathEvent missing from LOCAL_ONLY_ACTIONS — death modal flicker on guest
+  - [x] Bug 3 (HIGH): 3 equipment actions missing from ALLOWED_GUEST_ACTIONS — guests can't temper/repair/salvage
+  - [x] Bug 4 (HIGH): Debug actions not in LOCAL_ONLY — forwarded to host and rejected
+  - [x] Bug 5 (MEDIUM): No lobby player name validation — long names/control chars could crash UI
+  - [x] Bug 6 (MEDIUM): Room code modulo bias — rejection sampling for uniform distribution
+  - [x] Bug 7 (MEDIUM): No argument validation for equipment actions — temperEquipment/salvageEquipment uncapped
+  - 5 new multiplayer tests (39→44 total)
+  - Build passes, 176 tests pass
+
 ## In Progress
 
 *No active tasks*
