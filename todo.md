@@ -850,6 +850,15 @@
 
 ## Completed (2026-02-10)
 
+- [x] Weather-Festival Conflict Fix — Drought + Harvest Festival can no longer co-occur
+  - Added `WEATHER_FESTIVAL_CONFLICTS` map and `isWeatherFestivalConflict()` to weather.ts
+  - Conflict resolution in weekEndHelpers.ts orchestrator (festival takes priority)
+  - Conflict pairs: drought↔harvest-festival, snowstorm↔midsummer-fair, snowstorm↔harvest-festival
+  - 176 tests pass, TypeScript clean
+
+- [x] Complete Event Catalog — 103 events cataloged across 14 categories
+  - Full list logged to log.md with trigger conditions, chances, and effects
+
 - [x] Extra Credit System — scholar items + study session reduction
   - Renamed Encyclopedia/Dictionary/Atlas to fantasy names (Tome of All Knowledge, Lexicon of the Ancients, Cartographer's Codex)
   - Added to Shadow Market → Scholar Texts tab

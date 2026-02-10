@@ -25,7 +25,7 @@ import { getGameOption } from '@/data/gameOptions';
 import { getItem } from '@/data/items';
 import { updateStockPrices } from '@/data/stocks';
 import { selectWeekendActivity } from '@/data/weekends';
-import { advanceWeather, CLEAR_WEATHER } from '@/data/weather';
+import { advanceWeather, CLEAR_WEATHER, isWeatherFestivalConflict } from '@/data/weather';
 import type { WeatherState } from '@/data/weather';
 import { getActiveFestival } from '@/data/festivals';
 import type { Festival, FestivalId } from '@/data/festivals';
@@ -543,10 +543,28 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
 
       // --- Step 1: Advance global systems ---
       const economy = advanceEconomy(state);
-      const { weather, messages: weatherMsgs } = advanceWeatherSystem(state.weather);
+      // Check festival first (deterministic schedule) so we can resolve weather conflicts
       const { festival, activeFestivalId, messages: festivalMsgs } = checkFestival(newWeek);
+      const { weather: rawWeather, messages: weatherMsgs } = advanceWeatherSystem(state.weather);
+
+      // Resolve weather-festival conflicts: festival takes priority over contradictory weather
+      // e.g., Drought ("food prices soar") can't co-occur with Harvest Festival ("prices reduced 15%")
+      let weather = rawWeather;
+      let finalWeatherMsgs = weatherMsgs;
+      if (festival && rawWeather.type !== 'clear' && isWeatherFestivalConflict(rawWeather.type, festival.id)) {
+        weather = { ...CLEAR_WEATHER };
+        // If weather was previously active and just got cleared by festival, announce it
+        const prevType = state.weather?.type ?? 'clear';
+        if (prevType !== 'clear') {
+          finalWeatherMsgs = [`The ${festival.name} celebrations dispel the ${rawWeather.name.toLowerCase()}. Fair skies return!`];
+        } else {
+          // New weather was rolled but immediately suppressed — no announcement needed
+          finalWeatherMsgs = [];
+        }
+      }
+
       const finalPriceModifier = calculateFinalPrice(economy.priceModifier, weather, festival);
-      eventMessages.push(...weatherMsgs, ...festivalMsgs);
+      eventMessages.push(...finalWeatherMsgs, ...festivalMsgs);
 
       const ctx: WeekEndContext = {
         newWeek,
