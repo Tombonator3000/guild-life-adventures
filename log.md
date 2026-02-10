@@ -1,5 +1,59 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-10 - Forge Tempering Fix, Dungeon 6-Floor Display, Inventory Overhaul
+
+### Overview
+
+Fixed forge tempering to display correctly in inventory, updated all dungeon progress displays to show 6 floors, enlarged the inventory grid, added tempered item indicators, and placed the player portrait at the bottom of the inventory panel.
+
+### Bug Fix: Forge Tempering Display
+
+**Problem:** Forge tempering worked correctly in combat (all `calculateCombatStats` calls passed `temperedItems`), but the inventory display was broken:
+- `calculateTotalAttack()` and `calculateTotalDefense()` in InventoryGrid only read base weapon/armor stats, ignoring temper bonuses
+- Tempered items had no visual indicator in the inventory grid
+- Item tooltips showed no temper bonus information
+- Combat stats summary in inventory didn't include block chance or temper note
+
+**Fix:** Updated InventoryGrid to use `calculateCombatStats()` with `temperedItems` parameter, added `tempered` and `temperedStats` fields to `InventoryItem` interface, and updated `buildInventoryItems()` to populate these fields from `player.temperedItems`.
+
+### Dungeon Progress: 6-Floor Display
+
+**Problem:** Floor 6 "The Forgotten Temple" existed in `dungeon/floors.ts` but all progress displays hardcoded `/5` and only showed 5 floor indicators.
+
+**Fix:** Updated all dungeon progress displays to show `/6` and 6 floor indicators:
+- `SideInfoTabs.tsx` — progress bar and floor grid
+- `InfoTabs.tsx` — dungeon progress section
+- `banter.ts` — NPC dialogue for 5+ and 6 floors cleared
+- `achievements.ts` — new "Temple Explorer" achievement for clearing all 6 floors
+
+### Inventory Overhaul
+
+1. **Larger grid**: 4×5 (20 slots) → 5×6 (30 slots), slot size 40px → 44px
+2. **Tempered indicators**:
+   - Green "T" badge on tempered items in equip slots and inventory grid
+   - Green border glow on equipped tempered items
+   - Star icon + "(Tempered)" label in item tooltip
+   - Separate "Temper Bonus" section in tooltip showing +ATK/+DEF/+BLK
+3. **Combat stats summary**: Now includes block chance and "Temper bonuses included" note
+4. **Player portrait**: Large 120px character portrait at bottom of inventory with name and guild rank
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/components/game/InventoryGrid.tsx` | Fixed calculateTotalAttack/Defense to use calculateCombatStats with temperedItems; added tempered/temperedStats to InventoryItem; green indicators on tempered items; enlarged grid 5×6; added player portrait at bottom; added block chance to stats summary |
+| `src/components/game/SideInfoTabs.tsx` | Dungeon progress /5 → /6, added floor 6 indicator |
+| `src/components/game/InfoTabs.tsx` | Dungeon progress /5 → /6, added floor 6 indicator |
+| `src/data/banter.ts` | Added 6-floor dialogue, adjusted 5-floor dialogue |
+| `src/data/achievements.ts` | Added "Temple Explorer" achievement for clearing all 6 floors |
+
+### Build & Tests
+- TypeScript: compiles cleanly (tsc --noEmit)
+- Build: passes (vite build)
+- Tests: 176/176 pass
+
+---
+
 ## 2026-02-10 - Web Speech API Voice Narration (Implementation)
 
 ### Overview

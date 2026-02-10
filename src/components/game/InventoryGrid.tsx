@@ -3,14 +3,16 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { ItemIcon } from './ItemIcon';
-import { ARMORY_ITEMS, GENERAL_STORE_ITEMS, ENCHANTER_ITEMS, getAppliance, type Item } from '@/data/items';
+import { CharacterPortrait } from './CharacterPortrait';
+import { ARMORY_ITEMS, GENERAL_STORE_ITEMS, ENCHANTER_ITEMS, getAppliance, calculateCombatStats, TEMPER_BONUS, type Item } from '@/data/items';
 import type { Player, EquipmentSlot } from '@/types/game.types';
+import { GUILD_RANK_NAMES } from '@/types/game.types';
 import { useGameStore } from '@/store/gameStore';
 
 // Grid constants
-const GRID_COLS = 4;
-const GRID_ROWS = 5;
-const SLOT_SIZE = 'w-10 h-10'; // Tailwind classes for slot size
+const GRID_COLS = 5;
+const GRID_ROWS = 6;
+const SLOT_SIZE = 'w-11 h-11'; // Tailwind classes for slot size
 
 interface InventoryItem {
   id: string;
@@ -21,8 +23,14 @@ interface InventoryItem {
   quantity: number;
   equipped?: boolean;
   broken?: boolean;
+  tempered?: boolean;
   slot?: EquipmentSlot;
   stats?: {
+    attack?: number;
+    defense?: number;
+    blockChance?: number;
+  };
+  temperedStats?: {
     attack?: number;
     defense?: number;
     blockChance?: number;
@@ -164,6 +172,34 @@ export function InventoryGrid({ player }: InventoryGridProps) {
           <span>DEF</span>
           <span className="font-bold text-gold">{calculateTotalDefense(player)}</span>
         </div>
+        {calculateTotalBlockChance(player) > 0 && (
+          <div className="flex justify-between text-parchment">
+            <span>BLK</span>
+            <span className="font-bold text-gold">{Math.round(calculateTotalBlockChance(player) * 100)}%</span>
+          </div>
+        )}
+        {player.temperedItems.length > 0 && (
+          <div className="text-[8px] text-emerald-300 mt-0.5 text-center italic">
+            Temper bonuses included
+          </div>
+        )}
+      </div>
+
+      {/* Player Portrait */}
+      <div className="mt-3 flex flex-col items-center">
+        <div className="rounded-lg border-2 border-gold/50 overflow-hidden shadow-lg bg-wood/30 p-1">
+          <CharacterPortrait
+            portraitId={player.portraitId}
+            playerColor={player.color}
+            playerName={player.name}
+            size={120}
+            isAI={player.isAI}
+          />
+        </div>
+        <div className="mt-1 text-center">
+          <div className="font-display text-xs font-bold text-wood-dark">{player.name}</div>
+          <div className="text-[9px] text-wood-dark/70">{GUILD_RANK_NAMES[player.guildRank]}</div>
+        </div>
       </div>
 
       {/* Tooltip */}
@@ -203,8 +239,10 @@ function EquipSlot({
       className={`
         ${SLOT_SIZE} rounded border-2 flex flex-col items-center justify-center
         transition-all duration-150
-        ${item 
-          ? 'bg-gold/30 border-gold/60' 
+        ${item
+          ? item.tempered
+            ? 'bg-emerald-500/25 border-emerald-500/70'
+            : 'bg-gold/30 border-gold/60'
           : 'bg-parchment-dark/30 border-wood-light/50 border-dashed'
         }
         ${isDragTarget ? 'border-accent ring-2 ring-accent/50' : ''}
@@ -219,9 +257,12 @@ function EquipSlot({
           onDragEnd={onDragEnd}
           onMouseEnter={(e) => onMouseEnter(e, item)}
           onMouseLeave={onMouseLeave}
-          className="cursor-grab active:cursor-grabbing w-full h-full flex items-center justify-center"
+          className="cursor-grab active:cursor-grabbing w-full h-full flex items-center justify-center relative"
         >
           <ItemIcon itemId={item.itemId} size={28} />
+          {item.tempered && (
+            <span className="absolute -top-0.5 -right-0.5 text-[8px] font-bold text-emerald-400 bg-emerald-900/80 rounded px-0.5 leading-tight" title="Tempered">T</span>
+          )}
         </div>
       ) : (
         <span className="text-[7px] text-wood-light/60 font-semibold uppercase">
@@ -282,6 +323,9 @@ function InventorySlot({
           {item.broken && (
             <span className="absolute top-0 right-0 text-[10px] text-destructive">⚠</span>
           )}
+          {item.tempered && (
+            <span className="absolute -top-0.5 -right-0.5 text-[8px] font-bold text-emerald-400 bg-emerald-900/80 rounded px-0.5 leading-tight" title="Tempered">T</span>
+          )}
         </div>
       )}
     </div>
@@ -297,11 +341,13 @@ interface ItemTooltipProps {
 function ItemTooltip({ item, position }: ItemTooltipProps) {
   return (
     <div
-      className="fixed z-[100] bg-wood text-parchment p-2 rounded shadow-lg border border-gold/30 max-w-[180px] pointer-events-none"
+      className="fixed z-[100] bg-wood text-parchment p-2 rounded shadow-lg border border-gold/30 max-w-[200px] pointer-events-none"
       style={{ left: position.x, top: position.y }}
     >
       <div className="font-display font-bold text-[11px] text-gold mb-1">
+        {item.tempered && <span className="text-emerald-400 mr-1">&#9733;</span>}
         {item.name}
+        {item.tempered && <span className="text-emerald-400 text-[9px] ml-1">(Tempered)</span>}
         {item.equipped && <span className="text-secondary ml-1">(Equipped)</span>}
       </div>
       <div className="text-[9px] text-parchment/80 mb-1.5">
@@ -329,6 +375,29 @@ function ItemTooltip({ item, position }: ItemTooltipProps) {
           )}
         </div>
       )}
+      {item.tempered && item.temperedStats && (
+        <div className="text-[9px] space-y-0.5 border-t border-emerald-500/30 pt-1 mt-1">
+          <div className="text-emerald-400 font-bold text-[8px] uppercase">Temper Bonus</div>
+          {item.temperedStats.attack && (
+            <div className="flex justify-between">
+              <span className="text-emerald-300">Attack:</span>
+              <span className="text-emerald-400 font-bold">+{item.temperedStats.attack}</span>
+            </div>
+          )}
+          {item.temperedStats.defense && (
+            <div className="flex justify-between">
+              <span className="text-emerald-300">Defense:</span>
+              <span className="text-emerald-400 font-bold">+{item.temperedStats.defense}</span>
+            </div>
+          )}
+          {item.temperedStats.blockChance && (
+            <div className="flex justify-between">
+              <span className="text-emerald-300">Block:</span>
+              <span className="text-emerald-400 font-bold">+{Math.round(item.temperedStats.blockChance * 100)}%</span>
+            </div>
+          )}
+        </div>
+      )}
       {item.broken && (
         <div className="text-[9px] text-destructive mt-1 border-t border-gold/20 pt-1">
           ⚠ Broken - Needs repair
@@ -352,6 +421,7 @@ function buildInventoryItems(player: Player): InventoryItem[] {
   if (player.equippedWeapon) {
     const itemData = allItems.find(i => i.id === player.equippedWeapon);
     if (itemData) {
+      const isTempered = player.temperedItems.includes(player.equippedWeapon);
       items.push({
         id: `equipped-${itemData.id}`,
         itemId: itemData.id,
@@ -360,14 +430,17 @@ function buildInventoryItems(player: Player): InventoryItem[] {
         category: itemData.category,
         quantity: 1,
         equipped: true,
+        tempered: isTempered,
         slot: 'weapon',
         stats: itemData.equipStats,
+        temperedStats: isTempered ? TEMPER_BONUS.weapon : undefined,
       });
     }
   }
   if (player.equippedArmor) {
     const itemData = allItems.find(i => i.id === player.equippedArmor);
     if (itemData) {
+      const isTempered = player.temperedItems.includes(player.equippedArmor);
       items.push({
         id: `equipped-${itemData.id}`,
         itemId: itemData.id,
@@ -376,14 +449,17 @@ function buildInventoryItems(player: Player): InventoryItem[] {
         category: itemData.category,
         quantity: 1,
         equipped: true,
+        tempered: isTempered,
         slot: 'armor',
         stats: itemData.equipStats,
+        temperedStats: isTempered ? TEMPER_BONUS.armor : undefined,
       });
     }
   }
   if (player.equippedShield) {
     const itemData = allItems.find(i => i.id === player.equippedShield);
     if (itemData) {
+      const isTempered = player.temperedItems.includes(player.equippedShield);
       items.push({
         id: `equipped-${itemData.id}`,
         itemId: itemData.id,
@@ -392,8 +468,10 @@ function buildInventoryItems(player: Player): InventoryItem[] {
         category: itemData.category,
         quantity: 1,
         equipped: true,
+        tempered: isTempered,
         slot: 'shield',
         stats: itemData.equipStats,
+        temperedStats: isTempered ? TEMPER_BONUS.shield : undefined,
       });
     }
   }
@@ -403,6 +481,8 @@ function buildInventoryItems(player: Player): InventoryItem[] {
     if (qty <= 0) return;
     const itemData = allItems.find(i => i.id === itemId);
     if (itemData) {
+      const isTempered = player.temperedItems.includes(itemId);
+      const slot = itemData.equipSlot;
       items.push({
         id: `durable-${itemId}`,
         itemId: itemId,
@@ -410,8 +490,10 @@ function buildInventoryItems(player: Player): InventoryItem[] {
         description: itemData.description,
         category: itemData.category,
         quantity: qty,
-        slot: itemData.equipSlot,
+        tempered: isTempered,
+        slot,
         stats: itemData.equipStats,
+        temperedStats: isTempered && slot ? TEMPER_BONUS[slot] : undefined,
       });
     }
   });
@@ -447,15 +529,20 @@ function buildInventoryItems(player: Player): InventoryItem[] {
   return items;
 }
 
-// Helper: Calculate total attack
+// Helper: Calculate total attack (including temper bonuses)
 function calculateTotalAttack(player: Player): number {
-  const weapon = ARMORY_ITEMS.find(i => i.id === player.equippedWeapon);
-  return weapon?.equipStats?.attack || 0;
+  const stats = calculateCombatStats(player.equippedWeapon, player.equippedArmor, player.equippedShield, player.temperedItems);
+  return stats.attack;
 }
 
-// Helper: Calculate total defense
+// Helper: Calculate total defense (including temper bonuses)
 function calculateTotalDefense(player: Player): number {
-  const armor = ARMORY_ITEMS.find(i => i.id === player.equippedArmor);
-  const shield = ARMORY_ITEMS.find(i => i.id === player.equippedShield);
-  return (armor?.equipStats?.defense || 0) + (shield?.equipStats?.defense || 0);
+  const stats = calculateCombatStats(player.equippedWeapon, player.equippedArmor, player.equippedShield, player.temperedItems);
+  return stats.defense;
+}
+
+// Helper: Calculate total block chance (including temper bonuses)
+function calculateTotalBlockChance(player: Player): number {
+  const stats = calculateCombatStats(player.equippedWeapon, player.equippedArmor, player.equippedShield, player.temperedItems);
+  return stats.blockChance;
 }

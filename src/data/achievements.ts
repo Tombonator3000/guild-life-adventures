@@ -70,6 +70,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   // === Combat ===
   { id: 'first-dungeon', name: 'Into the Depths', description: 'Clear your first dungeon floor', icon: '⚔️', category: 'combat' },
   { id: 'dungeon-5', name: 'Dungeon Delver', description: 'Clear 5 dungeon floors total', icon: '🗡️', category: 'combat' },
+  { id: 'temple-cleared', name: 'Temple Explorer', description: 'Clear all 6 dungeon floors including the Forgotten Temple', icon: '🏛️', category: 'combat' },
   { id: 'dungeon-master', name: 'Dungeon Master', description: 'Clear 20 dungeon floors across all games', icon: '🏰', category: 'combat' },
   { id: 'boss-slayer', name: 'Boss Slayer', description: 'Defeat 10 dungeon bosses across all games', icon: '💀', category: 'combat' },
 
@@ -215,6 +216,7 @@ export function checkAchievements(context: {
   // Combat checks
   if ((context.dungeonFloorsCleared ?? 0) >= 1 || stats.totalDungeonFloorsCleared >= 1) tryUnlock('first-dungeon');
   if (stats.totalDungeonFloorsCleared >= 5) tryUnlock('dungeon-5');
+  if ((context.dungeonFloorsCleared ?? 0) >= 6) tryUnlock('temple-cleared');
   if (stats.totalDungeonFloorsCleared >= 20) tryUnlock('dungeon-master');
   if (stats.bossesDefeated >= 10) tryUnlock('boss-slayer');
 
