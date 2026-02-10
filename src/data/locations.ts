@@ -306,11 +306,7 @@ export const LOCATIONS: Location[] = [
 export const getLocation = (id: string): Location | undefined =>
   LOCATIONS.find(loc => loc.id === id);
 
-// Jones-style movement cost: Each step along the path costs 1 Hour
-// Plus 2-hour entry cost when arriving at a new location
+// Movement cost: Each step along the path costs 1 Hour
 export const getMovementCost = (from: string, to: string): number => {
-  const pathDistance = calculatePathDistance(from as LocationId, to as LocationId);
-  if (pathDistance === 0) return 0; // Already at location, no entry cost
-  // Add 2-hour entry cost (Jones-style)
-  return pathDistance + 2;
+  return calculatePathDistance(from as LocationId, to as LocationId);
 };

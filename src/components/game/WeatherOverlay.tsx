@@ -9,8 +9,8 @@ interface WeatherOverlayProps {
 /** Number of particles to render per weather type */
 const PARTICLE_COUNTS: Record<WeatherParticle, number> = {
   snow: 60,
-  rain: 80,
-  'light-rain': 40,
+  rain: 120,
+  'light-rain': 60,
   heatwave: 20,
   fog: 12,
 };
@@ -63,6 +63,7 @@ export function WeatherOverlay({ particle, weatherType }: WeatherOverlayProps) {
         {/* Extra layer for fog and heatwave */}
         {particle === 'fog' && <FogLayer />}
         {particle === 'heatwave' && <HeatwaveLayer />}
+        {(particle === 'rain' || particle === 'light-rain') && <RainLayer heavy={particle === 'rain'} />}
         {weatherType === 'thunderstorm' && <ThunderstormLayer />}
         {weatherType === 'enchanted-fog' && <EnchantedFogLayer />}
       </div>
@@ -93,7 +94,7 @@ function getDurationVariance(p: WeatherParticle): number {
 function getBaseSize(p: WeatherParticle): number {
   switch (p) {
     case 'snow': return 3;
-    case 'rain': return 1;
+    case 'rain': return 1.5;
     case 'light-rain': return 1;
     case 'heatwave': return 4;
     case 'fog': return 80;
@@ -103,8 +104,8 @@ function getBaseSize(p: WeatherParticle): number {
 function getSizeVariance(p: WeatherParticle): number {
   switch (p) {
     case 'snow': return 5;
-    case 'rain': return 1.5;
-    case 'light-rain': return 1;
+    case 'rain': return 2;
+    case 'light-rain': return 1.5;
     case 'heatwave': return 4;
     case 'fog': return 60;
   }
@@ -113,8 +114,8 @@ function getSizeVariance(p: WeatherParticle): number {
 function getBaseOpacity(p: WeatherParticle): number {
   switch (p) {
     case 'snow': return 0.6;
-    case 'rain': return 0.3;
-    case 'light-rain': return 0.2;
+    case 'rain': return 0.4;
+    case 'light-rain': return 0.25;
     case 'heatwave': return 0.08;
     case 'fog': return 0.04;
   }
@@ -141,12 +142,12 @@ function getParticleStyle(p: WeatherParticle, size: number): React.CSSProperties
     case 'rain':
       return {
         borderRadius: '0 0 50% 50%',
-        background: 'linear-gradient(to bottom, transparent, rgba(150,200,255,0.6))',
+        background: 'linear-gradient(to bottom, rgba(180,210,255,0.1), rgba(140,190,255,0.7))',
       };
     case 'light-rain':
       return {
         borderRadius: '0 0 50% 50%',
-        background: 'linear-gradient(to bottom, transparent, rgba(150,200,255,0.4))',
+        background: 'linear-gradient(to bottom, transparent, rgba(150,200,255,0.5))',
       };
     case 'heatwave':
       return {
@@ -268,6 +269,96 @@ function HeatwaveLayer() {
           animation: 'heat-shimmer 4s ease-in-out infinite',
         }}
       />
+    </>
+  );
+}
+
+/** Rain layer — wet overlay, diagonal streaks, and splash ripples at the bottom */
+function RainLayer({ heavy }: { heavy: boolean }) {
+  const streakCount = heavy ? 40 : 20;
+  const splashCount = heavy ? 24 : 12;
+
+  // Pre-generate stable random positions
+  const streaks = useMemo(() =>
+    Array.from({ length: streakCount }, (_, i) => ({
+      id: i,
+      left: Math.random() * 110 - 5,
+      delay: Math.random() * 2,
+      duration: 0.4 + Math.random() * 0.4,
+      opacity: 0.06 + Math.random() * (heavy ? 0.12 : 0.06),
+    })),
+  [streakCount, heavy]);
+
+  const splashes = useMemo(() =>
+    Array.from({ length: splashCount }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      bottom: Math.random() * 8,
+      delay: Math.random() * 3,
+      duration: 0.6 + Math.random() * 0.6,
+    })),
+  [splashCount]);
+
+  return (
+    <>
+      <style>{`
+        @keyframes rain-streak {
+          0% { transform: translateY(-10vh) skewX(-8deg); opacity: 0; }
+          10% { opacity: 1; }
+          100% { transform: translateY(110vh) skewX(-8deg); opacity: 0; }
+        }
+        @keyframes rain-splash {
+          0% { transform: scale(0); opacity: 0.7; }
+          100% { transform: scale(1); opacity: 0; }
+        }
+        @keyframes rain-wet-pulse {
+          0%, 100% { opacity: ${heavy ? 0.10 : 0.05}; }
+          50% { opacity: ${heavy ? 0.16 : 0.08}; }
+        }
+      `}</style>
+      {/* Dark wet overlay */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: heavy
+            ? 'linear-gradient(to bottom, rgba(30,40,60,0.12), rgba(20,30,50,0.08), rgba(30,40,60,0.14))'
+            : 'linear-gradient(to bottom, rgba(40,50,70,0.06), rgba(30,40,60,0.04), rgba(40,50,70,0.07))',
+          animation: `rain-wet-pulse 6s ease-in-out infinite`,
+        }}
+      />
+      {/* Diagonal rain streaks — long thin lines */}
+      {streaks.map((s) => (
+        <div
+          key={`streak-${s.id}`}
+          style={{
+            position: 'absolute',
+            left: `${s.left}%`,
+            top: '-10%',
+            width: '1px',
+            height: heavy ? '8vh' : '5vh',
+            opacity: s.opacity,
+            background: 'linear-gradient(to bottom, transparent, rgba(180,210,255,0.5), transparent)',
+            animation: `rain-streak ${s.duration}s linear ${s.delay}s infinite`,
+          }}
+        />
+      ))}
+      {/* Splash ripples at the bottom of the screen */}
+      {splashes.map((s) => (
+        <div
+          key={`splash-${s.id}`}
+          style={{
+            position: 'absolute',
+            left: `${s.left}%`,
+            bottom: `${s.bottom}%`,
+            width: '8px',
+            height: '3px',
+            borderRadius: '50%',
+            border: '1px solid rgba(180,210,255,0.3)',
+            animation: `rain-splash ${s.duration}s ease-out ${s.delay}s infinite`,
+          }}
+        />
+      ))}
     </>
   );
 }
