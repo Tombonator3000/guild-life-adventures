@@ -1,5 +1,45 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-10 - Created electron.md (Electron Build & Distribution Guide)
+
+### Overview
+
+Created `electron.md` — a comprehensive step-by-step guide for compiling Guild Life Adventures into a standalone desktop application using Electron and distributing it on itch.io.
+
+### What's in electron.md
+
+The document covers 11 phases from initial setup to Steam integration:
+
+1. **Project setup** — install Electron dependencies, create directory structure
+2. **Main process** — `electron/main/index.ts` with BrowserWindow, IPC, fullscreen (F11)
+3. **Preload script** — secure context bridge with platform detection and window controls
+4. **electron.vite.config.ts** — triple config for main/preload/renderer with `externalizeDepsPlugin()`
+5. **package.json changes** — scripts, electron-builder config (NSIS/DMG/AppImage), extraResources for audio
+6. **Runtime detection** — TypeScript declarations for `window.electronAPI`, conditional UI guidance
+7. **Build & test** — `dev:electron` (HMR), `build:win`/`build:linux`/`build:mac`, full test checklist
+8. **itch.io distribution** — butler CLI install, push workflow, channel naming, page setup
+9. **App updates** — butler delta updates, in-app update check via itch.io API, electron-updater for direct distribution
+10. **GitHub Actions CI/CD** — multi-platform build matrix, automatic butler push on tag
+11. **Steam integration** — steamworks.js setup, overlay workaround, steamcmd upload, timeline
+
+Also includes: complete folder structure diagram, troubleshooting section (8 common issues), reference links table.
+
+### Key Design Decisions
+
+- **Dual build system**: `vite.config.ts` (web) and `electron.vite.config.ts` (desktop) coexist — web version unaffected
+- **Zero React changes**: The entire `src/` directory works unchanged in Electron
+- **itch.io first, Steam later**: Free to publish, no code signing needed, butler handles delta updates
+- **Security**: `contextIsolation: true`, `nodeIntegration: false`, `webSecurity: true`
+- **extraResources**: Music, ambient, SFX, NPC portraits bundled in production build
+
+### Files Created
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| `electron.md` | ~580 | Complete Electron build and distribution guide |
+
+---
+
 ## 2026-02-10 - Game Compilation & Distribution Research (Deep Dive)
 
 ### Overview
