@@ -46,5 +46,5 @@ export const DEFAULT_GAME_TRACK = 'on-the-street';
 // Crossfade duration in milliseconds
 export const CROSSFADE_MS = 1500;
 
-// Default music volume (0-1). User requested 50% baseline.
-export const DEFAULT_MUSIC_VOLUME = 0.5;
+// Default music volume (0-1). Music tracks are loud, so 10% keeps it as subtle background.
+export const DEFAULT_MUSIC_VOLUME = 0.1;

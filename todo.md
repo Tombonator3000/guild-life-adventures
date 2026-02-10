@@ -929,9 +929,40 @@
   - LocationPanel.tsx reduced from 770 → 207 lines (-73%)
   - Zero behavior changes — 176 tests pass, build succeeds
 
+## Completed (2026-02-10)
+
+- [x] Save/Load Menu Text Readability — all text made larger, bolder, and darker
+  - Slot names: text-base font-semibold text-wood-dark (was text-sm text-card-foreground)
+  - Slot details: text-sm text-wood (was text-xs text-muted-foreground)
+  - All buttons: font-semibold text-wood with increased padding
+  - Mode tabs: font-semibold with text-wood for inactive state
+- [x] Music Default Volume → 10% (was 50%)
+  - DEFAULT_MUSIC_VOLUME in musicConfig.ts: 0.5 → 0.1
+  - Only affects new users; existing saved preferences unchanged
+- [x] Voice Cloning / Narration Research — full analysis in log.md
+  - Recommended: Kokoro TTS (kokoro-js, client-side, free) as starting point
+  - Enhancement: Pre-generate key narration with ElevenLabs voice cloning ($5 one-time)
+  - Full details with pricing, architecture, and implementation plan in log.md
+
 ## In Progress
 
 *No active tasks*
+
+## Voice Narration System (Research Complete 2026-02-10)
+
+### Recommended: Kokoro TTS (Client-Side) + Pre-Generated Key Lines
+
+### Implementation Steps (When Ready)
+
+- [ ] Add narration settings to `gameOptions.ts` (narrationEnabled: false, narrationVoice, narrationVolume)
+- [ ] Add Narration section to OptionsMenu Audio tab (toggle off by default, voice picker, volume slider)
+- [ ] Install `kokoro-js` and create lazy-loading wrapper (only downloads 160MB model when enabled)
+- [ ] Create Web Worker for non-blocking TTS synthesis
+- [ ] Create `useNarration` hook to trigger narration on game events
+- [ ] Add IndexedDB cache for generated audio (keyed by text hash)
+- [ ] Hook into location arrival, quest text, event messages, and tutorial
+- [ ] (Optional) Pre-generate key narration lines via ElevenLabs as static MP3 assets
+- [ ] (Optional) Add voice cloning option via ElevenLabs for custom narrator voice
 
 ## Standalone Exe / Steam Distribution (Research Complete 2026-02-09)
 

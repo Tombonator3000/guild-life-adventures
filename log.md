@@ -1,5 +1,81 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-10 - Menu Readability, Music Volume & Voice Narration Research
+
+### Task 1: Save/Load Menu Text Readability
+
+**Problem**: Save/load menu text was hard to read — slot names, details, and button labels used `text-muted-foreground` (HSL 30 25% 35%) at `text-xs`/`text-sm` size against the parchment background, creating low contrast.
+
+**Changes** (`src/components/game/SaveLoadMenu.tsx`):
+- **Slot names**: `text-sm text-card-foreground` → `text-base font-semibold text-wood-dark` (larger, bolder, darker)
+- **Auto save label**: `text-xs text-muted-foreground` → `text-xs font-normal text-wood-light`
+- **Slot details** (week/players/date): `text-xs text-muted-foreground` → `text-sm text-wood` (larger, darker)
+- **Empty slot text**: `text-xs text-muted-foreground` → `text-sm text-wood-light`
+- **Save/Load buttons**: `text-xs` → `text-sm font-semibold`, increased padding
+- **Delete icon**: `w-3 h-3` → `w-4 h-4`
+- **Mode tabs** (Save Game/Load Game): Added `font-semibold`, inactive text `text-muted-foreground` → `text-wood`
+- **Bottom buttons** (Options/Manual/Quit): `text-muted-foreground` → `text-wood`, added `font-semibold`, increased padding
+
+### Task 2: Music Default Volume → 10%
+
+**Problem**: Music played very loud at default 50% volume. The music tracks are inherently loud so even 50% felt overwhelming.
+
+**Change** (`src/audio/musicConfig.ts`):
+- `DEFAULT_MUSIC_VOLUME` changed from `0.5` (50%) to `0.1` (10%)
+- Only affects new users / cleared localStorage. Existing users keep their saved volume preference.
+
+### Task 3: Voice Cloning / Narration Research
+
+**Goal**: Investigate integrating voice cloning for game narration, with voice options in the options menu (off as default).
+
+#### Options Evaluated
+
+| Approach | Cost | Quality | Voice Cloning | Offline |
+|----------|------|---------|---------------|---------|
+| Web Speech API (browser native) | Free | Low/inconsistent | No | Yes |
+| Kokoro TTS (client-side, 82M params) | Free | Good | No (21 voices) | Yes |
+| ElevenLabs (cloud) | $5-99/mo | Excellent | Yes | No |
+| OpenAI TTS (cloud) | $15/1M chars | Very good | No | No |
+| Google Cloud TTS | $4-16/1M chars | Very good | Limited | No |
+| Chatterbox (self-hosted, MIT) | Server cost | Good | Yes | Server-side |
+| Fish Speech (cloud/self-hosted) | $0-11/mo | Good | Yes | Optional |
+| Pre-generated audio files | One-time | Excellent | N/A | Yes |
+
+#### Recommended Approach: Tiered Implementation
+
+**Tier 1 (Start here)**: **Kokoro TTS via `kokoro-js` (client-side)**
+- `npm i kokoro-js` — runs 100% in browser via WebGPU/WASM
+- 21 built-in English voices, ~160MB model download (cached)
+- Zero ongoing cost, works offline
+- Add options menu toggle (off by default), lazy-load model only when enabled
+- Use Web Worker to avoid blocking UI
+
+**Tier 2 (Enhancement)**: **Pre-generate key narration with ElevenLabs**
+- Use ElevenLabs ($5/mo Starter) to pre-generate audio for fixed text (location descriptions, tutorial, quest intros)
+- Clone a custom fantasy narrator voice from short audio sample
+- Export as MP3 static assets — one-time cost ~$5-20, then cancel subscription
+- Fall back to Kokoro for dynamic/overflow text
+
+**Tier 3 (If server budget available)**: **Self-hosted Chatterbox (MIT license)**
+- Deploy on GPU server (~$50-150/mo)
+- Full voice cloning from short audio sample
+- `/api/tts` endpoint, cache results in CDN
+
+#### Implementation Plan (When Ready)
+
+1. Add to `gameOptions.ts`: `narrationEnabled: false`, `narrationVoice: string`, `narrationVolume: number`
+2. Add Narration section to OptionsMenu Audio tab (off by default)
+3. Lazy-load kokoro-js only when user enables narration
+4. Run TTS in Web Worker for non-blocking synthesis
+5. Cache generated audio in IndexedDB keyed by text hash
+6. Hook into game events (location arrival, quest text, event messages) to trigger narration
+7. Optionally pre-generate key narration lines as static MP3 assets
+
+### Files Changed
+
+- `src/components/game/SaveLoadMenu.tsx` — Text readability improvements
+- `src/audio/musicConfig.ts` — DEFAULT_MUSIC_VOLUME 0.5 → 0.1
+
 ## 2026-02-10 - Refactor: LocationPanel getLocationTabs() → Factory Pattern
 
 ### Problem
