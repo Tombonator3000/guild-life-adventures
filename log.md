@@ -1,5 +1,38 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-10 - Refactor: LocationPanel getLocationTabs() → Factory Pattern
+
+### Problem
+
+`LocationPanel.tsx` was 770 lines with a 514-line `getLocationTabs()` switch statement — the single most complex function in the codebase. It contained 14 case blocks (one per location type), each building tab arrays with inline JSX, prop wiring, and business logic. Changes to one location risked breaking others, and the file required 50+ destructured store actions.
+
+### Solution
+
+Extracted the switch statement into a factory pattern in a new file `src/components/game/locationTabs.tsx`:
+
+1. **`LocationTabContext` interface** — bundles all store actions + game state needed by tab factories
+2. **13 named factory functions** — one per location (`guildHallTabs`, `tavernTabs`, `forgeTabs`, etc.)
+3. **`TAB_FACTORIES` lookup record** — maps `LocationId` → factory function, replacing the switch
+4. **`getLocationTabs(locationId, isHere, ctx)`** — 3-line function: checks `isHere`, looks up factory, calls it
+5. **`getWorkInfo(locationId, ctx)`** — extracted work footer builder
+
+### Results
+
+| File | Before | After | Change |
+|------|--------|-------|--------|
+| `LocationPanel.tsx` | 770 lines | 207 lines | -73% |
+| `locationTabs.tsx` | (new) | 440 lines | — |
+| `getLocationTabs()` | 514-line switch | 3-line lookup | -99% |
+
+- Each location's tab logic is now an isolated function (~20-50 lines each)
+- LocationPanel is now focused on routing, travel, and the newspaper modal
+- Zero behavior changes — 176 tests pass, build succeeds, TypeScript clean
+
+### Files Changed
+
+- `src/components/game/locationTabs.tsx` — NEW: 13 location tab factories + context type
+- `src/components/game/LocationPanel.tsx` — Refactored: 770 → 207 lines
+
 ## 2026-02-10 - AI Opponent Audit: Intelligence & Personality Overhaul
 
 ### Audit: AI Opponents (Grimwald, Seraphina, Thornwick, Morgath)
