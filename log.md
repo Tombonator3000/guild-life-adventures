@@ -10970,3 +10970,89 @@ Changed all affected text from `text-muted-foreground` to `text-gold` (the proje
 - TypeScript: compiles cleanly (tsc --noEmit)
 - Build: passes (vite build)
 - Tests: 171/171 pass
+
+---
+
+## Refactor RightSideTabs.tsx — Extract Tab Components (2026-02-10)
+
+### Task
+Find an overly complex function or component and refactor it for clarity while maintaining the same behavior.
+
+### Analysis
+
+Explored the entire codebase for complexity candidates. Top 5 identified:
+
+| Rank | File | Lines | Issue |
+|------|------|-------|-------|
+| 1 | `RightSideTabs.tsx` | 822 | 4 unrelated tab components + shared utils in single file |
+| 2 | `ItemIcon.tsx` | 533 | 40+ hardcoded icon mappings + 41 inline SVG components |
+| 3 | `useOnlineGame.ts` | 666 | 4 message handlers + host migration mixed in one hook |
+| 4 | `InventoryGrid.tsx` | 548 | 3x duplicate equipment slot code + 115-line build function |
+| 5 | `combatResolver.ts` | 455 | 149-line resolveEncounter switch with nested cases |
+
+Selected **#1 RightSideTabs.tsx** (822 lines) as the best candidate because:
+- Highest impact: 4 completely unrelated tab concerns in one file
+- Clear boundaries: each tab is an independent component with no shared state
+- Follows precedent: LocationPanel was previously refactored using the same extraction pattern
+- No external dependencies: only imported from GameBoard.tsx
+
+### What Was Wrong
+
+`RightSideTabs.tsx` was an 822-line monolithic file containing:
+1. **PlayersTab** (120 lines) — turn order and goal progress display
+2. **OptionsTab** (184 lines) — save/load, audio controls (3 near-identical volume sliders), AI speed, shortcuts
+3. **DeveloperTab** (286 lines) — 12 debug sections with inline onClick handlers
+4. **OptionSection** + **ShortcutRow** — shared wrapper components
+5. **LOCATIONS_LIST** — static data for teleport grid
+6. The main **RightSideTabs** shell (146 lines)
+
+Problems:
+- **Single responsibility violation**: 4 unrelated features mixed in one file
+- **Code duplication**: Music, Ambient, and SFX volume controls were 3 identical 28-line blocks with minor prop differences
+- **Untestable**: Individual tabs couldn't be tested in isolation
+- **Hard to navigate**: 822 lines with no file-level separation
+
+### Refactoring Performed
+
+Created 5 new files in `src/components/game/tabs/`:
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| `OptionSection.tsx` | 22 | Shared `OptionSection` + `ShortcutRow` components |
+| `AudioVolumeControl.tsx` | 52 | Reusable mute/volume/percentage control (replaces 3x duplicated blocks) |
+| `PlayersTab.tsx` | 115 | Player list with goal progress circles |
+| `OptionsTab.tsx` | 120 | Save/load, audio controls (uses AudioVolumeControl), AI speed, shortcuts |
+| `DeveloperTab.tsx` | 262 | Debug tools split into 7 sub-section components |
+
+Updated `RightSideTabs.tsx`: **822 → 174 lines** (79% reduction)
+
+### Key Improvements
+
+1. **Deduplicated audio controls**: 3 x 28 lines (84 lines) → 3 x 6 lines using `AudioVolumeControl` component
+2. **DeveloperTab split into sub-sections**: WeatherSection, VictoryAndGameSection, FestivalSection, ResourceSection, EventSection, PlayerStateSection, TeleportSection — each independently readable
+3. **Goal progress calculation extracted**: `calculateOverallProgress()` pure function in PlayersTab
+4. **Static data co-located**: `LOCATIONS_LIST`, `WEATHER_OPTIONS`, `FESTIVAL_OPTIONS`, `AI_SPEED_OPTIONS` moved to their respective tab files
+5. **Button class constants**: `DEBUG_BTN` and `SMALL_BTN` defined once in DeveloperTab (was inline in every button)
+
+### Files Changed
+
+| File | Changes |
+|------|---------|
+| `src/components/game/RightSideTabs.tsx` | 822 → 174 lines — shell/orchestrator only, imports 3 tab components |
+| `src/components/game/tabs/OptionSection.tsx` | NEW — shared OptionSection + ShortcutRow |
+| `src/components/game/tabs/AudioVolumeControl.tsx` | NEW — reusable audio volume control |
+| `src/components/game/tabs/PlayersTab.tsx` | NEW — player list with goal progress |
+| `src/components/game/tabs/OptionsTab.tsx` | NEW — save/load, audio, AI speed, shortcuts |
+| `src/components/game/tabs/DeveloperTab.tsx` | NEW — debug tools with 7 sub-sections |
+
+### Line Count Summary
+
+- **Before**: 822 lines (1 file)
+- **After**: 745 lines (6 files) — net 77-line reduction from deduplication
+- **Main file**: 822 → 174 lines (79% reduction)
+- **Zero behavior changes** — all UI, interactions, and rendering identical
+
+### Build & Tests
+- TypeScript: compiles cleanly (tsc --noEmit)
+- Build: passes (vite build)
+- Tests: 176/176 pass
