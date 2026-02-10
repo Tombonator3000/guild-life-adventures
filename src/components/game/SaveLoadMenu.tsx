@@ -70,20 +70,20 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
         <div className="flex gap-2 mb-4">
           <button
             onClick={() => setMode('save')}
-            className={`flex-1 p-2 rounded font-display text-sm flex items-center justify-center gap-2 ${
+            className={`flex-1 p-2.5 rounded font-display text-sm font-semibold flex items-center justify-center gap-2 ${
               mode === 'save'
                 ? 'bg-primary/20 text-primary border border-primary'
-                : 'bg-background/50 text-muted-foreground border border-border hover:border-primary/50'
+                : 'bg-background/50 text-wood border border-border hover:border-primary/50 hover:text-wood-dark'
             }`}
           >
             <Save className="w-4 h-4" /> Save Game
           </button>
           <button
             onClick={() => { setMode('load'); refreshSlots(); }}
-            className={`flex-1 p-2 rounded font-display text-sm flex items-center justify-center gap-2 ${
+            className={`flex-1 p-2.5 rounded font-display text-sm font-semibold flex items-center justify-center gap-2 ${
               mode === 'load'
                 ? 'bg-primary/20 text-primary border border-primary'
-                : 'bg-background/50 text-muted-foreground border border-border hover:border-primary/50'
+                : 'bg-background/50 text-wood border border-border hover:border-primary/50 hover:text-wood-dark'
             }`}
           >
             <FolderOpen className="w-4 h-4" /> Load Game
@@ -104,16 +104,16 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
                 } ${isAutoSave && mode === 'save' ? 'opacity-50' : ''}`}
               >
                 <div className="flex-1">
-                  <div className="font-display text-sm text-card-foreground">
+                  <div className="font-display text-base font-semibold text-wood-dark">
                     {s.slotName}
-                    {isAutoSave && <span className="text-xs text-muted-foreground ml-2">(automatic)</span>}
+                    {isAutoSave && <span className="text-xs font-normal text-wood-light ml-2">(automatic)</span>}
                   </div>
                   {s.exists ? (
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-sm text-wood">
                       Week {s.week} &middot; {s.playerNames.join(', ')} &middot; {formatSaveDate(s.timestamp)}
                     </div>
                   ) : (
-                    <div className="text-xs text-muted-foreground">Empty</div>
+                    <div className="text-sm text-wood-light">Empty</div>
                   )}
                 </div>
 
@@ -121,7 +121,7 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
                   {mode === 'save' && !isAutoSave && (
                     <button
                       onClick={() => handleSave(s.slot)}
-                      className="px-3 py-1 text-xs font-display bg-primary/20 text-primary rounded hover:bg-primary/30"
+                      className="px-3 py-1.5 text-sm font-display font-semibold bg-primary/20 text-primary rounded hover:bg-primary/30"
                     >
                       Save
                     </button>
@@ -129,7 +129,7 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
                   {mode === 'load' && s.exists && (
                     <button
                       onClick={() => handleLoad(s.slot)}
-                      className="px-3 py-1 text-xs font-display bg-primary/20 text-primary rounded hover:bg-primary/30"
+                      className="px-3 py-1.5 text-sm font-display font-semibold bg-primary/20 text-primary rounded hover:bg-primary/30"
                     >
                       Load
                     </button>
@@ -140,7 +140,7 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
                       className="p-1 text-destructive/60 hover:text-destructive"
                       title="Delete save"
                     >
-                      <Trash2 className="w-3 h-3" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   )}
                 </div>
@@ -154,20 +154,20 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
           <div className="flex gap-2">
             <button
               onClick={() => setShowOptions(true)}
-              className="flex-1 p-2 rounded border border-border bg-background/50 text-muted-foreground hover:text-foreground hover:border-foreground/30 font-display text-sm flex items-center justify-center gap-2"
+              className="flex-1 p-2.5 rounded border border-border bg-background/50 text-wood hover:text-wood-dark hover:border-foreground/30 font-display text-sm font-semibold flex items-center justify-center gap-2"
             >
               <Settings className="w-4 h-4" /> Options
             </button>
             <button
               onClick={() => setShowManual(true)}
-              className="flex-1 p-2 rounded border border-border bg-background/50 text-muted-foreground hover:text-foreground hover:border-foreground/30 font-display text-sm flex items-center justify-center gap-2"
+              className="flex-1 p-2.5 rounded border border-border bg-background/50 text-wood hover:text-wood-dark hover:border-foreground/30 font-display text-sm font-semibold flex items-center justify-center gap-2"
             >
               <BookOpen className="w-4 h-4" /> Manual
             </button>
           </div>
           <button
             onClick={handleQuitToTitle}
-            className="w-full p-2 rounded border border-border bg-background/50 text-muted-foreground hover:text-foreground hover:border-foreground/30 font-display text-sm flex items-center justify-center gap-2"
+            className="w-full p-2.5 rounded border border-border bg-background/50 text-wood hover:text-wood-dark hover:border-foreground/30 font-display text-sm font-semibold flex items-center justify-center gap-2"
           >
             <Home className="w-4 h-4" /> Save & Return to Title
           </button>
