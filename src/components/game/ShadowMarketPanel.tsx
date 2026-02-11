@@ -15,6 +15,7 @@ import {
   JonesMenuItem,
   JonesInfoRow,
 } from './JonesStylePanel';
+import { useTranslation } from '@/i18n';
 
 export type ShadowMarketSection = 'goods' | 'lottery' | 'tickets' | 'appliances' | 'scholar';
 
@@ -41,23 +42,27 @@ export function ShadowMarketPanel({
   buyTicket,
   section,
 }: ShadowMarketPanelProps) {
+  const { t } = useTranslation();
   const { buyAppliance, buyDurable } = useGameStore();
   const appliances = getMarketAppliances();
 
   const handleBuyAppliance = (applianceId: string, price: number) => {
     const happinessGain = buyAppliance(player.id, applianceId, price, 'market');
     const appliance = getAppliance(applianceId);
+    const applianceName = t(`appliances.${applianceId}.name`) || appliance?.name;
     if (happinessGain > 0) {
-      toast.success(`Purchased ${appliance?.name}! +${happinessGain} Happiness`);
+      toast.success(t('panelStore.purchased', { name: applianceName }) + ` +${happinessGain} Happiness`);
     } else {
-      toast.success(`Purchased ${appliance?.name}!`);
+      toast.success(t('panelStore.purchased', { name: applianceName }));
     }
   };
 
   const handleBuyItem = (item: typeof SHADOW_MARKET_ITEMS[0], price: number) => {
+    const itemName = t(`items.${item.id}.name`) || item.name;
+
     if (item.isLotteryTicket) {
       buyLotteryTicket(player.id, price);
-      toast.success(`Bought Fortune's Wheel ticket! (${player.lotteryTickets + 1} tickets for this week)`);
+      toast.success(t('panelStore.purchased', { name: itemName }) + ` (${player.lotteryTickets + 1} tickets for this week)`);
       return;
     }
 
@@ -67,7 +72,7 @@ export function ShadowMarketPanel({
         return;
       }
       buyTicket(player.id, item.ticketType, price);
-      toast.success(`Bought ${item.name}! Use it this weekend.`);
+      toast.success(t('panelStore.purchased', { name: itemName }));
       return;
     }
 
@@ -79,7 +84,7 @@ export function ShadowMarketPanel({
     if (item.effect?.type === 'happiness') {
       onModifyHappiness(item.effect.value);
     }
-    toast.success(`Purchased ${item.name}!`);
+    toast.success(t('panelStore.purchased', { name: itemName }));
   };
 
   // Separate items by type for better organization
@@ -101,7 +106,7 @@ export function ShadowMarketPanel({
         return (
           <JonesMenuItem
             key={item.id}
-            label={item.name}
+            label={t(`items.${item.id}.name`) || item.name}
             price={price}
             disabled={!canAfford}
             onClick={() => handleBuyItem(item, price)}
@@ -116,7 +121,7 @@ export function ShadowMarketPanel({
   const renderLottery = () => (
     <>
       {player.lotteryTickets > 0 && (
-        <JonesInfoRow label="Tickets this week:" value={`${player.lotteryTickets}`} darkText={darkText} largeText={largeText} />
+        <JonesInfoRow label={t('panelShadowMarket.lotteryTickets') + ':'} value={`${player.lotteryTickets}`} darkText={darkText} largeText={largeText} />
       )}
       {lotteryItems.map(item => {
         const price = Math.round(getItemPrice(item, priceModifier * 0.7));
@@ -124,7 +129,7 @@ export function ShadowMarketPanel({
         return (
           <JonesMenuItem
             key={item.id}
-            label={item.name}
+            label={t(`items.${item.id}.name`) || item.name}
             price={price}
             disabled={!canAfford}
             onClick={() => handleBuyItem(item, price)}
@@ -148,7 +153,7 @@ export function ShadowMarketPanel({
         return (
           <JonesMenuItem
             key={item.id}
-            label={item.name}
+            label={t(`items.${item.id}.name`) || item.name}
             price={price}
             disabled={!canAfford || alreadyOwns}
             highlight={alreadyOwns}
@@ -171,16 +176,17 @@ export function ShadowMarketPanel({
         const price = Math.round(getItemPrice(item, priceModifier * 0.85));
         const alreadyOwns = !!player.durables[item.id];
         const canAfford = player.gold >= price;
+        const itemName = t(`items.${item.id}.name`) || item.name;
         return (
           <JonesMenuItem
             key={item.id}
-            label={item.name}
+            label={itemName}
             price={price}
             disabled={!canAfford || alreadyOwns}
             highlight={alreadyOwns}
             onClick={() => {
               buyDurable(player.id, item.id, price);
-              toast.success(`Purchased ${item.name}!`);
+              toast.success(t('panelStore.purchased', { name: itemName }));
             }}
             darkText={darkText}
             largeText={largeText}
@@ -201,6 +207,7 @@ export function ShadowMarketPanel({
         const alreadyOwns = !!player.appliances[appliance.id];
         const canAfford = player.gold >= price;
         const isFirstPurchase = !player.applianceHistory.includes(appliance.id);
+        const applianceName = t(`appliances.${appliance.id}.name`) || appliance.name;
         const happinessNote = isFirstPurchase && appliance.happinessMarket > 0
           ? ` (+${appliance.happinessMarket} Hap)`
           : '';
@@ -208,7 +215,7 @@ export function ShadowMarketPanel({
         return (
           <JonesMenuItem
             key={appliance.id}
-            label={`${appliance.name}${happinessNote}`}
+            label={`${applianceName}${happinessNote}`}
             price={price}
             disabled={!canAfford || alreadyOwns}
             highlight={alreadyOwns}
@@ -240,21 +247,21 @@ export function ShadowMarketPanel({
   // Full mode (legacy): render all sections
   return (
     <JonesPanel>
-      <JonesPanelHeader title="Shadow Market" subtitle="Discount Goods" />
+      <JonesPanelHeader title={t('locations.shadowMarket')} subtitle="Discount Goods" />
       <JonesPanelContent>
-        <JonesSectionHeader title="BLACK MARKET GOODS" />
+        <JonesSectionHeader title={t('panelShadowMarket.blackMarketGoods')} />
         {renderGoods()}
 
-        <JonesSectionHeader title="FORTUNE'S WHEEL" />
+        <JonesSectionHeader title={t('panelShadowMarket.lotteryTickets')} />
         {renderLottery()}
 
-        <JonesSectionHeader title="WEEKEND TICKETS" />
+        <JonesSectionHeader title={t('panelShadowMarket.weekendTickets')} />
         {renderTickets()}
 
-        <JonesSectionHeader title="SCHOLAR TEXTS" />
+        <JonesSectionHeader title={t('panelShadowMarket.scholarlyTexts')} />
         {renderScholarItems()}
 
-        <JonesSectionHeader title="USED MAGICAL ITEMS" />
+        <JonesSectionHeader title={t('panelEnchanter.appliances')} />
         {renderAppliances()}
         {footerNote}
       </JonesPanelContent>

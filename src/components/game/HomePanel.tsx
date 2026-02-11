@@ -1,4 +1,5 @@
 import type { Player, LocationId } from '@/types/game.types';
+import { useTranslation } from '@/i18n';
 import { HOUSING_DATA } from '@/data/housing';
 import { JonesButton } from './JonesStylePanel';
 import { RoomScene, HomeActionBar, ApplianceLegend } from './home';
@@ -29,12 +30,13 @@ export function HomePanel({
   modifyRelaxation,
   onDone,
 }: HomePanelProps) {
+  const { t } = useTranslation();
   const rentsHere = playerRentsHere(player.housing, locationId);
 
   // Player doesn't rent here — show "For Rent" display
   if (!rentsHere) {
     const forRentImage = `${import.meta.env.BASE_URL}locations/for-rent.jpg`;
-    const locationName = locationId === 'noble-heights' ? 'Noble Heights' : 'The Slums';
+    const locationName = locationId === 'noble-heights' ? t('locations.nobleHeights') : t('locations.slums');
     return (
       <div className="h-full flex flex-col overflow-hidden select-none" style={{ background: '#1a1410' }}>
         <div
@@ -57,7 +59,7 @@ export function HomePanel({
               className="text-sm"
               style={{ color: '#d4c8a0', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
             >
-              Visit the Landlord's Office to rent this place.
+              {t('panelHome.visitLandlord')}
             </p>
           </div>
         </div>
@@ -68,7 +70,7 @@ export function HomePanel({
             borderTop: '2px solid #8b7355',
           }}
         >
-          <JonesButton label="DONE" onClick={onDone} />
+          <JonesButton label={t('common.done')} onClick={onDone} />
         </div>
       </div>
     );
@@ -79,10 +81,10 @@ export function HomePanel({
     return (
       <div className="h-full flex flex-col items-center justify-center bg-[#1a1410] p-4">
         <div className="text-[#8b7355] text-center font-mono">
-          <p className="text-lg mb-2">You have no home.</p>
-          <p className="text-sm">Visit the Landlord's Office to rent a place.</p>
+          <p className="text-lg mb-2">{t('panelHome.homeless')}</p>
+          <p className="text-sm">{t('panelHome.homelessMessage')}</p>
         </div>
-        <JonesButton label="DONE" onClick={onDone} className="mt-4" />
+        <JonesButton label={t('common.done')} onClick={onDone} className="mt-4" />
       </div>
     );
   }
@@ -141,7 +143,7 @@ export function HomePanel({
           fontSize: 'clamp(0.7rem, 1.5vw, 1rem)',
         }}
       >
-        {isNoble ? 'Noble Heights Estate' : isSlums ? 'The Slums' : 'Modest Dwelling'}
+        {isNoble ? t('housing.noble.name') : isSlums ? t('housing.slums.name') : t('housing.modest.name')}
       </div>
 
       <RoomScene

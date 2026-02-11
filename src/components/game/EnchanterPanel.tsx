@@ -6,6 +6,7 @@ import { getEnchanterAppliances, getAppliance, getItemPrice } from '@/data/items
 import { Sparkles, Wrench, ShoppingBag } from 'lucide-react';
 import type { Player } from '@/types/game.types';
 import { toast } from 'sonner';
+import { useTranslation } from '@/i18n';
 
 interface EnchanterPanelProps {
   player: Player;
@@ -14,6 +15,7 @@ interface EnchanterPanelProps {
 }
 
 export function EnchanterPanel({ player, priceModifier, onSpendTime }: EnchanterPanelProps) {
+  const { t } = useTranslation();
   const { buyAppliance, repairAppliance } = useGameStore();
   const appliances = getEnchanterAppliances();
 
@@ -26,18 +28,19 @@ export function EnchanterPanel({ player, priceModifier, onSpendTime }: Enchanter
   const handleBuyAppliance = (applianceId: string, price: number) => {
     const happinessGain = buyAppliance(player.id, applianceId, price, 'enchanter');
     const appliance = getAppliance(applianceId);
+    const name = t(`appliances.${applianceId}.name`) || appliance?.name;
     if (happinessGain > 0) {
-      toast.success(`Purchased ${appliance?.name}! +${happinessGain} Happiness`);
+      toast.success(t('panelStore.purchased', { name: name || '' }) + ` +${happinessGain} ${t('stats.happiness')}`);
     } else {
-      toast.success(`Purchased ${appliance?.name}!`);
+      toast.success(t('panelStore.purchased', { name: name || '' }));
     }
   };
 
   const handleRepair = (applianceId: string) => {
     const cost = repairAppliance(player.id, applianceId);
     onSpendTime(2);
-    const appliance = getAppliance(applianceId);
-    toast.success(`Repaired ${appliance?.name} for ${cost} gold`);
+    const name = t(`appliances.${applianceId}.name`) || getAppliance(applianceId)?.name;
+    toast.success(t('panelEnchanter.repaired', { name: name || '' }));
   };
 
   return (
@@ -46,17 +49,17 @@ export function EnchanterPanel({ player, priceModifier, onSpendTime }: Enchanter
       {brokenAppliances.length > 0 && (
         <div className="bg-[#e0d4b8] border border-[#8b7355] rounded p-3">
           <h4 className="font-display text-sm text-destructive flex items-center gap-2 mb-2">
-            <Wrench className="w-4 h-4" /> Broken Appliances
+            <Wrench className="w-4 h-4" /> {t('panelEnchanter.appliances')}
           </h4>
           <p className="text-xs text-[#6b5a42] mb-2">
-            Your appliances need repair! Cost varies based on original price.
+            {t('panelEnchanter.repairCost')}
           </p>
           <div className="space-y-2">
             {brokenAppliances.map(item => {
               const estimatedCost = Math.floor(item.originalPrice / 10); // Rough estimate
               return (
                 <div key={item.id} className="flex justify-between items-center">
-                  <span className="text-sm text-[#3d2a14]">{item.appliance?.name}</span>
+                  <span className="text-sm text-[#3d2a14]">{t(`appliances.${item.id}.name`) || item.appliance?.name}</span>
                   <button
                     onClick={() => handleRepair(item.id)}
                     disabled={player.gold < estimatedCost || player.timeRemaining < 2}
@@ -73,7 +76,7 @@ export function EnchanterPanel({ player, priceModifier, onSpendTime }: Enchanter
 
       {/* Shop Section */}
       <h4 className="font-display text-sm text-[#6b5a42] flex items-center gap-2">
-        <Sparkles className="w-4 h-4" /> Magical Appliances
+        <Sparkles className="w-4 h-4" /> {t('panelEnchanter.magicItems')}
       </h4>
       <p className="text-xs text-[#6b5a42]">
         Premium enchanted items. Higher price, but lower chance to break (1/51 per turn).
@@ -89,18 +92,18 @@ export function EnchanterPanel({ player, priceModifier, onSpendTime }: Enchanter
             <div key={appliance.id} className="bg-[#e0d4b8] border border-[#8b7355] rounded p-2">
               <div className="flex justify-between items-start mb-1">
                 <div>
-                  <span className="font-display font-semibold text-sm text-[#3d2a14]">{appliance.name}</span>
+                  <span className="font-display font-semibold text-sm text-[#3d2a14]">{t(`appliances.${appliance.id}.name`) || appliance.name}</span>
                   {alreadyOwns && (
                     <span className="ml-2 text-xs text-secondary">(Owned)</span>
                   )}
                 </div>
                 <span className="text-[#8b6914] font-bold">{price}g</span>
               </div>
-              <p className="text-xs text-[#6b5a42] mb-2">{appliance.description}</p>
+              <p className="text-xs text-[#6b5a42] mb-2">{t(`appliances.${appliance.id}.description`) || appliance.description}</p>
               <div className="flex justify-between items-center">
                 <div className="text-xs">
                   {isFirstPurchase && appliance.happinessEnchanter > 0 && (
-                    <span className="text-secondary">+{appliance.happinessEnchanter} Happiness</span>
+                    <span className="text-secondary">+{appliance.happinessEnchanter} {t('stats.happiness')}</span>
                   )}
                   {appliance.givesPerTurnBonus && (
                     <span className="text-secondary ml-2">+1/turn</span>

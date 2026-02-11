@@ -5,6 +5,7 @@ import {
 } from './JonesStylePanel';
 import { ARMORY_ITEMS, getItemPrice, calculateCombatStats, getItem } from '@/data/items';
 import { toast } from 'sonner';
+import { useTranslation } from '@/i18n';
 
 export type ArmorySection = 'clothing' | 'weapons' | 'armor' | 'shields';
 
@@ -33,6 +34,7 @@ export function ArmoryPanel({
   unequipItem,
   section,
 }: ArmoryPanelProps) {
+  const { t } = useTranslation();
   const combatStats = calculateCombatStats(
     player.equippedWeapon,
     player.equippedArmor,
@@ -88,7 +90,7 @@ export function ArmoryPanel({
           return (
             <div key={item.id} className="py-1 px-2 opacity-40">
               <div className={`font-mono ${textSize} ${textColor}`}>
-                🔒 {item.name} ({statLabel}) — Floor {item.requiresFloorCleared} required
+                🔒 {t(`items.${item.id}.name`) || item.name} ({statLabel}) — {t('panelArmory.requiresFloor', { n: item.requiresFloorCleared })}
               </div>
             </div>
           );
@@ -101,10 +103,10 @@ export function ArmoryPanel({
                 onClick={() => {
                   if (isEquipped) {
                     unequipItem(player.id, slot);
-                    toast.info(`Unequipped ${item.name}`);
+                    toast.info(t('panelArmory.unequippedItem', { name: t(`items.${item.id}.name`) || item.name }));
                   } else {
                     equipItem(player.id, item.id, slot);
-                    toast.success(`Equipped ${item.name}!`);
+                    toast.success(t('panelArmory.equippedItem', { name: t(`items.${item.id}.name`) || item.name }));
                   }
                 }}
                 className={`w-full text-left py-1 px-2 rounded transition-colors ${
@@ -115,22 +117,22 @@ export function ArmoryPanel({
               >
                 <div className={`flex items-baseline w-full font-mono ${textSize}`}>
                   <span className={isEquipped ? (darkText ? 'text-[#2a5c3a] font-bold' : 'text-[#a0d8b0] font-bold') : (darkText ? 'text-[#3d2a14]' : 'text-[#e0d4b8]')}>
-                    {isEquipped ? '⚔ ' : '  '}{item.name}
+                    {isEquipped ? '⚔ ' : '  '}{t(`items.${item.id}.name`) || item.name}
                   </span>
                   <span className="flex-1"></span>
                   <span className={`text-xs ${darkText ? 'text-[#6b5a42]' : 'text-[#a09080]'} ml-2`}>{statLabel}</span>
                   <span className="ml-2 text-xs">
                     {isEquipped ? (
-                      <span className={darkText ? 'text-[#2a5c3a]' : 'text-[#a0d8b0]'}>[EQUIPPED]</span>
+                      <span className={darkText ? 'text-[#2a5c3a]' : 'text-[#a0d8b0]'}>[{t('panelArmory.equipped').toUpperCase()}]</span>
                     ) : (
-                      <span className="text-gold">[EQUIP]</span>
+                      <span className="text-gold">[{t('panelArmory.equip').toUpperCase()}]</span>
                     )}
                   </span>
                 </div>
               </button>
             ) : (
               <JonesMenuItem
-                label={`${item.name} (${statLabel})`}
+                label={`${t(`items.${item.id}.name`) || item.name} (${statLabel})`}
                 price={price}
                 disabled={!canAfford}
                 darkText={darkText}
@@ -141,7 +143,7 @@ export function ArmoryPanel({
                   if (item.effect?.type === 'happiness') {
                     modifyHappiness(player.id, item.effect.value);
                   }
-                  toast.success(`Purchased ${item.name}!`);
+                  toast.success(t('panelArmory.purchased', { name: t(`items.${item.id}.name`) || item.name }));
                 }}
               />
             )}
@@ -153,7 +155,7 @@ export function ArmoryPanel({
 
   const combatStatsHeader = (
     <div className={`${darkText ? 'bg-[#e8dcc8] border-[#8b7355]' : 'bg-[#2d1f0f] border-[#8b7355]'} border rounded p-2 mb-2`}>
-      <div className={`text-xs ${darkText ? 'text-[#6b5a42]' : 'text-[#a09080]'} uppercase tracking-wide mb-1`}>Combat Stats</div>
+      <div className={`text-xs ${darkText ? 'text-[#6b5a42]' : 'text-[#a09080]'} uppercase tracking-wide mb-1`}>{t('panelArmory.combatStats')}</div>
       <div className={`flex gap-4 font-mono ${largeText ? 'text-base' : 'text-sm'}`}>
         <span className="text-red-600">⚔ ATK: {combatStats.attack}</span>
         <span className="text-blue-700">🛡 DEF: {combatStats.defense}</span>
@@ -162,16 +164,16 @@ export function ArmoryPanel({
         )}
       </div>
       <div className={`flex gap-3 mt-1 text-xs ${darkText ? 'text-[#6b5a42]' : 'text-[#8b7355]'}`}>
-        <span>W: {player.equippedWeapon ? getItem(player.equippedWeapon)?.name : 'None'}</span>
-        <span>A: {player.equippedArmor ? getItem(player.equippedArmor)?.name : 'None'}</span>
-        <span>S: {player.equippedShield ? getItem(player.equippedShield)?.name : 'None'}</span>
+        <span>W: {player.equippedWeapon ? (t(`items.${player.equippedWeapon}.name`) || getItem(player.equippedWeapon)?.name) : t('playerStats.none')}</span>
+        <span>A: {player.equippedArmor ? (t(`items.${player.equippedArmor}.name`) || getItem(player.equippedArmor)?.name) : t('playerStats.none')}</span>
+        <span>S: {player.equippedShield ? (t(`items.${player.equippedShield}.name`) || getItem(player.equippedShield)?.name) : t('playerStats.none')}</span>
       </div>
     </div>
   );
 
   const footerNote = (
     <div className={`mt-2 text-xs ${darkText ? 'text-[#6b5a42]' : 'text-[#8b7355]'} px-2`}>
-      Click owned items to equip/unequip
+      {t('panelArmory.clickToEquip')}
     </div>
   );
 
@@ -187,7 +189,7 @@ export function ArmoryPanel({
               return (
                 <JonesMenuItem
                   key={item.id}
-                  label={item.name}
+                  label={t(`items.${item.id}.name`) || item.name}
                   price={price}
                   disabled={!canAfford}
                   darkText={darkText}
@@ -197,7 +199,7 @@ export function ArmoryPanel({
                     if (item.effect?.type === 'clothing') {
                       modifyClothing(player.id, item.effect.value);
                     }
-                    toast.success(`Purchased ${item.name}!`);
+                    toast.success(t('panelArmory.purchased', { name: t(`items.${item.id}.name`) || item.name }));
                   }}
                 />
               );
@@ -208,7 +210,7 @@ export function ArmoryPanel({
         return (
           <div>
             {combatStatsHeader}
-            {renderEquipSection('WEAPONS', weaponItems, 'weapon', player.equippedWeapon, false)}
+            {renderEquipSection(t('panelArmory.weapons'), weaponItems, 'weapon', player.equippedWeapon, false)}
             {footerNote}
           </div>
         );
@@ -216,7 +218,7 @@ export function ArmoryPanel({
         return (
           <div>
             {combatStatsHeader}
-            {renderEquipSection('ARMOR', armorItems, 'armor', player.equippedArmor, false)}
+            {renderEquipSection(t('panelArmory.armor'), armorItems, 'armor', player.equippedArmor, false)}
             {footerNote}
           </div>
         );
@@ -224,7 +226,7 @@ export function ArmoryPanel({
         return (
           <div>
             {combatStatsHeader}
-            {renderEquipSection('SHIELDS', shieldItems, 'shield', player.equippedShield, false)}
+            {renderEquipSection(t('panelArmory.shields'), shieldItems, 'shield', player.equippedShield, false)}
             {footerNote}
           </div>
         );
@@ -240,7 +242,7 @@ export function ArmoryPanel({
         return (
           <JonesMenuItem
             key={item.id}
-            label={item.name}
+            label={t(`items.${item.id}.name`) || item.name}
             price={price}
             disabled={!canAfford}
             darkText
@@ -250,7 +252,7 @@ export function ArmoryPanel({
               if (item.effect?.type === 'clothing') {
                 modifyClothing(player.id, item.effect.value);
               }
-              toast.success(`Purchased ${item.name}!`);
+              toast.success(t('panelArmory.purchased', { name: t(`items.${item.id}.name`) || item.name }));
             }}
           />
         );

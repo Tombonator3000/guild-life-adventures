@@ -17,6 +17,7 @@ import {
 import { ActionButton } from './ActionButton';
 import { toast } from 'sonner';
 import { useGameStore } from '@/store/gameStore';
+import { useTranslation } from '@/i18n';
 import { calculateCombatStats } from '@/data/items';
 import {
   DUNGEON_FLOORS,
@@ -79,6 +80,7 @@ export function CavePanel({
   clearDungeonFloor,
   applyRareDrop,
 }: CavePanelProps) {
+  const { t } = useTranslation();
   const [expandedFloor, setExpandedFloor] = useState<number | null>(null);
   const [activeFloor, setActiveFloor] = useState<DungeonFloor | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
@@ -223,22 +225,22 @@ export function CavePanel({
       <div className="space-y-3">
         <div>
           <h4 className="font-display text-lg text-muted-foreground flex items-center gap-2">
-            <Lock className="w-5 h-5" /> The Dungeon
+            <Lock className="w-5 h-5" /> {t('panelCave.dungeonFloors')}
           </h4>
           <p className="text-xs text-muted-foreground mt-1">
-            The cave entrance is sealed with ancient runes.
+            {t('panelCave.floorLocked')}
           </p>
         </div>
         <div className="bg-[#2d1f0f] border border-[#8b7355] rounded p-4 text-center">
           <Lock className="w-8 h-8 text-[#8b7355] mx-auto mb-2" />
           <p className="text-sm text-[#e0d4b8] font-display mb-2">
-            Dungeon Access Locked
+            {t('panelCave.floorLocked')}
           </p>
           <p className="text-xs text-[#a09080] mb-3">
-            You must complete at least one degree at the Academy before the Guild will grant you a dungeon exploration permit.
+            {t('panelCave.requiresEquipment')}
           </p>
           <p className="text-xs text-amber-400">
-            Visit the Academy to begin your education.
+            {t('locations.academy')}
           </p>
         </div>
       </div>
@@ -268,11 +270,10 @@ export function CavePanel({
       {/* Header */}
       <div>
         <h4 className="font-display text-lg text-muted-foreground flex items-center gap-2">
-          <Sparkles className="w-5 h-5" /> The Dungeon
+          <Sparkles className="w-5 h-5" /> {t('panelCave.dungeonFloors')}
         </h4>
         <p className="text-xs text-muted-foreground mt-1">
-          Descend into the depths. Each floor grows more dangerous — and
-          more rewarding.
+          {t('panelCave.enterDungeon')}
         </p>
       </div>
 
@@ -286,7 +287,7 @@ export function CavePanel({
       {/* Progress bar */}
       <div className="bg-[#2d1f0f] border border-[#8b7355] rounded p-2">
         <div className="flex justify-between text-xs text-[#a09080] mb-1">
-          <span>Dungeon Progress</span>
+          <span>{t('panelCave.dungeonFloors')}</span>
           <span className="text-[#e0d4b8]">
             {progress.totalFloorsCleared}/{MAX_DUNGEON_FLOOR} Floors
           </span>
@@ -299,7 +300,7 @@ export function CavePanel({
         </div>
         {progress.allFloorsCleared && (
           <div className="text-xs text-amber-400 text-center mt-1">
-            All floors conquered!
+            {t('panelCave.floorCleared')}
           </div>
         )}
       </div>
@@ -307,7 +308,7 @@ export function CavePanel({
       {/* Equipment summary */}
       <div className="bg-[#2d1f0f] border border-[#8b7355] rounded p-2 text-xs font-mono">
         <div className="text-[#a09080] uppercase tracking-wide mb-1">
-          Your Equipment
+          {t('panelArmory.equipped')}
         </div>
         <div className="flex gap-3 text-[#e0d4b8]">
           <span className="text-red-400">
@@ -333,7 +334,7 @@ export function CavePanel({
       {hasAnyBonus && (
         <div className="bg-[#1a1a2e] border border-[#4a4a7a] rounded p-2 text-xs">
           <div className="text-[#8888cc] uppercase tracking-wide mb-1 flex items-center gap-1">
-            <BookOpen className="w-3 h-3" /> Education Bonuses
+            <BookOpen className="w-3 h-3" /> {t('goals.education')}
           </div>
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[#aaaadd]">
             {eduBonuses.canDisarmTraps && <span>✓ Trap Sense</span>}
@@ -376,7 +377,7 @@ export function CavePanel({
               <ChevronRight className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
             )}
             <Trophy className="w-3.5 h-3.5 text-amber-400" />
-            <span className="text-xs text-amber-400 font-display">Dungeon Records</span>
+            <span className="text-xs text-amber-400 font-display">{t('panelCave.dungeonFloors')}</span>
           </button>
           {showLeaderboard && (
             <div className="px-2 pb-2 space-y-1">
@@ -631,7 +632,7 @@ export function CavePanel({
       {/* Rest in Cave */}
       <div className="pt-2 border-t border-[#8b7355]/30">
         <ActionButton
-          label="Rest in the Cave"
+          label={t('common.rest')}
           cost={0}
           time={8}
           disabled={
