@@ -1,11 +1,12 @@
 // Inline event panel that renders inside the center panel (not a Dialog overlay)
-// Redesigned: large text filling center, button at bottom center, space for future graphics
+// Redesigned: large text filling center, button at bottom center, woodcut illustrations
 
 import { useEffect } from 'react';
 import { AlertTriangle, Skull, Home, Coins, Heart, Utensils } from 'lucide-react';
 import type { GameEvent } from './EventModal';
 import { playSFX } from '@/audio/sfxManager';
 import { t } from '@/i18n';
+import { getEventImage } from '@/assets/events';
 
 interface EventPanelProps {
   event: GameEvent;
@@ -72,9 +73,23 @@ export function EventPanel({ event, onDismiss }: EventPanelProps) {
     <div className="h-full w-full flex flex-col parchment-panel">
       {/* Scrollable content area - fills available space */}
       <div className="flex-1 flex flex-col items-center justify-center p-4 overflow-y-auto min-h-0">
-        {/* Icon area - also serves as future graphics placeholder */}
+        {/* Woodcut illustration or fallback icon */}
         <div className="flex-shrink-0 mb-3">
-          {getIcon()}
+          {(() => {
+            const img = getEventImage(event.id, event.type);
+            if (img) {
+              return (
+                <img
+                  src={img}
+                  alt={event.title}
+                  className="w-32 h-32 object-contain rounded-lg border-2 border-card-foreground/20"
+                  style={{ filter: 'sepia(0.3)' }}
+                  loading="lazy"
+                />
+              );
+            }
+            return getIcon();
+          })()}
         </div>
 
         {/* Title - large and prominent */}
