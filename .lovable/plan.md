@@ -1,98 +1,72 @@
 
-# Plan: Guild Life - Jones in the Fast Lane Implementation
 
-## Status: ✅ FULLY IMPLEMENTED
+## AI-generert steinmur-border rundt sidepanelene
 
-All missing features from the original Jones in the Fast Lane have been implemented with fantasy theming.
+Bruker Googles Gemini bildegenerering (via Lovable AI Gateway) til a lage dekorative steinmur-bilder med mose, slyngplanter og blomster i middelalderstil. Disse brukes som bakgrunnsbilder/borders rundt venstre og hoyre sidepanel.
 
-## Implemented Features
+### Tilnaerming
 
-### ✅ 1. Quest System (Guild Hall)
-- 18 quests ranked E to S with increasing difficulty/rewards
-- QuestPanel component for accepting and completing quests
-- Guild rank progression based on completed quests
-- Education and equipment requirements for some quests
+Genererer **to bilder** med AI:
+1. **Venstre border** - Vertikal steinmur-ramme med mose og vines, apen pa hoyre side (der panelinnholdet vises)
+2. **Hoyre border** - Speilvendt versjon, apen pa venstre side
 
-### ✅ 2. Newspaper (The Guildholm Herald)
-- Weekly newspaper generator with economy, jobs, quests, and gossip articles
-- Available at General Store or Shadow Market (discounted)
-- NewspaperModal component
+Bildene lagres i `public/ui/` og brukes som bakgrunn i en wrapper-komponent.
 
-### ✅ 3. Pawn Shop (The Fence) - Enhanced
-- PawnShopPanel component
-- Sell items from inventory at 50% value
-- Buy used items at discounted prices
-- Three-tier gambling system
+### Plan
 
-### ✅ 4. Healer's Sanctuary
-- HealerPanel component at Enchanter's Workshop
-- Minor, Moderate, and Full healing options
-- Cure sickness
-- Health blessing (increases max HP)
+#### Steg 1: Generer AI-bilder
+Bruke Gemini image generation til a lage to vertikale steinmur-border-bilder:
+- Prompt: Medieval stone wall border frame with moss, vines, and small flowers. Dark gray/brown stone texture. Transparent or dark center. Vertical orientation, game UI frame style.
+- Format: PNG med gjennomsiktig senter
+- Storrelse: Tilpasset sidepanelenes proporsjoner (smal og hoy)
 
-### ✅ 5. Rent Consequences
-- Warning after 4 weeks overdue
-- Automatic eviction after 8 weeks
-- Lose all items on eviction
-- Event warnings in processWeekEnd
+#### Steg 2: Ny komponent `StoneBorderFrame.tsx`
+- Enkel wrapper som legger AI-generert bilde som bakgrunn
+- Bruker `background-image` med `background-size: 100% 100%` for a strekke rammen
+- Padding inni for at panelinnholdet ikke overlapper steinmuren
+- Props: `side: 'left' | 'right'` for a velge riktig bilde
 
-### ✅ 6. Death Mechanic
-- checkDeath() function
-- Resurrection if player has 100g in savings
-- Moved to Healer's Sanctuary on resurrection
+#### Steg 3: Oppdater `GameBoard.tsx`
+- Wrap venstre sidepanel (linje 195-207) med `StoneBorderFrame side="left"`
+- Wrap hoyre sidepanel (linje 334-352) med `StoneBorderFrame side="right"`
+- Fjerne `p-[0.5%]` padding fra panel-wrapperne (StoneBorderFrame handterer dette)
 
-### ✅ 7. AI Logic (Grimwald)
-- useAI hook with decision logic
-- Prioritizes: food, rent, job, quests, education, rest
+#### Steg 4: Fiks eksisterende build-feil
+- **GameBoard.tsx linje 381**: Fjern `week={week}` prop fra mobile RightSideTabs
+- **DeveloperTab.tsx**: Fikse type-feil ved a bruke spesifikke store-selektorer i stedet for hele store-objektet
+- **QuestPanel.tsx**: Fikse "bounty" type-sammenligninger
+- **networkState.ts**: Fikse type-casting
 
-### ✅ 8. Event Display System
-- EventModal component
-- Shows weekly events at week start
-- Shadowfingers theft, sickness, eviction warnings
+#### Steg 5: Logg til log.md
 
-### ✅ 9. Advanced Job System (NEW!)
-- **Dependability Stat**: 0-100%, decays 5% weekly, increases with work
-- **Job Hiring**: Must get hired at Guild Hall (takes time, sets wage)
-- **Work Bonus**: 6+ hour shifts pay 33% bonus (8h worth for 6h work)
-- **Wage Garnishment**: 50% + 2g deducted from earnings if rent overdue (4+ weeks)
-- **Request Raise**: Can request 15% raise based on dependability (30-80% success chance)
-- **Job Loss**: Fired if dependability drops below 20%
+### Tekniske detaljer
 
-### ✅ 10. Enhanced Robbery Events (NEW!)
-- Bank Heist: 20% chance when leaving bank with 200+ gold
-- Shadow Market Ambush: 25% chance with 150+ gold
-- Pickpocket events at shady locations
+**Bildegenerering:**
+- Bruker `google/gemini-2.5-flash-image` modellen via Lovable AI
+- Genererer bildene under bygging/utvikling og lagrer som statiske filer i `public/ui/`
+- To bilder: `stone-border-left.png` og `stone-border-right.png`
 
-### ✅ 11. Rent Debt System (NEW!)
-- Accumulates 25% of rent weekly when overdue
-- Garnishment pays down debt before player receives earnings
+**StoneBorderFrame.tsx:**
+```
+interface StoneBorderFrameProps {
+  side: 'left' | 'right';
+  children: React.ReactNode;
+}
+```
+- Bruker bakgrunnsbilde som dekker hele containeren
+- Innvendig padding (~8-12%) slik at panelinnholdet sitter inni steinrammen
+- Gjennomsiktig senter slik at panelinnholdet er lesbart
 
-## New Files
-- src/data/quests.ts
-- src/data/newspaper.ts
-- src/hooks/useAI.ts
-- src/components/game/QuestPanel.tsx
-- src/components/game/EventModal.tsx
-- src/components/game/NewspaperModal.tsx
-- src/components/game/HealerPanel.tsx
-- src/components/game/PawnShopPanel.tsx
+**Filer som opprettes/endres:**
 
-## Updated Files
-- src/types/game.types.ts (Player extended with currentWage, dependability, experience, rentDebt)
-- src/store/gameStore.ts (requestRaise, improved workShift with bonus/garnishment, processWeekEnd with dependability)
-- src/components/game/LocationPanel.tsx (job system, raise button)
-- src/components/game/ResourcePanel.tsx (dependability & wage display)
-- src/components/game/GameBoard.tsx (EventModal integration)
-- src/data/events.ts (bank/shadow market robbery events)
-
-## Fantasy Name Translations
-| Original | Guild Life |
-|----------|------------|
-| Wild Willy | Shadowfingers |
-| Employment Office | Guild Hall |
-| Newspaper | The Guildholm Herald |
-| Jones | Grimwald |
-| Hospital | Healer's Sanctuary |
-| Diploma | Guild Certificate |
-| Welfare Office | Temple of Charity |
+| Fil | Endring |
+|-----|---------|
+| `public/ui/stone-border-left.png` | **Ny** - AI-generert steinmur venstre ramme |
+| `public/ui/stone-border-right.png` | **Ny** - AI-generert steinmur hoyre ramme |
+| `src/components/game/StoneBorderFrame.tsx` | **Ny** - Wrapper-komponent med steinmur-bakgrunn |
+| `src/components/game/GameBoard.tsx` | Wrap sidepaneler + fiks `week` build-feil |
+| `src/components/game/tabs/DeveloperTab.tsx` | Fiks type-feil med store |
+| `src/components/game/QuestPanel.tsx` | Fiks "bounty" type-feil |
+| `src/network/networkState.ts` | Fiks type-casting |
+| `log.md` | Logg dagens endringer |
 
