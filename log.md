@@ -1,5 +1,19 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-11 - Border Style Picker in OptionsMenu Modal
+
+### Overview
+
+Moved the border style picker into the main OptionsMenu modal under the Display tab, so players can change panel borders from the full options dialog (not just the side-panel OptionsTab). The picker shows all 6 styles (Stone, Leather, Wood, Iron, Scroll, None) in a 3×2 grid matching the existing design language.
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `src/components/game/OptionsMenu.tsx` | Added border style grid picker to DisplayTab with `BorderStyle` import |
+
+---
+
 ## 2026-02-11 - Extended Border Variants: Wood, Iron & Parchment
 
 ### Overview
