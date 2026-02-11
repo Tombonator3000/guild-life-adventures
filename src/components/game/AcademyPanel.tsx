@@ -9,6 +9,7 @@ import { getAvailableDegrees, DEGREES, getEffectiveSessionsRequired } from '@/da
 import { getItemPrice } from '@/data/items';
 import { toast } from 'sonner';
 import { useMemo } from 'react';
+import { useTranslation } from '@/i18n';
 
 interface AcademyPanelProps {
   player: Player;
@@ -23,6 +24,7 @@ export function AcademyPanel({
   studyDegree,
   completeDegree,
 }: AcademyPanelProps) {
+  const { t } = useTranslation();
   const availableDegrees = getAvailableDegrees(player.completedDegrees as DegreeId[]);
   const completedCount = player.completedDegrees.length;
 
@@ -41,23 +43,23 @@ export function AcademyPanel({
 
   return (
     <div>
-      <JonesInfoRow label="Degrees Earned:" value={`${completedCount} / 11`} darkText largeText />
+      <JonesInfoRow label={t('panelAcademy.degreesEarned')} value={`${completedCount} / 11`} darkText largeText />
       {completedCount > 0 && (
         <div className="text-xs text-[#6b5a42] px-2 mb-2">
-          {player.completedDegrees.map(id => DEGREES[id as DegreeId]?.name).join(', ')}
+          {player.completedDegrees.map(id => t(`degrees.${id}.name`)).join(', ')}
         </div>
       )}
       {hasStudyBonus && (
         <div className="text-xs text-[#2a7a2a] px-2 mb-2 font-semibold">
-          Extra Credit: {effectiveSessions} sessions per degree (was 10)
+          {t('panelAcademy.extraCredit', { sessions: effectiveSessions })}
         </div>
       )}
 
-      <JonesSectionHeader title="AVAILABLE COURSES" />
+      <JonesSectionHeader title={t('panelAcademy.availableCourses')} />
 
       {availableDegrees.length === 0 ? (
         <div className="text-sm text-[#6b5a42] text-center py-2 px-2">
-          You have completed all available degrees!
+          {t('panelAcademy.allDegreesComplete')}
         </div>
       ) : (
         <div>
@@ -71,7 +73,7 @@ export function AcademyPanel({
             return (
               <div key={degree.id} className="bg-[#e0d4b8] border border-[#8b7355] p-2 rounded mb-1">
                 <div className="flex justify-between items-baseline">
-                  <span className="font-mono text-sm text-[#3d2a14]">{degree.name}</span>
+                  <span className="font-mono text-sm text-[#3d2a14]">{t(`degrees.${degree.id}.name`)}</span>
                   <span className="font-mono text-xs text-[#6b5a42]">
                     {progress}/{sessionsNeeded}
                     {sessionsNeeded < degree.sessionsRequired && (
@@ -81,21 +83,21 @@ export function AcademyPanel({
                 </div>
                 {isComplete ? (
                   <JonesButton
-                    label="Graduate! (+5 Hap, +5 Dep)"
+                    label={`${t('panelAcademy.graduate')} (+5 Hap, +5 Dep)`}
                     onClick={() => completeDegree(player.id, degree.id as DegreeId)}
                     variant="primary"
                     className="w-full mt-1"
                   />
                 ) : (
                   <JonesMenuItem
-                    label={`Attend Class (${degree.hoursPerSession}h)`}
+                    label={`${t('panelAcademy.attend')} (${degree.hoursPerSession}h)`}
                     price={price}
                     disabled={!canAfford}
                     darkText
                     largeText
                     onClick={() => {
                       studyDegree(player.id, degree.id as DegreeId, price, degree.hoursPerSession);
-                      toast.success(`Attended ${degree.name} class!`);
+                      toast.success(t('panelAcademy.attendedClass', { name: t(`degrees.${degree.id}.name`) }));
                     }}
                   />
                 )}
@@ -115,7 +117,7 @@ export function AcademyPanel({
               .slice(0, 3)
               .map(d => (
                 <div key={d.id} className="py-0.5">
-                  {d.name} - <span className="text-[#8b7355]">{d.prerequisites.map(p => DEGREES[p]?.name || p).join(', ')}</span>
+                  {t(`degrees.${d.id}.name`)} - <span className="text-[#8b7355]">{d.prerequisites.map(p => t(`degrees.${p}.name`)).join(', ')}</span>
                 </div>
               ))}
           </div>

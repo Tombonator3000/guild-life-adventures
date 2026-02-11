@@ -7,6 +7,7 @@ import {
 import { GENERAL_STORE_ITEMS, getItemPrice } from '@/data/items';
 import { NEWSPAPER_COST, NEWSPAPER_TIME } from '@/data/newspaper';
 import { toast } from 'sonner';
+import { useTranslation } from '@/i18n';
 
 interface GeneralStorePanelProps {
   player: Player;
@@ -31,6 +32,7 @@ export function GeneralStorePanel({
   buyFreshFood,
   buyLotteryTicket,
 }: GeneralStorePanelProps) {
+  const { t } = useTranslation();
   const newspaperPrice = Math.round(NEWSPAPER_COST * priceModifier);
   const lotteryPrice = Math.round(10 * priceModifier);
 
@@ -40,14 +42,14 @@ export function GeneralStorePanel({
 
   return (
     <div>
-      <JonesSectionHeader title="FOOD & PROVISIONS" />
+      <JonesSectionHeader title={t('panelStore.food')} />
       {GENERAL_STORE_ITEMS.filter(item => item.effect?.type === 'food' && !item.isFreshFood).map(item => {
         const price = getItemPrice(item, priceModifier);
         const canAfford = player.gold >= price;
         return (
           <JonesMenuItem
             key={item.id}
-            label={item.name}
+            label={t(`items.${item.id}.name`) || item.name}
             price={price}
             disabled={!canAfford}
             darkText
@@ -57,7 +59,7 @@ export function GeneralStorePanel({
               if (item.effect?.type === 'food') {
                 modifyFood(player.id, item.effect.value);
               }
-              toast.success(`Purchased ${item.name}`);
+              toast.success(t('panelStore.purchased', { name: t(`items.${item.id}.name`) || item.name }));
             }}
           />
         );
@@ -66,8 +68,8 @@ export function GeneralStorePanel({
       {/* Fresh Food Section - only show if player has Preservation Box */}
       {hasPreservationBox && (
         <>
-          <JonesSectionHeader title="FRESH FOOD (STORED)" />
-          <JonesInfoRow label="Stored:" value={`${player.freshFood}/${maxFreshFood} units`} darkText largeText />
+          <JonesSectionHeader title={t('panelStore.freshFood')} />
+          <JonesInfoRow label={t('panelStore.freshFoodStored')} value={`${player.freshFood}/${maxFreshFood}`} darkText largeText />
           {GENERAL_STORE_ITEMS.filter(item => item.isFreshFood).map(item => {
             const price = getItemPrice(item, priceModifier);
             const units = item.freshFoodUnits || 0;
@@ -76,46 +78,38 @@ export function GeneralStorePanel({
             return (
               <JonesMenuItem
                 key={item.id}
-                label={`${item.name} (+${units} units)`}
+                label={`${t(`items.${item.id}.name`) || item.name} (+${units})`}
                 price={price}
                 disabled={!canAfford}
                 darkText
                 largeText
                 onClick={() => {
                   buyFreshFood(player.id, units, price);
-                  toast.success(`Stored ${Math.min(units, spaceLeft)} fresh food units!`);
+                  toast.success(t('panelStore.storedFreshFood', { units: Math.min(units, spaceLeft) }));
                 }}
               />
             );
           })}
           <div className="text-xs text-[#6b5a42] px-2 mb-1">
-            Fresh food prevents starvation when regular food runs out. Spoils if Preservation Box breaks.
+            {t('panelStore.preservationRequired')}
           </div>
         </>
       )}
 
-      <JonesSectionHeader title="OTHER GOODS" />
+      <JonesSectionHeader title={t('panelStore.durables')} />
       <JonesMenuItem
-        label="Newspaper"
-        price={newspaperPrice}
-        disabled={player.gold < newspaperPrice}
-        darkText
-        largeText
-        onClick={onBuyNewspaper}
-      />
-      <JonesMenuItem
-        label="Fortune's Wheel Ticket"
+        label={t(`items.lottery-ticket.name`) || "Fortune's Wheel Ticket"}
         price={lotteryPrice}
         disabled={player.gold < lotteryPrice}
         darkText
         largeText
         onClick={() => {
           buyLotteryTicket(player.id, lotteryPrice);
-          toast.success(`Bought Fortune's Wheel ticket! (${player.lotteryTickets + 1} tickets this week)`);
+          toast.success(t('panelStore.purchased', { name: t(`items.lottery-ticket.name`) }));
         }}
       />
       {player.lotteryTickets > 0 && (
-        <JonesInfoRow label="Tickets this week:" value={`${player.lotteryTickets}`} darkText largeText />
+        <JonesInfoRow label={t('panelShadowMarket.lotteryTickets') + ':'} value={`${player.lotteryTickets}`} darkText largeText />
       )}
     </div>
   );

@@ -4,6 +4,7 @@
 
 import { useState, useMemo } from 'react';
 import { Briefcase, ChevronLeft, GraduationCap, Shirt, Clock, Star, X, Check } from 'lucide-react';
+import { useTranslation } from '@/i18n';
 import { playSFX } from '@/audio/sfxManager';
 import {
   getEmployers,
@@ -44,6 +45,7 @@ export function GuildHallPanel({
   onNegotiateRaise,
   onSpendTime,
 }: GuildHallPanelProps) {
+  const { t } = useTranslation();
   const [selectedEmployer, setSelectedEmployer] = useState<Employer | null>(null);
   const [applicationResult, setApplicationResult] = useState<{
     job: Job;
@@ -123,9 +125,9 @@ export function GuildHallPanel({
       <div>
         <div className="text-center mb-3">
           <div className="font-display text-sm font-bold text-[#3d2a14]">
-            {isRaise ? 'SALARY INCREASE!' : (applicationResult.result.success ? 'HIRED!' : 'APPLICATION DENIED')}
+            {isRaise ? t('panelGuild.salaryIncrease') : (applicationResult.result.success ? t('panelGuild.hiredTitle') : t('panelGuild.applicationDenied'))}
           </div>
-          <p className="font-mono text-[#3d2a14] font-bold">{applicationResult.job.name}</p>
+          <p className="font-mono text-[#3d2a14] font-bold">{t(`jobs.${applicationResult.job.id}.name`) || applicationResult.job.name}</p>
           <p className="text-xs text-[#6b5a42]">{applicationResult.job.location}</p>
         </div>
 
@@ -134,31 +136,31 @@ export function GuildHallPanel({
             <div className="text-center bg-[#e0d4b8] p-3 rounded border border-[#8b7355]">
               {isRaise && applicationResult.oldWage != null && (
                 <p className="text-xs text-[#6b5a42] mb-1">
-                  Current: <span className="line-through text-[#8b7355]">${applicationResult.oldWage}/hour</span>
+                  {t('panelGuild.currentWageLabel')} <span className="line-through text-[#8b7355]">${applicationResult.oldWage}/hour</span>
                 </p>
               )}
-              <p className="text-xs text-[#6b5a42]">{isRaise ? 'New Wage:' : 'Offered Wage:'}</p>
+              <p className="text-xs text-[#6b5a42]">{isRaise ? t('panelGuild.newWage') : t('panelGuild.offeredWage')}</p>
               <p className="text-2xl font-mono font-bold text-[#c9a227]">
                 ${applicationResult.offeredWage}/hour
               </p>
               <p className="text-xs text-[#8b7355]">
-                (Market rate at time of visit)
+                {t('panelGuild.marketRateNote')}
               </p>
               {isRaise && applicationResult.oldWage != null && applicationResult.offeredWage != null && (
                 <p className="text-xs text-green-600 mt-1">
-                  +${applicationResult.offeredWage - applicationResult.oldWage}/hour raise
+                  {t('panelGuild.raiseAmount', { amount: String(applicationResult.offeredWage - applicationResult.oldWage) })}
                 </p>
               )}
             </div>
             <div className="flex gap-2">
               <JonesButton
-                label={isRaise ? 'Accept Raise' : 'Accept Job'}
+                label={isRaise ? t('panelGuild.acceptRaise') : t('panelGuild.acceptJob')}
                 onClick={handleAcceptJob}
                 variant="primary"
                 className="flex-1"
               />
               <JonesButton
-                label="Decline"
+                label={t('panelGuild.decline')}
                 onClick={handleDismissResult}
                 variant="secondary"
                 className="flex-1"
@@ -173,7 +175,7 @@ export function GuildHallPanel({
 
             {applicationResult.result.missingDegrees && applicationResult.result.missingDegrees.length > 0 && (
               <div className="text-sm text-[#6b5a42]">
-                <p className="font-bold text-[#3d2a14]">Missing Education:</p>
+                <p className="font-bold text-[#3d2a14]">{t('panelGuild.missingEducation')}</p>
                 <ul className="list-disc list-inside">
                   {applicationResult.result.missingDegrees.map(deg => (
                     <li key={deg}>{DEGREES[deg]?.name || deg}</li>
@@ -184,24 +186,24 @@ export function GuildHallPanel({
 
             {applicationResult.result.missingExperience && (
               <p className="text-sm text-[#6b5a42]">
-                Need <span className="font-bold text-[#3d2a14]">{applicationResult.result.missingExperience}</span> more experience
+                {t('panelGuild.needMoreExperience', { n: applicationResult.result.missingExperience })}
               </p>
             )}
 
             {applicationResult.result.missingDependability && (
               <p className="text-sm text-[#6b5a42]">
-                Need <span className="font-bold text-[#3d2a14]">{applicationResult.result.missingDependability}%</span> more dependability
+                {t('panelGuild.needMoreDependability', { n: applicationResult.result.missingDependability })}
               </p>
             )}
 
             {applicationResult.result.missingClothing && (
               <p className="text-sm text-[#6b5a42]">
-                Your clothing is not suitable. Visit the Armory!
+                {t('panelGuild.clothingNotSuitable')}
               </p>
             )}
 
             <JonesButton
-              label="OK"
+              label={t('panelGuild.ok')}
               onClick={handleDismissResult}
               variant="secondary"
               className="w-full"
@@ -223,10 +225,10 @@ export function GuildHallPanel({
           onClick={() => setSelectedEmployer(null)}
           className="flex items-center gap-1 text-sm text-[#6b5a42] hover:text-[#3d2a14] transition-colors mb-2"
         >
-          <ChevronLeft className="w-4 h-4" /> Back to Employers
+          <ChevronLeft className="w-4 h-4" /> {t('panelGuild.backToEmployers')}
         </button>
 
-        <JonesSectionHeader title="AVAILABLE POSITIONS" />
+        <JonesSectionHeader title={t('panelGuild.availablePositions')} />
         <div className="space-y-1">
           {selectedEmployer.jobs.map(job => {
             const isCurrentJob = player.currentJob === job.id;
@@ -246,9 +248,9 @@ export function GuildHallPanel({
               >
                 <div className="flex justify-between items-baseline">
                   <span className="font-mono text-sm text-[#3d2a14]">
-                    {job.name}
-                    {isCurrentJob && <span className="text-[#c9a227] ml-1">(Current)</span>}
-                    {isTakenByOther && <span className="text-red-600 ml-1">(Taken)</span>}
+                    {t(`jobs.${job.id}.name`) || job.name}
+                    {isCurrentJob && <span className="text-[#c9a227] ml-1">{t('panelGuild.currentTag')}</span>}
+                    {isTakenByOther && <span className="text-red-600 ml-1">{t('panelGuild.takenTag')}</span>}
                   </span>
                   <span className="font-mono text-sm text-[#c9a227] font-bold">
                     ${marketWage}/h
@@ -256,32 +258,32 @@ export function GuildHallPanel({
                 </div>
                 {isCurrentJob && canGetRaise && (
                   <div className="text-xs text-green-600 mt-0.5">
-                    Your wage: ${player.currentWage}/h — Market rate is higher!
+                    {t('panelGuild.yourWageMarketHigher', { wage: String(player.currentWage) })}
                   </div>
                 )}
                 {isTakenByOther && (
                   <div className="text-xs text-red-600 mt-0.5">
-                    Position held by {jobHolder.name}
+                    {t('panelGuild.positionHeldBy', { name: jobHolder.name })}
                   </div>
                 )}
                 <div className="text-xs text-[#6b5a42] mt-1">
                   {job.requiredDegrees.length > 0 && (
                     <span>{job.requiredDegrees.map(d => DEGREES[d]?.name || d).join(', ')} | </span>
                   )}
-                  {job.requiredExperience > 0 && <span>Exp: {job.requiredExperience}+ | </span>}
-                  {job.requiredDependability > 0 && <span>Dep: {job.requiredDependability}%+</span>}
+                  {job.requiredExperience > 0 && <span>{t('panelGuild.expLabel')} {job.requiredExperience}+ | </span>}
+                  {job.requiredDependability > 0 && <span>{t('panelGuild.depLabel')} {job.requiredDependability}%+</span>}
                 </div>
                 <div className="flex justify-between items-center mt-1">
-                  <span className="text-xs text-[#8b7355]">{job.hoursPerShift}h shifts</span>
+                  <span className="text-xs text-[#8b7355]">{t('panelGuild.hourShifts', { n: job.hoursPerShift })}</span>
                   {canGetRaise ? (
                     <JonesButton
-                      label="Request Raise"
+                      label={t('panelGuild.requestRaise')}
                       onClick={() => handleRequestRaise(job)}
                       variant="primary"
                     />
                   ) : (
                     <JonesButton
-                      label={isCurrentJob ? 'Current' : isTakenByOther ? 'Taken' : 'Apply'}
+                      label={isCurrentJob ? t('panelGuild.currentButton') : isTakenByOther ? t('panelGuild.takenButton') : t('panelGuild.applyForJob')}
                       onClick={() => handleApply(job)}
                       disabled={isCurrentJob || isTakenByOther}
                       variant="secondary"
@@ -299,7 +301,7 @@ export function GuildHallPanel({
   // Employer list (main view)
   return (
     <div>
-      <JonesSectionHeader title="EMPLOYERS" />
+      <JonesSectionHeader title={t('panelGuild.employers')} />
       <div>
         {employers.map(employer => (
           <JonesListItem
@@ -314,11 +316,11 @@ export function GuildHallPanel({
       {/* Current job status */}
       {player.currentJob && (
         <>
-          <JonesSectionHeader title="CURRENT EMPLOYMENT" />
-          <JonesInfoRow label="Wage:" value={`${player.currentWage}g/h`} darkText largeText />
-          <JonesInfoRow label="Experience:" value={`${player.experience}/${player.maxExperience}`} darkText largeText />
+          <JonesSectionHeader title={t('panelGuild.currentEmployment')} />
+          <JonesInfoRow label={t('panelGuild.wageLabel')} value={`${player.currentWage}g/h`} darkText largeText />
+          <JonesInfoRow label={t('panelGuild.experienceLabel')} value={`${player.experience}/${player.maxExperience}`} darkText largeText />
           <JonesInfoRow
-            label="Dependability:"
+            label={t('panelGuild.dependabilityLabel')}
             value={`${player.dependability}%`}
             valueClass={player.dependability < 30 ? 'text-red-600' : ''}
             darkText

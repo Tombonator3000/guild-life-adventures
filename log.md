@@ -1,5 +1,94 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-11 (Session 2) - Complete Game Data & Panel i18n Translation
+
+### Overview
+
+Expanded internationalization coverage from UI-only (350 keys) to comprehensive game data + panel UI (839+ keys per language). All game data (items, jobs, degrees, quests, bounties, NPCs, stocks, housing, weather, festivals, achievements, appliances, weekend activities, tickets, reputation) and all panel components now use translated strings via `t()` calls.
+
+### Translation Coverage Expansion
+
+| Category | New Keys | Examples |
+|----------|----------|---------|
+| npcs | 13 | NPC titles, greetings, subtitles for all 13 locations |
+| degrees | 11 | All degree names and descriptions |
+| housing | 4 | Housing tier names and descriptions |
+| stocks | 4 | Stock company names and descriptions |
+| weather | 6 | Weather event names and descriptions |
+| festivals | 4 | Festival names, descriptions, and event messages |
+| achievements | 25 | All achievement names and descriptions |
+| appliances | 8 | All magical appliance names and descriptions |
+| items | ~50 | All items (food, clothing, weapons, armor, shields, scholar texts, tavern, rare) |
+| quests | 18 | All quest names and descriptions |
+| questChains | 2 (+6 steps) | Dragon Conspiracy and Scholar's Secret chains |
+| bounties | 9 | All weekly bounty names and descriptions |
+| jobs | 40 | All job titles and descriptions across all employers |
+| tickets | 3 | Weekend ticket names and activity descriptions |
+| weekendActivities | 32 | All random and durable weekend activity names |
+| reputation | 4 | Reputation milestone titles and descriptions |
+| panelBank | 20 | Banking, broker, loan office UI strings |
+| panelAcademy | 12 | Degree enrollment and graduation UI |
+| panelHome | 9 | Home actions and homeless messages |
+| panelStore | 8 | General store section headers and toasts |
+| panelGuild | 40+ | Quest board, employment, guild pass, job application UI |
+| panelArmory | 10+ | Equipment categories, equip/purchase actions |
+| panelEnchanter | 8 | Magic items, cure, repair UI |
+| panelShadowMarket | 4 | Black market section headers |
+| panelTavern | 2 | Food & drink, work sections |
+| panelCave | 7 | Dungeon floors, locked/cleared states |
+| panelForge | 10 | Tempering, repair, salvage UI |
+| panelLandlord | 10 | Housing office, rent, move-in UI |
+| panelFence | 10 | Pawn shop, sell/buy/gamble UI |
+| panelGraveyard | 2 | Cemetery services UI |
+| panelBounty | 8 | Bounty board, accept/complete UI |
+| panelWork | 8 | Work shift UI strings |
+
+### Panel Components Updated
+
+| File | Key Changes |
+|------|------------|
+| `BankPanel.tsx` | Broker view, banking view, and loan office view all translated |
+| `AcademyPanel.tsx` | Degree names, session tracking, graduation toasts translated |
+| `HomePanel.tsx` | Housing names, homeless messages, sleep/relax actions translated |
+| `GeneralStorePanel.tsx` | Item names, section headers, fresh food UI translated |
+| `TavernPanel.tsx` | Food/drink item names and purchase toasts translated |
+| `GuildHallPanel.tsx` | Quest names, job titles, guild pass UI, employment flow translated |
+| `ArmoryPanel.tsx` | Weapon/armor/shield names, equip actions translated |
+| `EnchanterPanel.tsx` | Appliance names, cure/repair actions translated |
+| `ShadowMarketPanel.tsx` | Black market items, lottery, tickets, scholar texts translated |
+| `CavePanel.tsx` | Dungeon floor headers, equipment display, education bonuses translated |
+| `ForgePanel.tsx` | Tempering, repair, salvage sections translated |
+| `LandlordPanel.tsx` | Housing names, rent payment, move-in actions translated |
+| `PawnShopPanel.tsx` | Pawn/sell items, appliance trading, gambling UI translated |
+| `GraveyardPanel.tsx` | Cemetery services, resurrection info translated |
+| `BountyBoardPanel.tsx` | Bounty names, accept/complete actions translated |
+
+### Translation Pattern
+
+Game data is translated at the display layer using `t(\`section.id.field\`)` with English fallback:
+```tsx
+// Item names: t(`items.${item.id}.name`) || item.name
+// Job titles: t(`jobs.${job.id}.name`) || job.title
+// Degree names: t(`degrees.${degree.id}.name`) || degree.name
+// Toast messages: t('panelStore.purchased', { name: translatedName })
+```
+
+### i18n Type System Extended
+
+- Added `NameDesc` helper type for `{ name: string; description: string }` pattern
+- Added 16 `Record<string, NameDesc>` sections for game data
+- Added 14 fully-typed panel UI sections
+- Extended `common` with 24 new keys (buy, sell, hours, gold, attack, defense, etc.)
+
+### Build & Test Results
+
+- **TypeScript**: 0 errors
+- **Vite build**: Passed (~10s)
+- **Tests**: 176/176 passed (9 test files)
+- **Total translation keys per language**: 839+ lines
+
+---
+
 ## 2026-02-11 - Internationalization: German & Spanish Language Support
 
 ### Overview

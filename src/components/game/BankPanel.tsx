@@ -8,6 +8,7 @@ import {
   JonesButton,
 } from './JonesStylePanel';
 import { toast } from 'sonner';
+import { useTranslation } from '@/i18n';
 
 interface BankPanelProps {
   player: Player;
@@ -33,6 +34,7 @@ export function BankPanel({
   repayLoan,
   stockPrices,
 }: BankPanelProps) {
+  const { t } = useTranslation();
   const [view, setView] = useState<BankView>('main');
 
   const stockValue = calculateStockValue(player.stocks, stockPrices);
@@ -42,13 +44,13 @@ export function BankPanel({
     return (
       <div>
         <div className="text-center mb-2">
-          <div className="font-display text-sm font-bold text-[#3d2a14]">The Broker</div>
-          <div className="text-xs text-[#6b5a42]">Realm Investments</div>
+          <div className="font-display text-sm font-bold text-[#3d2a14]">{t('panelBank.theBroker')}</div>
+          <div className="text-xs text-[#6b5a42]">{t('panelBank.realmInvestments')}</div>
         </div>
-        <JonesInfoRow label="Portfolio Value:" value={`${stockValue}g`} darkText largeText />
-        <JonesInfoRow label="Cash:" value={`${player.gold}g`} darkText largeText />
+        <JonesInfoRow label={t('panelBank.portfolioValue')} value={`${stockValue}g`} darkText largeText />
+        <JonesInfoRow label={t('panelBank.cash')} value={`${player.gold}g`} darkText largeText />
 
-        <JonesSectionHeader title="AVAILABLE STOCKS" />
+        <JonesSectionHeader title={t('panelBank.availableStocks')} />
         {STOCKS.map(stock => {
           const price = stockPrices[stock.id] || stock.basePrice;
           const owned = player.stocks[stock.id] || 0;
@@ -58,35 +60,35 @@ export function BankPanel({
           return (
             <div key={stock.id} className="px-2 py-1.5 border-b border-[#8b7355]">
               <div className="flex justify-between items-baseline font-mono text-sm">
-                <span className="text-[#3d2a14]">{stock.name}</span>
+                <span className="text-[#3d2a14]">{t(`stocks.${stock.id}.name`) || stock.name}</span>
                 <span className="text-[#c9a227] font-bold">{price}g</span>
               </div>
               <div className="flex justify-between items-center mt-0.5">
                 <span className="text-xs text-[#6b5a42]">
-                  {stock.isTBill ? 'Safe (3% sell fee)' : `Risk: ${stock.volatility > 0.25 ? 'High' : stock.volatility > 0.15 ? 'Med' : 'Low'}`}
-                  {owned > 0 && ` | Own: ${owned}`}
+                  {stock.isTBill ? t('panelBank.safe') : (stock.volatility > 0.25 ? t('panelBank.riskHigh') : stock.volatility > 0.15 ? t('panelBank.riskMed') : t('panelBank.riskLow'))}
+                  {owned > 0 && ` | ${t('panelBank.own')}: ${owned}`}
                 </span>
                 <div className="flex gap-1">
                   <button
                     onClick={() => {
                       buyStock(player.id, stock.id, 1);
-                      toast.success(`Bought 1 share of ${stock.name}!`);
+                      toast.success(t('panelBank.boughtShare', { name: t(`stocks.${stock.id}.name`) || stock.name }));
                     }}
                     disabled={!canBuy}
                     className="text-xs px-2 py-0.5 bg-[#2a5c3a] text-white rounded disabled:opacity-40"
                   >
-                    Buy
+                    {t('common.buy')}
                   </button>
                   <button
                     onClick={() => {
                       sellStock(player.id, stock.id, 1);
                       const sellPrice = stock.isTBill ? Math.floor(price * 0.97) : price;
-                      toast.success(`Sold 1 share for ${sellPrice}g!`);
+                      toast.success(t('panelBank.soldShare', { name: t(`stocks.${stock.id}.name`) || stock.name }));
                     }}
                     disabled={!canSell}
                     className="text-xs px-2 py-0.5 bg-[#8b4a4a] text-white rounded disabled:opacity-40"
                   >
-                    Sell
+                    {t('common.sell')}
                   </button>
                 </div>
               </div>
@@ -94,10 +96,10 @@ export function BankPanel({
           );
         })}
         <div className="mt-2 text-xs text-[#6b5a42] px-2">
-          No time cost. Crown Bonds never lose value.
+          {t('panelBank.sellFee')}
         </div>
         <div className="mt-2 px-2">
-          <JonesButton label="BACK" onClick={() => setView('main')} variant="secondary" />
+          <JonesButton label={t('common.back').toUpperCase()} onClick={() => setView('main')} variant="secondary" />
         </div>
       </div>
     );
@@ -110,69 +112,69 @@ export function BankPanel({
     return (
       <div>
         <div className="text-center mb-2">
-          <div className="font-display text-sm font-bold text-[#3d2a14]">Loan Office</div>
-          <div className="text-xs text-[#6b5a42]">Gold Lending Services</div>
+          <div className="font-display text-sm font-bold text-[#3d2a14]">{t('panelBank.loanSystem')}</div>
+          <div className="text-xs text-[#6b5a42]">{t('panelBank.weeklyInterest')}</div>
         </div>
         {hasLoan ? (
           <>
-            <JonesInfoRow label="Outstanding Loan:" value={`${player.loanAmount}g`} valueClass="text-red-600" darkText largeText />
-            <JonesInfoRow label="Weeks Remaining:" value={`${player.loanWeeksRemaining}`} darkText largeText />
-            <JonesInfoRow label="Weekly Interest:" value="10%" darkText largeText />
+            <JonesInfoRow label={t('panelBank.currentDebt')} value={`${player.loanAmount}g`} valueClass="text-red-600" darkText largeText />
+            <JonesInfoRow label={t('panelBank.weeksRemaining')} value={`${player.loanWeeksRemaining}`} darkText largeText />
+            <JonesInfoRow label={t('panelBank.weeklyInterest')} value="10%" darkText largeText />
 
-            <JonesSectionHeader title="REPAY LOAN" />
+            <JonesSectionHeader title={t('panelBank.repayLoan').toUpperCase()} />
             {[50, 100, 250].map(amount => {
               const actual = Math.min(amount, player.loanAmount);
               return (
                 <JonesMenuItem
                   key={amount}
-                  label={`Repay ${actual}g`}
+                  label={`${t('panelBank.repayLoan')} ${actual}g`}
                   disabled={player.gold < actual || player.loanAmount <= 0}
                   darkText
                   largeText
                   onClick={() => {
                     repayLoan(player.id, actual);
-                    toast.success(`Repaid ${actual}g on your loan!`);
+                    toast.success(t('panelBank.loanRepaid', { amount: actual }));
                   }}
                 />
               );
             })}
             <JonesMenuItem
-              label={`Repay All (${player.loanAmount}g)`}
+              label={`${t('panelBank.repayAll')} (${player.loanAmount}g)`}
               disabled={player.gold < player.loanAmount}
               darkText
               largeText
               onClick={() => {
                 repayLoan(player.id, player.loanAmount);
-                toast.success('Loan fully repaid!');
+                toast.success(t('panelBank.loanRepaid', { amount: player.loanAmount }));
               }}
             />
           </>
         ) : (
           <>
             <div className="text-sm text-[#6b5a42] px-2 mb-2">
-              Borrow gold at 10% weekly interest. Repay within 8 weeks or face forced collection.
+              {t('panelBank.maxLoan')}
             </div>
-            <JonesSectionHeader title="LOAN AMOUNTS" />
+            <JonesSectionHeader title={t('panelBank.takeLoan').toUpperCase()} />
             {loanAmounts.map(amount => (
               <JonesMenuItem
                 key={amount}
-                label={`Borrow ${amount}g`}
+                label={`${t('panelBank.takeLoan')} ${amount}g`}
                 price={amount}
                 darkText
                 largeText
                 onClick={() => {
                   takeLoan(player.id, amount);
-                  toast.success(`Loan of ${amount}g approved! Repay within 8 weeks.`);
+                  toast.success(t('panelBank.loanTaken', { amount }));
                 }}
               />
             ))}
           </>
         )}
         <div className="mt-2 text-xs text-[#6b5a42] px-2">
-          {hasLoan ? 'Unpaid loans accrue 10% interest weekly. No time cost.' : 'Only one loan at a time. 10% weekly interest. No time cost.'}
+          {t('panelBank.noLoan')}
         </div>
         <div className="mt-2 px-2">
-          <JonesButton label="BACK" onClick={() => setView('main')} variant="secondary" />
+          <JonesButton label={t('common.back').toUpperCase()} onClick={() => setView('main')} variant="secondary" />
         </div>
       </div>
     );
@@ -180,52 +182,48 @@ export function BankPanel({
 
   return (
     <div>
-      <JonesInfoRow label="Cash:" value={`${player.gold}g`} darkText largeText />
-      <JonesInfoRow label="Savings:" value={`${player.savings}g`} darkText largeText />
-      <JonesInfoRow label="Investments:" value={`${player.investments}g`} darkText largeText />
-      {stockValue > 0 && <JonesInfoRow label="Stocks:" value={`${stockValue}g`} darkText largeText />}
-      {player.loanAmount > 0 && <JonesInfoRow label="Loan Debt:" value={`-${player.loanAmount}g`} valueClass="text-red-600" darkText largeText />}
-      <JonesInfoRow label="Net Wealth:" value={`${totalWealth}g`} valueClass="text-[#c9a227] font-bold" darkText largeText />
+      <JonesInfoRow label={t('panelBank.cash')} value={`${player.gold}g`} darkText largeText />
+      <JonesInfoRow label={t('panelBank.savings')} value={`${player.savings}g`} darkText largeText />
+      <JonesInfoRow label={t('stats.investments')} value={`${player.investments}g`} darkText largeText />
+      {stockValue > 0 && <JonesInfoRow label={t('panelBank.availableStocks').charAt(0) + t('panelBank.availableStocks').slice(1).toLowerCase() + ':'} value={`${stockValue}g`} darkText largeText />}
+      {player.loanAmount > 0 && <JonesInfoRow label={t('stats.loanDebt')} value={`-${player.loanAmount}g`} valueClass="text-red-600" darkText largeText />}
+      <JonesInfoRow label={t('panelBank.totalWealth')} value={`${totalWealth}g`} valueClass="text-[#c9a227] font-bold" darkText largeText />
 
-      <JonesSectionHeader title="BANKING SERVICES" />
+      <JonesSectionHeader title={t('panelBank.banking')} />
       <JonesMenuItem
-        label="Deposit 50 Gold"
+        label={`${t('common.deposit')} 50 ${t('stats.gold')}`}
         price={50}
         disabled={player.gold < 50}
         darkText
         largeText
         onClick={() => {
           depositToBank(player.id, 50);
-          toast.success('Deposited 50 gold!');
+          toast.success(t('panelBank.deposited', { amount: 50 }));
         }}
       />
       <JonesMenuItem
-        label="Withdraw 50 Gold"
+        label={`${t('common.withdraw')} 50 ${t('stats.gold')}`}
         disabled={player.savings < 50}
         darkText
         largeText
         onClick={() => {
           withdrawFromBank(player.id, 50);
-          toast.success('Withdrew 50 gold!');
+          toast.success(t('panelBank.withdrawn', { amount: 50 }));
         }}
       />
-      <JonesSectionHeader title="SERVICES" />
+      <JonesSectionHeader title={t('panelBank.loans')} />
       <JonesMenuItem
-        label="See the Broker (Stocks)"
+        label={t('panelBank.theBroker')}
         darkText
         largeText
         onClick={() => setView('broker')}
       />
       <JonesMenuItem
-        label={player.loanAmount > 0 ? `Loan Office (Owe: ${player.loanAmount}g)` : 'Loan Office'}
+        label={player.loanAmount > 0 ? `${t('panelBank.loanSystem')} (${player.loanAmount}g)` : t('panelBank.loanSystem')}
         darkText
         largeText
         onClick={() => setView('loans')}
       />
-
-      <div className="mt-2 text-xs text-[#6b5a42] px-2">
-        Banking services are free — no time cost.
-      </div>
     </div>
   );
 }

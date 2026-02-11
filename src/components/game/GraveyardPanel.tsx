@@ -4,6 +4,7 @@
 
 import { Heart, Sparkles, Cross, Skull } from 'lucide-react';
 import type { Player } from '@/types/game.types';
+import { useTranslation } from '@/i18n';
 
 interface GraveyardPanelProps {
   player: Player;
@@ -14,6 +15,7 @@ interface GraveyardPanelProps {
 }
 
 export function GraveyardPanel({ player, priceModifier, onPray, onMourn, onBlessMaxHealth }: GraveyardPanelProps) {
+  const { t } = useTranslation();
   const prayerCost = Math.round(10 * priceModifier);
   const meditationCost = Math.round(15 * priceModifier);
   const blessingCost = Math.round(200 * priceModifier);
@@ -24,17 +26,15 @@ export function GraveyardPanel({ player, priceModifier, onPray, onMourn, onBless
       <div className="bg-[#e0d4b8] border border-[#8b7355] rounded p-3">
         <div className="flex items-center gap-2 text-[#3d2a14] mb-2">
           <Skull className="w-4 h-4 text-[#6b5a42]" />
-          <span className="font-display font-semibold">Resurrection Grounds</span>
+          <span className="font-display font-semibold">{t('panelGraveyard.restingPlace')}</span>
         </div>
         <p className="text-xs text-[#6b5a42]">
-          Those who fall in battle are brought here by the spirits. If you carry at least
-          <span className="font-bold text-[#c9a227]"> 100g </span>
-          in savings, the graveyard guardians will restore you to life with 50 HP.
+          {t('panelGraveyard.noBusinessHere')}
         </p>
         {player.wasResurrectedThisWeek && (
           <div className="mt-2 p-2 bg-[#d4c4a8] rounded border border-[#a89070] text-xs text-[#6b5a42]">
             <Sparkles className="w-3 h-3 inline mr-1" />
-            You were resurrected this week. The spirits need time to recover.
+            {t('death.spiritsRestored')}
           </div>
         )}
       </div>
@@ -42,7 +42,7 @@ export function GraveyardPanel({ player, priceModifier, onPray, onMourn, onBless
       {/* Health display */}
       <div className="bg-[#e0d4b8] border border-[#8b7355] rounded p-3">
         <div className="flex items-center justify-between text-[#3d2a14]">
-          <span>Current Health:</span>
+          <span>{t('stats.health')}:</span>
           <span className="font-bold">{player.health}/{player.maxHealth}</span>
         </div>
         <div className="w-full bg-[#c8b898] rounded-full h-2 mt-2">
@@ -55,7 +55,7 @@ export function GraveyardPanel({ player, priceModifier, onPray, onMourn, onBless
 
       {/* Prayer - happiness boost */}
       <h4 className="font-display text-sm text-[#6b5a42] flex items-center gap-2">
-        <Cross className="w-4 h-4" /> Cemetery Services
+        <Cross className="w-4 h-4" /> {t('locations.graveyard')}
       </h4>
 
       <div className="space-y-2">
@@ -66,10 +66,10 @@ export function GraveyardPanel({ player, priceModifier, onPray, onMourn, onBless
         >
           <div className="flex items-center gap-2">
             <Cross className="w-4 h-4 text-[#6b5a42]" />
-            <span className="font-display font-semibold text-[#3d2a14]">Pray at the Graves</span>
+            <span className="font-display font-semibold text-[#3d2a14]">{t('common.rest')}</span>
           </div>
           <div className="flex items-center gap-3 text-xs">
-            <span className="text-[#2a7a2a]">+5 Happiness</span>
+            <span className="text-[#2a7a2a]">+5 {t('stats.happiness')}</span>
             <span className="text-[#8b6914]">-{prayerCost}g</span>
             <span className="text-[#6b5a42]">2h</span>
           </div>
@@ -82,10 +82,10 @@ export function GraveyardPanel({ player, priceModifier, onPray, onMourn, onBless
         >
           <div className="flex items-center gap-2">
             <Heart className="w-4 h-4 text-[#6b5a42]" />
-            <span className="font-display font-semibold text-[#3d2a14]">Meditate Among the Dead</span>
+            <span className="font-display font-semibold text-[#3d2a14]">{t('stats.relaxation')}</span>
           </div>
           <div className="flex items-center gap-3 text-xs">
-            <span className="text-[#2a7a2a]">+5 Relaxation</span>
+            <span className="text-[#2a7a2a]">+5 {t('stats.relaxation')}</span>
             <span className="text-[#8b6914]">-{meditationCost}g</span>
             <span className="text-[#6b5a42]">3h</span>
           </div>
@@ -98,10 +98,10 @@ export function GraveyardPanel({ player, priceModifier, onPray, onMourn, onBless
         >
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-[#9575cd]" />
-            <span className="font-display font-semibold text-[#3d2a14]">Spirit Blessing (+5 Max HP)</span>
+            <span className="font-display font-semibold text-[#3d2a14]">+5 {t('stats.maxHealth')}</span>
           </div>
           <div className="flex items-center gap-3 text-xs">
-            <span className="text-[#2a7a2a]">+5 Max HP</span>
+            <span className="text-[#2a7a2a]">+5 {t('stats.maxHealth')}</span>
             <span className="text-[#8b6914]">-{blessingCost}g</span>
             <span className="text-[#6b5a42]">4h</span>
           </div>

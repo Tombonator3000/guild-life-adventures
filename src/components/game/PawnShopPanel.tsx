@@ -5,6 +5,7 @@ import type { Player } from '@/types/game.types';
 import { getItem, getAppliance, getPawnValue, getPawnSalePrice, APPLIANCES } from '@/data/items';
 import { useGameStore } from '@/store/gameStore';
 import { toast } from 'sonner';
+import { useTranslation } from '@/i18n';
 
 export type FenceSection = 'trade' | 'magical' | 'gambling';
 
@@ -27,6 +28,7 @@ const USED_ITEMS = [
 ];
 
 export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem, onGamble, onSpendTime, section }: PawnShopPanelProps) {
+  const { t } = useTranslation();
   const { pawnAppliance, buyAppliance } = useGameStore();
   // Calculate sell prices (50% of original value)
   const getSellPrice = (itemId: string): number => {
@@ -39,7 +41,7 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
     player.inventory.length > 0 ? (
       <div>
         <h4 className="font-display text-sm text-[#6b5a42] flex items-center gap-2 mb-2">
-          <Package className="w-4 h-4" /> Sell Your Items
+          <Package className="w-4 h-4" /> {t('panelFence.pawnItems')}
         </h4>
         <div className="space-y-2">
           {player.inventory.map((itemId, index) => {
@@ -51,7 +53,7 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
                 onClick={() => onSellItem(itemId, sellPrice)}
                 className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
-                <span className="font-display font-semibold text-[#3d2a14]">{item?.name || itemId}</span>
+                <span className="font-display font-semibold text-[#3d2a14]">{t(`items.${itemId}.name`) || item?.name || itemId}</span>
                 <div className="flex items-center gap-3 text-xs">
                   <span className="text-[#2a7a2a]">+{sellPrice}g</span>
                 </div>
@@ -66,7 +68,7 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
   const renderUsedGoods = () => (
     <div>
       <h4 className="font-display text-sm text-[#6b5a42] flex items-center gap-2 mb-2">
-        <ShoppingBag className="w-4 h-4" /> Used Goods
+        <ShoppingBag className="w-4 h-4" /> {t('panelFence.itemsForSale')}
       </h4>
       <div className="space-y-2">
         {USED_ITEMS.map(item => {
@@ -94,10 +96,10 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
     Object.keys(player.appliances).length > 0 ? (
       <div>
         <h4 className="font-display text-sm text-[#6b5a42] flex items-center gap-2 mb-2">
-          <Sparkles className="w-4 h-4" /> Pawn Your Appliances
+          <Sparkles className="w-4 h-4" /> {t('panelFence.pawnItems')}
         </h4>
         <p className="text-xs text-[#6b5a42] mb-2">
-          Get 40% of original price. -1 Happiness.
+          {t('panelFence.pawnValue')} 40%
         </p>
         <div className="space-y-2">
           {Object.entries(player.appliances).map(([applianceId, owned]) => {
@@ -108,13 +110,13 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
                 key={applianceId}
                 onClick={() => {
                   pawnAppliance(player.id, applianceId, pawnValue);
-                  toast.success(`Pawned ${appliance?.name} for ${pawnValue} gold`);
+                  toast.success(t('panelFence.pawned', { name: t(`appliances.${applianceId}.name`) || appliance?.name, gold: pawnValue }));
                 }}
                 className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 <span className="font-display font-semibold text-[#3d2a14]">
-                  {appliance?.name || applianceId}
-                  {owned.isBroken && <span className="text-destructive ml-1">(Broken)</span>}
+                  {t(`appliances.${applianceId}.name`) || appliance?.name || applianceId}
+                  {owned.isBroken && <span className="text-destructive ml-1">({t('common.repair')})</span>}
                 </span>
                 <div className="flex items-center gap-3 text-xs">
                   <span className="text-[#2a7a2a]">+{pawnValue}g</span>
@@ -130,11 +132,11 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
   const renderBuyPawnedItems = () => (
     <div>
       <h4 className="font-display text-sm text-[#6b5a42] flex items-center gap-2 mb-2">
-        <Sparkles className="w-4 h-4" /> Pawned Magical Items
+        <Sparkles className="w-4 h-4" /> {t('panelEnchanter.appliances')}
       </h4>
       <p className="text-xs text-[#6b5a42] flex items-center gap-1 mb-2">
         <AlertTriangle className="w-3 h-3 text-warning" />
-        50% off, but 1/36 break chance. No happiness bonus.
+        50% off, 1/36 break chance
       </p>
       <div className="space-y-2">
         {APPLIANCES.filter(a => a.enchanterPrice > 0).slice(0, 4).map(appliance => {
@@ -146,14 +148,14 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
               key={appliance.id}
               onClick={() => {
                 buyAppliance(player.id, appliance.id, salePrice, 'pawn');
-                toast.success(`Bought ${appliance.name} from pawn shop!`);
+                toast.success(t('panelStore.purchased', { name: t(`appliances.${appliance.id}.name`) || appliance.name }));
               }}
               disabled={player.gold < salePrice || alreadyOwns}
               className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
               <span className="font-display font-semibold text-[#3d2a14]">
-                {appliance.name}
-                {alreadyOwns && <span className="text-secondary ml-1">(Owned)</span>}
+                {t(`appliances.${appliance.id}.name`) || appliance.name}
+                {alreadyOwns && <span className="text-secondary ml-1">({t('common.owned')})</span>}
               </span>
               <div className="flex items-center gap-3 text-xs">
                 <span className="text-[#8b6914]">-{salePrice}g</span>
@@ -169,7 +171,7 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
   const renderGambling = () => (
     <div>
       <h4 className="font-display text-sm text-[#6b5a42] flex items-center gap-2 mb-2">
-        <Dices className="w-4 h-4" /> Games of Chance
+        <Dices className="w-4 h-4" /> {t('panelFence.pawnShop')}
       </h4>
       <div className="space-y-2">
         <button
@@ -179,10 +181,10 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
         >
           <div className="flex items-center gap-2">
             <Dices className="w-4 h-4 text-[#6b5a42]" />
-            <span className="font-display font-semibold text-[#3d2a14]">Low Stakes (10g)</span>
+            <span className="font-display font-semibold text-[#3d2a14]">10g</span>
           </div>
           <div className="flex items-center gap-3 text-xs">
-            <span className="text-[#6b5a42]">40% win: +25g</span>
+            <span className="text-[#6b5a42]">40%: +25g</span>
             <span className="text-[#6b5a42]">2h</span>
           </div>
         </button>
@@ -194,10 +196,10 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
         >
           <div className="flex items-center gap-2">
             <Dices className="w-4 h-4 text-[#6b5a42]" />
-            <span className="font-display font-semibold text-[#3d2a14]">High Stakes (50g)</span>
+            <span className="font-display font-semibold text-[#3d2a14]">50g</span>
           </div>
           <div className="flex items-center gap-3 text-xs">
-            <span className="text-[#6b5a42]">30% win: +150g</span>
+            <span className="text-[#6b5a42]">30%: +150g</span>
             <span className="text-[#6b5a42]">2h</span>
           </div>
         </button>
@@ -209,10 +211,10 @@ export function PawnShopPanel({ player, priceModifier, onSellItem, onBuyUsedItem
         >
           <div className="flex items-center gap-2">
             <Dices className="w-4 h-4 text-[#6b5a42]" />
-            <span className="font-display font-semibold text-[#3d2a14]">All or Nothing (100g)</span>
+            <span className="font-display font-semibold text-[#3d2a14]">100g</span>
           </div>
           <div className="flex items-center gap-3 text-xs">
-            <span className="text-[#6b5a42]">20% win: +400g</span>
+            <span className="text-[#6b5a42]">20%: +400g</span>
             <span className="text-[#6b5a42]">3h</span>
           </div>
         </button>

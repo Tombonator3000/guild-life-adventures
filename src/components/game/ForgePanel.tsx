@@ -1,5 +1,6 @@
 import type { Player, EquipmentSlot } from '@/types/game.types';
 import { Hammer, Wrench, Recycle } from 'lucide-react';
+import { useTranslation } from '@/i18n';
 import {
   ARMORY_ITEMS,
   getItem,
@@ -63,6 +64,7 @@ function SmithingSection({
   modifyHappiness: (playerId: string, amount: number) => void;
   temperEquipment: (playerId: string, itemId: string, slot: EquipmentSlot, cost: number) => void;
 }) {
+  const { t } = useTranslation();
   // Get combat stats including temper bonuses
   const getEffectiveStats = () => {
     const base = calculateCombatStats(player.equippedWeapon, player.equippedArmor, player.equippedShield);
@@ -96,7 +98,7 @@ function SmithingSection({
     <div className="space-y-2">
       {/* Combat stats display */}
       <div className="bg-[#e8dcc8] border-[#8b7355] border rounded p-2">
-        <div className="text-xs text-[#6b5a42] uppercase tracking-wide mb-1">Current Combat Stats</div>
+        <div className="text-xs text-[#6b5a42] uppercase tracking-wide mb-1">{t('common.attack')} / {t('common.defense')}</div>
         <div className="flex gap-4 font-mono text-sm">
           <span className="text-red-700">ATK: {stats.attack}</span>
           <span className="text-blue-700">DEF: {stats.defense}</span>
@@ -108,9 +110,9 @@ function SmithingSection({
 
       {!hasEquipment ? (
         <div className="bg-[#e8dcc8] border border-[#8b7355] rounded p-3 text-center">
-          <p className="text-sm text-[#3d2a14] font-display mb-1">No Equipment to Temper</p>
+          <p className="text-sm text-[#3d2a14] font-display mb-1">{t('panelForge.temperEquipment')}</p>
           <p className="text-xs text-[#6b5a42]">
-            Buy weapons or armor at the <span className="text-[#c9a227] font-bold">Armory</span> first.
+            {t('locations.armory')}
           </p>
         </div>
       ) : (
@@ -135,7 +137,7 @@ function SmithingSection({
                 <div className="bg-[#b8d4b8] border border-[#4a9c5a] rounded py-1.5 px-2">
                   <div className="flex items-baseline w-full font-mono text-base">
                     <span className="text-[#2a5c3a] font-bold">
-                      Tempered {item.name}
+                      {t('panelForge.alreadyTempered')} {t(`items.${item.id}.name`) || item.name}
                     </span>
                     <span className="flex-1" />
                     <span className="text-xs text-[#2a5c3a] ml-2">{bonusLabel}</span>
@@ -148,20 +150,20 @@ function SmithingSection({
                     temperEquipment(player.id, item.id, slot, cost);
                     spendTime(player.id, time);
                     modifyHappiness(player.id, 2);
-                    toast.success(`Tempered ${item.name}! ${bonusLabel}`);
+                    toast.success(t('panelForge.tempered', { name: t(`items.${item.id}.name`) || item.name, bonus: bonusLabel }));
                   }}
                   disabled={!canAfford}
                   className="w-full text-left py-1.5 px-2 rounded transition-colors hover:bg-[#d4c4a8] disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <div className="flex items-baseline w-full font-mono text-base">
                     <span className="text-[#3d2a14]">
-                      {item.name}
+                      {t(`items.${item.id}.name`) || item.name}
                     </span>
                     <span className="flex-1" />
                     <span className="text-xs text-[#6b5a42] ml-2">{bonusLabel}</span>
                   </div>
                   <div className="flex items-center justify-between mt-0.5">
-                    <span className="text-xs text-[#6b5a42]">{time}h work</span>
+                    <span className="text-xs text-[#6b5a42]">{time}h {t('common.work').toLowerCase()}</span>
                     <span className="text-sm font-bold text-[#c9a227]">{cost}g</span>
                   </div>
                 </button>
@@ -172,7 +174,7 @@ function SmithingSection({
       )}
 
       <div className="mt-1 text-xs text-[#6b5a42] px-2">
-        Each piece can be tempered once for a permanent stat boost.
+        {t('panelForge.temperBonus')}
       </div>
     </div>
   );
@@ -189,6 +191,7 @@ function RepairsSection({
   spendTime: (playerId: string, hours: number) => void;
   forgeRepairAppliance: (playerId: string, applianceId: string) => number;
 }) {
+  const { t } = useTranslation();
   const FORGE_REPAIR_TIME = 3;
 
   // Get all owned appliances (broken and working)
@@ -200,17 +203,17 @@ function RepairsSection({
   return (
     <div className="space-y-2">
       <div className="bg-[#e8dcc8] border-[#8b7355] border rounded p-2">
-        <div className="text-xs text-[#6b5a42] uppercase tracking-wide mb-1">Forge Repairs</div>
+        <div className="text-xs text-[#6b5a42] uppercase tracking-wide mb-1">{t('panelForge.repairAppliances')}</div>
         <p className="text-xs text-[#6b5a42]">
-          Repair broken appliances for <span className="font-bold text-[#2a5c3a]">half the cost</span> of the Enchanter, but it takes {FORGE_REPAIR_TIME} hours.
+          {t('panelForge.repairAppliances')} — {FORGE_REPAIR_TIME}h
         </p>
       </div>
 
       {brokenAppliances.length === 0 ? (
         <div className="bg-[#e8dcc8] border border-[#8b7355] rounded p-3 text-center">
-          <p className="text-sm text-[#3d2a14] font-display mb-1">Nothing Broken</p>
+          <p className="text-sm text-[#3d2a14] font-display mb-1">{t('panelForge.repairAppliances')}</p>
           <p className="text-xs text-[#6b5a42]">
-            All your appliances are working fine.
+            OK
           </p>
         </div>
       ) : (
@@ -230,7 +233,7 @@ function RepairsSection({
                   const cost = forgeRepairAppliance(player.id, applianceId);
                   if (cost > 0) {
                     spendTime(player.id, FORGE_REPAIR_TIME);
-                    toast.success(`Repaired ${appliance.name} for ${cost}g at the Forge!`);
+                    toast.success(t('panelEnchanter.repaired', { name: t(`appliances.${applianceId}.name`) || appliance.name }));
                   }
                 }}
                 disabled={!canAfford}
@@ -238,7 +241,7 @@ function RepairsSection({
               >
                 <div className="flex items-baseline w-full font-mono text-base">
                   <span className="text-red-700 font-bold">
-                    {appliance.name}
+                    {t(`appliances.${applianceId}.name`) || appliance.name}
                   </span>
                   <span className="flex-1" />
                   <span className="text-xs text-red-600 ml-2">[BROKEN]</span>
@@ -290,6 +293,7 @@ function SalvageSection({
   spendTime: (playerId: string, hours: number) => void;
   salvageEquipment: (playerId: string, itemId: string, slot: EquipmentSlot, value: number) => void;
 }) {
+  const { t } = useTranslation();
   const SALVAGE_TIME = 1;
 
   // Get all equipment the player owns
@@ -302,17 +306,17 @@ function SalvageSection({
   return (
     <div className="space-y-2">
       <div className="bg-[#e8dcc8] border-[#8b7355] border rounded p-2">
-        <div className="text-xs text-[#6b5a42] uppercase tracking-wide mb-1">Forge Salvage</div>
+        <div className="text-xs text-[#6b5a42] uppercase tracking-wide mb-1">{t('panelForge.salvageEquipment')}</div>
         <p className="text-xs text-[#6b5a42]">
-          Melt down equipment for <span className="font-bold text-[#c9a227]">60% value</span> (vs 40% at The Fence). Takes {SALVAGE_TIME}h per item.
+          {t('panelForge.salvageValue')} 60% — {SALVAGE_TIME}h
         </p>
       </div>
 
       {!hasEquipment ? (
         <div className="bg-[#e8dcc8] border border-[#8b7355] rounded p-3 text-center">
-          <p className="text-sm text-[#3d2a14] font-display mb-1">No Equipment to Salvage</p>
+          <p className="text-sm text-[#3d2a14] font-display mb-1">{t('panelForge.salvageEquipment')}</p>
           <p className="text-xs text-[#6b5a42]">
-            You don't own any weapons, armor, or shields.
+            {t('panelArmory.weapons')} / {t('panelArmory.armor')} / {t('panelArmory.shields')}
           </p>
         </div>
       ) : (
@@ -329,14 +333,14 @@ function SalvageSection({
                 onClick={() => {
                   salvageEquipment(player.id, item.id, slot, salvageValue);
                   spendTime(player.id, SALVAGE_TIME);
-                  toast.success(`Salvaged ${item.name} for ${salvageValue}g!`);
+                  toast.success(t('panelForge.salvaged', { name: t(`items.${item.id}.name`) || item.name, gold: salvageValue }));
                 }}
                 disabled={!canAfford}
                 className="w-full text-left py-1.5 px-2 rounded transition-colors hover:bg-[#d4c4a8] disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <div className="flex items-baseline w-full font-mono text-base">
                   <span className="text-[#3d2a14]">
-                    {isEquipped ? '* ' : ''}{item.name}
+                    {isEquipped ? '* ' : ''}{t(`items.${item.id}.name`) || item.name}
                   </span>
                   <span className="flex-1" />
                   {item.equipStats && (

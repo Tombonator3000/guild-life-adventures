@@ -5,6 +5,7 @@ import {
 } from './JonesStylePanel';
 import { TAVERN_ITEMS, getItemPrice } from '@/data/items';
 import { toast } from 'sonner';
+import { useTranslation } from '@/i18n';
 
 interface TavernPanelProps {
   player: Player;
@@ -23,6 +24,7 @@ export function TavernPanel({
   modifyFood,
   modifyHappiness,
 }: TavernPanelProps) {
+  const { t } = useTranslation();
   return (
     <div>
       <div className="space-y-1">
@@ -32,7 +34,7 @@ export function TavernPanel({
           return (
             <JonesMenuItem
               key={item.id}
-              label={item.name}
+              label={t(`items.${item.id}.name`) || item.name}
               price={price}
               disabled={!canAfford}
               darkText
@@ -45,7 +47,7 @@ export function TavernPanel({
                 if (item.effect?.type === 'happiness') {
                   modifyHappiness(player.id, item.effect.value);
                 }
-                toast.success(`Purchased ${item.name}`);
+                toast.success(t('panelStore.purchased', { name: t(`items.${item.id}.name`) || item.name }));
               }}
             />
           );

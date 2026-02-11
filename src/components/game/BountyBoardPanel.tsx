@@ -16,6 +16,7 @@ import {
   JonesButton,
 } from './JonesStylePanel';
 import { ReputationBar, ScaledRewardDisplay } from './QuestPanel';
+import { useTranslation } from '@/i18n';
 
 interface BountyBoardPanelProps {
   player: Player;
@@ -36,6 +37,7 @@ function resolveActiveBounty(player: Player, week: number) {
   if (!bounty) return null;
 
   return {
+    id: bountyId,
     name: bounty.name,
     description: bounty.description,
     goldReward: bounty.goldReward,
@@ -46,6 +48,7 @@ function resolveActiveBounty(player: Player, week: number) {
 }
 
 export function BountyBoardPanel({ player, week, onTakeBounty, onCompleteQuest, onAbandonQuest, onBuyGuildPass }: BountyBoardPanelProps) {
+  const { t } = useTranslation();
   const activeBounty = resolveActiveBounty(player, week);
   const bounties = getWeeklyBounties(week);
 
@@ -55,10 +58,10 @@ export function BountyBoardPanel({ player, week, onTakeBounty, onCompleteQuest, 
       {!player.hasGuildPass && (
         <div className="space-y-2 mb-3">
           <div className="text-center text-xs text-[#6b5a42]">
-            <span className="text-[#c9a227] font-bold">Guild Pass</span> required for quests and chains. Bounties are free!
+            <span className="text-[#c9a227] font-bold">{t('panelGuild.requiresGuildPass')}</span>
           </div>
           <div className="text-center bg-[#e0d4b8] p-2 rounded border border-[#8b7355]">
-            <span className="text-xs text-[#6b5a42]">Guild Pass Cost:</span>
+            <span className="text-xs text-[#6b5a42]">{t('common.cost')}:</span>
             <span className="font-bold text-[#c9a227] ml-2">{GUILD_PASS_COST}g</span>
           </div>
           <button
@@ -67,8 +70,8 @@ export function BountyBoardPanel({ player, week, onTakeBounty, onCompleteQuest, 
             className="w-full gold-button py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {player.gold < GUILD_PASS_COST
-              ? `Need ${GUILD_PASS_COST - player.gold}g more`
-              : `Buy Guild Pass (${GUILD_PASS_COST}g)`}
+              ? `${GUILD_PASS_COST - player.gold}g`
+              : `${t('panelGuild.buyGuildPass')} (${GUILD_PASS_COST}g)`}
           </button>
         </div>
       )}
@@ -78,13 +81,13 @@ export function BountyBoardPanel({ player, week, onTakeBounty, onCompleteQuest, 
       {/* Active bounty completion UI */}
       {activeBounty && (
         <>
-          <JonesSectionHeader title="ACTIVE BOUNTY" />
+          <JonesSectionHeader title={t('panelBounty.weeklyBounties')} />
           <div className="bg-[#e0d4b8] border border-[#c9a227] ring-1 ring-[#c9a227] p-2 rounded">
             <div className="flex justify-between items-baseline">
-              <span className="font-mono text-sm text-[#3d2a14] font-bold">{activeBounty.name}</span>
-              <span className="font-mono text-xs font-bold text-[#8b6914]">Bounty</span>
+              <span className="font-mono text-sm text-[#3d2a14] font-bold">{t(`bounties.${activeBounty.id}.name`) || activeBounty.name}</span>
+              <span className="font-mono text-xs font-bold text-[#8b6914]">{t('panelBounty.bountyBoard')}</span>
             </div>
-            <p className="text-xs text-[#6b5a42] mt-1">{activeBounty.description}</p>
+            <p className="text-xs text-[#6b5a42] mt-1">{t(`bounties.${activeBounty.id}.description`) || activeBounty.description}</p>
             <div className="flex items-center gap-3 text-xs mt-2">
               <ScaledRewardDisplay baseGold={activeBounty.goldReward} baseHappiness={activeBounty.happinessReward} player={player} />
               <span className="text-[#6b5a42]">{activeBounty.timeRequired}h</span>
@@ -92,11 +95,11 @@ export function BountyBoardPanel({ player, week, onTakeBounty, onCompleteQuest, 
             </div>
             <div className="flex justify-between items-center mt-2">
               {player.timeRemaining < activeBounty.timeRequired && (
-                <span className="text-red-600 text-xs">Not enough time!</span>
+                <span className="text-red-600 text-xs">{t('board.notEnoughTime')}</span>
               )}
               <div className="flex gap-2 ml-auto">
                 <JonesButton
-                  label="Complete Bounty"
+                  label={t('panelBounty.completeBounty')}
                   onClick={() => { playSFX('quest-complete'); onCompleteQuest(); }}
                   disabled={player.timeRemaining < activeBounty.timeRequired}
                   variant="primary"
@@ -104,7 +107,7 @@ export function BountyBoardPanel({ player, week, onTakeBounty, onCompleteQuest, 
                 <button
                   onClick={onAbandonQuest}
                   className="px-2 py-1.5 bg-red-100 hover:bg-red-200 text-red-600 rounded transition-colors font-mono text-sm"
-                  title="Abandon bounty"
+                  title={t('common.cancel')}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -115,7 +118,7 @@ export function BountyBoardPanel({ player, week, onTakeBounty, onCompleteQuest, 
       )}
 
       {/* Bounty Board */}
-      <JonesSectionHeader title="BOUNTY BOARD (WEEKLY)" />
+      <JonesSectionHeader title={t('panelBounty.weeklyBounties')} />
       <div className="space-y-1">
         {bounties.map(bounty => {
           const alreadyDone = player.completedBountiesThisWeek.includes(bounty.id);
@@ -127,24 +130,24 @@ export function BountyBoardPanel({ player, week, onTakeBounty, onCompleteQuest, 
           return (
             <div key={bounty.id} className={`bg-[#e0d4b8] border p-2 rounded ${alreadyDone ? 'border-green-500' : 'border-[#8b7355]'}`}>
               <div className="flex justify-between items-baseline">
-                <span className="font-mono text-sm text-[#3d2a14]">{bounty.name}</span>
+                <span className="font-mono text-sm text-[#3d2a14]">{t(`bounties.${bounty.id}.name`) || bounty.name}</span>
                 <span className="font-mono text-sm text-[#8b6914] font-bold">+{getScaledQuestGold(bounty.goldReward, player.dungeonFloorsCleared)}g</span>
               </div>
-              <p className="text-xs text-[#6b5a42] mt-0.5 line-clamp-1">{bounty.description}</p>
+              <p className="text-xs text-[#6b5a42] mt-0.5 line-clamp-1">{t(`bounties.${bounty.id}.description`) || bounty.description}</p>
               <div className="flex items-center gap-2 text-xs text-[#6b5a42] mt-1">
                 <span>{bounty.timeRequired}h</span>
                 {bounty.healthRisk > 0 && <span className="text-red-600">-{bounty.healthRisk}HP</span>}
-                <span>+{bounty.happinessReward}hap</span>
+                <span>+{bounty.happinessReward} {t('stats.happiness').toLowerCase().slice(0, 3)}</span>
               </div>
               <div className="flex justify-between items-center mt-1">
-                <span className="text-xs text-[#8b7355]">Bounty</span>
+                <span className="text-xs text-[#8b7355]">{t('panelBounty.bountyBoard')}</span>
                 {alreadyDone ? (
                   <span className="flex items-center gap-1 text-xs text-green-600 font-mono font-bold">
-                    <Check className="w-3 h-3" /> Done
+                    <Check className="w-3 h-3" /> {t('common.done')}
                   </span>
                 ) : (
                   <JonesButton
-                    label="Accept Bounty"
+                    label={t('panelBounty.takeBounty')}
                     onClick={() => { playSFX('quest-accept'); onTakeBounty(bounty.id); }}
                     disabled={isDisabled}
                     variant="secondary"
