@@ -82,7 +82,7 @@ export function EventPanel({ event, onDismiss }: EventPanelProps) {
                 <img
                   src={img}
                   alt={event.title}
-                  className="w-32 h-32 object-contain rounded-lg border-2 border-card-foreground/20"
+                  className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 object-contain rounded-lg border-2 border-card-foreground/20"
                   style={{ filter: 'sepia(0.3)' }}
                   loading="lazy"
                 />
