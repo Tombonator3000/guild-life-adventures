@@ -339,7 +339,6 @@ export function GameBoard() {
           <RightSideTabs
             players={players}
             currentPlayerIndex={currentPlayerIndex}
-            week={week}
             goalSettings={goalSettings}
             onOpenSaveMenu={() => setShowGameMenu(true)}
             onToggleDebugOverlay={() => setShowDebugOverlay(prev => !prev)}
