@@ -1,5 +1,43 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-11 - AI-Generated Item Images (53 Items)
+
+### Overview
+
+Generated AI item images for all 53 purchasable items in the game using flux.schnell (512×512). Images are displayed in the ItemPreview panel when hovering over shop items.
+
+### Assets Generated (53 images in `src/assets/items/`)
+
+| Category | Count | Examples |
+|----------|-------|---------|
+| Weapons | 4 | dagger, sword, steel-sword, enchanted-blade |
+| Armor | 4 | leather-armor, chainmail, plate-armor, enchanted-plate |
+| Shields | 4 | shield, iron-shield, tower-shield, dragon-scale-shield |
+| Food | 8 | bread, cheese, meat, provisions, feast, fresh-vegetables, fresh-meat, fresh-provisions |
+| Tavern | 3 | ale, stew, roast |
+| Shadow Market | 3 | mystery-meat, stolen-goods, market-intel |
+| Clothing | 5 | peasant-garb, common-clothes, fine-clothes, noble-attire, guild-uniform |
+| Appliances | 8 | scrying-mirror, memory-crystal, music-box, cooking-fire, preservation-box, frost-chest, arcane-tome |
+| Magic Items | 3 | glow-orb, warmth-stone, healing-potion |
+| Durables | 3 | candles, blanket, furniture |
+| Tickets | 4 | lottery-ticket, jousting-ticket, theatre-ticket, bard-concert-ticket |
+| Scholar Items | 3 | encyclopedia, dictionary, atlas |
+
+### New Files
+
+| File | Purpose |
+|------|---------|
+| `src/assets/items/index.ts` | ES6 imports for all 53 item images, `ITEM_IMAGES` map, `getItemImage()` helper |
+| 53 PNG files in `src/assets/items/` | AI-generated 512×512 item icons |
+
+### Modified Files
+
+| File | Changes |
+|------|---------|
+| `src/components/game/ItemPreview.tsx` | Added `imageUrl` to `PreviewData`, displays 64×64 item image in preview panel, `itemToPreview()` and `applianceToPreview()` now include `getItemImage()` |
+
+---
+
 ## 2026-02-11 - ITEMS.MD Documentation & Item Preview System
 
 ### Overview
