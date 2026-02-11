@@ -49,16 +49,17 @@ describe('workShift', () => {
     expect(p.gold).toBe(134);
   });
 
-  it('increases dependability by 2 (capped at max)', () => {
+  it('increases dependability by 1 per shift (capped at max)', () => {
     const p0 = useGameStore.getState().players[0];
     expect(p0.dependability).toBe(50);
     useGameStore.getState().workShift(playerId, 6, 10);
-    expect(useGameStore.getState().players[0].dependability).toBe(52);
+    expect(useGameStore.getState().players[0].dependability).toBe(51);
   });
 
-  it('increases experience by hours worked (capped at max)', () => {
+  it('increases experience by ceil(hours/2) per shift (capped at max)', () => {
     useGameStore.getState().workShift(playerId, 6, 10);
-    expect(useGameStore.getState().players[0].experience).toBe(6);
+    // ceil(6/2) = 3
+    expect(useGameStore.getState().players[0].experience).toBe(3);
   });
 
   it('no happiness penalty in weeks 1-4', () => {

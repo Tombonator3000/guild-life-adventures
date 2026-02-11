@@ -1,8 +1,11 @@
 // SFXManager — singleton that handles sound effects for UI interactions.
 // Uses a pool of HTMLAudioElement instances to allow overlapping sounds.
 // Falls back to Web Audio API synthesized sounds when MP3 files are not available.
+// Routes audio through Web Audio API GainNodes for iOS/iPadOS volume control
+// (iOS ignores HTMLAudioElement.volume — GainNode is the only way to control volume).
 
 import { playSynthSFX } from './synthSFX';
+import { connectElement, resumeAudioContext } from './webAudioBridge';
 
 const SETTINGS_KEY = 'guild-life-sfx-settings';
 
@@ -92,6 +95,8 @@ class SFXManager {
   private listeners: Array<() => void> = [];
   // Pool of audio elements for overlapping sounds
   private audioPool: HTMLAudioElement[] = [];
+  // Web Audio API gain nodes for iOS volume control (one per pool element)
+  private gainNodes: GainNode[] = [];
   private poolIndex = 0;
   private readonly POOL_SIZE = 8;
   // Track which MP3 files failed to load so we use synth fallback directly
@@ -101,11 +106,13 @@ class SFXManager {
     this.settings = loadSettings();
     this.cachedSettings = { ...this.settings };
 
-    // Pre-create audio pool
+    // Pre-create audio pool with Web Audio gain nodes
     for (let i = 0; i < this.POOL_SIZE; i++) {
       const audio = new Audio();
       audio.preload = 'auto';
       this.audioPool.push(audio);
+      // Route through Web Audio API GainNode for iOS volume control
+      this.gainNodes.push(connectElement(audio));
     }
   }
 
@@ -129,14 +136,20 @@ class SFXManager {
     const url = `${import.meta.env.BASE_URL}sfx/${sfx.file}`;
 
     // Get next audio element from pool (round-robin)
-    const audio = this.audioPool[this.poolIndex];
+    const idx = this.poolIndex;
+    const audio = this.audioPool[idx];
+    const gain = this.gainNodes[idx];
     this.poolIndex = (this.poolIndex + 1) % this.POOL_SIZE;
 
     // Stop any current playback on this element
     audio.pause();
     audio.currentTime = 0;
     audio.src = url;
-    audio.volume = effectiveVolume;
+    // Volume controlled via GainNode (element.volume stays at 1 for iOS compatibility)
+    gain.gain.value = effectiveVolume;
+
+    // Resume AudioContext (iOS requires user gesture)
+    resumeAudioContext();
 
     // Play (handle autoplay restrictions silently)
     const playPromise = audio.play();

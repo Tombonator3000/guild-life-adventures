@@ -60,10 +60,12 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
           }
 
           // Dependability increases with work (capped at maxDependability)
-          const newDependability = Math.min(p.maxDependability, p.dependability + 2);
+          // +1 per shift (was +2 — slowed to prevent skipping job tiers)
+          const newDependability = Math.min(p.maxDependability, p.dependability + 1);
 
           // Experience increases (capped at maxExperience like Jones)
-          const newExperience = Math.min(p.maxExperience, p.experience + hours);
+          // Half of hours worked (was 1:1 — slowed to enforce meaningful time at each job tier)
+          const newExperience = Math.min(p.maxExperience, p.experience + Math.ceil(hours / 2));
 
           // Work happiness penalty scales with game progression:
           // Weeks 1-4: no penalty (let players get established)

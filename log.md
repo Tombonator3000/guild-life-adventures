@@ -1,5 +1,188 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-11 - iPad Audio Control Fix (Web Audio API GainNode)
+
+### Problem
+
+On iPad/iOS, `HTMLAudioElement.volume` is **read-only** — setting it has no effect. Music, ambient, and SFX volume could only be controlled via the iPad's hardware volume buttons, not from in-game volume sliders.
+
+### Root Cause
+
+All three audio managers (music, ambient, SFX) used `element.volume = X` to control volume. This works on desktop browsers but is silently ignored on iOS/iPadOS Safari.
+
+### Solution
+
+Routed all audio through the **Web Audio API** using `MediaElementAudioSourceNode` → `GainNode` → `AudioContext.destination`. Volume is now controlled via `GainNode.gain.value` which works on all platforms including iOS.
+
+### New Files
+
+| File | Purpose |
+|------|---------|
+| `src/audio/webAudioBridge.ts` | Shared AudioContext singleton, `connectElement()` creates MediaElementSource→GainNode per HTMLAudioElement, `resumeAudioContext()` for iOS autoplay policy |
+
+### Modified Files
+
+| File | Changes |
+|------|---------|
+| `src/audio/audioManager.ts` | Added `gainA`/`gainB` GainNodes, replaced all `deck.volume = X` with `gain.gain.value = X`, `fadeOut()` takes GainNode param, resume listeners call `resumeAudioContext()` |
+| `src/audio/ambientManager.ts` | Same GainNode approach as audioManager — `gainA`/`gainB`, all volume via gain nodes |
+| `src/audio/sfxManager.ts` | Each pool element (8) gets its own GainNode via `connectElement()`, volume set via `gain.gain.value` per play |
+
+### Technical Details
+
+- Single shared `AudioContext` across all managers (created once in webAudioBridge)
+- `connectElement()` calls `createMediaElementSource()` once per element (browser restriction: one source per element)
+- Element `.volume` set to 1 (max) — actual volume control exclusively through GainNode
+- Auto-resume on user interaction (click/touchstart/keydown/pointerdown) for iOS autoplay policy
+- Crossfade transitions work exactly as before, just using gain nodes instead of element.volume
+- SFX synth fallback (synthSFX.ts) already uses its own AudioContext — unchanged
+
+---
+
+## 2026-02-11 - Job System Balance Audit (Tier-Skipping Fix)
+
+### Problem
+
+Job progression was too fast. Players could skip intermediate job tiers:
+- After just 3 shifts as Dishwasher (18 hours), a player qualified for Barmaid/Barkeep — completely skipping Tavern Cook
+- Starting dependability of 50 already exceeded most early/mid job requirements (20-30 dep)
+- Experience gain of +6 per 6-hour shift closed tier gaps too quickly
+
+### Root Causes
+
+1. **Experience gain too fast**: `experience += hours` (6 exp per 6-hour shift)
+2. **Dependability gain too fast**: `dependability += 2` per shift
+3. **Tiny gaps between adjacent jobs**: Cook (exp 10) vs Barmaid (exp 15) = only 1 shift difference
+
+### Solution — Three-Part Fix
+
+#### 1. Slower Experience Gain
+- **Old**: `experience += hours` → 6 exp per 6-hr shift
+- **New**: `experience += Math.ceil(hours / 2)` → 3 exp per 6-hr shift
+- Effect: Takes 5 shifts (30 hours) to gain 15 exp instead of 3 shifts
+
+#### 2. Slower Dependability Gain
+- **Old**: `dependability += 2` per shift
+- **New**: `dependability += 1` per shift
+- Effect: Mid/high-tier dep requirements (55-80) now take meaningful investment
+
+#### 3. Widened Job Requirements
+
+All 37 jobs re-balanced with wider experience gaps between tiers:
+
+| Career Level | Old Exp Range | New Exp Range | Shifts to Reach (from 0) |
+|---|---|---|---|
+| 1 (Entry) | 0 | 0 | 0 |
+| 2 (Junior) | 10-20 | 15-25 | 5-9 shifts |
+| 3 (Associate) | 15-25 | 25-35 | 9-12 shifts |
+| 4 (Mid-Level) | 25-40 | 40-50 | 14-17 shifts |
+| 5 (Senior) | 35-50 | 55-65 | 19-22 shifts |
+| 6 (Lead) | 40-50 | 60-65 | 20-22 shifts |
+| 7 (Expert) | 50-55 | 70-80 | 24-27 shifts |
+| 8 (Executive) | 50-60 | 80-85 | 27-29 shifts |
+| 9 (Director) | 60 | 85-90 | 29-30 shifts |
+| 10 (Master) | 70 | 95 | 32 shifts |
+
+#### Tavern Progression Example (Before vs After)
+
+**Before** (with +6 exp/shift):
+- Dishwasher → Cook: 2 shifts (12 hours)
+- Dishwasher → Barmaid: 3 shifts (18 hours) — could skip Cook!
+
+**After** (with +3 exp/shift):
+- Dishwasher → Cook: 5 shifts (30 hours)
+- Dishwasher → Barmaid: 10 shifts (60 hours = 1 full turn)
+- Cook → Barmaid: 5 more shifts — must work at Cook first
+
+### Specific Job Changes
+
+**Tavern (Rusty Tankard):**
+| Job | Old Exp/Dep | New Exp/Dep |
+|---|---|---|
+| Tavern Cook | 10/20 | 15/20 |
+| Barmaid/Barkeep | 15/25 | **30/30** |
+| Head Chef | 25/35 | **45/40** |
+| Tavern Manager | 40/45 | **60/55** |
+
+**Guild Hall:**
+| Job | Old Exp/Dep | New Exp/Dep |
+|---|---|---|
+| Errand Runner | 10/20 | **15/20** |
+| Assistant Clerk | 20/30 | **25/30** |
+| Guild Accountant | 40/50 | **60/55** |
+| Guild Administrator | 60/60 | **80/70** |
+
+**Market:**
+| Job | Old Exp/Dep | New Exp/Dep |
+|---|---|---|
+| Shop Clerk | 10/20 | **15/25** |
+| Market Vendor | 20/30 | **35/35** |
+| Merchant Assistant | 30/40 | **50/45** |
+| Shop Manager | 50/50 | **65/60** |
+
+**Bank:**
+| Job | Old Exp/Dep | New Exp/Dep |
+|---|---|---|
+| Bank Janitor | 10/20 | **15/25** |
+| Bank Teller | 20/40 | **35/40** |
+| Guild Treasurer | 60/60 | **80/70** |
+
+**Forge:**
+| Job | Old Exp/Dep | New Exp/Dep |
+|---|---|---|
+| Apprentice Smith | 15/20 | **20/25** |
+| Journeyman Smith | 30/40 | **45/45** |
+| Master Smith | 50/50 | **70/60** |
+| Forge Manager | 60/60 | **85/70** |
+
+**Academy:**
+| Job | Old Exp/Dep | New Exp/Dep |
+|---|---|---|
+| Library Assistant | 10/30 | **15/30** |
+| Scribe | 20/40 | **30/40** |
+| Teacher | 40/50 | **55/55** |
+| Senior Teacher | 50/55 | **65/60** |
+| Academy Lecturer | 55/58 | **75/65** |
+| Researcher | 45/50 | **60/55** |
+| Sage | 50/60 | **80/70** |
+
+**Military:**
+| Job | Old Exp/Dep | New Exp/Dep |
+|---|---|---|
+| City Guard | 20/40 | **30/40** |
+| Caravan Guard | 30/50 | **45/50** |
+| Arena Fighter | 40/30 | **60/45** |
+| Weapons Instructor | 50/55 | **75/60** |
+
+**Magic:**
+| Job | Old Exp/Dep | New Exp/Dep |
+|---|---|---|
+| Scroll Copier | 15/30 | **25/35** |
+| Enchantment Assistant | 25/40 | **40/45** |
+| Potion Brewer | 35/45 | **55/50** |
+| Alchemist | 40/50 | **65/55** |
+
+**Noble/Top:**
+| Job | Old Exp/Dep | New Exp/Dep |
+|---|---|---|
+| Court Advisor | 60/60 | **80/70** |
+| Guild Master's Asst | 70/70 | **95/80** |
+
+### Modified Files
+
+| File | Changes |
+|------|---------|
+| `src/store/helpers/workEducationHelpers.ts` | Exp gain: `hours` → `Math.ceil(hours/2)`, Dep gain: `+2` → `+1` |
+| `src/data/jobs/definitions.ts` | All 37 jobs: widened exp/dep requirements (see tables above) |
+| `src/test/work.test.ts` | Updated 2 test assertions: dep `52→51`, exp `6→3` |
+
+### Build & Tests
+- TypeScript: compiles cleanly (tsc --noEmit)
+- Build: passes (vite build)
+- Tests: 176/176 pass
+
+---
+
 ## 2026-02-11 - AI-Generated Event Woodcut Illustrations (35 Images)
 
 Generated 35 medieval woodcut-style illustrations (512×512) for all game events. Displayed in EventPanel (128×128) and EventModal (96×96) with sepia filter. New files: `src/assets/events/index.ts` + 35 PNGs. Categories: Crime (5), Positive (3), Economic (4), Health (3), Life (8), Weather (5), Travel (6), Lottery (1). Modified: `EventPanel.tsx`, `EventModal.tsx`.
