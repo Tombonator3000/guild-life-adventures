@@ -85,7 +85,7 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
 
           // Show travel event to human players
           if (!currentPlayer.isAI) {
-            const message = `Travel Event: ${travelEvent.name} — ${formatTravelEvent(travelEvent)}`;
+            const message = `[${travelEvent.id}] Travel Event: ${travelEvent.name} — ${formatTravelEvent(travelEvent)}`;
             const existing = get().eventMessage;
             set({
               eventMessage: existing ? existing + '\n' + message : message,

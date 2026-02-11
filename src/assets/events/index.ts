@@ -102,16 +102,21 @@ export const EVENT_IMAGES: Record<string, string> = {
   'harvest-rain': harvestRain,
   'enchanted-fog': enchantedFog,
 
-  // Travel Events
+  // Travel Events (IDs match travelEvents.ts)
   'found-coin-purse': luckyFind,
   'wandering-merchant': wanderingMerchant,
+  'shortcut-found': wrongTurn,
   'hidden-shortcut': wrongTurn,
+  'bard-performance': streetBard,
   'street-bard': streetBard,
   'muddy-road': muddyRoad,
+  'lost-way': wrongTurn,
   'took-a-wrong-turn': wrongTurn,
   'wrong-turn': wrongTurn,
+  'stray-dog': muddyRoad,
   'aggressive-stray-dog': muddyRoad,
   'injured-traveler': injuredTraveler,
+  'old-map': oldMap,
   'old-map-fragment': oldMap,
 };
 

@@ -163,16 +163,53 @@ export function useLocationClick({
     }
   };
 
+  // Extract event ID from message text via embedded tag or keyword matching
+  const extractEventId = (msg: string): string => {
+    // Check for embedded travel event ID: [event-id] Travel Event: ...
+    const idMatch = msg.match(/^\[([a-z0-9-]+)\]/);
+    if (idMatch) return idMatch[1];
+
+    // Keyword-based detection for weekly/turn events
+    if (msg.includes('Shadowfingers')) return 'shadowfingers-theft';
+    if (msg.includes('evicted')) return 'eviction';
+    if (msg.includes('starving')) return 'starvation';
+    if (msg.includes('food poisoning')) return 'food-poisoning';
+    if (msg.includes('fallen ill')) return 'illness';
+    if (msg.includes('food spoiled')) return 'food-poisoning';
+    if (msg.includes('exhausted')) return 'illness';
+    if (msg.includes('slept on the streets')) return 'homeless';
+    if (msg.includes('clothing') && msg.includes('poor condition')) return 'clothing-torn';
+    if (msg.includes('fired')) return 'layoff';
+    if (msg.includes('Rent is overdue')) return 'eviction';
+    if (msg.includes('gear stolen')) return 'apartment-robbery';
+    if (msg.includes('Arcane Tome')) return 'lucky-find';
+    if (msg.includes('Weather:') && msg.includes('snow')) return 'snowstorm';
+    if (msg.includes('Weather:') && msg.includes('thunder')) return 'thunderstorm';
+    if (msg.includes('Weather:') && msg.includes('drought')) return 'drought';
+    if (msg.includes('Weather:') && msg.includes('rain')) return 'harvest-rain';
+    if (msg.includes('Weather:') && msg.includes('fog')) return 'enchanted-fog';
+    if (msg.includes('lottery')) return 'lottery-win';
+    if (msg.includes('birthday')) return 'birthday';
+    return 'weekly-event';
+  };
+
+  const extractEventType = (msg: string): GameEvent['type'] => {
+    if (msg.includes('evicted') || msg.includes('Rent is overdue')) return 'eviction';
+    if (msg.includes('Shadowfingers') || msg.includes('gear stolen')) return 'theft';
+    if (msg.includes('starving') || msg.includes('food spoiled')) return 'starvation';
+    if (msg.includes('ill') || msg.includes('food poisoning') || msg.includes('exhausted')) return 'sickness';
+    if (msg.includes('lottery') || msg.includes('Arcane Tome') || msg.includes('birthday')) return 'bonus';
+    return 'info';
+  };
+
   // Convert eventMessage to GameEvent format
+  // Strip embedded ID tag from display text
+  const cleanMessage = eventMessage?.replace(/^\[[a-z0-9-]+\]\s*/, '') ?? null;
   const currentEvent: GameEvent | null = eventMessage ? {
-    id: 'weekly-event',
+    id: extractEventId(eventMessage),
     title: 'Week ' + week + ' Events',
-    description: eventMessage,
-    type: eventMessage.includes('evicted') ? 'eviction' :
-          eventMessage.includes('Shadowfingers') ? 'theft' :
-          eventMessage.includes('starving') ? 'starvation' :
-          eventMessage.includes('ill') ? 'sickness' :
-          'info',
+    description: cleanMessage!,
+    type: extractEventType(eventMessage),
   } : null;
 
   return { handleLocationClick, currentEvent };

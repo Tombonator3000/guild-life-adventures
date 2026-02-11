@@ -1,5 +1,73 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-11 - Event Graphics Integration Audit & Fixes
+
+### Status Check
+
+Event graphics system was already implemented with 35 PNG woodcut illustrations in `src/assets/events/`. The `EventPanel.tsx` component renders images in the center panel using `getEventImage()` from the index file, with sepia filter styling and fallback to Lucide icons.
+
+### Issues Found & Fixed
+
+#### 1. Travel Event ID Mismatches (3 events)
+
+Travel events in `travelEvents.ts` used IDs that didn't match the keys in `EVENT_IMAGES`:
+
+| Travel Event | Code ID | Graphics Key | Status |
+|---|---|---|---|
+| Hidden Shortcut | `shortcut-found` | `hidden-shortcut` | **Mismatch** |
+| Street Bard | `bard-performance` | `street-bard` | **Mismatch** |
+| Wrong Turn | `lost-way` | `took-a-wrong-turn` | **Mismatch** |
+
+**Fix**: Added the actual travel event IDs (`shortcut-found`, `bard-performance`, `lost-way`, `stray-dog`, `old-map`) to `EVENT_IMAGES` in `src/assets/events/index.ts` alongside the existing alias keys.
+
+#### 2. Travel Event IDs Lost in Pipeline
+
+Travel events have proper IDs in `TravelEvent.id`, but when converted to `eventMessage` strings in `playerHelpers.ts`, the ID was discarded. EventPanel received all events with generic `id: 'weekly-event'`.
+
+**Fix**: Embedded travel event ID in message format: `[shortcut-found] Travel Event: Hidden Shortcut — ...` in `src/store/helpers/playerHelpers.ts:88`. The ID tag is stripped before display.
+
+#### 3. Generic Event ID for All Weekly Events
+
+All events from `processWeekEnd` and `startTurn` were assigned `id: 'weekly-event'` in `useLocationClick.ts`, relying solely on type-based fallback images.
+
+**Fix**: Added `extractEventId()` and `extractEventType()` functions in `src/hooks/useLocationClick.ts` that:
+- Extract embedded `[event-id]` tags from travel events
+- Match 20+ keyword patterns to assign specific event IDs (shadowfingers-theft, eviction, starvation, food-poisoning, illness, homeless, clothing-torn, layoff, weather events, lottery, birthday, etc.)
+- Improved type detection with more patterns (bonus type for lottery/birthday/tomes)
+- Strip embedded ID tags from display text
+
+### Modified Files
+
+| File | Changes |
+|------|---------|
+| `src/assets/events/index.ts` | Added 5 travel event IDs (`shortcut-found`, `bard-performance`, `lost-way`, `stray-dog`, `old-map`) to EVENT_IMAGES |
+| `src/store/helpers/playerHelpers.ts` | Embed `[travelEvent.id]` tag in travel event message string |
+| `src/hooks/useLocationClick.ts` | Added `extractEventId()` (20+ keyword patterns) and `extractEventType()` functions, strip ID tags from display |
+
+### Event Graphics Coverage Summary
+
+| Event Category | ID Matching | Image Source |
+|---|---|---|
+| Travel events (10) | ✓ Exact ID match via embedded tag | Specific per-event images |
+| Shadowfingers theft | ✓ Keyword match | `shadowfingers-theft` |
+| Eviction / rent overdue | ✓ Keyword match | `eviction` |
+| Starvation | ✓ Keyword match | `starvation` |
+| Illness / food poisoning | ✓ Keyword match | `illness` / `food-poisoning` |
+| Homeless / clothing | ✓ Keyword match | `homeless` / `clothing-torn` |
+| Weather events (5) | ✓ Keyword match | Specific weather images |
+| Layoff / job loss | ✓ Keyword match | `layoff` |
+| Lottery / birthday | ✓ Keyword match | `lottery-win` / `birthday` |
+| Other info events | Type fallback | `economicBoom` via TYPE_FALLBACKS |
+
+### Notes
+
+- Images display at 128×128px (`w-32 h-32`) with sepia(0.3) filter — source images are 512×512, could be shown larger
+- `RANDOM_EVENTS` array in `src/data/events.ts` is defined but never triggered (dead code — 15 structured events that aren't used by any game system)
+- Special modals (death, Shadowfingers, appliance breakage) use separate modal system, not EventPanel
+- All 176 tests pass, build succeeds
+
+---
+
 ## 2026-02-11 - iPad Audio Control Fix (Web Audio API GainNode)
 
 ### Problem
