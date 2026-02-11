@@ -4,6 +4,7 @@
 
 import { useGameStore } from '@/store/gameStore';
 import { getMarketAppliances, getAppliance, SHADOW_MARKET_ITEMS, ACADEMY_ITEMS, getItemPrice } from '@/data/items';
+import { itemToPreview, applianceToPreview } from './ItemPreview';
 import { AlertTriangle, BookOpen } from 'lucide-react';
 import type { Player } from '@/types/game.types';
 import { toast } from 'sonner';
@@ -112,6 +113,7 @@ export function ShadowMarketPanel({
             onClick={() => handleBuyItem(item, price)}
             darkText={darkText}
             largeText={largeText}
+            previewData={itemToPreview(item)}
           />
         );
       })}
@@ -135,6 +137,7 @@ export function ShadowMarketPanel({
             onClick={() => handleBuyItem(item, price)}
             darkText={darkText}
             largeText={largeText}
+            previewData={itemToPreview(item)}
           />
         );
       })}
@@ -160,6 +163,7 @@ export function ShadowMarketPanel({
             onClick={() => handleBuyItem(item, price)}
             darkText={darkText}
             largeText={largeText}
+            previewData={itemToPreview(item)}
           />
         );
       })}
@@ -190,6 +194,7 @@ export function ShadowMarketPanel({
             }}
             darkText={darkText}
             largeText={largeText}
+            previewData={itemToPreview(item)}
           />
         );
       })}
@@ -222,6 +227,7 @@ export function ShadowMarketPanel({
             onClick={() => handleBuyAppliance(appliance.id, price)}
             darkText={darkText}
             largeText={largeText}
+            previewData={applianceToPreview(appliance, 'market')}
           />
         );
       })}

@@ -4,8 +4,9 @@ import {
   JonesMenuItem,
   JonesInfoRow,
 } from './JonesStylePanel';
-import { GENERAL_STORE_ITEMS, getItemPrice } from '@/data/items';
+import { GENERAL_STORE_ITEMS, getItemPrice, getItem } from '@/data/items';
 import { NEWSPAPER_COST, NEWSPAPER_TIME } from '@/data/newspaper';
+import { itemToPreview } from './ItemPreview';
 import { toast } from 'sonner';
 import { useTranslation } from '@/i18n';
 
@@ -54,6 +55,7 @@ export function GeneralStorePanel({
             disabled={!canAfford}
             darkText
             largeText
+            previewData={itemToPreview(item)}
             onClick={() => {
               modifyGold(player.id, -price);
               if (item.effect?.type === 'food') {
@@ -83,6 +85,7 @@ export function GeneralStorePanel({
                 disabled={!canAfford}
                 darkText
                 largeText
+                previewData={itemToPreview(item)}
                 onClick={() => {
                   buyFreshFood(player.id, units, price);
                   toast.success(t('panelStore.storedFreshFood', { units: Math.min(units, spaceLeft) }));
@@ -103,6 +106,13 @@ export function GeneralStorePanel({
         disabled={player.gold < lotteryPrice}
         darkText
         largeText
+        previewData={{
+          name: "Fortune's Wheel Ticket",
+          description: 'Weekly lottery drawing. More tickets = better odds! Grand prize: 5,000g.',
+          category: 'Lottery',
+          tags: ['Lottery'],
+          effect: 'Grand Prize: 5,000g',
+        }}
         onClick={() => {
           buyLotteryTicket(player.id, lotteryPrice);
           toast.success(t('panelStore.purchased', { name: t(`items.lottery-ticket.name`) }));
