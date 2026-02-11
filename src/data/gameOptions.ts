@@ -5,6 +5,8 @@
 
 const STORAGE_KEY = 'guild-life-options';
 
+export type BorderStyle = 'stone' | 'leather' | 'wood' | 'iron' | 'parchment' | 'none';
+
 export interface GameOptions {
   // === Gameplay ===
   enableAging: boolean;        // Player aging system (birthdays, elder decay, health crises)
@@ -16,6 +18,7 @@ export interface GameOptions {
   showEventAnimations: boolean; // Animate event popups
   compactUI: boolean;          // Use compact stat displays
   showTurnNotifications: boolean; // Show turn-change notifications
+  borderStyle: BorderStyle;    // Side panel border style: stone, leather, or none
 
   // === Game Speed ===
   autoEndTurn: boolean;        // Auto-end turn when time runs out
@@ -35,6 +38,7 @@ const DEFAULT_OPTIONS: GameOptions = {
   showEventAnimations: true,
   compactUI: false,
   showTurnNotifications: true,
+  borderStyle: 'stone',         // Default: stone wall borders
 
   // Game Speed
   autoEndTurn: false,

@@ -86,6 +86,118 @@ Game data is translated at the display layer using `t(\`section.id.field\`)` wit
 - **Vite build**: Passed (~10s)
 - **Tests**: 176/176 passed (9 test files)
 - **Total translation keys per language**: 839+ lines
+## 2026-02-11 - AI-Generated Weather Textures: Enchanted Fog & Drought Heat Shimmer
+
+### Overview
+
+Enhanced the Enchanted Fog and Drought weather effects with AI-generated texture images, replacing the previous pure-CSS approximations. Uses flux2.dev to generate 4 atmospheric texture overlays that are animated with CSS for a rich, immersive weather experience.
+
+### Assets Generated
+
+| File | Description |
+|------|-------------|
+| `src/assets/enchanted-fog-layer.png` | Dense mystical fog with swirling blue-grey/silver wisps and purple magical glow (1920×1080) |
+| `src/assets/enchanted-fog-wisps.png` | Thin ethereal fog tendrils with glowing magical particles (1920×1080) |
+| `src/assets/heat-shimmer-layer.png` | Rising heat waves from scorched cracked earth with orange-amber thermal ripples (1920×1080) |
+| `src/assets/heat-shimmer-ground.png` | Parched cracked earth with heat haze rising, golden-brown drought ground (1920×1080) |
+
+### Changes
+
+| # | Change | Details |
+|---|--------|---------|
+| 1 | **EnchantedFogLayer** | Now uses 2 AI fog textures (`enchanted-fog-layer.png` + `enchanted-fog-wisps.png`) animated with `screen` blend mode, blur, and slow drifting. Magical glow pulse retained. Visibility-reducing gradient overlay at bottom. |
+| 2 | **HeatwaveLayer** | Now uses 2 AI heat textures (`heat-shimmer-layer.png` rising heat + `heat-shimmer-ground.png` cracked earth) with animated rising motion, ground pulse, and amber haze overlay with blur distortion. |
+| 3 | **No gameplay changes** | Pure visual enhancement — all weather mechanics unchanged |
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `src/components/game/WeatherOverlay.tsx` | Imported 4 AI textures, rewrote `EnchantedFogLayer` and `HeatwaveLayer` to use image backgrounds with CSS animation |
+
+---
+
+
+### Overview
+
+Moved the border style picker into the main OptionsMenu modal under the Display tab, so players can change panel borders from the full options dialog (not just the side-panel OptionsTab). The picker shows all 6 styles (Stone, Leather, Wood, Iron, Scroll, None) in a 3×2 grid matching the existing design language.
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `src/components/game/OptionsMenu.tsx` | Added border style grid picker to DisplayTab with `BorderStyle` import |
+
+---
+
+## 2026-02-11 - Extended Border Variants: Wood, Iron & Parchment
+
+### Overview
+
+Added three new AI-generated decorative border frame variants (Wood, Iron, Parchment) to join the existing Stone and Leather options. Players now have 6 border styles to choose from in the Options tab, displayed in a 3×2 grid.
+
+### Changes
+
+| # | Change | Details |
+|---|--------|---------|
+| 1 | **Wood border images** | Dark oak wood frame with carved floral vine patterns, iron nails, and ornamental corner brackets |
+| 2 | **Iron border images** | Dark forged iron frame with hammered texture, decorative rivets, wrought iron scrollwork, and rust patina |
+| 3 | **Parchment border images** | Aged parchment scroll frame with burned/torn edges, red wax seal stamps at corners |
+| 4 | **BorderStyle type expanded** | Added `'wood' | 'iron' | 'parchment'` to the union type (now 6 options total) |
+| 5 | **StoneBorderFrame updated** | Added imports and mapping for all 5 image-based border styles |
+| 6 | **OptionsTab grid layout** | Border picker changed from flex row to 3×2 grid to fit 6 options |
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `src/assets/wood-border-left.png` | AI-generated carved oak wood frame (left) |
+| `src/assets/wood-border-right.png` | AI-generated carved oak wood frame (right) |
+| `src/assets/iron-border-left.png` | AI-generated forged iron frame (left) |
+| `src/assets/iron-border-right.png` | AI-generated forged iron frame (right) |
+| `src/assets/parchment-border-left.png` | AI-generated parchment scroll frame (left) |
+| `src/assets/parchment-border-right.png` | AI-generated parchment scroll frame (right) |
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `src/data/gameOptions.ts` | `BorderStyle` expanded with `'wood' | 'iron' | 'parchment'` |
+| `src/components/game/StoneBorderFrame.tsx` | Added 3 new border image imports and mappings |
+| `src/components/game/tabs/OptionsTab.tsx` | Added 3 new border options, changed to 3×2 grid layout |
+
+---
+
+
+### Overview
+
+Added AI-generated decorative leather frame borders with stitches and brass rivets as an alternative to the existing stone wall borders. Players can now choose between Stone, Leather, or None border styles for the side panels via the Options tab. Also created a Supabase edge function (`generate-border`) that uses the Lovable AI Gateway (Google Gemini image generation) to dynamically generate border images.
+
+### Changes
+
+| # | Change | Details |
+|---|--------|---------|
+| 1 | **AI-generated leather border images** | Generated two leather frame images using flux.dev — `leather-border-left.png` and `leather-border-right.png` with dark aged brown leather, hand-sewn cross-stitches, brass rivets, Celtic knotwork tooling |
+| 2 | **Gemini image generation edge function** | New `supabase/functions/generate-border/index.ts` — calls Lovable AI Gateway with `google/gemini-2.5-flash-image` model to generate border images on demand |
+| 3 | **Border style option in GameOptions** | New `borderStyle: 'stone' | 'leather' | 'none'` option with `BorderStyle` type export, defaults to `'stone'` |
+| 4 | **Updated StoneBorderFrame component** | Now reads `borderStyle` from GameOptions, supports stone/leather/none variants with appropriate image mapping |
+| 5 | **Border style picker in OptionsTab** | 3-button toggle (🪨 Stone / 🧵 Leather / ❌ None) in Options panel under "Panel Borders" section |
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `src/assets/leather-border-left.png` | AI-generated leather frame for left panel |
+| `src/assets/leather-border-right.png` | AI-generated leather frame for right panel |
+| `supabase/functions/generate-border/index.ts` | Edge function for Gemini image generation of custom borders |
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `src/data/gameOptions.ts` | Added `BorderStyle` type and `borderStyle` option (default: `'stone'`) |
+| `src/components/game/StoneBorderFrame.tsx` | Multi-style support (stone/leather/none) via GameOptions |
+| `src/components/game/tabs/OptionsTab.tsx` | Added border style selector UI |
 
 ---
 
