@@ -40,6 +40,9 @@ export function OptionsTab({
   const BORDER_OPTIONS: { value: BorderStyle; label: string }[] = [
     { value: 'stone', label: '🪨 Stone' },
     { value: 'leather', label: '🧵 Leather' },
+    { value: 'wood', label: '🪵 Wood' },
+    { value: 'iron', label: '⚔️ Iron' },
+    { value: 'parchment', label: '📜 Scroll' },
     { value: 'none', label: '❌ None' },
   ];
 
@@ -97,7 +100,7 @@ export function OptionsTab({
 
       {/* Panel Border Style */}
       <OptionSection title="Panel Borders">
-        <div className="flex gap-1">
+        <div className="grid grid-cols-3 gap-1">
           {BORDER_OPTIONS.map(({ value, label }) => (
             <button
               key={value}

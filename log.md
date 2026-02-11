@@ -1,6 +1,43 @@
 # Guild Life Adventures - Development Log
 
-## 2026-02-11 - Leather Border Frames & Border Style Options
+## 2026-02-11 - Extended Border Variants: Wood, Iron & Parchment
+
+### Overview
+
+Added three new AI-generated decorative border frame variants (Wood, Iron, Parchment) to join the existing Stone and Leather options. Players now have 6 border styles to choose from in the Options tab, displayed in a 3×2 grid.
+
+### Changes
+
+| # | Change | Details |
+|---|--------|---------|
+| 1 | **Wood border images** | Dark oak wood frame with carved floral vine patterns, iron nails, and ornamental corner brackets |
+| 2 | **Iron border images** | Dark forged iron frame with hammered texture, decorative rivets, wrought iron scrollwork, and rust patina |
+| 3 | **Parchment border images** | Aged parchment scroll frame with burned/torn edges, red wax seal stamps at corners |
+| 4 | **BorderStyle type expanded** | Added `'wood' | 'iron' | 'parchment'` to the union type (now 6 options total) |
+| 5 | **StoneBorderFrame updated** | Added imports and mapping for all 5 image-based border styles |
+| 6 | **OptionsTab grid layout** | Border picker changed from flex row to 3×2 grid to fit 6 options |
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `src/assets/wood-border-left.png` | AI-generated carved oak wood frame (left) |
+| `src/assets/wood-border-right.png` | AI-generated carved oak wood frame (right) |
+| `src/assets/iron-border-left.png` | AI-generated forged iron frame (left) |
+| `src/assets/iron-border-right.png` | AI-generated forged iron frame (right) |
+| `src/assets/parchment-border-left.png` | AI-generated parchment scroll frame (left) |
+| `src/assets/parchment-border-right.png` | AI-generated parchment scroll frame (right) |
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `src/data/gameOptions.ts` | `BorderStyle` expanded with `'wood' | 'iron' | 'parchment'` |
+| `src/components/game/StoneBorderFrame.tsx` | Added 3 new border image imports and mappings |
+| `src/components/game/tabs/OptionsTab.tsx` | Added 3 new border options, changed to 3×2 grid layout |
+
+---
+
 
 ### Overview
 
