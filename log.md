@@ -1,5 +1,26 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-11 - Landlord Closed Graphics: Full Center Panel Coverage
+
+### Overview
+Fixed the Landlord "Office Closed" display to cover the entire center panel, matching the Noble Heights "For Rent" pattern. Previously the closed state showed a small 240px image with dark text on the parchment background. Now it uses `closed.jpg` as a full-bleed background image with a dark overlay and light text with text shadows.
+
+### Modified Files
+
+| File | Changes |
+|------|---------|
+| `src/components/game/locationTabs.tsx` | Rewrote landlord closed content: full-height container with background-cover image, dark overlay (rgba 0.35), centered light text with text shadows. Matches HomePanel "for-rent" pattern. |
+
+### Before vs After
+
+**Before:** Small `max-w-[240px]` image, dark text on parchment, `py-4` padding — did not fill the center panel.
+
+**After:** `h-full flex flex-col` container with `closed.jpg` as `backgroundSize: cover`, semi-transparent overlay, light parchment-colored text (`#f0e8d8`, `#d4c8a0`) with text shadows for readability. Fills entire tab content area.
+
+### Build & Test Results
+- **Vite build**: Passed
+- **Tests**: 176/176 passed (9 test files)
+
 ## 2026-02-11 (Session 3) - AI Adaptive Systems: Player Strategy Learning & Dynamic Difficulty
 
 ### Overview

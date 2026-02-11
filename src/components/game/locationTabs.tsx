@@ -401,24 +401,45 @@ function landlordTabs(ctx: LocationTabContext): LocationTab[] {
       id: 'housing',
       label: 'Housing',
       content: (
-        <div className="flex flex-col items-center justify-center py-4 gap-3">
-          <img
-            src={`${import.meta.env.BASE_URL}locations/closed.jpg`}
-            alt="Office Closed"
-            className="w-full max-w-[240px] rounded-lg border border-[#8b7355] shadow-md"
-          />
-          <h4 className="font-display text-lg text-[#3d2a14]">Office Closed</h4>
-          <p className="text-sm text-[#6b5a42] text-center max-w-xs">
-            The Landlord&apos;s office is only open during rent collection weeks.
-          </p>
-          <p className="text-xs text-[#8b7355] text-center">
-            Next rent week in <strong>{weeksUntilRentWeek}</strong> week{weeksUntilRentWeek !== 1 ? 's' : ''}.
-          </p>
-          {player.rentPrepaidWeeks > 0 && (
-            <p className="text-xs text-[#2a7a2a] text-center">
-              You have {player.rentPrepaidWeeks} prepaid week{player.rentPrepaidWeeks !== 1 ? 's' : ''} remaining.
-            </p>
-          )}
+        <div className="h-full flex flex-col overflow-hidden select-none" style={{ background: '#1a1410' }}>
+          <div
+            className="flex-1 relative overflow-hidden flex items-center justify-center"
+            style={{
+              backgroundImage: `url(${import.meta.env.BASE_URL}locations/closed.jpg)`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          >
+            <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.35)' }} />
+            <div className="relative z-10 text-center p-4">
+              <h2
+                className="font-display text-xl font-bold mb-2"
+                style={{ color: '#f0e8d8', textShadow: '0 2px 6px rgba(0,0,0,0.8)' }}
+              >
+                Office Closed
+              </h2>
+              <p
+                className="text-sm mb-1"
+                style={{ color: '#d4c8a0', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
+              >
+                The Landlord&apos;s office is only open during rent collection weeks.
+              </p>
+              <p
+                className="text-xs"
+                style={{ color: '#c8bc9a', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
+              >
+                Next rent week in <strong>{weeksUntilRentWeek}</strong> week{weeksUntilRentWeek !== 1 ? 's' : ''}.
+              </p>
+              {player.rentPrepaidWeeks > 0 && (
+                <p
+                  className="text-xs mt-1"
+                  style={{ color: '#7adb7a', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
+                >
+                  You have {player.rentPrepaidWeeks} prepaid week{player.rentPrepaidWeeks !== 1 ? 's' : ''} remaining.
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       ),
     }];
