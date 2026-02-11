@@ -1,6 +1,36 @@
 # Guild Life Adventures - Development Log
 
-## 2026-02-11 - Border Style Picker in OptionsMenu Modal
+## 2026-02-11 - AI-Generated Weather Textures: Enchanted Fog & Drought Heat Shimmer
+
+### Overview
+
+Enhanced the Enchanted Fog and Drought weather effects with AI-generated texture images, replacing the previous pure-CSS approximations. Uses flux2.dev to generate 4 atmospheric texture overlays that are animated with CSS for a rich, immersive weather experience.
+
+### Assets Generated
+
+| File | Description |
+|------|-------------|
+| `src/assets/enchanted-fog-layer.png` | Dense mystical fog with swirling blue-grey/silver wisps and purple magical glow (1920×1080) |
+| `src/assets/enchanted-fog-wisps.png` | Thin ethereal fog tendrils with glowing magical particles (1920×1080) |
+| `src/assets/heat-shimmer-layer.png` | Rising heat waves from scorched cracked earth with orange-amber thermal ripples (1920×1080) |
+| `src/assets/heat-shimmer-ground.png` | Parched cracked earth with heat haze rising, golden-brown drought ground (1920×1080) |
+
+### Changes
+
+| # | Change | Details |
+|---|--------|---------|
+| 1 | **EnchantedFogLayer** | Now uses 2 AI fog textures (`enchanted-fog-layer.png` + `enchanted-fog-wisps.png`) animated with `screen` blend mode, blur, and slow drifting. Magical glow pulse retained. Visibility-reducing gradient overlay at bottom. |
+| 2 | **HeatwaveLayer** | Now uses 2 AI heat textures (`heat-shimmer-layer.png` rising heat + `heat-shimmer-ground.png` cracked earth) with animated rising motion, ground pulse, and amber haze overlay with blur distortion. |
+| 3 | **No gameplay changes** | Pure visual enhancement — all weather mechanics unchanged |
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `src/components/game/WeatherOverlay.tsx` | Imported 4 AI textures, rewrote `EnchantedFogLayer` and `HeatwaveLayer` to use image backgrounds with CSS animation |
+
+---
+
 
 ### Overview
 
