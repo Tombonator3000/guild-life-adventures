@@ -47,7 +47,7 @@ export const en: TranslationStrings = {
 
   title: {
     gameTitle: 'GUILD LIFE',
-    subtitle: 'A Fantasy Life Simulator',
+    subtitle: 'A Fantasy Life Simulator (Whose Fantasy? Not Yours.)',
     newAdventure: 'New Adventure',
     onlineMultiplayer: 'Online Multiplayer',
     continueGame: 'Continue Game',
@@ -111,7 +111,7 @@ export const en: TranslationStrings = {
     escMenuHint: 'Esc=Menu',
     statsInventory: 'Stats & Inventory',
     playersOptions: 'Players & Options',
-    notEnoughTime: 'Not enough time to reach destination. Turn ended.',
+    notEnoughTime: 'Not enough time to reach destination. The week waits for no adventurer.',
   },
 
   sidebar: {
@@ -159,7 +159,7 @@ export const en: TranslationStrings = {
     status: 'Status',
     sick: 'Sick',
     dead: 'DEAD',
-    sickAlert: 'Sick - Visit Enchanter (Cure Ailments)!',
+    sickAlert: 'Sick - Visit Enchanter (Cure Ailments)! You look terrible. More terrible than usual.',
     none: 'None',
   },
 
@@ -210,16 +210,16 @@ export const en: TranslationStrings = {
     ageAtVictory: 'Age {age} at time of victory',
     finalStats: 'Final Stats',
     gameOver: 'Game Over',
-    allPerished: 'All adventurers have perished...',
+    allPerished: 'All adventurers have perished... The tavern will be noticeably quieter.',
     returnToTitle: 'Return to Title',
   },
 
   death: {
     youAreDead: 'YOU ARE DEAD',
     hasFallen: '{name} has fallen...',
-    respawning: 'Respawning at The Graveyard with 20 HP',
-    spiritsRestored: 'The spirits restored you! 100g taken from savings.',
-    permadeathEnabled: 'Permadeath is enabled. Your journey ends here.',
+    respawning: 'Respawning at The Graveyard with 20 HP. Death is but a minor inconvenience.',
+    spiritsRestored: 'The spirits restored you! 100g taken from savings. Resurrection: not free, but cheaper than a funeral.',
+    permadeathEnabled: 'Permadeath is enabled. Your journey ends here. Permanently. No takebacks.',
     acceptFate: 'Accept Your Fate',
     riseAgain: 'Rise Again',
   },
@@ -319,7 +319,7 @@ export const en: TranslationStrings = {
   },
 
   ai: {
-    isScheming: '{name} is Scheming...',
+    isScheming: '{name} is Scheming... (suspiciously)',
   },
 
   // ============================================================
@@ -327,19 +327,19 @@ export const en: TranslationStrings = {
   // ============================================================
 
   npcs: {
-    'guild-hall': { title: 'Guild Master', greeting: 'Welcome, adventurer.', subtitle: "Adventurer's Guild" },
-    'bank': { title: 'Head Banker', greeting: 'Your gold is safe here.', subtitle: 'Financial Services' },
-    'general-store': { title: 'Shopkeeper', greeting: 'Fresh goods today!', subtitle: 'Provisions & Sundries' },
-    'armory': { title: 'Master Armorer', greeting: 'Steel or leather?', subtitle: 'Arms & Armor' },
-    'enchanter': { title: 'Enchantress', greeting: 'Magic flows here.', subtitle: "Enchanter's Workshop" },
-    'shadow-market': { title: 'Black Marketeer', greeting: 'Psst... good deals.', subtitle: 'Black Market Goods' },
-    'academy': { title: 'Dean of Studies', greeting: 'Knowledge awaits.', subtitle: 'Higher Education' },
-    'rusty-tankard': { title: 'Barkeep', greeting: "What'll it be?", subtitle: 'Tavern & Eatery' },
-    'cave': { title: 'Dark Entrance', greeting: 'Danger lurks within...', subtitle: 'Dark Caverns' },
-    'forge': { title: 'Smithmaster', greeting: 'Hard work pays off.', subtitle: 'Smithy & Repairs' },
-    'landlord': { title: 'Landlord', greeting: 'Rent is due.', subtitle: 'Housing Office' },
-    'graveyard': { title: 'Gravedigger', greeting: 'The dead rest here... mostly.', subtitle: 'Cemetery & Resurrection' },
-    'fence': { title: 'Fence & Dealer', greeting: 'Buy, sell, or gamble?', subtitle: 'Pawn Shop & Dealer' },
+    'guild-hall': { title: 'Guild Master', greeting: 'Welcome, adventurer. Please try not to bleed on the carpet.', subtitle: "Adventurer's Guild" },
+    'bank': { title: 'Head Banker', greeting: "Your gold is safe here. Probably. We haven't been audited in centuries.", subtitle: 'Financial Services' },
+    'general-store': { title: 'Shopkeeper', greeting: 'Fresh goods today! Well, fresh-ish. Freshness is a spectrum.', subtitle: 'Provisions & Sundries' },
+    'armory': { title: 'Master Armorer', greeting: "Steel or leather? Either way, you'll need it where you're going.", subtitle: 'Arms & Armor' },
+    'enchanter': { title: 'Enchantress', greeting: "Magic flows here. Mind the sparks, they're sentient and hold grudges.", subtitle: "Enchanter's Workshop" },
+    'shadow-market': { title: 'Black Marketeer', greeting: 'Psst... good deals. No questions asked. Especially not that one.', subtitle: 'Black Market Goods' },
+    'academy': { title: 'Dean of Studies', greeting: 'Knowledge awaits. So does a truly unreasonable amount of homework.', subtitle: 'Higher Education' },
+    'rusty-tankard': { title: 'Barkeep', greeting: 'What\'ll it be? And no, we don\'t serve "something non-alcoholic."', subtitle: 'Tavern & Eatery' },
+    'cave': { title: 'Dark Entrance', greeting: 'Danger lurks within... Also a very persistent smell.', subtitle: 'Dark Caverns' },
+    'forge': { title: 'Smithmaster', greeting: 'Hard work pays off. Mostly in burns and calluses, but still.', subtitle: 'Smithy & Repairs' },
+    'landlord': { title: 'Landlord', greeting: 'Rent is due. It was due yesterday, actually. And the day before that.', subtitle: 'Housing Office' },
+    'graveyard': { title: 'Gravedigger', greeting: 'The dead rest here... mostly. Some are just having a really long nap.', subtitle: 'Cemetery & Resurrection' },
+    'fence': { title: 'Fence & Dealer', greeting: "Buy, sell, or gamble? All three end the same way, but we don't judge.", subtitle: 'Pawn Shop & Dealer' },
   },
 
   degrees: {
@@ -364,10 +364,10 @@ export const en: TranslationStrings = {
   },
 
   stocks: {
-    'crystal-mine': { name: 'Crystal Mine Ventures', description: 'Volatile mining operation. High risk, high reward.' },
-    'potion-guild': { name: 'Potion Consortium', description: 'Moderate risk potion manufacturing enterprise.' },
-    'enchanting-corp': { name: 'Enchanting Guild Corp', description: 'Stable enchanting business with steady returns.' },
-    'crown-bonds': { name: 'Crown Bonds', description: 'Royal treasury bonds. Fixed price, no crash risk. 3% fee to sell.' },
+    'crystal-mine': { name: 'Crystal Mine Ventures', description: 'Volatile mining operation. High risk, high reward. May collapse literally and financially.' },
+    'potion-guild': { name: 'Potion Consortium', description: 'Moderate risk potion manufacturing. Only three explosions this quarter.' },
+    'enchanting-corp': { name: 'Enchanting Guild Corp', description: 'Stable enchanting business. Boring, but boring pays dividends.' },
+    'crown-bonds': { name: 'Crown Bonds', description: "Royal treasury bonds. As exciting as watching paint dry. The paint pays 3%, though." },
   },
 
   weather: {

@@ -41,7 +41,7 @@ export const FESTIVALS: Festival[] = [
   {
     id: 'harvest-festival',
     name: 'Harvest Festival',
-    description: 'The autumn harvest brings abundance to Guildholm. Food is cheap and spirits are high!',
+    description: 'The autumn harvest brings abundance to Guildholm. Food is cheap, spirits are high, and nobody remembers they\'ll be broke by winter!',
     icon: '🌾',
     happinessBonus: 5,
     goldEffect: 0,
@@ -51,12 +51,12 @@ export const FESTIVALS: Festival[] = [
     movementDiscount: 0,
     wageMultiplier: 1.0,
     dungeonGoldMultiplier: 1.0,
-    eventMessage: '🌾 Harvest Festival! The autumn bounty brings cheap goods and good cheer. All prices reduced by 15% this week!',
+    eventMessage: '🌾 Harvest Festival! The autumn bounty brings cheap goods and terrible dancing. All prices reduced by 15% this week!',
   },
   {
     id: 'winter-solstice',
     name: 'Winter Solstice',
-    description: 'The longest night brings reflection and study. Scholars gather and wisdom flows freely.',
+    description: 'The longest night brings reflection and study. Scholars gather, wisdom flows freely, and everyone pretends they\'ve read more books than they have.',
     icon: '❄️',
     happinessBonus: 3,
     goldEffect: 0,
@@ -66,12 +66,12 @@ export const FESTIVALS: Festival[] = [
     movementDiscount: 0,
     wageMultiplier: 1.0,
     dungeonGoldMultiplier: 1.0,
-    eventMessage: '❄️ Winter Solstice! Scholars gather and wisdom flows. +2 bonus study progress and +3 dependability for all!',
+    eventMessage: '❄️ Winter Solstice! Scholars gather and wisdom flows like cheap mead. +2 bonus study progress and +3 dependability for all!',
   },
   {
     id: 'spring-tournament',
     name: 'Spring Tournament',
-    description: 'Warriors compete in the annual tournament. Dungeon runs are more rewarding and combat skills shine!',
+    description: 'Warriors compete in the annual tournament. Egos clash, armor dents, and the healers prepare overtime schedules.',
     icon: '⚔️',
     happinessBonus: 3,
     goldEffect: 0,
@@ -81,12 +81,12 @@ export const FESTIVALS: Festival[] = [
     movementDiscount: 0,
     wageMultiplier: 1.0,
     dungeonGoldMultiplier: 1.5, // 50% more dungeon gold
-    eventMessage: '⚔️ Spring Tournament! Warriors compete for glory. Dungeon gold rewards increased by 50% this week!',
+    eventMessage: '⚔️ Spring Tournament! Warriors compete for glory and suspiciously large trophies. Dungeon gold rewards increased by 50% this week!',
   },
   {
     id: 'midsummer-fair',
     name: 'Midsummer Fair',
-    description: 'The grand fair fills Guildholm with merchants and entertainers. Wages are higher and travel is festive!',
+    description: 'The grand fair fills Guildholm with merchants, entertainers, and an alarming number of jugglers. Wages are higher and travel is festive!',
     icon: '🎪',
     happinessBonus: 5,
     goldEffect: 10, // small gold handout from festivities
@@ -96,7 +96,7 @@ export const FESTIVALS: Festival[] = [
     movementDiscount: 0,
     wageMultiplier: 1.15, // 15% wage bonus
     dungeonGoldMultiplier: 1.0,
-    eventMessage: '🎪 Midsummer Fair! Merchants and entertainers fill the streets. +15% wages and +10g festival bonus for all!',
+    eventMessage: '🎪 Midsummer Fair! Merchants and entertainers fill the streets. Your wallet fills with dread. +15% wages and +10g festival bonus for all!',
   },
 ];
 

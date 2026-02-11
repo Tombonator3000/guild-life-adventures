@@ -15,7 +15,7 @@ export const HOUSING_DATA: Record<HousingTier, Housing> = {
   homeless: {
     tier: 'homeless',
     name: 'Homeless',
-    description: 'Sleeping on the streets. Dangerous and demoralizing.',
+    description: 'Sleeping on the streets. Free accommodation with complimentary rain, crime, and existential dread.',
     weeklyRent: 0,
     happinessBonus: -3,
     theftRisk: 50,
@@ -24,7 +24,7 @@ export const HOUSING_DATA: Record<HousingTier, Housing> = {
   slums: {
     tier: 'slums',
     name: 'The Slums',
-    description: 'Cheap housing in a rough neighborhood. Beware Shadowfingers.',
+    description: 'Cheap housing in a rough neighborhood. The walls are thin, the neighbors are loud, and Shadowfingers treats your door as a suggestion.',
     weeklyRent: 75,
     happinessBonus: 0,
     theftRisk: 25,
@@ -33,7 +33,7 @@ export const HOUSING_DATA: Record<HousingTier, Housing> = {
   modest: {
     tier: 'modest',
     name: 'Modest Dwelling',
-    description: 'A comfortable apartment in a decent area.',
+    description: 'A comfortable apartment in a decent area. You have walls, a roof, and a door that actually locks. Living the dream.',
     weeklyRent: 95,
     happinessBonus: 2,
     theftRisk: 5,
@@ -42,7 +42,7 @@ export const HOUSING_DATA: Record<HousingTier, Housing> = {
   noble: {
     tier: 'noble',
     name: 'Noble Heights',
-    description: 'Luxury living for the wealthy. Safe and prestigious.',
+    description: 'Luxury living for the wealthy. So safe and prestigious that you\'ll feel guilty. But not guilty enough to move back to the Slums.',
     weeklyRent: 120,
     happinessBonus: 3,
     theftRisk: 0,

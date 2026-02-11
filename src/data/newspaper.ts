@@ -20,50 +20,50 @@ export interface Newspaper {
 
 // Random headlines for flavor
 const GOSSIP_HEADLINES = [
-  "Shadowfingers Spotted Near Noble Heights",
-  "Guild Master Denies Corruption Rumors",
-  "Mysterious Lights Seen Over The Academy",
-  "Local Hero Saves Child From Runaway Cart",
-  "Enchanter's Workshop Explosion Injures Three",
-  "Tavern Brawl Leads to Forge Closure",
-  "Noble Family Announces Grand Ball",
-  "Strange Creature Sighted in Sewers",
-  "Bank Vault Break-In Thwarted by Guards",
-  "Academy Graduate Sets New Record",
+  "Shadowfingers Spotted Near Noble Heights; Claims He Was 'Just Browsing'",
+  "Guild Master Denies Corruption Rumors, Deposits Large Sum in Bank",
+  "Mysterious Lights Over Academy Blamed on 'Unsupervised Students'",
+  "Local Hero Saves Child From Runaway Cart; Demands Medal, Gets Sandwich",
+  "Enchanter's Workshop Explodes Again; Neighbors 'No Longer Surprised'",
+  "Tavern Brawl Leads to Forge Closure; Smith Blames 'Philosophical Disagreement'",
+  "Noble Family Announces Grand Ball; Commoners Announce Grand Eye-Roll",
+  "Strange Creature in Sewers Turns Out to Be Lost Accounting Student",
+  "Bank Vault Break-In Thwarted by Guards and One Very Angry Dwarf",
+  "Academy Graduate Sets New Record for Most Explosions in Final Exam",
 ];
 
 const GOSSIP_CONTENT = [
-  "Citizens are advised to keep their coin purses close and their doors locked.",
-  "The Guild Council released a statement dismissing all allegations.",
-  "Scholars believe it may be related to ongoing magical experiments.",
-  "The adventurer refused to give their name, preferring to remain anonymous.",
-  "The cause is still under investigation. No fatalities reported.",
-  "Guards restored order after several hours. Damages estimated at 50 gold.",
-  "Invitations are said to be highly sought after this season.",
-  "Adventurers are being offered bounties for more information.",
-  "The would-be thieves were apprehended and await trial.",
-  "The young mage completed their studies in record time.",
+  "Citizens are advised to keep their coin purses close, their doors locked, and their expectations low.",
+  "The Guild Council released a statement dismissing all allegations. The statement was suspiciously well-funded.",
+  "Scholars believe it may be related to ongoing magical experiments. They always say that. It's always true.",
+  "The adventurer refused to give their name, preferring to remain anonymous. And humble. Mostly anonymous.",
+  "The cause is still under investigation. As is the cause of the investigation. It's investigations all the way down.",
+  "Guards restored order after several hours and one very large net. Damages estimated at 50 gold and two egos.",
+  "Invitations are said to be highly sought after. Alternative invitations to 'not attend' are freely available.",
+  "Adventurers are being offered bounties for more information. So far, all information received has been wrong.",
+  "The would-be thieves were apprehended and await trial. Their defense: 'The vault door was open.' It was not.",
+  "The young mage completed their studies in record time. Also set a record for property damage. Unrelated, allegedly.",
 ];
 
 const ECONOMY_HEADLINES_HIGH = [
-  "Market Prices Surge Amid Supply Shortages",
-  "Merchant Caravan Delayed - Prices Rise",
-  "Economic Uncertainty Grips Guildholm",
-  "Inflation Worries Local Business Owners",
+  "Market Prices Surge; Everyone Blames Everyone Else",
+  "Merchant Caravan Delayed by 'Unexpected Dragon'; Prices Rise",
+  "Economic Uncertainty Grips Guildholm; Certainty Spotted Fleeing South",
+  "Inflation Worries Local Business Owners; Gold Worth Less, Costs More, Nobody Understands",
 ];
 
 const ECONOMY_HEADLINES_LOW = [
-  "Abundant Harvest Drives Prices Down",
-  "Trade Agreement Brings Cheaper Goods",
-  "Market Oversupply Benefits Consumers",
-  "Economic Boom Reaches All Districts",
+  "Abundant Harvest Drives Prices Down; Farmers Unsure Whether to Celebrate or Panic",
+  "Trade Agreement Brings Cheaper Goods; Merchants Grumble Photogenically",
+  "Market Oversupply Benefits Consumers; Merchants Discover Concept of 'Too Much Cheese'",
+  "Economic Boom Reaches All Districts; Economists Baffled, Take Credit Anyway",
 ];
 
 const ECONOMY_HEADLINES_NORMAL = [
-  "Markets Remain Stable This Week",
-  "Trade Continues at Expected Rates",
-  "Merchants Report Normal Activity",
-  "Economy Holds Steady Amid Uncertainty",
+  "Markets Remain Stable This Week; Journalists Struggle for Headlines",
+  "Trade Continues at Expected Rates; Nothing to Report, Report Filed Anyway",
+  "Merchants Report Normal Activity; Normalcy Itself Considered Newsworthy",
+  "Economy Holds Steady; Economists Disappointed by Lack of Drama",
 ];
 
 export function generateNewspaper(week: number, priceModifier: number, economyTrend?: number): Newspaper {
@@ -120,7 +120,7 @@ export function generateNewspaper(week: number, priceModifier: number, economyTr
   if (week % 4 === 0) {
     articles.push({
       headline: "Rent Due This Week!",
-      content: "The Landlord's Office reminds all tenants that rent payments are due. Failure to pay may result in eviction.",
+      content: "The Landlord's Office reminds all tenants that rent payments are due. Tomas has been sharpening his eviction notices with alarming enthusiasm.",
       category: 'events',
     });
   }
@@ -128,7 +128,7 @@ export function generateNewspaper(week: number, priceModifier: number, economyTr
   if (week % 8 === 0) {
     articles.push({
       headline: "Clothing Inspection Scheduled",
-      content: "Employers across Guildholm are conducting clothing inspections. Make sure your attire is in good condition!",
+      content: "Employers across Guildholm are conducting clothing inspections. If you can see daylight through your trousers, it's time to visit the Armory.",
       category: 'events',
     });
   }

@@ -1,5 +1,122 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-11 - Humor Overhaul: Monty Python/Discworld/HHGTTG Style
+
+### Goal
+Infuse the entire game with sarcastic, witty, absurdist humor inspired by Monty Python, Terry Pratchett's Discworld, and Douglas Adams' Hitchhiker's Guide to the Galaxy — all filtered through a medieval fantasy lens.
+
+### Changes Made
+
+**NPC Greetings (npcs.ts + i18n/en.ts)** — All 13 NPC greetings rewritten with dry wit and personality:
+- Guild Master: "Welcome, adventurer. Please try not to bleed on the carpet."
+- Bank: "Your gold is safe here. Probably. We haven't been audited in centuries."
+- Academy: "Knowledge awaits. So does a truly unreasonable amount of homework."
+- Tavern: 'What\'ll it be? And no, we don\'t serve "something non-alcoholic."'
+- etc.
+
+**NPC Banter (banter.ts)** — ~70 new humorous banter lines added across all 14 locations + context-aware banter updated:
+- Guild Hall: "The pension plan is excellent. Mostly because very few adventurers survive to collect it."
+- Bank: "The thing about compound interest is that nobody understands it. Including us."
+- General Store: "Had a customer ask if the bread was organic. Everything's organic, mate, it's medieval times."
+- Enchanter: "Magic is perfectly safe. The explosions are entirely a feature, not a bug."
+- Shadow Market: "I'm not a criminal. I'm an unlicensed entrepreneur with flexible ethics."
+- Academy: "The exam pass rate is 42%. The survival rate is slightly higher, which is encouraging."
+- Tavern: "We don't serve spirits here. Actually, we do — one's been haunting the cellar since Tuesday."
+- Cave: "Last words of the previous adventurer: 'How bad can it be?' Quite bad, as it turned out."
+- Graveyard: "Death is just nature's way of telling you to stop adventuring. Most people don't listen."
+- Fence: "Gambling is a tax on people who are bad at math. Please, continue."
+
+**Item Descriptions (items.ts)** — ~54 item descriptions rewritten:
+- Salted Meat: "Nobody asks what kind of meat. It's better that way."
+- Enchanted Blade: "It hums ominously and occasionally whispers career advice."
+- Chainmail: "Takes three hours to put on and sounds like a cutlery drawer falling down stairs."
+- Healing Potion: "Tastes like someone dissolved a boot in cough syrup, but it works."
+
+**Job Descriptions (jobs/definitions.ts)** — All 40+ job descriptions rewritten:
+- Floor Sweeper: "Glamorous it ain't, but at least you won't get eaten."
+- Scroll Copier: "Mispronounce one word and suddenly there's a goat in the library."
+- Arena Fighter: "Short shifts because you either win quickly or... well. Short shifts."
+- Forge Manager: "Like being a manager, but with more fire and fewer meetings. Heaven."
+
+**Location Descriptions (locations.ts)** — All 15 location descriptions rewritten:
+- Cave: "The treasure-to-danger ratio is not in your favor, statistically speaking."
+- Fence: "Where dignity goes to die and loose change goes to multiply. Theoretically."
+- Academy: "Student loans not available, mercifully."
+
+**Events (events.ts)** — All 15 random event messages rewritten:
+- Bank robbery: "Lost 100 gold. The irony is not lost on anyone except your wallet."
+- Market crash layoff: 'They called it "restructuring." You can call it "unemployment."'
+- Food poisoning: "In retrospect, the mystery meat was more mysterious than anticipated."
+
+**Travel Events (travelEvents.ts)** — All 10 travel event descriptions rewritten:
+- Stray dog: "It wasn't even a big dog. You will never speak of this."
+- Wrong turn: "In your defense, whoever planned this city was either drunk or a minotaur."
+
+**Quests (quests.ts)** — All 18 quest descriptions + 6 chain steps + 9 bounties rewritten:
+- Rat Extermination: "The rats have organized. They have a union now."
+- Lost Cat: "The cat is not lost. The cat is exactly where it wants to be."
+- Dragon Slayer: "The dragon is ancient, enormous, and breathes fire. You have a sword. Best of luck."
+
+**Newspaper (newspaper.ts)** — All gossip headlines, economy headlines, and content rewritten:
+- "Enchanter's Workshop Explodes Again; Neighbors 'No Longer Surprised'"
+- "Economic Boom Reaches All Districts; Economists Baffled, Take Credit Anyway"
+
+**Weekend Activities (weekends.ts)** — All 35+ weekend descriptions rewritten:
+- Fishing: "Caught nothing. Achieved inner peace. Mostly boredom."
+- Grand Ball: "Pretended to belong. Fooled approximately nobody."
+- Fortune Teller: "She predicted you'd spend 30 gold. She was right."
+
+**Weather (weather.ts)** — All 6 weather descriptions rewritten:
+- Clear: "Suspiciously fair. Nature is planning something."
+- Enchanted Fog: "Smells faintly of lavender, and nobody can find their shoes."
+
+**Festivals (festivals.ts)** — All 4 festival descriptions + event messages rewritten:
+- Spring Tournament: "Egos clash, armor dents, and the healers prepare overtime schedules."
+- Midsummer Fair: "Your wallet fills with dread."
+
+**Achievements (achievements.ts)** — All 25 achievement descriptions rewritten:
+- Dungeon Master: "You live in the dungeon now. The dungeon lives in you."
+- Speed Runner: "Speed-running medieval life. Impressive and slightly concerning."
+- Completionist: "You're collecting achievements about collecting achievements. Very meta."
+
+**Education (education.ts)** — All 11 degree descriptions rewritten:
+- Trade Guild: "Teaches you that buying low and selling high is, in fact, the whole trick."
+- Alchemy: "Turning lead into gold is the dream. Turning your eyebrows into smoke is the reality."
+
+**Housing (housing.ts)** — All 4 housing descriptions rewritten:
+- Homeless: "Free accommodation with complimentary rain, crime, and existential dread."
+- Noble Heights: "So safe and prestigious that you'll feel guilty. But not guilty enough to move back."
+
+**Dungeon Encounters (dungeon/encounters.ts)** — All 39 dungeon flavorText strings rewritten:
+- Rat King: "It has a CROWN. The rats have more organized governance than most cities."
+- Goblin scouts: "They share one brain cell between them and it's not their turn to use it."
+- Elder Dragon: "It has seen empires rise and fall. It is unimpressed by you."
+- Azrathor: "He's been rehearsing that. You can tell by the dramatic echo."
+- The Archon: "It pauses for dramatic effect. Full marks for presentation."
+
+**UI Text (i18n/en.ts)** — Key UI strings updated:
+- Subtitle: "A Fantasy Life Simulator (Whose Fantasy? Not Yours.)"
+- Death respawn: "Death is but a minor inconvenience."
+- Resurrection: "Not free, but cheaper than a funeral."
+- All perished: "The tavern will be noticeably quieter."
+- AI scheming: "(suspiciously)"
+- Stock descriptions updated with humor
+
+### Humor Style Guide
+- **Self-aware absurdity**: Characters aware of fantasy tropes
+- **Deadpan understatement**: Terrible things described casually
+- **Bureaucratic fantasy**: Medieval red tape and ridiculous rules
+- **Sarcastic observations**: Commentary on adventurer life
+- **Breaking expectations**: Subverting genre tropes
+- **British dry wit**: Pratchett/Adams-influenced deadpan
+
+### Testing
+- All 176 tests pass
+- Build succeeds (no TypeScript errors)
+- Text-only changes — no mechanical/balance changes
+
+---
+
 ## 2026-02-11 - Zone Editor: Visual Layout Placement for Center Panel
 
 ### Feature

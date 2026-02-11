@@ -62,41 +62,41 @@ const DEFAULT_STATS: AchievementStats = {
 /** All achievements in the game */
 export const ACHIEVEMENTS: Achievement[] = [
   // === Wealth ===
-  { id: 'first-100g', name: 'First Hundred', description: 'Accumulate 100 gold for the first time', icon: '💰', category: 'wealth' },
-  { id: 'wealthy-1000', name: 'Wealthy Merchant', description: 'Have 1,000+ gold (cash + savings)', icon: '🏦', category: 'wealth' },
-  { id: 'tycoon-5000', name: 'Guildholm Tycoon', description: 'Have 5,000+ gold total wealth', icon: '👑', category: 'wealth' },
-  { id: 'gold-hoarder', name: 'Gold Hoarder', description: 'Earn 10,000 gold across all games', icon: '🐉', category: 'wealth' },
+  { id: 'first-100g', name: 'First Hundred', description: 'Accumulate 100 gold. You can afford things now! Not good things, but things.', icon: '💰', category: 'wealth' },
+  { id: 'wealthy-1000', name: 'Wealthy Merchant', description: 'Have 1,000+ gold. You\'re officially richer than most of Guildholm. Don\'t let it go to your head.', icon: '🏦', category: 'wealth' },
+  { id: 'tycoon-5000', name: 'Guildholm Tycoon', description: 'Have 5,000+ gold. At this point, Shadowfingers has a file on you.', icon: '👑', category: 'wealth' },
+  { id: 'gold-hoarder', name: 'Gold Hoarder', description: 'Earn 10,000 gold across all games. You could buy a small castle. Or a large sandwich. Priorities.', icon: '🐉', category: 'wealth' },
 
   // === Combat ===
-  { id: 'first-dungeon', name: 'Into the Depths', description: 'Clear your first dungeon floor', icon: '⚔️', category: 'combat' },
-  { id: 'dungeon-5', name: 'Dungeon Delver', description: 'Clear 5 dungeon floors total', icon: '🗡️', category: 'combat' },
-  { id: 'temple-cleared', name: 'Temple Explorer', description: 'Clear all 6 dungeon floors including the Forgotten Temple', icon: '🏛️', category: 'combat' },
-  { id: 'dungeon-master', name: 'Dungeon Master', description: 'Clear 20 dungeon floors across all games', icon: '🏰', category: 'combat' },
-  { id: 'boss-slayer', name: 'Boss Slayer', description: 'Defeat 10 dungeon bosses across all games', icon: '💀', category: 'combat' },
+  { id: 'first-dungeon', name: 'Into the Depths', description: 'Clear your first dungeon floor. You went into a dark hole and came back alive. Celebrate accordingly.', icon: '⚔️', category: 'combat' },
+  { id: 'dungeon-5', name: 'Dungeon Delver', description: 'Clear 5 dungeon floors. At this point the monsters are more afraid of you than you are of them. Probably.', icon: '🗡️', category: 'combat' },
+  { id: 'temple-cleared', name: 'Temple Explorer', description: 'Clear all 6 floors including the Forgotten Temple. It\'s not forgotten anymore. You made sure of that.', icon: '🏛️', category: 'combat' },
+  { id: 'dungeon-master', name: 'Dungeon Master', description: 'Clear 20 dungeon floors across all games. You live in the dungeon now. The dungeon lives in you.', icon: '🏰', category: 'combat' },
+  { id: 'boss-slayer', name: 'Boss Slayer', description: 'Defeat 10 dungeon bosses. They have a support group now. You\'re the topic of discussion.', icon: '💀', category: 'combat' },
 
   // === Education ===
-  { id: 'first-degree', name: 'Scholar', description: 'Complete your first degree', icon: '📜', category: 'education' },
-  { id: 'triple-degree', name: 'Academic', description: 'Complete 3 degrees in a single game', icon: '🎓', category: 'education' },
-  { id: 'all-degrees', name: 'Grand Scholar', description: 'Earn 15 degrees across all games', icon: '📚', category: 'education' },
+  { id: 'first-degree', name: 'Scholar', description: 'Complete your first degree. Your parents would be proud. If they existed.', icon: '📜', category: 'education' },
+  { id: 'triple-degree', name: 'Academic', description: 'Complete 3 degrees in a single game. Overachiever. The other students definitely don\'t resent you.', icon: '🎓', category: 'education' },
+  { id: 'all-degrees', name: 'Grand Scholar', description: 'Earn 15 degrees across all games. You could wallpaper your dwelling with diplomas.', icon: '📚', category: 'education' },
 
   // === Social ===
-  { id: 'first-quest', name: 'Adventurer', description: 'Complete your first quest', icon: '📋', category: 'social' },
-  { id: 'quest-10', name: 'Seasoned Adventurer', description: 'Complete 10 quests across all games', icon: '🗺️', category: 'social' },
-  { id: 'guild-master', name: 'Guild Master', description: 'Reach Guild Master rank', icon: '⭐', category: 'social' },
-  { id: 'noble-life', name: 'Noble Life', description: 'Live in Noble Heights', icon: '🏠', category: 'social' },
+  { id: 'first-quest', name: 'Adventurer', description: 'Complete your first quest. You did a thing! The guild acknowledges your thing!', icon: '📋', category: 'social' },
+  { id: 'quest-10', name: 'Seasoned Adventurer', description: 'Complete 10 quests across all games. Professional errand runner with delusions of heroism.', icon: '🗺️', category: 'social' },
+  { id: 'guild-master', name: 'Guild Master', description: 'Reach Guild Master rank. You\'re in charge now. The paperwork is infinite.', icon: '⭐', category: 'social' },
+  { id: 'noble-life', name: 'Noble Life', description: 'Live in Noble Heights. You\'ve made it. Don\'t look down at the Slums. Actually, do. The view is why you pay extra.', icon: '🏠', category: 'social' },
 
   // === Exploration ===
-  { id: 'festival-goer', name: 'Festival Goer', description: 'Experience your first seasonal festival', icon: '🎪', category: 'exploration' },
-  { id: 'festival-all', name: 'Festival Fanatic', description: 'Experience all 4 seasonal festivals', icon: '🎉', category: 'exploration' },
-  { id: 'survivor-50', name: 'Survivor', description: 'Play for 50 weeks in a single game', icon: '🛡️', category: 'exploration' },
-  { id: 'veteran-player', name: 'Veteran', description: 'Play 5 complete games', icon: '🏅', category: 'exploration' },
+  { id: 'festival-goer', name: 'Festival Goer', description: 'Experience your first seasonal festival. Free food, bad music, and compulsory fun.', icon: '🎪', category: 'exploration' },
+  { id: 'festival-all', name: 'Festival Fanatic', description: 'Experience all 4 seasonal festivals. You\'ve survived them all. Your liver has questions.', icon: '🎉', category: 'exploration' },
+  { id: 'survivor-50', name: 'Survivor', description: 'Play for 50 weeks in a single game. That\'s almost a year of medieval life. You\'re practically a local.', icon: '🛡️', category: 'exploration' },
+  { id: 'veteran-player', name: 'Veteran', description: 'Play 5 complete games. Either dedicated or unable to stop. Both are valid.', icon: '🏅', category: 'exploration' },
 
   // === Mastery ===
-  { id: 'first-win', name: 'Victory!', description: 'Win your first game', icon: '🏆', category: 'mastery' },
-  { id: 'speed-win', name: 'Speed Runner', description: 'Win a game in under 30 weeks', icon: '⚡', category: 'mastery' },
-  { id: 'triple-win', name: 'Champion', description: 'Win 3 games', icon: '🥇', category: 'mastery' },
-  { id: 'max-happiness', name: 'Pure Joy', description: 'Reach 100 happiness', icon: '😊', category: 'mastery' },
-  { id: 'completionist', name: 'Completionist', description: 'Unlock 20 achievements', icon: '🌟', category: 'mastery', hidden: true },
+  { id: 'first-win', name: 'Victory!', description: 'Win your first game. Against all odds. Against common sense. You did it.', icon: '🏆', category: 'mastery' },
+  { id: 'speed-win', name: 'Speed Runner', description: 'Win a game in under 30 weeks. Speed-running medieval life. Impressive and slightly concerning.', icon: '⚡', category: 'mastery' },
+  { id: 'triple-win', name: 'Champion', description: 'Win 3 games. At this point it\'s not luck. It\'s a pattern of ruthless efficiency.', icon: '🥇', category: 'mastery' },
+  { id: 'max-happiness', name: 'Pure Joy', description: 'Reach 100 happiness. Maximum joy achieved. In a medieval economy. Remarkable.', icon: '😊', category: 'mastery' },
+  { id: 'completionist', name: 'Completionist', description: 'Unlock 20 achievements. You\'re collecting achievements about collecting achievements. Very meta.', icon: '🌟', category: 'mastery', hidden: true },
 ];
 
 // === Persistence ===

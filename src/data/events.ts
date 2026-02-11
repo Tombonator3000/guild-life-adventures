@@ -36,7 +36,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
     effect: {
       gold: -50,
       happiness: -3,
-      message: 'Shadowfingers picked your pocket while you slept! Lost 50 gold.',
+      message: 'Shadowfingers picked your pocket while you slept! Lost 50 gold. They left a thank-you note. How thoughtful.',
     },
   },
   {
@@ -51,7 +51,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
     effect: {
       gold: -100,
       happiness: -5,
-      message: 'Shadowfingers broke into your room! Lost 100 gold and valuables.',
+      message: 'Shadowfingers broke into your room! Lost 100 gold. They even made the bed on the way out. Professionals.',
     },
   },
   
@@ -68,7 +68,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
     effect: {
       gold: -100,
       happiness: -5,
-      message: 'You were robbed leaving the bank! Lost 100 gold.',
+      message: 'You were robbed leaving the bank! Lost 100 gold. The irony is not lost on anyone except your wallet.',
     },
   },
   {
@@ -83,7 +83,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
     effect: {
       gold: -75,
       happiness: -4,
-      message: 'You were ambushed in the Shadow Market! Lost 75 gold.',
+      message: 'You were ambushed in the Shadow Market! Lost 75 gold. In hindsight, the "Shadow" part was a clue.',
     },
   },
   
@@ -99,7 +99,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
     },
     effect: {
       gold: -25,
-      message: 'A pickpocket got you in the crowd! Lost 25 gold.',
+      message: 'A pickpocket got you in the crowd! Lost 25 gold. Didn\'t even feel it. Impressive, really.',
     },
   },
   
@@ -112,7 +112,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
     effect: {
       gold: 30,
       happiness: 5,
-      message: 'You found a pouch of coins on the ground! Gained 30 gold.',
+      message: 'You found a pouch of coins on the ground! Gained 30 gold. Finders keepers is legally binding here.',
     },
   },
   {
@@ -126,7 +126,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
     effect: {
       gold: 50,
       happiness: 10,
-      message: 'The guild master noticed your hard work! Bonus: 50 gold.',
+      message: 'The guild master noticed your hard work! Bonus: 50 gold. A rare case of meritocracy actually working.',
     },
   },
   {
@@ -137,7 +137,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
     effect: {
       gold: 15,
       happiness: 3,
-      message: 'A customer was so pleased they tipped you 15 gold!',
+      message: 'A customer was so pleased they tipped you 15 gold! Mark it on the calendar — this never happens.',
     },
   },
   
@@ -149,7 +149,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
     probability: 0.10,
     effect: {
       happiness: 5,
-      message: 'Economic boom! Prices are favorable this week.',
+      message: 'Economic boom! Prices are favorable this week. Nobody understands why. Economists blame the stars.',
     },
   },
   {
@@ -159,7 +159,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
     probability: 0.08,
     effect: {
       happiness: -5,
-      message: 'Market crash! Prices have increased.',
+      message: 'Market crash! Prices have increased. Economists blame different stars.',
     },
   },
 
@@ -171,7 +171,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
     probability: 0.05, // 5% chance per week
     effect: {
       happiness: -10,
-      message: 'Due to market conditions, your employer has reduced your wages by 20%!',
+      message: 'Due to market conditions, your employer has reduced your wages by 20%! They said "we\'re all in this together" while counting their gold.',
     },
   },
   {
@@ -181,10 +181,10 @@ export const RANDOM_EVENTS: GameEvent[] = [
     probability: 0.03, // 3% chance per week
     effect: {
       happiness: -20,
-      message: 'The market crash has forced your employer to let you go. You have lost your job!',
+      message: 'The market crash has forced your employer to let you go. They called it "restructuring." You can call it "unemployment."',
     },
   },
-  
+
   // Health events
   {
     id: 'illness',
@@ -197,7 +197,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
     effect: {
       health: -15,
       happiness: -2,
-      message: 'Living conditions gave you a cold. Health decreased.',
+      message: 'Living conditions gave you a cold. Your nose is running faster than you are. Health decreased.',
     },
   },
   {
@@ -211,7 +211,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
     effect: {
       health: -20,
       happiness: -3,
-      message: 'Food poisoning! You should be more careful what you eat.',
+      message: 'Food poisoning! In retrospect, the mystery meat was more mysterious than anticipated.',
     },
   },
   
@@ -223,7 +223,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
     probability: 0.05,
     effect: {
       clothing: -20,
-      message: 'Your clothes got torn! Clothing condition decreased.',
+      message: 'Your clothes got torn! Fashion was never your strong suit. It\'s even less so now.',
     },
   },
 ];
@@ -299,7 +299,7 @@ export const checkMarketCrash = (hasJob: boolean): MarketCrashResult => {
   if (Math.random() < 0.03) { // 3% chance
     return {
       type: 'layoff',
-      message: 'The market crash has forced your employer to let you go. You have lost your job!',
+      message: 'The market crash has forced your employer to let you go. They called it "restructuring." You can call it "unemployment."',
     };
   }
 
@@ -308,7 +308,7 @@ export const checkMarketCrash = (hasJob: boolean): MarketCrashResult => {
     return {
       type: 'paycut',
       wageMultiplier: 0.8, // 20% reduction like Jones
-      message: 'Due to market conditions, your employer has reduced your wages by 20%!',
+      message: 'Due to market conditions, your employer has reduced your wages by 20%! They said "we\'re all in this together" while counting their gold.',
     };
   }
 

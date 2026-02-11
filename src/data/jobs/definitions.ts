@@ -21,7 +21,7 @@ export const GUILD_HALL_JOBS: Job[] = [
     requiredClothing: 'none',
     requiredExperience: 0,
     requiredDependability: 0,
-    description: 'Sweep floors and clean the guild hall. Honest work for beginners.',
+    description: 'Sweep floors and clean the guild hall. Glamorous it ain\'t, but at least you won\'t get eaten.',
     careerLevel: 1,
   },
   {
@@ -34,7 +34,7 @@ export const GUILD_HALL_JOBS: Job[] = [
     requiredClothing: 'casual',
     requiredExperience: 15,
     requiredDependability: 20,
-    description: 'Deliver messages and packages around Guildholm.',
+    description: 'Deliver messages and packages around Guildholm. Nobody tips. Nobody ever tips.',
     careerLevel: 2,
   },
   // Requires Trade Guild
@@ -48,7 +48,7 @@ export const GUILD_HALL_JOBS: Job[] = [
     requiredClothing: 'casual',
     requiredExperience: 25,
     requiredDependability: 30,
-    description: 'Help process guild paperwork and memberships.',
+    description: 'Help process guild paperwork and memberships. The bureaucracy is alive and well and has sixteen forms for everything.',
     careerLevel: 2,
   },
   // Requires Commerce
@@ -62,7 +62,7 @@ export const GUILD_HALL_JOBS: Job[] = [
     requiredClothing: 'dress',
     requiredExperience: 60,
     requiredDependability: 55,
-    description: 'Manage guild finances and member dues.',
+    description: 'Manage guild finances and member dues. Mostly involves saying "no" to adventurers who think treasure is a write-off.',
     careerLevel: 5,
   },
   // Top job - requires Commerce + Master Combat (like Jones GM)
@@ -76,7 +76,7 @@ export const GUILD_HALL_JOBS: Job[] = [
     requiredClothing: 'business',
     requiredExperience: 80,
     requiredDependability: 70,
-    description: 'Senior guild management. One of the highest-paying positions.',
+    description: 'Senior guild management. You get a desk, a title, and the privilege of explaining to heroes why they can\'t expense a dragon.',
     careerLevel: 8,
   },
 ];
@@ -93,7 +93,7 @@ export const MARKET_JOBS: Job[] = [
     requiredClothing: 'none',
     requiredExperience: 0,
     requiredDependability: 10,
-    description: 'Carry goods and load carts at the market.',
+    description: 'Carry goods and load carts at the market. Your back will hate you, but your wallet will be slightly less empty.',
     careerLevel: 1,
   },
   // Requires Trade Guild (like Butcher requires Trade School)
@@ -107,7 +107,7 @@ export const MARKET_JOBS: Job[] = [
     requiredClothing: 'casual',
     requiredExperience: 35,
     requiredDependability: 35,
-    description: 'Sell goods at market stalls. Very lucrative early-game job!',
+    description: 'Sell goods at market stalls. The art of convincing people they need things they didn\'t know existed.',
     careerLevel: 3,
   },
   {
@@ -120,7 +120,7 @@ export const MARKET_JOBS: Job[] = [
     requiredClothing: 'casual',
     requiredExperience: 15,
     requiredDependability: 25,
-    description: 'Assist customers and stock shelves.',
+    description: 'Assist customers and stock shelves. Smile, nod, pretend you know where things are.',
     careerLevel: 2,
   },
   // Requires Commerce
@@ -134,7 +134,7 @@ export const MARKET_JOBS: Job[] = [
     requiredClothing: 'dress',
     requiredExperience: 50,
     requiredDependability: 45,
-    description: 'Assist senior merchants with trade negotiations and inventory.',
+    description: 'Assist senior merchants with trade negotiations. Hold their quill, nod wisely, and never admit you don\'t understand the spreadsheet.',
     careerLevel: 4,
   },
   {
@@ -147,7 +147,7 @@ export const MARKET_JOBS: Job[] = [
     requiredClothing: 'dress',
     requiredExperience: 65,
     requiredDependability: 60,
-    description: 'Run shop operations and manage staff.',
+    description: 'Run shop operations and manage staff. Finally, YOU get to tell people where things are.',
     careerLevel: 6,
   },
 ];
@@ -164,7 +164,7 @@ export const BANK_JOBS: Job[] = [
     requiredClothing: 'casual',
     requiredExperience: 15,
     requiredDependability: 25,
-    description: 'Clean the bank. Better pay than guild floor sweeping.',
+    description: 'Clean the bank. Same broom, fancier building, better pay. Career progression at its finest.',
     careerLevel: 2,
   },
   {
@@ -177,7 +177,7 @@ export const BANK_JOBS: Job[] = [
     requiredClothing: 'dress',
     requiredExperience: 35,
     requiredDependability: 40,
-    description: 'Handle deposits and withdrawals for customers.',
+    description: 'Handle deposits and withdrawals. Count gold all day. Resist the urge to keep some. Repeat.',
     careerLevel: 3,
   },
   // High-level job - like Jones Broker (requires Academic + Business)
@@ -191,7 +191,7 @@ export const BANK_JOBS: Job[] = [
     requiredClothing: 'business',
     requiredExperience: 80,
     requiredDependability: 70,
-    description: 'Manage guild investments. One of the best jobs in the realm!',
+    description: 'Manage guild investments. Other people\'s gold, your problem. Somehow, this pays really well.',
     careerLevel: 8,
   },
 ];
@@ -208,7 +208,7 @@ export const FORGE_JOBS: Job[] = [
     requiredClothing: 'none',
     requiredExperience: 0,
     requiredDependability: 0,
-    description: 'Hard physical labor at the forge. Long shifts.',
+    description: 'Hard physical labor at the forge. Long shifts. Eyebrows optional after week one.',
     careerLevel: 1,
   },
   {
@@ -221,7 +221,7 @@ export const FORGE_JOBS: Job[] = [
     requiredClothing: 'casual',
     requiredExperience: 20,
     requiredDependability: 25,
-    description: 'Learn the smithing trade under a master.',
+    description: 'Learn the smithing trade under a master. He communicates primarily through grunts and thrown hammers.',
     careerLevel: 2,
   },
   {
@@ -234,7 +234,7 @@ export const FORGE_JOBS: Job[] = [
     requiredClothing: 'casual',
     requiredExperience: 45,
     requiredDependability: 45,
-    description: 'Create quality metalwork and weapons.',
+    description: 'Create quality metalwork and weapons. You hit hot metal with a hammer until it becomes something useful. Oddly satisfying.',
     careerLevel: 4,
   },
   // Like Jones Machinist - requires Engineering
@@ -248,7 +248,7 @@ export const FORGE_JOBS: Job[] = [
     requiredClothing: 'casual',
     requiredExperience: 70,
     requiredDependability: 60,
-    description: 'Forge legendary weapons and armor.',
+    description: 'Forge legendary weapons and armor. Each one gets a name. You will run out of good names by the third sword.',
     careerLevel: 7,
   },
   // Top forge job - like Jones Engineer
@@ -262,7 +262,7 @@ export const FORGE_JOBS: Job[] = [
     requiredClothing: 'business',
     requiredExperience: 85,
     requiredDependability: 70,
-    description: 'Run the entire forge operation. Top forge position!',
+    description: 'Run the entire forge operation. Like being a manager, but with more fire and fewer meetings. Heaven.',
     careerLevel: 9,
   },
 ];
@@ -279,7 +279,7 @@ export const ACADEMY_JOBS: Job[] = [
     requiredClothing: 'casual',
     requiredExperience: 15,
     requiredDependability: 30,
-    description: 'Organize scrolls and help students find texts.',
+    description: 'Organize scrolls and help students find texts. It\'s like being a librarian, except the books sometimes try to kill you.',
     careerLevel: 2,
   },
   {
@@ -292,7 +292,7 @@ export const ACADEMY_JOBS: Job[] = [
     requiredClothing: 'dress',
     requiredExperience: 30,
     requiredDependability: 40,
-    description: 'Copy important documents and texts.',
+    description: 'Copy important documents and texts. Your handwriting will improve. Your eyesight will not.',
     careerLevel: 3,
   },
   // Like Jones Teacher
@@ -306,7 +306,7 @@ export const ACADEMY_JOBS: Job[] = [
     requiredClothing: 'dress',
     requiredExperience: 55,
     requiredDependability: 55,
-    description: 'Teach young students at the academy.',
+    description: 'Teach young students at the academy. "Those who can, do. Those who can\'t, teach. Those who can\'t teach, administrate."',
     careerLevel: 5,
   },
   {
@@ -319,7 +319,7 @@ export const ACADEMY_JOBS: Job[] = [
     requiredClothing: 'dress',
     requiredExperience: 65,
     requiredDependability: 60,
-    description: 'Lead classes and mentor junior teachers.',
+    description: 'Lead classes and mentor junior teachers. Like herding cats, but the cats have opinions about Aristotle.',
     careerLevel: 6,
   },
   {
@@ -332,7 +332,7 @@ export const ACADEMY_JOBS: Job[] = [
     requiredClothing: 'dress',
     requiredExperience: 75,
     requiredDependability: 65,
-    description: 'Deliver advanced lectures on specialized topics.',
+    description: 'Deliver advanced lectures on specialized topics. Stand in front of people and talk until they either learn or fall asleep.',
     careerLevel: 7,
   },
   // Requires Advanced Scholar
@@ -346,7 +346,7 @@ export const ACADEMY_JOBS: Job[] = [
     requiredClothing: 'dress',
     requiredExperience: 60,
     requiredDependability: 55,
-    description: 'Conduct scholarly research and publish findings.',
+    description: 'Conduct scholarly research and publish findings. The findings are usually "we need more funding for more research."',
     careerLevel: 6,
   },
   // Like Jones Professor - requires Research degree
@@ -360,7 +360,7 @@ export const ACADEMY_JOBS: Job[] = [
     requiredClothing: 'dress',
     requiredExperience: 80,
     requiredDependability: 70,
-    description: 'The highest academic position. Conduct original research.',
+    description: 'The highest academic position. You finally know everything. The main thing you know is how little everyone else knows.',
     careerLevel: 8,
   },
 ];
@@ -377,7 +377,7 @@ export const MILITARY_JOBS: Job[] = [
     requiredClothing: 'uniform',
     requiredExperience: 30,
     requiredDependability: 40,
-    description: 'Patrol the streets and maintain order.',
+    description: 'Patrol the streets and maintain order. Mostly involves telling drunken adventurers to put the sword down.',
     careerLevel: 3,
   },
   {
@@ -390,7 +390,7 @@ export const MILITARY_JOBS: Job[] = [
     requiredClothing: 'uniform',
     requiredExperience: 45,
     requiredDependability: 50,
-    description: 'Protect merchant caravans. Long hours, good pay.',
+    description: 'Protect merchant caravans. Long hours spent walking next to a cart, hoping bandits are having a day off.',
     careerLevel: 4,
   },
   {
@@ -403,7 +403,7 @@ export const MILITARY_JOBS: Job[] = [
     requiredClothing: 'uniform',
     requiredExperience: 60,
     requiredDependability: 45,
-    description: 'Fight for glory in the arena! Short shifts, high risk.',
+    description: 'Fight for glory in the arena! Short shifts because you either win quickly or... well. Short shifts.',
     careerLevel: 6,
   },
   {
@@ -416,7 +416,7 @@ export const MILITARY_JOBS: Job[] = [
     requiredClothing: 'uniform',
     requiredExperience: 75,
     requiredDependability: 60,
-    description: 'Train the next generation of warriors.',
+    description: 'Train the next generation of warriors. "No, hold the POINTY end towards the enemy." Every. Single. Time.',
     careerLevel: 7,
   },
 ];
@@ -433,7 +433,7 @@ export const MAGIC_JOBS: Job[] = [
     requiredClothing: 'casual',
     requiredExperience: 25,
     requiredDependability: 35,
-    description: 'Copy magical scrolls. Requires careful attention.',
+    description: 'Copy magical scrolls. Mispronounce one word and suddenly there\'s a goat in the library.',
     careerLevel: 3,
   },
   {
@@ -446,7 +446,7 @@ export const MAGIC_JOBS: Job[] = [
     requiredClothing: 'dress',
     requiredExperience: 40,
     requiredDependability: 45,
-    description: 'Assist master enchanters with their work.',
+    description: 'Assist master enchanters with their work. Mostly involves saying "ooh" and "ahh" at appropriate intervals and dodging sparks.',
     careerLevel: 4,
   },
   {
@@ -459,7 +459,7 @@ export const MAGIC_JOBS: Job[] = [
     requiredClothing: 'dress',
     requiredExperience: 65,
     requiredDependability: 55,
-    description: 'Brew potions and transmute materials.',
+    description: 'Brew potions and transmute materials. It\'s like cooking, but the ingredients argue back and occasionally explode.',
     careerLevel: 6,
   },
   {
@@ -472,7 +472,7 @@ export const MAGIC_JOBS: Job[] = [
     requiredClothing: 'dress',
     requiredExperience: 55,
     requiredDependability: 50,
-    description: 'Specialize in healing and enhancement potions.',
+    description: 'Specialize in healing and enhancement potions. "Does it taste good?" No. "Does it work?" Also no guarantee. But maybe.',
     careerLevel: 5,
   },
 ];
@@ -490,7 +490,7 @@ export const TAVERN_JOBS: Job[] = [
     requiredClothing: 'none',
     requiredExperience: 0,
     requiredDependability: 0,
-    description: 'Wash dishes and clean the kitchen. Honest work for beginners.',
+    description: 'Wash dishes and clean the kitchen. The stains are mysterious and the soap is inadequate, but it builds character.',
     careerLevel: 1,
   },
   {
@@ -503,7 +503,7 @@ export const TAVERN_JOBS: Job[] = [
     requiredClothing: 'casual',
     requiredExperience: 15,
     requiredDependability: 20,
-    description: 'Prepare hearty meals for hungry adventurers.',
+    description: 'Prepare hearty meals for hungry adventurers. The secret ingredient is a concerning lack of questions about the ingredients.',
     careerLevel: 2,
   },
   {
@@ -516,7 +516,7 @@ export const TAVERN_JOBS: Job[] = [
     requiredClothing: 'casual',
     requiredExperience: 30,
     requiredDependability: 30,
-    description: 'Serve drinks and food to patrons. Tips are good!',
+    description: 'Serve drinks and food to patrons. Tips range from \'generous\' to \'insultingly philosophical.\'',
     careerLevel: 2,
   },
   // Requires Trade Guild
@@ -530,7 +530,7 @@ export const TAVERN_JOBS: Job[] = [
     requiredClothing: 'casual',
     requiredExperience: 45,
     requiredDependability: 40,
-    description: 'Lead the kitchen and create the tavern\'s famous dishes.',
+    description: 'Lead the kitchen and create the tavern\'s famous dishes. Famous for what, exactly? Best not to specify.',
     careerLevel: 3,
   },
   // Manager position - requires Commerce
@@ -544,7 +544,7 @@ export const TAVERN_JOBS: Job[] = [
     requiredClothing: 'dress',
     requiredExperience: 60,
     requiredDependability: 55,
-    description: 'Manage the entire tavern operation. Keep the ale flowing!',
+    description: 'Manage the entire tavern operation. Keep the ale flowing, the brawls contained, and the health inspector away.',
     careerLevel: 5,
   },
 ];
@@ -561,7 +561,7 @@ export const NOBLE_JOBS: Job[] = [
     requiredClothing: 'business',
     requiredExperience: 80,
     requiredDependability: 70,
-    description: 'Advise nobility on important matters.',
+    description: 'Advise nobility on important matters. The trick is making them think your ideas are their ideas. It always is.',
     careerLevel: 8,
   },
   // Top job in the game - like Jones General Manager
@@ -575,7 +575,7 @@ export const NOBLE_JOBS: Job[] = [
     requiredClothing: 'business',
     requiredExperience: 95,
     requiredDependability: 80,
-    description: 'The highest-paying job in Guildholm. Ultimate career achievement!',
+    description: 'The highest-paying job in Guildholm. All the responsibility, none of the glory. Welcome to management.',
     careerLevel: 10,
   },
 ];
