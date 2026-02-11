@@ -3,7 +3,7 @@
 // Follows the medieval parchment aesthetic with amber-800/900 text colors
 
 import { useState } from 'react';
-import { Settings, Code, Users, Target, Coins, Smile, GraduationCap, TrendingUp, Menu, Trophy, Compass, Maximize, Minimize } from 'lucide-react';
+import { Settings, Code, Users, Target, Coins, Smile, GraduationCap, TrendingUp, Menu, Trophy, Compass, Maximize, Minimize, Crown } from 'lucide-react';
 import { AchievementsPanel } from './AchievementsPanel';
 import { PlayersTab } from './tabs/PlayersTab';
 import { OptionsTab } from './tabs/OptionsTab';
@@ -29,7 +29,6 @@ const TABS: TabConfig[] = [
 interface RightSideTabsProps {
   players: Player[];
   currentPlayerIndex: number;
-  week: number;
   goalSettings: GoalSettings;
   onOpenSaveMenu: () => void;
   onToggleDebugOverlay: () => void;
@@ -44,7 +43,6 @@ interface RightSideTabsProps {
 export function RightSideTabs({
   players,
   currentPlayerIndex,
-  week,
   goalSettings,
   onOpenSaveMenu,
   onToggleDebugOverlay,
@@ -60,11 +58,12 @@ export function RightSideTabs({
 
   return (
     <div className="h-full flex flex-col bg-parchment rounded-lg border-2 border-wood-dark/50 overflow-hidden">
-      {/* Header with Menu & Fullscreen */}
+      {/* Header with Current Turn & Menu/Fullscreen */}
       <div className="flex items-center justify-between p-2 bg-gradient-to-b from-wood-dark to-wood border-b-2 border-wood-light">
-        <div className="flex items-center gap-2">
-          <h3 className="font-display text-xs font-bold text-parchment">
-            Week {week}
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Crown className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+          <h3 className="font-display text-xs font-bold text-parchment truncate">
+            {players[currentPlayerIndex]?.name ?? 'Unknown'}'s Turn
           </h3>
         </div>
         <div className="flex items-center gap-1">

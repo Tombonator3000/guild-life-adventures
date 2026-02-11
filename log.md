@@ -1,5 +1,34 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-11 - Right Sidebar: Replace Duplicate Week with Turn Indicator
+
+### Overview
+
+Removed the redundant "Week X" display from the right sidebar header. The week number is already prominently shown in the top-center GameBoardHeader, so having it repeated in the sidebar wasted space. Replaced it with a **current player turn indicator** showing a crown icon + "[Player Name]'s Turn", which provides immediately useful context — especially in multiplayer games.
+
+### Changes
+
+| # | Change | Details |
+|---|--------|---------|
+| 1 | **Removed duplicate Week display** | Right sidebar header no longer shows "Week {week}" (already in GameBoardHeader) |
+| 2 | **Added turn indicator** | Crown icon + "{PlayerName}'s Turn" in sidebar header — shows whose turn it is at a glance |
+| 3 | **Cleaned up `week` prop** | Removed unused `week` prop from RightSideTabs interface and both call sites in GameBoard.tsx |
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `src/components/game/RightSideTabs.tsx` | Replaced "Week {week}" with Crown + player name turn indicator; removed `week` from props; added Crown import |
+| `src/components/game/GameBoard.tsx` | Removed `week={week}` prop from both RightSideTabs usages (desktop + mobile drawer) |
+
+### Build & Test Results
+
+- **TypeScript**: Clean (0 errors)
+- **Vite build**: Passed (~11s)
+- **Tests**: 176/176 passed (9 test files)
+
+---
+
 ## 2026-02-11 - Fullscreen Mode, Menu Relocation & Event Panel Redesign
 
 ### Overview
