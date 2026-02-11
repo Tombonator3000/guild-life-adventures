@@ -1,5 +1,79 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-11 - Refactored startTurnHelpers.ts (Complex Code Refactoring)
+
+### Overview
+
+Refactored `src/store/helpers/startTurnHelpers.ts` — the start-of-turn processor that handles appliance breakage, food spoilage, starvation, robbery, and bonuses. The original was a 341-line monolithic function with significant code duplication and no structural separation. Refactored into clearly named phase processors while preserving identical runtime behavior.
+
+### Problems Identified
+
+1. **3x duplicated doctor visit logic** — Identical cost calculation (30-200g), identical penalties (-10 hours, -4 happiness, -gold), copy-pasted across food spoilage (line 100), starvation (line 165), and exhaustion (line 187)
+2. **12+ copies of player-update boilerplate** — `set(state => ({ players: state.players.map(p => p.id === playerId ? {...p, ...changes} : p) }))` repeated verbatim throughout the file
+3. **No named sections** — One giant function body mixing 7 distinct concerns (appliance breakage, food spoilage, starvation, relaxation, homelessness, robbery, bonuses) with scattered re-reads
+4. **Hard to test individual concerns** — Everything coupled inside one closure, no way to unit-test individual phases
+
+### Refactoring Changes
+
+#### Shared Helpers Extracted (3)
+
+| Helper | Purpose | Occurrences Replaced |
+|--------|---------|---------------------|
+| `updatePlayerById(set, playerId, updater)` | Encapsulates the `set(state => ({ players: state.players.map(...) }))` boilerplate. Accepts static `Partial<Player>` or callback `(p: Player) => Partial<Player>` | 12+ |
+| `getPlayer(get, playerId)` | Encapsulates `get().players.find(p => p.id === playerId)!` | 5 |
+| `applyDoctorVisit(set, playerId, eventMessages, template)` | Deduplicates the doctor visit penalty (30-200g cost, -10 hours, -4 happiness). Uses `{cost}` template placeholder for per-caller messages | 3 |
+
+#### Phase Processors Extracted (7)
+
+| Function | Lines | Responsibility |
+|----------|-------|---------------|
+| `processApplianceBreakage` | 69-100 | Check breakage chance, mark broken, notify UI |
+| `processFreshFoodSpoilage` | 102-137 | Spoilage without Preservation Box, storage overflow |
+| `processStarvationCheck` | 139-174 | Fresh food backup, starvation time penalty |
+| `processRelaxationCheck` | 176-188 | Exhaustion collapse from low relaxation |
+| `processHomelessPenalty` | 190-206 | Health and time penalties for homeless players |
+| `processRobberyCheck` | 208-261 | Apartment robbery, equipment unequip, UI notification |
+| `processStartOfTurnBonuses` | 263-297 | Cooking fire, housing happiness, arcane tome income |
+
+#### Main Orchestrator
+
+The `createStartTurn` function is now a clean pipeline of 7 named phases with explicit re-reads between dependent phases:
+
+```
+Move to home → Phase 1: Appliance breakage → re-read →
+Phase 2: Food spoilage → re-read → Phase 3: Starvation → re-read →
+Phase 4: Relaxation → Phase 5: Homeless → Phase 6: Robbery → re-read →
+Phase 7: Bonuses → Emit events
+```
+
+### Behavior Preservation
+
+- **All 176 tests pass** (9 test files, 0 failures)
+- **TypeScript type-check passes** with zero errors
+- **Production build succeeds**
+- Sequential application of cooking fire / housing / arcane tome bonuses preserved (not batched) to maintain exact clamping behavior at happiness boundaries
+- All re-read points between phases match the original to ensure state dependencies are respected
+- Doctor visit messages preserved exactly via `{cost}` template substitution
+
+### Metrics
+
+| Metric | Before | After |
+|--------|--------|-------|
+| File lines | 341 | 372 |
+| Functions | 1 (monolith) | 11 (3 helpers + 7 phases + 1 orchestrator) |
+| Duplicated doctor visit blocks | 3 | 0 (1 shared helper) |
+| Player-update boilerplate copies | 12+ | 0 (1 shared helper) |
+| Max function body length | ~310 lines | ~65 lines |
+| Avg cyclomatic complexity per fn | High | Low |
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/store/helpers/startTurnHelpers.ts` | Refactored: 3 helpers + 7 phase processors extracted from monolith |
+
+---
+
 ## 2026-02-10 - Created electron.md (Electron Build & Distribution Guide)
 
 ### Overview
