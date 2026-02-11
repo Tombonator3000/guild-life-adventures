@@ -1,5 +1,39 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-11 - Leather Border Frames & Border Style Options
+
+### Overview
+
+Added AI-generated decorative leather frame borders with stitches and brass rivets as an alternative to the existing stone wall borders. Players can now choose between Stone, Leather, or None border styles for the side panels via the Options tab. Also created a Supabase edge function (`generate-border`) that uses the Lovable AI Gateway (Google Gemini image generation) to dynamically generate border images.
+
+### Changes
+
+| # | Change | Details |
+|---|--------|---------|
+| 1 | **AI-generated leather border images** | Generated two leather frame images using flux.dev — `leather-border-left.png` and `leather-border-right.png` with dark aged brown leather, hand-sewn cross-stitches, brass rivets, Celtic knotwork tooling |
+| 2 | **Gemini image generation edge function** | New `supabase/functions/generate-border/index.ts` — calls Lovable AI Gateway with `google/gemini-2.5-flash-image` model to generate border images on demand |
+| 3 | **Border style option in GameOptions** | New `borderStyle: 'stone' | 'leather' | 'none'` option with `BorderStyle` type export, defaults to `'stone'` |
+| 4 | **Updated StoneBorderFrame component** | Now reads `borderStyle` from GameOptions, supports stone/leather/none variants with appropriate image mapping |
+| 5 | **Border style picker in OptionsTab** | 3-button toggle (🪨 Stone / 🧵 Leather / ❌ None) in Options panel under "Panel Borders" section |
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `src/assets/leather-border-left.png` | AI-generated leather frame for left panel |
+| `src/assets/leather-border-right.png` | AI-generated leather frame for right panel |
+| `supabase/functions/generate-border/index.ts` | Edge function for Gemini image generation of custom borders |
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `src/data/gameOptions.ts` | Added `BorderStyle` type and `borderStyle` option (default: `'stone'`) |
+| `src/components/game/StoneBorderFrame.tsx` | Multi-style support (stone/leather/none) via GameOptions |
+| `src/components/game/tabs/OptionsTab.tsx` | Added border style selector UI |
+
+---
+
 ## 2026-02-11 - Internationalization: German & Spanish Language Support
 
 ### Overview
