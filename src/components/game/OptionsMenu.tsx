@@ -437,9 +437,30 @@ function DisplayTab({
   options: GameOptions;
   setOption: <K extends keyof GameOptions>(key: K, value: GameOptions[K]) => void;
 }) {
+  const isFullscreen = !!document.fullscreenElement;
+  const handleToggleFullscreen = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    } else {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+  };
+
   return (
     <div className="space-y-4">
       <SectionHeader title="Interface" />
+
+      <OptionRow
+        icon={<Monitor className="w-4 h-4 text-emerald-400" />}
+        label="Fullscreen"
+        description="Toggle fullscreen mode. Keyboard shortcut: F"
+        control={
+          <Switch
+            checked={isFullscreen}
+            onCheckedChange={handleToggleFullscreen}
+          />
+        }
+      />
 
       <OptionRow
         icon={<Eye className="w-4 h-4 text-blue-400" />}

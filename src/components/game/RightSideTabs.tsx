@@ -3,11 +3,12 @@
 // Follows the medieval parchment aesthetic with amber-800/900 text colors
 
 import { useState } from 'react';
-import { Settings, Code, Users, Target, Coins, Smile, GraduationCap, TrendingUp, Menu, Trophy, Compass } from 'lucide-react';
+import { Settings, Code, Users, Target, Coins, Smile, GraduationCap, TrendingUp, Menu, Trophy, Compass, Maximize, Minimize } from 'lucide-react';
 import { AchievementsPanel } from './AchievementsPanel';
 import { PlayersTab } from './tabs/PlayersTab';
 import { OptionsTab } from './tabs/OptionsTab';
 import { DeveloperTab } from './tabs/DeveloperTab';
+import { useFullscreen } from '@/hooks/useFullscreen';
 import type { Player, GoalSettings } from '@/types/game.types';
 
 type TabId = 'players' | 'achievements' | 'options' | 'developer';
@@ -55,15 +56,36 @@ export function RightSideTabs({
   onSkipAITurn,
 }: RightSideTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>('players');
+  const { isFullscreen, toggleFullscreen } = useFullscreen();
 
   return (
     <div className="h-full flex flex-col bg-parchment rounded-lg border-2 border-wood-dark/50 overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-2 p-2 bg-gradient-to-b from-wood-dark to-wood border-b-2 border-wood-light">
-        <Menu className="w-4 h-4 text-parchment" />
-        <h3 className="font-display text-xs font-bold text-parchment">
-          Week {week}
-        </h3>
+      {/* Header with Menu & Fullscreen */}
+      <div className="flex items-center justify-between p-2 bg-gradient-to-b from-wood-dark to-wood border-b-2 border-wood-light">
+        <div className="flex items-center gap-2">
+          <h3 className="font-display text-xs font-bold text-parchment">
+            Week {week}
+          </h3>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={toggleFullscreen}
+            className="p-1 rounded hover:bg-white/10 transition-colors"
+            title={isFullscreen ? 'Exit Fullscreen (F)' : 'Fullscreen (F)'}
+          >
+            {isFullscreen
+              ? <Minimize className="w-3.5 h-3.5 text-parchment" />
+              : <Maximize className="w-3.5 h-3.5 text-parchment" />
+            }
+          </button>
+          <button
+            onClick={onOpenSaveMenu}
+            className="p-1 rounded hover:bg-white/10 transition-colors"
+            title="Game Menu (Esc)"
+          >
+            <Menu className="w-3.5 h-3.5 text-parchment" />
+          </button>
+        </div>
       </div>
 
       {/* Tab Navigation */}

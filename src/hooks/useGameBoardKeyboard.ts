@@ -66,6 +66,15 @@ export function useGameBoardKeyboard({
         e.preventDefault();
         audioManager.toggleMute();
       }
+      // F = Toggle fullscreen
+      if (e.key === 'f' && !e.ctrlKey && !e.metaKey && !showGameMenu) {
+        e.preventDefault();
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+        } else {
+          document.documentElement.requestFullscreen().catch(() => {});
+        }
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);

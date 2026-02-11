@@ -1,5 +1,52 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-11 - Fullscreen Mode, Menu Relocation & Event Panel Redesign
+
+### Overview
+
+Three UI improvements: fullscreen mode with auto-enter on game start, relocated game menu button to right sidebar, and redesigned event panel with larger text and bottom-centered button.
+
+### Changes
+
+| # | Feature | Details |
+|---|---------|---------|
+| 1 | **Fullscreen Mode** | Game auto-enters fullscreen when starting (New Adventure, Continue, Load, Online). Toggle via F key, right-sidebar button, or Options > Display > Fullscreen. Uses Fullscreen API with graceful fallback. |
+| 2 | **Menu Button Relocation** | Moved ESC/Game Menu button from top-center GameBoardHeader to right sidebar header (above player list). Sits next to new fullscreen toggle button. Header now shows only week/market/weather info. |
+| 3 | **Event Panel Redesign** | Weekend and week events now display with larger text (text-3xl title, text-lg description), each event line rendered separately for readability. Icons enlarged to w-16/h-16. Button fixed at bottom center. Layout prepared with icon/graphics placeholder area for future event illustrations. |
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `src/hooks/useFullscreen.ts` | **New** — Fullscreen hook (enterFullscreen, exitFullscreen, toggleFullscreen, isFullscreen state) |
+| `src/components/screens/TitleScreen.tsx` | Added fullscreen entry on New Adventure, Continue, Load, Online clicks |
+| `src/components/screens/GameSetup.tsx` | Added fullscreen entry on Begin Adventure click |
+| `src/components/game/GameBoardHeader.tsx` | Removed menu button; now only shows week/market/weather info |
+| `src/components/game/GameBoard.tsx` | Removed onOpenMenu prop from GameBoardHeader |
+| `src/components/game/RightSideTabs.tsx` | Added Menu + Fullscreen toggle buttons in sidebar header |
+| `src/components/game/EventPanel.tsx` | Redesigned: larger icons (w-16), larger title (text-3xl), larger body text (text-lg), split description lines, fixed bottom button, graphics placeholder area |
+| `src/components/game/OptionsMenu.tsx` | Added Fullscreen toggle in Display tab |
+| `src/hooks/useGameBoardKeyboard.ts` | Added F key shortcut for fullscreen toggle |
+
+### Keyboard Shortcuts Updated
+
+| Key | Action |
+|-----|--------|
+| **F** | Toggle fullscreen (new) |
+| Esc | Toggle game menu |
+| E | End turn |
+| T | Toggle tutorial |
+| M | Toggle music |
+| Space | Skip AI turn |
+
+### Build & Test Results
+
+- **TypeScript**: Clean (0 errors)
+- **Vite build**: Passed (~12s)
+- **Tests**: 176/176 passed (9 test files)
+
+---
+
 ## 2026-02-11 - Lovable Sync & Build Verification
 
 ### Context

@@ -9,6 +9,7 @@ import { CreditsScreen } from '@/components/screens/CreditsScreen';
 import { useAudioSettings } from '@/hooks/useMusic';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { UpdateBanner } from '@/components/game/UpdateBanner';
+import { useFullscreen } from '@/hooks/useFullscreen';
 import gameBoard from '@/assets/game-board.jpeg';
 
 export function TitleScreen() {
@@ -21,8 +22,10 @@ export function TitleScreen() {
   const autoSaveExists = hasAutoSave();
   const { musicMuted, toggleMute } = useAudioSettings();
   const { canInstall, install, isIOS, showIOSGuide, dismissIOSGuide } = usePWAInstall();
+  const { enterFullscreen } = useFullscreen();
 
   const handleContinue = () => {
+    enterFullscreen();
     if (loadFromSlot(0)) {
       // loaded
     }
@@ -34,6 +37,7 @@ export function TitleScreen() {
   };
 
   const handleLoadSlot = (slot: number) => {
+    enterFullscreen();
     if (loadFromSlot(slot)) {
       setShowLoadMenu(false);
     }
@@ -81,14 +85,14 @@ export function TitleScreen() {
         {/* Action Buttons */}
         <div className="flex flex-col items-center gap-3">
           <button
-            onClick={() => setPhase('setup')}
+            onClick={() => { enterFullscreen(); setPhase('setup'); }}
             className="gold-button text-xl px-12 py-4 animate-pulse-gold"
           >
             New Adventure
           </button>
 
           <button
-            onClick={() => setPhase('online-lobby')}
+            onClick={() => { enterFullscreen(); setPhase('online-lobby'); }}
             className="wood-frame text-parchment text-lg px-10 py-3 font-display hover:brightness-110 flex items-center gap-2 justify-center"
           >
             <Globe className="w-5 h-5" />
