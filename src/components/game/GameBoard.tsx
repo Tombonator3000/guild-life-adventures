@@ -19,6 +19,7 @@ import { TutorialOverlay } from './TutorialOverlay';
 import { MobileHUD } from './MobileHUD';
 import { MobileDrawer } from './MobileDrawer';
 import { WeatherOverlay } from './WeatherOverlay';
+import { FestivalOverlay } from './FestivalOverlay';
 import { BanterBubble } from './BanterBubble';
 import { useBanterStore } from '@/store/banterStore';
 import { UpdateBanner } from './UpdateBanner';
@@ -276,6 +277,9 @@ export function GameBoard() {
               ))}
             </div>
           )}
+
+          {/* Festival visual overlay (z-34, below weather) */}
+          <FestivalOverlay activeFestival={useGameStore(s => s.activeFestival)} />
 
           {/* Weather particle overlay */}
           <WeatherOverlay particle={weather?.particle ?? null} weatherType={weather?.type} />

@@ -1,72 +1,57 @@
 
 
-## AI-generert steinmur-border rundt sidepanelene
+# Festival Grafikk og Animasjoner
 
-Bruker Googles Gemini bildegenerering (via Lovable AI Gateway) til a lage dekorative steinmur-bilder med mose, slyngplanter og blomster i middelalderstil. Disse brukes som bakgrunnsbilder/borders rundt venstre og hoyre sidepanel.
+Legge til visuell grafikk og animasjoner for de 4 sesongfestivalene, etter same monster som WeatherOverlay. Hvert festival far unike AI-genererte teksturer og CSS-animasjoner som vises over spillbrettet nar festivalen er aktiv.
 
-### Tilnaerming
+## De 4 festivalene og deres visuelle konsept
 
-Genererer **to bilder** med AI:
-1. **Venstre border** - Vertikal steinmur-ramme med mose og vines, apen pa hoyre side (der panelinnholdet vises)
-2. **Hoyre border** - Speilvendt versjon, apen pa venstre side
+### 1. Harvest Festival (Hostfestival)
+- **AI-teksturer**: Fallende hveteaks og eplblader, gylden kornkrans-border
+- **Animasjoner**: Sakte fallende kornaks-partikler, varm gylden glod-overlay, "abundance shimmer"
+- **Fargepalett**: Gull, rav, varm oransje
 
-Bildene lagres i `public/ui/` og brukes som bakgrunn i en wrapper-komponent.
+### 2. Winter Solstice (Vintersolverv)
+- **AI-teksturer**: Iskrystaller, frostrammer, nordlys-bands
+- **Animasjoner**: Glittrende frost-partikler som faller sakte, nordlys-lignende fargebolgerer oppe, blatt/lilla skimmer
+- **Fargepalett**: Isblatt, lilla, solv
 
-### Plan
+### 3. Spring Tournament (Varturnering)
+- **AI-teksturer**: Turnerings-bannere/flagg, sverd-kryss-emblem, konfetti
+- **Animasjoner**: Vaiende bannere pa sidene, fallende konfetti-partikler, glimt-effekter
+- **Fargepalett**: Rod, gull, solvhvit
 
-#### Steg 1: Generer AI-bilder
-Bruke Gemini image generation til a lage to vertikale steinmur-border-bilder:
-- Prompt: Medieval stone wall border frame with moss, vines, and small flowers. Dark gray/brown stone texture. Transparent or dark center. Vertical orientation, game UI frame style.
-- Format: PNG med gjennomsiktig senter
-- Storrelse: Tilpasset sidepanelenes proporsjoner (smal og hoy)
+### 4. Midsummer Fair (Midtsommerfest)
+- **AI-teksturer**: Festlige lanterner, fargerike band/streamers, blomsterkranser
+- **Animasjoner**: Svevende lanterner som stiger opp, fargerike streamers, varm festlig glod
+- **Fargepalett**: Varme farger, gront, gult, rodt
 
-#### Steg 2: Ny komponent `StoneBorderFrame.tsx`
-- Enkel wrapper som legger AI-generert bilde som bakgrunn
-- Bruker `background-image` med `background-size: 100% 100%` for a strekke rammen
-- Padding inni for at panelinnholdet ikke overlapper steinmuren
-- Props: `side: 'left' | 'right'` for a velge riktig bilde
+## Teknisk implementering
 
-#### Steg 3: Oppdater `GameBoard.tsx`
-- Wrap venstre sidepanel (linje 195-207) med `StoneBorderFrame side="left"`
-- Wrap hoyre sidepanel (linje 334-352) med `StoneBorderFrame side="right"`
-- Fjerne `p-[0.5%]` padding fra panel-wrapperne (StoneBorderFrame handterer dette)
+### Nye filer
+- `src/components/game/FestivalOverlay.tsx` — Ny komponent etter WeatherOverlay-monstre
+- 8 AI-genererte PNG-teksturer i `src/assets/`:
+  - `harvest-grain.png`, `harvest-glow.png`
+  - `solstice-frost.png`, `solstice-aurora.png`
+  - `tourney-banner.png`, `tourney-confetti.png`
+  - `fair-lantern.png`, `fair-streamers.png`
 
-#### Steg 4: Fiks eksisterende build-feil
-- **GameBoard.tsx linje 381**: Fjern `week={week}` prop fra mobile RightSideTabs
-- **DeveloperTab.tsx**: Fikse type-feil ved a bruke spesifikke store-selektorer i stedet for hele store-objektet
-- **QuestPanel.tsx**: Fikse "bounty" type-sammenligninger
-- **networkState.ts**: Fikse type-casting
+### Endringer i eksisterende filer
+- **`GameBoard.tsx`**: Importere `FestivalOverlay` og rendre den ved siden av `WeatherOverlay`, med `activeFestival` fra store
+- **`log.md`**: Dokumentere endringene
 
-#### Steg 5: Logg til log.md
+### FestivalOverlay-arkitektur
+- Tar `activeFestival: FestivalId | null` som prop
+- Returnerer `null` nar ingen festival er aktiv
+- Bruker `pointer-events: none` og `z-index: 34` (under weather pa 35)
+- Hver festival har sin egen sub-komponent (HarvestLayer, SolsticeLayer, TourneyLayer, FairLayer)
+- CSS `@keyframes`-animasjoner for partikler og overlays
+- AI-genererte PNG-teksturer som bakgrunnsbilder med blend modes
 
-### Tekniske detaljer
+### Animasjonsdetaljer per festival
 
-**Bildegenerering:**
-- Bruker `google/gemini-2.5-flash-image` modellen via Lovable AI
-- Genererer bildene under bygging/utvikling og lagrer som statiske filer i `public/ui/`
-- To bilder: `stone-border-left.png` og `stone-border-right.png`
-
-**StoneBorderFrame.tsx:**
-```
-interface StoneBorderFrameProps {
-  side: 'left' | 'right';
-  children: React.ReactNode;
-}
-```
-- Bruker bakgrunnsbilde som dekker hele containeren
-- Innvendig padding (~8-12%) slik at panelinnholdet sitter inni steinrammen
-- Gjennomsiktig senter slik at panelinnholdet er lesbart
-
-**Filer som opprettes/endres:**
-
-| Fil | Endring |
-|-----|---------|
-| `public/ui/stone-border-left.png` | **Ny** - AI-generert steinmur venstre ramme |
-| `public/ui/stone-border-right.png` | **Ny** - AI-generert steinmur hoyre ramme |
-| `src/components/game/StoneBorderFrame.tsx` | **Ny** - Wrapper-komponent med steinmur-bakgrunn |
-| `src/components/game/GameBoard.tsx` | Wrap sidepaneler + fiks `week` build-feil |
-| `src/components/game/tabs/DeveloperTab.tsx` | Fiks type-feil med store |
-| `src/components/game/QuestPanel.tsx` | Fiks "bounty" type-feil |
-| `src/network/networkState.ts` | Fiks type-casting |
-| `log.md` | Logg dagens endringer |
+**Harvest**: Fallende kornaks (15-20 partikler, slow fall 8-12s), gylden overlay med `screen` blend, pulserende varmt lys
+**Solstice**: Frostpartikler (glitter, 25 stk), nordlys-gradient som oscillerer horisontalt, blatt skimmer
+**Tourney**: Konfetti-partikler (30 stk, multi-farge, rotasjon), banner-lignende elementer pa sidene med svaie-animasjon
+**Fair**: Lanterner som stiger opp (10-15 stk, slow rise 10-15s), streamer-overlay, varm festglod
 
