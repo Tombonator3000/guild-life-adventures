@@ -1,6 +1,7 @@
 // Guild Life - Event Modal Component
 
 import { AlertTriangle, Skull, Home, Coins, Heart, Utensils } from 'lucide-react';
+import { getEventImage } from '@/assets/events';
 import {
   Dialog,
   DialogContent,
@@ -78,7 +79,21 @@ export function EventModal({ event, onDismiss }: EventModalProps) {
       <DialogContent className="parchment-panel border-0 max-w-md">
         <DialogHeader className="text-center">
           <div className="flex justify-center mb-4">
-            {getIcon()}
+            {(() => {
+              const img = getEventImage(event.id, event.type);
+              if (img) {
+                return (
+                  <img
+                    src={img}
+                    alt={event.title}
+                    className="w-24 h-24 object-contain rounded-lg border-2 border-card-foreground/20"
+                    style={{ filter: 'sepia(0.3)' }}
+                    loading="lazy"
+                  />
+                );
+              }
+              return getIcon();
+            })()}
           </div>
           <DialogTitle className="font-display text-2xl text-card-foreground">
             {event.title}

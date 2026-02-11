@@ -1,5 +1,11 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-11 - AI-Generated Event Woodcut Illustrations (35 Images)
+
+Generated 35 medieval woodcut-style illustrations (512×512) for all game events. Displayed in EventPanel (128×128) and EventModal (96×96) with sepia filter. New files: `src/assets/events/index.ts` + 35 PNGs. Categories: Crime (5), Positive (3), Economic (4), Health (3), Life (8), Weather (5), Travel (6), Lottery (1). Modified: `EventPanel.tsx`, `EventModal.tsx`.
+
+---
+
 ## 2026-02-11 - AI-Generated Item Images (53 Items)
 
 ### Overview
