@@ -10,6 +10,7 @@ import { useAudioSettings } from '@/hooks/useMusic';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { UpdateBanner } from '@/components/game/UpdateBanner';
 import { useFullscreen } from '@/hooks/useFullscreen';
+import { useTranslation } from '@/i18n';
 import gameBoard from '@/assets/game-board.jpeg';
 
 export function TitleScreen() {
@@ -23,6 +24,7 @@ export function TitleScreen() {
   const { musicMuted, toggleMute } = useAudioSettings();
   const { canInstall, install, isIOS, showIOSGuide, dismissIOSGuide } = usePWAInstall();
   const { enterFullscreen } = useFullscreen();
+  const { t } = useTranslation();
 
   const handleContinue = () => {
     enterFullscreen();
@@ -67,19 +69,19 @@ export function TitleScreen() {
             <Scroll className="w-12 h-12 text-gold animate-float" style={{ animationDelay: '1s' }} />
           </div>
           <h1 className="font-display text-6xl md:text-8xl font-bold text-foreground mb-4 tracking-wider">
-            GUILD LIFE
+            {t('title.gameTitle')}
           </h1>
           <p className="font-display text-xl md:text-2xl text-gold tracking-widest">
-            A Fantasy Life Simulator
+            {t('title.subtitle')}
           </p>
         </div>
 
         {/* Features */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12 max-w-4xl">
-          <FeatureCard icon={<Crown />} label="Rise in Rank" />
-          <FeatureCard icon={<Sword />} label="Complete Quests" />
-          <FeatureCard icon={<Scroll />} label="Master Skills" />
-          <FeatureCard icon={<Shield />} label="Build Wealth" />
+          <FeatureCard icon={<Crown />} label={t('title.riseInRank')} />
+          <FeatureCard icon={<Sword />} label={t('title.completeQuests')} />
+          <FeatureCard icon={<Scroll />} label={t('title.masterSkills')} />
+          <FeatureCard icon={<Shield />} label={t('title.buildWealth')} />
         </div>
 
         {/* Action Buttons */}
@@ -88,7 +90,7 @@ export function TitleScreen() {
             onClick={() => { enterFullscreen(); setPhase('setup'); }}
             className="gold-button text-xl px-12 py-4 animate-pulse-gold"
           >
-            New Adventure
+            {t('title.newAdventure')}
           </button>
 
           <button
@@ -96,7 +98,7 @@ export function TitleScreen() {
             className="wood-frame text-parchment text-lg px-10 py-3 font-display hover:brightness-110 flex items-center gap-2 justify-center"
           >
             <Globe className="w-5 h-5" />
-            Online Multiplayer
+            {t('title.onlineMultiplayer')}
           </button>
 
           {autoSaveExists && (
@@ -104,7 +106,7 @@ export function TitleScreen() {
               onClick={handleContinue}
               className="wood-frame text-parchment text-lg px-10 py-3 font-display hover:brightness-110"
             >
-              Continue Game
+              {t('title.continueGame')}
             </button>
           )}
 
@@ -113,7 +115,7 @@ export function TitleScreen() {
             className="text-gold hover:text-gold-dark text-sm font-display flex items-center gap-2 mt-2 transition-colors"
           >
             <Save className="w-4 h-4" />
-            Load Saved Game
+            {t('title.loadSavedGame')}
           </button>
 
           <button
@@ -121,7 +123,7 @@ export function TitleScreen() {
             className="text-gold hover:text-gold-dark text-sm font-display flex items-center gap-2 mt-1 transition-colors"
           >
             <Settings className="w-4 h-4" />
-            Options
+            {t('common.options')}
           </button>
 
           <button
@@ -129,7 +131,7 @@ export function TitleScreen() {
             className="text-gold hover:text-gold-dark text-sm font-display flex items-center gap-2 mt-1 transition-colors"
           >
             <BookOpen className="w-4 h-4" />
-            Manual
+            {t('common.manual')}
           </button>
 
           <button
@@ -137,13 +139,13 @@ export function TitleScreen() {
             className="text-gold hover:text-gold-dark text-sm font-display flex items-center gap-2 mt-1 transition-colors"
           >
             <Info className="w-4 h-4" />
-            About
+            {t('common.about')}
           </button>
         </div>
 
         {/* Footer */}
         <p className="absolute bottom-8 text-gold text-sm font-display">
-          Inspired by Jones in the Fast Lane
+          {t('title.inspiredBy')}
         </p>
 
         {/* Music mute + Install */}
@@ -173,7 +175,7 @@ export function TitleScreen() {
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowLoadMenu(false)} />
           <div className="relative parchment-panel p-6 w-full max-w-md">
-            <h2 className="font-display text-2xl text-card-foreground mb-4 text-center">Load Game</h2>
+            <h2 className="font-display text-2xl text-card-foreground mb-4 text-center">{t('title.loadGame')}</h2>
             <div className="space-y-3">
               {slots.map((s) => (
                 <div
@@ -192,18 +194,18 @@ export function TitleScreen() {
                     <div className="font-display text-sm text-card-foreground">{s.slotName}</div>
                     {s.exists && (
                       <div className="text-xs text-muted-foreground">
-                        Week {s.week} &middot; {s.playerNames.join(', ')} &middot; {formatSaveDate(s.timestamp)}
+                        {t('board.week')} {s.week} &middot; {s.playerNames.join(', ')} &middot; {formatSaveDate(s.timestamp)}
                       </div>
                     )}
                     {!s.exists && (
-                      <div className="text-xs text-muted-foreground">Empty</div>
+                      <div className="text-xs text-muted-foreground">{t('common.empty')}</div>
                     )}
                   </button>
                   {s.exists && (
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDeleteSlot(s.slot); }}
                       className="p-1 text-destructive/60 hover:text-destructive"
-                      title="Delete save"
+                      title={t('saveLoad.deleteSave')}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -216,7 +218,7 @@ export function TitleScreen() {
                 onClick={() => setShowLoadMenu(false)}
                 className="px-6 py-2 wood-frame text-parchment font-display text-sm hover:brightness-110"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </div>
@@ -253,20 +255,20 @@ export function TitleScreen() {
               <X className="w-5 h-5" />
             </button>
             <h2 className="font-display text-xl text-card-foreground mb-4 text-center">
-              Install on iPad / iPhone
+              {t('title.installTitle')}
             </h2>
             <div className="space-y-4 text-sm text-card-foreground">
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center font-display font-bold text-primary">1</div>
-                <p>Tap the <Share className="w-4 h-4 inline -mt-0.5" /> <strong>Share</strong> button in Safari's toolbar</p>
+                <p>Tap the <Share className="w-4 h-4 inline -mt-0.5" /> <strong>{t('title.installShare')}</strong> button in Safari's toolbar</p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center font-display font-bold text-primary">2</div>
-                <p>Scroll down and tap <Plus className="w-4 h-4 inline -mt-0.5" /> <strong>Add to Home Screen</strong></p>
+                <p>Scroll down and tap <Plus className="w-4 h-4 inline -mt-0.5" /> <strong>{t('title.installAdd')}</strong></p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center font-display font-bold text-primary">3</div>
-                <p>Tap <strong>Add</strong> to install Guild Life as an app</p>
+                <p>Tap <strong>{t('title.installConfirm')}</strong></p>
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-4 text-center">
@@ -277,7 +279,7 @@ export function TitleScreen() {
                 onClick={dismissIOSGuide}
                 className="px-6 py-2 wood-frame text-parchment font-display text-sm hover:brightness-110"
               >
-                Got it
+                {t('title.gotIt')}
               </button>
             </div>
           </div>

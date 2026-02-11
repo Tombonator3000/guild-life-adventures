@@ -2,6 +2,7 @@ import { Coins, Smile, GraduationCap, Briefcase, Target, Compass } from 'lucide-
 import type { Player, GoalSettings } from '@/types/game.types';
 import { calculateStockValue } from '@/data/stocks';
 import { useGameStore } from '@/store/gameStore';
+import { useTranslation } from '@/i18n';
 
 interface GoalProgressProps {
   player: Player;
@@ -11,6 +12,7 @@ interface GoalProgressProps {
 
 export function GoalProgress({ player, goals, compact = false }: GoalProgressProps) {
   const { stockPrices } = useGameStore();
+  const { t } = useTranslation();
   // Calculate progress for each goal (includes stocks and loans)
   const stockValue = calculateStockValue(player.stocks, stockPrices);
   const totalWealth = player.gold + player.savings + player.investments + stockValue - player.loanAmount;
@@ -42,7 +44,7 @@ export function GoalProgress({ player, goals, compact = false }: GoalProgressPro
     <div className={compact ? "space-y-1" : "space-y-2"}>
       <GoalBar
         icon={<Coins className={compact ? "w-3 h-3" : "w-4 h-4"} />}
-        label="Wealth"
+        label={t('goals.wealth')}
         current={totalWealth}
         target={goals.wealth}
         progress={wealthProgress}
@@ -51,7 +53,7 @@ export function GoalProgress({ player, goals, compact = false }: GoalProgressPro
       />
       <GoalBar
         icon={<Smile className={compact ? "w-3 h-3" : "w-4 h-4"} />}
-        label="Happiness"
+        label={t('goals.happiness')}
         current={player.happiness}
         target={goals.happiness}
         progress={happinessProgress}
@@ -60,7 +62,7 @@ export function GoalProgress({ player, goals, compact = false }: GoalProgressPro
       />
       <GoalBar
         icon={<GraduationCap className={compact ? "w-3 h-3" : "w-4 h-4"} />}
-        label="Education"
+        label={t('goals.education')}
         current={totalEducation}
         target={goals.education}
         progress={educationProgress}
@@ -69,7 +71,7 @@ export function GoalProgress({ player, goals, compact = false }: GoalProgressPro
       />
       <GoalBar
         icon={<Briefcase className={compact ? "w-3 h-3" : "w-4 h-4"} />}
-        label="Career"
+        label={t('goals.career')}
         current={careerValue}
         target={goals.career}
         progress={careerProgress}
@@ -79,7 +81,7 @@ export function GoalProgress({ player, goals, compact = false }: GoalProgressPro
       {adventureEnabled && (
         <GoalBar
           icon={<Compass className={compact ? "w-3 h-3" : "w-4 h-4"} />}
-          label="Adventure"
+          label={t('goals.adventure')}
           current={adventureValue}
           target={goals.adventure}
           progress={adventureProgress}
@@ -91,7 +93,7 @@ export function GoalProgress({ player, goals, compact = false }: GoalProgressPro
       {allGoalsMet && (
         <div className={`${compact ? 'mt-1 p-1' : 'mt-3 p-2'} bg-gold/20 border border-gold rounded-lg text-center animate-pulse-gold`}>
           <span className={`font-display font-bold text-gold-dark ${compact ? 'text-[9px]' : 'text-sm'}`}>
-            All Goals Met! You Win!
+            {t('goals.allGoalsMet')}
           </span>
         </div>
       )}

@@ -11,6 +11,7 @@ import { GUILD_RANK_NAMES, GUILD_RANK_INDEX, HOURS_PER_TURN } from '@/types/game
 import { HOUSING_DATA } from '@/data/housing';
 import { getJob } from '@/data/jobs';
 import { CharacterPortrait } from './CharacterPortrait';
+import { useTranslation } from '@/i18n';
 
 type TabId = 'stats' | 'inventory' | 'goals';
 
@@ -20,11 +21,13 @@ interface TabConfig {
   icon: React.ReactNode;
 }
 
-const TABS: TabConfig[] = [
-  { id: 'stats', label: 'STATS', icon: <BarChart3 className="w-4 h-4" /> },
-  { id: 'inventory', label: 'INVENTORY', icon: <Package className="w-4 h-4" /> },
-  { id: 'goals', label: 'GOALS', icon: <Target className="w-4 h-4" /> },
-];
+function getTabs(t: (key: string) => string): TabConfig[] {
+  return [
+    { id: 'stats', label: t('sidebar.stats'), icon: <BarChart3 className="w-4 h-4" /> },
+    { id: 'inventory', label: t('sidebar.inventory'), icon: <Package className="w-4 h-4" /> },
+    { id: 'goals', label: t('sidebar.goals'), icon: <Target className="w-4 h-4" /> },
+  ];
+}
 
 interface SideInfoTabsProps {
   player: Player;
@@ -34,6 +37,8 @@ interface SideInfoTabsProps {
 
 export function SideInfoTabs({ player, goals, isCurrentPlayer }: SideInfoTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>('stats');
+  const { t } = useTranslation();
+  const TABS = getTabs(t);
 
   return (
     <div className={`h-full flex flex-col bg-parchment rounded-lg border-2 overflow-hidden ${isCurrentPlayer ? 'border-accent' : 'border-wood-dark/50'}`}>
@@ -63,13 +68,13 @@ export function SideInfoTabs({ player, goals, isCurrentPlayer }: SideInfoTabsPro
           {player.isSick && (
             <div className="flex items-center gap-1 text-[10px] text-destructive font-semibold">
               <Skull className="w-3 h-3" />
-              <span>Sick - Visit Enchanter (Cure Ailments)!</span>
+              <span>{t('stats.sickAlert')}</span>
             </div>
           )}
           {player.health <= 0 && (
             <div className="flex items-center gap-1 text-[10px] text-destructive font-bold">
               <Skull className="w-3 h-3" />
-              <span>DEAD</span>
+              <span>{t('stats.dead')}</span>
             </div>
           )}
         </div>

@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { AlertTriangle, Skull, Home, Coins, Heart, Utensils } from 'lucide-react';
 import type { GameEvent } from './EventModal';
 import { playSFX } from '@/audio/sfxManager';
+import { t } from '@/i18n';
 
 interface EventPanelProps {
   event: GameEvent;
@@ -48,16 +49,16 @@ export function EventPanel({ event, onDismiss }: EventPanelProps) {
     if (!event.effects) return null;
     const effects: string[] = [];
     if (event.effects.gold) {
-      effects.push(`${event.effects.gold > 0 ? '+' : ''}${event.effects.gold} gold`);
+      effects.push(`${event.effects.gold > 0 ? '+' : ''}${event.effects.gold} ${t('events.gold')}`);
     }
     if (event.effects.health) {
-      effects.push(`${event.effects.health > 0 ? '+' : ''}${event.effects.health} health`);
+      effects.push(`${event.effects.health > 0 ? '+' : ''}${event.effects.health} ${t('events.health')}`);
     }
     if (event.effects.happiness) {
-      effects.push(`${event.effects.happiness > 0 ? '+' : ''}${event.effects.happiness} happiness`);
+      effects.push(`${event.effects.happiness > 0 ? '+' : ''}${event.effects.happiness} ${t('events.happiness')}`);
     }
     if (event.effects.food) {
-      effects.push(`${event.effects.food > 0 ? '+' : ''}${event.effects.food} food`);
+      effects.push(`${event.effects.food > 0 ? '+' : ''}${event.effects.food} ${t('events.food')}`);
     }
     return effects.length > 0 ? effects.join('  |  ') : null;
   };
@@ -107,7 +108,7 @@ export function EventPanel({ event, onDismiss }: EventPanelProps) {
           onClick={onDismiss}
           className="gold-button text-lg px-12 py-3 min-w-[200px]"
         >
-          {event.type === 'death' ? 'Game Over' : 'Continue'}
+          {event.type === 'death' ? t('events.gameOver') : t('events.continue')}
         </button>
       </div>
     </div>
