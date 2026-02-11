@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { ZONE_CONFIGS, BOARD_PATH, MOVEMENT_PATHS } from '@/data/locations';
 import { hasSavedZoneConfig } from '@/data/zoneStorage';
-import type { ZoneConfig, LocationId } from '@/types/game.types';
+import type { ZoneConfig, LocationId, LayoutElement, LayoutElementId, CenterPanelLayout } from '@/types/game.types';
 import type { MovementWaypoint } from '@/data/locations';
 
 export interface CenterPanelConfig {
@@ -11,7 +11,20 @@ export interface CenterPanelConfig {
   height: number;
 }
 
-export type EditorMode = 'zones' | 'paths';
+export type EditorMode = 'zones' | 'paths' | 'layout';
+
+// Default layout: NPC left column, text right column, item preview below NPC
+export const DEFAULT_LAYOUT: CenterPanelLayout = {
+  npc: { x: 0, y: 0, width: 25, height: 100 },
+  text: { x: 27, y: 0, width: 73, height: 100 },
+  itemPreview: { x: 0, y: 60, width: 25, height: 40 },
+};
+
+export const LAYOUT_ELEMENT_LABELS: Record<LayoutElementId, { label: string; color: string; borderColor: string }> = {
+  npc: { label: 'NPC Portrait', color: 'rgba(168, 85, 247, 0.3)', borderColor: '#a855f7' },
+  text: { label: 'Text / Content', color: 'rgba(59, 130, 246, 0.3)', borderColor: '#3b82f6' },
+  itemPreview: { label: 'Item Preview', color: 'rgba(245, 158, 11, 0.3)', borderColor: '#f59e0b' },
+};
 
 const DEFAULT_CENTER_PANEL: CenterPanelConfig = {
   top: 22.6,
@@ -39,14 +52,15 @@ export function getZoneCenter(zones: ZoneConfig[], locationId: LocationId): [num
 
 interface UseZoneEditorStateProps {
   onClose: () => void;
-  onSave: (configs: ZoneConfig[], centerPanel: CenterPanelConfig, paths: Record<string, MovementWaypoint[]>) => void;
+  onSave: (configs: ZoneConfig[], centerPanel: CenterPanelConfig, paths: Record<string, MovementWaypoint[]>, layout: CenterPanelLayout) => void;
   onReset?: () => void;
   initialCenterPanel?: CenterPanelConfig;
   initialZones?: ZoneConfig[];
   initialPaths?: Record<string, MovementWaypoint[]>;
+  initialLayout?: CenterPanelLayout;
 }
 
-export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPanel, initialZones, initialPaths }: UseZoneEditorStateProps) {
+export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPanel, initialZones, initialPaths, initialLayout }: UseZoneEditorStateProps) {
   const [zones, setZones] = useState<ZoneConfig[]>(() => {
     if (!initialZones) return [...ZONE_CONFIGS];
     // Merge with defaults so newly added locations always appear
@@ -69,6 +83,11 @@ export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPane
   const [paths, setPaths] = useState<Record<string, MovementWaypoint[]>>(initialPaths ? { ...initialPaths } : { ...MOVEMENT_PATHS });
   const [selectedEdge, setSelectedEdge] = useState<string | null>(null); // "fromId_toId"
   const [draggingWaypoint, setDraggingWaypoint] = useState<number | null>(null); // index in waypoints array
+
+  // Layout editing state (center panel sub-elements)
+  const [layout, setLayout] = useState<CenterPanelLayout>(initialLayout || { ...DEFAULT_LAYOUT });
+  const [selectedLayoutElement, setSelectedLayoutElement] = useState<LayoutElementId | null>(null);
+  const layoutDragStartRef = useRef<{ x: number; y: number; element: LayoutElement } | null>(null);
 
   const adjacentPairs = getAdjacentPairs();
 
@@ -109,6 +128,30 @@ export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPane
     dragStartRef.current = null;
   }, [centerPanel, getPercentPosition, editorMode]);
 
+  // === LAYOUT EDITING HANDLERS ===
+
+  // Convert board-level mouse coords to center-panel-relative percentages
+  const getBoardToCenterPanelPercent = useCallback((boardX: number, boardY: number) => {
+    return {
+      x: ((boardX - centerPanel.left) / centerPanel.width) * 100,
+      y: ((boardY - centerPanel.top) / centerPanel.height) * 100,
+    };
+  }, [centerPanel]);
+
+  const handleLayoutMouseDown = useCallback((e: React.MouseEvent, elementId: LayoutElementId, mode: 'move' | 'resize') => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (editorMode !== 'layout') return;
+    setSelectedLayoutElement(elementId);
+    setIsDragging(true);
+    setDragMode(mode);
+    const pos = getPercentPosition(e.clientX, e.clientY);
+    const cpPos = getBoardToCenterPanelPercent(pos.x, pos.y);
+    layoutDragStartRef.current = { x: cpPos.x, y: cpPos.y, element: { ...layout[elementId] } };
+    dragStartRef.current = null;
+    centerDragStartRef.current = null;
+  }, [editorMode, layout, getPercentPosition, getBoardToCenterPanelPercent]);
+
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     const pos = getPercentPosition(e.clientX, e.clientY);
 
@@ -121,6 +164,39 @@ export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPane
           Math.max(0, Math.min(100, Math.round(pos.y * 10) / 10)),
         ];
         return { ...prev, [selectedEdge]: waypoints };
+      });
+      return;
+    }
+
+    // Handle layout element dragging
+    if (editorMode === 'layout' && isDragging && selectedLayoutElement && layoutDragStartRef.current) {
+      const cpPos = getBoardToCenterPanelPercent(pos.x, pos.y);
+      const deltaX = cpPos.x - layoutDragStartRef.current.x;
+      const deltaY = cpPos.y - layoutDragStartRef.current.y;
+      const original = layoutDragStartRef.current.element;
+
+      setLayout(prev => {
+        const el = prev[selectedLayoutElement];
+        if (dragMode === 'move') {
+          return {
+            ...prev,
+            [selectedLayoutElement]: {
+              ...el,
+              x: Math.max(0, Math.min(100 - el.width, Math.round((original.x + deltaX) * 10) / 10)),
+              y: Math.max(0, Math.min(100 - el.height, Math.round((original.y + deltaY) * 10) / 10)),
+            },
+          };
+        } else if (dragMode === 'resize') {
+          return {
+            ...prev,
+            [selectedLayoutElement]: {
+              ...el,
+              width: Math.max(5, Math.min(100 - el.x, Math.round((original.width + deltaX) * 10) / 10)),
+              height: Math.max(5, Math.min(100 - el.y, Math.round((original.height + deltaY) * 10) / 10)),
+            },
+          };
+        }
+        return prev;
       });
       return;
     }
@@ -182,6 +258,7 @@ export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPane
     setDraggingWaypoint(null);
     dragStartRef.current = null;
     centerDragStartRef.current = null;
+    layoutDragStartRef.current = null;
   }, []);
 
   useEffect(() => {
@@ -238,6 +315,13 @@ export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPane
     setCenterPanel(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleLayoutInput = (elementId: LayoutElementId, field: keyof LayoutElement, value: number) => {
+    setLayout(prev => ({
+      ...prev,
+      [elementId]: { ...prev[elementId], [field]: value },
+    }));
+  };
+
   // === EXPORT ===
 
   const exportConfig = () => {
@@ -260,6 +344,14 @@ export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPane
       ).join('\n')}\n};`
       : `export const MOVEMENT_PATHS: Record<string, MovementWaypoint[]> = {};`;
 
+    // Export layout config
+    const layoutStr = `// Center panel layout — sub-element positions (% of center panel)
+export const CENTER_PANEL_LAYOUT: CenterPanelLayout = {
+  npc: { x: ${layout.npc.x.toFixed(1)}, y: ${layout.npc.y.toFixed(1)}, width: ${layout.npc.width.toFixed(1)}, height: ${layout.npc.height.toFixed(1)} },
+  text: { x: ${layout.text.x.toFixed(1)}, y: ${layout.text.y.toFixed(1)}, width: ${layout.text.width.toFixed(1)}, height: ${layout.text.height.toFixed(1)} },
+  itemPreview: { x: ${layout.itemPreview.x.toFixed(1)}, y: ${layout.itemPreview.y.toFixed(1)}, width: ${layout.itemPreview.width.toFixed(1)}, height: ${layout.itemPreview.height.toFixed(1)} },
+};`;
+
     const fullCode = `// Zone configurations for game board locations
 export const ZONE_CONFIGS: ZoneConfig[] = [
 ${configStr}
@@ -268,10 +360,12 @@ ${configStr}
 // Center info panel configuration
 ${centerPanelStr}
 
+${layoutStr}
+
 ${pathsStr}`;
 
     navigator.clipboard.writeText(fullCode);
-    alert('Full configuration copied to clipboard!\n\nIncludes:\n- ZONE_CONFIGS for locations\n- CENTER_PANEL_CONFIG for info panel\n- MOVEMENT_PATHS for player movement');
+    alert('Full configuration copied to clipboard!\n\nIncludes:\n- ZONE_CONFIGS for locations\n- CENTER_PANEL_CONFIG for info panel\n- CENTER_PANEL_LAYOUT for sub-elements\n- MOVEMENT_PATHS for player movement');
   };
 
   const selected = selectedZone && selectedZone !== 'center-panel'
@@ -288,9 +382,11 @@ ${pathsStr}`;
     setZones([...ZONE_CONFIGS]);
     setCenterPanel(DEFAULT_CENTER_PANEL);
     setPaths({});
+    setLayout({ ...DEFAULT_LAYOUT });
+    setSelectedLayoutElement(null);
   } : undefined;
 
-  const handleSave = () => onSave(zones, centerPanel, paths);
+  const handleSave = () => onSave(zones, centerPanel, paths, layout);
 
   return {
     zones,
@@ -325,5 +421,12 @@ ${pathsStr}`;
     handleSave,
     onClose,
     hasSavedConfig: hasSavedZoneConfig(),
+    // Layout state
+    layout,
+    setLayout,
+    selectedLayoutElement,
+    setSelectedLayoutElement,
+    handleLayoutMouseDown,
+    handleLayoutInput,
   };
 }

@@ -1,8 +1,8 @@
 import { BOARD_ASPECT_RATIO } from '@/data/locations';
-import type { ZoneConfig, LocationId } from '@/types/game.types';
+import type { ZoneConfig, LocationId, CenterPanelLayout, LayoutElementId } from '@/types/game.types';
 import type { MovementWaypoint } from '@/data/locations';
 import type { CenterPanelConfig, EditorMode } from '@/hooks/useZoneEditorState';
-import { getAdjacentPairs, getZoneCenter } from '@/hooks/useZoneEditorState';
+import { getAdjacentPairs, getZoneCenter, LAYOUT_ELEMENT_LABELS } from '@/hooks/useZoneEditorState';
 import gameBoard from '@/assets/game-board.jpeg';
 
 interface ZoneEditorBoardProps {
@@ -22,7 +22,14 @@ interface ZoneEditorBoardProps {
   setSelectedEdge: (edge: string | null) => void;
   setDraggingWaypoint: (index: number | null) => void;
   removeWaypoint: (edgeKey: string, index: number) => void;
+  // Layout props
+  layout: CenterPanelLayout;
+  selectedLayoutElement: LayoutElementId | null;
+  handleLayoutMouseDown: (e: React.MouseEvent, elementId: LayoutElementId, mode: 'move' | 'resize') => void;
+  setSelectedLayoutElement: (id: LayoutElementId | null) => void;
 }
+
+const LAYOUT_ELEMENT_IDS: LayoutElementId[] = ['npc', 'text', 'itemPreview'];
 
 export function ZoneEditorBoard({
   containerRef,
@@ -41,6 +48,10 @@ export function ZoneEditorBoard({
   setSelectedEdge,
   setDraggingWaypoint,
   removeWaypoint,
+  layout,
+  selectedLayoutElement,
+  handleLayoutMouseDown,
+  setSelectedLayoutElement,
 }: ZoneEditorBoardProps) {
   const adjacentPairs = getAdjacentPairs();
 
@@ -185,6 +196,83 @@ export function ZoneEditorBoard({
           </div>
         )}
 
+        {/* Layout mode: center panel outline + draggable sub-elements */}
+        {editorMode === 'layout' && (
+          <div
+            className="absolute border-2 border-dashed border-yellow-400/60"
+            style={{
+              top: `${centerPanel.top}%`,
+              left: `${centerPanel.left}%`,
+              width: `${centerPanel.width}%`,
+              height: `${centerPanel.height}%`,
+            }}
+            onClick={(e) => {
+              // Deselect when clicking empty area of center panel
+              if (e.target === e.currentTarget) {
+                setSelectedLayoutElement(null);
+              }
+            }}
+          >
+            <span className="absolute -top-5 left-0 text-[10px] text-yellow-400/80 bg-black/50 px-1 rounded">
+              CENTER PANEL
+            </span>
+
+            {/* Render layout elements inside center panel */}
+            {LAYOUT_ELEMENT_IDS.map(id => {
+              const el = layout[id];
+              const meta = LAYOUT_ELEMENT_LABELS[id];
+              const isSelected = selectedLayoutElement === id;
+
+              return (
+                <div
+                  key={id}
+                  className={`absolute border-2 cursor-move transition-colors ${
+                    isSelected
+                      ? 'border-white shadow-lg'
+                      : 'hover:brightness-125'
+                  }`}
+                  style={{
+                    left: `${el.x}%`,
+                    top: `${el.y}%`,
+                    width: `${el.width}%`,
+                    height: `${el.height}%`,
+                    backgroundColor: meta.color,
+                    borderColor: isSelected ? '#fff' : meta.borderColor,
+                    zIndex: isSelected ? 10 : 1,
+                  }}
+                  onMouseDown={e => handleLayoutMouseDown(e, id, 'move')}
+                >
+                  {/* Label */}
+                  <span
+                    className="absolute top-0.5 left-0.5 text-[10px] font-bold px-1 rounded"
+                    style={{
+                      backgroundColor: meta.borderColor,
+                      color: '#fff',
+                    }}
+                  >
+                    {meta.label}
+                  </span>
+
+                  {/* Size info */}
+                  <span className="absolute bottom-0.5 left-0.5 text-[9px] text-white/70 bg-black/40 px-0.5 rounded">
+                    {el.width.toFixed(0)}% x {el.height.toFixed(0)}%
+                  </span>
+
+                  {/* Resize handle */}
+                  <div
+                    className="absolute bottom-0 right-0 w-3.5 h-3.5 cursor-se-resize"
+                    style={{ backgroundColor: `${meta.borderColor}cc` }}
+                    onMouseDown={e => {
+                      e.stopPropagation();
+                      handleLayoutMouseDown(e, id, 'resize');
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* Zone overlays */}
         {zones.map(zone => {
           const isSelected = editorMode === 'zones' && selectedZone === zone.id;
@@ -200,7 +288,9 @@ export function ZoneEditorBoard({
                     : 'border-red-500/70 bg-red-500/20 hover:border-red-400 hover:bg-red-400/30 cursor-move'
                   : hasPath
                     ? 'border-blue-400/40 bg-blue-400/10 cursor-default'
-                    : 'border-gray-500/30 bg-gray-500/5 cursor-default'
+                    : editorMode === 'layout'
+                      ? 'border-gray-500/20 bg-transparent pointer-events-none'
+                      : 'border-gray-500/30 bg-gray-500/5 cursor-default'
               }`}
               style={{
                 left: `${zone.x}%`,
@@ -212,7 +302,7 @@ export function ZoneEditorBoard({
                 if (editorMode === 'zones') handleMouseDown(e, zone.id, 'move');
               }}
             >
-              {showLabels && (
+              {showLabels && editorMode !== 'layout' && (
                 <span className="absolute top-0 left-0 text-xs text-white bg-black/70 px-1 truncate max-w-full">
                   {zone.id}
                 </span>

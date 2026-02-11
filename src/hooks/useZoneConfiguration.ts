@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import type { ZoneConfig, LocationId } from '@/types/game.types';
+import type { ZoneConfig, CenterPanelLayout } from '@/types/game.types';
 import type { CenterPanelConfig } from '@/components/game/ZoneEditor';
 import type { MovementWaypoint } from '@/data/locations';
 import { ZONE_CONFIGS, LOCATIONS, MOVEMENT_PATHS } from '@/data/locations';
 import { loadZoneConfig, saveZoneConfig, clearZoneConfig } from '@/data/zoneStorage';
+import { DEFAULT_LAYOUT } from '@/hooks/useZoneEditorState';
 import { toast } from 'sonner';
 
 const DEFAULT_CENTER_PANEL: CenterPanelConfig = {
@@ -31,6 +32,11 @@ export function useZoneConfiguration() {
     return saved ? saved.centerPanel : DEFAULT_CENTER_PANEL;
   });
 
+  const [layout, setLayout] = useState<CenterPanelLayout>(() => {
+    const saved = loadZoneConfig();
+    return saved?.layout || DEFAULT_LAYOUT;
+  });
+
   // Load saved movement paths on mount
   useEffect(() => {
     const saved = loadZoneConfig();
@@ -40,9 +46,10 @@ export function useZoneConfiguration() {
     }
   }, []);
 
-  const handleSaveZones = (zones: ZoneConfig[], newCenterPanel: CenterPanelConfig, paths?: Record<string, MovementWaypoint[]>) => {
+  const handleSaveZones = (zones: ZoneConfig[], newCenterPanel: CenterPanelConfig, paths?: Record<string, MovementWaypoint[]>, newLayout?: CenterPanelLayout) => {
     setCustomZones(zones);
     setCenterPanel(newCenterPanel);
+    if (newLayout) setLayout(newLayout);
     // Apply movement paths to the global MOVEMENT_PATHS object
     const activePaths = paths || { ...MOVEMENT_PATHS };
     if (paths) {
@@ -50,7 +57,7 @@ export function useZoneConfiguration() {
       Object.entries(paths).forEach(([k, v]) => { MOVEMENT_PATHS[k] = v; });
     }
     // Persist to localStorage
-    saveZoneConfig(zones, newCenterPanel, activePaths);
+    saveZoneConfig(zones, newCenterPanel, activePaths, newLayout);
     toast.success('Zone config saved to localStorage');
   };
 
@@ -58,6 +65,7 @@ export function useZoneConfiguration() {
     clearZoneConfig();
     setCustomZones(ZONE_CONFIGS);
     setCenterPanel(DEFAULT_CENTER_PANEL);
+    setLayout(DEFAULT_LAYOUT);
     Object.keys(MOVEMENT_PATHS).forEach(k => delete MOVEMENT_PATHS[k]);
     toast.success('Zone config reset to defaults');
   };
@@ -83,6 +91,7 @@ export function useZoneConfiguration() {
   return {
     customZones,
     centerPanel,
+    layout,
     handleSaveZones,
     handleResetZones,
     getLocationWithCustomPosition,
