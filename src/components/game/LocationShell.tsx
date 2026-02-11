@@ -10,6 +10,7 @@ import { useBanter } from '@/hooks/useBanter';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import type { LocationId } from '@/types/game.types';
+import { ItemPreviewProvider, ItemPreviewPanel } from './ItemPreview';
 
 export interface LocationTab {
   id: string;
@@ -87,6 +88,7 @@ export function LocationShell({
   };
 
   return (
+    <ItemPreviewProvider>
     <div className="flex flex-col h-full overflow-hidden" style={{ background: '#1a1410' }}>
       {/* === HEADER BAR === Location-specific colored frame with name */}
       <div
@@ -134,6 +136,8 @@ export function LocationShell({
             >
               &ldquo;{npc.greeting}&rdquo;
             </div>
+            {/* Item Preview Panel - below NPC info */}
+            <ItemPreviewPanel accentColor={npc.accentColor} />
           </div>
         )}
 
@@ -257,5 +261,6 @@ export function LocationShell({
         </div>
       )}
     </div>
+    </ItemPreviewProvider>
   );
 }

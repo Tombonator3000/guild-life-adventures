@@ -4,6 +4,7 @@
 // - Clean list format for locations, employers, etc.
 
 import type React from 'react';
+import { useItemPreview, type PreviewData } from './ItemPreview';
 
 interface JonesMenuItemProps {
   label: string;
@@ -15,6 +16,7 @@ interface JonesMenuItemProps {
   className?: string;
   darkText?: boolean; // Use dark brown text for light backgrounds
   largeText?: boolean; // Use larger text (text-base instead of text-sm)
+  previewData?: PreviewData; // Item preview shown on hover below NPC portrait
 }
 
 // Single menu item with dotted line connecting to price
@@ -28,7 +30,9 @@ export function JonesMenuItem({
   className = '',
   darkText = false,
   largeText = false,
+  previewData,
 }: JonesMenuItemProps) {
+  const { setPreview } = useItemPreview();
   const textSize = largeText ? 'text-base' : 'text-sm';
   const textColor = highlight
     ? 'text-gold font-bold'
@@ -37,6 +41,11 @@ export function JonesMenuItem({
       : 'text-[#e0d4b8]';
   const hoverBg = darkText ? 'hover:bg-[#d4c4a8]' : 'hover:bg-[#5c4a32]';
   const dotColor = darkText ? 'border-[#8b7355]' : 'border-[#8b7355]';
+
+  const hoverHandlers = previewData ? {
+    onMouseEnter: () => setPreview(previewData),
+    onMouseLeave: () => setPreview(null),
+  } : {};
 
   const content = (
     <div
@@ -65,13 +74,14 @@ export function JonesMenuItem({
         onClick={onClick}
         disabled={disabled}
         className={`w-full text-left py-1 px-2 ${hoverBg} transition-colors rounded`}
+        {...hoverHandlers}
       >
         {content}
       </button>
     );
   }
 
-  return <div className="py-1 px-2">{content}</div>;
+  return <div className="py-1 px-2" {...hoverHandlers}>{content}</div>;
 }
 
 interface JonesListItemProps {

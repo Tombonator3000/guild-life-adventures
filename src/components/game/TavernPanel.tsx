@@ -4,6 +4,7 @@ import {
   JonesSectionHeader,
 } from './JonesStylePanel';
 import { TAVERN_ITEMS, getItemPrice } from '@/data/items';
+import { itemToPreview } from './ItemPreview';
 import { toast } from 'sonner';
 import { useTranslation } from '@/i18n';
 
@@ -39,6 +40,7 @@ export function TavernPanel({
               disabled={!canAfford}
               darkText
               largeText
+              previewData={itemToPreview(item)}
               onClick={() => {
                 modifyGold(player.id, -price);
                 if (item.effect?.type === 'food') {

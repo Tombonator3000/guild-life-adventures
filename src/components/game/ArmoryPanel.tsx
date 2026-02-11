@@ -4,6 +4,7 @@ import {
   JonesMenuItem,
 } from './JonesStylePanel';
 import { ARMORY_ITEMS, getItemPrice, calculateCombatStats, getItem } from '@/data/items';
+import { itemToPreview, useItemPreview } from './ItemPreview';
 import { toast } from 'sonner';
 import { useTranslation } from '@/i18n';
 
@@ -35,6 +36,7 @@ export function ArmoryPanel({
   section,
 }: ArmoryPanelProps) {
   const { t } = useTranslation();
+  const { setPreview } = useItemPreview();
   const combatStats = calculateCombatStats(
     player.equippedWeapon,
     player.equippedArmor,
@@ -96,6 +98,8 @@ export function ArmoryPanel({
           );
         }
 
+        const previewData = itemToPreview(item);
+
         return (
           <div key={item.id} className="py-0.5 px-1">
             {owns ? (
@@ -109,6 +113,8 @@ export function ArmoryPanel({
                     toast.success(t('panelArmory.equippedItem', { name: t(`items.${item.id}.name`) || item.name }));
                   }
                 }}
+                onMouseEnter={() => setPreview(previewData)}
+                onMouseLeave={() => setPreview(null)}
                 className={`w-full text-left py-1 px-2 rounded transition-colors ${
                   isEquipped
                     ? darkText ? 'bg-[#b8d4b8] border border-[#4a9c5a]' : 'bg-[#2a5c3a] border border-[#4a9c5a]'
@@ -137,6 +143,7 @@ export function ArmoryPanel({
                 disabled={!canAfford}
                 darkText={darkText}
                 largeText={largeText}
+                previewData={previewData}
                 onClick={() => {
                   modifyGold(player.id, -price);
                   buyDurable(player.id, item.id, 0); // Gold already deducted
@@ -194,6 +201,7 @@ export function ArmoryPanel({
                   disabled={!canAfford}
                   darkText={darkText}
                   largeText={largeText}
+                  previewData={itemToPreview(item)}
                   onClick={() => {
                     modifyGold(player.id, -price);
                     if (item.effect?.type === 'clothing') {
@@ -247,6 +255,7 @@ export function ArmoryPanel({
             disabled={!canAfford}
             darkText
             largeText
+            previewData={itemToPreview(item)}
             onClick={() => {
               modifyGold(player.id, -price);
               if (item.effect?.type === 'clothing') {

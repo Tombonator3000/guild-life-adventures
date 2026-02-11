@@ -1,5 +1,81 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-11 - ITEMS.MD Documentation & Item Preview System
+
+### Overview
+
+Two deliverables this session:
+
+1. **ITEMS.MD** — Comprehensive reference document listing every purchasable item, service, and cost in the game, organized by location (15 sections covering all 14 locations + rare drops).
+
+2. **Item Preview Panel** — A hover-activated preview window below the NPC portrait in the center panel. When hovering over any shop item, the preview shows item name, category, description, stats (ATK/DEF/BLK), effects (+Food/+Happiness/etc), and property tags (Durable, Stealable, Appliance, Equipment, etc).
+
+### New Files
+
+| File | Purpose |
+|------|---------|
+| `ITEMS.md` | Complete item & purchase reference document (all locations, all items, economy notes, cost comparisons) |
+| `src/components/game/ItemPreview.tsx` | Item preview context, panel component, and helper functions (`itemToPreview`, `applianceToPreview`) |
+
+### Modified Files
+
+| File | Changes |
+|------|---------|
+| `src/components/game/LocationShell.tsx` | Wrapped content in `ItemPreviewProvider`, added `ItemPreviewPanel` below NPC portrait in left column |
+| `src/components/game/JonesStylePanel.tsx` | Added `previewData` prop to `JonesMenuItem`, imported `useItemPreview`, added `onMouseEnter`/`onMouseLeave` handlers |
+| `src/components/game/GeneralStorePanel.tsx` | Added `previewData={itemToPreview(item)}` to all food, fresh food, and lottery ticket items |
+| `src/components/game/ArmoryPanel.tsx` | Added preview to all clothing, weapon, armor, and shield items (both owned equipment buttons and buy menu items) |
+| `src/components/game/TavernPanel.tsx` | Added preview to all tavern food/drink items |
+| `src/components/game/ShadowMarketPanel.tsx` | Added preview to goods, lottery, tickets, scholar texts, and market appliances |
+| `src/components/game/EnchanterPanel.tsx` | Added hover preview to enchanter appliance cards |
+
+### Architecture: Item Preview System
+
+```
+ItemPreviewProvider (LocationShell wraps all content)
+  ├─ ItemPreviewPanel (below NPC portrait, left column)
+  │   └─ Reads preview from context
+  │   └─ Shows: name, category, effect, stats, description, tags
+  │
+  └─ JonesMenuItem / custom buttons (in tab content, right side)
+      └─ onMouseEnter → setPreview(previewData)
+      └─ onMouseLeave → setPreview(null)
+```
+
+**Key design decisions:**
+- React Context per LocationShell (not global) — preview resets when changing locations
+- `itemToPreview(item: Item)` helper converts any Item to PreviewData
+- `applianceToPreview(appliance: Appliance, source)` includes break chance based on source
+- Tags rendered with color-coded badges (Durable=green, Stealable=red, Appliance=purple, etc)
+- Empty state shows "Hover over an item to preview" placeholder
+- Desktop only — preview panel hidden on mobile (NPC portrait column is hidden)
+
+### ITEMS.MD Contents
+
+15 sections covering every purchasable item/service:
+1. General Store (5 food + 3 fresh food + 4 durables)
+2. Rusty Tankard (4 tavern items)
+3. Armory (5 clothing + 4 weapons + 4 armor + 3 shields)
+4. Enchanter's Workshop (8 appliances + 3 magic items)
+5. Shadow Market (3 goods + lottery + 3 tickets + 3 scholar texts)
+6. Academy (11 degree courses with full prerequisite tree)
+7. Guild Hall (Guild Pass)
+8. Bank (deposits, loans, 4 stocks)
+9. Forge (tempering, repair, salvage)
+10. The Fence (pawn, redeem, buy used, gambling)
+11. Landlord (3 housing tiers + rent prepayment)
+12. Healer's Sanctuary (3 healing + 2 special services)
+13. Cave/Dungeon (5 floors with rewards)
+14. Rare Dungeon Drops (5 drop types)
+15. Economy Notes (price modifier, food efficiency comparison, most expensive items, total cost to buy everything: ~10,959g)
+
+### Build & Test Results
+- **Vite build**: Passed
+- **TypeScript**: 0 errors
+- **Tests**: 176/176 passed (9 test files)
+
+---
+
 ## 2026-02-11 - Landlord Closed Graphics: Full Center Panel Coverage
 
 ### Overview

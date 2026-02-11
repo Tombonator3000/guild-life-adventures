@@ -3,6 +3,7 @@
 
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { getEnchanterAppliances, getAppliance, getItemPrice } from '@/data/items';
+import { applianceToPreview, useItemPreview } from './ItemPreview';
 import { Sparkles, Wrench, ShoppingBag } from 'lucide-react';
 import type { Player } from '@/types/game.types';
 import { toast } from 'sonner';
@@ -16,6 +17,7 @@ interface EnchanterPanelProps {
 
 export function EnchanterPanel({ player, priceModifier, onSpendTime }: EnchanterPanelProps) {
   const { t } = useTranslation();
+  const { setPreview } = useItemPreview();
   const { buyAppliance, repairAppliance } = useGameStore();
   const appliances = getEnchanterAppliances();
 
@@ -89,7 +91,12 @@ export function EnchanterPanel({ player, priceModifier, onSpendTime }: Enchanter
           const isFirstPurchase = !player.applianceHistory.includes(appliance.id);
 
           return (
-            <div key={appliance.id} className="bg-[#e0d4b8] border border-[#8b7355] rounded p-2">
+            <div
+              key={appliance.id}
+              className="bg-[#e0d4b8] border border-[#8b7355] rounded p-2"
+              onMouseEnter={() => setPreview(applianceToPreview(appliance, 'enchanter'))}
+              onMouseLeave={() => setPreview(null)}
+            >
               <div className="flex justify-between items-start mb-1">
                 <div>
                   <span className="font-display font-semibold text-sm text-[#3d2a14]">{t(`appliances.${appliance.id}.name`) || appliance.name}</span>
