@@ -18,7 +18,18 @@ export function useAITurnHandler({ currentPlayer, phase, aiDifficulty }: UseAITu
 
   // Use per-player difficulty if available, otherwise fall back to global setting
   const effectiveDifficulty = currentPlayer?.aiDifficulty ?? aiDifficulty;
-  const { runAITurn, analyzeGameState, settings: aiSettings } = useGrimwaldAI(effectiveDifficulty);
+  const { runAITurn, analyzeGameState, resetAdaptiveSystems, settings: aiSettings } = useGrimwaldAI(effectiveDifficulty);
+  const hasResetRef = useRef(false);
+
+  // Reset adaptive AI systems when a new game starts
+  useEffect(() => {
+    if (phase === 'setup') {
+      hasResetRef.current = false;
+    } else if (phase === 'playing' && !hasResetRef.current) {
+      hasResetRef.current = true;
+      resetAdaptiveSystems();
+    }
+  }, [phase, resetAdaptiveSystems]);
 
   // AI Turn Handler - triggers when it's any AI player's turn
   useEffect(() => {

@@ -8,6 +8,8 @@
  * - Resource management (food, rent, clothing, health)
  * - Difficulty levels (Easy, Medium, Hard)
  * - Adaptive behavior based on game state
+ * - Learning from human player strategies (counter-strategy)
+ * - Dynamic difficulty auto-adjustment based on performance gap
  */
 
 import { useCallback, useRef, useMemo } from 'react';
@@ -20,6 +22,8 @@ import type { AIDifficulty, AIAction } from '@/hooks/ai/types';
 import { calculateGoalProgress, calculateResourceUrgency, getWeakestGoal } from '@/hooks/ai/strategy';
 import { generateActions } from '@/hooks/ai/actionGenerator';
 import { executeAIAction, type StoreActions } from '@/hooks/ai/actionExecutor';
+import { observeHumanPlayers, resetObservations } from '@/hooks/ai/playerObserver';
+import { recordPerformance, calculateAdjustment, applyAdjustment, resetPerformanceHistory } from '@/hooks/ai/difficultyAdjuster';
 
 // Re-export types for backwards compatibility
 export type { AIDifficulty, AIAction, GoalProgress, ResourceUrgency } from '@/hooks/ai/types';
@@ -29,7 +33,7 @@ export type { AIActionType } from '@/hooks/ai/types';
  * Main AI Hook
  */
 export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
-  const settings = DIFFICULTY_SETTINGS[difficulty];
+  const baseSettings = DIFFICULTY_SETTINGS[difficulty];
   const isExecutingRef = useRef(false);
   const actionLogRef = useRef<string[]>([]);
   // Track actions that failed this turn to avoid re-attempting them
@@ -98,7 +102,22 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     actionLogRef.current = [];
     failedActionsRef.current.clear(); // Reset failed action tracking for new turn
 
-    console.log(`[Grimwald AI] Starting turn (${difficulty} difficulty)`);
+    // ── Observe human players & record performance for adaptive systems ──
+    const initState = useGameStore.getState();
+    const humanPlayers = initState.players.filter(p => !p.isAI && !p.isGameOver);
+    observeHumanPlayers(humanPlayers, initState.week);
+    recordPerformance(player, humanPlayers, goalSettings, initState.week);
+
+    // ── Calculate dynamic difficulty adjustment ──
+    const adjustment = calculateAdjustment(player.id);
+    const settings = applyAdjustment(baseSettings, adjustment);
+
+    if (adjustment.active) {
+      console.log(`[Grimwald AI] ${player.name} difficulty adjusted: gap=${adjustment.performanceGap.toFixed(2)}, ` +
+        `mistakes=${settings.mistakeChance.toFixed(3)}, aggression=${settings.aggressiveness.toFixed(2)}`);
+    }
+
+    console.log(`[Grimwald AI] ${player.name} starting turn (${difficulty} difficulty)`);
 
     let actionsRemaining = 15; // Safety limit
     let currentPlayer = player;
@@ -145,7 +164,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         return;
       }
 
-      // Generate possible actions
+      // Generate possible actions (with adjusted settings)
       const actions = generateActions(
         currentPlayer,
         goalSettings,
@@ -195,9 +214,17 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
 
     // Start the turn
     const speedMult = useGameStore.getState().aiSpeedMultiplier || 1;
-    const adjustedDelay = Math.max(50, Math.floor(settings.decisionDelay / speedMult));
+    const adjustedDelay = Math.max(50, Math.floor(baseSettings.decisionDelay / speedMult));
     setTimeout(step, adjustedDelay);
-  }, [difficulty, settings, goalSettings, executeAction, endTurn]);
+  }, [difficulty, baseSettings, goalSettings, executeAction, endTurn]);
+
+  /**
+   * Reset adaptive systems when starting a new game.
+   */
+  const resetAdaptiveSystems = useCallback(() => {
+    resetObservations();
+    resetPerformanceHistory();
+  }, []);
 
   /**
    * Get AI analysis of current game state
@@ -206,21 +233,24 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     const progress = calculateGoalProgress(player, goalSettings);
     const urgency = calculateResourceUrgency(player);
     const weakestGoal = getWeakestGoal(progress);
+    const adjustment = calculateAdjustment(player.id);
 
     return {
       progress,
       urgency,
       weakestGoal,
       difficulty,
-      settings,
+      settings: baseSettings,
+      adjustment,
     };
-  }, [goalSettings, difficulty, settings]);
+  }, [goalSettings, difficulty, baseSettings]);
 
   return {
     runAITurn,
     analyzeGameState,
+    resetAdaptiveSystems,
     actionLog: actionLogRef.current,
     difficulty,
-    settings,
+    settings: baseSettings,
   };
 }

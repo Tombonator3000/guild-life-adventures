@@ -27,6 +27,7 @@ import {
   generateQuestDungeonActions,
   generateRivalryActions,
 } from './actions';
+import { getCounterStrategyWeights, type CounterStrategyWeights } from './playerObserver';
 
 /**
  * Apply personality-based priority scaling to all generated actions.
@@ -103,6 +104,45 @@ function applyTimeBudgetAwareness(actions: AIAction[], turnTimeRatio: number): v
       if (highValueActions.includes(action.type)) {
         action.priority += 5; // Small boost for productive activities early
       }
+    }
+  }
+}
+
+/**
+ * Apply counter-strategy weights based on observed human player behavior.
+ * Boosts AI priorities in areas where humans are strong (competitive pressure)
+ * and in areas humans neglect (exploit gaps).
+ */
+function applyCounterStrategyWeights(actions: AIAction[], counterWeights: CounterStrategyWeights): void {
+  for (const action of actions) {
+    switch (action.type) {
+      case 'study':
+      case 'graduate':
+        action.priority = Math.round(action.priority * counterWeights.education);
+        break;
+      case 'work':
+      case 'deposit-bank':
+      case 'withdraw-bank':
+      case 'apply-job':
+      case 'buy-stock':
+      case 'sell-stock':
+        action.priority = Math.round(action.priority * counterWeights.wealth);
+        break;
+      case 'explore-dungeon':
+      case 'buy-equipment':
+      case 'temper-equipment':
+      case 'take-quest':
+      case 'take-bounty':
+      case 'complete-quest':
+        action.priority = Math.round(action.priority * counterWeights.combat);
+        break;
+      case 'rest':
+      case 'buy-appliance':
+      case 'buy-ticket':
+        action.priority = Math.round(action.priority * counterWeights.happiness);
+        break;
+      default:
+        break;
     }
   }
 }
@@ -213,6 +253,15 @@ export function generateActions(
   // PERSONALITY: Apply personality-based weights
   // ============================================
   applyPersonalityWeights(actions, personality);
+
+  // ============================================
+  // COUNTER-STRATEGY: Adapt to observed human player behavior
+  // ============================================
+  const humanRivalIds = rivals.filter(r => !r.isAI).map(r => r.id);
+  if (humanRivalIds.length > 0) {
+    const counterWeights = getCounterStrategyWeights(humanRivalIds, settings.planningDepth);
+    applyCounterStrategyWeights(actions, counterWeights);
+  }
 
   // ============================================
   // TIME BUDGET: Adjust priorities based on turn phase
