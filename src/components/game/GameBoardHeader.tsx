@@ -1,4 +1,3 @@
-import { Menu } from 'lucide-react';
 import type { WeatherState } from '@/data/weather';
 
 function getWeatherIcon(type: string): string {
@@ -17,13 +16,11 @@ export function GameBoardHeader({
   priceModifier,
   economyTrend,
   weather,
-  onOpenMenu,
 }: {
   week: number;
   priceModifier: number;
   economyTrend: number;
   weather: WeatherState | null;
-  onOpenMenu: () => void;
 }) {
   return (
     <div className="absolute top-1 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
@@ -50,13 +47,6 @@ export function GameBoardHeader({
           </>
         )}
       </div>
-      <button
-        onClick={onOpenMenu}
-        className="parchment-panel p-2 hover:brightness-110"
-        title="Game Menu (Esc)"
-      >
-        <Menu className="w-5 h-5 text-card-foreground" />
-      </button>
     </div>
   );
 }

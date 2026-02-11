@@ -961,6 +961,12 @@
   - RightSideTabs.tsx reduced from 822 → 174 lines (79% reduction)
   - Zero behavior changes — 176 tests pass, build succeeds
 
+## Completed (2026-02-11 Session 2)
+
+- [x] Fullscreen mode — auto-enters on game start, F key toggle, sidebar button, Options toggle
+- [x] Menu button relocated — moved from top-center header to right sidebar header
+- [x] Event panel redesign — larger text (3xl title, lg body), bottom-centered button, graphics placeholder
+
 ## In Progress
 
 *No active tasks*

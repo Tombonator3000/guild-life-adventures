@@ -317,14 +317,13 @@ export function GameBoard() {
             </div>
           )}
 
-          {/* Week and price indicator + menu button (desktop only) */}
+          {/* Week and price indicator (desktop only) */}
           {!isMobile && (
             <GameBoardHeader
               week={week}
               priceModifier={priceModifier}
               economyTrend={economyTrend}
               weather={weather}
-              onOpenMenu={() => setShowGameMenu(true)}
             />
           )}
 

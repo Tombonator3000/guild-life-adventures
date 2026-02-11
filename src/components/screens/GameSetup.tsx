@@ -100,6 +100,13 @@ export function GameSetup() {
   };
 
   const handleStart = () => {
+    // Enter fullscreen when game begins
+    try {
+      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    } catch { /* ignore */ }
+
     startNewGame(
       playerNames,
       false, // legacy includeAI flag - not used when aiConfigs provided
