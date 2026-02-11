@@ -5,7 +5,7 @@
 
 const STORAGE_KEY = 'guild-life-options';
 
-export type BorderStyle = 'stone' | 'leather' | 'none';
+export type BorderStyle = 'stone' | 'leather' | 'wood' | 'iron' | 'parchment' | 'none';
 
 export interface GameOptions {
   // === Gameplay ===
