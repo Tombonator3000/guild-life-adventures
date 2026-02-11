@@ -1,5 +1,9 @@
 import { useMemo } from 'react';
 import type { WeatherParticle, WeatherType } from '@/data/weather';
+import enchantedFogLayer from '@/assets/enchanted-fog-layer.png';
+import enchantedFogWisps from '@/assets/enchanted-fog-wisps.png';
+import heatShimmerLayer from '@/assets/heat-shimmer-layer.png';
+import heatShimmerGround from '@/assets/heat-shimmer-ground.png';
 
 interface WeatherOverlayProps {
   particle: WeatherParticle | null;
@@ -250,23 +254,66 @@ function FogLayer() {
   );
 }
 
-/** Heatwave shimmer layer — subtle distortion effect */
+/** Heatwave shimmer layer — AI-generated heat shimmer textures */
 function HeatwaveLayer() {
   return (
     <>
       <style>{`
-        @keyframes heat-shimmer {
-          0% { opacity: 0.03; filter: blur(2px); }
-          50% { opacity: 0.06; filter: blur(4px); }
-          100% { opacity: 0.03; filter: blur(2px); }
+        @keyframes heat-tex-rise {
+          0% { transform: translateY(0) scale(1); opacity: 0.12; }
+          50% { transform: translateY(-3vh) scale(1.03); opacity: 0.18; }
+          100% { transform: translateY(0) scale(1); opacity: 0.12; }
+        }
+        @keyframes heat-ground-pulse {
+          0%, 100% { opacity: 0.10; }
+          50% { opacity: 0.18; }
+        }
+        @keyframes heat-distort {
+          0% { filter: blur(2px) brightness(1.0); }
+          50% { filter: blur(4px) brightness(1.05); }
+          100% { filter: blur(2px) brightness(1.0); }
         }
       `}</style>
+      {/* Rising heat shimmer texture */}
+      <div
+        style={{
+          position: 'absolute',
+          left: '-5%',
+          right: '-5%',
+          bottom: '0',
+          height: '70%',
+          backgroundImage: `url(${heatShimmerLayer})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'bottom center',
+          animation: 'heat-tex-rise 5s ease-in-out infinite',
+          opacity: 0.14,
+          mixBlendMode: 'screen',
+          filter: 'blur(3px)',
+        }}
+      />
+      {/* Cracked ground overlay at bottom */}
+      <div
+        style={{
+          position: 'absolute',
+          left: '-5%',
+          right: '-5%',
+          bottom: '0',
+          height: '35%',
+          backgroundImage: `url(${heatShimmerGround})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'bottom center',
+          animation: 'heat-ground-pulse 6s ease-in-out infinite',
+          opacity: 0.12,
+          mixBlendMode: 'multiply',
+        }}
+      />
+      {/* Amber heat haze overlay */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'linear-gradient(to top, rgba(255,140,0,0.05), transparent 60%)',
-          animation: 'heat-shimmer 4s ease-in-out infinite',
+          background: 'linear-gradient(to top, rgba(255,140,0,0.06), transparent 50%)',
+          animation: 'heat-distort 4s ease-in-out infinite',
         }}
       />
     </>
@@ -531,78 +578,74 @@ function ThunderstormLayer() {
   );
 }
 
-/** Enhanced fog layer — dense atmospheric fog with visibility reduction */
+/** Enhanced fog layer — AI-generated fog textures with animated drift */
 function EnchantedFogLayer() {
   return (
     <>
       <style>{`
-        @keyframes enchanted-fog-1 {
-          0% { transform: translateX(-15%) translateY(0); opacity: 0.15; }
-          33% { transform: translateX(5%) translateY(-3vh); opacity: 0.25; }
-          66% { transform: translateX(-5%) translateY(2vh); opacity: 0.18; }
-          100% { transform: translateX(-15%) translateY(0); opacity: 0.15; }
+        @keyframes enchanted-tex-1 {
+          0% { transform: translateX(-8%) scale(1.05); opacity: 0.18; }
+          33% { transform: translateX(4%) scale(1.1); opacity: 0.28; }
+          66% { transform: translateX(-3%) scale(1.07); opacity: 0.22; }
+          100% { transform: translateX(-8%) scale(1.05); opacity: 0.18; }
         }
-        @keyframes enchanted-fog-2 {
-          0% { transform: translateX(10%) translateY(2vh); opacity: 0.10; }
-          50% { transform: translateX(-10%) translateY(-2vh); opacity: 0.20; }
-          100% { transform: translateX(10%) translateY(2vh); opacity: 0.10; }
+        @keyframes enchanted-tex-2 {
+          0% { transform: translateX(6%) translateY(3vh) scale(1.1); opacity: 0.12; }
+          50% { transform: translateX(-8%) translateY(-2vh) scale(1.15); opacity: 0.22; }
+          100% { transform: translateX(6%) translateY(3vh) scale(1.1); opacity: 0.12; }
         }
-        @keyframes enchanted-fog-3 {
-          0% { transform: translateY(0); opacity: 0.12; }
-          50% { transform: translateY(-5vh); opacity: 0.22; }
-          100% { transform: translateY(0); opacity: 0.12; }
-        }
-        @keyframes enchanted-glow {
-          0%, 100% { opacity: 0; }
-          50% { opacity: 0.06; }
+        @keyframes enchanted-glow-pulse {
+          0%, 100% { opacity: 0.05; }
+          50% { opacity: 0.12; }
         }
       `}</style>
-      {/* Dense low fog band */}
+      {/* Primary fog texture layer — dense, slow drift */}
       <div
         style={{
           position: 'absolute',
-          left: '-10%',
-          right: '-10%',
-          bottom: '0',
-          height: '60%',
-          background: 'linear-gradient(to top, rgba(180,190,220,0.30), rgba(170,180,210,0.15), transparent)',
-          animation: 'enchanted-fog-1 18s ease-in-out infinite',
-          filter: 'blur(30px)',
+          inset: '-10%',
+          backgroundImage: `url(${enchantedFogLayer})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          animation: 'enchanted-tex-1 20s ease-in-out infinite',
+          opacity: 0.22,
+          mixBlendMode: 'screen',
+          filter: 'blur(4px)',
         }}
       />
-      {/* Mid-level fog wisps */}
+      {/* Secondary wisp layer — thinner, offset timing */}
       <div
         style={{
           position: 'absolute',
-          left: '-10%',
-          right: '-10%',
-          top: '20%',
-          height: '50%',
-          background: 'radial-gradient(ellipse at 40% 50%, rgba(190,200,230,0.20), transparent 60%)',
-          animation: 'enchanted-fog-2 25s ease-in-out infinite',
+          inset: '-5%',
+          backgroundImage: `url(${enchantedFogWisps})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          animation: 'enchanted-tex-2 28s ease-in-out infinite',
+          opacity: 0.16,
+          mixBlendMode: 'screen',
+          filter: 'blur(2px)',
+        }}
+      />
+      {/* Magical glow pulse */}
+      <div
+        style={{
+          position: 'absolute',
+          left: '15%',
+          top: '30%',
+          width: '40%',
+          height: '40%',
+          background: 'radial-gradient(circle, rgba(140,160,255,0.10), transparent 70%)',
+          animation: 'enchanted-glow-pulse 6s ease-in-out infinite',
           filter: 'blur(25px)',
         }}
       />
-      {/* Upper thin fog */}
+      {/* Visibility-reducing overlay */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'linear-gradient(to bottom, rgba(180,190,215,0.10), rgba(170,180,210,0.08), transparent 40%)',
-          animation: 'enchanted-fog-3 12s ease-in-out infinite',
-        }}
-      />
-      {/* Subtle magical glow within the fog */}
-      <div
-        style={{
-          position: 'absolute',
-          left: '20%',
-          top: '40%',
-          width: '30%',
-          height: '30%',
-          background: 'radial-gradient(circle, rgba(140,160,255,0.08), transparent 70%)',
-          animation: 'enchanted-glow 6s ease-in-out infinite',
-          filter: 'blur(20px)',
+          background: 'linear-gradient(to top, rgba(160,170,200,0.15), rgba(150,160,190,0.08), transparent 50%)',
         }}
       />
     </>
