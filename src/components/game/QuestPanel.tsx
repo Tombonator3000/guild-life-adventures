@@ -176,12 +176,12 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
       <div className="space-y-2">
         <ReputationBar player={player} />
 
-        <JonesSectionHeader title={`ACTIVE ${activeQuestData.type === 'bounty' ? 'BOUNTY' : activeQuestData.type === 'chain' ? 'CHAIN QUEST' : 'QUEST'}`} />
+        <JonesSectionHeader title={`ACTIVE ${activeQuestData.type === 'chain' ? 'CHAIN QUEST' : 'QUEST'}`} />
         <div className="bg-[#e0d4b8] border border-[#c9a227] ring-1 ring-[#c9a227] p-2 rounded">
           <div className="flex justify-between items-baseline">
             <span className="font-mono text-sm text-[#3d2a14] font-bold">{activeQuestData.name}</span>
-            <span className={`font-mono text-xs font-bold ${activeQuestData.type === 'bounty' ? 'text-[#8b6914]' : rankInfo.color}`}>
-              {activeQuestData.type === 'bounty' ? 'Bounty' : activeQuestData.type === 'chain' ? 'Chain' : rankInfo.name}
+            <span className={`font-mono text-xs font-bold ${rankInfo.color}`}>
+              {activeQuestData.type === 'chain' ? 'Chain' : rankInfo.name}
             </span>
           </div>
           <p className="text-xs text-[#6b5a42] mt-1">{activeQuestData.description}</p>
@@ -198,7 +198,7 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
             )}
             <div className="flex gap-2 ml-auto">
               <JonesButton
-                label={`Complete ${activeQuestData.type === 'bounty' ? 'Bounty' : 'Quest'}`}
+                label="Complete Quest"
                 onClick={() => { playSFX('quest-complete'); onCompleteQuest(); }}
                 disabled={player.timeRemaining < activeQuestData.timeRequired}
                 variant="primary"

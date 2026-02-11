@@ -36,6 +36,7 @@ import { usePlayerAnimation } from '@/hooks/usePlayerAnimation';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useGameBoardKeyboard } from '@/hooks/useGameBoardKeyboard';
 import { useLocationClick } from '@/hooks/useLocationClick';
+import { StoneBorderFrame } from './StoneBorderFrame';
 
 export function GameBoard() {
   const {
@@ -194,16 +195,18 @@ export function GameBoard() {
       {/* Left Side Panel - desktop only */}
       {!isMobile && (
         <div
-          className="relative z-30 p-[0.5%] flex flex-col flex-shrink-0 h-full"
+          className="relative z-30 flex flex-col flex-shrink-0 h-full"
           style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
         >
-          {currentPlayer && (
-            <SideInfoTabs
-              player={currentPlayer}
-              goals={goalSettings}
-              isCurrentPlayer={true}
-            />
-          )}
+          <StoneBorderFrame side="left">
+            {currentPlayer && (
+              <SideInfoTabs
+                player={currentPlayer}
+                goals={goalSettings}
+                isCurrentPlayer={true}
+              />
+            )}
+          </StoneBorderFrame>
         </div>
       )}
 
@@ -333,22 +336,24 @@ export function GameBoard() {
       {/* Right Side Panel - desktop only */}
       {!isMobile && (
         <div
-          className="relative z-30 p-[0.5%] flex flex-col flex-shrink-0 h-full"
+          className="relative z-30 flex flex-col flex-shrink-0 h-full"
           style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
         >
-          <RightSideTabs
-            players={players}
-            currentPlayerIndex={currentPlayerIndex}
-            goalSettings={goalSettings}
-            onOpenSaveMenu={() => setShowGameMenu(true)}
-            onToggleDebugOverlay={() => setShowDebugOverlay(prev => !prev)}
-            onToggleZoneEditor={() => setShowZoneEditor(true)}
-            showDebugOverlay={showDebugOverlay}
-            aiIsThinking={aiIsThinking}
-            aiSpeedMultiplier={aiSpeedMultiplier}
-            onSetAISpeed={setAISpeedMultiplier}
-            onSkipAITurn={() => setSkipAITurn(true)}
-          />
+          <StoneBorderFrame side="right">
+            <RightSideTabs
+              players={players}
+              currentPlayerIndex={currentPlayerIndex}
+              goalSettings={goalSettings}
+              onOpenSaveMenu={() => setShowGameMenu(true)}
+              onToggleDebugOverlay={() => setShowDebugOverlay(prev => !prev)}
+              onToggleZoneEditor={() => setShowZoneEditor(true)}
+              showDebugOverlay={showDebugOverlay}
+              aiIsThinking={aiIsThinking}
+              aiSpeedMultiplier={aiSpeedMultiplier}
+              onSetAISpeed={setAISpeedMultiplier}
+              onSkipAITurn={() => setSkipAITurn(true)}
+            />
+          </StoneBorderFrame>
         </div>
       )}
 
@@ -378,7 +383,6 @@ export function GameBoard() {
             <RightSideTabs
               players={players}
               currentPlayerIndex={currentPlayerIndex}
-              week={week}
               goalSettings={goalSettings}
               onOpenSaveMenu={() => { setShowRightDrawer(false); setShowGameMenu(true); }}
               onToggleDebugOverlay={() => setShowDebugOverlay(prev => !prev)}

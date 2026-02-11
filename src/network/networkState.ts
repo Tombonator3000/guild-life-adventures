@@ -139,8 +139,8 @@ export function applyNetworkState(state: SerializedGameState) {
   }
 
   if (!dismissedEvents.has('deathEvent')) {
-    update.deathEvent = (state as Record<string, unknown>).deathEvent ?? null;
-  } else if ((state as Record<string, unknown>).deathEvent == null) {
+    update.deathEvent = (state as unknown as Record<string, unknown>).deathEvent ?? null;
+  } else if ((state as unknown as Record<string, unknown>).deathEvent == null) {
     update.deathEvent = null;
     dismissedEvents.delete('deathEvent');
   }

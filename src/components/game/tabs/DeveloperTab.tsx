@@ -53,8 +53,9 @@ export function DeveloperTab({
   onToggleDebugOverlay,
   onToggleZoneEditor,
 }: DeveloperTabProps) {
-  const store = useGameStore();
-  const currentPlayer = store.players[store.currentPlayerIndex];
+  const players = useGameStore(s => s.players);
+  const currentPlayerIndex = useGameStore(s => s.currentPlayerIndex);
+  const currentPlayer = players[currentPlayerIndex];
   const playerId = currentPlayer?.id;
 
   return (
@@ -80,13 +81,13 @@ export function DeveloperTab({
         <p className="text-[8px] text-amber-700 text-center">Ctrl+Shift+Z</p>
       </OptionSection>
 
-      <WeatherSection store={store} />
-      <VictoryAndGameSection store={store} playerId={playerId} />
-      <FestivalSection store={store} />
-      <ResourceSection store={store} playerId={playerId} />
-      <EventSection store={store} playerId={playerId} />
-      <PlayerStateSection store={store} playerId={playerId} />
-      <TeleportSection store={store} playerId={playerId} currentLocation={currentPlayer?.currentLocation} />
+      <WeatherSection />
+      <VictoryAndGameSection playerId={playerId} />
+      <FestivalSection />
+      <ResourceSection playerId={playerId} />
+      <EventSection playerId={playerId} />
+      <PlayerStateSection playerId={playerId} />
+      <TeleportSection playerId={playerId} currentLocation={currentPlayer?.currentLocation} />
 
       <OptionSection title="SFX Generator">
         <a
@@ -111,15 +112,18 @@ export function DeveloperTab({
 
 // --- Sub-sections for DeveloperTab ---
 
-function WeatherSection({ store }: { store: ReturnType<typeof useGameStore> }) {
+function WeatherSection() {
+  const weather = useGameStore(s => s.weather);
+  const setDebugWeather = useGameStore(s => s.setDebugWeather);
+
   return (
     <OptionSection title="Weather">
       <div className="grid grid-cols-3 gap-1">
         {WEATHER_OPTIONS.map(([type, label]) => (
           <button
             key={type}
-            onClick={() => store.setDebugWeather(type)}
-            className={`${SMALL_BTN} ${store.weather?.type === type ? 'bg-amber-300 border-amber-600 text-amber-900' : ''}`}
+            onClick={() => setDebugWeather(type)}
+            className={`${SMALL_BTN} ${weather?.type === type ? 'bg-amber-300 border-amber-600 text-amber-900' : ''}`}
           >
             {label}
           </button>
@@ -129,16 +133,23 @@ function WeatherSection({ store }: { store: ReturnType<typeof useGameStore> }) {
   );
 }
 
-function VictoryAndGameSection({ store, playerId }: { store: ReturnType<typeof useGameStore>; playerId: string | undefined }) {
+function VictoryAndGameSection({ playerId }: { playerId: string | undefined }) {
+  const modifyGold = useGameStore(s => s.modifyGold);
+  const modifyHappiness = useGameStore(s => s.modifyHappiness);
+  const checkVictory = useGameStore(s => s.checkVictory);
+  const processWeekEnd = useGameStore(s => s.processWeekEnd);
+  const startTurn = useGameStore(s => s.startTurn);
+  const endTurn = useGameStore(s => s.endTurn);
+
   return (
     <OptionSection title="Victory & Game">
       <div className="space-y-1">
         <button
           onClick={() => {
             if (playerId) {
-              store.modifyGold(playerId, 10000);
-              store.modifyHappiness(playerId, 1000);
-              store.checkVictory(playerId);
+              modifyGold(playerId, 10000);
+              modifyHappiness(playerId, 1000);
+              checkVictory(playerId);
             }
           }}
           className={DEBUG_BTN}
@@ -146,21 +157,21 @@ function VictoryAndGameSection({ store, playerId }: { store: ReturnType<typeof u
           Trigger Win (Current Player)
         </button>
         <button
-          onClick={() => { if (playerId) store.checkVictory(playerId); }}
+          onClick={() => { if (playerId) checkVictory(playerId); }}
           className={DEBUG_BTN}
         >
           Check Victory
         </button>
-        <button onClick={() => store.processWeekEnd()} className={DEBUG_BTN}>
+        <button onClick={() => processWeekEnd()} className={DEBUG_BTN}>
           Force Week End
         </button>
         <button
-          onClick={() => { if (playerId) store.startTurn(playerId); }}
+          onClick={() => { if (playerId) startTurn(playerId); }}
           className={DEBUG_BTN}
         >
           Force Start Turn
         </button>
-        <button onClick={() => store.endTurn()} className={DEBUG_BTN}>
+        <button onClick={() => endTurn()} className={DEBUG_BTN}>
           Force End Turn
         </button>
       </div>
@@ -168,21 +179,24 @@ function VictoryAndGameSection({ store, playerId }: { store: ReturnType<typeof u
   );
 }
 
-function FestivalSection({ store }: { store: ReturnType<typeof useGameStore> }) {
+function FestivalSection() {
+  const activeFestival = useGameStore(s => s.activeFestival);
+  const setDebugFestival = useGameStore(s => s.setDebugFestival);
+
   return (
     <OptionSection title="Festivals">
       <div className="grid grid-cols-2 gap-1">
         {FESTIVAL_OPTIONS.map(([id, label]) => (
           <button
             key={id}
-            onClick={() => store.setDebugFestival(id)}
-            className={`${SMALL_BTN} ${store.activeFestival === id ? 'bg-amber-300 border-amber-600' : ''}`}
+            onClick={() => setDebugFestival(id)}
+            className={`${SMALL_BTN} ${activeFestival === id ? 'bg-amber-300 border-amber-600' : ''}`}
           >
             {label}
           </button>
         ))}
         <button
-          onClick={() => store.setDebugFestival(null)}
+          onClick={() => setDebugFestival(null)}
           className={`${SMALL_BTN} col-span-2`}
         >
           Clear Festival
@@ -192,44 +206,58 @@ function FestivalSection({ store }: { store: ReturnType<typeof useGameStore> }) 
   );
 }
 
-function ResourceSection({ store, playerId }: { store: ReturnType<typeof useGameStore>; playerId: string | undefined }) {
+function ResourceSection({ playerId }: { playerId: string | undefined }) {
+  const modifyGold = useGameStore(s => s.modifyGold);
+  const modifyHealth = useGameStore(s => s.modifyHealth);
+  const modifyHappiness = useGameStore(s => s.modifyHappiness);
+  const modifyFood = useGameStore(s => s.modifyFood);
+  const modifyClothing = useGameStore(s => s.modifyClothing);
+  const spendTime = useGameStore(s => s.spendTime);
+  const modifyRelaxation = useGameStore(s => s.modifyRelaxation);
+
   if (!playerId) return null;
 
   return (
     <OptionSection title="Resources (Current Player)">
       <div className="space-y-1">
         <div className="grid grid-cols-3 gap-1">
-          <button onClick={() => store.modifyGold(playerId, 500)} className={SMALL_BTN}>+500g</button>
-          <button onClick={() => store.modifyGold(playerId, -500)} className={SMALL_BTN}>-500g</button>
-          <button onClick={() => store.modifyGold(playerId, 5000)} className={SMALL_BTN}>+5000g</button>
+          <button onClick={() => modifyGold(playerId, 500)} className={SMALL_BTN}>+500g</button>
+          <button onClick={() => modifyGold(playerId, -500)} className={SMALL_BTN}>-500g</button>
+          <button onClick={() => modifyGold(playerId, 5000)} className={SMALL_BTN}>+5000g</button>
         </div>
         <div className="grid grid-cols-3 gap-1">
-          <button onClick={() => store.modifyHealth(playerId, 50)} className={SMALL_BTN}>+50 HP</button>
-          <button onClick={() => store.modifyHealth(playerId, -50)} className={SMALL_BTN}>-50 HP</button>
-          <button onClick={() => store.modifyHealth(playerId, 100)} className={SMALL_BTN}>Full HP</button>
+          <button onClick={() => modifyHealth(playerId, 50)} className={SMALL_BTN}>+50 HP</button>
+          <button onClick={() => modifyHealth(playerId, -50)} className={SMALL_BTN}>-50 HP</button>
+          <button onClick={() => modifyHealth(playerId, 100)} className={SMALL_BTN}>Full HP</button>
         </div>
         <div className="grid grid-cols-3 gap-1">
-          <button onClick={() => store.modifyHappiness(playerId, 50)} className={SMALL_BTN}>+50 Hap</button>
-          <button onClick={() => store.modifyFood(playerId, 50)} className={SMALL_BTN}>+50 Food</button>
-          <button onClick={() => store.modifyClothing(playerId, 50)} className={SMALL_BTN}>+50 Cloth</button>
+          <button onClick={() => modifyHappiness(playerId, 50)} className={SMALL_BTN}>+50 Hap</button>
+          <button onClick={() => modifyFood(playerId, 50)} className={SMALL_BTN}>+50 Food</button>
+          <button onClick={() => modifyClothing(playerId, 50)} className={SMALL_BTN}>+50 Cloth</button>
         </div>
         <div className="grid grid-cols-2 gap-1">
-          <button onClick={() => store.spendTime(playerId, -20)} className={SMALL_BTN}>+20 Hours</button>
-          <button onClick={() => store.modifyRelaxation(playerId, 20)} className={SMALL_BTN}>+20 Relax</button>
+          <button onClick={() => spendTime(playerId, -20)} className={SMALL_BTN}>+20 Hours</button>
+          <button onClick={() => modifyRelaxation(playerId, 20)} className={SMALL_BTN}>+20 Relax</button>
         </div>
       </div>
     </OptionSection>
   );
 }
 
-function EventSection({ store, playerId }: { store: ReturnType<typeof useGameStore>; playerId: string | undefined }) {
+function EventSection({ playerId }: { playerId: string | undefined }) {
+  const setEventMessage = useGameStore(s => s.setEventMessage);
+  const setPhase = useGameStore(s => s.setPhase);
+  const modifyGold = useGameStore(s => s.modifyGold);
+  const modifyHealth = useGameStore(s => s.modifyHealth);
+  const dismissEvent = useGameStore(s => s.dismissEvent);
+
   return (
     <OptionSection title="Events">
       <div className="space-y-1">
         <button
           onClick={() => {
-            store.setEventMessage('DEBUG: Test event message.\nThis is a multi-line event for testing.');
-            store.setPhase('event');
+            setEventMessage('DEBUG: Test event message.\nThis is a multi-line event for testing.');
+            setPhase('event');
           }}
           className={DEBUG_BTN}
         >
@@ -238,9 +266,9 @@ function EventSection({ store, playerId }: { store: ReturnType<typeof useGameSto
         <button
           onClick={() => {
             if (playerId) {
-              store.setEventMessage(`Shadowfingers struck! DEBUG robbery test.\nYou lost 50 gold to a street thief!`);
-              store.setPhase('event');
-              store.modifyGold(playerId, -50);
+              setEventMessage(`Shadowfingers struck! DEBUG robbery test.\nYou lost 50 gold to a street thief!`);
+              setPhase('event');
+              modifyGold(playerId, -50);
             }
           }}
           className={DEBUG_BTN}
@@ -249,8 +277,8 @@ function EventSection({ store, playerId }: { store: ReturnType<typeof useGameSto
         </button>
         <button
           onClick={() => {
-            store.setEventMessage('Weekend: You enjoyed a relaxing weekend at the Rusty Tankard!\n+5 Happiness from the festivities.');
-            store.setPhase('event');
+            setEventMessage('Weekend: You enjoyed a relaxing weekend at the Rusty Tankard!\n+5 Happiness from the festivities.');
+            setPhase('event');
           }}
           className={DEBUG_BTN}
         >
@@ -259,17 +287,17 @@ function EventSection({ store, playerId }: { store: ReturnType<typeof useGameSto
         <button
           onClick={() => {
             if (playerId) {
-              store.modifyHealth(playerId, -30);
-              store.setEventMessage('You fell ill! The doctor charged you 100g for treatment.\n-30 Health, -100 Gold.');
-              store.setPhase('event');
-              store.modifyGold(playerId, -100);
+              modifyHealth(playerId, -30);
+              setEventMessage('You fell ill! The doctor charged you 100g for treatment.\n-30 Health, -100 Gold.');
+              setPhase('event');
+              modifyGold(playerId, -100);
             }
           }}
           className={DEBUG_BTN}
         >
           Trigger Doctor Visit
         </button>
-        <button onClick={() => store.dismissEvent()} className={DEBUG_BTN}>
+        <button onClick={() => dismissEvent()} className={DEBUG_BTN}>
           Dismiss Event
         </button>
       </div>
@@ -277,22 +305,27 @@ function EventSection({ store, playerId }: { store: ReturnType<typeof useGameSto
   );
 }
 
-function PlayerStateSection({ store, playerId }: { store: ReturnType<typeof useGameStore>; playerId: string | undefined }) {
+function PlayerStateSection({ playerId }: { playerId: string | undefined }) {
+  const cureSickness = useGameStore(s => s.cureSickness);
+  const modifyMaxHealth = useGameStore(s => s.modifyMaxHealth);
+  const buyGuildPass = useGameStore(s => s.buyGuildPass);
+  const promoteGuildRank = useGameStore(s => s.promoteGuildRank);
+
   if (!playerId) return null;
 
   return (
     <OptionSection title="Player State">
       <div className="space-y-1">
-        <button onClick={() => store.cureSickness(playerId)} className={DEBUG_BTN}>
+        <button onClick={() => cureSickness(playerId)} className={DEBUG_BTN}>
           Cure Sickness
         </button>
-        <button onClick={() => store.modifyMaxHealth(playerId, 20)} className={DEBUG_BTN}>
+        <button onClick={() => modifyMaxHealth(playerId, 20)} className={DEBUG_BTN}>
           +20 Max Health
         </button>
-        <button onClick={() => store.buyGuildPass(playerId)} className={DEBUG_BTN}>
+        <button onClick={() => buyGuildPass(playerId)} className={DEBUG_BTN}>
           Buy Guild Pass
         </button>
-        <button onClick={() => store.promoteGuildRank(playerId)} className={DEBUG_BTN}>
+        <button onClick={() => promoteGuildRank(playerId)} className={DEBUG_BTN}>
           Promote Guild Rank
         </button>
       </div>
@@ -300,7 +333,10 @@ function PlayerStateSection({ store, playerId }: { store: ReturnType<typeof useG
   );
 }
 
-function TeleportSection({ store, playerId, currentLocation }: { store: ReturnType<typeof useGameStore>; playerId: string | undefined; currentLocation: string | undefined }) {
+function TeleportSection({ playerId, currentLocation }: { playerId: string | undefined; currentLocation: string | undefined }) {
+  const movePlayer = useGameStore(s => s.movePlayer);
+  const selectLocation = useGameStore(s => s.selectLocation);
+
   if (!playerId) return null;
 
   return (
@@ -310,8 +346,8 @@ function TeleportSection({ store, playerId, currentLocation }: { store: ReturnTy
           <button
             key={loc.id}
             onClick={() => {
-              store.movePlayer(playerId, loc.id as LocationId, 0);
-              store.selectLocation(loc.id as LocationId);
+              movePlayer(playerId, loc.id as LocationId, 0);
+              selectLocation(loc.id as LocationId);
             }}
             className={`${SMALL_BTN} ${currentLocation === loc.id ? 'bg-amber-300 border-amber-600' : ''}`}
             title={loc.name}

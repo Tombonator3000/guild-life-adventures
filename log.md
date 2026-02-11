@@ -1,5 +1,47 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-11 - AI-Generated Stone Border Frames & Build Error Fixes
+
+### Overview
+
+Replaced the black empty areas around the left and right side panels with AI-generated medieval stone wall border graphics featuring moss, vines, and flowers. Also fixed all existing build errors (46+ TypeScript errors across 4 files).
+
+### Changes
+
+| # | Change | Details |
+|---|--------|---------|
+| 1 | **AI-generated stone border images** | Generated two vertical stone wall frame images using flux.dev AI model — `stone-border-left.png` and `stone-border-right.png` with medieval aesthetic (dark stone, green moss, ivy vines, purple/yellow wildflowers) |
+| 2 | **New StoneBorderFrame component** | Wrapper component that applies AI-generated stone wall image as background around panel content with 8% inner padding |
+| 3 | **GameBoard side panels wrapped** | Both desktop side panels (left SideInfoTabs, right RightSideTabs) wrapped with StoneBorderFrame, replacing bare black gaps |
+| 4 | **DeveloperTab type fixes** | Refactored from `useGameStore()` (whole store) to individual `useGameStore(s => s.action)` selectors — fixes 40+ "property does not exist on type unknown" errors |
+| 5 | **QuestPanel bounty type fixes** | Removed dead-code `'bounty'` comparisons after the `!== 'bounty'` guard on line 172 — TypeScript correctly narrowed the type to `'quest' \| 'chain'` |
+| 6 | **GameBoard week prop fix** | Removed `week={week}` from mobile RightSideTabs (property removed from interface in earlier PR) |
+| 7 | **networkState.ts type fix** | Changed `state as Record<string, unknown>` to `state as unknown as Record<string, unknown>` for proper type conversion |
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `src/assets/stone-border-left.png` | AI-generated left stone wall border frame |
+| `src/assets/stone-border-right.png` | AI-generated right stone wall border frame |
+| `src/components/game/StoneBorderFrame.tsx` | Wrapper component applying stone border as background image |
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `src/components/game/GameBoard.tsx` | Import StoneBorderFrame, wrap both side panels, remove `week` prop from mobile RightSideTabs |
+| `src/components/game/tabs/DeveloperTab.tsx` | Refactored to use individual Zustand selectors instead of whole-store hook |
+| `src/components/game/QuestPanel.tsx` | Removed unreachable `'bounty'` type comparisons |
+| `src/network/networkState.ts` | Fixed `as Record` type casting via double assertion |
+
+### Build & Test Results
+
+- **TypeScript**: 0 errors (fixed 46+ errors)
+- **All previous functionality preserved** — no business logic changes
+
+---
+
 ## 2026-02-11 - Right Sidebar: Replace Duplicate Week with Turn Indicator
 
 ### Overview
