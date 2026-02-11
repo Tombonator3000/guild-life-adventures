@@ -1,5 +1,19 @@
 # Guild Life Adventures - Todo List
 
+## Completed (2026-02-11)
+
+- [x] iPad Audio Control Fix — Web Audio API GainNode for iOS volume control
+  - All 3 audio managers (music, ambient, SFX) now route through Web Audio API GainNodes
+  - New `webAudioBridge.ts`: shared AudioContext, `connectElement()` for MediaElementSource→GainNode
+  - iOS Safari ignores `element.volume` — GainNode provides the only programmatic volume control
+  - Auto-resume AudioContext on user interaction for iOS autoplay policy
+
+- [x] Job System Balance Audit — Prevent tier-skipping, widen progression gaps
+  - Experience gain: `hours` → `Math.ceil(hours/2)` (6→3 per 6hr shift)
+  - Dependability gain: `+2` → `+1` per shift
+  - All 37 jobs: widened exp/dep requirements (15-exp gaps between career rungs)
+  - Tavern example: Dishwasher→Barmaid now takes 10 shifts (was 3), must work as Cook first
+
 ## Completed (2026-02-07)
 
 - [x] Store Layout Redesign — General Store, Shadow Market, Armory, Rusty Tankard
