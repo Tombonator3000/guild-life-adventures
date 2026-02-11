@@ -1,5 +1,29 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-11 (Session 3) - Festival Visual Overlays with AI-Generated Textures
+
+### Overview
+Added visual graphics and animations for all 4 seasonal festivals (Harvest Festival, Winter Solstice, Spring Tournament, Midsummer Fair). Each festival has unique AI-generated textures and CSS animations displayed over the game board when active.
+
+### New Assets (8 AI-generated textures)
+- `harvest-grain.png` / `harvest-glow.png` — golden wheat and warm glow
+- `solstice-frost.png` / `solstice-aurora.png` — ice crystals and northern lights
+- `tourney-banner.png` / `tourney-confetti.png` — banners and confetti
+- `fair-lantern.png` / `fair-streamers.png` — sky lanterns and ribbons
+
+### New Component: FestivalOverlay.tsx
+- 4 sub-layers: HarvestLayer, SolsticeLayer, TourneyLayer, FairLayer
+- z-index 34, pointer-events none, screen blend modes
+- Harvest: 18 falling grain particles, golden glow pulse
+- Solstice: aurora band, frost texture, 25 glitter particles
+- Tourney: banner sides, 30 confetti particles, heroic glow
+- Fair: 12 rising lanterns with glow spots, streamer overlay
+
+### Integration
+- GameBoard.tsx: Added FestivalOverlay with activeFestival from store
+- Testable via Developer tab Festival buttons
+
+
 ## 2026-02-11 (Session 2) - Complete Game Data & Panel i18n Translation
 
 ### Overview
