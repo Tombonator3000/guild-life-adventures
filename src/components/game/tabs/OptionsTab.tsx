@@ -1,13 +1,15 @@
-// OptionsTab - Save/Load, audio controls, AI speed, keyboard shortcuts
+// OptionsTab - Save/Load, audio controls, AI speed, border style, keyboard shortcuts
 // Uses AudioVolumeControl for deduplicated music/ambient/SFX sliders
 
-import { Save, Play, FastForward, SkipForward, Music, Sparkles, Bell } from 'lucide-react';
+import { Save, Play, FastForward, SkipForward, Music, Sparkles, Bell, Frame } from 'lucide-react';
 import { useAudioSettings } from '@/hooks/useMusic';
 import { useSFXSettings } from '@/hooks/useSFX';
 import { useAmbientSettings } from '@/hooks/useAmbient';
+import { useGameOptions } from '@/hooks/useGameOptions';
 import { getBuildVersion } from '../UpdateBanner';
 import { OptionSection, ShortcutRow } from './OptionSection';
 import { AudioVolumeControl } from './AudioVolumeControl';
+import type { BorderStyle } from '@/data/gameOptions';
 
 interface OptionsTabProps {
   onOpenSaveMenu: () => void;
@@ -33,6 +35,13 @@ export function OptionsTab({
   const { musicVolume, musicMuted, setVolume: setMusicVolume, toggleMute: toggleMusicMute } = useAudioSettings();
   const sfx = useSFXSettings();
   const ambient = useAmbientSettings();
+  const { options, setOption } = useGameOptions();
+
+  const BORDER_OPTIONS: { value: BorderStyle; label: string }[] = [
+    { value: 'stone', label: '🪨 Stone' },
+    { value: 'leather', label: '🧵 Leather' },
+    { value: 'none', label: '❌ None' },
+  ];
 
   return (
     <div className="space-y-2">
@@ -84,6 +93,25 @@ export function OptionsTab({
           onVolumeChange={sfx.setVolume}
           onToggleMute={sfx.toggleMute}
         />
+      </OptionSection>
+
+      {/* Panel Border Style */}
+      <OptionSection title="Panel Borders">
+        <div className="flex gap-1">
+          {BORDER_OPTIONS.map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => setOption('borderStyle', value)}
+              className={`flex-1 flex items-center justify-center gap-1 p-1.5 rounded border text-[10px] font-display transition-all ${
+                options.borderStyle === value
+                  ? 'bg-amber-200 border-amber-600 text-amber-900'
+                  : 'bg-amber-100/30 border-amber-300/50 text-amber-700 hover:bg-amber-100'
+              }`}
+            >
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
       </OptionSection>
 
       {/* AI Speed Controls */}
