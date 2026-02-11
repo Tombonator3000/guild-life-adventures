@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import {
   X, Settings, Gamepad2, Volume2, VolumeX, Monitor,
-  Gauge, RotateCcw, Cake, Skull, Zap, Eye, Layout, Bell, Timer, Sparkles, BookOpen, Speech, Globe,
+  Gauge, RotateCcw, Cake, Skull, Zap, Eye, Layout, Bell, Timer, Sparkles, BookOpen, Speech, Globe, Frame,
 } from 'lucide-react';
 import { UserManual } from '@/components/game/UserManual';
 import { Switch } from '@/components/ui/switch';
@@ -21,7 +21,7 @@ import { useAppUpdate } from '@/hooks/useAppUpdate';
 import { getBuildVersion } from '@/components/game/UpdateBanner';
 import { useTranslation, LANGUAGE_OPTIONS } from '@/i18n';
 import type { Language } from '@/i18n';
-import type { GameOptions } from '@/data/gameOptions';
+import type { GameOptions, BorderStyle } from '@/data/gameOptions';
 
 type Tab = 'gameplay' | 'audio' | 'display' | 'speed';
 
@@ -534,6 +534,32 @@ function DisplayTab({
           />
         }
       />
+
+      <Separator />
+      <SectionHeader title="Panel Borders" />
+
+      <div className="grid grid-cols-3 gap-2">
+        {([
+          { value: 'stone' as BorderStyle, label: '🪨 Stone' },
+          { value: 'leather' as BorderStyle, label: '🧵 Leather' },
+          { value: 'wood' as BorderStyle, label: '🪵 Wood' },
+          { value: 'iron' as BorderStyle, label: '⚔️ Iron' },
+          { value: 'parchment' as BorderStyle, label: '📜 Scroll' },
+          { value: 'none' as BorderStyle, label: '❌ None' },
+        ]).map(({ value, label }) => (
+          <button
+            key={value}
+            onClick={() => setOption('borderStyle', value)}
+            className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded border font-display text-xs transition-all ${
+              options.borderStyle === value
+                ? 'bg-primary/20 border-primary text-primary'
+                : 'bg-background/30 border-border/50 text-muted-foreground hover:bg-background/50 hover:text-foreground'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
