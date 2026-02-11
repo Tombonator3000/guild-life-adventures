@@ -104,6 +104,7 @@ export function GameBoard() {
   const {
     customZones,
     centerPanel,
+    layout,
     handleSaveZones,
     handleResetZones,
     getLocationWithCustomPosition,
@@ -416,6 +417,7 @@ export function GameBoard() {
           initialCenterPanel={centerPanel}
           initialZones={customZones}
           initialPaths={{ ...MOVEMENT_PATHS }}
+          initialLayout={layout}
         />
       )}
 

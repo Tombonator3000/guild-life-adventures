@@ -1,5 +1,83 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-11 - Zone Editor: Visual Layout Placement for Center Panel
+
+### Feature
+
+Added a third editor mode ("Layout") to the Zone Editor that lets users visually position and resize three sub-elements inside the center panel:
+
+1. **NPC Portrait** (purple) — Where the NPC portrait, name, title, and greeting appear
+2. **Text / Content** (blue) — Where tabs, item lists, and all location-specific content render
+3. **Item Preview** (amber) — Where the hover item preview panel is placed
+
+### How It Works
+
+- Switch to "Layout" tab in the Zone Editor toolbar
+- The center panel is shown with a dashed yellow outline
+- Three colored overlay boxes represent the layout elements
+- **Drag to move** any element within the center panel bounds
+- **Drag the corner handle to resize** any element
+- All positions are percentages relative to the center panel (0-100%)
+- Properties panel shows X, Y, Width, Height for the selected element
+- "All Elements" summary shows all three positions at a glance
+- "Reset Layout to Defaults" button restores the default layout
+
+### Data Structure
+
+```typescript
+// game.types.ts
+export interface LayoutElement {
+  x: number;       // % of center panel width
+  y: number;       // % of center panel height
+  width: number;   // % of center panel width
+  height: number;  // % of center panel height
+}
+
+export type LayoutElementId = 'npc' | 'text' | 'itemPreview';
+
+export interface CenterPanelLayout {
+  npc: LayoutElement;
+  text: LayoutElement;
+  itemPreview: LayoutElement;
+}
+```
+
+### Default Layout
+
+| Element | X | Y | Width | Height |
+|---------|---|---|-------|--------|
+| NPC Portrait | 0% | 0% | 25% | 100% |
+| Text/Content | 27% | 0% | 73% | 100% |
+| Item Preview | 0% | 60% | 25% | 40% |
+
+### Persistence
+
+- Layout saves to localStorage alongside zones, center panel, and paths
+- Backwards compatible: old saves without `layout` field get the default layout
+- Included in "Copy Config" export as `CENTER_PANEL_LAYOUT`
+
+### Modified Files
+
+| File | Changes |
+|------|---------|
+| `src/types/game.types.ts` | Added `LayoutElement`, `LayoutElementId`, `CenterPanelLayout` types |
+| `src/hooks/useZoneEditorState.ts` | Added `layout` editor mode, layout state, drag/resize handlers, layout export, `DEFAULT_LAYOUT`, `LAYOUT_ELEMENT_LABELS` |
+| `src/components/game/ZoneEditorToolbar.tsx` | Added "Layout" tab (purple) |
+| `src/components/game/ZoneEditorBoard.tsx` | Layout mode rendering: center panel outline + 3 draggable/resizable sub-element overlays with color coding, labels, and size info |
+| `src/components/game/ZoneEditorProperties.tsx` | Layout panel: element selector, X/Y/Width/Height inputs, all-elements summary, reset button |
+| `src/components/game/ZoneEditor.tsx` | Updated props and wiring for layout state |
+| `src/data/zoneStorage.ts` | Extended `ZoneEditorSaveData` with optional `layout` field, updated save/load |
+| `src/hooks/useZoneConfiguration.ts` | Added layout state, load/save/reset, exposed via hook |
+| `src/components/game/GameBoard.tsx` | Passes `layout` and `initialLayout` to ZoneEditor |
+
+### Build & Tests
+
+- TypeScript compiles cleanly
+- Build succeeds
+- All 176 tests pass
+
+---
+
 ## 2026-02-11 - Event Graphics Integration Audit & Fixes
 
 ### Status Check

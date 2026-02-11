@@ -53,6 +53,16 @@ export function ZoneEditorToolbar({
           >
             Paths
           </button>
+          <button
+            onClick={() => setEditorMode('layout')}
+            className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+              editorMode === 'layout'
+                ? 'bg-purple-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Layout
+          </button>
         </div>
         <label className="flex items-center gap-2 text-white">
           <input

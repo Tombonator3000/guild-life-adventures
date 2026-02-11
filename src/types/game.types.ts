@@ -33,6 +33,23 @@ export interface ZoneConfig {
   polygon?: [number, number][];
 }
 
+// Layout element position/size within the center panel (percentages relative to center panel)
+export interface LayoutElement {
+  x: number;       // left position (% of center panel width)
+  y: number;       // top position (% of center panel height)
+  width: number;   // element width (% of center panel width)
+  height: number;  // element height (% of center panel height)
+}
+
+export type LayoutElementId = 'npc' | 'text' | 'itemPreview';
+
+// Complete layout configuration for center panel sub-elements
+export interface CenterPanelLayout {
+  npc: LayoutElement;         // NPC portrait area
+  text: LayoutElement;        // Text/content/tabs area
+  itemPreview: LayoutElement; // Item preview panel
+}
+
 export interface Location {
   id: LocationId;
   name: string;

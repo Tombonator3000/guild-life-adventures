@@ -1,6 +1,9 @@
-import type { ZoneConfig, LocationId } from '@/types/game.types';
+import type { ZoneConfig, LocationId, CenterPanelLayout, LayoutElementId, LayoutElement } from '@/types/game.types';
 import type { MovementWaypoint } from '@/data/locations';
 import type { CenterPanelConfig, EditorMode } from '@/hooks/useZoneEditorState';
+import { LAYOUT_ELEMENT_LABELS, DEFAULT_LAYOUT } from '@/hooks/useZoneEditorState';
+
+const LAYOUT_ELEMENT_IDS: LayoutElementId[] = ['npc', 'text', 'itemPreview'];
 
 interface ZoneEditorPropertiesProps {
   editorMode: EditorMode;
@@ -19,6 +22,12 @@ interface ZoneEditorPropertiesProps {
   adjacentPairs: [LocationId, LocationId][];
   clearEdgePath: (edgeKey: string) => void;
   removeWaypoint: (edgeKey: string, index: number) => void;
+  // Layout props
+  layout: CenterPanelLayout;
+  setLayout: React.Dispatch<React.SetStateAction<CenterPanelLayout>>;
+  selectedLayoutElement: LayoutElementId | null;
+  setSelectedLayoutElement: (id: LayoutElementId | null) => void;
+  handleLayoutInput: (elementId: LayoutElementId, field: keyof LayoutElement, value: number) => void;
 }
 
 export function ZoneEditorProperties({
@@ -38,6 +47,11 @@ export function ZoneEditorProperties({
   adjacentPairs,
   clearEdgePath,
   removeWaypoint,
+  layout,
+  setLayout,
+  selectedLayoutElement,
+  setSelectedLayoutElement,
+  handleLayoutInput,
 }: ZoneEditorPropertiesProps) {
   return (
     <div className="w-80 bg-gray-900 p-4 overflow-y-auto">
@@ -173,7 +187,7 @@ export function ZoneEditorProperties({
             ))}
           </div>
         </>
-      ) : (
+      ) : editorMode === 'paths' ? (
         <>
           {/* Path Drawing Panel */}
           <h3 className="text-lg font-bold text-cyan-400 mb-2">Movement Paths</h3>
@@ -277,6 +291,136 @@ export function ZoneEditorProperties({
               );
             })}
           </div>
+        </>
+      ) : (
+        <>
+          {/* Layout Panel */}
+          <h3 className="text-lg font-bold text-purple-400 mb-2">Panel Layout</h3>
+          <p className="text-gray-400 text-xs mb-4">
+            Position and resize sub-elements inside the center panel.
+            Drag to move, drag corner to resize.
+          </p>
+
+          {/* Element selector buttons */}
+          <div className="space-y-1 mb-4">
+            {LAYOUT_ELEMENT_IDS.map(id => {
+              const meta = LAYOUT_ELEMENT_LABELS[id];
+              const isSelected = selectedLayoutElement === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setSelectedLayoutElement(id)}
+                  className={`w-full text-left px-2 py-1.5 rounded text-sm flex items-center gap-2 ${
+                    isSelected ? 'text-white ring-1 ring-white' : 'text-gray-300 hover:bg-gray-700'
+                  }`}
+                  style={{
+                    backgroundColor: isSelected ? meta.borderColor : '#1f2937',
+                  }}
+                >
+                  <span
+                    className="w-3 h-3 rounded-sm flex-shrink-0"
+                    style={{ backgroundColor: meta.borderColor }}
+                  />
+                  {meta.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Selected element properties */}
+          {selectedLayoutElement && (
+            <div
+              className="mb-4 p-3 bg-gray-800 rounded border"
+              style={{ borderColor: `${LAYOUT_ELEMENT_LABELS[selectedLayoutElement].borderColor}80` }}
+            >
+              <h4
+                className="font-bold mb-3 text-sm"
+                style={{ color: LAYOUT_ELEMENT_LABELS[selectedLayoutElement].borderColor }}
+              >
+                {LAYOUT_ELEMENT_LABELS[selectedLayoutElement].label}
+              </h4>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="text-white text-sm">
+                  X (%)
+                  <input
+                    type="number"
+                    value={layout[selectedLayoutElement].x.toFixed(1)}
+                    onChange={e => handleLayoutInput(selectedLayoutElement, 'x', parseFloat(e.target.value) || 0)}
+                    className="w-full bg-gray-700 text-white px-2 py-1 rounded"
+                    step="0.5"
+                  />
+                </label>
+                <label className="text-white text-sm">
+                  Y (%)
+                  <input
+                    type="number"
+                    value={layout[selectedLayoutElement].y.toFixed(1)}
+                    onChange={e => handleLayoutInput(selectedLayoutElement, 'y', parseFloat(e.target.value) || 0)}
+                    className="w-full bg-gray-700 text-white px-2 py-1 rounded"
+                    step="0.5"
+                  />
+                </label>
+                <label className="text-white text-sm">
+                  Width (%)
+                  <input
+                    type="number"
+                    value={layout[selectedLayoutElement].width.toFixed(1)}
+                    onChange={e => handleLayoutInput(selectedLayoutElement, 'width', parseFloat(e.target.value) || 5)}
+                    className="w-full bg-gray-700 text-white px-2 py-1 rounded"
+                    step="0.5"
+                  />
+                </label>
+                <label className="text-white text-sm">
+                  Height (%)
+                  <input
+                    type="number"
+                    value={layout[selectedLayoutElement].height.toFixed(1)}
+                    onChange={e => handleLayoutInput(selectedLayoutElement, 'height', parseFloat(e.target.value) || 5)}
+                    className="w-full bg-gray-700 text-white px-2 py-1 rounded"
+                    step="0.5"
+                  />
+                </label>
+              </div>
+            </div>
+          )}
+
+          <hr className="border-gray-700 my-3" />
+
+          {/* All elements summary */}
+          <h4 className="text-sm font-bold text-white mb-2">All Elements</h4>
+          <div className="space-y-2 text-xs">
+            {LAYOUT_ELEMENT_IDS.map(id => {
+              const el = layout[id];
+              const meta = LAYOUT_ELEMENT_LABELS[id];
+              return (
+                <div key={id} className="bg-gray-800 rounded p-2">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span
+                      className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
+                      style={{ backgroundColor: meta.borderColor }}
+                    />
+                    <span className="font-bold text-gray-200">{meta.label}</span>
+                  </div>
+                  <div className="text-gray-400 font-mono">
+                    pos: ({el.x.toFixed(1)}, {el.y.toFixed(1)}) | size: {el.width.toFixed(1)}% x {el.height.toFixed(1)}%
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <hr className="border-gray-700 my-3" />
+
+          {/* Reset layout button */}
+          <button
+            onClick={() => {
+              setLayout({ ...DEFAULT_LAYOUT });
+              setSelectedLayoutElement(null);
+            }}
+            className="w-full px-3 py-1.5 bg-gray-700 text-gray-300 rounded text-sm hover:bg-gray-600"
+          >
+            Reset Layout to Defaults
+          </button>
         </>
       )}
     </div>

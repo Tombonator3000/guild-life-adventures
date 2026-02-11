@@ -2,6 +2,14 @@
 
 ## Completed (2026-02-11)
 
+- [x] Zone Editor: Visual Layout Placement — NPC, text, item preview positioning
+  - New "Layout" mode tab in Zone Editor (Zones | Paths | Layout)
+  - 3 draggable/resizable sub-elements inside center panel: NPC Portrait, Text/Content, Item Preview
+  - Color-coded overlays (purple/blue/amber) with labels and size info
+  - Properties panel with numeric X/Y/Width/Height inputs per element
+  - Persists to localStorage, included in Copy Config export
+  - Backwards compatible with existing saves
+
 - [x] iPad Audio Control Fix — Web Audio API GainNode for iOS volume control
   - All 3 audio managers (music, ambient, SFX) now route through Web Audio API GainNodes
   - New `webAudioBridge.ts`: shared AudioContext, `connectElement()` for MediaElementSource→GainNode
