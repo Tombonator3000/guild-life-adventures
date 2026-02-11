@@ -27,7 +27,7 @@ export const TRAVEL_EVENTS: TravelEvent[] = [
   {
     id: 'found-coin-purse',
     name: 'Found Coin Purse',
-    description: 'You found a coin purse dropped on the road! Someone was careless with their gold.',
+    description: 'You found a coin purse dropped on the road! Someone\'s bad day is your good day. The circle of life.',
     goldEffect: 15 + Math.floor(Math.random() * 20),
     happinessEffect: 2,
     timeCost: 0,
@@ -37,7 +37,7 @@ export const TRAVEL_EVENTS: TravelEvent[] = [
   {
     id: 'wandering-merchant',
     name: 'Wandering Merchant',
-    description: 'A friendly merchant offers you a sample of exotic herbs. You feel revitalized!',
+    description: 'A friendly merchant offers you a sample of exotic herbs. You feel revitalized! Probably not drugs. Probably.',
     goldEffect: 0,
     happinessEffect: 3,
     timeCost: 0,
@@ -47,7 +47,7 @@ export const TRAVEL_EVENTS: TravelEvent[] = [
   {
     id: 'shortcut-found',
     name: 'Hidden Shortcut',
-    description: 'You discover a hidden shortcut through the alleyways. Time saved!',
+    description: 'You discover a hidden shortcut through the alleyways. It smells terrible but saves time. Life is full of trade-offs.',
     goldEffect: 0,
     happinessEffect: 1,
     timeCost: -2, // negative = gain time
@@ -57,7 +57,7 @@ export const TRAVEL_EVENTS: TravelEvent[] = [
   {
     id: 'bard-performance',
     name: 'Street Bard',
-    description: 'A talented bard performs a beautiful song as you pass. Your spirits are lifted!',
+    description: 'A talented bard performs a beautiful song as you pass. He\'s actually good, which is suspicious for a street bard.',
     goldEffect: 0,
     happinessEffect: 5,
     timeCost: 1,
@@ -69,7 +69,7 @@ export const TRAVEL_EVENTS: TravelEvent[] = [
   {
     id: 'pickpocket',
     name: 'Pickpocket!',
-    description: 'A nimble thief bumps into you and steals some gold before disappearing into the crowd!',
+    description: 'A nimble thief bumps into you, says "excuse me" politely, and steals your gold. Manners maketh the pickpocket.',
     goldEffect: -20,
     happinessEffect: -3,
     timeCost: 0,
@@ -79,7 +79,7 @@ export const TRAVEL_EVENTS: TravelEvent[] = [
   {
     id: 'muddy-road',
     name: 'Muddy Road',
-    description: 'The road is flooded with mud. You slip and twist your ankle.',
+    description: 'The road is flooded with mud. You slip spectacularly. A child gives you a score of 3 out of 10.',
     goldEffect: 0,
     happinessEffect: -2,
     timeCost: 1,
@@ -89,7 +89,7 @@ export const TRAVEL_EVENTS: TravelEvent[] = [
   {
     id: 'lost-way',
     name: 'Took a Wrong Turn',
-    description: 'You got confused by the winding streets and lost valuable time.',
+    description: 'You got confused by the winding streets. In your defense, whoever planned this city was either drunk or a minotaur.',
     goldEffect: 0,
     happinessEffect: -1,
     timeCost: 2,
@@ -99,7 +99,7 @@ export const TRAVEL_EVENTS: TravelEvent[] = [
   {
     id: 'stray-dog',
     name: 'Aggressive Stray Dog',
-    description: 'A stray dog chases you through the streets! You escape but not unscathed.',
+    description: 'A stray dog chases you through the streets! It wasn\'t even a big dog. You will never speak of this.',
     goldEffect: 0,
     happinessEffect: -2,
     timeCost: 1,
@@ -111,7 +111,7 @@ export const TRAVEL_EVENTS: TravelEvent[] = [
   {
     id: 'injured-traveler',
     name: 'Injured Traveler',
-    description: 'You help an injured traveler. They thank you with a small reward.',
+    description: 'You help an injured traveler. They thank you with a small reward and a life story you didn\'t ask for.',
     goldEffect: 10,
     happinessEffect: 4,
     timeCost: 2,
@@ -121,7 +121,7 @@ export const TRAVEL_EVENTS: TravelEvent[] = [
   {
     id: 'old-map',
     name: 'Old Map Fragment',
-    description: 'You find a torn map fragment that reveals a cache of coins hidden nearby!',
+    description: 'You find a torn map fragment leading to hidden coins! X marks the spot. For once, X was telling the truth.',
     goldEffect: 25,
     happinessEffect: 3,
     timeCost: 3,

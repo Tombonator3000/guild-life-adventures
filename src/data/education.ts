@@ -24,7 +24,7 @@ export const DEGREES: Record<DegreeId, Degree> = {
   'trade-guild': {
     id: 'trade-guild',
     name: 'Trade Guild Certificate',
-    description: 'Basic commerce and craftsmanship. Opens doors to many practical jobs.',
+    description: 'Basic commerce and craftsmanship. Teaches you that buying low and selling high is, in fact, the whole trick.',
     prerequisites: [],
     sessionsRequired: 10,
     costPerSession: 5,
@@ -35,7 +35,7 @@ export const DEGREES: Record<DegreeId, Degree> = {
   'junior-academy': {
     id: 'junior-academy',
     name: 'Junior Academy Diploma',
-    description: 'Foundational knowledge in letters and numbers. Gateway to advanced studies.',
+    description: 'Foundational knowledge in letters and numbers. You\'ll learn to read and count, which puts you ahead of 60% of Guildholm.',
     prerequisites: [],
     sessionsRequired: 10,
     costPerSession: 5,
@@ -48,7 +48,7 @@ export const DEGREES: Record<DegreeId, Degree> = {
   'arcane-studies': {
     id: 'arcane-studies',
     name: 'Arcane Studies Certificate',
-    description: 'Basic magical theory and enchantment principles.',
+    description: 'Basic magical theory and enchantment principles. Lesson one: don\'t set yourself on fire. Lesson two: see lesson one.',
     prerequisites: ['trade-guild'],
     sessionsRequired: 10,
     costPerSession: 8,
@@ -59,7 +59,7 @@ export const DEGREES: Record<DegreeId, Degree> = {
   'combat-training': {
     id: 'combat-training',
     name: 'Combat Training Certificate',
-    description: 'Fundamental weapons and tactics. Required for advanced martial positions.',
+    description: 'Fundamental weapons and tactics. "Hit them before they hit you" is week one. The remaining nine weeks are refinements.',
     prerequisites: ['trade-guild'],
     sessionsRequired: 10,
     costPerSession: 8,
@@ -70,7 +70,7 @@ export const DEGREES: Record<DegreeId, Degree> = {
   'master-combat': {
     id: 'master-combat',
     name: 'Master Combat Degree',
-    description: 'Elite combat techniques and leadership. Key to top military and forge positions.',
+    description: 'Elite combat techniques and leadership. You\'ll learn seventeen ways to incapacitate someone. Twelve of them are legal.',
     prerequisites: ['combat-training'],
     sessionsRequired: 10,
     costPerSession: 12,
@@ -83,7 +83,7 @@ export const DEGREES: Record<DegreeId, Degree> = {
   'scholar': {
     id: 'scholar',
     name: 'Scholar Degree',
-    description: 'Advanced literacy and research methods. Qualifies you as a Teacher.',
+    description: 'Advanced literacy and research methods. You\'ll write a thesis. It will be "adequate." Everyone\'s first thesis is "adequate."',
     prerequisites: ['junior-academy'],
     sessionsRequired: 10,
     costPerSession: 10,
@@ -94,7 +94,7 @@ export const DEGREES: Record<DegreeId, Degree> = {
   'advanced-scholar': {
     id: 'advanced-scholar',
     name: 'Advanced Scholar Degree',
-    description: 'Deep academic study and thesis work.',
+    description: 'Deep academic study and thesis work. Your thesis advisor will have opinions. All of them contradictory. Good luck.',
     prerequisites: ['scholar'],
     sessionsRequired: 10,
     costPerSession: 15,
@@ -105,7 +105,7 @@ export const DEGREES: Record<DegreeId, Degree> = {
   'sage-studies': {
     id: 'sage-studies',
     name: 'Sage Studies Certificate',
-    description: 'Preparation for the highest academic honors.',
+    description: 'Preparation for the highest academic honors. The reading list is longer than most people\'s lifespans.',
     prerequisites: ['advanced-scholar'],
     sessionsRequired: 10,
     costPerSession: 20,
@@ -116,7 +116,7 @@ export const DEGREES: Record<DegreeId, Degree> = {
   'loremaster': {
     id: 'loremaster',
     name: 'Loremaster Degree',
-    description: 'The pinnacle of academic achievement. Only Loremasters can become Sages.',
+    description: 'The pinnacle of academic achievement. You\'ll know everything about everything. People at parties will avoid you.',
     prerequisites: ['sage-studies'],
     sessionsRequired: 10,
     costPerSession: 25,
@@ -127,7 +127,7 @@ export const DEGREES: Record<DegreeId, Degree> = {
   'commerce': {
     id: 'commerce',
     name: 'Commerce Degree',
-    description: 'Business administration and guild management. Key to management positions.',
+    description: 'Business administration and guild management. Learn to say "synergy" with a straight face in a medieval economy.',
     prerequisites: ['junior-academy'],
     sessionsRequired: 10,
     costPerSession: 10,
@@ -140,7 +140,7 @@ export const DEGREES: Record<DegreeId, Degree> = {
   'alchemy': {
     id: 'alchemy',
     name: 'Alchemy Degree',
-    description: 'The science of transmutation. Combines arcane and scholarly knowledge.',
+    description: 'The science of transmutation. Turning lead into gold is the dream. Turning your eyebrows into smoke is the reality.',
     prerequisites: ['arcane-studies', 'junior-academy'],
     sessionsRequired: 10,
     costPerSession: 15,

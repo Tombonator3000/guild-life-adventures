@@ -17,7 +17,7 @@ export const FLOOR_1_ENCOUNTERS: DungeonEncounter[] = [
     basePower: 10,
     baseDamage: 8,
     baseGold: 8,
-    flavorText: 'Squeaking fills the tunnel as red eyes glint in the darkness.',
+    flavorText: 'Squeaking fills the tunnel as red eyes glint in the darkness. These rats pay no rent and yet here they are.',
   },
   {
     id: 'f1-bats',
@@ -28,7 +28,7 @@ export const FLOOR_1_ENCOUNTERS: DungeonEncounter[] = [
     basePower: 8,
     baseDamage: 7,
     baseGold: 5,
-    flavorText: 'Leathery wings beat the stale air as the bats descend.',
+    flavorText: 'Leathery wings beat the stale air as the bats descend. They\'re just as surprised to see you as you are to see them. Possibly more annoyed.',
   },
   {
     id: 'f1-treasure',
@@ -39,7 +39,7 @@ export const FLOOR_1_ENCOUNTERS: DungeonEncounter[] = [
     basePower: 0,
     baseDamage: 0,
     baseGold: 15,
-    flavorText: 'The chest creaks open, revealing a small cache of forgotten coins.',
+    flavorText: 'The chest creaks open, revealing a small cache of forgotten coins. Someone had a very bad day here. Your gain, their loss. Literally.',
   },
   {
     id: 'f1-spring',
@@ -50,7 +50,7 @@ export const FLOOR_1_ENCOUNTERS: DungeonEncounter[] = [
     basePower: 0,
     baseDamage: -10,  // Negative = healing
     baseGold: 0,
-    flavorText: 'The water shimmers with a faint golden light. You feel restored.',
+    flavorText: 'The water shimmers with a faint golden light. You feel restored. It tastes like Tuesday, which is oddly specific.',
   },
 ];
 
@@ -63,7 +63,7 @@ export const FLOOR_1_BOSS: DungeonEncounter = {
   basePower: 18,
   baseDamage: 15,
   baseGold: 25,
-  flavorText: 'The Rat King screeches, its minions scattering as it charges forward!',
+  flavorText: 'The Rat King screeches, its minions scattering as it charges forward! It has a crown. A CROWN. The rats have more organized governance than most cities.',
 };
 
 // ============================================================
@@ -80,7 +80,7 @@ export const FLOOR_2_ENCOUNTERS: DungeonEncounter[] = [
     basePower: 22,
     baseDamage: 15,
     baseGold: 15,
-    flavorText: 'The goblins cackle as they circle, looking for an opening.',
+    flavorText: 'The goblins cackle as they circle, looking for an opening. They share one brain cell between them and it\'s not their turn to use it.',
   },
   {
     id: 'f2-pit-trap',
@@ -92,7 +92,7 @@ export const FLOOR_2_ENCOUNTERS: DungeonEncounter[] = [
     baseDamage: 18,
     baseGold: 0,
     isDisarmable: true,
-    flavorText: 'Dust clouds rise as stones crumble. Trade Guild training spots the trigger plates.',
+    flavorText: 'Dust clouds rise as stones crumble. Trade Guild training spots the trigger plates. Who builds these things? Is there a trap-building degree?',
   },
   {
     id: 'f2-goblin-warriors',
@@ -103,7 +103,7 @@ export const FLOOR_2_ENCOUNTERS: DungeonEncounter[] = [
     basePower: 28,
     baseDamage: 18,
     baseGold: 20,
-    flavorText: 'The goblins bang their shields and howl a war cry.',
+    flavorText: 'The goblins bang their shields and howl what they believe is an intimidating war cry. It sounds like a cat being given a bath.',
   },
   {
     id: 'f2-treasure-cache',
@@ -114,7 +114,7 @@ export const FLOOR_2_ENCOUNTERS: DungeonEncounter[] = [
     basePower: 0,
     baseDamage: 0,
     baseGold: 25,
-    flavorText: 'The goblins\' ill-gotten gains. Finders keepers.',
+    flavorText: 'The goblins\' ill-gotten gains. Finders keepers. It\'s not stealing if you steal from thieves. That\'s just redistribution.',
   },
   {
     id: 'f2-mushroom-grotto',
@@ -125,7 +125,7 @@ export const FLOOR_2_ENCOUNTERS: DungeonEncounter[] = [
     basePower: 0,
     baseDamage: -8,
     baseGold: 0,
-    flavorText: 'The air here is damp and earthy. The mushrooms glow softly, easing your wounds.',
+    flavorText: 'The air here is damp and earthy. The mushrooms glow softly, easing your wounds. Don\'t eat the blue ones. Don\'t ask why.',
   },
 ];
 
@@ -138,7 +138,7 @@ export const FLOOR_2_BOSS: DungeonEncounter = {
   basePower: 35,
   baseDamage: 25,
   baseGold: 45,
-  flavorText: 'The Chieftain roars, slamming his axe against the stone floor, sparks flying!',
+  flavorText: 'The Chieftain roars, slamming his axe against the stone floor, sparks flying! He\'s been practicing that move. You can tell.',
 };
 
 // ============================================================
@@ -155,7 +155,7 @@ export const FLOOR_3_ENCOUNTERS: DungeonEncounter[] = [
     basePower: 40,
     baseDamage: 25,
     baseGold: 30,
-    flavorText: 'Hollow eye sockets glow with pale blue fire as the dead march.',
+    flavorText: 'Hollow eye sockets glow with pale blue fire as the dead march. They\'re dead, but they still have better posture than you.',
   },
   {
     id: 'f3-ghosts',
@@ -167,7 +167,7 @@ export const FLOOR_3_ENCOUNTERS: DungeonEncounter[] = [
     baseDamage: 28,
     baseGold: 35,
     requiresArcane: true,
-    flavorText: 'Their touch drains warmth from your body. Arcane knowledge reveals their weakness.',
+    flavorText: 'Their touch drains warmth from your body. Arcane knowledge reveals their weakness: they can\'t handle being ignored. Nobody can, really.',
   },
   {
     id: 'f3-poison-trap',
@@ -179,7 +179,7 @@ export const FLOOR_3_ENCOUNTERS: DungeonEncounter[] = [
     baseDamage: 22,
     baseGold: 0,
     isDisarmable: true,
-    flavorText: 'Hissing sounds from the walls. Quick hands could disable the mechanism.',
+    flavorText: 'Hissing sounds from the walls. Quick hands could disable the mechanism. Slow hands will learn an important lesson about poison.',
   },
   {
     id: 'f3-ancient-artifacts',
@@ -190,7 +190,7 @@ export const FLOOR_3_ENCOUNTERS: DungeonEncounter[] = [
     basePower: 0,
     baseDamage: 0,
     baseGold: 50,
-    flavorText: 'Gold coins with unfamiliar faces and jeweled trinkets catch the torchlight.',
+    flavorText: 'Gold coins with unfamiliar faces and jeweled trinkets catch the torchlight. Dead people have the best stuff.',
   },
   {
     id: 'f3-sanctified-pool',
@@ -201,7 +201,7 @@ export const FLOOR_3_ENCOUNTERS: DungeonEncounter[] = [
     basePower: 0,
     baseDamage: -12,
     baseGold: 0,
-    flavorText: 'Holy light radiates from the water. Its warmth pushes back the chill of the dead.',
+    flavorText: 'Holy light radiates from the water. Its warmth pushes back the chill of the dead. It tastes like forgiveness. And a hint of mint.',
   },
 ];
 
@@ -215,7 +215,7 @@ export const FLOOR_3_BOSS: DungeonEncounter = {
   baseDamage: 38,
   baseGold: 80,
   requiresArcane: true,
-  flavorText: 'The Lich speaks in a language dead for centuries, raising its staff high!',
+  flavorText: 'The Lich speaks in a language dead for centuries, raising its staff high! It\'s monologuing. They always monologue. Use this time wisely.',
 };
 
 // ============================================================
@@ -232,7 +232,7 @@ export const FLOOR_4_ENCOUNTERS: DungeonEncounter[] = [
     basePower: 60,
     baseDamage: 40,
     baseGold: 60,
-    flavorText: 'The dragon rears back, smoke curling from its nostrils.',
+    flavorText: 'The dragon rears back, smoke curling from its nostrils. It\'s a teenager, technically. All the fire, none of the wisdom.',
   },
   {
     id: 'f4-fire-trap',
@@ -244,7 +244,7 @@ export const FLOOR_4_ENCOUNTERS: DungeonEncounter[] = [
     baseDamage: 35,
     baseGold: 0,
     isDisarmable: true,
-    flavorText: 'The air shimmers with heat. Natural vents — or deliberate defenses?',
+    flavorText: 'The air shimmers with heat. Natural vents — or deliberate defenses? Either way, your eyebrows are at risk.',
   },
   {
     id: 'f4-drake-pack',
@@ -255,7 +255,7 @@ export const FLOOR_4_ENCOUNTERS: DungeonEncounter[] = [
     basePower: 55,
     baseDamage: 35,
     baseGold: 50,
-    flavorText: 'The drakes circle, snapping their jaws, herding you toward a wall.',
+    flavorText: 'The drakes circle, snapping their jaws, herding you toward a wall. They work together better than most adventuring parties.',
   },
   {
     id: 'f4-dragon-hoard',
@@ -266,7 +266,7 @@ export const FLOOR_4_ENCOUNTERS: DungeonEncounter[] = [
     basePower: 0,
     baseDamage: 0,
     baseGold: 100,
-    flavorText: 'Mountains of gold coins, gemstones, and enchanted trinkets glitter in the firelight.',
+    flavorText: 'Mountains of gold coins, gemstones, and enchanted trinkets glitter in the firelight. You briefly consider a career change to "dragon."',
   },
 ];
 
@@ -279,7 +279,7 @@ export const FLOOR_4_BOSS: DungeonEncounter = {
   basePower: 80,
   baseDamage: 55,
   baseGold: 150,
-  flavorText: 'The Elder Dragon unfurls its wings, filling the cavern. Its roar shakes the earth!',
+  flavorText: 'The Elder Dragon unfurls its wings, filling the cavern. Its roar shakes the earth! It has seen empires rise and fall. It is unimpressed by you.',
 };
 
 // ============================================================
@@ -296,7 +296,7 @@ export const FLOOR_5_ENCOUNTERS: DungeonEncounter[] = [
     basePower: 80,
     baseDamage: 55,
     baseGold: 100,
-    flavorText: 'The demons speak in a tongue that makes your head throb.',
+    flavorText: 'The demons speak in a tongue that makes your head throb. You catch the word "overtime." Even demons have work complaints.',
   },
   {
     id: 'f5-void-trap',
@@ -308,7 +308,7 @@ export const FLOOR_5_ENCOUNTERS: DungeonEncounter[] = [
     baseDamage: 50,
     baseGold: 0,
     isDisarmable: true,
-    flavorText: 'Space warps and bends. A careful hand can seal the rift.',
+    flavorText: 'Space warps and bends. A careful hand can seal the rift. An careless hand will discover what\'s on the other side. Spoiler: nothing good.',
   },
   {
     id: 'f5-shadow-fiends',
@@ -320,7 +320,7 @@ export const FLOOR_5_ENCOUNTERS: DungeonEncounter[] = [
     baseDamage: 50,
     baseGold: 80,
     requiresArcane: true,
-    flavorText: 'The darkness itself attacks, tendrils of shadow lashing out.',
+    flavorText: 'The darkness itself attacks, tendrils of shadow lashing out. Your nightlight at home is looking increasingly like a sound investment.',
   },
   {
     id: 'f5-abyssal-vault',
@@ -331,7 +331,7 @@ export const FLOOR_5_ENCOUNTERS: DungeonEncounter[] = [
     basePower: 0,
     baseDamage: 0,
     baseGold: 200,
-    flavorText: 'The runes fade as you approach. Inside: riches beyond imagination.',
+    flavorText: 'The runes fade as you approach. Inside: riches beyond imagination. Also beyond common sense, since it was guarded by demons.',
   },
 ];
 
@@ -345,7 +345,7 @@ export const FLOOR_5_BOSS: DungeonEncounter = {
   baseDamage: 75,
   baseGold: 300,
   requiresArcane: true,
-  flavorText: 'Azrathor laughs, his voice echoing from every direction. "You dare enter MY domain?"',
+  flavorText: 'Azrathor laughs, his voice echoing from every direction. "You dare enter MY domain?" He\'s been rehearsing that. You can tell by the dramatic echo.',
 };
 
 // ============================================================
@@ -362,7 +362,7 @@ export const FLOOR_6_ENCOUNTERS: DungeonEncounter[] = [
     basePower: 100,
     baseDamage: 70,
     baseGold: 120,
-    flavorText: 'The statues grind to life, their stone swords humming with ancient power.',
+    flavorText: 'The statues grind to life, their stone swords humming with ancient power. They\'ve been standing there for millennia. They\'re extremely grumpy about being woken up.',
   },
   {
     id: 'f6-divine-ward',
@@ -374,7 +374,7 @@ export const FLOOR_6_ENCOUNTERS: DungeonEncounter[] = [
     baseDamage: 60,
     baseGold: 0,
     isDisarmable: true,
-    flavorText: 'Runes flare across the corridor. Only those trained in ancient lore can deactivate them.',
+    flavorText: 'Runes flare across the corridor. Only those trained in ancient lore can deactivate them. Everyone else gets a very enlightening experience. Literally.',
   },
   {
     id: 'f6-spectral-priests',
@@ -386,7 +386,7 @@ export const FLOOR_6_ENCOUNTERS: DungeonEncounter[] = [
     baseDamage: 65,
     baseGold: 100,
     requiresArcane: true,
-    flavorText: 'They chant in unison, each syllable a wave of spectral force.',
+    flavorText: 'They chant in unison, each syllable a wave of spectral force. Thousands of years dead and they\'re still doing their job. Now THAT\'S dependability.',
   },
   {
     id: 'f6-temple-reliquary',
@@ -397,7 +397,7 @@ export const FLOOR_6_ENCOUNTERS: DungeonEncounter[] = [
     basePower: 0,
     baseDamage: 0,
     baseGold: 250,
-    flavorText: 'Gold chalices, gem-encrusted icons, and sacred texts fill every shelf.',
+    flavorText: 'Gold chalices, gem-encrusted icons, and sacred texts fill every shelf. A museum would weep. You weep too, but for different reasons.',
   },
   {
     id: 'f6-sanctum-font',
@@ -408,7 +408,7 @@ export const FLOOR_6_ENCOUNTERS: DungeonEncounter[] = [
     basePower: 0,
     baseDamage: -18,
     baseGold: 0,
-    flavorText: 'The water glows with warm golden light. Your wounds close as you drink.',
+    flavorText: 'The water glows with warm golden light. Your wounds close as you drink. This is the good stuff. Premium divine tap water.',
   },
 ];
 
@@ -422,7 +422,7 @@ export const FLOOR_6_BOSS: DungeonEncounter = {
   baseDamage: 95,
   baseGold: 500,
   requiresArcane: true,
-  flavorText: '"You have read the ancient texts. You know what I am. KNEEL, or be unmade."',
+  flavorText: '"You have read the ancient texts. You know what I am. KNEEL, or be unmade." It pauses for dramatic effect. Full marks for presentation.',
 };
 
 // ============================================================
@@ -435,7 +435,7 @@ export const MINI_BOSSES: Record<number, MiniBoss> = {
     id: 'mb-cave-troll',
     name: 'Cave Troll',
     description: 'A lumbering troll that has wandered into the upper caverns.',
-    flavorText: 'The ground shakes with each step. It smells you before it sees you.',
+    flavorText: 'The ground shakes with each step. It smells you before it sees you. In fairness, you haven\'t bathed since floor one.',
     basePower: 14,
     baseDamage: 12,
     baseGold: 20,
@@ -444,7 +444,7 @@ export const MINI_BOSSES: Record<number, MiniBoss> = {
     id: 'mb-goblin-shaman',
     name: 'Goblin Shaman',
     description: 'A goblin witch doctor, crackling with stolen magic.',
-    flavorText: 'Bones rattle on its staff as it speaks words of power.',
+    flavorText: 'Bones rattle on its staff as it speaks words of power. For a goblin, it has surprisingly good diction.',
     basePower: 28,
     baseDamage: 20,
     baseGold: 35,
@@ -454,7 +454,7 @@ export const MINI_BOSSES: Record<number, MiniBoss> = {
     id: 'mb-death-knight',
     name: 'Death Knight',
     description: 'A fallen paladin, armored in black plate and wielding a cursed blade.',
-    flavorText: 'Its hollow laugh echoes through the crypt as it draws its sword.',
+    flavorText: 'Its hollow laugh echoes through the crypt as it draws its sword. Former paladin. Fell from grace. Still has great dental, though.',
     basePower: 45,
     baseDamage: 32,
     baseGold: 65,
@@ -463,7 +463,7 @@ export const MINI_BOSSES: Record<number, MiniBoss> = {
     id: 'mb-drake-matriarch',
     name: 'Drake Matriarch',
     description: 'The mother of the drake pack, larger and fiercer than any other.',
-    flavorText: 'She spreads her wings wide, shielding her brood. You must go through her.',
+    flavorText: 'She spreads her wings wide, shielding her brood. You must go through her. She has the look of a mother who hasn\'t slept in weeks. Terrifying.',
     basePower: 65,
     baseDamage: 45,
     baseGold: 120,
@@ -472,7 +472,7 @@ export const MINI_BOSSES: Record<number, MiniBoss> = {
     id: 'mb-void-reaver',
     name: 'Void Reaver',
     description: 'A creature born from the gaps between planes, all teeth and claws.',
-    flavorText: 'Reality tears open and something wrong crawls through.',
+    flavorText: 'Reality tears open and something wrong crawls through. It exists in ways that geometry objects to.',
     basePower: 90,
     baseDamage: 60,
     baseGold: 200,
@@ -482,7 +482,7 @@ export const MINI_BOSSES: Record<number, MiniBoss> = {
     id: 'mb-fallen-archon',
     name: 'Fallen Archon',
     description: 'A lesser archon, corrupted by centuries of isolation in the temple.',
-    flavorText: 'Its wings are tattered, its halo cracked. But its fury is undiminished.',
+    flavorText: 'Its wings are tattered, its halo cracked. But its fury is undiminished. Millennia of isolation does things to a divine being\'s temperament.',
     basePower: 115,
     baseDamage: 75,
     baseGold: 350,

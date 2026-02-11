@@ -33,6 +33,13 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "Between us, some of these quests aren't worth the parchment they're printed on.", mood: 'gossip' },
     { text: "The guild's seen better days, but we keep the lanterns lit.", mood: 'grumpy' },
     { text: "Every adventurer starts at the bottom. The good ones don't stay there.", mood: 'friendly' },
+    { text: "We've got a complaints box. It's that bin over there. Next to the fire.", mood: 'grumpy' },
+    { text: "Rule one: Don't die. Rule two: If you do die, please file the paperwork first.", mood: 'friendly' },
+    { text: "Someone left a severed troll hand on the quest board again. This is why we can't have nice things.", mood: 'grumpy' },
+    { text: "The pension plan is excellent. Mostly because very few adventurers survive to collect it.", mood: 'gossip' },
+    { text: "I'm not saying the quests are getting worse, but yesterday someone posted one for 'finding a lost sock.'", mood: 'gossip' },
+    { text: "We had an adventurer once who tried to negotiate with a dragon. There was a brief exchange of views. And fire.", mood: 'mysterious' },
+    { text: "The bureaucracy here would make a dwarven tax office weep with pride.", mood: 'grumpy' },
   ],
 
   'bank': [
@@ -49,6 +56,12 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "Keep your gold in the vault. The Slums have sticky fingers.", mood: 'warning' },
     { text: "Our ledgers go back three hundred years. Not a single discrepancy.", mood: 'friendly' },
     { text: "Invest wisely, and your gold works harder than you do.", mood: 'friendly' },
+    { text: "We offer a premium vault service. It's the same vault, but the door has a fancier handle.", mood: 'friendly' },
+    { text: "The interest rate is 3.7%. I don't know what that means either, but it sounds impressive.", mood: 'gossip' },
+    { text: "A wizard tried to conjure gold once. Counterfeit, obviously. The vault set fire to it.", mood: 'gossip' },
+    { text: "Our motto: 'Your gold is safe with us.' Our unofficial motto: 'Probably.'", mood: 'friendly' },
+    { text: "Someone asked for a loan to pay off another loan. I admired the audacity, if nothing else.", mood: 'gossip' },
+    { text: "The thing about compound interest is that nobody understands it. Including us.", mood: 'mysterious' },
   ],
 
   'general-store': [
@@ -65,6 +78,11 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "Business has been good since the new adventurers arrived in town.", mood: 'friendly' },
     { text: "My grandfather ran this store. And his grandfather before him.", mood: 'friendly' },
     { text: "The preservation boxes keep food fresh for weeks. Worth every coin.", mood: 'friendly' },
+    { text: "Had a customer ask if the bread was organic. Everything's organic, mate, it's medieval times.", mood: 'grumpy' },
+    { text: "My 'Best Before' dates are more of a philosophical suggestion, really.", mood: 'friendly' },
+    { text: "We don't do loyalty cards. We do loyalty. Which is to say, you have no choice, I'm the only store.", mood: 'friendly' },
+    { text: "A customer returned cheese saying it had gone off. It was supposed to smell like that. I think.", mood: 'gossip' },
+    { text: "The salted meat will keep forever. Whether you'd want to eat it forever is another question.", mood: 'grumpy' },
   ],
 
   'armory': [
@@ -81,6 +99,11 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "The tower shields are popular with cave divers. Wise choice.", mood: 'friendly' },
     { text: "Chainmail's heavy, but you'll thank me when a goblin swings at you.", mood: 'grumpy' },
     { text: "Some say the best armor is not getting hit. I say that's bad for business.", mood: 'friendly' },
+    { text: "Customer wanted armor 'that looks cool but is also practical.' I told him to pick one.", mood: 'grumpy' },
+    { text: "The enchanted plate is so heavy that wearing it counts as both armor AND exercise.", mood: 'friendly' },
+    { text: "Had someone ask for a refund because his sword 'didn't slay the dragon.' What did he expect, a dagger?", mood: 'gossip' },
+    { text: "I guarantee all my weapons for life. The weapon's life, not yours.", mood: 'grumpy' },
+    { text: "A knight came in asking for 'something lighter.' I gave him a torch.", mood: 'gossip' },
   ],
 
   'enchanter': [
@@ -97,6 +120,11 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "Some ailments need more than herbs. That's where I come in.", mood: 'friendly' },
     { text: "The Arcane Tome chose you, you know. They always choose.", mood: 'mysterious' },
     { text: "Watch the candles. When they flicker without wind, something listens.", mood: 'warning' },
+    { text: "Magic is perfectly safe. The explosions are entirely a feature, not a bug.", mood: 'friendly' },
+    { text: "I once accidentally turned a cat into a slightly different cat. Nobody noticed.", mood: 'gossip' },
+    { text: "The universe is held together by magic, willpower, and an alarming amount of string.", mood: 'mysterious' },
+    { text: "Please don't touch the glowing thing. I'm not entirely sure what it does, and I made it.", mood: 'warning' },
+    { text: "I turned invisible once. It was nice for about five minutes, then people started sitting on me.", mood: 'gossip' },
   ],
 
   'shadow-market': [
@@ -113,6 +141,11 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "No refunds, no receipts, no problems. That's how we do business.", mood: 'grumpy' },
     { text: "Word on the street is someone's been snooping around the vaults.", mood: 'gossip' },
     { text: "The cheaper the deal, the bigger the catch. Usually.", mood: 'warning' },
+    { text: "Everything here was legally acquired. Well, acquired. Let's leave it at 'acquired.'", mood: 'mysterious' },
+    { text: "I'm not a criminal. I'm an unlicensed entrepreneur with flexible ethics.", mood: 'friendly' },
+    { text: "The stolen goods aren't stolen. They've been liberated from people who didn't appreciate them.", mood: 'gossip' },
+    { text: "This mystery meat is a mystery even to me. And I sold it to myself.", mood: 'gossip' },
+    { text: "My prices are so low, even I don't know how I stay in business. Tax evasion, probably.", mood: 'friendly' },
   ],
 
   'academy': [
@@ -129,6 +162,12 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "Had a student accidentally summon a toad in Arcane Studies. Classic.", mood: 'gossip' },
     { text: "The Scholar path leads to the finest minds in the realm.", mood: 'friendly' },
     { text: "Sage Studies is no joke. Only the dedicated make it through.", mood: 'warning' },
+    { text: "The exam pass rate is 42%. The survival rate is slightly higher, which is encouraging.", mood: 'gossip' },
+    { text: "A student asked if there'd be a test. There's always a test. Life is a test. Welcome.", mood: 'grumpy' },
+    { text: "The Alchemy lab was evacuated twice this week. Both times were 'controlled explosions.' Allegedly.", mood: 'gossip' },
+    { text: "We teach critical thinking here. The first lesson is questioning why you enrolled.", mood: 'friendly' },
+    { text: "The library's restricted section is restricted for a reason. The books bite.", mood: 'warning' },
+    { text: "Last week's thesis topic was 'Why Dragons Exist: A Critical Inquiry.' The dragon reviewer was not pleased.", mood: 'gossip' },
   ],
 
   'rusty-tankard': [
@@ -146,6 +185,12 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "Relax, have a drink, and let the world sort itself out for a while.", mood: 'friendly' },
     { text: "Some adventurers live here. Not the proud ones, mind you.", mood: 'grumpy' },
     { text: "Heard there's a drinking contest next weekend. Fancy your chances?", mood: 'friendly' },
+    { text: "A philosopher walked in and asked for the meaning of life. I gave him an ale. Same thing.", mood: 'gossip' },
+    { text: "The stew ingredients are listed on the menu. Well, the ones I can identify are.", mood: 'friendly' },
+    { text: "We don't serve spirits here. Actually, we do — one's been haunting the cellar since Tuesday.", mood: 'gossip' },
+    { text: "The food here has never killed anyone. That we know of. That complained.", mood: 'friendly' },
+    { text: "Every adventurer who comes in here has a story. Most of them aren't true, but the ale doesn't mind.", mood: 'friendly' },
+    { text: "Someone tried to pay with 'exposure' last week. I gave them exposure. To the door.", mood: 'grumpy' },
   ],
 
   'cave': [
@@ -159,6 +204,10 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "Legend says the Abyss holds treasures beyond imagination.", mood: 'mysterious' },
     { text: "Rest here if you must. The cave entrance is safe... mostly.", mood: 'friendly' },
     { text: "The Dragon's Lair is no place for the unprepared.", mood: 'warning' },
+    { text: "The cave doesn't care about your feelings. Or your armor. Or your continued existence.", mood: 'grumpy' },
+    { text: "Last words of the previous adventurer: 'How bad can it be?' Quite bad, as it turned out.", mood: 'gossip' },
+    { text: "The echoes down there sometimes echo things that haven't been said yet. Very unsettling.", mood: 'mysterious' },
+    { text: "A sign at the entrance says 'Abandon Hope.' Someone crossed it out and wrote 'Free Loot.'", mood: 'gossip' },
   ],
 
   'forge': [
@@ -172,6 +221,10 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "The heat in here builds character. Or so I keep telling myself.", mood: 'friendly' },
     { text: "Each weapon I make, I name. Don't ask me why.", mood: 'friendly' },
     { text: "Dragon-forged steel is the dream. Haven't found a dragon willing to help, though.", mood: 'gossip' },
+    { text: "My apprentice asked if there's a 'cool' way to do smithing. I handed him the tongs. There isn't.", mood: 'grumpy' },
+    { text: "I once forged a sword so sharp it cut through the concept of Tuesday. Lost a whole day.", mood: 'gossip' },
+    { text: "Health and safety? In a forge? You're standing next to molten metal, what more safety do you want?", mood: 'grumpy' },
+    { text: "The anvil's been in the family for seven generations. So has the bruise on my thumb.", mood: 'friendly' },
   ],
 
   'landlord': [
@@ -187,6 +240,11 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "I've evicted three tenants this month alone. Don't be the fourth.", mood: 'warning' },
     { text: "The walls in Noble Heights are thick. Privacy guaranteed.", mood: 'friendly' },
     { text: "Had a tenant keep a basilisk as a pet once. Turned my carpet to stone.", mood: 'gossip' },
+    { text: "Read the lease carefully. Especially clause 47b about 'summoning entities from other planes.'", mood: 'warning' },
+    { text: "The Slums have character. Mostly the character of things that skitter in the dark.", mood: 'grumpy' },
+    { text: "Noble Heights residents complain about everything. The silence, the comfort, the lack of adventure. Ungrateful lot.", mood: 'gossip' },
+    { text: "Eviction is painless. For me. For you it involves a surprisingly strong dwarf.", mood: 'grumpy' },
+    { text: "Late fees start after one week. After two weeks, the fee becomes... creative.", mood: 'warning' },
   ],
 
   'graveyard': [
@@ -200,6 +258,11 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "A prayer here goes a long way. The spirits appreciate it.", mood: 'friendly' },
     { text: "I've seen things crawl out of these graves that'd turn your hair white.", mood: 'warning' },
     { text: "Meditation among the dead clears the mind. Don't knock it.", mood: 'mysterious' },
+    { text: "Death is just nature's way of telling you to stop adventuring. Most people don't listen.", mood: 'friendly' },
+    { text: "We offer a resurrection service. The fine print says 'results may vary.' They do.", mood: 'gossip' },
+    { text: "A skeleton tried to file a noise complaint last week. Against itself. Philosophical, in a way.", mood: 'gossip' },
+    { text: "The tombstones here are very informative. 'Here lies Dave. He didn't listen.' Classic Dave.", mood: 'friendly' },
+    { text: "I've buried adventurers who came back, complained about the afterlife, and went back to work.", mood: 'grumpy' },
   ],
 
   'fence': [
@@ -213,6 +276,11 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "I once bought a 'magic' lamp. It was just a lamp. With a moth inside.", mood: 'gossip' },
     { text: "The wheel of fortune spins for all. Some just spin it better.", mood: 'mysterious' },
     { text: "I appraise by weight, shine, and gut feeling. Mostly gut feeling.", mood: 'grumpy' },
+    { text: "The house always wins. Unless the house is on fire. Which has happened.", mood: 'gossip' },
+    { text: "A man once pawned his dignity. I couldn't find a buyer. Not much market for that.", mood: 'friendly' },
+    { text: "Every item here has a story. Most of them are 'I needed the money.' Sad, but profitable.", mood: 'grumpy' },
+    { text: "Gambling is a tax on people who are bad at math. Please, continue.", mood: 'friendly' },
+    { text: "I accept all currencies. Gold, silver, tears, broken dreams — it all spends the same.", mood: 'mysterious' },
   ],
 };
 
@@ -254,8 +322,8 @@ export function getContextBanter(
 
   // Player has many degrees
   if (player.completedDegrees.length >= 5) {
-    candidates.push({ text: `With that many degrees, you could teach at the Academy yourself!`, mood: 'friendly' });
-    candidates.push({ text: `The most educated adventurer in Guildholm. The scholars are jealous.`, mood: 'gossip' });
+    candidates.push({ text: `With that many degrees, you could wallpaper your dwelling with diplomas. Very tasteful.`, mood: 'friendly' });
+    candidates.push({ text: `The most educated adventurer in Guildholm. Still can't open a jar, though, I bet.`, mood: 'gossip' });
   } else if (player.completedDegrees.length >= 3) {
     candidates.push({ text: `Three degrees already? Someone's been hitting the books.`, mood: 'friendly' });
   }
@@ -263,17 +331,17 @@ export function getContextBanter(
   // Player is rich
   const totalWealth = player.gold + player.savings;
   if (totalWealth > 2000) {
-    candidates.push({ text: `Word is you've got more gold than the bank itself!`, mood: 'gossip' });
-    candidates.push({ text: `The wealthy ones always attract attention. And not always the good kind.`, mood: 'warning' });
+    candidates.push({ text: `Word is you've got more gold than the bank itself! Sleep with one eye open.`, mood: 'gossip' });
+    candidates.push({ text: `That much gold changes people. You haven't started monologuing yet, have you?`, mood: 'warning' });
   } else if (totalWealth > 1000) {
     candidates.push({ text: `Your purse sounds heavy. Business must be good.`, mood: 'friendly' });
   }
 
   // Player is broke
   if (player.gold < 10 && player.savings < 10) {
-    candidates.push({ text: `Times are tough, eh? We've all been there.`, mood: 'friendly' });
-    candidates.push({ text: `Maybe the Fence can help you turn something into coin.`, mood: 'gossip' });
-    candidates.push({ text: `Can't buy anything with empty pockets. Just saying.`, mood: 'grumpy' });
+    candidates.push({ text: `Times are tough, eh? At this point even your shadow is looking for loose change.`, mood: 'friendly' });
+    candidates.push({ text: `You know you're broke when the Fence won't even take your stuff. Just saying.`, mood: 'gossip' });
+    candidates.push({ text: `Empty pockets are a lifestyle choice. An involuntary one, but still.`, mood: 'grumpy' });
   }
 
   // Player has high dependability (career goal)
@@ -292,14 +360,14 @@ export function getContextBanter(
 
   // Player is sick
   if (player.isSick) {
-    candidates.push({ text: `You don't look so good. The enchanter might be able to help.`, mood: 'warning' });
-    candidates.push({ text: `That cough sounds nasty. See a healer before it gets worse.`, mood: 'warning' });
+    candidates.push({ text: `You don't look so good. In fact, you look like something the cat dragged in, partially digested, and rejected.`, mood: 'warning' });
+    candidates.push({ text: `That cough sounds nasty. Please don't do it near the merchandise. Or me.`, mood: 'warning' });
   }
 
   // Player health is low
   if (player.health < 30) {
-    candidates.push({ text: `You look like you've been through a war. Rest up!`, mood: 'warning' });
-    candidates.push({ text: `One more hit and you're done for. Be careful out there.`, mood: 'warning' });
+    candidates.push({ text: `You look like you've been through a war. And lost. Comprehensively.`, mood: 'warning' });
+    candidates.push({ text: `One more hit and the graveyard gains a new resident. Just a friendly observation.`, mood: 'warning' });
   }
 
   // Player lives in Noble Heights
@@ -309,8 +377,8 @@ export function getContextBanter(
 
   // Player is homeless
   if (player.housing === 'homeless') {
-    candidates.push({ text: `Sleeping on the streets? The Landlord has rooms, you know.`, mood: 'warning' });
-    candidates.push({ text: `No roof over your head? That's a hard life, friend.`, mood: 'friendly' });
+    candidates.push({ text: `Sleeping on the streets? Bold strategy. Let me know how that works out for you.`, mood: 'warning' });
+    candidates.push({ text: `No roof over your head? On the bright side, you save a fortune on rent.`, mood: 'friendly' });
   }
 
   // Player has the guild pass
@@ -320,8 +388,8 @@ export function getContextBanter(
 
   // Player is old
   if (player.age >= 50) {
-    candidates.push({ text: `Still adventuring at your age? Respect. Most retire by 40.`, mood: 'friendly' });
-    candidates.push({ text: `The years add wisdom... and creaky joints.`, mood: 'grumpy' });
+    candidates.push({ text: `Still adventuring at your age? That's either brave or a failure to plan for retirement.`, mood: 'friendly' });
+    candidates.push({ text: `The years add wisdom... and a disconcerting number of mysterious creaking sounds.`, mood: 'grumpy' });
   }
 
   // --- AI opponent banter ---
@@ -355,8 +423,8 @@ export function getContextBanter(
 
     // AI died recently
     if (ai.isGameOver) {
-      candidates.push({ text: `Poor ${ai.name}. The dungeon took another one.`, mood: 'friendly' });
-      candidates.push({ text: `${ai.name}'s out of the game. One less competitor, I suppose.`, mood: 'gossip' });
+      candidates.push({ text: `Poor ${ai.name}. They died as they lived — making questionable decisions.`, mood: 'friendly' });
+      candidates.push({ text: `${ai.name}'s shuffled off this mortal coil. Thoughts and prayers. Mostly thoughts.`, mood: 'gossip' });
     }
 
     // AI has guild pass but player doesn't

@@ -39,7 +39,7 @@ export interface WeatherState {
 export const CLEAR_WEATHER: WeatherState = {
   type: 'clear',
   name: 'Clear Skies',
-  description: 'The weather is fair across Guildholm.',
+  description: 'The weather is fair across Guildholm. Suspiciously fair. Nature is planning something.',
   weeksRemaining: 0,
   particle: null,
   movementCostExtra: 0,
@@ -54,7 +54,7 @@ const WEATHER_EVENTS: Omit<WeatherState, 'weeksRemaining'>[] = [
   {
     type: 'snowstorm',
     name: 'Snowstorm',
-    description: 'A fierce snowstorm blankets Guildholm. Travel is slow and spirits are low.',
+    description: 'A fierce snowstorm blankets Guildholm. Travel is slow, spirits are low, and someone is definitely going to suggest building a snowman.',
     particle: 'snow',
     movementCostExtra: 1,
     priceMultiplier: 1.10,
@@ -65,7 +65,7 @@ const WEATHER_EVENTS: Omit<WeatherState, 'weeksRemaining'>[] = [
   {
     type: 'thunderstorm',
     name: 'Thunderstorm',
-    description: 'Dark clouds gather over Guildholm. Lightning crackles and rain pours.',
+    description: 'Dark clouds gather over Guildholm. Lightning crackles and rain pours. Perfect weather for brooding dramatically on a rooftop.',
     particle: 'rain',
     movementCostExtra: 1,
     priceMultiplier: 1.05,
@@ -76,7 +76,7 @@ const WEATHER_EVENTS: Omit<WeatherState, 'weeksRemaining'>[] = [
   {
     type: 'drought',
     name: 'Drought',
-    description: 'A scorching drought dries the land. Food prices soar and stored food may spoil.',
+    description: 'A scorching drought dries the land. Food prices soar, wells run dry, and everyone suddenly has strong opinions about water.',
     particle: 'heatwave',
     movementCostExtra: 0,
     priceMultiplier: 1.15,
@@ -87,7 +87,7 @@ const WEATHER_EVENTS: Omit<WeatherState, 'weeksRemaining'>[] = [
   {
     type: 'enchanted-fog',
     name: 'Enchanted Fog',
-    description: 'A mystical fog rolls through Guildholm. It feels strangely invigorating.',
+    description: 'A mystical fog rolls through Guildholm. It feels strangely invigorating, smells faintly of lavender, and nobody can find their shoes.',
     particle: 'fog',
     movementCostExtra: 1,
     priceMultiplier: 0.95,
@@ -98,7 +98,7 @@ const WEATHER_EVENTS: Omit<WeatherState, 'weeksRemaining'>[] = [
   {
     type: 'harvest-rain',
     name: 'Harvest Rain',
-    description: 'A gentle rain blesses the farmlands. Food is plentiful and prices drop.',
+    description: 'A gentle rain blesses the farmlands. Food is plentiful, prices drop, and farmers finally stop complaining. Briefly.',
     particle: 'light-rain',
     movementCostExtra: 0,
     priceMultiplier: 0.90,
