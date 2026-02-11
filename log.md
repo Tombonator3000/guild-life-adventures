@@ -1,5 +1,84 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-11 - Internationalization: German & Spanish Language Support
+
+### Overview
+
+Added a complete internationalization (i18n) system with German (Deutsch) and Spanish (Español) as selectable languages alongside English. Created translation infrastructure with 350+ translated strings across all major UI categories, a reactive `useTranslation` hook, and a language selector dropdown in the Options menu.
+
+### Changes
+
+| # | Change | Details |
+|---|--------|---------|
+| 1 | **i18n translation system** | New `src/i18n/` module with typed translation strings, dot-path `t()` function with `{param}` interpolation, English fallback for missing keys |
+| 2 | **3 language files** | Complete translations for `en.ts` (English), `de.ts` (German/Deutsch), `es.ts` (Spanish/Español) — 20 categories, 350+ strings each |
+| 3 | **Language persistence** | Language preference saved to `localStorage` (key: `guild-life-language`), survives page reloads |
+| 4 | **Language selector in Options** | Globe icon + dropdown in Gameplay tab with flag indicators (🇬🇧/🇩🇪/🇪🇸), separated from other options by divider |
+| 5 | **Reactive useTranslation hook** | `useSyncExternalStore`-based hook triggers re-render on language change — instant UI switching |
+| 6 | **TitleScreen translated** | Game title, subtitle, all menu buttons, feature cards, load modal, iOS install guide |
+| 7 | **OptionsMenu fully translated** | All 4 tabs (Gameplay/Audio/Display/Speed), footer buttons, reset confirm dialog |
+| 8 | **GameBoardHeader translated** | Week, Market, economy trend tooltips |
+| 9 | **Sidebar tabs translated** | Both sidebars (STATS/INVENTORY/GOALS and PLAYERS/ACHIEVE/OPTIONS/DEV), turn indicator, menu buttons |
+| 10 | **SaveLoadMenu translated** | Game Menu title, Save/Load tabs, slot labels, toast messages |
+| 11 | **EventPanel translated** | Continue/Game Over buttons, effect labels (gold/health/happiness/food) |
+| 12 | **DeathModal translated** | "YOU ARE DEAD" title, fallen message, respawn/permadeath info, action buttons |
+| 13 | **GoalProgress translated** | Goal names (Wealth/Happiness/Education/Career/Adventure), victory message |
+| 14 | **SideInfoTabs translated** | Sick alert, dead status indicator |
+
+### Translation Categories
+
+| Category | Key Count | Examples |
+|----------|-----------|---------|
+| common | 17 | Cancel, Done, Back, Save, Load, Options |
+| title | 16 | Game title, subtitle, menu buttons |
+| setup | 31 | Adventure setup labels, AI config, goal presets |
+| board | 10 | Week, Market, economy tooltips |
+| sidebar | 12 | Tab labels, turn indicator, menu titles |
+| stats | 33 | Resource names, status labels |
+| goals | 10 | Goal names, victory message |
+| saveLoad | 14 | Menu titles, toast messages |
+| events | 6 | Effect labels |
+| victory | 9 | Victory/game over messages |
+| death | 7 | Death modal text |
+| optionsMenu | 38 | All settings labels and descriptions |
+| tutorial | 9 | Tutorial step titles |
+| online | 8 | Multiplayer lobby labels |
+| locations | 15 | All 14 locations + graveyard |
+| ai | 1 | AI scheming message |
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `src/i18n/types.ts` | TypeScript interfaces for `Language` type and `TranslationStrings` shape |
+| `src/i18n/en.ts` | English translations (base language) |
+| `src/i18n/de.ts` | German translations |
+| `src/i18n/es.ts` | Spanish translations |
+| `src/i18n/index.ts` | Main module: `t()` function, `useTranslation` hook, language storage, subscription system |
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `src/components/game/OptionsMenu.tsx` | Added Globe import, language selector dropdown in Gameplay tab, all text replaced with `t()` calls |
+| `src/components/screens/TitleScreen.tsx` | All menu text, feature cards, modals translated via `useTranslation` |
+| `src/components/game/GameBoardHeader.tsx` | Week/Market/economy tooltips translated via `t()` |
+| `src/components/game/RightSideTabs.tsx` | Tab labels, turn indicator, button titles translated |
+| `src/components/game/SideInfoTabs.tsx` | Tab labels, sick/dead alerts translated |
+| `src/components/game/GoalProgress.tsx` | Goal labels and victory message translated |
+| `src/components/game/SaveLoadMenu.tsx` | Menu title, tabs, slot labels, toast messages translated |
+| `src/components/game/EventPanel.tsx` | Button text, effect labels translated |
+| `src/components/game/DeathModal.tsx` | All death screen text translated |
+
+### Build & Test Results
+
+- **TypeScript**: 0 errors
+- **Vite build**: Passed (~11s)
+- **Tests**: 176/176 passed (9 test files)
+- **Language switching**: Instant, persists across sessions
+
+---
+
 ## 2026-02-11 - AI-Generated Stone Border Frames & Build Error Fixes
 
 ### Overview

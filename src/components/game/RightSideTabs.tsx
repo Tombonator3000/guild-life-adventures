@@ -9,6 +9,7 @@ import { PlayersTab } from './tabs/PlayersTab';
 import { OptionsTab } from './tabs/OptionsTab';
 import { DeveloperTab } from './tabs/DeveloperTab';
 import { useFullscreen } from '@/hooks/useFullscreen';
+import { useTranslation } from '@/i18n';
 import type { Player, GoalSettings } from '@/types/game.types';
 
 type TabId = 'players' | 'achievements' | 'options' | 'developer';
@@ -19,12 +20,15 @@ interface TabConfig {
   icon: React.ReactNode;
 }
 
-const TABS: TabConfig[] = [
-  { id: 'players', label: 'PLAYERS', icon: <Users className="w-4 h-4" /> },
-  { id: 'achievements', label: 'ACHIEVE', icon: <Trophy className="w-4 h-4" /> },
-  { id: 'options', label: 'OPTIONS', icon: <Settings className="w-4 h-4" /> },
-  { id: 'developer', label: 'DEV', icon: <Code className="w-4 h-4" /> },
-];
+// Tab configs are generated per-render to support dynamic language
+function getTabs(t: (key: string) => string): TabConfig[] {
+  return [
+    { id: 'players', label: t('sidebar.players'), icon: <Users className="w-4 h-4" /> },
+    { id: 'achievements', label: t('sidebar.achieve'), icon: <Trophy className="w-4 h-4" /> },
+    { id: 'options', label: t('sidebar.options'), icon: <Settings className="w-4 h-4" /> },
+    { id: 'developer', label: t('sidebar.dev'), icon: <Code className="w-4 h-4" /> },
+  ];
+}
 
 interface RightSideTabsProps {
   players: Player[];
@@ -55,6 +59,8 @@ export function RightSideTabs({
 }: RightSideTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>('players');
   const { isFullscreen, toggleFullscreen } = useFullscreen();
+  const { t } = useTranslation();
+  const TABS = getTabs(t);
 
   return (
     <div className="h-full flex flex-col bg-parchment rounded-lg border-2 border-wood-dark/50 overflow-hidden">
@@ -63,14 +69,14 @@ export function RightSideTabs({
         <div className="flex items-center gap-1.5 min-w-0">
           <Crown className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
           <h3 className="font-display text-xs font-bold text-parchment truncate">
-            {players[currentPlayerIndex]?.name ?? 'Unknown'}'s Turn
+            {t('sidebar.turn', { name: players[currentPlayerIndex]?.name ?? 'Unknown' })}
           </h3>
         </div>
         <div className="flex items-center gap-1">
           <button
             onClick={toggleFullscreen}
             className="p-1 rounded hover:bg-white/10 transition-colors"
-            title={isFullscreen ? 'Exit Fullscreen (F)' : 'Fullscreen (F)'}
+            title={isFullscreen ? `${t('sidebar.exitFullscreen')} (F)` : `${t('sidebar.fullscreen')} (F)`}
           >
             {isFullscreen
               ? <Minimize className="w-3.5 h-3.5 text-parchment" />
@@ -80,7 +86,7 @@ export function RightSideTabs({
           <button
             onClick={onOpenSaveMenu}
             className="p-1 rounded hover:bg-white/10 transition-colors"
-            title="Game Menu (Esc)"
+            title={`${t('sidebar.gameMenu')} (Esc)`}
           >
             <Menu className="w-3.5 h-3.5 text-parchment" />
           </button>

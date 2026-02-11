@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { Skull, Heart, MapPin } from 'lucide-react';
 import { playSFX } from '@/audio/sfxManager';
+import { useTranslation } from '@/i18n';
 import type { DeathEvent } from '@/types/game.types';
 
 interface DeathModalProps {
@@ -14,6 +15,7 @@ interface DeathModalProps {
 
 export function DeathModal({ event, onDismiss }: DeathModalProps) {
   const [showContent, setShowContent] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     playSFX('death');
@@ -48,12 +50,12 @@ export function DeathModal({ event, onDismiss }: DeathModalProps) {
 
         {/* Title */}
         <h1 className="font-display text-5xl md:text-6xl font-bold text-red-500 mb-4 tracking-wider drop-shadow-[0_0_10px_rgba(220,38,38,0.4)]">
-          YOU ARE DEAD
+          {t('death.youAreDead')}
         </h1>
 
         {/* Player name */}
         <p className="font-display text-xl text-red-300/80 mb-6">
-          {event.playerName} has fallen...
+          {t('death.hasFallen', { name: event.playerName })}
         </p>
 
         {/* Message */}
@@ -67,7 +69,7 @@ export function DeathModal({ event, onDismiss }: DeathModalProps) {
         {!event.isPermadeath && !event.wasResurrected && (
           <div className="flex items-center gap-3 mb-6 text-green-400/90">
             <Heart className="w-5 h-5" />
-            <span className="font-display text-sm">Respawning at The Graveyard with 20 HP</span>
+            <span className="font-display text-sm">{t('death.respawning')}</span>
             <MapPin className="w-5 h-5" />
           </div>
         )}
@@ -75,7 +77,7 @@ export function DeathModal({ event, onDismiss }: DeathModalProps) {
         {event.wasResurrected && (
           <div className="flex items-center gap-3 mb-6 text-green-400/90">
             <Heart className="w-5 h-5" />
-            <span className="font-display text-sm">The spirits restored you! 100g taken from savings.</span>
+            <span className="font-display text-sm">{t('death.spiritsRestored')}</span>
             <MapPin className="w-5 h-5" />
           </div>
         )}
@@ -83,7 +85,7 @@ export function DeathModal({ event, onDismiss }: DeathModalProps) {
         {event.isPermadeath && !event.wasResurrected && (
           <div className="flex items-center gap-3 mb-6 text-red-400/90">
             <Skull className="w-5 h-5" />
-            <span className="font-display text-sm">Permadeath is enabled. Your journey ends here.</span>
+            <span className="font-display text-sm">{t('death.permadeathEnabled')}</span>
             <Skull className="w-5 h-5" />
           </div>
         )}
@@ -93,7 +95,7 @@ export function DeathModal({ event, onDismiss }: DeathModalProps) {
           onClick={onDismiss}
           className="gold-button text-lg px-10 py-3"
         >
-          {event.isPermadeath && !event.wasResurrected ? 'Accept Your Fate' : 'Rise Again'}
+          {event.isPermadeath && !event.wasResurrected ? t('death.acceptFate') : t('death.riseAgain')}
         </button>
       </div>
     </div>

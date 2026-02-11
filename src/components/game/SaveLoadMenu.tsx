@@ -6,6 +6,7 @@ import type { SaveSlotInfo } from '@/data/saveLoad';
 import { toast } from 'sonner';
 import { OptionsMenu } from '@/components/game/OptionsMenu';
 import { UserManual } from '@/components/game/UserManual';
+import { useTranslation } from '@/i18n';
 
 interface SaveLoadMenuProps {
   onClose: () => void;
@@ -13,6 +14,7 @@ interface SaveLoadMenuProps {
 
 export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
   const { saveToSlot, loadFromSlot, setPhase } = useGameStore();
+  const { t } = useTranslation();
   const [mode, setMode] = useState<'save' | 'load'>('save');
   const [showOptions, setShowOptions] = useState(false);
   const [showManual, setShowManual] = useState(false);
@@ -24,26 +26,26 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
     if (slot === 0) return; // Can't manually save to auto-save slot
     const success = saveToSlot(slot);
     if (success) {
-      toast.success(`Game saved to Slot ${slot}`);
+      toast.success(t('saveLoad.gameSaved', { n: slot }));
       refreshSlots();
     } else {
-      toast.error('Failed to save game');
+      toast.error(t('saveLoad.saveFailed'));
     }
   };
 
   const handleLoad = (slot: number) => {
     const success = loadFromSlot(slot);
     if (success) {
-      toast.success('Game loaded');
+      toast.success(t('saveLoad.gameLoaded'));
       onClose();
     } else {
-      toast.error('Failed to load game');
+      toast.error(t('saveLoad.loadFailed'));
     }
   };
 
   const handleDelete = (slot: number) => {
     deleteSave(slot);
-    toast.info('Save deleted');
+    toast.info(t('saveLoad.saveDeleted'));
     refreshSlots();
   };
 
@@ -60,7 +62,7 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
       <div className="relative parchment-panel p-6 w-full max-w-md">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-2xl text-card-foreground">Game Menu</h2>
+          <h2 className="font-display text-2xl text-card-foreground">{t('saveLoad.gameMenu')}</h2>
           <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
           </button>
@@ -76,7 +78,7 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
                 : 'bg-background/50 text-wood border border-border hover:border-primary/50 hover:text-wood-dark'
             }`}
           >
-            <Save className="w-4 h-4" /> Save Game
+            <Save className="w-4 h-4" /> {t('saveLoad.saveGame')}
           </button>
           <button
             onClick={() => { setMode('load'); refreshSlots(); }}
@@ -86,7 +88,7 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
                 : 'bg-background/50 text-wood border border-border hover:border-primary/50 hover:text-wood-dark'
             }`}
           >
-            <FolderOpen className="w-4 h-4" /> Load Game
+            <FolderOpen className="w-4 h-4" /> {t('saveLoad.loadGame')}
           </button>
         </div>
 
@@ -106,14 +108,14 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
                 <div className="flex-1">
                   <div className="font-display text-base font-semibold text-wood-dark">
                     {s.slotName}
-                    {isAutoSave && <span className="text-xs font-normal text-wood-light ml-2">(automatic)</span>}
+                    {isAutoSave && <span className="text-xs font-normal text-wood-light ml-2">{t('setup.automatic')}</span>}
                   </div>
                   {s.exists ? (
                     <div className="text-sm text-wood">
-                      Week {s.week} &middot; {s.playerNames.join(', ')} &middot; {formatSaveDate(s.timestamp)}
+                      {t('board.week')} {s.week} &middot; {s.playerNames.join(', ')} &middot; {formatSaveDate(s.timestamp)}
                     </div>
                   ) : (
-                    <div className="text-sm text-wood-light">Empty</div>
+                    <div className="text-sm text-wood-light">{t('common.empty')}</div>
                   )}
                 </div>
 
@@ -123,7 +125,7 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
                       onClick={() => handleSave(s.slot)}
                       className="px-3 py-1.5 text-sm font-display font-semibold bg-primary/20 text-primary rounded hover:bg-primary/30"
                     >
-                      Save
+                      {t('common.save')}
                     </button>
                   )}
                   {mode === 'load' && s.exists && (
@@ -131,14 +133,14 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
                       onClick={() => handleLoad(s.slot)}
                       className="px-3 py-1.5 text-sm font-display font-semibold bg-primary/20 text-primary rounded hover:bg-primary/30"
                     >
-                      Load
+                      {t('common.load')}
                     </button>
                   )}
                   {s.exists && !isAutoSave && (
                     <button
                       onClick={() => handleDelete(s.slot)}
                       className="p-1 text-destructive/60 hover:text-destructive"
-                      title="Delete save"
+                      title={t('saveLoad.deleteSave')}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -156,20 +158,20 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
               onClick={() => setShowOptions(true)}
               className="flex-1 p-2.5 rounded border border-border bg-background/50 text-wood hover:text-wood-dark hover:border-foreground/30 font-display text-sm font-semibold flex items-center justify-center gap-2"
             >
-              <Settings className="w-4 h-4" /> Options
+              <Settings className="w-4 h-4" /> {t('common.options')}
             </button>
             <button
               onClick={() => setShowManual(true)}
               className="flex-1 p-2.5 rounded border border-border bg-background/50 text-wood hover:text-wood-dark hover:border-foreground/30 font-display text-sm font-semibold flex items-center justify-center gap-2"
             >
-              <BookOpen className="w-4 h-4" /> Manual
+              <BookOpen className="w-4 h-4" /> {t('common.manual')}
             </button>
           </div>
           <button
             onClick={handleQuitToTitle}
             className="w-full p-2.5 rounded border border-border bg-background/50 text-wood hover:text-wood-dark hover:border-foreground/30 font-display text-sm font-semibold flex items-center justify-center gap-2"
           >
-            <Home className="w-4 h-4" /> Save & Return to Title
+            <Home className="w-4 h-4" /> {t('saveLoad.saveReturn')}
           </button>
         </div>
 

@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import {
   X, Settings, Gamepad2, Volume2, VolumeX, Monitor,
-  Gauge, RotateCcw, Cake, Skull, Zap, Eye, Layout, Bell, Timer, Sparkles, BookOpen, Speech,
+  Gauge, RotateCcw, Cake, Skull, Zap, Eye, Layout, Bell, Timer, Sparkles, BookOpen, Speech, Globe,
 } from 'lucide-react';
 import { UserManual } from '@/components/game/UserManual';
 import { Switch } from '@/components/ui/switch';
@@ -19,6 +19,8 @@ import { useAmbientSettings } from '@/hooks/useAmbient';
 import { useNarrationSettings } from '@/hooks/useNarration';
 import { useAppUpdate } from '@/hooks/useAppUpdate';
 import { getBuildVersion } from '@/components/game/UpdateBanner';
+import { useTranslation, LANGUAGE_OPTIONS } from '@/i18n';
+import type { Language } from '@/i18n';
 import type { GameOptions } from '@/data/gameOptions';
 
 type Tab = 'gameplay' | 'audio' | 'display' | 'speed';
@@ -38,12 +40,13 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [showManual, setShowManual] = useState(false);
+  const { t, language, setLanguage } = useTranslation();
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: 'gameplay', label: 'Gameplay', icon: <Gamepad2 className="w-4 h-4" /> },
-    { id: 'audio', label: 'Audio', icon: <Volume2 className="w-4 h-4" /> },
-    { id: 'display', label: 'Display', icon: <Monitor className="w-4 h-4" /> },
-    { id: 'speed', label: 'Speed', icon: <Gauge className="w-4 h-4" /> },
+    { id: 'gameplay', label: t('optionsMenu.gameplay'), icon: <Gamepad2 className="w-4 h-4" /> },
+    { id: 'audio', label: t('optionsMenu.audio'), icon: <Volume2 className="w-4 h-4" /> },
+    { id: 'display', label: t('optionsMenu.display'), icon: <Monitor className="w-4 h-4" /> },
+    { id: 'speed', label: t('optionsMenu.speed'), icon: <Gauge className="w-4 h-4" /> },
   ];
 
   return (
@@ -54,7 +57,7 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div className="flex items-center gap-2">
             <Settings className="w-5 h-5 text-primary" />
-            <h2 className="font-display text-2xl text-card-foreground">Options</h2>
+            <h2 className="font-display text-2xl text-card-foreground">{t('optionsMenu.options')}</h2>
           </div>
           <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
@@ -82,16 +85,16 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
         {/* Tab content */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-1">
           {activeTab === 'gameplay' && (
-            <GameplayTab options={options} setOption={setOption} />
+            <GameplayTab options={options} setOption={setOption} language={language} setLanguage={setLanguage} t={t} />
           )}
           {activeTab === 'audio' && (
-            <AudioTab audio={audio} sfx={sfx} ambient={ambient} narration={narration} />
+            <AudioTab audio={audio} sfx={sfx} ambient={ambient} narration={narration} t={t} />
           )}
           {activeTab === 'display' && (
-            <DisplayTab options={options} setOption={setOption} />
+            <DisplayTab options={options} setOption={setOption} t={t} />
           )}
           {activeTab === 'speed' && (
-            <SpeedTab options={options} setOption={setOption} />
+            <SpeedTab options={options} setOption={setOption} t={t} />
           )}
         </div>
 
@@ -102,12 +105,12 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
             onClick={() => setShowManual(true)}
             className="w-full flex items-center justify-center gap-2 p-2 rounded border border-border bg-background/50 text-muted-foreground hover:text-foreground hover:border-foreground/30 font-display text-sm transition-colors"
           >
-            <BookOpen className="w-4 h-4" /> Adventurer's Manual
+            <BookOpen className="w-4 h-4" /> {t('optionsMenu.adventurersManual')}
           </button>
           {/* Version & Update Row */}
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-muted-foreground font-display">
-              Build: {getBuildVersion()}
+              {t('optionsMenu.build')}: {getBuildVersion()}
             </span>
             {needRefresh ? (
               <button
@@ -115,7 +118,7 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
                 className="flex items-center gap-1 text-xs text-primary font-display font-bold animate-pulse hover:underline"
               >
                 <RotateCcw className="w-3 h-3" />
-                Update Available — Click to Install
+                {t('optionsMenu.updateAvailable')}
               </button>
             ) : (
               <button
@@ -127,7 +130,7 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
                 className="flex items-center gap-1 text-[10px] text-muted-foreground font-display hover:text-foreground transition-colors"
               >
                 <RotateCcw className={`w-3 h-3 ${checkingUpdate ? 'animate-spin' : ''}`} />
-                {checkingUpdate ? 'Checking...' : 'Check for Updates'}
+                {checkingUpdate ? t('optionsMenu.checking') : t('optionsMenu.checkForUpdates')}
               </button>
             )}
           </div>
@@ -135,18 +138,18 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
           <div className="flex items-center justify-between">
             {showResetConfirm ? (
               <div className="flex items-center gap-2 text-xs">
-                <span className="text-destructive font-display">Reset all options?</span>
+                <span className="text-destructive font-display">{t('optionsMenu.resetAllOptions')}</span>
                 <button
                   onClick={() => { resetOptions(); setShowResetConfirm(false); }}
                   className="px-2 py-1 bg-destructive/20 text-destructive rounded text-xs font-display hover:bg-destructive/30"
                 >
-                  Yes, Reset
+                  {t('optionsMenu.yesReset')}
                 </button>
                 <button
                   onClick={() => setShowResetConfirm(false)}
                   className="px-2 py-1 bg-background/50 text-muted-foreground rounded text-xs font-display hover:bg-background/70"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             ) : (
@@ -155,14 +158,14 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground font-display transition-colors"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                Reset Defaults
+                {t('optionsMenu.resetDefaults')}
               </button>
             )}
             <button
               onClick={onClose}
               className="px-6 py-2 wood-frame text-parchment font-display text-sm hover:brightness-110"
             >
-              Done
+              {t('common.done')}
             </button>
           </div>
         </div>
@@ -178,21 +181,51 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
 
 // === Tab Components ===
 
+type TFunc = (key: string, params?: Record<string, string | number>) => string;
+
 function GameplayTab({
   options,
   setOption,
+  language,
+  setLanguage,
+  t,
 }: {
   options: GameOptions;
   setOption: <K extends keyof GameOptions>(key: K, value: GameOptions[K]) => void;
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: TFunc;
 }) {
   return (
     <div className="space-y-4">
-      <SectionHeader title="Gameplay Options" />
+      <SectionHeader title={t('optionsMenu.gameplayOptions')} />
+
+      {/* Language selector */}
+      <OptionRow
+        icon={<Globe className="w-4 h-4 text-sky-500" />}
+        label={t('optionsMenu.language')}
+        description={t('optionsMenu.languageDesc')}
+        control={
+          <select
+            value={language}
+            onChange={(e) => setLanguage(e.target.value as Language)}
+            className="text-xs p-1.5 rounded border border-border bg-background/50 text-card-foreground font-display min-w-[120px]"
+          >
+            {LANGUAGE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.flag} {opt.label}
+              </option>
+            ))}
+          </select>
+        }
+      />
+
+      <Separator />
 
       <OptionRow
         icon={<Cake className="w-4 h-4 text-amber-500" />}
-        label="Player Aging"
-        description="Players age over time with birthday milestones, elder health decay, and age-related events."
+        label={t('optionsMenu.playerAging')}
+        description={t('optionsMenu.playerAgingDesc')}
         control={
           <Switch
             checked={options.enableAging}
@@ -203,8 +236,8 @@ function GameplayTab({
 
       <OptionRow
         icon={<Zap className="w-4 h-4 text-yellow-500" />}
-        label="Weather Events"
-        description="Random weather events that affect gameplay and the economy."
+        label={t('optionsMenu.weatherEvents')}
+        description={t('optionsMenu.weatherEventsDesc')}
         control={
           <Switch
             checked={options.enableWeatherEvents}
@@ -215,8 +248,8 @@ function GameplayTab({
 
       <OptionRow
         icon={<Sparkles className="w-4 h-4 text-purple-500" />}
-        label="Seasonal Festivals"
-        description="4 festivals every 12 weeks with unique effects on the economy and gameplay."
+        label={t('optionsMenu.seasonalFestivals')}
+        description={t('optionsMenu.seasonalFestivalsDesc')}
         control={
           <Switch
             checked={options.enableFestivals}
@@ -227,8 +260,8 @@ function GameplayTab({
 
       <OptionRow
         icon={<Skull className="w-4 h-4 text-destructive" />}
-        label="Permadeath"
-        description="Players who die are permanently eliminated. When off, players respawn at the Graveyard with 20 HP."
+        label={t('optionsMenu.permadeath')}
+        description={t('optionsMenu.permadeathDesc')}
         control={
           <Switch
             checked={options.enablePermadeath}
@@ -245,22 +278,24 @@ function AudioTab({
   sfx,
   ambient,
   narration,
+  t,
 }: {
   audio: ReturnType<typeof useAudioSettings>;
   sfx: ReturnType<typeof useSFXSettings>;
   ambient: ReturnType<typeof useAmbientSettings>;
   narration: ReturnType<typeof useNarrationSettings>;
+  t: TFunc;
 }) {
   const voices = narration.isSupported ? narration.getEnglishVoices() : [];
 
   return (
     <div className="space-y-4">
-      <SectionHeader title="Music" />
+      <SectionHeader title={t('optionsMenu.music')} />
 
       <OptionRow
         icon={audio.musicMuted ? <VolumeX className="w-4 h-4 text-muted-foreground" /> : <Volume2 className="w-4 h-4 text-primary" />}
-        label="Music"
-        description="Background music during gameplay."
+        label={t('optionsMenu.music')}
+        description={t('optionsMenu.musicDesc')}
         control={
           <Switch
             checked={!audio.musicMuted}
@@ -272,7 +307,7 @@ function AudioTab({
       {!audio.musicMuted && (
         <div className="pl-8 pr-2">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-            <span>Volume</span>
+            <span>{t('optionsMenu.volume')}</span>
             <span>{Math.round(audio.musicVolume * 100)}%</span>
           </div>
           <Slider
@@ -286,12 +321,12 @@ function AudioTab({
       )}
 
       <Separator />
-      <SectionHeader title="Ambient Sounds" />
+      <SectionHeader title={t('optionsMenu.ambientSounds')} />
 
       <OptionRow
         icon={ambient.ambientMuted ? <VolumeX className="w-4 h-4 text-muted-foreground" /> : <Bell className="w-4 h-4 text-amber-500" />}
-        label="Ambient Sounds"
-        description="Environmental sounds per location (forge, tavern, cave, etc.)."
+        label={t('optionsMenu.ambientSounds')}
+        description={t('optionsMenu.ambientSoundsDesc')}
         control={
           <Switch
             checked={!ambient.ambientMuted}
@@ -303,7 +338,7 @@ function AudioTab({
       {!ambient.ambientMuted && (
         <div className="pl-8 pr-2">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-            <span>Volume</span>
+            <span>{t('optionsMenu.volume')}</span>
             <span>{Math.round(ambient.ambientVolume * 100)}%</span>
           </div>
           <Slider
@@ -317,12 +352,12 @@ function AudioTab({
       )}
 
       <Separator />
-      <SectionHeader title="Sound Effects" />
+      <SectionHeader title={t('optionsMenu.soundEffects')} />
 
       <OptionRow
         icon={sfx.sfxMuted ? <VolumeX className="w-4 h-4 text-muted-foreground" /> : <Volume2 className="w-4 h-4 text-secondary" />}
-        label="Sound Effects"
-        description="UI clicks, combat sounds, and event alerts."
+        label={t('optionsMenu.soundEffects')}
+        description={t('optionsMenu.soundEffectsDesc')}
         control={
           <Switch
             checked={!sfx.sfxMuted}
@@ -334,7 +369,7 @@ function AudioTab({
       {!sfx.sfxMuted && (
         <div className="pl-8 pr-2">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-            <span>Volume</span>
+            <span>{t('optionsMenu.volume')}</span>
             <span>{Math.round(sfx.sfxVolume * 100)}%</span>
           </div>
           <Slider
@@ -348,14 +383,14 @@ function AudioTab({
       )}
 
       <Separator />
-      <SectionHeader title="Voice Narration" />
+      <SectionHeader title={t('optionsMenu.voiceNarration')} />
 
       {narration.isSupported ? (
         <>
           <OptionRow
             icon={<Speech className="w-4 h-4 text-emerald-500" />}
-            label="Voice Narration"
-            description="NPC greetings, events, and weekend activities read aloud."
+            label={t('optionsMenu.voiceNarration')}
+            description={t('optionsMenu.voiceNarrationDesc')}
             control={
               <Switch
                 checked={narration.enabled}
@@ -370,14 +405,14 @@ function AudioTab({
               {voices.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                    <span>Voice</span>
+                    <span>{t('optionsMenu.voice')}</span>
                   </div>
                   <select
                     value={narration.voiceURI}
                     onChange={(e) => narration.setVoice(e.target.value)}
                     className="w-full text-xs p-1.5 rounded border border-border bg-background/50 text-card-foreground font-display"
                   >
-                    <option value="">Auto (best available)</option>
+                    <option value="">{t('optionsMenu.voiceAuto')}</option>
                     {voices.map((v) => (
                       <option key={v.voiceURI} value={v.voiceURI}>
                         {v.name} ({v.lang}){v.localService ? '' : ' (online)'}
@@ -390,7 +425,7 @@ function AudioTab({
               {/* Volume slider */}
               <div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                  <span>Volume</span>
+                  <span>{t('optionsMenu.volume')}</span>
                   <span>{Math.round(narration.volume * 100)}%</span>
                 </div>
                 <Slider
@@ -405,7 +440,7 @@ function AudioTab({
               {/* Speed slider */}
               <div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                  <span>Speed</span>
+                  <span>{t('optionsMenu.narrationSpeed')}</span>
                   <span>{narration.rate.toFixed(1)}x</span>
                 </div>
                 <Slider
@@ -422,7 +457,7 @@ function AudioTab({
       ) : (
         <div className="p-3 rounded-lg bg-background/30 border border-border/50">
           <p className="text-xs text-muted-foreground font-display">
-            Voice narration is not supported by this browser.
+            {t('optionsMenu.narrationNotSupported')}
           </p>
         </div>
       )}
@@ -433,9 +468,11 @@ function AudioTab({
 function DisplayTab({
   options,
   setOption,
+  t,
 }: {
   options: GameOptions;
   setOption: <K extends keyof GameOptions>(key: K, value: GameOptions[K]) => void;
+  t: TFunc;
 }) {
   const isFullscreen = !!document.fullscreenElement;
   const handleToggleFullscreen = () => {
@@ -448,12 +485,12 @@ function DisplayTab({
 
   return (
     <div className="space-y-4">
-      <SectionHeader title="Interface" />
+      <SectionHeader title={t('optionsMenu.interface')} />
 
       <OptionRow
         icon={<Monitor className="w-4 h-4 text-emerald-400" />}
-        label="Fullscreen"
-        description="Toggle fullscreen mode. Keyboard shortcut: F"
+        label={t('optionsMenu.fullscreen')}
+        description={t('optionsMenu.fullscreenDesc')}
         control={
           <Switch
             checked={isFullscreen}
@@ -464,8 +501,8 @@ function DisplayTab({
 
       <OptionRow
         icon={<Eye className="w-4 h-4 text-blue-400" />}
-        label="Event Animations"
-        description="Animate event popups and transitions."
+        label={t('optionsMenu.eventAnimations')}
+        description={t('optionsMenu.eventAnimationsDesc')}
         control={
           <Switch
             checked={options.showEventAnimations}
@@ -476,8 +513,8 @@ function DisplayTab({
 
       <OptionRow
         icon={<Layout className="w-4 h-4 text-purple-400" />}
-        label="Compact UI"
-        description="Use smaller stat displays to save screen space."
+        label={t('optionsMenu.compactUI')}
+        description={t('optionsMenu.compactUIDesc')}
         control={
           <Switch
             checked={options.compactUI}
@@ -488,8 +525,8 @@ function DisplayTab({
 
       <OptionRow
         icon={<Bell className="w-4 h-4 text-amber-400" />}
-        label="Turn Notifications"
-        description="Show notifications when turns change between players."
+        label={t('optionsMenu.turnNotifications')}
+        description={t('optionsMenu.turnNotificationsDesc')}
         control={
           <Switch
             checked={options.showTurnNotifications}
@@ -504,18 +541,20 @@ function DisplayTab({
 function SpeedTab({
   options,
   setOption,
+  t,
 }: {
   options: GameOptions;
   setOption: <K extends keyof GameOptions>(key: K, value: GameOptions[K]) => void;
+  t: TFunc;
 }) {
   return (
     <div className="space-y-4">
-      <SectionHeader title="Game Speed" />
+      <SectionHeader title={t('optionsMenu.gameSpeed')} />
 
       <OptionRow
         icon={<Timer className="w-4 h-4 text-time" />}
-        label="Auto-End Turn"
-        description="Automatically end your turn when all hours are spent."
+        label={t('optionsMenu.autoEndTurn')}
+        description={t('optionsMenu.autoEndTurnDesc')}
         control={
           <Switch
             checked={options.autoEndTurn}
@@ -526,7 +565,7 @@ function SpeedTab({
 
       <div className="p-3 rounded-lg bg-background/30 border border-border/50">
         <p className="text-xs text-muted-foreground font-display">
-          AI speed and skip settings are available in the in-game sidebar under the Players tab.
+          {t('optionsMenu.aiSpeedNote')}
         </p>
       </div>
     </div>
