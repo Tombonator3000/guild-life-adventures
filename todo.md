@@ -82,9 +82,9 @@
 - [x] Fix event modal dismissal desync in online multiplayer — **FIXED** auto-clear on turn/week change
 
 ### Medium Priority
-- [ ] AI: Add difficulty-based decision thresholds (currently only speed differs)
+- [x] AI: Add difficulty-based decision thresholds (currently only speed differs) — **DONE** Dynamic difficulty adjustment based on performance gap
 - [ ] AI: Add rent prepayment and appliance repair logic
-- [ ] AI: Add competition awareness (check other players' progress)
+- [x] AI: Add competition awareness (check other players' progress) — **DONE** Player strategy observer + counter-strategy weights
 - [ ] Mobile HUD: Add turn indicator and player color
 - [ ] Dead player tokens visual distinction
 - [ ] Fix keyboard shortcuts triggering inside modals
@@ -95,7 +95,7 @@
 - [ ] Player name duplicate/length validation
 - [ ] Victory screen leaderboard for multi-player
 - [ ] Spectator mode for dead players
-- [ ] AI stock market strategy (buy low, sell high)
+- [x] AI stock market strategy (buy low, sell high) — **DONE** Smart stock market intelligence (actual prices, undervalued detection)
 
 ## Completed (2026-02-05)
 

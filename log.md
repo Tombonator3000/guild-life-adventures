@@ -1,5 +1,85 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-11 (Session 3) - AI Adaptive Systems: Player Strategy Learning & Dynamic Difficulty
+
+### Overview
+
+Implemented the final two AI "Future Improvements" from agents.md: **Learning from Player Strategies** and **Difficulty Auto-Adjustment**. These two systems make AI opponents adaptive — they observe human player behavior and adjust their difficulty in real-time to keep games competitive.
+
+### New Files
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| `src/hooks/ai/playerObserver.ts` | ~260 | Observes human player state changes between turns, builds strategy profiles, generates counter-strategy weights |
+| `src/hooks/ai/difficultyAdjuster.ts` | ~175 | Tracks AI-vs-human performance gap, calculates rubber-banding difficulty adjustments |
+
+### Modified Files
+
+| File | Changes |
+|------|---------|
+| `src/hooks/ai/actionGenerator.ts` | Added `applyCounterStrategyWeights()` step in action pipeline, imports playerObserver |
+| `src/hooks/useGrimwaldAI.ts` | Integrated observer + adjuster into `runAITurn()`, added `resetAdaptiveSystems()`, adjusted settings per turn |
+| `src/hooks/useAITurnHandler.ts` | Calls `resetAdaptiveSystems()` when new game starts (phase transition detection) |
+| `agents.md` | Full documentation of both systems, file table updated, all Future Improvements checked off |
+| `todo.md` | Updated with completed items |
+
+### System 1: Learning from Player Strategies
+
+**Architecture:** Snapshot-diff observation (no store hooks needed)
+
+1. At each AI turn start, snapshots all human player states
+2. Compares to previous snapshots to infer what humans focused on (education, wealth, combat, happiness)
+3. Builds a rolling `PlayerStrategyProfile` per human using exponential moving average (alpha=0.3)
+4. Classifies dominant strategy: `education-rush`, `wealth-grind`, `combat-focus`, `happiness-focus`, `balanced`
+5. Generates `CounterStrategyWeights` that boost AI action priorities:
+   - **Competitive pressure**: Match human strengths to prevent them winning (0.4x boost for medium, 0.6x for hard)
+   - **Gap exploitation**: Slightly boost areas humans neglect (+0.15 to +0.30)
+6. Applied in `actionGenerator.ts` between personality weights and time-budget awareness
+
+**Key design decisions:**
+- Module-level Map storage (not serialized to game state — ephemeral per session)
+- Requires 3+ turns of data before generating counter-strategy
+- Only medium/hard AI (planningDepth >= 2) uses counter-strategy
+- Easy AI is unaffected
+
+### System 2: Dynamic Difficulty Adjustment
+
+**Architecture:** Performance gap rubber-banding
+
+1. Records `(humanProgress, aiProgress, gap)` each AI turn after week 5
+2. Calculates exponentially-weighted moving average of gap + trend direction
+3. Converts signal to adjustments:
+   - Human leading (+gap): fewer mistakes (0.5x), more aggressive (+0.15), more efficient (+0.15)
+   - AI leading (-gap): more mistakes (1.5x), less aggressive (-0.15), less efficient (-0.15)
+4. Applied via `applyAdjustment()` which creates a modified copy of `DifficultySettings`
+5. `planningDepth` and `decisionDelay` are never adjusted (too impactful on AI capabilities)
+
+**Guardrails:**
+- Signal clamped to ±0.5 range (prevents extreme swings)
+- `mistakeChance` clamped to 0.005-0.35 (never zero, never overwhelming)
+- `aggressiveness` and `efficiencyWeight` clamped to 0.1-1.0
+- Only activates after week 5 with 3+ data points
+- Resets on new game start
+
+### Action Pipeline (Updated Order)
+
+```
+generateActions() →
+  1. Collect from 6 category generators
+  2. applyPersonalityWeights()      ← existing
+  3. applyCounterStrategyWeights()  ← NEW: adapt to human strategy
+  4. applyTimeBudgetAwareness()     ← existing
+  5. Route optimization             ← existing
+  6. Sort by priority
+  7. applyMistakes()                ← existing (with adjusted mistakeChance)
+```
+
+### Build & Test Results
+
+- **TypeScript**: 0 errors
+- **Vite build**: Passed (~11s)
+- **Tests**: 176/176 passed (9 test files)
+- **All Future Improvements in agents.md**: ✅ Complete (16/16)
 ## 2026-02-11 (Session 3) - Festival Visual Overlays with AI-Generated Textures
 
 ### Overview

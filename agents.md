@@ -175,7 +175,9 @@ Safety limits prevent infinite loops (max 15 actions per turn).
 | `src/hooks/useGrimwaldAI.ts` | Main AI decision engine (19 action types) |
 | `src/hooks/ai/types.ts` | AI types, difficulty settings, personality profiles |
 | `src/hooks/ai/strategy.ts` | Pure strategy functions (dungeon, quest, equipment) |
-| `src/hooks/ai/actionGenerator.ts` | Priority-based action generation, personality weighting, time-budget awareness |
+| `src/hooks/ai/actionGenerator.ts` | Priority-based action generation, personality weighting, counter-strategy, time-budget awareness |
+| `src/hooks/ai/playerObserver.ts` | Human player strategy observation and counter-strategy weights |
+| `src/hooks/ai/difficultyAdjuster.ts` | Dynamic difficulty auto-adjustment based on performance gap |
 | `src/hooks/ai/actions/criticalNeeds.ts` | Food, rent, clothing, health actions |
 | `src/hooks/ai/actions/goalActions.ts` | Goal-oriented actions (education, wealth, happiness, career, adventure) |
 | `src/hooks/ai/actions/strategicActions.ts` | Job seeking, housing, banking |
@@ -226,6 +228,70 @@ During Grimwald's turn, players see:
 - Toast notifications for AI actions
 - Console logs for debugging (in development)
 
+## Learning from Player Strategies
+
+The AI observes human player behavior across turns and adapts its strategy to compete more effectively. This system activates after 3 turns of observation data.
+
+### How It Works
+
+1. **Observation**: At the start of each AI turn, human player states are snapshotted. Changes between snapshots (gold earned, degrees completed, equipment bought, etc.) are analyzed to infer human focus areas.
+
+2. **Strategy Profiling**: Each human player gets a rolling strategy profile with focus weights across 4 dimensions:
+   - **Education** — degree completions, study activity
+   - **Wealth** — gold accumulation, job changes, wage increases
+   - **Combat** — dungeon clears, equipment upgrades, quest completions
+   - **Happiness** — happiness gains, appliance purchases
+
+3. **Counter-Strategy**: Medium/hard AI uses the observed profile to adjust its own action priorities:
+   - **Competitive pressure**: Boost priority in areas where humans are strong (prevent them from winning there)
+   - **Gap exploitation**: Slightly boost neglected areas (the human isn't competing there, so the AI can gain cheaply)
+   - Hard AI reacts more strongly than medium AI (0.6x vs 0.4x competitive boost)
+
+4. **Strategy Classification**: Profiles are classified as: `education-rush`, `wealth-grind`, `combat-focus`, `happiness-focus`, or `balanced`
+
+### Implementation Details
+
+- Uses exponential moving average (alpha=0.3) for smooth adaptation
+- Keeps last 10 turn deltas for trend analysis
+- Module-level state (not serialized) — resets on new game
+- Only medium/hard AI (planningDepth >= 2) uses counter-strategy; easy AI ignores observations
+
+## Dynamic Difficulty Adjustment
+
+The AI automatically adjusts its effective difficulty based on the performance gap between human and AI players. This creates "rubber-banding" for a more competitive experience.
+
+### How It Works
+
+1. **Performance Recording**: Each AI turn, the system records the overall goal progress (0-1) of both the AI and the average of all human players.
+
+2. **Gap Analysis**: An exponentially-weighted moving average of the gap (human - AI progress) is calculated, giving more weight to recent turns. The trend (growing vs shrinking gap) is also factored in.
+
+3. **Adjustment Calculation**:
+   - **Human leading** → AI plays tighter: fewer mistakes (0.5x), more aggressive (+0.15), more efficient (+0.15)
+   - **AI leading** → AI eases off: more mistakes (1.5x), less aggressive (-0.15), less efficient (-0.15)
+   - Signal is clamped to ±0.5 range to prevent extreme swings
+
+4. **What's Adjusted**:
+   - `mistakeChance` — multiplied by 0.5-1.5x (clamped to 0.005-0.35)
+   - `aggressiveness` — shifted by ±0.15 (clamped to 0.1-1.0)
+   - `efficiencyWeight` — shifted by ±0.15 (clamped to 0.1-1.0)
+   - `planningDepth` and `decisionDelay` are **NOT** adjusted (too impactful)
+
+### Activation Conditions
+
+- Only activates after **week 5** (game needs to establish naturally)
+- Requires at least **3 data points** before generating adjustments
+- Only applies when human players exist (no adjustment in all-AI games)
+- Resets when a new game starts
+
+### Example Scenarios
+
+| Scenario | Gap | Mistake Adj. | Aggression Adj. |
+|----------|-----|-------------|-----------------|
+| Human dominating (+0.3) | +0.30 | 0.70x (fewer) | +0.09 (more) |
+| Neck and neck (0.0) | 0.00 | 1.00x (none) | +0.00 (none) |
+| AI winning (-0.2) | -0.20 | 1.20x (more) | -0.06 (less) |
+
 ## References
 
 Based on Jones AI from "Jones in the Fast Lane" (Sierra, 1991):
@@ -249,5 +315,5 @@ Based on Jones AI from "Jones in the Fast Lane" (Sierra, 1991):
 - [x] Time-budget awareness (early vs late turn priorities)
 - [x] Smart stock market intelligence (actual prices, undervalued detection, T-Bill safety)
 - [x] Improved mistake system (3 mistake types: oversight, classic swap, impulsive)
-- [ ] Learning from player strategies
-- [ ] Difficulty auto-adjustment based on player performance
+- [x] Learning from player strategies
+- [x] Difficulty auto-adjustment based on player performance
