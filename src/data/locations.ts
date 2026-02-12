@@ -204,11 +204,24 @@ export const getSegmentWaypoints = (from: LocationId, to: LocationId): MovementW
 
 // Get the full list of animation points for a path (zone centers + intermediate waypoints)
 export const getAnimationPoints = (path: LocationId[]): MovementWaypoint[] => {
-  if (path.length === 0) return [];
+  return getAnimationPointsWithBoundaries(path).points;
+};
+
+// Like getAnimationPoints but also returns which point indices are location zone centers.
+// locationBoundaries[i] = the index in points[] where path[i]'s zone center is.
+export const getAnimationPointsWithBoundaries = (path: LocationId[]): {
+  points: MovementWaypoint[];
+  locationBoundaries: number[];
+} => {
+  if (path.length === 0) return { points: [], locationBoundaries: [] };
 
   const points: MovementWaypoint[] = [];
+  const locationBoundaries: number[] = [];
 
   for (let i = 0; i < path.length; i++) {
+    // Record the index of this zone center
+    locationBoundaries.push(points.length);
+
     // Add zone center
     const zone = ZONE_CONFIGS.find(z => z.id === path[i]);
     if (zone) {
@@ -222,7 +235,7 @@ export const getAnimationPoints = (path: LocationId[]): MovementWaypoint[] => {
     }
   }
 
-  return points;
+  return { points, locationBoundaries };
 };
 
 // Convert zone config to Location format for backward compatibility

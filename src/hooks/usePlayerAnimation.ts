@@ -19,6 +19,32 @@ export function usePlayerAnimation() {
   const [pathVersion, setPathVersion] = useState(0);
   const pendingMoveRef = useRef<PendingMove | null>(null);
 
+  // Track animation progress for mid-movement redirects
+  const currentPathRef = useRef<LocationId[] | null>(null);
+  const lastReachedLocationIndexRef = useRef(0);
+  const accumulatedStepsRef = useRef(0);
+
+  // Called by AnimatedPlayerToken when it reaches a location zone center
+  const handleLocationReached = useCallback((pathLocationIndex: number) => {
+    lastReachedLocationIndexRef.current = pathLocationIndex;
+    // Accumulated steps = how many location-to-location moves completed
+    // (pathLocationIndex 0 = start, 1 = first step complete, etc.)
+    accumulatedStepsRef.current = pathLocationIndex;
+  }, []);
+
+  // Get the current intermediate location during animation
+  const getCurrentIntermediateLocation = useCallback((): LocationId | null => {
+    const path = currentPathRef.current;
+    if (!path) return null;
+    const idx = lastReachedLocationIndexRef.current;
+    return path[idx] ?? null;
+  }, []);
+
+  // Get accumulated steps so far during animation
+  const getAccumulatedSteps = useCallback((): number => {
+    return accumulatedStepsRef.current;
+  }, []);
+
   // Handle animation completion
   const handleAnimationComplete = useCallback(() => {
     const pending = pendingMoveRef.current;
@@ -40,6 +66,10 @@ export function usePlayerAnimation() {
       }
       pendingMoveRef.current = null;
     }
+    // Reset tracking
+    currentPathRef.current = null;
+    lastReachedLocationIndexRef.current = 0;
+    accumulatedStepsRef.current = 0;
     setAnimatingPlayer(null);
     setAnimationPath(null);
   }, [movePlayer, selectLocation, endTurn]);
@@ -58,14 +88,18 @@ export function usePlayerAnimation() {
       timeCost,
       isPartial,
     };
+    // Reset tracking for fresh movement
+    currentPathRef.current = path;
+    lastReachedLocationIndexRef.current = 0;
+    accumulatedStepsRef.current = 0;
     setAnimatingPlayer(playerId);
     setAnimationPath(path);
     setPathVersion(v => v + 1);
   }, []);
 
   // Redirect animation mid-movement to a new destination.
-  // The player state hasn't changed yet (movePlayer called only on completion),
-  // so we restart the animation from the player's original location.
+  // Uses accumulated time tracking: the new path starts from the last reached location,
+  // and total time = steps already taken + new path steps.
   const redirectAnimation = useCallback((
     playerId: string,
     destination: LocationId,
@@ -79,6 +113,11 @@ export function usePlayerAnimation() {
       timeCost,
       isPartial,
     };
+    // Update tracking for the new path segment
+    currentPathRef.current = path;
+    lastReachedLocationIndexRef.current = 0;
+    // accumulatedSteps is NOT reset — it carries over from previous segments
+    // The caller (useLocationClick) already factored accumulated steps into timeCost
     // Increment pathVersion to force AnimatedPlayerToken remount (resets internal refs)
     setPathVersion(v => v + 1);
     setAnimationPath(path);
@@ -91,6 +130,9 @@ export function usePlayerAnimation() {
   ) => {
     // Don't set pendingMoveRef — remote animations are purely visual.
     // When handleAnimationComplete fires, pendingMoveRef is null so it just clears state.
+    currentPathRef.current = path;
+    lastReachedLocationIndexRef.current = 0;
+    accumulatedStepsRef.current = 0;
     setAnimatingPlayer(playerId);
     setAnimationPath(path);
     setPathVersion(v => v + 1);
@@ -101,6 +143,9 @@ export function usePlayerAnimation() {
     animationPath,
     pathVersion,
     handleAnimationComplete,
+    handleLocationReached,
+    getCurrentIntermediateLocation,
+    getAccumulatedSteps,
     startAnimation,
     redirectAnimation,
     startRemoteAnimation,

@@ -1,5 +1,29 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-12 - Fix Movement Direction: Remove Popup, Add Mid-Movement Redirect
+
+### Overview
+Replaced the direction choice popup (clockwise vs counter-clockwise) with a redirect-based movement system. Players now click a location to start moving immediately via the shortest path. If they click a different location mid-movement, the character stops at its current position and redirects toward the new destination. All time accumulates — every step counts, including backtracking.
+
+### Changes
+- **Removed direction choice popup**: No more modal asking which direction to go. Movement always takes the shortest path automatically.
+- **Mid-movement redirect with accumulated time**: Clicking a new location during animation stops the character at the last reached location and redirects from there. Time = steps already taken + new path cost.
+- **Location boundary tracking**: Added `getAnimationPointsWithBoundaries()` to `locations.ts` — returns animation waypoints plus indices marking zone centers, enabling the token to report which location it has reached.
+- **AnimatedPlayerToken callback**: Added `onLocationReached` prop — fires each time the token passes through a location's zone center during animation.
+- **usePlayerAnimation tracking**: Added `currentPathRef`, `lastReachedLocationIndexRef`, `accumulatedStepsRef` to track mid-animation progress. New `getCurrentIntermediateLocation()` and `getAccumulatedSteps()` accessors for redirect logic.
+- **Simplified useLocationClick**: Removed `directionChoice` state, `chooseDirection`, `cancelDirectionChoice`. Travel always uses `getPath()` (shortest). Redirect logic reads intermediate location and accumulated steps to compute total time cost.
+- **Partial travel on redirect**: If total accumulated time exceeds player's remaining time, the character travels as far as possible from the redirect point and the turn auto-ends.
+- **Multiple redirects supported**: Each redirect accumulates more time. Weather extra cost applies to all steps.
+
+### Files Modified
+- `src/data/locations.ts` — Added `getAnimationPointsWithBoundaries()`
+- `src/components/game/AnimatedPlayerToken.tsx` — Added `onLocationReached` callback
+- `src/hooks/usePlayerAnimation.ts` — Added accumulated time tracking, intermediate location tracking
+- `src/hooks/useLocationClick.ts` — Removed popup, simplified to shortest path + accumulated redirect
+- `src/components/game/GameBoard.tsx` — Removed popup JSX, wired new props
+
+---
+
 ## 2026-02-12 - Appliance Bonuses, Forced Loan Repayment, Crash Tiers, Direction Choice, Active Relaxation, Newspaper Personalization
 
 ### Overview

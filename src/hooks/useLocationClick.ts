@@ -1,7 +1,5 @@
-import { useState, useCallback } from 'react';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
-import { getMovementCost, getPath, getBothPaths, getLocation } from '@/data/locations';
-import type { DirectionOption, MovementDirection } from '@/data/locations';
+import { getPath } from '@/data/locations';
 import { type GameEvent } from '@/components/game/EventModal';
 import type { LocationId } from '@/types/game.types';
 import { toast } from 'sonner';
@@ -14,6 +12,8 @@ export function useLocationClick({
   startAnimation,
   redirectAnimation,
   broadcastMovement,
+  getCurrentIntermediateLocation,
+  getAccumulatedSteps,
 }: {
   animatingPlayer: string | null;
   isOnline: boolean;
@@ -33,6 +33,8 @@ export function useLocationClick({
     isPartial?: boolean,
   ) => void;
   broadcastMovement: (playerId: string, path: LocationId[]) => void;
+  getCurrentIntermediateLocation: () => LocationId | null;
+  getAccumulatedSteps: () => number;
 }) {
   const {
     selectedLocation,
@@ -43,115 +45,56 @@ export function useLocationClick({
   } = useGameStore();
   const currentPlayer = useCurrentPlayer();
 
-  // Direction choice state: when player clicks a location with two different paths
-  const [directionChoice, setDirectionChoice] = useState<{
-    destination: LocationId;
-    options: DirectionOption[];
-    weatherExtraCostPerStep: number;
-  } | null>(null);
-
-  // Execute movement with a specific direction choice
-  const executeMovement = useCallback((
-    playerId: string,
-    destination: LocationId,
-    chosenPath: LocationId[],
-    weatherExtraCostPerStep: number,
-    isPartial: boolean,
-  ) => {
-    const baseCost = chosenPath.length - 1; // steps = path length - 1
-    const weatherExtraCost = baseCost > 0 ? baseCost * weatherExtraCostPerStep : 0;
-    const moveCost = baseCost + weatherExtraCost;
-
-    playSFX('footstep');
-    if (isPartial) {
-      startAnimation(playerId, destination, moveCost, chosenPath, true);
-    } else {
-      startAnimation(playerId, destination, moveCost, chosenPath);
-    }
-    if (isOnline) {
-      broadcastMovement(playerId, chosenPath);
-    }
-    setDirectionChoice(null);
-  }, [startAnimation, isOnline, broadcastMovement]);
-
-  // Handle direction choice selection from the popup
-  const chooseDirection = useCallback((direction: MovementDirection) => {
-    if (!directionChoice || !currentPlayer) return;
-    const option = directionChoice.options.find(o => o.direction === direction);
-    if (!option) return;
-
-    const weatherExtra = directionChoice.weatherExtraCostPerStep;
-    const totalCost = option.distance + (option.distance > 0 ? option.distance * weatherExtra : 0);
-
-    if (currentPlayer.timeRemaining >= totalCost) {
-      // Full travel
-      executeMovement(currentPlayer.id, directionChoice.destination, option.path, weatherExtra, false);
-    } else if (currentPlayer.timeRemaining > 0) {
-      // Partial travel
-      const stepsCanTake = Math.floor(currentPlayer.timeRemaining / (1 + weatherExtra)) || Math.min(currentPlayer.timeRemaining, option.distance);
-      if (stepsCanTake > 0 && option.path.length > 1) {
-        const partialPath = option.path.slice(0, stepsCanTake + 1);
-        const partialDest = partialPath[partialPath.length - 1];
-        executeMovement(currentPlayer.id, partialDest, partialPath, weatherExtra, true);
-      }
-    } else {
-      toast.error('No time remaining!');
-      setDirectionChoice(null);
-    }
-  }, [directionChoice, currentPlayer, executeMovement]);
-
-  // Cancel direction choice
-  const cancelDirectionChoice = useCallback(() => {
-    setDirectionChoice(null);
-  }, []);
-
   const handleLocationClick = (locationId: string) => {
     if (!currentPlayer) return;
 
-    // Cancel any pending direction choice if clicking elsewhere
-    if (directionChoice && directionChoice.destination !== locationId) {
-      setDirectionChoice(null);
-    }
+    const weatherExtraCostPerStep = (weather?.movementCostExtra) || 0;
 
     // During animation: allow the animating player to redirect to a new destination
     if (animatingPlayer) {
       if (animatingPlayer === currentPlayer.id && locationId !== currentPlayer.currentLocation) {
-        // Recalculate path from original location (movePlayer hasn't been called yet)
-        const baseMoveCost = getMovementCost(currentPlayer.currentLocation, locationId as LocationId);
-        const travelPath = getPath(currentPlayer.currentLocation as LocationId, locationId as LocationId);
-        const weatherExtraCost = (baseMoveCost > 0 && weather?.movementCostExtra)
-          ? travelPath.length * weather.movementCostExtra
-          : 0;
-        const moveCost = baseMoveCost + weatherExtraCost;
+        // Get the intermediate location where the player currently is
+        const intermediateLocation = getCurrentIntermediateLocation();
+        if (!intermediateLocation) return;
 
-        if (currentPlayer.timeRemaining >= moveCost) {
+        // If clicking the location we're currently at, ignore
+        if (locationId === intermediateLocation) return;
+
+        const dest = locationId as LocationId;
+        const accumulatedSteps = getAccumulatedSteps();
+        const accumulatedTimeCost = accumulatedSteps + Math.floor(accumulatedSteps * weatherExtraCostPerStep);
+
+        // Calculate new path from intermediate location to new destination (shortest)
+        const newPath = getPath(intermediateLocation, dest);
+        const newSteps = newPath.length - 1;
+        const newTimeCost = newSteps + Math.floor(newSteps * weatherExtraCostPerStep);
+        const totalTimeCost = accumulatedTimeCost + newTimeCost;
+
+        if (currentPlayer.timeRemaining >= totalTimeCost) {
+          // Full redirect travel
           playSFX('footstep');
-          redirectAnimation(
-            currentPlayer.id,
-            locationId as LocationId,
-            moveCost,
-            travelPath,
-          );
-          if (isOnline) {
-            broadcastMovement(currentPlayer.id, travelPath);
-          }
-        } else if (currentPlayer.timeRemaining > 0) {
-          const fullPath = getPath(currentPlayer.currentLocation as LocationId, locationId as LocationId);
-          const stepsCanTake = currentPlayer.timeRemaining;
-          if (stepsCanTake > 0 && fullPath.length > 1) {
-            const partialPath = fullPath.slice(0, stepsCanTake + 1);
-            const partialDestination = partialPath[partialPath.length - 1];
+          redirectAnimation(currentPlayer.id, dest, totalTimeCost, newPath);
+          if (isOnline) broadcastMovement(currentPlayer.id, newPath);
+        } else if (currentPlayer.timeRemaining > accumulatedTimeCost) {
+          // Partial redirect: can take some steps toward new destination
+          const remainingTime = currentPlayer.timeRemaining - accumulatedTimeCost;
+          const costPerStep = 1 + weatherExtraCostPerStep;
+          const stepsCanTake = Math.floor(remainingTime / costPerStep) || Math.min(remainingTime, newSteps);
+          if (stepsCanTake > 0 && newPath.length > 1) {
+            const partialPath = newPath.slice(0, stepsCanTake + 1);
+            const partialDest = partialPath[partialPath.length - 1];
+            const partialNewCost = stepsCanTake + Math.floor(stepsCanTake * weatherExtraCostPerStep);
             redirectAnimation(
               currentPlayer.id,
-              partialDestination,
-              currentPlayer.timeRemaining,
+              partialDest,
+              accumulatedTimeCost + partialNewCost,
               partialPath,
               true,
             );
-            if (isOnline) {
-              broadcastMovement(currentPlayer.id, partialPath);
-            }
+            if (isOnline) broadcastMovement(currentPlayer.id, partialPath);
           }
+        } else {
+          toast.error('No time remaining!');
         }
       }
       return;
@@ -179,41 +122,33 @@ export function useLocationClick({
         selectLocation(locationId as LocationId);
       }
     } else {
-      // Travel to a different location — check for direction choice (Jones-style)
+      // Travel to a different location — always use shortest path, no direction popup
       const dest = locationId as LocationId;
       const from = currentPlayer.currentLocation as LocationId;
-      const weatherExtraCostPerStep = (weather?.movementCostExtra) || 0;
 
-      // Get both directional paths
-      const options = getBothPaths(from, dest);
+      const travelPath = getPath(from, dest);
+      const baseCost = travelPath.length - 1;
+      const weatherExtraCost = baseCost > 0 ? Math.floor(baseCost * weatherExtraCostPerStep) : 0;
+      const moveCost = baseCost + weatherExtraCost;
 
-      if (options.length === 2 && options[0].distance !== options[1].distance) {
-        // Different distances — show direction choice popup
-        setDirectionChoice({ destination: dest, options, weatherExtraCostPerStep });
-      } else {
-        // Equal distance or single option — auto-use shortest (clockwise for ties)
-        const travelPath = getPath(from, dest);
-        const baseCost = travelPath.length - 1;
-        const weatherExtraCost = baseCost > 0 ? baseCost * weatherExtraCostPerStep : 0;
-        const moveCost = baseCost + weatherExtraCost;
-
-        if (currentPlayer.timeRemaining >= moveCost) {
-          playSFX('footstep');
-          startAnimation(currentPlayer.id, dest, moveCost, travelPath);
-          if (isOnline) broadcastMovement(currentPlayer.id, travelPath);
-        } else if (currentPlayer.timeRemaining > 0) {
-          const stepsCanTake = currentPlayer.timeRemaining;
-          if (stepsCanTake > 0 && travelPath.length > 1) {
-            const partialPath = travelPath.slice(0, stepsCanTake + 1);
-            const partialDest = partialPath[partialPath.length - 1];
-            startAnimation(currentPlayer.id, partialDest, currentPlayer.timeRemaining, partialPath, true);
-            if (isOnline) broadcastMovement(currentPlayer.id, partialPath);
-          } else {
-            toast.error('No time remaining!');
-          }
+      if (currentPlayer.timeRemaining >= moveCost) {
+        playSFX('footstep');
+        startAnimation(currentPlayer.id, dest, moveCost, travelPath);
+        if (isOnline) broadcastMovement(currentPlayer.id, travelPath);
+      } else if (currentPlayer.timeRemaining > 0) {
+        const costPerStep = 1 + weatherExtraCostPerStep;
+        const stepsCanTake = Math.floor(currentPlayer.timeRemaining / costPerStep) || Math.min(currentPlayer.timeRemaining, baseCost);
+        if (stepsCanTake > 0 && travelPath.length > 1) {
+          const partialPath = travelPath.slice(0, stepsCanTake + 1);
+          const partialDest = partialPath[partialPath.length - 1];
+          const partialCost = stepsCanTake + Math.floor(stepsCanTake * weatherExtraCostPerStep);
+          startAnimation(currentPlayer.id, partialDest, partialCost, partialPath, true);
+          if (isOnline) broadcastMovement(currentPlayer.id, partialPath);
         } else {
           toast.error('No time remaining!');
         }
+      } else {
+        toast.error('No time remaining!');
       }
     }
   };
@@ -270,8 +205,5 @@ export function useLocationClick({
   return {
     handleLocationClick,
     currentEvent,
-    directionChoice,
-    chooseDirection,
-    cancelDirectionChoice,
   };
 }
