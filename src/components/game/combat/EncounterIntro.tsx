@@ -5,6 +5,7 @@ import { Heart, Swords, Sparkles } from 'lucide-react';
 import { playSFX } from '@/audio/sfxManager';
 import type { DungeonRunState } from '@/data/combatResolver';
 import { getEncounterIcon, getEncounterAction } from '@/data/combatResolver';
+import { getEncounterImage } from '@/assets/encounters';
 import { HealthBar } from './HealthBar';
 
 interface EncounterIntroProps {
@@ -62,9 +63,21 @@ export function EncounterIntro({
                   : 'bg-gradient-to-b from-[#2d1f0f] to-[#1a1308] border-[#8b7355]/60'
         }`}
       >
-        {/* Icon + Name */}
+        {/* Woodcut + Icon + Name */}
         <div className="text-center mb-3">
-          <div className="text-3xl mb-1">{icon}</div>
+          {getEncounterImage(encounter.id) ? (
+            <div className="flex justify-center mb-2">
+              <img
+                src={getEncounterImage(encounter.id)}
+                alt={encounter.name}
+                className="w-24 h-24 object-contain rounded-lg border border-[#8b7355]/40"
+                style={{ filter: 'sepia(0.3)' }}
+                loading="lazy"
+              />
+            </div>
+          ) : (
+            <div className="text-3xl mb-1">{icon}</div>
+          )}
           <h3
             className={`font-display text-lg ${
               isBoss ? 'text-red-300' : 'text-[#e0d4b8]'
