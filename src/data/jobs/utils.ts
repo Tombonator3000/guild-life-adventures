@@ -82,6 +82,9 @@ export const canWorkJob = (
   experience: number,
   dependability: number
 ): boolean => {
+  // Bankruptcy Barrel: no clothes = can't work ANY job
+  if (clothingLevel <= 0) return false;
+
   // Check degrees
   const hasDegrees = job.requiredDegrees.every(deg => completedDegrees.includes(deg));
   if (!hasDegrees) return false;
@@ -171,6 +174,15 @@ export const applyForJob = (
   experience: number,
   dependability: number
 ): JobApplicationResult => {
+  // Bankruptcy Barrel: no clothes = can't apply for ANY job
+  if (clothingLevel <= 0) {
+    return {
+      success: false,
+      reason: 'You have no clothes! Buy some before applying for work.',
+      missingClothing: true,
+    };
+  }
+
   // Check degrees
   const missingDegrees = job.requiredDegrees.filter(deg => !completedDegrees.includes(deg));
   if (missingDegrees.length > 0) {

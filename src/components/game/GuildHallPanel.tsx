@@ -228,6 +228,12 @@ export function GuildHallPanel({
           <ChevronLeft className="w-4 h-4" /> {t('panelGuild.backToEmployers')}
         </button>
 
+        {player.clothingCondition <= 0 && (
+          <div className="text-red-600 text-xs px-2 py-1.5 mb-2 border border-red-500/30 rounded bg-red-50">
+            You have no clothes! Buy clothing before applying for work.
+          </div>
+        )}
+
         <JonesSectionHeader title={t('panelGuild.availablePositions')} />
         <div className="space-y-1">
           {selectedEmployer.jobs.map(job => {

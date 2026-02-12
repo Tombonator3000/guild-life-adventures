@@ -1,5 +1,24 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-12 - Bankruptcy Barrel & Bank Loan Job History
+
+### Bankruptcy Barrel: Broken Clothes Work Restriction (Jones-style)
+- **Change**: When `clothingCondition` reaches 0, player cannot work ANY job (including entry-level 'none' requirement) until they buy new clothes. Matches Jones in the Fast Lane "Bankruptcy Barrel" mechanic.
+- **Guard checks**: `workShift()` early-return, `canWorkJob()` absolute floor, `applyForJob()` explicit rejection, `setJob()` blocks hiring when naked
+- **UI**: WorkSection shows "buy clothing" warning instead of work button. GuildHallPanel shows restriction banner. ResourcePanel shows "NONE!" in red.
+- **AI**: Clothing urgency raised to 1.0 when naked. Priority raised to 95 (above rent at 90).
+- **Week-end**: Clothing degradation message warns when clothes destroyed.
+- **Files**: `game.types.ts`, `workEducationHelpers.ts`, `jobs/utils.ts`, `playerHelpers.ts`, `WorkSection.tsx`, `GuildHallPanel.tsx`, `ResourcePanel.tsx`, `weekEndHelpers.ts`, AI strategy/criticalNeeds/actionExecutor
+
+### Bank Loan Job History Requirement (Jones-style)
+- **Change**: Bank requires `totalShiftsWorked >= 4` before granting loans. New lifetime shift counter on Player that never resets (unlike `shiftsWorkedSinceHire`).
+- **New field**: `totalShiftsWorked: number` on Player interface (defaults to 0)
+- **Constant**: `LOAN_MIN_SHIFTS_REQUIRED = 4`
+- **Guard checks**: `takeLoan()` checks `totalShiftsWorked` before approving
+- **UI**: BankPanel loan section shows "work history required" message when ineligible
+- **AI**: Loan action generation and execution check job history
+- **Files**: `game.types.ts`, `gameStore.ts`, `workEducationHelpers.ts`, `stockLoanHelpers.ts`, `BankPanel.tsx`, AI actionExecutor/economicActions, i18n (en/es/de)
+
 ## 2026-02-12 - UI Positioning, Tooltip Size, Zone Editor Animations, Spoilage Mechanic
 
 ### Task 1: NPC Name/Title Banner Above Portrait

@@ -7,7 +7,7 @@
  */
 
 import type { Player, HousingTier, DegreeId, EquipmentSlot } from '@/types/game.types';
-import { RENT_COSTS, GUILD_PASS_COST } from '@/types/game.types';
+import { RENT_COSTS, GUILD_PASS_COST, LOAN_MIN_SHIFTS_REQUIRED } from '@/types/game.types';
 import { getJob, canWorkJob, calculateOfferedWage } from '@/data/jobs';
 import { DEGREES } from '@/data/education';
 import { calculatePathDistance, getPath } from '@/data/locations';
@@ -154,6 +154,7 @@ function handleWork(player: Player, action: AIAction, store: StoreActions): bool
   const hours = (action.details?.hours as number) || 6;
   const wage = (action.details?.wage as number) || player.currentWage;
   if (player.timeRemaining < hours) return false;
+  if (player.clothingCondition <= 0) return false; // Bankruptcy Barrel
   store.workShift(player.id, hours, wage);
   return true;
 }
@@ -242,6 +243,7 @@ function handleWithdrawBank(player: Player, action: AIAction, store: StoreAction
 function handleTakeLoan(player: Player, action: AIAction, store: StoreActions): boolean {
   const amount = (action.details?.amount as number) || 200;
   if (player.loanAmount > 0) return false;
+  if ((player.totalShiftsWorked || 0) < LOAN_MIN_SHIFTS_REQUIRED) return false; // Job history
   store.takeLoan(player.id, amount);
   return true;
 }

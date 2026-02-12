@@ -187,6 +187,11 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
     },
 
     setJob: (playerId: string, jobId: string | null, wage: number = 0) => {
+      // Bankruptcy Barrel: block hiring when player has no clothes (allow quitting)
+      if (jobId !== null) {
+        const player = get().players.find(p => p.id === playerId);
+        if (player && player.clothingCondition <= 0) return;
+      }
       set((state) => ({
         players: state.players.map((p) =>
           p.id === playerId

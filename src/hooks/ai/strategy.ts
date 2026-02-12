@@ -107,8 +107,8 @@ export function calculateResourceUrgency(player: Player): ResourceUrgency {
     else rent = 0.1;
   }
 
-  // Clothing urgency - need for job
-  const clothing = player.clothingCondition < 25 ? 0.9 : player.clothingCondition < 50 ? 0.4 : 0.1;
+  // Clothing urgency - need for job (Bankruptcy Barrel: max urgency when naked)
+  const clothing = player.clothingCondition <= 0 ? 1.0 : player.clothingCondition < 25 ? 0.9 : player.clothingCondition < 50 ? 0.4 : 0.1;
 
   // Health urgency
   const health = player.health < 30 ? 1.0 : player.health < 50 ? 0.5 : 0.1;

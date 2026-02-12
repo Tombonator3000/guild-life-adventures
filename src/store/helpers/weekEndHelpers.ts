@@ -204,7 +204,9 @@ function processNeeds(p: Player, isClothingDegradation: boolean, msgs: string[])
   // Clothing degradation (every 8 weeks)
   if (isClothingDegradation) {
     p.clothingCondition = Math.max(0, p.clothingCondition - 25);
-    if (!p.isAI && p.clothingCondition <= 25) {
+    if (!p.isAI && p.clothingCondition <= 0) {
+      msgs.push(`${p.name}'s clothing has been destroyed! Cannot work until you buy new clothes.`);
+    } else if (!p.isAI && p.clothingCondition <= 25) {
       msgs.push(`${p.name}'s clothing is in poor condition!`);
     }
   }

@@ -436,6 +436,7 @@ export interface TranslationStrings {
     withdrawn: string;
     loanTaken: string;
     loanRepaid: string;
+    loanNoHistory: string;
     sellFee: string;
   };
 

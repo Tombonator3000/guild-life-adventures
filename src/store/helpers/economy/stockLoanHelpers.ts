@@ -1,4 +1,5 @@
 import { getSellPrice } from '@/data/stocks';
+import { LOAN_MIN_SHIFTS_REQUIRED } from '@/types/game.types';
 import type { SetFn, GetFn } from '../../storeTypes';
 
 export function createStockLoanActions(set: SetFn, get: GetFn) {
@@ -57,6 +58,9 @@ export function createStockLoanActions(set: SetFn, get: GetFn) {
 
     takeLoan: (playerId: string, amount: number) => {
       if (amount <= 0 || !Number.isFinite(amount) || amount > 1000) return;
+      // Job history requirement: must have worked enough shifts before bank grants a loan
+      const player = get().players.find(p => p.id === playerId);
+      if (!player || (player.totalShiftsWorked || 0) < LOAN_MIN_SHIFTS_REQUIRED) return;
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;

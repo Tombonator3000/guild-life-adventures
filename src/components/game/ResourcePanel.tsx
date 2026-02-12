@@ -94,7 +94,7 @@ export function ResourcePanel() {
         <ResourceCard 
           icon={<Shirt className="w-4 h-4" />}
           label="Clothing"
-          value={`${player.clothingCondition}%`}
+          value={player.clothingCondition <= 0 ? 'NONE!' : `${player.clothingCondition}%`}
           color="text-primary"
           showBar
           barValue={player.clothingCondition}

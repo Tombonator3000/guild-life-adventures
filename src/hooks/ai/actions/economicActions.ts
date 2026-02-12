@@ -8,6 +8,7 @@
 
 import { useGameStore } from '@/store/gameStore';
 import { STOCKS, getSellPrice } from '@/data/stocks';
+import { LOAN_MIN_SHIFTS_REQUIRED } from '@/types/game.types';
 import type { AIAction } from '../types';
 import type { ActionContext } from './actionContext';
 
@@ -43,7 +44,7 @@ export function generateEconomicActions(ctx: ActionContext): AIAction[] {
   // AI-3: LOAN SYSTEM
   // ============================================
   // Take loan when critically broke (can't afford food or rent)
-  if (player.loanAmount <= 0 && player.gold < 20 && player.savings < 20) {
+  if (player.loanAmount <= 0 && player.gold < 20 && player.savings < 20 && (player.totalShiftsWorked || 0) >= LOAN_MIN_SHIFTS_REQUIRED) {
     if (currentLocation === 'bank') {
       actions.push({
         type: 'take-loan',

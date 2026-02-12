@@ -185,6 +185,7 @@ export interface Player {
   currentJob: string | null;
   currentWage: number; // Current job hourly wage (can increase with raises)
   shiftsWorkedSinceHire: number; // Shifts worked at current job (resets on new hire)
+  totalShiftsWorked: number; // Lifetime total shifts worked (never resets) - for loan eligibility
   dependability: number; // 0-100, affects job performance and raise chance
   experience: number; // Work experience points
   relaxation: number; // 10-50, affects apartment robbery chance (higher = safer)
@@ -351,6 +352,9 @@ export const FOOD_DEPLETION_PER_WEEK = 25; // Lose 25 food per week
 export const STARVATION_HEALTH_PENALTY = 10; // Lose 10 health when starving
 export const STARVATION_HAPPINESS_PENALTY = 8; // Lose 8 happiness when starving (reduced from 15)
 export const SPOILED_FOOD_SICKNESS_CHANCE = 0.55; // 55% chance of sickness when eating spoiled food (Jones-style)
+
+// Loan eligibility: minimum lifetime shifts worked before bank approves a loan
+export const LOAN_MIN_SHIFTS_REQUIRED = 4;
 
 // Rent costs per week - increased to be a meaningful recurring expense
 export const RENT_COSTS: Record<HousingTier, number> = {
