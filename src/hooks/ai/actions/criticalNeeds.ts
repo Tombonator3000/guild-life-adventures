@@ -22,29 +22,47 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
   // ============================================
 
   // 1. FOOD - Prevent starvation (-20 hours penalty is devastating)
+  // H9 FIX: Apply priceModifier to food costs (AI was ignoring economy inflation/deflation)
+  // M16 FIX: Buy bulk provisions at General Store when affordable (most cost-effective)
   if (urgency.food > 0.5) {
-    const foodCost = 6; // Cheapest food option (Shadow Market mystery meat)
-    if (player.gold >= foodCost) {
-      if (currentLocation === 'rusty-tankard') {
+    const pm = ctx.priceModifier;
+    const cheapestFoodCost = Math.round(6 * pm); // Shadow Market mystery meat base 6g
+    if (player.gold >= cheapestFoodCost) {
+      if (currentLocation === 'general-store' && player.gold >= Math.round(50 * pm)) {
+        // M16: Bulk buy — General Store provisions (50g for 50 food, best value)
         actions.push({
           type: 'buy-food',
-          priority: 100, // Highest priority
+          priority: 100,
+          description: 'Buy bulk provisions at General Store',
+          details: { cost: Math.round(50 * pm), foodGain: 50 },
+        });
+      } else if (currentLocation === 'rusty-tankard') {
+        actions.push({
+          type: 'buy-food',
+          priority: 100,
           description: 'Buy food to prevent starvation',
-          details: { cost: 12, foodGain: 15 },
+          details: { cost: Math.round(12 * pm), foodGain: 15 },
         });
       } else if (currentLocation === 'shadow-market') {
-        // Shadow Market has cheap food too
         actions.push({
           type: 'buy-food',
           priority: 98,
           description: 'Buy food at Shadow Market',
-          details: { cost: 6, foodGain: 10 },
+          details: { cost: Math.round(6 * pm), foodGain: 10 },
         });
       } else {
-        // Go to whichever food source is closer
+        // Go to whichever food source is closer (prefer General Store for bulk if affordable)
+        const storeCost = moveCost('general-store');
         const tavernCost = moveCost('rusty-tankard');
         const marketCost = moveCost('shadow-market');
-        if (marketCost < tavernCost && player.timeRemaining > marketCost + 2) {
+        if (player.gold >= Math.round(50 * pm) && storeCost <= tavernCost && player.timeRemaining > storeCost + 2) {
+          actions.push({
+            type: 'move',
+            location: 'general-store',
+            priority: 95,
+            description: 'Travel to General Store for bulk provisions',
+          });
+        } else if (marketCost < tavernCost && player.timeRemaining > marketCost + 2) {
           actions.push({
             type: 'move',
             location: 'shadow-market',
@@ -95,23 +113,32 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
   }
 
   // 3. CLOTHING - Needed for jobs
-  if (urgency.clothing > 0.6 && player.gold >= 30) {
-    if (currentLocation === 'armory' || currentLocation === 'general-store') {
-      actions.push({
-        type: 'buy-clothing',
-        priority: 75,
-        description: 'Buy clothing for work',
-        details: { cost: 30, type: 'casual' },
-      });
-    } else {
-      const movementCost = Math.min(moveCost('armory'), moveCost('general-store'));
-      if (player.timeRemaining > movementCost + 2) {
+  // H11 FIX: Apply priceModifier to clothing costs (AI was ignoring economy)
+  // H11 FIX: Buy higher-quality clothing if needed for current/target job (business tier = 75 threshold)
+  {
+    const pm = ctx.priceModifier;
+    const needsBusinessClothing = player.clothingCondition < 75 && urgency.clothing > 0.3;
+    const needsBasicClothing = urgency.clothing > 0.6;
+    const clothingCost = needsBusinessClothing ? Math.round(55 * pm) : Math.round(25 * pm);
+    const clothingGain = needsBusinessClothing ? 75 : 50;
+    if ((needsBasicClothing || needsBusinessClothing) && player.gold >= clothingCost) {
+      if (currentLocation === 'armory' || currentLocation === 'general-store') {
         actions.push({
-          type: 'move',
-          location: moveCost('armory') < moveCost('general-store') ? 'armory' : 'general-store',
-          priority: 70,
-          description: 'Travel to buy clothing',
+          type: 'buy-clothing',
+          priority: 75,
+          description: needsBusinessClothing ? 'Buy business clothing for better jobs' : 'Buy clothing for work',
+          details: { cost: clothingCost, clothingGain },
         });
+      } else {
+        const movementCost = Math.min(moveCost('armory'), moveCost('general-store'));
+        if (player.timeRemaining > movementCost + 2) {
+          actions.push({
+            type: 'move',
+            location: moveCost('armory') < moveCost('general-store') ? 'armory' : 'general-store',
+            priority: 70,
+            description: 'Travel to buy clothing',
+          });
+        }
       }
     }
   }

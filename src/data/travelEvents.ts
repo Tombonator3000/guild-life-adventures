@@ -28,7 +28,8 @@ export const TRAVEL_EVENTS: TravelEvent[] = [
     id: 'found-coin-purse',
     name: 'Found Coin Purse',
     description: 'You found a coin purse dropped on the road! Someone\'s bad day is your good day. The circle of life.',
-    goldEffect: 15 + Math.floor(Math.random() * 20),
+    // M11 FIX: Use base value only — actual randomization happens in rollTravelEvent()
+    goldEffect: 15,
     happinessEffect: 2,
     timeCost: 0,
     healthEffect: 0,

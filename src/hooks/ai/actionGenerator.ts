@@ -49,10 +49,16 @@ function applyPersonalityWeights(actions: AIAction[], personality: AIPersonality
       case 'apply-job':
         action.priority = Math.round(action.priority * w.wealth);
         break;
-      // Combat/dungeon actions
+      // Combat/dungeon/quest actions
+      // M22 FIX: Added quest/bounty actions so personality affects quest priorities
       case 'explore-dungeon':
       case 'buy-equipment':
       case 'temper-equipment':
+      case 'take-quest':
+      case 'take-chain-quest':
+      case 'take-bounty':
+      case 'complete-quest':
+      case 'buy-guild-pass':
         action.priority = Math.round(action.priority * w.combat);
         break;
       // Social/happiness actions

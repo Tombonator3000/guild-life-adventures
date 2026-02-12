@@ -29,7 +29,7 @@ export function HealerPanel({ player, priceModifier, onHeal, onCureSickness, onB
         <div className="w-full bg-[#c8b898] rounded-full h-2 mt-2">
           <div
             className="bg-destructive h-2 rounded-full transition-all"
-            style={{ width: `${(player.health / player.maxHealth) * 100}%` }}
+            style={{ width: `${player.maxHealth > 0 ? (player.health / player.maxHealth) * 100 : 0}%` }}
           />
         </div>
       </div>

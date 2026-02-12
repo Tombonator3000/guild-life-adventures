@@ -9,7 +9,8 @@ interface HealthBarProps {
 }
 
 export function HealthBar({ currentHealth, maxHealth, showLabel = false, height = 'h-1.5' }: HealthBarProps) {
-  const healthPct = Math.max(0, (currentHealth / maxHealth) * 100);
+  // L41/L42 FIX: Guard against maxHealth=0 to prevent division by zero (NaN/Infinity)
+  const healthPct = maxHealth > 0 ? Math.max(0, (currentHealth / maxHealth) * 100) : 0;
 
   return (
     <div>

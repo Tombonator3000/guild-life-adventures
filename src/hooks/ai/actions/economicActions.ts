@@ -123,9 +123,9 @@ export function generateEconomicActions(ctx: ActionContext): AIAction[] {
   // ============================================
   // Pawn appliances when broke — priority 85 (above healing at 80)
   // AI can't heal if it can't afford 30g, so pawning must come first
-  // Widened threshold: gold < 30 (was 10) — pawn before completely broke
+  // M18 FIX: Raised threshold from 30g to 75g — pawn before can't afford rent/food
   // Removed loanAmount requirement — pawn whenever gold is critically low
-  if (player.gold < 30 && currentLocation === 'fence') {
+  if (player.gold < 75 && currentLocation === 'fence') {
     const pawnableAppliances = Object.entries(player.appliances)
       .filter(([, v]) => v && !v.isBroken)
       .map(([id]) => id);
@@ -141,7 +141,8 @@ export function generateEconomicActions(ctx: ActionContext): AIAction[] {
   }
 
   // Move to fence for pawning when broke and not already there
-  if (player.gold < 30 && currentLocation !== 'fence') {
+  // M18 FIX: Raised threshold from 30g to 75g
+  if (player.gold < 75 && currentLocation !== 'fence') {
     const hasPawnableAppliance = Object.values(player.appliances).some(v => v && !v.isBroken);
     if (hasPawnableAppliance && player.timeRemaining > moveCost('fence') + 2) {
       actions.push({

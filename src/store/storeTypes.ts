@@ -93,6 +93,9 @@ export interface GameStore extends GameState {
   // Dungeon actions
   clearDungeonFloor: (playerId: string, floorId: number) => void;
   applyRareDrop: (playerId: string, dropId: string) => void;
+  // M31 FIX: Proper store actions for dungeon tracking (was direct setState in CavePanel)
+  incrementDungeonAttempts: (playerId: string) => void;
+  updatePlayerDungeonRecord: (playerId: string, floorId: number, goldEarned: number, encountersCompleted: number) => void;
   // Stock Market actions
   buyStock: (playerId: string, stockId: string, shares: number) => void;
   sellStock: (playerId: string, stockId: string, shares: number) => void;
