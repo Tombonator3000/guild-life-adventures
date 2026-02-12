@@ -300,7 +300,7 @@ function processRobberyCheck(
   }
 }
 
-/** Phase 7: Apply start-of-turn bonuses — cooking fire, housing happiness, arcane tome */
+/** Phase 7: Apply start-of-turn bonuses — appliance per-turn bonuses, housing happiness, arcane tome income */
 function processStartOfTurnBonuses(
   set: SetFn,
   playerId: string,
@@ -308,11 +308,13 @@ function processStartOfTurnBonuses(
   currentWeek: number,
   eventMessages: string[],
 ): void {
-  // Cooking Fire happiness bonus — nerfed: only triggers every other week (even weeks)
+  // --- Per-turn appliance bonuses (Jones-style: Microwave = Cooking Fire) ---
+  // Cooking Fire: +3 food per turn (prevents some food depletion, like Jones's microwave)
   const hasCookingFire = player.appliances['cooking-fire'] && !player.appliances['cooking-fire'].isBroken;
-  if (hasCookingFire && currentWeek % 2 === 0) {
+  if (hasCookingFire) {
+    const COOKING_FIRE_FOOD_BONUS = 3;
     updatePlayerById(set, playerId, (p) => ({
-      happiness: Math.min(100, p.happiness + 1),
+      foodLevel: Math.min(100, p.foodLevel + COOKING_FIRE_FOOD_BONUS),
     }));
   }
 
@@ -327,7 +329,7 @@ function processStartOfTurnBonuses(
     }
   }
 
-  // Arcane Tome random income chance (15% per turn)
+  // --- Arcane Tome random income generation (Jones-style Computer: 15% chance, 10-60g) ---
   const hasArcaneTome = player.appliances['arcane-tome'] && !player.appliances['arcane-tome'].isBroken;
   if (hasArcaneTome && Math.random() < 0.15) {
     const income = Math.floor(Math.random() * 50) + 10; // 10-60 gold

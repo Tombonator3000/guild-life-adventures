@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
-import { LOCATIONS, getMovementCost, getPath } from '@/data/locations';
+import { LOCATIONS, getMovementCost, getPath, getLocation } from '@/data/locations';
 import { getAppliance } from '@/data/items';
 import { LocationZone } from './LocationZone';
 import { PlayerToken } from './PlayerToken';
@@ -168,7 +168,7 @@ export function GameBoard() {
     }
   }, [remoteAnimation, animatingPlayer, startRemoteAnimation, clearRemoteAnimation]);
 
-  const { handleLocationClick, currentEvent } = useLocationClick({
+  const { handleLocationClick, currentEvent, directionChoice, chooseDirection, cancelDirectionChoice } = useLocationClick({
     animatingPlayer,
     isOnline,
     isLocalPlayerTurn,
@@ -405,6 +405,58 @@ export function GameBoard() {
             />
           </MobileDrawer>
         </>
+      )}
+
+      {/* Direction Choice Popup (Jones-style: choose clockwise or counter-clockwise) */}
+      {directionChoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-card border-2 border-amber-700 rounded-lg p-4 max-w-sm w-full mx-4 shadow-xl">
+            <h3 className="text-center font-bold text-amber-800 mb-3">
+              Choose Direction to {getLocation(directionChoice.destination)?.name || directionChoice.destination}
+            </h3>
+            <div className="space-y-2">
+              {directionChoice.options.map((option) => {
+                const weatherCost = option.distance > 0 ? Math.floor(option.distance * directionChoice.weatherExtraCostPerStep) : 0;
+                const totalCost = option.distance + weatherCost;
+                const passesThrough = option.path.slice(1, -1).map(id => getLocation(id)?.name || id);
+                const canAfford = (currentPlayer?.timeRemaining ?? 0) >= totalCost;
+                return (
+                  <button
+                    key={option.direction}
+                    onClick={() => chooseDirection(option.direction)}
+                    disabled={!canAfford}
+                    className={`w-full p-3 rounded border text-left transition-colors ${
+                      option.isShortest
+                        ? 'border-amber-600 bg-amber-50 hover:bg-amber-100'
+                        : 'border-stone-400 bg-stone-50 hover:bg-stone-100'
+                    } ${!canAfford ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-sm">
+                        {option.direction === 'clockwise' ? '↻ Clockwise' : '↺ Counter-clockwise'}
+                        {option.isShortest && ' (shortest)'}
+                      </span>
+                      <span className={`text-sm font-bold ${canAfford ? 'text-amber-800' : 'text-red-600'}`}>
+                        {totalCost}h
+                      </span>
+                    </div>
+                    {passesThrough.length > 0 && (
+                      <div className="text-xs text-stone-500 mt-1">
+                        via {passesThrough.join(' → ')}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={cancelDirectionChoice}
+              className="w-full mt-3 p-2 text-sm text-stone-500 hover:text-stone-700 border border-stone-300 rounded"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Shadowfingers Robbery Modal */}

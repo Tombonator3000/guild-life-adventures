@@ -281,36 +281,56 @@ export const checkWeeklyTheft = (housing: HousingTier, gold: number): GameEvent 
   return null;
 };
 
+// Jones-style 3-tier market crash severity
+export type CrashSeverity = 'none' | 'minor' | 'moderate' | 'major';
+
 // Jones-style market crash result
 export interface MarketCrashResult {
   type: 'paycut' | 'layoff' | 'none';
-  wageMultiplier?: number; // 0.8 for pay cut (20% reduction)
+  severity: CrashSeverity;
+  wageMultiplier?: number; // 0.8 for moderate pay cut (20% reduction)
+  priceDropBonus?: number; // Additional price drop for minor+ crashes
   message?: string;
 }
 
-// Check for market crash events affecting jobs (Jones-style)
-// Only affects players who have jobs
-export const checkMarketCrash = (hasJob: boolean): MarketCrashResult => {
-  if (!hasJob) {
-    return { type: 'none' };
-  }
+// Determine crash severity (Jones-style 3-tier system)
+// Called once per week — severity applies globally to all players
+// Minor: prices drop further (no job effects)
+// Moderate: 80% wage cut + price drop
+// Major: fired + price drop
+export const checkMarketCrash = (_hasJob: boolean): MarketCrashResult => {
+  const roll = Math.random();
 
-  // Check for layoff first (more severe, less likely)
-  if (Math.random() < 0.03) { // 3% chance
+  // Major crash: 2% chance — layoffs (Jones: fired)
+  if (roll < 0.02) {
     return {
       type: 'layoff',
-      message: 'The market crash has forced your employer to let you go. They called it "restructuring." You can call it "unemployment."',
+      severity: 'major',
+      priceDropBonus: -0.08,
+      message: 'MAJOR MARKET CRASH! Mass layoffs across Guildholm. Your employer has let you go. They called it "restructuring." You can call it "unemployment."',
     };
   }
 
-  // Check for pay cut (less severe, more likely)
-  if (Math.random() < 0.05) { // 5% chance
+  // Moderate crash: 5% chance — pay cut to 80% (Jones: 80% wage)
+  if (roll < 0.07) {
     return {
       type: 'paycut',
-      wageMultiplier: 0.8, // 20% reduction like Jones
-      message: 'Due to market conditions, your employer has reduced your wages by 20%! They said "we\'re all in this together" while counting their gold.',
+      severity: 'moderate',
+      wageMultiplier: 0.8,
+      priceDropBonus: -0.05,
+      message: 'Moderate market downturn! Your employer has reduced wages by 20%. "We\'re all in this together," they said, while counting their gold.',
     };
   }
 
-  return { type: 'none' };
+  // Minor crash: 8% chance — prices drop, no job effects
+  if (roll < 0.15) {
+    return {
+      type: 'none',
+      severity: 'minor',
+      priceDropBonus: -0.03,
+      message: 'Minor market dip — prices have dropped slightly across Guildholm.',
+    };
+  }
+
+  return { type: 'none', severity: 'none' };
 };

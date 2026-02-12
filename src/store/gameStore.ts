@@ -190,6 +190,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     networkMode: 'local' as const,
     localPlayerId: null as string | null,
     roomCode: null as string | null,
+    weeklyNewsEvents: [],
 
     // Game setup (not network-wrapped — guarded explicitly)
     startNewGame: (playerNames, includeAI, goals, aiDifficulty = 'medium', aiConfigs, playerPortraits) => {

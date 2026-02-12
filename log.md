@@ -1,5 +1,94 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-12 - Appliance Bonuses, Forced Loan Repayment, Crash Tiers, Direction Choice, Active Relaxation, Newspaper Personalization
+
+### Overview
+Major feature batch implementing 6 Jones-style mechanics: per-turn appliance bonuses, forced loan repayment with asset seizure, 3-tier crash severity, movement direction choice, active relaxation, and personalized newspaper headlines.
+
+### 1. Per-Turn Appliance Bonuses
+- **Cooking Fire** (Eternal Cooking Fire): Changed from +1 happiness every other week to **+3 food per turn** (Jones-style microwave benefit)
+- **Arcane Tome** (Computer): Unchanged — 15% chance of 10-60g income per turn
+- Updated all UI labels: ItemPreview, EnchanterPanel, item descriptions
+- Files: `startTurnHelpers.ts`, `items.ts`, `ItemPreview.tsx`, `EnchanterPanel.tsx`
+
+### 2. Forced Loan Repayment (Jones-style)
+- **Wage garnishment**: When loan is in default (0 weeks remaining), 25% of all work earnings auto-deducted toward loan
+- **6-step asset seizure cascade on default**: savings → gold → investments → stocks (80% value) → appliances (30% value) → durables (30% value)
+- Equipment properly unequipped when seized
+- Detailed event messages listing what was seized
+- If still can't repay: loan stays in default, wage garnishment continues indefinitely
+- Files: `weekEndHelpers.ts`, `workEducationHelpers.ts`
+
+### 3. Crash Severity Tiers (Jones-style 3-tier)
+- **Minor crash** (8% chance during recession): Prices drop further (-3% modifier), -3 happiness
+- **Moderate crash** (5% chance): 80% wage cut + price drop (-5% modifier), -10 happiness
+- **Major crash** (2% chance): Fired + price drop (-8% modifier), -20 happiness
+- Replaces old flat 3%/5% random rolls with proper severity system
+- `CrashSeverity` type exported: `'none' | 'minor' | 'moderate' | 'major'`
+- Crash severity applies price drop bonus in `advanceEconomy`
+- Files: `events.ts`, `weekEndHelpers.ts`
+
+### 4. Direction Choice for Movement (Jones-style)
+- Added `getBothPaths()` and `getDirectedPath()` to `locations.ts`
+- When clockwise and counter-clockwise distances differ, shows a direction choice popup
+- Popup shows both options with: direction label, step count, locations passed through
+- Equal distances auto-use shortest (clockwise for ties)
+- Cancel button to abort movement
+- AI always uses shortest path (no UI needed)
+- Files: `locations.ts`, `useLocationClick.ts`, `GameBoard.tsx`
+
+### 5. Active Relaxation Mechanic (Jones-style)
+- New **"Rest"** button at home (Noble Heights / Slums) alongside existing Relax and Sleep
+- Rest: 4h (noble) / 6h (slums) → **+8 relaxation, +1 happiness**
+- Compared to Relax: better relaxation recovery, less happiness
+- Compared to Sleep: no health recovery, focused on relaxation stat
+- Disabled when relaxation is already at max (50)
+- Files: `HomePanel.tsx`, `HomeActionBar.tsx`
+
+### 6. Newspaper Personalization (Jones-style)
+- **`PlayerNewsEvent` system**: 15+ event types tracked during week-end processing
+- Events collected: robbery, apartment-robbery, loan-default, loan-repaid, fired, paycut, crash (3 tiers), starvation, eviction, degree-earned, quest-completed, death/resurrection
+- `generatePersonalizedArticles()`: converts events to themed newspaper articles with witty copy
+- Articles inserted after economy section, limited to 3 personalized articles per issue
+- `weeklyNewsEvents` added to `GameState` — populated during `processWeekEnd`, reset each week
+- Files: `newspaper.ts`, `weekEndHelpers.ts`, `game.types.ts`, `gameStore.ts`, `LocationPanel.tsx`, `locationTabs.tsx`
+
+### 7. AI Updates
+- AI now uses Rest action when relaxation ≤ 20 (priority 55, higher than regular rest at 45)
+- Loan repayment priority boosted to 80 when in default (was 65) — wage garnishment makes this urgent
+- New partial loan repayment action: repays 50% of gold when can't afford full repayment
+- Files: `goalActions.ts`, `economicActions.ts`
+
+### Files Changed
+| File | Changes |
+|------|---------|
+| `src/store/helpers/startTurnHelpers.ts` | Cooking Fire: +3 food/turn instead of +1 happiness/2 weeks |
+| `src/data/items.ts` | Updated cooking fire description and comment |
+| `src/components/game/ItemPreview.tsx` | Updated bonus text to +3 Food/turn |
+| `src/components/game/EnchanterPanel.tsx` | Updated bonus text to +3 Food/turn |
+| `src/store/helpers/weekEndHelpers.ts` | Forced loan repayment with 6-step asset seizure, crash severity tiers, news event collection |
+| `src/store/helpers/workEducationHelpers.ts` | Wage garnishment for overdue loans (25% of earnings) |
+| `src/data/events.ts` | 3-tier CrashSeverity type, restructured checkMarketCrash |
+| `src/data/locations.ts` | getBothPaths(), getDirectedPath(), DirectionOption, MovementDirection types |
+| `src/hooks/useLocationClick.ts` | Direction choice popup state, chooseDirection/cancelDirectionChoice handlers |
+| `src/components/game/GameBoard.tsx` | Direction choice popup UI overlay |
+| `src/components/game/HomePanel.tsx` | Active rest action (handleRest), canRest state |
+| `src/components/game/home/HomeActionBar.tsx` | New Rest button with props |
+| `src/data/newspaper.ts` | PlayerNewsEvent system, generatePersonalizedArticles(), 15+ event types |
+| `src/types/game.types.ts` | PlayerNewsEventData interface, weeklyNewsEvents on GameState |
+| `src/store/gameStore.ts` | weeklyNewsEvents initial state |
+| `src/components/game/LocationPanel.tsx` | Pass weeklyNewsEvents to generateNewspaper |
+| `src/components/game/locationTabs.tsx` | weeklyNewsEvents in LocationTabContext |
+| `src/hooks/ai/actions/goalActions.ts` | AI rest when relaxation ≤ 20 |
+| `src/hooks/ai/actions/economicActions.ts` | Urgent loan repayment, partial repayment |
+
+### Build & Tests
+- TypeScript: compiles cleanly (tsc --noEmit)
+- Tests: 182/182 pass
+- Build: successful (vite build)
+
+---
+
 ## 2026-02-12 - Jones-Style 3-Tier Clothing System & Job Progression
 
 ### Overview

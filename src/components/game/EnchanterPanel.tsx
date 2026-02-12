@@ -113,7 +113,7 @@ export function EnchanterPanel({ player, priceModifier, onSpendTime }: Enchanter
                     <span className="text-secondary">+{appliance.happinessEnchanter} {t('stats.happiness')}</span>
                   )}
                   {appliance.givesPerTurnBonus && (
-                    <span className="text-secondary ml-2">+1/turn</span>
+                    <span className="text-secondary ml-2">+3 Food/turn</span>
                   )}
                   {appliance.canGenerateIncome && (
                     <span className="text-[#8b6914] ml-2">Income chance</span>

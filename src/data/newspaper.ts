@@ -1,6 +1,6 @@
 // Guild Life - The Guildholm Herald (Newspaper System)
 
-import type { Job } from '@/types/game.types';
+import type { Job, PlayerNewsEventData } from '@/types/game.types';
 import { JOBS } from './jobs';
 import { QUESTS } from './quests';
 
@@ -66,7 +66,7 @@ const ECONOMY_HEADLINES_NORMAL = [
   "Economy Holds Steady; Economists Disappointed by Lack of Drama",
 ];
 
-export function generateNewspaper(week: number, priceModifier: number, economyTrend?: number): Newspaper {
+export function generateNewspaper(week: number, priceModifier: number, economyTrend?: number, newsEvents?: PlayerNewsEventData[]): Newspaper {
   const articles: NewsArticle[] = [];
 
   // Economy article based on price modifier and trend
@@ -133,6 +133,13 @@ export function generateNewspaper(week: number, priceModifier: number, economyTr
     });
   }
 
+  // Personalized articles from player events (Jones-style: robbery, loan, crash headlines)
+  if (newsEvents && newsEvents.length > 0) {
+    const personalizedArticles = generatePersonalizedArticles(newsEvents as PlayerNewsEvent[]);
+    // Insert personalized articles near the top (after economy, before jobs)
+    articles.splice(1, 0, ...personalizedArticles);
+  }
+
   return {
     week,
     articles,
@@ -140,6 +147,177 @@ export function generateNewspaper(week: number, priceModifier: number, economyTr
     featuredJobs: randomJobs.map(j => j.id),
     questRumors: randomQuests.map(q => q.id),
   };
+}
+
+// ============================================================
+// Personalized newspaper articles (Jones-style: player-specific headlines)
+// ============================================================
+
+export type PlayerNewsEvent =
+  | { type: 'robbery'; playerName: string; goldLost: number }
+  | { type: 'apartment-robbery'; playerName: string; itemsStolen: number }
+  | { type: 'loan-default'; playerName: string; amountOwed: number }
+  | { type: 'loan-repaid'; playerName: string }
+  | { type: 'fired'; playerName: string; jobName?: string }
+  | { type: 'paycut'; playerName: string; percentage: number }
+  | { type: 'crash-minor' }
+  | { type: 'crash-moderate' }
+  | { type: 'crash-major' }
+  | { type: 'starvation'; playerName: string }
+  | { type: 'sickness'; playerName: string }
+  | { type: 'eviction'; playerName: string }
+  | { type: 'degree-earned'; playerName: string; degreeName: string }
+  | { type: 'quest-completed'; playerName: string; questName: string }
+  | { type: 'death'; playerName: string; wasResurrected: boolean };
+
+const ROBBERY_HEADLINES = [
+  (name: string) => `Shadowfingers Strike Again; ${name} Loses Fortune`,
+  (name: string) => `${name} Robbed in Broad Daylight; Guards "Investigating"`,
+  (name: string) => `Notorious Theft Ring Targets ${name}; City Watch Baffled`,
+];
+
+const APARTMENT_ROBBERY_HEADLINES = [
+  (name: string) => `Break-In at ${name}'s Residence; Valuables Stolen`,
+  (name: string) => `${name}'s Home Burgled While Away; Neighbors Heard Nothing`,
+];
+
+const LOAN_DEFAULT_HEADLINES = [
+  (name: string) => `Bank Seizes Assets: ${name} Defaults on Loan`,
+  (name: string) => `${name} in Financial Ruin; Bank Collectors Dispatched`,
+];
+
+const CRASH_HEADLINES: Record<string, string[]> = {
+  minor: ['Minor Market Dip Concerns Merchants', 'Prices Slip Slightly; Traders Nervous'],
+  moderate: ['Market Downturn Forces Wage Cuts Across Guildholm', 'Economic Slump Hits Workers\' Pockets'],
+  major: ['MARKET CRASH: Mass Layoffs Rock Guildholm!', 'Economic Catastrophe: Businesses Close, Workers Fired'],
+};
+
+/** Generate personalized articles based on player events from the previous week */
+export function generatePersonalizedArticles(events: PlayerNewsEvent[]): NewsArticle[] {
+  const articles: NewsArticle[] = [];
+
+  for (const event of events) {
+    switch (event.type) {
+      case 'robbery': {
+        const headlineFn = ROBBERY_HEADLINES[Math.floor(Math.random() * ROBBERY_HEADLINES.length)];
+        articles.push({
+          headline: headlineFn(event.playerName),
+          content: `${event.playerName} was relieved of ${event.goldLost}g by persons unknown. The City Watch has opened a case file, which they intend to lose promptly.`,
+          category: 'events',
+        });
+        break;
+      }
+      case 'apartment-robbery': {
+        const headlineFn = APARTMENT_ROBBERY_HEADLINES[Math.floor(Math.random() * APARTMENT_ROBBERY_HEADLINES.length)];
+        articles.push({
+          headline: headlineFn(event.playerName),
+          content: `${event.itemsStolen} item(s) were taken from ${event.playerName}'s residence. Investigators recommend "better locks, or perhaps a better neighborhood."`,
+          category: 'events',
+        });
+        break;
+      }
+      case 'loan-default': {
+        const headlineFn = LOAN_DEFAULT_HEADLINES[Math.floor(Math.random() * LOAN_DEFAULT_HEADLINES.length)];
+        articles.push({
+          headline: headlineFn(event.playerName),
+          content: `Guildholm Bank has begun asset seizure proceedings against ${event.playerName}, who still owes ${event.amountOwed}g. The bank expressed "deep sympathy" while counting their recovered gold.`,
+          category: 'economy',
+        });
+        break;
+      }
+      case 'loan-repaid': {
+        articles.push({
+          headline: `${event.playerName} Settles Debt with Guildholm Bank`,
+          content: `After a prolonged period of financial obligation, ${event.playerName} has cleared their loan. The bank has sent a congratulatory note and a pamphlet for their next loan product.`,
+          category: 'economy',
+        });
+        break;
+      }
+      case 'fired': {
+        articles.push({
+          headline: `${event.playerName} Let Go Amid Market Turmoil`,
+          content: `${event.playerName} has been dismissed from their position${event.jobName ? ` as ${event.jobName}` : ''}. The employer cited "economic restructuring," a phrase that means exactly what it sounds like.`,
+          category: 'jobs',
+        });
+        break;
+      }
+      case 'paycut': {
+        articles.push({
+          headline: `Workers Face ${event.percentage}% Pay Cuts; ${event.playerName} Among Those Affected`,
+          content: `Economic pressures have forced employers to slash wages. ${event.playerName}'s income has been reduced. Employers promise the cuts are "temporary." Historians note this promise has a 0% track record.`,
+          category: 'economy',
+        });
+        break;
+      }
+      case 'crash-minor':
+      case 'crash-moderate':
+      case 'crash-major': {
+        const severity = event.type.replace('crash-', '');
+        const headlines = CRASH_HEADLINES[severity] || CRASH_HEADLINES['minor'];
+        articles.push({
+          headline: headlines[Math.floor(Math.random() * headlines.length)],
+          content: severity === 'major'
+            ? 'A catastrophic market collapse has devastated Guildholm\'s economy. Businesses are closing and workers are being laid off across all sectors.'
+            : severity === 'moderate'
+              ? 'A significant economic downturn has forced employers across Guildholm to cut wages. Workers are advised to tighten their belts.'
+              : 'A minor dip in market prices has been observed. Economists disagree on whether this is a trend or a hiccup. They always disagree.',
+          category: 'economy',
+        });
+        break;
+      }
+      case 'starvation': {
+        articles.push({
+          headline: `${event.playerName} Found Weakened from Hunger`,
+          content: `Witnesses report seeing ${event.playerName} stumbling through the streets. Local healers recommend "eating food," a solution that remains shockingly underutilized.`,
+          category: 'events',
+        });
+        break;
+      }
+      case 'eviction': {
+        articles.push({
+          headline: `${event.playerName} Evicted; Landlord Tomas Unmoved`,
+          content: `Landlord Tomas has evicted ${event.playerName} for nonpayment. "Rules are rules," he said, polishing an eviction notice with visible satisfaction.`,
+          category: 'events',
+        });
+        break;
+      }
+      case 'degree-earned': {
+        articles.push({
+          headline: `${event.playerName} Earns ${event.degreeName}; Academy Celebrates`,
+          content: `The Academy has awarded ${event.playerName} a ${event.degreeName}. Faculty described the achievement as "impressive" and "about time."`,
+          category: 'events',
+        });
+        break;
+      }
+      case 'quest-completed': {
+        articles.push({
+          headline: `Adventurer ${event.playerName} Completes ${event.questName}`,
+          content: `The Guild Hall reports that ${event.playerName} has successfully completed the "${event.questName}" quest. Rewards were distributed and drinks were had.`,
+          category: 'quests',
+        });
+        break;
+      }
+      case 'death': {
+        if (event.wasResurrected) {
+          articles.push({
+            headline: `${event.playerName} Returns from Beyond; Healers Baffled`,
+            content: `In an extraordinary turn of events, ${event.playerName} has been resurrected after a fatal incident. The Graveyard priests claim it was "routine." The public disagrees.`,
+            category: 'events',
+          });
+        } else {
+          articles.push({
+            headline: `Tragic Loss: ${event.playerName} Falls in Guildholm`,
+            content: `The city mourns the loss of ${event.playerName}. Memorial services will be held at the Graveyard. Flowers and gold donations are welcome. Especially the gold.`,
+            category: 'events',
+          });
+        }
+        break;
+      }
+    }
+  }
+
+  // Limit to 3 personalized articles max (don't flood the paper)
+  return articles.slice(0, 3);
 }
 
 export const NEWSPAPER_COST = 5;

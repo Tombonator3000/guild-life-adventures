@@ -2,9 +2,12 @@ interface HomeActionBarProps {
   isNoble: boolean;
   canRelax: boolean;
   canSleep: boolean;
+  canRest: boolean;
   relaxHours: number;
+  restHours: number;
   onRelax: () => void;
   onSleep: () => void;
+  onRest: () => void;
   onDone: () => void;
 }
 
@@ -12,14 +15,17 @@ export function HomeActionBar({
   isNoble,
   canRelax,
   canSleep,
+  canRest,
   relaxHours,
+  restHours,
   onRelax,
   onSleep,
+  onRest,
   onDone,
 }: HomeActionBarProps) {
   return (
     <div
-      className="shrink-0 flex items-center justify-center gap-3 py-2 px-3"
+      className="shrink-0 flex items-center justify-center gap-2 py-2 px-3 flex-wrap"
       style={{
         background: isNoble
           ? 'linear-gradient(180deg, #4a3568 0%, #3a2558 100%)'
@@ -39,14 +45,36 @@ export function HomeActionBar({
           color: canRelax ? '#e0ffe0' : '#6b6b5a',
           border: `2px solid ${canRelax ? '#5aaa5a' : '#4a4a3a'}`,
           borderRadius: '3px',
-          padding: 'clamp(3px, 0.6vw, 8px) clamp(10px, 2vw, 24px)',
-          fontSize: 'clamp(0.55rem, 1.1vw, 0.8rem)',
+          padding: 'clamp(3px, 0.6vw, 8px) clamp(8px, 1.5vw, 18px)',
+          fontSize: 'clamp(0.5rem, 1vw, 0.75rem)',
           cursor: canRelax ? 'pointer' : 'not-allowed',
           opacity: canRelax ? 1 : 0.6,
         }}
         title={`Rest for ${relaxHours} hours (+5 happiness, +3 relaxation)`}
       >
         Relax ({relaxHours}h)
+      </button>
+
+      {/* Rest button — active relaxation recovery (Jones-style) */}
+      <button
+        onClick={onRest}
+        disabled={!canRest}
+        className="font-bold uppercase tracking-wider transition-colors"
+        style={{
+          background: canRest
+            ? 'linear-gradient(180deg, #6a7a4a 0%, #5a6a3a 100%)'
+            : '#3a3a2a',
+          color: canRest ? '#f0ffe0' : '#6b6b5a',
+          border: `2px solid ${canRest ? '#7a9a5a' : '#4a4a3a'}`,
+          borderRadius: '3px',
+          padding: 'clamp(3px, 0.6vw, 8px) clamp(8px, 1.5vw, 18px)',
+          fontSize: 'clamp(0.5rem, 1vw, 0.75rem)',
+          cursor: canRest ? 'pointer' : 'not-allowed',
+          opacity: canRest ? 1 : 0.6,
+        }}
+        title={`Recuperate for ${restHours} hours (+8 relaxation, +1 happiness)`}
+      >
+        Rest ({restHours}h)
       </button>
 
       {/* Sleep button */}
@@ -61,8 +89,8 @@ export function HomeActionBar({
           color: canSleep ? '#e0e0ff' : '#6b6b5a',
           border: `2px solid ${canSleep ? '#5a6aaa' : '#4a4a3a'}`,
           borderRadius: '3px',
-          padding: 'clamp(3px, 0.6vw, 8px) clamp(10px, 2vw, 24px)',
-          fontSize: 'clamp(0.55rem, 1.1vw, 0.8rem)',
+          padding: 'clamp(3px, 0.6vw, 8px) clamp(8px, 1.5vw, 18px)',
+          fontSize: 'clamp(0.5rem, 1vw, 0.75rem)',
           cursor: canSleep ? 'pointer' : 'not-allowed',
           opacity: canSleep ? 1 : 0.6,
         }}
@@ -80,8 +108,8 @@ export function HomeActionBar({
           color: '#f0e8d8',
           border: '2px solid #a08a68',
           borderRadius: '3px',
-          padding: 'clamp(3px, 0.6vw, 8px) clamp(10px, 2vw, 24px)',
-          fontSize: 'clamp(0.55rem, 1.1vw, 0.8rem)',
+          padding: 'clamp(3px, 0.6vw, 8px) clamp(8px, 1.5vw, 18px)',
+          fontSize: 'clamp(0.5rem, 1vw, 0.75rem)',
           cursor: 'pointer',
         }}
       >

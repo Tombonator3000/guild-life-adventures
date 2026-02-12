@@ -63,22 +63,47 @@ export function generateEconomicActions(ctx: ActionContext): AIAction[] {
   }
 
   // Repay loan when have enough gold (avoid compounding interest)
-  // Reduced buffer from 100 to 50 — 10% weekly interest makes delays costly
+  // When in default (loanWeeksRemaining <= 0), priority is much higher due to 25% wage garnishment
   if (player.loanAmount > 0 && player.gold > player.loanAmount + 50) {
+    const isInDefault = player.loanWeeksRemaining <= 0;
+    const repayPriority = isInDefault ? 80 : 65; // Urgent when wages are being garnished
+    const travelPriority = isInDefault ? 75 : 60;
     if (currentLocation === 'bank') {
       actions.push({
         type: 'repay-loan',
-        priority: 65,
-        description: `Repay loan of ${player.loanAmount}g`,
+        priority: repayPriority,
+        description: `Repay loan of ${player.loanAmount}g${isInDefault ? ' (URGENT: wages garnished)' : ''}`,
         details: { amount: player.loanAmount },
       });
     } else if (player.timeRemaining > moveCost('bank') + 2) {
       actions.push({
         type: 'move',
         location: 'bank',
-        priority: 60,
-        description: 'Travel to bank to repay loan',
+        priority: travelPriority,
+        description: `Travel to bank to repay loan${isInDefault ? ' (wages being garnished!)' : ''}`,
       });
+    }
+  }
+
+  // Partial loan repayment when in default but can't cover full amount
+  if (player.loanAmount > 0 && player.loanWeeksRemaining <= 0 && player.gold >= 50 && player.gold < player.loanAmount + 50) {
+    const partialAmount = Math.floor(player.gold * 0.5); // Repay half of available gold
+    if (partialAmount >= 50) {
+      if (currentLocation === 'bank') {
+        actions.push({
+          type: 'repay-loan',
+          priority: 70,
+          description: `Partial loan repayment of ${partialAmount}g to reduce garnishment`,
+          details: { amount: partialAmount },
+        });
+      } else if (player.timeRemaining > moveCost('bank') + 2) {
+        actions.push({
+          type: 'move',
+          location: 'bank',
+          priority: 65,
+          description: 'Travel to bank for partial loan repayment',
+        });
+      }
     }
   }
 
