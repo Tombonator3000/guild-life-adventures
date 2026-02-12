@@ -100,26 +100,66 @@ export function createItemActions(set: SetFn, get: GetFn) {
       }));
     },
 
-    buyFreshFood: (playerId: string, units: number, cost: number) => {
+    buyFreshFood: (playerId: string, units: number, cost: number): boolean => {
+      let spoiled = false;
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
-          // Check if player has preservation box
-          const hasPreservationBox = p.appliances['preservation-box'] && !p.appliances['preservation-box'].isBroken;
-          if (!hasPreservationBox) return p; // Can't store without preservation box
           if (p.gold < cost) return p;
 
+          const hasPreservationBox = p.appliances['preservation-box'] && !p.appliances['preservation-box'].isBroken;
+          const newGold = p.gold - cost;
+
+          // Without Preservation Box: 80% chance food spoils immediately
+          if (!hasPreservationBox) {
+            if (Math.random() < 0.80) {
+              spoiled = true;
+              return { ...p, gold: newGold }; // Gold spent, food lost
+            }
+            // 20% survival — add to freshFood (will spoil at turn start without box)
+            return { ...p, gold: newGold, freshFood: Math.min(6, p.freshFood + units) };
+          }
+
+          // With Preservation Box: safe storage
           const hasFrostChest = p.appliances['frost-chest'] && !p.appliances['frost-chest'].isBroken;
           const maxStorage = hasFrostChest ? 12 : 6;
           const newFreshFood = Math.min(maxStorage, p.freshFood + units);
 
           return {
             ...p,
-            gold: p.gold - cost,
+            gold: newGold,
             freshFood: newFreshFood,
           };
         }),
       }));
+      return spoiled;
+    },
+
+    // Buy regular food at General Store with spoilage risk without Preservation Box
+    buyFoodWithSpoilage: (playerId: string, foodValue: number, cost: number): boolean => {
+      let spoiled = false;
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          if (p.gold < cost) return p;
+
+          const hasPreservationBox = p.appliances['preservation-box'] && !p.appliances['preservation-box'].isBroken;
+          const newGold = p.gold - cost;
+
+          // Without Preservation Box: 80% chance food spoils on purchase
+          if (!hasPreservationBox && Math.random() < 0.80) {
+            spoiled = true;
+            return { ...p, gold: newGold }; // Gold spent, no food gained
+          }
+
+          return {
+            ...p,
+            gold: newGold,
+            foodLevel: Math.min(100, p.foodLevel + foodValue),
+          };
+        }),
+      }));
+      return spoiled;
     },
   };
 }

@@ -103,7 +103,9 @@ export interface GameStore extends GameState {
   takeLoan: (playerId: string, amount: number) => void;
   repayLoan: (playerId: string, amount: number) => void;
   // Fresh food actions
-  buyFreshFood: (playerId: string, units: number, cost: number) => void;
+  buyFreshFood: (playerId: string, units: number, cost: number) => boolean;
+  // Regular food with spoilage risk (General Store without Preservation Box = 80% spoilage)
+  buyFoodWithSpoilage: (playerId: string, foodValue: number, cost: number) => boolean;
   // Lottery actions
   buyLotteryTicket: (playerId: string, cost: number) => void;
   // Ticket actions

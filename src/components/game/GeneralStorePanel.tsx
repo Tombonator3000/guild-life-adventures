@@ -4,8 +4,8 @@ import {
   JonesMenuItem,
   JonesInfoRow,
 } from './JonesStylePanel';
-import { GENERAL_STORE_ITEMS, getItemPrice, getItem } from '@/data/items';
-import { NEWSPAPER_COST, NEWSPAPER_TIME } from '@/data/newspaper';
+import { GENERAL_STORE_ITEMS, getItemPrice } from '@/data/items';
+import { NEWSPAPER_COST } from '@/data/newspaper';
 import { itemToPreview } from './ItemPreview';
 import { toast } from 'sonner';
 import { useTranslation } from '@/i18n';
@@ -18,7 +18,8 @@ interface GeneralStorePanelProps {
   modifyFood: (playerId: string, amount: number) => void;
   modifyHappiness: (playerId: string, amount: number) => void;
   onBuyNewspaper: () => void;
-  buyFreshFood: (playerId: string, units: number, cost: number) => void;
+  buyFreshFood: (playerId: string, units: number, cost: number) => boolean;
+  buyFoodWithSpoilage: (playerId: string, foodValue: number, cost: number) => boolean;
   buyLotteryTicket: (playerId: string, cost: number) => void;
 }
 
@@ -31,6 +32,7 @@ export function GeneralStorePanel({
   modifyHappiness,
   onBuyNewspaper,
   buyFreshFood,
+  buyFoodWithSpoilage,
   buyLotteryTicket,
 }: GeneralStorePanelProps) {
   const { t } = useTranslation();
@@ -39,11 +41,16 @@ export function GeneralStorePanel({
 
   const hasPreservationBox = player.appliances['preservation-box'] && !player.appliances['preservation-box'].isBroken;
   const hasFrostChest = player.appliances['frost-chest'] && !player.appliances['frost-chest'].isBroken;
-  const maxFreshFood = hasFrostChest ? 12 : hasPreservationBox ? 6 : 0;
+  const maxFreshFood = hasFrostChest ? 12 : hasPreservationBox ? 6 : 6;
 
   return (
     <div>
       <JonesSectionHeader title={t('panelStore.food')} />
+      {!hasPreservationBox && (
+        <div className="text-xs text-red-800 bg-red-100/80 px-2 py-1 mb-1 rounded border border-red-200">
+          ⚠ Without a Preservation Box, food has an 80% chance of spoiling!
+        </div>
+      )}
       {GENERAL_STORE_ITEMS.filter(item => item.effect?.type === 'food' && !item.isFreshFood).map(item => {
         const price = getItemPrice(item, priceModifier);
         const canAfford = player.gold >= price;
@@ -57,46 +64,55 @@ export function GeneralStorePanel({
             largeText
             previewData={itemToPreview(item)}
             onClick={() => {
-              modifyGold(player.id, -price);
-              if (item.effect?.type === 'food') {
-                modifyFood(player.id, item.effect.value);
+              const spoiled = buyFoodWithSpoilage(player.id, item.effect!.value, price);
+              if (spoiled) {
+                toast.error(`${t(`items.${item.id}.name`) || item.name} spoiled! ${price}g wasted. Get a Preservation Box!`);
+              } else {
+                toast.success(t('panelStore.purchased', { name: t(`items.${item.id}.name`) || item.name }));
               }
-              toast.success(t('panelStore.purchased', { name: t(`items.${item.id}.name`) || item.name }));
             }}
           />
         );
       })}
 
-      {/* Fresh Food Section - only show if player has Preservation Box */}
+      {/* Fresh Food Section - always shown, with spoilage warning when no box */}
+      <JonesSectionHeader title={t('panelStore.freshFood')} />
+      {hasPreservationBox ? (
+        <JonesInfoRow label={t('panelStore.freshFoodStored')} value={`${player.freshFood}/${maxFreshFood}`} darkText largeText />
+      ) : (
+        <div className="text-xs text-red-800 bg-red-100/80 px-2 py-1 mb-1 rounded border border-red-200">
+          ⚠ No Preservation Box! Fresh food will almost certainly spoil (80% on purchase + spoils at turn start).
+        </div>
+      )}
+      {GENERAL_STORE_ITEMS.filter(item => item.isFreshFood).map(item => {
+        const price = getItemPrice(item, priceModifier);
+        const units = item.freshFoodUnits || 0;
+        const spaceLeft = maxFreshFood - player.freshFood;
+        const canAfford = player.gold >= price && (hasPreservationBox ? spaceLeft > 0 : true);
+        return (
+          <JonesMenuItem
+            key={item.id}
+            label={`${t(`items.${item.id}.name`) || item.name} (+${units})`}
+            price={price}
+            disabled={!canAfford}
+            darkText
+            largeText
+            previewData={itemToPreview(item)}
+            onClick={() => {
+              const spoiled = buyFreshFood(player.id, units, price);
+              if (spoiled) {
+                toast.error(`Fresh food spoiled immediately! ${price}g wasted. Get a Preservation Box!`);
+              } else {
+                toast.success(t('panelStore.storedFreshFood', { units: Math.min(units, spaceLeft) }));
+              }
+            }}
+          />
+        );
+      })}
       {hasPreservationBox && (
-        <>
-          <JonesSectionHeader title={t('panelStore.freshFood')} />
-          <JonesInfoRow label={t('panelStore.freshFoodStored')} value={`${player.freshFood}/${maxFreshFood}`} darkText largeText />
-          {GENERAL_STORE_ITEMS.filter(item => item.isFreshFood).map(item => {
-            const price = getItemPrice(item, priceModifier);
-            const units = item.freshFoodUnits || 0;
-            const spaceLeft = maxFreshFood - player.freshFood;
-            const canAfford = player.gold >= price && spaceLeft > 0;
-            return (
-              <JonesMenuItem
-                key={item.id}
-                label={`${t(`items.${item.id}.name`) || item.name} (+${units})`}
-                price={price}
-                disabled={!canAfford}
-                darkText
-                largeText
-                previewData={itemToPreview(item)}
-                onClick={() => {
-                  buyFreshFood(player.id, units, price);
-                  toast.success(t('panelStore.storedFreshFood', { units: Math.min(units, spaceLeft) }));
-                }}
-              />
-            );
-          })}
-          <div className="text-xs text-[#6b5a42] px-2 mb-1">
-            {t('panelStore.preservationRequired')}
-          </div>
-        </>
+        <div className="text-xs text-[#6b5a42] px-2 mb-1">
+          {t('panelStore.preservationRequired')}
+        </div>
       )}
 
       <JonesSectionHeader title={t('panelStore.durables')} />

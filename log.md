@@ -1,5 +1,42 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-12 - Food Preservation Overhaul
+
+### Problem
+All General Store food (bread, cheese, salted meat, provisions, feast) was added directly to `foodLevel` with zero risk — no Preservation Box needed. This removed the economic incentive to buy a Preservation Box early, making it a useless mid-game luxury instead of a critical investment.
+
+### Changes
+- **Removed**: Salted Meat (25g), Week of Provisions (50g), Feast Supplies (85g) — only Bread (8g) and Cheese (15g) remain
+- **New spoilage mechanic**: ALL General Store food (regular + fresh) now has 80% chance of spoiling on purchase without a working Preservation Box. Gold is spent but food is lost
+- **Fresh food purchasable without box**: Previously required Preservation Box to buy. Now purchasable but with 80% immediate spoilage, plus surviving units still spoil at turn start (existing mechanic)
+- **Tavern food unchanged**: Always safe, no spoilage risk (cooked/served immediately)
+- **AI updated**: AI now prefers Tavern when no Preservation Box, General Store only with box
+- **UI warnings**: Red spoilage warning banners shown in General Store when player has no Preservation Box
+- **New store action**: `buyFoodWithSpoilage` for regular food spoilage at General Store
+
+### Economic Impact
+- Without box: Bread costs effective ~4g per food unit (8g / 20% success × 10 food), Tavern stew costs 0.8g per food unit — Tavern is 5× more efficient
+- With box: General Store is equally efficient as Tavern but cheaper per unit
+- Creates meaningful early-game decision: expensive safe Tavern food vs cheap risky General Store food vs investing 650-876g in Preservation Box
+
+### Files Modified
+- `src/data/items.ts` — Removed 3 food items (Salted Meat, Week of Provisions, Feast Supplies)
+- `src/store/helpers/economy/itemHelpers.ts` — New `buyFoodWithSpoilage` action, modified `buyFreshFood` to allow no-box purchase with 80% spoilage
+- `src/store/storeTypes.ts` — Updated type signatures
+- `src/components/game/GeneralStorePanel.tsx` — Spoilage UI, warnings, fresh food always visible
+- `src/components/game/locationTabs.tsx` — Wired new prop
+- `src/components/game/LocationPanel.tsx` — Wired new store action
+- `src/hooks/ai/actions/criticalNeeds.ts` — AI prefers Tavern without box
+- `src/hooks/ai/actionExecutor.ts` — AI uses spoilage mechanic at General Store
+- `src/i18n/en.ts` — Removed translations for deleted items
+- `src/data/banter.ts` — Updated shopkeeper banter
+- `src/assets/items/index.ts` — Removed unused item imports
+- `src/components/game/ItemIcon.tsx` — Cleaned up icon mappings
+- `src/components/game/UserManual.tsx` — Updated food documentation and strategy tips
+- `src/test/freshFood.test.ts` — Updated and expanded tests (26 tests, all passing)
+
+---
+
 ## 2026-02-12 - Fix White Screen Issue Investigation & Loading Screen
 
 ### Investigation

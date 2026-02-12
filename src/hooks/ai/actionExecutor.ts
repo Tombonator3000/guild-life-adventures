@@ -56,7 +56,8 @@ export interface StoreActions {
   repayLoan: (playerId: string, amount: number) => void;
   buyStock: (playerId: string, stockId: string, shares: number) => void;
   sellStock: (playerId: string, stockId: string, shares: number) => void;
-  buyFreshFood: (playerId: string, units: number, cost: number) => void;
+  buyFreshFood: (playerId: string, units: number, cost: number) => boolean;
+  buyFoodWithSpoilage: (playerId: string, foodValue: number, cost: number) => boolean;
   buyTicket: (playerId: string, ticketType: string, cost: number) => void;
   sellItem: (playerId: string, itemId: string, price: number) => void;
   pawnAppliance: (playerId: string, applianceId: string, pawnValue: number) => void;
@@ -96,6 +97,15 @@ function handleBuyFood(player: Player, action: AIAction, store: StoreActions): b
   const cost = (action.details?.cost as number) || 15;
   const foodGain = (action.details?.foodGain as number) || 25;
   if (player.gold < cost) return false;
+
+  // General Store food uses spoilage mechanic (80% spoilage without Preservation Box)
+  if (player.currentLocation === 'general-store') {
+    store.buyFoodWithSpoilage(player.id, foodGain, cost);
+    store.spendTime(player.id, 1);
+    return true;
+  }
+
+  // Tavern/Shadow Market: always safe
   store.modifyGold(player.id, -cost);
   store.modifyFood(player.id, foodGain);
   store.spendTime(player.id, 1);

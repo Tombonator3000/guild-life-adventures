@@ -108,6 +108,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     takeLoan: store.takeLoan,
     repayLoan: store.repayLoan,
     buyFreshFood: store.buyFreshFood,
+    buyFoodWithSpoilage: store.buyFoodWithSpoilage,
     buyLotteryTicket: store.buyLotteryTicket,
     buyTicket: store.buyTicket,
     cureSickness: store.cureSickness,

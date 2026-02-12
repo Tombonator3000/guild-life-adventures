@@ -51,9 +51,8 @@ function getIconForItem(itemId: string, category?: ItemCategory): IconFn {
   // Food
   if (itemId === 'bread') return BreadIcon;
   if (itemId === 'cheese') return CheeseIcon;
-  if (itemId === 'meat' || itemId === 'fresh-meat') return MeatIcon;
-  if (itemId === 'provisions' || itemId === 'fresh-provisions') return ProvisionsIcon;
-  if (itemId === 'feast') return FeastIcon;
+  if (itemId === 'fresh-meat') return MeatIcon;
+  if (itemId === 'fresh-provisions') return ProvisionsIcon;
   if (itemId === 'fresh-vegetables') return VegetablesIcon;
   if (itemId === 'mystery-meat') return MysteryMeatIcon;
   if (itemId === 'ale') return AleIcon;
