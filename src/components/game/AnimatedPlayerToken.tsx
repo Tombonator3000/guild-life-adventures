@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Player, LocationId } from '@/types/game.types';
-import { getAnimationPoints } from '@/data/locations';
+import { getAnimationPointsWithBoundaries, getAnimationPoints } from '@/data/locations';
 import { cn } from '@/lib/utils';
-import type { MovementWaypoint } from '@/data/locations';
 import { CharacterPortrait } from './CharacterPortrait';
 
 interface AnimatedPlayerTokenProps {
@@ -10,6 +9,7 @@ interface AnimatedPlayerTokenProps {
   isCurrent: boolean;
   animationPath: LocationId[] | null;
   onAnimationComplete?: () => void;
+  onLocationReached?: (pathLocationIndex: number) => void;
 }
 
 export function AnimatedPlayerToken({
@@ -17,6 +17,7 @@ export function AnimatedPlayerToken({
   isCurrent,
   animationPath,
   onAnimationComplete,
+  onLocationReached,
 }: AnimatedPlayerTokenProps) {
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
   const animatingRef = useRef(false);
@@ -41,8 +42,8 @@ export function AnimatedPlayerToken({
       return;
     }
 
-    // Get all animation points (zone centers + intermediate waypoints)
-    const allPoints: MovementWaypoint[] = getAnimationPoints(animationPath);
+    // Get all animation points with location boundary info
+    const { points: allPoints, locationBoundaries } = getAnimationPointsWithBoundaries(animationPath);
     if (allPoints.length === 0) {
       animatingRef.current = false;
       return;
@@ -53,6 +54,8 @@ export function AnimatedPlayerToken({
       animatingRef.current = true;
       pointIndexRef.current = 0;
       setPosition({ x: allPoints[0][0], y: allPoints[0][1] });
+      // Report starting location
+      onLocationReached?.(0);
     }
 
     const currentIdx = pointIndexRef.current;
@@ -69,10 +72,16 @@ export function AnimatedPlayerToken({
       const nextIdx = currentIdx + 1;
       pointIndexRef.current = nextIdx;
       setPosition({ x: allPoints[nextIdx][0], y: allPoints[nextIdx][1] });
-    }, 150); // 150ms per waypoint (faster since there are more points now)
+
+      // Check if we just reached a location zone center
+      const locIdx = locationBoundaries.indexOf(nextIdx);
+      if (locIdx !== -1) {
+        onLocationReached?.(locIdx);
+      }
+    }, 150); // 150ms per waypoint
 
     return () => clearTimeout(timer);
-  }, [animationPath, position, onAnimationComplete]);
+  }, [animationPath, position, onAnimationComplete, onLocationReached]);
 
   if (!position) return null;
 
