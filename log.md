@@ -1,5 +1,31 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-12 - Fix White Screen Issue Investigation & Loading Screen
+
+### Investigation
+- **Reported issue**: White screen on GitHub Pages deployment (https://tombonator3000.github.io/guild-life-adventures/)
+- **Suspect**: Lovable's GraveyardCrows animation component (commits 1214734, 9159ddf, 32ba87c)
+- **Finding**: GraveyardCrows code is syntactically valid, TypeScript compiles clean, production build succeeds with no errors
+- **Root cause**: Most likely a GitHub Actions deployment failure or service worker caching stale/broken content — NOT the crow animation code itself
+- **Note**: `crow-silhouette.png` is actually a JPEG file (not a real PNG), but Vite handles this without issue
+
+### Fix: HTML Loading Screen
+- **index.html**: Added visible loading screen inside `<div id="root">` that shows "Loading the realm..." while JS bundle loads
+  - Prevents pure white screen if JS loads slowly or fails entirely
+  - 15-second timeout displays "Clear Cache & Reload" button for stuck service workers
+  - `<noscript>` message for users without JavaScript
+  - React's `createRoot().render()` automatically replaces loading content when app mounts
+
+### Files Modified
+- `index.html`
+
+### Verification
+- `tsc --noEmit` — passes (zero type errors)
+- `bun run build:github` — succeeds (328 precache entries, ~40MB)
+- `bun run test` — all 176 tests pass
+
+---
+
 ## 2026-02-12 - Double Board Icon Size + Fix Healer Special Services Buttons
 
 ### Task 1: Double Player Icon Size on Game Board

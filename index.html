@@ -33,7 +33,26 @@
 </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Loading screen — visible until React mounts and replaces this content -->
+      <div id="loading-screen" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1f170a;color:#e8dcc8;font-family:serif;text-align:center;padding:2rem;">
+        <h1 style="font-size:2rem;margin-bottom:1rem;color:#d4a537;">Guild Life Adventures</h1>
+        <p style="font-size:1rem;opacity:0.7;">Loading the realm...</p>
+        <noscript><p style="margin-top:1rem;color:#c44;">JavaScript is required to play this game.</p></noscript>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
+    <!-- Fallback: if JS fails to load after 15s, show reload prompt -->
+    <script>
+      setTimeout(function(){
+        var root=document.getElementById('root');
+        if(root&&root.querySelector('#loading-screen')){
+          var p=document.createElement('p');
+          p.style.cssText='margin-top:1.5rem;font-family:serif;';
+          p.innerHTML='<button onclick="if(\'caches\' in window){caches.keys().then(function(n){n.forEach(function(k){caches.delete(k)})});};location.reload();" style="padding:.75rem 2rem;font-size:1rem;font-family:serif;background:linear-gradient(135deg,hsl(45,85%,55%),hsl(35,70%,40%));color:#1f170a;border:none;border-radius:.25rem;cursor:pointer;font-weight:bold;">Clear Cache &amp; Reload</button>';
+          root.querySelector('#loading-screen').appendChild(p);
+        }
+      },15000);
+    </script>
   </body>
 </html>
