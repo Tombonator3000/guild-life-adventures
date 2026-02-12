@@ -303,8 +303,8 @@ export function GameBoard() {
               className="absolute overflow-hidden z-10"
               style={isMobile ? {
                 bottom: '0%',
-                left: '1%',
-                width: '98%',
+                left: '0%',
+                width: '100%',
                 height: '65%',
               } : {
                 top: `${centerPanel.top}%`,
@@ -313,7 +313,7 @@ export function GameBoard() {
                 height: `${centerPanel.height}%`,
               }}
             >
-              <div className="w-full h-full overflow-hidden flex flex-col bg-card/95 rounded-t-lg">
+              <div className={`w-full h-full overflow-hidden flex flex-col bg-card/95 ${isMobile ? '' : 'rounded-t-lg'}`}>
                 {phase === 'event' && currentEvent ? (
                   <EventPanel event={currentEvent} onDismiss={dismissEvent} />
                 ) : selectedLocation ? (
