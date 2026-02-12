@@ -12,7 +12,7 @@ export function PlayerToken({ player, index, isCurrent }: PlayerTokenProps) {
   return (
     <div
       className={cn(
-        'w-8 h-8 rounded-full shadow-lg transition-all duration-300',
+        'w-16 h-16 rounded-full shadow-lg transition-all duration-300',
         isCurrent && 'animate-float ring-2 ring-gold ring-offset-1'
       )}
       style={{
@@ -24,7 +24,7 @@ export function PlayerToken({ player, index, isCurrent }: PlayerTokenProps) {
         portraitId={player.portraitId}
         playerColor={player.color}
         playerName={player.name}
-        size={32}
+        size={64}
         isAI={player.isAI}
       />
     </div>

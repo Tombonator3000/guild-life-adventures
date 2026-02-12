@@ -75,7 +75,7 @@ export function HealerPanel({ player, priceModifier, onHeal, onCureSickness, onB
         <button
           onClick={() => { playSFX('heal'); onCureSickness(75, 2); }}
           disabled={player.gold < 75 || player.timeRemaining < 2}
-          className="w-full p-2 wood-frame text-parchment flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-primary" />
@@ -90,7 +90,7 @@ export function HealerPanel({ player, priceModifier, onHeal, onCureSickness, onB
         <button
           onClick={() => { playSFX('heal'); onBlessHealth(150, 4); }}
           disabled={player.gold < 150 || player.timeRemaining < 4}
-          className="w-full p-2 wood-frame text-parchment flex items-center justify-between hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4 text-secondary" />
