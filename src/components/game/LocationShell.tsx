@@ -117,7 +117,7 @@ export function LocationShell({
       >
         {/* NPC Portrait - Left side, hidden on mobile */}
         {!isMobile && (
-          <div className={`flex-shrink-0 ${xlPortrait ? 'w-56' : largePortrait ? 'w-44' : 'w-36'} flex flex-col items-center relative`}>
+          <div className={`flex-shrink-0 ${xlPortrait ? 'w-64' : largePortrait ? 'w-52' : 'w-44'} flex flex-col items-center relative`}>
             <NpcPortrait npc={npc} size={xlPortrait ? 'xl' : largePortrait ? 'large' : 'normal'} />
             <div className="text-center">
               <div

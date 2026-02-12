@@ -5,10 +5,14 @@ interface CharacterPortraitProps {
   portraitId: string | null;
   playerColor: string;
   playerName: string;
-  /** Diameter in pixels */
+  /** Width in pixels (and height when shape is 'circle') */
   size: number;
+  /** Optional explicit height in pixels (defaults to size) */
+  height?: number;
   className?: string;
   isAI?: boolean;
+  /** Shape of the portrait frame. Default 'circle'. */
+  shape?: 'circle' | 'rect';
 }
 
 /**
@@ -20,11 +24,15 @@ export function CharacterPortrait({
   playerColor,
   playerName,
   size,
+  height,
   className = '',
   isAI = false,
+  shape = 'circle',
 }: CharacterPortraitProps) {
   const [imageError, setImageError] = useState(false);
   const portrait = getPortrait(portraitId);
+  const actualHeight = height ?? size;
+  const roundedClass = shape === 'circle' ? 'rounded-full' : 'rounded-lg';
 
   // Reset error state when portrait changes (e.g., different AI player)
   useEffect(() => {
@@ -35,13 +43,13 @@ export function CharacterPortrait({
   if (!portrait) {
     return (
       <div
-        className={`rounded-full border-2 border-white/60 flex items-center justify-center ${className}`}
+        className={`${roundedClass} border-2 border-white/60 flex items-center justify-center ${className}`}
         style={{
           width: size,
-          height: size,
+          height: actualHeight,
           backgroundColor: playerColor,
           minWidth: size,
-          minHeight: size,
+          minHeight: actualHeight,
         }}
       >
         <span
@@ -58,12 +66,12 @@ export function CharacterPortrait({
 
   return (
     <div
-      className={`rounded-full border-2 border-white/60 overflow-hidden ${className}`}
+      className={`${roundedClass} border-2 border-white/60 overflow-hidden ${className}`}
       style={{
         width: size,
-        height: size,
+        height: actualHeight,
         minWidth: size,
-        minHeight: size,
+        minHeight: actualHeight,
         backgroundColor: portrait.placeholderColors.bg,
       }}
     >

@@ -1,5 +1,27 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-12 - Enhanced Player Image Display & Location Panel Layout
+
+### Task 1: Larger Player Portrait in Side Panel
+- **CharacterPortrait.tsx**: Added `shape` ('circle'|'rect') and `height` props for rectangular portrait support (backward-compatible)
+- **SideInfoTabs.tsx**: Replaced tiny 32px circular header portrait with large 180×200px rectangular portrait prominently displayed above tabs, with player name and guild rank below
+- **InventoryGrid.tsx**: Removed duplicate 120px portrait from bottom of inventory tab; cleaned up unused `CharacterPortrait` and `GUILD_RANK_NAMES` imports
+
+### Task 2: Larger NPC & Preview in Location Panels
+- **LocationShell.tsx**: Increased NPC column widths: normal w-36→w-44, large w-44→w-52, xl w-56→w-64
+- **NpcPortrait.tsx**: Increased portrait sizes: normal w-32 h-36→w-40 h-44, large w-40 h-48→w-48 h-56, xl w-52 h-60→w-60 h-72
+- **ItemPreview.tsx**: Increased item preview image from 64px to 96px (w-16 h-16→w-24 h-24), bumped header/effect text from text-[11px] to text-xs
+
+### Files Modified
+- `src/components/game/CharacterPortrait.tsx`
+- `src/components/game/SideInfoTabs.tsx`
+- `src/components/game/InventoryGrid.tsx`
+- `src/components/game/LocationShell.tsx`
+- `src/components/game/NpcPortrait.tsx`
+- `src/components/game/ItemPreview.tsx`
+
+---
+
 ## 2026-02-12 - Dungeon Encounter Woodcuts (36 images)
 
 Generated 36 AI woodcut illustrations for all dungeon encounters, bosses, and mini-bosses (Floors 1-6 + 6 mini-bosses). Images display in EncounterIntro (96×96, sepia filter), with emoji icon fallback.

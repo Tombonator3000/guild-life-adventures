@@ -105,7 +105,7 @@ export function ItemPreviewPanel({ accentColor = '#8b7355' }: ItemPreviewPanelPr
           background: `linear-gradient(180deg, ${accentColor} 0%, ${accentColor}dd 100%)`,
         }}
       >
-        <div className="font-display text-[11px] font-bold text-white leading-tight truncate">
+        <div className="font-display text-xs font-bold text-white leading-tight truncate">
           {preview.name}
         </div>
         {preview.category && (
@@ -117,11 +117,11 @@ export function ItemPreviewPanel({ accentColor = '#8b7355' }: ItemPreviewPanelPr
 
       {/* Item image */}
       {preview.imageUrl && (
-        <div className="flex justify-center py-1" style={{ backgroundColor: 'rgba(0,0,0,0.08)' }}>
+        <div className="flex justify-center py-2" style={{ backgroundColor: 'rgba(0,0,0,0.08)' }}>
           <img
             src={preview.imageUrl}
             alt={preview.name}
-            className="w-16 h-16 object-contain rounded"
+            className="w-24 h-24 object-contain rounded"
             loading="lazy"
           />
         </div>
@@ -131,7 +131,7 @@ export function ItemPreviewPanel({ accentColor = '#8b7355' }: ItemPreviewPanelPr
       <div className="px-2 py-1.5">
         {/* Effect summary */}
         {preview.effect && (
-          <div className="text-[11px] font-mono font-bold text-[#2a5c3a] text-center mb-1">
+          <div className="text-xs font-mono font-bold text-[#2a5c3a] text-center mb-1">
             {preview.effect}
           </div>
         )}
