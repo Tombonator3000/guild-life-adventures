@@ -82,7 +82,7 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "My 'Best Before' dates are more of a philosophical suggestion, really.", mood: 'friendly' },
     { text: "We don't do loyalty cards. We do loyalty. Which is to say, you have no choice, I'm the only store.", mood: 'friendly' },
     { text: "A customer returned cheese saying it had gone off. It was supposed to smell like that. I think.", mood: 'gossip' },
-    { text: "The salted meat will keep forever. Whether you'd want to eat it forever is another question.", mood: 'grumpy' },
+    { text: "Food doesn't last without a Preservation Box. Invest in one, or eat at the tavern. Your choice, your funeral.", mood: 'warning' },
   ],
 
   'armory': [

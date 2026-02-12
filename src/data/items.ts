@@ -193,30 +193,6 @@ export const GENERAL_STORE_ITEMS: Item[] = [
     effect: { type: 'food', value: 15 },
     description: 'Aged cheese from local dairies. The smell has been classified as a defensive weapon.',
   },
-  {
-    id: 'meat',
-    name: 'Salted Meat',
-    category: 'food',
-    basePrice: 25,
-    effect: { type: 'food', value: 25 },
-    description: 'Preserved meat that lasts for weeks. Nobody asks what kind of meat. It\'s better that way.',
-  },
-  {
-    id: 'provisions',
-    name: 'Week of Provisions',
-    category: 'food',
-    basePrice: 50,
-    effect: { type: 'food', value: 50 },
-    description: 'Enough food for a full week. Assuming you eat like a reasonable person, which adventurers never do.',
-  },
-  {
-    id: 'feast',
-    name: 'Feast Supplies',
-    category: 'food',
-    basePrice: 85,
-    effect: { type: 'food', value: 100 },
-    description: 'Enough to throw a small party! Or feed one barbarian for an afternoon.',
-  },
   // Fresh Food - requires Preservation Box to store (Jones-style Refrigerator food)
   {
     id: 'fresh-vegetables',

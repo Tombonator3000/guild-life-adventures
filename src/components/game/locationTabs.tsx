@@ -88,6 +88,7 @@ export interface LocationTabContext {
   takeLoan: GameStore['takeLoan'];
   repayLoan: GameStore['repayLoan'];
   buyFreshFood: GameStore['buyFreshFood'];
+  buyFoodWithSpoilage: GameStore['buyFoodWithSpoilage'];
   buyLotteryTicket: GameStore['buyLotteryTicket'];
   buyTicket: GameStore['buyTicket'];
   cureSickness: GameStore['cureSickness'];
@@ -305,7 +306,7 @@ function bankTabs(ctx: LocationTabContext): LocationTab[] {
 
 function generalStoreTabs(ctx: LocationTabContext): LocationTab[] {
   const { player, priceModifier, modifyGold, spendTime, modifyFood, modifyHappiness,
-    onBuyNewspaper, buyFreshFood, buyLotteryTicket } = ctx;
+    onBuyNewspaper, buyFreshFood, buyFoodWithSpoilage, buyLotteryTicket } = ctx;
   return [{
     id: 'shop',
     label: 'Shop',
@@ -319,6 +320,7 @@ function generalStoreTabs(ctx: LocationTabContext): LocationTab[] {
         modifyHappiness={modifyHappiness}
         onBuyNewspaper={onBuyNewspaper}
         buyFreshFood={buyFreshFood}
+        buyFoodWithSpoilage={buyFoodWithSpoilage}
         buyLotteryTicket={buyLotteryTicket}
       />
     ),

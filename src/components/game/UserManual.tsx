@@ -609,11 +609,13 @@ function ItemsChapter() {
         rows={[
           ['Bread', '8g', '10'],
           ['Cheese', '15g', '15'],
-          ['Salted Meat', '25g', '25'],
-          ['Week of Provisions', '50g', '50'],
-          ['Feast Supplies', '85g', '100'],
         ]}
       />
+      <P>
+        <strong>Important:</strong> Without a Preservation Box, General Store food has
+        an <strong>80% chance of spoiling</strong> on purchase (gold spent, no food gained).
+        Tavern food is always safe but more expensive. Invest in a Preservation Box early!
+      </P>
       <P>
         Food depletes by <strong>25 units per week</strong>. If you reach 0 food at the start
         of a turn, you suffer starvation penalties. Keep at least one week's supply on hand.
@@ -718,7 +720,7 @@ function HealthChapter() {
 
       <H2>Food Sources</H2>
       <P>
-        <strong>General Store:</strong> Buy packaged food (bread, cheese, meat, provisions).
+        <strong>General Store:</strong> Buy food (bread, cheese, fresh food). Requires Preservation Box for safe storage — 80% spoilage without one!
       </P>
       <P>
         <strong>Rusty Tankard:</strong> Fast food that provides immediate sustenance.
@@ -1039,8 +1041,8 @@ function TipsChapter() {
         than nothing. Head to the Guild Hall on turn 1.
       </P>
       <P>
-        <strong>Buy a week of provisions.</strong> Food security prevents crippling
-        starvation penalties that waste health and happiness.
+        <strong>Eat at the Tavern early on.</strong> General Store food spoils without a
+        Preservation Box. Save up for one to unlock cheap, safe food.
       </P>
       <P>
         <strong>Start a degree.</strong> Trade Guild Certificate or Junior Academy — both

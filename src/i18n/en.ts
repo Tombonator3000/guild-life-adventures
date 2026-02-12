@@ -428,9 +428,6 @@ export const en: TranslationStrings = {
   items: {
     'bread': { name: 'Loaf of Bread', description: 'Basic sustenance. Keeps hunger at bay.' },
     'cheese': { name: 'Wheel of Cheese', description: 'Aged cheese from local dairies.' },
-    'meat': { name: 'Salted Meat', description: 'Preserved meat that lasts for weeks.' },
-    'provisions': { name: 'Week of Provisions', description: 'Enough food for a full week.' },
-    'feast': { name: 'Feast Supplies', description: 'Enough to throw a small party!' },
     'fresh-vegetables': { name: 'Fresh Vegetables', description: 'Fresh produce. Stores 2 units in Preservation Box.' },
     'fresh-meat': { name: 'Fresh Meat', description: 'Quality fresh meat. Stores 3 units in Preservation Box.' },
     'fresh-provisions': { name: 'Fresh Provisions Bundle', description: 'A full bundle of fresh food. Stores 6 units in Preservation Box.' },

@@ -23,24 +23,25 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
 
   // 1. FOOD - Prevent starvation (-20 hours penalty is devastating)
   // H9 FIX: Apply priceModifier to food costs (AI was ignoring economy inflation/deflation)
-  // M16 FIX: Buy bulk provisions at General Store when affordable (most cost-effective)
+  // Without Preservation Box, General Store food has 80% spoilage — prefer Tavern
   if (urgency.food > 0.5) {
     const pm = ctx.priceModifier;
+    const hasBox = player.appliances['preservation-box'] && !player.appliances['preservation-box'].isBroken;
     const cheapestFoodCost = Math.round(6 * pm); // Shadow Market mystery meat base 6g
     if (player.gold >= cheapestFoodCost) {
-      if (currentLocation === 'general-store' && player.gold >= Math.round(50 * pm)) {
-        // M16: Bulk buy — General Store provisions (50g for 50 food, best value)
+      if (currentLocation === 'general-store' && hasBox && player.gold >= Math.round(15 * pm)) {
+        // With Preservation Box: buy cheese at General Store (15g for 15 food, safe)
         actions.push({
           type: 'buy-food',
           priority: 100,
-          description: 'Buy bulk provisions at General Store',
-          details: { cost: Math.round(50 * pm), foodGain: 50 },
+          description: 'Buy cheese at General Store (safe with Preservation Box)',
+          details: { cost: Math.round(15 * pm), foodGain: 15 },
         });
       } else if (currentLocation === 'rusty-tankard') {
         actions.push({
           type: 'buy-food',
           priority: 100,
-          description: 'Buy food to prevent starvation',
+          description: 'Buy food at tavern (always safe)',
           details: { cost: Math.round(12 * pm), foodGain: 15 },
         });
       } else if (currentLocation === 'shadow-market') {
@@ -51,31 +52,44 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
           details: { cost: Math.round(6 * pm), foodGain: 10 },
         });
       } else {
-        // Go to whichever food source is closer (prefer General Store for bulk if affordable)
+        // Navigate to food source — prefer Tavern without box, General Store with box
         const storeCost = moveCost('general-store');
         const tavernCost = moveCost('rusty-tankard');
         const marketCost = moveCost('shadow-market');
-        if (player.gold >= Math.round(50 * pm) && storeCost <= tavernCost && player.timeRemaining > storeCost + 2) {
-          actions.push({
-            type: 'move',
-            location: 'general-store',
-            priority: 95,
-            description: 'Travel to General Store for bulk provisions',
-          });
-        } else if (marketCost < tavernCost && player.timeRemaining > marketCost + 2) {
-          actions.push({
-            type: 'move',
-            location: 'shadow-market',
-            priority: 93,
-            description: 'Travel to Shadow Market for cheap food',
-          });
-        } else if (player.timeRemaining > tavernCost + 2) {
-          actions.push({
-            type: 'move',
-            location: 'rusty-tankard',
-            priority: 95,
-            description: 'Travel to tavern for food',
-          });
+        if (!hasBox) {
+          // Without Preservation Box: prefer Tavern (safe) or Shadow Market (cheap)
+          if (tavernCost <= marketCost && player.timeRemaining > tavernCost + 2) {
+            actions.push({
+              type: 'move',
+              location: 'rusty-tankard',
+              priority: 95,
+              description: 'Travel to tavern for safe food (no Preservation Box)',
+            });
+          } else if (player.timeRemaining > marketCost + 2) {
+            actions.push({
+              type: 'move',
+              location: 'shadow-market',
+              priority: 93,
+              description: 'Travel to Shadow Market for cheap food',
+            });
+          }
+        } else {
+          // With Preservation Box: General Store is efficient
+          if (storeCost <= tavernCost && player.timeRemaining > storeCost + 2) {
+            actions.push({
+              type: 'move',
+              location: 'general-store',
+              priority: 95,
+              description: 'Travel to General Store for food',
+            });
+          } else if (player.timeRemaining > tavernCost + 2) {
+            actions.push({
+              type: 'move',
+              location: 'rusty-tankard',
+              priority: 95,
+              description: 'Travel to tavern for food',
+            });
+          }
         }
       }
     }

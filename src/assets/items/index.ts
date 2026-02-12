@@ -22,9 +22,6 @@ import dragonScaleShield from './dragon-scale-shield.png';
 // Food
 import bread from './bread.png';
 import cheese from './cheese.png';
-import meat from './meat.png';
-import provisions from './provisions.png';
-import feast from './feast.png';
 import freshVegetables from './fresh-vegetables.png';
 import freshMeat from './fresh-meat.png';
 import freshProvisions from './fresh-provisions.png';
@@ -100,9 +97,6 @@ export const ITEM_IMAGES: Record<string, string> = {
   // Food
   'bread': bread,
   'cheese': cheese,
-  'meat': meat,
-  'provisions': provisions,
-  'feast': feast,
   'fresh-vegetables': freshVegetables,
   'fresh-meat': freshMeat,
   'fresh-provisions': freshProvisions,

@@ -114,15 +114,29 @@ describe('Fresh Food - buyFreshFood', () => {
     expect(p.freshFood).toBe(12); // Capped at 12
   });
 
-  it('rejects purchase without Preservation Box', () => {
+  it('spoils fresh food 80% of time without Preservation Box', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5); // < 0.80 = spoiled
     setGold(500);
-    useGameStore.getState().buyFreshFood(playerId, 2, 12);
+    const spoiled = useGameStore.getState().buyFreshFood(playerId, 2, 12);
     const p = useGameStore.getState().players[0];
-    expect(p.freshFood).toBe(0);
-    expect(p.gold).toBe(500); // Gold not deducted
+    expect(spoiled).toBe(true);
+    expect(p.freshFood).toBe(0); // Food spoiled
+    expect(p.gold).toBe(488); // Gold still deducted
+    vi.restoreAllMocks();
   });
 
-  it('rejects purchase with broken Preservation Box', () => {
+  it('allows 20% fresh food survival without Preservation Box', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.9); // >= 0.80 = survived
+    setGold(500);
+    const spoiled = useGameStore.getState().buyFreshFood(playerId, 2, 12);
+    const p = useGameStore.getState().players[0];
+    expect(spoiled).toBe(false);
+    expect(p.freshFood).toBe(2); // Food survived (but will spoil at turn start)
+    expect(p.gold).toBe(488);
+    vi.restoreAllMocks();
+  });
+
+  it('spoils fresh food with broken Preservation Box (80% chance)', () => {
     givePreservationBox();
     // Break the box
     useGameStore.setState((state) => ({
@@ -138,11 +152,14 @@ describe('Fresh Food - buyFreshFood', () => {
           : p
       ),
     }));
+    vi.spyOn(Math, 'random').mockReturnValue(0.5); // < 0.80 = spoiled
     setGold(500);
-    useGameStore.getState().buyFreshFood(playerId, 2, 12);
+    const spoiled = useGameStore.getState().buyFreshFood(playerId, 2, 12);
     const p = useGameStore.getState().players[0];
+    expect(spoiled).toBe(true);
     expect(p.freshFood).toBe(0);
-    expect(p.gold).toBe(500);
+    expect(p.gold).toBe(488); // Gold deducted
+    vi.restoreAllMocks();
   });
 
   it('rejects purchase when not enough gold', () => {
@@ -176,6 +193,63 @@ describe('Fresh Food - buyFreshFood', () => {
     useGameStore.getState().buyFreshFood(playerId, 6, 35);
     const p = useGameStore.getState().players[0];
     expect(p.freshFood).toBe(6); // Capped at 6, not 12
+  });
+});
+
+describe('Regular Food - buyFoodWithSpoilage', () => {
+  beforeEach(resetAndStart);
+
+  it('spoils food 80% of time without Preservation Box', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5); // < 0.80 = spoiled
+    setGold(500);
+    setFoodLevel(50);
+    const spoiled = useGameStore.getState().buyFoodWithSpoilage(playerId, 10, 8);
+    const p = useGameStore.getState().players[0];
+    expect(spoiled).toBe(true);
+    expect(p.foodLevel).toBe(50); // No food gained
+    expect(p.gold).toBe(492); // 500 - 8
+    vi.restoreAllMocks();
+  });
+
+  it('preserves food 20% of time without Preservation Box', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.85); // >= 0.80 = safe
+    setGold(500);
+    setFoodLevel(50);
+    const spoiled = useGameStore.getState().buyFoodWithSpoilage(playerId, 10, 8);
+    const p = useGameStore.getState().players[0];
+    expect(spoiled).toBe(false);
+    expect(p.foodLevel).toBe(60); // 50 + 10
+    expect(p.gold).toBe(492);
+    vi.restoreAllMocks();
+  });
+
+  it('always preserves food with Preservation Box', () => {
+    givePreservationBox();
+    setGold(500);
+    setFoodLevel(50);
+    const spoiled = useGameStore.getState().buyFoodWithSpoilage(playerId, 15, 15);
+    const p = useGameStore.getState().players[0];
+    expect(spoiled).toBe(false);
+    expect(p.foodLevel).toBe(65); // 50 + 15
+    expect(p.gold).toBe(485);
+  });
+
+  it('caps food level at 100', () => {
+    givePreservationBox();
+    setGold(500);
+    setFoodLevel(95);
+    useGameStore.getState().buyFoodWithSpoilage(playerId, 10, 8);
+    const p = useGameStore.getState().players[0];
+    expect(p.foodLevel).toBe(100); // Capped at 100
+  });
+
+  it('rejects purchase when not enough gold', () => {
+    setGold(5);
+    setFoodLevel(50);
+    useGameStore.getState().buyFoodWithSpoilage(playerId, 10, 8);
+    const p = useGameStore.getState().players[0];
+    expect(p.foodLevel).toBe(50); // Unchanged
+    expect(p.gold).toBe(5); // Unchanged
   });
 });
 
