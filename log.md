@@ -1,5 +1,23 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-12 - Double Board Icon Size + Fix Healer Special Services Buttons
+
+### Task 1: Double Player Icon Size on Game Board
+- **PlayerToken.tsx**: Increased static token from 32px to 64px (`w-8 h-8` → `w-16 h-16`, `size={32}` → `size={64}`)
+- **AnimatedPlayerToken.tsx**: Increased animated token from 40px to 80px (`w-10 h-10` → `w-20 h-20`, `size={40}` → `size={80}`)
+- **LocationZone.tsx**: Increased token container gap from `gap-1` to `gap-2` for better spacing between larger icons
+
+### Task 2: Fix Special Services Button Style at Enchanter (Healer Tab)
+- **HealerPanel.tsx**: Changed "Cure Ailments" and "Health Blessing" buttons from dark `wood-frame text-parchment` style to standard parchment style (`bg-[#e0d4b8] border border-[#8b7355] rounded hover:bg-[#d4c4a8]`), matching the Healing Services buttons above them
+
+### Files Modified
+- `src/components/game/PlayerToken.tsx`
+- `src/components/game/AnimatedPlayerToken.tsx`
+- `src/components/game/LocationZone.tsx`
+- `src/components/game/HealerPanel.tsx`
+
+---
+
 ## 2026-02-12 - Enhanced Player Image Display & Location Panel Layout
 
 ### Task 1: Larger Player Portrait in Side Panel

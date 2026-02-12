@@ -79,7 +79,7 @@ export function AnimatedPlayerToken({
   return (
     <div
       className={cn(
-        'absolute w-10 h-10 rounded-full shadow-xl z-50',
+        'absolute w-20 h-20 rounded-full shadow-xl z-50',
         'transition-all duration-150 ease-in-out',
         isCurrent && 'ring-2 ring-yellow-400 ring-offset-1 animate-bounce',
         animationPath && 'scale-110'
@@ -96,7 +96,7 @@ export function AnimatedPlayerToken({
         portraitId={player.portraitId}
         playerColor={player.color}
         playerName={player.name}
-        size={40}
+        size={80}
         isAI={player.isAI}
       />
     </div>
