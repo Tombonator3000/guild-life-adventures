@@ -1,5 +1,29 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-12 - Woodcut Illustrations Batch 2 (35 new) + Build Fixes
+
+### Build Fixes
+- **playerHelpers.ts**: Fixed `totalRuns` → `runs` + added `totalGold` in `updatePlayerDungeonRecord`
+- **gameStore.ts**: Fixed `Record<string, unknown>` → `Player` type cast in `loadFromSlot`
+
+### New Woodcuts (35 images in `src/assets/events/`)
+- **Festivals (4)**: harvest-festival, winter-solstice, spring-tournament, midsummer-fair
+- **Ticket Weekends (3)**: weekend-jousting, weekend-theatre, weekend-bard-concert
+- **Durable Weekends (3)**: weekend-scrying, weekend-cooking, weekend-study
+- **Cheap Weekends (8)**: walk, fishing, market, street-food, nap, card-game, gardening, tavern
+- **Medium Weekends (8)**: feast, horse-ride, archery, fortune-teller, bathhouse, arena, river-cruise, dance
+- **Expensive Weekends (6)**: ball, spa, hunting, boat, banquet, magic-show
+- **Other (3)**: campfire, picnic, museum, stray-dog
+
+### Modified Files
+- `src/assets/events/index.ts` — 35 new imports, all festival + weekend IDs mapped
+- `src/store/helpers/playerHelpers.ts` — dungeonRecords type fix
+- `src/store/gameStore.ts` — Player type cast fix
+
+**Running Totals**: 70 event woodcuts + 53 item images = **123 AI-generated assets**
+
+---
+
 ## 2026-02-12 - Audit Fix Session — 11 Findings Fixed
 
 ### Overview

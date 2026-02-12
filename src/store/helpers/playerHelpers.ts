@@ -226,12 +226,13 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
           const existing = currentRecords[floorId];
           const bestGold = existing ? Math.max(existing.bestGold, goldEarned) : goldEarned;
           const bestEncounters = existing ? Math.max(existing.bestEncounters, encountersCompleted) : encountersCompleted;
-          const totalRuns = existing ? existing.totalRuns + 1 : 1;
+          const runs = existing ? existing.runs + 1 : 1;
+          const totalGold = existing ? existing.totalGold + goldEarned : goldEarned;
           return {
             ...p,
             dungeonRecords: {
               ...currentRecords,
-              [floorId]: { bestGold, bestEncounters, totalRuns },
+              [floorId]: { bestGold, bestEncounters, runs, totalGold },
             },
           };
         }),
