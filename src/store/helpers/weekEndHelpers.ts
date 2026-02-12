@@ -22,7 +22,7 @@ import {
 import { checkWeeklyTheft, checkMarketCrash } from '@/data/events';
 import type { MarketCrashResult } from '@/data/events';
 import { getGameOption } from '@/data/gameOptions';
-import { getItem } from '@/data/items';
+import { getItem, CLOTHING_DEGRADATION_PER_WEEK, getClothingTier, CLOTHING_TIER_LABELS, CLOTHING_THRESHOLDS } from '@/data/items';
 import { updateStockPrices } from '@/data/stocks';
 import { selectWeekendActivity } from '@/data/weekends';
 import { advanceWeather, CLEAR_WEATHER, isWeatherFestivalConflict } from '@/data/weather';
@@ -194,20 +194,28 @@ function processEmployment(p: Player, crashResult: MarketCrashResult, msgs: stri
 }
 
 /** Deplete food and degrade clothing */
-function processNeeds(p: Player, isClothingDegradation: boolean, msgs: string[]): void {
+function processNeeds(p: Player, _isClothingDegradation: boolean, msgs: string[]): void {
   // Food depletion
   p.foodLevel = Math.max(0, p.foodLevel - 25);
 
   // Starvation note: Jones only penalizes -20 hours at turn start (handled in startTurnHelpers).
   // Week-end just depletes food — no additional health/happiness penalty here.
 
-  // Clothing degradation (every 8 weeks)
-  if (isClothingDegradation) {
-    p.clothingCondition = Math.max(0, p.clothingCondition - 25);
-    if (!p.isAI && p.clothingCondition <= 0) {
+  // Clothing degradation (weekly — Jones-style gradual wear)
+  // -3 condition per week. Clothes degrade through tiers: business → dress → casual → none
+  const prevTier = getClothingTier(p.clothingCondition);
+  p.clothingCondition = Math.max(0, p.clothingCondition - CLOTHING_DEGRADATION_PER_WEEK);
+  const newTier = getClothingTier(p.clothingCondition);
+
+  if (!p.isAI) {
+    if (p.clothingCondition <= 0) {
       msgs.push(`${p.name}'s clothing has been destroyed! Cannot work until you buy new clothes.`);
-    } else if (!p.isAI && p.clothingCondition <= 25) {
-      msgs.push(`${p.name}'s clothing is in poor condition!`);
+    } else if (newTier !== prevTier) {
+      // Warn when dropping to a lower tier
+      const tierLabel = CLOTHING_TIER_LABELS[newTier];
+      msgs.push(`${p.name}'s clothing has worn down to ${tierLabel} quality. Better jobs may require an upgrade.`);
+    } else if (p.clothingCondition > 0 && p.clothingCondition <= CLOTHING_THRESHOLDS.casual) {
+      msgs.push(`${p.name}'s clothing is nearly worn out!`);
     }
   }
 }
@@ -605,7 +613,7 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
 
       const ctx: WeekEndContext = {
         newWeek,
-        isClothingDegradation: newWeek % 8 === 0,
+        isClothingDegradation: true, // Now weekly (was newWeek % 8 === 0)
         economy,
         weather,
         festival,

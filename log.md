@@ -1,5 +1,90 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-12 - Jones-Style 3-Tier Clothing System & Job Progression
+
+### Overview
+Implemented a Jones in the Fast Lane-style 3-tier clothing system where higher positions require progressively better clothing. Clothing degrades weekly, creating ongoing maintenance costs that scale with career ambition.
+
+### Clothing Tier System
+- **Casual tier** (condition 15+): Peasant Garb (12g, sets to 35), Common Tunic (25g, sets to 45)
+- **Dress tier** (condition 40+): Fine Clothes (60g, sets to 60), Merchant's Attire (100g, sets to 75)
+- **Business tier** (condition 70+): Noble Attire (175g, sets to 90), Guild Vestments (250g, sets to 100)
+- **Bankruptcy Barrel**: condition 0 = cannot work any job
+
+### Key Mechanics
+- **SET-based purchasing**: Buying clothes SETS condition to `max(current, item_value)` instead of adding (no stacking cheap clothes)
+- **Weekly degradation**: -3 condition per week (was -25 every 8 weeks) — gradual tier descent
+- **Starting condition**: 35 (casual tier, need to buy better clothes for professional jobs)
+- **Happiness on purchase**: Dress clothes +2-3, Business clothes +4-5 happiness
+- **Tier warnings**: Players notified when clothing degrades through tier boundaries
+
+### Job Requirements (already existed, now properly utilized)
+- `none`: Floor Sweeper, Forge Laborer, Tavern Dishwasher
+- `casual`: Errand Runner, Shop Clerk, Library Assistant, etc.
+- `dress`: Bank Teller, Teacher, Guild Accountant, Scribe, etc.
+- `business`: Guild Administrator, Guild Treasurer, Forge Manager, Court Advisor
+- `uniform`: City Guard, Arena Fighter, Weapons Instructor
+
+### UI Changes
+- **Armory Panel**: Shows current clothing status header with tier name and condition %, tier label per item, disabled if won't upgrade
+- **Guild Hall**: Job listings now show clothing tier requirement (red if not met)
+- **Resource Panel**: Shows current clothing tier name instead of generic "Clothing" label
+- **User Manual**: Updated clothing section with tier descriptions, prices, and degradation info
+
+### AI Updates
+- AI now buys appropriate tier based on career needs (emergency casual → dress → business)
+- Urgency thresholds updated for new tier boundaries (casual=15, dress=40, business=70)
+- AI action executor skips purchase if already at or above target condition
+
+### Files Modified
+- `src/data/items.ts` — Restructured 6 clothing items (2 per tier), added CLOTHING_THRESHOLDS, getClothingTier(), meetsClothingRequirement() helpers
+- `src/data/jobs/utils.ts` — Updated canWorkJob/applyForJob to use CLOTHING_THRESHOLDS, descriptive error messages
+- `src/store/helpers/weekEndHelpers.ts` — Weekly degradation (-3/week), tier transition warnings
+- `src/store/helpers/playerHelpers.ts` — modifyClothing changed to SET-based (Math.max)
+- `src/store/gameStore.ts` — Starting clothingCondition 50→35
+- `src/types/game.types.ts` — CLOTHING_INTERVAL 8→1
+- `src/components/game/ArmoryPanel.tsx` — Tier display, status header, happiness bonuses, upgrade-only purchasing
+- `src/components/game/GuildHallPanel.tsx` — Job listing shows required clothing tier (red if unmet)
+- `src/components/game/ResourcePanel.tsx` — Shows tier name in resource bar
+- `src/components/game/UserManual.tsx` — Updated clothing documentation
+- `src/hooks/ai/actions/criticalNeeds.ts` — 3-tier AI clothing purchasing logic
+- `src/hooks/ai/strategy.ts` — Urgency thresholds for new tier boundaries
+- `src/hooks/ai/actionExecutor.ts` — SET-based clothing with skip-if-already-met
+- `src/i18n/en.ts`, `src/i18n/es.ts`, `src/i18n/de.ts` — Updated clothing item translations
+- `src/assets/items/index.ts` — New item ID mappings (reuse existing images)
+- `src/components/game/ItemIcon.tsx` — New item ID icon mappings
+
+### Verification
+- `tsc --noEmit` — passes (zero type errors)
+- `bun run build` — succeeds (325 precache entries)
+- `bun run test` — all 182 tests pass
+
+---
+
+### Jones Feature Gap Analysis
+
+**Partially Implemented:**
+1. Lottery drawing mechanics (tickets exist, drawing logic unclear)
+2. Low-relaxation doctor visits (starvation/spoilage work, relaxation threshold unclear)
+3. Pawn shop redemption system (buy/sell works, collateral/timed-redemption missing)
+
+**Missing Features (Simple to Add):**
+1. Computer random income generation (canGenerateIncome flag exists, logic missing)
+2. Per-turn appliance bonuses (givesPerTurnBonus flag exists, logic missing)
+3. Forced loan repayment on deadline (loanWeeksRemaining exists, enforcement missing)
+
+**Missing Features (Medium Complexity):**
+1. Direction choice for movement (left/right around ring board)
+2. Crash severity tiers (minor=price drop, moderate=80% pay cut, major=fired)
+3. Active relaxation mechanic (spend time to restore relaxation stat)
+4. Newspaper player-specific event tracking
+
+**Missing Features (Complex):**
+1. Free actions when time runs out (buy items at 0 hours, can't work/study)
+2. Full pawn shop collateral/redemption system with time windows
+
+---
+
 ## 2026-02-12 - Bankruptcy Barrel & Bank Loan Job History
 
 ### Bankruptcy Barrel: Broken Clothes Work Restriction (Jones-style)

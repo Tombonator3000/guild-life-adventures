@@ -126,24 +126,69 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
     }
   }
 
-  // 3. CLOTHING - Needed for jobs
-  // H11 FIX: Apply priceModifier to clothing costs (AI was ignoring economy)
-  // H11 FIX: Buy higher-quality clothing if needed for current/target job (business tier = 75 threshold)
+  // 3. CLOTHING - Jones-style 3-tier system (casual/dress/business)
+  // Thresholds: casual=15, dress=40, business=70
+  // AI buys the appropriate tier based on career needs
   {
     const pm = ctx.priceModifier;
-    const needsBusinessClothing = player.clothingCondition < 75 && urgency.clothing > 0.3;
-    const needsBasicClothing = urgency.clothing > 0.6;
-    const clothingCost = needsBusinessClothing ? Math.round(55 * pm) : Math.round(25 * pm);
-    const clothingGain = needsBusinessClothing ? 75 : 50;
     const isNaked = player.clothingCondition <= 0;
-    const clothingPriority = isNaked ? 95 : 75; // Naked = higher than rent (90)
-    if ((needsBasicClothing || needsBusinessClothing) && player.gold >= clothingCost) {
+    const condition = player.clothingCondition;
+
+    // Determine what tier the AI needs based on its current/target job
+    // Business tier for high-level jobs, dress for mid, casual for entry
+    let targetCondition = 0;
+    let clothingCost = 0;
+    let tierDesc = '';
+
+    if (isNaked || urgency.clothing >= 0.8) {
+      // Emergency: buy cheapest clothes (Peasant Garb = 12g → condition 35)
+      targetCondition = 35;
+      clothingCost = Math.round(12 * pm);
+      tierDesc = 'casual (emergency)';
+    } else if (condition < 70 && urgency.clothing > 0.2) {
+      // Business tier needed for top jobs (Noble Attire = 175g → condition 90)
+      targetCondition = 90;
+      clothingCost = Math.round(175 * pm);
+      tierDesc = 'business';
+      // Fallback to dress if can't afford business
+      if (player.gold < clothingCost) {
+        targetCondition = 60;
+        clothingCost = Math.round(60 * pm);
+        tierDesc = 'dress';
+      }
+      // Fallback to casual if can't afford dress
+      if (player.gold < clothingCost) {
+        targetCondition = 45;
+        clothingCost = Math.round(25 * pm);
+        tierDesc = 'casual';
+      }
+    } else if (condition < 40 && urgency.clothing > 0.4) {
+      // Dress tier needed for mid jobs (Fine Clothes = 60g → condition 60)
+      targetCondition = 60;
+      clothingCost = Math.round(60 * pm);
+      tierDesc = 'dress';
+      if (player.gold < clothingCost) {
+        targetCondition = 45;
+        clothingCost = Math.round(25 * pm);
+        tierDesc = 'casual';
+      }
+    } else if (condition < 15 && urgency.clothing > 0.5) {
+      // Basic casual (Common Tunic = 25g → condition 45)
+      targetCondition = 45;
+      clothingCost = Math.round(25 * pm);
+      tierDesc = 'casual';
+    }
+
+    const needsClothing = targetCondition > condition && clothingCost > 0;
+    const clothingPriority = isNaked ? 95 : 75;
+
+    if (needsClothing && player.gold >= clothingCost) {
       if (currentLocation === 'armory' || currentLocation === 'general-store') {
         actions.push({
           type: 'buy-clothing',
           priority: clothingPriority,
-          description: isNaked ? 'Buy clothing urgently (cannot work naked)' : needsBusinessClothing ? 'Buy business clothing for better jobs' : 'Buy clothing for work',
-          details: { cost: clothingCost, clothingGain },
+          description: isNaked ? 'Buy clothing urgently (cannot work naked)' : `Buy ${tierDesc} clothing for work`,
+          details: { cost: clothingCost, clothingGain: targetCondition },
         });
       } else {
         const movementCost = Math.min(moveCost('armory'), moveCost('general-store'));
@@ -152,7 +197,7 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
             type: 'move',
             location: moveCost('armory') < moveCost('general-store') ? 'armory' : 'general-store',
             priority: isNaked ? 90 : 70,
-            description: isNaked ? 'Travel urgently to buy clothing' : 'Travel to buy clothing',
+            description: isNaked ? 'Travel urgently to buy clothing' : `Travel to buy ${tierDesc} clothing`,
           });
         }
       }

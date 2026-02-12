@@ -325,47 +325,67 @@ export const SHADOW_MARKET_ITEMS: Item[] = [
 ];
 
 // Armory items (QT Clothing equivalent)
+// Jones-style 3-tier clothing system: Casual → Dress → Business
+// Each tier has a cheaper and pricier option (price = durability/quality)
+// Clothing condition is SET to the item's value (not additive) via Math.max(current, value)
+// Thresholds: casual=15, dress=40, business=70 (see jobs/utils.ts clothingMap)
 export const ARMORY_ITEMS: Item[] = [
-  // Clothing
+  // === CASUAL TIER (condition 35-45) — Entry-level & junior jobs ===
   {
     id: 'peasant-garb',
     name: 'Peasant Garb',
     category: 'clothing',
-    basePrice: 25,
-    effect: { type: 'clothing', value: 50 },
-    description: 'Simple clothes for simple folk. Fashion-forward if you\'re a potato farmer.',
+    basePrice: 12,
+    effect: { type: 'clothing', value: 35 },
+    description: 'Simple clothes for simple folk. Enough for entry-level work. Fashion-forward if you\'re a potato farmer.',
+    happinessOnPurchase: 0,
   },
   {
-    id: 'common-clothes',
-    name: 'Common Clothes',
+    id: 'common-tunic',
+    name: 'Common Tunic',
     category: 'clothing',
-    basePrice: 50,
-    effect: { type: 'clothing', value: 75 },
-    description: 'Respectable attire for everyday work. Won\'t turn heads, but won\'t get you turned away either.',
+    basePrice: 25,
+    effect: { type: 'clothing', value: 45 },
+    description: 'Sturdy everyday wear. Holds up well for casual work. Won\'t turn heads, but won\'t get you turned away either.',
+    happinessOnPurchase: 0,
   },
+  // === DRESS TIER (condition 60-75) — Mid-level professional jobs ===
   {
     id: 'fine-clothes',
     name: 'Fine Clothes',
     category: 'clothing',
-    basePrice: 100,
-    effect: { type: 'clothing', value: 100 },
-    description: 'Quality garments for professionals. Makes you look like you know what you\'re doing. A useful deception.',
+    basePrice: 60,
+    effect: { type: 'clothing', value: 60 },
+    description: 'Respectable attire for professional work. Required for bank tellers, teachers, and scribes.',
+    happinessOnPurchase: 2,
   },
+  {
+    id: 'merchants-attire',
+    name: "Merchant's Attire",
+    category: 'clothing',
+    basePrice: 100,
+    effect: { type: 'clothing', value: 75 },
+    description: 'Quality garments that last. Makes you look like you know what you\'re doing. A useful deception.',
+    happinessOnPurchase: 3,
+  },
+  // === BUSINESS TIER (condition 85-100) — Top-level executive & leadership jobs ===
   {
     id: 'noble-attire',
     name: 'Noble Attire',
     category: 'clothing',
-    basePrice: 250,
-    effect: { type: 'clothing', value: 100 },
-    description: 'Luxurious clothing fit for nobility. So fancy that peasants will bow involuntarily. Side effects may include arrogance.',
+    basePrice: 175,
+    effect: { type: 'clothing', value: 90 },
+    description: 'Luxurious clothing fit for guild administrators and treasurers. Peasants bow involuntarily.',
+    happinessOnPurchase: 4,
   },
   {
-    id: 'guild-uniform',
-    name: 'Guild Uniform',
+    id: 'guild-vestments',
+    name: 'Guild Vestments',
     category: 'clothing',
-    basePrice: 150,
+    basePrice: 250,
     effect: { type: 'clothing', value: 100 },
-    description: 'Official uniform for guild work. Comes with that special "I follow orders" look.',
+    description: 'The finest attire in the realm. Required for the highest positions. Side effects may include arrogance.',
+    happinessOnPurchase: 5,
   },
   // Weapons - equippable with combat stats
   {
@@ -732,4 +752,43 @@ export const calculateCombatStats = (
   }
 
   return { attack, defense, blockChance };
+};
+
+// === Clothing Tier System (Jones-style) ===
+// Thresholds for job clothing requirements mapped to clothingCondition values
+export const CLOTHING_THRESHOLDS = {
+  none: 0,
+  casual: 15,
+  dress: 40,
+  business: 70,
+  uniform: 70,
+} as const;
+
+// Weekly clothing degradation amount (Jones-style: clothes wear out over time)
+export const CLOTHING_DEGRADATION_PER_WEEK = 3;
+
+// Get the clothing tier name from a condition value
+export type ClothingTierName = 'none' | 'casual' | 'dress' | 'business';
+
+export const getClothingTier = (condition: number): ClothingTierName => {
+  if (condition >= CLOTHING_THRESHOLDS.business) return 'business';
+  if (condition >= CLOTHING_THRESHOLDS.dress) return 'dress';
+  if (condition >= CLOTHING_THRESHOLDS.casual) return 'casual';
+  return 'none';
+};
+
+export const CLOTHING_TIER_LABELS: Record<ClothingTierName, string> = {
+  none: 'No Clothes',
+  casual: 'Casual',
+  dress: 'Dress',
+  business: 'Business',
+};
+
+// Check if a clothing condition meets a specific requirement
+export const meetsClothingRequirement = (
+  condition: number,
+  requirement: string,
+): boolean => {
+  const threshold = CLOTHING_THRESHOLDS[requirement as keyof typeof CLOTHING_THRESHOLDS] ?? 0;
+  return condition >= threshold;
 };

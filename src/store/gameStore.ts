@@ -87,7 +87,7 @@ const createPlayer = (
   maxDependability: 100,
   maxExperience: 100,
   completedQuests: 0,
-  clothingCondition: 50,
+  clothingCondition: 35, // Casual tier (Jones-style: starts with basic clothes, need to buy better for higher jobs)
   weeksSinceRent: 0,
   foodLevel: 50,
   savings: 0,

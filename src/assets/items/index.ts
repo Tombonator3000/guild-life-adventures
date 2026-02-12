@@ -32,12 +32,12 @@ import ale from './ale.png';
 import stew from './stew.png';
 import roast from './roast.png';
 
-// Clothing
+// Clothing (6 items: 2 casual, 2 dress, 2 business)
 import peasantGarb from './peasant-garb.png';
-import commonClothes from './common-clothes.png';
+import commonClothes from './common-clothes.png'; // Reused for common-tunic
 import fineClothes from './fine-clothes.png';
 import nobleAttire from './noble-attire.png';
-import guildUniform from './guild-uniform.png';
+import guildUniform from './guild-uniform.png'; // Reused for guild-vestments
 
 // Appliances
 import scryingMirror from './scrying-mirror.png';
@@ -107,12 +107,13 @@ export const ITEM_IMAGES: Record<string, string> = {
   'stew': stew,
   'roast': roast,
 
-  // Clothing
+  // Clothing (Jones-style 3-tier: casual/dress/business)
   'peasant-garb': peasantGarb,
-  'common-clothes': commonClothes,
+  'common-tunic': commonClothes,
   'fine-clothes': fineClothes,
+  'merchants-attire': fineClothes,     // Reuse fine-clothes image for now
   'noble-attire': nobleAttire,
-  'guild-uniform': guildUniform,
+  'guild-vestments': guildUniform,
 
   // Appliances
   'scrying-mirror': scryingMirror,

@@ -1,5 +1,30 @@
 # Guild Life Adventures - Todo List
 
+## Completed (2026-02-12)
+
+- [x] Jones-Style 3-Tier Clothing System — Casual/Dress/Business clothes for job progression
+  - 6 clothing items across 3 tiers with SET-based purchasing
+  - Weekly degradation (-3/week), tier transition warnings
+  - AI updated for 3-tier purchasing logic
+  - Guild Hall shows clothing requirements per job
+
+## Missing Jones Features (Backlog)
+
+### Simple
+- [ ] Computer random income generation (canGenerateIncome flag exists)
+- [ ] Per-turn appliance bonuses (givesPerTurnBonus flag exists)
+- [ ] Forced loan repayment on deadline (loanWeeksRemaining exists)
+
+### Medium
+- [ ] Direction choice for movement (left/right around ring board)
+- [ ] Crash severity tiers (minor=price drop, moderate=80% pay cut, major=fired)
+- [ ] Active relaxation mechanic (spend time to restore relaxation)
+- [ ] Newspaper player-specific event tracking
+
+### Complex
+- [ ] Free actions when time runs out (buy items at 0 hours, can't work/study)
+- [ ] Full pawn shop collateral/redemption system with time windows
+
 ## Completed (2026-02-11)
 
 - [x] Zone Editor: Visual Layout Placement — NPC, text, item preview positioning

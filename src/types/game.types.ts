@@ -347,7 +347,7 @@ export const HOURS_PER_TURN = 60;
 // Legacy constant for backward compatibility
 export const HOURS_PER_WEEK = HOURS_PER_TURN;
 export const RENT_INTERVAL = 4; // Rent due every 4 weeks
-export const CLOTHING_INTERVAL = 8; // Clothing degrades every 8 weeks
+export const CLOTHING_INTERVAL = 1; // Clothing degrades every week (Jones-style gradual wear, -3/week)
 export const FOOD_DEPLETION_PER_WEEK = 25; // Lose 25 food per week
 export const STARVATION_HEALTH_PENALTY = 10; // Lose 10 health when starving
 export const STARVATION_HAPPINESS_PENALTY = 8; // Lose 8 happiness when starving (reduced from 15)

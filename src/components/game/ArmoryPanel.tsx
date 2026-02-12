@@ -3,7 +3,7 @@ import {
   JonesSectionHeader,
   JonesMenuItem,
 } from './JonesStylePanel';
-import { ARMORY_ITEMS, getItemPrice, calculateCombatStats, getItem } from '@/data/items';
+import { ARMORY_ITEMS, getItemPrice, calculateCombatStats, getItem, getClothingTier, CLOTHING_TIER_LABELS, CLOTHING_THRESHOLDS } from '@/data/items';
 import { itemToPreview, useItemPreview } from './ItemPreview';
 import { toast } from 'sonner';
 import { useTranslation } from '@/i18n';
@@ -49,6 +49,8 @@ export function ArmoryPanel({
   const largeText = !!section;
 
   const clothingItems = ARMORY_ITEMS.filter(item => item.effect?.type === 'clothing');
+  const currentTier = getClothingTier(player.clothingCondition);
+  const tierLabel = CLOTHING_TIER_LABELS[currentTier];
   const weaponItems = ARMORY_ITEMS.filter(item => item.equipSlot === 'weapon');
   const armorItems = ARMORY_ITEMS.filter(item => item.equipSlot === 'armor');
   const shieldItems = ARMORY_ITEMS.filter(item => item.equipSlot === 'shield');
@@ -190,24 +192,45 @@ export function ArmoryPanel({
       case 'clothing':
         return (
           <div>
+            {/* Clothing status header */}
+            <div className="bg-[#e8dcc8] border border-[#8b7355] rounded p-2 mb-2">
+              <div className="text-xs text-[#6b5a42] uppercase tracking-wide mb-1">Current Clothing</div>
+              <div className="flex items-center gap-3 font-mono text-base">
+                <span className={player.clothingCondition <= 0 ? 'text-red-600 font-bold' : 'text-[#3d2a14]'}>
+                  {tierLabel} ({player.clothingCondition}%)
+                </span>
+              </div>
+              <div className="flex gap-3 mt-1 text-xs text-[#6b5a42]">
+                <span>Casual: {CLOTHING_THRESHOLDS.casual}+</span>
+                <span>Dress: {CLOTHING_THRESHOLDS.dress}+</span>
+                <span>Business: {CLOTHING_THRESHOLDS.business}+</span>
+              </div>
+            </div>
             {clothingItems.map(item => {
               const price = getItemPrice(item, priceModifier);
               const canAfford = player.gold >= price;
+              const clothingValue = item.effect?.value ?? 0;
+              const wouldUpgrade = clothingValue > player.clothingCondition;
+              const itemTier = getClothingTier(clothingValue);
+              const itemTierLabel = CLOTHING_TIER_LABELS[itemTier];
               return (
                 <JonesMenuItem
                   key={item.id}
-                  label={t(`items.${item.id}.name`) || item.name}
+                  label={`${t(`items.${item.id}.name`) || item.name} [${itemTierLabel}]`}
                   price={price}
-                  disabled={!canAfford}
+                  disabled={!canAfford || !wouldUpgrade}
                   darkText={darkText}
                   largeText={largeText}
                   previewData={itemToPreview(item)}
                   onClick={() => {
                     modifyGold(player.id, -price);
-                    if (item.effect?.type === 'clothing') {
-                      modifyClothing(player.id, item.effect.value);
+                    modifyClothing(player.id, clothingValue);
+                    // Happiness bonus for dress/business clothing (Jones-style)
+                    if (item.happinessOnPurchase && item.happinessOnPurchase > 0) {
+                      modifyHappiness(player.id, item.happinessOnPurchase);
                     }
-                    toast.success(t('panelArmory.purchased', { name: t(`items.${item.id}.name`) || item.name }));
+                    const newTier = getClothingTier(Math.max(player.clothingCondition, clothingValue));
+                    toast.success(`Purchased ${t(`items.${item.id}.name`) || item.name} — now ${CLOTHING_TIER_LABELS[newTier]} tier`);
                   }}
                 />
               );
@@ -244,24 +267,39 @@ export function ArmoryPanel({
   // Fallback: default to clothing
   return (
     <div>
+      {/* Clothing status header */}
+      <div className="bg-[#e8dcc8] border border-[#8b7355] rounded p-2 mb-2">
+        <div className="text-xs text-[#6b5a42] uppercase tracking-wide mb-1">Current Clothing</div>
+        <div className="flex items-center gap-3 font-mono text-base">
+          <span className={player.clothingCondition <= 0 ? 'text-red-600 font-bold' : 'text-[#3d2a14]'}>
+            {tierLabel} ({player.clothingCondition}%)
+          </span>
+        </div>
+      </div>
       {clothingItems.map(item => {
         const price = getItemPrice(item, priceModifier);
         const canAfford = player.gold >= price;
+        const clothingValue = item.effect?.value ?? 0;
+        const wouldUpgrade = clothingValue > player.clothingCondition;
+        const itemTier = getClothingTier(clothingValue);
+        const itemTierLabel = CLOTHING_TIER_LABELS[itemTier];
         return (
           <JonesMenuItem
             key={item.id}
-            label={t(`items.${item.id}.name`) || item.name}
+            label={`${t(`items.${item.id}.name`) || item.name} [${itemTierLabel}]`}
             price={price}
-            disabled={!canAfford}
+            disabled={!canAfford || !wouldUpgrade}
             darkText
             largeText
             previewData={itemToPreview(item)}
             onClick={() => {
               modifyGold(player.id, -price);
-              if (item.effect?.type === 'clothing') {
-                modifyClothing(player.id, item.effect.value);
+              modifyClothing(player.id, clothingValue);
+              if (item.happinessOnPurchase && item.happinessOnPurchase > 0) {
+                modifyHappiness(player.id, item.happinessOnPurchase);
               }
-              toast.success(t('panelArmory.purchased', { name: t(`items.${item.id}.name`) || item.name }));
+              const newTier = getClothingTier(Math.max(player.clothingCondition, clothingValue));
+              toast.success(`Purchased ${t(`items.${item.id}.name`) || item.name} — now ${CLOTHING_TIER_LABELS[newTier]} tier`);
             }}
           />
         );

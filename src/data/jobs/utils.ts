@@ -3,6 +3,7 @@
 import type { DegreeId } from '@/types/game.types';
 import type { ClothingRequirement, Job, JobOffer, Employer, JobApplicationResult } from './types';
 import { ALL_JOBS } from './definitions';
+import { CLOTHING_THRESHOLDS, getClothingTier, CLOTHING_TIER_LABELS } from '@/data/items';
 
 // Minimum wage floor per career level — ensures higher-tier jobs always pay more
 // than lower-tier jobs regardless of economy fluctuations
@@ -89,15 +90,9 @@ export const canWorkJob = (
   const hasDegrees = job.requiredDegrees.every(deg => completedDegrees.includes(deg));
   if (!hasDegrees) return false;
 
-  // Check clothing
-  const clothingMap: Record<ClothingRequirement, number> = {
-    'none': 0,
-    'casual': 25,
-    'dress': 50,
-    'business': 75,
-    'uniform': 75,
-  };
-  if (clothingLevel < clothingMap[job.requiredClothing]) return false;
+  // Check clothing tier (Jones-style: casual=15, dress=40, business=70)
+  const threshold = CLOTHING_THRESHOLDS[job.requiredClothing as keyof typeof CLOTHING_THRESHOLDS] ?? 0;
+  if (clothingLevel < threshold) return false;
 
   // Check experience and dependability
   if (experience < job.requiredExperience) return false;
@@ -193,18 +188,15 @@ export const applyForJob = (
     };
   }
 
-  // Check clothing
-  const clothingMap: Record<ClothingRequirement, number> = {
-    'none': 0,
-    'casual': 25,
-    'dress': 50,
-    'business': 75,
-    'uniform': 75,
-  };
-  if (clothingLevel < clothingMap[job.requiredClothing]) {
+  // Check clothing tier (Jones-style: casual=15, dress=40, business=70)
+  const clothingThreshold = CLOTHING_THRESHOLDS[job.requiredClothing as keyof typeof CLOTHING_THRESHOLDS] ?? 0;
+  if (clothingLevel < clothingThreshold) {
+    const currentTier = getClothingTier(clothingLevel);
+    const requiredLabel = CLOTHING_TIER_LABELS[job.requiredClothing as keyof typeof CLOTHING_TIER_LABELS] ?? job.requiredClothing;
+    const currentLabel = CLOTHING_TIER_LABELS[currentTier];
     return {
       success: false,
-      reason: 'Clothing not suitable',
+      reason: `Requires ${requiredLabel} clothing (you have: ${currentLabel})`,
       missingClothing: true,
     };
   }

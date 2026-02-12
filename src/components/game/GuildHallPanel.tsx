@@ -18,6 +18,7 @@ import {
 } from '@/data/jobs';
 import { DEGREES, type DegreeId } from '@/data/education';
 import type { Player } from '@/types/game.types';
+import { CLOTHING_TIER_LABELS, meetsClothingRequirement } from '@/data/items';
 import {
   JonesSectionHeader,
   JonesListItem,
@@ -198,7 +199,7 @@ export function GuildHallPanel({
 
             {applicationResult.result.missingClothing && (
               <p className="text-sm text-[#6b5a42]">
-                {t('panelGuild.clothingNotSuitable')}
+                {applicationResult.result.reason || t('panelGuild.clothingNotSuitable')}
               </p>
             )}
 
@@ -273,6 +274,12 @@ export function GuildHallPanel({
                   </div>
                 )}
                 <div className="text-xs text-[#6b5a42] mt-1">
+                  {job.requiredClothing !== 'none' && (
+                    <span className={
+                      meetsClothingRequirement(player.clothingCondition, job.requiredClothing) ? '' : 'text-red-600 font-semibold'
+                    }>
+                      {CLOTHING_TIER_LABELS[job.requiredClothing as keyof typeof CLOTHING_TIER_LABELS] || job.requiredClothing} clothes | </span>
+                  )}
                   {job.requiredDegrees.length > 0 && (
                     <span>{job.requiredDegrees.map(d => DEGREES[d]?.name || d).join(', ')} | </span>
                   )}
