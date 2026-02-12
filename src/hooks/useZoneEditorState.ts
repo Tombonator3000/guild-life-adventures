@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { ZONE_CONFIGS, BOARD_PATH, MOVEMENT_PATHS } from '@/data/locations';
 import { hasSavedZoneConfig } from '@/data/zoneStorage';
-import type { ZoneConfig, LocationId, LayoutElement, LayoutElementId, CenterPanelLayout } from '@/types/game.types';
+import type { ZoneConfig, LocationId, LayoutElement, LayoutElementId, CenterPanelLayout, AnimationLayerConfig } from '@/types/game.types';
 import type { MovementWaypoint } from '@/data/locations';
 
 export interface CenterPanelConfig {
@@ -11,7 +11,12 @@ export interface CenterPanelConfig {
   height: number;
 }
 
-export type EditorMode = 'zones' | 'paths' | 'layout';
+export type EditorMode = 'zones' | 'paths' | 'layout' | 'animations';
+
+// Default animation layers — each entry is a draggable group of animated elements on the board
+export const DEFAULT_ANIMATION_LAYERS: AnimationLayerConfig[] = [
+  { id: 'graveyard-crows', label: 'Graveyard Crows', cx: 3.0, cy: 30, orbitRadius: 1.0, size: 1.0, speed: 1.0, visible: true },
+];
 
 // Default layout: NPC left column, text right column, item preview below NPC
 export const DEFAULT_LAYOUT: CenterPanelLayout = {
@@ -52,15 +57,16 @@ export function getZoneCenter(zones: ZoneConfig[], locationId: LocationId): [num
 
 interface UseZoneEditorStateProps {
   onClose: () => void;
-  onSave: (configs: ZoneConfig[], centerPanel: CenterPanelConfig, paths: Record<string, MovementWaypoint[]>, layout: CenterPanelLayout) => void;
+  onSave: (configs: ZoneConfig[], centerPanel: CenterPanelConfig, paths: Record<string, MovementWaypoint[]>, layout: CenterPanelLayout, animationLayers: AnimationLayerConfig[]) => void;
   onReset?: () => void;
   initialCenterPanel?: CenterPanelConfig;
   initialZones?: ZoneConfig[];
   initialPaths?: Record<string, MovementWaypoint[]>;
   initialLayout?: CenterPanelLayout;
+  initialAnimationLayers?: AnimationLayerConfig[];
 }
 
-export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPanel, initialZones, initialPaths, initialLayout }: UseZoneEditorStateProps) {
+export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPanel, initialZones, initialPaths, initialLayout, initialAnimationLayers }: UseZoneEditorStateProps) {
   const [zones, setZones] = useState<ZoneConfig[]>(() => {
     if (!initialZones) return [...ZONE_CONFIGS];
     // Merge with defaults so newly added locations always appear
@@ -88,6 +94,13 @@ export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPane
   const [layout, setLayout] = useState<CenterPanelLayout>(initialLayout || { ...DEFAULT_LAYOUT });
   const [selectedLayoutElement, setSelectedLayoutElement] = useState<LayoutElementId | null>(null);
   const layoutDragStartRef = useRef<{ x: number; y: number; element: LayoutElement } | null>(null);
+
+  // Animation layer editing state
+  const [animationLayers, setAnimationLayers] = useState<AnimationLayerConfig[]>(
+    initialAnimationLayers || [...DEFAULT_ANIMATION_LAYERS]
+  );
+  const [selectedAnimationLayer, setSelectedAnimationLayer] = useState<string | null>(null);
+  const animDragStartRef = useRef<{ x: number; y: number; layer: AnimationLayerConfig } | null>(null);
 
   const adjacentPairs = getAdjacentPairs();
 
@@ -152,6 +165,24 @@ export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPane
     centerDragStartRef.current = null;
   }, [editorMode, layout, getPercentPosition, getBoardToCenterPanelPercent]);
 
+  // === ANIMATION LAYER EDITING HANDLERS ===
+
+  const handleAnimationLayerMouseDown = useCallback((e: React.MouseEvent, layerId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (editorMode !== 'animations') return;
+    const layer = animationLayers.find(l => l.id === layerId);
+    if (!layer) return;
+    setSelectedAnimationLayer(layerId);
+    setIsDragging(true);
+    setDragMode('move');
+    const pos = getPercentPosition(e.clientX, e.clientY);
+    animDragStartRef.current = { x: pos.x, y: pos.y, layer: { ...layer } };
+    dragStartRef.current = null;
+    centerDragStartRef.current = null;
+    layoutDragStartRef.current = null;
+  }, [editorMode, animationLayers, getPercentPosition]);
+
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     const pos = getPercentPosition(e.clientX, e.clientY);
 
@@ -198,6 +229,23 @@ export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPane
         }
         return prev;
       });
+      return;
+    }
+
+    // Handle animation layer dragging
+    if (editorMode === 'animations' && isDragging && selectedAnimationLayer && animDragStartRef.current) {
+      const deltaX = pos.x - animDragStartRef.current.x;
+      const deltaY = pos.y - animDragStartRef.current.y;
+      const original = animDragStartRef.current.layer;
+
+      setAnimationLayers(prev => prev.map(l => {
+        if (l.id !== selectedAnimationLayer) return l;
+        return {
+          ...l,
+          cx: Math.max(0, Math.min(100, Math.round((original.cx + deltaX) * 10) / 10)),
+          cy: Math.max(0, Math.min(100, Math.round((original.cy + deltaY) * 10) / 10)),
+        };
+      }));
       return;
     }
 
@@ -259,6 +307,7 @@ export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPane
     dragStartRef.current = null;
     centerDragStartRef.current = null;
     layoutDragStartRef.current = null;
+    animDragStartRef.current = null;
   }, []);
 
   useEffect(() => {
@@ -320,6 +369,12 @@ export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPane
       ...prev,
       [elementId]: { ...prev[elementId], [field]: value },
     }));
+  };
+
+  const handleAnimationInput = (layerId: string, field: keyof AnimationLayerConfig, value: number | boolean) => {
+    setAnimationLayers(prev => prev.map(l =>
+      l.id === layerId ? { ...l, [field]: value } : l
+    ));
   };
 
   // === EXPORT ===
@@ -384,9 +439,11 @@ ${pathsStr}`;
     setPaths({});
     setLayout({ ...DEFAULT_LAYOUT });
     setSelectedLayoutElement(null);
+    setAnimationLayers([...DEFAULT_ANIMATION_LAYERS]);
+    setSelectedAnimationLayer(null);
   } : undefined;
 
-  const handleSave = () => onSave(zones, centerPanel, paths, layout);
+  const handleSave = () => onSave(zones, centerPanel, paths, layout, animationLayers);
 
   return {
     zones,
@@ -428,5 +485,12 @@ ${pathsStr}`;
     setSelectedLayoutElement,
     handleLayoutMouseDown,
     handleLayoutInput,
+    // Animation layer state
+    animationLayers,
+    setAnimationLayers,
+    selectedAnimationLayer,
+    setSelectedAnimationLayer,
+    handleAnimationLayerMouseDown,
+    handleAnimationInput,
   };
 }

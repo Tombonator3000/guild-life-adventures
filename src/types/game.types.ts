@@ -50,6 +50,18 @@ export interface CenterPanelLayout {
   itemPreview: LayoutElement; // Item preview panel
 }
 
+/** A group of animated elements (e.g., graveyard crows) with adjustable position/properties */
+export interface AnimationLayerConfig {
+  id: string;            // e.g., 'graveyard-crows'
+  label: string;         // Display name: 'Graveyard Crows'
+  cx: number;            // Group center X (% of board width)
+  cy: number;            // Group center Y (% of board height)
+  orbitRadius: number;   // Orbit radius multiplier (default 1.0)
+  size: number;          // Size multiplier (default 1.0)
+  speed: number;         // Speed multiplier (default 1.0)
+  visible: boolean;      // Whether the group is rendered
+}
+
 export interface Location {
   id: LocationId;
   name: string;
@@ -338,6 +350,7 @@ export const CLOTHING_INTERVAL = 8; // Clothing degrades every 8 weeks
 export const FOOD_DEPLETION_PER_WEEK = 25; // Lose 25 food per week
 export const STARVATION_HEALTH_PENALTY = 10; // Lose 10 health when starving
 export const STARVATION_HAPPINESS_PENALTY = 8; // Lose 8 happiness when starving (reduced from 15)
+export const SPOILED_FOOD_SICKNESS_CHANCE = 0.55; // 55% chance of sickness when eating spoiled food (Jones-style)
 
 // Rent costs per week - increased to be a meaningful recurring expense
 export const RENT_COSTS: Record<HousingTier, number> = {

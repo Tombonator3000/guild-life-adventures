@@ -63,6 +63,16 @@ export function ZoneEditorToolbar({
           >
             Layout
           </button>
+          <button
+            onClick={() => setEditorMode('animations')}
+            className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+              editorMode === 'animations'
+                ? 'bg-orange-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Animations
+          </button>
         </div>
         <label className="flex items-center gap-2 text-white">
           <input

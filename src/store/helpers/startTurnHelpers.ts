@@ -7,6 +7,7 @@
 //   3. Main orchestrator (createStartTurn)
 
 import type { LocationId, Player } from '@/types/game.types';
+import { SPOILED_FOOD_SICKNESS_CHANCE } from '@/types/game.types';
 import { HOUSING_DATA } from '@/data/housing';
 import {
   checkApartmentRobbery,
@@ -115,10 +116,10 @@ function processFreshFoodSpoilage(
     updatePlayerById(set, playerId, { freshFood: 0 });
     eventMessages.push(`${player.name}'s fresh food spoiled! No working Preservation Box to keep it fresh.`);
 
-    // Doctor visit trigger from food spoilage (25% chance, matches Jones)
-    if (Math.random() < 0.25) {
+    // Doctor visit trigger from eating spoiled food (55% chance, Jones-style)
+    if (Math.random() < SPOILED_FOOD_SICKNESS_CHANCE) {
       applyDoctorVisit(set, playerId, eventMessages,
-        `${player.name} got sick from spoiled food! Healer charged {cost}g. -10 Hours, -4 Happiness.`
+        `${player.name} ate the spoiled food and got sick! Healer charged {cost}g. -10 Hours, -4 Happiness.`
       );
     }
     return true;
@@ -133,6 +134,43 @@ function processFreshFoodSpoilage(
       updatePlayerById(set, playerId, { freshFood: maxStorage });
       eventMessages.push(`${spoiledUnits} units of fresh food spoiled (storage full, max ${maxStorage}).`);
     }
+  }
+
+  return false;
+}
+
+/**
+ * Phase 2.5: Regular food spoilage check — eating spoiled food without preservation.
+ * Jones-style: Without a refrigerator (Preservation Box), stored food goes bad.
+ * Player still eats it (prevents starvation) but has a high chance of getting sick.
+ * Returns true if a doctor visit was triggered.
+ */
+function processRegularFoodSpoilage(
+  set: SetFn,
+  playerId: string,
+  player: Player,
+  eventMessages: string[],
+): boolean {
+  const hasPreservationBox = player.appliances['preservation-box']
+    && !player.appliances['preservation-box'].isBroken;
+
+  // No spoilage risk with a working Preservation Box
+  if (hasPreservationBox) return false;
+
+  // No food to spoil
+  if (player.foodLevel <= 0) return false;
+
+  // Food is spoiled but player eats it anyway (foodLevel NOT reduced — it still prevents starvation)
+  eventMessages.push(
+    `${player.name}'s food has gone bad without a Preservation Box!`
+  );
+
+  // 55% chance of getting sick from eating spoiled food (Jones-style)
+  if (Math.random() < SPOILED_FOOD_SICKNESS_CHANCE) {
+    applyDoctorVisit(set, playerId, eventMessages,
+      `${player.name} got sick from eating spoiled food! Healer charged {cost}g. -10 Hours, -4 Happiness.`
+    );
+    return true;
   }
 
   return false;
@@ -336,6 +374,14 @@ export function createStartTurn(set: SetFn, get: GetFn) {
       // Re-read player after potential spoilage changes
       currentPlayer = getPlayer(get, playerId);
 
+      // --- Phase 2.5: Regular food spoilage (eating rancid food, Jones-style) ---
+      // Don't double-penalize if fresh food already caused a doctor visit
+      let regularFoodSpoiled = false;
+      if (!freshFoodSpoiled) {
+        regularFoodSpoiled = processRegularFoodSpoilage(set, playerId, currentPlayer, eventMessages);
+        currentPlayer = getPlayer(get, playerId);
+      }
+
       // --- Phase 3: Starvation check ---
       const isStarving = processStarvationCheck(set, playerId, currentPlayer, eventMessages);
 
@@ -344,7 +390,7 @@ export function createStartTurn(set: SetFn, get: GetFn) {
 
       // --- Phase 4: Relaxation exhaustion check ---
       // B4: Only triggers if player didn't already get a doctor visit from starvation/spoilage
-      if (!isStarving && !freshFoodSpoiled) {
+      if (!isStarving && !freshFoodSpoiled && !regularFoodSpoiled) {
         processRelaxationCheck(set, playerId, currentPlayer, eventMessages);
         currentPlayer = getPlayer(get, playerId);
       }

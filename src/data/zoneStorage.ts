@@ -4,7 +4,7 @@
  * so edits survive page reloads without needing to copy code.
  */
 
-import type { ZoneConfig, CenterPanelLayout } from '@/types/game.types';
+import type { ZoneConfig, CenterPanelLayout, AnimationLayerConfig } from '@/types/game.types';
 import type { CenterPanelConfig } from '@/components/game/ZoneEditor';
 import type { MovementWaypoint } from '@/data/locations';
 
@@ -15,6 +15,7 @@ export interface ZoneEditorSaveData {
   centerPanel: CenterPanelConfig;
   paths: Record<string, MovementWaypoint[]>;
   layout?: CenterPanelLayout; // Optional for backwards compat with pre-layout saves
+  animationLayers?: AnimationLayerConfig[]; // Optional for backwards compat
   savedAt: number;
 }
 
@@ -26,6 +27,7 @@ export function saveZoneConfig(
   centerPanel: CenterPanelConfig,
   paths: Record<string, MovementWaypoint[]>,
   layout?: CenterPanelLayout,
+  animationLayers?: AnimationLayerConfig[],
 ): boolean {
   try {
     const data: ZoneEditorSaveData = {
@@ -33,6 +35,7 @@ export function saveZoneConfig(
       centerPanel,
       paths,
       layout,
+      animationLayers,
       savedAt: Date.now(),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));

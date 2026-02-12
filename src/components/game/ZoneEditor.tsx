@@ -2,7 +2,7 @@ import { useZoneEditorState } from '@/hooks/useZoneEditorState';
 import { ZoneEditorToolbar } from './ZoneEditorToolbar';
 import { ZoneEditorBoard } from './ZoneEditorBoard';
 import { ZoneEditorProperties } from './ZoneEditorProperties';
-import type { ZoneConfig, CenterPanelLayout } from '@/types/game.types';
+import type { ZoneConfig, CenterPanelLayout, AnimationLayerConfig } from '@/types/game.types';
 import type { MovementWaypoint } from '@/data/locations';
 
 export type { CenterPanelConfig } from '@/hooks/useZoneEditorState';
@@ -10,16 +10,17 @@ import type { CenterPanelConfig } from '@/hooks/useZoneEditorState';
 
 interface ZoneEditorProps {
   onClose: () => void;
-  onSave: (configs: ZoneConfig[], centerPanel: CenterPanelConfig, paths: Record<string, MovementWaypoint[]>, layout: CenterPanelLayout) => void;
+  onSave: (configs: ZoneConfig[], centerPanel: CenterPanelConfig, paths: Record<string, MovementWaypoint[]>, layout: CenterPanelLayout, animationLayers: AnimationLayerConfig[]) => void;
   onReset?: () => void;
   initialCenterPanel?: CenterPanelConfig;
   initialZones?: ZoneConfig[];
   initialPaths?: Record<string, MovementWaypoint[]>;
   initialLayout?: CenterPanelLayout;
+  initialAnimationLayers?: AnimationLayerConfig[];
 }
 
-export function ZoneEditor({ onClose, onSave, onReset, initialCenterPanel, initialZones, initialPaths, initialLayout }: ZoneEditorProps) {
-  const state = useZoneEditorState({ onClose, onSave, onReset, initialCenterPanel, initialZones, initialPaths, initialLayout });
+export function ZoneEditor({ onClose, onSave, onReset, initialCenterPanel, initialZones, initialPaths, initialLayout, initialAnimationLayers }: ZoneEditorProps) {
+  const state = useZoneEditorState({ onClose, onSave, onReset, initialCenterPanel, initialZones, initialPaths, initialLayout, initialAnimationLayers });
 
   return (
     <div className="fixed inset-0 bg-black/90 z-50 flex flex-col">
@@ -59,6 +60,10 @@ export function ZoneEditor({ onClose, onSave, onReset, initialCenterPanel, initi
           selectedLayoutElement={state.selectedLayoutElement}
           handleLayoutMouseDown={state.handleLayoutMouseDown}
           setSelectedLayoutElement={state.setSelectedLayoutElement}
+          animationLayers={state.animationLayers}
+          selectedAnimationLayer={state.selectedAnimationLayer}
+          handleAnimationLayerMouseDown={state.handleAnimationLayerMouseDown}
+          setSelectedAnimationLayer={state.setSelectedAnimationLayer}
         />
         <ZoneEditorProperties
           editorMode={state.editorMode}
@@ -82,6 +87,11 @@ export function ZoneEditor({ onClose, onSave, onReset, initialCenterPanel, initi
           selectedLayoutElement={state.selectedLayoutElement}
           setSelectedLayoutElement={state.setSelectedLayoutElement}
           handleLayoutInput={state.handleLayoutInput}
+          animationLayers={state.animationLayers}
+          setAnimationLayers={state.setAnimationLayers}
+          selectedAnimationLayer={state.selectedAnimationLayer}
+          setSelectedAnimationLayer={state.setSelectedAnimationLayer}
+          handleAnimationInput={state.handleAnimationInput}
         />
       </div>
 
@@ -90,7 +100,9 @@ export function ZoneEditor({ onClose, onSave, onReset, initialCenterPanel, initi
           ? 'Click a zone to select | Drag to move | Drag corner to resize | Yellow area = center info panel'
           : state.editorMode === 'paths'
             ? 'Select an edge from the list | Click on the board to add waypoints | Drag waypoints to reposition | Right-click to remove'
-            : 'Select a layout element | Drag to move | Drag corner to resize | Positions are % of center panel'
+            : state.editorMode === 'animations'
+              ? 'Select a layer | Drag the center dot to reposition | Edit properties in the right panel'
+              : 'Select a layout element | Drag to move | Drag corner to resize | Positions are % of center panel'
         }
       </div>
     </div>
