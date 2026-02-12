@@ -26,6 +26,7 @@ import { UpdateBanner } from './UpdateBanner';
 import { GameBoardHeader } from './GameBoardHeader';
 import { GameBoardOverlays } from './GameBoardOverlays';
 import { DebugOverlay } from './DebugOverlay';
+import { GraveyardCrows } from './GraveyardCrows';
 import gameBoard from '@/assets/game-board.jpeg';
 import type { LocationId } from '@/types/game.types';
 import { toast } from 'sonner';
@@ -278,6 +279,9 @@ export function GameBoard() {
               ))}
             </div>
           )}
+
+          {/* Graveyard crows animation */}
+          <GraveyardCrows />
 
           {/* Festival visual overlay (z-34, below weather) */}
           <FestivalOverlay activeFestival={useGameStore(s => s.activeFestival)} />
