@@ -24,8 +24,9 @@ export function GoalProgress({ player, goals, compact = false }: GoalProgressPro
   const totalEducation = player.completedDegrees.length * 9;
   const educationProgress = Math.min(100, (totalEducation / goals.education) * 100);
 
-  // Career = dependability (Jones-style), 0 if no job
-  const careerValue = player.currentJob ? player.dependability : 0;
+  // M28 FIX: Career = dependability (Jones-style), shown even when unemployed
+  // Losing a job shouldn't instantly zero out career progress
+  const careerValue = player.dependability;
   const careerProgress = Math.min(100, (careerValue / goals.career) * 100);
 
   // Adventure = quests completed + dungeon floors cleared (optional goal, 0 = disabled)

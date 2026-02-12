@@ -17,7 +17,7 @@ interface HomePanelProps {
 /** Check if the player actually rents at this housing location */
 function playerRentsHere(housing: string, locationId: LocationId): boolean {
   if (locationId === 'noble-heights') return housing === 'noble';
-  if (locationId === 'slums') return housing === 'slums' || housing === 'modest';
+  if (locationId === 'slums') return housing === 'slums';
   return false;
 }
 
@@ -143,7 +143,7 @@ export function HomePanel({
           fontSize: 'clamp(0.7rem, 1.5vw, 1rem)',
         }}
       >
-        {isNoble ? t('housing.noble.name') : isSlums ? t('housing.slums.name') : t('housing.modest.name')}
+        {isNoble ? t('housing.noble.name') : t('housing.slums.name')}
       </div>
 
       <RoomScene

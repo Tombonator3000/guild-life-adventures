@@ -126,7 +126,7 @@ export function LandlordPanel({
         {t('panelLandlord.housingOffice')}
       </p>
       <div className="space-y-2">
-        {HOUSING_TIERS.filter(tier => tier !== player.housing && tier !== 'homeless' && tier !== 'modest').map(tier => {
+        {HOUSING_TIERS.filter(tier => tier !== player.housing && tier !== 'homeless').map(tier => {
           const housing = HOUSING_DATA[tier];
           const tierMarketRent = Math.round(housing.weeklyRent * priceModifier);
           const moveCost = tierMarketRent * 2; // First month + deposit

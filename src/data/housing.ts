@@ -30,15 +30,6 @@ export const HOUSING_DATA: Record<HousingTier, Housing> = {
     theftRisk: 25,
     relaxationRate: 8,
   },
-  modest: {
-    tier: 'modest',
-    name: 'Modest Dwelling',
-    description: 'A comfortable apartment in a decent area. You have walls, a roof, and a door that actually locks. Living the dream.',
-    weeklyRent: 95,
-    happinessBonus: 2,
-    theftRisk: 5,
-    relaxationRate: 5,
-  },
   noble: {
     tier: 'noble',
     name: 'Noble Heights',
@@ -50,7 +41,7 @@ export const HOUSING_DATA: Record<HousingTier, Housing> = {
   },
 };
 
-export const HOUSING_TIERS: HousingTier[] = ['homeless', 'slums', 'modest', 'noble'];
+export const HOUSING_TIERS: HousingTier[] = ['homeless', 'slums', 'noble'];
 
 export const getHousing = (tier: HousingTier): Housing => HOUSING_DATA[tier];
 

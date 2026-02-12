@@ -39,12 +39,16 @@ export interface DungeonRunState {
   currentEncounterIndex: number;
   currentHealth: number;
   startHealth: number;
+  /** H12 FIX: Player's max health — healing capped here instead of startHealth */
+  maxHealth: number;
   results: EncounterResult[];
   totalGold: number;
   totalDamage: number;
   totalHealed: number;
   bossDefeated: boolean;
   retreated: boolean;
+  /** H13 FIX: True when player left due to insufficient time (keeps 100% gold) */
+  leftDueToTime: boolean;
   isFirstClear: boolean;
   rareDropName: string | null;
   /** Active dungeon modifier for this run (null = normal run) */
@@ -83,6 +87,7 @@ export function initDungeonRun(
   playerHealth: number,
   isFirstClear: boolean,
   floorsCleared?: number[],
+  playerMaxHealth?: number,
 ): DungeonRunState {
   const encounters = generateFloorEncounters(floor, floorsCleared);
   const modifier = rollDungeonModifier();
@@ -95,12 +100,15 @@ export function initDungeonRun(
     currentEncounterIndex: 0,
     currentHealth: playerHealth,
     startHealth: playerHealth,
+    // H12 FIX: Use maxHealth for healing cap (defaults to startHealth for backwards compat)
+    maxHealth: playerMaxHealth ?? playerHealth,
     results: [],
     totalGold: 0,
     totalDamage: 0,
     totalHealed: 0,
     bossDefeated: false,
     retreated: false,
+    leftDueToTime: false,
     isFirstClear,
     rareDropName: null,
     modifier,
@@ -218,7 +226,8 @@ export function resolveEncounter(
       const modDamageMult = mod ? mod.damageMult : 1.0;
       const modDmgReduc = mod ? mod.bonusDamageReduction : 0;
       let d = Math.floor(encounter.baseDamage * Math.max(0.3, 1 - ratio * 0.5) * noEquipmentDamageMult * modDamageMult);
-      d = Math.floor(d * (1 - eduBonuses.damageReduction - modDmgReduc));
+      // M27 FIX: Clamp damage reduction multiplier to minimum 0 to prevent negative damage
+      d = Math.floor(d * Math.max(0, 1 - eduBonuses.damageReduction - modDmgReduc));
 
       if (eduBonuses.damageReduction > 0) {
         bonusesActivated.push(`-${Math.round(eduBonuses.damageReduction * 100)}% dmg`);
@@ -271,10 +280,11 @@ export function applyEncounterResult(
   state: DungeonRunState,
   result: EncounterResult,
 ): DungeonRunState {
+  // H12 FIX: Cap healing at maxHealth (not startHealth) so entering at low HP isn't punishing
   const newHealth = Math.max(
     0,
     Math.min(
-      state.startHealth,
+      state.maxHealth,
       state.currentHealth - result.damageDealt + result.healed + result.potionHealed,
     ),
   );

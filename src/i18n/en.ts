@@ -360,7 +360,6 @@ export const en: TranslationStrings = {
   housing: {
     'homeless': { name: 'Homeless', description: 'Sleeping on the streets. Dangerous and demoralizing.' },
     'slums': { name: 'The Slums', description: 'Cheap housing in a rough neighborhood. Beware Shadowfingers.' },
-    'modest': { name: 'Modest Dwelling', description: 'A comfortable apartment in a decent area.' },
     'noble': { name: 'Noble Heights', description: 'Luxury living for the wealthy. Safe and prestigious.' },
   },
 

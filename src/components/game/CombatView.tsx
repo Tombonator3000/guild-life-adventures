@@ -71,7 +71,8 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
   const isFirstClear = !player.dungeonFloorsCleared.includes(floor.id);
 
   const [runState, setRunState] = useState<DungeonRunState>(() =>
-    initDungeonRun(floor, player.health, isFirstClear, player.dungeonFloorsCleared),
+    // H12 FIX: Pass maxHealth so healing is capped at maxHealth, not entry health
+    initDungeonRun(floor, player.health, isFirstClear, player.dungeonFloorsCleared, player.maxHealth),
   );
 
   // ─── Fight current encounter ──────────────────────────────
@@ -123,7 +124,8 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
       ...s,
       phase: 'floor-summary' as const,
       retreated: true,
-      // Keep all gold — leaving due to time, not cowardice
+      // H13 FIX: Distinguish time-based exit (keeps 100% gold) from voluntary retreat (50%)
+      leftDueToTime: true,
     }));
   }, []);
 

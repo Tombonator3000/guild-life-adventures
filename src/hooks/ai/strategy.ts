@@ -392,7 +392,7 @@ export function getBestQuest(player: Player, settings: DifficultySettings): stri
  */
 export function getBestBounty(player: Player, week: number): string | null {
   if (player.activeQuest) return null;
-  if (!player.hasGuildPass) return null; // Bounties require Guild Pass
+  // M15 FIX: Bounties don't require Guild Pass (only quests do)
 
   const bounties = getWeeklyBounties(week);
   const takeable = bounties.filter(b => {

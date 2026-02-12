@@ -80,21 +80,21 @@ describe('checkVictory', () => {
     expect(useGameStore.getState().checkVictory(playerId)).toBe(true);
   });
 
-  it('counts career as dependability (0 if no job)', () => {
+  it('counts career as dependability (M28: available even without job)', () => {
     const playerId = resetAndStart({ wealth: 50, happiness: 40, education: 0, career: 60, adventure: 0 });
-    // Player starts with dependability=50 but no job, so career=0. Need career >= 60.
+    // Player starts with dependability=50, career goal=60. 50 < 60 so not met.
     expect(useGameStore.getState().checkVictory(playerId)).toBe(false);
 
-    // Give player a job but low dependability
+    // Low dependability still fails
     useGameStore.setState((state) => ({
       players: state.players.map(p =>
-        p.id === playerId ? { ...p, currentJob: 'floor-sweeper', dependability: 55 } : p
+        p.id === playerId ? { ...p, dependability: 55 } : p
       ),
     }));
     // 55 < 60, not enough
     expect(useGameStore.getState().checkVictory(playerId)).toBe(false);
 
-    // Raise dependability to meet goal
+    // Raise dependability to meet goal (no job needed)
     useGameStore.setState((state) => ({
       players: state.players.map(p =>
         p.id === playerId ? { ...p, dependability: 65 } : p
@@ -104,24 +104,25 @@ describe('checkVictory', () => {
     expect(useGameStore.getState().checkVictory(playerId)).toBe(true);
   });
 
-  it('career is 0 when player has no job', () => {
+  it('career uses dependability regardless of job status (M28 fix)', () => {
     const playerId = resetAndStart({ wealth: 50, happiness: 40, education: 0, career: 10, adventure: 0 });
-    // Player has dependability=50 but no job -> career value = 0
+    // M28: Career = dependability even without a job
     useGameStore.setState((state) => ({
       players: state.players.map(p =>
         p.id === playerId ? { ...p, currentJob: null, dependability: 100 } : p
       ),
     }));
-    expect(useGameStore.getState().checkVictory(playerId)).toBe(false);
+    // dependability 100 >= career goal 10, so career is met even without job
+    expect(useGameStore.getState().checkVictory(playerId)).toBe(true);
 
-    // Give job -> career = dependability = 100 >= 10
+    // Low dependability still fails career check
     useGameStore.setState({ winner: null, phase: 'playing' });
     useGameStore.setState((state) => ({
       players: state.players.map(p =>
-        p.id === playerId ? { ...p, currentJob: 'floor-sweeper' } : p
+        p.id === playerId ? { ...p, currentJob: null, dependability: 5 } : p
       ),
     }));
-    expect(useGameStore.getState().checkVictory(playerId)).toBe(true);
+    expect(useGameStore.getState().checkVictory(playerId)).toBe(false);
   });
 
   it('subtracts loan amount from wealth', () => {

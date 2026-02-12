@@ -74,7 +74,7 @@ export type GuildRank =
 
 export type QuestRank = 'E' | 'D' | 'C' | 'B' | 'A' | 'S';
 
-export type HousingTier = 'homeless' | 'slums' | 'modest' | 'noble';
+export type HousingTier = 'homeless' | 'slums' | 'noble';
 
 export type EducationPath = 'fighter' | 'mage' | 'priest' | 'business';
 
@@ -343,7 +343,6 @@ export const STARVATION_HAPPINESS_PENALTY = 8; // Lose 8 happiness when starving
 export const RENT_COSTS: Record<HousingTier, number> = {
   homeless: 0,
   slums: 75,
-  modest: 95,
   noble: 120,
 };
 

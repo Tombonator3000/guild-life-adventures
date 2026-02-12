@@ -34,18 +34,21 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         }
       }
 
+      // C1 FIX: Re-read state after checkVictory, which may have mutated state
+      const postVictoryState = get();
+
       // Find next alive player
       const findNextAlivePlayer = (startIndex: number): { index: number; isNewWeek: boolean } => {
         let index = startIndex;
         let loopCount = 0;
-        const totalPlayers = state.players.length;
+        const totalPlayers = postVictoryState.players.length;
 
         while (loopCount < totalPlayers) {
           index = (index + 1) % totalPlayers;
           const isNewWeek = index === 0;
 
           // Check if this player is alive
-          if (!state.players[index].isGameOver) {
+          if (!postVictoryState.players[index].isGameOver) {
             return { index, isNewWeek };
           }
 
@@ -62,8 +65,8 @@ export function createTurnActions(set: SetFn, get: GetFn) {
 
       // Check if only one player remains alive - they win (multiplayer only)
       // In single-player, the player must achieve all goals to win
-      const alivePlayers = state.players.filter(p => !p.isGameOver);
-      if (alivePlayers.length === 1 && state.players.length > 1) {
+      const alivePlayers = postVictoryState.players.filter(p => !p.isGameOver);
+      if (alivePlayers.length === 1 && postVictoryState.players.length > 1) {
         set({
           winner: alivePlayers[0].id,
           phase: 'victory',
@@ -80,18 +83,20 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         return;
       }
 
-      const { index: nextIndex, isNewWeek } = findNextAlivePlayer(state.currentPlayerIndex);
+      const { index: nextIndex, isNewWeek } = findNextAlivePlayer(postVictoryState.currentPlayerIndex);
 
       if (isNewWeek) {
         get().processWeekEnd();
       } else {
         // Start next player's turn (includes apartment robbery check)
-        const nextPlayer = state.players[nextIndex];
+        // C1 FIX: Use fresh state for player data
+        const freshState = get();
+        const nextPlayer = freshState.players[nextIndex];
         // C9: Move player to their home location at start of turn
         const homeLocation: LocationId = getHomeLocation(nextPlayer.housing);
         set({
           currentPlayerIndex: nextIndex,
-          players: state.players.map((p, index) =>
+          players: freshState.players.map((p, index) =>
             index === nextIndex
               ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: homeLocation, dungeonAttemptsThisTurn: 0 }
               : p

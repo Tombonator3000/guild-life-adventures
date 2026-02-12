@@ -69,9 +69,11 @@ function applyDoctorVisit(
 /** Phase 1: Check and apply appliance breakage (runs before food checks) */
 function processApplianceBreakage(
   set: SetFn,
+  get: GetFn,
   playerId: string,
-  player: Player,
 ): void {
+  // C2 FIX: Re-read player from state to avoid stale gold values
+  const player = getPlayer(get, playerId);
   if (player.gold <= 500) return;
 
   for (const applianceId of Object.keys(player.appliances)) {
@@ -276,7 +278,7 @@ function processStartOfTurnBonuses(
     }));
   }
 
-  // Housing happiness bonus — Homeless: -3, Slums: 0, Modest: +2, Noble: +3
+  // Housing happiness bonus — Homeless: -3, Slums: 0, Noble: +3 (Jones 2-tier)
   const housingBonus = HOUSING_DATA[player.housing as keyof typeof HOUSING_DATA]?.happinessBonus ?? 0;
   if (housingBonus !== 0) {
     updatePlayerById(set, playerId, (p) => ({
@@ -322,7 +324,8 @@ export function createStartTurn(set: SetFn, get: GetFn) {
       // --- Phase 1: Appliance breakage (before food checks) ---
       // Breakage must run first so that a broken Preservation Box / Frost Chest
       // immediately affects food this turn.
-      processApplianceBreakage(set, playerId, player);
+      // C2 FIX: Pass get so breakage reads fresh player state (gold may have changed)
+      processApplianceBreakage(set, get, playerId);
 
       // Re-read player after potential appliance breakage
       let currentPlayer = getPlayer(get, playerId);
