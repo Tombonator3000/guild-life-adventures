@@ -268,6 +268,18 @@ export const FLOOR_4_ENCOUNTERS: DungeonEncounter[] = [
     baseGold: 100,
     flavorText: 'Mountains of gold coins, gemstones, and enchanted trinkets glitter in the firelight. You briefly consider a career change to "dragon."',
   },
+  // M12 FIX: Add healing encounter to Floor 4 (was missing, creating inverted difficulty curve)
+  {
+    id: 'f4-dragon-tear-pool',
+    name: 'Dragon Tear Pool',
+    description: 'A pool of crystallized dragon tears, warm to the touch and faintly glowing.',
+    type: 'healing',
+    difficulty: 'easy',
+    basePower: 0,
+    baseDamage: -14,
+    baseGold: 0,
+    flavorText: 'The liquid is warm and tastes of copper and sunlight. Dragon tears are renowned for their healing properties. Also their rarity, since dragons rarely cry. Except during tax season.',
+  },
 ];
 
 export const FLOOR_4_BOSS: DungeonEncounter = {
@@ -332,6 +344,18 @@ export const FLOOR_5_ENCOUNTERS: DungeonEncounter[] = [
     baseDamage: 0,
     baseGold: 200,
     flavorText: 'The runes fade as you approach. Inside: riches beyond imagination. Also beyond common sense, since it was guarded by demons.',
+  },
+  // M12 FIX: Add healing encounter to Floor 5 (was missing, creating inverted difficulty curve)
+  {
+    id: 'f5-void-well',
+    name: 'Void Well',
+    description: 'A rift of inverted darkness that paradoxically radiates warmth and restoration.',
+    type: 'healing',
+    difficulty: 'easy',
+    basePower: 0,
+    baseDamage: -16,
+    baseGold: 0,
+    flavorText: 'The void whispers comfort as it mends your wounds. Healing from literal nothingness. The universe has a strange sense of humor.',
   },
 ];
 

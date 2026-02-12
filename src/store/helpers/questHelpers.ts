@@ -210,7 +210,8 @@ export function createQuestActions(set: SetFn, get: GetFn) {
             health: Math.max(0, p.health - healthLoss),
             happiness: Math.min(100, p.happiness + finalHappiness),
             timeRemaining: Math.max(0, p.timeRemaining - step.timeRequired),
-            completedQuests: p.completedQuests + 1,
+            // M7 FIX: Only increment completedQuests on final chain step (not each step)
+            completedQuests: p.completedQuests + (isLastStep ? 1 : 0),
             guildReputation: p.guildReputation + (isLastStep ? 3 : 1), // chain completion = 3 rep
             activeQuest: null,
             questChainProgress: newChainProgress,
@@ -433,13 +434,16 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       }
 
       if (newRank !== player.guildRank) {
+        // M8 FIX: Append promotion message to existing eventMessage instead of overwriting
+        const existing = get().eventMessage;
+        const promoMsg = `Congratulations! You have been promoted to ${newRank.charAt(0).toUpperCase() + newRank.slice(1)}!`;
         set((state) => ({
           players: state.players.map((p) =>
             p.id === playerId
               ? { ...p, guildRank: newRank }
               : p
           ),
-          eventMessage: `Congratulations! You have been promoted to ${newRank.charAt(0).toUpperCase() + newRank.slice(1)}!`,
+          eventMessage: existing ? existing + '\n' + promoMsg : promoMsg,
         }));
       }
     },

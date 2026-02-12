@@ -1,5 +1,65 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-12 - Audit Fix Session — 11 Findings Fixed
+
+### Overview
+
+Addressed remaining unfixed findings from AUDIT-2026-02-12.md. This session fixed 11 issues (2 HIGH, 7 MEDIUM, 2 LOW) across game store, AI system, data, and UI.
+
+### Fixes Applied
+
+| ID | Severity | Fix | File(s) |
+|----|----------|-----|---------|
+| H9/H11 | HIGH | AI food/clothing purchases now use priceModifier (economy-aware). AI buys bulk provisions at General Store (50g/50 food). Clothing includes business-tier option for better jobs. | `criticalNeeds.ts` |
+| M4 | MEDIUM | `negotiateRaise` now validates: job exists, wage capped at 3x base (matches `requestRaise`), minimum 1g | `workEducationHelpers.ts` |
+| M7 | MEDIUM | Chain quests only increment `completedQuests` on final step (was inflating adventure score) | `questHelpers.ts` |
+| M8 | MEDIUM | Guild rank promotion appends to `eventMessage` instead of overwriting quest completion message | `questHelpers.ts` |
+| M11 | MEDIUM | `found-coin-purse` travel event goldEffect changed from stale `15 + Math.random()*20` (module-load) to base `15` (re-randomized at roll time) | `travelEvents.ts` |
+| M12 | MEDIUM | Added healing encounters to Floor 4 (Dragon Tear Pool, -14 HP) and Floor 5 (Void Well, -16 HP) — smooths difficulty curve | `encounters.ts` |
+| M14 | MEDIUM | Deep Dungeon Clear quest now checks all 6 floors (was missing Floor 6: Forgotten Temple). Updated quest description + validation. | `quests.ts` |
+| M18 | MEDIUM | AI pawn threshold raised from 30g to 75g — prevents death spiral by pawning before unable to afford food/rent | `economicActions.ts` |
+| M22 | MEDIUM | Quest/bounty/guild-pass actions now weighted by personality (combat weight). Morgath gets combat boost for quest actions. | `actionGenerator.ts` |
+| M31 | MEDIUM | CavePanel refactored from direct `useGameStore.setState()` to proper store actions (`incrementDungeonAttempts`, `updatePlayerDungeonRecord`). Works with middleware/multiplayer. | `CavePanel.tsx`, `playerHelpers.ts`, `storeTypes.ts` |
+| L41/L42 | LOW | Division by zero guard in HealthBar, HealerPanel, GraveyardPanel when `maxHealth=0` | `HealthBar.tsx`, `HealerPanel.tsx`, `GraveyardPanel.tsx` |
+
+### Previously Fixed (confirmed in codebase from earlier sessions)
+
+The following findings from the audit were already fixed before this session:
+- **C1**: Stale state after checkVictory (re-read via `get()`)
+- **C2**: Appliance breakage stale player (re-read from state)
+- **C3**: Duplicate `feast` item ID (renamed to `tavern-feast`)
+- **C4**: AI weather movement cost bypass (weather cost added to AI moves)
+- **H1**: Modest housing maps to slums (modest tier removed, Jones 2-tier system)
+- **H2**: payRent ignores prepaid weeks (check added)
+- **H3**: Loan default ignores investments (investments now liquidated)
+- **H4**: Two death paths (unified to match checkDeath)
+- **H6**: ancient-evil mage level 3 → 2 (A-rank aligned with difficulty)
+- **H8**: AI dungeon floor 0 falsy check (explicit null check)
+- **H10**: AI job upgrade missing move action (move-to-guild-hall added)
+- **H12**: Dungeon health cap (maxHealth instead of startHealth)
+- **H13**: Retreat gold penalty message (leftDueToTime distinguished)
+- **M3**: payRent doesn't clear rentDebt (cleared on payment)
+- **M9**: Eviction doesn't reset prepaid weeks (cleared on eviction)
+- **M15**: getBestBounty wrong guild pass check (bounties don't need pass)
+- **M27**: Damage reduction not clamped (clamped to minimum 0)
+- **M28**: Career = 0 when unemployed (shows dependability always)
+- **M32**: Newspaper purchase no gold check (gold validation added)
+- **L15**: workShift no time validation (time check added)
+
+### Audit Status Summary
+
+| Severity | Total | Fixed | Remaining |
+|----------|-------|-------|-----------|
+| CRITICAL | 4 | 4 | 0 |
+| HIGH | 13 | 13 | 0 |
+| MEDIUM | 32 | 21 | 11 |
+| LOW | 57 | 3 | 54 |
+| **Total** | **106** | **41** | **65** |
+
+All CRITICAL and HIGH findings are now resolved. Remaining items are MEDIUM (data balance, fragile-but-safe patterns) and LOW (dead code, minor UX, documentation).
+
+---
+
 ## 2026-02-12 - Full Game Audit (Agent-Assisted) — 106 Findings
 
 ### Overview

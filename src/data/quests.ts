@@ -240,7 +240,8 @@ export const QUESTS: Quest[] = [
   {
     id: 'deep-dungeon-clear',
     name: 'Deep Dungeon Clear',
-    description: 'Conquer all 5 levels of the legendary dungeon. This is either incredibly brave or proof that natural selection still works.',
+    // M14 FIX: Updated to reference all 6 floors (Floor 6: Forgotten Temple was missing)
+    description: 'Conquer all 6 levels of the legendary dungeon. This is either incredibly brave or proof that natural selection still works.',
     rank: 'S',
     goldReward: 450,
     timeRequired: 30,
@@ -312,9 +313,10 @@ export function canTakeQuest(
 
   // Check all dungeon floors requirement
   if (quest.requiresAllDungeonFloors) {
-    const allCleared = [1, 2, 3, 4, 5].every(f => cleared.includes(f));
+    // M14 FIX: Check all 6 floors (was missing Floor 6: Forgotten Temple)
+    const allCleared = [1, 2, 3, 4, 5, 6].every(f => cleared.includes(f));
     if (!allCleared) {
-      return { canTake: false, reason: `Requires all 5 dungeon floors cleared` };
+      return { canTake: false, reason: `Requires all 6 dungeon floors cleared` };
     }
   }
 

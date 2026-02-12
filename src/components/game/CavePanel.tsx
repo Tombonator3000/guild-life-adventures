@@ -120,15 +120,9 @@ export function CavePanel({
     // Only charge for the first encounter's time on entry (rest charged per encounter)
     const encounterTime = getEncounterTimeCost(floor, combatStats);
     spendTime(player.id, encounterTime);
-    // Increment dungeon attempts via direct store set
-    const { players } = useGameStore.getState();
-    useGameStore.setState({
-      players: players.map(p =>
-        p.id === player.id
-          ? { ...p, dungeonAttemptsThisTurn: (p.dungeonAttemptsThisTurn || 0) + 1 }
-          : p
-      ),
-    });
+    // M31 FIX: Use proper store action instead of direct setState
+    const { incrementDungeonAttempts } = useGameStore.getState();
+    incrementDungeonAttempts(player.id);
     setActiveFloor(floor);
   };
 
@@ -173,26 +167,9 @@ export function CavePanel({
       );
     }
 
-    // Update dungeon leaderboard records
-    const { players } = useGameStore.getState();
-    useGameStore.setState({
-      players: players.map(p => {
-        if (p.id !== player.id) return p;
-        const currentRecords = p.dungeonRecords || {};
-        const updatedRecord = updateDungeonRecord(
-          currentRecords[activeFloor.id],
-          result.goldEarned,
-          result.encountersCompleted,
-        );
-        return {
-          ...p,
-          dungeonRecords: {
-            ...currentRecords,
-            [activeFloor.id]: updatedRecord,
-          },
-        };
-      }),
-    });
+    // M31 FIX: Use proper store action instead of direct setState
+    const { updatePlayerDungeonRecord } = useGameStore.getState();
+    updatePlayerDungeonRecord(player.id, activeFloor.id, result.goldEarned, result.encountersCompleted);
 
     if (result.success) {
       const firstClearBonus = result.isFirstClear

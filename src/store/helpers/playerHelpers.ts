@@ -205,5 +205,37 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
         ),
       }));
     },
+
+    // M31 FIX: Proper store action for dungeon attempt tracking (was direct setState in CavePanel)
+    incrementDungeonAttempts: (playerId: string) => {
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? { ...p, dungeonAttemptsThisTurn: (p.dungeonAttemptsThisTurn || 0) + 1 }
+            : p
+        ),
+      }));
+    },
+
+    // M31 FIX: Proper store action for dungeon record updates (was direct setState in CavePanel)
+    updatePlayerDungeonRecord: (playerId: string, floorId: number, goldEarned: number, encountersCompleted: number) => {
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          const currentRecords = p.dungeonRecords || {};
+          const existing = currentRecords[floorId];
+          const bestGold = existing ? Math.max(existing.bestGold, goldEarned) : goldEarned;
+          const bestEncounters = existing ? Math.max(existing.bestEncounters, encountersCompleted) : encountersCompleted;
+          const totalRuns = existing ? existing.totalRuns + 1 : 1;
+          return {
+            ...p,
+            dungeonRecords: {
+              ...currentRecords,
+              [floorId]: { bestGold, bestEncounters, totalRuns },
+            },
+          };
+        }),
+      }));
+    },
   };
 }

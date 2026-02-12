@@ -146,11 +146,19 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
       }
     },
 
+    // M4 FIX: Add validation to negotiateRaise (bounds check, job existence, wage cap)
     negotiateRaise: (playerId: string, newWage: number) => {
+      const state = get();
+      const player = state.players.find(p => p.id === playerId);
+      if (!player || !player.currentJob) return;
+      const job = getJob(player.currentJob);
+      if (!job) return;
+      const maxWage = Math.ceil(job.baseWage * 3); // Cap at 3x base (same as requestRaise)
+      const clampedWage = Math.max(1, Math.min(newWage, maxWage));
       set((state) => ({
         players: state.players.map((p) =>
           p.id === playerId
-            ? { ...p, currentWage: newWage }
+            ? { ...p, currentWage: clampedWage }
             : p
         ),
       }));
