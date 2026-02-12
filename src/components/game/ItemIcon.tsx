@@ -59,12 +59,13 @@ function getIconForItem(itemId: string, category?: ItemCategory): IconFn {
   if (itemId === 'stew') return StewIcon;
   if (itemId === 'roast') return RoastIcon;
   
-  // Clothing
+  // Clothing (Jones-style 3-tier)
   if (itemId === 'peasant-garb') return PeasantGarbIcon;
-  if (itemId === 'common-clothes') return CommonClothesIcon;
+  if (itemId === 'common-tunic') return CommonClothesIcon;
   if (itemId === 'fine-clothes') return FineClothesIcon;
+  if (itemId === 'merchants-attire') return FineClothesIcon;
   if (itemId === 'noble-attire') return NobleAttireIcon;
-  if (itemId === 'guild-uniform') return GuildUniformIcon;
+  if (itemId === 'guild-vestments') return GuildUniformIcon;
   
   // Appliances
   if (itemId === 'candles') return CandlesIcon;

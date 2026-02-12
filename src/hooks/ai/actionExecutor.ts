@@ -113,9 +113,11 @@ function handleBuyFood(player: Player, action: AIAction, store: StoreActions): b
 }
 
 function handleBuyClothing(player: Player, action: AIAction, store: StoreActions): boolean {
-  const cost = (action.details?.cost as number) || 25;
-  const clothingGain = (action.details?.clothingGain as number) || 50;
+  const cost = (action.details?.cost as number) || 12;
+  // clothingGain is now the target condition level (SET-based, not additive)
+  const clothingGain = (action.details?.clothingGain as number) || 35;
   if (player.gold < cost) return false;
+  if (clothingGain <= player.clothingCondition) return false; // Already at or above this level
   store.modifyGold(player.id, -cost);
   store.modifyClothing(player.id, clothingGain);
   store.spendTime(player.id, 1);

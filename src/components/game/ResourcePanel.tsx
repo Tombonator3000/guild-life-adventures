@@ -1,6 +1,7 @@
 import { useCurrentPlayer, useGameStore } from '@/store/gameStore';
 import { Coins, Heart, Smile, Clock, Utensils, Shirt, Shield, Briefcase } from 'lucide-react';
 import { GUILD_RANK_NAMES, HOURS_PER_TURN } from '@/types/game.types';
+import { getClothingTier, CLOTHING_TIER_LABELS } from '@/data/items';
 import { GoalProgress } from './GoalProgress';
 import { CharacterPortrait } from './CharacterPortrait';
 
@@ -91,9 +92,9 @@ export function ResourcePanel() {
           barColor="bg-secondary"
           warning={player.foodLevel < 25}
         />
-        <ResourceCard 
+        <ResourceCard
           icon={<Shirt className="w-4 h-4" />}
-          label="Clothing"
+          label={player.clothingCondition <= 0 ? 'Clothing' : CLOTHING_TIER_LABELS[getClothingTier(player.clothingCondition)]}
           value={player.clothingCondition <= 0 ? 'NONE!' : `${player.clothingCondition}%`}
           color="text-primary"
           showBar

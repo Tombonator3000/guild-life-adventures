@@ -468,10 +468,12 @@ function JobsChapter() {
 
       <H2>Clothing Requirements</H2>
       <P>
-        Jobs require appropriate attire. Entry jobs need casual clothes, mid-level jobs
-        need dress clothes, and top jobs require a business suit. Buy clothing at the
-        <strong> Armory</strong> or <strong>Shadow Market</strong>. Clothes wear out over
-        time and must be replaced.
+        Jobs require appropriate attire in three tiers. <strong>Casual</strong> clothes
+        (Peasant Garb 12g, Common Tunic 25g) for entry jobs. <strong>Dress</strong> clothes
+        (Fine Clothes 60g, Merchant's Attire 100g) for professional positions.
+        <strong> Business</strong> attire (Noble Attire 175g, Guild Vestments 250g) for
+        leadership roles. Clothes degrade by 3% per week — more expensive clothes start
+        at higher condition and last longer. Buy at the <strong>Armory</strong>.
       </P>
 
       <H2>Wage Variation</H2>

@@ -146,11 +146,14 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
       }));
     },
 
+    // Jones-style SET behavior: buying clothes SETS condition to max(current, amount)
+    // This means buying Peasant Garb (35) when you have 20 → sets to 35
+    // But buying Peasant Garb (35) when you have 60 → stays at 60 (no downgrade)
     modifyClothing: (playerId: string, amount: number) => {
       set((state) => ({
         players: state.players.map((p) =>
           p.id === playerId
-            ? { ...p, clothingCondition: Math.max(0, Math.min(100, p.clothingCondition + amount)) }
+            ? { ...p, clothingCondition: Math.min(100, Math.max(p.clothingCondition, amount)) }
             : p
         ),
       }));
