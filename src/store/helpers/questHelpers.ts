@@ -465,8 +465,8 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       const totalEducation = player.completedDegrees.length * 9;
       const educationMet = totalEducation >= goals.education;
 
-      // Check career (Jones-style: dependability stat, 0 if no job)
-      const careerValue = player.currentJob ? player.dependability : 0;
+      // M28 FIX: Career = dependability (available even when unemployed)
+      const careerValue = player.dependability;
       const careerMet = careerValue >= goals.career;
 
       // Check adventure goal (optional — 0 means disabled)

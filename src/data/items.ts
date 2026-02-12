@@ -585,7 +585,7 @@ export const TAVERN_ITEMS: Item[] = [
     description: 'A proper meal with all the trimmings. The meat is identifiable, which puts it in the top tier for tavern food.',
   },
   {
-    id: 'feast',
+    id: 'tavern-feast',
     name: 'Tavern Feast',
     category: 'food',
     basePrice: 45,

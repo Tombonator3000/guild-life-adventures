@@ -13003,7 +13003,88 @@ Updated `RightSideTabs.tsx`: **822 → 174 lines** (79% reduction)
 - **Main file**: 822 → 174 lines (79% reduction)
 - **Zero behavior changes** — all UI, interactions, and rendering identical
 
-### Build & Tests
+### Build & Tests (RightSideTabs refactor)
 - TypeScript: compiles cleanly (tsc --noEmit)
 - Build: passes (vite build)
+- Tests: 176/176 pass
+
+---
+
+## 2026-02-12 — Audit Fix Session: 4 CRITICAL + 9 HIGH + 6 MEDIUM + 1 LOW
+
+### Summary
+
+Fixed 20 findings from AUDIT-2026-02-12.md across all severity levels. Removed the 'modest' housing tier to align with Jones's 2-tier system (Slums / Noble Heights only). All 176 tests pass, TypeScript compiles cleanly.
+
+### CRITICAL Fixes (4/4)
+
+| ID | Fix | File(s) |
+|----|-----|---------|
+| C1 | Re-read state after `checkVictory()` in `endTurn` — prevents stale player data from being used for next turn setup | `turnHelpers.ts` |
+| C2 | `processApplianceBreakage` now receives `get` fn and re-reads player — prevents stale gold check after robbery deduction | `startTurnHelpers.ts` |
+| C3 | Renamed duplicate item ID `'feast'` → `'tavern-feast'` in TAVERN_ITEMS | `items.ts` |
+| C4 | AI movement now includes `weather.movementCostExtra` (same formula as human) — no more weather cheating | `actionExecutor.ts` |
+
+### HIGH Fixes (9/13)
+
+| ID | Fix | File(s) |
+|----|-----|---------|
+| H1 | **Removed modest housing tier entirely** (Jones 2-tier: Slums + Noble). Updated type, data, RENT_COSTS, HOUSING_TIERS, UI panels, i18n (en/es/de), UserManual, save migration | 11 files |
+| H2 | `payRent` now checks `rentPrepaidWeeks` — skips gold deduction if prepaid | `bankingHelpers.ts` |
+| H3 | Loan default now liquidates investments after savings/gold before declaring default | `weekEndHelpers.ts` |
+| H4 | Week-end death checks unified with mid-turn death: scaled resurrection cost, happiness penalty, permadeath support | `weekEndHelpers.ts` |
+| H6 | Reduced `ancient-evil` quest from mage level 3 → mage level 2 (was harder than S-rank) | `quests.ts` |
+| H8 | AI dungeon floor 0 now uses explicit null check instead of falsy `!floorId` | `actionExecutor.ts` |
+| H10 | AI job upgrade now generates move-to-guild-hall action if not already there | `strategicActions.ts` |
+| H12 | Dungeon healing cap uses `maxHealth` instead of `startHealth` — entering at low HP no longer punishing | `combatResolver.ts`, `CombatView.tsx` |
+| H13 | Added `leftDueToTime` flag — distinguishes time-exit (100% gold) from voluntary retreat (50% gold) in FloorSummaryView | `combatResolver.ts`, `CombatView.tsx`, `FloorSummaryView.tsx` |
+
+### MEDIUM Fixes (6/32)
+
+| ID | Fix | File(s) |
+|----|-----|---------|
+| M3 | `payRent` now clears `rentDebt` on payment | `bankingHelpers.ts` |
+| M9 | Eviction now clears `rentPrepaidWeeks` and `lockedRent` | `weekEndHelpers.ts` |
+| M15 | AI `getBestBounty` removed incorrect Guild Pass check (bounties are free) | `strategy.ts` |
+| M27 | Damage reduction multiplier clamped to min 0 — prevents negative damage | `combatResolver.ts` |
+| M28 | Career goal = dependability always (not gated by job). Updated `GoalProgress`, `checkVictory`, and test | `GoalProgress.tsx`, `questHelpers.ts`, `victory.test.ts` |
+| M32 | Newspaper purchase now validates gold before buying | `LocationPanel.tsx` |
+
+### LOW Fixes (1/57)
+
+| ID | Fix | File(s) |
+|----|-----|---------|
+| L15 | `workShift` now validates player has enough `timeRemaining` before working | `workEducationHelpers.ts` |
+
+### Files Changed (25 files)
+
+| File | Changes |
+|------|---------|
+| `src/types/game.types.ts` | Removed `'modest'` from HousingTier, removed from RENT_COSTS |
+| `src/data/housing.ts` | Removed modest housing data, removed from HOUSING_TIERS array |
+| `src/data/items.ts` | Renamed duplicate `feast` → `tavern-feast` (C3) |
+| `src/data/quests.ts` | `ancient-evil`: mage 3 → mage 2 (H6) |
+| `src/data/combatResolver.ts` | Added `maxHealth` + `leftDueToTime` to DungeonRunState, clamped damage reduction (M27) |
+| `src/store/helpers/turnHelpers.ts` | C1: Re-read state after checkVictory in endTurn |
+| `src/store/helpers/startTurnHelpers.ts` | C2: Pass `get` to processApplianceBreakage |
+| `src/store/helpers/weekEndHelpers.ts` | H3: Loan default includes investments, H4: Unified death checks, M9: Eviction clears prepaid |
+| `src/store/helpers/economy/bankingHelpers.ts` | H2: Check prepaid weeks, M3: Clear rent debt |
+| `src/store/helpers/workEducationHelpers.ts` | L15: Time validation in workShift |
+| `src/store/helpers/questHelpers.ts` | M28: Career = dependability always |
+| `src/store/gameStore.ts` | H1: Save migration for modest → slums |
+| `src/hooks/ai/actionExecutor.ts` | C4: Weather movement cost, H8: Floor 0 null check |
+| `src/hooks/ai/actions/strategicActions.ts` | H10: Job upgrade move action |
+| `src/hooks/ai/strategy.ts` | M15: Removed incorrect Guild Pass check for bounties |
+| `src/components/game/GoalProgress.tsx` | M28: Career = dependability always |
+| `src/components/game/HomePanel.tsx` | H1: Removed modest housing references |
+| `src/components/game/LandlordPanel.tsx` | H1: Removed modest filter (no longer needed) |
+| `src/components/game/UserManual.tsx` | H1: Removed modest from housing table |
+| `src/components/game/LocationPanel.tsx` | M32: Newspaper gold validation |
+| `src/components/game/CombatView.tsx` | H12: Pass maxHealth, H13: leftDueToTime flag |
+| `src/components/game/combat/FloorSummaryView.tsx` | H13: Separate messages for retreat vs time exit |
+| `src/i18n/en.ts`, `es.ts`, `de.ts` | H1: Removed modest housing translation |
+| `src/test/victory.test.ts` | M28: Updated career tests for new behavior |
+
+### Build & Tests
+- TypeScript: compiles cleanly (tsc --noEmit)
 - Tests: 176/176 pass

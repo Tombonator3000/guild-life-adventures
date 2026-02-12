@@ -577,7 +577,6 @@ function HousingChapter() {
         rows={[
           ['Homeless', '0g', '-3/turn', '50%', 'Sleeping on streets. Very dangerous.'],
           ['The Slums', '75g', '0', '25%', 'Cheap but Shadowfingers lurks.'],
-          ['Modest', '95g', '+2/turn', '5%', 'Comfortable and relatively safe.'],
           ['Noble Heights', '120g', '+3/turn', '0%', 'Luxury and completely safe.'],
         ]}
       />
@@ -1050,7 +1049,7 @@ function TipsChapter() {
 
       <H2>Mid Game (Weeks 8–20)</H2>
       <P>
-        <strong>Upgrade housing.</strong> Moving to Modest or Noble Heights protects your
+        <strong>Upgrade housing.</strong> Moving to Noble Heights protects your
         growing collection of items from Shadowfingers.
       </P>
       <P>

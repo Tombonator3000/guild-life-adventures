@@ -50,6 +50,7 @@ export function generateStrategicActions(ctx: ActionContext): AIAction[] {
   }
 
   // Consider upgrading job if better one available
+  // H10 FIX: Add move-to-guild-hall action if not already there
   if (player.currentJob) {
     const currentJob = getJob(player.currentJob);
     const bestJob = getBestAvailableJob(player, rivals);
@@ -60,6 +61,13 @@ export function generateStrategicActions(ctx: ActionContext): AIAction[] {
           priority: 60,
           description: `Upgrade to ${bestJob.name}`,
           details: { jobId: bestJob.id },
+        });
+      } else if (player.timeRemaining > moveCost('guild-hall') + 2) {
+        actions.push({
+          type: 'move',
+          location: 'guild-hall',
+          priority: 55,
+          description: 'Travel to guild hall for job upgrade',
         });
       }
     }

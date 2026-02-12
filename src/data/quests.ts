@@ -232,7 +232,8 @@ export const QUESTS: Quest[] = [
     timeRequired: 18,
     healthRisk: 45,
     happinessReward: 9,
-    requiredEducation: { path: 'mage', level: 3 },
+    // H6 FIX: Reduced from mage 3 to mage 2 (was harder than S-rank quests)
+    requiredEducation: { path: 'mage', level: 2 },
   },
 
   // S-Rank Quests (legendary) — massive rewards for top-tier adventurers

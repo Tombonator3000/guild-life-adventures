@@ -121,10 +121,15 @@ export function FloorSummaryView({
           </div>
         )}
 
-        {/* Retreat note */}
-        {state.retreated && (
+        {/* Retreat note — H13 FIX: distinguish voluntary retreat (50%) from time exit (100%) */}
+        {state.retreated && !state.leftDueToTime && (
           <div className="mt-2 text-xs text-[#8b7355] text-center">
             You retreated with 50% of your earnings. The floor remains uncleared.
+          </div>
+        )}
+        {state.leftDueToTime && (
+          <div className="mt-2 text-xs text-[#8b7355] text-center">
+            You left the dungeon due to time constraints. All earnings kept.
           </div>
         )}
 

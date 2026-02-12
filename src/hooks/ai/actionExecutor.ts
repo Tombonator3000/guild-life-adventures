@@ -72,11 +72,18 @@ type ActionHandler = (player: Player, action: AIAction, store: StoreActions) => 
 
 function handleMove(player: Player, action: AIAction, store: StoreActions): boolean {
   if (!action.location) return false;
-  const cost = calculatePathDistance(player.currentLocation, action.location);
+  const baseCost = calculatePathDistance(player.currentLocation, action.location);
+  // C4 FIX: Include weather movement cost (same formula as human movement)
+  const state = useGameStore.getState();
+  const weather = state.weather;
+  const path = getPath(player.currentLocation, action.location);
+  const weatherExtraCost = (baseCost > 0 && weather?.movementCostExtra)
+    ? path.length * weather.movementCostExtra
+    : 0;
+  const cost = baseCost + weatherExtraCost;
   if (player.timeRemaining < cost) return false;
-  const networkMode = useGameStore.getState().networkMode;
+  const networkMode = state.networkMode;
   if (networkMode === 'host') {
-    const path = getPath(player.currentLocation, action.location);
     peerManager.broadcast({ type: 'movement-animation', playerId: player.id, path });
   }
   store.movePlayer(player.id, action.location, cost);
@@ -386,7 +393,8 @@ function handleCompleteQuest(player: Player, action: AIAction, store: StoreActio
 
 function handleExploreDungeon(player: Player, action: AIAction, store: StoreActions): boolean {
   const floorId = action.details?.floorId as number;
-  if (!floorId) return false;
+  // H8 FIX: Use explicit null check instead of falsy (floor 0 is valid)
+  if (floorId === undefined || floorId === null) return false;
   const floor = getFloor(floorId);
   if (!floor) return false;
 

@@ -50,8 +50,10 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
   };
 
   const handleBuyNewspaper = () => {
-    playSFX('item-buy');
     const price = Math.round(NEWSPAPER_COST * store.priceModifier);
+    // M32 FIX: Check gold before purchasing
+    if (player.gold < price) return;
+    playSFX('item-buy');
     store.modifyGold(player.id, -price);
     const newspaper = generateNewspaper(store.week, store.priceModifier, store.economyTrend);
     setCurrentNewspaper(newspaper);

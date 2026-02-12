@@ -283,6 +283,9 @@ function processHousing(p: Player, msgs: string[]): void {
     p.housing = 'homeless';
     p.weeksSinceRent = 0;
     p.rentDebt = 0;
+    // M9 FIX: Clear prepaid weeks and locked rent on eviction
+    p.rentPrepaidWeeks = 0;
+    p.lockedRent = 0;
     p.inventory = [];
     // H1: Clear appliances and equipment on eviction
     p.durables = {};
@@ -358,21 +361,27 @@ function processLoans(p: Player, msgs: string[]): void {
   p.loanAmount = Math.min(p.loanAmount + interest, 2000);
   p.loanWeeksRemaining = Math.max(0, p.loanWeeksRemaining - 1);
 
-  // Loan default: forced repayment from savings/gold
+  // Loan default: forced repayment from savings/gold/investments (H3 FIX)
   if (p.loanWeeksRemaining <= 0 && p.loanAmount > 0) {
     const fromSavings = Math.min(p.savings, p.loanAmount);
     p.savings -= fromSavings;
-    const remaining = p.loanAmount - fromSavings;
+    let remaining = p.loanAmount - fromSavings;
     const fromGold = Math.min(p.gold, remaining);
     p.gold -= fromGold;
-    const stillOwed = remaining - fromGold;
+    remaining -= fromGold;
+    // H3 FIX: Also liquidate investments to cover loan default
+    if (remaining > 0 && p.investments > 0) {
+      const fromInvestments = Math.min(p.investments, remaining);
+      p.investments -= fromInvestments;
+      remaining -= fromInvestments;
+    }
 
-    if (stillOwed > 0) {
+    if (remaining > 0) {
       // Can't fully repay: happiness penalty, extension
       p.happiness = Math.max(0, p.happiness - 10);
       p.loanWeeksRemaining = 4;
       if (!p.isAI) {
-        msgs.push(`${p.name} defaulted on loan! -10 happiness. ${stillOwed}g still owed.`);
+        msgs.push(`${p.name} defaulted on loan! -10 happiness. ${remaining}g still owed.`);
       }
     } else {
       p.loanAmount = 0;
@@ -510,18 +519,44 @@ function processPlayerWeekEnd(p: Player, ctx: WeekEndContext, msgs: string[]): v
 // 3. Death Check Processing
 // ============================================================
 
+// H4 FIX: Unified death logic matching checkDeath in questHelpers.ts
+// Uses scaled resurrection cost, happiness penalty, and permadeath support
 function processDeathChecks(players: Player[], msgs: string[]): void {
+  const enablePermadeath = getGameOption('enablePermadeath');
+
   for (const p of players) {
     if (p.isGameOver || p.health > 0) continue;
 
     // Skip resurrection if already resurrected this week (prevents double resurrection exploit)
     if (p.wasResurrectedThisWeek) {
-      p.isGameOver = true;
-      msgs.push(`${p.name} could not be saved a second time and has perished!`);
-    } else if (p.savings >= 100) {
+      if (enablePermadeath) {
+        p.isGameOver = true;
+        msgs.push(`${p.name} could not be saved a second time and has perished!`);
+      } else {
+        // Non-permadeath: respawn with minimal HP
+        p.health = 20;
+        p.happiness = Math.max(0, p.happiness - 8);
+        msgs.push(`${p.name} barely survived! -8 happiness.`);
+      }
+      continue;
+    }
+
+    // Scaled resurrection cost (same formula as checkDeath)
+    const totalWealth = p.gold + p.savings;
+    const scaledCost = Math.min(2000, Math.max(100, 100 + Math.floor((Math.max(0, totalWealth - 500)) * 0.10)));
+    const resurrectionHappinessPenalty = 8;
+
+    if (p.savings >= scaledCost) {
       p.health = 50;
-      p.savings -= 100;
-      msgs.push(`${p.name} was revived by healers! 100g taken from savings.`);
+      p.savings -= scaledCost;
+      p.happiness = Math.max(0, p.happiness - resurrectionHappinessPenalty);
+      p.wasResurrectedThisWeek = true;
+      msgs.push(`${p.name} was revived by healers! ${scaledCost}g from savings, -${resurrectionHappinessPenalty} happiness.`);
+    } else if (!enablePermadeath) {
+      // Non-permadeath: respawn with minimal HP
+      p.health = 20;
+      p.happiness = Math.max(0, p.happiness - 8);
+      msgs.push(`${p.name} barely survived the week! -8 happiness.`);
     } else {
       p.isGameOver = true;
       msgs.push(`${p.name} has perished!`);

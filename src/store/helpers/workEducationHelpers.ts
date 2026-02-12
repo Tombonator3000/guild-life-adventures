@@ -28,6 +28,9 @@ const DEGREE_TO_PATH: Record<string, string> = {
 export function createWorkEducationActions(set: SetFn, get: GetFn) {
   return {
     workShift: (playerId: string, hours: number, wage: number) => {
+      // L15 FIX: Validate player has enough time before working
+      const player = get().players.find(p => p.id === playerId);
+      if (!player || player.timeRemaining < hours) return;
       const gameWeek = get().week;
       set((state) => ({
         players: state.players.map((p) => {
