@@ -1,5 +1,5 @@
 import { BOARD_ASPECT_RATIO } from '@/data/locations';
-import type { ZoneConfig, LocationId, CenterPanelLayout, LayoutElementId } from '@/types/game.types';
+import type { ZoneConfig, LocationId, CenterPanelLayout, LayoutElementId, AnimationLayerConfig } from '@/types/game.types';
 import type { MovementWaypoint } from '@/data/locations';
 import type { CenterPanelConfig, EditorMode } from '@/hooks/useZoneEditorState';
 import { getAdjacentPairs, getZoneCenter, LAYOUT_ELEMENT_LABELS } from '@/hooks/useZoneEditorState';
@@ -27,6 +27,11 @@ interface ZoneEditorBoardProps {
   selectedLayoutElement: LayoutElementId | null;
   handleLayoutMouseDown: (e: React.MouseEvent, elementId: LayoutElementId, mode: 'move' | 'resize') => void;
   setSelectedLayoutElement: (id: LayoutElementId | null) => void;
+  // Animation layer props
+  animationLayers: AnimationLayerConfig[];
+  selectedAnimationLayer: string | null;
+  handleAnimationLayerMouseDown: (e: React.MouseEvent, layerId: string) => void;
+  setSelectedAnimationLayer: (id: string | null) => void;
 }
 
 const LAYOUT_ELEMENT_IDS: LayoutElementId[] = ['npc', 'text', 'itemPreview'];
@@ -52,6 +57,10 @@ export function ZoneEditorBoard({
   selectedLayoutElement,
   handleLayoutMouseDown,
   setSelectedLayoutElement,
+  animationLayers,
+  selectedAnimationLayer,
+  handleAnimationLayerMouseDown,
+  setSelectedAnimationLayer,
 }: ZoneEditorBoardProps) {
   const adjacentPairs = getAdjacentPairs();
 
@@ -272,6 +281,58 @@ export function ZoneEditorBoard({
             })}
           </div>
         )}
+
+        {/* Animation layer markers (animations mode) */}
+        {editorMode === 'animations' && animationLayers.map(layer => {
+          const isSelected = selectedAnimationLayer === layer.id;
+          const orbitPx = 30 * layer.orbitRadius;
+          return (
+            <div
+              key={layer.id}
+              className="absolute cursor-move"
+              style={{
+                left: `${layer.cx}%`,
+                top: `${layer.cy}%`,
+                transform: 'translate(-50%, -50%)',
+                zIndex: isSelected ? 20 : 10,
+              }}
+              onMouseDown={e => handleAnimationLayerMouseDown(e, layer.id)}
+            >
+              {/* Orbit radius preview ellipse */}
+              <div
+                className="absolute rounded-full pointer-events-none"
+                style={{
+                  width: `${orbitPx * 2}px`,
+                  height: `${orbitPx * 1.1}px`,
+                  left: '50%',
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  border: `2px ${isSelected ? 'solid' : 'dashed'} ${isSelected ? '#f97316' : '#fb923c80'}`,
+                }}
+              />
+              {/* Center dot */}
+              <div
+                className="w-5 h-5 rounded-full border-2"
+                style={{
+                  backgroundColor: isSelected ? '#f97316' : '#fb923c80',
+                  borderColor: isSelected ? '#fff' : '#f97316',
+                }}
+              />
+              {/* Label */}
+              {showLabels && (
+                <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-orange-400 bg-black/70 px-1 whitespace-nowrap rounded">
+                  {layer.label}
+                </span>
+              )}
+              {/* Visibility indicator */}
+              {!layer.visible && (
+                <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] text-red-400 bg-black/70 px-1 rounded">
+                  hidden
+                </span>
+              )}
+            </div>
+          );
+        })}
 
         {/* Zone overlays */}
         {zones.map(zone => {

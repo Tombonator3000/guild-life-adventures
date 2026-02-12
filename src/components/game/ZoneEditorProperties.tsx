@@ -1,7 +1,7 @@
-import type { ZoneConfig, LocationId, CenterPanelLayout, LayoutElementId, LayoutElement } from '@/types/game.types';
+import type { ZoneConfig, LocationId, CenterPanelLayout, LayoutElementId, LayoutElement, AnimationLayerConfig } from '@/types/game.types';
 import type { MovementWaypoint } from '@/data/locations';
 import type { CenterPanelConfig, EditorMode } from '@/hooks/useZoneEditorState';
-import { LAYOUT_ELEMENT_LABELS, DEFAULT_LAYOUT } from '@/hooks/useZoneEditorState';
+import { LAYOUT_ELEMENT_LABELS, DEFAULT_LAYOUT, DEFAULT_ANIMATION_LAYERS } from '@/hooks/useZoneEditorState';
 
 const LAYOUT_ELEMENT_IDS: LayoutElementId[] = ['npc', 'text', 'itemPreview'];
 
@@ -28,6 +28,12 @@ interface ZoneEditorPropertiesProps {
   selectedLayoutElement: LayoutElementId | null;
   setSelectedLayoutElement: (id: LayoutElementId | null) => void;
   handleLayoutInput: (elementId: LayoutElementId, field: keyof LayoutElement, value: number) => void;
+  // Animation layer props
+  animationLayers: AnimationLayerConfig[];
+  setAnimationLayers: React.Dispatch<React.SetStateAction<AnimationLayerConfig[]>>;
+  selectedAnimationLayer: string | null;
+  setSelectedAnimationLayer: (id: string | null) => void;
+  handleAnimationInput: (layerId: string, field: keyof AnimationLayerConfig, value: number | boolean) => void;
 }
 
 export function ZoneEditorProperties({
@@ -52,6 +58,11 @@ export function ZoneEditorProperties({
   selectedLayoutElement,
   setSelectedLayoutElement,
   handleLayoutInput,
+  animationLayers,
+  setAnimationLayers,
+  selectedAnimationLayer,
+  setSelectedAnimationLayer,
+  handleAnimationInput,
 }: ZoneEditorPropertiesProps) {
   return (
     <div className="w-80 bg-gray-900 p-4 overflow-y-auto">
@@ -292,7 +303,7 @@ export function ZoneEditorProperties({
             })}
           </div>
         </>
-      ) : (
+      ) : editorMode === 'layout' ? (
         <>
           {/* Layout Panel */}
           <h3 className="text-lg font-bold text-purple-400 mb-2">Panel Layout</h3>
@@ -420,6 +431,147 @@ export function ZoneEditorProperties({
             className="w-full px-3 py-1.5 bg-gray-700 text-gray-300 rounded text-sm hover:bg-gray-600"
           >
             Reset Layout to Defaults
+          </button>
+        </>
+      ) : (
+        <>
+          {/* Animations Panel */}
+          <h3 className="text-lg font-bold text-orange-400 mb-2">Animated Layers</h3>
+          <p className="text-gray-400 text-xs mb-4">
+            Position animated layer groups on the game board.
+            Drag the center dot to move. Edit properties below.
+          </p>
+
+          {/* Layer selector buttons */}
+          <div className="space-y-1 mb-4">
+            {animationLayers.map(layer => {
+              const isSelected = selectedAnimationLayer === layer.id;
+              return (
+                <button
+                  key={layer.id}
+                  onClick={() => setSelectedAnimationLayer(layer.id)}
+                  className={`w-full text-left px-2 py-1.5 rounded text-sm flex items-center gap-2 ${
+                    isSelected ? 'bg-orange-600 text-white ring-1 ring-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  }`}
+                >
+                  <span
+                    className="w-3 h-3 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: isSelected ? '#fff' : '#f97316' }}
+                  />
+                  {layer.label}
+                  {!layer.visible && <span className="text-red-400 text-[10px] ml-auto">(hidden)</span>}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Selected layer properties */}
+          {selectedAnimationLayer && (() => {
+            const layer = animationLayers.find(l => l.id === selectedAnimationLayer);
+            if (!layer) return null;
+            return (
+              <div className="mb-4 p-3 bg-gray-800 rounded border border-orange-500/50">
+                <h4 className="text-orange-400 font-bold mb-3 text-sm">{layer.label}</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="text-white text-sm">
+                    Center X (%)
+                    <input
+                      type="number"
+                      value={layer.cx.toFixed(1)}
+                      onChange={e => handleAnimationInput(layer.id, 'cx', parseFloat(e.target.value) || 0)}
+                      className="w-full bg-gray-700 text-white px-2 py-1 rounded"
+                      step="0.5"
+                    />
+                  </label>
+                  <label className="text-white text-sm">
+                    Center Y (%)
+                    <input
+                      type="number"
+                      value={layer.cy.toFixed(1)}
+                      onChange={e => handleAnimationInput(layer.id, 'cy', parseFloat(e.target.value) || 0)}
+                      className="w-full bg-gray-700 text-white px-2 py-1 rounded"
+                      step="0.5"
+                    />
+                  </label>
+                  <label className="text-white text-sm">
+                    Orbit Radius
+                    <input
+                      type="number"
+                      value={layer.orbitRadius.toFixed(2)}
+                      onChange={e => handleAnimationInput(layer.id, 'orbitRadius', parseFloat(e.target.value) || 0.1)}
+                      className="w-full bg-gray-700 text-white px-2 py-1 rounded"
+                      step="0.1"
+                      min="0.1"
+                      max="5.0"
+                    />
+                  </label>
+                  <label className="text-white text-sm">
+                    Size
+                    <input
+                      type="number"
+                      value={layer.size.toFixed(2)}
+                      onChange={e => handleAnimationInput(layer.id, 'size', parseFloat(e.target.value) || 0.5)}
+                      className="w-full bg-gray-700 text-white px-2 py-1 rounded"
+                      step="0.1"
+                      min="0.1"
+                      max="5.0"
+                    />
+                  </label>
+                  <label className="text-white text-sm">
+                    Speed
+                    <input
+                      type="number"
+                      value={layer.speed.toFixed(2)}
+                      onChange={e => handleAnimationInput(layer.id, 'speed', parseFloat(e.target.value) || 0.5)}
+                      className="w-full bg-gray-700 text-white px-2 py-1 rounded"
+                      step="0.1"
+                      min="0.1"
+                      max="5.0"
+                    />
+                  </label>
+                  <label className="text-white text-sm flex items-center gap-2 mt-2">
+                    <input
+                      type="checkbox"
+                      checked={layer.visible}
+                      onChange={e => handleAnimationInput(layer.id, 'visible', e.target.checked)}
+                    />
+                    Visible
+                  </label>
+                </div>
+              </div>
+            );
+          })()}
+
+          <hr className="border-gray-700 my-3" />
+
+          {/* All layers summary */}
+          <h4 className="text-sm font-bold text-white mb-2">All Layers</h4>
+          <div className="space-y-2 text-xs">
+            {animationLayers.map(layer => (
+              <div key={layer.id} className="bg-gray-800 rounded p-2">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-orange-500" />
+                  <span className="font-bold text-gray-200">{layer.label}</span>
+                  {!layer.visible && <span className="text-red-400 text-[10px] ml-auto">(hidden)</span>}
+                </div>
+                <div className="text-gray-400 font-mono">
+                  pos: ({layer.cx.toFixed(1)}, {layer.cy.toFixed(1)}) | orbit: {layer.orbitRadius.toFixed(1)}x | size: {layer.size.toFixed(1)}x | speed: {layer.speed.toFixed(1)}x
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <hr className="border-gray-700 my-3" />
+
+          {/* Reset animations button */}
+          <button
+            onClick={() => {
+              setAnimationLayers([...DEFAULT_ANIMATION_LAYERS]);
+              setSelectedAnimationLayer(null);
+            }}
+            className="w-full px-3 py-1.5 bg-gray-700 text-gray-300 rounded text-sm hover:bg-gray-600"
+          >
+            Reset Animations to Defaults
           </button>
         </>
       )}

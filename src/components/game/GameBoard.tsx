@@ -106,6 +106,7 @@ export function GameBoard() {
     customZones,
     centerPanel,
     layout,
+    animationLayers,
     handleSaveZones,
     handleResetZones,
     getLocationWithCustomPosition,
@@ -422,6 +423,7 @@ export function GameBoard() {
           initialZones={customZones}
           initialPaths={{ ...MOVEMENT_PATHS }}
           initialLayout={layout}
+          initialAnimationLayers={animationLayers}
         />
       )}
 

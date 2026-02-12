@@ -322,20 +322,20 @@ interface ItemTooltipProps {
 function ItemTooltip({ item, position }: ItemTooltipProps) {
   return (
     <div
-      className="fixed z-[100] bg-wood text-parchment p-2 rounded shadow-lg border border-gold/30 max-w-[200px] pointer-events-none"
+      className="fixed z-[100] bg-wood text-parchment p-3 rounded shadow-lg border border-gold/30 max-w-[400px] pointer-events-none"
       style={{ left: position.x, top: position.y }}
     >
-      <div className="font-display font-bold text-[11px] text-gold mb-1">
+      <div className="font-display font-bold text-[22px] text-gold mb-2">
         {item.tempered && <span className="text-emerald-400 mr-1">&#9733;</span>}
         {item.name}
-        {item.tempered && <span className="text-emerald-400 text-[9px] ml-1">(Tempered)</span>}
+        {item.tempered && <span className="text-emerald-400 text-[18px] ml-1">(Tempered)</span>}
         {item.equipped && <span className="text-secondary ml-1">(Equipped)</span>}
       </div>
-      <div className="text-[9px] text-parchment/80 mb-1.5">
+      <div className="text-[18px] text-parchment/80 mb-3">
         {item.description}
       </div>
       {item.stats && (
-        <div className="text-[9px] space-y-0.5 border-t border-gold/20 pt-1">
+        <div className="text-[18px] space-y-1 border-t border-gold/20 pt-2">
           {item.stats.attack && (
             <div className="flex justify-between">
               <span>Attack:</span>
@@ -357,8 +357,8 @@ function ItemTooltip({ item, position }: ItemTooltipProps) {
         </div>
       )}
       {item.tempered && item.temperedStats && (
-        <div className="text-[9px] space-y-0.5 border-t border-emerald-500/30 pt-1 mt-1">
-          <div className="text-emerald-400 font-bold text-[8px] uppercase">Temper Bonus</div>
+        <div className="text-[18px] space-y-1 border-t border-emerald-500/30 pt-2 mt-2">
+          <div className="text-emerald-400 font-bold text-[16px] uppercase">Temper Bonus</div>
           {item.temperedStats.attack && (
             <div className="flex justify-between">
               <span className="text-emerald-300">Attack:</span>
@@ -380,12 +380,12 @@ function ItemTooltip({ item, position }: ItemTooltipProps) {
         </div>
       )}
       {item.broken && (
-        <div className="text-[9px] text-destructive mt-1 border-t border-gold/20 pt-1">
+        <div className="text-[18px] text-destructive mt-2 border-t border-gold/20 pt-2">
           ⚠ Broken - Needs repair
         </div>
       )}
       {item.slot && !item.equipped && (
-        <div className="text-[8px] text-parchment/60 mt-1 italic">
+        <div className="text-[16px] text-parchment/60 mt-2 italic">
           Drag to equip
         </div>
       )}

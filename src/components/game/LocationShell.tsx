@@ -118,8 +118,8 @@ export function LocationShell({
         {/* NPC Portrait - Left side, hidden on mobile */}
         {!isMobile && (
           <div className={`flex-shrink-0 ${xlPortrait ? 'w-64' : largePortrait ? 'w-52' : 'w-44'} flex flex-col items-center relative`}>
-            <NpcPortrait npc={npc} size={xlPortrait ? 'xl' : largePortrait ? 'large' : 'normal'} />
-            <div className="text-center">
+            {/* Name/title banner ABOVE portrait */}
+            <div className="text-center mb-1">
               <div
                 className="font-display text-sm font-bold leading-tight"
                 style={{ color: npc.accentColor }}
@@ -130,6 +130,7 @@ export function LocationShell({
                 {npc.title}
               </div>
             </div>
+            <NpcPortrait npc={npc} size={xlPortrait ? 'xl' : largePortrait ? 'large' : 'normal'} />
             <div
               className="mt-1.5 text-[11px] italic text-center leading-tight px-1"
               style={{ color: '#8b7355' }}

@@ -1,5 +1,63 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-12 - UI Positioning, Tooltip Size, Zone Editor Animations, Spoilage Mechanic
+
+### Task 1: NPC Name/Title Banner Above Portrait
+- **Change**: Moved the NPC name and title banner from below the portrait to above it in LocationShell
+- **File**: `src/components/game/LocationShell.tsx` — Reordered JSX: name/title div now renders before `<NpcPortrait>` with `mb-1` spacing
+- Mobile layout unchanged (already uses inline name)
+
+### Task 2: Double Inventory Tooltip Text Size
+- **Change**: All text in the inventory hover tooltip is now 2x larger for readability
+- **File**: `src/components/game/InventoryGrid.tsx` — `ItemTooltip` component sizes doubled:
+  - Container: `max-w-[200px]` → `max-w-[400px]`, `p-2` → `p-3`
+  - Item name: `text-[11px]` → `text-[22px]`
+  - Description/stats: `text-[9px]` → `text-[18px]`
+  - Labels/hints: `text-[8px]` → `text-[16px]`
+  - Spacing proportionally increased
+
+### Task 3: Zone Editor Animations Mode
+- **Change**: New "Animations" tab in the Zone Editor to position animated layers (crows etc.) on the game board
+- **New type**: `AnimationLayerConfig` in `game.types.ts` — `{ id, label, cx, cy, orbitRadius, size, speed, visible }`
+- **Default layer**: `graveyard-crows` at cx:3%, cy:30% with multipliers of 1.0
+- **Editor features**:
+  - Orange "Animations" mode button in toolbar
+  - Draggable center dot on the board showing layer position
+  - Orbit radius preview ellipse around the center
+  - Properties panel: Center X/Y (%), orbit radius, size, speed multipliers, visibility toggle
+  - Layer summary and reset button
+- **GraveyardCrows consumer**: Reads saved config from localStorage, applies cx/cy offset + orbitRadius/size/speed multipliers
+  - If `visible: false`, crows are not rendered
+- **Files modified**:
+  - `src/types/game.types.ts` — Added `AnimationLayerConfig` interface
+  - `src/hooks/useZoneEditorState.ts` — Extended `EditorMode`, added animation state/handlers, `DEFAULT_ANIMATION_LAYERS`
+  - `src/hooks/useZoneConfiguration.ts` — Animation layers in save/load/reset flow
+  - `src/data/zoneStorage.ts` — Added `animationLayers` to save data and `saveZoneConfig` signature
+  - `src/components/game/ZoneEditor.tsx` — Pass animation props to sub-components
+  - `src/components/game/ZoneEditorToolbar.tsx` — "Animations" mode button
+  - `src/components/game/ZoneEditorBoard.tsx` — Draggable animation layer markers with orbit preview
+  - `src/components/game/ZoneEditorProperties.tsx` — Animation layer properties panel
+  - `src/components/game/GraveyardCrows.tsx` — Reads saved animation config, applies position/size/speed overrides
+  - `src/components/game/GameBoard.tsx` — Passes `animationLayers` from config to editor
+
+### Task 4: Spoilage Mechanic — Eating Spoiled Food Causes Sickness (Jones-style)
+- **Change**: Without a working Preservation Box, regular food (`foodLevel`) goes bad. Player still eats it (prevents starvation) but has 55% chance of getting sick → doctor visit (30-200g, -10h, -4 happiness)
+- **Design**: Matches Jones in the Fast Lane — no refrigerator means food spoils, eating spoiled food makes you sick
+- **Constants**: `SPOILED_FOOD_SICKNESS_CHANCE = 0.55` added to `game.types.ts`
+- **New function**: `processRegularFoodSpoilage()` in `startTurnHelpers.ts`
+  - Checks: has foodLevel > 0 AND no working Preservation Box
+  - Food NOT removed (still prevents starvation)
+  - 55% sickness chance → `applyDoctorVisit()`
+- **Orchestrator integration**: Phase 2.5 between fresh food spoilage (Phase 2) and starvation check (Phase 3)
+  - Guard: no double-penalize if fresh food already triggered doctor
+  - Phase 4 guard updated to skip relaxation check if regular food spoilage caused doctor visit
+- **Fresh food sickness**: Increased from 25% to 55% (using same constant)
+- **Files modified**:
+  - `src/types/game.types.ts` — `SPOILED_FOOD_SICKNESS_CHANCE` constant
+  - `src/store/helpers/startTurnHelpers.ts` — New `processRegularFoodSpoilage()`, updated `processFreshFoodSpoilage()` sickness chance, Phase 2.5 in orchestrator
+
+---
+
 ## 2026-02-12 - Food Preservation Overhaul
 
 ### Problem
