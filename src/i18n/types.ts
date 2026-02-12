@@ -292,6 +292,7 @@ export interface TranslationStrings {
     updateAvailable: string;
     checkForUpdates: string;
     checking: string;
+    forceRefresh: string;
     resetDefaults: string;
     resetAllOptions: string;
     yesReset: string;

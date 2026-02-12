@@ -1,5 +1,70 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-12 - Audit GitHub Integration: Cache-Busting & Forced Updates
+
+### Problem
+After merging PRs to GitHub, the live site at `tombonator3000.github.io/guild-life-adventures/` could take **hours** to reflect changes. Players were stuck on stale versions with no way to force an update.
+
+### Root Cause Analysis (Triple Caching Layer)
+1. **GitHub Pages CDN (Fastly)**: Serves all assets with `Cache-Control: max-age=600` (~10 min). CDN edge caches can be stickier.
+2. **Service Worker Precaching (Workbox)**: Precaches ALL JS/CSS/HTML. Even when CDN has new files, the SW intercepts requests and serves old cached versions.
+3. **SW Update Detection**: `registration.update()` fetches the SW script **through** the CDN. If CDN still serves the old SW script, the check sees "no update". The 5-min polling only runs while the tab is active.
+
+**The service worker was the primary culprit** — it could keep serving stale content indefinitely.
+
+### Solution: version.json Polling + Nuclear Hard Refresh
+
+#### 1. Build-time version.json (vite.config.ts)
+- New Vite plugin `versionJsonPlugin()` generates `dist/version.json` at build time
+- Contains `{ buildTime: "<ISO timestamp>" }` matching the `__BUILD_TIME__` define
+- Shared `buildTime` variable ensures exact match between embedded and file versions
+- `version.json` is explicitly excluded from SW precache via `globIgnores`
+
+#### 2. Aggressive Version Polling (useAppUpdate.ts)
+- Polls `version.json` every **60 seconds** with `cache: 'no-store'` + `Cache-Control: no-cache` headers
+- Bypasses both the service worker (file not in precache manifest) and browser cache (`no-store`)
+- Compares `data.buildTime` against embedded `__BUILD_TIME__`
+- If mismatch → sets `versionMismatch` state → shows update banner
+
+#### 3. Nuclear Hard Refresh (hardRefresh())
+- Exported function that clears everything:
+  1. Unregisters **all** service workers via `navigator.serviceWorker.getRegistrations()`
+  2. Deletes **all** Cache Storage entries via `caches.keys()` + `caches.delete()`
+  3. Calls `window.location.reload()` to fetch fresh from network
+- Used when version.json detects a mismatch (ensures complete cache purge)
+- Standard SW update path (`updateServiceWorker(true)`) used when SW itself detected the update
+
+#### 4. Workbox Config Improvements (vite.config.ts)
+- Added `cleanupOutdatedCaches: true` — removes old precache entries when new SW activates
+- Added `globIgnores: ['**/version.json']` — prevents version.json from ever being precached
+
+#### 5. Manual Force Refresh (OptionsMenu)
+- New "Force Refresh" button in Options footer (next to "Check for Updates")
+- Calls `hardRefresh()` directly — lets players manually nuke all caches at any time
+- i18n keys added for EN/DE/ES
+
+### Expected Improvement
+- **Before**: Hours for updates to reach players (SW served stale indefinitely)
+- **After**: ~60 seconds for detection (version.json poll) + ~10 min max for CDN (GitHub Pages TTL)
+- **Manual override**: Players can always click "Force Refresh" for immediate update
+
+### Files Modified
+| File | Change |
+|------|--------|
+| `vite.config.ts` | `versionJsonPlugin()`, shared `buildTime`, `cleanupOutdatedCaches`, `globIgnores` |
+| `src/hooks/useAppUpdate.ts` | version.json polling (60s), `hardRefresh()` export, dual detection |
+| `src/components/game/OptionsMenu.tsx` | "Force Refresh" button, uses `hardRefresh` from hook |
+| `src/i18n/en.ts` | Added `forceRefresh` key |
+| `src/i18n/de.ts` | Added `forceRefresh` key |
+| `src/i18n/es.ts` | Added `forceRefresh` key |
+| `src/i18n/types.ts` | Added `forceRefresh` to type definition |
+
+### Tests
+- All 176 existing tests pass (9 test files)
+- Build succeeds with `version.json` generated in `dist/`
+
+---
+
 ## 2026-02-12 - Fix Mobile Center Panel Gray Area
 
 ### Goal

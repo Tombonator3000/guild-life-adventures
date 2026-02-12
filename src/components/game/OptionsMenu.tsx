@@ -36,7 +36,7 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
   const sfx = useSFXSettings();
   const ambient = useAmbientSettings();
   const narration = useNarrationSettings();
-  const { needRefresh, updateApp, checkForUpdates } = useAppUpdate();
+  const { needRefresh, updateApp, checkForUpdates, hardRefresh } = useAppUpdate();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [showManual, setShowManual] = useState(false);
@@ -112,27 +112,37 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
             <span className="text-[10px] text-muted-foreground font-display">
               {t('optionsMenu.build')}: {getBuildVersion()}
             </span>
-            {needRefresh ? (
+            <div className="flex items-center gap-2">
+              {needRefresh ? (
+                <button
+                  onClick={updateApp}
+                  className="flex items-center gap-1 text-xs text-primary font-display font-bold animate-pulse hover:underline"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  {t('optionsMenu.updateAvailable')}
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setCheckingUpdate(true);
+                    checkForUpdates();
+                    setTimeout(() => setCheckingUpdate(false), 3000);
+                  }}
+                  className="flex items-center gap-1 text-[10px] text-muted-foreground font-display hover:text-foreground transition-colors"
+                >
+                  <RotateCcw className={`w-3 h-3 ${checkingUpdate ? 'animate-spin' : ''}`} />
+                  {checkingUpdate ? t('optionsMenu.checking') : t('optionsMenu.checkForUpdates')}
+                </button>
+              )}
               <button
-                onClick={updateApp}
-                className="flex items-center gap-1 text-xs text-primary font-display font-bold animate-pulse hover:underline"
+                onClick={hardRefresh}
+                className="flex items-center gap-1 text-[10px] text-muted-foreground font-display hover:text-destructive transition-colors"
+                title="Clear all caches and reload from server"
               >
                 <RotateCcw className="w-3 h-3" />
-                {t('optionsMenu.updateAvailable')}
+                {t('optionsMenu.forceRefresh')}
               </button>
-            ) : (
-              <button
-                onClick={() => {
-                  setCheckingUpdate(true);
-                  checkForUpdates();
-                  setTimeout(() => setCheckingUpdate(false), 3000);
-                }}
-                className="flex items-center gap-1 text-[10px] text-muted-foreground font-display hover:text-foreground transition-colors"
-              >
-                <RotateCcw className={`w-3 h-3 ${checkingUpdate ? 'animate-spin' : ''}`} />
-                {checkingUpdate ? t('optionsMenu.checking') : t('optionsMenu.checkForUpdates')}
-              </button>
-            )}
+            </div>
           </div>
           {/* Actions Row */}
           <div className="flex items-center justify-between">

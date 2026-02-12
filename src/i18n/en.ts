@@ -272,6 +272,7 @@ export const en: TranslationStrings = {
     updateAvailable: 'Update Available — Click to Install',
     checkForUpdates: 'Check for Updates',
     checking: 'Checking...',
+    forceRefresh: 'Force Refresh',
     resetDefaults: 'Reset Defaults',
     resetAllOptions: 'Reset all options?',
     yesReset: 'Yes, Reset',
