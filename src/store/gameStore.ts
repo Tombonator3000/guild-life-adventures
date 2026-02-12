@@ -316,8 +316,8 @@ export const useGameStore = create<GameStore>((set, get) => {
       if (!data) return false;
       const gs = data.gameState;
       // H1 FIX: Migrate 'modest' housing to 'slums' (Jones 2-tier system)
-      const migratedPlayers = gs.players.map((p: Record<string, unknown>) =>
-        (p.housing as string) === 'modest' ? { ...p, housing: 'slums' } : p
+      const migratedPlayers = gs.players.map((p: Player) =>
+        p.housing === ('modest' as string) ? { ...p, housing: 'slums' as const } : p
       );
       set({
         phase: gs.phase === 'event' ? 'playing' : gs.phase,
