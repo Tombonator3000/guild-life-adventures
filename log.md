@@ -1,5 +1,20 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-12 - Dungeon Encounter Woodcuts (36 images)
+
+Generated 36 AI woodcut illustrations for all dungeon encounters, bosses, and mini-bosses (Floors 1-6 + 6 mini-bosses). Images display in EncounterIntro (96×96, sepia filter), with emoji icon fallback.
+
+### New Files
+- `src/assets/encounters/index.ts` — ES6 imports, `ENCOUNTER_IMAGES` map, `getEncounterImage()` helper
+- 36 PNG files in `src/assets/encounters/` (f1-*, f2-*, f3-*, f4-*, f5-*, f6-*, mb-*)
+
+### Modified Files
+- `src/components/game/combat/EncounterIntro.tsx` — Shows woodcut image instead of emoji icon
+
+**Running Totals**: 70 event woodcuts + 53 item images + 36 encounter woodcuts = **159 AI-generated assets**
+
+---
+
 ## 2026-02-12 - Woodcut Illustrations Batch 2 (35 new) + Build Fixes
 
 ### Build Fixes
