@@ -1,5 +1,24 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-12 - Fix Mobile Center Panel Gray Area
+
+### Goal
+Eliminate the small gray area visible around the center panel edges on mobile layout.
+
+### Changes Made
+
+**GameBoard.tsx** — Mobile center panel styling fix:
+- Changed `left: '1%'` → `left: '0%'` and `width: '98%'` → `width: '100%'` — panel now goes edge-to-edge on mobile, removing the 1% gray gap on each side
+- Made `rounded-t-lg` desktop-only — on mobile the panel is full-width so rounded top corners would expose the gray background behind them
+- No desktop layout changes — the `centerPanel` percentage-based positioning remains unchanged
+
+### Files Modified
+| File | Change |
+|------|--------|
+| `src/components/game/GameBoard.tsx` | Mobile center panel: full-width (0%/100%), conditional rounded corners |
+
+---
+
 ## 2026-02-11 - Humor Overhaul: Monty Python/Discworld/HHGTTG Style
 
 ### Goal
