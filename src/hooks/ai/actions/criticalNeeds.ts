@@ -135,12 +135,14 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
     const needsBasicClothing = urgency.clothing > 0.6;
     const clothingCost = needsBusinessClothing ? Math.round(55 * pm) : Math.round(25 * pm);
     const clothingGain = needsBusinessClothing ? 75 : 50;
+    const isNaked = player.clothingCondition <= 0;
+    const clothingPriority = isNaked ? 95 : 75; // Naked = higher than rent (90)
     if ((needsBasicClothing || needsBusinessClothing) && player.gold >= clothingCost) {
       if (currentLocation === 'armory' || currentLocation === 'general-store') {
         actions.push({
           type: 'buy-clothing',
-          priority: 75,
-          description: needsBusinessClothing ? 'Buy business clothing for better jobs' : 'Buy clothing for work',
+          priority: clothingPriority,
+          description: isNaked ? 'Buy clothing urgently (cannot work naked)' : needsBusinessClothing ? 'Buy business clothing for better jobs' : 'Buy clothing for work',
           details: { cost: clothingCost, clothingGain },
         });
       } else {
@@ -149,8 +151,8 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
           actions.push({
             type: 'move',
             location: moveCost('armory') < moveCost('general-store') ? 'armory' : 'general-store',
-            priority: 70,
-            description: 'Travel to buy clothing',
+            priority: isNaked ? 90 : 70,
+            description: isNaked ? 'Travel urgently to buy clothing' : 'Travel to buy clothing',
           });
         }
       }

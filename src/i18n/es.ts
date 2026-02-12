@@ -655,6 +655,7 @@ export const es: TranslationStrings = {
     withdrawn: '¡{amount} de oro retirados!',
     loanTaken: '¡Préstamo de {amount} de oro tomado!',
     loanRepaid: '¡{amount} de oro del préstamo pagados!',
+    loanNoHistory: 'El banco requiere historial laboral antes de otorgar préstamos. Trabaja al menos 4 turnos primero.',
     sellFee: '3% comisión de venta',
   },
 

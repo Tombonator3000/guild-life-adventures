@@ -193,7 +193,9 @@ describe('Job system pure functions', () => {
     const entryJobs = getEntryLevelJobs();
     const easyJob = entryJobs.find(j => j.requiredClothing === 'none' && j.requiredExperience === 0);
     if (easyJob) {
-      expect(canWorkJob(easyJob, [], 0, 0, 0)).toBe(true);
+      // Bankruptcy Barrel: clothingLevel 0 blocks all jobs, use 1 for "barely clothed"
+      expect(canWorkJob(easyJob, [], 0, 0, 0)).toBe(false); // Naked = blocked
+      expect(canWorkJob(easyJob, [], 1, 0, 0)).toBe(true);  // Barely clothed = OK for 'none' requirement
     }
   });
 

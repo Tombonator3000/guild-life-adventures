@@ -655,6 +655,7 @@ export const de: TranslationStrings = {
     withdrawn: '{amount} Gold abgehoben!',
     loanTaken: 'Kredit über {amount} Gold aufgenommen!',
     loanRepaid: '{amount} Gold vom Kredit getilgt!',
+    loanNoHistory: 'Die Bank verlangt eine Arbeitshistorie, bevor sie Kredite gewährt. Arbeite zuerst mindestens 4 Schichten.',
     sellFee: '3% Verkaufsgebühr',
   },
 

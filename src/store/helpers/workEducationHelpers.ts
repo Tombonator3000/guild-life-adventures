@@ -31,6 +31,8 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
       // L15 FIX: Validate player has enough time before working
       const player = get().players.find(p => p.id === playerId);
       if (!player || player.timeRemaining < hours) return;
+      // Bankruptcy Barrel: cannot work without any clothes
+      if (player.clothingCondition <= 0) return;
       const gameWeek = get().week;
       set((state) => ({
         players: state.players.map((p) => {
@@ -87,6 +89,7 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
             dependability: newDependability,
             experience: newExperience,
             shiftsWorkedSinceHire: (p.shiftsWorkedSinceHire || 0) + 1,
+            totalShiftsWorked: (p.totalShiftsWorked || 0) + 1,
             rentDebt: newRentDebt,
           };
         }),

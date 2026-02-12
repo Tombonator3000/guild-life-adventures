@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Player } from '@/types/game.types';
+import { LOAN_MIN_SHIFTS_REQUIRED } from '@/types/game.types';
 import { STOCKS, calculateStockValue } from '@/data/stocks';
 import {
   JonesSectionHeader,
@@ -108,6 +109,7 @@ export function BankPanel({
   if (view === 'loans') {
     const loanAmounts = [100, 250, 500, 1000];
     const hasLoan = player.loanAmount > 0;
+    const hasJobHistory = (player.totalShiftsWorked || 0) >= LOAN_MIN_SHIFTS_REQUIRED;
 
     return (
       <div>
@@ -149,7 +151,7 @@ export function BankPanel({
               }}
             />
           </>
-        ) : (
+        ) : hasJobHistory ? (
           <>
             <div className="text-sm text-[#6b5a42] px-2 mb-2">
               {t('panelBank.maxLoan')}
@@ -169,6 +171,10 @@ export function BankPanel({
               />
             ))}
           </>
+        ) : (
+          <div className="text-sm text-[#8b4a4a] px-2 py-2">
+            {t('panelBank.loanNoHistory')}
+          </div>
         )}
         <div className="mt-2 text-xs text-[#6b5a42] px-2">
           {t('panelBank.noLoan')}

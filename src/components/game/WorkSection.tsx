@@ -21,6 +21,32 @@ export function WorkSection({ player, locationName, workShift, variant }: WorkSe
 
   if (!canWork || !jobData) return null;
 
+  // Bankruptcy Barrel: no clothes = can't work
+  const isNaked = player.clothingCondition <= 0;
+
+  if (isNaked) {
+    if (variant === 'jones') {
+      return (
+        <div className="mt-4 pt-3 border-t border-[#5a4a3a]">
+          <JonesSectionHeader title="WORK" />
+          <div className="px-2 py-2 text-xs text-red-400 font-bold">
+            You have no clothes! Buy clothing at the General Store or Armory before you can work.
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="wood-frame p-3 text-parchment">
+        <h4 className="font-display text-sm text-parchment-dark flex items-center gap-2 mb-2">
+          <Briefcase className="w-4 h-4" /> Work
+        </h4>
+        <div className="text-xs text-red-400 font-bold">
+          You have no clothes! Buy clothing at the General Store or Armory before you can work.
+        </div>
+      </div>
+    );
+  }
+
   // Match actual workShift calculation: flat 15% bonus on earnings for all shifts
   const earnings = Math.floor(jobData.hoursPerShift * player.currentWage * 1.15);
 

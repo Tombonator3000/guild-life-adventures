@@ -652,6 +652,7 @@ export const en: TranslationStrings = {
     withdrawn: 'Withdrew {amount}g from savings!',
     loanTaken: 'Loan of {amount}g taken!',
     loanRepaid: 'Repaid {amount}g on loan!',
+    loanNoHistory: 'The bank requires work history before granting loans. Work at least 4 shifts first.',
     sellFee: '3% sell fee',
   },
 

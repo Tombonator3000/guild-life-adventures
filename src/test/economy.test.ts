@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useGameStore } from '@/store/gameStore';
 import { getInitialStockPrices } from '@/data/stocks';
+import { LOAN_MIN_SHIFTS_REQUIRED } from '@/types/game.types';
 
 let playerId: string;
 
@@ -8,6 +9,15 @@ function resetAndStart() {
   const store = useGameStore.getState();
   store.startNewGame(['TestPlayer'], false, { wealth: 5000, happiness: 75, education: 45, career: 4, adventure: 0 });
   playerId = useGameStore.getState().players[0].id;
+}
+
+/** Give player enough work history to qualify for bank loans */
+function grantJobHistory() {
+  useGameStore.setState((state) => ({
+    players: state.players.map(p =>
+      p.id === playerId ? { ...p, totalShiftsWorked: LOAN_MIN_SHIFTS_REQUIRED } : p
+    ),
+  }));
 }
 
 describe('Banking - depositToBank', () => {
@@ -104,7 +114,10 @@ describe('Banking - invest', () => {
 });
 
 describe('Loans - takeLoan', () => {
-  beforeEach(resetAndStart);
+  beforeEach(() => {
+    resetAndStart();
+    grantJobHistory(); // Loan requires work history
+  });
 
   it('adds loan amount to gold and sets repayment', () => {
     useGameStore.getState().takeLoan(playerId, 500);
@@ -141,6 +154,7 @@ describe('Loans - takeLoan', () => {
 describe('Loans - repayLoan', () => {
   beforeEach(() => {
     resetAndStart();
+    grantJobHistory(); // Loan requires work history
     useGameStore.getState().takeLoan(playerId, 500); // gold=600, loan=500
   });
 
