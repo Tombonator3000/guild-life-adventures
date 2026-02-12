@@ -237,7 +237,7 @@ export function itemToPreview(item: Item): PreviewData {
   if (item.equipSlot) tags.push('Equipment');
   if (item.isLotteryTicket) tags.push('Lottery');
   if (item.isTicket) tags.push('Ticket');
-  if (item.givesPerTurnBonus) effectParts.push('+1 Food/turn');
+  if (item.givesPerTurnBonus) effectParts.push('+3 Food/turn');
   if (item.canGenerateIncome) effectParts.push('Income generation');
 
   return {
@@ -262,7 +262,7 @@ export function applianceToPreview(appliance: Appliance, source: 'enchanter' | '
     effectParts.push(`+${happiness} Happiness`);
   }
   if (appliance.givesPerTurnBonus) {
-    effectParts.push('+1 Food/turn');
+    effectParts.push('+3 Food/turn');
   }
   if (appliance.canGenerateIncome) {
     effectParts.push('Random income');

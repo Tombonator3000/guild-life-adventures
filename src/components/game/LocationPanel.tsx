@@ -55,7 +55,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     if (player.gold < price) return;
     playSFX('item-buy');
     store.modifyGold(player.id, -price);
-    const newspaper = generateNewspaper(store.week, store.priceModifier, store.economyTrend);
+    const newspaper = generateNewspaper(store.week, store.priceModifier, store.economyTrend, store.weeklyNewsEvents);
     setCurrentNewspaper(newspaper);
     setShowNewspaper(true);
   };
@@ -72,6 +72,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     priceModifier: store.priceModifier,
     economyTrend: store.economyTrend,
     week: store.week,
+    weeklyNewsEvents: store.weeklyNewsEvents,
     stockPrices: store.stockPrices,
     modifyGold: store.modifyGold,
     modifyHappiness: store.modifyHappiness,

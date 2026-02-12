@@ -2,6 +2,13 @@
 
 ## Completed (2026-02-12)
 
+- [x] Per-turn appliance bonuses — Cooking Fire +3 food/turn, Arcane Tome 15% income
+- [x] Forced loan repayment — 6-step asset seizure cascade, 25% wage garnishment
+- [x] Crash severity tiers — Minor/Moderate/Major with progressive effects
+- [x] Direction choice for movement — Choose clockwise/counter-clockwise with popup
+- [x] Active relaxation mechanic — Rest action at home (+8 relaxation)
+- [x] Newspaper personalization — 15+ event types generate personalized headlines
+- [x] AI updates — Relaxation recovery, urgent loan repayment, partial repayment
 - [x] Jones-Style 3-Tier Clothing System — Casual/Dress/Business clothes for job progression
   - 6 clothing items across 3 tiers with SET-based purchasing
   - Weekly degradation (-3/week), tier transition warnings
@@ -11,15 +18,15 @@
 ## Missing Jones Features (Backlog)
 
 ### Simple
-- [ ] Computer random income generation (canGenerateIncome flag exists)
-- [ ] Per-turn appliance bonuses (givesPerTurnBonus flag exists)
-- [ ] Forced loan repayment on deadline (loanWeeksRemaining exists)
+- [x] ~~Computer random income generation (canGenerateIncome flag exists)~~ — Already working
+- [x] ~~Per-turn appliance bonuses (givesPerTurnBonus flag exists)~~ — Done: +3 food/turn
+- [x] ~~Forced loan repayment on deadline (loanWeeksRemaining exists)~~ — Done: asset seizure + wage garnishment
 
 ### Medium
-- [ ] Direction choice for movement (left/right around ring board)
-- [ ] Crash severity tiers (minor=price drop, moderate=80% pay cut, major=fired)
-- [ ] Active relaxation mechanic (spend time to restore relaxation)
-- [ ] Newspaper player-specific event tracking
+- [x] ~~Direction choice for movement (left/right around ring board)~~ — Done: direction popup
+- [x] ~~Crash severity tiers (minor=price drop, moderate=80% pay cut, major=fired)~~ — Done: 3-tier
+- [x] ~~Active relaxation mechanic (spend time to restore relaxation)~~ — Done: Rest button
+- [x] ~~Newspaper player-specific event tracking~~ — Done: 15+ event types
 
 ### Complex
 - [ ] Free actions when time runs out (buy items at 0 hours, can't work/study)

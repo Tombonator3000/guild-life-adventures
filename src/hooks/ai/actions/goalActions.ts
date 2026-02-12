@@ -177,6 +177,30 @@ export function generateGoalActions(ctx: ActionContext): AIAction[] {
           }
         }
       }
+
+      // Active relaxation: recover relaxation when dangerously low (below 20, risk of doctor visit)
+      if (player.relaxation <= 20 && player.housing !== 'homeless' && player.timeRemaining >= 4) {
+        const homeLocation = player.housing === 'noble' ? 'noble-heights' : 'slums';
+        const restHours = player.housing === 'noble' ? 4 : 6;
+        if (currentLocation === homeLocation && player.timeRemaining >= restHours) {
+          actions.push({
+            type: 'rest',
+            priority: 55,
+            description: 'Recuperate to restore relaxation',
+            details: { hours: restHours, happinessGain: 1, relaxGain: 8 },
+          });
+        } else {
+          const homeMoveCost = moveCost(homeLocation as Parameters<typeof moveCost>[0]);
+          if (player.timeRemaining > homeMoveCost + restHours) {
+            actions.push({
+              type: 'move',
+              location: homeLocation as Parameters<typeof moveCost>[0],
+              priority: 50,
+              description: 'Travel home to recuperate (low relaxation)',
+            });
+          }
+        }
+      }
       break;
 
     case 'career':

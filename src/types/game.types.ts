@@ -288,6 +288,22 @@ export interface GameState {
   networkMode: 'local' | 'host' | 'guest';
   localPlayerId: string | null;   // This client's player ID in online mode
   roomCode: string | null;        // Room code for display
+  // Personalized newspaper events collected during week-end processing (Jones-style)
+  weeklyNewsEvents: PlayerNewsEventData[];
+}
+
+// Serializable news event data (used in GameState, mirrors newspaper.ts PlayerNewsEvent)
+export interface PlayerNewsEventData {
+  type: string;
+  playerName?: string;
+  goldLost?: number;
+  itemsStolen?: number;
+  amountOwed?: number;
+  jobName?: string;
+  percentage?: number;
+  degreeName?: string;
+  questName?: string;
+  wasResurrected?: boolean;
 }
 
 // Weekend event result for display between turns

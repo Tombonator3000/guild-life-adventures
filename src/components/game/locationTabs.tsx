@@ -51,6 +51,7 @@ export interface LocationTabContext {
   priceModifier: number;
   economyTrend: number;
   week: number;
+  weeklyNewsEvents: GameStore['weeklyNewsEvents'];
   stockPrices: GameStore['stockPrices'];
   // Store actions (subset used by location panels)
   modifyGold: GameStore['modifyGold'];
@@ -464,7 +465,7 @@ function landlordTabs(ctx: LocationTabContext): LocationTab[] {
 
 function shadowMarketTabs(ctx: LocationTabContext): LocationTab[] {
   const { player, priceModifier, spendTime, modifyGold, modifyHappiness, modifyFood,
-    buyLotteryTicket, buyTicket, economyTrend, week, onShowNewspaper } = ctx;
+    buyLotteryTicket, buyTicket, economyTrend, week, weeklyNewsEvents, onShowNewspaper } = ctx;
   const shadowNewspaperPrice = Math.round(NEWSPAPER_COST * priceModifier * 0.5);
   const shadowMarketProps = {
     player,
@@ -491,7 +492,7 @@ function shadowMarketTabs(ctx: LocationTabContext): LocationTab[] {
             onClick={() => {
               playSFX('item-buy');
               modifyGold(player.id, -shadowNewspaperPrice);
-              const newspaper = generateNewspaper(week, priceModifier, economyTrend);
+              const newspaper = generateNewspaper(week, priceModifier, economyTrend, weeklyNewsEvents);
               onShowNewspaper(newspaper);
             }}
           />

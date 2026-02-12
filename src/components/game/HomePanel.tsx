@@ -108,6 +108,9 @@ export function HomePanel({
 
   const canRelax = player.timeRemaining >= housingData.relaxationRate && housingData.relaxationRate > 0;
   const canSleep = player.timeRemaining >= 8;
+  // Active relaxation: dedicated rest action focused on relaxation recovery (Jones-style)
+  const restHours = isNoble ? 4 : 6;
+  const canRest = player.timeRemaining >= restHours && player.relaxation < 50;
 
   const handleRelax = () => {
     spendTime(player.id, housingData.relaxationRate);
@@ -120,6 +123,13 @@ export function HomePanel({
     modifyHappiness(player.id, 8);   // Increased from 5 — sleep is the primary active happiness recovery
     modifyHealth(player.id, 10);
     modifyRelaxation(player.id, 5);
+  };
+
+  // Active rest: focused relaxation recovery — more relaxation, less happiness (Jones-style)
+  const handleRest = () => {
+    spendTime(player.id, restHours);
+    modifyHappiness(player.id, 1);
+    modifyRelaxation(player.id, 8);
   };
 
   // Wall and floor colors based on housing tier
@@ -163,9 +173,12 @@ export function HomePanel({
         isNoble={isNoble}
         canRelax={canRelax}
         canSleep={canSleep}
+        canRest={canRest}
         relaxHours={housingData.relaxationRate}
+        restHours={restHours}
         onRelax={handleRelax}
         onSleep={handleSleep}
+        onRest={handleRest}
         onDone={onDone}
       />
 

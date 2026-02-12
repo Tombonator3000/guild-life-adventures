@@ -7,7 +7,7 @@
 //   3. Death check processing
 //   4. Main orchestrator (createProcessWeekEnd)
 
-import type { LocationId, Player } from '@/types/game.types';
+import type { LocationId, Player, PlayerNewsEventData } from '@/types/game.types';
 import {
   HOURS_PER_TURN,
   RENT_COSTS,
@@ -83,9 +83,14 @@ function advanceEconomy(state: {
   // H8: Market crash only during recession and low economy
   const crashResult = (economyTrend === -1 && priceModifier < 0.9)
     ? checkMarketCrash(true)
-    : { type: 'none' as const };
+    : { type: 'none' as const, severity: 'none' as const };
 
-  return { priceModifier, economyTrend, economyCycleWeeksLeft, crashResult };
+  // Apply crash price drop bonus (minor/moderate/major crashes push prices down further)
+  const finalPriceModifier = crashResult.priceDropBonus
+    ? Math.max(0.75, priceModifier + crashResult.priceDropBonus)
+    : priceModifier;
+
+  return { priceModifier: finalPriceModifier, economyTrend, economyCycleWeeksLeft, crashResult };
 }
 
 /** Advance weather system and generate announcement messages */
@@ -160,8 +165,8 @@ function resetWeeklyFlags(p: Player): void {
   }
 }
 
-/** Process employment: dependability decay, job loss, market crash effects */
-function processEmployment(p: Player, crashResult: MarketCrashResult, msgs: string[]): void {
+/** Process employment: dependability decay, job loss, market crash effects (Jones-style 3-tier) */
+function processEmployment(p: Player, crashResult: MarketCrashResult, msgs: string[], newsEvents: PlayerNewsEventData[]): void {
   // B5: Dependability decay only if unemployed
   if (!p.currentJob) {
     p.dependability = Math.max(0, p.dependability - 5);
@@ -177,19 +182,29 @@ function processEmployment(p: Player, crashResult: MarketCrashResult, msgs: stri
     }
   }
 
-  // H8: Apply global market crash effects
-  if (p.currentJob) {
-    if (crashResult.type === 'layoff') {
-      p.currentJob = null;
-      p.currentWage = 0;
-      p.shiftsWorkedSinceHire = 0;
-      p.happiness = Math.max(0, p.happiness - 20);
-      if (!p.isAI) msgs.push(`${p.name}: ${crashResult.message}`);
-    } else if (crashResult.type === 'paycut' && crashResult.wageMultiplier) {
-      p.currentWage = Math.floor(p.currentWage * crashResult.wageMultiplier);
-      p.happiness = Math.max(0, p.happiness - 10);
-      if (!p.isAI) msgs.push(`${p.name}: ${crashResult.message}`);
-    }
+  // Jones-style 3-tier market crash effects
+  if (crashResult.severity === 'major' && p.currentJob) {
+    // Major crash: fired (Jones-style layoff)
+    const jobName = p.currentJob;
+    p.currentJob = null;
+    p.currentWage = 0;
+    p.shiftsWorkedSinceHire = 0;
+    p.happiness = Math.max(0, p.happiness - 20);
+    if (!p.isAI) msgs.push(`${p.name}: ${crashResult.message}`);
+    newsEvents.push({ type: 'fired', playerName: p.name, jobName });
+    newsEvents.push({ type: 'crash-major' });
+  } else if (crashResult.severity === 'moderate' && p.currentJob && crashResult.wageMultiplier) {
+    // Moderate crash: 80% wage (Jones-style pay cut)
+    p.currentWage = Math.floor(p.currentWage * crashResult.wageMultiplier);
+    p.happiness = Math.max(0, p.happiness - 10);
+    if (!p.isAI) msgs.push(`${p.name}: ${crashResult.message}`);
+    newsEvents.push({ type: 'paycut', playerName: p.name, percentage: 20 });
+    newsEvents.push({ type: 'crash-moderate' });
+  } else if (crashResult.severity === 'minor') {
+    // Minor crash: just prices drop (already applied in advanceEconomy), small happiness hit
+    p.happiness = Math.max(0, p.happiness - 3);
+    if (!p.isAI) msgs.push(crashResult.message || 'Minor market dip — prices have dropped.');
+    newsEvents.push({ type: 'crash-minor' });
   }
 }
 
@@ -268,7 +283,7 @@ function processFestivalOnPlayer(p: Player, festival: Festival | null): void {
 }
 
 /** Process rent debt accumulation and eviction */
-function processHousing(p: Player, msgs: string[]): void {
+function processHousing(p: Player, msgs: string[], newsEvents: PlayerNewsEventData[]): void {
   if (p.housing === 'homeless') return;
 
   // C4: Rent debt accumulation (4+ weeks overdue)
@@ -319,6 +334,7 @@ function processHousing(p: Player, msgs: string[]): void {
       }
       msgs.push(evictionMsg);
     }
+    newsEvents.push({ type: 'eviction', playerName: p.name });
   } else if (p.weeksSinceRent >= 4 && !p.isAI) {
     msgs.push(`${p.name}: Rent is overdue! Wages will be garnished 50%.`);
   }
@@ -362,8 +378,8 @@ function processSickness(p: Player, msgs: string[]): void {
   }
 }
 
-/** Process loan interest and forced repayment on default */
-function processLoans(p: Player, msgs: string[]): void {
+/** Process loan interest and forced repayment on default (Jones-style) */
+function processLoans(p: Player, msgs: string[], newsEvents: PlayerNewsEventData[]): void {
   if (p.loanAmount <= 0) return;
 
   // 10% weekly interest, capped at 2x max borrow (2000g)
@@ -371,33 +387,113 @@ function processLoans(p: Player, msgs: string[]): void {
   p.loanAmount = Math.min(p.loanAmount + interest, 2000);
   p.loanWeeksRemaining = Math.max(0, p.loanWeeksRemaining - 1);
 
-  // Loan default: forced repayment from savings/gold/investments (H3 FIX)
+  // Loan default: forced repayment from savings/gold/investments/assets (Jones-style)
   if (p.loanWeeksRemaining <= 0 && p.loanAmount > 0) {
+    const seizureDetails: string[] = [];
+
+    // Step 1: Seize from savings
     const fromSavings = Math.min(p.savings, p.loanAmount);
-    p.savings -= fromSavings;
+    if (fromSavings > 0) {
+      p.savings -= fromSavings;
+      seizureDetails.push(`${fromSavings}g from savings`);
+    }
     let remaining = p.loanAmount - fromSavings;
-    const fromGold = Math.min(p.gold, remaining);
-    p.gold -= fromGold;
-    remaining -= fromGold;
-    // H3 FIX: Also liquidate investments to cover loan default
+
+    // Step 2: Seize from gold on hand
+    if (remaining > 0) {
+      const fromGold = Math.min(p.gold, remaining);
+      if (fromGold > 0) {
+        p.gold -= fromGold;
+        remaining -= fromGold;
+        seizureDetails.push(`${fromGold}g from purse`);
+      }
+    }
+
+    // Step 3: Liquidate investments
     if (remaining > 0 && p.investments > 0) {
       const fromInvestments = Math.min(p.investments, remaining);
       p.investments -= fromInvestments;
       remaining -= fromInvestments;
+      seizureDetails.push(`${fromInvestments}g from investments`);
     }
 
+    // Step 4: Liquidate stocks at current value (forced sell at 80% value)
+    if (remaining > 0 && Object.keys(p.stocks).length > 0) {
+      for (const stockId of Object.keys(p.stocks)) {
+        if (remaining <= 0) break;
+        const shares = p.stocks[stockId];
+        if (shares > 0) {
+          // Forced liquidation at 80% value (panic selling penalty)
+          const estimatedValue = Math.floor(shares * 50 * 0.8); // Rough estimate
+          const recovered = Math.min(estimatedValue, remaining);
+          delete p.stocks[stockId];
+          remaining -= recovered;
+          seizureDetails.push(`stocks (${shares} shares)`);
+        }
+      }
+    }
+
+    // Step 5: Liquidate appliances (sell at 30% of original price)
+    if (remaining > 0 && Object.keys(p.appliances).length > 0) {
+      const applianceIds = Object.keys(p.appliances);
+      const liquidatedAppliances: string[] = [];
+      for (const appId of applianceIds) {
+        if (remaining <= 0) break;
+        const app = p.appliances[appId];
+        const recoveredValue = Math.floor(app.originalPrice * 0.3);
+        remaining -= recoveredValue;
+        liquidatedAppliances.push(appId);
+        delete p.appliances[appId];
+      }
+      if (liquidatedAppliances.length > 0) {
+        seizureDetails.push(`${liquidatedAppliances.length} appliance(s) seized`);
+      }
+    }
+
+    // Step 6: Liquidate durable items (sell at 30% of base price)
+    if (remaining > 0 && Object.keys(p.durables).length > 0) {
+      const durableIds = Object.keys(p.durables);
+      const liquidatedDurables: string[] = [];
+      for (const durId of durableIds) {
+        if (remaining <= 0) break;
+        const item = getItem(durId);
+        if (item) {
+          const recoveredValue = Math.floor(item.basePrice * 0.3);
+          remaining -= recoveredValue;
+          liquidatedDurables.push(durId);
+          // Unequip if it was equipped
+          if (p.equippedWeapon === durId) p.equippedWeapon = null;
+          if (p.equippedArmor === durId) p.equippedArmor = null;
+          if (p.equippedShield === durId) p.equippedShield = null;
+        }
+        delete p.durables[durId];
+      }
+      if (liquidatedDurables.length > 0) {
+        seizureDetails.push(`${liquidatedDurables.length} item(s) repossessed`);
+      }
+    }
+
+    remaining = Math.max(0, remaining);
+
     if (remaining > 0) {
-      // Can't fully repay: happiness penalty, extension
+      // Still can't fully repay: happiness penalty, wage garnishment continues, extension
       p.happiness = Math.max(0, p.happiness - 10);
-      p.loanWeeksRemaining = 4;
+      p.loanAmount = remaining;
+      p.loanWeeksRemaining = 0; // Stay in default — wage garnishment continues
       if (!p.isAI) {
-        msgs.push(`${p.name} defaulted on loan! -10 happiness. ${remaining}g still owed.`);
+        const seized = seizureDetails.length > 0 ? ` Bank seized: ${seizureDetails.join(', ')}.` : '';
+        msgs.push(`${p.name} defaulted on loan!${seized} Still owe ${remaining}g. 25% of wages garnished until repaid. -10 Happiness.`);
       }
+      newsEvents.push({ type: 'loan-default', playerName: p.name, amountOwed: remaining });
     } else {
+      // Fully repaid through seizure
       p.loanAmount = 0;
+      p.loanWeeksRemaining = 0;
       if (!p.isAI) {
-        msgs.push(`${p.name}'s loan was forcefully repaid from savings!`);
+        const seized = seizureDetails.length > 0 ? ` Bank seized: ${seizureDetails.join(', ')}.` : '';
+        msgs.push(`${p.name}'s loan was forcefully repaid!${seized}`);
       }
+      newsEvents.push({ type: 'loan-repaid', playerName: p.name });
     }
   }
 }
@@ -510,16 +606,16 @@ function updateRentTracking(p: Player): void {
 // Per-player pipeline: calls all processors in order
 // ============================================================
 
-function processPlayerWeekEnd(p: Player, ctx: WeekEndContext, msgs: string[]): void {
+function processPlayerWeekEnd(p: Player, ctx: WeekEndContext, msgs: string[], newsEvents: PlayerNewsEventData[]): void {
   resetWeeklyFlags(p);
-  processEmployment(p, ctx.economy.crashResult, msgs);
+  processEmployment(p, ctx.economy.crashResult, msgs, newsEvents);
   processNeeds(p, ctx.isClothingDegradation, msgs);
   processWeatherOnPlayer(p, ctx.weather, msgs);
   processFestivalOnPlayer(p, ctx.festival);
-  processHousing(p, msgs);
+  processHousing(p, msgs, newsEvents);
   processFinances(p, msgs);
   processSickness(p, msgs);
-  processLoans(p, msgs);
+  processLoans(p, msgs, newsEvents);
   processLeisure(p, ctx.newWeek, msgs);
   processAging(p, ctx.newWeek, msgs);
   updateRentTracking(p);
@@ -620,10 +716,15 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
       };
 
       // --- Step 2: Process all players ---
+      const newsEvents: PlayerNewsEventData[] = [];
+      // Add crash severity as a news event if any crash happened
+      if (economy.crashResult.severity !== 'none') {
+        newsEvents.push({ type: `crash-${economy.crashResult.severity}` });
+      }
       const updatedPlayers = state.players.map((player) => {
         const p = { ...player };
         if (p.isGameOver) return p;
-        processPlayerWeekEnd(p, ctx, eventMessages);
+        processPlayerWeekEnd(p, ctx, eventMessages, newsEvents);
         return p;
       });
 
@@ -652,6 +753,7 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
           economyCycleWeeksLeft: economy.economyCycleWeeksLeft,
           weather,
           activeFestival: activeFestivalId,
+          weeklyNewsEvents: newsEvents,
         });
         return;
       }
@@ -669,6 +771,7 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
           economyCycleWeeksLeft: economy.economyCycleWeeksLeft,
           weather,
           activeFestival: activeFestivalId,
+          weeklyNewsEvents: newsEvents,
         });
         return;
       }
@@ -695,6 +798,7 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
         eventMessage: eventMessages.length > 0 ? eventMessages.join('\n') : null,
         phase: eventMessages.length > 0 ? 'event' : 'playing',
         stockPrices: newStockPrices,
+        weeklyNewsEvents: newsEvents,
       });
 
       // Check for apartment robbery at start of first alive player's turn

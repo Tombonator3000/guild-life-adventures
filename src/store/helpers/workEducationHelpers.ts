@@ -64,6 +64,15 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
             earnings -= garnishment;
           }
 
+          // Loan garnishment: 25% of wages if loan is overdue (0 weeks remaining)
+          let loanGarnishment = 0;
+          let newLoanAmount = p.loanAmount;
+          if (p.loanAmount > 0 && p.loanWeeksRemaining <= 0) {
+            loanGarnishment = Math.min(Math.floor(earnings * 0.25), p.loanAmount);
+            newLoanAmount = p.loanAmount - loanGarnishment;
+            earnings -= loanGarnishment;
+          }
+
           // Dependability increases with work (capped at maxDependability)
           // +1 per shift (was +2 — slowed to prevent skipping job tiers)
           const newDependability = Math.min(p.maxDependability, p.dependability + 1);
@@ -91,6 +100,8 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
             shiftsWorkedSinceHire: (p.shiftsWorkedSinceHire || 0) + 1,
             totalShiftsWorked: (p.totalShiftsWorked || 0) + 1,
             rentDebt: newRentDebt,
+            loanAmount: newLoanAmount,
+            loanWeeksRemaining: newLoanAmount <= 0 ? 0 : p.loanWeeksRemaining,
           };
         }),
       }));

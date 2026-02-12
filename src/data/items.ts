@@ -91,7 +91,7 @@ export const APPLIANCES: Appliance[] = [
     marketPrice: 200,
     happinessEnchanter: 1,
     happinessMarket: 1,
-    description: 'A magical flame for cooking. Never goes out. Slightly concerning, but the food is excellent.',
+    description: 'A magical flame for cooking. Never goes out. +3 food per turn. Slightly concerning, but the food is excellent.',
     givesPerTurnBonus: true,
   },
   {

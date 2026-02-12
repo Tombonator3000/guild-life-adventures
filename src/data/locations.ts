@@ -77,6 +77,53 @@ export const getPath = (from: LocationId, to: LocationId): LocationId[] => {
   return path;
 };
 
+// Direction choice: get both clockwise and counter-clockwise paths (Jones-style)
+export type MovementDirection = 'clockwise' | 'counter-clockwise';
+
+export interface DirectionOption {
+  direction: MovementDirection;
+  path: LocationId[];
+  distance: number;
+  isShortest: boolean;
+}
+
+// Get both directional paths between two locations
+export const getBothPaths = (from: LocationId, to: LocationId): DirectionOption[] => {
+  if (from === to) return [];
+
+  const fromIndex = getPathIndex(from);
+  const toIndex = getPathIndex(to);
+  if (fromIndex === -1 || toIndex === -1) return [];
+
+  const pathLength = BOARD_PATH.length;
+  const cwDist = (toIndex - fromIndex + pathLength) % pathLength;
+  const ccwDist = (fromIndex - toIndex + pathLength) % pathLength;
+
+  // Build clockwise path
+  const cwPath: LocationId[] = [from];
+  for (let i = 1; i <= cwDist; i++) {
+    cwPath.push(BOARD_PATH[(fromIndex + i) % pathLength]);
+  }
+
+  // Build counter-clockwise path
+  const ccwPath: LocationId[] = [from];
+  for (let i = 1; i <= ccwDist; i++) {
+    ccwPath.push(BOARD_PATH[(fromIndex - i + pathLength) % pathLength]);
+  }
+
+  return [
+    { direction: 'clockwise', path: cwPath, distance: cwDist, isShortest: cwDist <= ccwDist },
+    { direction: 'counter-clockwise', path: ccwPath, distance: ccwDist, isShortest: ccwDist <= cwDist },
+  ];
+};
+
+// Get path in a specific direction
+export const getDirectedPath = (from: LocationId, to: LocationId, direction: MovementDirection): LocationId[] => {
+  const options = getBothPaths(from, to);
+  const chosen = options.find(o => o.direction === direction);
+  return chosen ? chosen.path : getPath(from, to);
+};
+
 // Zone configurations with precise coordinates matching the game board image
 // These can be edited to fine-tune zone positions
 // Coordinates are percentages relative to the board container
