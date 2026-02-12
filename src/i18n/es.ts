@@ -272,6 +272,7 @@ export const es: TranslationStrings = {
     updateAvailable: 'Actualización disponible — Clic para instalar',
     checkForUpdates: 'Buscar actualizaciones',
     checking: 'Buscando...',
+    forceRefresh: 'Forzar recarga',
     resetDefaults: 'Restablecer',
     resetAllOptions: '¿Restablecer todas las opciones?',
     yesReset: 'Sí, restablecer',

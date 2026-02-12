@@ -1,11 +1,39 @@
 import { defineConfig, type PluginOption } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import { writeFileSync, mkdirSync } from "fs";
 import { VitePWA } from "vite-plugin-pwa";
 
 // Detect deploy target: "github" for GitHub Pages, default for Lovable/local
 const deployTarget = process.env.DEPLOY_TARGET || "lovable";
 const basePath = deployTarget === "github" ? "/guild-life-adventures/" : "/";
+
+// Shared build timestamp — used in both __BUILD_TIME__ define and version.json
+const buildTime = new Date().toISOString();
+
+/**
+ * Generates version.json in the output directory at build time.
+ * This file is fetched by the client with cache: 'no-store' to detect
+ * new deployments even when the service worker serves stale assets.
+ */
+function versionJsonPlugin(): PluginOption {
+  let outDir = "dist";
+  return {
+    name: "version-json",
+    apply: "build",
+    configResolved(config) {
+      outDir = config.build.outDir;
+    },
+    closeBundle() {
+      const versionData = { buildTime };
+      mkdirSync(outDir, { recursive: true });
+      writeFileSync(
+        path.join(outDir, "version.json"),
+        JSON.stringify(versionData),
+      );
+    },
+  };
+}
 
 // Lovable-tagger is optional — only available in Lovable dev environment
 let lovableTaggerPlugin: PluginOption | null = null;
@@ -19,7 +47,7 @@ try {
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   define: {
-    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    __BUILD_TIME__: JSON.stringify(buildTime),
   },
   base: basePath,
   server: {
@@ -107,6 +135,8 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         maximumFileSizeToCacheInBytes: 15 * 1024 * 1024, // 15 MB (game-board.jpeg is ~10 MB)
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff,woff2}"],
+        globIgnores: ["**/version.json"], // Never precache — fetched with no-store for update detection
+        cleanupOutdatedCaches: true, // Remove old precache entries when new SW activates
         runtimeCaching: [
           {
             urlPattern: /\.(?:mp3)$/i,
@@ -139,6 +169,7 @@ export default defineConfig(({ mode }) => ({
         ],
       },
     }),
+    versionJsonPlugin(),
   ].filter(Boolean),
   resolve: {
     alias: {
