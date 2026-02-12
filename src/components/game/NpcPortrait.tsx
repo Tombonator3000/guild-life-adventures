@@ -10,9 +10,9 @@ interface NpcPortraitProps {
 }
 
 const SIZES = {
-  normal: 'w-32 h-36',
-  large: 'w-40 h-48',
-  xl: 'w-52 h-60',
+  normal: 'w-40 h-44',
+  large: 'w-48 h-56',
+  xl: 'w-60 h-72',
 };
 
 export function NpcPortrait({ npc, size = 'normal' }: NpcPortraitProps) {

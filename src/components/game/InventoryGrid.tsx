@@ -3,10 +3,8 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { ItemIcon } from './ItemIcon';
-import { CharacterPortrait } from './CharacterPortrait';
 import { ARMORY_ITEMS, GENERAL_STORE_ITEMS, ENCHANTER_ITEMS, getAppliance, calculateCombatStats, TEMPER_BONUS, type Item } from '@/data/items';
 import type { Player, EquipmentSlot } from '@/types/game.types';
-import { GUILD_RANK_NAMES } from '@/types/game.types';
 import { useGameStore } from '@/store/gameStore';
 
 // Grid constants
@@ -183,23 +181,6 @@ export function InventoryGrid({ player }: InventoryGridProps) {
             Temper bonuses included
           </div>
         )}
-      </div>
-
-      {/* Player Portrait */}
-      <div className="mt-3 flex flex-col items-center">
-        <div className="rounded-lg border-2 border-gold/50 overflow-hidden shadow-lg bg-wood/30 p-1">
-          <CharacterPortrait
-            portraitId={player.portraitId}
-            playerColor={player.color}
-            playerName={player.name}
-            size={120}
-            isAI={player.isAI}
-          />
-        </div>
-        <div className="mt-1 text-center">
-          <div className="font-display text-xs font-bold text-wood-dark">{player.name}</div>
-          <div className="text-[9px] text-wood-dark/70">{GUILD_RANK_NAMES[player.guildRank]}</div>
-        </div>
       </div>
 
       {/* Tooltip */}
