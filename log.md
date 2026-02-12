@@ -1,5 +1,263 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-12 - Full Game Audit (Agent-Assisted) — 106 Findings
+
+### Overview
+
+A comprehensive audit of the entire codebase was performed using 5 parallel audit agents, each specializing in a different system. The audit covered: game store logic, game data/balance, AI system, UI/UX, combat, and types. **106 total findings** were identified.
+
+| Area | Findings | Critical | High | Medium | Low |
+|------|----------|----------|------|--------|-----|
+| Game Store | 32 | 2 | 4 | 9 | 17 |
+| Game Data | 22 | 1 | 3 | 5 | 13 |
+| AI System | 25 | 1 | 4 | 10 | 10 |
+| UI/Combat | 27 | 0 | 2 | 8 | 17 |
+| **Total** | **106** | **4** | **13** | **32** | **57** |
+
+---
+
+### CRITICAL Findings (4)
+
+#### C1. Stale State in `endTurn` After `checkVictory` (gameStore)
+- **File**: `turnHelpers.ts`, `endTurn()`, lines 89-102
+- **Issue**: When `isNewWeek` is false, `endTurn` captures state via `const state = get()`, then calls `checkVictory()` which can mutate state. The old `state.players` snapshot is used to build the next turn, potentially overwriting mutations from `checkVictory`.
+- **Impact**: Subtle data loss — achievement tracking or side-effect mutations from `checkVictory` can be silently overwritten.
+
+#### C2. Appliance Breakage Uses Stale Player Object (gameStore)
+- **File**: `startTurnHelpers.ts`, lines 75-98
+- **Issue**: `processApplianceBreakage` uses a `player` object passed from before breakage mutations, not a re-read from state. The gold threshold check (`player.gold <= 500`) uses stale values.
+- **Impact**: Breakage check may use wrong gold value if prior phases in `startTurn` modified gold.
+
+#### C3. Duplicate Item ID `'feast'` (game data)
+- **File**: `items.ts`, lines 213 and 588
+- **Issue**: Two items share ID `'feast'` — "Feast Supplies" (General Store, 85g, 100 food) and "Tavern Feast" (Rusty Tankard, 45g, 50 food). `getItem('feast')` returns the first match (General Store version).
+- **Impact**: Tavern Feast is unretrievable by ID. Purchasing it may apply wrong stats.
+
+#### C4. AI Weather Movement Cost Bypass (AI system)
+- **File**: `actionExecutor.ts`, `handleMove()`, lines 73-84
+- **Issue**: AI movement cost calculation uses `calculatePathDistance()` which ignores weather. Human movement correctly adds `weather.movementCostExtra`. During a snowstorm (+1 hour/step), a 5-step trip costs 10 hours for humans but only 5 for AI.
+- **Impact**: AI effectively cheats during bad weather — significant competitive advantage.
+
+---
+
+### HIGH Findings (13)
+
+#### H1. Modest Housing Maps to Slums Location (gameStore)
+- **File**: `turnHelpers.ts`, `getHomeLocation()`, lines 16-19
+- **Issue**: Only checks `housing === 'noble'`, everything else defaults to 'slums'. Modest housing tenants start turns at Slums.
+- **Impact**: Players paying 95g/week for modest housing get same starting location as 75g slums.
+
+#### H2. `payRent` Doesn't Check/Use Prepaid Weeks (gameStore)
+- **File**: `bankingHelpers.ts`, `payRent()`, lines 7-21
+- **Issue**: Resets `weeksSinceRent: 0` but ignores `rentPrepaidWeeks`. Players waste gold paying rent when already covered.
+
+#### H3. Loan Default Ignores Investments/Stocks (gameStore)
+- **File**: `weekEndHelpers.ts`, `processLoans()`, lines 353-384
+- **Issue**: Default only checks `savings` + `gold`, not investments or stocks. Players can invest loan money, default repeatedly with -10 happiness, while investments grow.
+
+#### H4. Two Different Death-Handling Paths (gameStore)
+- **File**: `weekEndHelpers.ts` `processDeathChecks()` vs `questHelpers.ts` `checkDeath()`
+- **Issue**: Week-end death: flat 100g cost, no happiness penalty, no permadeath check. Mid-turn death: scaled cost up to 2000g, happiness penalty, permadeath support.
+- **Impact**: Week-end deaths are much cheaper. Permadeath not respected during week-end processing.
+
+#### H5. Quest `priest` Education Path Is Opaque (game data)
+- **File**: `quests.ts`, line 200
+- **Issue**: Exorcism quest requires `priest level 2`, but the mapping Scholar → priest is hidden. No UI or docs connect "Scholar Degree" to "priest path".
+- **Impact**: Players cannot determine how to meet the requirement.
+
+#### H6. Quest `ancient-evil` Requires Mage Level 3 — Disproportionate (game data)
+- **File**: `quests.ts`, line 235
+- **Issue**: Requires 3 mage-mapped degrees (minimum 7 total degrees, 420+ hours, 500+ gold). Harder than S-rank Dragon Slayer quest.
+
+#### H7. Job `location` Field Uses Display Names Not LocationId (game data)
+- **File**: `jobs/definitions.ts`, all jobs
+- **Issue**: Jobs use `'Guild Hall'` instead of `'guild-hall'`. Direct comparison with `LocationId` fails silently.
+
+#### H8. AI Dungeon Floor 0 Bug — Falsy Check (AI system)
+- **File**: `actionExecutor.ts`, `handleExploreDungeon()`, line 388-389
+- **Issue**: `if (!floorId)` treats floor ID `0` as falsy, blocking AI from entering that floor.
+
+#### H9. AI Food/Clothing Purchases Bypass Store — Hardcoded Values (AI system)
+- **File**: `criticalNeeds.ts`, lines 28-117
+- **Issue**: AI uses direct `modifyGold`/`modifyFood`/`modifyClothing` with hardcoded prices, bypassing actual store items, price modifiers, and economy effects.
+- **Impact**: AI ignores inflation/deflation, only considers 2 of 9+ food items, always pays base prices.
+
+#### H10. AI Job Upgrade Missing Move Action (AI system)
+- **File**: `strategicActions.ts`, lines 52-66
+- **Issue**: AI only upgrades jobs if already at Guild Hall. Does not generate a move action to travel there for upgrades.
+- **Impact**: Mid-game job upgrades happen only by coincidence.
+
+#### H11. AI Hardcoded Clothing Purchase (AI system)
+- **File**: `criticalNeeds.ts`, lines 98-117
+- **Issue**: AI always pays 30g for clothing via direct `modifyGold`/`modifyClothing`, bypassing actual item system. Never buys higher-quality clothing needed for better jobs.
+
+#### H12. Dungeon Health Capped at startHealth — Misleading UI (UI/Combat)
+- **File**: `combatResolver.ts`, lines 274-279
+- **Issue**: Healing in dungeon is capped at entry health, not maxHealth. UI shows "+X healed" including wasted healing above the cap.
+- **Impact**: Players see incorrect healing amounts. Entering at low HP is disproportionately risky.
+
+#### H13. Retreat Gold Penalty Messaging Bug (UI/Combat)
+- **File**: `combatResolver.ts` line 343, `CombatView.tsx` lines 122-127
+- **Issue**: Time-based dungeon exit sets `retreated: true` but does NOT halve gold. But FloorSummaryView shows "50% penalty" text for ALL retreats including time-based.
+- **Impact**: Players see incorrect "50% gold lost" message when they actually kept 100%.
+
+---
+
+### MEDIUM Findings (32)
+
+#### Game Store (9)
+
+| # | Finding | File |
+|---|---------|------|
+| M1 | Street robbery wipes travel event gold gain | `playerHelpers.ts` `movePlayer()` |
+| M2 | Eviction clears carried inventory (maybe over-punishing) | `weekEndHelpers.ts` `processHousing()` |
+| M3 | `payRent` doesn't clear accumulated `rentDebt` | `weekEndHelpers.ts` + `bankingHelpers.ts` |
+| M4 | `negotiateRaise` has no validation on wage value | `workEducationHelpers.ts` |
+| M5 | Shallow clone of players — fragile for nested mutations | `weekEndHelpers.ts` |
+| M6 | Stock `buyStock` price read and gold check not atomic | `stockLoanHelpers.ts` |
+| M7 | Chain quest steps inflate `completedQuests` counter | `questHelpers.ts` |
+| M8 | Guild rank promotion overwrites prior event messages | `questHelpers.ts` `promoteGuildRank()` |
+| M9 | Week-end eviction doesn't reset `rentPrepaidWeeks`/`lockedRent` | `weekEndHelpers.ts` `processHousing()` |
+
+#### Game Data (5)
+
+| # | Finding | File |
+|---|---------|------|
+| M10 | Missing NPC data for `noble-heights` and `slums` | `npcs.ts` |
+| M11 | Travel event `found-coin-purse` has stale module-load randomization | `travelEvents.ts` |
+| M12 | Dungeon Floors 4/5 have zero healing encounters — inverted difficulty | `dungeon/encounters.ts` |
+| M13 | Guild Master's Assistant requires 3 degrees — practically unreachable | `jobs/definitions.ts` |
+| M14 | Deep Dungeon Clear quest checks floors 1-5 but 6 exist | `quests.ts` |
+
+#### AI System (10)
+
+| # | Finding | File |
+|---|---------|------|
+| M15 | `getBestBounty()` wrongly requires Guild Pass (contradicts comment) | `strategy.ts` |
+| M16 | AI food buying only buys small amounts — never stocks up efficiently | `criticalNeeds.ts` |
+| M17 | Homeless/modest AI players directed to wrong home location for rest | `goalActions.ts` |
+| M18 | AI pawning triggers too late (gold < 30) — death spiral risk | `economicActions.ts` |
+| M19 | AI action limit (15) consumed by failed actions — premature turn end | `useGrimwaldAI.ts` |
+| M20 | Stock market logic only triggers when wealth is weakest goal | `economicActions.ts` |
+| M21 | `weatherMoveCostMult` context field is dead code — never read | `types.ts` / `actionGenerator.ts` |
+| M22 | Quest/bounty actions not weighted by personality — Morgath gets no combat boost | `actionGenerator.ts` |
+| M23 | Adventure goal handler doesn't prioritize quest completion | `goalActions.ts` |
+| M24 | Banking strategy ignores personality `goldBuffer` trait | `strategy.ts` |
+
+#### UI/Combat (8)
+
+| # | Finding | File |
+|---|---------|------|
+| M25 | Stale closure in GameBoard turn transition useEffect | `GameBoard.tsx` |
+| M26 | CombatView uses stale player prop for `hasEnoughTime` | `CombatView.tsx` |
+| M27 | Damage reduction formula not clamped to [0,1] — fragile | `combatResolver.ts` |
+| M28 | Career progress drops to 0 when player has no job | `GoalProgress.tsx` |
+| M29 | No accessibility labels on interactive elements | Multiple files |
+| M30 | FloorSummaryView wrong retreat message for time-based exit | `FloorSummaryView.tsx` |
+| M31 | CavePanel directly mutates store via `setState` (bypasses actions) | `CavePanel.tsx` |
+| M32 | Newspaper purchase doesn't check gold balance | `LocationPanel.tsx` |
+
+---
+
+### LOW Findings (57) — Summary
+
+#### Game Store (17)
+- Dead code in `findNextAlivePlayer` fallthrough
+- Robbery check runs for homeless players (harmless no-op)
+- `modifyGold` negative amounts silently forgiven
+- First job hire costs 10 dependability
+- `buyFreshFood` overcharges when near storage cap
+- `calculateRepairCost` randomized differently between notification and actual repair
+- Rent tracking off-by-one (checks before weekly update)
+- `startNewGame` no validation on player names/count
+- Career migration formula misidentifies low values
+- Fired players can spiral into low dependability
+- Investments completely safe from all theft
+- `applyRareDrop` `permanent_max_health` heals player (inconsistent)
+- Bounties don't count toward `completedQuests`
+- Tempered status is per-type not per-instance
+- `workShift` no time validation — earn full pay with insufficient time
+- No `isGameOver` guard on player actions
+- Achievement tracking excludes AI players
+
+#### Game Data (13)
+- Board path has 15 locations (CLAUDE.md says 14 — missing Graveyard)
+- `Blessed Ground` modifier gives 36% damage reduction, not described 20%
+- Education `unlocksJobs` arrays incomplete
+- `forge-manager` and `guild-administrator` identical degree requirements
+- `RENT_COSTS` defined in two places (maintenance risk)
+- Music box cheaper at Enchanter (reversed from normal pattern)
+- `Archon's Crown` rare drop effect doesn't match description
+- Clothing casual tier (25) redundant — cheapest clothing gives 50
+- Starvation penalty docs say 20 hours, actual is 10 health + 8 happiness
+- `weapons-instructor` job at Academy but in `MILITARY_JOBS` array
+- Scholar's Secret chain D-rank but requires mage level 1 (steep for early game)
+- Dungeon Floor 3→4 creates steepest difficulty cliff
+- Shadow Market has only 1 job
+
+#### AI System (10)
+- Simple AI picks cheapest degree (may miss useful ones)
+- Health healing uses hardcoded 30g/25HP values
+- Fresh food buying only if player has Preservation Box
+- AI never strategically buys Preservation Box
+- Module-level observer state persists across hot-reloads
+- Difficulty adjuster doesn't activate until week 5
+- Education rivalry is purely opportunistic (no proactive travel)
+- Equipment upgrade stats hardcoded — maintenance risk
+- `shouldBuyGuildPass` uses magic number 500 instead of constant
+- AI sells inventory at flat 10g regardless of item value
+
+#### UI/Combat (17)
+- Division by zero in bar width with maxHealth=0
+- HealthBar division by zero with 0 maxHealth
+- `PLAYER_COLORS` tightly coupled to `MAX_TOTAL_PLAYERS`
+- `showNewspaper` state variable is dead code
+- Weather movement cost uses non-null assertion
+- LocationZone re-renders on every mouse move
+- GameBoard full re-render on any store change
+- FestivalOverlay inline store selector
+- `Player.age` typed required but used with `?? 18` fallback
+- `EducationProgress` interface is dead code
+- Tooltip overflows viewport at edges
+- MobileHUD player name truncated to ~5 chars
+- No validation on player names in GameSetup
+- No confirmation before ending turn
+- Victory screen grid layout asymmetric with 5 goals
+- No-weapon dungeon penalty extremely harsh for new players
+- Cave "Rest" has no cooldown — free unlimited healing
+
+---
+
+### Top 10 Priority Fixes
+
+| Priority | ID | Description | Impact |
+|----------|----|-------------|--------|
+| 1 | C4 | AI weather movement bypass | Competitive fairness violation |
+| 2 | C3 | Duplicate `feast` item ID | Wrong item stats applied |
+| 3 | H4 | Dual death paths — permadeath bypass | Game rule violation |
+| 4 | H9/H11 | AI hardcoded food/clothing bypass | AI ignores economy system |
+| 5 | C1 | Stale state after checkVictory | Data loss risk |
+| 6 | H5 | Opaque priest education path | Player confusion |
+| 7 | M12 | Floors 4/5 no healing — inverted difficulty | Broken progression |
+| 8 | H13 | Retreat message shows wrong gold penalty | UX confusion |
+| 9 | M22 | AI personality weights missing for quests | Personality indistinguishable |
+| 10 | H10 | AI never travels to guild hall for job upgrade | AI underperformance |
+
+### Gameplay Improvement Suggestions
+
+1. **Bulk Food Buying for AI**: AI should use General Store provisions (50g/50 food) instead of multiple small purchases
+2. **Dungeon Floor Healing**: Add at least 1 healing encounter to Floors 4 and 5 to smooth difficulty curve
+3. **Personality-Weighted Quests**: Apply combat/education/wealth multipliers to quest-related AI actions
+4. **Banking Personality**: Use `goldBuffer` personality trait in banking strategy
+5. **Career Goal UX**: Show dependability stat even when unemployed (don't reset to 0)
+6. **Turn End Confirmation**: Add "Are you sure?" when player has 20+ hours remaining
+7. **Cave Rest Cooldown**: Add diminishing returns (e.g., -5 HP per rest in same turn)
+8. **Equipment Tooltip in Dungeon**: Show penalty text before entering dungeon without equipment
+9. **Quest Path Display**: Show education path mappings in Academy UI
+10. **AI Pawn Threshold**: Raise from 30g to ~75g to prevent death spirals
+
+---
+
 ## 2026-02-12 - Audit GitHub Integration: Cache-Busting & Forced Updates
 
 ### Problem
