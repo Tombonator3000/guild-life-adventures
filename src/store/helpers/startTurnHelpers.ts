@@ -160,6 +160,9 @@ function processRegularFoodSpoilage(
   // No food to spoil
   if (player.foodLevel <= 0) return false;
 
+  // Only spoil food bought from General Store — Tavern food is cooked/served fresh and doesn't spoil
+  if (!player.hasStoreBoughtFood) return false;
+
   // Food is spoiled but player eats it anyway (foodLevel NOT reduced — it still prevents starvation)
   eventMessages.push(
     `${player.name}'s food has gone bad without a Preservation Box!`

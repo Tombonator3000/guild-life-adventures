@@ -159,6 +159,19 @@ export function useLocationClick({
     const idMatch = msg.match(/^\[([a-z0-9-]+)\]/);
     if (idMatch) return idMatch[1];
 
+    // Weather graphics get FIRST priority — display weather woodcut over other events
+    if (msg.includes('Weather:') && msg.includes('snow')) return 'snowstorm';
+    if (msg.includes('Weather:') && msg.includes('thunder')) return 'thunderstorm';
+    if (msg.includes('Weather:') && msg.includes('drought')) return 'drought';
+    if (msg.includes('Weather:') && msg.includes('rain')) return 'harvest-rain';
+    if (msg.includes('Weather:') && msg.includes('fog')) return 'enchanted-fog';
+
+    // Festival graphics get second priority
+    if (msg.includes('Harvest Festival')) return 'harvest-festival';
+    if (msg.includes('Winter Solstice')) return 'winter-solstice';
+    if (msg.includes('Spring Tournament')) return 'spring-tournament';
+    if (msg.includes('Midsummer Fair')) return 'midsummer-fair';
+
     // Keyword-based detection for weekly/turn events
     if (msg.includes('Shadowfingers')) return 'shadowfingers-theft';
     if (msg.includes('evicted')) return 'eviction';
@@ -173,11 +186,6 @@ export function useLocationClick({
     if (msg.includes('Rent is overdue')) return 'eviction';
     if (msg.includes('gear stolen')) return 'apartment-robbery';
     if (msg.includes('Arcane Tome')) return 'lucky-find';
-    if (msg.includes('Weather:') && msg.includes('snow')) return 'snowstorm';
-    if (msg.includes('Weather:') && msg.includes('thunder')) return 'thunderstorm';
-    if (msg.includes('Weather:') && msg.includes('drought')) return 'drought';
-    if (msg.includes('Weather:') && msg.includes('rain')) return 'harvest-rain';
-    if (msg.includes('Weather:') && msg.includes('fog')) return 'enchanted-fog';
     if (msg.includes('lottery')) return 'lottery-win';
     if (msg.includes('birthday')) return 'birthday';
     return 'weekly-event';

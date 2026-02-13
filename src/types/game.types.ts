@@ -181,6 +181,7 @@ export interface Player {
   weeksSinceRent: number;
   foodLevel: number; // 0-100, depletes each week
   foodBoughtWithoutPreservation: boolean; // True if food was bought this turn without a Preservation Box (spoilage checked at turn end)
+  hasStoreBoughtFood: boolean; // True if player has food from General Store (persists until foodLevel=0; used for start-of-turn spoilage check)
   savings: number; // Money in bank
   investments: number; // Invested amount
   currentJob: string | null;
