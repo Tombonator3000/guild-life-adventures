@@ -1,13 +1,13 @@
-import stoneBorderLeft from '@/assets/stone-border-left.png';
-import stoneBorderRight from '@/assets/stone-border-right.png';
-import leatherBorderLeft from '@/assets/leather-border-left.png';
-import leatherBorderRight from '@/assets/leather-border-right.png';
-import woodBorderLeft from '@/assets/wood-border-left.png';
-import woodBorderRight from '@/assets/wood-border-right.png';
-import ironBorderLeft from '@/assets/iron-border-left.png';
-import ironBorderRight from '@/assets/iron-border-right.png';
-import parchmentBorderLeft from '@/assets/parchment-border-left.png';
-import parchmentBorderRight from '@/assets/parchment-border-right.png';
+import stoneBorderLeft from '@/assets/stone-border-left.jpg';
+import stoneBorderRight from '@/assets/stone-border-right.jpg';
+import leatherBorderLeft from '@/assets/leather-border-left.jpg';
+import leatherBorderRight from '@/assets/leather-border-right.jpg';
+import woodBorderLeft from '@/assets/wood-border-left.jpg';
+import woodBorderRight from '@/assets/wood-border-right.jpg';
+import ironBorderLeft from '@/assets/iron-border-left.jpg';
+import ironBorderRight from '@/assets/iron-border-right.jpg';
+import parchmentBorderLeft from '@/assets/parchment-border-left.jpg';
+import parchmentBorderRight from '@/assets/parchment-border-right.jpg';
 import { useGameOptions } from '@/hooks/useGameOptions';
 import type { BorderStyle } from '@/data/gameOptions';
 

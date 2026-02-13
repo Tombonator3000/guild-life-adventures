@@ -2,93 +2,93 @@
 // All AI-generated 512×512 medieval woodcut-style event illustrations
 
 // Crime & Theft
-import shadowfingersTheft from './shadowfingers-theft.png';
-import bankRobbery from './bank-robbery.png';
-import shadowAmbush from './shadow-ambush.png';
-import pickpocket from './pickpocket.png';
-import apartmentRobbery from './apartment-robbery.png';
+import shadowfingersTheft from './shadowfingers-theft.jpg';
+import bankRobbery from './bank-robbery.jpg';
+import shadowAmbush from './shadow-ambush.jpg';
+import pickpocket from './pickpocket.jpg';
+import apartmentRobbery from './apartment-robbery.jpg';
 
 // Positive Events
-import luckyFind from './lucky-find.png';
-import guildBonus from './guild-bonus.png';
-import generousTip from './generous-tip.png';
+import luckyFind from './lucky-find.jpg';
+import guildBonus from './guild-bonus.jpg';
+import generousTip from './generous-tip.jpg';
 
 // Economic Events
-import economicBoom from './economic-boom.png';
-import marketCrash from './market-crash.png';
-import layoff from './layoff.png';
-import payCut from './pay-cut.png';
+import economicBoom from './economic-boom.jpg';
+import marketCrash from './market-crash.jpg';
+import layoff from './layoff.jpg';
+import payCut from './pay-cut.jpg';
 
 // Health Events
-import illness from './illness.png';
-import foodPoisoning from './food-poisoning.png';
-import doctorVisit from './doctor-visit.png';
+import illness from './illness.jpg';
+import foodPoisoning from './food-poisoning.jpg';
+import doctorVisit from './doctor-visit.jpg';
 
 // Life Events
-import death from './death.png';
-import resurrection from './resurrection.png';
-import starvation from './starvation.png';
-import eviction from './eviction.png';
-import clothingTorn from './clothing-torn.png';
-import homeless from './homeless.png';
-import birthday from './birthday.png';
-import applianceBreak from './appliance-break.png';
-import lotteryWin from './lottery-win.png';
+import death from './death.jpg';
+import resurrection from './resurrection.jpg';
+import starvation from './starvation.jpg';
+import eviction from './eviction.jpg';
+import clothingTorn from './clothing-torn.jpg';
+import homeless from './homeless.jpg';
+import birthday from './birthday.jpg';
+import applianceBreak from './appliance-break.jpg';
+import lotteryWin from './lottery-win.jpg';
 
 // Weather Events
-import snowstorm from './snowstorm.png';
-import thunderstorm from './thunderstorm.png';
-import drought from './drought.png';
-import harvestRain from './harvest-rain.png';
-import enchantedFog from './enchanted-fog.png';
+import snowstorm from './snowstorm.jpg';
+import thunderstorm from './thunderstorm.jpg';
+import drought from './drought.jpg';
+import harvestRain from './harvest-rain.jpg';
+import enchantedFog from './enchanted-fog.jpg';
 
 // Travel Events
-import wanderingMerchant from './wandering-merchant.png';
-import streetBard from './street-bard.png';
-import muddyRoad from './muddy-road.png';
-import wrongTurn from './wrong-turn.png';
-import injuredTraveler from './injured-traveler.png';
-import oldMap from './old-map.png';
-import strayDog from './stray-dog.png';
+import wanderingMerchant from './wandering-merchant.jpg';
+import streetBard from './street-bard.jpg';
+import muddyRoad from './muddy-road.jpg';
+import wrongTurn from './wrong-turn.jpg';
+import injuredTraveler from './injured-traveler.jpg';
+import oldMap from './old-map.jpg';
+import strayDog from './stray-dog.jpg';
 
 // Festival Events
-import harvestFestival from './harvest-festival.png';
-import winterSolstice from './winter-solstice.png';
-import springTournament from './spring-tournament.png';
-import midsummerFair from './midsummer-fair.png';
+import harvestFestival from './harvest-festival.jpg';
+import winterSolstice from './winter-solstice.jpg';
+import springTournament from './spring-tournament.jpg';
+import midsummerFair from './midsummer-fair.jpg';
 
 // Weekend Activity Events
-import weekendJousting from './weekend-jousting.png';
-import weekendTheatre from './weekend-theatre.png';
-import weekendBardConcert from './weekend-bard-concert.png';
-import weekendBall from './weekend-ball.png';
-import weekendArena from './weekend-arena.png';
-import weekendBathhouse from './weekend-bathhouse.png';
-import weekendHorseRide from './weekend-horse-ride.png';
-import weekendArchery from './weekend-archery.png';
-import weekendFortuneTeller from './weekend-fortune-teller.png';
-import weekendFishing from './weekend-fishing.png';
-import weekendBanquet from './weekend-banquet.png';
-import weekendMagicShow from './weekend-magic-show.png';
-import weekendSpa from './weekend-spa.png';
-import weekendHunting from './weekend-hunting.png';
-import weekendBoat from './weekend-boat.png';
-import weekendDance from './weekend-dance.png';
-import weekendCardGame from './weekend-card-game.png';
-import weekendCampfire from './weekend-campfire.png';
-import weekendPicnic from './weekend-picnic.png';
-import weekendMarket from './weekend-market.png';
-import weekendScrying from './weekend-scrying.png';
-import weekendCooking from './weekend-cooking.png';
-import weekendStudy from './weekend-study.png';
-import weekendWalk from './weekend-walk.png';
-import weekendNap from './weekend-nap.png';
-import weekendFeast from './weekend-feast.png';
-import weekendStreetFood from './weekend-street-food.png';
-import weekendRiverCruise from './weekend-river-cruise.png';
-import weekendGardening from './weekend-gardening.png';
-import weekendTavern from './weekend-tavern.png';
-import weekendMuseum from './weekend-museum.png';
+import weekendJousting from './weekend-jousting.jpg';
+import weekendTheatre from './weekend-theatre.jpg';
+import weekendBardConcert from './weekend-bard-concert.jpg';
+import weekendBall from './weekend-ball.jpg';
+import weekendArena from './weekend-arena.jpg';
+import weekendBathhouse from './weekend-bathhouse.jpg';
+import weekendHorseRide from './weekend-horse-ride.jpg';
+import weekendArchery from './weekend-archery.jpg';
+import weekendFortuneTeller from './weekend-fortune-teller.jpg';
+import weekendFishing from './weekend-fishing.jpg';
+import weekendBanquet from './weekend-banquet.jpg';
+import weekendMagicShow from './weekend-magic-show.jpg';
+import weekendSpa from './weekend-spa.jpg';
+import weekendHunting from './weekend-hunting.jpg';
+import weekendBoat from './weekend-boat.jpg';
+import weekendDance from './weekend-dance.jpg';
+import weekendCardGame from './weekend-card-game.jpg';
+import weekendCampfire from './weekend-campfire.jpg';
+import weekendPicnic from './weekend-picnic.jpg';
+import weekendMarket from './weekend-market.jpg';
+import weekendScrying from './weekend-scrying.jpg';
+import weekendCooking from './weekend-cooking.jpg';
+import weekendStudy from './weekend-study.jpg';
+import weekendWalk from './weekend-walk.jpg';
+import weekendNap from './weekend-nap.jpg';
+import weekendFeast from './weekend-feast.jpg';
+import weekendStreetFood from './weekend-street-food.jpg';
+import weekendRiverCruise from './weekend-river-cruise.jpg';
+import weekendGardening from './weekend-gardening.jpg';
+import weekendTavern from './weekend-tavern.jpg';
+import weekendMuseum from './weekend-museum.jpg';
 
 /** Map event IDs and keywords to their woodcut illustrations */
 export const EVENT_IMAGES: Record<string, string> = {

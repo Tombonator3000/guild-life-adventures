@@ -8,14 +8,14 @@ import { useMemo } from 'react';
 import type { FestivalId } from '@/data/festivals';
 
 // AI-generated textures
-import harvestGrain from '@/assets/harvest-grain.png';
-import harvestGlow from '@/assets/harvest-glow.png';
-import solsticeFrost from '@/assets/solstice-frost.png';
-import solsticeAurora from '@/assets/solstice-aurora.png';
-import tourneyBanner from '@/assets/tourney-banner.png';
-import tourneyConfetti from '@/assets/tourney-confetti.png';
-import fairLantern from '@/assets/fair-lantern.png';
-import fairStreamers from '@/assets/fair-streamers.png';
+import harvestGrain from '@/assets/harvest-grain.jpg';
+import harvestGlow from '@/assets/harvest-glow.jpg';
+import solsticeFrost from '@/assets/solstice-frost.jpg';
+import solsticeAurora from '@/assets/solstice-aurora.jpg';
+import tourneyBanner from '@/assets/tourney-banner.jpg';
+import tourneyConfetti from '@/assets/tourney-confetti.jpg';
+import fairLantern from '@/assets/fair-lantern.jpg';
+import fairStreamers from '@/assets/fair-streamers.jpg';
 
 interface FestivalOverlayProps {
   activeFestival: FestivalId | null;

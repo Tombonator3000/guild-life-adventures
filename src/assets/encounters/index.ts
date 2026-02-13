@@ -2,59 +2,59 @@
 // All AI-generated 512×512 medieval woodcut-style encounter illustrations
 
 // Floor 1: Entrance Cavern
-import f1Rats from './f1-rats.png';
-import f1Bats from './f1-bats.png';
-import f1Treasure from './f1-treasure.png';
-import f1Spring from './f1-spring.png';
-import f1Boss from './f1-boss.png';
+import f1Rats from './f1-rats.jpg';
+import f1Bats from './f1-bats.jpg';
+import f1Treasure from './f1-treasure.jpg';
+import f1Spring from './f1-spring.jpg';
+import f1Boss from './f1-boss.jpg';
 
 // Floor 2: Goblin Tunnels
-import f2GoblinScouts from './f2-goblin-scouts.png';
-import f2PitTrap from './f2-pit-trap.png';
-import f2GoblinWarriors from './f2-goblin-warriors.png';
-import f2Treasure from './f2-treasure.png';
-import f2MushroomGrotto from './f2-mushroom-grotto.png';
-import f2Boss from './f2-boss.png';
+import f2GoblinScouts from './f2-goblin-scouts.jpg';
+import f2PitTrap from './f2-pit-trap.jpg';
+import f2GoblinWarriors from './f2-goblin-warriors.jpg';
+import f2Treasure from './f2-treasure.jpg';
+import f2MushroomGrotto from './f2-mushroom-grotto.jpg';
+import f2Boss from './f2-boss.jpg';
 
 // Floor 3: Undead Crypt
-import f3Skeletons from './f3-skeletons.png';
-import f3Ghosts from './f3-ghosts.png';
-import f3PoisonTrap from './f3-poison-trap.png';
-import f3Artifacts from './f3-artifacts.png';
-import f3SanctifiedPool from './f3-sanctified-pool.png';
-import f3Boss from './f3-boss.png';
+import f3Skeletons from './f3-skeletons.jpg';
+import f3Ghosts from './f3-ghosts.jpg';
+import f3PoisonTrap from './f3-poison-trap.jpg';
+import f3Artifacts from './f3-artifacts.jpg';
+import f3SanctifiedPool from './f3-sanctified-pool.jpg';
+import f3Boss from './f3-boss.jpg';
 
 // Floor 4: Dragon's Lair
-import f4YoungDragon from './f4-young-dragon.png';
-import f4FireTrap from './f4-fire-trap.png';
-import f4DrakePack from './f4-drake-pack.png';
-import f4DragonHoard from './f4-dragon-hoard.png';
-import f4DragonTears from './f4-dragon-tears.png';
-import f4Boss from './f4-boss.png';
+import f4YoungDragon from './f4-young-dragon.jpg';
+import f4FireTrap from './f4-fire-trap.jpg';
+import f4DrakePack from './f4-drake-pack.jpg';
+import f4DragonHoard from './f4-dragon-hoard.jpg';
+import f4DragonTears from './f4-dragon-tears.jpg';
+import f4Boss from './f4-boss.jpg';
 
 // Floor 5: The Abyss
-import f5DemonSoldiers from './f5-demon-soldiers.png';
-import f5VoidTrap from './f5-void-trap.png';
-import f5ShadowFiends from './f5-shadow-fiends.png';
-import f5AbyssalVault from './f5-abyssal-vault.png';
-import f5VoidWell from './f5-void-well.png';
-import f5Boss from './f5-boss.png';
+import f5DemonSoldiers from './f5-demon-soldiers.jpg';
+import f5VoidTrap from './f5-void-trap.jpg';
+import f5ShadowFiends from './f5-shadow-fiends.jpg';
+import f5AbyssalVault from './f5-abyssal-vault.jpg';
+import f5VoidWell from './f5-void-well.jpg';
+import f5Boss from './f5-boss.jpg';
 
 // Floor 6: The Forgotten Temple
-import f6TempleGuardians from './f6-temple-guardians.png';
-import f6DivineWard from './f6-divine-ward.png';
-import f6SpectralPriests from './f6-spectral-priests.png';
-import f6Reliquary from './f6-reliquary.png';
-import f6SanctumFont from './f6-sanctum-font.png';
-import f6Boss from './f6-boss.png';
+import f6TempleGuardians from './f6-temple-guardians.jpg';
+import f6DivineWard from './f6-divine-ward.jpg';
+import f6SpectralPriests from './f6-spectral-priests.jpg';
+import f6Reliquary from './f6-reliquary.jpg';
+import f6SanctumFont from './f6-sanctum-font.jpg';
+import f6Boss from './f6-boss.jpg';
 
 // Mini-Bosses
-import mbCaveTroll from './mb-cave-troll.png';
-import mbGoblinShaman from './mb-goblin-shaman.png';
-import mbDeathKnight from './mb-death-knight.png';
-import mbDrakeMatriarch from './mb-drake-matriarch.png';
-import mbVoidReaver from './mb-void-reaver.png';
-import mbFallenArchon from './mb-fallen-archon.png';
+import mbCaveTroll from './mb-cave-troll.jpg';
+import mbGoblinShaman from './mb-goblin-shaman.jpg';
+import mbDeathKnight from './mb-death-knight.jpg';
+import mbDrakeMatriarch from './mb-drake-matriarch.jpg';
+import mbVoidReaver from './mb-void-reaver.jpg';
+import mbFallenArchon from './mb-fallen-archon.jpg';
 
 /** Map encounter IDs to their woodcut illustrations */
 export const ENCOUNTER_IMAGES: Record<string, string> = {
