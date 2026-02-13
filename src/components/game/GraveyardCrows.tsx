@@ -1,4 +1,4 @@
-import crowSprite from '@/assets/crow-silhouette.jpg';
+import crowSprite from '@/assets/crow-silhouette.png';
 import { loadZoneConfig } from '@/data/zoneStorage';
 
 const BASE_CROWS = [

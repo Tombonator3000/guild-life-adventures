@@ -23,6 +23,7 @@ import { checkWeeklyTheft, checkMarketCrash } from '@/data/events';
 import type { MarketCrashResult } from '@/data/events';
 import { getGameOption } from '@/data/gameOptions';
 import { getItem, CLOTHING_DEGRADATION_PER_WEEK, getClothingTier, CLOTHING_TIER_LABELS, CLOTHING_THRESHOLDS } from '@/data/items';
+import { getJob } from '@/data/jobs';
 import { updateStockPrices } from '@/data/stocks';
 import { selectWeekendActivity } from '@/data/weekends';
 import { advanceWeather, CLEAR_WEATHER, isWeatherFestivalConflict } from '@/data/weather';
@@ -210,8 +211,9 @@ function processEmployment(p: Player, crashResult: MarketCrashResult, msgs: stri
 
 /** Deplete food and degrade clothing */
 function processNeeds(p: Player, _isClothingDegradation: boolean, msgs: string[]): void {
-  // Food depletion
-  p.foodLevel = Math.max(0, p.foodLevel - 25);
+  // Food depletion — 35/week so players must buy food almost every round
+  // (unless they have a Preservation Box with stored fresh food as backup)
+  p.foodLevel = Math.max(0, p.foodLevel - 35);
 
   // Clear store-bought food flag when all food is consumed (Tavern food doesn't set this flag)
   if (p.foodLevel <= 0) {
@@ -236,6 +238,18 @@ function processNeeds(p: Player, _isClothingDegradation: boolean, msgs: string[]
       msgs.push(`${p.name}'s clothing has worn down to ${tierLabel} quality. Better jobs may require an upgrade.`);
     } else if (p.clothingCondition > 0 && p.clothingCondition <= CLOTHING_THRESHOLDS.casual) {
       msgs.push(`${p.name}'s clothing is nearly worn out!`);
+    }
+
+    // Warn if clothing has dropped below current job's requirement
+    if (p.currentJob && p.clothingCondition > 0) {
+      const job = getJob(p.currentJob);
+      if (job) {
+        const jobThreshold = CLOTHING_THRESHOLDS[job.requiredClothing as keyof typeof CLOTHING_THRESHOLDS] ?? 0;
+        if (p.clothingCondition < jobThreshold) {
+          const requiredLabel = CLOTHING_TIER_LABELS[job.requiredClothing as keyof typeof CLOTHING_TIER_LABELS] ?? job.requiredClothing;
+          msgs.push(`${p.name}'s clothing is too worn for ${job.name}! Requires ${requiredLabel} quality. You cannot work until you upgrade your clothes.`);
+        }
+      }
     }
   }
 }
