@@ -91,6 +91,7 @@ const createPlayer = (
   weeksSinceRent: 0,
   foodLevel: 50,
   foodBoughtWithoutPreservation: false,
+  hasStoreBoughtFood: false,
   savings: 0,
   investments: 0,
   currentJob: null,

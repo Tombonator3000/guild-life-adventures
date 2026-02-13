@@ -97,8 +97,8 @@ export function EventPanel({ event, onDismiss }: EventPanelProps) {
           {event.title}
         </h2>
 
-        {/* Event description lines - large readable text */}
-        <div className="w-full max-w-lg space-y-2 mb-4">
+        {/* Event description lines - large readable text, wide to minimize scrolling */}
+        <div className="w-full max-w-3xl space-y-2 mb-4 px-2">
           {descriptionLines.map((line, i) => (
             <p
               key={i}
@@ -111,7 +111,7 @@ export function EventPanel({ event, onDismiss }: EventPanelProps) {
 
         {/* Effects summary */}
         {effectsText && (
-          <div className="wood-frame px-6 py-3 text-parchment text-center w-full max-w-lg">
+          <div className="wood-frame px-6 py-3 text-parchment text-center w-full max-w-3xl">
             <span className="font-display text-lg font-semibold">{effectsText}</span>
           </div>
         )}

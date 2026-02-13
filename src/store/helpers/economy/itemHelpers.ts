@@ -116,6 +116,7 @@ export function createItemActions(set: SetFn, get: GetFn) {
               gold: newGold,
               freshFood: Math.min(6, p.freshFood + units),
               foodBoughtWithoutPreservation: true,
+              hasStoreBoughtFood: true,
             };
           }
 
@@ -150,6 +151,7 @@ export function createItemActions(set: SetFn, get: GetFn) {
             foodLevel: Math.min(100, p.foodLevel + foodValue),
             // Track that food was bought without preservation (spoilage checked at turn end)
             ...(!hasPreservationBox ? { foodBoughtWithoutPreservation: true } : {}),
+            hasStoreBoughtFood: true,
           };
         }),
       }));

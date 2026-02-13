@@ -213,6 +213,11 @@ function processNeeds(p: Player, _isClothingDegradation: boolean, msgs: string[]
   // Food depletion
   p.foodLevel = Math.max(0, p.foodLevel - 25);
 
+  // Clear store-bought food flag when all food is consumed (Tavern food doesn't set this flag)
+  if (p.foodLevel <= 0) {
+    p.hasStoreBoughtFood = false;
+  }
+
   // Starvation note: Jones only penalizes -20 hours at turn start (handled in startTurnHelpers).
   // Week-end just depletes food — no additional health/happiness penalty here.
 
@@ -367,9 +372,22 @@ function processFinances(p: Player, msgs: string[]): void {
   }
 }
 
-/** Random sickness check (5% chance) */
+/** Random sickness check (5% chance) + ongoing sickness health drain */
 function processSickness(p: Player, msgs: string[]): void {
-  if (Math.random() < 0.05 && !p.isSick) {
+  // Ongoing sickness: gradual health drain each week if player doesn't cure it
+  // Gets progressively worse: -5 HP per week while sick
+  if (p.isSick) {
+    const SICKNESS_WEEKLY_DRAIN = 5;
+    p.health = Math.max(0, p.health - SICKNESS_WEEKLY_DRAIN);
+    p.happiness = Math.max(0, p.happiness - 2);
+    if (!p.isAI) {
+      msgs.push(`${p.name}'s sickness worsens! -${SICKNESS_WEEKLY_DRAIN} health, -2 happiness. Visit a healer soon!`);
+    }
+    return; // Already sick — skip new sickness roll
+  }
+
+  // New sickness: 5% weekly chance
+  if (Math.random() < 0.05) {
     p.isSick = true;
     p.health = Math.max(0, p.health - 15);
     if (!p.isAI) {

@@ -1,5 +1,46 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-13 - Food Spoilage Fix, UI Improvements, Weather Priority & Sickness Drain
+
+### Overview
+Four targeted fixes addressing gameplay bugs and UI improvements.
+
+**Test Results**: 185 tests passed (9 test files, 0 failures)
+
+### Changes
+
+#### 1. Food Spoilage Message — General Store Only (Bug Fix)
+- **Problem**: "food has gone bad without a Preservation Box!" message appeared at turn start even when player only had Tavern food (cooked/served fresh — shouldn't spoil)
+- **Root cause**: `processRegularFoodSpoilage()` in `startTurnHelpers.ts` checked `foodLevel > 0` without distinguishing food source
+- **Fix**: Added `hasStoreBoughtFood: boolean` flag to Player type
+  - Set to `true` when buying from General Store (`buyFoodWithSpoilage`, `buyFreshFood` in `itemHelpers.ts`)
+  - Checked in `processRegularFoodSpoilage()` — message only appears if flag is true
+  - Cleared when `foodLevel` reaches 0 in weekly `processNeeds()`
+  - Tavern food (uses `modifyFood()` directly) never sets this flag
+- **Files**: `game.types.ts`, `gameStore.ts`, `itemHelpers.ts`, `startTurnHelpers.ts`, `weekEndHelpers.ts`
+
+#### 2. Center Panel Text Width — Reduced Scrolling (UI Fix)
+- **Problem**: Event text in the center panel was constrained to `max-w-lg` (512px), causing unnecessary scrolling on wider screens
+- **Fix**: Changed text container and effects bar from `max-w-lg` to `max-w-3xl` (768px) with extra horizontal padding
+- **Files**: `EventPanel.tsx`
+
+#### 3. Weather Graphics Priority (Display Fix)
+- **Problem**: When weather and other events occurred the same week, non-weather events (sickness, robbery, etc.) could take image priority over weather in the event display
+- **Fix**: Moved weather keyword checks to the TOP of `extractEventId()` in `useLocationClick.ts`, before all other event types. Also added festival keyword detection as second priority.
+- **Priority order**: Weather > Festival > Theft/Eviction/Sickness > Weekend > Default
+- **Files**: `useLocationClick.ts`
+
+#### 4. Gradual Sickness Health Drain (New Mechanic)
+- **Problem**: Sickness (`isSick = true`) had no ongoing penalty — player could ignore it indefinitely with no consequence beyond the initial -15 HP hit
+- **Fix**: Added weekly health drain while sick: -5 HP and -2 happiness per week
+  - Applies in `processSickness()` during week-end processing
+  - If player doesn't visit healer to cure sickness, health deteriorates progressively
+  - Message warns player each week: "sickness worsens! Visit a healer soon!"
+  - When already sick, the 5% new-sickness roll is skipped (can't get double sick)
+- **Files**: `weekEndHelpers.ts`
+
+---
+
 ## 2026-02-13 - Jones in the Fast Lane Compatibility Audit & Game Quality Assessment
 
 ### Overview
