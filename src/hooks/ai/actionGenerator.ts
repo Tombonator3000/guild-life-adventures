@@ -30,58 +30,50 @@ import {
 import { getCounterStrategyWeights, type CounterStrategyWeights } from './playerObserver';
 
 /**
+ * Maps each AI action type to its personality weight category.
+ * Actions not in this map (e.g. 'move', 'end-turn') are left unscaled.
+ */
+const PERSONALITY_WEIGHT_CATEGORY: Partial<Record<string, keyof AIPersonality['weights']>> = {
+  // Education
+  'study': 'education',
+  'graduate': 'education',
+  // Wealth/work
+  'work': 'wealth',
+  'deposit-bank': 'wealth',
+  'withdraw-bank': 'wealth',
+  'apply-job': 'wealth',
+  // Combat/dungeon/quest (M22 FIX: includes quest/bounty actions)
+  'explore-dungeon': 'combat',
+  'buy-equipment': 'combat',
+  'temper-equipment': 'combat',
+  'take-quest': 'combat',
+  'take-chain-quest': 'combat',
+  'take-bounty': 'combat',
+  'complete-quest': 'combat',
+  'buy-guild-pass': 'combat',
+  // Social/happiness
+  'rest': 'social',
+  'buy-appliance': 'social',
+  'buy-ticket': 'social',
+  // Caution/health
+  'heal': 'caution',
+  'cure-sickness': 'caution',
+  // Gambling/risk
+  'buy-lottery-ticket': 'gambling',
+  'buy-stock': 'gambling',
+  'sell-stock': 'gambling',
+};
+
+/**
  * Apply personality-based priority scaling to all generated actions.
  * Each action type gets its priority multiplied by the relevant personality weight.
  */
 function applyPersonalityWeights(actions: AIAction[], personality: AIPersonality): void {
+  const w = personality.weights;
   for (const action of actions) {
-    const w = personality.weights;
-    switch (action.type) {
-      // Education actions
-      case 'study':
-      case 'graduate':
-        action.priority = Math.round(action.priority * w.education);
-        break;
-      // Wealth/work actions
-      case 'work':
-      case 'deposit-bank':
-      case 'withdraw-bank':
-      case 'apply-job':
-        action.priority = Math.round(action.priority * w.wealth);
-        break;
-      // Combat/dungeon/quest actions
-      // M22 FIX: Added quest/bounty actions so personality affects quest priorities
-      case 'explore-dungeon':
-      case 'buy-equipment':
-      case 'temper-equipment':
-      case 'take-quest':
-      case 'take-chain-quest':
-      case 'take-bounty':
-      case 'complete-quest':
-      case 'buy-guild-pass':
-        action.priority = Math.round(action.priority * w.combat);
-        break;
-      // Social/happiness actions
-      case 'rest':
-      case 'buy-appliance':
-      case 'buy-ticket':
-        action.priority = Math.round(action.priority * w.social);
-        break;
-      // Caution/health actions
-      case 'heal':
-      case 'cure-sickness':
-        action.priority = Math.round(action.priority * w.caution);
-        break;
-      // Gambling/risk actions
-      case 'buy-lottery-ticket':
-      case 'buy-stock':
-      case 'sell-stock':
-        action.priority = Math.round(action.priority * w.gambling);
-        break;
-      // Move actions inherit the weight of what they're moving toward
-      // (handled by the description or left at 1.0)
-      default:
-        break;
+    const category = PERSONALITY_WEIGHT_CATEGORY[action.type];
+    if (category) {
+      action.priority = Math.round(action.priority * w[category]);
     }
   }
 }
@@ -115,40 +107,43 @@ function applyTimeBudgetAwareness(actions: AIAction[], turnTimeRatio: number): v
 }
 
 /**
+ * Maps each AI action type to its counter-strategy weight category.
+ * Counter-strategy uses different categories than personality (e.g. stocks → wealth, not gambling).
+ */
+const COUNTER_STRATEGY_CATEGORY: Partial<Record<string, keyof CounterStrategyWeights>> = {
+  // Education
+  'study': 'education',
+  'graduate': 'education',
+  // Wealth (includes stocks — counter-strategy treats stock trading as wealth, not gambling)
+  'work': 'wealth',
+  'deposit-bank': 'wealth',
+  'withdraw-bank': 'wealth',
+  'apply-job': 'wealth',
+  'buy-stock': 'wealth',
+  'sell-stock': 'wealth',
+  // Combat
+  'explore-dungeon': 'combat',
+  'buy-equipment': 'combat',
+  'temper-equipment': 'combat',
+  'take-quest': 'combat',
+  'take-bounty': 'combat',
+  'complete-quest': 'combat',
+  // Happiness
+  'rest': 'happiness',
+  'buy-appliance': 'happiness',
+  'buy-ticket': 'happiness',
+};
+
+/**
  * Apply counter-strategy weights based on observed human player behavior.
  * Boosts AI priorities in areas where humans are strong (competitive pressure)
  * and in areas humans neglect (exploit gaps).
  */
 function applyCounterStrategyWeights(actions: AIAction[], counterWeights: CounterStrategyWeights): void {
   for (const action of actions) {
-    switch (action.type) {
-      case 'study':
-      case 'graduate':
-        action.priority = Math.round(action.priority * counterWeights.education);
-        break;
-      case 'work':
-      case 'deposit-bank':
-      case 'withdraw-bank':
-      case 'apply-job':
-      case 'buy-stock':
-      case 'sell-stock':
-        action.priority = Math.round(action.priority * counterWeights.wealth);
-        break;
-      case 'explore-dungeon':
-      case 'buy-equipment':
-      case 'temper-equipment':
-      case 'take-quest':
-      case 'take-bounty':
-      case 'complete-quest':
-        action.priority = Math.round(action.priority * counterWeights.combat);
-        break;
-      case 'rest':
-      case 'buy-appliance':
-      case 'buy-ticket':
-        action.priority = Math.round(action.priority * counterWeights.happiness);
-        break;
-      default:
-        break;
+    const category = COUNTER_STRATEGY_CATEGORY[action.type];
+    if (category) {
+      action.priority = Math.round(action.priority * counterWeights[category]);
     }
   }
 }

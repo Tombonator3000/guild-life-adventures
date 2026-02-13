@@ -424,6 +424,69 @@ function handleCompleteQuest(player: Player, action: AIAction, store: StoreActio
 
 // ─── Dungeon ────────────────────────────────────────────────────────────
 
+/** Validate that the player can attempt a dungeon floor. Returns false if blocked. */
+function canAttemptDungeon(player: Player, timeCost: number): boolean {
+  const attemptsUsed = player.dungeonAttemptsThisTurn || 0;
+  if (attemptsUsed >= 2) return false;
+  if (player.health <= 20) return false;
+  if (player.completedDegrees.length === 0) return false;
+  if (player.timeRemaining < timeCost) return false;
+  return true;
+}
+
+/** Increment the player's dungeon attempt counter for this turn. */
+function trackDungeonAttempt(playerId: string): void {
+  const storeState = useGameStore.getState();
+  useGameStore.setState({
+    players: storeState.players.map(p =>
+      p.id === playerId
+        ? { ...p, dungeonAttemptsThisTurn: (p.dungeonAttemptsThisTurn || 0) + 1 }
+        : p
+    ),
+  });
+}
+
+/** Calculate festival-adjusted gold earned from a dungeon run. */
+function calculateDungeonGold(baseGold: number, bossDefeated: boolean): number {
+  const festivalId = useGameStore.getState().activeFestival;
+  const festivalMult = festivalId
+    ? (FESTIVALS.find(f => f.id === festivalId)?.dungeonGoldMultiplier ?? 1.0)
+    : 1.0;
+  const defeatMult = bossDefeated ? 1.0 : 0.25;
+  return Math.floor(baseGold * defeatMult * festivalMult);
+}
+
+/** Apply all results from a dungeon run: gold, health, happiness, floor clear, rare drops, durability. */
+function applyDungeonResults(
+  playerId: string,
+  floorId: number,
+  floor: ReturnType<typeof getFloor> & object,
+  result: ReturnType<typeof autoResolveFloor>,
+  isFirstClear: boolean,
+  store: StoreActions,
+): number {
+  const actualGold = calculateDungeonGold(result.goldEarned, result.bossDefeated);
+
+  if (actualGold > 0) store.modifyGold(playerId, actualGold);
+  if (result.healthChange !== 0) store.modifyHealth(playerId, result.healthChange);
+
+  if (result.bossDefeated && isFirstClear) {
+    store.clearDungeonFloor(playerId, floorId);
+    store.modifyHappiness(playerId, floor.happinessOnClear);
+  } else if (!result.bossDefeated) {
+    store.modifyHappiness(playerId, -2);
+  }
+
+  if (result.rareDropName) {
+    store.applyRareDrop(playerId, floor.rareDrop.id);
+  }
+  if (result.durabilityLoss) {
+    store.applyDurabilityLoss(playerId, result.durabilityLoss);
+  }
+
+  return actualGold;
+}
+
 function handleExploreDungeon(player: Player, action: AIAction, store: StoreActions): boolean {
   const floorId = action.details?.floorId as number;
   // H8 FIX: Use explicit null check instead of falsy (floor 0 is valid)
@@ -431,66 +494,26 @@ function handleExploreDungeon(player: Player, action: AIAction, store: StoreActi
   const floor = getFloor(floorId);
   if (!floor) return false;
 
-  // Check dungeon attempts limit and health
-  const attemptsUsed = player.dungeonAttemptsThisTurn || 0;
-  if (attemptsUsed >= 2) return false;
-  if (player.health <= 20) return false;
-  if (player.completedDegrees.length === 0) return false;
-
+  // Calculate time cost and validate
   const combatStats = calculateCombatStats(
-    player.equippedWeapon,
-    player.equippedArmor,
-    player.equippedShield,
-    player.temperedItems,
-    player.equipmentDurability,
+    player.equippedWeapon, player.equippedArmor, player.equippedShield,
+    player.temperedItems, player.equipmentDurability,
   );
   const eduBonuses = calculateEducationBonuses(player.completedDegrees);
-  const encounterTime = getEncounterTimeCost(floor, combatStats);
-  const timeCost = encounterTime * ENCOUNTERS_PER_FLOOR;
-  if (player.timeRemaining < timeCost) return false;
+  const timeCost = getEncounterTimeCost(floor, combatStats) * ENCOUNTERS_PER_FLOOR;
+  if (!canAttemptDungeon(player, timeCost)) return false;
 
+  // Execute dungeon run
   store.spendTime(player.id, timeCost);
-
-  // Track dungeon attempts
-  const storeState = useGameStore.getState();
-  useGameStore.setState({
-    players: storeState.players.map(p =>
-      p.id === player.id
-        ? { ...p, dungeonAttemptsThisTurn: (p.dungeonAttemptsThisTurn || 0) + 1 }
-        : p
-    ),
-  });
+  trackDungeonAttempt(player.id);
 
   const isFirstClear = !player.dungeonFloorsCleared.includes(floorId);
   const lootMult = getLootMultiplier(floor, player.guildRank);
   const equippedItems = { weapon: player.equippedWeapon, armor: player.equippedArmor, shield: player.equippedShield };
   const result = autoResolveFloor(floor, combatStats, eduBonuses, player.health, isFirstClear, lootMult, player.dungeonFloorsCleared, equippedItems);
 
-  // Festival dungeon gold multiplier
-  const festivalId = useGameStore.getState().activeFestival;
-  const festivalDungeonMult = festivalId
-    ? (FESTIVALS.find(f => f.id === festivalId)?.dungeonGoldMultiplier ?? 1.0)
-    : 1.0;
-  const defeatGoldMult = (!result.bossDefeated) ? 0.25 : 1.0;
-  const actualGold = Math.floor(result.goldEarned * defeatGoldMult * festivalDungeonMult);
-  if (actualGold > 0) store.modifyGold(player.id, actualGold);
-  if (result.healthChange !== 0) store.modifyHealth(player.id, result.healthChange);
-  if (result.bossDefeated && isFirstClear) {
-    store.clearDungeonFloor(player.id, floorId);
-    store.modifyHappiness(player.id, floor.happinessOnClear);
-  } else if (!result.bossDefeated) {
-    store.modifyHappiness(player.id, -2);
-  }
-  if (result.rareDropName) {
-    store.applyRareDrop(player.id, floor.rareDrop.id);
-  }
-
-  // Apply equipment durability loss from dungeon run
-  if (result.durabilityLoss) {
-    store.applyDurabilityLoss(player.id, result.durabilityLoss);
-  }
-
-  // Check for death after dungeon combat
+  // Apply results and check for death
+  const actualGold = applyDungeonResults(player.id, floorId, floor, result, isFirstClear, store);
   const { checkDeath } = useGameStore.getState();
   checkDeath(player.id);
 
