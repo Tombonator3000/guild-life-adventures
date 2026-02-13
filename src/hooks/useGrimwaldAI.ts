@@ -77,6 +77,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     buyStock: store.buyStock,
     sellStock: store.sellStock,
     buyFreshFood: store.buyFreshFood,
+    buyFoodWithSpoilage: store.buyFoodWithSpoilage,
     buyTicket: store.buyTicket,
     sellItem: store.sellItem,
     pawnAppliance: store.pawnAppliance,
