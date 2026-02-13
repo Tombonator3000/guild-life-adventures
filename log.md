@@ -1,5 +1,46 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-13 - PNG to JPG Image Migration (Asset Size Reduction)
+
+### Overview
+Converted all 187 PNG image assets in `src/assets/` to JPG format to reduce total asset size. None of the PNG files used actual transparency, making lossless-to-lossy conversion safe across the board.
+
+**Test Results**: 185 tests passed (9 test files, 0 failures)
+
+### Changes
+
+#### Image Conversion
+- **187 PNG files** converted to JPG at quality 75 (Pillow/JPEG optimize)
+- **Total size reduction**: 36.33 MB → 27.06 MB (**25.5% savings, 9.3 MB saved**)
+- Transparency audit confirmed 0 of 187 PNGs used alpha channel — all fully opaque
+- PWA icons in `/public/` (11 files) kept as PNG (browser/manifest standard requirement)
+
+#### Files Converted by Category
+| Category | Files | Location |
+|----------|-------|----------|
+| Encounters | 42 | `src/assets/encounters/` (f1-f6 floors + mini-bosses) |
+| Events | 71 | `src/assets/events/` (crime, weather, weekend, festival, etc.) |
+| Items | 51 | `src/assets/items/` (weapons, armor, food, clothing, appliances, etc.) |
+| Overlays & Borders | 23 | `src/assets/` (weather, festival, border frames, crow) |
+
+#### Source Code Updates (7 files)
+- `src/assets/encounters/index.ts` — all 42 imports: `.png` → `.jpg`
+- `src/assets/events/index.ts` — all 71 imports: `.png` → `.jpg`
+- `src/assets/items/index.ts` — all 51 imports: `.png` → `.jpg`
+- `src/components/game/StoneBorderFrame.tsx` — 10 border imports: `.png` → `.jpg`
+- `src/components/game/FestivalOverlay.tsx` — 8 festival imports: `.png` → `.jpg`
+- `src/components/game/WeatherOverlay.tsx` — 4 weather imports: `.png` → `.jpg`
+- `src/components/game/GraveyardCrows.tsx` — 1 crow import: `.png` → `.jpg`
+
+#### What Was NOT Changed
+- **PWA icons** (`public/*.png`) — kept as PNG (required by PWA manifest/favicon spec)
+- **`index.html`** favicon references — still PNG
+- **`vite.config.ts`** PWA icon config — still PNG
+- **`game-board.jpeg`**, **`Guild-Life-Logo.jpg`**, **`shadowfingers.jpg`** — already JPG, unchanged
+- **Location backgrounds** (`public/locations/*.jpg`) — already JPG, unchanged
+
+---
+
 ## 2026-02-13 - Food Spoilage Fix, UI Improvements, Weather Priority & Sickness Drain
 
 ### Overview

@@ -2,77 +2,77 @@
 // All AI-generated 512×512 item icons for the game
 
 // Weapons
-import dagger from './dagger.png';
-import sword from './sword.png';
-import steelSword from './steel-sword.png';
-import enchantedBlade from './enchanted-blade.png';
+import dagger from './dagger.jpg';
+import sword from './sword.jpg';
+import steelSword from './steel-sword.jpg';
+import enchantedBlade from './enchanted-blade.jpg';
 
 // Armor
-import leatherArmor from './leather-armor.png';
-import chainmail from './chainmail.png';
-import plateArmor from './plate-armor.png';
-import enchantedPlate from './enchanted-plate.png';
+import leatherArmor from './leather-armor.jpg';
+import chainmail from './chainmail.jpg';
+import plateArmor from './plate-armor.jpg';
+import enchantedPlate from './enchanted-plate.jpg';
 
 // Shields
-import shield from './shield.png';
-import ironShield from './iron-shield.png';
-import towerShield from './tower-shield.png';
-import dragonScaleShield from './dragon-scale-shield.png';
+import shield from './shield.jpg';
+import ironShield from './iron-shield.jpg';
+import towerShield from './tower-shield.jpg';
+import dragonScaleShield from './dragon-scale-shield.jpg';
 
 // Food
-import bread from './bread.png';
-import cheese from './cheese.png';
-import freshVegetables from './fresh-vegetables.png';
-import freshMeat from './fresh-meat.png';
-import freshProvisions from './fresh-provisions.png';
-import mysteryMeat from './mystery-meat.png';
+import bread from './bread.jpg';
+import cheese from './cheese.jpg';
+import freshVegetables from './fresh-vegetables.jpg';
+import freshMeat from './fresh-meat.jpg';
+import freshProvisions from './fresh-provisions.jpg';
+import mysteryMeat from './mystery-meat.jpg';
 
 // Tavern
-import ale from './ale.png';
-import stew from './stew.png';
-import roast from './roast.png';
+import ale from './ale.jpg';
+import stew from './stew.jpg';
+import roast from './roast.jpg';
 
 // Clothing (6 items: 2 casual, 2 dress, 2 business)
-import peasantGarb from './peasant-garb.png';
-import commonClothes from './common-clothes.png'; // Reused for common-tunic
-import fineClothes from './fine-clothes.png';
-import nobleAttire from './noble-attire.png';
-import guildUniform from './guild-uniform.png'; // Reused for guild-vestments
+import peasantGarb from './peasant-garb.jpg';
+import commonClothes from './common-clothes.jpg'; // Reused for common-tunic
+import fineClothes from './fine-clothes.jpg';
+import nobleAttire from './noble-attire.jpg';
+import guildUniform from './guild-uniform.jpg'; // Reused for guild-vestments
 
 // Appliances
-import scryingMirror from './scrying-mirror.png';
-import simpleScryingGlass from './simple-scrying-glass.png';
-import memoryCrystal from './memory-crystal.png';
-import musicBox from './music-box.png';
-import cookingFire from './cooking-fire.png';
-import preservationBox from './preservation-box.png';
-import frostChest from './frost-chest.png';
-import arcaneTome from './arcane-tome.png';
+import scryingMirror from './scrying-mirror.jpg';
+import simpleScryingGlass from './simple-scrying-glass.jpg';
+import memoryCrystal from './memory-crystal.jpg';
+import musicBox from './music-box.jpg';
+import cookingFire from './cooking-fire.jpg';
+import preservationBox from './preservation-box.jpg';
+import frostChest from './frost-chest.jpg';
+import arcaneTome from './arcane-tome.jpg';
 
 // Magic Items
-import glowOrb from './glow-orb.png';
-import warmthStone from './warmth-stone.png';
-import healingPotion from './healing-potion.png';
+import glowOrb from './glow-orb.jpg';
+import warmthStone from './warmth-stone.jpg';
+import healingPotion from './healing-potion.jpg';
 
 // Durables
-import candles from './candles.png';
-import blanket from './blanket.png';
-import furniture from './furniture.png';
+import candles from './candles.jpg';
+import blanket from './blanket.jpg';
+import furniture from './furniture.jpg';
 
 // Shadow Market
-import stolenGoods from './stolen-goods.png';
-import marketIntel from './market-intel.png';
+import stolenGoods from './stolen-goods.jpg';
+import marketIntel from './market-intel.jpg';
 
 // Tickets
-import lotteryTicket from './lottery-ticket.png';
-import joustingTicket from './jousting-ticket.png';
-import theatreTicket from './theatre-ticket.png';
-import bardConcertTicket from './bard-concert-ticket.png';
+import lotteryTicket from './lottery-ticket.jpg';
+import joustingTicket from './jousting-ticket.jpg';
+import theatreTicket from './theatre-ticket.jpg';
+import bardConcertTicket from './bard-concert-ticket.jpg';
 
 // Scholar Items
-import encyclopedia from './encyclopedia.png';
-import dictionary from './dictionary.png';
-import atlas from './atlas.png';
+import encyclopedia from './encyclopedia.jpg';
+import dictionary from './dictionary.jpg';
+import atlas from './atlas.jpg';
 
 /** Map item IDs to their AI-generated images */
 export const ITEM_IMAGES: Record<string, string> = {
