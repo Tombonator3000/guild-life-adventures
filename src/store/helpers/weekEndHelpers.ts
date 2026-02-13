@@ -410,6 +410,75 @@ function processSickness(p: Player, msgs: string[]): void {
   }
 }
 
+/** Seize gold from a currency source (savings, gold, investments). Returns amount recovered. */
+function seizeCurrency(
+  p: Player,
+  field: 'savings' | 'gold' | 'investments',
+  remaining: number,
+  label: string,
+  details: string[],
+): number {
+  const available = p[field];
+  if (remaining <= 0 || available <= 0) return 0;
+  const seized = Math.min(available, remaining);
+  p[field] -= seized;
+  details.push(`${seized}g from ${label}`);
+  return seized;
+}
+
+/** Forced-sell stocks at 80% value. Returns total gold recovered. */
+function seizeStocks(p: Player, remaining: number, details: string[]): number {
+  if (remaining <= 0 || Object.keys(p.stocks).length === 0) return 0;
+  let recovered = 0;
+  for (const stockId of Object.keys(p.stocks)) {
+    if (remaining - recovered <= 0) break;
+    const shares = p.stocks[stockId];
+    if (shares > 0) {
+      const value = Math.min(Math.floor(shares * 50 * 0.8), remaining - recovered);
+      delete p.stocks[stockId];
+      recovered += value;
+      details.push(`stocks (${shares} shares)`);
+    }
+  }
+  return recovered;
+}
+
+/** Liquidate appliances at 30% of original price. Returns total gold recovered. */
+function seizeAppliances(p: Player, remaining: number, details: string[]): number {
+  if (remaining <= 0 || Object.keys(p.appliances).length === 0) return 0;
+  let recovered = 0;
+  let count = 0;
+  for (const appId of Object.keys(p.appliances)) {
+    if (remaining - recovered <= 0) break;
+    recovered += Math.floor(p.appliances[appId].originalPrice * 0.3);
+    delete p.appliances[appId];
+    count++;
+  }
+  if (count > 0) details.push(`${count} appliance(s) seized`);
+  return recovered;
+}
+
+/** Liquidate durable items at 30% of base price, unequipping as needed. Returns total gold recovered. */
+function seizeDurables(p: Player, remaining: number, details: string[]): number {
+  if (remaining <= 0 || Object.keys(p.durables).length === 0) return 0;
+  let recovered = 0;
+  let count = 0;
+  for (const durId of Object.keys(p.durables)) {
+    if (remaining - recovered <= 0) break;
+    const item = getItem(durId);
+    if (item) {
+      recovered += Math.floor(item.basePrice * 0.3);
+      if (p.equippedWeapon === durId) p.equippedWeapon = null;
+      if (p.equippedArmor === durId) p.equippedArmor = null;
+      if (p.equippedShield === durId) p.equippedShield = null;
+    }
+    delete p.durables[durId];
+    count++;
+  }
+  if (count > 0) details.push(`${count} item(s) repossessed`);
+  return recovered;
+}
+
 /** Process loan interest and forced repayment on default (Jones-style) */
 function processLoans(p: Player, msgs: string[], newsEvents: PlayerNewsEventData[]): void {
   if (p.loanAmount <= 0) return;
@@ -419,114 +488,35 @@ function processLoans(p: Player, msgs: string[], newsEvents: PlayerNewsEventData
   p.loanAmount = Math.min(p.loanAmount + interest, 2000);
   p.loanWeeksRemaining = Math.max(0, p.loanWeeksRemaining - 1);
 
-  // Loan default: forced repayment from savings/gold/investments/assets (Jones-style)
-  if (p.loanWeeksRemaining <= 0 && p.loanAmount > 0) {
-    const seizureDetails: string[] = [];
+  if (p.loanWeeksRemaining > 0 || p.loanAmount <= 0) return;
 
-    // Step 1: Seize from savings
-    const fromSavings = Math.min(p.savings, p.loanAmount);
-    if (fromSavings > 0) {
-      p.savings -= fromSavings;
-      seizureDetails.push(`${fromSavings}g from savings`);
+  // Loan default: seize assets in priority order (Jones-style cascade)
+  const details: string[] = [];
+  let remaining = p.loanAmount;
+  remaining -= seizeCurrency(p, 'savings', remaining, 'savings', details);
+  remaining -= seizeCurrency(p, 'gold', remaining, 'purse', details);
+  remaining -= seizeCurrency(p, 'investments', remaining, 'investments', details);
+  remaining -= seizeStocks(p, remaining, details);
+  remaining -= seizeAppliances(p, remaining, details);
+  remaining -= seizeDurables(p, remaining, details);
+  remaining = Math.max(0, remaining);
+
+  const seized = details.length > 0 ? ` Bank seized: ${details.join(', ')}.` : '';
+  if (remaining > 0) {
+    p.happiness = Math.max(0, p.happiness - 10);
+    p.loanAmount = remaining;
+    p.loanWeeksRemaining = 0;
+    if (!p.isAI) {
+      msgs.push(`${p.name} defaulted on loan!${seized} Still owe ${remaining}g. 25% of wages garnished until repaid. -10 Happiness.`);
     }
-    let remaining = p.loanAmount - fromSavings;
-
-    // Step 2: Seize from gold on hand
-    if (remaining > 0) {
-      const fromGold = Math.min(p.gold, remaining);
-      if (fromGold > 0) {
-        p.gold -= fromGold;
-        remaining -= fromGold;
-        seizureDetails.push(`${fromGold}g from purse`);
-      }
+    newsEvents.push({ type: 'loan-default', playerName: p.name, amountOwed: remaining });
+  } else {
+    p.loanAmount = 0;
+    p.loanWeeksRemaining = 0;
+    if (!p.isAI) {
+      msgs.push(`${p.name}'s loan was forcefully repaid!${seized}`);
     }
-
-    // Step 3: Liquidate investments
-    if (remaining > 0 && p.investments > 0) {
-      const fromInvestments = Math.min(p.investments, remaining);
-      p.investments -= fromInvestments;
-      remaining -= fromInvestments;
-      seizureDetails.push(`${fromInvestments}g from investments`);
-    }
-
-    // Step 4: Liquidate stocks at current value (forced sell at 80% value)
-    if (remaining > 0 && Object.keys(p.stocks).length > 0) {
-      for (const stockId of Object.keys(p.stocks)) {
-        if (remaining <= 0) break;
-        const shares = p.stocks[stockId];
-        if (shares > 0) {
-          // Forced liquidation at 80% value (panic selling penalty)
-          const estimatedValue = Math.floor(shares * 50 * 0.8); // Rough estimate
-          const recovered = Math.min(estimatedValue, remaining);
-          delete p.stocks[stockId];
-          remaining -= recovered;
-          seizureDetails.push(`stocks (${shares} shares)`);
-        }
-      }
-    }
-
-    // Step 5: Liquidate appliances (sell at 30% of original price)
-    if (remaining > 0 && Object.keys(p.appliances).length > 0) {
-      const applianceIds = Object.keys(p.appliances);
-      const liquidatedAppliances: string[] = [];
-      for (const appId of applianceIds) {
-        if (remaining <= 0) break;
-        const app = p.appliances[appId];
-        const recoveredValue = Math.floor(app.originalPrice * 0.3);
-        remaining -= recoveredValue;
-        liquidatedAppliances.push(appId);
-        delete p.appliances[appId];
-      }
-      if (liquidatedAppliances.length > 0) {
-        seizureDetails.push(`${liquidatedAppliances.length} appliance(s) seized`);
-      }
-    }
-
-    // Step 6: Liquidate durable items (sell at 30% of base price)
-    if (remaining > 0 && Object.keys(p.durables).length > 0) {
-      const durableIds = Object.keys(p.durables);
-      const liquidatedDurables: string[] = [];
-      for (const durId of durableIds) {
-        if (remaining <= 0) break;
-        const item = getItem(durId);
-        if (item) {
-          const recoveredValue = Math.floor(item.basePrice * 0.3);
-          remaining -= recoveredValue;
-          liquidatedDurables.push(durId);
-          // Unequip if it was equipped
-          if (p.equippedWeapon === durId) p.equippedWeapon = null;
-          if (p.equippedArmor === durId) p.equippedArmor = null;
-          if (p.equippedShield === durId) p.equippedShield = null;
-        }
-        delete p.durables[durId];
-      }
-      if (liquidatedDurables.length > 0) {
-        seizureDetails.push(`${liquidatedDurables.length} item(s) repossessed`);
-      }
-    }
-
-    remaining = Math.max(0, remaining);
-
-    if (remaining > 0) {
-      // Still can't fully repay: happiness penalty, wage garnishment continues, extension
-      p.happiness = Math.max(0, p.happiness - 10);
-      p.loanAmount = remaining;
-      p.loanWeeksRemaining = 0; // Stay in default — wage garnishment continues
-      if (!p.isAI) {
-        const seized = seizureDetails.length > 0 ? ` Bank seized: ${seizureDetails.join(', ')}.` : '';
-        msgs.push(`${p.name} defaulted on loan!${seized} Still owe ${remaining}g. 25% of wages garnished until repaid. -10 Happiness.`);
-      }
-      newsEvents.push({ type: 'loan-default', playerName: p.name, amountOwed: remaining });
-    } else {
-      // Fully repaid through seizure
-      p.loanAmount = 0;
-      p.loanWeeksRemaining = 0;
-      if (!p.isAI) {
-        const seized = seizureDetails.length > 0 ? ` Bank seized: ${seizureDetails.join(', ')}.` : '';
-        msgs.push(`${p.name}'s loan was forcefully repaid!${seized}`);
-      }
-      newsEvents.push({ type: 'loan-repaid', playerName: p.name });
-    }
+    newsEvents.push({ type: 'loan-repaid', playerName: p.name });
   }
 }
 
@@ -770,56 +760,47 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
         eventMessages.push('MARKET CRASH! Stock prices have plummeted!');
       }
 
-      // --- Step 5: Check game-over conditions ---
+      // --- Step 5: Check game-over conditions and set up new week ---
       const firstAliveIndex = updatedPlayers.findIndex(p => !p.isGameOver);
       const isRentDue = newWeek % 4 === 0;
 
-      if (firstAliveIndex === -1) {
-        set({
-          week: newWeek,
-          phase: 'victory',
-          eventMessage: 'All players have perished. Game Over!',
-          stockPrices: newStockPrices,
-          priceModifier: finalPriceModifier,
-          economyTrend: economy.economyTrend,
-          economyCycleWeeksLeft: economy.economyCycleWeeksLeft,
-          weather,
-          activeFestival: activeFestivalId,
-          weeklyNewsEvents: newsEvents,
-        });
-        return;
-      }
-
-      const alivePlayers = updatedPlayers.filter(p => !p.isGameOver);
-      if (alivePlayers.length === 1 && updatedPlayers.length > 1) {
-        set({
-          week: newWeek,
-          winner: alivePlayers[0].id,
-          phase: 'victory',
-          eventMessage: `${alivePlayers[0].name} is the last one standing and wins the game!`,
-          stockPrices: newStockPrices,
-          priceModifier: finalPriceModifier,
-          economyTrend: economy.economyTrend,
-          economyCycleWeeksLeft: economy.economyCycleWeeksLeft,
-          weather,
-          activeFestival: activeFestivalId,
-          weeklyNewsEvents: newsEvents,
-        });
-        return;
-      }
-
-      // --- Step 6: Set up the new week ---
-      const firstPlayer = updatedPlayers[firstAliveIndex];
-      const firstPlayerHome: LocationId = getHomeLocation(firstPlayer.housing);
-
-      set({
+      // Shared state fields updated every week-end
+      const weekEndState = {
         week: newWeek,
-        currentPlayerIndex: firstAliveIndex,
+        stockPrices: newStockPrices,
         priceModifier: finalPriceModifier,
         economyTrend: economy.economyTrend,
         economyCycleWeeksLeft: economy.economyCycleWeeksLeft,
         weather,
         activeFestival: activeFestivalId,
+        weeklyNewsEvents: newsEvents,
+      };
+
+      // All players dead
+      if (firstAliveIndex === -1) {
+        set({ ...weekEndState, phase: 'victory', eventMessage: 'All players have perished. Game Over!' });
+        return;
+      }
+
+      // Last player standing wins
+      const alivePlayers = updatedPlayers.filter(p => !p.isGameOver);
+      if (alivePlayers.length === 1 && updatedPlayers.length > 1) {
+        set({
+          ...weekEndState,
+          winner: alivePlayers[0].id,
+          phase: 'victory',
+          eventMessage: `${alivePlayers[0].name} is the last one standing and wins the game!`,
+        });
+        return;
+      }
+
+      // Normal week transition
+      const firstPlayer = updatedPlayers[firstAliveIndex];
+      const firstPlayerHome: LocationId = getHomeLocation(firstPlayer.housing);
+
+      set({
+        ...weekEndState,
+        currentPlayerIndex: firstAliveIndex,
         players: updatedPlayers.map((p, index) =>
           index === firstAliveIndex
             ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: firstPlayerHome, dungeonAttemptsThisTurn: 0 }
@@ -829,8 +810,6 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
         selectedLocation: null,
         eventMessage: eventMessages.length > 0 ? eventMessages.join('\n') : null,
         phase: eventMessages.length > 0 ? 'event' : 'playing',
-        stockPrices: newStockPrices,
-        weeklyNewsEvents: newsEvents,
       });
 
       // Check for apartment robbery at start of first alive player's turn
