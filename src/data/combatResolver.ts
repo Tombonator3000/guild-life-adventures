@@ -136,6 +136,144 @@ export interface EquippedItems {
   shield: string | null;
 }
 
+/** Shared context passed to per-encounter-type resolvers */
+interface EncounterContext {
+  encounter: DungeonEncounter;
+  combatStats: CombatStats;
+  eduBonuses: EducationBonuses;
+  mod: DungeonModifier | null;
+  noArmorDamageMult: number;
+  noWeaponGoldMult: number;
+  attackPower: number;
+  bonuses: string[];
+}
+
+/** Partial result from a per-type resolver (only the fields it sets) */
+interface TypeResult {
+  damageDealt?: number;
+  goldEarned?: number;
+  healed?: number;
+  blocked?: boolean;
+  disarmed?: boolean;
+}
+
+function resolveTreasure(ctx: EncounterContext): TypeResult {
+  const { encounter, eduBonuses, mod, bonuses } = ctx;
+  let goldMult = 1 + eduBonuses.goldBonus;
+  if (mod?.id === 'fortunes-favor') {
+    goldMult *= 2.0;
+    bonuses.push("Fortune's Favor (2x treasure)");
+  } else if (mod && mod.goldMult !== 1.0) {
+    goldMult *= mod.goldMult;
+  }
+  if (eduBonuses.goldBonus > 0) {
+    bonuses.push(`+${Math.round(eduBonuses.goldBonus * 100)}% gold`);
+  }
+  return { goldEarned: Math.floor(encounter.baseGold * goldMult) };
+}
+
+function resolveHealing(ctx: EncounterContext): TypeResult {
+  const { encounter, mod, bonuses } = ctx;
+  if (mod?.disableHealing) {
+    bonuses.push('Healing disabled! (Blood Moon)');
+    return { healed: 0 };
+  }
+  let healed = Math.abs(encounter.baseDamage);
+  if (mod && mod.healingMult !== 1.0) {
+    healed = Math.floor(healed * mod.healingMult);
+    bonuses.push(`Healing +${Math.round((mod.healingMult - 1) * 100)}%`);
+  }
+  return { healed };
+}
+
+function resolveTrap(ctx: EncounterContext): TypeResult {
+  const { encounter, eduBonuses, mod, noArmorDamageMult, bonuses } = ctx;
+  const canDisarm = eduBonuses.canDisarmTraps && !(mod?.disableDisarm);
+  if (encounter.isDisarmable && canDisarm) {
+    bonuses.push('Trap Sense');
+    return { disarmed: true };
+  }
+  if (mod?.disableDisarm && encounter.isDisarmable && eduBonuses.canDisarmTraps) {
+    bonuses.push('Cannot disarm! (Echoing Darkness)');
+  }
+  const modDamageMult = mod ? mod.damageMult : 1.0;
+  const modDmgReduc = mod ? mod.bonusDamageReduction : 0;
+  let d = Math.floor(encounter.baseDamage * (1 - eduBonuses.damageReduction - modDmgReduc) * noArmorDamageMult * modDamageMult);
+  d = Math.max(1, d);
+  if (eduBonuses.damageReduction > 0) {
+    bonuses.push(`-${Math.round(eduBonuses.damageReduction * 100)}% dmg`);
+  }
+  return { damageDealt: d };
+}
+
+function resolveCombat(ctx: EncounterContext): TypeResult {
+  const { encounter, combatStats, eduBonuses, mod, noArmorDamageMult, noWeaponGoldMult, attackPower, bonuses } = ctx;
+  let effAtk = attackPower;
+  if (encounter.requiresArcane && !eduBonuses.canDamageEthereal) effAtk *= 0.3;
+  if (encounter.requiresArcane && eduBonuses.canDamageEthereal) bonuses.push('Arcane Sight');
+
+  const effectiveEnemyPower = encounter.basePower * (mod?.enemyPowerMult ?? 1.0);
+  const playerPower = effAtk + combatStats.defense * 0.5;
+  const ratio = playerPower / Math.max(1, effectiveEnemyPower);
+
+  // Damage: inversely proportional to power ratio
+  const modDamageMult = mod ? mod.damageMult : 1.0;
+  const modDmgReduc = mod ? mod.bonusDamageReduction : 0;
+  let d = Math.floor(encounter.baseDamage * Math.max(0.3, 1 - ratio * 0.5) * noArmorDamageMult * modDamageMult);
+  // M27 FIX: Clamp damage reduction multiplier to minimum 0 to prevent negative damage
+  d = Math.floor(d * Math.max(0, 1 - eduBonuses.damageReduction - modDmgReduc));
+  if (eduBonuses.damageReduction > 0) {
+    bonuses.push(`-${Math.round(eduBonuses.damageReduction * 100)}% dmg`);
+  }
+
+  let blocked = false;
+  if (combatStats.blockChance > 0 && Math.random() < combatStats.blockChance) {
+    d = Math.floor(d * 0.5);
+    blocked = true;
+  }
+  d = Math.max(1, d);
+
+  // Gold: proportional to power ratio (capped at 1.5x)
+  const modGoldMult = mod ? mod.goldMult : 1.0;
+  const goldEarned = Math.floor(
+    encounter.baseGold * (1 + eduBonuses.goldBonus) * Math.min(1.5, ratio) * noWeaponGoldMult * modGoldMult,
+  );
+  if (eduBonuses.goldBonus > 0) {
+    bonuses.push(`+${Math.round(eduBonuses.goldBonus * 100)}% gold`);
+  }
+  return { damageDealt: d, goldEarned, blocked };
+}
+
+/** Calculate equipment durability loss for a resolved encounter */
+function calculateDurabilityLoss(
+  encounterType: DungeonEncounter['type'],
+  items: EquippedItems,
+  damageDealt: number,
+  blocked: boolean,
+  disarmed: boolean,
+): EquipmentDurabilityLoss {
+  const loss: EquipmentDurabilityLoss = { weaponLoss: 0, armorLoss: 0, shieldLoss: 0 };
+
+  if (encounterType === 'combat' || encounterType === 'boss') {
+    if (items.weapon) {
+      loss.weaponLoss = DURABILITY_LOSS[items.weapon] ?? DEFAULT_DURABILITY_LOSS;
+    }
+    if (items.armor && damageDealt > 0) {
+      loss.armorLoss = DURABILITY_LOSS[items.armor] ?? DEFAULT_DURABILITY_LOSS;
+    }
+    if (items.shield) {
+      const baseLoss = DURABILITY_LOSS[items.shield] ?? DEFAULT_DURABILITY_LOSS;
+      loss.shieldLoss = blocked ? Math.ceil(baseLoss * 1.5) : Math.ceil(baseLoss * 0.5);
+    }
+  } else if (encounterType === 'trap' && !disarmed) {
+    if (items.armor && damageDealt > 0) {
+      loss.armorLoss = Math.ceil((DURABILITY_LOSS[items.armor] ?? DEFAULT_DURABILITY_LOSS) * 0.5);
+    }
+  }
+
+  return loss;
+}
+
 /**
  * Resolve a single encounter and return the result.
  * Applies dungeon modifier effects to damage, gold, healing, etc.
@@ -149,167 +287,57 @@ export function resolveEncounter(
   modifier?: DungeonModifier | null,
   equippedItems?: EquippedItems,
 ): EncounterResult {
-  const mod = modifier ?? null;
   const bonusesActivated: string[] = [];
-  const attackPower = combatStats.attack * (1 + eduBonuses.attackBonus);
-
-  // RPG equipment penalty: no weapon = heavily penalized attack, no armor = more damage taken
   const hasNoWeapon = combatStats.attack <= 0;
   const hasNoArmor = combatStats.defense <= 0;
-  const noEquipmentDamageMult = hasNoArmor ? 1.5 : 1.0; // +50% damage taken without armor
-  const noWeaponGoldMult = hasNoWeapon ? 0.3 : 1.0;     // -70% gold earned without weapon
-
   if (hasNoWeapon) bonusesActivated.push('No weapon! (-70% gold)');
   if (hasNoArmor) bonusesActivated.push('No armor! (+50% dmg taken)');
-
   if (eduBonuses.attackBonus > 0) {
     bonusesActivated.push(`+${Math.round(eduBonuses.attackBonus * 100)}% ATK`);
   }
 
-  let damageDealt = 0;
-  let goldEarned = 0;
-  let healed = 0;
-  let blocked = false;
-  let disarmed = false;
-  let potionFound = false;
-  let potionHealed = 0;
+  const ctx: EncounterContext = {
+    encounter,
+    combatStats,
+    eduBonuses,
+    mod: modifier ?? null,
+    noArmorDamageMult: hasNoArmor ? 1.5 : 1.0,
+    noWeaponGoldMult: hasNoWeapon ? 0.3 : 1.0,
+    attackPower: combatStats.attack * (1 + eduBonuses.attackBonus),
+    bonuses: bonusesActivated,
+  };
 
-  switch (encounter.type) {
-    case 'treasure': {
-      let goldMult = 1 + eduBonuses.goldBonus;
-      // Fortune's Favor doubles treasure gold specifically
-      if (mod?.id === 'fortunes-favor') {
-        goldMult *= 2.0;
-        bonusesActivated.push("Fortune's Favor (2x treasure)");
-      } else if (mod && mod.goldMult !== 1.0) {
-        goldMult *= mod.goldMult;
-      }
-      goldEarned = Math.floor(encounter.baseGold * goldMult);
-      if (eduBonuses.goldBonus > 0) {
-        bonusesActivated.push(`+${Math.round(eduBonuses.goldBonus * 100)}% gold`);
-      }
-      break;
-    }
+  // Resolve encounter by type
+  const resolvers: Record<DungeonEncounter['type'], (c: EncounterContext) => TypeResult> = {
+    treasure: resolveTreasure,
+    healing: resolveHealing,
+    trap: resolveTrap,
+    combat: resolveCombat,
+    boss: resolveCombat,
+  };
+  const typeResult = resolvers[encounter.type](ctx);
 
-    case 'healing': {
-      if (mod?.disableHealing) {
-        // Blood Moon: healing encounters are disabled
-        bonusesActivated.push('Healing disabled! (Blood Moon)');
-        healed = 0;
-      } else {
-        healed = Math.abs(encounter.baseDamage);
-        if (mod && mod.healingMult !== 1.0) {
-          healed = Math.floor(healed * mod.healingMult);
-          bonusesActivated.push(`Healing +${Math.round((mod.healingMult - 1) * 100)}%`);
-        }
-      }
-      break;
-    }
-
-    case 'trap': {
-      const canDisarm = eduBonuses.canDisarmTraps && !(mod?.disableDisarm);
-      if (encounter.isDisarmable && canDisarm) {
-        disarmed = true;
-        bonusesActivated.push('Trap Sense');
-      } else {
-        if (mod?.disableDisarm && encounter.isDisarmable && eduBonuses.canDisarmTraps) {
-          bonusesActivated.push('Cannot disarm! (Echoing Darkness)');
-        }
-        const modDamageMult = mod ? mod.damageMult : 1.0;
-        const modDmgReduc = mod ? mod.bonusDamageReduction : 0;
-        let d = Math.floor(encounter.baseDamage * (1 - eduBonuses.damageReduction - modDmgReduc) * noEquipmentDamageMult * modDamageMult);
-        d = Math.max(1, d);
-        damageDealt = d;
-        if (eduBonuses.damageReduction > 0) {
-          bonusesActivated.push(`-${Math.round(eduBonuses.damageReduction * 100)}% dmg`);
-        }
-      }
-      break;
-    }
-
-    case 'combat':
-    case 'boss': {
-      let effAtk = attackPower;
-      if (encounter.requiresArcane && !eduBonuses.canDamageEthereal) {
-        effAtk *= 0.3;
-      }
-      if (encounter.requiresArcane && eduBonuses.canDamageEthereal) {
-        bonusesActivated.push('Arcane Sight');
-      }
-
-      // Apply enemy power modifier
-      const effectiveEnemyPower = encounter.basePower * (mod?.enemyPowerMult ?? 1.0);
-
-      const playerPower = effAtk + combatStats.defense * 0.5;
-      const ratio = playerPower / Math.max(1, effectiveEnemyPower);
-
-      // Damage: inversely proportional to power ratio, penalized without armor
-      const modDamageMult = mod ? mod.damageMult : 1.0;
-      const modDmgReduc = mod ? mod.bonusDamageReduction : 0;
-      let d = Math.floor(encounter.baseDamage * Math.max(0.3, 1 - ratio * 0.5) * noEquipmentDamageMult * modDamageMult);
-      // M27 FIX: Clamp damage reduction multiplier to minimum 0 to prevent negative damage
-      d = Math.floor(d * Math.max(0, 1 - eduBonuses.damageReduction - modDmgReduc));
-
-      if (eduBonuses.damageReduction > 0) {
-        bonusesActivated.push(`-${Math.round(eduBonuses.damageReduction * 100)}% dmg`);
-      }
-
-      if (combatStats.blockChance > 0 && Math.random() < combatStats.blockChance) {
-        d = Math.floor(d * 0.5);
-        blocked = true;
-      }
-      d = Math.max(1, d);
-      damageDealt = d;
-
-      // Gold: proportional to power ratio (capped at 1.5x), penalized without weapon
-      const modGoldMult = mod ? mod.goldMult : 1.0;
-      goldEarned = Math.floor(
-        encounter.baseGold * (1 + eduBonuses.goldBonus) * Math.min(1.5, ratio) * noWeaponGoldMult * modGoldMult,
-      );
-      if (eduBonuses.goldBonus > 0) {
-        bonusesActivated.push(`+${Math.round(eduBonuses.goldBonus * 100)}% gold`);
-      }
-      break;
-    }
-  }
+  const damageDealt = typeResult.damageDealt ?? 0;
+  const blocked = typeResult.blocked ?? false;
+  const disarmed = typeResult.disarmed ?? false;
 
   // Healing potion chance from Alchemy
+  let potionFound = false;
+  let potionHealed = 0;
   if (eduBonuses.healingPotionChance > 0 && Math.random() < eduBonuses.healingPotionChance) {
     potionFound = true;
     potionHealed = HEALING_POTION_RESTORE;
     bonusesActivated.push('Potion Brewing');
   }
 
-  // Calculate equipment durability loss
-  const durabilityLoss: EquipmentDurabilityLoss = { weaponLoss: 0, armorLoss: 0, shieldLoss: 0 };
   const items = equippedItems ?? { weapon: null, armor: null, shield: null };
-
-  if (encounter.type === 'combat' || encounter.type === 'boss') {
-    // Weapons degrade on combat encounters
-    if (items.weapon) {
-      durabilityLoss.weaponLoss = DURABILITY_LOSS[items.weapon] ?? DEFAULT_DURABILITY_LOSS;
-    }
-    // Armor degrades when taking damage
-    if (items.armor && damageDealt > 0) {
-      durabilityLoss.armorLoss = DURABILITY_LOSS[items.armor] ?? DEFAULT_DURABILITY_LOSS;
-    }
-    // Shields degrade on combat (more if blocked)
-    if (items.shield) {
-      const baseLoss = DURABILITY_LOSS[items.shield] ?? DEFAULT_DURABILITY_LOSS;
-      durabilityLoss.shieldLoss = blocked ? Math.ceil(baseLoss * 1.5) : Math.ceil(baseLoss * 0.5);
-    }
-  } else if (encounter.type === 'trap' && !disarmed) {
-    // Armor degrades from trap damage
-    if (items.armor && damageDealt > 0) {
-      durabilityLoss.armorLoss = Math.ceil((DURABILITY_LOSS[items.armor] ?? DEFAULT_DURABILITY_LOSS) * 0.5);
-    }
-  }
+  const durabilityLoss = calculateDurabilityLoss(encounter.type, items, damageDealt, blocked, disarmed);
 
   return {
     encounter,
     damageDealt,
-    goldEarned,
-    healed,
+    goldEarned: typeResult.goldEarned ?? 0,
+    healed: typeResult.healed ?? 0,
     blocked,
     disarmed,
     potionFound,

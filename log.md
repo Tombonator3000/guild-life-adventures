@@ -1,5 +1,91 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-13 - Code Audit & Refactoring: Complex Functions
+
+### Overview
+Audited the entire codebase for overly complex functions and refactored the top 3 candidates for clarity while maintaining identical behavior. All 185 tests pass, build succeeds.
+
+**Test Results**: 185 tests passed (9 test files, 0 failures)
+
+### Audit Findings
+Scanned all major files (gameStore, AI system, combat resolver, weekEndHelpers, components) for complexity indicators: functions over 50 lines, deep nesting (3+ levels), excessive parameters, and repetitive patterns.
+
+Top 5 candidates identified:
+1. `processLoans()` — 117 lines, 6-step asset seizure cascade with repetitive pattern
+2. `createProcessWeekEnd()` — 132 lines, 3 nearly-identical `set()` calls (8 shared fields)
+3. `resolveEncounter()` — 176 lines, monolithic switch with 4 encounter types + durability calc
+4. `generateActions()` — 121 lines (already well-structured, helpers already extracted)
+5. `generateGoalActions()` — 329 lines, repetitive but each case has enough unique logic to justify
+
+Refactored #1, #2, and #3. Skipped #4 (already clean) and #5 (repetition is acceptable given unique per-goal logic).
+
+### 1. Refactor: processLoans() (weekEndHelpers.ts)
+
+**Before**: Single 117-line function with 6 sequential asset seizure steps, each repeating the same pattern: check remaining > 0, check asset available, calculate recovery, mutate state, push detail string.
+
+**After**: Extracted 4 focused helper functions:
+- `seizeCurrency(player, field, remaining, label, details)` — handles savings, gold, investments (generic for any currency field)
+- `seizeStocks(player, remaining, details)` — forced stock liquidation at 80% value
+- `seizeAppliances(player, remaining, details)` — appliance liquidation at 30%
+- `seizeDurables(player, remaining, details)` — durable item liquidation with unequip handling
+
+Main function reduced from 117 lines to ~25 lines of clean pipeline:
+```
+remaining -= seizeCurrency(p, 'savings', remaining, 'savings', details);
+remaining -= seizeCurrency(p, 'gold', remaining, 'purse', details);
+remaining -= seizeCurrency(p, 'investments', remaining, 'investments', details);
+remaining -= seizeStocks(p, remaining, details);
+remaining -= seizeAppliances(p, remaining, details);
+remaining -= seizeDurables(p, remaining, details);
+```
+
+Also simplified early-return logic: inverted the default condition check to `if (p.loanWeeksRemaining > 0 || p.loanAmount <= 0) return;` eliminating one level of nesting.
+
+#### Files Changed
+- `src/store/helpers/weekEndHelpers.ts` — Extracted `seizeCurrency`, `seizeStocks`, `seizeAppliances`, `seizeDurables` from processLoans()
+
+### 2. Refactor: resolveEncounter() (combatResolver.ts)
+
+**Before**: Single 176-line function with a switch statement handling 4 encounter types (treasure, healing, trap, combat/boss), equipment penalty setup, and durability loss calculation all mixed together.
+
+**After**: Extracted 6 focused functions:
+- `resolveTreasure(ctx)` — treasure gold calculation with Fortune's Favor modifier
+- `resolveHealing(ctx)` — healing with Blood Moon disable check
+- `resolveTrap(ctx)` — trap disarm check + damage calculation
+- `resolveCombat(ctx)` — combat/boss resolution with power ratio, block, gold
+- `calculateDurabilityLoss(type, items, damage, blocked, disarmed)` — equipment wear calculation
+- Shared `EncounterContext` interface for passing common data to resolvers
+
+Main function uses a resolver dispatch table:
+```
+const resolvers = { treasure: resolveTreasure, healing: resolveHealing, trap: resolveTrap, combat: resolveCombat, boss: resolveCombat };
+const typeResult = resolvers[encounter.type](ctx);
+```
+
+Each resolver is 10-30 lines, independently readable and testable. Total line count similar but cognitive complexity reduced significantly.
+
+#### Files Changed
+- `src/data/combatResolver.ts` — Extracted `EncounterContext`, `TypeResult`, `resolveTreasure`, `resolveHealing`, `resolveTrap`, `resolveCombat`, `calculateDurabilityLoss` from resolveEncounter()
+
+### 3. Refactor: createProcessWeekEnd() (weekEndHelpers.ts)
+
+**Before**: 3 separate `set()` calls at end of function for game-over conditions (all dead, last standing, normal transition), each repeating 8 identical fields (week, stockPrices, priceModifier, economyTrend, economyCycleWeeksLeft, weather, activeFestival, weeklyNewsEvents).
+
+**After**: Extracted shared fields into `weekEndState` object, then spread into each `set()` call:
+```
+const weekEndState = { week, stockPrices, priceModifier, economyTrend, economyCycleWeeksLeft, weather, activeFestival, weeklyNewsEvents };
+// All dead:  set({ ...weekEndState, phase: 'victory', eventMessage: '...' });
+// Last one:  set({ ...weekEndState, winner: ..., phase: 'victory', eventMessage: '...' });
+// Normal:    set({ ...weekEndState, currentPlayerIndex: ..., players: ..., ... });
+```
+
+Reduced 50 lines of repeated state fields to 20 lines. Each branch now only specifies what's unique to that game-over condition.
+
+#### Files Changed
+- `src/store/helpers/weekEndHelpers.ts` — Extracted `weekEndState` shared object in createProcessWeekEnd()
+
+---
+
 ## 2026-02-13 - Clothing Quality Job Check, Food Drain Increase, PNG Image Fix
 
 ### Overview
