@@ -101,7 +101,6 @@ export function createItemActions(set: SetFn, get: GetFn) {
     },
 
     buyFreshFood: (playerId: string, units: number, cost: number): boolean => {
-      let spoiled = false;
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
@@ -110,14 +109,14 @@ export function createItemActions(set: SetFn, get: GetFn) {
           const hasPreservationBox = p.appliances['preservation-box'] && !p.appliances['preservation-box'].isBroken;
           const newGold = p.gold - cost;
 
-          // Without Preservation Box: 80% chance food spoils immediately
+          // Without Preservation Box: food is stored but may spoil at turn end (hidden from player)
           if (!hasPreservationBox) {
-            if (Math.random() < 0.80) {
-              spoiled = true;
-              return { ...p, gold: newGold }; // Gold spent, food lost
-            }
-            // 20% survival — add to freshFood (will spoil at turn start without box)
-            return { ...p, gold: newGold, freshFood: Math.min(6, p.freshFood + units) };
+            return {
+              ...p,
+              gold: newGold,
+              freshFood: Math.min(6, p.freshFood + units),
+              foodBoughtWithoutPreservation: true,
+            };
           }
 
           // With Preservation Box: safe storage
@@ -132,12 +131,11 @@ export function createItemActions(set: SetFn, get: GetFn) {
           };
         }),
       }));
-      return spoiled;
+      return false; // Spoilage is now hidden — checked at turn end
     },
 
-    // Buy regular food at General Store with spoilage risk without Preservation Box
+    // Buy regular food at General Store — spoilage risk is hidden, checked at turn end
     buyFoodWithSpoilage: (playerId: string, foodValue: number, cost: number): boolean => {
-      let spoiled = false;
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
@@ -146,20 +144,16 @@ export function createItemActions(set: SetFn, get: GetFn) {
           const hasPreservationBox = p.appliances['preservation-box'] && !p.appliances['preservation-box'].isBroken;
           const newGold = p.gold - cost;
 
-          // Without Preservation Box: 80% chance food spoils on purchase
-          if (!hasPreservationBox && Math.random() < 0.80) {
-            spoiled = true;
-            return { ...p, gold: newGold }; // Gold spent, no food gained
-          }
-
           return {
             ...p,
             gold: newGold,
             foodLevel: Math.min(100, p.foodLevel + foodValue),
+            // Track that food was bought without preservation (spoilage checked at turn end)
+            ...(!hasPreservationBox ? { foodBoughtWithoutPreservation: true } : {}),
           };
         }),
       }));
-      return spoiled;
+      return false; // Spoilage is now hidden — checked at turn end
     },
   };
 }

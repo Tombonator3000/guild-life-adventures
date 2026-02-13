@@ -180,6 +180,7 @@ export interface Player {
   clothingCondition: number;
   weeksSinceRent: number;
   foodLevel: number; // 0-100, depletes each week
+  foodBoughtWithoutPreservation: boolean; // True if food was bought this turn without a Preservation Box (spoilage checked at turn end)
   savings: number; // Money in bank
   investments: number; // Invested amount
   currentJob: string | null;

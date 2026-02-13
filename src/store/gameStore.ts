@@ -90,6 +90,7 @@ const createPlayer = (
   clothingCondition: 35, // Casual tier (Jones-style: starts with basic clothes, need to buy better for higher jobs)
   weeksSinceRent: 0,
   foodLevel: 50,
+  foodBoughtWithoutPreservation: false,
   savings: 0,
   investments: 0,
   currentJob: null,
