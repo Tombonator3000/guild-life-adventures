@@ -7,11 +7,12 @@
 
 import { getFloor, getFloorTimeCost } from '@/data/dungeon';
 import { FESTIVALS } from '@/data/festivals';
-import { calculateCombatStats, ARMORY_ITEMS, getTemperCost, TEMPER_TIME } from '@/data/items';
+import { calculateCombatStats, ARMORY_ITEMS, getTemperCost, TEMPER_TIME, EQUIPMENT_REPAIR_TIME, getEquipmentRepairCost, getItem } from '@/data/items';
 import type { AIAction } from '../types';
 import {
   getBestDungeonFloor,
   getNextEquipmentUpgrade,
+  getEquipmentNeedingRepair,
   shouldBuyGuildPass,
   getBestQuest,
   getBestBounty,
@@ -97,6 +98,34 @@ export function generateQuestDungeonActions(ctx: ActionContext): AIAction[] {
           priority: 48,
           description: 'Travel to forge to temper equipment',
         });
+      }
+    }
+  }
+
+  // Repair damaged equipment at the Forge (prioritize if durability < 50%)
+  const damagedEquip = getEquipmentNeedingRepair(player);
+  if (damagedEquip) {
+    const item = getItem(damagedEquip.itemId);
+    if (item) {
+      const repairCost = getEquipmentRepairCost(item, damagedEquip.durability);
+      if (player.gold >= repairCost && player.timeRemaining >= EQUIPMENT_REPAIR_TIME + 2) {
+        // Higher priority if equipment is broken (durability 0)
+        const priority = damagedEquip.durability <= 0 ? 58 : 53;
+        if (currentLocation === 'forge') {
+          actions.push({
+            type: 'repair-equipment',
+            priority,
+            description: `Repair ${item.name} at Forge (${damagedEquip.durability}% durability)`,
+            details: { itemId: damagedEquip.itemId, cost: repairCost },
+          });
+        } else if (player.timeRemaining > moveCost('forge') + EQUIPMENT_REPAIR_TIME) {
+          actions.push({
+            type: 'move',
+            location: 'forge',
+            priority: priority - 4,
+            description: 'Travel to forge to repair equipment',
+          });
+        }
       }
     }
   }

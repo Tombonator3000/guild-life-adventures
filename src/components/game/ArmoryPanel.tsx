@@ -3,7 +3,7 @@ import {
   JonesSectionHeader,
   JonesMenuItem,
 } from './JonesStylePanel';
-import { ARMORY_ITEMS, getItemPrice, calculateCombatStats, getItem, getClothingTier, CLOTHING_TIER_LABELS, CLOTHING_THRESHOLDS } from '@/data/items';
+import { ARMORY_ITEMS, getItemPrice, calculateCombatStats, getItem, getClothingTier, CLOTHING_TIER_LABELS, CLOTHING_THRESHOLDS, getDurabilityCondition, MAX_DURABILITY } from '@/data/items';
 import { itemToPreview, useItemPreview } from './ItemPreview';
 import { toast } from 'sonner';
 import { useTranslation } from '@/i18n';
@@ -42,6 +42,7 @@ export function ArmoryPanel({
     player.equippedArmor,
     player.equippedShield,
     player.temperedItems,
+    player.equipmentDurability,
   );
 
   // In tabbed mode, use dark text on light parchment background
@@ -128,6 +129,17 @@ export function ArmoryPanel({
                     {isEquipped ? '⚔ ' : '  '}{t(`items.${item.id}.name`) || item.name}
                   </span>
                   <span className="flex-1"></span>
+                  {/* Durability indicator for owned equipment */}
+                  {(() => {
+                    const dur = player.equipmentDurability?.[item.id] ?? MAX_DURABILITY;
+                    if (dur >= MAX_DURABILITY) return null;
+                    const cond = getDurabilityCondition(dur);
+                    const color = cond === 'broken' ? (darkText ? 'text-red-700' : 'text-red-500')
+                      : cond === 'poor' ? (darkText ? 'text-red-600' : 'text-red-400')
+                      : cond === 'worn' ? (darkText ? 'text-amber-700' : 'text-amber-400')
+                      : (darkText ? 'text-green-700' : 'text-green-400');
+                    return <span className={`text-xs ml-1 ${color}`}>{dur}%</span>;
+                  })()}
                   <span className={`text-xs ${darkText ? 'text-[#6b5a42]' : 'text-[#a09080]'} ml-2`}>{statLabel}</span>
                   <span className="ml-2 text-xs">
                     {isEquipped ? (

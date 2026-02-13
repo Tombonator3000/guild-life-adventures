@@ -95,6 +95,7 @@ export interface LocationTabContext {
   cureSickness: GameStore['cureSickness'];
   temperEquipment: GameStore['temperEquipment'];
   forgeRepairAppliance: GameStore['forgeRepairAppliance'];
+  forgeRepairEquipment: GameStore['forgeRepairEquipment'];
   salvageEquipment: GameStore['salvageEquipment'];
   // Callbacks for newspaper modal (owned by LocationPanel)
   onBuyNewspaper: () => void;
@@ -252,7 +253,7 @@ function tavernTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function forgeTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, priceModifier, spendTime, modifyHappiness, temperEquipment, forgeRepairAppliance, salvageEquipment } = ctx;
+  const { player, priceModifier, spendTime, modifyHappiness, temperEquipment, forgeRepairAppliance, forgeRepairEquipment, salvageEquipment } = ctx;
   const forgeProps = {
     player,
     priceModifier,
@@ -260,6 +261,7 @@ function forgeTabs(ctx: LocationTabContext): LocationTab[] {
     modifyHappiness: (id: string, amount: number) => modifyHappiness(id, amount),
     temperEquipment,
     forgeRepairAppliance,
+    forgeRepairEquipment,
     salvageEquipment,
   };
   return [

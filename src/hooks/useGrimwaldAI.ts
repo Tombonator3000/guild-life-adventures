@@ -83,6 +83,8 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     pawnAppliance: store.pawnAppliance,
     buyLotteryTicket: store.buyLotteryTicket,
     temperEquipment: store.temperEquipment,
+    forgeRepairEquipment: store.forgeRepairEquipment,
+    applyDurabilityLoss: store.applyDurabilityLoss,
     endTurn: store.endTurn,
   }), [store]);
 

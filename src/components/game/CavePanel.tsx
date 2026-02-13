@@ -18,7 +18,7 @@ import { ActionButton } from './ActionButton';
 import { toast } from 'sonner';
 import { useGameStore } from '@/store/gameStore';
 import { useTranslation } from '@/i18n';
-import { calculateCombatStats } from '@/data/items';
+import { calculateCombatStats, getDurabilityCondition, MAX_DURABILITY } from '@/data/items';
 import {
   DUNGEON_FLOORS,
   checkFloorRequirements,
@@ -90,6 +90,7 @@ export function CavePanel({
     player.equippedArmor,
     player.equippedShield,
     player.temperedItems,
+    player.equipmentDurability,
   );
   const eduBonuses = calculateEducationBonuses(player.completedDegrees);
   const progress = getDungeonProgress(player.dungeonFloorsCleared);
@@ -142,6 +143,20 @@ export function CavePanel({
 
     // Apply gold earned
     if (result.goldEarned > 0) modifyGold(player.id, result.goldEarned);
+
+    // Apply equipment durability loss
+    const { applyDurabilityLoss } = useGameStore.getState();
+    if (result.durabilityLoss) {
+      applyDurabilityLoss(player.id, result.durabilityLoss);
+      // Notify player of equipment degradation
+      const losses: string[] = [];
+      if (result.durabilityLoss.weaponLoss > 0) losses.push(`Weapon -${result.durabilityLoss.weaponLoss}`);
+      if (result.durabilityLoss.armorLoss > 0) losses.push(`Armor -${result.durabilityLoss.armorLoss}`);
+      if (result.durabilityLoss.shieldLoss > 0) losses.push(`Shield -${result.durabilityLoss.shieldLoss}`);
+      if (losses.length > 0) {
+        toast(`Equipment wear: ${losses.join(', ')} durability`, { duration: 3000 });
+      }
+    }
 
     // Health was already applied per-encounter via handleEncounterHealthDelta
     // Only do a final death check in case something was missed
@@ -300,6 +315,41 @@ export function CavePanel({
             </span>
           )}
         </div>
+        {/* Durability indicators */}
+        {(player.equippedWeapon || player.equippedArmor || player.equippedShield) && (
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[#a09080]">
+            {player.equippedWeapon && (() => {
+              const dur = player.equipmentDurability?.[player.equippedWeapon] ?? MAX_DURABILITY;
+              const cond = getDurabilityCondition(dur);
+              const color = cond === 'broken' ? 'text-red-500' : cond === 'poor' ? 'text-red-400' : cond === 'worn' ? 'text-amber-400' : 'text-green-400';
+              return <span className={color}>⚔ {dur}%</span>;
+            })()}
+            {player.equippedArmor && (() => {
+              const dur = player.equipmentDurability?.[player.equippedArmor] ?? MAX_DURABILITY;
+              const cond = getDurabilityCondition(dur);
+              const color = cond === 'broken' ? 'text-red-500' : cond === 'poor' ? 'text-red-400' : cond === 'worn' ? 'text-amber-400' : 'text-green-400';
+              return <span className={color}>🛡 {dur}%</span>;
+            })()}
+            {player.equippedShield && (() => {
+              const dur = player.equipmentDurability?.[player.equippedShield] ?? MAX_DURABILITY;
+              const cond = getDurabilityCondition(dur);
+              const color = cond === 'broken' ? 'text-red-500' : cond === 'poor' ? 'text-red-400' : cond === 'worn' ? 'text-amber-400' : 'text-green-400';
+              return <span className={color}>🔰 {dur}%</span>;
+            })()}
+          </div>
+        )}
+        {/* Repair warning */}
+        {(player.equippedWeapon || player.equippedArmor || player.equippedShield) && (() => {
+          const items = [player.equippedWeapon, player.equippedArmor, player.equippedShield].filter(Boolean);
+          const hasBroken = items.some(id => (player.equipmentDurability?.[id!] ?? MAX_DURABILITY) <= 0);
+          const hasPoor = items.some(id => {
+            const dur = player.equipmentDurability?.[id!] ?? MAX_DURABILITY;
+            return dur > 0 && dur <= 25;
+          });
+          if (hasBroken) return <div className="text-red-400 mt-1">Equipment broken! Repair at the Forge.</div>;
+          if (hasPoor) return <div className="text-amber-400 mt-1">Equipment wearing out. Visit the Forge soon.</div>;
+          return null;
+        })()}
         {combatStats.attack === 0 && (
           <div className="text-[#8b7355] mt-1">
             Tip: Equip gear at the Armory before entering the dungeon!

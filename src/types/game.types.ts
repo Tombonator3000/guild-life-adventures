@@ -230,6 +230,8 @@ export interface Player {
   lotteryTickets: number;          // Number of lottery tickets for this week's drawing
   // Forge tempering
   temperedItems: string[];         // Item IDs that have been tempered at the Forge (once per item)
+  // Equipment durability (0-100, degrades in dungeon combat, repair at Forge)
+  equipmentDurability: Record<string, number>; // itemId -> durability (100 = perfect, 0 = broken)
   // Quest Chain progress (B1)
   questChainProgress: Record<string, number>; // chainId → steps completed (0-indexed)
   // Repeatable Bounties (B2)

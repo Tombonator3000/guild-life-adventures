@@ -676,6 +676,63 @@ export const canBeStolen = (itemId: string): boolean => {
   return item ? (item.isDurable === true && item.isUnstealable !== true) : false;
 };
 
+// === Equipment Durability & Degradation ===
+
+export const MAX_DURABILITY = 100;
+
+// Durability loss per dungeon encounter by item tier
+// Lower-tier items degrade faster, higher-tier items are more durable
+export const DURABILITY_LOSS: Record<string, number> = {
+  // Weapons (lose durability on combat/boss encounters)
+  'dagger': 12,
+  'sword': 8,
+  'steel-sword': 5,
+  'enchanted-blade': 3,
+  // Armor (lose durability on combat/boss/trap encounters when taking damage)
+  'leather-armor': 10,
+  'chainmail': 7,
+  'plate-armor': 4,
+  'enchanted-plate': 3,
+  // Shields (lose durability on block or combat encounters)
+  'shield': 10,
+  'iron-shield': 7,
+  'tower-shield': 4,
+  // Rare drops degrade very slowly
+  'dragon-scale-shield': 2,
+};
+
+// Default degradation for unknown equipment
+export const DEFAULT_DURABILITY_LOSS = 8;
+
+// Stat effectiveness based on durability
+// 0% durability = broken (0% stats), 1-25% = poor (50%), 26-50% = worn (75%), 51%+ = full (100%)
+export function getDurabilityMultiplier(durability: number): number {
+  if (durability <= 0) return 0;
+  if (durability <= 25) return 0.5;
+  if (durability <= 50) return 0.75;
+  return 1.0;
+}
+
+// Get durability condition label
+export type DurabilityCondition = 'broken' | 'poor' | 'worn' | 'good' | 'perfect';
+
+export function getDurabilityCondition(durability: number): DurabilityCondition {
+  if (durability <= 0) return 'broken';
+  if (durability <= 25) return 'poor';
+  if (durability <= 50) return 'worn';
+  if (durability <= 80) return 'good';
+  return 'perfect';
+}
+
+// Repair cost: 30% of base price for full repair, scales with damage
+export function getEquipmentRepairCost(item: Item, currentDurability: number): number {
+  const damagePercent = (MAX_DURABILITY - currentDurability) / MAX_DURABILITY;
+  return Math.max(5, Math.round(item.basePrice * 0.3 * damagePercent));
+}
+
+// Time cost for equipment repair at Forge (hours)
+export const EQUIPMENT_REPAIR_TIME = 2;
+
 // === Forge Tempering ===
 
 // Temper cost: ~60% of base price, minimum 30g
@@ -715,11 +772,13 @@ export const getEquipStats = (itemId: string): EquipmentStats | undefined => {
 
 // Calculate total combat stats for a player's equipment
 // Includes temper bonuses when temperedItems array is provided
+// Includes durability multiplier when equipmentDurability map is provided
 export const calculateCombatStats = (
   equippedWeapon: string | null,
   equippedArmor: string | null,
   equippedShield: string | null,
   temperedItems?: string[],
+  equipmentDurability?: Record<string, number>,
 ): { attack: number; defense: number; blockChance: number } => {
   let attack = 0;
   let defense = 0;
@@ -727,28 +786,45 @@ export const calculateCombatStats = (
 
   if (equippedWeapon) {
     const stats = getEquipStats(equippedWeapon);
-    if (stats) attack += stats.attack || 0;
+    let weaponAtk = stats?.attack || 0;
     if (temperedItems?.includes(equippedWeapon)) {
-      attack += TEMPER_BONUS.weapon.attack;
+      weaponAtk += TEMPER_BONUS.weapon.attack;
     }
+    // Apply durability multiplier
+    if (equipmentDurability) {
+      const dur = equipmentDurability[equippedWeapon] ?? MAX_DURABILITY;
+      weaponAtk = Math.floor(weaponAtk * getDurabilityMultiplier(dur));
+    }
+    attack += weaponAtk;
   }
   if (equippedArmor) {
     const stats = getEquipStats(equippedArmor);
-    if (stats) defense += stats.defense || 0;
+    let armorDef = stats?.defense || 0;
     if (temperedItems?.includes(equippedArmor)) {
-      defense += TEMPER_BONUS.armor.defense;
+      armorDef += TEMPER_BONUS.armor.defense;
     }
+    if (equipmentDurability) {
+      const dur = equipmentDurability[equippedArmor] ?? MAX_DURABILITY;
+      armorDef = Math.floor(armorDef * getDurabilityMultiplier(dur));
+    }
+    defense += armorDef;
   }
   if (equippedShield) {
     const stats = getEquipStats(equippedShield);
-    if (stats) {
-      defense += stats.defense || 0;
-      blockChance = stats.blockChance || 0;
-    }
+    let shieldDef = stats?.defense || 0;
+    let shieldBlock = stats?.blockChance || 0;
     if (temperedItems?.includes(equippedShield)) {
-      defense += TEMPER_BONUS.shield.defense;
-      blockChance += TEMPER_BONUS.shield.blockChance;
+      shieldDef += TEMPER_BONUS.shield.defense;
+      shieldBlock += TEMPER_BONUS.shield.blockChance;
     }
+    if (equipmentDurability) {
+      const dur = equipmentDurability[equippedShield] ?? MAX_DURABILITY;
+      const mult = getDurabilityMultiplier(dur);
+      shieldDef = Math.floor(shieldDef * mult);
+      shieldBlock = shieldBlock * mult;
+    }
+    defense += shieldDef;
+    blockChance = shieldBlock;
   }
 
   return { attack, defense, blockChance };

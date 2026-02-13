@@ -63,6 +63,8 @@ export interface StoreActions {
   pawnAppliance: (playerId: string, applianceId: string, pawnValue: number) => void;
   buyLotteryTicket: (playerId: string, cost: number) => void;
   temperEquipment: (playerId: string, itemId: string, slot: string, cost: number) => void;
+  forgeRepairEquipment: (playerId: string, itemId: string, cost: number) => void;
+  applyDurabilityLoss: (playerId: string, durabilityLoss: import('@/data/combatResolver').EquipmentDurabilityLoss) => void;
   endTurn: () => void;
 }
 
@@ -343,6 +345,15 @@ function handleTemperEquipment(player: Player, action: AIAction, store: StoreAct
   return true;
 }
 
+function handleRepairEquipment(player: Player, action: AIAction, store: StoreActions): boolean {
+  const itemId = action.details?.itemId as string;
+  const cost = (action.details?.cost as number) || 0;
+  if (!itemId || player.gold < cost) return false;
+  store.forgeRepairEquipment(player.id, itemId, cost);
+  store.spendTime(player.id, 2); // EQUIPMENT_REPAIR_TIME
+  return true;
+}
+
 function handleSellItem(player: Player, action: AIAction, store: StoreActions): boolean {
   const itemId = action.details?.itemId as string;
   const price = (action.details?.price as number) || 10;
@@ -423,6 +434,7 @@ function handleExploreDungeon(player: Player, action: AIAction, store: StoreActi
     player.equippedArmor,
     player.equippedShield,
     player.temperedItems,
+    player.equipmentDurability,
   );
   const eduBonuses = calculateEducationBonuses(player.completedDegrees);
   const encounterTime = getEncounterTimeCost(floor, combatStats);
@@ -443,7 +455,8 @@ function handleExploreDungeon(player: Player, action: AIAction, store: StoreActi
 
   const isFirstClear = !player.dungeonFloorsCleared.includes(floorId);
   const lootMult = getLootMultiplier(floor, player.guildRank);
-  const result = autoResolveFloor(floor, combatStats, eduBonuses, player.health, isFirstClear, lootMult, player.dungeonFloorsCleared);
+  const equippedItems = { weapon: player.equippedWeapon, armor: player.equippedArmor, shield: player.equippedShield };
+  const result = autoResolveFloor(floor, combatStats, eduBonuses, player.health, isFirstClear, lootMult, player.dungeonFloorsCleared, equippedItems);
 
   // Festival dungeon gold multiplier
   const festivalId = useGameStore.getState().activeFestival;
@@ -462,6 +475,11 @@ function handleExploreDungeon(player: Player, action: AIAction, store: StoreActi
   }
   if (result.rareDropName) {
     store.applyRareDrop(player.id, floor.rareDrop.id);
+  }
+
+  // Apply equipment durability loss from dungeon run
+  if (result.durabilityLoss) {
+    store.applyDurabilityLoss(player.id, result.durabilityLoss);
   }
 
   // Check for death after dungeon combat
@@ -504,6 +522,7 @@ const ACTION_HANDLERS: Record<AIActionType, ActionHandler> = {
   'heal': handleHeal,
   'buy-equipment': handleBuyEquipment,
   'temper-equipment': handleTemperEquipment,
+  'repair-equipment': handleRepairEquipment,
   'buy-guild-pass': handleBuyGuildPass,
   'take-quest': handleTakeQuest,
   'take-chain-quest': handleTakeChainQuest,

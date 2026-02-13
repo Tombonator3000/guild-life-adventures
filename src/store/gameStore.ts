@@ -138,6 +138,8 @@ const createPlayer = (
   lotteryTickets: 0,
   // Forge tempering
   temperedItems: [],
+  // Equipment durability
+  equipmentDurability: {},
   // Quest system B-features
   questChainProgress: {},
   completedBountiesThisWeek: [],
