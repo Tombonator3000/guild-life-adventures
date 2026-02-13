@@ -1,5 +1,77 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-13 - Equipment Durability & Degradation System
+
+### Overview
+Added a complete equipment durability system where weapons, armor, and shields gradually degrade during dungeon combat and must be repaired at the Forge. This adds meaningful resource management and a gold sink to the dungeon gameplay loop.
+
+**Test Results**: 185 tests passed (9 test files, 0 failures)
+
+### Mechanics
+
+#### Durability System
+- All equipment has **durability** (0-100%). New equipment starts at 100%.
+- **Weapons** lose durability on combat/boss encounters
+- **Armor** loses durability when taking damage (combat/boss/trap)
+- **Shields** lose durability in combat; blocking costs 1.5x normal wear
+- Equipment condition levels: Perfect (81-100%), Good (51-80%), Worn (26-50%), Poor (1-25%), Broken (0%)
+
+#### Stat Effectiveness by Condition
+| Condition | Durability | Stat Multiplier |
+|-----------|-----------|-----------------|
+| Perfect/Good | 51-100% | 100% |
+| Worn | 26-50% | 75% |
+| Poor | 1-25% | 50% |
+| Broken | 0% | 0% (no stats) |
+
+#### Degradation Rates (per encounter)
+| Tier | Weapons | Armor | Shields |
+|------|---------|-------|---------|
+| Basic (Dagger, Leather, Wood Shield) | -12 | -10 | -10 |
+| Mid (Sword, Chainmail, Iron Shield) | -8 | -7 | -7 |
+| High (Steel Sword, Plate, Tower Shield) | -5 | -4 | -4 |
+| Enchanted/Rare | -3 | -3 | -2 |
+
+#### Repair at Forge
+- Equipment repair cost: 30% of base price, scaled by damage
+- Repair time: 2 hours
+- Restores equipment to 100% durability
+- Available in the "Repairs" tab alongside appliance repair
+
+### Files Changed
+
+#### Core Types & Data
+- `src/types/game.types.ts` — Added `equipmentDurability: Record<string, number>` to Player
+- `src/data/items.ts` — Added durability constants (MAX_DURABILITY, DURABILITY_LOSS per item, getDurabilityMultiplier, getDurabilityCondition, getEquipmentRepairCost, EQUIPMENT_REPAIR_TIME), updated `calculateCombatStats` for durability-aware stat calculation
+
+#### Combat System
+- `src/data/combatResolver.ts` — Added EquipmentDurabilityLoss tracking per encounter, accumulated in DungeonRunState, included in AutoResolveResult. resolveEncounter now accepts EquippedItems param for per-encounter durability loss calculation
+
+#### Store
+- `src/store/gameStore.ts` — Initialize equipmentDurability: {} for new players
+- `src/store/storeTypes.ts` — Added forgeRepairEquipment and applyDurabilityLoss action types
+- `src/store/helpers/economy/equipmentHelpers.ts` — New actions: applyDurabilityLoss (post-dungeon), forgeRepairEquipment (repair to 100%). Updated equipItem to initialize durability, applyRareDrop to set durability for equippable drops, salvageEquipment to clean up durability entries
+
+#### UI Components
+- `src/components/game/CombatView.tsx` — Pass equipmentDurability to combat stats, pass equippedItems to resolveEncounter, return durabilityLoss in CombatRunResult
+- `src/components/game/CavePanel.tsx` — Show durability % for equipped items in equipment summary, warn when equipment is poor/broken, apply durability loss after dungeon run with toast notification
+- `src/components/game/ArmoryPanel.tsx` — Show durability % on owned equipment items (color-coded by condition)
+- `src/components/game/ForgePanel.tsx` — New "Equipment Repair" section in Repairs tab with durability bars, condition labels, and repair cost/time
+- `src/components/game/locationTabs.tsx` — Wire forgeRepairEquipment through forge tab context
+
+#### AI (Grimwald)
+- `src/hooks/ai/types.ts` — Added 'repair-equipment' action type
+- `src/hooks/ai/strategy.ts` — New getEquipmentNeedingRepair() function, durability-aware combat stats in getNextEquipmentUpgrade
+- `src/hooks/ai/actions/questDungeonActions.ts` — AI generates repair-equipment actions when equipment < 50% durability (priority 53, or 58 if broken)
+- `src/hooks/ai/actionExecutor.ts` — New handleRepairEquipment handler, pass equippedItems to autoResolveFloor, apply durability loss after AI dungeon runs
+- `src/hooks/useGrimwaldAI.ts` — Wire new store actions to AI
+
+#### Network
+- `src/network/types.ts` — Added forgeRepairEquipment and applyDurabilityLoss to ALLOWED_GUEST_ACTIONS
+- `src/components/game/LocationPanel.tsx` — Pass forgeRepairEquipment to location tab context
+
+---
+
 ## 2026-02-13 - PNG to JPG Image Migration (Asset Size Reduction)
 
 ### Overview

@@ -172,7 +172,9 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'unequipItem',
   'temperEquipment',
   'forgeRepairAppliance',
+  'forgeRepairEquipment',
   'salvageEquipment',
+  'applyDurabilityLoss',
 
   // Stocks & Loans
   'buyStock',

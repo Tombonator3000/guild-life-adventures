@@ -113,7 +113,10 @@ export interface GameStore extends GameState {
   // Forge actions
   temperEquipment: (playerId: string, itemId: string, slot: EquipmentSlot, cost: number) => void;
   forgeRepairAppliance: (playerId: string, applianceId: string) => number;
+  forgeRepairEquipment: (playerId: string, itemId: string, cost: number) => void;
   salvageEquipment: (playerId: string, itemId: string, slot: EquipmentSlot, value: number) => void;
+  // Equipment durability
+  applyDurabilityLoss: (playerId: string, durabilityLoss: import('@/data/combatResolver').EquipmentDurabilityLoss) => void;
   // Weekend event display
   dismissWeekendEvent: () => void;
   // Save/Load

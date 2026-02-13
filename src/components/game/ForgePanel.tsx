@@ -7,8 +7,12 @@ import {
   getItemPrice,
   getTemperCost,
   getSalvageValue,
+  getEquipmentRepairCost,
   TEMPER_BONUS,
   TEMPER_TIME,
+  EQUIPMENT_REPAIR_TIME,
+  MAX_DURABILITY,
+  getDurabilityCondition,
   getAppliance,
   APPLIANCES,
   calculateRepairCost,
@@ -25,6 +29,7 @@ interface ForgePanelProps {
   modifyHappiness: (playerId: string, amount: number) => void;
   temperEquipment: (playerId: string, itemId: string, slot: EquipmentSlot, cost: number) => void;
   forgeRepairAppliance: (playerId: string, applianceId: string) => number;
+  forgeRepairEquipment: (playerId: string, itemId: string, cost: number) => void;
   salvageEquipment: (playerId: string, itemId: string, slot: EquipmentSlot, value: number) => void;
   section: ForgeSection;
 }
@@ -36,6 +41,7 @@ export function ForgePanel({
   modifyHappiness,
   temperEquipment,
   forgeRepairAppliance,
+  forgeRepairEquipment,
   salvageEquipment,
   section,
 }: ForgePanelProps) {
@@ -43,7 +49,7 @@ export function ForgePanel({
     case 'smithing':
       return <SmithingSection player={player} priceModifier={priceModifier} spendTime={spendTime} modifyHappiness={modifyHappiness} temperEquipment={temperEquipment} />;
     case 'repairs':
-      return <RepairsSection player={player} spendTime={spendTime} forgeRepairAppliance={forgeRepairAppliance} />;
+      return <RepairsSection player={player} spendTime={spendTime} forgeRepairAppliance={forgeRepairAppliance} forgeRepairEquipment={forgeRepairEquipment} />;
     case 'salvage':
       return <SalvageSection player={player} priceModifier={priceModifier} spendTime={spendTime} salvageEquipment={salvageEquipment} />;
   }
@@ -182,14 +188,25 @@ function SmithingSection({
 
 // === REPAIRS (Appliance Repair — cheaper than Enchanter) ===
 
+// Durability bar color based on condition
+const DURABILITY_COLORS: Record<string, string> = {
+  broken: 'bg-red-600',
+  poor: 'bg-red-500',
+  worn: 'bg-amber-500',
+  good: 'bg-green-500',
+  perfect: 'bg-green-400',
+};
+
 function RepairsSection({
   player,
   spendTime,
   forgeRepairAppliance,
+  forgeRepairEquipment,
 }: {
   player: Player;
   spendTime: (playerId: string, hours: number) => void;
   forgeRepairAppliance: (playerId: string, applianceId: string) => number;
+  forgeRepairEquipment: (playerId: string, itemId: string, cost: number) => void;
 }) {
   const { t } = useTranslation();
   const FORGE_REPAIR_TIME = 3;
@@ -200,8 +217,84 @@ function RepairsSection({
     id => player.appliances[id].isBroken
   );
 
+  // Get equipment needing repair (durability < 100)
+  const damagedEquipment = ARMORY_ITEMS.filter(item => {
+    if (!item.equipSlot) return false;
+    if (!player.durables[item.id] || player.durables[item.id] <= 0) return false;
+    const dur = player.equipmentDurability?.[item.id];
+    return dur !== undefined && dur < MAX_DURABILITY;
+  });
+
   return (
     <div className="space-y-2">
+      {/* Equipment Repair Section */}
+      <div className="bg-[#e8dcc8] border-[#8b7355] border rounded p-2">
+        <div className="text-xs text-[#6b5a42] uppercase tracking-wide mb-1">Equipment Repair</div>
+        <p className="text-xs text-[#6b5a42]">
+          Restore weapon, armor & shield durability — {EQUIPMENT_REPAIR_TIME}h
+        </p>
+      </div>
+
+      {damagedEquipment.length === 0 ? (
+        <div className="bg-[#e8dcc8] border border-[#8b7355] rounded p-3 text-center">
+          <p className="text-sm text-[#3d2a14] font-display mb-1">Equipment Repair</p>
+          <p className="text-xs text-[#6b5a42]">
+            All equipment in good condition
+          </p>
+        </div>
+      ) : (
+        damagedEquipment.map(item => {
+          const dur = player.equipmentDurability?.[item.id] ?? MAX_DURABILITY;
+          const condition = getDurabilityCondition(dur);
+          const cost = getEquipmentRepairCost(item, dur);
+          const canAfford = player.gold >= cost && player.timeRemaining >= EQUIPMENT_REPAIR_TIME;
+          const isEquipped = player.equippedWeapon === item.id || player.equippedArmor === item.id || player.equippedShield === item.id;
+          const barColor = DURABILITY_COLORS[condition] || 'bg-gray-500';
+
+          return (
+            <div key={item.id} className="py-1 px-1">
+              <button
+                onClick={() => {
+                  forgeRepairEquipment(player.id, item.id, cost);
+                  spendTime(player.id, EQUIPMENT_REPAIR_TIME);
+                  toast.success(`Repaired ${t(`items.${item.id}.name`) || item.name} to full durability!`);
+                }}
+                disabled={!canAfford}
+                className="w-full text-left py-1.5 px-2 rounded transition-colors hover:bg-[#d4c4a8] disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <div className="flex items-baseline w-full font-mono text-base">
+                  <span className={condition === 'broken' ? 'text-red-700 font-bold' : 'text-[#3d2a14]'}>
+                    {isEquipped ? '* ' : ''}{t(`items.${item.id}.name`) || item.name}
+                  </span>
+                  <span className="flex-1" />
+                  <span className={`text-xs ml-2 ${condition === 'broken' ? 'text-red-600' : condition === 'poor' ? 'text-red-500' : 'text-amber-600'}`}>
+                    [{condition.toUpperCase()}]
+                  </span>
+                </div>
+                {/* Durability bar */}
+                <div className="mt-1 flex items-center gap-2">
+                  <div className="flex-1 h-1.5 bg-black/20 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${barColor} transition-all`}
+                      style={{ width: `${dur}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-[#6b5a42] w-10 text-right">{dur}%</span>
+                </div>
+                <div className="flex items-center justify-between mt-0.5">
+                  <span className="text-xs text-[#6b5a42]">{EQUIPMENT_REPAIR_TIME}h repair</span>
+                  <span className="text-sm font-bold text-[#c9a227]">{cost}g</span>
+                </div>
+              </button>
+            </div>
+          );
+        })
+      )}
+
+      {/* Divider between equipment and appliance repair */}
+      <div className="border-t border-[#8b7355]/30 my-1" />
+
+      {/* Appliance Repair Section */}
       <div className="bg-[#e8dcc8] border-[#8b7355] border rounded p-2">
         <div className="text-xs text-[#6b5a42] uppercase tracking-wide mb-1">{t('panelForge.repairAppliances')}</div>
         <p className="text-xs text-[#6b5a42]">

@@ -1,5 +1,6 @@
 import type { EquipmentSlot } from '@/types/game.types';
-import { calculateRepairCost } from '@/data/items';
+import { calculateRepairCost, MAX_DURABILITY, getEquipmentRepairCost, getItem } from '@/data/items';
+import type { EquipmentDurabilityLoss } from '@/data/combatResolver';
 import { DUNGEON_FLOORS } from '@/data/dungeon';
 import { updateAchievementStats, checkAchievements } from '@/data/achievements';
 import type { SetFn, GetFn } from '../../storeTypes';
@@ -18,6 +19,13 @@ export function createEquipmentActions(set: SetFn, get: GetFn) {
           if (slot === 'weapon') update.equippedWeapon = itemId;
           else if (slot === 'armor') update.equippedArmor = itemId;
           else if (slot === 'shield') update.equippedShield = itemId;
+
+          // Initialize durability if not set (new equipment starts at full durability)
+          const newDurability = { ...p.equipmentDurability };
+          if (newDurability[itemId] === undefined) {
+            newDurability[itemId] = MAX_DURABILITY;
+          }
+          update.equipmentDurability = newDurability;
 
           return { ...p, ...update };
         }),
@@ -98,6 +106,10 @@ export function createEquipmentActions(set: SetFn, get: GetFn) {
               const newDurables = { ...p.durables };
               newDurables[dropId] = (newDurables[dropId] || 0) + 1;
               updates.durables = newDurables;
+              // Initialize durability for rare drop
+              const newDur = { ...p.equipmentDurability };
+              newDur[dropId] = MAX_DURABILITY;
+              updates.equipmentDurability = newDur;
               if (effect.slot === 'shield') {
                 updates.equippedShield = dropId;
               }
@@ -193,12 +205,62 @@ export function createEquipmentActions(set: SetFn, get: GetFn) {
           // Remove from tempered list if salvaged
           const newTempered = p.temperedItems.filter(id => id !== itemId || (newDurables[itemId] && newDurables[itemId] > 0));
 
+          // Clean up durability entry
+          const newDurability = { ...p.equipmentDurability };
+          if (!newDurables[itemId]) delete newDurability[itemId];
+
           return {
             ...p,
             ...unequip,
             gold: p.gold + value,
             durables: newDurables,
             temperedItems: newTempered,
+            equipmentDurability: newDurability,
+          };
+        }),
+      }));
+    },
+
+    // Apply equipment durability loss after a dungeon run
+    applyDurabilityLoss: (playerId: string, durabilityLoss: EquipmentDurabilityLoss) => {
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+
+          const newDur = { ...p.equipmentDurability };
+          if (p.equippedWeapon && durabilityLoss.weaponLoss > 0) {
+            const current = newDur[p.equippedWeapon] ?? MAX_DURABILITY;
+            newDur[p.equippedWeapon] = Math.max(0, current - durabilityLoss.weaponLoss);
+          }
+          if (p.equippedArmor && durabilityLoss.armorLoss > 0) {
+            const current = newDur[p.equippedArmor] ?? MAX_DURABILITY;
+            newDur[p.equippedArmor] = Math.max(0, current - durabilityLoss.armorLoss);
+          }
+          if (p.equippedShield && durabilityLoss.shieldLoss > 0) {
+            const current = newDur[p.equippedShield] ?? MAX_DURABILITY;
+            newDur[p.equippedShield] = Math.max(0, current - durabilityLoss.shieldLoss);
+          }
+
+          return { ...p, equipmentDurability: newDur };
+        }),
+      }));
+    },
+
+    // Repair equipment at Forge: restore durability to 100
+    forgeRepairEquipment: (playerId: string, itemId: string, cost: number) => {
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          if (p.gold < cost) return p;
+          if (!p.durables[itemId] || p.durables[itemId] <= 0) return p;
+
+          const newDur = { ...p.equipmentDurability };
+          newDur[itemId] = MAX_DURABILITY;
+
+          return {
+            ...p,
+            gold: p.gold - cost,
+            equipmentDurability: newDur,
           };
         }),
       }));

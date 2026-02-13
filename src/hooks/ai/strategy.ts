@@ -305,6 +305,23 @@ export function getBestDungeonFloor(player: Player, settings: DifficultySettings
 }
 
 /**
+ * Check if any equipped item needs repair (durability < 50%).
+ * Returns the most damaged item that should be repaired, or null.
+ */
+export function getEquipmentNeedingRepair(player: Player): { itemId: string; durability: number } | null {
+  const equipped = [player.equippedWeapon, player.equippedArmor, player.equippedShield].filter(Boolean) as string[];
+  let worstItem: { itemId: string; durability: number } | null = null;
+
+  for (const itemId of equipped) {
+    const dur = player.equipmentDurability?.[itemId] ?? 100;
+    if (dur < 50 && (!worstItem || dur < worstItem.durability)) {
+      worstItem = { itemId, durability: dur };
+    }
+  }
+  return worstItem;
+}
+
+/**
  * Get the best equipment upgrade the AI should buy.
  */
 export function getNextEquipmentUpgrade(player: Player): { itemId: string; cost: number; slot: string } | null {
@@ -313,6 +330,7 @@ export function getNextEquipmentUpgrade(player: Player): { itemId: string; cost:
     player.equippedArmor,
     player.equippedShield,
     player.temperedItems,
+    player.equipmentDurability,
   );
 
   const weaponUpgrades = [

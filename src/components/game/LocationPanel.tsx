@@ -115,6 +115,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     cureSickness: store.cureSickness,
     temperEquipment: store.temperEquipment,
     forgeRepairAppliance: store.forgeRepairAppliance,
+    forgeRepairEquipment: store.forgeRepairEquipment,
     salvageEquipment: store.salvageEquipment,
     onBuyNewspaper: handleBuyNewspaper,
     onShowNewspaper: handleShowNewspaper,

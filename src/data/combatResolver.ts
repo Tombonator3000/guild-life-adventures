@@ -5,11 +5,19 @@
 
 import type { DungeonEncounter, DungeonFloor, DungeonModifier } from './dungeon';
 import { calculateEducationBonuses, generateFloorEncounters, rollDungeonModifier } from './dungeon';
+import { DURABILITY_LOSS, DEFAULT_DURABILITY_LOSS } from './items';
 import type { DegreeId } from '@/types/game.types';
 
 // ============================================================
 // Types
 // ============================================================
+
+/** Equipment durability loss from a single encounter */
+export interface EquipmentDurabilityLoss {
+  weaponLoss: number;
+  armorLoss: number;
+  shieldLoss: number;
+}
 
 /** Result of resolving a single encounter */
 export interface EncounterResult {
@@ -23,6 +31,8 @@ export interface EncounterResult {
   potionHealed: number;
   /** Education bonus names that activated during this encounter */
   bonusesActivated: string[];
+  /** Equipment durability loss from this encounter */
+  durabilityLoss: EquipmentDurabilityLoss;
 }
 
 /** Phases of the combat state machine */
@@ -55,6 +65,8 @@ export interface DungeonRunState {
   modifier: DungeonModifier | null;
   /** Whether a mini-boss appeared in this run */
   hasMiniBoss: boolean;
+  /** Accumulated equipment durability loss for the entire run */
+  totalDurabilityLoss: EquipmentDurabilityLoss;
 }
 
 /** Player combat stats needed for resolution */
@@ -113,7 +125,15 @@ export function initDungeonRun(
     rareDropName: null,
     modifier,
     hasMiniBoss,
+    totalDurabilityLoss: { weaponLoss: 0, armorLoss: 0, shieldLoss: 0 },
   };
+}
+
+/** Equipped item IDs for durability loss calculation */
+export interface EquippedItems {
+  weapon: string | null;
+  armor: string | null;
+  shield: string | null;
 }
 
 /**
@@ -127,6 +147,7 @@ export function resolveEncounter(
   eduBonuses: EducationBonuses,
   currentHealth: number,
   modifier?: DungeonModifier | null,
+  equippedItems?: EquippedItems,
 ): EncounterResult {
   const mod = modifier ?? null;
   const bonusesActivated: string[] = [];
@@ -259,6 +280,31 @@ export function resolveEncounter(
     bonusesActivated.push('Potion Brewing');
   }
 
+  // Calculate equipment durability loss
+  const durabilityLoss: EquipmentDurabilityLoss = { weaponLoss: 0, armorLoss: 0, shieldLoss: 0 };
+  const items = equippedItems ?? { weapon: null, armor: null, shield: null };
+
+  if (encounter.type === 'combat' || encounter.type === 'boss') {
+    // Weapons degrade on combat encounters
+    if (items.weapon) {
+      durabilityLoss.weaponLoss = DURABILITY_LOSS[items.weapon] ?? DEFAULT_DURABILITY_LOSS;
+    }
+    // Armor degrades when taking damage
+    if (items.armor && damageDealt > 0) {
+      durabilityLoss.armorLoss = DURABILITY_LOSS[items.armor] ?? DEFAULT_DURABILITY_LOSS;
+    }
+    // Shields degrade on combat (more if blocked)
+    if (items.shield) {
+      const baseLoss = DURABILITY_LOSS[items.shield] ?? DEFAULT_DURABILITY_LOSS;
+      durabilityLoss.shieldLoss = blocked ? Math.ceil(baseLoss * 1.5) : Math.ceil(baseLoss * 0.5);
+    }
+  } else if (encounter.type === 'trap' && !disarmed) {
+    // Armor degrades from trap damage
+    if (items.armor && damageDealt > 0) {
+      durabilityLoss.armorLoss = Math.ceil((DURABILITY_LOSS[items.armor] ?? DEFAULT_DURABILITY_LOSS) * 0.5);
+    }
+  }
+
   return {
     encounter,
     damageDealt,
@@ -269,6 +315,7 @@ export function resolveEncounter(
     potionFound,
     potionHealed,
     bonusesActivated,
+    durabilityLoss,
   };
 }
 
@@ -317,6 +364,13 @@ export function applyEncounterResult(
 
   const goToSummary = playerDied || isLastEncounter;
 
+  // Accumulate durability loss
+  const newDurabilityLoss: EquipmentDurabilityLoss = {
+    weaponLoss: state.totalDurabilityLoss.weaponLoss + result.durabilityLoss.weaponLoss,
+    armorLoss: state.totalDurabilityLoss.armorLoss + result.durabilityLoss.armorLoss,
+    shieldLoss: state.totalDurabilityLoss.shieldLoss + result.durabilityLoss.shieldLoss,
+  };
+
   return {
     ...state,
     phase: goToSummary ? 'floor-summary' : 'encounter-result',
@@ -327,6 +381,7 @@ export function applyEncounterResult(
     totalHealed: newTotalHealed,
     bossDefeated: bossDefeated || state.bossDefeated,
     rareDropName: rareDropName || state.rareDropName,
+    totalDurabilityLoss: newDurabilityLoss,
   };
 }
 
@@ -398,6 +453,8 @@ export interface AutoResolveResult {
   log: string[];
   /** Modifier that was active during this run */
   modifierName: string | null;
+  /** Equipment durability loss from the entire run */
+  durabilityLoss: EquipmentDurabilityLoss;
 }
 
 /**
@@ -414,6 +471,7 @@ export function autoResolveFloor(
   isFirstClear: boolean,
   lootMultiplier: number = 1.0,
   floorsCleared?: number[],
+  equippedItems?: EquippedItems,
 ): AutoResolveResult {
   let state = initDungeonRun(floor, playerHealth, isFirstClear, floorsCleared);
   const log: string[] = [];
@@ -432,7 +490,7 @@ export function autoResolveFloor(
     }
 
     const encounter = state.encounters[i];
-    const result = resolveEncounter(encounter, combatStats, eduBonuses, state.currentHealth, state.modifier);
+    const result = resolveEncounter(encounter, combatStats, eduBonuses, state.currentHealth, state.modifier, equippedItems);
     state = applyEncounterResult(state, result);
 
     // Build log entry
@@ -461,5 +519,6 @@ export function autoResolveFloor(
     rareDropName: state.rareDropName,
     log,
     modifierName: state.modifier?.name ?? null,
+    durabilityLoss: state.totalDurabilityLoss,
   };
 }

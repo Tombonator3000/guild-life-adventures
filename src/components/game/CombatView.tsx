@@ -18,6 +18,8 @@ import {
   type EncounterResult,
   type CombatStats,
   type EducationBonuses,
+  type EquipmentDurabilityLoss,
+  type EquippedItems,
   initDungeonRun,
   resolveEncounter,
   applyEncounterResult,
@@ -56,6 +58,8 @@ export interface CombatRunResult {
   encounterLog: EncounterResult[];
   /** Number of encounters completed (for leaderboard) */
   encountersCompleted: number;
+  /** Equipment durability loss from the entire run */
+  durabilityLoss: EquipmentDurabilityLoss;
 }
 
 // ─── Main CombatView Component ────────────────────────────────
@@ -66,9 +70,17 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
     player.equippedArmor,
     player.equippedShield,
     player.temperedItems,
+    player.equipmentDurability,
   );
   const eduBonuses: EducationBonuses = calculateEducationBonuses(player.completedDegrees);
   const isFirstClear = !player.dungeonFloorsCleared.includes(floor.id);
+
+  // Track equipped items for durability loss calculation
+  const equippedItems: EquippedItems = {
+    weapon: player.equippedWeapon,
+    armor: player.equippedArmor,
+    shield: player.equippedShield,
+  };
 
   const [runState, setRunState] = useState<DungeonRunState>(() =>
     // H12 FIX: Pass maxHealth so healing is capped at maxHealth, not entry health
@@ -79,7 +91,7 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
 
   const handleFight = useCallback(() => {
     const encounter = runState.encounters[runState.currentEncounterIndex];
-    const result = resolveEncounter(encounter, combatStats, eduBonuses, runState.currentHealth, runState.modifier);
+    const result = resolveEncounter(encounter, combatStats, eduBonuses, runState.currentHealth, runState.modifier, equippedItems);
     const newState = applyEncounterResult(runState, result);
 
     // Apply health change immediately to game store (per-encounter, not deferred)
@@ -159,6 +171,7 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
       happinessChange,
       encounterLog: runState.results,
       encountersCompleted: runState.results.length,
+      durabilityLoss: runState.totalDurabilityLoss,
     });
   }, [runState, floor, onComplete]);
 
