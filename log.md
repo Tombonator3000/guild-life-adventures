@@ -1,5 +1,113 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-13 - Code Audit & Refactoring Round 2: AI System Complexity
+
+### Overview
+Second refactoring pass targeting the AI decision engine. Audited 22 major files for complexity indicators (functions >50 lines, deep nesting 3+ levels, repetitive patterns, excessive switch statements). Identified 13 candidates, refactored the top 3 that weren't already handled in the first round. All 185 tests pass, build succeeds.
+
+**Test Results**: 185 tests passed (9 test files, 0 failures)
+
+### Full Audit Findings (13 candidates across 8 files)
+
+| File | Function | Lines | Severity | Primary Issue |
+|------|----------|-------|----------|---------------|
+| economicActions.ts | generateEconomicActions | 280 | CRITICAL | 7 subsystems in one function |
+| goalActions.ts | generateGoalActions | 330 | CRITICAL | Giant switch, deep nesting |
+| criticalNeeds.ts | generateCriticalActions | 220 | CRITICAL | 4-level nesting, repetition |
+| questDungeonActions.ts | generateQuestDungeonActions | 215 | CRITICAL | Multiple subsystems, move duplication |
+| actionGenerator.ts | applyPersonalityWeights | 52 | MEDIUM | Repetitive switch → data-driven |
+| actionGenerator.ts | applyCounterStrategyWeights | 32 | MEDIUM | Same pattern as above |
+| actionGenerator.ts | applyMistakes | 27 | MEDIUM | Complex array mutation logic |
+| actionGenerator.ts | generateActions | 122 | HIGH | Multi-layer orchestration |
+| actionExecutor.ts | handleExploreDungeon | 74 | HIGH | 5 concerns mixed in one handler |
+| useGrimwaldAI.ts | runAITurn | 121 | HIGH | Recursive closure, multiple exit paths |
+| workEducationHelpers.ts | workShift | 87 | MEDIUM | Multiple sequential calculations |
+| CavePanel.tsx | Component | 150+ | MEDIUM | UI + logic mixing |
+| GameSetup.tsx | Component | 150+ | MEDIUM | Multiple parallel states |
+
+Refactored #1, #2, #5+#6. Skipped others (acceptable complexity, already well-structured, or too large for this pass).
+
+### 1. Refactor: applyPersonalityWeights + applyCounterStrategyWeights (actionGenerator.ts)
+
+**Before**: Two functions using 50+ line switch statements to map action types to weight categories. Both follow the exact same pattern — `switch(action.type) { case X: multiply by w.Y; break; }` — repeated for 12+ cases each. The counter-strategy function was a near-copy of the personality function with slightly different category names.
+
+**After**: Replaced both switch statements with declarative lookup tables:
+- `PERSONALITY_WEIGHT_CATEGORY`: Maps 22 action types → 6 personality weight categories (education, wealth, combat, social, caution, gambling)
+- `COUNTER_STRATEGY_CATEGORY`: Maps 17 action types → 4 counter-strategy categories (education, wealth, combat, happiness)
+
+Each function reduced from a switch statement to a 4-line loop:
+```typescript
+function applyPersonalityWeights(actions, personality) {
+  const w = personality.weights;
+  for (const action of actions) {
+    const category = PERSONALITY_WEIGHT_CATEGORY[action.type];
+    if (category) action.priority = Math.round(action.priority * w[category]);
+  }
+}
+```
+
+**Why data-driven**: Adding a new action type only requires adding one line to the lookup table instead of a new switch case. The mapping between action types and categories is now self-documenting and visible at a glance. Comments about groupings (e.g. "stocks → wealth for counter-strategy, gambling for personality") are clear from the data structure.
+
+#### Files Changed
+- `src/hooks/ai/actionGenerator.ts` — Replaced switch statements with `PERSONALITY_WEIGHT_CATEGORY` and `COUNTER_STRATEGY_CATEGORY` lookup tables
+
+### 2. Refactor: generateEconomicActions (economicActions.ts)
+
+**Before**: Single 280-line function handling 7 unrelated economic subsystems: sickness curing, loan management (take/repay/partial), fresh food, tickets, pawning/selling, lottery, and stock market. The stock market section alone was 85 lines with its own nested decision tree for stock picking (hard AI undervalued detection, T-Bill preference, gambler fallback).
+
+**After**: Extracted 5 focused sub-generators + 1 helper:
+- `generateSicknessActions(ctx)` — Sickness curing at enchanter (15 lines)
+- `generateLoanActions(ctx)` — Take/repay/partial loan management (30 lines)
+- `generatePawningActions(ctx)` — Emergency pawning and item selling (25 lines)
+- `generateStockActions(ctx)` — Stock buying and selling (40 lines)
+- `pickBestStockToBuy(player, settings, stockPrices, gambling)` — Smart stock picking extracted from stock buying logic (25 lines)
+
+Main function reduced to orchestrator calling sub-generators + 3 inline sections (fresh food, tickets, lottery — small enough to not warrant extraction):
+```typescript
+export function generateEconomicActions(ctx) {
+  const actions = [
+    ...generateSicknessActions(ctx),
+    ...generateLoanActions(ctx),
+    ...generatePawningActions(ctx),
+    ...generateStockActions(ctx),
+  ];
+  // + inline fresh food, tickets, lottery (3-5 lines each)
+  return actions;
+}
+```
+
+#### Files Changed
+- `src/hooks/ai/actions/economicActions.ts` — Extracted `generateSicknessActions`, `generateLoanActions`, `generatePawningActions`, `generateStockActions`, `pickBestStockToBuy` from generateEconomicActions()
+
+### 3. Refactor: handleExploreDungeon (actionExecutor.ts)
+
+**Before**: 74-line handler mixing 5 distinct concerns: dungeon attempt validation, attempt tracking (direct store mutation), combat resolution, result application (gold/health/happiness/floor-clear/rare-drops/durability across 15+ lines of conditionals), and death checking.
+
+**After**: Extracted 4 focused helpers:
+- `canAttemptDungeon(player, timeCost)` — Validates attempt count, health, education, and time (5 lines)
+- `trackDungeonAttempt(playerId)` — Increments dungeon attempt counter in store (6 lines)
+- `calculateDungeonGold(baseGold, bossDefeated)` — Festival multiplier and defeat multiplier calculation (6 lines)
+- `applyDungeonResults(playerId, floorId, floor, result, isFirstClear, store)` — Applies all dungeon outcomes: gold, health, happiness, floor clear, rare drops, durability loss (18 lines)
+
+Main handler reduced to a clean pipeline:
+```typescript
+function handleExploreDungeon(player, action, store) {
+  // 1. Validate floor and calculate costs
+  // 2. canAttemptDungeon() check
+  // 3. spendTime + trackDungeonAttempt()
+  // 4. autoResolveFloor()
+  // 5. applyDungeonResults()
+  // 6. checkDeath()
+}
+```
+
+Each extracted function has a single responsibility and is independently readable and testable.
+
+#### Files Changed
+- `src/hooks/ai/actionExecutor.ts` — Extracted `canAttemptDungeon`, `trackDungeonAttempt`, `calculateDungeonGold`, `applyDungeonResults` from handleExploreDungeon()
+
+---
+
 ## 2026-02-13 - Code Audit & Refactoring: Complex Functions
 
 ### Overview
