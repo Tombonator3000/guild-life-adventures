@@ -46,11 +46,6 @@ export function GeneralStorePanel({
   return (
     <div>
       <JonesSectionHeader title={t('panelStore.food')} />
-      {!hasPreservationBox && (
-        <div className="text-xs text-red-800 bg-red-100/80 px-2 py-1 mb-1 rounded border border-red-200">
-          ⚠ Without a Preservation Box, food has an 80% chance of spoiling!
-        </div>
-      )}
       {GENERAL_STORE_ITEMS.filter(item => item.effect?.type === 'food' && !item.isFreshFood).map(item => {
         const price = getItemPrice(item, priceModifier);
         const canAfford = player.gold >= price;
@@ -64,25 +59,17 @@ export function GeneralStorePanel({
             largeText
             previewData={itemToPreview(item)}
             onClick={() => {
-              const spoiled = buyFoodWithSpoilage(player.id, item.effect!.value, price);
-              if (spoiled) {
-                toast.error(`${t(`items.${item.id}.name`) || item.name} spoiled! ${price}g wasted. Get a Preservation Box!`);
-              } else {
-                toast.success(t('panelStore.purchased', { name: t(`items.${item.id}.name`) || item.name }));
-              }
+              buyFoodWithSpoilage(player.id, item.effect!.value, price);
+              toast.success(t('panelStore.purchased', { name: t(`items.${item.id}.name`) || item.name }));
             }}
           />
         );
       })}
 
-      {/* Fresh Food Section - always shown, with spoilage warning when no box */}
+      {/* Fresh Food Section */}
       <JonesSectionHeader title={t('panelStore.freshFood')} />
-      {hasPreservationBox ? (
+      {hasPreservationBox && (
         <JonesInfoRow label={t('panelStore.freshFoodStored')} value={`${player.freshFood}/${maxFreshFood}`} darkText largeText />
-      ) : (
-        <div className="text-xs text-red-800 bg-red-100/80 px-2 py-1 mb-1 rounded border border-red-200">
-          ⚠ No Preservation Box! Fresh food will almost certainly spoil (80% on purchase + spoils at turn start).
-        </div>
       )}
       {GENERAL_STORE_ITEMS.filter(item => item.isFreshFood).map(item => {
         const price = getItemPrice(item, priceModifier);
@@ -99,12 +86,8 @@ export function GeneralStorePanel({
             largeText
             previewData={itemToPreview(item)}
             onClick={() => {
-              const spoiled = buyFreshFood(player.id, units, price);
-              if (spoiled) {
-                toast.error(`Fresh food spoiled immediately! ${price}g wasted. Get a Preservation Box!`);
-              } else {
-                toast.success(t('panelStore.storedFreshFood', { units: Math.min(units, spaceLeft) }));
-              }
+              buyFreshFood(player.id, units, price);
+              toast.success(t('panelStore.storedFreshFood', { units: Math.min(units, spaceLeft) }));
             }}
           />
         );

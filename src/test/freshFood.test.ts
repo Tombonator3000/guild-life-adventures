@@ -114,29 +114,17 @@ describe('Fresh Food - buyFreshFood', () => {
     expect(p.freshFood).toBe(12); // Capped at 12
   });
 
-  it('spoils fresh food 80% of time without Preservation Box', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0.5); // < 0.80 = spoiled
+  it('stores fresh food without Preservation Box (spoilage hidden until turn end)', () => {
     setGold(500);
     const spoiled = useGameStore.getState().buyFreshFood(playerId, 2, 12);
     const p = useGameStore.getState().players[0];
-    expect(spoiled).toBe(true);
-    expect(p.freshFood).toBe(0); // Food spoiled
-    expect(p.gold).toBe(488); // Gold still deducted
-    vi.restoreAllMocks();
-  });
-
-  it('allows 20% fresh food survival without Preservation Box', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0.9); // >= 0.80 = survived
-    setGold(500);
-    const spoiled = useGameStore.getState().buyFreshFood(playerId, 2, 12);
-    const p = useGameStore.getState().players[0];
-    expect(spoiled).toBe(false);
-    expect(p.freshFood).toBe(2); // Food survived (but will spoil at turn start)
+    expect(spoiled).toBe(false); // No instant spoilage
+    expect(p.freshFood).toBe(2); // Food stored
     expect(p.gold).toBe(488);
-    vi.restoreAllMocks();
+    expect(p.foodBoughtWithoutPreservation).toBe(true); // Flag set for turn-end check
   });
 
-  it('spoils fresh food with broken Preservation Box (80% chance)', () => {
+  it('stores fresh food with broken Preservation Box and sets spoilage flag', () => {
     givePreservationBox();
     // Break the box
     useGameStore.setState((state) => ({
@@ -152,14 +140,21 @@ describe('Fresh Food - buyFreshFood', () => {
           : p
       ),
     }));
-    vi.spyOn(Math, 'random').mockReturnValue(0.5); // < 0.80 = spoiled
     setGold(500);
     const spoiled = useGameStore.getState().buyFreshFood(playerId, 2, 12);
     const p = useGameStore.getState().players[0];
-    expect(spoiled).toBe(true);
-    expect(p.freshFood).toBe(0);
-    expect(p.gold).toBe(488); // Gold deducted
-    vi.restoreAllMocks();
+    expect(spoiled).toBe(false); // No instant spoilage
+    expect(p.freshFood).toBe(2); // Food stored
+    expect(p.gold).toBe(488);
+    expect(p.foodBoughtWithoutPreservation).toBe(true); // Flag set
+  });
+
+  it('does not set spoilage flag when buying with working Preservation Box', () => {
+    givePreservationBox();
+    setGold(500);
+    useGameStore.getState().buyFreshFood(playerId, 2, 12);
+    const p = useGameStore.getState().players[0];
+    expect(p.foodBoughtWithoutPreservation).toBe(false); // No flag — food is safe
   });
 
   it('rejects purchase when not enough gold', () => {
@@ -199,31 +194,18 @@ describe('Fresh Food - buyFreshFood', () => {
 describe('Regular Food - buyFoodWithSpoilage', () => {
   beforeEach(resetAndStart);
 
-  it('spoils food 80% of time without Preservation Box', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0.5); // < 0.80 = spoiled
+  it('always adds food on purchase without Preservation Box (spoilage hidden until turn end)', () => {
     setGold(500);
     setFoodLevel(50);
     const spoiled = useGameStore.getState().buyFoodWithSpoilage(playerId, 10, 8);
     const p = useGameStore.getState().players[0];
-    expect(spoiled).toBe(true);
-    expect(p.foodLevel).toBe(50); // No food gained
-    expect(p.gold).toBe(492); // 500 - 8
-    vi.restoreAllMocks();
-  });
-
-  it('preserves food 20% of time without Preservation Box', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0.85); // >= 0.80 = safe
-    setGold(500);
-    setFoodLevel(50);
-    const spoiled = useGameStore.getState().buyFoodWithSpoilage(playerId, 10, 8);
-    const p = useGameStore.getState().players[0];
-    expect(spoiled).toBe(false);
-    expect(p.foodLevel).toBe(60); // 50 + 10
+    expect(spoiled).toBe(false); // No instant spoilage
+    expect(p.foodLevel).toBe(60); // 50 + 10 — food always goes through
     expect(p.gold).toBe(492);
-    vi.restoreAllMocks();
+    expect(p.foodBoughtWithoutPreservation).toBe(true); // Flag set for turn-end check
   });
 
-  it('always preserves food with Preservation Box', () => {
+  it('always adds food on purchase with Preservation Box (no spoilage flag)', () => {
     givePreservationBox();
     setGold(500);
     setFoodLevel(50);
@@ -232,6 +214,7 @@ describe('Regular Food - buyFoodWithSpoilage', () => {
     expect(spoiled).toBe(false);
     expect(p.foodLevel).toBe(65); // 50 + 15
     expect(p.gold).toBe(485);
+    expect(p.foodBoughtWithoutPreservation).toBe(false); // No flag — food is safe
   });
 
   it('caps food level at 100', () => {
@@ -447,5 +430,79 @@ describe('Fresh Food - Frost Chest requires Preservation Box', () => {
     const p = useGameStore.getState().players[0];
     expect(p.appliances['frost-chest']).toBeUndefined();
     expect(p.gold).toBe(2000);
+  });
+});
+
+describe('End-of-turn Spoilage Check', () => {
+  // Use 2-player game so endTurn doesn't trigger processWeekEnd (which depletes food)
+  function resetWith2Players() {
+    const store = useGameStore.getState();
+    store.startNewGame(['TestPlayer', 'Player2'], false, { wealth: 5000, happiness: 75, education: 45, career: 4, adventure: 0 });
+    playerId = useGameStore.getState().players[0].id;
+  }
+
+  beforeEach(resetWith2Players);
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('spoils food at turn end when flag is set and no Preservation Box (80% chance)', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.3); // < 0.80 = food goes bad, < 0.55 = gets sick
+    setGold(500);
+    setFoodLevel(60);
+    // Set the flag as if food was bought without preservation
+    useGameStore.setState((state) => ({
+      players: state.players.map(p =>
+        p.id === playerId ? { ...p, foodBoughtWithoutPreservation: true } : p
+      ),
+    }));
+    useGameStore.getState().endTurn();
+    const p = useGameStore.getState().players.find(pp => pp.id === playerId)!;
+    expect(p.foodBoughtWithoutPreservation).toBe(false); // Flag reset
+    expect(p.foodLevel).toBeLessThan(60); // Some food lost
+    expect(p.isSick).toBe(true); // Got sick from spoiled food
+  });
+
+  it('does not spoil food at turn end when flag is not set', () => {
+    setGold(500);
+    setFoodLevel(60);
+    // No flag set
+    vi.spyOn(Math, 'random').mockReturnValue(0.3);
+    useGameStore.getState().endTurn();
+    const p = useGameStore.getState().players.find(pp => pp.id === playerId)!;
+    expect(p.foodLevel).toBe(60); // Unchanged — no spoilage flag
+  });
+
+  it('does not spoil food if player got Preservation Box during turn', () => {
+    setGold(500);
+    setFoodLevel(60);
+    // Set the flag
+    useGameStore.setState((state) => ({
+      players: state.players.map(p =>
+        p.id === playerId ? { ...p, foodBoughtWithoutPreservation: true } : p
+      ),
+    }));
+    // Player then buys a Preservation Box during the same turn
+    givePreservationBox();
+    vi.spyOn(Math, 'random').mockReturnValue(0.3);
+    useGameStore.getState().endTurn();
+    const p = useGameStore.getState().players.find(pp => pp.id === playerId)!;
+    expect(p.foodLevel).toBe(60); // Food safe — box was purchased during turn
+  });
+
+  it('food survives at turn end 20% of the time without box', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.9); // >= 0.80 = food survives
+    setGold(500);
+    setFoodLevel(60);
+    useGameStore.setState((state) => ({
+      players: state.players.map(p =>
+        p.id === playerId ? { ...p, foodBoughtWithoutPreservation: true } : p
+      ),
+    }));
+    useGameStore.getState().endTurn();
+    const p = useGameStore.getState().players.find(pp => pp.id === playerId)!;
+    expect(p.foodBoughtWithoutPreservation).toBe(false); // Flag reset
+    expect(p.foodLevel).toBe(60); // Food survived!
   });
 });

@@ -23,7 +23,7 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
 
   // 1. FOOD - Prevent starvation (-20 hours penalty is devastating)
   // H9 FIX: Apply priceModifier to food costs (AI was ignoring economy inflation/deflation)
-  // Without Preservation Box, General Store food has 80% spoilage — prefer Tavern
+  // Without Preservation Box, General Store food may spoil at turn end — prefer Tavern
   if (urgency.food > 0.5) {
     const pm = ctx.priceModifier;
     const hasBox = player.appliances['preservation-box'] && !player.appliances['preservation-box'].isBroken;

@@ -98,7 +98,7 @@ function handleBuyFood(player: Player, action: AIAction, store: StoreActions): b
   const foodGain = (action.details?.foodGain as number) || 25;
   if (player.gold < cost) return false;
 
-  // General Store food uses spoilage mechanic (80% spoilage without Preservation Box)
+  // General Store food uses spoilage mechanic (spoilage checked at turn end without Preservation Box)
   if (player.currentLocation === 'general-store') {
     store.buyFoodWithSpoilage(player.id, foodGain, cost);
     store.spendTime(player.id, 1);

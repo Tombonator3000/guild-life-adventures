@@ -6,7 +6,7 @@
 // endTurn logic + orchestrator → this file
 
 import type { LocationId } from '@/types/game.types';
-import { HOURS_PER_TURN } from '@/types/game.types';
+import { HOURS_PER_TURN, SPOILED_FOOD_SICKNESS_CHANCE } from '@/types/game.types';
 import type { SetFn, GetFn } from '../storeTypes';
 import { createStartTurn } from './startTurnHelpers';
 import { createProcessWeekEnd } from './weekEndHelpers';
@@ -18,6 +18,82 @@ export function getHomeLocation(housing: string): LocationId {
   return 'slums';
 }
 
+/**
+ * End-of-turn spoilage check: If the player bought food this turn without a Preservation Box,
+ * there's an 80% chance the food has gone bad. If it went bad, 55% chance the player gets sick
+ * and needs a doctor visit (-10 hours, -4 happiness, -30~200g).
+ * The spoilage info is intentionally hidden from the store UI — the player only finds out at turn end.
+ */
+function processEndOfTurnSpoilage(set: SetFn, get: GetFn, playerId: string): void {
+  const player = get().players.find(p => p.id === playerId);
+  if (!player || !player.foodBoughtWithoutPreservation) return;
+
+  // Reset the flag regardless of outcome
+  set((state) => ({
+    players: state.players.map(p =>
+      p.id === playerId ? { ...p, foodBoughtWithoutPreservation: false } : p
+    ),
+  }));
+
+  // Check if player now has a Preservation Box (they might have bought one during the turn)
+  const hasPreservationBox = player.appliances['preservation-box'] && !player.appliances['preservation-box'].isBroken;
+  if (hasPreservationBox) return; // Food is safe now
+
+  // 80% chance that the unpreserved food has gone bad
+  if (Math.random() >= 0.80) return; // Lucky — food survived
+
+  const eventMessages: string[] = [];
+
+  // Food has gone bad — reduce foodLevel (some of what was bought spoiled)
+  const foodLost = Math.min(player.foodLevel, Math.floor(player.foodLevel * 0.5)); // Lose up to 50% of current food
+  const freshFoodLost = player.freshFood; // All unpreserved fresh food spoils
+
+  set((state) => ({
+    players: state.players.map(p => {
+      if (p.id !== playerId) return p;
+      return {
+        ...p,
+        foodLevel: Math.max(0, p.foodLevel - foodLost),
+        freshFood: hasPreservationBox ? p.freshFood : 0,
+      };
+    }),
+  }));
+
+  eventMessages.push(
+    `${player.name}'s food has gone bad! Without a Preservation Box, the food spoiled.`
+    + (foodLost > 0 ? ` Lost ${foodLost} food.` : '')
+    + (freshFoodLost > 0 ? ` ${freshFoodLost} units of fresh food ruined.` : '')
+  );
+
+  // 55% chance of getting sick from the spoiled food — doctor visit
+  if (Math.random() < SPOILED_FOOD_SICKNESS_CHANCE) {
+    const doctorCost = 30 + Math.floor(Math.random() * 171); // 30-200g
+    set((state) => ({
+      players: state.players.map(p => {
+        if (p.id !== playerId) return p;
+        return {
+          ...p,
+          isSick: true,
+          happiness: Math.max(0, p.happiness - 4),
+          gold: Math.max(0, p.gold - doctorCost),
+        };
+      }),
+    }));
+    eventMessages.push(
+      `${player.name} got food poisoning from the spoiled food! Healer charged ${doctorCost}g. -4 Happiness. Visit a healer to recover!`
+    );
+  }
+
+  // Show event messages to non-AI players
+  if (!player.isAI && eventMessages.length > 0) {
+    const existing = get().eventMessage;
+    const combined = existing
+      ? existing + '\n' + eventMessages.join('\n')
+      : eventMessages.join('\n');
+    set({ eventMessage: combined, phase: 'event' });
+  }
+}
+
 export function createTurnActions(set: SetFn, get: GetFn) {
   const startTurn = createStartTurn(set, get);
   const processWeekEnd = createProcessWeekEnd(set, get);
@@ -26,8 +102,14 @@ export function createTurnActions(set: SetFn, get: GetFn) {
     endTurn: () => {
       const state = get();
 
+      // --- End-of-turn spoilage check (before switching players) ---
+      const endingPlayer = state.players[state.currentPlayerIndex];
+      if (endingPlayer && !endingPlayer.isGameOver) {
+        processEndOfTurnSpoilage(set, get, endingPlayer.id);
+      }
+
       // Check if current player has achieved victory goals before switching turns
-      const currentPlayer = state.players[state.currentPlayerIndex];
+      const currentPlayer = get().players[get().currentPlayerIndex];
       if (currentPlayer && !currentPlayer.isGameOver) {
         if (get().checkVictory(currentPlayer.id)) {
           return; // Victory achieved, don't continue with turn switching

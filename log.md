@@ -1,5 +1,62 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-13 - Hidden Food Spoilage System (Jones-Style Surprise Mechanic)
+
+### Overview
+Redesigned food spoilage to be a hidden mechanic. Players no longer see spoilage warnings at the General Store — food purchases always appear to succeed. Spoilage is calculated at the end of the player's turn: if they bought food without a Preservation Box, there's an 80% chance the food goes bad. If it does, 55% chance the player gets food poisoning (sickness + doctor visit). This creates a "surprise" penalty that encourages buying a Preservation Box without explicitly warning the player.
+
+### Design (Jones-Style)
+In the original Jones in the Fast Lane, food spoilage was not explicitly warned about in the store UI. Players discovered the consequences through gameplay. This implementation follows that philosophy:
+- **Store UI**: No spoilage warnings, no red banners, no "80% chance" text
+- **Purchase**: Food always goes through — player sees success toast
+- **Turn End**: Hidden spoilage check runs before switching to next player
+- **Discovery**: Player learns about spoilage when their food goes bad and they get sick
+
+### Changes
+
+#### 1. Hidden Spoilage on Purchase
+- **Removed** 80% instant spoilage on `buyFoodWithSpoilage` (regular food) — food always adds to `foodLevel`
+- **Removed** 80% instant spoilage on `buyFreshFood` (fresh food) — food always adds to `freshFood`
+- **Added** `foodBoughtWithoutPreservation` boolean flag on Player — set to `true` when buying food without a working Preservation Box
+- Flag is NOT set when buying with a working Preservation Box
+
+#### 2. End-of-Turn Spoilage Check (`processEndOfTurnSpoilage`)
+- Runs in `endTurn()` before switching to next player
+- Checks if `foodBoughtWithoutPreservation` flag is set
+- If player acquired a Preservation Box during the turn, food is safe (smart purchase rewarded)
+- **80% chance** food goes bad: loses up to 50% of current `foodLevel` + all unpreserved fresh food
+- **55% chance** of food poisoning from spoiled food: sets `isSick = true`, -4 happiness, 30-200g doctor cost
+- Event messages shown to non-AI players
+
+#### 3. UI Changes
+- **Removed** red spoilage warning banner from General Store food section
+- **Removed** red spoilage warning banner from fresh food section (when no Preservation Box)
+- **Removed** spoilage error toast messages on purchase
+- Purchase toasts now always show success
+
+#### 4. AI Updates
+- AI still internally prefers safe food sources (Tavern/Shadow Market) without Preservation Box — strategic behavior unchanged
+- Updated comments in `criticalNeeds.ts` and `actionExecutor.ts` to reflect new mechanic
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `src/types/game.types.ts` | Added `foodBoughtWithoutPreservation: boolean` to Player interface |
+| `src/store/gameStore.ts` | Added `foodBoughtWithoutPreservation: false` to default player state |
+| `src/store/helpers/economy/itemHelpers.ts` | Removed instant spoilage from `buyFreshFood` and `buyFoodWithSpoilage`; sets flag instead |
+| `src/store/helpers/turnHelpers.ts` | Added `processEndOfTurnSpoilage()` function; integrated into `endTurn()` |
+| `src/components/game/GeneralStorePanel.tsx` | Removed spoilage warning banners and error toasts |
+| `src/hooks/ai/actions/criticalNeeds.ts` | Updated comment |
+| `src/hooks/ai/actionExecutor.ts` | Updated comment |
+| `src/test/freshFood.test.ts` | Updated 5 existing tests + added 4 new end-of-turn spoilage tests |
+
+### Build & Tests
+- TypeScript: compiles cleanly (tsc --noEmit)
+- Tests: 185/185 passing (9 test files)
+- New tests cover: spoilage at turn end (80%), sickness (55%), Preservation Box during turn, flag behavior
+
+---
+
 ## 2026-02-12 - Fix Movement Direction: Remove Popup, Add Mid-Movement Redirect
 
 ### Overview
