@@ -14,7 +14,7 @@ import solsticeFrost from '@/assets/solstice-frost.jpg';
 import solsticeAurora from '@/assets/solstice-aurora.jpg';
 import tourneyBanner from '@/assets/tourney-banner.jpg';
 import tourneyConfetti from '@/assets/tourney-confetti.jpg';
-import fairLantern from '@/assets/fair-lantern.jpg';
+import fairLantern from '@/assets/fair-lantern.png';
 import fairStreamers from '@/assets/fair-streamers.jpg';
 
 interface FestivalOverlayProps {

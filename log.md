@@ -1,5 +1,49 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-13 - Clothing Quality Job Check, Food Drain Increase, PNG Image Fix
+
+### Overview
+Three gameplay and asset changes: jobs now refuse players whose clothing has degraded below the required tier, weekly food drain increased from 25 to 35 making food a pressing weekly need, and crow-silhouette/fair-lantern images converted back to PNG for transparency support in animated overlay layers.
+
+**Test Results**: 185 tests passed (9 test files, 0 failures)
+
+### 1. Clothing Quality Job Check (Gameplay)
+- **Problem**: Players could keep working any job as long as they had *any* clothes (condition > 0), even if the job required a higher clothing tier (dress/business). Only complete nudity (condition = 0) blocked work.
+- **Fix**: Work shifts now check if player's clothing condition meets the job's `requiredClothing` tier threshold (casual=15, dress=40, business=70). If clothes degrade below the threshold, the player cannot work that job until they upgrade.
+- **UI**: WorkSection shows a specific error message when clothing is too worn for the job, telling the player what tier is required vs what they have.
+- **Weekly warning**: When clothing degrades below a job's requirement during week-end processing, a warning message is shown.
+- **AI**: AI action executor also checks clothing tier before attempting work shifts, so AI players face the same restriction.
+
+#### Files Changed
+- `src/store/helpers/workEducationHelpers.ts` — Added `CLOTHING_THRESHOLDS` import and clothing tier check in `workShift` (looks up job's `requiredClothing` threshold)
+- `src/components/game/WorkSection.tsx` — Added clothing tier imports, new `clothingTooLow` check with descriptive error message showing required vs current tier
+- `src/store/helpers/weekEndHelpers.ts` — Added `getJob` import, job-specific clothing warning in `processNeeds` when clothes drop below job requirement
+- `src/hooks/ai/actionExecutor.ts` — Added `CLOTHING_THRESHOLDS` import and clothing tier check in `handleWork`
+
+### 2. Increased Food Drain (Balance)
+- **Problem**: Weekly food drain was 25 (from 0-100 scale), meaning starting food of 50 lasted 2 full weeks. Players could easily ignore food for extended periods.
+- **Fix**: Increased weekly food drain from 25 to 35. Starting food (50) now barely lasts 1 week, making food purchases an almost-mandatory weekly activity.
+- **Preservation Box**: Players with a Preservation Box and stored fresh food still have a safety net (fresh food consumed automatically when regular food runs out).
+- **Cooking Fire**: The +3 food/turn appliance bonus provides a small buffer but is not enough alone.
+- **AI**: No AI changes needed — existing food urgency thresholds (trigger at foodLevel < 50) naturally cause the AI to buy food more frequently with faster drain.
+
+#### Files Changed
+- `src/store/helpers/weekEndHelpers.ts` — Changed `p.foodLevel - 25` to `p.foodLevel - 35` in `processNeeds`
+
+### 3. PNG Image Conversion (Asset Fix)
+- **Problem**: `crow-silhouette.jpg` and `fair-lantern.jpg` were converted from PNG to JPG during the mass PNG→JPG migration, but these images are used in animated overlay layers (GraveyardCrows, FestivalOverlay) that need alpha channel transparency.
+- **Fix**: Converted both images back to PNG with RGBA mode for transparency support. Removed the JPG versions.
+
+#### Files Changed
+- `src/assets/crow-silhouette.png` — Re-created from JPG with RGBA alpha channel
+- `src/assets/fair-lantern.png` — Re-created from JPG with RGBA alpha channel
+- `src/assets/crow-silhouette.jpg` — Deleted
+- `src/assets/fair-lantern.jpg` — Deleted
+- `src/components/game/GraveyardCrows.tsx` — Import changed from `.jpg` to `.png`
+- `src/components/game/FestivalOverlay.tsx` — Import changed from `.jpg` to `.png`
+
+---
+
 ## 2026-02-13 - Equipment Durability & Degradation System
 
 ### Overview

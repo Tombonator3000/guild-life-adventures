@@ -1,5 +1,17 @@
 # Guild Life Adventures - Todo List
 
+## Completed (2026-02-13)
+
+- [x] Clothing quality job check — Jobs refuse player when clothing degrades below required tier
+  - workShift checks job's requiredClothing threshold (casual=15, dress=40, business=70)
+  - UI shows specific error with required vs current tier
+  - Weekly warning when clothes drop below job requirement
+  - AI also checks clothing tier before working
+- [x] Increased food drain — 25 → 35 per week (food now almost mandatory weekly purchase)
+  - Starting food (50) barely lasts 1 week
+  - Preservation Box + fresh food still works as backup
+- [x] PNG image fix — crow-silhouette.jpg and fair-lantern.jpg converted back to PNG for transparency
+
 ## Completed (2026-02-12)
 
 - [x] Per-turn appliance bonuses — Cooking Fire +3 food/turn, Arcane Tome 15% income

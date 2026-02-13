@@ -12,7 +12,7 @@ import { getJob, canWorkJob, calculateOfferedWage } from '@/data/jobs';
 import { DEGREES } from '@/data/education';
 import { calculatePathDistance, getPath } from '@/data/locations';
 import { peerManager } from '@/network/PeerManager';
-import { calculateCombatStats } from '@/data/items';
+import { calculateCombatStats, CLOTHING_THRESHOLDS } from '@/data/items';
 import { getFloor, calculateEducationBonuses, getEncounterTimeCost, getLootMultiplier, ENCOUNTERS_PER_FLOOR } from '@/data/dungeon';
 import { autoResolveFloor } from '@/data/combatResolver';
 import { FESTIVALS } from '@/data/festivals';
@@ -159,6 +159,14 @@ function handleWork(player: Player, action: AIAction, store: StoreActions): bool
   const wage = (action.details?.wage as number) || player.currentWage;
   if (player.timeRemaining < hours) return false;
   if (player.clothingCondition <= 0) return false; // Bankruptcy Barrel
+  // Clothing quality check: can't work if clothes don't meet job tier
+  if (player.currentJob) {
+    const job = getJob(player.currentJob);
+    if (job) {
+      const threshold = CLOTHING_THRESHOLDS[job.requiredClothing as keyof typeof CLOTHING_THRESHOLDS] ?? 0;
+      if (player.clothingCondition < threshold) return false;
+    }
+  }
   store.workShift(player.id, hours, wage);
   return true;
 }

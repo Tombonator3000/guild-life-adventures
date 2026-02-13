@@ -5,6 +5,7 @@ import type { EducationPath, DegreeId } from '@/types/game.types';
 import { GRADUATION_BONUSES, getDegree } from '@/data/education';
 import { WORK_HAPPINESS_AGE } from '@/types/game.types';
 import { getJob } from '@/data/jobs';
+import { CLOTHING_THRESHOLDS } from '@/data/items';
 import { getGameOption } from '@/data/gameOptions';
 import { FESTIVALS } from '@/data/festivals';
 import { updateAchievementStats, checkAchievements } from '@/data/achievements';
@@ -33,6 +34,14 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
       if (!player || player.timeRemaining < hours) return;
       // Bankruptcy Barrel: cannot work without any clothes
       if (player.clothingCondition <= 0) return;
+      // Clothing quality check: job refuses you if your clothes don't meet its tier
+      if (player.currentJob) {
+        const job = getJob(player.currentJob);
+        if (job) {
+          const threshold = CLOTHING_THRESHOLDS[job.requiredClothing as keyof typeof CLOTHING_THRESHOLDS] ?? 0;
+          if (player.clothingCondition < threshold) return;
+        }
+      }
       const gameWeek = get().week;
       set((state) => ({
         players: state.players.map((p) => {
