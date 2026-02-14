@@ -2,6 +2,7 @@
 // Runs independently of the music system. Uses crossfade for smooth transitions.
 // Routes audio through Web Audio API GainNodes for iOS/iPadOS volume control
 // (iOS ignores HTMLAudioElement.volume — GainNode is the only way to control volume).
+// Falls back to HTMLAudioElement.volume if AudioContext is unavailable.
 
 import { AMBIENT_TRACKS, AMBIENT_CROSSFADE_MS, DEFAULT_AMBIENT_VOLUME } from './ambientConfig';
 import { connectElement, resumeAudioContext } from './webAudioBridge';
@@ -36,9 +37,9 @@ function saveSettings(settings: AmbientSettings) {
 class AmbientManager {
   private deckA: HTMLAudioElement;
   private deckB: HTMLAudioElement;
-  // Web Audio API gain nodes for iOS volume control
-  private gainA: GainNode;
-  private gainB: GainNode;
+  // Web Audio API gain nodes for iOS volume control (null = fallback to element.volume)
+  private gainA: GainNode | null;
+  private gainB: GainNode | null;
   private activeDeck: 'A' | 'B' = 'A';
   private currentTrackId: string | null = null;
   private settings: AmbientSettings;
@@ -56,6 +57,7 @@ class AmbientManager {
     this.deckB.preload = 'auto';
 
     // Route through Web Audio API GainNodes — required for iOS volume control
+    // Returns null if AudioContext is unavailable (falls back to element.volume)
     this.gainA = connectElement(this.deckA);
     this.gainB = connectElement(this.deckB);
 
@@ -151,11 +153,11 @@ class AmbientManager {
     return this.activeDeck === 'A' ? this.deckB : this.deckA;
   }
 
-  private getActiveGain(): GainNode {
+  private getActiveGain(): GainNode | null {
     return this.activeDeck === 'A' ? this.gainA : this.gainB;
   }
 
-  private getInactiveGain(): GainNode {
+  private getInactiveGain(): GainNode | null {
     return this.activeDeck === 'A' ? this.gainB : this.gainA;
   }
 
@@ -166,9 +168,23 @@ class AmbientManager {
 
   private currentBaseVolume = 1;
 
+  /** Set volume on a gain node if available, otherwise use element.volume */
+  private setGainVolume(gain: GainNode | null, deck: HTMLAudioElement, vol: number) {
+    if (gain) {
+      gain.gain.value = vol;
+    } else {
+      deck.volume = vol;
+    }
+  }
+
+  /** Read volume from a gain node if available, otherwise from element.volume */
+  private getGainVolume(gain: GainNode | null, deck: HTMLAudioElement): number {
+    return gain ? gain.gain.value : deck.volume;
+  }
+
   private applyVolume() {
     const vol = this.effectiveVolume(this.currentBaseVolume);
-    this.getActiveGain().gain.value = vol;
+    this.setGainVolume(this.getActiveGain(), this.getActiveDeck(), vol);
   }
 
   private clearResumeListener() {
@@ -221,7 +237,7 @@ class AmbientManager {
     this.currentBaseVolume = baseVolume;
 
     newDeck.src = url;
-    newGain.gain.value = 0;
+    this.setGainVolume(newGain, newDeck, 0);
     newDeck.currentTime = 0;
 
     // Resume AudioContext (iOS requires user gesture)
@@ -237,7 +253,7 @@ class AmbientManager {
     }
 
     const targetVolume = this.effectiveVolume(baseVolume);
-    const oldVolume = oldGain.gain.value;
+    const oldVolume = this.getGainVolume(oldGain, oldDeck);
     const steps = 20;
     const interval = AMBIENT_CROSSFADE_MS / steps;
     let step = 0;
@@ -246,24 +262,24 @@ class AmbientManager {
       step++;
       const progress = step / steps;
 
-      newGain.gain.value = Math.min(targetVolume, targetVolume * progress);
-      oldGain.gain.value = Math.max(0, oldVolume * (1 - progress));
+      this.setGainVolume(newGain, newDeck, Math.min(targetVolume, targetVolume * progress));
+      this.setGainVolume(oldGain, oldDeck, Math.max(0, oldVolume * (1 - progress)));
 
       if (step >= steps) {
         if (this.fadeInterval) {
           clearInterval(this.fadeInterval);
           this.fadeInterval = null;
         }
-        newGain.gain.value = targetVolume;
-        oldGain.gain.value = 0;
+        this.setGainVolume(newGain, newDeck, targetVolume);
+        this.setGainVolume(oldGain, oldDeck, 0);
         oldDeck.pause();
         oldDeck.src = '';
       }
     }, interval);
   }
 
-  private fadeOut(deck: HTMLAudioElement, gain: GainNode) {
-    const startVolume = gain.gain.value;
+  private fadeOut(deck: HTMLAudioElement, gain: GainNode | null) {
+    const startVolume = this.getGainVolume(gain, deck);
     if (startVolume <= 0) {
       deck.pause();
       deck.src = '';
@@ -274,7 +290,7 @@ class AmbientManager {
     let step = 0;
     const fadeTimer = setInterval(() => {
       step++;
-      gain.gain.value = Math.max(0, startVolume * (1 - step / steps));
+      this.setGainVolume(gain, deck, Math.max(0, startVolume * (1 - step / steps)));
       if (step >= steps) {
         clearInterval(fadeTimer);
         deck.pause();
