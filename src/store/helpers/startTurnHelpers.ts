@@ -18,6 +18,7 @@ import {
 } from '@/data/items';
 import type { SetFn, GetFn } from '../storeTypes';
 import { getHomeLocation } from './turnHelpers';
+import { hasCurseEffect } from './hexHelpers';
 
 // ============================================================
 // Shared Helpers
@@ -408,6 +409,19 @@ export function createStartTurn(set: SetFn, get: GetFn) {
 
       // Re-read player for bonus calculations (robbery may change appliance state)
       currentPlayer = getPlayer(get, playerId);
+
+      // --- Phase 6b: Curse of Lethargy (time loss) ---
+      const lethargyCurse = hasCurseEffect(currentPlayer, 'time-loss');
+      if (lethargyCurse) {
+        const timeLoss = lethargyCurse.magnitude;
+        updatePlayerById(set, playerId, (p) => ({
+          timeRemaining: Math.max(0, p.timeRemaining - timeLoss),
+        }));
+        if (!currentPlayer.isAI) {
+          eventMessages.push(`${currentPlayer.name} is afflicted by the Curse of Lethargy! -${timeLoss} hours this turn.`);
+        }
+        currentPlayer = getPlayer(get, playerId);
+      }
 
       // --- Phase 7: Start-of-turn bonuses ---
       processStartOfTurnBonuses(set, playerId, currentPlayer, get().week, eventMessages);

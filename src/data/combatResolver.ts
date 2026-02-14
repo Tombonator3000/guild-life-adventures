@@ -7,6 +7,8 @@ import type { DungeonEncounter, DungeonFloor, DungeonModifier } from './dungeon'
 import { calculateEducationBonuses, generateFloorEncounters, rollDungeonModifier } from './dungeon';
 import { DURABILITY_LOSS, DEFAULT_DURABILITY_LOSS } from './items';
 import type { DegreeId } from '@/types/game.types';
+import { rollHexDrop } from './hexes';
+import { getGameOption } from './gameOptions';
 
 // ============================================================
 // Types
@@ -67,6 +69,8 @@ export interface DungeonRunState {
   hasMiniBoss: boolean;
   /** Accumulated equipment durability loss for the entire run */
   totalDurabilityLoss: EquipmentDurabilityLoss;
+  /** Hex scroll drop from boss (null = no drop) */
+  hexScrollDropId: string | null;
 }
 
 /** Player combat stats needed for resolution */
@@ -126,6 +130,7 @@ export function initDungeonRun(
     modifier,
     hasMiniBoss,
     totalDurabilityLoss: { weaponLoss: 0, armorLoss: 0, shieldLoss: 0 },
+    hexScrollDropId: null,
   };
 }
 
@@ -390,6 +395,15 @@ export function applyEncounterResult(
     }
   }
 
+  // Check hex scroll drop (independent of rare drop, only when hexes enabled)
+  let hexScrollDropId: string | null = null;
+  if (bossDefeated && getGameOption('enableHexesCurses')) {
+    const hexDrop = rollHexDrop(state.floor.id);
+    if (hexDrop) {
+      hexScrollDropId = hexDrop.id;
+    }
+  }
+
   const goToSummary = playerDied || isLastEncounter;
 
   // Accumulate durability loss
@@ -410,6 +424,7 @@ export function applyEncounterResult(
     bossDefeated: bossDefeated || state.bossDefeated,
     rareDropName: rareDropName || state.rareDropName,
     totalDurabilityLoss: newDurabilityLoss,
+    hexScrollDropId: hexScrollDropId || state.hexScrollDropId,
   };
 }
 

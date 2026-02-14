@@ -944,8 +944,91 @@ Added `enableHexesCurses` as an optional gameplay toggle in the Options menu, fo
 - Backwards compatible: `loadGameOptions()` merges with defaults, so existing localStorage is unaffected
 
 ### Next Steps
-- Implement the actual hex/curse system (data definitions, store actions, UI panels, AI)
-- Guard all hex logic behind `getGameOption('enableHexesCurses')` checks
-- When disabled: Enchanter/Shadow Market hide "Forbidden Scrolls"/"Dirty Tricks" tabs, Graveyard hides "Dark Ritual", dungeon drops skip hex scrolls
+- ~~Implement the actual hex/curse system~~ ✅ DONE (see below)
+
+---
+
+## 2026-02-14 16:37 — Hexes & Curses System Implementation
+
+### Summary
+Full implementation of the Hexes & Curses gameplay system as designed in the changelog above. This is an opt-in rivalry feature (`enableHexesCurses` toggle in Game Options, off by default).
+
+### Files Created
+| File | Purpose |
+|------|---------|
+| `src/data/hexes.ts` | All hex/curse definitions (6 location hexes, 6 personal curses, 5 sabotage hexes, 1 legendary), defense items, shop rotation, drop logic |
+| `src/store/helpers/hexHelpers.ts` | Store actions (buy, cast, dispel, cleanse, dark ritual, curse reflection), expiration processing, curse effect helpers |
+| `src/components/game/HexShopPanel.tsx` | Shared hex shop UI (used by Enchanter "Dark Scrolls" tab and Shadow Market "Dirty Tricks" tab) |
+| `src/components/game/GraveyardHexPanel.tsx` | Graveyard dark magic UI (Dark Ritual, Curse Reflection, Purification) |
+| `src/test/hexes.test.ts` | 34 tests covering data layer, store actions, expiration, feature toggle |
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `src/types/game.types.ts` | Added `hexScrolls`, `activeCurses`, `hasProtectiveAmulet`, `hexCastCooldown` to Player; `locationHexes` to GameState |
+| `src/store/storeTypes.ts` | Added 9 hex action signatures to GameStore interface |
+| `src/store/gameStore.ts` | Wired hexHelpers, added defaults to createPlayer, added `locationHexes: []` to initial state and startNewGame |
+| `src/store/helpers/weekEndHelpers.ts` | Added `processHexExpiration()` to week-end pipeline (Step 2b), Curse of Decay doubles food/clothing degradation |
+| `src/store/helpers/startTurnHelpers.ts` | Added Curse of Lethargy time-loss (Phase 6b) |
+| `src/store/helpers/workEducationHelpers.ts` | Added Curse of Poverty wage reduction in workShift |
+| `src/components/game/locationTabs.tsx` | Added hex tabs to Enchanter, Shadow Market, Graveyard; location hex blockage in getLocationTabs |
+| `src/components/game/InfoTabs.tsx` | Added Dark Magic section (afflictions + scrolls) to Stats tab |
+| `src/components/game/CavePanel.tsx` | Added hex scroll drop handling after boss defeats |
+| `src/data/combatResolver.ts` | Added `hexScrollDropId` to DungeonRunState, hex drop roll on boss defeat |
+| `src/network/types.ts` | Added 9 hex actions to ALLOWED_GUEST_ACTIONS whitelist |
+| `src/hooks/ai/actions/rivalryActions.ts` | Added AI hex casting (cast-curse, cast-location-hex) and defense (buy-amulet) behaviors |
+| `src/hooks/ai/actionExecutor.ts` | Added hex action handlers and StoreActions for AI |
+| `src/hooks/ai/types.ts` | Added hex action types to AIActionType union |
+| `src/data/saveLoad.ts` | Added v3→v4 migration for hex fields, bumped SAVE_VERSION to 4 |
+
+### Hex System Architecture
+```
+┌─────────────────────────────────────────────────────────┐
+│  LOCATION HEXES (block opponents from using locations)  │
+│  6 types: Academy, Guild Hall, General Store, Forge,    │
+│           Bank (drop only), Cave                        │
+│  Duration: 1-2 weeks | Cast time: 3h | 1 per caster    │
+├─────────────────────────────────────────────────────────┤
+│  PERSONAL CURSES (debuff a specific rival)              │
+│  6 types: Poverty (wages -40%), Clumsiness (equip 3x), │
+│           Lethargy (-10h/turn), Misfortune (2x robbery),│
+│           Decay (food/clothes 2x), Confusion (+2 study) │
+│  Duration: 2-4 weeks | Cast time: 2h | 1 per target    │
+├─────────────────────────────────────────────────────────┤
+│  SABOTAGE (instant destruction)                         │
+│  5 types: Shatter (weapon), Corrode (armor),            │
+│           Spoilage (food), Jinx (appliance),            │
+│           Wardrobe (clothing)                           │
+│  Instant | Cast time: 2h                                │
+├─────────────────────────────────────────────────────────┤
+│  LEGENDARY: Hex of Ruin (Floor 5 drop only)             │
+│  Closes ALL shops + 25% gold loss | Cannot be warded    │
+├─────────────────────────────────────────────────────────┤
+│  DEFENSE                                                │
+│  Protective Amulet (400g) - blocks next hex, consumed   │
+│  Dispel Scroll (250g) - removes location hex at site    │
+│  Graveyard Purification (300g) - removes personal curse │
+│  Graveyard Reflection (150g) - 35% reflect / 25% remove│
+└─────────────────────────────────────────────────────────┘
+```
+
+### Sources
+- **Enchanter** → "Dark Scrolls" tab (requires Floor 2 cleared), defense items
+- **Shadow Market** → "Dirty Tricks" tab (rotating 3-4 per week)
+- **Graveyard** → "Dark Magic" tab (Dark Ritual: random scroll, 15% backfire)
+- **Dungeon** → Boss drops (Floors 3-5, 3-5% chance each)
+
+### Feature Guard
+All hex logic is behind `getGameOption('enableHexesCurses')` — when disabled:
+- Store actions return early / return failure
+- UI tabs are hidden
+- Dungeon drops skip hex scrolls
+- Week-end processing skips hex expiration
+
+### Test Results
+- 34 new tests in `src/test/hexes.test.ts`
+- All 219 tests pass (185 existing + 34 new)
+- TypeScript: 0 errors
+- Build: clean
 
 ---

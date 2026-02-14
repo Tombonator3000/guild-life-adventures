@@ -10,6 +10,7 @@ import { GUILD_RANK_NAMES, GUILD_RANK_INDEX } from '@/types/game.types';
 import { HOUSING_DATA } from '@/data/housing';
 import { getGameOption } from '@/data/gameOptions';
 import { getJob } from '@/data/jobs';
+import { getHexById } from '@/data/hexes';
 
 type TabId = 'inventory' | 'goals' | 'stats';
 
@@ -450,7 +451,43 @@ function StatsTab({ player }: StatsTabProps) {
         <StatRow label="Relaxation" value={`${player.relaxation}/50`} />
         <StatRow label="Max Health" value={player.maxHealth.toString()} />
         {player.isSick && <StatRow label="Status" value="Sick" warning />}
+        {player.hasProtectiveAmulet && <StatRow label="Protection" value="Amulet Active" highlight />}
       </div>
+
+      {/* Hexes & Curses (only shown when feature enabled and has afflictions/scrolls) */}
+      {getGameOption('enableHexesCurses') && (player.activeCurses.length > 0 || player.hexScrolls.length > 0) && (
+        <div className="bg-parchment-dark/30 rounded-lg p-3 border border-wood-light/30">
+          <h3 className="font-display text-sm font-bold text-destructive mb-2">Dark Magic</h3>
+          {player.activeCurses.length > 0 && (
+            <>
+              <div className="text-xs text-wood/70 mb-1">Active Afflictions:</div>
+              {player.activeCurses.map((curse, i) => {
+                const hex = getHexById(curse.hexId);
+                return (
+                  <div key={i} className="flex justify-between text-xs py-0.5">
+                    <span className="text-destructive">{hex?.name || 'Unknown'}</span>
+                    <span className="text-wood/70">{curse.weeksRemaining}w left</span>
+                  </div>
+                );
+              })}
+            </>
+          )}
+          {player.hexScrolls.length > 0 && (
+            <>
+              <div className="text-xs text-wood/70 mb-1 mt-1">Hex Scrolls:</div>
+              {player.hexScrolls.map((scroll) => {
+                const hex = getHexById(scroll.hexId);
+                return (
+                  <div key={scroll.hexId} className="flex justify-between text-xs py-0.5">
+                    <span className="text-purple-700">{hex?.name || scroll.hexId}</span>
+                    <span className="text-wood/70">×{scroll.quantity}</span>
+                  </div>
+                );
+              })}
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

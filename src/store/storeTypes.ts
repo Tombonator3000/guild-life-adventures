@@ -118,6 +118,16 @@ export interface GameStore extends GameState {
   salvageEquipment: (playerId: string, itemId: string, slot: EquipmentSlot, value: number) => void;
   // Equipment durability
   applyDurabilityLoss: (playerId: string, durabilityLoss: import('@/data/combatResolver').EquipmentDurabilityLoss) => void;
+  // Hexes & Curses actions
+  buyHexScroll: (playerId: string, hexId: string, cost: number) => void;
+  castLocationHex: (playerId: string, hexId: string) => { success: boolean; message: string };
+  castPersonalCurse: (playerId: string, hexId: string, targetId: string) => { success: boolean; message: string };
+  buyProtectiveAmulet: (playerId: string, cost: number) => void;
+  dispelLocationHex: (playerId: string, cost: number) => { success: boolean; message: string };
+  cleanseCurse: (playerId: string, cost: number) => { success: boolean; message: string };
+  performDarkRitual: (playerId: string, cost: number) => { success: boolean; message: string; backfired?: boolean };
+  attemptCurseReflection: (playerId: string, cost: number) => { success: boolean; message: string };
+  addHexScrollToPlayer: (playerId: string, hexId: string) => void;
   // Weekend event display
   dismissWeekendEvent: () => void;
   // Save/Load
