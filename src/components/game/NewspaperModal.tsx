@@ -1,6 +1,6 @@
 // Guild Life - The Guildholm Herald (Newspaper Modal)
 
-import { Newspaper, X, TrendingUp, TrendingDown, Minus, Briefcase, Scroll, MessageSquare, Calendar } from 'lucide-react';
+import { Newspaper, TrendingUp, TrendingDown, Minus, Briefcase, Scroll, MessageSquare, Calendar } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -60,19 +60,11 @@ export function NewspaperModal({ newspaper, onClose }: NewspaperModalProps) {
     <Dialog open={!!newspaper} onOpenChange={() => onClose()}>
       <DialogContent className="parchment-panel border-0 max-w-lg max-h-[80vh] overflow-hidden">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Newspaper className="w-6 h-6 text-primary" />
-              <DialogTitle className="font-display text-2xl text-card-foreground">
-                The Guildholm Herald
-              </DialogTitle>
-            </div>
-            <button 
-              onClick={onClose}
-              className="p-1 hover:bg-muted rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5 text-muted-foreground" />
-            </button>
+          <div className="flex items-center gap-2">
+            <Newspaper className="w-6 h-6 text-primary" />
+            <DialogTitle className="font-display text-2xl text-card-foreground">
+              The Guildholm Herald
+            </DialogTitle>
           </div>
           <div className="flex items-center justify-between text-sm text-muted-foreground border-b border-border pb-2">
             <span>Week {newspaper.week} Edition</span>
@@ -82,12 +74,12 @@ export function NewspaperModal({ newspaper, onClose }: NewspaperModalProps) {
         
         <div className="space-y-4 overflow-y-auto max-h-[50vh] pr-2">
           {newspaper.articles.map((article, index) => (
-            <article key={index} className="wood-frame p-3 text-parchment">
+            <article key={index} className="parchment-panel p-3">
               <div className="flex items-center gap-2 mb-2">
                 <ArticleIcon category={article.category} />
-                <h3 className="font-display font-bold text-sm">{article.headline}</h3>
+                <h3 className="font-display font-bold text-sm text-wood-dark">{article.headline}</h3>
               </div>
-              <p className="text-sm text-parchment-dark">{article.content}</p>
+              <p className="text-sm text-wood">{article.content}</p>
             </article>
           ))}
         </div>

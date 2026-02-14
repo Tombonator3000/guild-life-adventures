@@ -481,6 +481,7 @@ export interface TranslationStrings {
     storedFreshFood: string;
     freshFoodStored: string;
     freshFoodCapacity: string;
+    newspaper: string;
   };
 
   /** Guild Hall panel UI strings */

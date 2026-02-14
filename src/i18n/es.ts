@@ -698,6 +698,7 @@ export const es: TranslationStrings = {
     storedFreshFood: '¡{units} unidades de comida fresca almacenadas!',
     freshFoodStored: 'Comida Fresca Almacenada:',
     freshFoodCapacity: 'Capacidad:',
+    newspaper: 'El Heraldo de Guildholm',
   },
 
   panelGuild: {

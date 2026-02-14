@@ -100,13 +100,13 @@ export function GeneralStorePanel({
 
       <JonesSectionHeader title={t('panelStore.durables')} />
       <JonesMenuItem
-        label={t('panelStore.newspaper') || 'Town Crier Gazette'}
+        label={t('panelStore.newspaper')}
         price={newspaperPrice}
         disabled={player.gold < newspaperPrice}
         darkText
         largeText
         previewData={{
-          name: 'Town Crier Gazette',
+          name: 'The Guildholm Herald',
           description: 'The latest news, job listings, and town gossip. Essential reading for the ambitious adventurer.',
           category: 'Information',
           tags: ['News'],
@@ -114,7 +114,7 @@ export function GeneralStorePanel({
         }}
         onClick={() => {
           onBuyNewspaper();
-          toast.success(t('panelStore.purchased', { name: t('panelStore.newspaper') || 'Town Crier Gazette' }));
+          toast.success(t('panelStore.purchased', { name: t('panelStore.newspaper') }));
         }}
       />
       <JonesMenuItem
