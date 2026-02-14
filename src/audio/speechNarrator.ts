@@ -71,10 +71,18 @@ class SpeechNarrator {
   private cancelTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
+    // Constructor wrapped in try-catch: speechNarrator is a module-level singleton.
+    // If initVoices() or registerUserGestureListener() throws (broken SpeechSynthesis
+    // API, sandboxed iframe, privacy restrictions), narration degrades to silent.
+    // This is critical — a constructor crash prevents React from mounting.
     this.settings = loadSettings();
     this.cachedSettings = { ...this.settings };
-    this.initVoices();
-    this.registerUserGestureListener();
+    try {
+      this.initVoices();
+      this.registerUserGestureListener();
+    } catch (e) {
+      console.warn('[Narration] SpeechSynthesis initialization failed:', e);
+    }
   }
 
   // --- Public API ---
@@ -227,33 +235,41 @@ class SpeechNarrator {
   private initVoices() {
     if (!this.isSupported()) return;
 
-    // Try loading voices immediately (works in Firefox)
-    const immediate = window.speechSynthesis.getVoices();
-    if (immediate.length > 0) {
-      this.onVoicesReady(immediate);
-      return;
-    }
-
-    // Chrome/Edge/Safari: voices load asynchronously
-    const handler = () => {
-      const voices = window.speechSynthesis.getVoices();
-      if (voices.length > 0) {
-        this.onVoicesReady(voices);
-        window.speechSynthesis.removeEventListener('voiceschanged', handler);
+    try {
+      // Try loading voices immediately (works in Firefox)
+      const immediate = window.speechSynthesis.getVoices();
+      if (immediate.length > 0) {
+        this.onVoicesReady(immediate);
+        return;
       }
-    };
-    window.speechSynthesis.addEventListener('voiceschanged', handler);
 
-    // Fallback timeout (3s) in case voiceschanged never fires
-    setTimeout(() => {
-      if (!this.voicesLoaded) {
-        const voices = window.speechSynthesis.getVoices();
-        if (voices.length > 0) {
-          this.onVoicesReady(voices);
+      // Chrome/Edge/Safari: voices load asynchronously
+      const handler = () => {
+        try {
+          const voices = window.speechSynthesis.getVoices();
+          if (voices.length > 0) {
+            this.onVoicesReady(voices);
+            window.speechSynthesis.removeEventListener('voiceschanged', handler);
+          }
+        } catch { /* ignore — broken SpeechSynthesis implementation */ }
+      };
+      window.speechSynthesis.addEventListener('voiceschanged', handler);
+
+      // Fallback timeout (3s) in case voiceschanged never fires
+      setTimeout(() => {
+        if (!this.voicesLoaded) {
+          try {
+            const voices = window.speechSynthesis.getVoices();
+            if (voices.length > 0) {
+              this.onVoicesReady(voices);
+            }
+            window.speechSynthesis.removeEventListener('voiceschanged', handler);
+          } catch { /* ignore */ }
         }
-        window.speechSynthesis.removeEventListener('voiceschanged', handler);
-      }
-    }, 3000);
+      }, 3000);
+    } catch (e) {
+      console.warn('[Narration] Voice initialization failed:', e);
+    }
   }
 
   private onVoicesReady(voices: SpeechSynthesisVoice[]) {

@@ -1,5 +1,4 @@
 import { createRoot } from "react-dom/client";
-import App from "./App.tsx";
 import "./index.css";
 
 // Show error on the loading screen if React fails to mount.
@@ -23,10 +22,21 @@ function showMountError(error: unknown) {
   `;
 }
 
-try {
-  console.log('[Guild Life] Mounting React app...');
-  createRoot(document.getElementById("root")!).render(<App />);
-  console.log('[Guild Life] React render() called successfully');
-} catch (error) {
-  showMountError(error);
+// Dynamic import of App — catches module-level failures in the entire
+// component tree (store, hooks, audio singletons, data modules).
+// Static imports (like `import App from "./App"`) execute during module
+// resolution BEFORE any try-catch can run, so errors are invisible.
+// Dynamic import() converts them to catchable rejected promises.
+async function mount() {
+  try {
+    console.log('[Guild Life] Loading app modules...');
+    const { default: App } = await import("./App.tsx");
+    console.log('[Guild Life] Mounting React app...');
+    createRoot(document.getElementById("root")!).render(<App />);
+    console.log('[Guild Life] React render() called successfully');
+  } catch (error) {
+    showMountError(error);
+  }
 }
+
+mount();

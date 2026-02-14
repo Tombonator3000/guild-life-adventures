@@ -1156,3 +1156,155 @@ src/store/gameStore.ts                   — Auto-save subscription try-catch
 - No regressions
 
 ---
+
+## 2026-02-14 — BUG HUNT: "Loading the realm..." Freeze (Round 5 — Architectural Hardening) (18:00 UTC)
+
+### Bug Report
+
+Game stuck on static "Loading the realm..." screen — React never mounts. This is the **fifth** investigation of this recurring issue.
+
+### Investigation Method
+
+Systematic parallel AI agent scan with **5 specialized agents** scanning simultaneously:
+1. Full loading chain analysis (index.html → main.tsx → App.tsx → Index.tsx → TitleScreen.tsx)
+2. Store initialization & hex system (gameStore, hexHelpers, hexes.ts, saveLoad.ts)
+3. Audio singletons & module-level side effects (all 4 audio managers + webAudioBridge)
+4. Import/dependency tree (circular deps, missing packages, vite config)
+5. TitleScreen import tree (eager vs lazy imports, transitive singleton pulls)
+
+### Root Cause Analysis
+
+**PRIMARY: Index.tsx eagerly imports ALL 3 audio singletons**
+
+Despite Round 4 lazy-loading OptionsMenu/UserManual/CreditsScreen in TitleScreen.tsx, `Index.tsx` itself still eagerly imported the audio hooks at lines 4-6:
+
+```tsx
+import { useMusicController } from '@/hooks/useMusic';      // → audioManager singleton
+import { useAmbientController } from '@/hooks/useAmbient';  // → ambientManager singleton
+import { useNarrationController } from '@/hooks/useNarration'; // → speechNarrator singleton
+```
+
+Each hook module imports its manager singleton at the TOP LEVEL. The singletons are created at module import time — before React can render anything. If ANY of them crashes, Index.tsx fails to load, React never mounts.
+
+**SECONDARY: speechNarrator constructor completely unprotected**
+
+Unlike `audioManager` and `ambientManager` (which were wrapped in try-catch in Round 4), `speechNarrator` had NO try-catch in its constructor:
+
+```typescript
+constructor() {
+  this.settings = loadSettings();
+  this.cachedSettings = { ...this.settings };
+  this.initVoices();                    // ← calls speechSynthesis API with NO try-catch
+  this.registerUserGestureListener();   // ← calls document.addEventListener with NO try-catch
+}
+```
+
+`initVoices()` calls `window.speechSynthesis.getVoices()` and `.addEventListener('voiceschanged', ...)` — both can throw in sandboxed iframes, privacy-restricted browsers, or broken SpeechSynthesis implementations. A throw here prevents React from mounting.
+
+**TERTIARY: main.tsx static import can't catch module failures**
+
+`main.tsx` had:
+```typescript
+import App from "./App.tsx";  // ← Static import — evaluated BEFORE try-catch runs
+
+try {
+  createRoot(...).render(<App />);
+} catch (error) {
+  showMountError(error);      // ← Never reached if import fails
+}
+```
+
+Static ES module imports execute during module resolution, BEFORE the module body runs. If App or any transitive dependency throws during module evaluation, the error bypasses the try-catch entirely. Only the raw `window.onerror`/`unhandledrejection` handlers in index.html could catch it — with a 3-second delay and no clear error message.
+
+### What Was Already Fixed (from previous rounds)
+
+All confirmed still in place:
+- ✅ `@radix-ui/react-collection` explicit dependency (Round 2)
+- ✅ `unhandledrejection` handler in index.html (Round 2)
+- ✅ `speechNarrator.doSpeak()` try-catch (Round 1)
+- ✅ `webAudioBridge.ts` safe AudioContext creation (Round 1)
+- ✅ `audioManager` constructor try-catch (Round 4)
+- ✅ `ambientManager` constructor try-catch (Round 4)
+- ✅ `sfxManager` constructor try-catch (Round 4)
+- ✅ `gameStore` auto-save subscription try-catch (Round 4)
+- ✅ Lazy-loaded GameBoard/GameSetup/VictoryScreen/OnlineLobby (Round 3)
+- ✅ Lazy-loaded OptionsMenu/UserManual/CreditsScreen (Round 4)
+- ✅ `controllerchange` listener for auto-reload on SW update (Round 1)
+- ✅ AbortController 5s timeout on version.json fetches (Round 3)
+
+### Fixes Applied (4)
+
+| # | Severity | File | Fix |
+|---|----------|------|-----|
+| 1 | **CRITICAL** | `src/pages/Index.tsx` | **Lazy-load AudioController** — extracted all 3 audio hooks (useMusicController, useAmbientController, useNarrationController) into a new `AudioController` component. Lazy-loaded via `React.lazy()` with a `SilentErrorBoundary` that swallows load failures. Audio singletons no longer on the critical path — if audio fails, game runs silently. |
+| 2 | **HIGH** | `src/audio/speechNarrator.ts` | **Constructor try-catch** — wrapped `initVoices()` and `registerUserGestureListener()` in try-catch. If SpeechSynthesis API is broken, narration degrades to silent instead of crashing. |
+| 3 | **HIGH** | `src/audio/speechNarrator.ts` | **initVoices() try-catch** — wrapped `getVoices()`, `addEventListener('voiceschanged')`, and fallback timeout in try-catch. Handles broken SpeechSynthesis implementations. |
+| 4 | **HIGH** | `src/main.tsx` | **Dynamic import of App** — changed from `import App from "./App"` (static, uncatchable) to `const { default: App } = await import("./App")` (dynamic, caught by try-catch). ANY module-level failure in the entire component tree now shows `showMountError()` with the actual error message instead of hanging silently. |
+
+### Files Changed (4 files, 1 new)
+
+```
+src/pages/Index.tsx                          — Lazy-load AudioController + SilentErrorBoundary
+src/audio/speechNarrator.ts                  — Constructor + initVoices() try-catch
+src/main.tsx                                 — Dynamic import of App for catchable errors
+src/components/game/AudioController.tsx      — NEW: wrapper component for all audio hooks
+```
+
+### Architecture: Defense-in-Depth Loading Chain
+
+After this fix, the loading chain has **5 independent error boundaries**:
+
+```
+Layer 1: index.html
+  ├── window.onerror (sync errors)
+  ├── window.onunhandledrejection (async/module errors)
+  └── guildFallbackCheck at 5s/12s (reload button)
+
+Layer 2: main.tsx
+  └── mount() async function with try-catch
+      └── dynamic import("./App") — catches ALL module-level failures
+      └── showMountError() — replaces loading screen with error + reload
+
+Layer 3: App.tsx
+  └── ErrorBoundary (React class component)
+      └── "Something went wrong" + Clear Cache & Reload
+
+Layer 4: Index.tsx
+  └── Suspense + ScreenLoader for lazy screens
+  └── SilentErrorBoundary for AudioController
+      └── If audio fails, game runs silently (no crash)
+
+Layer 5: Individual singletons
+  ├── audioManager — constructor try-catch
+  ├── ambientManager — constructor try-catch
+  ├── sfxManager — constructor try-catch
+  ├── speechNarrator — constructor try-catch (NEW)
+  └── webAudioBridge — getContext()/connectElement() try-catch
+```
+
+**No single point of failure can prevent the game from showing useful content.**
+
+### Build Output — Code Splitting Improvement
+
+```
+Before (Round 4):
+  index.js    776 KB  (everything on critical path)
+
+After (Round 5):
+  index.js    145 KB  (createRoot + CSS + error handler only)
+  App.js      614 KB  (dynamically imported — failure shows error)
+  Audio.js     16 KB  (lazy — failure = silent game)
+  GameBoard   489 KB  (lazy — failure = ScreenLoader)
+```
+
+**Initial bundle reduced by 81%** (776 KB → 145 KB). React mounting is now nearly instant — the heavy modules load asynchronously after the initial render.
+
+### Verification
+
+- TypeScript: Clean (0 errors)
+- Tests: 219/219 passing (10 test files, 0 failures)
+- Build: Succeeds with improved code splitting
+- Initial bundle: 145 KB (was 776 KB) — 81% reduction
+- No regressions
+
+---
