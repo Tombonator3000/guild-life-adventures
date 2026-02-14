@@ -38,7 +38,7 @@ function showMountError(error: unknown) {
       <p style="font-size:1.1rem;color:#c44;margin-bottom:0.5rem;">Failed to load the realm</p>
       <p style="font-size:0.85rem;opacity:0.7;max-width:600px;word-break:break-word;">${msg}</p>
       ${stack ? `<pre style="font-size:0.7rem;opacity:0.5;max-width:600px;overflow:auto;text-align:left;margin-top:1rem;">${stack}</pre>` : ''}
-      <button onclick="location.reload()" style="margin-top:1.5rem;padding:0.5rem 1.5rem;background:#d4a537;color:#1f170a;border:none;border-radius:4px;cursor:pointer;font-size:1rem;">Reload</button>
+      <button onclick="try{var u=new URL(location.href);u.searchParams.set('_gv',Date.now());location.replace(u.toString())}catch(e){location.reload()}" style="margin-top:1.5rem;padding:0.5rem 1.5rem;background:#d4a537;color:#1f170a;border:none;border-radius:4px;cursor:pointer;font-size:1rem;">Reload</button>
     </div>
   `;
 }
@@ -105,7 +105,15 @@ async function checkStaleBuild(): Promise<boolean> {
 
       // Wait for cleanup to fully propagate before reload
       await new Promise(r => setTimeout(r, 500));
-      window.location.reload();
+      // Cache-busting reload: location.reload() may serve stale cached HTML
+      // because GitHub Pages sends Cache-Control: max-age=600.
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('_gv', String(Date.now()));
+        window.location.replace(url.toString());
+      } catch {
+        window.location.reload();
+      }
       return true; // Page will reload
     }
   } catch {

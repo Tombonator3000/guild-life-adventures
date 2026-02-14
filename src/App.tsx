@@ -52,12 +52,27 @@ class ErrorBoundary extends Component<
             {this.state.error?.message || 'An unexpected error occurred.'}
           </p>
           <button
-            onClick={() => {
-              // Clear service worker cache and reload
-              if ('caches' in window) {
-                caches.keys().then(names => names.forEach(name => caches.delete(name)));
+            onClick={async () => {
+              // Clear service worker cache and reload with cache-busting param.
+              // location.reload() may serve stale cached HTML (GitHub Pages max-age=600).
+              try {
+                if (navigator.serviceWorker) {
+                  const regs = await navigator.serviceWorker.getRegistrations();
+                  await Promise.all(regs.map(r => r.unregister()));
+                }
+                if ('caches' in window) {
+                  const keys = await caches.keys();
+                  await Promise.all(keys.map(k => caches.delete(k)));
+                }
+                await new Promise(r => setTimeout(r, 300));
+              } catch { /* ignore — reload regardless */ }
+              try {
+                const url = new URL(window.location.href);
+                url.searchParams.set('_gv', String(Date.now()));
+                window.location.replace(url.toString());
+              } catch {
+                window.location.reload();
               }
-              window.location.reload();
             }}
             style={{
               padding: '0.75rem 2rem',

@@ -32,7 +32,15 @@ function lazyWithRetry<T extends { default: React.ComponentType<unknown> }>(
         }
         // Wait for cleanup to propagate before reloading
         await new Promise(r => setTimeout(r, 500));
-        window.location.reload();
+        // Cache-busting reload: location.reload() may serve stale cached HTML
+        // (GitHub Pages max-age=600). Adding ?_gv= forces fresh network fetch.
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.set('_gv', String(Date.now()));
+          window.location.replace(url.toString());
+        } catch {
+          window.location.reload();
+        }
         // Return a never-resolving promise to prevent React error while reloading
         return new Promise<T>(() => {});
       });
