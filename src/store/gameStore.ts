@@ -20,7 +20,7 @@ import { createWorkEducationActions } from './helpers/workEducationHelpers';
 import { createQuestActions } from './helpers/questHelpers';
 import { createHexActions } from './helpers/hexHelpers';
 import { forwardIfGuest, setStoreAccessor } from '@/network/NetworkActionProxy';
-import { markEventDismissed } from '@/network/networkState';
+import { markEventDismissed, setNetworkStateStoreAccessor } from '@/network/networkState';
 import { getDefaultAIPortrait } from '@/data/portraits';
 import type { GameStore } from './storeTypes';
 
@@ -422,10 +422,14 @@ export const useGameStore = create<GameStore>((set, get) => {
   };
 });
 
-// Register store accessor with NetworkActionProxy to break circular dependency.
-// NetworkActionProxy needs to check networkMode but can't import useGameStore directly
-// (that would create gameStore → NetworkActionProxy → gameStore cycle).
+// Register store accessors to break circular dependencies.
+// Both NetworkActionProxy and networkState need access to the store but can't import
+// useGameStore directly (that would create gameStore → module → gameStore cycles).
 setStoreAccessor(() => useGameStore.getState());
+setNetworkStateStoreAccessor({
+  getState: () => useGameStore.getState() as Record<string, unknown>,
+  setState: (update) => useGameStore.setState(update),
+});
 
 // Auto-save: save to slot 0 whenever game state changes during play
 // Disabled for online modes (multiplayer saves can't be restored properly)
