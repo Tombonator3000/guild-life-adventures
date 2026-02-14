@@ -44,9 +44,7 @@
     <!-- Catch JS errors that occur before React mounts (module load failures, etc.) -->
     <script>
       window.__guildLoadErrors=[];
-      window.onerror=function(msg,src,line,col,err){
-        window.__guildLoadErrors.push({msg:msg,src:src,err:err});
-        /* If loading screen is still visible after 3s, show the error */
+      function __guildShowLoadError(msg){
         setTimeout(function(){
           var ls=document.getElementById('loading-screen');
           if(!ls)return;
@@ -59,7 +57,18 @@
             +'<button onclick="location.reload()" style="margin-top:1rem;padding:.5rem 1.5rem;background:#d4a537;color:#1f170a;border:none;border-radius:4px;cursor:pointer;font-size:1rem;">Reload</button>';
           ls.appendChild(d);
         },3000);
+      }
+      window.onerror=function(msg,src,line,col,err){
+        window.__guildLoadErrors.push({msg:msg,src:src,err:err});
+        __guildShowLoadError(msg);
       };
+      /* ES module loading failures produce rejected promises, not synchronous errors.
+         Without this handler, the loading screen stays visible forever with no error shown. */
+      window.addEventListener('unhandledrejection',function(e){
+        var msg=e.reason&&e.reason.message?e.reason.message:String(e.reason||'Module loading failed');
+        window.__guildLoadErrors.push({msg:msg,err:e.reason});
+        __guildShowLoadError(msg);
+      });
     </script>
     <script type="module" src="/src/main.tsx"></script>
     <!-- Fallback: if React fails to mount after 8s, show reload prompt.

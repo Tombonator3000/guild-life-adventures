@@ -191,32 +191,37 @@ class SpeechNarrator {
   private doSpeak(text: string) {
     if (!window.speechSynthesis) return;
 
-    // Always create a new utterance (Firefox reuse Bug 4)
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.volume = this.settings.volume;
-    utterance.rate = this.settings.rate;
-    utterance.lang = 'en-GB';
+    try {
+      // Always create a new utterance (Firefox reuse Bug 4)
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.volume = this.settings.volume;
+      utterance.rate = this.settings.rate;
+      utterance.lang = 'en-GB';
 
-    const voice = this.selectedVoice ?? this.pickBestVoice();
-    if (voice) {
-      utterance.voice = voice;
+      const voice = this.selectedVoice ?? this.pickBestVoice();
+      if (voice) {
+        utterance.voice = voice;
+      }
+
+      // Store reference to prevent garbage collection (Bug 2)
+      this.currentUtterance = utterance;
+
+      utterance.onend = () => {
+        if (this.currentUtterance === utterance) {
+          this.currentUtterance = null;
+        }
+      };
+      utterance.onerror = () => {
+        if (this.currentUtterance === utterance) {
+          this.currentUtterance = null;
+        }
+      };
+
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      // SpeechSynthesis can throw on some browsers (e.g. sandboxed iframes, privacy settings)
+      this.currentUtterance = null;
     }
-
-    // Store reference to prevent garbage collection (Bug 2)
-    this.currentUtterance = utterance;
-
-    utterance.onend = () => {
-      if (this.currentUtterance === utterance) {
-        this.currentUtterance = null;
-      }
-    };
-    utterance.onerror = () => {
-      if (this.currentUtterance === utterance) {
-        this.currentUtterance = null;
-      }
-    };
-
-    window.speechSynthesis.speak(utterance);
   }
 
   private initVoices() {
