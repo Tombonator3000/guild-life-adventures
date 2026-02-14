@@ -1,6 +1,6 @@
 import type { Player } from '@/types/game.types';
 import { RENT_COSTS } from '@/types/game.types';
-import { Coins, Home, Lock } from 'lucide-react';
+import { Coins, Home, Lock, HandHeart } from 'lucide-react';
 import { ActionButton } from './ActionButton';
 import { HOUSING_DATA, HOUSING_TIERS } from '@/data/housing';
 import { toast } from 'sonner';
@@ -13,6 +13,7 @@ interface LandlordPanelProps {
   spendTime: (playerId: string, hours: number) => void;
   prepayRent: (playerId: string, weeks: number, cost: number) => void;
   moveToHousing: (playerId: string, tier: string, cost: number, lockedRent: number) => void;
+  begForMoreTime: (playerId: string) => { success: boolean; message: string };
 }
 
 export function LandlordPanel({
@@ -21,6 +22,7 @@ export function LandlordPanel({
   spendTime,
   prepayRent,
   moveToHousing,
+  begForMoreTime,
 }: LandlordPanelProps) {
   const { t } = useTranslation();
   const baseRent = RENT_COSTS[player.housing];
@@ -116,6 +118,40 @@ export function LandlordPanel({
             />
           </div>
         </>
+      )}
+
+      {/* Beg for More Time - available when 2+ weeks overdue, not homeless, not already used */}
+      {player.housing !== 'homeless' && player.weeksSinceRent >= 2 && !player.rentExtensionUsed && (
+        <>
+          <h4 className="font-display text-sm text-[#6b5a42] flex items-center gap-2">
+            <HandHeart className="w-4 h-4" /> Desperate Measures
+          </h4>
+          <ActionButton
+            label="Beg for More Time (1h)"
+            cost={0}
+            time={1}
+            disabled={player.timeRemaining < 1}
+            darkText
+            onClick={() => {
+              const result = begForMoreTime(player.id);
+              spendTime(player.id, 1);
+              if (result.success) {
+                playSFX('rent-paid');
+                toast.success(result.message);
+              } else {
+                toast.error(result.message);
+              }
+            }}
+          />
+          <p className="text-xs text-[#8b6914] italic">
+            Grovel before Tomas for a one-week extension. Success depends on your reputation. One attempt per cycle.
+          </p>
+        </>
+      )}
+      {player.rentExtensionUsed && player.weeksSinceRent >= 2 && (
+        <p className="text-xs text-[#6b5a42] italic">
+          You already begged this cycle. Tomas is pointedly ignoring you.
+        </p>
       )}
 
       {/* Housing Options */}

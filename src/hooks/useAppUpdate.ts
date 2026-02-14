@@ -100,7 +100,9 @@ export function useAppUpdate() {
 
     const checkVersion = async () => {
       try {
-        const resp = await fetch(getVersionUrl(), {
+        // Cache-busting query param defeats CDN/proxy caches that ignore no-store
+        const url = `${getVersionUrl()}?_=${Date.now()}`;
+        const resp = await fetch(url, {
           cache: 'no-store',
           headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
         });
@@ -145,9 +147,9 @@ export function useAppUpdate() {
     // Trigger both detection methods simultaneously
     navigator.serviceWorker?.getRegistration().then(reg => reg?.update());
 
-    // Also check version.json immediately
+    // Also check version.json immediately (cache-busting param)
     try {
-      const resp = await fetch(getVersionUrl(), {
+      const resp = await fetch(`${getVersionUrl()}?_=${Date.now()}`, {
         cache: 'no-store',
         headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
       });

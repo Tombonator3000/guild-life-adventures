@@ -114,6 +114,7 @@ const createPlayer = (
   // Housing prepayment system
   rentPrepaidWeeks: 0,
   lockedRent: 0,
+  rentExtensionUsed: false,
   // Death/Game Over state
   isGameOver: false,
   wasResurrectedThisWeek: false,

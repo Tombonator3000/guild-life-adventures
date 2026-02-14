@@ -240,6 +240,8 @@ export interface Player {
   questCooldownWeeksLeft: number;             // weeks until player can take quests again (0 = no cooldown)
   // Guild Reputation (B5)
   guildReputation: number;                    // total quest+bounty+chain completions for reputation milestones
+  // Landlord rent extension ("beg for more time")
+  rentExtensionUsed: boolean;                 // True if player already begged this rent cycle (reset on payment)
 }
 
 export interface GoalSettings {
