@@ -1850,3 +1850,172 @@ src/App.tsx                          — Lazy-load SFXGeneratorPage
 - No regressions
 
 ---
+
+## 2026-02-14 — BUG HUNT: "Loading the realm..." Freeze (Round 4 — Permanent Fix) (21:00 UTC)
+
+### Bug Report
+
+Game stuck on "Loading the realm..." screen — AGAIN. This is the **fourth** occurrence of this recurring issue. User reports it keeps coming back and appears to be cache-related. Previous fixes (rounds 1-3) addressed symptoms but not the root architectural vulnerability.
+
+### Investigation Method
+
+Systematic parallel AI agent scan with **3 specialized agents** scanning simultaneously:
+1. **PWA/Service Worker agent** — analyzed vite.config.ts, index.html, main.tsx SW registration, caching strategy
+2. **Loading chain agent** — analyzed Index.tsx, TitleScreen, gameStore, App.tsx initialization flow
+3. **Zustand/localStorage agent** — analyzed store persistence, hydration, all 12 localStorage keys
+
+### Root Cause Analysis
+
+**PRIMARY: Service Worker PRECACHES JS/CSS bundles — creates stale chunk race condition**
+
+The `globPatterns` in vite.config.ts included `**/*.{js,css,...}`:
+```javascript
+globPatterns: ["**/*.{js,css,ico,png,svg,jpg,jpeg,webp,woff,woff2}"]
+```
+
+This meant the SW precache manifest contained every JS/CSS chunk with their content hashes. On new deployments:
+
+1. New SW activates via `skipWaiting + clientsClaim` (takes control immediately)
+2. `cleanupOutdatedCaches: true` removes old precache entries (old chunk hashes)
+3. But browser may still have old HTML (GitHub Pages caches HTML for 600s)
+4. Old HTML references old chunk hashes (e.g., `index-abc123.js`)
+5. Old chunks are gone from SW precache → request falls through to network → 404
+6. Module loading fails → React never mounts → "Loading the realm..." forever
+
+This is a **fundamental architectural flaw**: the SW precache and HTML are updated at different times, creating a window where they reference different chunk hashes.
+
+**SECONDARY: `hardRefresh()` only waited 100ms before reload**
+
+The async SW unregistration and cache deletion operations may not complete in 100ms. If reload fires before cleanup finishes, the stale SW re-activates immediately on the next load.
+
+**TERTIARY: `lazyWithRetry()` used fire-and-forget `.then()` chains**
+
+Cache operations in the retry handler were called with `.then()` (non-blocking) instead of `await` (blocking). The `setTimeout(reload, 200)` could fire before cache operations started.
+
+**QUATERNARY: Reload loop prevention was too restrictive**
+
+`canAutoReload()` used a 30-second time-based check. If CDN served stale content during that window, auto-reload was blocked and the user was stuck with stale JS.
+
+**QUINARY: Inline stale-build detection (index.html) used fire-and-forget cache cleanup**
+
+Same `.then()` pattern — cache deletion promises not awaited before calling `location.reload()`.
+
+### What Was Already Fixed (Rounds 1-3)
+
+All confirmed still in place:
+- ✅ `@radix-ui/react-collection` explicit dependency (package.json)
+- ✅ `unhandledrejection` handler (index.html)
+- ✅ `speechNarrator.doSpeak()` try-catch
+- ✅ React.lazy() for GameBoard, GameSetup, VictoryScreen, OnlineLobby
+- ✅ `navigateFallback: null` (HTML always from network)
+- ✅ SilentErrorBoundary for AudioController
+- ✅ AbortController 5s timeout on version.json fetches
+- ✅ `controllerchange` listener for SW takeover auto-reload
+
+### Fixes Applied (5)
+
+| # | Severity | File | Fix |
+|---|----------|------|-----|
+| 1 | **CRITICAL** | `vite.config.ts` | **Removed JS/CSS from SW precache globPatterns.** Changed from `**/*.{js,css,ico,png,...}` to `**/*.{ico,png,svg,jpg,jpeg,webp,woff,woff2}`. JS/CSS now uses `NetworkFirst` runtime caching instead (always tries network first, cache fallback only when offline). This eliminates the stale-chunk race condition entirely. |
+| 2 | **HIGH** | `src/hooks/useAppUpdate.ts` | **Robust `hardRefresh()`** — increased wait from 100ms to 500ms, added SW unregister verification (re-checks after first pass). **Smarter `canAutoReload()`** — switched from 30s time-based to counter-based (max 2 reloads per 60s window), allowing proper recovery while still preventing infinite loops. |
+| 3 | **HIGH** | `src/pages/Index.tsx` | **`lazyWithRetry()` now properly awaits cache operations.** Changed from fire-and-forget `.then()` chains to `async/await`. Cache deletion and SW unregistration fully complete before reload fires. Wait increased from 200ms to 500ms. |
+| 4 | **MEDIUM** | `index.html` | **Inline stale-build check now awaits cache cleanup.** Changed from fire-and-forget `.then()` to proper `Promise.resolve().then()` chain that awaits all cleanup before reloading. Added counter-based reload loop prevention (max 2 per 60s, matching useAppUpdate). Wait increased from 300ms to 500ms. |
+| 5 | **MEDIUM** | `src/main.tsx` | **Pre-mount stale check: increased wait to 500ms, added SW verification.** After unregistering SWs and clearing caches, re-checks if SWs are actually gone and retries if needed. |
+
+### Technical Details
+
+**Before (vite.config.ts globPatterns):**
+```javascript
+globPatterns: ["**/*.{js,css,ico,png,svg,jpg,jpeg,webp,woff,woff2}"]
+```
+JS/CSS precached → stale chunks served after deploy → infinite loading
+
+**After (vite.config.ts):**
+```javascript
+globPatterns: ["**/*.{ico,png,svg,jpg,jpeg,webp,woff,woff2}"]
+// + NetworkFirst runtime caching for JS/CSS:
+runtimeCaching: [
+  {
+    urlPattern: /\.(?:js|css)$/i,
+    handler: "NetworkFirst",
+    options: {
+      cacheName: "js-css-cache",
+      networkTimeoutSeconds: 5,
+      expiration: { maxEntries: 50, maxAgeSeconds: 604800 },
+    },
+  },
+  // ... existing mp3/image caches
+]
+```
+JS/CSS always fetched from network → cache only as offline fallback → no stale chunks
+
+**Build output verification:**
+- Precache manifest: 322 entries (images, audio, icons only — zero JS/CSS)
+- Runtime caching: `NetworkFirst` for JS/CSS, `CacheFirst` for media
+- SW properly registers `networkTimeoutSeconds: 5` for JS/CSS (falls back to cache if network hangs >5s)
+
+**Before (lazyWithRetry cache cleanup):**
+```typescript
+// Fire-and-forget — reload may happen before cleanup starts
+caches.keys().then(names => names.forEach(name => caches.delete(name)));
+navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+setTimeout(() => window.location.reload(), 200);
+```
+
+**After (lazyWithRetry cache cleanup):**
+```typescript
+// Properly awaited — reload only after cleanup completes
+const names = await caches.keys();
+await Promise.all(names.map(name => caches.delete(name)));
+const regs = await navigator.serviceWorker.getRegistrations();
+await Promise.all(regs.map(r => r.unregister()));
+await new Promise(r => setTimeout(r, 500));
+window.location.reload();
+```
+
+**Before (canAutoReload):**
+```typescript
+// 30s time-based — too restrictive, blocks recovery
+const last = sessionStorage.getItem(AUTO_RELOAD_KEY);
+return Date.now() - Number(last) > 30_000;
+```
+
+**After (canAutoReload):**
+```typescript
+// Counter-based — allows 2 reloads per 60s window
+const data = JSON.parse(raw);
+if (Date.now() - data.firstReloadTs > 60_000) return true;
+return data.count < 2;
+```
+
+### Why This Fix Is Permanent
+
+Previous rounds fixed **symptoms** (error handlers, lazy loading, retry logic). This round fixes the **root cause**: JS/CSS should never be in the SW precache for an app deployed to GitHub Pages.
+
+The combination of:
+1. Content-hashed filenames (Vite's default)
+2. `navigateFallback: null` (HTML always from network)
+3. **No JS/CSS in precache** (removed in this fix)
+4. `NetworkFirst` runtime caching (cache only as offline fallback)
+
+...means there is no longer any mechanism by which the SW can serve stale JS chunks. The only way to get stale JS is from the browser's HTTP cache, which is controlled by content hashes and standard cache headers — not the SW.
+
+### Files Changed (5)
+
+```
+vite.config.ts                      — Removed JS/CSS from precache, added NetworkFirst runtime caching
+src/hooks/useAppUpdate.ts           — Robust hardRefresh (500ms + verification), counter-based canAutoReload
+src/pages/Index.tsx                 — lazyWithRetry properly awaits cache cleanup
+index.html                          — Inline stale check awaits cleanup, counter-based reload prevention
+src/main.tsx                        — Pre-mount stale check: 500ms wait + SW verification
+```
+
+### Verification
+
+- TypeScript: Clean (0 errors)
+- Tests: 219/219 passing (10 test files, 0 failures)
+- Build: Succeeds — precache has 322 entries (images/audio only, zero JS/CSS)
+- SW runtime caching: NetworkFirst for JS/CSS confirmed in built sw.js
+- No regressions
+
+---

@@ -152,7 +152,17 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         maximumFileSizeToCacheInBytes: 15 * 1024 * 1024, // 15 MB (game-board.jpeg is ~10 MB)
-        globPatterns: ["**/*.{js,css,ico,png,svg,jpg,jpeg,webp,woff,woff2}"],
+        // ===== CRITICAL FIX: DO NOT PRECACHE JS OR CSS =====
+        // JS/CSS files are content-hashed by Vite (e.g., index-abc123.js).
+        // The browser's HTTP cache handles them correctly using the hash.
+        // When JS/CSS are in the SW precache, deploys create a race condition:
+        //   1. New SW activates (skipWaiting + clientsClaim)
+        //   2. New SW cleans up old precache entries (cleanupOutdatedCaches)
+        //   3. But browser may still have old HTML referencing old chunk hashes
+        //   4. Old chunks are gone from precache → 404 → "Loading the realm..." forever
+        // By only precaching static assets (images, fonts, icons), the SW provides
+        // offline-capable media while JS/CSS always come fresh from the network.
+        globPatterns: ["**/*.{ico,png,svg,jpg,jpeg,webp,woff,woff2}"],
         globIgnores: ["**/version.json"], // Never precache — fetched with no-store for update detection
         cleanupOutdatedCaches: true, // Remove old precache entries when new SW activates
         // Don't serve cached HTML for navigation — always fetch fresh from network
@@ -161,6 +171,23 @@ export default defineConfig(({ mode }) => ({
         skipWaiting: true,
         clientsClaim: true,
         runtimeCaching: [
+          // JS/CSS: NetworkFirst — always try network, fall back to cache only when offline.
+          // This prevents stale JS chunks from being served after a new deployment.
+          {
+            urlPattern: /\.(?:js|css)$/i,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "js-css-cache",
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+              networkTimeoutSeconds: 5, // Fall back to cache after 5s if network hangs
+            },
+          },
           {
             urlPattern: /\.(?:mp3)$/i,
             handler: "CacheFirst",

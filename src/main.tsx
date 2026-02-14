@@ -82,10 +82,16 @@ async function checkStaleBuild(): Promise<boolean> {
         await Promise.all(regs.map(r => r.unregister()));
         const keys = await caches.keys();
         await Promise.all(keys.map(k => caches.delete(k)));
+
+        // Verify SWs are actually gone — retry if not
+        const remaining = await navigator.serviceWorker?.getRegistrations() ?? [];
+        if (remaining.length > 0) {
+          await Promise.all(remaining.map(r => r.unregister()));
+        }
       } catch { /* ignore — reload regardless */ }
 
-      // Small delay to ensure cache operations complete before reload
-      await new Promise(r => setTimeout(r, 100));
+      // Wait for cleanup to fully propagate before reload
+      await new Promise(r => setTimeout(r, 500));
       window.location.reload();
       return true; // Page will reload
     }
