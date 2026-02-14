@@ -5,6 +5,95 @@
 
 ---
 
+## 2026-02-14 — Bug Hunt: Shadow Market Crashes + Multiplayer Connection Fixes + Audit (21:00 UTC)
+
+### Overview
+
+Systematic bug hunt using parallel AI agents. Three areas fixed:
+1. **Shadow Market hex/curse system crashes** — 4 bugs causing TypeError crashes
+2. **Multiplayer connection hangs** — missing timeouts causing infinite "Connecting..." state
+3. **General audit fixes** — defensive guards for AI executor and turn switching
+
+### Bug 1: Shadow Market Crashes (CRITICAL)
+
+**Root Cause:** The hex/curse system has three hex categories: `location` (blocks a board location), `personal` (debuff on a player), and `sabotage` (instant destruction). Location hexes have NO `effect` field — they only have `targetLocation`. Multiple code paths accessed `hex.effect.type` without verifying the hex has an effect.
+
+#### Fix 1a: `rollGraveyardRitual()` returns location hexes in backfire pool
+**File:** `src/data/hexes.ts:485-498`
+
+The graveyard dark ritual pool included LOCATION_HEXES. When the ritual backfired (15% chance), the code tried to create an `ActiveCurse` from the hex's `effect` field — but location hexes don't have one.
+
+**Fix:** When `backfired=true`, filter the pool to only include hexes with `effect != null`. Non-backfired rolls are fine since the player just gets a scroll.
+
+#### Fix 1b: `castPersonalCurse()` missing category guard
+**File:** `src/store/helpers/hexHelpers.ts:107`
+
+Validation checked `!hex.effect` but not `hex.category === 'location'`. A player could theoretically cast a location hex via the personal curse path.
+
+**Fix:** Added `hex.category === 'location'` to the validation check.
+
+#### Fix 1c: `applySabotageHex()` uses non-null assertion on `hex.effect`
+**File:** `src/store/helpers/hexHelpers.ts:444-523`
+
+The function used `hex.effect!.type` (non-null assertion) in two switch statements without validating that `effect` exists.
+
+**Fix:** Added early return if `hex.effect` is null. Stored `effectType` in a local variable to avoid repeated non-null assertions.
+
+#### Fix 1d: `performDarkRitual()` backfire with null hex
+**File:** `src/store/helpers/hexHelpers.ts:286`
+
+Added defensive `hex &&` check alongside existing `hex.effect` check in the backfire branch.
+
+### Bug 2: Multiplayer Connection Hangs (CRITICAL)
+
+**Root Cause:** `createRoom()` and `joinRoom()` in PeerManager wrapped PeerJS initialization in a Promise, but had NO timeout if the PeerJS signaling server was unreachable. The `peer.on('open')` event would never fire, and the `peer.on('error')` event doesn't always fire for network failures. Result: the Promise hung forever, showing "Connecting..." indefinitely.
+
+#### Fix 2a: `createRoom()` — 20s outer timeout
+**File:** `src/network/PeerManager.ts:181-237`
+
+Added `settled` flag and 20-second timeout. If the Peer never opens, the promise rejects with a clear error message: "Could not reach the multiplayer server. Check your internet connection and try again."
+
+#### Fix 2b: `joinRoom()` — 20s outer timeout
+**File:** `src/network/PeerManager.ts:242-291`
+
+Same pattern: `settled` flag + 20-second timeout covering both signaling server connection AND host data channel. Error message: "Connection timed out. The room may not exist, or check your internet connection."
+
+#### Fix 2c: `connectToHost()` — clean up DataConnection on timeout
+**File:** `src/network/PeerManager.ts:292-310`
+
+The existing 10s timeout in `connectToHost()` rejected the promise but didn't close the stale `DataConnection`, causing a memory leak. Added `conn.close()` in the timeout handler.
+
+### Bug 3: Audit Fixes
+
+#### Fix 3a: AI action executor crash protection
+**File:** `src/hooks/ai/actionExecutor.ts:615-622`
+
+Wrapped `handler(player, action, store)` in try-catch. If an AI action handler throws (e.g., accessing undefined property), the error is logged and the action returns `false` instead of crashing the entire game.
+
+#### Fix 3b: Turn switching null guard
+**File:** `src/store/helpers/turnHelpers.ts:177`
+
+Added null check on `nextPlayer` after array index access. If `freshState.players[nextIndex]` is somehow undefined (edge case during multiplayer or after player deaths), the turn switch aborts with an error log instead of crashing with "Cannot read property 'housing' of undefined".
+
+### Files Changed
+
+| File | Changes |
+|------|---------|
+| `src/data/hexes.ts` | Fixed `rollGraveyardRitual()` to filter location hexes from backfire pool |
+| `src/store/helpers/hexHelpers.ts` | Added category guard to `castPersonalCurse()`, defensive null check in `applySabotageHex()` and `performDarkRitual()` |
+| `src/network/PeerManager.ts` | Added 20s timeouts to `createRoom()`/`joinRoom()`, connection cleanup in `connectToHost()` |
+| `src/hooks/ai/actionExecutor.ts` | Wrapped `executeAIAction()` in try-catch |
+| `src/store/helpers/turnHelpers.ts` | Added null guard for `nextPlayer` in `endTurn()` |
+
+### Test Results
+
+```
+219 tests passed (10 files), 0 failures
+Build: clean (no TypeScript or ESLint errors)
+```
+
+---
+
 ## 2026-02-14 — Timer Bug Hunt: Work Silent Failure + Animation Stutter Fix (20:30 UTC)
 
 ### Bug Report

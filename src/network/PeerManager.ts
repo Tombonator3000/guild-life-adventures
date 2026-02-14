@@ -185,10 +185,13 @@ export class PeerManager {
 
     return new Promise((resolve, reject) => {
       this.setStatus('connecting');
+      let settled = false;
 
       this.peer = new Peer(peerId, this.getPeerConfig());
 
       this.peer.on('open', () => {
+        if (settled) return;
+        settled = true;
         this.setStatus('connected');
         this.startHeartbeatCheck();
         console.log(`[PeerManager] Host room created: ${this._roomCode}`);
@@ -208,7 +211,8 @@ export class PeerManager {
           const newPeerId = roomCodeToPeerId(this._roomCode);
           this.peer = new Peer(newPeerId, this.getPeerConfig());
           this.setupHostPeerHandlers(resolve, reject);
-        } else {
+        } else if (!settled) {
+          settled = true;
           this.setStatus('error');
           reject(err);
         }
@@ -219,6 +223,17 @@ export class PeerManager {
         // Auto-reconnect to signaling server
         this.peer?.reconnect();
       });
+
+      // Timeout: if signaling server doesn't respond within 20 seconds, fail
+      setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          this.setStatus('error');
+          this.peer?.destroy();
+          this.peer = null;
+          reject(new Error('Could not reach the multiplayer server. Check your internet connection and try again.'));
+        }
+      }, 20000);
     });
   }
 
@@ -231,23 +246,47 @@ export class PeerManager {
 
     return new Promise((resolve, reject) => {
       this.setStatus('connecting');
+      let settled = false;
 
       this.peer = new Peer(this.getPeerConfig());
 
       this.peer.on('open', () => {
-        this.connectToHost(hostPeerId, resolve, reject);
+        if (settled) return;
+        this.connectToHost(hostPeerId, () => {
+          if (settled) return;
+          settled = true;
+          resolve();
+        }, (err) => {
+          if (settled) return;
+          settled = true;
+          reject(err);
+        });
       });
 
       this.peer.on('error', (err) => {
         console.error('[PeerManager] Guest error:', err);
-        this.setStatus('error');
-        reject(err);
+        if (!settled) {
+          settled = true;
+          this.setStatus('error');
+          reject(err);
+        }
       });
 
       this.peer.on('disconnected', () => {
         this.setStatus('reconnecting');
         this.peer?.reconnect();
       });
+
+      // Timeout: if signaling server + host connection doesn't complete within 20 seconds, fail
+      setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          this.setStatus('error');
+          this.peer?.destroy();
+          this.peer = null;
+          reject(new Error('Connection timed out. The room may not exist, or check your internet connection.'));
+        }
+      }, 20000);
     });
   }
 
@@ -292,8 +331,10 @@ export class PeerManager {
     setTimeout(() => {
       if (!settled) {
         settled = true;
+        // Clean up the dangling DataConnection
+        try { conn.close(); } catch { /* ignore */ }
         this.setStatus('error');
-        reject?.(new Error('Connection timeout - room not found'));
+        reject?.(new Error('Connection timeout — the room was not found or the host is unreachable.'));
       }
     }, 10000);
   }

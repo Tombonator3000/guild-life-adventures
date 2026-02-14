@@ -104,7 +104,7 @@ export function createHexActions(set: SetFn, get: GetFn) {
       const target = state.players.find(p => p.id === targetId);
       const hex = getHexById(hexId);
 
-      if (!player || !target || !hex || !hex.effect) {
+      if (!player || !target || !hex || !hex.effect || hex.category === 'location') {
         return { success: false, message: 'Invalid curse.' };
       }
       if (playerId === targetId) {
@@ -285,7 +285,7 @@ export function createHexActions(set: SetFn, get: GetFn) {
 
       const { hex, backfired } = rollGraveyardRitual();
 
-      if (backfired && hex.effect) {
+      if (backfired && hex && hex.effect) {
         // Ritual backfire: curse yourself!
         const selfCurse: ActiveCurse = {
           hexId: hex.id,
@@ -445,9 +445,13 @@ function applySabotageHex(
   set: SetFn, get: GetFn,
   playerId: string, targetId: string, hex: HexDefinition
 ): { success: boolean; message: string } {
+  if (!hex.effect) {
+    return { success: false, message: 'Invalid sabotage hex — no effect defined.' };
+  }
   const state = get();
   const player = state.players.find(p => p.id === playerId)!;
   const target = state.players.find(p => p.id === targetId)!;
+  const effectType = hex.effect.type;
 
   set((s) => ({
     players: s.players.map((p) => {
@@ -460,7 +464,7 @@ function applySabotageHex(
         };
       }
       if (p.id === targetId) {
-        switch (hex.effect!.type) {
+        switch (effectType) {
           case 'destroy-weapon':
             return {
               ...p,
@@ -499,7 +503,7 @@ function applySabotageHex(
   }));
 
   let effectMsg = '';
-  switch (hex.effect!.type) {
+  switch (effectType) {
     case 'destroy-weapon':
       effectMsg = target.equippedWeapon ? 'Their weapon shatters into pieces!' : 'They had no weapon to destroy.';
       break;

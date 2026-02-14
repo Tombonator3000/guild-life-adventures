@@ -485,7 +485,9 @@ export function isLocationHexed(
 export function rollGraveyardRitual(): { hex: HexDefinition; backfired: boolean } {
   const backfired = Math.random() < 0.15; // 15% backfire chance
   // Weighted pool: more common hexes appear more often
-  const pool: HexDefinition[] = [
+  // Note: Only hexes WITH effects can backfire (location hexes have no effect field),
+  // so if backfired, only use personal/sabotage curses that have effects.
+  const allPool: HexDefinition[] = [
     ...PERSONAL_CURSES.filter(h => h.basePrice <= 400),  // cheap curses (2x weight)
     ...PERSONAL_CURSES.filter(h => h.basePrice <= 400),
     ...LOCATION_HEXES.filter(h => h.basePrice <= 400),   // cheap location hexes
@@ -493,7 +495,17 @@ export function rollGraveyardRitual(): { hex: HexDefinition; backfired: boolean 
     ...PERSONAL_CURSES,                                    // all curses (1x weight)
     ...LOCATION_HEXES,                                     // all location hexes
   ];
-  const hex = pool[Math.floor(Math.random() * pool.length)];
+
+  if (backfired) {
+    // Backfired rituals apply the curse to the caster, so the hex MUST have an effect field.
+    // Location hexes don't have effects — filter them out.
+    const effectPool = allPool.filter(h => h.effect != null);
+    const hex = effectPool[Math.floor(Math.random() * effectPool.length)];
+    return { hex, backfired };
+  }
+
+  // Success: any hex type is fine (player gets a scroll, not an instant effect)
+  const hex = allPool[Math.floor(Math.random() * allPool.length)];
   return { hex, backfired };
 }
 
