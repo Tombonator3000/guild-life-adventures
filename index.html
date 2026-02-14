@@ -42,17 +42,19 @@
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
-    <!-- Fallback: if JS fails to load after 15s, show reload prompt -->
+    <!-- Fallback: if JS fails to load after 8s, show reload prompt.
+         Unregisters service workers + clears caches before reload to break
+         out of stale SW serving old content after GitHub Pages deploys. -->
     <script>
       setTimeout(function(){
         var root=document.getElementById('root');
         if(root&&root.querySelector('#loading-screen')){
           var p=document.createElement('p');
           p.style.cssText='margin-top:1.5rem;font-family:serif;';
-          p.innerHTML='<button onclick="if(\'caches\' in window){caches.keys().then(function(n){n.forEach(function(k){caches.delete(k)})});};location.reload();" style="padding:.75rem 2rem;font-size:1rem;font-family:serif;background:linear-gradient(135deg,hsl(45,85%,55%),hsl(35,70%,40%));color:#1f170a;border:none;border-radius:.25rem;cursor:pointer;font-weight:bold;">Clear Cache &amp; Reload</button>';
+          p.innerHTML='<button onclick="(function(){if(navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(s){s.unregister()})});}if(window.caches){caches.keys().then(function(n){n.forEach(function(k){caches.delete(k)})});}setTimeout(function(){location.reload()},300);})()" style="padding:.75rem 2rem;font-size:1rem;font-family:serif;background:linear-gradient(135deg,hsl(45,85%,55%),hsl(35,70%,40%));color:#1f170a;border:none;border-radius:.25rem;cursor:pointer;font-weight:bold;">Clear Cache &amp; Reload</button>';
           root.querySelector('#loading-screen').appendChild(p);
         }
-      },15000);
+      },8000);
     </script>
   </body>
 </html>

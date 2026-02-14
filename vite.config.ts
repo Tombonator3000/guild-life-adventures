@@ -61,7 +61,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && lovableTaggerPlugin,
     VitePWA({
-      registerType: "prompt",
+      registerType: "autoUpdate",
       includeAssets: [
         "favicon.ico",
         "apple-touch-icon.png",
@@ -134,9 +134,14 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         maximumFileSizeToCacheInBytes: 15 * 1024 * 1024, // 15 MB (game-board.jpeg is ~10 MB)
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff,woff2}"],
+        globPatterns: ["**/*.{js,css,ico,png,svg,jpg,jpeg,webp,woff,woff2}"],
         globIgnores: ["**/version.json"], // Never precache — fetched with no-store for update detection
         cleanupOutdatedCaches: true, // Remove old precache entries when new SW activates
+        // Don't serve cached HTML for navigation — always fetch fresh from network
+        // This prevents stale index.html from being served after GitHub Pages deployments
+        navigateFallback: null,
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
           {
             urlPattern: /\.(?:mp3)$/i,
