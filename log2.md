@@ -1473,3 +1473,169 @@ Layer 4: In-app detection (useAppUpdate.ts)
 - No regressions
 
 ---
+
+## 2026-02-14 — BUG HUNT: "Loading the realm..." Freeze (Round 7 — Parallel Agent Scan) (19:00 UTC)
+
+### Bug Report
+
+Game stuck on static "Loading the realm..." screen — React never mounts. User reports: **"Spill starter ikke. Står bare loading the realm.. Ser ut som den prøve å lade gammel cache"** (Game doesn't start. Just shows loading the realm. Looks like it's trying to load old cache).
+
+This is the **seventh** investigation of this recurring issue. Previous rounds fixed audio singletons (R1), missing dependencies (R2), eager imports (R3/R4/R5), and stale cache detection (R6).
+
+### Investigation Method
+
+Systematic parallel AI agent scan (7 areas):
+1. Store initialization & save/load (`gameStore.ts`, `saveLoad.ts`, helpers)
+2. Loading chain analysis (`index.html` → `main.tsx` → `App.tsx` → `Index.tsx`)
+3. Audio singletons & module-level side effects
+4. PWA/Service Worker configuration (`vite.config.ts`, `useAppUpdate.ts`)
+5. Import tree & circular dependencies
+6. TitleScreen eager import chain
+7. Build output & runtime behavior
+
+### Root Cause Analysis
+
+**BUG #1 (CRITICAL): Circular dependency `gameStore.ts` ↔ `networkState.ts`**
+
+```
+gameStore.ts (line 23): import { markEventDismissed } from '@/network/networkState'
+networkState.ts (line 4): import { useGameStore } from '@/store/gameStore'
+```
+
+This is the EXACT same circular pattern that was already fixed in `NetworkActionProxy.ts` (Round 6) using the `setStoreAccessor()` pattern — but `networkState.ts` was NEVER updated. During module evaluation, one module gets a partially-initialized reference to the other. While ES module live bindings might handle this at runtime, it's a fragile pattern that can break under code splitting and stale cache conditions (mixed old/new chunk versions).
+
+**BUG #2 (HIGH): No inline version check before module loading**
+
+All existing version checks are INSIDE JavaScript bundles:
+- `main.tsx:checkStaleBuild()` — inside the entry chunk
+- `useAppUpdate.ts` — inside App.tsx's import tree
+
+If the entry chunk fails to load (stale HTML → 404 for old chunk hash), these checks NEVER RUN. The user sees "Loading the realm..." forever with no error shown until the 4s fallback timer fires.
+
+Missing defense layer: an inline script in `index.html` that runs BEFORE the module script, compares the build time baked into the HTML with the server's `version.json`, and auto-reloads on mismatch.
+
+**BUG #3 (MEDIUM): `SFXGeneratorPage` eagerly imported in `App.tsx`**
+
+```tsx
+import SFXGeneratorPage from "./pages/SFXGenerator"; // pulls in jszip (110 KB)
+```
+
+The admin-only SFX generator page is statically imported in `App.tsx`, adding `jszip` and ElevenLabs service code to the critical path. 99.9% of users never visit `/admin/sfx`. This inflates `App.js` by 110 KB and adds a module that could fail to evaluate.
+
+**BUG #4 (MEDIUM): Duplicate version.json fetches**
+
+`main.tsx` fetches `version.json` independently from the fallback timer in `index.html`. On slow connections, this adds 3s of waiting before the app even starts loading modules.
+
+### Fixes Applied (4)
+
+| # | Severity | File(s) | Fix |
+|---|----------|---------|-----|
+| 1 | **CRITICAL** | `networkState.ts`, `gameStore.ts` | **Break circular dependency**: Replaced `import { useGameStore }` with `setNetworkStateStoreAccessor()` pattern (same approach as NetworkActionProxy). `gameStore.ts` registers accessor after store creation. Functions that need store access use the accessor at call time. Safe default (error log + return) if accessor isn't set yet. |
+| 2 | **HIGH** | `index.html`, `vite.config.ts`, `main.tsx` | **Inline stale-build detection (Layer 0)**: Vite plugin injects `window.__HTML_BUILD_TIME__` into HTML at build time via `transformIndexHtml`. New inline script in HTML pre-fetches `version.json` and compares with baked-in build time. On mismatch: clears caches + unregisters SWs + reloads — ALL before the module script even loads. `main.tsx` reuses the pre-fetched promise (`window.__versionCheck`) to avoid a duplicate fetch. |
+| 3 | **MEDIUM** | `App.tsx` | **Lazy-load SFXGeneratorPage**: Changed from static import to `React.lazy()` + `Suspense`. Removed `jszip` + admin code (110 KB) from critical path. App.js reduced from 615 KB → 505 KB (-18%). |
+| 4 | **MEDIUM** | `main.tsx` | **Reuse pre-fetched version data**: `checkStaleBuild()` now reads `window.__versionCheck` (pre-fetched by index.html inline script) instead of making a separate fetch. Falls back to own fetch if pre-fetched data isn't available (dev mode). |
+
+### Architecture: Defense-in-Depth Loading Chain (7 Layers)
+
+After this fix, the loading chain has **7 independent defense layers** against stale cache:
+
+```
+Layer 0: HTML inline script (NEW — runs BEFORE module script)
+  └── window.__HTML_BUILD_TIME__ vs version.json
+  └── If stale: clear caches + reload IMMEDIATELY
+  └── No module loading needed — works even when all JS chunks 404
+
+Layer 1: Browser cache headers (index.html)
+  └── Cache-Control: no-cache, no-store, must-revalidate
+  └── Forces browser to revalidate HTML from server
+
+Layer 2: Pre-mount check (main.tsx)
+  └── Reuses pre-fetched version.json from Layer 0
+  └── __BUILD_TIME__ (baked into JS) vs version.json (from server)
+  └── If stale: clear caches + reload before importing App
+
+Layer 3: Chunk retry (Index.tsx)
+  └── lazyWithRetry() retries failed chunk imports once
+  └── On second failure: clear caches + reload
+
+Layer 4: Error boundaries (App.tsx + Index.tsx)
+  └── ErrorBoundary catches React render errors
+  └── SilentErrorBoundary for audio subsystem
+
+Layer 5: Error handlers (index.html)
+  └── window.onerror + unhandledrejection
+  └── Shows error message + reload button after 3s
+
+Layer 6: Fallback polling (index.html)
+  └── Polls every 3s starting at 5s
+  └── Shows "Clear Cache & Reload" button if React hasn't mounted
+```
+
+### Technical Details
+
+**Circular dependency fix (networkState.ts):**
+```typescript
+// BEFORE: Circular import
+import { useGameStore } from '@/store/gameStore';
+export function serializeGameState() {
+  const s = useGameStore.getState(); // could be undefined during init
+}
+
+// AFTER: Setter pattern — no import needed
+let storeAccessor: StoreAccessor | null = null;
+export function setNetworkStateStoreAccessor(accessor: StoreAccessor) {
+  storeAccessor = accessor;
+}
+export function serializeGameState() {
+  if (!storeAccessor) { console.error('...'); return {} as SerializedGameState; }
+  const s = storeAccessor.getState();
+}
+```
+
+**Inline version check (index.html — injected by Vite at build time):**
+```html
+<script>window.__HTML_BUILD_TIME__="2026-02-14T19:25:54.236Z";</script>
+<script>
+(function(){
+  if(!window.__HTML_BUILD_TIME__) return; // dev mode
+  window.__versionCheck = fetch('version.json?_=' + Date.now(), {cache:'no-store'})
+    .then(r => r.ok ? r.json() : null).catch(() => null);
+  window.__versionCheck.then(function(data) {
+    if (!data || data.buildTime === window.__HTML_BUILD_TIME__) return;
+    // STALE! Clear caches + reload before module script even loads
+    // ...
+  });
+})();
+</script>
+```
+
+**Build output — improved code splitting:**
+```
+Before:
+  App.js       615 KB (includes jszip + SFXGenerator admin code)
+
+After:
+  App.js       505 KB (-18%, admin code removed from critical path)
+  SFXGenerator 110 KB (lazy-loaded, only on /admin/sfx)
+```
+
+### Files Changed (6)
+
+```
+src/network/networkState.ts          — Break circular dep (setNetworkStateStoreAccessor pattern)
+src/store/gameStore.ts               — Register networkState accessor after store creation
+index.html                           — Inline stale-build detection script + pre-fetch version.json
+vite.config.ts                       — transformIndexHtml injects __HTML_BUILD_TIME__
+src/main.tsx                         — Reuse pre-fetched version data from window.__versionCheck
+src/App.tsx                          — Lazy-load SFXGeneratorPage
+```
+
+### Verification
+
+- TypeScript: Clean (0 errors)
+- Tests: 219/219 passing (10 test files, 0 failures)
+- Build: Succeeds with improved code splitting
+- `version.json` buildTime matches `__HTML_BUILD_TIME__` in built HTML
+- No regressions
+
+---

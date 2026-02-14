@@ -1,6 +1,14 @@
 import { createRoot } from "react-dom/client";
 import "./index.css";
 
+// Augment window for cross-script communication with index.html inline scripts
+declare global {
+  interface Window {
+    __versionCheck?: Promise<{ buildTime?: string } | null>;
+    __HTML_BUILD_TIME__?: string;
+  }
+}
+
 // Show error on the loading screen if React fails to mount.
 // Without this, the static "Loading the realm..." stays visible forever.
 function showMountError(error: unknown) {
@@ -23,11 +31,14 @@ function showMountError(error: unknown) {
 }
 
 /**
- * Pre-mount staleness check: fetch version.json BEFORE loading any app modules.
- * If the running HTML was served from browser HTTP cache (GitHub Pages caches HTML
- * for ~10 min), its JS chunk references may have stale hashes that no longer exist
- * on the server. Detecting this BEFORE importing App.tsx prevents silent module
- * loading failures that leave "Loading the realm..." visible forever.
+ * Pre-mount staleness check: compare __BUILD_TIME__ with version.json.
+ *
+ * Uses the pre-fetched version data from the inline script in index.html
+ * (window.__versionCheck) when available. This avoids a duplicate fetch and
+ * makes the check nearly instant since the fetch started during HTML parsing.
+ *
+ * Falls back to a fresh fetch with 3s timeout if the pre-fetched data is
+ * not available (e.g., in development mode).
  *
  * Returns true if the page is stale and a hard refresh was triggered.
  */
@@ -36,19 +47,32 @@ async function checkStaleBuild(): Promise<boolean> {
   if (typeof __BUILD_TIME__ === 'undefined') return false;
 
   try {
-    const base = import.meta.env.BASE_URL || '/';
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
-    const resp = await fetch(`${base}version.json?_=${Date.now()}`, {
-      cache: 'no-store',
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
+    // Try to use pre-fetched version data (started in index.html inline script)
+    let data: { buildTime?: string } | null = null;
 
-    if (!resp.ok) return false;
-    const data = await resp.json();
+    if (window.__versionCheck) {
+      // Race against a 3s timeout in case the pre-fetch is hanging
+      data = await Promise.race([
+        window.__versionCheck,
+        new Promise<null>(resolve => setTimeout(() => resolve(null), 3000)),
+      ]);
+    }
 
-    if (data.buildTime && data.buildTime !== __BUILD_TIME__) {
+    // Fallback: fetch ourselves if no pre-fetched data
+    if (!data) {
+      const base = import.meta.env.BASE_URL || '/';
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      const resp = await fetch(`${base}version.json?_=${Date.now()}`, {
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      if (!resp.ok) return false;
+      data = await resp.json();
+    }
+
+    if (data?.buildTime && data.buildTime !== __BUILD_TIME__) {
       console.warn('[Guild Life] Stale build detected — clearing cache and reloading.',
         { running: __BUILD_TIME__, server: data.buildTime });
 

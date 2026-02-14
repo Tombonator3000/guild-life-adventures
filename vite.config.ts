@@ -12,9 +12,16 @@ const basePath = deployTarget === "github" ? "/guild-life-adventures/" : "/";
 const buildTime = new Date().toISOString();
 
 /**
- * Generates version.json in the output directory at build time.
- * This file is fetched by the client with cache: 'no-store' to detect
+ * Generates version.json in the output directory AND injects __HTML_BUILD_TIME__
+ * into index.html at build time.
+ *
+ * version.json: fetched by the client with cache: 'no-store' to detect
  * new deployments even when the service worker serves stale assets.
+ *
+ * __HTML_BUILD_TIME__: embedded in index.html inline script so that the
+ * stale-build detection can run BEFORE any module script loads. This is the
+ * critical defense layer — if module scripts fail to load (stale cache → 404),
+ * the inline script still detects the mismatch and auto-reloads.
  */
 function versionJsonPlugin(): PluginOption {
   let outDir = "dist";
@@ -23,6 +30,17 @@ function versionJsonPlugin(): PluginOption {
     apply: "build",
     configResolved(config) {
       outDir = config.build.outDir;
+    },
+    transformIndexHtml() {
+      // Inject build time into HTML as a global variable.
+      // Used by the inline stale-build detection script.
+      return [
+        {
+          tag: 'script',
+          children: `window.__HTML_BUILD_TIME__="${buildTime}";`,
+          injectTo: 'head',
+        },
+      ];
     },
     closeBundle() {
       const versionData = { buildTime };

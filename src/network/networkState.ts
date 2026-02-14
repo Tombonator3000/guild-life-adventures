@@ -1,8 +1,29 @@
 // Shared network state serialization/deserialization
 // Single source of truth — used by both useOnlineGame and useNetworkSync
 
-import { useGameStore } from '@/store/gameStore';
+// IMPORTANT: Do NOT import useGameStore at the top level here.
+// gameStore.ts imports markEventDismissed from this module, creating a circular dependency:
+//   gameStore.ts → networkState.ts → gameStore.ts
+// This circular import causes "Loading the realm..." freeze because one module
+// gets a partially-initialized reference to the other during module evaluation.
+//
+// Solution: gameStore.ts calls setNetworkStateStoreAccessor() after creating the store,
+// providing a function to get/set state without a direct import.
+
 import type { SerializedGameState } from './types';
+
+/** Store accessor — set by gameStore.ts after store creation to break circular dep */
+type StoreState = Record<string, unknown>;
+type StoreAccessor = {
+  getState: () => StoreState;
+  setState: (update: Record<string, unknown>) => void;
+};
+let storeAccessor: StoreAccessor | null = null;
+
+/** Called by gameStore.ts after store creation to provide state access */
+export function setNetworkStateStoreAccessor(accessor: StoreAccessor) {
+  storeAccessor = accessor;
+}
 
 /** Track which event IDs the guest has locally dismissed (prevents re-show on sync) */
 const dismissedEvents = new Set<string>();
@@ -35,7 +56,11 @@ export function resetNetworkState() {
  * tutorial, AI speed) is excluded.
  */
 export function serializeGameState(): SerializedGameState {
-  const s = useGameStore.getState();
+  if (!storeAccessor) {
+    console.error('[Network] Store accessor not set — cannot serialize state');
+    return {} as SerializedGameState;
+  }
+  const s = storeAccessor.getState();
   return {
     phase: s.phase,
     currentPlayerIndex: s.currentPlayerIndex,
@@ -73,7 +98,11 @@ export function serializeGameState(): SerializedGameState {
  * Auto-clears dismissed events on turn change and new week to prevent stale state.
  */
 export function applyNetworkState(state: SerializedGameState) {
-  const store = useGameStore.getState();
+  if (!storeAccessor) {
+    console.error('[Network] Store accessor not set — cannot apply state');
+    return;
+  }
+  const store = storeAccessor.getState();
 
   // Clear dismissed events on turn change or new week (prevents persistence bugs)
   if (state.currentPlayerIndex !== lastSyncedPlayerIndex || state.week !== lastSyncedWeek) {
@@ -145,7 +174,7 @@ export function applyNetworkState(state: SerializedGameState) {
     dismissedEvents.delete('deathEvent');
   }
 
-  useGameStore.setState(update);
+  storeAccessor.setState(update);
 }
 
 /**
@@ -153,7 +182,11 @@ export function applyNetworkState(state: SerializedGameState) {
  * Returns true on success, false on failure.
  */
 export function executeAction(name: string, args: unknown[]): boolean {
-  const store = useGameStore.getState();
+  if (!storeAccessor) {
+    console.error('[Network] Store accessor not set — cannot execute action');
+    return false;
+  }
+  const store = storeAccessor.getState();
   const action = (store as unknown as Record<string, unknown>)[name];
   if (typeof action !== 'function') {
     console.error(`[Network] Unknown action: ${name}`);
