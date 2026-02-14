@@ -330,3 +330,33 @@ Game stuck on static "Loading the realm..." screen — React never mounts.
 - **Refactoring passes**: 3 (complex functions, AI system, weekEnd helpers)
 
 ---
+
+## 2026-02-14 — The Guildholm Herald UI Polish (11:00 UTC)
+
+### Overview
+
+Three fixes to the newspaper (The Guildholm Herald) based on gameplay feedback:
+
+1. **Removed double X close button** — The `NewspaperModal` had a custom X button in the header AND the shadcn/ui `DialogContent` component rendered its own built-in X button. Removed the custom one, keeping only the Dialog's native close button.
+
+2. **Renamed "Town Crier Gazette" to "The Guildholm Herald"** — The General Store panel used hardcoded "Town Crier Gazette" as the newspaper name (with a missing i18n key `panelStore.newspaper` that fell back to the hardcoded string). Added the `newspaper` key to all i18n files (EN: "The Guildholm Herald", DE: "Der Guildholm-Herold", ES: "El Heraldo de Guildholm") and updated the preview data in `GeneralStorePanel.tsx`.
+
+3. **Changed article styling from brown/white to parchment/black** — Newspaper articles used `wood-frame` class (dark brown gradient background with white `text-parchment` text), which didn't match the rest of the game's parchment-based UI. Changed to `parchment-panel` class (light parchment gradient background) with `text-wood-dark` headlines and `text-wood` body text.
+
+### Files Changed (7 files)
+
+| File | Change |
+|------|--------|
+| `src/components/game/NewspaperModal.tsx` | Removed custom X button (kept Dialog's built-in); removed unused `X` import; changed article class from `wood-frame text-parchment` to `parchment-panel text-wood-dark/text-wood` |
+| `src/components/game/GeneralStorePanel.tsx` | Renamed "Town Crier Gazette" to "The Guildholm Herald" in label, preview data, and toast; removed fallback strings (i18n key now exists) |
+| `src/i18n/types.ts` | Added `newspaper: string` to `panelStore` interface |
+| `src/i18n/en.ts` | Added `newspaper: 'The Guildholm Herald'` |
+| `src/i18n/de.ts` | Added `newspaper: 'Der Guildholm-Herold'` |
+| `src/i18n/es.ts` | Added `newspaper: 'El Heraldo de Guildholm'` |
+
+### Verification
+
+- Build: Clean (vite build succeeds)
+- Tests: 185/185 passing (9 test files, 0 failures)
+
+---

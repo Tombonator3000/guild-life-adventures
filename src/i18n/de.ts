@@ -698,6 +698,7 @@ export const de: TranslationStrings = {
     storedFreshFood: '{units} frische Nahrungseinheiten gelagert!',
     freshFoodStored: 'Frische Nahrung gelagert:',
     freshFoodCapacity: 'Kapazität:',
+    newspaper: 'Der Guildholm-Herold',
   },
 
   panelGuild: {
