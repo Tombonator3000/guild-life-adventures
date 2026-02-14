@@ -14,19 +14,25 @@ function lazyWithRetry<T extends { default: React.ComponentType<unknown> }>(
   return lazy(() =>
     factory().catch(() => {
       // First retry — chunk may have failed due to transient network error
-      return factory().catch(() => {
+      return factory().catch(async () => {
         // Second failure — likely stale cache. Clear everything and reload.
         console.error('[Guild Life] Chunk loading failed twice — clearing cache and reloading');
-        if ('caches' in window) {
-          caches.keys().then(names => names.forEach(name => caches.delete(name)));
+        try {
+          // Await cache operations instead of fire-and-forget .then() chains
+          if ('caches' in window) {
+            const names = await caches.keys();
+            await Promise.all(names.map(name => caches.delete(name)));
+          }
+          if (navigator.serviceWorker) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map(r => r.unregister()));
+          }
+        } catch {
+          // Ignore — reload regardless
         }
-        if (navigator.serviceWorker) {
-          navigator.serviceWorker.getRegistrations().then(regs =>
-            regs.forEach(r => r.unregister())
-          );
-        }
-        // Delay reload slightly to let cache operations start
-        setTimeout(() => window.location.reload(), 200);
+        // Wait for cleanup to propagate before reloading
+        await new Promise(r => setTimeout(r, 500));
+        window.location.reload();
         // Return a never-resolving promise to prevent React error while reloading
         return new Promise<T>(() => {});
       });

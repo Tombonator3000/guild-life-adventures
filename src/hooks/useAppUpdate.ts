@@ -30,27 +30,41 @@ export async function hardRefresh(): Promise<void> {
     const cacheKeys = await caches.keys();
     await Promise.all(cacheKeys.map(k => caches.delete(k)));
 
-    // 3. Wait for async operations to settle before reload.
-    // Without this delay, the browser may reload before unregister/cache-delete
-    // fully propagate, causing the stale SW to reactivate immediately.
-    await new Promise(r => setTimeout(r, 100));
+    // 3. Verify cleanup actually completed — SWs should be gone
+    const remainingRegs = await navigator.serviceWorker?.getRegistrations() ?? [];
+    if (remainingRegs.length > 0) {
+      // Retry unregistration
+      await Promise.all(remainingRegs.map(r => r.unregister()));
+    }
+
+    // 4. Wait for async operations to fully propagate.
+    // 100ms was too short in some cases — browser needs time to finalize
+    // SW unregistration before the next page load avoids re-activation.
+    await new Promise(r => setTimeout(r, 500));
   } catch {
     // Ignore errors — reload regardless
   }
 
-  // 4. Force full reload from network
+  // 5. Force full reload from network
   window.location.reload();
 }
 
 /**
- * Check if we already auto-reloaded recently (within 30s) to prevent
- * reload loops when CDN serves stale content.
+ * Check if we can auto-reload. Prevents infinite reload loops by tracking
+ * reload count within a session window. Allows up to 2 reloads per 60s.
+ * This is more robust than the previous 30s time-based check because it
+ * lets a stale build attempt recovery twice (once to clear SW, once to
+ * fetch fresh content) before giving up and showing the manual button.
  */
 function canAutoReload(): boolean {
   try {
-    const last = sessionStorage.getItem(AUTO_RELOAD_KEY);
-    if (!last) return true;
-    return Date.now() - Number(last) > 30_000;
+    const raw = sessionStorage.getItem(AUTO_RELOAD_KEY);
+    if (!raw) return true;
+    const data = JSON.parse(raw);
+    // Reset counter if window has expired
+    if (Date.now() - data.firstReloadTs > 60_000) return true;
+    // Allow up to 2 auto-reloads within the window
+    return data.count < 2;
   } catch {
     return true;
   }
@@ -58,7 +72,13 @@ function canAutoReload(): boolean {
 
 function markAutoReload(): void {
   try {
-    sessionStorage.setItem(AUTO_RELOAD_KEY, String(Date.now()));
+    const raw = sessionStorage.getItem(AUTO_RELOAD_KEY);
+    let data = raw ? JSON.parse(raw) : null;
+    if (!data || Date.now() - data.firstReloadTs > 60_000) {
+      data = { firstReloadTs: Date.now(), count: 0 };
+    }
+    data.count++;
+    sessionStorage.setItem(AUTO_RELOAD_KEY, JSON.stringify(data));
   } catch {
     // sessionStorage unavailable — allow reload anyway
   }

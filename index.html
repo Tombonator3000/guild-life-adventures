@@ -104,21 +104,47 @@
              Clear everything and reload BEFORE module script tries to load. */
           console.warn('[Guild Life] Stale HTML detected (inline check). Build:',
             window.__HTML_BUILD_TIME__,'Server:',data.buildTime);
+          /* Check reload loop prevention — max 2 reloads per 60s */
           try{
-            if(navigator.serviceWorker){
-              navigator.serviceWorker.getRegistrations().then(function(regs){
-                regs.forEach(function(r){r.unregister()});
-              });
+            var raw=sessionStorage.getItem('guild-stale-reload');
+            if(raw){
+              var rd=JSON.parse(raw);
+              if(Date.now()-rd.ts<60000&&rd.count>=2){
+                console.warn('[Guild Life] Reload limit reached — showing manual button instead');
+                return;
+              }
+              if(Date.now()-rd.ts>=60000) raw=null;
             }
-            if(window.caches){
-              caches.keys().then(function(keys){
-                keys.forEach(function(k){caches.delete(k)});
-              });
-            }
+            var reloadData=raw?JSON.parse(raw):{ts:Date.now(),count:0};
+            if(!reloadData.ts)reloadData.ts=Date.now();
+            reloadData.count++;
+            sessionStorage.setItem('guild-stale-reload',JSON.stringify(reloadData));
           }catch(e){}
-          /* Mark that we're reloading to prevent loops */
-          try{sessionStorage.setItem('guild-stale-reload',Date.now().toString())}catch(e){}
-          setTimeout(function(){location.reload()},300);
+          /* Properly await cache cleanup before reloading */
+          Promise.resolve()
+            .then(function(){
+              var promises=[];
+              if(navigator.serviceWorker){
+                promises.push(
+                  navigator.serviceWorker.getRegistrations().then(function(regs){
+                    return Promise.all(regs.map(function(r){return r.unregister()}));
+                  })
+                );
+              }
+              if(window.caches){
+                promises.push(
+                  caches.keys().then(function(keys){
+                    return Promise.all(keys.map(function(k){return caches.delete(k)}));
+                  })
+                );
+              }
+              return Promise.all(promises);
+            })
+            .catch(function(){})
+            .then(function(){
+              /* Wait for cleanup to propagate */
+              setTimeout(function(){location.reload()},500);
+            });
         });
       })();
     </script>
