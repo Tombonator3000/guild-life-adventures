@@ -294,6 +294,33 @@ src/store/helpers/turnHelpers.ts       — Dead ternary branch fix
 - Tests: 185/185 passing (9 test files, 0 failures)
 ---
 
+## 2026-02-14 - BUG HUNT: "Loading the realm..." Freeze Fix
+
+### Bug Report (09:30 UTC)
+Game stuck on static "Loading the realm..." screen — React never mounts.
+
+### Root Cause Analysis
+1. **Audio singleton crash potential**: `audioManager` and `ambientManager` are module-level singletons whose constructors call `new AudioContext()` (via `webAudioBridge.ts`) without any try-catch. If AudioContext fails (browser restrictions, privacy settings, sandboxed iframes), the entire module loading chain crashes silently, preventing React from mounting.
+2. **No error visibility**: `main.tsx` had a bare `createRoot().render()` with no try-catch. Any uncaught error during React initialization left the static HTML "Loading the realm..." visible forever with no indication of what went wrong.
+3. **Flaky test**: `movePlayer` test expected deterministic behavior but `checkForEvent()` and `rollTravelEvent()` were wired into `movePlayer` (from the "wire up random events" fix), making it non-deterministic via `Math.random()`.
+
+### Fixes Applied
+| File | Change |
+|------|--------|
+| `src/audio/webAudioBridge.ts` | `getContext()` returns `AudioContext \| null` with try-catch; `connectElement()` returns `GainNode \| null` with try-catch fallback |
+| `src/audio/audioManager.ts` | Handle nullable `GainNode` throughout — `setGainVolume()`/`getGainVolume()` helpers fall back to `element.volume` when GainNode is null |
+| `src/audio/ambientManager.ts` | Same nullable GainNode handling as audioManager |
+| `src/main.tsx` | Wrap `createRoot().render()` in try-catch; show error message + Reload button on failure |
+| `index.html` | Add `window.onerror` handler before React script — shows error on loading screen after 3s if React fails to mount |
+| `src/test/gameActions.test.ts` | Mock `Math.random()` in movePlayer test to prevent random events from triggering |
+
+### Test Results
+- **185/185 tests pass** (was 184/185 before fix)
+- TypeScript: clean (no errors)
+- Build: succeeds
+
+---
+
 ### Development Statistics (from log.md)
 
 - **Total test count**: 185 tests across 9 test files (as of 2026-02-14)

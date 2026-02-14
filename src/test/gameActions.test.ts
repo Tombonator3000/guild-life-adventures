@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useGameStore } from '@/store/gameStore';
 import { calculateStockValue, getSellPrice, getInitialStockPrices, updateStockPrices } from '@/data/stocks';
 import { canWorkJob, applyForJob, getEntryLevelJobs, getAvailableJobs } from '@/data/jobs/utils';
@@ -51,7 +51,10 @@ describe('Player actions', () => {
   beforeEach(resetAndStart);
 
   it('movePlayer updates location and spends time', () => {
+    // Mock Math.random to prevent random travel/location events from firing
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99);
     useGameStore.getState().movePlayer(playerId, 'bank', 3);
+    randomSpy.mockRestore();
     const p = useGameStore.getState().players[0];
     expect(p.currentLocation).toBe('bank');
     expect(p.timeRemaining).toBe(57);
