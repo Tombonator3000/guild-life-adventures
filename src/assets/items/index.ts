@@ -31,6 +31,7 @@ import mysteryMeat from './mystery-meat.jpg';
 import ale from './ale.jpg';
 import stew from './stew.jpg';
 import roast from './roast.jpg';
+import feast from './feast.jpg';
 
 // Clothing (6 items: 2 casual, 2 dress, 2 business)
 import peasantGarb from './peasant-garb.jpg';
@@ -106,6 +107,7 @@ export const ITEM_IMAGES: Record<string, string> = {
   'ale': ale,
   'stew': stew,
   'roast': roast,
+  'tavern-feast': feast,
 
   // Clothing (Jones-style 3-tier: casual/dress/business)
   'peasant-garb': peasantGarb,
