@@ -1,5 +1,30 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-14 - Item Image Overhaul: Medieval Woodcut Style
+
+### Overview
+Regenerated all 50 item images in `src/assets/items/` with a consistent medieval woodcut whimsical art style using Gemini (flux.schnell). All images are 512×512 JPG, black ink on aged parchment with detailed line work. No code changes needed — same filenames, same imports.
+
+### Items Regenerated (50 total)
+- **Weapons (4)**: dagger, sword, steel-sword, enchanted-blade
+- **Armor (4)**: leather-armor, chainmail, plate-armor, enchanted-plate
+- **Shields (4)**: shield, iron-shield, tower-shield, dragon-scale-shield
+- **Food (6)**: bread, cheese, fresh-vegetables, fresh-meat, fresh-provisions, mystery-meat
+- **Tavern (4)**: ale, stew, roast, feast
+- **Clothing (5)**: peasant-garb, common-clothes, fine-clothes, noble-attire, guild-uniform
+- **Appliances (8)**: scrying-mirror, simple-scrying-glass, memory-crystal, music-box, cooking-fire, preservation-box, frost-chest, arcane-tome
+- **Magic Items (3)**: glow-orb, warmth-stone, healing-potion
+- **Durables (3)**: candles, blanket, furniture
+- **Shadow Market (2)**: stolen-goods, market-intel
+- **Tickets (4)**: lottery-ticket, jousting-ticket, theatre-ticket, bard-concert-ticket
+- **Scholar Items (3)**: encyclopedia, dictionary, atlas
+- **Extra (1)**: meat.jpg (unused but refreshed for consistency)
+
+### Style Prompt
+`Medieval woodcut whimsical illustration of [item], black ink on aged parchment, detailed line work, fantasy RPG item icon, 1:1 square`
+
+---
+
 ## 2026-02-13 - Code Audit & Refactoring Round 2: AI System Complexity
 
 ### Overview
