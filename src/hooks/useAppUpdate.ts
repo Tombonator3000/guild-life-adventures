@@ -59,12 +59,12 @@ export function useAppUpdate() {
   const [versionMismatch, setVersionMismatch] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval>>();
 
-  // SW auto-update registration — with autoUpdate, the SW calls skipWaiting()
-  // and clients.claim() automatically. The page reloads when the new SW
-  // takes control via the controllerchange event.
+  // SW registration — we still register for caching benefits, but all
+  // user-triggered updates go through hardRefresh() to avoid the race
+  // condition where skipWaiting + clientsClaim activates a new SW but
+  // the page never reloads (old JS + new SW = silent failure).
   const {
     needRefresh: [swNeedRefresh],
-    updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(_swUrl, registration) {
       if (!registration) return;
@@ -73,6 +73,23 @@ export function useAppUpdate() {
       setInterval(() => registration.update(), SW_CHECK_INTERVAL_MS);
     },
   });
+
+  // Safety net: if a new service worker takes control (e.g. auto-update
+  // via skipWaiting + clientsClaim), force a page reload. Without this
+  // listener the old JS keeps running against new SW-served assets,
+  // causing React to fail silently and the loading screen to hang.
+  useEffect(() => {
+    const onControllerChange = () => {
+      if (canAutoReload()) {
+        markAutoReload();
+        window.location.reload();
+      }
+    };
+    navigator.serviceWorker?.addEventListener('controllerchange', onControllerChange);
+    return () => {
+      navigator.serviceWorker?.removeEventListener('controllerchange', onControllerChange);
+    };
+  }, []);
 
   // version.json polling — bypasses both service worker and browser cache.
   // On initial mount, if a version mismatch is detected AND we haven't
@@ -115,15 +132,14 @@ export function useAppUpdate() {
   // Either detection method triggers the banner
   const needRefresh = swNeedRefresh || versionMismatch;
 
+  // Always use hardRefresh for user-triggered updates. The previous
+  // implementation used updateServiceWorker(true) for the SW path which
+  // only sent a skipWaiting message without reloading the page — causing
+  // the infinite loading bug. hardRefresh is reliable: unregister SW,
+  // clear caches, reload from network.
   const updateApp = useCallback(async () => {
-    if (versionMismatch) {
-      // version.json confirmed a stale build → nuclear refresh
-      await hardRefresh();
-    } else {
-      // SW detected update → use standard SW skipWaiting + reload
-      await updateServiceWorker(true);
-    }
-  }, [versionMismatch, updateServiceWorker]);
+    await hardRefresh();
+  }, []);
 
   const checkForUpdates = useCallback(async () => {
     // Trigger both detection methods simultaneously

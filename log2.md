@@ -5,6 +5,98 @@
 
 ---
 
+## 2026-02-14 - PWA Infinite Loading Fix (Round 2)
+
+### Overview (08:30 UTC)
+
+**Recurring critical bug**: Every time GitHub Pages deploys a new version and the user clicks "Update Now", the game hangs on the loading screen forever and never starts. This was supposedly fixed earlier on 2026-02-14, but the fix was insufficient — the bug kept recurring.
+
+### Root Cause Analysis
+
+The PWA update system had **two paths** when the user clicked "Update Now":
+- **Path A (version mismatch)**: `hardRefresh()` → unregister SWs, clear caches, reload. **This worked.**
+- **Path B (SW update only)**: `updateServiceWorker(true)` → sends skip-waiting message to new SW. **This was broken.**
+
+**Why Path B caused infinite loading:**
+
+1. `updateServiceWorker(true)` from vite-pwa sends a `postMessage({ type: 'SKIP_WAITING' })` to the waiting service worker
+2. The new SW activates immediately (`skipWaiting: true` + `clientsClaim: true` in vite.config.ts)
+3. The new SW takes control and starts serving **new** assets (JS bundles with new hashes)
+4. But **no page reload ever happens** — the old JavaScript keeps running in memory
+5. Old JS tries to import modules or fetch assets that no longer exist (hash mismatch)
+6. React fails to mount or crashes silently → loading screen stays forever
+
+The comment at line 63 of `useAppUpdate.ts` claimed: *"The page reloads when the new SW takes control via the controllerchange event"* — but **no controllerchange event listener was ever registered**. This was a documentation lie.
+
+### Fixes Applied
+
+**1. Always use `hardRefresh()` for user-triggered updates** (`useAppUpdate.ts`)
+- Removed the `updateServiceWorker(true)` code path entirely
+- Both version mismatch AND SW update now go through the same reliable `hardRefresh()` path
+- `hardRefresh()` = unregister all SWs + clear all caches + `window.location.reload()`
+- No more race condition between old JS and new SW
+
+**2. Added `controllerchange` event listener** (`useAppUpdate.ts`)
+- Safety net for automatic SW activations (not user-triggered)
+- If a new SW takes control via auto-update, the page now reloads automatically
+- Respects the 30-second throttle to prevent reload loops
+- Properly cleaned up on unmount
+
+**3. Improved index.html fallback timer** (`index.html`)
+- Previous: single 8s timeout, one-shot check
+- Now: checks at both 8s and 15s (second chance for slow connections)
+- Extracted to named function `guildFallbackCheck()` for reuse
+- Guards against adding duplicate buttons (checks `.fallback-btn` class)
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/hooks/useAppUpdate.ts` | Removed `updateServiceWorker` path; `updateApp` always calls `hardRefresh()`; added `controllerchange` listener |
+| `index.html` | Dual fallback timer (8s + 15s); extracted to named function; duplicate guard |
+
+### Technical Details
+
+**Before (broken):**
+```typescript
+const updateApp = useCallback(async () => {
+  if (versionMismatch) {
+    await hardRefresh();           // ← This worked
+  } else {
+    await updateServiceWorker(true); // ← This caused infinite loading
+  }
+}, [versionMismatch, updateServiceWorker]);
+```
+
+**After (fixed):**
+```typescript
+const updateApp = useCallback(async () => {
+  await hardRefresh(); // Always reliable: unregister SW + clear caches + reload
+}, []);
+```
+
+**New safety net:**
+```typescript
+useEffect(() => {
+  const onControllerChange = () => {
+    if (canAutoReload()) {
+      markAutoReload();
+      window.location.reload();
+    }
+  };
+  navigator.serviceWorker?.addEventListener('controllerchange', onControllerChange);
+  return () => {
+    navigator.serviceWorker?.removeEventListener('controllerchange', onControllerChange);
+  };
+}, []);
+```
+
+### Test Results
+- 185 tests passing (9 files, 0 failures)
+- Build succeeds cleanly
+
+---
+
 ## 2026-02-14 - Home Action Cleanup, Newspaper Restore, Weekend Image Fix
 
 ### Overview (15:00 UTC)
