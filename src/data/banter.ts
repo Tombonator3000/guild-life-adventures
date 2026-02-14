@@ -40,6 +40,9 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "I'm not saying the quests are getting worse, but yesterday someone posted one for 'finding a lost sock.'", mood: 'gossip' },
     { text: "We had an adventurer once who tried to negotiate with a dragon. There was a brief exchange of views. And fire.", mood: 'mysterious' },
     { text: "The bureaucracy here would make a dwarven tax office weep with pride.", mood: 'grumpy' },
+    { text: "An adventurer asked what the dental plan covers. I said 'getting punched in the mouth.' That IS the dental plan.", mood: 'gossip' },
+    { text: "Guild motto: 'Fortune favours the bold.' Guild reality: Fortune favours the well-insured.", mood: 'friendly' },
+    { text: "We had a motivation poster: 'Hang in there!' It was next to the execution notice board. Bad placement.", mood: 'gossip' },
   ],
 
   'bank': [
@@ -62,6 +65,8 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "Our motto: 'Your gold is safe with us.' Our unofficial motto: 'Probably.'", mood: 'friendly' },
     { text: "Someone asked for a loan to pay off another loan. I admired the audacity, if nothing else.", mood: 'gossip' },
     { text: "The thing about compound interest is that nobody understands it. Including us.", mood: 'mysterious' },
+    { text: "A dragon came in to open an account. We asked for two forms of ID. He provided fire. Twice.", mood: 'gossip' },
+    { text: "The vault is protected by three locks, two spells, and one very cross dwarf named Björn.", mood: 'friendly' },
   ],
 
   'general-store': [
@@ -83,6 +88,8 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "We don't do loyalty cards. We do loyalty. Which is to say, you have no choice, I'm the only store.", mood: 'friendly' },
     { text: "A customer returned cheese saying it had gone off. It was supposed to smell like that. I think.", mood: 'gossip' },
     { text: "Food doesn't last without a Preservation Box. Invest in one, or eat at the tavern. Your choice, your funeral.", mood: 'warning' },
+    { text: "A wizard asked for gluten-free bread. Sir, this is the Middle Ages. Everything is gluten. WE are gluten.", mood: 'grumpy' },
+    { text: "The turnips are fresh. The cheese is aged. The sausages are... best not investigated.", mood: 'friendly' },
   ],
 
   'armory': [
@@ -104,6 +111,8 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "Had someone ask for a refund because his sword 'didn't slay the dragon.' What did he expect, a dagger?", mood: 'gossip' },
     { text: "I guarantee all my weapons for life. The weapon's life, not yours.", mood: 'grumpy' },
     { text: "A knight came in asking for 'something lighter.' I gave him a torch.", mood: 'gossip' },
+    { text: "Every weapon I sell comes with a free lecture on how to hold it. Most people need it.", mood: 'grumpy' },
+    { text: "Someone asked if the armor comes in 'slimming black.' This is a forge, not a tailor.", mood: 'gossip' },
   ],
 
   'enchanter': [
@@ -125,6 +134,8 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "The universe is held together by magic, willpower, and an alarming amount of string.", mood: 'mysterious' },
     { text: "Please don't touch the glowing thing. I'm not entirely sure what it does, and I made it.", mood: 'warning' },
     { text: "I turned invisible once. It was nice for about five minutes, then people started sitting on me.", mood: 'gossip' },
+    { text: "The crystal ball shows the future. Unfortunately, the future is mostly paperwork.", mood: 'mysterious' },
+    { text: "I enchanted a broom to sweep by itself. It swept the cat. Then the furniture. Then my dignity.", mood: 'gossip' },
   ],
 
   'shadow-market': [
@@ -146,6 +157,8 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "The stolen goods aren't stolen. They've been liberated from people who didn't appreciate them.", mood: 'gossip' },
     { text: "This mystery meat is a mystery even to me. And I sold it to myself.", mood: 'gossip' },
     { text: "My prices are so low, even I don't know how I stay in business. Tax evasion, probably.", mood: 'friendly' },
+    { text: "I don't ask where things come from. In return, nobody asks where I came from. It's a system.", mood: 'mysterious' },
+    { text: "Fell off a cart, fell out of a window, fell out of someone's pocket... everything here is a victim of gravity.", mood: 'gossip' },
   ],
 
   'academy': [
@@ -168,6 +181,8 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "We teach critical thinking here. The first lesson is questioning why you enrolled.", mood: 'friendly' },
     { text: "The library's restricted section is restricted for a reason. The books bite.", mood: 'warning' },
     { text: "Last week's thesis topic was 'Why Dragons Exist: A Critical Inquiry.' The dragon reviewer was not pleased.", mood: 'gossip' },
+    { text: "The dormitory has a strict 'no summoning after midnight' policy. It is widely ignored.", mood: 'warning' },
+    { text: "Graduation ceremony is lovely. Assuming you survive the final exam. Literally. We lose a few every year.", mood: 'gossip' },
   ],
 
   'rusty-tankard': [
@@ -191,23 +206,35 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "The food here has never killed anyone. That we know of. That complained.", mood: 'friendly' },
     { text: "Every adventurer who comes in here has a story. Most of them aren't true, but the ale doesn't mind.", mood: 'friendly' },
     { text: "Someone tried to pay with 'exposure' last week. I gave them exposure. To the door.", mood: 'grumpy' },
+    { text: "We had a bard play last night who was so bad, the ale curdled. The ale! It was already terrible!", mood: 'gossip' },
+    { text: "A regular once drank so much he proposed to the hat stand. They're still together, actually.", mood: 'gossip' },
   ],
 
   'cave': [
-    { text: "The darkness whispers of treasure... and danger.", mood: 'mysterious' },
-    { text: "Many enter. Fewer leave. Such is the way.", mood: 'warning' },
-    { text: "The deeper floors hold greater rewards.", mood: 'mysterious' },
-    { text: "Something stirs in the depths...", mood: 'warning' },
-    { text: "I've mapped the first three floors. Beyond that... good luck.", mood: 'grumpy' },
-    { text: "The goblins on Floor 1 are child's play. Floor 5? Different story.", mood: 'warning' },
-    { text: "Bring a shield. The creatures down there hit harder than you'd think.", mood: 'warning' },
-    { text: "Legend says the Abyss holds treasures beyond imagination.", mood: 'mysterious' },
-    { text: "Rest here if you must. The cave entrance is safe... mostly.", mood: 'friendly' },
-    { text: "The Dragon's Lair is no place for the unprepared.", mood: 'warning' },
-    { text: "The cave doesn't care about your feelings. Or your armor. Or your continued existence.", mood: 'grumpy' },
-    { text: "Last words of the previous adventurer: 'How bad can it be?' Quite bad, as it turned out.", mood: 'gossip' },
-    { text: "The echoes down there sometimes echo things that haven't been said yet. Very unsettling.", mood: 'mysterious' },
-    { text: "A sign at the entrance says 'Abandon Hope.' Someone crossed it out and wrote 'Free Loot.'", mood: 'gossip' },
+    // Ominous / atmospheric
+    { text: "The darkness breathes. Can you hear it? In... out... in... out...", mood: 'mysterious' },
+    { text: "Something below knows your name. It has known it for a very long time.", mood: 'mysterious' },
+    { text: "The walls are wet. Not with water. Best not to think about it.", mood: 'warning' },
+    { text: "There are footprints going in. None coming out. Curious, that.", mood: 'mysterious' },
+    { text: "The cave does not hunger. The cave does not thirst. The cave simply... consumes.", mood: 'mysterious' },
+    { text: "Somewhere deep below, something just stopped moving. It heard you.", mood: 'warning' },
+    { text: "The torches flicker, though there is no wind. There has never been wind down here.", mood: 'mysterious' },
+    { text: "The stones whisper warnings in languages that died before the world had a name.", mood: 'mysterious' },
+    // Darkly humorous
+    { text: "A sign at the entrance says 'Abandon Hope.' Someone crossed it out and wrote 'Free Loot.' They didn't come back either.", mood: 'gossip' },
+    { text: "Last words of the previous adventurer: 'How bad can it be?' His epitaph reads the same.", mood: 'gossip' },
+    { text: "The cave doesn't care about your armor. Or your sword. Or your feelings. Or your plans for Tuesday.", mood: 'grumpy' },
+    { text: "The echoes down there sometimes echo things that haven't been said yet. Very poor customer experience.", mood: 'mysterious' },
+    { text: "Someone left a one-star review scratched into the wall: 'Too many goblins. Not enough loot. Got eaten.'", mood: 'gossip' },
+    { text: "The smell improves on Floor 3. It becomes a different, worse smell. But it's different. That's something.", mood: 'grumpy' },
+    { text: "The goblins on Floor 1 are child's play. The children on Floor 3 are goblin's play. It's all very confusing.", mood: 'gossip' },
+    { text: "Fun fact: the cave is older than the mountain above it. Don't ask how. Nobody likes that conversation.", mood: 'mysterious' },
+    // Practical warnings (with dark humor)
+    { text: "Bring a shield. The creatures hit harder than your landlord's rent notices. And that's saying something.", mood: 'warning' },
+    { text: "Floor 5 is where hope goes to file its resignation. Bring potions. Bring prayers. Bring a will.", mood: 'warning' },
+    { text: "The Dragon's Lair is no place for the unprepared. It is, however, an excellent place for the prepared to discover they were wrong.", mood: 'warning' },
+    { text: "Rest here if you must. The entrance is safe. Mostly. The definition of 'mostly' is doing a lot of work in that sentence.", mood: 'friendly' },
+    { text: "The deeper floors hold greater rewards. Also greater everything else. Mostly teeth.", mood: 'warning' },
   ],
 
   'forge': [
@@ -225,6 +252,8 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "I once forged a sword so sharp it cut through the concept of Tuesday. Lost a whole day.", mood: 'gossip' },
     { text: "Health and safety? In a forge? You're standing next to molten metal, what more safety do you want?", mood: 'grumpy' },
     { text: "The anvil's been in the family for seven generations. So has the bruise on my thumb.", mood: 'friendly' },
+    { text: "A customer asked if I could make a sword that 'speaks.' I can barely make one that cuts.", mood: 'grumpy' },
+    { text: "The forge runs on three things: coal, sweat, and a deep-seated fear of the wife's cooking.", mood: 'gossip' },
   ],
 
   'landlord': [
@@ -245,6 +274,9 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "Noble Heights residents complain about everything. The silence, the comfort, the lack of adventure. Ungrateful lot.", mood: 'gossip' },
     { text: "Eviction is painless. For me. For you it involves a surprisingly strong dwarf.", mood: 'grumpy' },
     { text: "Late fees start after one week. After two weeks, the fee becomes... creative.", mood: 'warning' },
+    { text: "Had someone grovel for an extension once. Cried real tears. I was moved. I still said no.", mood: 'grumpy' },
+    { text: "Begging for more time? I've a ledger of broken promises thicker than the city wall.", mood: 'warning' },
+    { text: "The eviction dwarf doesn't do refunds. Or apologies. Or mercy.", mood: 'grumpy' },
   ],
 
   'graveyard': [
@@ -263,6 +295,8 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "A skeleton tried to file a noise complaint last week. Against itself. Philosophical, in a way.", mood: 'gossip' },
     { text: "The tombstones here are very informative. 'Here lies Dave. He didn't listen.' Classic Dave.", mood: 'friendly' },
     { text: "I've buried adventurers who came back, complained about the afterlife, and went back to work.", mood: 'grumpy' },
+    { text: "The afterlife has a queue. Apparently the paperwork there is worse than the guild's. Says it all.", mood: 'gossip' },
+    { text: "A ghost asked me if I could dig him up. I said that's not how any of this works. He tipped well, though.", mood: 'gossip' },
   ],
 
   'fence': [
@@ -281,6 +315,8 @@ export const BANTER_LINES: Partial<Record<LocationId, BanterLine[]>> = {
     { text: "Every item here has a story. Most of them are 'I needed the money.' Sad, but profitable.", mood: 'grumpy' },
     { text: "Gambling is a tax on people who are bad at math. Please, continue.", mood: 'friendly' },
     { text: "I accept all currencies. Gold, silver, tears, broken dreams — it all spends the same.", mood: 'mysterious' },
+    { text: "The odds are always in my favour. That's not a slogan, it's mathematics. I checked.", mood: 'friendly' },
+    { text: "Someone pawned their sense of shame last week. Couldn't give it away. Market's flooded.", mood: 'gossip' },
   ],
 };
 

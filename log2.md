@@ -360,3 +360,103 @@ Three fixes to the newspaper (The Guildholm Herald) based on gameplay feedback:
 - Tests: 185/185 passing (9 test files, 0 failures)
 
 ---
+
+## 2026-02-14 — Landlord "Beg for More Time" + NPC Banter Overhaul + PWA Cache-Bust (12:00 UTC)
+
+### Overview
+
+Three features/fixes implemented in a single session:
+
+1. **Landlord: "Beg for More Time"** — New mechanic allowing players to grovel before Tomas for a one-week rent extension when 2+ weeks overdue.
+2. **NPC Banter Overhaul** — Added 30+ new banter lines across all NPCs. Cave NPC ("The Maw") completely reworked to be more ominous, atmospheric, and darkly humorous.
+3. **PWA Update Cache-Busting** — Added `?_=${Date.now()}` cache-busting parameter to version.json fetches to defeat CDN/proxy caches that ignore `no-store` headers.
+
+---
+
+### 1. Landlord: "Beg for More Time"
+
+**Design:**
+- Available when player is 2+ weeks overdue on rent (`weeksSinceRent >= 2`)
+- Not available if homeless or already used this rent cycle
+- Costs 1 hour (time spent pleading)
+- Success chance: 50% base + 0.5% per point of dependability (max +30%), capped at 80%
+- **On success**: `weeksSinceRent` reduced by 1, -2 happiness (dignity cost)
+- **On failure**: No extension, -5 happiness (humiliation), attempt still consumed
+- `rentExtensionUsed` flag resets when rent is actually paid via `prepayRent`
+
+**Files Changed:**
+
+| File | Change |
+|------|--------|
+| `src/types/game.types.ts` | Added `rentExtensionUsed: boolean` to `Player` interface |
+| `src/store/storeTypes.ts` | Added `begForMoreTime` action signature |
+| `src/store/helpers/economy/bankingHelpers.ts` | Implemented `begForMoreTime` logic with probability roll; added `rentExtensionUsed: false` reset in `prepayRent` |
+| `src/store/gameStore.ts` | Added `rentExtensionUsed: false` to default player |
+| `src/components/game/LandlordPanel.tsx` | Added `begForMoreTime` prop + "Desperate Measures" UI section with ActionButton |
+| `src/components/game/locationTabs.tsx` | Added `begForMoreTime` to `LocationTabContext` interface and `landlordTabs` function |
+| `src/components/game/LocationPanel.tsx` | Passed `store.begForMoreTime` through LocationTabContext |
+| `src/network/types.ts` | Added `begForMoreTime` to `ALLOWED_GUEST_ACTIONS` whitelist |
+| `src/data/banter.ts` | Added 3 landlord banter lines about begging/extensions |
+
+**Toast Messages:**
+- Success: *"Tomas sighs heavily. 'One more week. ONE. And I'm adding it to my ledger of disappointments.'"*
+- Failure: *"Tomas crosses his arms. 'I've heard better sob stories from the rats in the cellar. Pay up.'"*
+
+---
+
+### 2. NPC Banter Overhaul
+
+**Cave NPC — Complete Rework:**
+- Renamed from "The Cave" / "Dark Entrance" to **"The Maw"** / **"It Watches"**
+- Subtitle changed from "Dark Caverns" to **"The Yawning Dark"**
+- New greeting: *"The darkness breathes. Something ancient stirs below. Also, there is a smell. An unreasonable smell."*
+- Darker color scheme: deeper purples and blacks (`#0d0d0d` bg, `#4a3a5a` accent)
+- **21 new banter lines** (replacing 14 old ones) in three categories:
+  - **Ominous/atmospheric** (8 lines): Walls that bleed, footprints that go in but not out, stones whispering in dead languages
+  - **Darkly humorous** (8 lines): One-star reviews, the smell "improving" on Floor 3, goblins vs children confusion
+  - **Practical warnings with humor** (5 lines): Shields vs rent notices, Floor 5 as hope's resignation letter
+
+**Other NPCs — New Lines (2-3 per NPC):**
+- **Guild Hall** (+3): Dental plan joke, Fortune/insurance, motivation poster
+- **Bank** (+2): Dragon's two forms of ID (fire), Björn the guard dwarf
+- **General Store** (+2): Gluten-free medieval, turnips/cheese/sausages
+- **Armory** (+2): Free holding lecture, "slimming black" armor
+- **Enchanter** (+2): Crystal ball/paperwork, self-sweeping broom
+- **Shadow Market** (+2): Gravity victims, identity mystery
+- **Rusty Tankard** (+2): Bard so bad ale curdled, hat stand marriage
+- **Academy** (+2): No-summoning-after-midnight, graduation survival
+- **Forge** (+2): Speaking sword request, wife's cooking fuel
+- **Graveyard** (+2): Afterlife queue/paperwork, ghost wants to be dug up
+- **Fence** (+2): Odds/mathematics, pawned shame
+
+**Total new banter lines: ~33 across all locations.**
+
+**NPC Greeting Updates:**
+- **Tomas (Landlord)**: Extended with "...which is how time works"
+- **Morthos (Graveyard)**: Extended with "One complained about the noise"
+
+---
+
+### 3. PWA Update Cache-Busting
+
+**Problem:** version.json fetches could be served stale by CDN/proxy caches that don't fully respect `cache: 'no-store'` headers, preventing update detection.
+
+**Fix:** Added `?_=${Date.now()}` query parameter to both version.json fetch locations:
+- Periodic check in `useEffect` (every 60s)
+- Manual `checkForUpdates()` callback
+
+This ensures every request gets a unique URL, making CDN caching impossible.
+
+| File | Change |
+|------|--------|
+| `src/hooks/useAppUpdate.ts` | Added `?_=${Date.now()}` cache-busting to both version.json fetch URLs |
+
+---
+
+### Verification
+
+- Build: Clean (vite build succeeds)
+- Tests: 185/185 passing (9 test files, 0 failures)
+- No TypeScript errors
+
+---

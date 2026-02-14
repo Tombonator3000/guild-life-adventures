@@ -88,9 +88,61 @@ export function createBankingActions(set: SetFn, get: GetFn) {
             gold: p.gold - totalCost,
             rentPrepaidWeeks: p.rentPrepaidWeeks + weeks,
             weeksSinceRent: 0,
+            rentExtensionUsed: false, // Reset beg-for-time on payment
           };
         }),
       }));
+    },
+
+    // Beg the landlord for a one-week rent extension
+    // 50% base chance, +1% per point of dependability (max +50%), capped at 80%
+    // Can only be used once per rent cycle (resets when rent is paid)
+    begForMoreTime: (playerId: string): { success: boolean; message: string } => {
+      const state = get();
+      const player = state.players.find(p => p.id === playerId);
+      if (!player) return { success: false, message: 'Player not found.' };
+      if (player.rentExtensionUsed) return { success: false, message: 'You already begged this cycle. Tomas remembers.' };
+      if (player.weeksSinceRent < 2) return { success: false, message: 'You\'re not overdue enough to need begging.' };
+      if (player.housing === 'homeless') return { success: false, message: 'You don\'t have housing to extend.' };
+
+      // Calculate success chance: 50% base + dependability bonus (capped at 80%)
+      const baseChance = 0.50;
+      const depBonus = Math.min(player.dependability * 0.005, 0.30);
+      const successChance = Math.min(baseChance + depBonus, 0.80);
+      const roll = Math.random();
+      const succeeded = roll < successChance;
+
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          if (succeeded) {
+            return {
+              ...p,
+              weeksSinceRent: Math.max(0, p.weeksSinceRent - 1),
+              rentExtensionUsed: true,
+              happiness: Math.max(0, p.happiness - 2), // Dignity cost
+            };
+          } else {
+            return {
+              ...p,
+              rentExtensionUsed: true,
+              happiness: Math.max(0, p.happiness - 5), // Humiliation
+            };
+          }
+        }),
+      }));
+
+      if (succeeded) {
+        return {
+          success: true,
+          message: 'Tomas sighs heavily. "One more week. ONE. And I\'m adding it to my ledger of disappointments."',
+        };
+      } else {
+        return {
+          success: false,
+          message: 'Tomas crosses his arms. "I\'ve heard better sob stories from the rats in the cellar. Pay up."',
+        };
+      }
     },
 
     // Move to new housing with locked-in rent

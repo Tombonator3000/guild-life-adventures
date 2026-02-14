@@ -145,6 +145,7 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'payRent',
   'prepayRent',
   'moveToHousing',
+  'begForMoreTime',
 
   // Work & Education
   'setJob',

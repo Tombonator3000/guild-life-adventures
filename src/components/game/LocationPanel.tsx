@@ -84,6 +84,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     completeDegree: store.completeDegree,
     prepayRent: store.prepayRent,
     moveToHousing: store.moveToHousing,
+    begForMoreTime: store.begForMoreTime,
     depositToBank: store.depositToBank,
     withdrawFromBank: store.withdrawFromBank,
     takeQuest: store.takeQuest,
