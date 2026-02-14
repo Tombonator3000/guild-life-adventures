@@ -5,7 +5,7 @@
 
 import type { GameState } from '@/types/game.types';
 
-const SAVE_VERSION = 3;
+const SAVE_VERSION = 4;
 const STORAGE_PREFIX = 'guild-life-';
 const AUTO_SAVE_KEY = `${STORAGE_PREFIX}autosave`;
 const SAVE_SLOT_KEY = (slot: number) => `${STORAGE_PREFIX}save-${slot}`;
@@ -86,6 +86,22 @@ export function loadGame(slot: number = 0): SaveData | null {
         }
       }
       saveData.version = 3;
+    }
+
+    if (saveData.version < 4) {
+      // v3 → v4: Add Hexes & Curses system fields
+      if (saveData.gameState?.players) {
+        for (const p of saveData.gameState.players as unknown as Record<string, unknown>[]) {
+          if (p.hexScrolls === undefined) p.hexScrolls = [];
+          if (p.activeCurses === undefined) p.activeCurses = [];
+          if (p.hasProtectiveAmulet === undefined) p.hasProtectiveAmulet = false;
+          if (p.hexCastCooldown === undefined) p.hexCastCooldown = 0;
+        }
+      }
+      if (saveData.gameState && (saveData.gameState as Record<string, unknown>).locationHexes === undefined) {
+        (saveData.gameState as Record<string, unknown>).locationHexes = [];
+      }
+      saveData.version = 4;
     }
 
     return saveData;

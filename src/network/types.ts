@@ -204,4 +204,15 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
 
   // Food with spoilage
   'buyFoodWithSpoilage',
+
+  // Hexes & Curses
+  'buyHexScroll',
+  'castLocationHex',
+  'castPersonalCurse',
+  'buyProtectiveAmulet',
+  'dispelLocationHex',
+  'cleanseCurse',
+  'performDarkRitual',
+  'attemptCurseReflection',
+  'addHexScrollToPlayer',
 ]);

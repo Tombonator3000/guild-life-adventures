@@ -17,6 +17,7 @@ import {
 import { ActionButton } from './ActionButton';
 import { toast } from 'sonner';
 import { useGameStore } from '@/store/gameStore';
+import { getHexById } from '@/data/hexes';
 import { useTranslation } from '@/i18n';
 import { calculateCombatStats, getDurabilityCondition, MAX_DURABILITY } from '@/data/items';
 import {
@@ -178,6 +179,17 @@ export function CavePanel({
       applyRareDrop(player.id, activeFloor.rareDrop.id);
       toast.success(
         `RARE DROP: ${result.rareDropName}! ${activeFloor.rareDrop.description}`,
+        { duration: 6000 },
+      );
+    }
+
+    // Apply hex scroll drop (if hexes enabled and boss dropped one)
+    if (result.hexScrollDropId) {
+      const { addHexScrollToPlayer } = useGameStore.getState();
+      addHexScrollToPlayer(player.id, result.hexScrollDropId);
+      const hexDef = getHexById(result.hexScrollDropId);
+      toast.success(
+        `DARK SCROLL: ${hexDef?.name || 'Unknown Hex'}! A forbidden scroll materializes from the darkness.`,
         { duration: 6000 },
       );
     }

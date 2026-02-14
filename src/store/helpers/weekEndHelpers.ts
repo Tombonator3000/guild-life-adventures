@@ -31,6 +31,7 @@ import type { WeatherState } from '@/data/weather';
 import { getActiveFestival } from '@/data/festivals';
 import type { Festival, FestivalId } from '@/data/festivals';
 import { updateAchievementStats } from '@/data/achievements';
+import { processHexExpiration, hasCurseEffect } from './hexHelpers';
 import type { SetFn, GetFn } from '../storeTypes';
 import { getHomeLocation } from './turnHelpers';
 
@@ -209,9 +210,14 @@ function processEmployment(p: Player, crashResult: MarketCrashResult, msgs: stri
 
 /** Deplete food and degrade clothing */
 function processNeeds(p: Player, _isClothingDegradation: boolean, msgs: string[]): void {
+  // Check for Curse of Decay — doubles food/clothing degradation
+  const decayCurse = hasCurseEffect(p, 'food-clothing-decay');
+  const decayMultiplier = decayCurse ? decayCurse.magnitude : 1;
+
   // Food depletion — 35/week so players must buy food almost every round
   // (unless they have a Preservation Box with stored fresh food as backup)
-  p.foodLevel = Math.max(0, p.foodLevel - 35);
+  const foodDrain = Math.round(35 * decayMultiplier);
+  p.foodLevel = Math.max(0, p.foodLevel - foodDrain);
 
   // Clear store-bought food flag when all food is consumed (Tavern food doesn't set this flag)
   if (p.foodLevel <= 0) {
@@ -224,7 +230,8 @@ function processNeeds(p: Player, _isClothingDegradation: boolean, msgs: string[]
   // Clothing degradation (weekly — Jones-style gradual wear)
   // -3 condition per week. Clothes degrade through tiers: business → dress → casual → none
   const prevTier = getClothingTier(p.clothingCondition);
-  p.clothingCondition = Math.max(0, p.clothingCondition - CLOTHING_DEGRADATION_PER_WEEK);
+  const clothingDrain = Math.round(CLOTHING_DEGRADATION_PER_WEEK * decayMultiplier);
+  p.clothingCondition = Math.max(0, p.clothingCondition - clothingDrain);
   const newTier = getClothingTier(p.clothingCondition);
 
   if (!p.isAI) {
@@ -752,8 +759,14 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
         return p;
       });
 
+      // --- Step 2b: Process hex/curse expiration ---
+      const hexResult = processHexExpiration(updatedPlayers, state.locationHexes);
+      const hexPlayers = hexResult.players;
+      const hexLocationHexes = hexResult.locationHexes;
+      eventMessages.push(...hexResult.messages);
+
       // --- Step 3: Death checks ---
-      processDeathChecks(updatedPlayers, eventMessages);
+      processDeathChecks(hexPlayers, eventMessages);
 
       // --- Step 4: Update stock prices ---
       const isStockCrash = economy.economyTrend === -1 && Math.random() < 0.10;
@@ -763,7 +776,7 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
       }
 
       // --- Step 5: Check game-over conditions and set up new week ---
-      const firstAliveIndex = updatedPlayers.findIndex(p => !p.isGameOver);
+      const firstAliveIndex = hexPlayers.findIndex(p => !p.isGameOver);
       const isRentDue = newWeek % 4 === 0;
 
       // Shared state fields updated every week-end
@@ -776,6 +789,7 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
         weather,
         activeFestival: activeFestivalId,
         weeklyNewsEvents: newsEvents,
+        locationHexes: hexLocationHexes,
       };
 
       // All players dead
@@ -785,7 +799,7 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
       }
 
       // Last player standing wins
-      const alivePlayers = updatedPlayers.filter(p => !p.isGameOver);
+      const alivePlayers = hexPlayers.filter(p => !p.isGameOver);
       if (alivePlayers.length === 1 && updatedPlayers.length > 1) {
         set({
           ...weekEndState,
@@ -797,13 +811,13 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
       }
 
       // Normal week transition
-      const firstPlayer = updatedPlayers[firstAliveIndex];
+      const firstPlayer = hexPlayers[firstAliveIndex];
       const firstPlayerHome: LocationId = getHomeLocation(firstPlayer.housing);
 
       set({
         ...weekEndState,
         currentPlayerIndex: firstAliveIndex,
-        players: updatedPlayers.map((p, index) =>
+        players: hexPlayers.map((p, index) =>
           index === firstAliveIndex
             ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: firstPlayerHome, dungeonAttemptsThisTurn: 0 }
             : p

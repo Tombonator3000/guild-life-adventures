@@ -11,6 +11,8 @@ import { calculateGoalProgress, getWeakestGoal } from '../strategy';
 import type { AIAction, GoalProgress } from '../types';
 import type { ActionContext } from './actionContext';
 import type { Player } from '@/types/game.types';
+import { getGameOption } from '@/data/gameOptions';
+import { getHexById } from '@/data/hexes';
 
 /**
  * Calculate a rival's goal progress to understand their strategy
@@ -135,6 +137,48 @@ export function generateRivalryActions(ctx: ActionContext): AIAction[] {
           details: { amount: depositAmount },
         });
       }
+    }
+  }
+
+  // === RIVALRY: Hex casting (when enabled) ===
+  if (getGameOption('enableHexesCurses') && player.hexScrolls.length > 0 && threatIsClose) {
+    const castLocations = ['shadow-market', 'enchanter', 'graveyard'] as const;
+    if (castLocations.includes(currentLocation as typeof castLocations[number])) {
+      // Cast personal curses on biggest threat
+      for (const scroll of player.hexScrolls) {
+        const hex = getHexById(scroll.hexId);
+        if (!hex || player.timeRemaining < hex.castTime) continue;
+        if (hex.category === 'personal' || hex.category === 'sabotage') {
+          actions.push({
+            type: 'cast-curse',
+            priority: 72,
+            description: `Curse ${biggestThreat.name} with ${hex.name}`,
+            details: { hexId: hex.id, targetId: biggestThreat.id },
+          });
+          break; // One hex action per turn
+        }
+        if (hex.category === 'location') {
+          actions.push({
+            type: 'cast-location-hex',
+            priority: 65,
+            description: `Hex a location to block ${biggestThreat.name}`,
+            details: { hexId: hex.id },
+          });
+          break;
+        }
+      }
+    }
+  }
+
+  // === RIVALRY: Buy Protective Amulet (defense) ===
+  if (getGameOption('enableHexesCurses') && !player.hasProtectiveAmulet && player.gold > 500 && threatIsClose) {
+    if (currentLocation === 'enchanter') {
+      actions.push({
+        type: 'buy-amulet',
+        priority: 55,
+        description: 'Buy Protective Amulet for defense',
+        details: {},
+      });
     }
   }
 

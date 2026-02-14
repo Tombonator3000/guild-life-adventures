@@ -29,6 +29,13 @@ import { AcademyPanel } from './AcademyPanel';
 import { LandlordPanel } from './LandlordPanel';
 import { CavePanel } from './CavePanel';
 import { GraveyardPanel } from './GraveyardPanel';
+import { HexShopPanel } from './HexShopPanel';
+import { GraveyardHexPanel } from './GraveyardHexPanel';
+import { getGameOption } from '@/data/gameOptions';
+import { getEnchanterHexStock, getShadowMarketHexStock, isLocationHexed, getHexById } from '@/data/hexes';
+import type { ActiveLocationHex } from '@/data/hexes';
+import { isPlayerRuined } from '@/store/helpers/hexHelpers';
+import { useGameStore } from '@/store/gameStore';
 
 // Map location ID to the job location name used in jobs.ts
 const JOB_LOCATION_MAP: Record<string, string> = {
@@ -354,8 +361,10 @@ function armoryTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function enchanterTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, priceModifier, modifyGold, modifyHealth, spendTime, cureSickness, modifyMaxHealth } = ctx;
-  return [
+  const { player, players, priceModifier, modifyGold, modifyHealth, spendTime, cureSickness, modifyMaxHealth } = ctx;
+  const hexesEnabled = getGameOption('enableHexesCurses');
+  const enchanterHexes = hexesEnabled ? getEnchanterHexStock(player) : [];
+  const tabs: LocationTab[] = [
     {
       id: 'healing',
       label: 'Healing',
@@ -393,6 +402,26 @@ function enchanterTabs(ctx: LocationTabContext): LocationTab[] {
       ),
     },
   ];
+
+  // Forbidden Scrolls tab (only when hexes enabled)
+  if (hexesEnabled) {
+    tabs.push({
+      id: 'hexes',
+      label: 'Dark Scrolls',
+      content: (
+        <HexShopPanel
+          player={player}
+          players={players}
+          priceModifier={priceModifier}
+          availableHexes={enchanterHexes}
+          showDefense={true}
+          variant="enchanter"
+        />
+      ),
+    });
+  }
+
+  return tabs;
 }
 
 function landlordTabs(ctx: LocationTabContext): LocationTab[] {
@@ -482,7 +511,10 @@ function shadowMarketTabs(ctx: LocationTabContext): LocationTab[] {
     buyTicket,
   };
 
-  return [
+  const hexesEnabled = getGameOption('enableHexesCurses');
+  const shadowHexes = hexesEnabled ? getShadowMarketHexStock(week) : [];
+
+  const tabs: LocationTab[] = [
     {
       id: 'goods',
       label: 'Goods',
@@ -509,6 +541,26 @@ function shadowMarketTabs(ctx: LocationTabContext): LocationTab[] {
     { id: 'scholar', label: 'Scholar Texts', content: <ShadowMarketPanel {...shadowMarketProps} section="scholar" /> },
     { id: 'appliances', label: 'Magical Items', content: <ShadowMarketPanel {...shadowMarketProps} section="appliances" /> },
   ];
+
+  // Dirty Tricks tab (only when hexes enabled)
+  if (hexesEnabled) {
+    tabs.push({
+      id: 'hexes',
+      label: 'Dirty Tricks',
+      content: (
+        <HexShopPanel
+          player={player}
+          players={players}
+          priceModifier={priceModifier}
+          availableHexes={shadowHexes}
+          showDefense={false}
+          variant="shadow-market"
+        />
+      ),
+    });
+  }
+
+  return tabs;
 }
 
 function fenceTabs(ctx: LocationTabContext): LocationTab[] {
@@ -561,7 +613,8 @@ function fenceTabs(ctx: LocationTabContext): LocationTab[] {
 
 function graveyardTabs(ctx: LocationTabContext): LocationTab[] {
   const { player, priceModifier, modifyGold, modifyHappiness, modifyRelaxation, modifyMaxHealth, spendTime } = ctx;
-  return [{
+  const hexesEnabled = getGameOption('enableHexesCurses');
+  const tabs: LocationTab[] = [{
     id: 'cemetery',
     label: 'Cemetery',
     content: (
@@ -586,6 +639,22 @@ function graveyardTabs(ctx: LocationTabContext): LocationTab[] {
       />
     ),
   }];
+
+  // Dark Magic tab (only when hexes enabled)
+  if (hexesEnabled) {
+    tabs.push({
+      id: 'dark-magic',
+      label: 'Dark Magic',
+      content: (
+        <GraveyardHexPanel
+          player={player}
+          priceModifier={priceModifier}
+        />
+      ),
+    });
+  }
+
+  return tabs;
 }
 
 function caveTabs(ctx: LocationTabContext): LocationTab[] {
@@ -642,6 +711,39 @@ const TAB_FACTORIES: Partial<Record<LocationId, TabFactory>> = {
 /** Get location tabs for a given location. Returns null if player is not at the location. */
 export function getLocationTabs(locationId: LocationId, isHere: boolean, ctx: LocationTabContext): LocationTab[] | null {
   if (!isHere) return null;
+
+  // Check for location hex or Hex of Ruin blockage
+  if (getGameOption('enableHexesCurses')) {
+    const locationHexes = useGameStore.getState().locationHexes;
+    const activeHex = isLocationHexed(locationId, ctx.player.id, locationHexes);
+    const isRuined = isPlayerRuined(ctx.player);
+
+    if (activeHex || isRuined) {
+      const hexName = activeHex ? (getHexById(activeHex.hexId)?.name || 'Unknown Hex') : 'Hex of Ruin';
+      const casterName = activeHex ? activeHex.casterName : 'dark forces';
+      const weeksLeft = activeHex ? activeHex.weeksRemaining : (ctx.player.activeCurses.find(c => c.effectType === 'legendary-ruin')?.weeksRemaining || 1);
+      return [{
+        id: 'hexed',
+        label: 'Sealed',
+        content: (
+          <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+            <div className="text-4xl mb-3">🔒</div>
+            <h3 className="font-display text-lg font-bold text-red-800 mb-2">Location Sealed!</h3>
+            <p className="text-sm text-red-700 mb-1">
+              <strong>{hexName}</strong> cast by {casterName}
+            </p>
+            <p className="text-xs text-[#6b5a42]">
+              This location is blocked by dark magic. {weeksLeft > 0 ? `Expires in ${weeksLeft} week${weeksLeft > 1 ? 's' : ''}.` : ''}
+            </p>
+            <p className="text-xs text-[#6b5a42] mt-2">
+              Visit the Enchanter to buy a Dispel Scroll, or wait for the hex to expire.
+            </p>
+          </div>
+        ),
+      }];
+    }
+  }
+
   const factory = TAB_FACTORIES[locationId];
   return factory ? factory(ctx) : defaultTabs();
 }

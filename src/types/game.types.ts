@@ -2,6 +2,7 @@
 
 import type { WeatherState } from '@/data/weather';
 import type { FestivalId } from '@/data/festivals';
+import type { ActiveLocationHex, ActiveCurse, HexScroll } from '@/data/hexes';
 
 export type LocationId =
   | 'noble-heights'
@@ -242,6 +243,11 @@ export interface Player {
   guildReputation: number;                    // total quest+bounty+chain completions for reputation milestones
   // Landlord rent extension ("beg for more time")
   rentExtensionUsed: boolean;                 // True if player already begged this rent cycle (reset on payment)
+  // Hexes & Curses system
+  hexScrolls: HexScroll[];                    // Hex scrolls in inventory
+  activeCurses: ActiveCurse[];                // Active personal curses afflicting this player
+  hasProtectiveAmulet: boolean;               // Blocks next incoming hex/curse (consumed on use)
+  hexCastCooldown: number;                    // Weeks until player can cast another hex (0 = ready)
 }
 
 export interface GoalSettings {
@@ -296,6 +302,8 @@ export interface GameState {
   roomCode: string | null;        // Room code for display
   // Personalized newspaper events collected during week-end processing (Jones-style)
   weeklyNewsEvents: PlayerNewsEventData[];
+  // Hexes & Curses: active location hexes on the board
+  locationHexes: ActiveLocationHex[];
 }
 
 // Serializable news event data (used in GameState, mirrors newspaper.ts PlayerNewsEvent)

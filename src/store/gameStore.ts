@@ -18,6 +18,7 @@ import { createEconomyActions } from './helpers/economyHelpers';
 import { createTurnActions } from './helpers/turnHelpers';
 import { createWorkEducationActions } from './helpers/workEducationHelpers';
 import { createQuestActions } from './helpers/questHelpers';
+import { createHexActions } from './helpers/hexHelpers';
 import { forwardIfGuest } from '@/network/NetworkActionProxy';
 import { markEventDismissed } from '@/network/networkState';
 import { getDefaultAIPortrait } from '@/data/portraits';
@@ -146,6 +147,11 @@ const createPlayer = (
   completedBountiesThisWeek: [],
   questCooldownWeeksLeft: 0,
   guildReputation: 0,
+  // Hexes & Curses
+  hexScrolls: [],
+  activeCurses: [],
+  hasProtectiveAmulet: false,
+  hexCastCooldown: 0,
 });
 
 export const useGameStore = create<GameStore>((set, get) => {
@@ -154,6 +160,7 @@ export const useGameStore = create<GameStore>((set, get) => {
   const turnActions = createTurnActions(set, get);
   const workEducationActions = createWorkEducationActions(set, get);
   const questActions = createQuestActions(set, get);
+  const hexActions = createHexActions(set, get);
 
   return {
     // Initial state
@@ -196,6 +203,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     localPlayerId: null as string | null,
     roomCode: null as string | null,
     weeklyNewsEvents: [],
+    locationHexes: [],
 
     // Game setup (not network-wrapped — guarded explicitly)
     startNewGame: (playerNames, includeAI, goals, aiDifficulty = 'medium', aiConfigs, playerPortraits) => {
@@ -250,6 +258,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         weather: { ...CLEAR_WEATHER },
         activeFestival: null,
         deathEvent: null,
+        locationHexes: [],
       });
     },
 
@@ -261,6 +270,9 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     // Economy actions (network-aware)
     ...wrapWithNetworkGuard(economyActions),
+
+    // Hex & Curse actions (network-aware)
+    ...wrapWithNetworkGuard(hexActions),
 
     // Quest and game status actions (network-aware)
     ...wrapWithNetworkGuard(questActions),

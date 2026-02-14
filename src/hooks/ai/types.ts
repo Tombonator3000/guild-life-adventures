@@ -82,6 +82,9 @@ export type AIActionType =
   | 'sell-item'
   | 'pawn-appliance'
   | 'buy-lottery-ticket'
+  | 'cast-curse'
+  | 'cast-location-hex'
+  | 'buy-amulet'
   | 'end-turn';
 
 export interface AIAction {

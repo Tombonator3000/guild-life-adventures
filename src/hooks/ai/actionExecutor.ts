@@ -65,6 +65,11 @@ export interface StoreActions {
   temperEquipment: (playerId: string, itemId: string, slot: string, cost: number) => void;
   forgeRepairEquipment: (playerId: string, itemId: string, cost: number) => void;
   applyDurabilityLoss: (playerId: string, durabilityLoss: import('@/data/combatResolver').EquipmentDurabilityLoss) => void;
+  // Hexes & Curses
+  castLocationHex: (playerId: string, hexId: string) => { success: boolean; message: string };
+  castPersonalCurse: (playerId: string, hexId: string, targetId: string) => { success: boolean; message: string };
+  buyProtectiveAmulet: (playerId: string, cost: number) => void;
+  addHexScrollToPlayer: (playerId: string, hexId: string) => void;
   endTurn: () => void;
 }
 
@@ -522,6 +527,32 @@ function handleExploreDungeon(player: Player, action: AIAction, store: StoreActi
   return true;
 }
 
+// ─── Hexes & Curses ─────────────────────────────────────────────────────
+
+function handleCastCurse(player: Player, action: AIAction, store: StoreActions): boolean {
+  const hexId = action.details?.hexId as string;
+  const targetId = action.details?.targetId as string;
+  if (!hexId || !targetId) return false;
+  const result = store.castPersonalCurse(player.id, hexId, targetId);
+  return result.success;
+}
+
+function handleCastLocationHex(player: Player, action: AIAction, store: StoreActions): boolean {
+  const hexId = action.details?.hexId as string;
+  if (!hexId) return false;
+  const result = store.castLocationHex(player.id, hexId);
+  return result.success;
+}
+
+function handleBuyAmulet(player: Player, _action: AIAction, store: StoreActions): boolean {
+  if (player.hasProtectiveAmulet) return false;
+  const state = useGameStore.getState();
+  const cost = Math.round(400 * state.priceModifier);
+  if (player.gold < cost) return false;
+  store.buyProtectiveAmulet(player.id, cost);
+  return true;
+}
+
 // ─── Turn Control ───────────────────────────────────────────────────────
 
 function handleEndTurn(_player: Player, _action: AIAction, store: StoreActions): boolean {
@@ -570,6 +601,9 @@ const ACTION_HANDLERS: Record<AIActionType, ActionHandler> = {
   'sell-item': handleSellItem,
   'pawn-appliance': handlePawnAppliance,
   'buy-lottery-ticket': handleBuyLotteryTicket,
+  'cast-curse': handleCastCurse,
+  'cast-location-hex': handleCastLocationHex,
+  'buy-amulet': handleBuyAmulet,
   'end-turn': handleEndTurn,
 };
 

@@ -8,6 +8,7 @@ import { getJob } from '@/data/jobs';
 import { CLOTHING_THRESHOLDS } from '@/data/items';
 import { getGameOption } from '@/data/gameOptions';
 import { FESTIVALS } from '@/data/festivals';
+import { hasCurseEffect } from './hexHelpers';
 import { updateAchievementStats, checkAchievements } from '@/data/achievements';
 import type { SetFn, GetFn } from '../storeTypes';
 
@@ -58,6 +59,12 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
             ? (FESTIVALS.find(f => f.id === festivalId)?.wageMultiplier ?? 1.0)
             : 1.0;
           let earnings = Math.floor(hours * effectiveWage * 1.15 * festivalWageMult);
+
+          // Curse of Poverty: reduce wages
+          const povertyCurse = hasCurseEffect(p, 'wage-reduction');
+          if (povertyCurse) {
+            earnings = Math.floor(earnings * (1 - povertyCurse.magnitude));
+          }
 
           // Apply permanent gold bonus from rare drops (e.g., Goblin's Lucky Coin)
           if (p.permanentGoldBonus > 0) {
