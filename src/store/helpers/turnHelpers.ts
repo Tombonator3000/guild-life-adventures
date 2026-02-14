@@ -54,7 +54,7 @@ function processEndOfTurnSpoilage(set: SetFn, get: GetFn, playerId: string): voi
       return {
         ...p,
         foodLevel: Math.max(0, p.foodLevel - foodLost),
-        freshFood: hasPreservationBox ? p.freshFood : 0,
+        freshFood: 0, // hasPreservationBox is always false here (early return on line 40)
       };
     }),
   }));

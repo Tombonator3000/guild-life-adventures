@@ -21,7 +21,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
   const store = useGameStore();
   const player = useCurrentPlayer();
   const location = getLocation(locationId);
-  const [showNewspaper, setShowNewspaper] = useState(false);
   const [currentNewspaper, setCurrentNewspaper] = useState<ReturnType<typeof generateNewspaper> | null>(null);
 
   if (!location || !player) return null;
@@ -57,12 +56,10 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     store.modifyGold(player.id, -price);
     const newspaper = generateNewspaper(store.week, store.priceModifier, store.economyTrend, store.weeklyNewsEvents);
     setCurrentNewspaper(newspaper);
-    setShowNewspaper(true);
   };
 
   const handleShowNewspaper = (newspaper: ReturnType<typeof generateNewspaper>) => {
     setCurrentNewspaper(newspaper);
-    setShowNewspaper(true);
   };
 
   // Build context for location tab factories
@@ -205,7 +202,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
 
       <NewspaperModal
         newspaper={currentNewspaper}
-        onClose={() => { setShowNewspaper(false); setCurrentNewspaper(null); }}
+        onClose={() => { setCurrentNewspaper(null); }}
       />
     </>
   );

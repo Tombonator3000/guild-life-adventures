@@ -335,7 +335,7 @@ function processStartOfTurnBonuses(
   // --- Arcane Tome random income generation (Jones-style Computer: 15% chance, 10-60g) ---
   const hasArcaneTome = player.appliances['arcane-tome'] && !player.appliances['arcane-tome'].isBroken;
   if (hasArcaneTome && Math.random() < 0.15) {
-    const income = Math.floor(Math.random() * 50) + 10; // 10-60 gold
+    const income = Math.floor(Math.random() * 51) + 10; // 10-60 gold
     updatePlayerById(set, playerId, (p) => ({ gold: p.gold + income }));
     eventMessages.push(`Your Arcane Tome generated ${income} gold through mystical knowledge!`);
   }

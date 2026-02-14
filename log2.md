@@ -248,6 +248,52 @@ src/components/game/InfoTabs.tsx        — MEDIUM: combat stats with durability
 
 ---
 
+## 2026-02-14 — Bug Hunt Fix Session (10:00 UTC)
+
+### Overview
+
+Fixed all bugs documented in the Agent-Powered Bug Hunt session earlier today. This includes 3 HIGH-priority issues (random events disconnected, online dungeon exploit, missing network whitelist entry) and 7 LOW-priority issues (dead code, off-by-one, ordering bugs, dead state).
+
+### HIGH Priority Fixes (3)
+
+| Bug | File | Fix |
+|-----|------|-----|
+| **Random events disconnected** | `playerHelpers.ts` | Wired `checkForEvent()` into `movePlayer()` — location-based random events (pickpocketing, food poisoning, guild bonuses, lucky finds, etc.) now trigger when a player arrives at a location. Effects applied to player state, event message shown via `eventMessage` + `phase: 'event'` for human players. |
+| **Online dungeon exploit** | `network/types.ts` | Added `incrementDungeonAttempts` and `updatePlayerDungeonRecord` to `ALLOWED_GUEST_ACTIONS` whitelist. Guest players can now properly track dungeon attempts and records through the network proxy. |
+| **`buyFoodWithSpoilage` missing from whitelist** | `network/types.ts` | Added `buyFoodWithSpoilage` to `ALLOWED_GUEST_ACTIONS`. Guest players can now buy regular food from General Store in online mode. |
+
+### LOW Priority Fixes (7)
+
+| # | Bug | File | Fix |
+|---|-----|------|-----|
+| 1 | Dead ternary in `processEndOfTurnSpoilage` | `turnHelpers.ts:57` | `hasPreservationBox` is always `false` at that point (early return on line 40). Changed `hasPreservationBox ? p.freshFood : 0` to simply `0`. |
+| 2 | Arcane Tome income range 10-59 not 10-60 | `startTurnHelpers.ts:338` | Changed `Math.random() * 50` to `Math.random() * 51` for correct 10-60 range. |
+| 3 | `clothing-torn` event with SET-based `modifyClothing` | `playerHelpers.ts` (integration) | Now that events are wired up, clothing effects use `clothingCondition + effect.clothing` (addition/subtraction), not the SET-based `modifyClothing()`. The -20 correctly subtracts from current condition. |
+| 4 | `checkForEvent` probability inflation | `events.ts:231` | Refactored: first filter eligible events by conditions only, then pick one random eligible event, then roll its probability. Prevents cumulative trigger rate inflation from independent rolls. |
+| 5 | `payRent` redundant reset for prepaid | `bankingHelpers.ts:13` | Changed prepaid branch from `return { ...p, weeksSinceRent: 0 }` to `return p` — prepaid tracking is handled in `weekEndHelpers.ts`. |
+| 6 | Bounty suppressed when quest unreachable | (documented) | This is correct design — bounties are disabled while any quest is active. Not a bug, documented as intended behavior. |
+| 7 | Low-dep firing shields crash penalty | `weekEndHelpers.ts:171` | Reordered `processEmployment`: crash effects now process BEFORE low-dependability firing. Player with low dep during a major crash now receives the -20 happiness penalty before being fired. |
+| 8 | `showNewspaper` dead state | `LocationPanel.tsx` | Removed unused `showNewspaper` state variable and all references. `NewspaperModal` was already controlled by `currentNewspaper !== null`. |
+
+### Files Changed (8 files)
+
+```
+src/data/events.ts                     — Refactored checkForEvent probability (pick-then-roll)
+src/store/helpers/playerHelpers.ts     — Wired checkForEvent into movePlayer
+src/network/types.ts                   — Added 3 actions to ALLOWED_GUEST_ACTIONS whitelist
+src/store/helpers/startTurnHelpers.ts  — Arcane Tome off-by-one fix
+src/store/helpers/economy/bankingHelpers.ts — payRent redundant reset removed
+src/store/helpers/weekEndHelpers.ts    — Crash penalty ordering fix
+src/components/game/LocationPanel.tsx  — Removed showNewspaper dead state
+src/store/helpers/turnHelpers.ts       — Dead ternary branch fix
+```
+
+### Verification
+
+- Build: Clean (vite build succeeds)
+- Tests: 185/185 passing (9 test files, 0 failures)
+---
+
 ### Development Statistics (from log.md)
 
 - **Total test count**: 185 tests across 9 test files (as of 2026-02-14)

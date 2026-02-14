@@ -198,4 +198,9 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'abandonQuest',
   'clearDungeonFloor',
   'applyRareDrop',
+  'incrementDungeonAttempts',
+  'updatePlayerDungeonRecord',
+
+  // Food with spoilage
+  'buyFoodWithSpoilage',
 ]);

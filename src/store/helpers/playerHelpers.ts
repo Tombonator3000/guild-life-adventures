@@ -7,6 +7,7 @@ import {
   checkStreetRobbery,
 } from '@/data/shadowfingers';
 import { rollTravelEvent, formatTravelEvent } from '@/data/travelEvents';
+import { checkForEvent } from '@/data/events';
 
 export function createPlayerActions(set: SetFn, get: GetFn) {
   return {
@@ -60,6 +61,37 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
               },
             }),
           }));
+        }
+      }
+
+      // Location-based random events (pickpocketing, food poisoning, guild bonuses, etc.)
+      const arrivalPlayer = get().players.find(p => p.id === playerId);
+      if (arrivalPlayer) {
+        const locationEvent = checkForEvent(arrivalPlayer.housing, location, arrivalPlayer.gold);
+        if (locationEvent) {
+          // Apply all effects from the event
+          set((state) => ({
+            players: state.players.map((p) => {
+              if (p.id !== playerId) return p;
+              return {
+                ...p,
+                gold: Math.max(0, p.gold + (locationEvent.effect.gold || 0)),
+                health: Math.max(0, Math.min(p.maxHealth, p.health + (locationEvent.effect.health || 0))),
+                happiness: Math.max(0, Math.min(100, p.happiness + (locationEvent.effect.happiness || 0))),
+                clothingCondition: Math.max(0, p.clothingCondition + (locationEvent.effect.clothing || 0)),
+              };
+            }),
+          }));
+
+          // Show event message to human players only
+          if (!arrivalPlayer.isAI) {
+            const message = `[${locationEvent.id}] ${locationEvent.name}: ${locationEvent.effect.message}`;
+            const existing = get().eventMessage;
+            set({
+              eventMessage: existing ? existing + '\n' + message : message,
+              phase: 'event',
+            });
+          }
         }
       }
 
