@@ -223,7 +223,7 @@ export function generateQuestDungeonActions(ctx: ActionContext): AIAction[] {
     } else {
       // Use actual floor time cost instead of hardcoded 6
       const targetFloor = getFloor(dungeonFloor);
-      const combatStats = calculateCombatStats(player.equippedWeapon, player.equippedArmor, player.equippedShield, player.temperedItems);
+      const combatStats = calculateCombatStats(player.equippedWeapon, player.equippedArmor, player.equippedShield, player.temperedItems, player.equipmentDurability);
       const floorTime = targetFloor ? getFloorTimeCost(targetFloor, combatStats) : 6;
       if (player.timeRemaining > moveCost('cave') + floorTime) {
         actions.push({

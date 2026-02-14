@@ -167,6 +167,87 @@ log.md covered the entire development history from project creation (2026-02-05)
 - **2026-02-13**: Code audit & refactoring (2 rounds — processLoans, resolveEncounter, weekEndHelpers, economicActions, actionGenerator lookup tables, handleExploreDungeon extraction), clothing quality job check, equipment durability & degradation, PNG→JPG migration, food spoilage fix, Jones compatibility audit (91% score), hidden food spoilage system
 - **2026-02-14**: PWA infinite loading fix (service worker configuration), item image overhaul (50 images in medieval woodcut style)
 
+---
+
+## 2026-02-14 — Agent-Powered Bug Hunt (09:00 UTC)
+
+### Overview
+
+Systematic bug hunt using 7 parallel AI agents scanning different subsystems:
+1. Game store logic (gameStore, helpers)
+2. AI system (Grimwald AI, strategy, actions)
+3. Combat/dungeon/quest systems
+4. Economy/banking/stock systems
+5. UI components
+6. Multiplayer/network
+7. Type safety & data integrity
+
+### Bugs Found: 22 total (1 CRITICAL, 5 HIGH, 8 MEDIUM, 8 LOW)
+
+### CRITICAL Bug Fixed
+
+| Bug | File | Description |
+|-----|------|-------------|
+| **Week cycle skipped when player 0 dies** | `turnHelpers.ts:123-146` | `findNextAlivePlayer` checked `isNewWeek = index === 0` per iteration. When player 0 was dead and search wrapped past index 0, `isNewWeek` was `false` for the next alive player. Result: `processWeekEnd` never called — rent, food depletion, stock updates, clothing degradation, and weather all permanently stopped. **Fix**: Track `crossedWeekBoundary` flag across all iterations. |
+
+### HIGH Bugs Fixed (5)
+
+| Bug | File | Description |
+|-----|------|-------------|
+| **Stock seizure uses hardcoded price** | `weekEndHelpers.ts:437` | `seizeStocks` calculated value as `shares * 50 * 0.8` instead of using actual market prices. Stocks worth 2000g would be seized for only 400g. **Fix**: Thread `stockPrices` through `WeekEndContext` → `processPlayerWeekEnd` → `processLoans` → `seizeStocks`. |
+| **AI combat stats ignore equipment durability** | `strategy.ts:253`, `questDungeonActions.ts:226` | `getBestDungeonFloor` and quest dungeon time calculation called `calculateCombatStats` without `equipmentDurability` parameter. AI thought broken gear was at full power, attempting floors it was too weak for. **Fix**: Pass `player.equipmentDurability` to all `calculateCombatStats` calls. |
+| **AI dungeon healing capped at entry HP** | `combatResolver.ts:504` | `autoResolveFloor` didn't pass `playerMaxHealth` to `initDungeonRun`. Healing encounters during auto-resolve were capped at entry HP rather than max HP. AI entering at 60/100 HP could never heal above 60. **Fix**: Add `playerMaxHealth` parameter to `autoResolveFloor`, pass `player.maxHealth` from AI executor. |
+| **Random events disconnected** | `events.ts:231` | `checkForEvent()` is exported but never called anywhere. Location-based random events (pickpocketing, food poisoning, lucky finds, etc.) are entirely non-functional. **Status**: Documented — requires design decision on where to wire up (noted for future). |
+| **Online dungeon exploit** | `CavePanel.tsx:125` | `incrementDungeonAttempts` called via `getState()` bypassing network proxy, and not in `ALLOWED_GUEST_ACTIONS`. Guests get unlimited dungeon runs. **Status**: Documented — requires network refactor (noted for future). |
+
+### MEDIUM Bugs Fixed (8)
+
+| Bug | File | Description |
+|-----|------|-------------|
+| **Duplicate crash news** | `weekEndHelpers.ts:196/203/208` | Crash news events pushed per-player inside `processEmployment` AND once globally on line 743. In 4-player game, crash appeared 5 times. **Fix**: Removed per-player crash news pushes (global one at line 743 is sufficient). |
+| **`bestEncounters` inverted** | `playerHelpers.ts:236` | Used `Math.max` (tracking worst run) instead of `Math.min` (tracking fastest/best run). **Fix**: Changed to `Math.min`. |
+| **AI clothing branches shadowed** | `criticalNeeds.ts:148-180` | `condition < 70` check caught all cases before `condition < 40` and `condition < 15` could fire. AI bought business clothing (175g) when cheaper tiers would suffice. **Fix**: Reordered: check `< 15` first, then `< 40`, then `< 70`. |
+| **AI wasted guild hall trips** | `goalActions.ts:240-247` | Career goal sent AI to guild hall even when `bestQuest` was null. **Fix**: Added `bestQuest &&` guard to movement condition. |
+| **Homeless UI dead code** | `HomePanel.tsx:80-89` | Homeless check was unreachable after `playerRentsHere` returned false. Homeless players saw generic "For Rent" instead of tailored message. **Fix**: Moved homeless check before `rentsHere` check. |
+| **InfoTabs wrong combat stats** | `InfoTabs.tsx:112-116` | Inventory tab showed raw base stats, ignoring tempering and durability. Player with broken gear saw full stats. **Fix**: Use `calculateCombatStats()` with tempering and durability. |
+| **Asset seizure over-recovery** | `weekEndHelpers.ts:447-480` | `seizeAppliances`/`seizeDurables` didn't cap recovery to remaining debt, destroying expensive items for small debts. **Fix**: Added `Math.min(value, remaining - recovered)` cap. |
+| **`buyFoodWithSpoilage` missing from whitelist** | `network/types.ts` | Guest players can't buy food with spoilage in online mode. **Status**: Documented — requires whitelist update (noted for future). |
+
+### LOW Bugs Documented (not fixed — too minor)
+
+1. Dead ternary branch in `processEndOfTurnSpoilage` (hasPreservationBox always false at that point)
+2. Arcane Tome income range 10-59 not 10-60 (off-by-one in `Math.random() * 50`)
+3. `clothing-torn` event uses -20 with SET-based `modifyClothing` (dead code, events disconnected)
+4. `checkForEvent` rolls independently per event, inflating cumulative trigger rate
+5. `payRent` redundantly resets `weeksSinceRent` for prepaid players
+6. Bounty generation suppressed when quest exists but can't be reached
+7. Low-dependability firing shields player from major crash happiness penalty
+8. `showNewspaper` state in LocationPanel set but never read
+
+### Files Changed (12 bugs fixed in 10 files)
+
+```
+src/store/helpers/turnHelpers.ts        — CRITICAL: week boundary detection
+src/store/helpers/weekEndHelpers.ts     — HIGH: stock seizure prices, MEDIUM: duplicate crash news, seizure over-recovery
+src/store/helpers/playerHelpers.ts      — MEDIUM: bestEncounters inverted
+src/hooks/ai/strategy.ts               — HIGH: missing equipmentDurability
+src/hooks/ai/actions/questDungeonActions.ts — HIGH: missing equipmentDurability
+src/hooks/ai/actions/criticalNeeds.ts   — MEDIUM: clothing branch order
+src/hooks/ai/actions/goalActions.ts     — MEDIUM: null quest guard
+src/hooks/ai/actionExecutor.ts          — HIGH: pass playerMaxHealth
+src/data/combatResolver.ts             — HIGH: autoResolveFloor maxHealth param
+src/components/game/HomePanel.tsx       — MEDIUM: homeless UI fix
+src/components/game/InfoTabs.tsx        — MEDIUM: combat stats with durability
+```
+
+### Verification
+
+- Build: Clean (vite build succeeds)
+- Tests: 185/185 passing
+- No regressions introduced
+
+---
+
 ### Development Statistics (from log.md)
 
 - **Total test count**: 185 tests across 9 test files (as of 2026-02-14)

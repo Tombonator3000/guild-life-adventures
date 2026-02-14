@@ -52,6 +52,7 @@ interface WeekEndContext {
   economy: EconomyUpdate;
   weather: WeatherState;
   festival: Festival | null;
+  stockPrices: Record<string, number>;
 }
 
 // ============================================================
@@ -193,19 +194,16 @@ function processEmployment(p: Player, crashResult: MarketCrashResult, msgs: stri
     p.happiness = Math.max(0, p.happiness - 20);
     if (!p.isAI) msgs.push(`${p.name}: ${crashResult.message}`);
     newsEvents.push({ type: 'fired', playerName: p.name, jobName });
-    newsEvents.push({ type: 'crash-major' });
   } else if (crashResult.severity === 'moderate' && p.currentJob && crashResult.wageMultiplier) {
     // Moderate crash: 80% wage (Jones-style pay cut)
     p.currentWage = Math.floor(p.currentWage * crashResult.wageMultiplier);
     p.happiness = Math.max(0, p.happiness - 10);
     if (!p.isAI) msgs.push(`${p.name}: ${crashResult.message}`);
     newsEvents.push({ type: 'paycut', playerName: p.name, percentage: 20 });
-    newsEvents.push({ type: 'crash-moderate' });
   } else if (crashResult.severity === 'minor') {
     // Minor crash: just prices drop (already applied in advanceEconomy), small happiness hit
     p.happiness = Math.max(0, p.happiness - 3);
     if (!p.isAI) msgs.push(crashResult.message || 'Minor market dip — prices have dropped.');
-    newsEvents.push({ type: 'crash-minor' });
   }
 }
 
@@ -426,15 +424,16 @@ function seizeCurrency(
   return seized;
 }
 
-/** Forced-sell stocks at 80% value. Returns total gold recovered. */
-function seizeStocks(p: Player, remaining: number, details: string[]): number {
+/** Forced-sell stocks at 80% of current market value. Returns total gold recovered. */
+function seizeStocks(p: Player, remaining: number, details: string[], stockPrices: Record<string, number>): number {
   if (remaining <= 0 || Object.keys(p.stocks).length === 0) return 0;
   let recovered = 0;
   for (const stockId of Object.keys(p.stocks)) {
     if (remaining - recovered <= 0) break;
     const shares = p.stocks[stockId];
     if (shares > 0) {
-      const value = Math.min(Math.floor(shares * 50 * 0.8), remaining - recovered);
+      const price = stockPrices[stockId] || 50; // fallback to 50 if price unknown
+      const value = Math.min(Math.floor(shares * price * 0.8), remaining - recovered);
       delete p.stocks[stockId];
       recovered += value;
       details.push(`stocks (${shares} shares)`);
@@ -450,7 +449,8 @@ function seizeAppliances(p: Player, remaining: number, details: string[]): numbe
   let count = 0;
   for (const appId of Object.keys(p.appliances)) {
     if (remaining - recovered <= 0) break;
-    recovered += Math.floor(p.appliances[appId].originalPrice * 0.3);
+    const value = Math.min(Math.floor(p.appliances[appId].originalPrice * 0.3), remaining - recovered);
+    recovered += value;
     delete p.appliances[appId];
     count++;
   }
@@ -467,7 +467,8 @@ function seizeDurables(p: Player, remaining: number, details: string[]): number 
     if (remaining - recovered <= 0) break;
     const item = getItem(durId);
     if (item) {
-      recovered += Math.floor(item.basePrice * 0.3);
+      const value = Math.min(Math.floor(item.basePrice * 0.3), remaining - recovered);
+      recovered += value;
       if (p.equippedWeapon === durId) p.equippedWeapon = null;
       if (p.equippedArmor === durId) p.equippedArmor = null;
       if (p.equippedShield === durId) p.equippedShield = null;
@@ -480,7 +481,7 @@ function seizeDurables(p: Player, remaining: number, details: string[]): number 
 }
 
 /** Process loan interest and forced repayment on default (Jones-style) */
-function processLoans(p: Player, msgs: string[], newsEvents: PlayerNewsEventData[]): void {
+function processLoans(p: Player, msgs: string[], newsEvents: PlayerNewsEventData[], stockPrices: Record<string, number>): void {
   if (p.loanAmount <= 0) return;
 
   // 10% weekly interest, capped at 2x max borrow (2000g)
@@ -496,7 +497,7 @@ function processLoans(p: Player, msgs: string[], newsEvents: PlayerNewsEventData
   remaining -= seizeCurrency(p, 'savings', remaining, 'savings', details);
   remaining -= seizeCurrency(p, 'gold', remaining, 'purse', details);
   remaining -= seizeCurrency(p, 'investments', remaining, 'investments', details);
-  remaining -= seizeStocks(p, remaining, details);
+  remaining -= seizeStocks(p, remaining, details, stockPrices);
   remaining -= seizeAppliances(p, remaining, details);
   remaining -= seizeDurables(p, remaining, details);
   remaining = Math.max(0, remaining);
@@ -637,7 +638,7 @@ function processPlayerWeekEnd(p: Player, ctx: WeekEndContext, msgs: string[], ne
   processHousing(p, msgs, newsEvents);
   processFinances(p, msgs);
   processSickness(p, msgs);
-  processLoans(p, msgs, newsEvents);
+  processLoans(p, msgs, newsEvents, ctx.stockPrices);
   processLeisure(p, ctx.newWeek, msgs);
   processAging(p, ctx.newWeek, msgs);
   updateRentTracking(p);
@@ -735,6 +736,7 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
         economy,
         weather,
         festival,
+        stockPrices: state.stockPrices,
       };
 
       // --- Step 2: Process all players ---

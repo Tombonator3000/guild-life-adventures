@@ -123,15 +123,16 @@ export function createTurnActions(set: SetFn, get: GetFn) {
       const findNextAlivePlayer = (startIndex: number): { index: number; isNewWeek: boolean } => {
         let index = startIndex;
         let loopCount = 0;
+        let crossedWeekBoundary = false;
         const totalPlayers = postVictoryState.players.length;
 
         while (loopCount < totalPlayers) {
           index = (index + 1) % totalPlayers;
-          const isNewWeek = index === 0;
+          if (index === 0) crossedWeekBoundary = true;
 
           // Check if this player is alive
           if (!postVictoryState.players[index].isGameOver) {
-            return { index, isNewWeek };
+            return { index, isNewWeek: crossedWeekBoundary };
           }
 
           // If we've checked a full loop and all players are dead, game over

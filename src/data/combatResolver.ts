@@ -500,8 +500,9 @@ export function autoResolveFloor(
   lootMultiplier: number = 1.0,
   floorsCleared?: number[],
   equippedItems?: EquippedItems,
+  playerMaxHealth?: number,
 ): AutoResolveResult {
-  let state = initDungeonRun(floor, playerHealth, isFirstClear, floorsCleared);
+  let state = initDungeonRun(floor, playerHealth, isFirstClear, floorsCleared, playerMaxHealth ?? playerHealth);
   const log: string[] = [];
 
   if (state.modifier) {

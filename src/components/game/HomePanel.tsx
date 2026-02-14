@@ -31,6 +31,20 @@ export function HomePanel({
   onDone,
 }: HomePanelProps) {
   const { t } = useTranslation();
+
+  // Homeless player — show homeless message
+  if (player.housing === 'homeless') {
+    return (
+      <div className="h-full flex flex-col items-center justify-center bg-[#1a1410] p-4">
+        <div className="text-[#8b7355] text-center font-mono">
+          <p className="text-lg mb-2">{t('panelHome.homeless')}</p>
+          <p className="text-sm">{t('panelHome.homelessMessage')}</p>
+        </div>
+        <JonesButton label={t('common.done')} onClick={onDone} className="mt-4" />
+      </div>
+    );
+  }
+
   const rentsHere = playerRentsHere(player.housing, locationId);
 
   // Player doesn't rent here — show "For Rent" display
@@ -72,19 +86,6 @@ export function HomePanel({
         >
           <JonesButton label={t('common.done')} onClick={onDone} />
         </div>
-      </div>
-    );
-  }
-
-  // Homeless player at slums — no home to show
-  if (player.housing === 'homeless') {
-    return (
-      <div className="h-full flex flex-col items-center justify-center bg-[#1a1410] p-4">
-        <div className="text-[#8b7355] text-center font-mono">
-          <p className="text-lg mb-2">{t('panelHome.homeless')}</p>
-          <p className="text-sm">{t('panelHome.homelessMessage')}</p>
-        </div>
-        <JonesButton label={t('common.done')} onClick={onDone} className="mt-4" />
       </div>
     );
   }
