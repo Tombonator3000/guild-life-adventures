@@ -1,17 +1,22 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { Sword, Shield, Scroll, Crown, Save, Trash2, Volume2, VolumeX, Download, Globe, Settings, Info, Share, Plus, X, BookOpen } from 'lucide-react';
 import { hasAutoSave, getSaveSlots, formatSaveDate, deleteSave } from '@/data/saveLoad';
 import type { SaveSlotInfo } from '@/data/saveLoad';
-import { OptionsMenu } from '@/components/game/OptionsMenu';
-import { UserManual } from '@/components/game/UserManual';
-import { CreditsScreen } from '@/components/screens/CreditsScreen';
 import { useAudioSettings } from '@/hooks/useMusic';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { UpdateBanner } from '@/components/game/UpdateBanner';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { useTranslation } from '@/i18n';
 import gameBoard from '@/assets/game-board.jpeg';
+
+// Lazy-load heavy sub-components that are only shown on user interaction.
+// OptionsMenu imports ALL audio hooks (sfxManager, ambientManager, speechNarrator),
+// each of which creates module-level singletons. Lazy-loading prevents these from
+// blocking React mount — a key defense against "Loading the realm..." freezes.
+const OptionsMenu = lazy(() => import('@/components/game/OptionsMenu').then(m => ({ default: m.OptionsMenu })));
+const UserManual = lazy(() => import('@/components/game/UserManual').then(m => ({ default: m.UserManual })));
+const CreditsScreen = lazy(() => import('@/components/screens/CreditsScreen').then(m => ({ default: m.CreditsScreen })));
 
 export function TitleScreen() {
   const { setPhase, loadFromSlot } = useGameStore();
@@ -225,14 +230,18 @@ export function TitleScreen() {
         </div>
       )}
 
-      {/* Options Modal */}
+      {/* Options Modal (lazy-loaded to avoid eagerly importing audio singletons) */}
       {showOptions && (
-        <OptionsMenu onClose={() => setShowOptions(false)} />
+        <Suspense fallback={null}>
+          <OptionsMenu onClose={() => setShowOptions(false)} />
+        </Suspense>
       )}
 
       {/* Manual Modal */}
       {showManual && (
-        <UserManual onClose={() => setShowManual(false)} />
+        <Suspense fallback={null}>
+          <UserManual onClose={() => setShowManual(false)} />
+        </Suspense>
       )}
 
       {/* PWA Update Notification */}
@@ -240,7 +249,9 @@ export function TitleScreen() {
 
       {/* Credits / About Screen */}
       {showCredits && (
-        <CreditsScreen onClose={() => setShowCredits(false)} />
+        <Suspense fallback={null}>
+          <CreditsScreen onClose={() => setShowCredits(false)} />
+        </Suspense>
       )}
 
       {/* iOS PWA Install Guide */}

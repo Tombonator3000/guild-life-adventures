@@ -52,13 +52,22 @@ class AudioManager {
   private resumeCleanup: (() => void) | null = null;
 
   constructor() {
-    this.deckA = new Audio();
-    this.deckB = new Audio();
-    this.deckA.loop = true;
-    this.deckB.loop = true;
-    // Prevent network errors from being noisy
-    this.deckA.preload = 'auto';
-    this.deckB.preload = 'auto';
+    // Audio element creation wrapped in try-catch: if Audio() is unavailable
+    // (e.g., sandboxed iframe), music gracefully degrades to silence.
+    // This is critical because audioManager is a module-level singleton —
+    // a constructor crash prevents React from mounting ("Loading the realm..." freeze).
+    try {
+      this.deckA = new Audio();
+      this.deckB = new Audio();
+      this.deckA.loop = true;
+      this.deckB.loop = true;
+      this.deckA.preload = 'auto';
+      this.deckB.preload = 'auto';
+    } catch (e) {
+      console.warn('[Audio] HTMLAudioElement creation failed:', e);
+      this.deckA = {} as HTMLAudioElement;
+      this.deckB = {} as HTMLAudioElement;
+    }
 
     // Route through Web Audio API GainNodes — required for iOS volume control
     // Returns null if AudioContext is unavailable (falls back to element.volume)

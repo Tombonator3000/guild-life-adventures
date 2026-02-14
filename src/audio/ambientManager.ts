@@ -49,12 +49,20 @@ class AmbientManager {
   private resumeCleanup: (() => void) | null = null;
 
   constructor() {
-    this.deckA = new Audio();
-    this.deckB = new Audio();
-    this.deckA.loop = true;
-    this.deckB.loop = true;
-    this.deckA.preload = 'auto';
-    this.deckB.preload = 'auto';
+    // Audio element creation wrapped in try-catch: if Audio() is unavailable
+    // (e.g., sandboxed iframe), ambient sounds gracefully degrade to silence.
+    try {
+      this.deckA = new Audio();
+      this.deckB = new Audio();
+      this.deckA.loop = true;
+      this.deckB.loop = true;
+      this.deckA.preload = 'auto';
+      this.deckB.preload = 'auto';
+    } catch (e) {
+      console.warn('[Ambient] HTMLAudioElement creation failed:', e);
+      this.deckA = {} as HTMLAudioElement;
+      this.deckB = {} as HTMLAudioElement;
+    }
 
     // Route through Web Audio API GainNodes — required for iOS volume control
     // Returns null if AudioContext is unavailable (falls back to element.volume)
