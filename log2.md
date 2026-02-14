@@ -460,3 +460,110 @@ This ensures every request gets a unique URL, making CDN caching impossible.
 - No TypeScript errors
 
 ---
+
+## 2026-02-14 — BUG HUNT: "Loading the realm..." Freeze (Parallel Agent Scan) (14:00 UTC)
+
+### Bug Report
+
+Game stuck on static "Loading the realm..." screen — React never mounts. This is a **recurring** issue that has been investigated before (earlier on 2026-02-14), but the root cause was different this time.
+
+### Investigation Method
+
+Systematic parallel AI agent scan across 7 areas:
+1. Build system & dependencies
+2. Loading chain (index.html → main.tsx → App.tsx → Index.tsx)
+3. Store initialization (gameStore.ts, helpers)
+4. Audio system (audioManager, ambientManager, speechNarrator, webAudioBridge)
+5. React hooks (useMusic, useAmbient, useNarration)
+6. i18n system (all language files)
+7. Recent code changes (last 5 commits)
+
+### Root Cause Analysis
+
+**PRIMARY: Missing `@radix-ui/react-collection` transitive dependency**
+
+The import chain that breaks:
+```
+App.tsx → Toaster → @radix-ui/react-toast → @radix-ui/react-collection → MISSING
+```
+
+- `@radix-ui/react-toast@1.2.14` requires `@radix-ui/react-collection@1.1.7` as a direct dependency
+- `react-collection` was NOT listed in `package.json` (only a transitive dependency)
+- During `bun install`, the download of `react-collection-1.1.7.tgz` failed with **HTTP 407** (proxy/authentication error)
+- This left `node_modules/@radix-ui/react-collection/` missing entirely
+- The Vite build failed with: `Rollup failed to resolve import "@radix-ui/react-collection"`
+- At runtime: ES module loading fails → React never mounts → "Loading the realm..." stays forever
+
+**SECONDARY: Missing `unhandledrejection` handler in index.html**
+
+- The existing `window.onerror` handler only catches synchronous errors
+- ES module loading failures produce rejected promises (not synchronous errors)
+- Without an `unhandledrejection` handler, the error/reload button **never appears**
+- User sees "Loading the realm..." indefinitely with no feedback
+
+**TERTIARY: Missing try-catch in speechNarrator.doSpeak()**
+
+- `SpeechSynthesisUtterance` constructor and `speechSynthesis.speak()` can throw on some browsers
+- In sandboxed iframes, privacy-restricted browsers, or broken SpeechSynthesis implementations
+- Would crash the narration hook and potentially cascade to break the game
+
+### What Was NOT the Cause
+
+All investigated and confirmed safe:
+- ✅ Store initialization (gameStore.ts) — no crash paths, no async blocking
+- ✅ Audio singletons (audioManager, ambientManager) — proper try-catch throughout
+- ✅ React hooks (useMusic, useAmbient, useNarration) — no infinite loops, proper deps
+- ✅ webAudioBridge — safe AudioContext creation with fallback
+- ✅ i18n system — all languages have matching shapes, safe fallback chain
+- ✅ TitleScreen — all imports exist, all translation keys present
+- ✅ Recent code changes (5 commits) — no runtime crash risks, all function signatures match
+- ✅ TypeScript — zero type errors
+
+### Fixes Applied (3)
+
+| # | Severity | File | Fix |
+|---|----------|------|-----|
+| 1 | **CRITICAL** | `package.json` | Added `@radix-ui/react-collection@^1.1.7` as explicit dependency — prevents transitive dep from being silently skipped during install |
+| 2 | **HIGH** | `index.html` | Added `window.addEventListener('unhandledrejection', ...)` handler — catches ES module loading failures and shows error/reload button. Extracted error display to shared `__guildShowLoadError()` function. |
+| 3 | **LOW** | `src/audio/speechNarrator.ts` | Wrapped `doSpeak()` body in try-catch — prevents SpeechSynthesis API exceptions from crashing the narration hook |
+
+### Files Changed (3)
+
+```
+package.json                        — Added @radix-ui/react-collection explicit dependency
+index.html                          — Added unhandledrejection handler + shared error display function
+src/audio/speechNarrator.ts         — try-catch around doSpeak() body
+```
+
+### Technical Details
+
+**Before (package.json):**
+```json
+"@radix-ui/react-checkbox": "^1.3.2",
+"@radix-ui/react-collapsible": "^1.1.11",
+```
+
+**After (package.json):**
+```json
+"@radix-ui/react-checkbox": "^1.3.2",
+"@radix-ui/react-collapsible": "^1.1.11",
+"@radix-ui/react-collection": "^1.1.7",
+```
+
+**New unhandledrejection handler (index.html):**
+```javascript
+window.addEventListener('unhandledrejection', function(e) {
+  var msg = e.reason && e.reason.message ? e.reason.message : String(e.reason || 'Module loading failed');
+  window.__guildLoadErrors.push({msg: msg, err: e.reason});
+  __guildShowLoadError(msg);
+});
+```
+
+### Verification
+
+- Build: Clean (vite build succeeds)
+- Tests: 185/185 passing (9 test files, 0 failures)
+- No TypeScript errors
+- No regressions
+
+---
