@@ -122,7 +122,9 @@ export function useAppUpdate() {
     const onControllerChange = () => {
       if (canAutoReload()) {
         markAutoReload();
-        window.location.reload();
+        // Use cache-busting reload instead of location.reload() —
+        // GitHub Pages max-age=600 means plain reload may serve stale HTML.
+        hardRefresh();
       }
     };
     navigator.serviceWorker?.addEventListener('controllerchange', onControllerChange);

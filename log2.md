@@ -5,6 +5,77 @@
 
 ---
 
+## 2026-02-14 — Bug Hunt #8: Eliminate ALL Remaining `location.reload()` Stale-Cache Paths (22:00 UTC)
+
+### Overview
+
+Systematic bug hunt using 3 parallel AI agents to analyze the entire loading pipeline. Found **6 places** where `location.reload()` was used without the cache-busting `?_gv=` parameter that was introduced in the previous fix (PR #205). Any of these could cause the recurring "Loading the realm..." infinite freeze when GitHub Pages serves stale cached HTML (`Cache-Control: max-age=600`).
+
+### Root Cause
+
+The previous fix correctly implemented cache-busting reloads in `hardRefresh()` (useAppUpdate.ts) and the index.html stale-build detection inline script. However, **6 other reload paths** still used plain `location.reload()`, which on GitHub Pages may serve the **same stale HTML from browser HTTP cache**:
+
+1. Stale HTML references old content-hashed chunk URLs (e.g., `index-abc123.js`)
+2. Those chunks no longer exist on the server after a deploy
+3. `location.reload()` sends a conditional request → CDN returns 304 → stale HTML again
+4. The stale HTML tries to load non-existent chunks → 404 → "Loading the realm..." forever
+
+### 6 Bugs Fixed
+
+| # | File | Location | Context |
+|---|------|----------|---------|
+| 1 | `src/App.tsx:60` | ErrorBoundary "Clear Cache & Reload" button | Also fixed: cache clearing was fire-and-forget (`.then()` without `await`), reload could fire before cleanup completed |
+| 2 | `src/hooks/useAppUpdate.ts:125` | `onControllerChange` handler (SW takeover) | Changed from `location.reload()` to `hardRefresh()` which already has cache-busting |
+| 3 | `src/main.tsx:108` | `checkStaleBuild()` reload after detecting stale build | Added cache-busting with `?_gv=` param |
+| 4 | `src/main.tsx:41` | `showMountError()` reload button (inline HTML) | Added cache-busting to inline onclick handler |
+| 5 | `src/pages/Index.tsx:35` | `lazyWithRetry()` reload after 2x chunk failure | Added cache-busting with `?_gv=` param |
+| 6 | `index.html:65` | `__guildShowLoadError()` reload button (pre-React) | Added cache-busting to inline onclick handler |
+
+### Fix Pattern
+
+Every reload now follows the same pattern with a fallback:
+```javascript
+try {
+  const url = new URL(window.location.href);
+  url.searchParams.set('_gv', String(Date.now()));
+  window.location.replace(url.toString());
+} catch {
+  window.location.reload(); // Fallback only if URL manipulation fails
+}
+```
+
+### Additional Fix: App.tsx ErrorBoundary (Bug 1)
+
+The ErrorBoundary's "Clear Cache & Reload" button had a secondary issue: cache clearing was fire-and-forget using `.then()` chains, meaning `location.reload()` could fire before caches were actually deleted. Fixed to use `async/await` and also await SW unregistration + 300ms propagation delay before the cache-busting reload.
+
+### Files Changed
+
+| File | Changes |
+|------|---------|
+| `src/App.tsx` | ErrorBoundary: await cache cleanup + cache-busting reload |
+| `src/hooks/useAppUpdate.ts` | controllerchange: use `hardRefresh()` instead of `location.reload()` |
+| `src/main.tsx` | checkStaleBuild + showMountError: cache-busting reloads |
+| `src/pages/Index.tsx` | lazyWithRetry: cache-busting reload |
+| `index.html` | Error handler reload button: cache-busting |
+
+### Remaining `location.reload()` Audit
+
+After fixes, ALL remaining `location.reload()` calls are in catch-fallback positions only (when `new URL()` constructor fails — e.g., very old browsers). Primary reload paths all use cache-busting `?_gv=`.
+
+### GitHub Context
+
+This is the **8th fix attempt** for the recurring "Loading the realm..." freeze. Previous 10+ PRs (#185, #188, #193, #194, #195, #198, #199, #200, #201, #204, #205) each fixed symptoms but missed these remaining reload paths. A full audit of all reload call sites was needed.
+
+### Test Results
+
+```
+219 tests passed (10 files), 0 failures
+Build: clean (no TypeScript or ESLint errors)
+Precache: 23 entries / 2,379 KB (unchanged)
+```
+
+---
+
 ## 2026-02-14 — DEFINITIVE Fix: "Loading the Realm..." Infinite Freeze (21:30 UTC)
 
 ### Overview
