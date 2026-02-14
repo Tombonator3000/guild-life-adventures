@@ -241,6 +241,8 @@ export const de: TranslationStrings = {
     seasonalFestivalsDesc: '4 Feste alle 12 Wochen mit einzigartigen Auswirkungen auf Wirtschaft und Spiel.',
     permadeath: 'Permanenter Tod',
     permadeathDesc: 'Gestorbene Spieler werden dauerhaft eliminiert. Bei Deaktivierung werden Spieler am Friedhof mit 20 LP wiederbelebt.',
+    hexesCurses: 'Flüche & Verwünschungen',
+    hexesCursesDesc: 'Dunkle Magie-Rivalität. Verhexe Orte um Gegner zu blockieren, verfluche ihren Fortschritt und zerstöre ihre Ausrüstung. Schriftrollen als seltene Dungeon-Beute oder teuer zu kaufen.',
     music: 'Musik',
     musicDesc: 'Hintergrundmusik während des Spiels.',
     ambientSounds: 'Umgebungsgeräusche',

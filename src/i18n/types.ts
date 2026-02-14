@@ -261,6 +261,8 @@ export interface TranslationStrings {
     seasonalFestivalsDesc: string;
     permadeath: string;
     permadeathDesc: string;
+    hexesCurses: string;
+    hexesCursesDesc: string;
     music: string;
     musicDesc: string;
     ambientSounds: string;

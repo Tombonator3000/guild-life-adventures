@@ -919,3 +919,33 @@ One-shot scrolls that directly damage an opponent's possessions. No duration —
 | **Total** | **21** | **200-600g** | **4 locations + dungeon** |
 
 ---
+
+## 2026-02-14 — Hexes & Curses: Gameplay Option Toggle (18:30 UTC)
+
+### Changes
+
+Added `enableHexesCurses` as an optional gameplay toggle in the Options menu, following the same pattern as Aging, Weather, Festivals, and Permadeath.
+
+**Default: OFF** — This is an opt-in rivalry feature. Players must explicitly enable it.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/data/gameOptions.ts` | Added `enableHexesCurses: boolean` to `GameOptions` interface + `false` default |
+| `src/components/game/OptionsMenu.tsx` | Added toggle row with Flame icon under Gameplay tab (after Permadeath, with separator) |
+| `src/i18n/types.ts` | Added `hexesCurses` and `hexesCursesDesc` translation keys |
+| `src/i18n/en.ts` | English: "Hexes & Curses" — "Dark magic rivalry..." |
+| `src/i18n/de.ts` | German: "Flüche & Verwünschungen" — "Dunkle Magie-Rivalität..." |
+| `src/i18n/es.ts` | Spanish: "Maleficios y Maldiciones" — "Rivalidad con magia oscura..." |
+
+### Verification
+- TypeScript: Clean compilation (no errors)
+- Backwards compatible: `loadGameOptions()` merges with defaults, so existing localStorage is unaffected
+
+### Next Steps
+- Implement the actual hex/curse system (data definitions, store actions, UI panels, AI)
+- Guard all hex logic behind `getGameOption('enableHexesCurses')` checks
+- When disabled: Enchanter/Shadow Market hide "Forbidden Scrolls"/"Dirty Tricks" tabs, Graveyard hides "Dark Ritual", dungeon drops skip hex scrolls
+
+---

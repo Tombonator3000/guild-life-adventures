@@ -13,6 +13,7 @@ export interface GameOptions {
   enableWeatherEvents: boolean; // Random weather events affecting gameplay
   enableFestivals: boolean;    // Seasonal festivals every 12 weeks
   enablePermadeath: boolean;   // Players die permanently (vs respawn at cost)
+  enableHexesCurses: boolean;  // Dark magic sabotage: hex locations, curse opponents, destroy equipment
 
   // === Display ===
   showEventAnimations: boolean; // Animate event popups
@@ -33,6 +34,7 @@ const DEFAULT_OPTIONS: GameOptions = {
   enableWeatherEvents: true,
   enableFestivals: true,
   enablePermadeath: true,
+  enableHexesCurses: false,     // Off by default — opt-in rivalry feature
 
   // Display
   showEventAnimations: true,

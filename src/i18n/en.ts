@@ -241,6 +241,8 @@ export const en: TranslationStrings = {
     seasonalFestivalsDesc: '4 festivals every 12 weeks with unique effects on the economy and gameplay.',
     permadeath: 'Permadeath',
     permadeathDesc: 'Players who die are permanently eliminated. When off, players respawn at the Graveyard with 20 HP.',
+    hexesCurses: 'Hexes & Curses',
+    hexesCursesDesc: 'Dark magic rivalry. Hex locations to block opponents, cast curses to sabotage their progress, and destroy their equipment. Scrolls found as rare dungeon drops or bought at great cost.',
     music: 'Music',
     musicDesc: 'Background music during gameplay.',
     ambientSounds: 'Ambient Sounds',

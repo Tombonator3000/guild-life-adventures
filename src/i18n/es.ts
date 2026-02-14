@@ -241,6 +241,8 @@ export const es: TranslationStrings = {
     seasonalFestivalsDesc: '4 festivales cada 12 semanas con efectos únicos en la economía y el juego.',
     permadeath: 'Muerte Permanente',
     permadeathDesc: 'Los jugadores que mueren son eliminados permanentemente. Al desactivar, los jugadores reaparecen en el Cementerio con 20 PV.',
+    hexesCurses: 'Maleficios y Maldiciones',
+    hexesCursesDesc: 'Rivalidad con magia oscura. Maldice ubicaciones para bloquear oponentes, lanza maleficios para sabotear su progreso y destruir su equipo. Pergaminos encontrados como botín raro o comprados a gran costo.',
     music: 'Música',
     musicDesc: 'Música de fondo durante el juego.',
     ambientSounds: 'Sonidos Ambientales',

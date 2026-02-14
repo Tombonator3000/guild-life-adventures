@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import {
   X, Settings, Gamepad2, Volume2, VolumeX, Monitor,
-  Gauge, RotateCcw, Cake, Skull, Zap, Eye, Layout, Bell, Timer, Sparkles, BookOpen, Speech, Globe, Frame,
+  Gauge, RotateCcw, Cake, Skull, Zap, Eye, Layout, Bell, Timer, Sparkles, BookOpen, Speech, Globe, Frame, Flame,
 } from 'lucide-react';
 import { UserManual } from '@/components/game/UserManual';
 import { Switch } from '@/components/ui/switch';
@@ -276,6 +276,20 @@ function GameplayTab({
           <Switch
             checked={options.enablePermadeath}
             onCheckedChange={(v) => setOption('enablePermadeath', v)}
+          />
+        }
+      />
+
+      <Separator />
+
+      <OptionRow
+        icon={<Flame className="w-4 h-4 text-purple-500" />}
+        label={t('optionsMenu.hexesCurses')}
+        description={t('optionsMenu.hexesCursesDesc')}
+        control={
+          <Switch
+            checked={options.enableHexesCurses}
+            onCheckedChange={(v) => setOption('enableHexesCurses', v)}
           />
         }
       />
