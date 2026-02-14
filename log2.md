@@ -682,3 +682,270 @@ src/main.tsx                     — Console diagnostics at mount time
 - No regressions
 
 ---
+
+## 2026-02-14 — Hexes & Curses System Design Proposal (18:00 UTC)
+
+### Overview
+
+Design proposal for a **sabotage/rivalry mechanic** allowing players to interfere with opponents through dark magic. Core philosophy: **rare, expensive, and high-risk/high-reward** — not something you do every turn, but a dramatic strategic move that can swing the game.
+
+Inspired by the user's vision: *"hexes and curses — close the school so your opponent can't study, close their workplace so they can't earn money, destroy their equipment."*
+
+---
+
+### Design Principles
+
+1. **Rare** — Hex scrolls are uncommon items, not commodity goods
+2. **Expensive** — 300-800g base price (comparable to high-end weapons/armor)
+3. **Difficult to obtain** — Best ones only as rare dungeon drops (Floor 3-5 bosses)
+4. **Counterplay exists** — Wards, cleansing, and natural expiration prevent griefing
+5. **Thematic** — Dark magic fits the medieval fantasy world (Enchanter, Shadow Market, Graveyard)
+6. **AI-compatible** — AI can both cast and defend against hexes
+
+---
+
+### PART 1: Hex Categories
+
+#### A. Location Hexes (Block a location for opponents)
+
+These "close down" a location for all OTHER players for a set duration. The caster is unaffected.
+
+| Hex Scroll | Target | Duration | Effect | Base Price | Source |
+|-----------|--------|----------|--------|-----------|--------|
+| **Seal of Ignorance** | Academy | 2 weeks | Opponents cannot study (Academy locked) | 500g | Enchanter / Floor 3 drop |
+| **Embargo Decree** | Guild Hall | 2 weeks | Opponents cannot accept quests or apply for jobs | 600g | Shadow Market / Floor 4 drop |
+| **Market Blight** | Market/Store | 1 week | General Store closed to opponents (no food/items) | 400g | Shadow Market |
+| **Forge Curse** | Forge | 2 weeks | Opponents cannot temper, repair, or salvage | 350g | Shadow Market / Floor 3 drop |
+| **Vault Seal** | Bank | 1 week | Opponents cannot deposit, withdraw, or trade stocks | 500g | Floor 4 drop only |
+| **Dungeon Ward** | Cave | 2 weeks | Opponents cannot enter the dungeon | 450g | Enchanter / Floor 4 drop |
+
+**Rules:**
+- Only ONE location hex active at a time (per caster) — prevents locking down everything
+- Caster must be AT the target location to cast (travel + time investment)
+- Costs 3 hours to cast (ritual time)
+- A glowing rune icon appears on the board location showing it's hexed
+- Affected players see: *"Dark magic seals the Academy doors. The hex of [caster name] bars your entry."*
+- The caster can still use the location normally
+
+#### B. Personal Curses (Debuffs on a specific opponent)
+
+Targeted at a specific rival player. The caster must choose which opponent to curse.
+
+| Curse Scroll | Duration | Effect | Base Price | Source |
+|-------------|----------|--------|-----------|--------|
+| **Curse of Poverty** | 3 weeks | Target's wages reduced by 40% | 500g | Shadow Market / Floor 3 drop |
+| **Hex of Clumsiness** | 3 weeks | Target's equipment durability degrades 3x faster | 400g | Shadow Market |
+| **Curse of Lethargy** | 2 weeks | Target loses 10 extra hours per turn (50h instead of 60h) | 600g | Floor 4 drop only |
+| **Hex of Misfortune** | 4 weeks | Target's robbery chance doubled, 25% chance of random bad event each week | 350g | Graveyard / Shadow Market |
+| **Curse of Decay** | 3 weeks | Target's food spoils 2x faster, clothing degrades 2x faster | 300g | Shadow Market |
+| **Hex of Confusion** | 2 weeks | Target needs +2 extra study sessions per degree (stacks with existing progress) | 450g | Enchanter / Floor 3 drop |
+
+**Rules:**
+- Max 1 curse active per target (can't pile 6 curses on one person)
+- Caster must be at Shadow Market, Enchanter, or Graveyard to cast
+- Costs 2 hours to cast
+- Target notified: *"A dark curse settles upon you! [Curse name] — [effect description]. It will last [N] weeks."*
+- Target can see active curses in their Info panel (new "Afflictions" section)
+
+#### C. Equipment Sabotage (Instant destructive effects)
+
+One-shot scrolls that directly damage an opponent's possessions. No duration — immediate.
+
+| Sabotage Scroll | Effect | Base Price | Source |
+|----------------|--------|-----------|--------|
+| **Shatter Hex** | Destroy target's equipped weapon (gone forever) | 600g | Floor 4+ drop only |
+| **Corrode Hex** | Destroy target's equipped armor (gone forever) | 600g | Floor 4+ drop only |
+| **Spoilage Curse** | Destroy ALL of target's stored food (food → 0, freshFood → 0) | 300g | Shadow Market |
+| **Appliance Jinx** | Break one random appliance the target owns | 250g | Shadow Market / Enchanter |
+| **Wardrobe Hex** | Reduce target's clothing condition to 0 (rags) | 200g | Shadow Market |
+
+**Rules:**
+- Shatter/Corrode hexes are drop-only — can't buy your way to destroying someone's Enchanted Blade
+- Target notified with dramatic flavor text
+
+---
+
+### PART 2: Acquisition Methods
+
+#### Enchanter (Elara) — "Forbidden Scrolls" Tab
+- New tab in Enchanter panel
+- Requires having cleared **Floor 2** of the dungeon (Elara won't sell dark magic to amateurs)
+- Sells: Seal of Ignorance, Dungeon Ward, Hex of Confusion, Appliance Jinx
+- Prices affected by priceModifier
+
+#### Shadow Market (Shadowfinger) — "Dirty Tricks" Tab
+- New tab in Shadow Market panel
+- No prerequisites (Shadowfinger doesn't ask questions)
+- Sells: Embargo Decree, Market Blight, Forge Curse, Curse of Poverty, Hex of Clumsiness, Hex of Misfortune, Curse of Decay, Spoilage Curse, Wardrobe Hex
+- Random rotating stock: only 3-4 available per week (not all at once)
+
+#### Graveyard (Morthos) — "Dark Ritual" Action
+- New action at Graveyard
+- Costs 4 hours + 200g (ritual materials)
+- Gives ONE random hex/curse scroll (any type, weighted toward lower tiers)
+- 15% chance of "ritual backfire" — curse yourself instead (+fun, +risk)
+- Thematically perfect: graveyard + dark magic + risk
+
+#### Dungeon Boss Drops (Rare Loot)
+- Floor 3 boss: 8% chance of random curse scroll drop (Tier 1-2)
+- Floor 4 boss: 12% chance of random curse scroll (Tier 1-3) + 5% Shatter/Corrode Hex
+- Floor 5 boss: 15% chance of random curse scroll (any) + 8% Shatter/Corrode + 3% **Legendary: Hex of Ruin**
+
+#### Legendary Drop: Hex of Ruin (Floor 5 only, 3% chance)
+- **Effect**: Closes ALL shops/services for target player for 1 week + reduces their gold by 25%
+- Cannot be purchased — dungeon drop only
+- Cannot be warded against
+- Announced to all players: *"[Caster] has unleashed the legendary Hex of Ruin upon [Target]!"*
+
+---
+
+### PART 3: Counterplay & Defense
+
+| Defense | Cost | Effect | Source |
+|---------|------|--------|--------|
+| **Protective Amulet** | 400g | Blocks next hex/curse cast on you (consumed) | Enchanter |
+| **Cleansing Ritual** | 150g + 3hrs | Removes one active personal curse | Healer |
+| **Dispel Scroll** | 250g | Removes one active location hex (must use AT the location) | Enchanter |
+| **Curse Reflection** | 250g + 3hrs | 35% reflect to caster, 25% remove, 40% fail | Graveyard |
+| **Natural Expiration** | Free | All hexes expire after 1-4 weeks | Automatic |
+
+---
+
+### PART 4: UI Design
+
+#### Hex Casting Flow
+1. Player visits Shadow Market / Enchanter / Graveyard
+2. Opens "Forbidden Scrolls" / "Dirty Tricks" / "Dark Ritual" tab
+3. Sees available hex scrolls with descriptions, prices, target selector
+4. Selects hex → dropdown to choose target player
+5. Confirms: *"Cast [Hex Name] on [Target]? Cost: [X]g + [Y] hours"*
+6. Dark particle animation on game board
+7. Both players notified
+
+#### Active Hexes Display
+- **Info Panel → "Afflictions" section** (skull icon)
+- Shows: hex name, effect, caster, weeks remaining
+- Pulsing dark purple border on cursed player tokens
+- Dark purple rune overlay on hexed board locations
+
+---
+
+### PART 5: AI Integration
+
+#### AI Casting Hexes (rivalryActions.ts)
+- Only **Medium/Hard** difficulty
+- Conditions: opponent within 20% of winning, AI has >500g surplus, 3-turn cooldown
+- Priority: block locations that counter the leading opponent's strategy
+
+#### AI Defending Against Hexes
+- Buys Protective Amulet if gold >800g
+- Cleanses curses at Healer if curse impacts current goal
+- Buys Dispel Scroll if critical location is hexed
+
+#### New AI Action Types
+```
+'cast-location-hex', 'cast-personal-curse', 'cast-equipment-sabotage',
+'buy-protective-amulet', 'cleanse-curse', 'dispel-location-hex'
+```
+
+---
+
+### PART 6: Economy Impact Analysis
+
+| Action | Cost | Damage to opponent |
+|--------|------|-------------------|
+| Curse of Poverty (3 wks) | 500g | ~150-450g lost income |
+| Seal of Ignorance (2 wks) | 500g | 2-3 study sessions lost |
+| Spoilage Curse | 300g | All food destroyed → starvation (-20 hrs) + rebuy cost |
+| Shatter Hex (Enchanted Blade) | Drop only | 500g weapon destroyed |
+| Wardrobe Hex | 200g | Clothing → 0, may lose job |
+
+**Balance**: Hexes deal MORE damage than they cost, but gold spent on hexes is NOT spent on progression — a calculated sacrifice.
+
+#### Safeguards
+- One location hex per caster at a time
+- One personal curse per target at a time
+- Natural expiration (no permanent effects)
+- Counterplay items exist (amulet, cleansing, dispel)
+- High gold + time costs prevent spam
+
+---
+
+### PART 7: Implementation Plan
+
+| File | Changes |
+|------|---------|
+| `src/types/game.types.ts` | Add `HexId`, `HexEffect`, `LocationHex` types; extend `Player` with `hexes`, `protectiveAmulet`; extend `GameState` with `locationHexes` |
+| `src/data/hexes.ts` | **NEW** — All hex/curse definitions, costs, durations, effects |
+| `src/data/items.ts` | Add hex scrolls, Protective Amulet, Dispel Scroll |
+| `src/store/gameStore.ts` | Add hex actions |
+| `src/store/helpers/hexHelpers.ts` | **NEW** — Hex action logic, validation, application |
+| `src/store/helpers/weekEndHelpers.ts` | Add `processHexes()` to pipeline + expiration logic |
+| `src/store/helpers/playerHelpers.ts` | Check location hexes in `movePlayer()` |
+| `src/components/game/EnchanterPanel.tsx` | "Forbidden Scrolls" tab |
+| `src/components/game/ShadowMarketPanel.tsx` | "Dirty Tricks" tab |
+| `src/components/game/GraveyardPanel.tsx` | "Dark Ritual" and "Curse Reflection" |
+| `src/components/game/HealerPanel.tsx` | "Cleanse Curse" action |
+| `src/components/game/InfoTabs.tsx` | "Afflictions" section |
+| `src/components/game/GameBoard.tsx` | Hex visual overlays |
+| `src/hooks/ai/actions/rivalryActions.ts` | Hex casting + defense AI logic |
+| `src/data/combatResolver.ts` | Hex scroll drops in boss loot tables |
+| `src/network/types.ts` | Add hex actions to `ALLOWED_GUEST_ACTIONS` |
+| `src/test/hexes.test.ts` | **NEW** — Tests |
+
+**Scope**: ~15-20 files, ~2 new files, ~800-1200 lines new code
+
+---
+
+### PART 8: Open Questions
+
+1. **Hex stacking** — Max 1 curse per target? Or allow 2 from different casters?
+2. **Self-hex "dark bargains"?** — e.g., "Pact of Power: -20 HP permanently, +10 ATK for 5 weeks" — cool but extra scope
+3. **Newspaper integration** — Hex events as Guildholm Herald headlines? ("DARK MAGIC REPORTED AT ACADEMY")
+4. **Achievements** — "First Blood: Cast your first hex", "Karma: Reflected curse hits you back", "Untouchable: Block 3 hexes"
+5. **Multiplayer balance** — In 4-player games, should hexes be even more expensive to prevent ganging up?
+
+---
+
+### Summary
+
+| Category | Count | Price Range | Sources |
+|----------|-------|-------------|---------|
+| Location Hexes | 6 | 350-600g | Enchanter, Shadow Market, Dungeon |
+| Personal Curses | 6 | 300-600g | Shadow Market, Enchanter, Graveyard, Dungeon |
+| Equipment Sabotage | 5 | 200-600g | Shadow Market, Dungeon drops (best are drop-only) |
+| Defense Items | 3 | 150-400g | Enchanter, Healer |
+| Legendary | 1 | Drop only | Floor 5 boss (3%) |
+| **Total** | **21** | **200-600g** | **4 locations + dungeon** |
+
+---
+
+## 2026-02-14 — Hexes & Curses: Gameplay Option Toggle (18:30 UTC)
+
+### Changes
+
+Added `enableHexesCurses` as an optional gameplay toggle in the Options menu, following the same pattern as Aging, Weather, Festivals, and Permadeath.
+
+**Default: OFF** — This is an opt-in rivalry feature. Players must explicitly enable it.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/data/gameOptions.ts` | Added `enableHexesCurses: boolean` to `GameOptions` interface + `false` default |
+| `src/components/game/OptionsMenu.tsx` | Added toggle row with Flame icon under Gameplay tab (after Permadeath, with separator) |
+| `src/i18n/types.ts` | Added `hexesCurses` and `hexesCursesDesc` translation keys |
+| `src/i18n/en.ts` | English: "Hexes & Curses" — "Dark magic rivalry..." |
+| `src/i18n/de.ts` | German: "Flüche & Verwünschungen" — "Dunkle Magie-Rivalität..." |
+| `src/i18n/es.ts` | Spanish: "Maleficios y Maldiciones" — "Rivalidad con magia oscura..." |
+
+### Verification
+- TypeScript: Clean compilation (no errors)
+- Backwards compatible: `loadGameOptions()` merges with defaults, so existing localStorage is unaffected
+
+### Next Steps
+- Implement the actual hex/curse system (data definitions, store actions, UI panels, AI)
+- Guard all hex logic behind `getGameOption('enableHexesCurses')` checks
+- When disabled: Enchanter/Shadow Market hide "Forbidden Scrolls"/"Dirty Tricks" tabs, Graveyard hides "Dark Ritual", dungeon drops skip hex scrolls
+
+---
