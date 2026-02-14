@@ -15,6 +15,10 @@ function getVersionUrl(): string {
  * Nuclear cache clear: unregister all service workers, delete every Cache
  * Storage entry, then hard-reload the page. This guarantees the browser
  * fetches everything fresh from the network (subject only to CDN TTL).
+ *
+ * Waits for all async cleanup to complete before reloading, preventing
+ * the race condition where reload fires while SWs are still registered
+ * or caches still exist, causing the stale SW to re-activate on reload.
  */
 export async function hardRefresh(): Promise<void> {
   try {
@@ -25,11 +29,16 @@ export async function hardRefresh(): Promise<void> {
     // 2. Delete all Cache Storage caches
     const cacheKeys = await caches.keys();
     await Promise.all(cacheKeys.map(k => caches.delete(k)));
+
+    // 3. Wait for async operations to settle before reload.
+    // Without this delay, the browser may reload before unregister/cache-delete
+    // fully propagate, causing the stale SW to reactivate immediately.
+    await new Promise(r => setTimeout(r, 100));
   } catch {
     // Ignore errors — reload regardless
   }
 
-  // 3. Force full reload from network
+  // 4. Force full reload from network
   window.location.reload();
 }
 

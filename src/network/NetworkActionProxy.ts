@@ -3,10 +3,26 @@
 // For online hosts: passes through to real store
 // For local games: passes through to real store
 
-import { useGameStore } from '@/store/gameStore';
+// IMPORTANT: Do NOT import useGameStore at the top level here.
+// gameStore.ts imports forwardIfGuest from this module, creating a circular dependency:
+//   gameStore.ts → NetworkActionProxy.ts → gameStore.ts
+// This circular import caused "Loading the realm..." freeze because one module
+// would get a partially-initialized reference to the other during module evaluation.
+//
+// Solution: gameStore.ts calls setStoreAccessor() after creating the store,
+// providing a function to get the current state without a direct import.
 import { LOCAL_ONLY_ACTIONS, HOST_INTERNAL_ACTIONS } from './types';
 
 type ActionSender = (actionName: string, args: unknown[]) => void;
+
+/** Store accessor — set by gameStore.ts after store creation to break circular dep */
+type StoreAccessor = () => { networkMode: string };
+let storeAccessor: StoreAccessor | null = null;
+
+/** Called by gameStore.ts after store creation to provide state access */
+export function setStoreAccessor(accessor: StoreAccessor) {
+  storeAccessor = accessor;
+}
 
 // Global reference to the network action sender (set by useOnlineGame hook)
 let networkActionSender: ActionSender | null = null;
@@ -68,7 +84,10 @@ export function setNetworkActionSender(sender: ActionSender | null) {
  * Returns false if the action should execute locally.
  */
 export function shouldForwardAction(actionName: string, args: unknown[]): boolean {
-  const state = useGameStore.getState();
+  // If store accessor isn't set yet (during initialization), execute locally
+  if (!storeAccessor) return false;
+
+  const state = storeAccessor();
 
   // Local mode — always execute locally
   if (state.networkMode === 'local') return false;

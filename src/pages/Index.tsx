@@ -2,14 +2,47 @@ import { lazy, Suspense, Component, type ReactNode } from 'react';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { TitleScreen } from '@/components/screens/TitleScreen';
 
+/**
+ * Retry wrapper for React.lazy() dynamic imports.
+ * When a chunk fails to load (hash mismatch after deploy, network error, stale SW cache),
+ * this retries the import once before giving up. On retry failure, it clears all caches
+ * and reloads the page, which is the most reliable recovery for stale-cache scenarios.
+ */
+function lazyWithRetry<T extends { default: React.ComponentType<unknown> }>(
+  factory: () => Promise<T>,
+): React.LazyExoticComponent<T['default']> {
+  return lazy(() =>
+    factory().catch(() => {
+      // First retry — chunk may have failed due to transient network error
+      return factory().catch(() => {
+        // Second failure — likely stale cache. Clear everything and reload.
+        console.error('[Guild Life] Chunk loading failed twice — clearing cache and reloading');
+        if ('caches' in window) {
+          caches.keys().then(names => names.forEach(name => caches.delete(name)));
+        }
+        if (navigator.serviceWorker) {
+          navigator.serviceWorker.getRegistrations().then(regs =>
+            regs.forEach(r => r.unregister())
+          );
+        }
+        // Delay reload slightly to let cache operations start
+        setTimeout(() => window.location.reload(), 200);
+        // Return a never-resolving promise to prevent React error while reloading
+        return new Promise<T>(() => {});
+      });
+    })
+  );
+}
+
 // Lazy-load screens that aren't needed at startup.
 // Only TitleScreen is eagerly loaded (initial phase = 'title').
 // This prevents a module failure in GameBoard's 25+ sub-component tree
 // from blocking the entire app from mounting.
-const GameSetup = lazy(() => import('@/components/screens/GameSetup').then(m => ({ default: m.GameSetup })));
-const GameBoard = lazy(() => import('@/components/game/GameBoard').then(m => ({ default: m.GameBoard })));
-const VictoryScreen = lazy(() => import('@/components/screens/VictoryScreen').then(m => ({ default: m.VictoryScreen })));
-const OnlineLobby = lazy(() => import('@/components/screens/OnlineLobby').then(m => ({ default: m.OnlineLobby })));
+// Uses lazyWithRetry to recover from chunk loading failures (stale cache after deploy).
+const GameSetup = lazyWithRetry(() => import('@/components/screens/GameSetup').then(m => ({ default: m.GameSetup })));
+const GameBoard = lazyWithRetry(() => import('@/components/game/GameBoard').then(m => ({ default: m.GameBoard })));
+const VictoryScreen = lazyWithRetry(() => import('@/components/screens/VictoryScreen').then(m => ({ default: m.VictoryScreen })));
+const OnlineLobby = lazyWithRetry(() => import('@/components/screens/OnlineLobby').then(m => ({ default: m.OnlineLobby })));
 
 // Lazy-load audio controller — keeps audio singletons (audioManager, ambientManager,
 // speechNarrator) off the critical path. If ANY audio module fails to load/construct,

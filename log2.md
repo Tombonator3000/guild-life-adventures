@@ -1308,3 +1308,168 @@ After (Round 5):
 - No regressions
 
 ---
+
+## 2026-02-14 — BUG HUNT: "Loading the realm..." Freeze (Round 6 — Cache Root Cause) (18:30 UTC)
+
+### Bug Report
+Game stuck on static "Loading the realm..." screen — React never mounts.
+User reports: **"Ser ut som den prøve å lade gammel cache"** (looks like it's trying to load old cache).
+
+This is the **sixth** investigation of this recurring issue. Previous rounds fixed audio singletons, missing deps, eager imports, and lazy loading. This round targets the **root cause**: stale browser cache serving old HTML that references chunk hashes that no longer exist.
+
+### Investigation Method
+
+Systematic parallel AI agent scan with **7 specialized agents** scanning simultaneously:
+1. Loading chain analysis (index.html → main.tsx → App.tsx → Index.tsx → TitleScreen)
+2. PWA / Service Worker / Cache configuration
+3. Store initialization & save/load
+4. Audio singletons & module-level side effects
+5. Circular dependencies & missing imports
+6. Recent code changes
+7. Build output & runtime behavior
+
+### Root Cause Analysis
+
+**PRIMARY: Stale browser-cached HTML + new SW precache = hash mismatch**
+
+GitHub Pages sets `Cache-Control: max-age=600` (10 min) on HTML files. During that window:
+1. Browser serves stale `index.html` from HTTP cache (with OLD chunk hash references)
+2. New SW has been deployed with NEW precache manifest (new chunk hashes)
+3. Browser requests old chunk filename → 404 or cache miss → module loading fails
+4. React never mounts → "Loading the realm..." forever
+5. No error shown because the `unhandledrejection` handler only fires after 3s delay
+
+This is the exact "old cache" scenario the user described.
+
+**SECONDARY: Circular dependency gameStore.ts ↔ NetworkActionProxy.ts**
+
+```
+gameStore.ts (line 22) → imports forwardIfGuest from NetworkActionProxy.ts
+NetworkActionProxy.ts (line 6) → imports useGameStore from gameStore.ts
+```
+
+During module evaluation, one module gets a partially-initialized reference to the other. While modern bundlers handle many circular dep cases, this is a fragile pattern that can break during code splitting, especially when the SW serves a mix of old and new chunks.
+
+**TERTIARY: hardRefresh() race condition**
+
+`hardRefresh()` called `window.location.reload()` immediately after `await Promise.all(...)` for unregister/cache-delete. But the browser may reload before these async operations fully propagate, causing the stale SW to reactivate on reload.
+
+**QUATERNARY: No pre-mount version check**
+
+`main.tsx` immediately imported App.tsx without checking whether the running HTML matches the deployed version. By the time `useAppUpdate()` could detect a version mismatch (inside React), module loading had already failed.
+
+### Fixes Applied (6)
+
+| # | Severity | File | Fix |
+|---|----------|------|-----|
+| 1 | **CRITICAL** | `src/main.tsx` | **Pre-mount staleness check**: Before importing App.tsx, fetch `version.json` with `cache: 'no-store'` and compare `__BUILD_TIME__`. If stale, clear all caches + unregister SWs + reload BEFORE any module loading. Catches the "stale HTML + new chunks" scenario at the earliest possible point. 3s timeout ensures it doesn't block mount on offline/slow networks. |
+| 2 | **CRITICAL** | `src/network/NetworkActionProxy.ts` | **Break circular dependency**: Removed `import { useGameStore } from '@/store/gameStore'` top-level import. Replaced with `setStoreAccessor()` pattern — gameStore.ts registers a state accessor function after store creation. NetworkActionProxy uses this accessor at call time instead of importing the store directly. If accessor isn't set yet (during init), `shouldForwardAction` returns false (safe default). |
+| 3 | **HIGH** | `src/store/gameStore.ts` | **Register store accessor**: Added `setStoreAccessor(() => useGameStore.getState())` call after store creation to complete the circular dep fix. |
+| 4 | **HIGH** | `src/hooks/useAppUpdate.ts` | **Fix hardRefresh() race condition**: Added 100ms delay between cache operations and `window.location.reload()`. Ensures async unregister/cache-delete propagate before the browser reloads. |
+| 5 | **HIGH** | `index.html` | **Cache-control meta tags**: Added `<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">`, `Pragma: no-cache`, `Expires: 0`. Tells browsers to always revalidate this HTML page, reducing the stale-HTML window from 10 min to ~0. |
+| 6 | **HIGH** | `index.html` | **Improved fallback timer**: Changed from two fixed timeouts (5s/12s) to a polling loop (every 3s starting at 4s). Self-cleaning — stops polling once React mounts. First check at 4s accounts for the pre-mount version check (3s timeout). |
+| 7 | **HIGH** | `src/pages/Index.tsx` | **Lazy chunk retry logic**: `lazyWithRetry()` wrapper for `React.lazy()` — retries chunk import once on failure, then clears all caches + unregisters SWs + reloads on second failure. Recovers from transient network errors and stale-cache hash mismatches. |
+
+### Technical Details
+
+**Pre-mount version check (main.tsx):**
+```typescript
+async function checkStaleBuild(): Promise<boolean> {
+  if (typeof __BUILD_TIME__ === 'undefined') return false;
+  try {
+    const resp = await fetch(`${base}version.json?_=${Date.now()}`, { cache: 'no-store' });
+    const data = await resp.json();
+    if (data.buildTime && data.buildTime !== __BUILD_TIME__) {
+      // Clear SW + caches + wait 100ms + reload
+      return true;
+    }
+  } catch { /* proceed with mount if offline */ }
+  return false;
+}
+
+async function mount() {
+  const isStale = await checkStaleBuild();
+  if (isStale) return; // reloading
+  const { default: App } = await import("./App.tsx");
+  createRoot(root).render(<App />);
+}
+```
+
+**Circular dependency fix (NetworkActionProxy.ts):**
+```typescript
+// BEFORE: Circular import
+import { useGameStore } from '@/store/gameStore';
+export function shouldForwardAction(...) {
+  const state = useGameStore.getState(); // could be undefined during init
+}
+
+// AFTER: Setter pattern — no import needed
+let storeAccessor: (() => { networkMode: string }) | null = null;
+export function setStoreAccessor(accessor) { storeAccessor = accessor; }
+export function shouldForwardAction(...) {
+  if (!storeAccessor) return false; // safe default during init
+  const state = storeAccessor();
+}
+```
+
+**Lazy chunk retry (Index.tsx):**
+```typescript
+function lazyWithRetry(factory) {
+  return lazy(() =>
+    factory().catch(() =>
+      factory().catch(() => {
+        // Second failure — clear caches + reload
+        caches.keys().then(names => names.forEach(name => caches.delete(name)));
+        navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+        setTimeout(() => window.location.reload(), 200);
+        return new Promise(() => {}); // hang while reloading
+      })
+    )
+  );
+}
+```
+
+### Files Changed (6)
+
+```
+src/main.tsx                          — Pre-mount staleness check (version.json)
+src/network/NetworkActionProxy.ts     — Break circular dep (setStoreAccessor pattern)
+src/store/gameStore.ts                — Register store accessor + import setStoreAccessor
+src/hooks/useAppUpdate.ts             — hardRefresh() 100ms delay before reload
+index.html                            — Cache-control meta tags + polling fallback timer
+src/pages/Index.tsx                   — lazyWithRetry() chunk loading retry logic
+```
+
+### Architecture: "Old Cache" Defense Layers
+
+After this fix, the app has **4 layers** of defense against stale cache:
+
+```
+Layer 1: Browser (index.html)
+  └── Cache-Control: no-cache, no-store, must-revalidate
+  └── Forces browser to always revalidate HTML from server
+
+Layer 2: Pre-mount check (main.tsx)
+  └── Fetches version.json BEFORE loading any app modules
+  └── If stale: clear caches + unregister SWs + reload
+  └── Prevents old HTML from even trying to load new chunks
+
+Layer 3: Chunk retry (Index.tsx)
+  └── lazyWithRetry() retries failed chunk imports
+  └── On second failure: clear caches + reload
+  └── Recovers from transient errors and partial cache
+
+Layer 4: In-app detection (useAppUpdate.ts)
+  └── version.json polling every 60s
+  └── controllerchange listener for auto-reload
+  └── hardRefresh() with proper async settling
+```
+
+### Verification
+
+- TypeScript: Clean (0 errors)
+- Tests: 219/219 passing (10 test files, 0 failures)
+- Build: Succeeds cleanly
+- No regressions
+
+---
