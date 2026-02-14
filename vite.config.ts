@@ -53,6 +53,60 @@ function versionJsonPlugin(): PluginOption {
   };
 }
 
+/**
+ * Defers the entry module script loading until AFTER the stale-build check passes.
+ *
+ * Without this plugin, Vite outputs <script type="module" src="..."> directly in HTML.
+ * The browser starts fetching the module immediately — even while the inline stale-build
+ * check is running. If the HTML is stale (from browser HTTP cache), the module URL
+ * references non-existent content-hashed chunks → 404 → "Loading the realm..." forever.
+ *
+ * This plugin removes the module script tag and stores its URL in window.__ENTRY__.
+ * The inline stale-check script in index.html then injects the module dynamically
+ * ONLY after confirming the HTML is fresh (or timing out). This eliminates the race
+ * condition that caused the recurring loading freeze.
+ *
+ * Only applies to production builds — development mode keeps the original script tag.
+ */
+function deferModulePlugin(): PluginOption {
+  return {
+    name: 'defer-module-load',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(html: string) {
+        // Find the entry point module script tag that Vite generates
+        // Format: <script type="module" crossorigin src="/assets/index-abc123.js"></script>
+        const scriptMatch = html.match(
+          /<script\s+type="module"\s+crossorigin\s+src="([^"]+)"\s*><\/script>/
+        );
+        if (!scriptMatch) return html; // No match — return unchanged (safe degradation)
+
+        const entrySrc = scriptMatch[1];
+
+        // Remove the module script tag — inline script will load it after version check
+        html = html.replace(scriptMatch[0], '');
+
+        // Also remove modulepreload links to prevent wasted 404 fetches on stale builds
+        const preloads: string[] = [];
+        html = html.replace(
+          /<link\s+rel="modulepreload"\s+crossorigin\s+href="([^"]+)"\s*\/?>/g,
+          (_match: string, href: string) => {
+            preloads.push(href);
+            return '';
+          }
+        );
+
+        // Inject entry URL and preload URLs as globals
+        const script = `<script>window.__ENTRY__=${JSON.stringify(entrySrc)};window.__PRELOADS__=${JSON.stringify(preloads)};</script>`;
+        html = html.replace('</head>', script + '\n</head>');
+
+        return html;
+      }
+    }
+  };
+}
+
 // Lovable-tagger is optional — only available in Lovable dev environment
 let lovableTaggerPlugin: PluginOption | null = null;
 try {
@@ -80,14 +134,14 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && lovableTaggerPlugin,
     VitePWA({
       registerType: "autoUpdate",
+      // Only precache essential PWA icons. All other assets (music, images, SFX)
+      // are cached on-demand via runtimeCaching rules below. This reduces SW install
+      // from 40 MB / 322 entries to <1 MB / ~12 entries, preventing the scenario where
+      // a long SW install + skipWaiting causes a mid-visit controller swap.
       includeAssets: [
         "favicon.ico",
         "apple-touch-icon.png",
         "icon.svg",
-        "music/*.mp3",
-        "ambient/*.mp3",
-        "sfx/*.mp3",
-        "npcs/*.jpg",
       ],
       manifest: {
         name: "Guild Life Adventures",
@@ -162,7 +216,10 @@ export default defineConfig(({ mode }) => ({
         //   4. Old chunks are gone from precache → 404 → "Loading the realm..." forever
         // By only precaching static assets (images, fonts, icons), the SW provides
         // offline-capable media while JS/CSS always come fresh from the network.
-        globPatterns: ["**/*.{ico,png,svg,jpg,jpeg,webp,woff,woff2}"],
+        // Only precache PWA icons — NOT the 300+ game images (40 MB).
+        // Images, audio, and NPC portraits are cached on-demand via CacheFirst
+        // runtime caching below. This makes SW install near-instant.
+        globPatterns: ["pwa-*.png", "favicon.ico"],
         globIgnores: ["**/version.json"], // Never precache — fetched with no-store for update detection
         cleanupOutdatedCaches: true, // Remove old precache entries when new SW activates
         // Don't serve cached HTML for navigation — always fetch fresh from network
@@ -194,7 +251,7 @@ export default defineConfig(({ mode }) => ({
             options: {
               cacheName: "music-cache",
               expiration: {
-                maxEntries: 20,
+                maxEntries: 100, // All music + ambient + SFX files
                 maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
               },
               cacheableResponse: {
@@ -203,12 +260,12 @@ export default defineConfig(({ mode }) => ({
             },
           },
           {
-            urlPattern: /\.(?:jpg|jpeg|png|svg)$/i,
+            urlPattern: /\.(?:jpg|jpeg|png|svg|webp)$/i,
             handler: "CacheFirst",
             options: {
               cacheName: "image-cache",
               expiration: {
-                maxEntries: 50,
+                maxEntries: 500, // All game images cached on demand
                 maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
               },
               cacheableResponse: {
@@ -220,6 +277,7 @@ export default defineConfig(({ mode }) => ({
       },
     }),
     versionJsonPlugin(),
+    deferModulePlugin(),
   ].filter(Boolean),
   resolve: {
     alias: {

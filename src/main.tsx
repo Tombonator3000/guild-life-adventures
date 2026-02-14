@@ -1,6 +1,19 @@
 import { createRoot } from "react-dom/client";
 import "./index.css";
 
+// Clean up cache-busting parameter added by hardRefresh() or stale-build detection.
+// This runs early so the ?_gv=... doesn't persist in the URL bar or browser history.
+// The inline script in index.html also strips it, but this is a safety net.
+try {
+  const url = new URL(window.location.href);
+  if (url.searchParams.has('_gv')) {
+    url.searchParams.delete('_gv');
+    window.history.replaceState(null, '', url.toString());
+  }
+} catch {
+  // URL manipulation failed — ignore
+}
+
 // Augment window for cross-script communication with index.html inline scripts
 declare global {
   interface Window {

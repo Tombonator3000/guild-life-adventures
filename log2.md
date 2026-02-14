@@ -5,6 +5,142 @@
 
 ---
 
+## 2026-02-14 — DEFINITIVE Fix: "Loading the Realm..." Infinite Freeze (21:30 UTC)
+
+### Overview
+
+Systematic bug hunt targeting the recurring "Loading the realm..." freeze. This is the **7th attempt** to fix this issue (6 previous PRs all addressed symptoms but not root causes). This time: a deep architectural analysis identified 3 root causes that all previous fixes missed, plus an implementation of 5 targeted fixes.
+
+### Root Cause Analysis
+
+After analyzing all 6 previous fix attempts and the full loading architecture (4 defense layers, 3 cache systems, 2 version detection methods), identified 3 fundamental root causes:
+
+**Root Cause 1 — Race condition between version check and module loading:**
+The inline stale-build check (`version.json` fetch) runs asynchronously, but Vite's `<script type="module">` tag starts loading **in parallel** (browser preloader begins fetching immediately). If the module requests reference old chunk hashes (from stale cached HTML), the 404 errors fire BEFORE the version check can trigger a reload. The previous fix attempted to catch this with `unhandledrejection`, but that only shows an error — it doesn't prevent the race.
+
+**Root Cause 2 — `location.reload()` doesn't bypass browser HTTP cache:**
+GitHub Pages sends `Cache-Control: max-age=600` (10-minute cache). The `<meta http-equiv="Cache-Control">` tags in the HTML are **ignored by modern browsers** — only HTTP response headers matter. After clearing SW caches, `location.reload()` sends a conditional request (If-Modified-Since), but the browser may STILL serve the cached HTML if the CDN returns 304. This means the reload loop (clear cache → reload → still stale) could burn through the 2-reload limit without ever getting fresh HTML.
+
+**Root Cause 3 — 40 MB precache causing mid-visit SW takeover:**
+The SW precached 322 image/icon entries totaling ~40 MB. On a slow connection, SW installation could take minutes. With `skipWaiting: true` + `clientsClaim: true`, the new SW activates immediately after install — taking control of the page while old JavaScript is still running in memory. The old JS then tries to lazy-load chunks that the new SW doesn't have → 404 → freeze.
+
+### Fixes Applied (5 changes across 4 files)
+
+#### Fix 1: Deferred Module Loading (vite.config.ts) — Eliminates race condition
+**New Vite plugin: `deferModulePlugin()`**
+
+In production, removes the `<script type="module">` tag from the built HTML and stores its URL in `window.__ENTRY__`. The inline stale-check script now dynamically injects the module script ONLY after confirming the HTML is fresh via `version.json`. This completely eliminates the race condition — the module never starts loading until the version check passes (or times out after 3s).
+
+```
+Before: version check runs async ←→ module loads in parallel ← RACE CONDITION
+After:  version check → pass → load module (sequential)
+```
+
+Also removes `<link rel="modulepreload">` tags to prevent wasted 404 fetches on stale builds. Preloads are re-injected by `loadApp()` after the version check passes.
+
+Dev mode is unaffected (plugin is `apply: 'build'` only).
+
+#### Fix 2: Deferred Loading Logic in index.html — New `loadApp()` function
+Rewrote the inline stale-build detection script with a `loadApp()` function that:
+1. Injects modulepreload links for performance
+2. Creates and appends the `<script type="module">` dynamically
+3. Strips the `_gv` cache-buster parameter from the URL
+4. Is called when: version check passes, version check fails (can't determine), or 3s timeout
+
+#### Fix 3: Cache-Busting Reload (useAppUpdate.ts + index.html)
+Replaced all `location.reload()` calls with cache-busting URL parameter:
+```javascript
+// Before (may serve cached HTML):
+window.location.reload();
+
+// After (forces fresh network fetch):
+const url = new URL(window.location.href);
+url.searchParams.set('_gv', String(Date.now()));
+window.location.replace(url.toString());
+```
+
+This bypasses the browser's HTTP cache by treating the request as a navigation to a new URL. Applied in:
+- `hardRefresh()` in `useAppUpdate.ts`
+- Stale-build reload in `index.html` inline script
+- "Clear Cache & Reload" fallback button in `index.html`
+
+The `_gv` parameter is stripped from the URL by:
+- The `loadApp()` function in `index.html` (primary)
+- A safety net at the top of `main.tsx` (secondary)
+
+#### Fix 4: Precache Reduction (vite.config.ts) — 94% size reduction
+Reduced SW precache from **322 entries / 39,384 KB (~40 MB)** to **23 entries / 2,379 KB (~2.3 MB)**:
+
+**Before:**
+```javascript
+includeAssets: ["favicon.ico", "apple-touch-icon.png", "icon.svg",
+  "music/*.mp3", "ambient/*.mp3", "sfx/*.mp3", "npcs/*.jpg"],
+globPatterns: ["**/*.{ico,png,svg,jpg,jpeg,webp,woff,woff2}"],
+```
+
+**After:**
+```javascript
+includeAssets: ["favicon.ico", "apple-touch-icon.png", "icon.svg"],
+globPatterns: ["pwa-*.png", "favicon.ico"],
+```
+
+All game images, audio, NPC portraits, and SFX are now cached **on-demand** via the existing `CacheFirst` runtime caching rules (which were already configured but underutilized). Increased `maxEntries` for image cache (50 → 500) and music cache (20 → 100) to accommodate on-demand caching.
+
+This makes SW install near-instant, preventing the mid-visit takeover scenario from Root Cause 3.
+
+#### Fix 5: URL Cleanup (main.tsx)
+Added safety-net cleanup of the `_gv` cache-busting parameter at the top of `main.tsx` (before React mounts), in case the inline script's cleanup didn't run.
+
+### Files Changed
+
+| File | Changes |
+|------|---------|
+| `vite.config.ts` | New `deferModulePlugin()` Vite plugin; reduced `includeAssets` and `globPatterns`; increased runtime cache `maxEntries` |
+| `index.html` | Rewrote stale-check script with deferred `loadApp()` function; cache-busting reloads; cleaner fallback button |
+| `src/hooks/useAppUpdate.ts` | `hardRefresh()` uses cache-busting URL param instead of `location.reload()` |
+| `src/main.tsx` | Added `_gv` parameter cleanup at top of module |
+
+### Defense Layers (Updated Architecture)
+
+```
+Layer 0: Deferred Module Loading (NEW — index.html + deferModulePlugin)
+  └── Module script NOT in HTML — loaded dynamically after version check
+  └── No more race condition between check and module loading
+
+Layer 1: Stale-Build Detection (index.html inline script)
+  └── Fetches version.json BEFORE loading any modules
+  └── Cache-busting reload on mismatch (NEW: ?_gv= param)
+  └── 3s timeout: loads anyway if version check hangs
+
+Layer 2: Pre-Mount Version Check (main.tsx)
+  └── Secondary defense: reuses window.__versionCheck promise
+  └── Catches edge cases the inline check missed
+
+Layer 3: Chunk Retry Logic (Index.tsx)
+  └── lazyWithRetry() retries failed chunk imports
+  └── On second failure: clear caches + cache-busting reload
+
+Layer 4: In-App Update Detection (useAppUpdate.ts)
+  └── version.json polling (every 60s)
+  └── controllerchange listener
+  └── hardRefresh() with cache-busting reload (NEW)
+
+Layer 5: Fallback Timer (index.html)
+  └── "Clear Cache & Reload" button after 5s
+  └── Uses cache-busting reload (NEW)
+```
+
+### Test Results
+
+```
+219 tests passed (10 files), 0 failures
+Build: clean (no TypeScript or ESLint errors)
+GitHub Pages build: clean (with base path /guild-life-adventures/)
+Precache: 23 entries / 2,379 KB (was 322 entries / 39,384 KB)
+```
+
+---
+
 ## 2026-02-14 — Bug Hunt: Shadow Market Crashes + Multiplayer Connection Fixes + Audit (21:00 UTC)
 
 ### Overview

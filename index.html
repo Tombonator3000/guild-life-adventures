@@ -78,39 +78,80 @@
         __guildShowLoadError(msg);
       });
     </script>
-    <!-- INLINE STALE-BUILD DETECTION (Layer 0 — runs BEFORE any module script)
-         window.__HTML_BUILD_TIME__ is injected by Vite's versionJsonPlugin at build time.
-         In production: compares the build time baked into this HTML with the latest
-         version.json on the server. If they differ, this HTML is stale (served from
-         browser HTTP cache or old SW), and the JS chunks it references likely don't exist.
-         Auto-clears caches and reloads BEFORE the module script even tries to load.
-         In development: __HTML_BUILD_TIME__ is undefined, so this is a no-op.
+    <!-- DEFERRED MODULE LOADING + STALE-BUILD DETECTION (Layer 0)
+         In production, deferModulePlugin removes the <script type="module"> tag and
+         stores its URL in window.__ENTRY__. This script loads it dynamically AFTER
+         confirming the HTML is fresh via version.json. This eliminates the race
+         condition where stale HTML starts loading non-existent JS chunks in parallel
+         with the version check.
 
-         Also pre-fetches version.json and stores the promise on window.__versionCheck
-         so main.tsx can reuse it instead of making a second fetch. -->
+         In development, window.__HTML_BUILD_TIME__ is undefined and window.__ENTRY__
+         doesn't exist, so the module script tag below loads normally. -->
     <script>
       (function(){
-        if(!window.__HTML_BUILD_TIME__)return; /* dev mode — skip */
+        /* ===== loadApp: dynamically inject the entry module ===== */
+        function loadApp(){
+          if(document.querySelector('script[data-entry]'))return; /* already loading */
+          var src=window.__ENTRY__;
+          if(!src)return; /* dev mode — module script is in the HTML */
+          /* Re-add modulepreload hints for performance */
+          (window.__PRELOADS__||[]).forEach(function(href){
+            var l=document.createElement('link');
+            l.rel='modulepreload';l.crossOrigin='';l.href=href;
+            document.head.appendChild(l);
+          });
+          /* Inject the entry module */
+          var s=document.createElement('script');
+          s.type='module';s.crossOrigin='';s.src=src;
+          s.setAttribute('data-entry','1');
+          document.body.appendChild(s);
+          /* Clean up cache-buster from URL (added by stale-build reload) */
+          if(location.search.indexOf('_gv=')!==-1){
+            try{
+              var url=new URL(location.href);
+              url.searchParams.delete('_gv');
+              history.replaceState(null,'',url.toString());
+            }catch(e){}
+          }
+        }
+
+        if(!window.__HTML_BUILD_TIME__){
+          /* Dev mode — no version check, module loads from HTML script tag */
+          return;
+        }
+
         var base=document.querySelector('base[href]');
         base=base?base.getAttribute('href'):'/';
-        /* Start fetch immediately — module script can reuse this promise */
+
+        /* Fetch version.json — reused by main.tsx via window.__versionCheck */
         window.__versionCheck=fetch(base+'version.json?_='+Date.now(),{cache:'no-store'})
           .then(function(r){return r.ok?r.json():null})
-          .catch(function(){return null}); /* offline — proceed */
+          .catch(function(){return null});
+
         window.__versionCheck.then(function(data){
-          if(!data||!data.buildTime)return;
-          if(data.buildTime===window.__HTML_BUILD_TIME__)return; /* HTML is fresh */
-          /* HTML is stale — JS chunks probably have wrong hashes.
-             Clear everything and reload BEFORE module script tries to load. */
-          console.warn('[Guild Life] Stale HTML detected (inline check). Build:',
+          if(!data||!data.buildTime){
+            /* Can't determine version — load the app anyway */
+            loadApp();
+            return;
+          }
+          if(data.buildTime===window.__HTML_BUILD_TIME__){
+            /* HTML is fresh — safe to load */
+            loadApp();
+            return;
+          }
+
+          /* ===== STALE BUILD DETECTED ===== */
+          console.warn('[Guild Life] Stale HTML detected. Running:',
             window.__HTML_BUILD_TIME__,'Server:',data.buildTime);
-          /* Check reload loop prevention — max 2 reloads per 60s */
+
+          /* Reload loop prevention — max 2 reloads per 60s */
           try{
             var raw=sessionStorage.getItem('guild-stale-reload');
             if(raw){
               var rd=JSON.parse(raw);
               if(Date.now()-rd.ts<60000&&rd.count>=2){
-                console.warn('[Guild Life] Reload limit reached — showing manual button instead');
+                console.warn('[Guild Life] Reload limit reached — loading anyway');
+                loadApp(); /* Try loading despite staleness */
                 return;
               }
               if(Date.now()-rd.ts>=60000) raw=null;
@@ -120,7 +161,8 @@
             reloadData.count++;
             sessionStorage.setItem('guild-stale-reload',JSON.stringify(reloadData));
           }catch(e){}
-          /* Properly await cache cleanup before reloading */
+
+          /* Clear SW caches, then reload with cache-busting URL */
           Promise.resolve()
             .then(function(){
               var promises=[];
@@ -142,37 +184,66 @@
             })
             .catch(function(){})
             .then(function(){
-              /* Wait for cleanup to propagate */
-              setTimeout(function(){location.reload()},500);
+              /* Cache-busting reload: location.reload() may still serve cached HTML
+                 because GitHub Pages sends Cache-Control: max-age=600 and the meta
+                 http-equiv tags are ignored by modern browsers. Adding a query param
+                 forces the browser to treat it as a new URL → fresh network fetch. */
+              setTimeout(function(){
+                try{
+                  var url=new URL(location.href);
+                  url.searchParams.set('_gv',String(Date.now()));
+                  location.replace(url.toString());
+                }catch(e){location.reload();}
+              },500);
             });
         });
+
+        /* Timeout: if version check takes >3s, load anyway (slow/offline) */
+        setTimeout(function(){
+          if(!document.querySelector('script[data-entry]')){
+            console.log('[Guild Life] Version check timed out — loading app');
+            loadApp();
+          }
+        },3000);
       })();
     </script>
+    <!-- Dev mode entry point — in production, deferModulePlugin removes the
+         built version and stores it in window.__ENTRY__ for deferred loading -->
     <script type="module" src="/src/main.tsx"></script>
     <!-- Fallback: polling loop checks every 3s if React has mounted.
          If loading-screen is still visible after 5s, shows "Clear Cache & Reload" button.
-         The button unregisters SWs, clears all caches, waits 300ms, then reloads. -->
+         Button clears SW caches and reloads with cache-busting URL param. -->
     <script>
       (function(){
         var shown=false;
+        function cacheReload(){
+          if(navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(s){s.unregister()})});}
+          if(window.caches){caches.keys().then(function(n){n.forEach(function(k){caches.delete(k)})});}
+          setTimeout(function(){
+            try{var u=new URL(location.href);u.searchParams.set('_gv',Date.now());location.replace(u.toString());}
+            catch(e){location.reload();}
+          },300);
+        }
         function guildFallbackCheck(){
           var root=document.getElementById('root');
           var ls=root&&root.querySelector('#loading-screen');
-          if(!ls){shown=true;return;} /* React mounted — stop checking */
-          if(shown)return; /* Already showed button */
+          if(!ls){shown=true;return;}
+          if(shown)return;
           shown=true;
           var p=document.createElement('p');
           p.className='fallback-btn';
           p.style.cssText='margin-top:1.5rem;font-family:serif;';
-          p.innerHTML='<button onclick="(function(){if(navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(s){s.unregister()})});}if(window.caches){caches.keys().then(function(n){n.forEach(function(k){caches.delete(k)})});}setTimeout(function(){location.reload()},300);})()" style="padding:.75rem 2rem;font-size:1rem;font-family:serif;background:linear-gradient(135deg,hsl(45,85%,55%),hsl(35,70%,40%));color:#1f170a;border:none;border-radius:.25rem;cursor:pointer;font-weight:bold;">Clear Cache &amp; Reload</button>';
+          var btn=document.createElement('button');
+          btn.textContent='Clear Cache & Reload';
+          btn.style.cssText='padding:.75rem 2rem;font-size:1rem;font-family:serif;background:linear-gradient(135deg,hsl(45,85%,55%),hsl(35,70%,40%));color:#1f170a;border:none;border-radius:.25rem;cursor:pointer;font-weight:bold;';
+          btn.onclick=cacheReload;
+          p.appendChild(btn);
           ls.appendChild(p);
         }
-        /* Poll every 3s starting at 5s. The inline version check and main.tsx
-           pre-mount check need time to complete before we show the fallback button. */
         var t=setInterval(function(){
           var root=document.getElementById('root');
           var ls=root&&root.querySelector('#loading-screen');
-          if(!ls){clearInterval(t);return;} /* React mounted */
+          if(!ls){clearInterval(t);return;}
           guildFallbackCheck();
         },3000);
         setTimeout(guildFallbackCheck,5000);

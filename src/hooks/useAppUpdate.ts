@@ -45,8 +45,19 @@ export async function hardRefresh(): Promise<void> {
     // Ignore errors — reload regardless
   }
 
-  // 5. Force full reload from network
-  window.location.reload();
+  // 5. Cache-busting reload: use a URL query parameter to bypass the browser's
+  // HTTP cache. GitHub Pages sends Cache-Control: max-age=600 (10 minutes), and
+  // location.reload() may still serve the stale cached HTML within that window.
+  // The <meta http-equiv="Cache-Control"> tags are ignored by modern browsers.
+  // Adding ?_gv=<timestamp> forces the browser to treat it as a new URL.
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set('_gv', String(Date.now()));
+    window.location.replace(url.toString());
+  } catch {
+    // Fallback: regular reload if URL manipulation fails
+    window.location.reload();
+  }
 }
 
 /**
