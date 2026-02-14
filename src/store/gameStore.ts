@@ -19,7 +19,7 @@ import { createTurnActions } from './helpers/turnHelpers';
 import { createWorkEducationActions } from './helpers/workEducationHelpers';
 import { createQuestActions } from './helpers/questHelpers';
 import { createHexActions } from './helpers/hexHelpers';
-import { forwardIfGuest } from '@/network/NetworkActionProxy';
+import { forwardIfGuest, setStoreAccessor } from '@/network/NetworkActionProxy';
 import { markEventDismissed } from '@/network/networkState';
 import { getDefaultAIPortrait } from '@/data/portraits';
 import type { GameStore } from './storeTypes';
@@ -421,6 +421,11 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
   };
 });
+
+// Register store accessor with NetworkActionProxy to break circular dependency.
+// NetworkActionProxy needs to check networkMode but can't import useGameStore directly
+// (that would create gameStore → NetworkActionProxy → gameStore cycle).
+setStoreAccessor(() => useGameStore.getState());
 
 // Auto-save: save to slot 0 whenever game state changes during play
 // Disabled for online modes (multiplayer saves can't be restored properly)

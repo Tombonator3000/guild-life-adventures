@@ -22,6 +22,56 @@ function showMountError(error: unknown) {
   `;
 }
 
+/**
+ * Pre-mount staleness check: fetch version.json BEFORE loading any app modules.
+ * If the running HTML was served from browser HTTP cache (GitHub Pages caches HTML
+ * for ~10 min), its JS chunk references may have stale hashes that no longer exist
+ * on the server. Detecting this BEFORE importing App.tsx prevents silent module
+ * loading failures that leave "Loading the realm..." visible forever.
+ *
+ * Returns true if the page is stale and a hard refresh was triggered.
+ */
+async function checkStaleBuild(): Promise<boolean> {
+  // Skip in development (no __BUILD_TIME__ or no version.json)
+  if (typeof __BUILD_TIME__ === 'undefined') return false;
+
+  try {
+    const base = import.meta.env.BASE_URL || '/';
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+    const resp = await fetch(`${base}version.json?_=${Date.now()}`, {
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (!resp.ok) return false;
+    const data = await resp.json();
+
+    if (data.buildTime && data.buildTime !== __BUILD_TIME__) {
+      console.warn('[Guild Life] Stale build detected — clearing cache and reloading.',
+        { running: __BUILD_TIME__, server: data.buildTime });
+
+      // Unregister SWs + clear caches + wait for completion before reload
+      try {
+        const regs = await navigator.serviceWorker?.getRegistrations() ?? [];
+        await Promise.all(regs.map(r => r.unregister()));
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      } catch { /* ignore — reload regardless */ }
+
+      // Small delay to ensure cache operations complete before reload
+      await new Promise(r => setTimeout(r, 100));
+      window.location.reload();
+      return true; // Page will reload
+    }
+  } catch {
+    // Network error or timeout — proceed with mount (better than hanging)
+    console.log('[Guild Life] Version check skipped (network unavailable)');
+  }
+  return false;
+}
+
 // Dynamic import of App — catches module-level failures in the entire
 // component tree (store, hooks, audio singletons, data modules).
 // Static imports (like `import App from "./App"`) execute during module
@@ -29,6 +79,12 @@ function showMountError(error: unknown) {
 // Dynamic import() converts them to catchable rejected promises.
 async function mount() {
   try {
+    // Check for stale build BEFORE loading any app modules.
+    // If HTML is from browser cache but server has newer build, reload now.
+    console.log('[Guild Life] Checking build freshness...');
+    const isStale = await checkStaleBuild();
+    if (isStale) return; // Page is reloading
+
     console.log('[Guild Life] Loading app modules...');
     const { default: App } = await import("./App.tsx");
     console.log('[Guild Life] Mounting React app...');

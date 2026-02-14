@@ -3,6 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- Prevent browser HTTP caching of this HTML page.
+         GitHub Pages sets Cache-Control: max-age=600 (10 min). During that window,
+         a stale cached HTML file may reference old JS chunk hashes that no longer exist
+         on the server, causing "Loading the realm..." to hang forever.
+         These meta tags tell the browser to always revalidate this page. -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <title>Guild Life</title>
     <meta name="description" content="A fantasy life simulation game inspired by Jones in the Fast Lane">
@@ -21,8 +29,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
 
     <!-- Open Graph -->
-    
-    
+
+
     <meta property="og:type" content="website" />
 
     <meta name="twitter:card" content="summary_large_image" />
@@ -71,25 +79,36 @@
       });
     </script>
     <script type="module" src="/src/main.tsx"></script>
-    <!-- Fallback: if React fails to mount after 8s, show reload prompt.
-         Checks if loading-screen is still visible (React replaces #root content on mount).
-         Also checks at 15s as a second chance for slow connections.
-         Unregisters service workers + clears caches before reload to break
-         out of stale SW serving old content after GitHub Pages deploys. -->
+    <!-- Fallback: polling loop checks every 3s if React has mounted.
+         If loading-screen is still visible after 4s, shows "Clear Cache & Reload" button.
+         Continues polling in case the first check fires during the pre-mount version check.
+         The button unregisters SWs, clears all caches, waits 300ms, then reloads. -->
     <script>
-      function guildFallbackCheck(){
-        var root=document.getElementById('root');
-        var ls=root&&root.querySelector('#loading-screen');
-        if(!ls)return; /* React mounted — all good */
-        if(ls.querySelector('.fallback-btn'))return; /* Already added */
-        var p=document.createElement('p');
-        p.className='fallback-btn';
-        p.style.cssText='margin-top:1.5rem;font-family:serif;';
-        p.innerHTML='<button onclick="(function(){if(navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(s){s.unregister()})});}if(window.caches){caches.keys().then(function(n){n.forEach(function(k){caches.delete(k)})});}setTimeout(function(){location.reload()},300);})()" style="padding:.75rem 2rem;font-size:1rem;font-family:serif;background:linear-gradient(135deg,hsl(45,85%,55%),hsl(35,70%,40%));color:#1f170a;border:none;border-radius:.25rem;cursor:pointer;font-weight:bold;">Clear Cache &amp; Reload</button>';
-        ls.appendChild(p);
-      }
-      setTimeout(guildFallbackCheck,5000);
-      setTimeout(guildFallbackCheck,12000);
+      (function(){
+        var shown=false;
+        function guildFallbackCheck(){
+          var root=document.getElementById('root');
+          var ls=root&&root.querySelector('#loading-screen');
+          if(!ls){shown=true;return;} /* React mounted — stop checking */
+          if(shown)return; /* Already showed button */
+          shown=true;
+          var p=document.createElement('p');
+          p.className='fallback-btn';
+          p.style.cssText='margin-top:1.5rem;font-family:serif;';
+          p.innerHTML='<button onclick="(function(){if(navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(s){s.unregister()})});}if(window.caches){caches.keys().then(function(n){n.forEach(function(k){caches.delete(k)})});}setTimeout(function(){location.reload()},300);})()" style="padding:.75rem 2rem;font-size:1rem;font-family:serif;background:linear-gradient(135deg,hsl(45,85%,55%),hsl(35,70%,40%));color:#1f170a;border:none;border-radius:.25rem;cursor:pointer;font-weight:bold;">Clear Cache &amp; Reload</button>';
+          ls.appendChild(p);
+        }
+        /* Poll every 3s starting at 4s. The pre-mount version check in main.tsx takes
+           up to 3s (fetch timeout), so we wait 4s to avoid false positives. */
+        var t=setInterval(function(){
+          var root=document.getElementById('root');
+          var ls=root&&root.querySelector('#loading-screen');
+          if(!ls){clearInterval(t);return;} /* React mounted */
+          guildFallbackCheck();
+        },3000);
+        /* First check at 4s (after version check timeout + some margin) */
+        setTimeout(guildFallbackCheck,4000);
+      })();
     </script>
   </body>
 </html>
