@@ -10,7 +10,7 @@ export function createBankingActions(set: SetFn, get: GetFn) {
           if (p.id !== playerId) return p;
           // H2 FIX: Skip payment if prepaid weeks cover this period
           if (p.rentPrepaidWeeks > 0) {
-            return { ...p, weeksSinceRent: 0 };
+            return p; // No changes needed — prepaid tracking handled in weekEndHelpers
           }
           // Use locked-in rent if available, otherwise current rate
           const rentCost = p.lockedRent > 0 ? p.lockedRent : RENT_COSTS[p.housing];

@@ -174,17 +174,7 @@ function processEmployment(p: Player, crashResult: MarketCrashResult, msgs: stri
     p.dependability = Math.max(0, p.dependability - 5);
   }
 
-  // Fire player with too-low dependability
-  if (p.currentJob && p.dependability < 20) {
-    p.currentJob = null;
-    p.currentWage = 0;
-    p.shiftsWorkedSinceHire = 0;
-    if (!p.isAI) {
-      msgs.push(`${p.name} was fired due to poor dependability!`);
-    }
-  }
-
-  // Jones-style 3-tier market crash effects
+  // Jones-style 3-tier market crash effects (process BEFORE low-dep firing so crash penalty applies)
   if (crashResult.severity === 'major' && p.currentJob) {
     // Major crash: fired (Jones-style layoff)
     const jobName = p.currentJob;
@@ -204,6 +194,16 @@ function processEmployment(p: Player, crashResult: MarketCrashResult, msgs: stri
     // Minor crash: just prices drop (already applied in advanceEconomy), small happiness hit
     p.happiness = Math.max(0, p.happiness - 3);
     if (!p.isAI) msgs.push(crashResult.message || 'Minor market dip — prices have dropped.');
+  }
+
+  // Fire player with too-low dependability (after crash so crash penalties still apply)
+  if (p.currentJob && p.dependability < 20) {
+    p.currentJob = null;
+    p.currentWage = 0;
+    p.shiftsWorkedSinceHire = 0;
+    if (!p.isAI) {
+      msgs.push(`${p.name} was fired due to poor dependability!`);
+    }
   }
 }
 

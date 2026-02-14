@@ -233,11 +233,8 @@ export const checkForEvent = (
   location: LocationId,
   gold: number
 ): GameEvent | null => {
+  // First, filter events by conditions only (no probability roll yet)
   const eligibleEvents = RANDOM_EVENTS.filter(event => {
-    // Check probability
-    if (Math.random() > event.probability) return false;
-    
-    // Check conditions
     if (event.conditions) {
       if (event.conditions.housing && !event.conditions.housing.includes(housing)) {
         return false;
@@ -252,14 +249,16 @@ export const checkForEvent = (
         return false;
       }
     }
-    
     return true;
   });
-  
+
   if (eligibleEvents.length === 0) return null;
-  
-  // Return a random eligible event
-  return eligibleEvents[Math.floor(Math.random() * eligibleEvents.length)];
+
+  // Pick one random eligible event, then roll its probability
+  const chosen = eligibleEvents[Math.floor(Math.random() * eligibleEvents.length)];
+  if (Math.random() > chosen.probability) return null;
+
+  return chosen;
 };
 
 export const checkWeeklyTheft = (housing: HousingTier, gold: number): GameEvent | null => {
