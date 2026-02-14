@@ -1,5 +1,87 @@
 # Guild Life Adventures - Development Log
 
+## 2026-02-14 - Fix: Infinite Loading on GitHub Pages After Deployment
+
+### Overview
+
+Fixed the critical bug where the game would show "Loading the realm..." infinitely on GitHub Pages after deploying an update, never actually starting. Root cause was the PWA Service Worker configuration serving stale cached `index.html` and preventing fresh content from loading.
+
+**Test Results**: 185 tests passed (9 test files, 0 failures). Build succeeds.
+
+### Root Cause Analysis
+
+The Service Worker (PWA) was configured with `registerType: "prompt"` and precached `index.html` along with all JS/CSS bundles. After a GitHub Pages deployment:
+
+1. Old SW intercepted navigation requests and served cached stale `index.html`
+2. Stale HTML referenced old JS bundles (with old content hashes) from precache
+3. `registerType: "prompt"` meant the new SW installed silently but **waited** for user to click "Update Now"
+4. If the old cached code had any initialization issue, React never mounted
+5. The UpdateBanner (which lets users click "Update Now") never rendered because the app was stuck
+6. Result: permanent infinite loading — user could never recover without manually clearing browser cache
+
+### Fix: 4 Changes Across 3 Files
+
+#### 1. Stop Precaching HTML (vite.config.ts)
+
+**Before**: `globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff,woff2}"]`
+**After**: `globPatterns: ["**/*.{js,css,ico,png,svg,jpg,jpeg,webp,woff,woff2}"]`
+
+Removed `html` from the precache glob. Now `index.html` is **never** cached by the SW — the browser always fetches fresh HTML from the network on every page load. Since Vite hashes all JS/CSS bundle filenames, fresh HTML always references the correct bundles.
+
+Added `navigateFallback: null` to explicitly prevent the SW from serving any cached HTML for navigation requests.
+
+#### 2. Auto-Update SW (vite.config.ts)
+
+**Before**: `registerType: "prompt"` — SW waits for user action, stale content served indefinitely
+**After**: `registerType: "autoUpdate"` + `skipWaiting: true` + `clientsClaim: true`
+
+New SW immediately takes control when available. No user intervention needed. The old SW is replaced as soon as the new one is ready. Combined with not caching HTML, this means:
+- Navigation always gets fresh HTML from network
+- JS/CSS bundles are precached (fast loading) but update automatically
+- No more "stuck on old version" scenarios
+
+#### 3. Auto-Reload on Version Mismatch (useAppUpdate.ts)
+
+Added immediate auto-reload when `version.json` detects a stale build on initial page load. Previous behavior only showed a banner. New behavior:
+- On mount, fetch `version.json` with `cache: 'no-store'`
+- If buildTime differs from `__BUILD_TIME__`, auto-reload via `hardRefresh()` (unregister all SWs + clear all caches + reload)
+- Uses `sessionStorage` to prevent reload loops: if already auto-reloaded within 30s, falls back to showing the UpdateBanner instead
+
+#### 4. Improved Fallback Timer (index.html)
+
+- Reduced fallback timer from 15s to 8s — users see the "Clear Cache & Reload" button faster
+- The reload button now also **unregisters all service workers** before reloading (previously only cleared caches)
+- Adds a 300ms delay after cache/SW cleanup before reload to allow async operations to complete
+
+### Files Changed
+
+| File | Changes |
+|------|---------|
+| `vite.config.ts` | `registerType: "autoUpdate"`, removed `html` from `globPatterns`, added `navigateFallback: null`, `skipWaiting: true`, `clientsClaim: true` |
+| `src/hooks/useAppUpdate.ts` | Auto-reload on first version mismatch detection with 30s loop prevention via `sessionStorage` |
+| `index.html` | Fallback timer 15s → 8s, reload button now unregisters SWs |
+
+### How It Works Now (After Fix)
+
+```
+User visits after deployment:
+  1. Browser fetches fresh index.html from network (not cached by SW)
+  2. Fresh HTML references new JS bundles with correct hashes
+  3. SW precache has the new JS bundles → fast load from cache
+  4. React mounts → game starts immediately ✓
+
+Edge case (SW still has old bundles):
+  1. Fresh HTML references new JS bundles
+  2. SW doesn't have them yet → fetches from network
+  3. New SW installs with autoUpdate → immediately takes control
+  4. useAppUpdate detects version mismatch → auto-reloads once
+  5. Game loads with fresh content ✓
+
+Worst case (everything stale):
+  1. 8-second fallback shows "Clear Cache & Reload" button
+  2. Button unregisters all SWs + clears all caches + reloads
+  3. Fresh content loads from network ✓
+```
 ## 2026-02-14 - Item Image Overhaul: Medieval Woodcut Style
 
 ### Overview
