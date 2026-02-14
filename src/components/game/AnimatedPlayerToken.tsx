@@ -12,6 +12,8 @@ interface AnimatedPlayerTokenProps {
   onLocationReached?: (pathLocationIndex: number) => void;
 }
 
+const ANIMATION_STEP_MS = 80; // ms per waypoint (was 150ms — faster, smoother movement)
+
 export function AnimatedPlayerToken({
   player,
   isCurrent,
@@ -22,6 +24,12 @@ export function AnimatedPlayerToken({
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
   const animatingRef = useRef(false);
   const pointIndexRef = useRef(0);
+
+  // Keep callback refs up to date without triggering animation restarts
+  const onCompleteRef = useRef(onAnimationComplete);
+  const onLocationRef = useRef(onLocationReached);
+  onCompleteRef.current = onAnimationComplete;
+  onLocationRef.current = onLocationReached;
 
   // Initialize position based on current location
   useEffect(() => {
@@ -36,6 +44,7 @@ export function AnimatedPlayerToken({
   }, [player.currentLocation, animationPath]);
 
   // Handle path animation through all waypoints
+  // Only re-runs when animationPath changes (not on position/callback changes)
   useEffect(() => {
     if (!animationPath || animationPath.length === 0) {
       animatingRef.current = false;
@@ -49,39 +58,41 @@ export function AnimatedPlayerToken({
       return;
     }
 
-    // Start animation
-    if (!animatingRef.current) {
-      animatingRef.current = true;
-      pointIndexRef.current = 0;
-      setPosition({ x: allPoints[0][0], y: allPoints[0][1] });
-      // Report starting location
-      onLocationReached?.(0);
-    }
+    // Start animation from first point
+    animatingRef.current = true;
+    pointIndexRef.current = 0;
+    setPosition({ x: allPoints[0][0], y: allPoints[0][1] });
+    onLocationRef.current?.(0);
 
-    const currentIdx = pointIndexRef.current;
-
-    // Check if we're done
-    if (currentIdx >= allPoints.length - 1) {
+    // If only one point, animation is done immediately
+    if (allPoints.length <= 1) {
       animatingRef.current = false;
-      onAnimationComplete?.();
+      onCompleteRef.current?.();
       return;
     }
 
-    // Animate to next point
-    const timer = setTimeout(() => {
-      const nextIdx = currentIdx + 1;
+    // Step through waypoints with setInterval for consistent timing
+    const interval = setInterval(() => {
+      const nextIdx = pointIndexRef.current + 1;
       pointIndexRef.current = nextIdx;
       setPosition({ x: allPoints[nextIdx][0], y: allPoints[nextIdx][1] });
 
       // Check if we just reached a location zone center
       const locIdx = locationBoundaries.indexOf(nextIdx);
       if (locIdx !== -1) {
-        onLocationReached?.(locIdx);
+        onLocationRef.current?.(locIdx);
       }
-    }, 150); // 150ms per waypoint
 
-    return () => clearTimeout(timer);
-  }, [animationPath, position, onAnimationComplete, onLocationReached]);
+      // Check if we're done
+      if (nextIdx >= allPoints.length - 1) {
+        clearInterval(interval);
+        animatingRef.current = false;
+        onCompleteRef.current?.();
+      }
+    }, ANIMATION_STEP_MS);
+
+    return () => clearInterval(interval);
+  }, [animationPath]); // Only animationPath — callbacks use refs
 
   if (!position) return null;
 
@@ -89,14 +100,15 @@ export function AnimatedPlayerToken({
     <div
       className={cn(
         'absolute w-20 h-20 rounded-full shadow-xl z-50',
-        'transition-all duration-150 ease-in-out',
-        isCurrent && 'ring-2 ring-yellow-400 ring-offset-1 animate-bounce',
+        isCurrent && !animationPath && 'ring-2 ring-yellow-400 ring-offset-1 animate-bounce',
         animationPath && 'scale-110'
       )}
       style={{
         left: `${position.x}%`,
         top: `${position.y}%`,
         transform: 'translate(-50%, -50%)',
+        // Smooth CSS transition matching JS interval for fluid movement
+        transition: `left ${ANIMATION_STEP_MS}ms ease-in-out, top ${ANIMATION_STEP_MS}ms ease-in-out`,
         boxShadow: `0 4px 15px rgba(0,0,0,0.4), 0 0 ${isCurrent ? '20px' : '10px'} ${player.color}`,
       }}
       title={player.name}

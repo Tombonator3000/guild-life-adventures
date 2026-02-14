@@ -124,8 +124,12 @@ export function getWorkInfo(locationId: LocationId, ctx: LocationTabContext): Wo
     earnings,
     canWork: player.timeRemaining >= currentJobData.hoursPerShift,
     onWork: () => {
-      workShift(player.id, currentJobData.hoursPerShift, player.currentWage);
-      toast.success(`Worked a shift at ${currentJobData.name}!`);
+      const worked = workShift(player.id, currentJobData.hoursPerShift, player.currentWage);
+      if (worked) {
+        toast.success(`Worked a shift at ${currentJobData.name}!`);
+      } else {
+        toast.error('Unable to work — not enough time or improper attire.');
+      }
     },
   };
 }

@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 interface WorkSectionProps {
   player: Player;
   locationName: string;
-  workShift: (playerId: string, hours: number, wage: number) => void;
+  workShift: (playerId: string, hours: number, wage: number) => boolean;
   variant: 'jones' | 'wood-frame';
 }
 
@@ -71,8 +71,12 @@ export function WorkSection({ player, locationName, workShift, variant }: WorkSe
         <JonesButton
           label={`Work Shift (+${earnings}g)`}
           onClick={() => {
-            workShift(player.id, jobData.hoursPerShift, player.currentWage);
-            toast.success(`Worked a shift at ${jobData.name}!`);
+            const worked = workShift(player.id, jobData.hoursPerShift, player.currentWage);
+            if (worked) {
+              toast.success(`Worked a shift at ${jobData.name}!`);
+            } else {
+              toast.error('Unable to work — not enough time or improper attire.');
+            }
           }}
           disabled={player.timeRemaining < jobData.hoursPerShift}
           variant="primary"
@@ -100,8 +104,12 @@ export function WorkSection({ player, locationName, workShift, variant }: WorkSe
         time={jobData.hoursPerShift}
         disabled={player.timeRemaining < jobData.hoursPerShift}
         onClick={() => {
-          workShift(player.id, jobData.hoursPerShift, player.currentWage);
-          toast.success(`Worked a shift at ${jobData.name}!`);
+          const worked = workShift(player.id, jobData.hoursPerShift, player.currentWage);
+          if (worked) {
+            toast.success(`Worked a shift at ${jobData.name}!`);
+          } else {
+            toast.error('Unable to work — not enough time or improper attire.');
+          }
         }}
       />
     </div>
