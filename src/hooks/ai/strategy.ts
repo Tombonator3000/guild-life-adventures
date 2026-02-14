@@ -255,6 +255,7 @@ export function getBestDungeonFloor(player: Player, settings: DifficultySettings
     player.equippedArmor,
     player.equippedShield,
     player.temperedItems,
+    player.equipmentDurability,
   );
 
   if (player.health < 40) return null;

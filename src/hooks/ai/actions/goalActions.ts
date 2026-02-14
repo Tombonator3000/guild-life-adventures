@@ -237,7 +237,7 @@ export function generateGoalActions(ctx: ActionContext): AIAction[] {
             description: 'Take quest for guild rank',
             details: { questId: bestQuest },
           });
-        } else if (player.timeRemaining > moveCost('guild-hall') + 2) {
+        } else if (bestQuest && player.timeRemaining > moveCost('guild-hall') + 2) {
           actions.push({
             type: 'move',
             location: 'guild-hall',

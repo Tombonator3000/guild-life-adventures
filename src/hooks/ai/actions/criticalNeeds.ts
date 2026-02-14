@@ -145,6 +145,21 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
       targetCondition = 35;
       clothingCost = Math.round(12 * pm);
       tierDesc = 'casual (emergency)';
+    } else if (condition < 15 && urgency.clothing > 0.5) {
+      // Basic casual (Common Tunic = 25g → condition 45)
+      targetCondition = 45;
+      clothingCost = Math.round(25 * pm);
+      tierDesc = 'casual';
+    } else if (condition < 40 && urgency.clothing > 0.4) {
+      // Dress tier needed for mid jobs (Fine Clothes = 60g → condition 60)
+      targetCondition = 60;
+      clothingCost = Math.round(60 * pm);
+      tierDesc = 'dress';
+      if (player.gold < clothingCost) {
+        targetCondition = 45;
+        clothingCost = Math.round(25 * pm);
+        tierDesc = 'casual';
+      }
     } else if (condition < 70 && urgency.clothing > 0.2) {
       // Business tier needed for top jobs (Noble Attire = 175g → condition 90)
       targetCondition = 90;
@@ -162,21 +177,6 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
         clothingCost = Math.round(25 * pm);
         tierDesc = 'casual';
       }
-    } else if (condition < 40 && urgency.clothing > 0.4) {
-      // Dress tier needed for mid jobs (Fine Clothes = 60g → condition 60)
-      targetCondition = 60;
-      clothingCost = Math.round(60 * pm);
-      tierDesc = 'dress';
-      if (player.gold < clothingCost) {
-        targetCondition = 45;
-        clothingCost = Math.round(25 * pm);
-        tierDesc = 'casual';
-      }
-    } else if (condition < 15 && urgency.clothing > 0.5) {
-      // Basic casual (Common Tunic = 25g → condition 45)
-      targetCondition = 45;
-      clothingCost = Math.round(25 * pm);
-      tierDesc = 'casual';
     }
 
     const needsClothing = targetCondition > condition && clothingCost > 0;

@@ -510,7 +510,7 @@ function handleExploreDungeon(player: Player, action: AIAction, store: StoreActi
   const isFirstClear = !player.dungeonFloorsCleared.includes(floorId);
   const lootMult = getLootMultiplier(floor, player.guildRank);
   const equippedItems = { weapon: player.equippedWeapon, armor: player.equippedArmor, shield: player.equippedShield };
-  const result = autoResolveFloor(floor, combatStats, eduBonuses, player.health, isFirstClear, lootMult, player.dungeonFloorsCleared, equippedItems);
+  const result = autoResolveFloor(floor, combatStats, eduBonuses, player.health, isFirstClear, lootMult, player.dungeonFloorsCleared, equippedItems, player.maxHealth);
 
   // Apply results and check for death
   const actualGold = applyDungeonResults(player.id, floorId, floor, result, isFirstClear, store);

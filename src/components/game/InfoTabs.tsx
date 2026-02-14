@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Package, Target, BarChart3, Sword, Shield, Shirt } from 'lucide-react';
 import type { Player, GoalSettings } from '@/types/game.types';
 import { GoalProgress } from './GoalProgress';
-import { ARMORY_ITEMS, GENERAL_STORE_ITEMS, getAppliance } from '@/data/items';
+import { ARMORY_ITEMS, GENERAL_STORE_ITEMS, getAppliance, calculateCombatStats } from '@/data/items';
 import { GUILD_RANK_NAMES, GUILD_RANK_INDEX } from '@/types/game.types';
 import { HOUSING_DATA } from '@/data/housing';
 import { getGameOption } from '@/data/gameOptions';
@@ -109,11 +109,14 @@ function InventoryTab({ player }: InventoryTabProps) {
     ? ARMORY_ITEMS.find(i => i.id === player.equippedShield)
     : null;
 
-  // Calculate total defense and attack
-  const totalAttack = (equippedWeapon?.equipStats?.attack || 0);
-  const totalDefense = (equippedArmor?.equipStats?.defense || 0) + 
-                       (equippedShield?.equipStats?.defense || 0);
-  const blockChance = Math.round((equippedShield?.equipStats?.blockChance || 0) * 100);
+  // Calculate total defense and attack (including tempering and durability)
+  const combatStats = calculateCombatStats(
+    player.equippedWeapon, player.equippedArmor, player.equippedShield,
+    player.temperedItems, player.equipmentDurability,
+  );
+  const totalAttack = combatStats.attack;
+  const totalDefense = combatStats.defense;
+  const blockChance = Math.round(combatStats.blockChance * 100);
 
   // Get durables
   const durableItems = Object.entries(player.durables).filter(([, qty]) => qty > 0);
