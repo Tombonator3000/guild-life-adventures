@@ -100,6 +100,24 @@ export function GeneralStorePanel({
 
       <JonesSectionHeader title={t('panelStore.durables')} />
       <JonesMenuItem
+        label={t('panelStore.newspaper') || 'Town Crier Gazette'}
+        price={newspaperPrice}
+        disabled={player.gold < newspaperPrice}
+        darkText
+        largeText
+        previewData={{
+          name: 'Town Crier Gazette',
+          description: 'The latest news, job listings, and town gossip. Essential reading for the ambitious adventurer.',
+          category: 'Information',
+          tags: ['News'],
+          effect: 'View personalized weekly headlines',
+        }}
+        onClick={() => {
+          onBuyNewspaper();
+          toast.success(t('panelStore.purchased', { name: t('panelStore.newspaper') || 'Town Crier Gazette' }));
+        }}
+      />
+      <JonesMenuItem
         label={t(`items.lottery-ticket.name`) || "Fortune's Wheel Ticket"}
         price={lotteryPrice}
         disabled={player.gold < lotteryPrice}

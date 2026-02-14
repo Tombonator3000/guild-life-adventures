@@ -5,6 +5,44 @@
 
 ---
 
+## 2026-02-14 - Home Action Cleanup, Newspaper Restore, Weekend Image Fix
+
+### Overview (15:00 UTC)
+
+Three quality-of-life fixes based on gameplay feedback:
+
+1. **Merged Relax + Rest into single "Relax" action** — The two home buttons (Relax: +5 hap/+3 relax, Rest: +1 hap/+8 relax) were essentially the same thing and cluttered the UI. Combined into one "Relax" button with balanced stats (+3 happiness, +5 relaxation). Sleep (8h, +8 hap, +10 hp, +5 relax) remains as the premium option.
+
+2. **Newspaper added back to General Store** — The `onBuyNewspaper` handler was already wired up but no UI button existed. Added a JonesMenuItem for the Town Crier Gazette in the Durables section (before the lottery ticket).
+
+3. **Fixed weekend turn always showing wrong image** — Weekend activities (rw-nap, ticket-jousting, etc.) never showed their correct woodcut images. Root cause: `processLeisure()` pushed messages like `"Weekend: Slept in all weekend..."` with no embedded activity ID. The `extractEventId()` function couldn't match any weekend activity, fell through to default `'weekly-event'` → type fallback `'info'` → showed `economic-boom.jpg` every time. Fix: embed activity ID tag in weekend messages (`[rw-nap] Weekend: ...`) and add weekend-specific regex in `extractEventId()` to find the tag anywhere in multi-line event messages.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/game/HomePanel.tsx` | Removed Rest action, merged stats into Relax (+3 hap, +5 relax) |
+| `src/components/game/home/HomeActionBar.tsx` | Removed Rest button + all Rest-related props |
+| `src/hooks/ai/actions/goalActions.ts` | Merged AI "rest for happiness" and "recuperate for relaxation" into single relax action |
+| `src/components/game/GeneralStorePanel.tsx` | Added newspaper JonesMenuItem in Durables section |
+| `src/store/helpers/weekEndHelpers.ts` | Embed activity ID in weekend message: `[${activity.id}] Weekend: ...` |
+| `src/hooks/useLocationClick.ts` | Added weekend activity ID regex matching; made cleanMessage strip IDs globally |
+
+### Technical Details
+
+**Weekend image fix chain:**
+- `weekEndHelpers.ts:535` now produces: `[rw-nap] Weekend: Slept in all weekend...`
+- `extractEventId()` new regex: `/\[(rw-[a-z-]+|ticket-[a-z-]+|...-weekend)\]/`
+- Matches anywhere in multi-line message (not `^` anchored like travel events)
+- `getEventImage('rw-nap')` → finds `weekendNap` in `EVENT_IMAGES` → correct image
+- `cleanMessage` regex changed from `/^\[...\]/` to `/\[...\]/g` to strip IDs globally
+
+**Home action before/after:**
+- Before: Relax (3-8h, +5 hap, +3 relax) + Rest (4-6h, +1 hap, +8 relax) + Sleep (8h)
+- After: Relax (3-8h, +3 hap, +5 relax) + Sleep (8h) — cleaner, no redundancy
+
+---
+
 ## 2026-02-14 - Project Documentation Overhaul
 
 ### Overview
