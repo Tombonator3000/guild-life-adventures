@@ -5,6 +5,128 @@
 
 ---
 
+## 2026-02-14 — Timer Bug Hunt: Work Silent Failure + Animation Stutter Fix (20:30 UTC)
+
+### Bug Report
+
+User reported: "Time doesn't go evenly. It suddenly stopped going evenly. Work button doesn't decrease time or pay money. Movement is very slow."
+
+### Root Cause Analysis (4 bugs found)
+
+#### BUG 1 (CRITICAL): workShift silently fails but toast shows success
+**File:** `src/components/game/WorkSection.tsx`, `src/components/game/locationTabs.tsx`
+
+The `workShift()` function returned `void` and had early-return validation (not enough time, clothing too worn, naked). But all 3 UI call sites fired `toast.success("Worked a shift!")` **unconditionally** — even when workShift rejected the action and returned early. The player saw a success message but no time deduction and no gold.
+
+**Why work was failing:** The validation check (`player.timeRemaining < hours`) read player state with `get()` OUTSIDE the Zustand `set()` callback. Between the validation read and the state update, the player's state could have changed (e.g., movement animation completing), causing validation to use stale data. This race condition meant work could silently fail even when the UI showed the player had enough time.
+
+#### BUG 2 (HIGH): Animation useEffect had `position` in dependency array
+**File:** `src/components/game/AnimatedPlayerToken.tsx`
+
+The animation effect at line 84 depended on `[animationPath, position, onAnimationComplete, onLocationReached]`. Since the effect itself called `setPosition()`, every position update triggered:
+1. Effect cleanup (clear old timeout)
+2. Effect re-run (set new timeout)
+
+This created unnecessary overhead per waypoint. Combined with callback reference changes from parent re-renders, the animation could stutter or restart unpredictably.
+
+#### BUG 3 (MEDIUM): Animation too slow — 150ms per waypoint + duplicate waypoints
+**File:** `src/components/game/AnimatedPlayerToken.tsx`, `src/data/locations.ts`
+
+Each waypoint animated with a 150ms `setTimeout` AND a matching 150ms `transition-all` CSS. With `transition-all`, every CSS property (including shadows, transforms, opacity) was transitioning — not just position. For a 5-step journey with 2 waypoints per segment: ~15 points × 150ms = 2.25 seconds.
+
+Three movement paths had duplicate consecutive waypoints causing unnecessary pauses:
+- `noble-heights_general-store`: `[[5.6, 51.4], [5.6, 51.4]]` — 2 identical points
+- `rusty-tankard_shadow-market`: `[[81.8, 33.4], [81.8, 33.4]]` — 2 identical points
+- `noble-heights_graveyard`: `[..., [5.1, 38.3], [5.1, 38.3]]` — duplicate at end
+
+#### BUG 4 (LOW): animate-bounce during movement
+The token had `animate-bounce` (Tailwind keyframe) applied during movement combined with `transition-all`, causing visual conflicts between the bounce keyframe and position transitions.
+
+### Fixes Applied
+
+| # | Severity | File | Fix |
+|---|----------|------|-----|
+| 1 | **CRITICAL** | `workEducationHelpers.ts` | Moved ALL validation inside `set()` callback — reads latest state atomically. Changed return type from `void` to `boolean`. |
+| 2 | **CRITICAL** | `storeTypes.ts` | Updated `workShift` signature: `void` → `boolean`. |
+| 3 | **CRITICAL** | `WorkSection.tsx` | Check `workShift()` return value before showing toast. Show error toast on failure. |
+| 4 | **CRITICAL** | `locationTabs.tsx` | Same fix as WorkSection — check return before toast. |
+| 5 | **HIGH** | `actionExecutor.ts` | Updated AI executor's `workShift` type to `boolean`. |
+| 6 | **HIGH** | `AnimatedPlayerToken.tsx` | Rewrote animation: removed `position` from deps, use `setInterval` instead of recursive `setTimeout`, use callback refs to prevent animation restarts. |
+| 7 | **MEDIUM** | `AnimatedPlayerToken.tsx` | Reduced animation speed from 150ms to 80ms per waypoint. Changed CSS from `transition-all duration-150` to targeted `transition: left 80ms, top 80ms` — no longer transitions shadows/transforms. Disabled `animate-bounce` during movement. |
+| 8 | **MEDIUM** | `locations.ts` | Removed 4 duplicate waypoints from 3 movement paths. |
+
+### Technical Details
+
+**workShift before (race condition):**
+```typescript
+workShift: (playerId, hours, wage) => {
+  const player = get().players.find(...);  // reads state HERE
+  if (!player || player.timeRemaining < hours) return;  // validates against stale state
+  // ... more validation with stale state ...
+  set((state) => ({  // updates with CURRENT state
+    players: state.players.map(p => ...)
+  }));
+}
+```
+
+**workShift after (atomic):**
+```typescript
+workShift: (playerId, hours, wage): boolean => {
+  let success = false;
+  set((state) => {
+    const p = state.players.find(...);  // reads CURRENT state
+    if (!p || p.timeRemaining < hours) return {};  // validates against current state
+    // ... all validation against current state ...
+    success = true;
+    return { players: state.players.map(...) };
+  });
+  return success;
+}
+```
+
+**Animation before (stuttering):**
+```typescript
+useEffect(() => {
+  // ... set timeout to update position ...
+  const timer = setTimeout(() => {
+    setPosition(nextPoint);  // triggers re-render → re-runs THIS effect
+  }, 150);
+  return () => clearTimeout(timer);
+}, [animationPath, position, onAnimationComplete, onLocationReached]);
+// position in deps = effect re-runs every frame
+```
+
+**Animation after (smooth):**
+```typescript
+useEffect(() => {
+  const interval = setInterval(() => {
+    setPosition(nextPoint);  // updates position without triggering effect
+    if (done) { clearInterval(interval); onCompleteRef.current?.(); }
+  }, 80);
+  return () => clearInterval(interval);
+}, [animationPath]);  // only animationPath — position NOT in deps
+```
+
+### Files Changed (7 files)
+
+```
+src/store/helpers/workEducationHelpers.ts  — Atomic validation inside set(), return boolean
+src/store/storeTypes.ts                    — workShift return type: void → boolean
+src/components/game/WorkSection.tsx        — Conditional toast based on success/failure
+src/components/game/locationTabs.tsx       — Conditional toast based on success/failure
+src/hooks/ai/actionExecutor.ts            — Updated workShift type
+src/components/game/AnimatedPlayerToken.tsx — Rewrote animation (setInterval, 80ms, targeted CSS transition)
+src/data/locations.ts                      — Removed 4 duplicate waypoints
+```
+
+### Verification
+
+- TypeScript: Clean (no errors)
+- Tests: **219/219 passing** (10 test files, 0 failures)
+- Build: Succeeds cleanly
+
+---
+
 ## 2026-02-14 - PWA Infinite Loading Fix (Round 2)
 
 ### Overview (08:30 UTC)

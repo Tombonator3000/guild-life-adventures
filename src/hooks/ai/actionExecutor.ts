@@ -26,7 +26,7 @@ import type { AIAction, AIActionType } from './types';
  */
 export interface StoreActions {
   movePlayer: (playerId: string, location: string, cost: number) => void;
-  workShift: (playerId: string, hours: number, wage: number) => void;
+  workShift: (playerId: string, hours: number, wage: number) => boolean;
   modifyGold: (playerId: string, amount: number) => void;
   modifyHealth: (playerId: string, amount: number) => void;
   modifyFood: (playerId: string, amount: number) => void;

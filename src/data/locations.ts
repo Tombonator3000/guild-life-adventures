@@ -158,7 +158,7 @@ export const BOARD_ASPECT_RATIO = `${76 * 16} / ${100 * 9}`; // 1216/900 ≈ 1.3
 export type MovementWaypoint = [number, number];
 
 export const MOVEMENT_PATHS: Record<string, MovementWaypoint[]> = {
-  'noble-heights_general-store': [[5.6, 51.4], [5.6, 51.4]],
+  'noble-heights_general-store': [[5.6, 51.4]],
   'general-store_bank': [[19.9, 69.5]],
   'bank_forge': [[3.6, 88.8]],
   'forge_guild-hall': [[22.7, 92.8]],
@@ -167,12 +167,12 @@ export const MOVEMENT_PATHS: Record<string, MovementWaypoint[]> = {
   'academy_enchanter': [[79.5, 94.2]],
   'enchanter_armory': [[97.0, 78.0]],
   'armory_rusty-tankard': [[96.8, 52.1]],
-  'rusty-tankard_shadow-market': [[81.8, 33.4], [81.8, 33.4]],
+  'rusty-tankard_shadow-market': [[81.8, 33.4]],
   'shadow-market_fence': [[78.7, 21.0]],
   'fence_slums': [[62.3, 20.1]],
   'slums_landlord': [[40.4, 19.7]],
   'landlord_noble-heights': [[22.2, 20.5]],
-  'noble-heights_graveyard': [[13.0, 31.6], [5.1, 38.3], [5.1, 38.3]],
+  'noble-heights_graveyard': [[13.0, 31.6], [5.1, 38.3]],
   'graveyard_general-store': [[5.6, 52.6]],
 };
 

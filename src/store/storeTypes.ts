@@ -38,7 +38,7 @@ export interface GameStore extends GameState {
   setHousing: (playerId: string, tier: HousingTier) => void;
   setJob: (playerId: string, jobId: string | null, wage?: number) => void;
   cureSickness: (playerId: string) => void;
-  workShift: (playerId: string, hours: number, wage: number) => void;
+  workShift: (playerId: string, hours: number, wage: number) => boolean;
   requestRaise: (playerId: string) => { success: boolean; newWage?: number; message: string };
   negotiateRaise: (playerId: string, newWage: number) => void;
   studySession: (playerId: string, path: EducationPath, cost: number, hours: number) => void;
