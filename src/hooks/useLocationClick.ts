@@ -188,6 +188,11 @@ export function useLocationClick({
     if (msg.includes('Arcane Tome')) return 'lucky-find';
     if (msg.includes('lottery')) return 'lottery-win';
     if (msg.includes('birthday')) return 'birthday';
+
+    // Weekend activity ID embedded anywhere in multi-line message: [rw-nap], [ticket-jousting], etc.
+    const weekendMatch = msg.match(/\[(rw-[a-z-]+|ticket-[a-z-]+|scrying-weekend|memory-weekend|music-weekend|cooking-weekend|study-weekend)\]/);
+    if (weekendMatch) return weekendMatch[1];
+
     return 'weekly-event';
   };
 
@@ -202,7 +207,7 @@ export function useLocationClick({
 
   // Convert eventMessage to GameEvent format
   // Strip embedded ID tag from display text
-  const cleanMessage = eventMessage?.replace(/^\[[a-z0-9-]+\]\s*/, '') ?? null;
+  const cleanMessage = eventMessage?.replace(/\[[a-z0-9-]+\]\s*/g, '') ?? null;
   const currentEvent: GameEvent | null = eventMessage ? {
     id: extractEventId(eventMessage),
     title: 'Week ' + week + ' Events',

@@ -154,49 +154,26 @@ export function generateGoalActions(ctx: ActionContext): AIAction[] {
         }
       }
 
-      // Rest for happiness (minor)
-      if (player.happiness < 40 && player.timeRemaining >= 4) {
+      // Relax at home for happiness + relaxation recovery
+      if ((player.happiness < 40 || player.relaxation <= 20) && player.housing !== 'homeless' && player.timeRemaining >= 3) {
         const homeLocation = player.housing === 'noble' ? 'noble-heights' : 'slums';
-        if (currentLocation === homeLocation) {
+        const relaxHours = player.housing === 'noble' ? 3 : 8;
+        const priority = player.relaxation <= 20 ? 55 : 45;
+        if (currentLocation === homeLocation && player.timeRemaining >= relaxHours) {
           actions.push({
             type: 'rest',
-            priority: 45,
-            description: 'Rest to recover happiness',
-            details: { hours: 4, happinessGain: 5 },
-          });
-        } else {
-          // Travel home to rest when happiness is low
-          const homeMoveCost = moveCost(homeLocation as Parameters<typeof moveCost>[0]);
-          if (player.timeRemaining > homeMoveCost + 4) {
-            actions.push({
-              type: 'move',
-              location: homeLocation as Parameters<typeof moveCost>[0],
-              priority: 40,
-              description: 'Travel home to rest',
-            });
-          }
-        }
-      }
-
-      // Active relaxation: recover relaxation when dangerously low (below 20, risk of doctor visit)
-      if (player.relaxation <= 20 && player.housing !== 'homeless' && player.timeRemaining >= 4) {
-        const homeLocation = player.housing === 'noble' ? 'noble-heights' : 'slums';
-        const restHours = player.housing === 'noble' ? 4 : 6;
-        if (currentLocation === homeLocation && player.timeRemaining >= restHours) {
-          actions.push({
-            type: 'rest',
-            priority: 55,
-            description: 'Recuperate to restore relaxation',
-            details: { hours: restHours, happinessGain: 1, relaxGain: 8 },
+            priority,
+            description: 'Relax to recover happiness and relaxation',
+            details: { hours: relaxHours, happinessGain: 3, relaxGain: 5 },
           });
         } else {
           const homeMoveCost = moveCost(homeLocation as Parameters<typeof moveCost>[0]);
-          if (player.timeRemaining > homeMoveCost + restHours) {
+          if (player.timeRemaining > homeMoveCost + relaxHours) {
             actions.push({
               type: 'move',
               location: homeLocation as Parameters<typeof moveCost>[0],
-              priority: 50,
-              description: 'Travel home to recuperate (low relaxation)',
+              priority: priority - 5,
+              description: 'Travel home to relax',
             });
           }
         }

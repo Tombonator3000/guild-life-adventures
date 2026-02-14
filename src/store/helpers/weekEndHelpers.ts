@@ -532,7 +532,7 @@ function processLeisure(p: Player, newWeek: number, msgs: string[]): void {
       p.tickets = p.tickets.filter(t => t !== ticketUsed);
     }
     if (!p.isAI) {
-      msgs.push(`Weekend: ${activity.description} (+${activity.happiness} Happiness${activity.cost > 0 ? `, -${activity.cost}g` : ''})`);
+      msgs.push(`[${activity.id}] Weekend: ${activity.description} (+${activity.happiness} Happiness${activity.cost > 0 ? `, -${activity.cost}g` : ''})`);
     }
   }
 
