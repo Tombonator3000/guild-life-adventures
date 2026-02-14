@@ -424,16 +424,25 @@ export const useGameStore = create<GameStore>((set, get) => {
 
 // Auto-save: save to slot 0 whenever game state changes during play
 // Disabled for online modes (multiplayer saves can't be restored properly)
+// Wrapped in try-catch: this executes at module load time. If it throws,
+// the entire module evaluation fails and React can't mount ("Loading the realm..." freeze).
 let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
-useGameStore.subscribe((state) => {
-  if ((state.phase === 'playing' || state.phase === 'event') && state.networkMode === 'local') {
-    // Debounce auto-save to avoid excessive writes
-    if (autoSaveTimer) clearTimeout(autoSaveTimer);
-    autoSaveTimer = setTimeout(() => {
-      saveGame(state, 0);
-    }, 2000);
-  }
-});
+try {
+  useGameStore.subscribe((state) => {
+    if ((state.phase === 'playing' || state.phase === 'event') && state.networkMode === 'local') {
+      if (autoSaveTimer) clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(() => {
+        try {
+          saveGame(state, 0);
+        } catch (e) {
+          console.warn('[Guild Life] Auto-save failed:', e);
+        }
+      }, 2000);
+    }
+  });
+} catch (e) {
+  console.warn('[Guild Life] Failed to set up auto-save subscription:', e);
+}
 
 // Selector hooks
 export const useCurrentPlayer = () => {

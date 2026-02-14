@@ -1032,3 +1032,127 @@ All hex logic is behind `getGameOption('enableHexesCurses')` — when disabled:
 - Build: clean
 
 ---
+
+## 2026-02-14 — BUG HUNT: "Loading the realm..." Freeze (Round 4 — Parallel Agent Scan) (17:00 UTC)
+
+### Bug Report
+
+Game stuck on static "Loading the realm..." screen — React never mounts. This is the **fourth** investigation of this recurring issue. Previous fixes addressed:
+- Round 1: Audio singleton crash (webAudioBridge, audioManager, ambientManager)
+- Round 2: Missing @radix-ui/react-collection dependency
+- Round 3: Eager import tree (GameBoard blocks everything → lazy-loaded)
+
+### Investigation Method
+
+Systematic parallel AI agent scan with **5 specialized agents** scanning simultaneously:
+1. Loading chain analysis (index.html → main.tsx → App.tsx → Index.tsx)
+2. Recent changes (Hexes & Curses system) for crash paths
+3. Store initialization & hex state
+4. Module-level side effects and singleton instantiation
+5. i18n, new components, and circular dependencies
+
+### Root Cause Analysis
+
+**PRIMARY: TitleScreen eagerly imports ALL audio singletons via OptionsMenu**
+
+The import chain that creates 4 module-level singletons:
+```
+TitleScreen
+  ├── useAudioSettings → audioManager (2 HTMLAudioElement + 2 GainNode)
+  └── OptionsMenu (EAGERLY imported)
+       ├── useSFXSettings → sfxManager (8 HTMLAudioElement + 8 GainNode)
+       ├── useAmbientSettings → ambientManager (2 HTMLAudioElement + 2 GainNode)
+       └── useNarrationSettings → speechNarrator (SpeechSynthesis API)
+```
+
+**Impact**: ALL 4 audio singletons are created at module import time before React can mount. If ANY constructor throws (browser restriction, sandboxed iframe, broken Audio API), the entire module evaluation chain fails silently, React never mounts, and "Loading the realm..." stays forever.
+
+OptionsMenu, UserManual, and CreditsScreen are only shown when the user clicks buttons — they should NOT be in the eager import chain.
+
+**SECONDARY: sfxManager GainNode null unsafety**
+
+`sfxManager.ts` line 99: `private gainNodes: GainNode[]` — but `connectElement()` returns `GainNode | null`. Pushes null into the array. Later at line 149: `gain.gain.value = effectiveVolume` — crashes if gain is null (when AudioContext is unavailable).
+
+**TERTIARY: Auto-save subscription at module level without error protection**
+
+`gameStore.ts` line 428: `useGameStore.subscribe(...)` executes at module import time. If `saveGame()` throws (localStorage full, serialization error), module evaluation fails.
+
+### What Was NOT the Cause
+
+All investigated and confirmed safe:
+- ✅ Hexes & Curses system — clean data layer, proper types, feature-guarded, no circular deps
+- ✅ game.types.ts ↔ hexes.ts — type-only imports (erased at compile time)
+- ✅ hexHelpers.ts — no circular dependencies with gameStore
+- ✅ i18n system — all languages have matching shapes, hex keys present
+- ✅ Save/load migration (v3→v4) — proper defaults
+- ✅ Store initialization — hex fields properly defaulted
+- ✅ SFXGeneratorPage — clean imports
+- ✅ gameStore ↔ NetworkActionProxy circular dependency — safe (runtime-only access)
+
+### Fixes Applied (5)
+
+| # | Severity | File | Fix |
+|---|----------|------|-----|
+| 1 | **CRITICAL** | `TitleScreen.tsx` | **Lazy-load OptionsMenu, UserManual, CreditsScreen** with `React.lazy()` + `Suspense`. Removes sfxManager (8 Audio + 8 GainNode), ambientManager, and speechNarrator singletons from the eager import chain. Initial bundle reduced by **92 KB** (868→776 KB). |
+| 2 | **HIGH** | `sfxManager.ts` | **Fix GainNode null safety**: changed `gainNodes: GainNode[]` to `(GainNode | null)[]`. Play method now falls back to `element.volume` when GainNode is null. Added empty pool guard (synth-only fallback). |
+| 3 | **HIGH** | `sfxManager.ts` | **Constructor try-catch**: wraps audio pool creation in try-catch. If `new Audio()` throws, SFX gracefully degrades to synth-only. |
+| 4 | **MEDIUM** | `gameStore.ts` | **Auto-save subscription try-catch**: wraps both the `subscribe()` call AND the `saveGame()` call inside it. Prevents module evaluation failure if localStorage or serialization throws. |
+| 5 | **MEDIUM** | `audioManager.ts`, `ambientManager.ts` | **Constructor try-catch**: wraps `new Audio()` + loop/preload setup. Falls back to empty object if Audio API is unavailable. |
+
+### Technical Details
+
+**Before (TitleScreen.tsx) — ALL singletons eagerly loaded:**
+```tsx
+import { OptionsMenu } from '@/components/game/OptionsMenu';   // sfx + ambient + narration
+import { UserManual } from '@/components/game/UserManual';
+import { CreditsScreen } from '@/components/screens/CreditsScreen';
+```
+
+**After (TitleScreen.tsx) — heavy components lazy-loaded:**
+```tsx
+const OptionsMenu = lazy(() => import('@/components/game/OptionsMenu').then(m => ({ default: m.OptionsMenu })));
+const UserManual = lazy(() => import('@/components/game/UserManual').then(m => ({ default: m.UserManual })));
+const CreditsScreen = lazy(() => import('@/components/screens/CreditsScreen').then(m => ({ default: m.CreditsScreen })));
+```
+
+**Build output — improved code splitting:**
+```
+Before: index.js 868 KB (TitleScreen + OptionsMenu + UserManual + CreditsScreen)
+After:  index.js 776 KB (TitleScreen only — 11% smaller)
+        OptionsMenu.js 41 KB (lazy)
+        UserManual.js 41 KB (lazy)
+        CreditsScreen.js 9 KB (lazy)
+```
+
+**sfxManager GainNode fix:**
+```typescript
+// Before: crashes when GainNode is null
+gain.gain.value = effectiveVolume;
+
+// After: graceful fallback
+if (gain) {
+  gain.gain.value = effectiveVolume;
+} else {
+  audio.volume = effectiveVolume;
+}
+```
+
+### Files Changed (5)
+
+```
+src/components/screens/TitleScreen.tsx    — Lazy-load OptionsMenu, UserManual, CreditsScreen
+src/audio/sfxManager.ts                  — GainNode null safety + constructor try-catch + empty pool guard
+src/audio/audioManager.ts                — Constructor try-catch for Audio()
+src/audio/ambientManager.ts              — Constructor try-catch for Audio()
+src/store/gameStore.ts                   — Auto-save subscription try-catch
+```
+
+### Verification
+
+- TypeScript: Clean (0 errors)
+- Tests: 219/219 passing (10 test files, 0 failures)
+- Build: Succeeds with improved code splitting (8 lazy chunks instead of 5)
+- Initial bundle: 776 KB (was 868 KB) — 11% reduction
+- No regressions
+
+---

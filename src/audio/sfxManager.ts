@@ -96,7 +96,8 @@ class SFXManager {
   // Pool of audio elements for overlapping sounds
   private audioPool: HTMLAudioElement[] = [];
   // Web Audio API gain nodes for iOS volume control (one per pool element)
-  private gainNodes: GainNode[] = [];
+  // Nullable: connectElement returns null when AudioContext is unavailable
+  private gainNodes: (GainNode | null)[] = [];
   private poolIndex = 0;
   private readonly POOL_SIZE = 8;
   // Track which MP3 files failed to load so we use synth fallback directly
@@ -106,13 +107,19 @@ class SFXManager {
     this.settings = loadSettings();
     this.cachedSettings = { ...this.settings };
 
-    // Pre-create audio pool with Web Audio gain nodes
-    for (let i = 0; i < this.POOL_SIZE; i++) {
-      const audio = new Audio();
-      audio.preload = 'auto';
-      this.audioPool.push(audio);
-      // Route through Web Audio API GainNode for iOS volume control
-      this.gainNodes.push(connectElement(audio));
+    // Pre-create audio pool with Web Audio gain nodes.
+    // Wrapped in try-catch: if Audio() or connectElement() fails in a restricted
+    // environment, SFX will gracefully degrade to synth-only (no crash).
+    try {
+      for (let i = 0; i < this.POOL_SIZE; i++) {
+        const audio = new Audio();
+        audio.preload = 'auto';
+        this.audioPool.push(audio);
+        // Route through Web Audio API GainNode for iOS volume control
+        this.gainNodes.push(connectElement(audio));
+      }
+    } catch (e) {
+      console.warn('[SFX] Audio pool creation failed — synth fallback only:', e);
     }
   }
 
@@ -127,8 +134,8 @@ class SFXManager {
 
     const effectiveVolume = sfx.volume * this.settings.sfxVolume;
 
-    // If this MP3 previously failed to load, go straight to synth
-    if (this.failedFiles.has(sfxId)) {
+    // If this MP3 previously failed to load, or audio pool wasn't created, go straight to synth
+    if (this.failedFiles.has(sfxId) || this.audioPool.length === 0) {
       playSynthSFX(sfxId, effectiveVolume);
       return;
     }
@@ -146,7 +153,12 @@ class SFXManager {
     audio.currentTime = 0;
     audio.src = url;
     // Volume controlled via GainNode (element.volume stays at 1 for iOS compatibility)
-    gain.gain.value = effectiveVolume;
+    // Falls back to element.volume when GainNode is null (AudioContext unavailable)
+    if (gain) {
+      gain.gain.value = effectiveVolume;
+    } else {
+      audio.volume = effectiveVolume;
+    }
 
     // Resume AudioContext (iOS requires user gesture)
     resumeAudioContext();
