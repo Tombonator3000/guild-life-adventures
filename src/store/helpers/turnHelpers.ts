@@ -175,6 +175,10 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         // C1 FIX: Use fresh state for player data
         const freshState = get();
         const nextPlayer = freshState.players[nextIndex];
+        if (!nextPlayer) {
+          console.error(`[Turn] nextPlayer at index ${nextIndex} is undefined (players: ${freshState.players.length})`);
+          return;
+        }
         // C9: Move player to their home location at start of turn
         const homeLocation: LocationId = getHomeLocation(nextPlayer.housing);
         set({

@@ -615,5 +615,10 @@ const ACTION_HANDLERS: Record<AIActionType, ActionHandler> = {
 export function executeAIAction(player: Player, action: AIAction, store: StoreActions): boolean {
   const handler = ACTION_HANDLERS[action.type];
   if (!handler) return false;
-  return handler(player, action, store);
+  try {
+    return handler(player, action, store);
+  } catch (err) {
+    console.error(`[AI] Action '${action.type}' failed for ${player.name}:`, err);
+    return false;
+  }
 }
