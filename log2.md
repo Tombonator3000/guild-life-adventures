@@ -5,6 +5,55 @@
 
 ---
 
+## 2026-02-14 — Bug Fix: Shadow Market Hex Tab Crash — Missing `players` Destructuring (23:00 UTC)
+
+### Overview
+
+Fixed a crash that occurred when opening the "Dirty Tricks" (hex shop) tab at the Shadow Market. The game threw a `ReferenceError: players is not defined` when hexes were enabled and the player navigated to the Dirty Tricks tab.
+
+### Root Cause
+
+In `src/components/game/locationTabs.tsx`, the `shadowMarketTabs()` function destructured many properties from the `ctx` (LocationTabContext) parameter, but **forgot to include `players`**. The `players` array was then passed to `<HexShopPanel players={players} />` on line 557, referencing an undefined variable.
+
+The equivalent function `enchanterTabs()` (which also uses HexShopPanel) correctly destructured `players` from `ctx`. The shadow market version was the only one with this omission.
+
+**Why TypeScript didn't catch it**: The project uses `strict: false` and `noImplicitAny: false` in tsconfig, which allowed the bare `players` reference to pass type-checking without error.
+
+### Bug Details
+
+| Item | Detail |
+|------|--------|
+| **Symptom** | Game crashes when clicking "Dirty Tricks" tab in Shadow Market |
+| **Trigger** | Hex feature enabled + visiting Shadow Market + clicking hex tab |
+| **Error** | `ReferenceError: players is not defined` |
+| **Root cause** | `players` not destructured from `ctx` in `shadowMarketTabs()` |
+| **File** | `src/components/game/locationTabs.tsx:504` |
+
+### Fix
+
+```diff
+ function shadowMarketTabs(ctx: LocationTabContext): LocationTab[] {
+-  const { player, priceModifier, spendTime, modifyGold, modifyHappiness, modifyFood,
++  const { player, players, priceModifier, spendTime, modifyGold, modifyHappiness, modifyFood,
+     buyLotteryTicket, buyTicket, economyTrend, week, weeklyNewsEvents, onShowNewspaper } = ctx;
+```
+
+### Verification
+
+- **Build output before fix**: `players` was a bare identifier (undefined at runtime)
+- **Build output after fix**: `players:n` (properly mapped to local variable from destructuring)
+- **Tests**: 219 passing, 0 failures
+- **Build**: Clean, no errors
+- All 12 other tab factory functions checked — no similar bugs found
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/game/locationTabs.tsx` | Added `players` to destructuring in `shadowMarketTabs()` |
+
+---
+
 ## 2026-02-14 — Bug Hunt #8: Eliminate ALL Remaining `location.reload()` Stale-Cache Paths (22:00 UTC)
 
 ### Overview

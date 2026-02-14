@@ -501,7 +501,7 @@ function landlordTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function shadowMarketTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, priceModifier, spendTime, modifyGold, modifyHappiness, modifyFood,
+  const { player, players, priceModifier, spendTime, modifyGold, modifyHappiness, modifyFood,
     buyLotteryTicket, buyTicket, economyTrend, week, weeklyNewsEvents, onShowNewspaper } = ctx;
   const shadowNewspaperPrice = Math.round(NEWSPAPER_COST * priceModifier * 0.5);
   const shadowMarketProps = {
