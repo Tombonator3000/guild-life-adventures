@@ -102,10 +102,14 @@ export function useAppUpdate() {
       try {
         // Cache-busting query param defeats CDN/proxy caches that ignore no-store
         const url = `${getVersionUrl()}?_=${Date.now()}`;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
         const resp = await fetch(url, {
           cache: 'no-store',
           headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
+          signal: controller.signal,
         });
+        clearTimeout(timeout);
         if (!resp.ok) return;
         const data = await resp.json();
         if (data.buildTime && data.buildTime !== __BUILD_TIME__) {
@@ -149,17 +153,21 @@ export function useAppUpdate() {
 
     // Also check version.json immediately (cache-busting param)
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
       const resp = await fetch(`${getVersionUrl()}?_=${Date.now()}`, {
         cache: 'no-store',
         headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
       if (!resp.ok) return;
       const data = await resp.json();
       if (data.buildTime && data.buildTime !== __BUILD_TIME__) {
         setVersionMismatch(true);
       }
     } catch {
-      // ignore
+      // ignore (network error or timeout)
     }
   }, []);
 

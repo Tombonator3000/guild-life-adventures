@@ -24,7 +24,9 @@ function showMountError(error: unknown) {
 }
 
 try {
+  console.log('[Guild Life] Mounting React app...');
   createRoot(document.getElementById("root")!).render(<App />);
+  console.log('[Guild Life] React render() called successfully');
 } catch (error) {
   showMountError(error);
 }

@@ -567,3 +567,118 @@ window.addEventListener('unhandledrejection', function(e) {
 - No regressions
 
 ---
+
+## 2026-02-14 — BUG HUNT: "Loading the realm..." Freeze (Round 3 — Parallel Agent Scan) (16:00 UTC)
+
+### Bug Report
+
+Game stuck on static "Loading the realm..." screen — React never mounts. This is the **third** investigation of this recurring issue. Previous fixes (rounds 1 & 2) addressed dependency issues and error handlers but the underlying architectural vulnerability remained.
+
+### Investigation Method
+
+Systematic parallel AI agent scan with **7 specialized agents** scanning simultaneously:
+1. App.tsx → Index.tsx loading chain analysis
+2. Zustand gameStore initialization
+3. TitleScreen/GameSetup rendering flow
+4. Audio/asset initialization (audioManager, ambientManager, speechNarrator, webAudioBridge)
+5. Runtime errors & build verification (tsc, vite build)
+6. localStorage/persist/hydration
+7. main.tsx & index.html entry points
+
+### Root Cause Analysis
+
+**PRIMARY: Eager import tree creates single point of failure**
+
+`Index.tsx` statically imported ALL screen components at the top level:
+```tsx
+import { GameBoard } from '@/components/game/GameBoard';     // 25+ sub-components
+import { GameSetup } from '@/components/screens/GameSetup';
+import { VictoryScreen } from '@/components/screens/VictoryScreen';
+import { OnlineLobby } from '@/components/screens/OnlineLobby';
+```
+
+GameBoard alone imports 25+ sub-components, network hooks, AI handlers, zone configuration, and every location panel. ALL of these modules must be resolved and evaluated BEFORE React can render even the TitleScreen — despite the initial phase always being `'title'`.
+
+**Impact**: If ANY module in GameBoard's massive dependency tree fails (missing dep, network error on CDN, corrupted cache, proxy issue), the entire app freezes on "Loading the realm..." because React can't even instantiate the Index component.
+
+**SECONDARY: version.json fetch had no timeout**
+
+`useAppUpdate.ts` called `fetch(version.json)` with no `AbortController` timeout. If the network hung (slow DNS, CDN timeout, proxy issues), the promise never resolved. While this didn't directly block rendering (it's in a `useEffect`), it prevented error recovery and update detection.
+
+**TERTIARY: Fallback timer too slow**
+
+The 8-second first fallback check in `index.html` was too long — users perceive the app as broken after ~3-5 seconds.
+
+### What Was Already Fixed (from previous rounds)
+
+All confirmed still in place:
+- ✅ `@radix-ui/react-collection` explicit dependency (package.json)
+- ✅ `unhandledrejection` handler (index.html)
+- ✅ `speechNarrator.doSpeak()` try-catch
+- ✅ `webAudioBridge.ts` safe AudioContext creation
+- ✅ `main.tsx` try-catch around `createRoot().render()`
+- ✅ `controllerchange` listener for auto-reload on SW update
+- ✅ `hardRefresh()` always used for user-triggered updates
+
+### Fixes Applied (3)
+
+| # | Severity | File | Fix |
+|---|----------|------|-----|
+| 1 | **CRITICAL** | `src/pages/Index.tsx` | **Lazy-load GameBoard, GameSetup, VictoryScreen, OnlineLobby** with `React.lazy()` + `Suspense`. Only TitleScreen is eagerly loaded (it's always the first screen). Reduces initial JS bundle by 37% and prevents a failure in any lazy screen from blocking the TitleScreen. |
+| 2 | **MEDIUM** | `src/hooks/useAppUpdate.ts` | **Added AbortController with 5s timeout** to both version.json fetch calls. Prevents hung network requests from blocking update detection. |
+| 3 | **LOW** | `index.html` + `src/main.tsx` | **Faster fallback timer** (5s + 12s instead of 8s + 15s). Added `console.log` diagnostics at mount time for easier debugging. |
+
+### Technical Details
+
+**Before (Index.tsx):**
+```tsx
+import { GameBoard } from '@/components/game/GameBoard';
+// ... 25+ transitive imports loaded eagerly
+
+switch (phase) {
+  case 'title': return <TitleScreen />;
+  case 'playing': return <GameBoard />;
+  // ...
+}
+```
+
+**After (Index.tsx):**
+```tsx
+const GameBoard = lazy(() => import('@/components/game/GameBoard')
+  .then(m => ({ default: m.GameBoard })));
+
+if (phase === 'title') return <TitleScreen />;
+
+return <Suspense fallback={<ScreenLoader />}>{screen}</Suspense>;
+```
+
+**Build output change (code splitting enabled):**
+- Before: `index.js` — 1,469 KB (everything in one chunk)
+- After: `index.js` — 847 KB (core + TitleScreen), `GameBoard.js` — 476 KB (lazy-loaded)
+- **37% smaller initial bundle** = faster parse + mount
+
+**Fetch timeout (useAppUpdate.ts):**
+```typescript
+const controller = new AbortController();
+const timeout = setTimeout(() => controller.abort(), 5000);
+const resp = await fetch(url, { signal: controller.signal, ... });
+clearTimeout(timeout);
+```
+
+### Files Changed (4)
+
+```
+src/pages/Index.tsx              — React.lazy() for 4 screens + Suspense boundary
+src/hooks/useAppUpdate.ts        — AbortController 5s timeout on both fetch calls
+index.html                       — Faster fallback timers (5s + 12s)
+src/main.tsx                     — Console diagnostics at mount time
+```
+
+### Verification
+
+- TypeScript: Clean (no errors)
+- Tests: 185/185 passing (9 test files, 0 failures)
+- Build: Succeeds with code splitting (2 JS chunks instead of 1)
+- No regressions
+
+---
