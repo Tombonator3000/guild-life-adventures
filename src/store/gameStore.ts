@@ -369,6 +369,20 @@ export const useGameStore = create<GameStore>((set, get) => {
       const data = loadGame(slot);
       if (!data) return false;
       const gs = data.gameState;
+
+      // Defensive validation: corrupted or structurally broken saves could crash
+      // the app or set phase to undefined, causing the UI to hang.
+      const validPhases = ['title', 'setup', 'playing', 'victory', 'event', 'online-lobby'];
+      if (!gs || !gs.players || !Array.isArray(gs.players) || gs.players.length === 0) {
+        console.warn('[Guild Life] Save data is corrupted — missing players. Deleting bad save.');
+        try { deleteSave(slot); } catch { /* ignore */ }
+        return false;
+      }
+      if (!gs.phase || !validPhases.includes(gs.phase)) {
+        console.warn('[Guild Life] Save has invalid phase:', gs.phase, '— defaulting to playing.');
+        gs.phase = 'playing';
+      }
+
       // H1 FIX: Migrate 'modest' housing to 'slums' (Jones 2-tier system)
       const migratedPlayers = gs.players.map((p: Player) =>
         p.housing === ('modest' as string) ? { ...p, housing: 'slums' as const } : p

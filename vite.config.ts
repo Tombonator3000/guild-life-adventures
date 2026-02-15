@@ -32,12 +32,16 @@ function versionJsonPlugin(): PluginOption {
       outDir = config.build.outDir;
     },
     transformIndexHtml() {
-      // Inject build time into HTML as a global variable.
+      // Inject build time AND base path into HTML as global variables.
       // Used by the inline stale-build detection script.
+      // __HTML_BASE__ is critical: without it, the inline script fetches
+      // version.json from '/' instead of the correct base path (e.g.
+      // '/guild-life-adventures/' on GitHub Pages), causing the stale-build
+      // detection to always 404 and never detect stale HTML.
       return [
         {
           tag: 'script',
-          children: `window.__HTML_BUILD_TIME__="${buildTime}";`,
+          children: `window.__HTML_BUILD_TIME__="${buildTime}";window.__HTML_BASE__=${JSON.stringify(basePath)};`,
           injectTo: 'head',
         },
       ];

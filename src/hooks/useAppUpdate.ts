@@ -21,31 +21,29 @@ function getVersionUrl(): string {
  * or caches still exist, causing the stale SW to re-activate on reload.
  */
 export async function hardRefresh(): Promise<void> {
+  // Wrap all cleanup in a 5-second timeout to prevent hanging forever
+  // if browser APIs (SW unregister, cache delete) don't resolve.
   try {
-    // 1. Unregister all service workers
-    const registrations = await navigator.serviceWorker?.getRegistrations() ?? [];
-    await Promise.all(registrations.map(r => r.unregister()));
+    await Promise.race([
+      (async () => {
+        // 1. Unregister all service workers
+        const registrations = await navigator.serviceWorker?.getRegistrations() ?? [];
+        await Promise.all(registrations.map(r => r.unregister()));
 
-    // 2. Delete all Cache Storage caches
-    const cacheKeys = await caches.keys();
-    await Promise.all(cacheKeys.map(k => caches.delete(k)));
+        // 2. Delete all Cache Storage caches
+        const cacheKeys = await caches.keys();
+        await Promise.all(cacheKeys.map(k => caches.delete(k)));
 
-    // 3. Verify cleanup actually completed — SWs should be gone
-    const remainingRegs = await navigator.serviceWorker?.getRegistrations() ?? [];
-    if (remainingRegs.length > 0) {
-      // Retry unregistration
-      await Promise.all(remainingRegs.map(r => r.unregister()));
-    }
-
-    // 4. Wait for async operations to fully propagate.
-    // 100ms was too short in some cases — browser needs time to finalize
-    // SW unregistration before the next page load avoids re-activation.
-    await new Promise(r => setTimeout(r, 500));
+        // 3. Wait for async operations to fully propagate.
+        await new Promise(r => setTimeout(r, 500));
+      })(),
+      new Promise<void>(resolve => setTimeout(resolve, 5000)), // 5s timeout
+    ]);
   } catch {
     // Ignore errors — reload regardless
   }
 
-  // 5. Cache-busting reload: use a URL query parameter to bypass the browser's
+  // 4. Cache-busting reload: use a URL query parameter to bypass the browser's
   // HTTP cache. GitHub Pages sends Cache-Control: max-age=600 (10 minutes), and
   // location.reload() may still serve the stale cached HTML within that window.
   // The <meta http-equiv="Cache-Control"> tags are ignored by modern browsers.

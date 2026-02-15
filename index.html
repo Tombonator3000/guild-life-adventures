@@ -120,8 +120,13 @@
           return;
         }
 
-        var base=document.querySelector('base[href]');
-        base=base?base.getAttribute('href'):'/';
+        /* Use the base path injected by versionJsonPlugin at build time.
+           Previously this looked for a <base href> tag which doesn't exist,
+           causing the version.json fetch to always 404 on GitHub Pages
+           (fetched /version.json instead of /guild-life-adventures/version.json).
+           This was the root cause of the recurring "Loading the realm..." freeze:
+           stale-build detection never worked on GitHub Pages. */
+        var base=window.__HTML_BASE__||'/';
 
         /* Fetch version.json — reused by main.tsx via window.__versionCheck */
         window.__versionCheck=fetch(base+'version.json?_='+Date.now(),{cache:'no-store'})
