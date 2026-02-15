@@ -71,6 +71,7 @@ export interface GameStore extends GameState {
   startTurn: (playerId: string) => void;
   processWeekEnd: () => void;
   setPhase: (phase: GameState['phase']) => void;
+  resetForNewGame: () => void;
   selectLocation: (location: LocationId | null) => void;
   dismissEvent: () => void;
   checkVictory: (playerId: string) => boolean;

@@ -198,13 +198,15 @@
             });
         });
 
-        /* Timeout: if version check takes >3s, load anyway (slow/offline) */
+        /* Timeout: if version check takes >8s, load anyway (slow/offline).
+           Increased from 3s to reduce the race condition where a slow version.json
+           causes the app to load with stale HTML before staleness is detected. */
         setTimeout(function(){
           if(!document.querySelector('script[data-entry]')){
             console.log('[Guild Life] Version check timed out — loading app');
             loadApp();
           }
-        },3000);
+        },8000);
       })();
     </script>
     <!-- Dev mode entry point — in production, deferModulePlugin removes the

@@ -6,7 +6,7 @@ import { VictoryEffects } from '@/components/game/VictoryEffects';
 import { getGameOption } from '@/data/gameOptions';
 
 export function VictoryScreen() {
-  const { setPhase, winner, players, goalSettings, eventMessage, stockPrices } = useGameStore();
+  const { setPhase, resetForNewGame, winner, players, goalSettings, eventMessage, stockPrices } = useGameStore();
 
   const winningPlayer = players.find(p => p.id === winner);
 
@@ -35,7 +35,7 @@ export function VictoryScreen() {
           </div>
 
           <button
-            onClick={() => setPhase('title')}
+            onClick={() => resetForNewGame()}
             className="gold-button text-xl px-12 py-4 mt-8"
           >
             Return to Title
@@ -163,13 +163,13 @@ export function VictoryScreen() {
         {/* Action Buttons */}
         <div className="flex gap-4">
           <button
-            onClick={() => setPhase('title')}
+            onClick={() => resetForNewGame()}
             className="gold-button text-lg px-8 py-3"
           >
             Return to Title
           </button>
           <button
-            onClick={() => setPhase('setup')}
+            onClick={() => { resetForNewGame(); setPhase('setup'); }}
             className="px-8 py-3 bg-secondary text-secondary-foreground rounded-lg font-display text-lg hover:bg-secondary/80 transition-colors"
           >
             New Game

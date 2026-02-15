@@ -32,6 +32,7 @@ import { getActiveFestival } from '@/data/festivals';
 import type { Festival, FestivalId } from '@/data/festivals';
 import { updateAchievementStats } from '@/data/achievements';
 import { processHexExpiration, hasCurseEffect } from './hexHelpers';
+import { deleteSave } from '@/data/saveLoad';
 import type { SetFn, GetFn } from '../storeTypes';
 import { getHomeLocation } from './turnHelpers';
 
@@ -815,6 +816,7 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
 
       // All players dead
       if (firstAliveIndex === -1) {
+        try { deleteSave(0); } catch { /* ignore */ }
         set({ ...weekEndState, phase: 'victory', eventMessage: 'All players have perished. Game Over!' });
         return;
       }
@@ -822,6 +824,7 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
       // Last player standing wins
       const alivePlayers = hexPlayers.filter(p => !p.isGameOver);
       if (alivePlayers.length === 1 && updatedPlayers.length > 1) {
+        try { deleteSave(0); } catch { /* ignore */ }
         set({
           ...weekEndState,
           winner: alivePlayers[0].id,

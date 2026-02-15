@@ -316,7 +316,7 @@ export function GameBoard() {
                 bottom: '0%',
                 left: '0%',
                 width: '100%',
-                height: '65%',
+                height: '40%',
               } : {
                 top: `${centerPanel.top}%`,
                 left: `${centerPanel.left}%`,
@@ -488,7 +488,7 @@ function BoardBanterOverlay({ centerPanel, isMobile }: {
     <div
       className="absolute z-20 pointer-events-none flex items-end justify-start"
       style={isMobile ? {
-        bottom: '66%',
+        bottom: '41%',
         left: '5%',
         width: '90%',
         height: 'auto',
