@@ -7,6 +7,9 @@ import { TitleScreen } from '@/components/screens/TitleScreen';
  * When a chunk fails to load (hash mismatch after deploy, network error, stale SW cache),
  * this retries the import once before giving up. On retry failure, it clears all caches
  * and reloads the page, which is the most reliable recovery for stale-cache scenarios.
+ *
+ * Includes reload loop protection using the same sessionStorage counter as hardRefresh().
+ * Without this, persistent chunk failures could cause infinite reloads.
  */
 function lazyWithRetry<T extends { default: React.ComponentType<unknown> }>(
   factory: () => Promise<T>,
@@ -17,8 +20,26 @@ function lazyWithRetry<T extends { default: React.ComponentType<unknown> }>(
       return factory().catch(async () => {
         // Second failure — likely stale cache. Clear everything and reload.
         console.error('[Guild Life] Chunk loading failed twice — clearing cache and reloading');
+
+        // Reload loop protection: if too many reloads recently, don't reload again.
+        // Uses the same sessionStorage counter as hardRefresh() and the index.html fallback.
         try {
-          // Await cache operations instead of fire-and-forget .then() chains
+          const RELOAD_KEY = 'guild-reload-count';
+          const d = JSON.parse(sessionStorage.getItem(RELOAD_KEY) || 'null');
+          const count = (d && Date.now() - d.ts < 120_000) ? (d.count || 0) : 0;
+          if (count >= 3) {
+            console.warn('[Guild Life] Reload loop detected — not reloading from lazyWithRetry');
+            throw new Error('Chunk loading failed after retries (reload limit reached)');
+          }
+          // Bump counter
+          const next = { ts: d?.ts || Date.now(), count: count + 1 };
+          sessionStorage.setItem(RELOAD_KEY, JSON.stringify(next));
+        } catch (e) {
+          if (e instanceof Error && e.message.includes('reload limit')) throw e;
+          // sessionStorage unavailable — proceed with reload anyway
+        }
+
+        try {
           if ('caches' in window) {
             const names = await caches.keys();
             await Promise.all(names.map(name => caches.delete(name)));

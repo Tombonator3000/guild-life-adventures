@@ -53,26 +53,10 @@ class ErrorBoundary extends Component<
           </p>
           <button
             onClick={async () => {
-              // Clear service worker cache and reload with cache-busting param.
-              // location.reload() may serve stale cached HTML (GitHub Pages max-age=600).
-              try {
-                if (navigator.serviceWorker) {
-                  const regs = await navigator.serviceWorker.getRegistrations();
-                  await Promise.all(regs.map(r => r.unregister()));
-                }
-                if ('caches' in window) {
-                  const keys = await caches.keys();
-                  await Promise.all(keys.map(k => caches.delete(k)));
-                }
-                await new Promise(r => setTimeout(r, 300));
-              } catch { /* ignore — reload regardless */ }
-              try {
-                const url = new URL(window.location.href);
-                url.searchParams.set('_gv', String(Date.now()));
-                window.location.replace(url.toString());
-              } catch {
-                window.location.reload();
-              }
+              // Use hardRefresh() which has reload loop protection.
+              // Direct location.reload() may serve stale cached HTML (GitHub Pages max-age=600).
+              const { hardRefresh } = await import('@/hooks/useAppUpdate');
+              await hardRefresh();
             }}
             style={{
               padding: '0.75rem 2rem',

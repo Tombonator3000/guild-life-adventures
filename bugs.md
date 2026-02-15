@@ -5,14 +5,14 @@
 
 ---
 
-## BUG-001: "Loading the realm..." Freeze (RECURRING — FIXED permanently via hot-swap)
+## BUG-001: "Loading the realm..." Freeze (RECURRING — FIXED via multi-layer protection)
 
 | Field | Value |
 |-------|-------|
 | **Severity** | Critical |
-| **Status** | FIXED (hot-swap architecture eliminates reload dependency) |
+| **Status** | FIXED (hot-swap + reload loop protection on ALL reload paths) |
 | **First seen** | 2026-02-14 |
-| **Occurrences** | 14 fix attempts across PRs #185–#211 |
+| **Occurrences** | 15 fix attempts across PRs #185–#214 |
 | **Symptom** | Game stuck on "Loading the realm..." loading screen, React never mounts |
 | **Environment** | Production (GitHub Pages), after any new deployment |
 
@@ -99,6 +99,26 @@ The hot-swap mechanism works correctly. The problem was the DEFENSE LAYERS fight
 - Made `cacheReload()` await cleanup before reloading (3s timeout)
 - Removed `checkStaleBuild()` from main.tsx (redundant with inline script)
 - Removed auto-reload from `useAppUpdate` (shows banner instead)
+
+### Why PR #213's Fix STILL Caused Reload Loop (found 2026-02-15, 15:35 UTC)
+
+PR #213 added a `controllerchange` event listener in `useAppUpdate.ts` that called `hardRefresh()` whenever the SW controller changed. This was intended as a safety net for mid-session SW updates, but it fired on EVERY page load:
+
+1. `hardRefresh()` unregisters the SW and reloads
+2. On reload, `useRegisterSW` registers a NEW SW
+3. New SW installs → `skipWaiting` → `clientsClaim` → controller changes from `null` to new SW
+4. `controllerchange` fires → `hardRefresh()` → GOTO step 1
+
+**Compounding factor**: `hardRefresh()` had NO reload loop protection — it never checked the `sessionStorage` counter that the fallback button used. `lazyWithRetry()` also lacked this check.
+
+### Final Fix: Unified Reload Loop Protection (2026-02-15)
+
+1. **`controllerchange` → shows update banner** instead of calling `hardRefresh()`. The version polling and hot-swap handle new deploys; the user decides when to reload.
+2. **`hardRefresh()` checks `sessionStorage` reload counter** (max 3 reloads in 2 min) before reloading. Shared counter with index.html fallback.
+3. **`lazyWithRetry()` checks the same counter** before clearing caches and reloading.
+4. **ErrorBoundary uses `hardRefresh()`** instead of inline logic, inheriting loop protection.
+
+**Key principle**: ALL programmatic reload paths now share a single `sessionStorage` counter. No code path can trigger `location.replace()` or `location.reload()` more than 3 times in 2 minutes.
 
 ---
 
