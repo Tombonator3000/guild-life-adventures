@@ -313,10 +313,11 @@ export function GameBoard() {
             <div
               className="absolute overflow-hidden z-10"
               style={isMobile ? {
-                bottom: '0%',
-                left: '0%',
-                width: '100%',
-                height: '40%',
+                bottom: '2%',
+                left: '4%',
+                width: '92%',
+                height: '30%',
+                borderRadius: '12px',
               } : {
                 top: `${centerPanel.top}%`,
                 left: `${centerPanel.left}%`,
@@ -324,7 +325,7 @@ export function GameBoard() {
                 height: `${centerPanel.height}%`,
               }}
             >
-              <div className={`w-full h-full overflow-hidden flex flex-col bg-card/95 ${isMobile ? '' : 'rounded-t-lg'}`}>
+              <div className={`w-full h-full overflow-hidden flex flex-col bg-card/95 ${isMobile ? 'rounded-xl' : 'rounded-t-lg'}`}>
                 {phase === 'event' && currentEvent ? (
                   <EventPanel event={currentEvent} onDismiss={dismissEvent} />
                 ) : selectedLocation ? (
@@ -488,7 +489,7 @@ function BoardBanterOverlay({ centerPanel, isMobile }: {
     <div
       className="absolute z-20 pointer-events-none flex items-end justify-start"
       style={isMobile ? {
-        bottom: '41%',
+        bottom: '33%',
         left: '5%',
         width: '90%',
         height: 'auto',
