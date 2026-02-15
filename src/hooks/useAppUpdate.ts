@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 const SW_CHECK_INTERVAL_MS = 5 * 60 * 1000;   // SW update check every 5 min
 const VERSION_POLL_INTERVAL_MS = 60 * 1000;    // version.json poll every 60 sec
-const AUTO_RELOAD_KEY = 'guild-life-auto-reload-ts';
 
 /** Resolve version.json URL relative to the app's base path. */
 function getVersionUrl(): string {
@@ -58,41 +57,6 @@ export async function hardRefresh(): Promise<void> {
   }
 }
 
-/**
- * Check if we can auto-reload. Prevents infinite reload loops by tracking
- * reload count within a session window. Allows up to 2 reloads per 60s.
- * This is more robust than the previous 30s time-based check because it
- * lets a stale build attempt recovery twice (once to clear SW, once to
- * fetch fresh content) before giving up and showing the manual button.
- */
-function canAutoReload(): boolean {
-  try {
-    const raw = sessionStorage.getItem(AUTO_RELOAD_KEY);
-    if (!raw) return true;
-    const data = JSON.parse(raw);
-    // Reset counter if window has expired
-    if (Date.now() - data.firstReloadTs > 60_000) return true;
-    // Allow up to 2 auto-reloads within the window
-    return data.count < 2;
-  } catch {
-    return true;
-  }
-}
-
-function markAutoReload(): void {
-  try {
-    const raw = sessionStorage.getItem(AUTO_RELOAD_KEY);
-    let data = raw ? JSON.parse(raw) : null;
-    if (!data || Date.now() - data.firstReloadTs > 60_000) {
-      data = { firstReloadTs: Date.now(), count: 0 };
-    }
-    data.count++;
-    sessionStorage.setItem(AUTO_RELOAD_KEY, JSON.stringify(data));
-  } catch {
-    // sessionStorage unavailable — allow reload anyway
-  }
-}
-
 export function useAppUpdate() {
   const [versionMismatch, setVersionMismatch] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval>>();
@@ -118,12 +82,9 @@ export function useAppUpdate() {
   // causing React to fail silently and the loading screen to hang.
   useEffect(() => {
     const onControllerChange = () => {
-      if (canAutoReload()) {
-        markAutoReload();
-        // Use cache-busting reload instead of location.reload() —
-        // GitHub Pages max-age=600 means plain reload may serve stale HTML.
-        hardRefresh();
-      }
+      // Use cache-busting reload instead of location.reload() —
+      // GitHub Pages max-age=600 means plain reload may serve stale HTML.
+      hardRefresh();
     };
     navigator.serviceWorker?.addEventListener('controllerchange', onControllerChange);
     return () => {
@@ -132,12 +93,13 @@ export function useAppUpdate() {
   }, []);
 
   // version.json polling — bypasses both service worker and browser cache.
-  // On initial mount, if a version mismatch is detected AND we haven't
-  // auto-reloaded recently, do a hard refresh immediately. This prevents
-  // the infinite loading issue where stale cached JS never mounts properly.
+  // Detects new deployments while the app is running and shows an update
+  // banner. Does NOT auto-reload — the user clicks the banner to update.
+  // (Auto-reload on first mount was removed because the inline script in
+  // index.html already handles stale-build detection with hot-swap.
+  // Having auto-reload here too caused reload loops when both systems
+  // detected staleness simultaneously.)
   useEffect(() => {
-    let isFirstCheck = true;
-
     const checkVersion = async () => {
       try {
         // Cache-busting query param defeats CDN/proxy caches that ignore no-store
@@ -153,20 +115,12 @@ export function useAppUpdate() {
         if (!resp.ok) return;
         const data = await resp.json();
         if (data.buildTime && data.buildTime !== __BUILD_TIME__) {
-          if (isFirstCheck && canAutoReload()) {
-            // First check after mount detected stale build — auto-reload
-            // to pick up the new version without user intervention.
-            markAutoReload();
-            await hardRefresh();
-            return; // hardRefresh reloads the page
-          }
-          // Subsequent checks or already reloaded once — show banner
+          // Show update banner — user decides when to reload
           setVersionMismatch(true);
         }
       } catch {
         // Network error — skip this check
       }
-      isFirstCheck = false;
     };
 
     // Check on mount, then every 60s

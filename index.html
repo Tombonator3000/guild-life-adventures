@@ -52,7 +52,15 @@
     <!-- Catch JS errors that occur before React mounts (module load failures, etc.) -->
     <script>
       window.__guildLoadErrors=[];
+      /* Loading state flags — used by fallback script to decide when to show
+         the "Clear Cache & Reload" button. Without these, the fallback shows
+         too early (before the module has time to load), causing users to click
+         it and enter a reload loop. */
+      window.__guildAppLoading=false;  /* true once loadApp() injects module */
+      window.__guildAppFailed=false;   /* true if module fails to load */
+      window.__guildReactMounted=false; /* true once React renders */
       function __guildShowLoadError(msg){
+        window.__guildAppFailed=true;
         setTimeout(function(){
           var ls=document.getElementById('loading-screen');
           if(!ls)return;
@@ -64,7 +72,7 @@
             +'<p style="font-size:0.8rem;opacity:0.7;max-width:500px;word-break:break-word;">'+msg+'</p>'
             +'<button onclick="try{var u=new URL(location.href);u.searchParams.set(\'_gv\',Date.now());location.replace(u.toString())}catch(e){location.reload()}" style="margin-top:1rem;padding:.5rem 1.5rem;background:#d4a537;color:#1f170a;border:none;border-radius:4px;cursor:pointer;font-size:1rem;">Reload</button>';
           ls.appendChild(d);
-        },3000);
+        },2000);
       }
       window.onerror=function(msg,src,line,col,err){
         window.__guildLoadErrors.push({msg:msg,src:src,err:err});
@@ -99,6 +107,8 @@
           if(document.querySelector('script[data-entry]'))return; /* already loading */
           var src=window.__ENTRY__;
           if(!src)return; /* dev mode — module script is in the HTML */
+          window.__guildAppLoading=true;
+          console.log('[Guild Life] Loading entry module:',src);
           /* Re-add modulepreload hints for performance */
           (window.__PRELOADS__||[]).forEach(function(href){
             var l=document.createElement('link');
@@ -114,6 +124,7 @@
              unhandledrejection — they silently fail, leaving the loading
              screen visible forever. This onerror catches those cases. */
           s.onerror=function(){
+            window.__guildAppFailed=true;
             console.error('[Guild Life] Entry module failed to load:',src);
             __guildShowLoadError('Module failed to load: '+src.split('/').pop());
           };
@@ -237,25 +248,119 @@
     <!-- Dev mode entry point — in production, deferModulePlugin removes the
          built version and stores it in window.__ENTRY__ for deferred loading -->
     <script type="module" src="/src/main.tsx"></script>
-    <!-- Fallback: polling loop checks every 3s if React has mounted.
-         If loading-screen is still visible after 5s, shows "Clear Cache & Reload" button.
-         Button clears SW caches and reloads with cache-busting URL param. -->
+    <!-- Fallback: polling loop checks if React has mounted.
+         Shows "Clear Cache & Reload" button ONLY when loading has genuinely failed,
+         not just because it's slow. Previous version showed button after 3s which
+         caused users to enter reload loops on slower connections.
+
+         Logic: Show button when:
+         1. Module failed to load (__guildAppFailed), OR
+         2. 15+ seconds elapsed and app still loading (genuine timeout), OR
+         3. Loading hasn't even started after 10s (version check hung)
+         Never show if React has mounted (__guildReactMounted). -->
     <script>
       (function(){
         var shown=false;
-        function cacheReload(){
-          if(navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(s){s.unregister()})});}
-          if(window.caches){caches.keys().then(function(n){n.forEach(function(k){caches.delete(k)})});}
-          setTimeout(function(){
+        var startTime=Date.now();
+        var RELOAD_KEY='guild-reload-count';
+
+        function getReloadCount(){
+          try{
+            var d=JSON.parse(sessionStorage.getItem(RELOAD_KEY)||'null');
+            if(!d||Date.now()-d.ts>120000)return 0; /* reset after 2 min */
+            return d.count||0;
+          }catch(e){return 0;}
+        }
+        function bumpReloadCount(){
+          try{
+            var d=JSON.parse(sessionStorage.getItem(RELOAD_KEY)||'null');
+            if(!d||Date.now()-d.ts>120000)d={ts:Date.now(),count:0};
+            d.count++;
+            sessionStorage.setItem(RELOAD_KEY,JSON.stringify(d));
+          }catch(e){}
+        }
+
+        function cacheReload(btn){
+          var count=getReloadCount();
+          if(count>=3){
+            /* Reload loop detected — show manual recovery steps instead */
+            var ls=document.getElementById('loading-screen');
+            if(ls){
+              var existing=ls.querySelector('.loop-info');
+              if(!existing){
+                var d=document.createElement('div');
+                d.className='loop-info';
+                d.style.cssText='margin-top:1rem;max-width:400px;';
+                d.innerHTML='<p style="color:#d4a537;font-size:0.95rem;margin-bottom:0.5rem;">Multiple reloads detected</p>'
+                  +'<p style="font-size:0.8rem;opacity:0.8;">Try these steps:</p>'
+                  +'<ol style="font-size:0.8rem;opacity:0.8;text-align:left;margin:0.5rem 0;">'
+                  +'<li>Open a new tab/window</li>'
+                  +'<li>Clear your browser cache (Ctrl+Shift+Del)</li>'
+                  +'<li>Navigate to the game URL directly</li>'
+                  +'</ol>'
+                  +'<button onclick="try{sessionStorage.removeItem(\'guild-reload-count\');localStorage.clear()}catch(e){}try{var u=new URL(location.href);u.searchParams.set(\'_gv\',Date.now());location.replace(u.toString())}catch(e){location.reload()}" '
+                  +'style="margin-top:0.5rem;padding:.5rem 1.5rem;background:#c44;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:0.9rem;">Hard Reset (clears all game data)</button>';
+                ls.appendChild(d);
+              }
+            }
+            return;
+          }
+
+          /* Show "Reloading..." and disable button to prevent double-clicks */
+          if(btn){btn.textContent='Reloading...';btn.disabled=true;}
+          bumpReloadCount();
+
+          /* AWAIT cache cleanup before reloading (previous version was fire-and-forget
+             with only 300ms delay — SW might still be active during reload) */
+          var cleanup=[];
+          try{
+            if(navigator.serviceWorker){
+              cleanup.push(navigator.serviceWorker.getRegistrations().then(function(r){
+                return Promise.all(r.map(function(s){return s.unregister()}));
+              }));
+            }
+          }catch(e){}
+          try{
+            if(window.caches){
+              cleanup.push(caches.keys().then(function(n){
+                return Promise.all(n.map(function(k){return caches.delete(k)}));
+              }));
+            }
+          }catch(e){}
+
+          /* Wait for cleanup (max 3s), then reload with cache-busting */
+          var done=false;
+          function doReload(){
+            if(done)return;done=true;
             try{var u=new URL(location.href);u.searchParams.set('_gv',Date.now());location.replace(u.toString());}
             catch(e){location.reload();}
-          },300);
+          }
+          Promise.all(cleanup).catch(function(){}).then(function(){
+            setTimeout(doReload,200);
+          });
+          setTimeout(doReload,3000); /* fallback if cleanup hangs */
         }
+
+        function shouldShowButton(){
+          /* React mounted — no need for fallback */
+          if(window.__guildReactMounted)return false;
+          /* Module explicitly failed to load */
+          if(window.__guildAppFailed)return true;
+          /* Module is still loading — give it time */
+          var elapsed=Date.now()-startTime;
+          if(window.__guildAppLoading&&elapsed<15000)return false;
+          /* Loading hasn't started after 10s (version check hung) */
+          if(!window.__guildAppLoading&&elapsed>10000)return true;
+          /* 15+ seconds and still not mounted — genuine timeout */
+          return elapsed>=15000;
+        }
+
         function guildFallbackCheck(){
           var root=document.getElementById('root');
           var ls=root&&root.querySelector('#loading-screen');
           if(!ls){shown=true;return;}
           if(shown)return;
+          if(!shouldShowButton())return;
           shown=true;
           var p=document.createElement('p');
           p.className='fallback-btn';
@@ -263,17 +368,17 @@
           var btn=document.createElement('button');
           btn.textContent='Clear Cache & Reload';
           btn.style.cssText='padding:.75rem 2rem;font-size:1rem;font-family:serif;background:linear-gradient(135deg,hsl(45,85%,55%),hsl(35,70%,40%));color:#1f170a;border:none;border-radius:.25rem;cursor:pointer;font-weight:bold;';
-          btn.onclick=cacheReload;
+          btn.onclick=function(){cacheReload(btn);};
           p.appendChild(btn);
           ls.appendChild(p);
         }
+        /* Poll every 2s (checks shouldShowButton which has smart timing) */
         var t=setInterval(function(){
           var root=document.getElementById('root');
           var ls=root&&root.querySelector('#loading-screen');
           if(!ls){clearInterval(t);return;}
           guildFallbackCheck();
-        },3000);
-        setTimeout(guildFallbackCheck,5000);
+        },2000);
       })();
     </script>
   </body>

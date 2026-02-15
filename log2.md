@@ -5,6 +5,101 @@
 
 ---
 
+## 2026-02-15 — Fix: Loading System Simplification — Eliminate Reload Loops (16:35 UTC)
+
+### Overview
+
+**BUG HUNT**: Game still gets stuck on "Clear Cache & Reload" after PRs. Despite 14+ previous fix attempts (PRs #185-#212) and the hot-swap architecture, the loading freeze keeps recurring. Root cause analysis with parallel agents identified THREE interacting problems in the loading defense layers.
+
+### Root Cause Analysis
+
+The loading system had become too complex (10+ defense layers added across 14 PRs), and the layers were **fighting each other**, creating reload loops:
+
+**Problem 1: Premature fallback button (3-second timer)**
+The "Clear Cache & Reload" fallback button appeared after just 3 seconds (first `setInterval` tick in `index.html`). On slower connections where version check + module load takes 4-8 seconds, users see the button while loading is still in progress. Clicking it triggers an unnecessary reload, which shows the same button again → user clicks again → reload loop.
+
+**Problem 2: Redundant `checkStaleBuild()` in main.tsx had NO reload limit**
+The inline script in `index.html` already handles stale-build detection with hot-swap. But `main.tsx` had a SECOND stale check that ran after the module loaded. If the inline script's version.json fetch failed (transient network error) and the 8s timeout loaded the module anyway, `checkStaleBuild()` would detect the stale build and reload — but with NO loop counter. If the reload got stale HTML again (CDN cache), it would reload again indefinitely.
+
+**Problem 3: `cacheReload()` was fire-and-forget**
+The fallback button's `cacheReload()` function started SW unregister and cache deletion as fire-and-forget `.then()` chains, then reloaded after only 300ms. The async operations might not complete in 300ms, so the reload could happen while the old SW was still active.
+
+**Problem 4: `useAppUpdate` auto-reload on first mount**
+After React mounted, `useAppUpdate` would immediately check version.json and auto-reload if stale. This conflicted with the inline script's hot-swap (which already loaded the fresh module). If both systems detected staleness, double reloads occurred.
+
+### Changes
+
+#### 1. Smart fallback timing with loading state flags (`index.html`)
+
+Added three coordination flags:
+- `window.__guildAppLoading` — set when `loadApp()` injects the module script
+- `window.__guildAppFailed` — set when module load fails (onerror) or React mount fails
+- `window.__guildReactMounted` — set when React successfully renders
+
+The fallback `shouldShowButton()` function uses these flags:
+- If React mounted → never show button
+- If module explicitly failed → show immediately
+- If module is still loading → wait up to 15 seconds before showing
+- If loading hasn't started after 10 seconds → show (version check hung)
+
+Changed polling interval from 3s to 2s (but `shouldShowButton` gates the actual display).
+
+#### 2. Reload loop protection (`index.html`)
+
+Added `sessionStorage`-based reload counter (`guild-reload-count`):
+- Tracks reload count within a 2-minute window
+- After 3 reloads: stops reloading and shows manual recovery steps
+- Includes a "Hard Reset" button that clears localStorage + caches (nuclear option for corrupted save data)
+- Counter resets after 2 minutes
+
+#### 3. Proper cache cleanup awaiting (`index.html`)
+
+`cacheReload()` now:
+- Awaits SW unregister + cache delete via `Promise.all`
+- Has a 3-second timeout fallback if cleanup hangs
+- Shows "Reloading..." text and disables button to prevent double-clicks
+- Only reloads after cleanup completes (or timeout)
+
+#### 4. Removed `checkStaleBuild()` from main.tsx
+
+Deleted the entire 66-line `checkStaleBuild()` function and its call in `mount()`. The inline script's hot-swap handles stale builds. The `useAppUpdate` hook handles ongoing version polling after mount.
+
+#### 5. Simplified `useAppUpdate.ts`
+
+- Removed `canAutoReload()` and `markAutoReload()` functions (no longer needed)
+- Removed `AUTO_RELOAD_KEY` sessionStorage tracking
+- Removed auto-reload on first mount check — now only shows update banner
+- Removed `canAutoReload` check from `controllerchange` handler (hardRefresh is reliable enough)
+
+### Defense Layer Summary (After Simplification)
+
+| Layer | Purpose | When |
+|-------|---------|------|
+| Inline stale-build detection | Hot-swap fresh modules from version.json | Before module loads |
+| 8s timeout | Load module anyway if version check hangs | Before module loads |
+| Module onerror | Show error if entry module 404s | Module load time |
+| React ErrorBoundary | Catch render errors | After module loads |
+| Smart fallback button | Show reload button only when genuinely stuck | 10-15s after page load |
+| Reload loop protection | Prevent infinite reload loops (max 3 in 2 min) | On reload button click |
+| useAppUpdate polling | Show update banner for new versions | After React mounts |
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `index.html` | Smart fallback timing, loading state flags, reload loop protection, proper cache cleanup |
+| `src/main.tsx` | Removed `checkStaleBuild()`, added `__guildReactMounted` flag |
+| `src/hooks/useAppUpdate.ts` | Removed auto-reload on first check, removed `canAutoReload`/`markAutoReload` |
+
+### Verification
+
+- **Tests**: 219 passing, 0 failures
+- **Build** (`DEPLOY_TARGET=github`): Clean, no errors
+- **Built HTML verified**: All loading flags, reload protection, and smart timing present
+- **version.json verified**: Correct base paths for GitHub Pages
+
+---
+
 ## 2026-02-15 — DEFINITIVE FIX: "Loading the realm..." Freeze — Root Cause Found (15:30 UTC)
 
 ### Overview
