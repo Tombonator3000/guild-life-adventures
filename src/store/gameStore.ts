@@ -476,7 +476,7 @@ export const useGameStore = create<GameStore>((set, get) => {
 // useGameStore directly (that would create gameStore → module → gameStore cycles).
 setStoreAccessor(() => useGameStore.getState());
 setNetworkStateStoreAccessor({
-  getState: () => useGameStore.getState() as Record<string, unknown>,
+  getState: () => useGameStore.getState() as unknown as Record<string, unknown>,
   setState: (update) => useGameStore.setState(update),
 });
 

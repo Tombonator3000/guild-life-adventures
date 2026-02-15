@@ -60,6 +60,8 @@ export interface CombatRunResult {
   encountersCompleted: number;
   /** Equipment durability loss from the entire run */
   durabilityLoss: EquipmentDurabilityLoss;
+  /** Hex scroll drop from boss (null = no drop) */
+  hexScrollDropId: string | null;
 }
 
 // ─── Main CombatView Component ────────────────────────────────
@@ -172,6 +174,7 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
       encounterLog: runState.results,
       encountersCompleted: runState.results.length,
       durabilityLoss: runState.totalDurabilityLoss,
+      hexScrollDropId: runState.hexScrollDropId,
     });
   }, [runState, floor, onComplete]);
 
