@@ -5,6 +5,40 @@
 
 ---
 
+## 2026-02-15 — Fix: Mobile Center Panel Still Too Large (14:00 UTC)
+
+### Overview
+
+Follow-up to the earlier mobile panel fix. Even after reducing from 65% to 40%, the center panel still covered too much of the screen on mobile, making the game board unplayable. The panel was full-width and anchored to the bottom edge, blocking interaction with location zones.
+
+### Changes
+
+Transformed the mobile center panel from a full-width bottom sheet into a compact, centered floating panel:
+
+| Property | Before | After |
+|----------|--------|-------|
+| `height` | 40% | 30% |
+| `width` | 100% | 92% |
+| `left` | 0% | 4% |
+| `bottom` | 0% | 2% |
+| `borderRadius` | none | 12px |
+| Inner div corners | none on mobile | `rounded-xl` |
+| Banter bubble `bottom` | 41% | 33% |
+
+The panel is now a compact rounded rectangle floating near the bottom of the screen with margins on all sides, leaving the game board visible and interactive around it.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/game/GameBoard.tsx` | Mobile center panel: width 100%→92%, height 40%→30%, left 0%→4%, bottom 0%→2%, added borderRadius 12px, inner div rounded-xl on mobile, banter bubble bottom 41%→33% |
+
+### Verification
+
+- **Build**: Clean, no errors
+
+---
+
 ## 2026-02-15 — Fix: Mobile Center Panel Too Large + Play Again After Victory (12:20 UTC)
 
 ### Overview
