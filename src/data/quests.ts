@@ -7,6 +7,8 @@ export interface Quest {
   id: string;
   name: string;
   description: string;
+  /** Variant descriptions — a random one is shown each time the quest appears */
+  descriptionVariants?: string[];
   rank: QuestRank;
   goldReward: number;
   timeRequired: number;
@@ -21,6 +23,14 @@ export interface Quest {
   requiresDungeonFloor?: number;
   /** Requires ALL dungeon floors to be cleared */
   requiresAllDungeonFloors?: boolean;
+}
+
+/** Pick a random quest description variant or fall back to the default */
+export function pickQuestDescription(quest: Quest): string {
+  if (quest.descriptionVariants && quest.descriptionVariants.length > 0) {
+    return quest.descriptionVariants[Math.floor(Math.random() * quest.descriptionVariants.length)];
+  }
+  return quest.description;
 }
 
 // Quest rank to guild rank requirements
@@ -60,6 +70,12 @@ export const QUESTS: Quest[] = [
     id: 'rat-extermination',
     name: 'Rat Extermination',
     description: 'Clear the tavern cellar of a rat infestation. The rats have organized. They have a union now.',
+    descriptionVariants: [
+      'Clear the tavern cellar of a rat infestation. The rats have organized. They have a union now.',
+      'The tavern\'s rat problem has become a rat situation. The situation has become a rat crisis. Handle it.',
+      'Rats in the cellar again. The tavern keeper says there are "a few." The tavern keeper is a liar.',
+      'Exterminate the rat colony beneath the Rusty Tankard. They\'ve elected a leader. His name is Whiskers. He must fall.',
+    ],
     rank: 'E',
     goldReward: 25,
     timeRequired: 5,
@@ -70,6 +86,12 @@ export const QUESTS: Quest[] = [
     id: 'package-delivery',
     name: 'Package Delivery',
     description: 'Deliver a mysterious package across the city. Don\'t open it. Don\'t shake it. Don\'t ask questions. Standard delivery.',
+    descriptionVariants: [
+      'Deliver a mysterious package across the city. Don\'t open it. Don\'t shake it. Don\'t ask questions. Standard delivery.',
+      'A package needs delivering. It hums. Faintly. Don\'t think about the humming. Just deliver it.',
+      'Take this parcel to the Academy. It\'s wrapped in three layers of cloth. Something inside moved. Probably nothing.',
+      'Courier service needed: deliver a box that smells faintly of cinnamon and danger. Standard rates apply.',
+    ],
     rank: 'E',
     goldReward: 15,
     timeRequired: 3,
@@ -80,6 +102,12 @@ export const QUESTS: Quest[] = [
     id: 'herb-gathering',
     name: 'Herb Gathering',
     description: 'Collect healing herbs from the city gardens. The gardener will glare at you. This is normal.',
+    descriptionVariants: [
+      'Collect healing herbs from the city gardens. The gardener will glare at you. This is normal.',
+      'The Enchanter needs herbs. Specific herbs. Don\'t bring the wrong ones. The last person who brought the wrong ones turned blue.',
+      'Gather medicinal plants from around Guildholm. They\'re green. Some are poisonous. Learn the difference.',
+      'Herb gathering for the Academy\'s alchemy lab. The herbs bite sometimes. This is also normal. Apparently.',
+    ],
     rank: 'E',
     goldReward: 18,
     timeRequired: 4,
@@ -90,6 +118,12 @@ export const QUESTS: Quest[] = [
     id: 'lost-cat',
     name: 'Find the Lost Cat',
     description: "A noble's prized cat has gone missing. The cat is not lost. The cat is exactly where it wants to be.",
+    descriptionVariants: [
+      "A noble's prized cat has gone missing. The cat is not lost. The cat is exactly where it wants to be.",
+      "Lady Pemberton's cat has escaped. Again. The cat has a better social life than most adventurers.",
+      "Find a noble's missing cat. Reward offered. The cat is described as 'precious.' The cat describes itself as 'independent.'",
+      "A pampered feline has vanished from Noble Heights. It was last seen judging passersby from a rooftop. Typical cat behaviour.",
+    ],
     rank: 'E',
     goldReward: 30,
     timeRequired: 6,
@@ -102,6 +136,12 @@ export const QUESTS: Quest[] = [
     id: 'escort-merchant',
     name: 'Escort Merchant',
     description: 'Protect a merchant traveling to the next district. He talks. A lot. Combat is the easy part.',
+    descriptionVariants: [
+      'Protect a merchant traveling to the next district. He talks. A lot. Combat is the easy part.',
+      'Escort a nervous merchant through bandit territory. The bandits are dangerous. The merchant\'s stories are worse.',
+      'A merchant needs protection for a trade run. He\'ll pay well. He\'ll also tell you about his childhood. Brace yourself.',
+      'Bodyguard duty for a travelling merchant. Risk: moderate. Boredom from his anecdotes: extreme.',
+    ],
     rank: 'D',
     goldReward: 50,
     timeRequired: 10,
@@ -113,6 +153,12 @@ export const QUESTS: Quest[] = [
     id: 'guard-duty',
     name: 'Guard Duty',
     description: 'Stand watch at the city gates overnight. Nothing will happen. You\'ll still be exhausted. Welcome to guard duty.',
+    descriptionVariants: [
+      'Stand watch at the city gates overnight. Nothing will happen. You\'ll still be exhausted. Welcome to guard duty.',
+      'Night watch at the gates. Eight hours of staring into darkness. The darkness stares back. Then it gets bored.',
+      'Guard the city gates from dusk to dawn. The exciting part is staying awake. Nobody has managed yet.',
+      'Overnight sentry duty. You\'ll see nothing, hear nothing, and be paid for the privilege of boredom.',
+    ],
     rank: 'D',
     goldReward: 42,
     timeRequired: 6,
@@ -123,6 +169,12 @@ export const QUESTS: Quest[] = [
     id: 'courier-run',
     name: 'Urgent Courier Run',
     description: 'Deliver time-sensitive documents across the kingdom. "Time-sensitive" means "should have been sent last week."',
+    descriptionVariants: [
+      'Deliver time-sensitive documents across the kingdom. "Time-sensitive" means "should have been sent last week."',
+      'Rush delivery of sealed documents. The seal says "URGENT." The date says "two weeks ago." Priorities.',
+      'A diplomatic courier run. The documents are important. How important? Nobody will tell you. That level of important.',
+      'Deliver papers to a distant outpost. Fast. The sender stressed "fast" three times. While handing you a map drawn by a child.',
+    ],
     rank: 'D',
     goldReward: 40,
     timeRequired: 8,
@@ -135,6 +187,12 @@ export const QUESTS: Quest[] = [
     id: 'bandit-hunt',
     name: 'Bandit Hunt',
     description: 'Track down and capture highway bandits. They\'re not clever, but there are a lot of them. Quantity has a quality of its own.',
+    descriptionVariants: [
+      'Track down and capture highway bandits. They\'re not clever, but there are a lot of them. Quantity has a quality of its own.',
+      'A bandit gang plagues the trade routes. They wear matching scarves. Organised crime has a dress code, apparently.',
+      'Eliminate a bandit camp near the trade road. They\'ve been robbing merchants and writing rude messages. Both are crimes.',
+      'Hunt down highway robbers operating near Guildholm. They call themselves the "Free Blades." Free because nobody pays them. Yet.',
+    ],
     rank: 'C',
     goldReward: 80,
     timeRequired: 10,
@@ -146,6 +204,12 @@ export const QUESTS: Quest[] = [
     id: 'lost-artifact',
     name: 'Lost Artifact',
     description: 'Recover an ancient relic from abandoned ruins. "Abandoned" is doing a lot of heavy lifting in that sentence.',
+    descriptionVariants: [
+      'Recover an ancient relic from abandoned ruins. "Abandoned" is doing a lot of heavy lifting in that sentence.',
+      'An ancient artifact lies in ruins outside the city. The ruins are full of traps. The artifact is full of archaeological value. And traps.',
+      'Retrieve a missing relic from an old temple. The temple has been "uninhabited for centuries." Centuries-old things still live there.',
+      'A valuable artifact awaits recovery in the old ruins. Previous recovery teams sent reports. Then they stopped sending reports.',
+    ],
     rank: 'C',
     goldReward: 90,
     timeRequired: 12,
@@ -156,6 +220,12 @@ export const QUESTS: Quest[] = [
     id: 'curse-investigation',
     name: 'Curse Investigation',
     description: 'Investigate strange occurrences at the old manor. Spoiler: it\'s always ghosts. It\'s never NOT ghosts.',
+    descriptionVariants: [
+      'Investigate strange occurrences at the old manor. Spoiler: it\'s always ghosts. It\'s never NOT ghosts.',
+      'The old manor is acting up again. Doors slamming, voices at night. The owner says it\'s "the wind." It\'s never the wind.',
+      'Strange lights and sounds from the abandoned estate. The Academy wants data. You want gold. The ghosts want attention.',
+      'A cursed property needs investigating. The previous investigator left running. He hasn\'t stopped. He\'s still running, actually.',
+    ],
     rank: 'C',
     goldReward: 65,
     timeRequired: 8,
@@ -169,18 +239,29 @@ export const QUESTS: Quest[] = [
     id: 'monster-slaying',
     name: 'Monster Slaying',
     description: 'Hunt the beast terrorizing local farmers. The farmers describe it as "big, scary, and bitey." Helpful.',
+    descriptionVariants: [
+      'Hunt the beast terrorizing local farmers. The farmers describe it as "big, scary, and bitey." Helpful.',
+      'A monster has claimed a farm as its territory. The cows disagree. The cows are losing. Help the cows.',
+      'Something large and angry roams the farmlands. Witness accounts vary from "wolf" to "small dragon" to "my mother-in-law."',
+      'Slay the creature terrorising the countryside. Survivors describe it as having "too many teeth." An excess of teeth is never good.',
+    ],
     rank: 'B',
     goldReward: 140,
     timeRequired: 14,
     healthRisk: 35,
     happinessReward: 6,
-    // Fixed: was fighter 3 which is impossible (max fighter = 2 via combat-training + master-combat)
     requiredEducation: { path: 'fighter', level: 2 },
   },
   {
     id: 'dungeon-dive',
     name: 'Dungeon Dive',
     description: 'Prove your dungeon prowess. Go back into the dungeon. Voluntarily. We question your judgment but respect your courage.',
+    descriptionVariants: [
+      'Prove your dungeon prowess. Go back into the dungeon. Voluntarily. We question your judgment but respect your courage.',
+      'Return to the dungeon and bring back proof of your exploits. Proof means loot. Not stories. Nobody trusts stories.',
+      'The guild wants a dungeon progress report. They want you to write it. In the dungeon. While fighting. Bureaucracy.',
+      'Voluntary dungeon expedition required. "Voluntary" is a strong word. "Strongly encouraged with gold incentive" is more accurate.',
+    ],
     rank: 'B',
     goldReward: 160,
     timeRequired: 16,
@@ -192,6 +273,12 @@ export const QUESTS: Quest[] = [
     id: 'exorcism',
     name: 'Exorcism',
     description: 'Cleanse the haunted chapel of dark spirits. The spirits are dark, the chapel is drafty, and the pay barely covers therapy.',
+    descriptionVariants: [
+      'Cleanse the haunted chapel of dark spirits. The spirits are dark, the chapel is drafty, and the pay barely covers therapy.',
+      'A chapel outside town has been overrun by spectres. The congregation wants them gone. The spectres disagree. Negotiate with force.',
+      'Perform an exorcism at the old chapel. Bring candles, holy water, and a strong constitution. The ghosts are... assertive.',
+      'Dark spirits haunt a sacred chapel. The priests tried praying. The spirits prayed back. Louder. Professional help needed.',
+    ],
     rank: 'B',
     goldReward: 110,
     timeRequired: 10,
@@ -205,18 +292,29 @@ export const QUESTS: Quest[] = [
     id: 'dragon-investigation',
     name: 'Dragon Investigation',
     description: 'Investigate dragon sightings in the mountains. "Investigate" — not "provoke," "annoy," or "poke with a stick."',
+    descriptionVariants: [
+      'Investigate dragon sightings in the mountains. "Investigate" — not "provoke," "annoy," or "poke with a stick."',
+      'Confirm or deny the dragon reports from the mountain villages. Emphasis on "from a safe distance."',
+      'Mountain scouts report dragon activity. The guild wants eyes on the ground. Preferably eyes attached to a living person.',
+      'Dragon reconnaissance mission. Observe, document, and return. In that order. Especially the "return" part.',
+    ],
     rank: 'A',
     goldReward: 220,
     timeRequired: 18,
     healthRisk: 40,
     happinessReward: 9,
-    // Fixed: was fighter 4 which is impossible (max fighter = 2)
     requiredEducation: { path: 'fighter', level: 2 },
   },
   {
     id: 'demon-cult',
     name: 'Demon Cult',
     description: 'Infiltrate and dismantle a dangerous cult. Their robes are surprisingly comfortable. Don\'t get attached.',
+    descriptionVariants: [
+      'Infiltrate and dismantle a dangerous cult. Their robes are surprisingly comfortable. Don\'t get attached.',
+      'A demon-worshipping cult threatens the region. Infiltrate, gather intelligence, and shut them down. Yes, you can keep the robe.',
+      'Break up a dangerous cult operating beneath the city. They chant at midnight. They summon things. Things with teeth.',
+      'A cult is summoning entities from the lower planes. Stop them before something answers. Something always answers.',
+    ],
     rank: 'A',
     goldReward: 260,
     timeRequired: 22,
@@ -227,12 +325,17 @@ export const QUESTS: Quest[] = [
     id: 'ancient-evil',
     name: 'Ancient Evil Awakens',
     description: 'Seal the tomb before the ancient evil escapes. The ancient evil has been napping for 3,000 years and is NOT a morning person.',
+    descriptionVariants: [
+      'Seal the tomb before the ancient evil escapes. The ancient evil has been napping for 3,000 years and is NOT a morning person.',
+      'An ancient tomb is cracking open. Whatever\'s inside has been sleeping for millennia and wakes up hungry.',
+      'Re-seal the awakening tomb of an ancient horror. The previous seal lasted 3,000 years. We\'d like the new one to last longer.',
+      'A primordial evil stirs beneath the earth. It must not be allowed to rise. It\'s already pretty annoyed about the 3,000-year nap.',
+    ],
     rank: 'A',
     goldReward: 240,
     timeRequired: 18,
     healthRisk: 45,
     happinessReward: 9,
-    // H6 FIX: Reduced from mage 3 to mage 2 (was harder than S-rank quests)
     requiredEducation: { path: 'mage', level: 2 },
   },
 
@@ -240,8 +343,13 @@ export const QUESTS: Quest[] = [
   {
     id: 'deep-dungeon-clear',
     name: 'Deep Dungeon Clear',
-    // M14 FIX: Updated to reference all 6 floors (Floor 6: Forgotten Temple was missing)
     description: 'Conquer all 6 levels of the legendary dungeon. This is either incredibly brave or proof that natural selection still works.',
+    descriptionVariants: [
+      'Conquer all 6 levels of the legendary dungeon. This is either incredibly brave or proof that natural selection still works.',
+      'Complete a full dungeon clear — all six floors, all bosses. The survival rate for this quest is a statistic we don\'t publish.',
+      'Descend through all six dungeon floors and emerge victorious. Or don\'t emerge. The guild will send flowers.',
+      'The ultimate dungeon challenge: six floors, six bosses, one adventurer. The odds are not in your favour. The gold is.',
+    ],
     rank: 'S',
     goldReward: 450,
     timeRequired: 30,
@@ -253,12 +361,17 @@ export const QUESTS: Quest[] = [
     id: 'dragon-slayer',
     name: 'Dragon Slayer',
     description: 'Slay the ancient dragon threatening the kingdom. The dragon is ancient, enormous, and breathes fire. You have a sword. Best of luck.',
+    descriptionVariants: [
+      'Slay the ancient dragon threatening the kingdom. The dragon is ancient, enormous, and breathes fire. You have a sword. Best of luck.',
+      'Kill the dragon. The dragon disagrees with this plan. The dragon is very large. Your plan is very ambitious.',
+      'Face the ancient wyrm in single combat. The wyrm has centuries of experience, impenetrable scales, and fire breath. You have enthusiasm.',
+      'The ultimate quest: dragonslaying. The guild will provide equipment, intelligence, and a pre-written eulogy. Just in case.',
+    ],
     rank: 'S',
     goldReward: 600,
     timeRequired: 36,
     healthRisk: 70,
     happinessReward: 20,
-    // Fixed: was fighter 4 which is impossible (max fighter = 2)
     requiredEducation: { path: 'fighter', level: 2 },
   },
 ];
@@ -335,6 +448,8 @@ export interface QuestChainStep {
   id: string;
   name: string;
   description: string;
+  /** Variant descriptions for quest chain steps */
+  descriptionVariants?: string[];
   rank: QuestRank;
   goldReward: number;
   timeRequired: number;
@@ -370,6 +485,11 @@ export const QUEST_CHAINS: QuestChain[] = [
         id: 'dragon-conspiracy-1',
         name: 'Whispers of Fire',
         description: 'Strange burn marks appear across the city. Could be dragons. Could be a cooking accident. Best to check.',
+        descriptionVariants: [
+          'Strange burn marks appear across the city. Could be dragons. Could be a cooking accident. Best to check.',
+          'Scorch marks on buildings, melted cobblestones, and the smell of sulphur. Either dragons or the worst barbecue ever.',
+          'Mysterious fire damage across multiple districts. The Fire Brigade says "not our problem." It might be yours.',
+        ],
         rank: 'C',
         goldReward: 75,
         timeRequired: 10,
@@ -380,6 +500,11 @@ export const QUEST_CHAINS: QuestChain[] = [
         id: 'dragon-conspiracy-2',
         name: 'The Smuggler\'s Trail',
         description: 'Follow the trail of dragon-forged weapons to a smuggling ring. They\'re not subtle. None of them are ever subtle.',
+        descriptionVariants: [
+          'Follow the trail of dragon-forged weapons to a smuggling ring. They\'re not subtle. None of them are ever subtle.',
+          'Dragon-forged weapons are appearing on the black market. Trace them to the source. The source probably has dragons.',
+          'Illegal weapon shipments bear dragon marks. Follow the supply chain. It leads somewhere hot. Literally.',
+        ],
         rank: 'B',
         goldReward: 130,
         timeRequired: 14,
@@ -391,6 +516,11 @@ export const QUEST_CHAINS: QuestChain[] = [
         id: 'dragon-conspiracy-3',
         name: 'Lair of the Conspirators',
         description: 'Confront the conspirators in their hidden lair beneath the mountains. Hidden lairs: where evil goes when it can\'t afford office space.',
+        descriptionVariants: [
+          'Confront the conspirators in their hidden lair beneath the mountains. Hidden lairs: where evil goes when it can\'t afford office space.',
+          'Storm the conspiracy\'s mountain base. They\'ve been planning this for years. You\'ve been planning for about ten minutes.',
+          'The final showdown with the dragon conspirators. Deep in the mountains. Bring fire resistance. And courage. Mostly fire resistance.',
+        ],
         rank: 'A',
         goldReward: 250,
         timeRequired: 20,
@@ -412,6 +542,11 @@ export const QUEST_CHAINS: QuestChain[] = [
         id: 'scholars-secret-1',
         name: 'The Coded Journal',
         description: 'Decipher the late scholar\'s encrypted journal. His handwriting was terrible even before the dying part.',
+        descriptionVariants: [
+          'Decipher the late scholar\'s encrypted journal. His handwriting was terrible even before the dying part.',
+          'Crack the dead scholar\'s cipher. He used a complex code. And also terrible handwriting. A double challenge.',
+          'A dying scholar\'s journal holds secrets. Decode it. The code is arcane. The penmanship is criminal.',
+        ],
         rank: 'D',
         goldReward: 45,
         timeRequired: 8,
@@ -423,6 +558,11 @@ export const QUEST_CHAINS: QuestChain[] = [
         id: 'scholars-secret-2',
         name: 'The Hidden Library',
         description: 'Locate the secret library beneath the Academy. It\'s "secret" in the way everyone knows about it but pretends they don\'t.',
+        descriptionVariants: [
+          'Locate the secret library beneath the Academy. It\'s "secret" in the way everyone knows about it but pretends they don\'t.',
+          'Find the Academy\'s hidden archive. The Dean says it doesn\'t exist. The Dean was seen entering it last Tuesday.',
+          'Beneath the Academy lies a library of forbidden knowledge. Finding it is step one. Surviving the librarian is step two.',
+        ],
         rank: 'C',
         goldReward: 85,
         timeRequired: 12,
@@ -433,6 +573,11 @@ export const QUEST_CHAINS: QuestChain[] = [
         id: 'scholars-secret-3',
         name: 'The Forbidden Ritual',
         description: 'Use the forbidden knowledge to seal an ancient breach. It\'s forbidden for a reason. Several reasons, actually. All of them alarming.',
+        descriptionVariants: [
+          'Use the forbidden knowledge to seal an ancient breach. It\'s forbidden for a reason. Several reasons, actually. All of them alarming.',
+          'Perform the sealing ritual before the breach widens further. The ritual is dangerous. The breach is worse. Pick your danger.',
+          'Close the ancient breach using forbidden magic. "Forbidden" doesn\'t mean "impossible." It means "really bad idea that works."',
+        ],
         rank: 'B',
         goldReward: 150,
         timeRequired: 16,
@@ -503,6 +648,8 @@ export interface Bounty {
   id: string;
   name: string;
   description: string;
+  /** Variant descriptions for bounties */
+  descriptionVariants?: string[];
   goldReward: number;
   timeRequired: number;
   healthRisk: number;
@@ -510,15 +657,15 @@ export interface Bounty {
 }
 
 const BOUNTY_POOL: Bounty[] = [
-  { id: 'bounty-rats', name: 'Cellar Rats', description: 'Clear rats from a merchant\'s cellar. Again. They always come back. It\'s basically a subscription service.', goldReward: 12, timeRequired: 3, healthRisk: 3, happinessReward: 1 },
-  { id: 'bounty-patrol', name: 'Night Patrol', description: 'Patrol the streets after dark. Mostly involves being cold, bored, and suspicious of shadows.', goldReward: 18, timeRequired: 4, healthRisk: 5, happinessReward: 1 },
-  { id: 'bounty-herbs', name: 'Herb Collection', description: 'Gather herbs for the healers. They want the green ones. Not the other green ones. The OTHER other green ones.', goldReward: 10, timeRequired: 3, healthRisk: 0, happinessReward: 2 },
-  { id: 'bounty-delivery', name: 'Urgent Parcel', description: 'Deliver a time-sensitive parcel. It was "urgent" three days ago. Now it\'s "extremely urgent." Same parcel.', goldReward: 14, timeRequired: 3, healthRisk: 0, happinessReward: 1 },
-  { id: 'bounty-escort', name: 'Traveler Escort', description: 'Escort a traveler to the gate. They walk slowly. They stop to look at things. Your patience will be tested.', goldReward: 20, timeRequired: 5, healthRisk: 8, happinessReward: 2 },
-  { id: 'bounty-cleanup', name: 'Rubble Clearing', description: 'Clear debris from a collapsed stall. The owner insists it "collapsed on its own." The insurance adjuster disagrees.', goldReward: 15, timeRequired: 4, healthRisk: 3, happinessReward: 1 },
-  { id: 'bounty-gather', name: 'Mushroom Foraging', description: 'Forage rare mushrooms from the cave mouth. "Rare" because smart people don\'t go near the cave mouth.', goldReward: 16, timeRequired: 4, healthRisk: 5, happinessReward: 2 },
-  { id: 'bounty-lost-item', name: 'Lost Heirloom', description: 'Find a lost ring in the slums. It\'s always a ring. Never a lost spoon. Nobody cries over spoons.', goldReward: 22, timeRequired: 5, healthRisk: 0, happinessReward: 2 },
-  { id: 'bounty-sparring', name: 'Sparring Partner', description: 'Spar with a guard recruit at the Armory. He\'s new. Go easy on him. Or don\'t. Your call.', goldReward: 18, timeRequired: 4, healthRisk: 10, happinessReward: 1 },
+  { id: 'bounty-rats', name: 'Cellar Rats', description: 'Clear rats from a merchant\'s cellar. Again. They always come back. It\'s basically a subscription service.', descriptionVariants: ['Clear rats from a merchant\'s cellar. Again. They always come back. It\'s basically a subscription service.', 'Rat extermination in the warehouse district. The rats have gotten organised. They have shifts.', 'Another cellar, another infestation. The rats outnumber the residents. Restore the balance.'], goldReward: 12, timeRequired: 3, healthRisk: 3, happinessReward: 1 },
+  { id: 'bounty-patrol', name: 'Night Patrol', description: 'Patrol the streets after dark. Mostly involves being cold, bored, and suspicious of shadows.', descriptionVariants: ['Patrol the streets after dark. Mostly involves being cold, bored, and suspicious of shadows.', 'Evening guard patrol needed. The job is 10% vigilance and 90% trying to stay awake.', 'Walk the streets. Look intimidating. Report anything unusual. Define "unusual" yourself.'], goldReward: 18, timeRequired: 4, healthRisk: 5, happinessReward: 1 },
+  { id: 'bounty-herbs', name: 'Herb Collection', description: 'Gather herbs for the healers. They want the green ones. Not the other green ones. The OTHER other green ones.', descriptionVariants: ['Gather herbs for the healers. They want the green ones. Not the other green ones. The OTHER other green ones.', 'The Enchanter needs specific plants. A diagram is provided. The diagram was drawn by someone who can\'t draw.', 'Collect healing herbs from the gardens. Don\'t eat them. The last person who ate them saw colours for a week.'], goldReward: 10, timeRequired: 3, healthRisk: 0, happinessReward: 2 },
+  { id: 'bounty-delivery', name: 'Urgent Parcel', description: 'Deliver a time-sensitive parcel. It was "urgent" three days ago. Now it\'s "extremely urgent." Same parcel.', descriptionVariants: ['Deliver a time-sensitive parcel. It was "urgent" three days ago. Now it\'s "extremely urgent." Same parcel.', 'Rush delivery across the city. The package rattles. Don\'t shake it. Don\'t ask. Just deliver.', 'A merchant needs something delivered. "Quickly," they say. "Yesterday," they mean. Time travel not included.'], goldReward: 14, timeRequired: 3, healthRisk: 0, happinessReward: 1 },
+  { id: 'bounty-escort', name: 'Traveler Escort', description: 'Escort a traveler to the gate. They walk slowly. They stop to look at things. Your patience will be tested.', descriptionVariants: ['Escort a traveler to the gate. They walk slowly. They stop to look at things. Your patience will be tested.', 'Accompany a nervous visitor through the city. They jump at shadows. There are many shadows. It\'s a long walk.', 'Bodyguard work for a traveler. The danger is mild. The small talk is brutal. Bring patience.'], goldReward: 20, timeRequired: 5, healthRisk: 8, happinessReward: 2 },
+  { id: 'bounty-cleanup', name: 'Rubble Clearing', description: 'Clear debris from a collapsed stall. The owner insists it "collapsed on its own." The insurance adjuster disagrees.', descriptionVariants: ['Clear debris from a collapsed stall. The owner insists it "collapsed on its own." The insurance adjuster disagrees.', 'Manual labour: clear rubble from a building site. It\'s honest work. Your back will file a complaint.', 'Clean-up duty after a structural failure in the market. Heavy lifting required. Pride optional.'], goldReward: 15, timeRequired: 4, healthRisk: 3, happinessReward: 1 },
+  { id: 'bounty-gather', name: 'Mushroom Foraging', description: 'Forage rare mushrooms from the cave mouth. "Rare" because smart people don\'t go near the cave mouth.', descriptionVariants: ['Forage rare mushrooms from the cave mouth. "Rare" because smart people don\'t go near the cave mouth.', 'Collect fungi from the cave entrance. The mushrooms glow. That\'s either valuable or radioactive. Probably valuable.', 'The Academy needs cave mushrooms. They grow where sensible people don\'t. Bring a basket. And courage.'], goldReward: 16, timeRequired: 4, healthRisk: 5, happinessReward: 2 },
+  { id: 'bounty-lost-item', name: 'Lost Heirloom', description: 'Find a lost ring in the slums. It\'s always a ring. Never a lost spoon. Nobody cries over spoons.', descriptionVariants: ['Find a lost ring in the slums. It\'s always a ring. Never a lost spoon. Nobody cries over spoons.', 'A family heirloom went missing. Search the Slums. Ask questions. Accept vague answers. Find the thing.', 'Locate a missing ring. The owner swears it has "sentimental value." The Fence swears it has "market value."'], goldReward: 22, timeRequired: 5, healthRisk: 0, happinessReward: 2 },
+  { id: 'bounty-sparring', name: 'Sparring Partner', description: 'Spar with a guard recruit at the Armory. He\'s new. Go easy on him. Or don\'t. Your call.', descriptionVariants: ['Spar with a guard recruit at the Armory. He\'s new. Go easy on him. Or don\'t. Your call.', 'The City Watch needs a sparring partner. The recruit is nervous. Your job is to be less nervous. And hit things.', 'Help train a new guard through practice combat. Try not to break him. They\'re short-staffed as it is.'], goldReward: 18, timeRequired: 4, healthRisk: 10, happinessReward: 1 },
 ];
 
 /** Get 3 bounties for a given week (deterministic rotation based on week number) */

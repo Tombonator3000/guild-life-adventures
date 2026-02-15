@@ -2995,3 +2995,81 @@ Added a new **Mobile** tab to the Zone Editor that allows configuring separate z
 - **Zero breaking changes** — backwards compatible with saves without mobile overrides
 
 ---
+
+## 2026-02-15 23:20 — Static Content Expansion (Massive)
+
+### Summary
+
+Massively expanded all static content across the game's data files to improve replay variety and reduce repetition. All new content maintains the established Monty Python / Discworld / dry-wit humor style.
+
+### Changes by Category
+
+#### 1. Banter Lines (`src/data/banter.ts`) — ~258 → 810+
+
+- Expanded static banter from ~258 lines to **760+ static lines** across all 13 locations
+- Each location now has **40-60 lines** (previously 15-25)
+- Added **50+ dynamic context-aware banter lines** triggered by player state:
+  - Quest completion count (15+ quests)
+  - High happiness (60+)
+  - Active loan status
+  - Stock investments
+  - Age 40+
+- **Total: 810+ banter lines**
+
+#### 2. Newspaper Headlines (`src/data/newspaper.ts`) — ~70 → 313+
+
+- **Gossip headlines**: 10 → 50
+- **Gossip content**: 10 → 40 (now with independent random index from headlines)
+- **Economy headlines** (HIGH/LOW/NORMAL): 4 each → 17 each (51 total)
+- **Robbery headlines**: 3 → 8 (template functions) + 5 content variants
+- **Apartment robbery headlines**: 2 → 5 + 4 content variants
+- **Loan default headlines**: 2 → 5 + 4 content variants
+- **Market crash headlines**: 6 → 15
+- **Personalized event articles** (loan-repaid, fired, paycut, starvation, sickness, eviction, degree-earned, quest-completed, death/resurrection): each now has 5 headline + 4 content variants
+- **Job articles**: 8 headline + 4 content variants
+- **Quest rumor articles**: 8 headline + 4 content variants
+- **Periodic articles**: rent (5h+4c), clothing (5h+4c), dungeon flavor (3h+3c), life in Guildholm (3h+3c)
+- **Total: 313+ content variants**
+
+#### 3. Event Description Variants (`src/data/events.ts` + `src/data/travelEvents.ts`)
+
+- Added `descriptionVariants?: string[]` and `messageVariants?: string[]` to `GameEvent` interface
+- Added `descriptionVariants?: string[]` to `TravelEvent` interface
+- Added helper functions: `pickEventDescription()`, `pickEventMessage()`, `pickTravelDescription()`
+- **Game events**: 3-5 description + message variants per event (15 events)
+- **Travel events**: 3-5 description variants per event (10 events)
+- All variants are optional with fallback to default — backward compatible
+
+#### 4. Quest Flavor Text (`src/data/quests.ts`)
+
+- Added `descriptionVariants?: string[]` to `Quest`, `QuestChainStep`, and `Bounty` interfaces
+- Added `pickQuestDescription()` helper function
+- **Main quests**: 3-4 description variants each (18 quests)
+- **Quest chain steps**: 3 description variants each (6 steps)
+- **Bounties**: 3 description variants each (9 bounties)
+- All variants are optional with fallback to default — backward compatible
+
+### Technical Notes
+
+- All variant arrays are **optional** (`?`) for backward compatibility
+- Helper functions (`pickEventDescription`, `pickEventMessage`, `pickTravelDescription`, `pickQuestDescription`) select a random variant or fall back to the default `description`/`message` field
+- **Note**: Helper functions are defined but not yet integrated into UI rendering code — the existing code still uses `description`/`message` directly. Integration is a separate task.
+
+### Files Changed
+
+| File | Changes |
+|------|---------|
+| `src/data/banter.ts` | ~760 static + 50 dynamic banter lines (up from ~258) |
+| `src/data/newspaper.ts` | 313+ content variants (up from ~70) |
+| `src/data/events.ts` | Added variant interfaces, helper functions, 3-5 variants per event |
+| `src/data/travelEvents.ts` | Added variant interface, helper function, 3-5 variants per event |
+| `src/data/quests.ts` | Added variant interfaces, helper function, 3+ variants per quest/chain/bounty |
+| `log2.md` | This entry |
+
+### Test Results
+
+- **Tests**: 219 passing, 0 failures (10 test files)
+- **Build**: Clean production build, no TypeScript errors
+- **Zero breaking changes** — all additions are optional/backward compatible
+
+---
