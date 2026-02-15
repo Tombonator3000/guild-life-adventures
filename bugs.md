@@ -5,12 +5,12 @@
 
 ---
 
-## BUG-001: "Loading the realm..." Freeze (RECURRING — FIXED via multi-layer protection)
+## BUG-001: "Loading the realm..." Freeze (RECURRING — FIXED via 4-layer defense)
 
 | Field | Value |
 |-------|-------|
 | **Severity** | Critical |
-| **Status** | FIXED (hot-swap + reload loop protection on ALL reload paths) |
+| **Status** | FIXED (CDN cache bypass + module retry + SW neutered + reload loop protection) |
 | **First seen** | 2026-02-14 |
 | **Occurrences** | 15 fix attempts across PRs #185–#214 |
 | **Symptom** | Game stuck on "Loading the realm..." loading screen, React never mounts |
@@ -120,6 +120,21 @@ PR #213 added a `controllerchange` event listener in `useAppUpdate.ts` that call
 
 **Key principle**: ALL programmatic reload paths now share a single `sessionStorage` counter. No code path can trigger `location.replace()` or `location.reload()` more than 3 times in 2 minutes.
 
+### Why ALL Previous Fixes Were Insufficient (found 2026-02-15, late)
+
+Even after 15 fix attempts, TWO fundamental problems remained:
+
+**Problem A: CDN cache bypass was incomplete.** The inline script's `version.json` fetch used `{cache:'no-store'}` which only bypasses the **browser's** HTTP cache. It did NOT include `Cache-Control: no-cache` request headers to bypass the **CDN** cache (Fastly/GitHub Pages). When both HTML and version.json were stale from CDN cache (matching buildTimes), the hot-swap never triggered. The stale entry URL 404'd silently.
+
+**Problem B: Service worker interference.** The SW with `skipWaiting: true` + `clientsClaim: true` + `registerType: 'autoUpdate'` caused mid-visit takeover bugs across 5+ PRs. Each fix for the SW created a new issue because the SW's lifecycle is inherently incompatible with the stale-cache recovery mechanism.
+
+### Nuclear Fix (2026-02-15, late)
+
+1. **CDN cache bypass**: Added `headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}` to the inline version.json fetch. These request headers tell CDN proxies to revalidate with the origin.
+2. **Module onerror retry**: When entry module 404s, automatically retry by fetching version.json again (CDN may have updated since first fetch) and hot-swap to fresh entry URL. Up to 2 retries.
+3. **Inline SW unregister**: Unregister ALL service workers as the first action in the loading pipeline, BEFORE the version check. Eliminates old/broken SWs from interfering with fetches.
+4. **SW neutered for GitHub Pages**: Changed `registerType` to `'prompt'` (was `'autoUpdate'`) and disabled `skipWaiting`/`clientsClaim` for GitHub Pages builds. New SWs install but don't activate until all tabs are closed. No mid-visit takeover, no `controllerchange` events, no reload loops.
+
 ---
 
 ## BUG-002: Autosave Victory Loop
@@ -179,3 +194,6 @@ PR #213 added a `controllerchange` event listener in `useAppUpdate.ts` that call
 2. **Verify defense layers actually fire** — The inline script's 404 was silently swallowed
 3. **Centralize base path handling** — Don't compute base path differently in 3 places
 4. **Log when stale detection can't run** — Would have revealed the 404 immediately
+5. **`cache:'no-store'` only bypasses browser cache, NOT CDN cache** — Must also send `Cache-Control: no-cache` request header for CDN bypass
+6. **Service workers and stale-cache recovery are fundamentally incompatible** — Disable aggressive SW behavior (skipWaiting/clientsClaim) on CDN-cached hosts
+7. **Add retry mechanisms, not just detection** — When a module 404s, try fetching version.json again instead of immediately giving up

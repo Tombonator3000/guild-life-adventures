@@ -163,7 +163,13 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && lovableTaggerPlugin,
     VitePWA({
-      registerType: "autoUpdate",
+      // CRITICAL FIX (2026-02-15): On GitHub Pages, use 'prompt' instead of 'autoUpdate'.
+      // 'autoUpdate' forces skipWaiting + clientsClaim which causes the new SW to
+      // take control mid-visit → controllerchange fires → has caused 5+ infinite
+      // reload loops across PRs #198-#214. 'prompt' makes the SW wait for explicit
+      // activation, eliminating all mid-visit takeover bugs.
+      // On Lovable (no CDN cache issues), 'autoUpdate' is safe and provides seamless updates.
+      registerType: deployTarget === 'github' ? 'prompt' : 'autoUpdate',
       // Only precache essential PWA icons. All other assets (music, images, SFX)
       // are cached on-demand via runtimeCaching rules below. This reduces SW install
       // from 40 MB / 322 entries to <1 MB / ~12 entries, preventing the scenario where
@@ -255,8 +261,14 @@ export default defineConfig(({ mode }) => ({
         // Don't serve cached HTML for navigation — always fetch fresh from network
         // This prevents stale index.html from being served after GitHub Pages deployments
         navigateFallback: null,
-        skipWaiting: true,
-        clientsClaim: true,
+        // CRITICAL FIX (2026-02-15): On GitHub Pages, DON'T use skipWaiting + clientsClaim.
+        // These cause the new SW to take control of the page IMMEDIATELY after install,
+        // which fires the 'controllerchange' event and has caused 5+ infinite reload loops
+        // across PRs #198-#214. Without these, the new SW waits until all tabs are closed
+        // before activating — no mid-visit takeover, no reload loops.
+        // On Lovable (basePath '/'), this isn't an issue because there's no CDN cache.
+        skipWaiting: deployTarget !== 'github',
+        clientsClaim: deployTarget !== 'github',
         runtimeCaching: [
           // JS/CSS: NetworkFirst — always try network, fall back to cache only when offline.
           // This prevents stale JS chunks from being served after a new deployment.
