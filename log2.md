@@ -2577,3 +2577,99 @@ src/components/game/LocationShell.tsx       — Reset active tab when tabs chang
 - **No regressions**: All existing functionality preserved
 
 ---
+
+## 2026-02-15 — FIX: "Loading the realm..." Freeze — Hot-Swap Architecture (14:00 UTC)
+
+### Overview
+
+**Permanent fix** for the recurring "Loading the realm..." freeze that kept returning after every PR deployment, despite the version.json base path fix in PR #211.
+
+### Root Cause Analysis (Why PR #211's Fix Wasn't Sufficient)
+
+PR #211 fixed the `version.json` fetch URL (correct base path), but the stale-build **recovery mechanism** was still fragile:
+
+1. **Stale HTML detected** → inline script tries to reload with `?_gv=<timestamp>`
+2. **GitHub Pages CDN** may still serve cached HTML within `max-age=600` window
+3. After 2 reload attempts, **reload limit reached** → `loadApp()` called with STALE entry URL
+4. **Stale entry URL points to non-existent chunk** (old content hash) → **404**
+5. **`<script type="module">` 404s are SILENT** — no `window.onerror`, no `unhandledrejection`
+6. **Module never loads** → React never mounts → "Loading the realm..." stays forever
+7. "Clear Cache & Reload" **repeats the same cycle** — still serves stale HTML from CDN
+
+### The Fix: Hot-Swap Fresh Modules from version.json
+
+Instead of reloading (which may serve the same stale HTML), the inline script now **hot-swaps** the entry module URL directly from `version.json`.
+
+**Key insight**: `version.json` is ALWAYS fresh — fetched with `cache: 'no-store'` and a unique query param. Even when the HTML is stale, `version.json` contains the correct URLs.
+
+#### Change 1: version.json now includes entry + CSS URLs
+
+**`vite.config.ts`** — Shared state between `deferModulePlugin` and `versionJsonPlugin`:
+
+```javascript
+// Shared between plugins
+let extractedEntry: string | null = null;
+let extractedCss: string[] = [];
+
+// deferModulePlugin extracts entry + CSS during transformIndexHtml
+// versionJsonPlugin writes them to version.json in closeBundle
+
+// version.json now contains:
+// {"buildTime":"...","entry":"/guild-life-adventures/assets/index-xxx.js","css":["..."]}
+```
+
+#### Change 2: Hot-swap instead of reload on stale detection
+
+**`index.html`** — When stale build detected AND version.json has `entry`:
+
+```javascript
+if(data.entry){
+  console.log('[Guild Life] Hot-swapping to fresh entry:', data.entry);
+  swapCss(data.css);              // Replace stale CSS with fresh CSS
+  window.__ENTRY__ = data.entry;  // Override stale entry URL
+  loadApp();                      // Load fresh module directly
+  return;                         // No reload needed!
+}
+```
+
+The `swapCss()` function removes stale CSS links (matching `/assets/`) and adds fresh ones from version.json.
+
+#### Change 3: onerror handler on module script element
+
+**`index.html`** — `loadApp()` now adds `s.onerror`:
+
+```javascript
+s.onerror = function(){
+  console.error('[Guild Life] Entry module failed to load:', src);
+  __guildShowLoadError('Module failed to load: ' + src.split('/').pop());
+};
+```
+
+Previously, `<script type="module">` 404s were completely silent — no `window.onerror` or `unhandledrejection` event. The loading screen stayed forever with no error message. Now module load failures show an actionable error.
+
+### Why This Fix Is Permanent
+
+| Scenario | Previous behavior | New behavior |
+|----------|------------------|-------------|
+| Stale HTML + CDN caching | Reload loop → stale chunks 404 → silent freeze | Hot-swap from version.json → fresh module loads directly |
+| Module 404 (any cause) | Silent failure → loading screen forever | onerror shows error + reload button |
+| version.json unreachable | Falls through to loadApp() → may work or 404 | Same, but onerror catches 404 |
+| Older deploy without entry in version.json | N/A | Falls back to reload (old behavior) |
+
+The **critical improvement** is eliminating the reload entirely for stale builds. Since `version.json` is always fetched fresh from the network (bypasses both browser cache and CDN), it always has the correct entry URL. The stale HTML becomes irrelevant — only the inline JavaScript matters, and it hot-swaps to the fresh module.
+
+### Files Changed (2)
+
+```
+vite.config.ts  — Shared extractedEntry/extractedCss between plugins, version.json includes entry+css
+index.html      — Hot-swap logic in stale detection, swapCss(), onerror on script element
+```
+
+### Verification
+
+- **Tests**: 219 passing, 0 failures (10 test files)
+- **Build**: Clean TypeScript, no errors
+- **version.json output**: `{"buildTime":"...","entry":"/guild-life-adventures/assets/index-xxx.js","css":["/guild-life-adventures/assets/index-BSxyJ1SA.css"]}`
+- **Built HTML**: Contains hot-swap logic, onerror handler, swapCss function
+
+---

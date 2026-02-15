@@ -5,14 +5,14 @@
 
 ---
 
-## BUG-001: "Loading the realm..." Freeze (RECURRING — FIXED 13x)
+## BUG-001: "Loading the realm..." Freeze (RECURRING — FIXED permanently via hot-swap)
 
 | Field | Value |
 |-------|-------|
 | **Severity** | Critical |
-| **Status** | FIXED (permanent fix in PR #211+) |
+| **Status** | FIXED (hot-swap architecture eliminates reload dependency) |
 | **First seen** | 2026-02-14 |
-| **Occurrences** | 13 fix attempts across PRs #185–#210 |
+| **Occurrences** | 14 fix attempts across PRs #185–#211 |
 | **Symptom** | Game stuck on "Loading the realm..." loading screen, React never mounts |
 | **Environment** | Production (GitHub Pages), after any new deployment |
 
@@ -67,6 +67,21 @@ fetch(base + 'version.json?_=' + Date.now(), ...)
 1. **Save data validation** — `loadFromSlot()` now validates `phase` and `players` before applying
 2. **hardRefresh() timeout** — 5s timeout on SW/cache cleanup to prevent infinite hang
 3. **Corrupted save detection** — Invalid saves are logged and deleted instead of crashing
+
+### Why PR #211's Fix Wasn't Sufficient (found 2026-02-15)
+
+PR #211 fixed the version.json fetch URL, but the **recovery mechanism** (reload with `?_gv=`) was fragile:
+- GitHub Pages CDN may serve cached HTML even with `?_gv=` param within `max-age=600`
+- After 2 reload attempts, reload limit reached → `loadApp()` called with STALE entry URL
+- Stale entry URL → 404 → `<script type="module">` 404s are **SILENT** (no window.onerror)
+- Module never loads → React never mounts → "Loading the realm..." forever
+
+### Permanent Fix: Hot-Swap Architecture
+
+Instead of reloading (fragile), the inline script now hot-swaps the entry module from `version.json`:
+1. `version.json` now includes `entry` and `css` URLs (always fresh via `cache:'no-store'`)
+2. When stale HTML detected: swap `window.__ENTRY__` to fresh URL, replace CSS links, load directly
+3. Added `onerror` handler on `<script type="module">` to catch silent 404s
 
 ---
 

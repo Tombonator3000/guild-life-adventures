@@ -11,6 +11,14 @@ const basePath = deployTarget === "github" ? "/guild-life-adventures/" : "/";
 // Shared build timestamp — used in both __BUILD_TIME__ define and version.json
 const buildTime = new Date().toISOString();
 
+// Shared state between versionJsonPlugin and deferModulePlugin.
+// deferModulePlugin extracts the entry + CSS URLs during transformIndexHtml (order: 'post'),
+// and versionJsonPlugin writes them to version.json in closeBundle().
+// This allows the inline stale-build detection script to hot-swap to fresh modules
+// directly from version.json instead of reloading (which may serve stale cached HTML).
+let extractedEntry: string | null = null;
+let extractedCss: string[] = [];
+
 /**
  * Generates version.json in the output directory AND injects __HTML_BUILD_TIME__
  * into index.html at build time.
@@ -47,7 +55,11 @@ function versionJsonPlugin(): PluginOption {
       ];
     },
     closeBundle() {
-      const versionData = { buildTime };
+      // Include entry + CSS URLs so stale-build detection can hot-swap
+      // to fresh modules without reloading (reload may serve same stale HTML).
+      const versionData: Record<string, unknown> = { buildTime };
+      if (extractedEntry) versionData.entry = extractedEntry;
+      if (extractedCss.length > 0) versionData.css = extractedCss;
       mkdirSync(outDir, { recursive: true });
       writeFileSync(
         path.join(outDir, "version.json"),
@@ -87,6 +99,20 @@ function deferModulePlugin(): PluginOption {
         if (!scriptMatch) return html; // No match — return unchanged (safe degradation)
 
         const entrySrc = scriptMatch[1];
+
+        // Share entry URL with versionJsonPlugin for inclusion in version.json.
+        // This allows stale-build detection to hot-swap to the fresh entry module
+        // directly from version.json instead of reloading.
+        extractedEntry = entrySrc;
+
+        // Extract CSS URLs for version.json (stale HTML may reference 404'd CSS)
+        const cssUrls: string[] = [];
+        const cssRegex = /<link\s+rel="stylesheet"\s+crossorigin\s+href="([^"]+)"\s*\/?>/g;
+        let cssMatch;
+        while ((cssMatch = cssRegex.exec(html)) !== null) {
+          cssUrls.push(cssMatch[1]);
+        }
+        extractedCss = cssUrls;
 
         // Remove the module script tag — inline script will load it after version check
         html = html.replace(scriptMatch[0], '');

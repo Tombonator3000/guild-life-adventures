@@ -85,6 +85,11 @@
          condition where stale HTML starts loading non-existent JS chunks in parallel
          with the version check.
 
+         KEY FIX (2026-02-15): When stale HTML is detected, instead of reloading
+         (which may serve the SAME stale HTML from CDN cache), we hot-swap the
+         entry module URL from version.json and load the fresh module directly.
+         version.json is always fresh (fetched with cache:'no-store' + unique URL).
+
          In development, window.__HTML_BUILD_TIME__ is undefined and window.__ENTRY__
          doesn't exist, so the module script tag below loads normally. -->
     <script>
@@ -104,6 +109,14 @@
           var s=document.createElement('script');
           s.type='module';s.crossOrigin='';s.src=src;
           s.setAttribute('data-entry','1');
+          /* Handle module load failures (404 for old chunks, network errors).
+             <script type="module"> errors don't trigger window.onerror or
+             unhandledrejection — they silently fail, leaving the loading
+             screen visible forever. This onerror catches those cases. */
+          s.onerror=function(){
+            console.error('[Guild Life] Entry module failed to load:',src);
+            __guildShowLoadError('Module failed to load: '+src.split('/').pop());
+          };
           document.body.appendChild(s);
           /* Clean up cache-buster from URL (added by stale-build reload) */
           if(location.search.indexOf('_gv=')!==-1){
@@ -115,17 +128,25 @@
           }
         }
 
+        /* ===== swapCss: replace stale CSS links with fresh ones ===== */
+        function swapCss(freshCssUrls){
+          if(!freshCssUrls||!freshCssUrls.length)return;
+          /* Remove stale CSS links (Vite-generated ones in /assets/) */
+          var staleLinks=document.querySelectorAll('link[rel="stylesheet"][href*="/assets/"]');
+          for(var i=0;i<staleLinks.length;i++){staleLinks[i].remove();}
+          /* Add fresh CSS links */
+          for(var j=0;j<freshCssUrls.length;j++){
+            var link=document.createElement('link');
+            link.rel='stylesheet';link.crossOrigin='';link.href=freshCssUrls[j];
+            document.head.appendChild(link);
+          }
+        }
+
         if(!window.__HTML_BUILD_TIME__){
           /* Dev mode — no version check, module loads from HTML script tag */
           return;
         }
 
-        /* Use the base path injected by versionJsonPlugin at build time.
-           Previously this looked for a <base href> tag which doesn't exist,
-           causing the version.json fetch to always 404 on GitHub Pages
-           (fetched /version.json instead of /guild-life-adventures/version.json).
-           This was the root cause of the recurring "Loading the realm..." freeze:
-           stale-build detection never worked on GitHub Pages. */
         var base=window.__HTML_BASE__||'/';
 
         /* Fetch version.json — reused by main.tsx via window.__versionCheck */
@@ -146,28 +167,33 @@
           }
 
           /* ===== STALE BUILD DETECTED ===== */
-          console.warn('[Guild Life] Stale HTML detected. Running:',
+          console.warn('[Guild Life] Stale HTML detected. HTML:',
             window.__HTML_BUILD_TIME__,'Server:',data.buildTime);
 
-          /* Reload loop prevention — max 2 reloads per 60s */
-          try{
-            var raw=sessionStorage.getItem('guild-stale-reload');
-            if(raw){
-              var rd=JSON.parse(raw);
-              if(Date.now()-rd.ts<60000&&rd.count>=2){
-                console.warn('[Guild Life] Reload limit reached — loading anyway');
-                loadApp(); /* Try loading despite staleness */
-                return;
-              }
-              if(Date.now()-rd.ts>=60000) raw=null;
-            }
-            var reloadData=raw?JSON.parse(raw):{ts:Date.now(),count:0};
-            if(!reloadData.ts)reloadData.ts=Date.now();
-            reloadData.count++;
-            sessionStorage.setItem('guild-stale-reload',JSON.stringify(reloadData));
-          }catch(e){}
+          /* ===== HOT-SWAP FIX: Load fresh module directly from version.json =====
+             Previous approach: reload with ?_gv=<timestamp> to force fresh HTML.
+             Problem: GitHub Pages CDN may still serve cached HTML within max-age=600
+             window, causing a reload loop that ends with loading stale chunks (404).
 
-          /* Clear SW caches, then reload with cache-busting URL */
+             New approach: version.json contains the fresh entry module URL and CSS URLs.
+             Since version.json is fetched with cache:'no-store' + unique query param,
+             it's ALWAYS fresh. We hot-swap to the fresh module without reloading.
+             This works even when the HTML itself is stale/cached. */
+          if(data.entry){
+            console.log('[Guild Life] Hot-swapping to fresh entry:',data.entry);
+            /* Replace stale CSS with fresh CSS from version.json */
+            swapCss(data.css);
+            /* Load the fresh entry module instead of the stale one from HTML */
+            window.__ENTRY__=data.entry;
+            loadApp();
+            return;
+          }
+
+          /* Fallback for older deploys without entry in version.json:
+             clear caches and reload with cache-busting URL */
+          console.warn('[Guild Life] version.json missing entry URL — falling back to reload');
+
+          /* Clear SW caches, then reload */
           Promise.resolve()
             .then(function(){
               var promises=[];
@@ -189,10 +215,6 @@
             })
             .catch(function(){})
             .then(function(){
-              /* Cache-busting reload: location.reload() may still serve cached HTML
-                 because GitHub Pages sends Cache-Control: max-age=600 and the meta
-                 http-equiv tags are ignored by modern browsers. Adding a query param
-                 forces the browser to treat it as a new URL → fresh network fetch. */
               setTimeout(function(){
                 try{
                   var url=new URL(location.href);
@@ -203,9 +225,7 @@
             });
         });
 
-        /* Timeout: if version check takes >8s, load anyway (slow/offline).
-           Increased from 3s to reduce the race condition where a slow version.json
-           causes the app to load with stale HTML before staleness is detected. */
+        /* Timeout: if version check takes >8s, load anyway (slow/offline). */
         setTimeout(function(){
           if(!document.querySelector('script[data-entry]')){
             console.log('[Guild Life] Version check timed out — loading app');
