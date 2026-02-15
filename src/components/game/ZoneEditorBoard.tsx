@@ -32,6 +32,16 @@ interface ZoneEditorBoardProps {
   selectedAnimationLayer: string | null;
   handleAnimationLayerMouseDown: (e: React.MouseEvent, layerId: string) => void;
   setSelectedAnimationLayer: (id: string | null) => void;
+  // Mobile props
+  mobileZones: ZoneConfig[];
+  mobileCenterPanel: CenterPanelConfig;
+  mobileLayout: CenterPanelLayout;
+  selectedMobileZone: LocationId | 'center-panel' | null;
+  selectedMobileLayoutElement: LayoutElementId | null;
+  handleMobileZoneMouseDown: (e: React.MouseEvent, zoneId: LocationId, mode: 'move' | 'resize') => void;
+  handleMobileCenterPanelMouseDown: (e: React.MouseEvent, mode: 'move' | 'resize') => void;
+  handleMobileLayoutMouseDown: (e: React.MouseEvent, elementId: LayoutElementId, mode: 'move' | 'resize') => void;
+  setSelectedMobileLayoutElement: (id: LayoutElementId | null) => void;
 }
 
 const LAYOUT_ELEMENT_IDS: LayoutElementId[] = ['npc', 'text', 'itemPreview'];
@@ -61,6 +71,15 @@ export function ZoneEditorBoard({
   selectedAnimationLayer,
   handleAnimationLayerMouseDown,
   setSelectedAnimationLayer,
+  mobileZones,
+  mobileCenterPanel,
+  mobileLayout,
+  selectedMobileZone,
+  selectedMobileLayoutElement,
+  handleMobileZoneMouseDown,
+  handleMobileCenterPanelMouseDown,
+  handleMobileLayoutMouseDown,
+  setSelectedMobileLayoutElement,
 }: ZoneEditorBoardProps) {
   const adjacentPairs = getAdjacentPairs();
 
@@ -334,8 +353,128 @@ export function ZoneEditorBoard({
           );
         })}
 
-        {/* Zone overlays */}
-        {zones.map(zone => {
+        {/* Mobile mode: mobile center panel + layout elements + mobile zones */}
+        {editorMode === 'mobile' && (
+          <>
+            {/* Mobile center panel */}
+            <div
+              className={`absolute border-2 cursor-move transition-colors ${
+                selectedMobileZone === 'center-panel'
+                  ? 'border-green-400 bg-green-400/30'
+                  : 'border-emerald-400 bg-emerald-400/20 hover:border-emerald-300 hover:bg-emerald-300/30'
+              }`}
+              style={{
+                top: `${mobileCenterPanel.top}%`,
+                left: `${mobileCenterPanel.left}%`,
+                width: `${mobileCenterPanel.width}%`,
+                height: `${mobileCenterPanel.height}%`,
+              }}
+              onMouseDown={e => handleMobileCenterPanelMouseDown(e, 'move')}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  setSelectedMobileLayoutElement(null);
+                }
+              }}
+            >
+              <span className="absolute -top-5 left-0 text-[10px] text-emerald-400 bg-black/70 px-1 rounded">
+                MOBILE CENTER PANEL
+              </span>
+              {/* Resize handle */}
+              <div
+                className="absolute bottom-0 right-0 w-4 h-4 bg-emerald-400/80 cursor-se-resize"
+                onMouseDown={e => {
+                  e.stopPropagation();
+                  handleMobileCenterPanelMouseDown(e, 'resize');
+                }}
+              />
+
+              {/* Mobile layout elements inside center panel */}
+              {LAYOUT_ELEMENT_IDS.map(id => {
+                const el = mobileLayout[id];
+                const meta = LAYOUT_ELEMENT_LABELS[id];
+                const isElSelected = selectedMobileLayoutElement === id;
+
+                return (
+                  <div
+                    key={id}
+                    className={`absolute border-2 cursor-move transition-colors ${
+                      isElSelected
+                        ? 'border-white shadow-lg'
+                        : 'hover:brightness-125'
+                    }`}
+                    style={{
+                      left: `${el.x}%`,
+                      top: `${el.y}%`,
+                      width: `${el.width}%`,
+                      height: `${el.height}%`,
+                      backgroundColor: meta.color,
+                      borderColor: isElSelected ? '#fff' : meta.borderColor,
+                      zIndex: isElSelected ? 10 : 1,
+                    }}
+                    onMouseDown={e => handleMobileLayoutMouseDown(e, id, 'move')}
+                  >
+                    <span
+                      className="absolute top-0.5 left-0.5 text-[10px] font-bold px-1 rounded"
+                      style={{ backgroundColor: meta.borderColor, color: '#fff' }}
+                    >
+                      {meta.label}
+                    </span>
+                    <span className="absolute bottom-0.5 left-0.5 text-[9px] text-white/70 bg-black/40 px-0.5 rounded">
+                      {el.width.toFixed(0)}% x {el.height.toFixed(0)}%
+                    </span>
+                    <div
+                      className="absolute bottom-0 right-0 w-3.5 h-3.5 cursor-se-resize"
+                      style={{ backgroundColor: `${meta.borderColor}cc` }}
+                      onMouseDown={e => {
+                        e.stopPropagation();
+                        handleMobileLayoutMouseDown(e, id, 'resize');
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Mobile zone overlays */}
+            {mobileZones.map(zone => {
+              const isSelected = selectedMobileZone === zone.id;
+              return (
+                <div
+                  key={zone.id}
+                  data-zone-id={zone.id}
+                  className={`absolute border-2 transition-colors ${
+                    isSelected
+                      ? 'border-emerald-400 bg-emerald-400/30 cursor-move'
+                      : 'border-teal-500/70 bg-teal-500/20 hover:border-teal-400 hover:bg-teal-400/30 cursor-move'
+                  }`}
+                  style={{
+                    left: `${zone.x}%`,
+                    top: `${zone.y}%`,
+                    width: `${zone.width}%`,
+                    height: `${zone.height}%`,
+                  }}
+                  onMouseDown={e => handleMobileZoneMouseDown(e, zone.id, 'move')}
+                >
+                  {showLabels && (
+                    <span className="absolute top-0 left-0 text-xs text-white bg-black/70 px-1 truncate max-w-full">
+                      {zone.id}
+                    </span>
+                  )}
+                  <div
+                    className="absolute bottom-0 right-0 w-4 h-4 bg-white/80 cursor-se-resize"
+                    onMouseDown={e => {
+                      e.stopPropagation();
+                      handleMobileZoneMouseDown(e, zone.id, 'resize');
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </>
+        )}
+
+        {/* Zone overlays (hidden in mobile mode — mobile has its own) */}
+        {editorMode !== 'mobile' && zones.map(zone => {
           const isSelected = editorMode === 'zones' && selectedZone === zone.id;
           const hasPath = editorMode === 'paths';
           return (

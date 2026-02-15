@@ -107,10 +107,15 @@ export function GameBoard() {
     centerPanel,
     layout,
     animationLayers,
+    mobileOverrides,
     handleSaveZones,
     handleResetZones,
     getLocationWithCustomPosition,
   } = useZoneConfiguration();
+
+  // Pick the right center panel and layout based on mobile vs desktop
+  const activeCenterPanel = isMobile ? mobileOverrides.centerPanel : centerPanel;
+  const activeLayout = isMobile ? mobileOverrides.layout : layout;
 
   // AI turns only run on host/local — guests receive AI state via sync
   const { aiIsThinking } = useAITurnHandler({
@@ -235,7 +240,7 @@ export function GameBoard() {
           {/* Location zones overlay */}
           <div className="absolute inset-0">
             {LOCATIONS.map((baseLocation) => {
-              const location = getLocationWithCustomPosition(baseLocation.id) || baseLocation;
+              const location = getLocationWithCustomPosition(baseLocation.id, isMobile) || baseLocation;
               const playersHere = players.filter(
                 p => p.currentLocation === location.id && p.id !== animatingPlayer
               );
@@ -304,25 +309,19 @@ export function GameBoard() {
           />
 
           {/* Banter speech bubble - large overlay above center panel */}
-          <BoardBanterOverlay centerPanel={centerPanel} isMobile={isMobile} />
+          <BoardBanterOverlay centerPanel={activeCenterPanel} isMobile={isMobile} />
 
           {/* Center UI panel */}
-          {/* Mobile: full-width bottom sheet when location selected or event, hidden otherwise */}
+          {/* Mobile: positioned via mobileOverrides when location selected or event, hidden otherwise */}
           {/* Desktop: always visible, positioned within the board frame */}
           {(!isMobile || selectedLocation || (phase === 'event' && currentEvent)) && (
             <div
-              className="absolute overflow-hidden z-10"
-              style={isMobile ? {
-                bottom: '2%',
-                left: '4%',
-                width: '92%',
-                height: '30%',
-                borderRadius: '12px',
-              } : {
-                top: `${centerPanel.top}%`,
-                left: `${centerPanel.left}%`,
-                width: `${centerPanel.width}%`,
-                height: `${centerPanel.height}%`,
+              className={`absolute overflow-hidden z-10 ${isMobile ? 'rounded-xl' : ''}`}
+              style={{
+                top: `${activeCenterPanel.top}%`,
+                left: `${activeCenterPanel.left}%`,
+                width: `${activeCenterPanel.width}%`,
+                height: `${activeCenterPanel.height}%`,
               }}
             >
               <div className={`w-full h-full overflow-hidden flex flex-col bg-card/95 ${isMobile ? 'rounded-xl' : 'rounded-t-lg'}`}>
@@ -431,6 +430,7 @@ export function GameBoard() {
           initialPaths={{ ...MOVEMENT_PATHS }}
           initialLayout={layout}
           initialAnimationLayers={animationLayers}
+          initialMobileOverrides={mobileOverrides}
         />
       )}
 

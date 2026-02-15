@@ -2943,3 +2943,55 @@ index.html      — Hot-swap logic in stale detection, swapCss(), onerror on scr
 - **Built HTML**: Contains hot-swap logic, onerror handler, swapCss function
 
 ---
+
+## 2026-02-15 — Mobile Layout Mode in Zone Editor (18:00 UTC)
+
+### Overview
+
+Added a new **Mobile** tab to the Zone Editor that allows configuring separate zone positions, center panel placement, and layout element positions for mobile viewports (<1024px). When the game detects a mobile screen, it uses these mobile-specific overrides instead of the desktop configuration.
+
+### What Changed
+
+#### New "Mobile" Editor Mode
+- 5th tab in the Zone Editor toolbar (Zones | Paths | Layout | Animations | **Mobile**)
+- Emerald/teal color scheme to visually distinguish from desktop zones (red/green)
+- Full drag-and-resize support for mobile zones, center panel, and layout elements
+- "Copy Desktop Config to Mobile" button to use desktop positions as starting point
+
+#### Mobile Zone Overrides
+- Each of the 15 location zones can have different position/size for mobile
+- Mobile center panel position/size configurable (default: bottom-sheet style at 68% top, 4% left, 92% width, 30% height)
+- Mobile layout sub-elements (NPC Portrait, Text/Content, Item Preview) independently positionable
+
+#### Runtime Integration
+- `GameBoard.tsx` picks `activeCenterPanel` and `activeLayout` based on `isMobile` hook
+- `getLocationWithCustomPosition()` accepts `isMobile` parameter for zone position lookups
+- Replaces the previous hardcoded mobile center panel values (bottom: 2%, left: 4%, width: 92%, height: 30%)
+
+#### Persistence
+- Mobile overrides saved to localStorage alongside desktop zone config
+- Backwards compatible — older saves without `mobileOverrides` use defaults
+- Included in "Copy Config" clipboard export
+
+### Files Changed (10 files)
+
+| File | Changes |
+|------|---------|
+| `src/types/game.types.ts` | Added `MobileZoneOverrides` interface |
+| `src/hooks/useZoneEditorState.ts` | Added `'mobile'` editor mode, mobile state (zones, centerPanel, layout), drag handlers, input handlers, `copyDesktopToMobile()`, defaults (`DEFAULT_MOBILE_CENTER_PANEL`, `DEFAULT_MOBILE_LAYOUT`) |
+| `src/data/zoneStorage.ts` | Added `mobileOverrides` to `ZoneEditorSaveData`, `saveZoneConfig()`, `loadZoneConfig()` |
+| `src/components/game/ZoneEditorToolbar.tsx` | Added "Mobile" tab button (emerald color) |
+| `src/components/game/ZoneEditorProperties.tsx` | Added mobile mode panel: center panel editor, layout element editor, zone list, "Copy Desktop" and "Reset" buttons |
+| `src/components/game/ZoneEditorBoard.tsx` | Added mobile mode rendering: mobile zones (teal), mobile center panel (emerald), mobile layout elements; hides desktop zones in mobile mode |
+| `src/components/game/ZoneEditor.tsx` | Passes mobile props between state hook, board, and properties components; added mobile status bar text |
+| `src/hooks/useZoneConfiguration.ts` | Loads/saves `mobileOverrides`, provides `mobileOverrides` in return value, `getLocationWithCustomPosition(id, isMobile)` |
+| `src/components/game/GameBoard.tsx` | Uses `activeCenterPanel`/`activeLayout` based on `isMobile`, passes `initialMobileOverrides` to zone editor, passes `isMobile` to zone position lookup |
+| `log2.md` | This entry |
+
+### Test Results
+
+- **Tests**: 219 passing, 0 failures (10 test files)
+- **Build**: Clean TypeScript, no errors
+- **Zero breaking changes** — backwards compatible with saves without mobile overrides
+
+---
