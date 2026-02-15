@@ -58,7 +58,14 @@ export function LocationShell({
   const currentPlayer = useCurrentPlayer();
   const players = useGameStore(s => s.players);
 
+  // BUG FIX: Reset active tab when visible tabs change and current tab no longer exists
   const activeContent = visibleTabs.find(t => t.id === activeTab)?.content;
+  const tabIds = visibleTabs.map(t => t.id).join(',');
+  useEffect(() => {
+    if (!visibleTabs.find(t => t.id === activeTab)) {
+      setActiveTab(defaultTab || visibleTabs[0]?.id || '');
+    }
+  }, [tabIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Try to trigger banter when entering a location (with player context for context-aware lines)
   useEffect(() => {

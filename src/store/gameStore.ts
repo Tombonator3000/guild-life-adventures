@@ -169,6 +169,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     players: [],
     week: 1,
     priceModifier: 1.0,
+    basePriceModifier: 1.0,
     economyTrend: 0,
     economyCycleWeeksLeft: 4,
     goalSettings: {
@@ -244,6 +245,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         currentPlayerIndex: 0,
         week: 1,
         priceModifier: 1.0,
+        basePriceModifier: 1.0,
         economyTrend: 0,
         economyCycleWeeksLeft: 4,
         goalSettings: goals,

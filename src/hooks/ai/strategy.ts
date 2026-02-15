@@ -25,18 +25,26 @@ import type { DifficultySettings, GoalProgress, ResourceUrgency } from './types'
  */
 export function calculateGoalProgress(
   player: Player,
-  goals: { wealth: number; happiness: number; education: number; career: number; adventure?: number }
+  goals: { wealth: number; happiness: number; education: number; career: number; adventure?: number },
+  stockPrices?: Record<string, number>
 ): GoalProgress {
-  const totalWealth = player.gold + player.savings + player.investments;
-  const wealthProgress = Math.min(1, totalWealth / goals.wealth);
+  // BUG FIX: Include stock value and subtract loan (matches checkVictory in questHelpers.ts)
+  let stockValue = 0;
+  if (stockPrices && player.stocks) {
+    for (const [stockId, shares] of Object.entries(player.stocks)) {
+      stockValue += shares * (stockPrices[stockId] ?? 0);
+    }
+  }
+  const totalWealth = player.gold + player.savings + player.investments + stockValue - player.loanAmount;
+  const wealthProgress = goals.wealth > 0 ? Math.min(1, totalWealth / goals.wealth) : 1;
 
-  const happinessProgress = Math.min(1, player.happiness / goals.happiness);
+  const happinessProgress = goals.happiness > 0 ? Math.min(1, player.happiness / goals.happiness) : 1;
 
   const educationPoints = player.completedDegrees.length * 9;
-  const educationProgress = Math.min(1, educationPoints / goals.education);
+  const educationProgress = goals.education > 0 ? Math.min(1, educationPoints / goals.education) : 1;
 
-  // Career = dependability (Jones-style), 0 if no job
-  const careerValue = player.currentJob ? player.dependability : 0;
+  // BUG FIX: Career = dependability (Jones-style), shown even when unemployed (matches checkVictory)
+  const careerValue = player.dependability;
   const careerProgress = Math.min(1, careerValue / goals.career);
 
   // Adventure = quests + dungeon floors (optional, 0 = disabled)

@@ -100,6 +100,21 @@ function validateActionArgs(name: string, args: unknown[], store: ReturnType<typ
       if (typeof value !== 'number' || !isFinite(value) || value < 0 || value > 2000) return 'Invalid salvage value';
       return null;
     }
+    // BUG FIX: Validate hex/curse cost parameters (prevent zero-cost exploits)
+    case 'buyHexScroll': {
+      const cost = args[2];
+      if (typeof cost !== 'number' || !isFinite(cost) || cost < 1 || cost > 2000) return 'Invalid hex scroll cost';
+      return null;
+    }
+    case 'buyProtectiveAmulet':
+    case 'cleanseCurse':
+    case 'performDarkRitual':
+    case 'dispelLocationHex':
+    case 'attemptCurseReflection': {
+      const cost = args[1];
+      if (typeof cost !== 'number' || !isFinite(cost) || cost < 1 || cost > 5000) return 'Invalid cost';
+      return null;
+    }
     default:
       return null;
   }
@@ -366,24 +381,22 @@ export function useNetworkSync() {
             return;
           }
 
-          // Validate that ALL player-id arguments match the sender
-          // (prevents a guest from modifying another player's state)
-          // Scans every argument position for future-proofing — currently all
-          // ALLOWED_GUEST_ACTIONS use playerId at args[0], but this check
-          // catches any position to prevent regressions.
-          if (Array.isArray(msg.args)) {
-            for (let i = 0; i < msg.args.length; i++) {
-              const arg = msg.args[i];
-              if (typeof arg === 'string' && arg.startsWith('player-') && arg !== senderPlayerId) {
-                console.warn(`[NetworkSync] Blocked cross-player action: ${msg.name} from ${senderPlayerId} targeting ${arg} at args[${i}]`);
-                peerManager.sendTo(fromPeerId, {
-                  type: 'action-result',
-                  requestId: msg.requestId,
-                  success: false,
-                  error: 'Cannot target other players',
-                });
-                return;
-              }
+          // Validate that the FIRST player-id argument (args[0]) matches the sender
+          // (prevents a guest from impersonating another player).
+          // BUG FIX: Actions like castPersonalCurse legitimately target OTHER players
+          // at args[2], so we only validate args[0] (the actor) matches the sender.
+          // Cross-player targeting actions are validated by the store logic itself.
+          if (Array.isArray(msg.args) && msg.args.length > 0) {
+            const actorId = msg.args[0];
+            if (typeof actorId === 'string' && actorId.startsWith('player-') && actorId !== senderPlayerId) {
+              console.warn(`[NetworkSync] Blocked impersonation: ${msg.name} from ${senderPlayerId} acting as ${actorId}`);
+              peerManager.sendTo(fromPeerId, {
+                type: 'action-result',
+                requestId: msg.requestId,
+                success: false,
+                error: 'Cannot act as another player',
+              });
+              return;
             }
           }
 
@@ -468,16 +481,21 @@ export function useNetworkSync() {
         disconnectedPeersRef.current.add(peerId);
         clearRateLimit(peerId);
         // Check if it's the disconnected player's turn — auto-skip
-        const store = useGameStore.getState();
-        const currentPlayer = store.players[store.currentPlayerIndex];
         const disconnectedPlayerId = peerManager.getPlayerIdForPeer(peerId);
-        if (currentPlayer && currentPlayer.id === disconnectedPlayerId && store.phase === 'playing') {
+        const storeSnapshot = useGameStore.getState();
+        const currentPlayer = storeSnapshot.players[storeSnapshot.currentPlayerIndex];
+        if (currentPlayer && currentPlayer.id === disconnectedPlayerId && storeSnapshot.phase === 'playing') {
           // Give a brief window for reconnection before skipping
           setTimeout(() => {
-            if (disconnectedPeersRef.current.has(peerId)) {
-              console.log(`[NetworkSync] Disconnected player's turn — auto-skipping ${currentPlayer.name}`);
-              peerManager.broadcast({ type: 'turn-timeout', playerId: currentPlayer.id });
-              store.endTurn();
+            // BUG FIX: Re-check current state to avoid ending the wrong player's turn
+            const freshStore = useGameStore.getState();
+            const freshCurrentPlayer = freshStore.players[freshStore.currentPlayerIndex];
+            if (disconnectedPeersRef.current.has(peerId) &&
+                freshCurrentPlayer && freshCurrentPlayer.id === disconnectedPlayerId &&
+                freshStore.phase === 'playing') {
+              console.log(`[NetworkSync] Disconnected player's turn — auto-skipping ${freshCurrentPlayer.name}`);
+              peerManager.broadcast({ type: 'turn-timeout', playerId: freshCurrentPlayer.id });
+              freshStore.endTurn();
             }
           }, 5000); // 5 second grace period
         }

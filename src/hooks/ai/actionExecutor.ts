@@ -226,10 +226,11 @@ function handlePayRent(player: Player, action: AIAction, store: StoreActions): b
 function handleMoveHousing(player: Player, action: AIAction, store: StoreActions): boolean {
   const tier = action.details?.tier as HousingTier;
   const cost = (action.details?.cost as number) || 200;
-  if (!tier || player.gold < cost) return false;
+  // BUG FIX: Check for 4 hours (same as human) instead of 1
+  if (!tier || player.gold < cost || player.timeRemaining < 4) return false;
   const rent = (action.details?.rent as number) || RENT_COSTS[tier];
   store.moveToHousing(player.id, tier, cost, rent);
-  store.spendTime(player.id, 1);
+  store.spendTime(player.id, 4); // BUG FIX: Was 1, should be 4 (matches human)
   return true;
 }
 
@@ -237,7 +238,7 @@ function handleDowngradeHousing(player: Player, action: AIAction, store: StoreAc
   const tier = action.details?.tier as HousingTier;
   if (!tier) return false;
   store.moveToHousing(player.id, tier, 0, RENT_COSTS[tier]);
-  store.spendTime(player.id, 1);
+  store.spendTime(player.id, 4); // BUG FIX: Was 1, should be 4 (matches human)
   return true;
 }
 

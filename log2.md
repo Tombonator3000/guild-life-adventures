@@ -2275,3 +2275,128 @@ src/main.tsx                        — Pre-mount stale check: 500ms wait + SW v
 - No regressions
 
 ---
+
+## 2026-02-15 — Systematic Bug Hunt: 38 Bugs Found, 16 Fixed (10:00-10:50 UTC)
+
+### Overview
+
+Conducted a systematic bug hunt using 6 parallel AI agents scanning different areas of the codebase simultaneously. Found **38 unique bugs** across all areas, fixed **16** of the most impactful ones. All fixes verified with 219 passing tests and clean build.
+
+### Methodology
+
+Launched 6 parallel search agents:
+1. **Game Store Logic** (gameStore.ts, helpers) → 7 bugs found
+2. **AI Opponent System** (useGrimwaldAI, ai/) → 10 bugs found
+3. **Game Data Definitions** (jobs, items, education, etc.) → 4 bugs found
+4. **UI Components** (GameBoard, LocationPanel, screens) → 5 bugs found
+5. **Multiplayer/Network** (PeerManager, NetworkSync) → 10 bugs found
+6. **Economy & Combat Math** (banking, combat, prices) → 6 bugs found
+
+Total: 42 raw findings, 38 unique after deduplication.
+
+### Bugs Fixed (16)
+
+#### CRITICAL — Game-Breaking
+
+| # | Bug | File | Fix |
+|---|-----|------|-----|
+| 1 | **castPersonalCurse completely broken in multiplayer** — cross-player validation blocked ALL hex curse casting because targetId at args[2] is a different player | `useNetworkSync.ts:374` | Changed validation to only check args[0] (actor) matches sender; target validation left to store logic |
+| 2 | **Disconnect auto-skip ends wrong player's turn** — stale closure captured player state 5 seconds before timeout fires | `useNetworkSync.ts:476` | Re-fetch fresh state inside setTimeout, verify it's still the disconnected player's turn |
+
+#### HIGH — Incorrect Game Behavior
+
+| # | Bug | File | Fix |
+|---|-----|------|-----|
+| 3 | **Loan garnishment increases loan when earnings negative** — rent garnishment pushes earnings < 0, then loan garnishment computes negative amount, increasing debt | `workEducationHelpers.ts:84` | Added `earnings > 0` guard before loan garnishment |
+| 4 | **Stock seizure deletes ALL shares but credits partial value** — player with 100 shares worth 8000g loses all 100 when only 200g debt remains | `weekEndHelpers.ts:443` | Calculate `sharesToSell` proportionally, only sell enough to cover remaining debt |
+| 5 | **Shallow copy mutation breaks Zustand** — `delete p.stocks[id]` mutates shared nested objects through shallow copy | `weekEndHelpers.ts:444,461,483` | Deep copy `stocks`, `appliances`, `durables` before `delete` operations |
+| 6 | **Weather/festival price multipliers permanently compound** — `advanceEconomy` reads weather-tainted priceModifier, applies drift, then weather multiplied again | `weekEndHelpers.ts:64-96` | Added `basePriceModifier` field to GameState; `advanceEconomy` now reads base price without weather/festival |
+| 7 | **VictoryScreen career value zeros when no job** — `checkVictory` uses raw `dependability`, but VictoryScreen shows 0 if no job | `VictoryScreen.tsx:59` | Removed job check; career = dependability unconditionally (matches checkVictory) |
+| 8 | **AI hex/curse actions crash with TypeError** — `storeActions` object missing 4 hex methods, causing `undefined is not a function` | `useGrimwaldAI.ts:88` | Added `castLocationHex`, `castPersonalCurse`, `buyProtectiveAmulet`, `addHexScrollToPlayer` to storeActions |
+| 9 | **AI wealth calculation missing stocks and loans** — AI strategic decisions ignore stock portfolio value and outstanding loans | `ai/strategy.ts:30` | Added stock value calculation and loan subtraction to match `checkVictory` formula |
+
+#### MEDIUM — Unfair AI Advantages / UX Issues
+
+| # | Bug | File | Fix |
+|---|-----|------|-----|
+| 10 | **AI pays half housing move-in cost** — AI: 1x rent, Human: 2x rent (first month + deposit) | `ai/actions/strategicActions.ts:111` | Changed AI cost to `rent * 2` matching human formula |
+| 11 | **AI locks rent at unmodified base price** — AI uses raw constant, human uses price-adjusted rent | `ai/actions/strategicActions.ts:111` | AI now passes `Math.round(RENT_COSTS.noble * priceModifier)` for rent |
+| 12 | **AI spends 1 hour on housing, human spends 4** — unfair 3-hour time advantage | `ai/actionExecutor.ts:232,240` | Changed AI `spendTime` from 1 to 4 hours |
+| 13 | **AI ignores priceModifier for appliance purchases** — hardcoded base prices | `ai/actions/goalActions.ts:129-132` | Appliance costs now multiplied by `priceModifier` |
+| 14 | **LocationShell active tab shows blank content** — tab state not reset when visible tabs change | `LocationShell.tsx:55` | Added useEffect to reset activeTab when current tab disappears |
+
+#### SECURITY — Multiplayer Exploits
+
+| # | Bug | File | Fix |
+|---|-----|------|-----|
+| 15 | **Free hex scrolls via addHexScrollToPlayer** — internal-only action was in guest whitelist | `network/types.ts:217` | Removed from `ALLOWED_GUEST_ACTIONS` |
+| 16 | **Zero-cost hex/curse exploits** — 6 hex actions accept client-supplied cost with no validation | `useNetworkSync.ts:103` | Added `validateActionArgs` cases for all hex cost parameters (minimum 1g) |
+
+#### LOW — Fixed Incidentally
+
+| # | Bug | File | Fix |
+|---|-----|------|-----|
+| — | **Rivalry study race on completed degrees** — AI wastes gold/time studying already-graduated degrees | `ai/actions/rivalryActions.ts:111` | Added `!player.completedDegrees.includes(degreeId)` check |
+
+### Bugs Found But NOT Fixed (22 remaining)
+
+#### Store/Economy (deferred — lower impact)
+- Hardcoded food drain 35 vs constant `FOOD_DEPLETION_PER_WEEK` = 25
+- `updateRentTracking` increments `weeksSinceRent` for homeless players
+- `buyFreshFood`/`buyFoodWithSpoilage` always return `false`
+- No `isGameOver` guard on economy/work/education functions
+- Seized stocks valued at stale (pre-update) prices
+- `begForMoreTime` dependability formula differs from documentation
+- Trap damage reduction missing `Math.max(0)` clamp
+
+#### AI (deferred — edge cases)
+- Dungeon time cost mismatch between strategy and executor
+- Weather movement cost formula mismatch (+1 hour difference)
+- AI doesn't validate location before working (executor level)
+
+#### UI (deferred — edge cases)
+- Missing `equippedItems` in CombatView `handleFight` useCallback deps
+- `isMultiHuman` missing from GameBoard useEffect deps
+- NaN in GoalProgress when goal target is 0
+
+#### Multiplayer (deferred — complex/rare)
+- Room creation retry races with timeout (stale `settled` variable)
+- Disconnect handlers fire twice for same peer (duplicate auto-skip)
+- Concurrent reconnection attempts create duplicate connections
+- Host migration doesn't broadcast state to non-successor guests
+- `setPhase` in LOCAL_ONLY_ACTIONS allows guest phase desync
+
+#### Game Data (deferred — low impact)
+- Missing "uniform" label in CLOTHING_TIER_LABELS
+- `festival-all` achievement counts any 4 festivals, not all 4 unique
+- Stale `Job` interface in game.types.ts (unused but confusing)
+- Dead starvation penalty constants never used
+
+### Files Changed (16)
+
+```
+src/store/helpers/workEducationHelpers.ts  — Loan garnishment earnings > 0 guard
+src/store/helpers/weekEndHelpers.ts        — Stock seizure partial sell, deep copy mutations, basePriceModifier
+src/types/game.types.ts                    — Added basePriceModifier to GameState
+src/store/gameStore.ts                     — Initialize basePriceModifier: 1.0
+src/network/networkState.ts                — Serialize/deserialize basePriceModifier
+src/components/screens/VictoryScreen.tsx   — Career = dependability (no job check)
+src/hooks/useGrimwaldAI.ts                 — Added hex store actions, pass stockPrices
+src/hooks/ai/strategy.ts                   — Wealth calc includes stocks/loans, career unconditional
+src/hooks/ai/actionGenerator.ts            — Pass stockPrices parameter
+src/hooks/ai/actionExecutor.ts             — Housing time 1→4 hours
+src/hooks/ai/actions/strategicActions.ts   — Housing cost 1x→2x, price-adjusted rent
+src/hooks/ai/actions/goalActions.ts        — Appliance prices use priceModifier
+src/hooks/ai/actions/rivalryActions.ts     — Skip completed degrees in study race
+src/network/useNetworkSync.ts              — castPersonalCurse fix, disconnect re-check, hex cost validation
+src/network/types.ts                       — Remove addHexScrollToPlayer from guest whitelist
+src/components/game/LocationShell.tsx       — Reset active tab when tabs change
+```
+
+### Verification
+
+- **Tests**: 219 passing, 0 failures (10 test files)
+- **Build**: Clean TypeScript, no errors
+- **No regressions**: All existing functionality preserved
+
+---

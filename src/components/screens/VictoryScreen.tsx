@@ -55,8 +55,8 @@ export function VictoryScreen() {
   const wealthMet = totalWealth >= goalSettings.wealth;
   const happinessMet = winningPlayer.happiness >= goalSettings.happiness;
   const educationMet = totalEducation >= goalSettings.education;
-  // Career = dependability (Jones-style), 0 if no job
-  const careerValue = winningPlayer.currentJob ? winningPlayer.dependability : 0;
+  // M28 FIX: Career = dependability (Jones-style), shown even when unemployed (matches checkVictory)
+  const careerValue = winningPlayer.dependability;
   const careerMet = careerValue >= goalSettings.career;
   const adventureEnabled = (goalSettings.adventure ?? 0) > 0;
   const adventureValue = winningPlayer.completedQuests + winningPlayer.dungeonFloorsCleared.length;

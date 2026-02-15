@@ -23,7 +23,7 @@ import type { ActionContext } from './actionContext';
  */
 export function generateGoalActions(ctx: ActionContext): AIAction[] {
   const actions: AIAction[] = [];
-  const { player, settings, currentLocation, moveCost, progress, weakestGoal, rivals } = ctx;
+  const { player, settings, currentLocation, moveCost, progress, weakestGoal, rivals, priceModifier } = ctx;
 
   // ============================================
   // GOAL-ORIENTED ACTIONS
@@ -126,10 +126,12 @@ export function generateGoalActions(ctx: ActionContext): AIAction[] {
       // Appliances give one-time happiness bonus
       if (player.gold > 200) {
         // Priority: Cooking Fire (+1 hap/turn), then others
+        // BUG FIX: Apply priceModifier to appliance costs (was using hardcoded base prices)
+        const pm = priceModifier ?? 1;
         const wantedAppliances = [
-          { id: 'cooking-fire', cost: 276, priority: 68 },
-          { id: 'scrying-mirror', cost: 525, priority: 63 },
-          { id: 'preservation-box', cost: 876, priority: 60 },
+          { id: 'cooking-fire', cost: Math.round(276 * pm), priority: 68 },
+          { id: 'scrying-mirror', cost: Math.round(525 * pm), priority: 63 },
+          { id: 'preservation-box', cost: Math.round(876 * pm), priority: 60 },
         ];
         for (const wanted of wantedAppliances) {
           if (!player.appliances[wanted.id] && player.gold >= wanted.cost) {
