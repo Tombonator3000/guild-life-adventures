@@ -10,16 +10,47 @@ function getVersionUrl(): string {
   return `${base}version.json`;
 }
 
+const RELOAD_KEY = 'guild-reload-count';
+const MAX_RELOADS = 3;
+const RELOAD_WINDOW_MS = 120_000; // 2 minutes
+
+/** Check how many programmatic reloads have happened recently. */
+function getReloadCount(): number {
+  try {
+    const d = JSON.parse(sessionStorage.getItem(RELOAD_KEY) || 'null');
+    if (!d || Date.now() - d.ts > RELOAD_WINDOW_MS) return 0;
+    return d.count || 0;
+  } catch { return 0; }
+}
+
+/** Increment the reload counter in sessionStorage. */
+function bumpReloadCount(): void {
+  try {
+    let d = JSON.parse(sessionStorage.getItem(RELOAD_KEY) || 'null');
+    if (!d || Date.now() - d.ts > RELOAD_WINDOW_MS) d = { ts: Date.now(), count: 0 };
+    d.count++;
+    sessionStorage.setItem(RELOAD_KEY, JSON.stringify(d));
+  } catch { /* ignore */ }
+}
+
 /**
  * Nuclear cache clear: unregister all service workers, delete every Cache
  * Storage entry, then hard-reload the page. This guarantees the browser
  * fetches everything fresh from the network (subject only to CDN TTL).
  *
- * Waits for all async cleanup to complete before reloading, preventing
- * the race condition where reload fires while SWs are still registered
- * or caches still exist, causing the stale SW to re-activate on reload.
+ * Includes reload loop protection: if more than 3 reloads happen within
+ * 2 minutes, the reload is skipped to prevent infinite loops.
  */
 export async function hardRefresh(): Promise<void> {
+  // Reload loop protection: don't reload if we've already reloaded too many times.
+  // Without this, programmatic callers (e.g. controllerchange, lazyWithRetry)
+  // can create infinite reload loops that make the game permanently unloadable.
+  if (getReloadCount() >= MAX_RELOADS) {
+    console.warn('[Guild Life] Reload loop detected — skipping hardRefresh (', getReloadCount(), 'reloads in 2 min)');
+    return;
+  }
+  bumpReloadCount();
+
   // Wrap all cleanup in a 5-second timeout to prevent hanging forever
   // if browser APIs (SW unregister, cache delete) don't resolve.
   try {
@@ -76,15 +107,22 @@ export function useAppUpdate() {
     },
   });
 
-  // Safety net: if a new service worker takes control (e.g. auto-update
-  // via skipWaiting + clientsClaim), force a page reload. Without this
-  // listener the old JS keeps running against new SW-served assets,
-  // causing React to fail silently and the loading screen to hang.
+  // When a new SW takes control mid-session (e.g. auto-update via
+  // skipWaiting + clientsClaim), show the update banner instead of reloading.
+  //
+  // CRITICAL FIX (2026-02-15): The previous version called hardRefresh() here,
+  // which caused an INFINITE RELOAD LOOP:
+  //   1. hardRefresh() unregisters SW and reloads
+  //   2. On reload, useRegisterSW registers a NEW SW
+  //   3. New SW installs → skipWaiting → clientsClaim → controllerchange fires
+  //   4. hardRefresh() fires again → GOTO step 1
+  // This happened because controllerchange fires whenever the controller
+  // changes from null to a new SW (not just SW-to-SW swaps).
+  // Showing the banner instead lets the user decide when to reload.
   useEffect(() => {
     const onControllerChange = () => {
-      // Use cache-busting reload instead of location.reload() —
-      // GitHub Pages max-age=600 means plain reload may serve stale HTML.
-      hardRefresh();
+      console.log('[Guild Life] Service worker controller changed — showing update banner');
+      setVersionMismatch(true);
     };
     navigator.serviceWorker?.addEventListener('controllerchange', onControllerChange);
     return () => {

@@ -100,6 +100,84 @@ Deleted the entire 66-line `checkStaleBuild()` function and its call in `mount()
 
 ---
 
+## 2026-02-15 — FIX: controllerchange → hardRefresh() Infinite Reload Loop (15:35 UTC)
+
+### Overview
+
+**The game still refused to load and hung on "Clear Cache & Reload"** after deploying PR #213 (which was supposed to fix the reload loops). Systematic investigation found a NEW infinite reload loop mechanism that was introduced IN PR #213 itself.
+
+### Root Cause
+
+**The `controllerchange` event listener in `useAppUpdate.ts` called `hardRefresh()` on EVERY page load, creating an infinite reload loop.**
+
+The `controllerchange` event fires whenever `navigator.serviceWorker.controller` changes — including when it changes from `null` to a new SW (first registration), not just SW-to-SW swaps.
+
+**The loop:**
+1. Page loads (no SW — previous `hardRefresh()` unregistered it)
+2. `useRegisterSW` registers a new SW
+3. New SW installs → `skipWaiting()` → activates → `clients.claim()`
+4. Controller changes from `null` to new SW → `controllerchange` fires
+5. `hardRefresh()` runs → unregisters SW, clears caches, reloads with `?_gv=`
+6. **GOTO step 1** — infinite reload loop
+
+**Why `hardRefresh()` didn't stop the loop:** It had NO reload loop protection — it never checked `sessionStorage` for a reload counter. The counter in the fallback script's `cacheReload()` was only checked by the button handler, not by programmatic callers.
+
+**Why the game appeared to hang on "Clear Cache":** The game briefly loaded (React mounted for a few frames), then immediately reloaded. From the user's perspective: the loading screen flickered repeatedly, and eventually the fallback button appeared (showing "Clear Cache & Reload"). But clicking it didn't help because `hardRefresh` kept firing.
+
+### Additional Vulnerabilities Found
+
+1. **`lazyWithRetry()` in Index.tsx** — Also reloaded without checking the reload counter. If chunks kept failing, this created its own independent reload loop.
+2. **`ErrorBoundary` in App.tsx** — Inline `onClick` handler duplicated cache-clearing logic instead of using `hardRefresh()`, missing reload loop protection.
+
+### Changes
+
+#### Fix 1: Replace `controllerchange` → `hardRefresh()` with banner (ROOT CAUSE)
+
+**`src/hooks/useAppUpdate.ts`** — The `controllerchange` listener now shows the update banner (`setVersionMismatch(true)`) instead of calling `hardRefresh()`. This is safe because:
+- The version polling already detects new deploys and shows the banner
+- The inline hot-swap in index.html handles stale HTML without reloading
+- The user decides when to reload by clicking the update banner
+
+#### Fix 2: Reload loop protection in `hardRefresh()`
+
+**`src/hooks/useAppUpdate.ts`** — `hardRefresh()` now checks `sessionStorage` `guild-reload-count` before reloading. If ≥3 reloads in 2 minutes, the reload is skipped with a console warning. Uses the same counter format as the index.html fallback.
+
+#### Fix 3: Reload loop protection in `lazyWithRetry()`
+
+**`src/pages/Index.tsx`** — `lazyWithRetry()` now checks the same `sessionStorage` reload counter before clearing caches and reloading. If the limit is reached, it throws an error instead of reloading (letting the ErrorBoundary catch it).
+
+#### Fix 4: ErrorBoundary uses `hardRefresh()`
+
+**`src/App.tsx`** — The ErrorBoundary's reload button now dynamically imports and calls `hardRefresh()` instead of duplicating the cache-clearing logic. This ensures it benefits from the reload loop protection.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/hooks/useAppUpdate.ts` | `controllerchange` → shows banner instead of `hardRefresh()`; added reload loop protection to `hardRefresh()` |
+| `src/pages/Index.tsx` | Added reload loop protection to `lazyWithRetry()` |
+| `src/App.tsx` | ErrorBoundary uses `hardRefresh()` instead of inline logic |
+| `bugs.md` | Updated BUG-001 with new root cause and fix |
+| `log2.md` | This entry |
+
+### Verification
+
+- **TypeScript**: No errors
+- **Tests**: 219 passing, 0 failures
+- **Build** (`DEPLOY_TARGET=github`): Clean, no errors
+
+### Pattern: Defense Layers That Attack Each Other
+
+This is the 15th fix attempt for BUG-001. The recurring pattern:
+1. A defense layer is added to handle stale-cache scenarios
+2. The defense layer itself creates a new reload path
+3. The new reload path doesn't share reload loop protection with other paths
+4. Multiple paths reload independently → infinite loop
+
+**Lesson**: ALL reload paths MUST share a single reload counter. No function should call `location.replace()` or `location.reload()` without checking the counter first.
+
+---
+
 ## 2026-02-15 — DEFINITIVE FIX: "Loading the realm..." Freeze — Root Cause Found (15:30 UTC)
 
 ### Overview
