@@ -8,6 +8,7 @@
 import type { LocationId } from '@/types/game.types';
 import { HOURS_PER_TURN, SPOILED_FOOD_SICKNESS_CHANCE } from '@/types/game.types';
 import type { SetFn, GetFn } from '../storeTypes';
+import { deleteSave } from '@/data/saveLoad';
 import { createStartTurn } from './startTurnHelpers';
 import { createProcessWeekEnd } from './weekEndHelpers';
 
@@ -150,6 +151,7 @@ export function createTurnActions(set: SetFn, get: GetFn) {
       // In single-player, the player must achieve all goals to win
       const alivePlayers = postVictoryState.players.filter(p => !p.isGameOver);
       if (alivePlayers.length === 1 && postVictoryState.players.length > 1) {
+        try { deleteSave(0); } catch { /* ignore */ }
         set({
           winner: alivePlayers[0].id,
           phase: 'victory',
@@ -159,6 +161,7 @@ export function createTurnActions(set: SetFn, get: GetFn) {
       }
 
       if (alivePlayers.length === 0) {
+        try { deleteSave(0); } catch { /* ignore */ }
         set({
           phase: 'victory',
           eventMessage: 'All players have perished. Game Over!',

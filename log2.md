@@ -5,6 +5,55 @@
 
 ---
 
+## 2026-02-15 — Fix: Mobile Center Panel Too Large + Play Again After Victory (12:20 UTC)
+
+### Overview
+
+Two fixes: (1) Mobile center panel covered 65% of the screen making the game unplayable on phones — reduced to 40%. (2) "Play Again" after victory/game-over could fail due to stale autosave causing instant re-victory loop, and stale game state persisting across game sessions.
+
+### Issue 1: Mobile Center Panel Size
+
+The center panel (location details, events) on mobile was set to `height: 65%`, covering most of the game board and making it impossible to interact with location zones.
+
+**Fix**: Reduced to `height: 40%`. Also adjusted the banter bubble position from `bottom: 66%` to `bottom: 41%` to stay aligned above the panel.
+
+### Issue 2: Play Again / Game Loading After PR
+
+Root causes identified:
+
+1. **Autosave victory loop**: Autosave runs during 'playing' phase but NOT during 'victory'. This means the last autosave is from RIGHT BEFORE victory was triggered. If user goes Victory → Title → Continue, the autosave loads the pre-victory state, `checkVictory` fires on next `endTurn`, and the user is immediately sent back to VictoryScreen — creating an infinite loop.
+
+2. **Stale state on transition**: VictoryScreen's "Return to Title" only called `setPhase('title')`, leaving old `winner`, `players`, and other game state in memory. This could cause unexpected behavior when starting a new game.
+
+3. **Version check timeout too aggressive**: The inline stale-build detection in `index.html` had a 3s fallback timeout that could cause stale code to load before `version.json` check completed on slow/mobile networks.
+
+**Fixes**:
+
+- **New `resetForNewGame` action** in gameStore: Clears all game state (players, winner, economy, weather, etc.), deletes autosave slot 0, and sets phase to 'title'. Used by VictoryScreen buttons.
+- **Delete autosave on victory**: All 5 victory paths (checkVictory in questHelpers, last-standing and all-dead in turnHelpers, last-standing and all-dead in weekEndHelpers, setPhase('victory') in gameStore) now call `deleteSave(0)` to prevent the Continue → re-victory loop.
+- **VictoryScreen uses resetForNewGame**: "Return to Title" calls `resetForNewGame()`. "New Game" calls `resetForNewGame()` then `setPhase('setup')`.
+- **Version check timeout increased**: `index.html` inline script timeout increased from 3s to 8s, reducing the race condition where stale HTML loads before staleness is detected.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/game/GameBoard.tsx` | Mobile center panel height 65% → 40%, banter bubble position 66% → 41% |
+| `src/store/gameStore.ts` | Added `resetForNewGame` action, `setPhase('victory')` deletes autosave, import `deleteSave` |
+| `src/store/storeTypes.ts` | Added `resetForNewGame` to store type |
+| `src/components/screens/VictoryScreen.tsx` | Buttons use `resetForNewGame()` instead of `setPhase('title')` |
+| `src/store/helpers/questHelpers.ts` | `checkVictory` deletes autosave before setting victory |
+| `src/store/helpers/turnHelpers.ts` | Last-standing and all-dead paths delete autosave |
+| `src/store/helpers/weekEndHelpers.ts` | Last-standing and all-dead paths delete autosave |
+| `index.html` | Version check fallback timeout 3s → 8s |
+
+### Verification
+
+- **Tests**: 219 passing, 0 failures
+- **Build**: Clean, no errors
+
+---
+
 ## 2026-02-14 — Bug Fix: Shadow Market Hex Tab Crash — Missing `players` Destructuring (23:00 UTC)
 
 ### Overview

@@ -12,7 +12,7 @@ import { getInitialStockPrices } from '@/data/stocks';
 import { CLEAR_WEATHER } from '@/data/weather';
 import type { WeatherType, WeatherParticle } from '@/data/weather';
 import { FESTIVALS } from '@/data/festivals';
-import { saveGame, loadGame } from '@/data/saveLoad';
+import { saveGame, loadGame, deleteSave } from '@/data/saveLoad';
 import { createPlayerActions } from './helpers/playerHelpers';
 import { createEconomyActions } from './helpers/economyHelpers';
 import { createTurnActions } from './helpers/turnHelpers';
@@ -283,7 +283,40 @@ export const useGameStore = create<GameStore>((set, get) => {
     ...wrapWithNetworkGuard(turnActions),
 
     // Simple UI actions
-    setPhase: (phase) => set({ phase }),
+    setPhase: (phase) => {
+      // When entering victory, delete the autosave to prevent the
+      // "Continue → instant re-victory" loop on TitleScreen.
+      if (phase === 'victory') {
+        try { deleteSave(0); } catch { /* ignore */ }
+      }
+      set({ phase });
+    },
+
+    // Reset all game state and return to title screen.
+    // Used from VictoryScreen to ensure clean slate for next game.
+    resetForNewGame: () => {
+      try { deleteSave(0); } catch { /* ignore */ }
+      set({
+        phase: 'title',
+        players: [],
+        currentPlayerIndex: 0,
+        week: 1,
+        winner: null,
+        eventMessage: null,
+        selectedLocation: null,
+        shadowfingersEvent: null,
+        deathEvent: null,
+        weekendEvent: null,
+        weather: { ...CLEAR_WEATHER },
+        activeFestival: null,
+        locationHexes: [],
+        stockPrices: getInitialStockPrices(),
+        priceModifier: 1.0,
+        basePriceModifier: 1.0,
+        economyTrend: 0,
+        economyCycleWeeksLeft: 4,
+      });
+    },
     selectLocation: (location) => set({ selectedLocation: location }),
     dismissEvent: () => {
       if (get().networkMode === 'guest') markEventDismissed('eventMessage');

@@ -20,6 +20,7 @@ import {
 } from '@/data/quests';
 import { calculateStockValue } from '@/data/stocks';
 import { checkAchievements, updateAchievementStats } from '@/data/achievements';
+import { deleteSave } from '@/data/saveLoad';
 import type { SetFn, GetFn } from '../storeTypes';
 
 export function createQuestActions(set: SetFn, get: GetFn) {
@@ -510,6 +511,8 @@ export function createQuestActions(set: SetFn, get: GetFn) {
             isVictory: true,
           });
         }
+        // Delete autosave to prevent "Continue → instant re-victory" loop
+        try { deleteSave(0); } catch { /* ignore */ }
         set({
           winner: playerId,
           phase: 'victory',
