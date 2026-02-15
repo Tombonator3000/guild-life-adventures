@@ -2,7 +2,7 @@ import { useZoneEditorState } from '@/hooks/useZoneEditorState';
 import { ZoneEditorToolbar } from './ZoneEditorToolbar';
 import { ZoneEditorBoard } from './ZoneEditorBoard';
 import { ZoneEditorProperties } from './ZoneEditorProperties';
-import type { ZoneConfig, CenterPanelLayout, AnimationLayerConfig } from '@/types/game.types';
+import type { ZoneConfig, CenterPanelLayout, AnimationLayerConfig, MobileZoneOverrides } from '@/types/game.types';
 import type { MovementWaypoint } from '@/data/locations';
 
 export type { CenterPanelConfig } from '@/hooks/useZoneEditorState';
@@ -10,17 +10,18 @@ import type { CenterPanelConfig } from '@/hooks/useZoneEditorState';
 
 interface ZoneEditorProps {
   onClose: () => void;
-  onSave: (configs: ZoneConfig[], centerPanel: CenterPanelConfig, paths: Record<string, MovementWaypoint[]>, layout: CenterPanelLayout, animationLayers: AnimationLayerConfig[]) => void;
+  onSave: (configs: ZoneConfig[], centerPanel: CenterPanelConfig, paths: Record<string, MovementWaypoint[]>, layout: CenterPanelLayout, animationLayers: AnimationLayerConfig[], mobileOverrides?: MobileZoneOverrides) => void;
   onReset?: () => void;
   initialCenterPanel?: CenterPanelConfig;
   initialZones?: ZoneConfig[];
   initialPaths?: Record<string, MovementWaypoint[]>;
   initialLayout?: CenterPanelLayout;
   initialAnimationLayers?: AnimationLayerConfig[];
+  initialMobileOverrides?: MobileZoneOverrides;
 }
 
-export function ZoneEditor({ onClose, onSave, onReset, initialCenterPanel, initialZones, initialPaths, initialLayout, initialAnimationLayers }: ZoneEditorProps) {
-  const state = useZoneEditorState({ onClose, onSave, onReset, initialCenterPanel, initialZones, initialPaths, initialLayout, initialAnimationLayers });
+export function ZoneEditor({ onClose, onSave, onReset, initialCenterPanel, initialZones, initialPaths, initialLayout, initialAnimationLayers, initialMobileOverrides }: ZoneEditorProps) {
+  const state = useZoneEditorState({ onClose, onSave, onReset, initialCenterPanel, initialZones, initialPaths, initialLayout, initialAnimationLayers, initialMobileOverrides });
 
   return (
     <div className="fixed inset-0 bg-black/90 z-50 flex flex-col">
@@ -64,6 +65,15 @@ export function ZoneEditor({ onClose, onSave, onReset, initialCenterPanel, initi
           selectedAnimationLayer={state.selectedAnimationLayer}
           handleAnimationLayerMouseDown={state.handleAnimationLayerMouseDown}
           setSelectedAnimationLayer={state.setSelectedAnimationLayer}
+          mobileZones={state.mobileZones}
+          mobileCenterPanel={state.mobileCenterPanel}
+          mobileLayout={state.mobileLayout}
+          selectedMobileZone={state.selectedMobileZone}
+          selectedMobileLayoutElement={state.selectedMobileLayoutElement}
+          handleMobileZoneMouseDown={state.handleMobileZoneMouseDown}
+          handleMobileCenterPanelMouseDown={state.handleMobileCenterPanelMouseDown}
+          handleMobileLayoutMouseDown={state.handleMobileLayoutMouseDown}
+          setSelectedMobileLayoutElement={state.setSelectedMobileLayoutElement}
         />
         <ZoneEditorProperties
           editorMode={state.editorMode}
@@ -92,6 +102,19 @@ export function ZoneEditor({ onClose, onSave, onReset, initialCenterPanel, initi
           selectedAnimationLayer={state.selectedAnimationLayer}
           setSelectedAnimationLayer={state.setSelectedAnimationLayer}
           handleAnimationInput={state.handleAnimationInput}
+          mobileZones={state.mobileZones}
+          mobileCenterPanel={state.mobileCenterPanel}
+          mobileLayout={state.mobileLayout}
+          setMobileLayout={state.setMobileLayout}
+          selectedMobileZone={state.selectedMobileZone}
+          setSelectedMobileZone={state.setSelectedMobileZone}
+          selectedMobileLayoutElement={state.selectedMobileLayoutElement}
+          setSelectedMobileLayoutElement={state.setSelectedMobileLayoutElement}
+          selectedMobileZoneData={state.selectedMobileZoneData}
+          handleMobileZoneInput={state.handleMobileZoneInput}
+          handleMobileCenterPanelInput={state.handleMobileCenterPanelInput}
+          handleMobileLayoutInput={state.handleMobileLayoutInput}
+          copyDesktopToMobile={state.copyDesktopToMobile}
         />
       </div>
 
@@ -102,7 +125,9 @@ export function ZoneEditor({ onClose, onSave, onReset, initialCenterPanel, initi
             ? 'Select an edge from the list | Click on the board to add waypoints | Drag waypoints to reposition | Right-click to remove'
             : state.editorMode === 'animations'
               ? 'Select a layer | Drag the center dot to reposition | Edit properties in the right panel'
-              : 'Select a layout element | Drag to move | Drag corner to resize | Positions are % of center panel'
+              : state.editorMode === 'mobile'
+                ? 'Mobile layout: Drag zones, center panel, and layout elements | Green = mobile-specific positions'
+                : 'Select a layout element | Drag to move | Drag corner to resize | Positions are % of center panel'
         }
       </div>
     </div>

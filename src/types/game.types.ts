@@ -51,6 +51,18 @@ export interface CenterPanelLayout {
   itemPreview: LayoutElement; // Item preview panel
 }
 
+// Mobile-specific overrides for zone positions, center panel, and layout
+export interface MobileZoneOverrides {
+  zones: ZoneConfig[];                // Location zone positions for mobile viewport
+  centerPanel: {                      // Center info panel dimensions for mobile
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+  };
+  layout: CenterPanelLayout;          // Sub-element layout within center panel for mobile
+}
+
 /** A group of animated elements (e.g., graveyard crows) with adjustable position/properties */
 export interface AnimationLayerConfig {
   id: string;            // e.g., 'graveyard-crows'

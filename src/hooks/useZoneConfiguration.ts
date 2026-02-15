@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import type { ZoneConfig, CenterPanelLayout, AnimationLayerConfig } from '@/types/game.types';
+import type { ZoneConfig, CenterPanelLayout, AnimationLayerConfig, MobileZoneOverrides } from '@/types/game.types';
 import type { CenterPanelConfig } from '@/components/game/ZoneEditor';
 import type { MovementWaypoint } from '@/data/locations';
 import { ZONE_CONFIGS, LOCATIONS, MOVEMENT_PATHS } from '@/data/locations';
 import { loadZoneConfig, saveZoneConfig, clearZoneConfig } from '@/data/zoneStorage';
-import { DEFAULT_LAYOUT, DEFAULT_ANIMATION_LAYERS } from '@/hooks/useZoneEditorState';
+import { DEFAULT_LAYOUT, DEFAULT_ANIMATION_LAYERS, DEFAULT_MOBILE_CENTER_PANEL, DEFAULT_MOBILE_LAYOUT } from '@/hooks/useZoneEditorState';
 import { toast } from 'sonner';
 
 const DEFAULT_CENTER_PANEL: CenterPanelConfig = {
@@ -42,6 +42,21 @@ export function useZoneConfiguration() {
     return saved?.animationLayers || DEFAULT_ANIMATION_LAYERS;
   });
 
+  const [mobileOverrides, setMobileOverrides] = useState<MobileZoneOverrides>(() => {
+    const saved = loadZoneConfig();
+    if (saved?.mobileOverrides) {
+      return {
+        ...saved.mobileOverrides,
+        zones: mergeWithDefaults(saved.mobileOverrides.zones),
+      };
+    }
+    return {
+      zones: ZONE_CONFIGS,
+      centerPanel: DEFAULT_MOBILE_CENTER_PANEL,
+      layout: DEFAULT_MOBILE_LAYOUT,
+    };
+  });
+
   // Load saved movement paths on mount
   useEffect(() => {
     const saved = loadZoneConfig();
@@ -51,11 +66,12 @@ export function useZoneConfiguration() {
     }
   }, []);
 
-  const handleSaveZones = (zones: ZoneConfig[], newCenterPanel: CenterPanelConfig, paths?: Record<string, MovementWaypoint[]>, newLayout?: CenterPanelLayout, newAnimationLayers?: AnimationLayerConfig[]) => {
+  const handleSaveZones = (zones: ZoneConfig[], newCenterPanel: CenterPanelConfig, paths?: Record<string, MovementWaypoint[]>, newLayout?: CenterPanelLayout, newAnimationLayers?: AnimationLayerConfig[], newMobileOverrides?: MobileZoneOverrides) => {
     setCustomZones(zones);
     setCenterPanel(newCenterPanel);
     if (newLayout) setLayout(newLayout);
     if (newAnimationLayers) setAnimationLayers(newAnimationLayers);
+    if (newMobileOverrides) setMobileOverrides(newMobileOverrides);
     // Apply movement paths to the global MOVEMENT_PATHS object
     const activePaths = paths || { ...MOVEMENT_PATHS };
     if (paths) {
@@ -63,7 +79,7 @@ export function useZoneConfiguration() {
       Object.entries(paths).forEach(([k, v]) => { MOVEMENT_PATHS[k] = v; });
     }
     // Persist to localStorage
-    saveZoneConfig(zones, newCenterPanel, activePaths, newLayout, newAnimationLayers);
+    saveZoneConfig(zones, newCenterPanel, activePaths, newLayout, newAnimationLayers, newMobileOverrides);
     toast.success('Zone config saved to localStorage');
   };
 
@@ -73,14 +89,20 @@ export function useZoneConfiguration() {
     setCenterPanel(DEFAULT_CENTER_PANEL);
     setLayout(DEFAULT_LAYOUT);
     setAnimationLayers(DEFAULT_ANIMATION_LAYERS);
+    setMobileOverrides({
+      zones: ZONE_CONFIGS,
+      centerPanel: DEFAULT_MOBILE_CENTER_PANEL,
+      layout: DEFAULT_MOBILE_LAYOUT,
+    });
     Object.keys(MOVEMENT_PATHS).forEach(k => delete MOVEMENT_PATHS[k]);
     toast.success('Zone config reset to defaults');
   };
 
-  // Get location with custom zones applied
-  const getLocationWithCustomPosition = (locationId: string) => {
+  // Get location with custom zones applied (respects mobile overrides when isMobile)
+  const getLocationWithCustomPosition = (locationId: string, isMobile = false) => {
     const location = LOCATIONS.find(l => l.id === locationId);
-    const customZone = customZones.find(z => z.id === locationId);
+    const zones = isMobile ? mobileOverrides.zones : customZones;
+    const customZone = zones.find(z => z.id === locationId);
     if (location && customZone) {
       return {
         ...location,
@@ -100,6 +122,7 @@ export function useZoneConfiguration() {
     centerPanel,
     layout,
     animationLayers,
+    mobileOverrides,
     handleSaveZones,
     handleResetZones,
     getLocationWithCustomPosition,

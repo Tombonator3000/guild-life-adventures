@@ -1,7 +1,7 @@
 import type { ZoneConfig, LocationId, CenterPanelLayout, LayoutElementId, LayoutElement, AnimationLayerConfig } from '@/types/game.types';
 import type { MovementWaypoint } from '@/data/locations';
 import type { CenterPanelConfig, EditorMode } from '@/hooks/useZoneEditorState';
-import { LAYOUT_ELEMENT_LABELS, DEFAULT_LAYOUT, DEFAULT_ANIMATION_LAYERS } from '@/hooks/useZoneEditorState';
+import { LAYOUT_ELEMENT_LABELS, DEFAULT_LAYOUT, DEFAULT_ANIMATION_LAYERS, DEFAULT_MOBILE_CENTER_PANEL, DEFAULT_MOBILE_LAYOUT } from '@/hooks/useZoneEditorState';
 
 const LAYOUT_ELEMENT_IDS: LayoutElementId[] = ['npc', 'text', 'itemPreview'];
 
@@ -34,6 +34,20 @@ interface ZoneEditorPropertiesProps {
   selectedAnimationLayer: string | null;
   setSelectedAnimationLayer: (id: string | null) => void;
   handleAnimationInput: (layerId: string, field: keyof AnimationLayerConfig, value: number | boolean) => void;
+  // Mobile props
+  mobileZones: ZoneConfig[];
+  mobileCenterPanel: CenterPanelConfig;
+  mobileLayout: CenterPanelLayout;
+  setMobileLayout: React.Dispatch<React.SetStateAction<CenterPanelLayout>>;
+  selectedMobileZone: LocationId | 'center-panel' | null;
+  setSelectedMobileZone: (zone: LocationId | 'center-panel' | null) => void;
+  selectedMobileLayoutElement: LayoutElementId | null;
+  setSelectedMobileLayoutElement: (id: LayoutElementId | null) => void;
+  selectedMobileZoneData: ZoneConfig | null | undefined;
+  handleMobileZoneInput: (zoneId: LocationId, field: keyof ZoneConfig, value: number) => void;
+  handleMobileCenterPanelInput: (field: keyof CenterPanelConfig, value: number) => void;
+  handleMobileLayoutInput: (elementId: LayoutElementId, field: keyof LayoutElement, value: number) => void;
+  copyDesktopToMobile: () => void;
 }
 
 export function ZoneEditorProperties({
@@ -63,6 +77,19 @@ export function ZoneEditorProperties({
   selectedAnimationLayer,
   setSelectedAnimationLayer,
   handleAnimationInput,
+  mobileZones,
+  mobileCenterPanel,
+  mobileLayout,
+  setMobileLayout,
+  selectedMobileZone,
+  setSelectedMobileZone,
+  selectedMobileLayoutElement,
+  setSelectedMobileLayoutElement,
+  selectedMobileZoneData,
+  handleMobileZoneInput,
+  handleMobileCenterPanelInput,
+  handleMobileLayoutInput,
+  copyDesktopToMobile,
 }: ZoneEditorPropertiesProps) {
   return (
     <div className="w-80 bg-gray-900 p-4 overflow-y-auto">
@@ -433,7 +460,7 @@ export function ZoneEditorProperties({
             Reset Layout to Defaults
           </button>
         </>
-      ) : (
+      ) : editorMode === 'animations' ? (
         <>
           {/* Animations Panel */}
           <h3 className="text-lg font-bold text-orange-400 mb-2">Animated Layers</h3>
@@ -574,7 +601,252 @@ export function ZoneEditorProperties({
             Reset Animations to Defaults
           </button>
         </>
-      )}
+      ) : editorMode === 'mobile' ? (
+        <>
+          {/* Mobile Layout Panel */}
+          <h3 className="text-lg font-bold text-emerald-400 mb-2">Mobile Layout</h3>
+          <p className="text-gray-400 text-xs mb-3">
+            Configure zone positions, center panel, and layout for mobile (&lt;1024px) viewports.
+          </p>
+
+          {/* Copy from Desktop button */}
+          <button
+            onClick={copyDesktopToMobile}
+            className="w-full px-3 py-1.5 bg-emerald-700 text-emerald-100 rounded text-sm hover:bg-emerald-600 mb-4"
+          >
+            Copy Desktop Config to Mobile
+          </button>
+
+          {/* Mobile Center Panel */}
+          <h4 className="text-sm font-bold text-yellow-400 mb-2">Center Panel</h4>
+          <button
+            onClick={() => setSelectedMobileZone('center-panel')}
+            className={`w-full text-left px-2 py-1 rounded text-sm mb-2 ${
+              selectedMobileZone === 'center-panel'
+                ? 'bg-yellow-600 text-white'
+                : 'bg-gray-800 text-yellow-300 hover:bg-gray-700'
+            }`}
+          >
+            Info Panel (yellow)
+          </button>
+
+          {selectedMobileZone === 'center-panel' && (
+            <div className="mb-4 p-3 bg-gray-800 rounded border border-yellow-500/50">
+              <h4 className="text-yellow-400 font-bold mb-3 text-sm">Mobile Center Panel</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="text-white text-sm">
+                  Left (%)
+                  <input
+                    type="number"
+                    value={mobileCenterPanel.left.toFixed(1)}
+                    onChange={e => handleMobileCenterPanelInput('left', parseFloat(e.target.value) || 0)}
+                    className="w-full bg-gray-700 text-white px-2 py-1 rounded"
+                    step="0.5"
+                  />
+                </label>
+                <label className="text-white text-sm">
+                  Top (%)
+                  <input
+                    type="number"
+                    value={mobileCenterPanel.top.toFixed(1)}
+                    onChange={e => handleMobileCenterPanelInput('top', parseFloat(e.target.value) || 0)}
+                    className="w-full bg-gray-700 text-white px-2 py-1 rounded"
+                    step="0.5"
+                  />
+                </label>
+                <label className="text-white text-sm">
+                  Width (%)
+                  <input
+                    type="number"
+                    value={mobileCenterPanel.width.toFixed(1)}
+                    onChange={e => handleMobileCenterPanelInput('width', parseFloat(e.target.value) || 10)}
+                    className="w-full bg-gray-700 text-white px-2 py-1 rounded"
+                    step="0.5"
+                  />
+                </label>
+                <label className="text-white text-sm">
+                  Height (%)
+                  <input
+                    type="number"
+                    value={mobileCenterPanel.height.toFixed(1)}
+                    onChange={e => handleMobileCenterPanelInput('height', parseFloat(e.target.value) || 10)}
+                    className="w-full bg-gray-700 text-white px-2 py-1 rounded"
+                    step="0.5"
+                  />
+                </label>
+              </div>
+            </div>
+          )}
+
+          <hr className="border-gray-700 my-3" />
+
+          {/* Mobile Layout Elements */}
+          <h4 className="text-sm font-bold text-purple-400 mb-2">Layout Elements</h4>
+          <div className="space-y-1 mb-3">
+            {LAYOUT_ELEMENT_IDS.map(id => {
+              const meta = LAYOUT_ELEMENT_LABELS[id];
+              const isSelected = selectedMobileLayoutElement === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setSelectedMobileLayoutElement(id)}
+                  className={`w-full text-left px-2 py-1.5 rounded text-sm flex items-center gap-2 ${
+                    isSelected ? 'text-white ring-1 ring-white' : 'text-gray-300 hover:bg-gray-700'
+                  }`}
+                  style={{
+                    backgroundColor: isSelected ? meta.borderColor : '#1f2937',
+                  }}
+                >
+                  <span
+                    className="w-3 h-3 rounded-sm flex-shrink-0"
+                    style={{ backgroundColor: meta.borderColor }}
+                  />
+                  {meta.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {selectedMobileLayoutElement && (
+            <div
+              className="mb-4 p-3 bg-gray-800 rounded border"
+              style={{ borderColor: `${LAYOUT_ELEMENT_LABELS[selectedMobileLayoutElement].borderColor}80` }}
+            >
+              <h4
+                className="font-bold mb-3 text-sm"
+                style={{ color: LAYOUT_ELEMENT_LABELS[selectedMobileLayoutElement].borderColor }}
+              >
+                {LAYOUT_ELEMENT_LABELS[selectedMobileLayoutElement].label}
+              </h4>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="text-white text-sm">
+                  X (%)
+                  <input
+                    type="number"
+                    value={mobileLayout[selectedMobileLayoutElement].x.toFixed(1)}
+                    onChange={e => handleMobileLayoutInput(selectedMobileLayoutElement, 'x', parseFloat(e.target.value) || 0)}
+                    className="w-full bg-gray-700 text-white px-2 py-1 rounded"
+                    step="0.5"
+                  />
+                </label>
+                <label className="text-white text-sm">
+                  Y (%)
+                  <input
+                    type="number"
+                    value={mobileLayout[selectedMobileLayoutElement].y.toFixed(1)}
+                    onChange={e => handleMobileLayoutInput(selectedMobileLayoutElement, 'y', parseFloat(e.target.value) || 0)}
+                    className="w-full bg-gray-700 text-white px-2 py-1 rounded"
+                    step="0.5"
+                  />
+                </label>
+                <label className="text-white text-sm">
+                  Width (%)
+                  <input
+                    type="number"
+                    value={mobileLayout[selectedMobileLayoutElement].width.toFixed(1)}
+                    onChange={e => handleMobileLayoutInput(selectedMobileLayoutElement, 'width', parseFloat(e.target.value) || 5)}
+                    className="w-full bg-gray-700 text-white px-2 py-1 rounded"
+                    step="0.5"
+                  />
+                </label>
+                <label className="text-white text-sm">
+                  Height (%)
+                  <input
+                    type="number"
+                    value={mobileLayout[selectedMobileLayoutElement].height.toFixed(1)}
+                    onChange={e => handleMobileLayoutInput(selectedMobileLayoutElement, 'height', parseFloat(e.target.value) || 5)}
+                    className="w-full bg-gray-700 text-white px-2 py-1 rounded"
+                    step="0.5"
+                  />
+                </label>
+              </div>
+            </div>
+          )}
+
+          <hr className="border-gray-700 my-3" />
+
+          {/* Mobile Location Zones */}
+          <h4 className="text-sm font-bold text-white mb-2">Location Zones</h4>
+
+          {selectedMobileZoneData && (
+            <div className="mb-4 p-3 bg-gray-800 rounded">
+              <h4 className="text-emerald-400 font-bold mb-3 text-sm">{selectedMobileZoneData.id}</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="text-white text-sm">
+                  X (%)
+                  <input
+                    type="number"
+                    value={selectedMobileZoneData.x.toFixed(1)}
+                    onChange={e => handleMobileZoneInput(selectedMobileZoneData.id, 'x', parseFloat(e.target.value) || 0)}
+                    className="w-full bg-gray-700 text-white px-2 py-1 rounded"
+                    step="0.5"
+                  />
+                </label>
+                <label className="text-white text-sm">
+                  Y (%)
+                  <input
+                    type="number"
+                    value={selectedMobileZoneData.y.toFixed(1)}
+                    onChange={e => handleMobileZoneInput(selectedMobileZoneData.id, 'y', parseFloat(e.target.value) || 0)}
+                    className="w-full bg-gray-700 text-white px-2 py-1 rounded"
+                    step="0.5"
+                  />
+                </label>
+                <label className="text-white text-sm">
+                  Width (%)
+                  <input
+                    type="number"
+                    value={selectedMobileZoneData.width.toFixed(1)}
+                    onChange={e => handleMobileZoneInput(selectedMobileZoneData.id, 'width', parseFloat(e.target.value) || 5)}
+                    className="w-full bg-gray-700 text-white px-2 py-1 rounded"
+                    step="0.5"
+                  />
+                </label>
+                <label className="text-white text-sm">
+                  Height (%)
+                  <input
+                    type="number"
+                    value={selectedMobileZoneData.height.toFixed(1)}
+                    onChange={e => handleMobileZoneInput(selectedMobileZoneData.id, 'height', parseFloat(e.target.value) || 5)}
+                    className="w-full bg-gray-700 text-white px-2 py-1 rounded"
+                    step="0.5"
+                  />
+                </label>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-1 max-h-48 overflow-y-auto">
+            {mobileZones.map(zone => (
+              <button
+                key={zone.id}
+                onClick={() => setSelectedMobileZone(zone.id)}
+                className={`w-full text-left px-2 py-1 rounded text-sm ${
+                  selectedMobileZone === zone.id
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                }`}
+              >
+                {zone.id}
+              </button>
+            ))}
+          </div>
+
+          <hr className="border-gray-700 my-3" />
+
+          {/* Reset mobile to defaults */}
+          <button
+            onClick={() => {
+              setMobileLayout({ ...DEFAULT_MOBILE_LAYOUT });
+              setSelectedMobileLayoutElement(null);
+              setSelectedMobileZone(null);
+            }}
+            className="w-full px-3 py-1.5 bg-gray-700 text-gray-300 rounded text-sm hover:bg-gray-600"
+          >
+            Reset Mobile to Defaults
+          </button>
+        </>
+      ) : null}
     </div>
   );
 }

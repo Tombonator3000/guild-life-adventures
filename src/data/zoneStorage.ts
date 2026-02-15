@@ -1,10 +1,10 @@
 /**
  * Zone Editor localStorage persistence
- * Saves/loads zone configurations, center panel, layout, and movement paths
+ * Saves/loads zone configurations, center panel, layout, movement paths, and mobile overrides
  * so edits survive page reloads without needing to copy code.
  */
 
-import type { ZoneConfig, CenterPanelLayout, AnimationLayerConfig } from '@/types/game.types';
+import type { ZoneConfig, CenterPanelLayout, AnimationLayerConfig, MobileZoneOverrides } from '@/types/game.types';
 import type { CenterPanelConfig } from '@/components/game/ZoneEditor';
 import type { MovementWaypoint } from '@/data/locations';
 
@@ -16,6 +16,7 @@ export interface ZoneEditorSaveData {
   paths: Record<string, MovementWaypoint[]>;
   layout?: CenterPanelLayout; // Optional for backwards compat with pre-layout saves
   animationLayers?: AnimationLayerConfig[]; // Optional for backwards compat
+  mobileOverrides?: MobileZoneOverrides; // Optional for backwards compat
   savedAt: number;
 }
 
@@ -28,6 +29,7 @@ export function saveZoneConfig(
   paths: Record<string, MovementWaypoint[]>,
   layout?: CenterPanelLayout,
   animationLayers?: AnimationLayerConfig[],
+  mobileOverrides?: MobileZoneOverrides,
 ): boolean {
   try {
     const data: ZoneEditorSaveData = {
@@ -36,6 +38,7 @@ export function saveZoneConfig(
       paths,
       layout,
       animationLayers,
+      mobileOverrides,
       savedAt: Date.now(),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
