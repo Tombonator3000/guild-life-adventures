@@ -214,5 +214,5 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'cleanseCurse',
   'performDarkRitual',
   'attemptCurseReflection',
-  'addHexScrollToPlayer',
+  // BUG FIX: Removed 'addHexScrollToPlayer' — internal-only action (dungeon drops), no cost validation
 ]);

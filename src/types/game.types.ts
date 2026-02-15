@@ -272,7 +272,8 @@ export interface GameState {
   currentPlayerIndex: number;
   players: Player[];
   week: number;
-  priceModifier: number;
+  priceModifier: number;          // Final price modifier (includes weather/festival effects)
+  basePriceModifier: number;      // Raw economy modifier (without weather/festival, used as input for next week's drift)
   economyTrend: number;          // -1 (recession), 0 (stable), 1 (boom)
   economyCycleWeeksLeft: number;  // Weeks until next trend change
   goalSettings: GoalSettings;

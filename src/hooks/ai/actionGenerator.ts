@@ -188,9 +188,10 @@ export function generateActions(
   goals: { wealth: number; happiness: number; education: number; career: number },
   settings: DifficultySettings,
   week: number,
-  priceModifier: number
+  priceModifier: number,
+  stockPrices?: Record<string, number>
 ): AIAction[] {
-  const progress = calculateGoalProgress(player, goals);
+  const progress = calculateGoalProgress(player, goals, stockPrices);
   const urgency = calculateResourceUrgency(player);
   const weakestGoal = getWeakestGoal(progress);
   const currentLocation = player.currentLocation;

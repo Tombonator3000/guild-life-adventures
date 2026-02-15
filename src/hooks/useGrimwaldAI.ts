@@ -85,6 +85,11 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     temperEquipment: store.temperEquipment,
     forgeRepairEquipment: store.forgeRepairEquipment,
     applyDurabilityLoss: store.applyDurabilityLoss,
+    // BUG FIX: Include hex/curse store actions (were missing, causing TypeError crashes)
+    castLocationHex: store.castLocationHex,
+    castPersonalCurse: store.castPersonalCurse,
+    buyProtectiveAmulet: store.buyProtectiveAmulet,
+    addHexScrollToPlayer: store.addHexScrollToPlayer,
     endTurn: store.endTurn,
   }), [store]);
 
@@ -140,7 +145,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
           const fastState = useGameStore.getState();
           const fastPlayer = fastState.players.find(p => p.id === player.id);
           if (!fastPlayer || fastPlayer.timeRemaining < 1 || fastPlayer.isGameOver) break;
-          const fastActions = generateActions(fastPlayer, goalSettings, settings, fastState.week, fastState.priceModifier);
+          const fastActions = generateActions(fastPlayer, goalSettings, settings, fastState.week, fastState.priceModifier, fastState.stockPrices);
           if (fastActions[0].type === 'end-turn') break;
           const success = executeAction(fastPlayer, fastActions[0]);
           if (!success) {
@@ -173,7 +178,8 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         goalSettings,
         settings,
         state.week,
-        state.priceModifier
+        state.priceModifier,
+        state.stockPrices
       );
 
       // Filter out actions that already failed this turn (prevent re-attempting)
@@ -233,7 +239,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
    * Get AI analysis of current game state
    */
   const analyzeGameState = useCallback((player: Player) => {
-    const progress = calculateGoalProgress(player, goalSettings);
+    const progress = calculateGoalProgress(player, goalSettings, useGameStore.getState().stockPrices);
     const urgency = calculateResourceUrgency(player);
     const weakestGoal = getWeakestGoal(progress);
     const adjustment = calculateAdjustment(player.id);

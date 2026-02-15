@@ -108,7 +108,8 @@ export function generateRivalryActions(ctx: ActionContext): AIAction[] {
     // We add a "study race" action with higher priority using actual degree data
     if (currentLocation === 'academy') {
       for (const [degreeId, progressCount] of Object.entries(player.degreeProgress)) {
-        if (progressCount > 0) {
+        // BUG FIX: Skip already-completed degrees (prevents wasting gold/time)
+        if (progressCount > 0 && !player.completedDegrees.includes(degreeId)) {
           const degree = DEGREES[degreeId as keyof typeof DEGREES];
           if (degree && player.gold >= degree.costPerSession && player.timeRemaining >= degree.hoursPerSession) {
             actions.push({

@@ -79,9 +79,10 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
         }
 
         // Loan garnishment: 25% of wages if loan is overdue (0 weeks remaining)
+        // BUG FIX: Only garnish if earnings are positive (rent garnishment can push earnings negative)
         let loanGarnishment = 0;
         let newLoanAmount = p.loanAmount;
-        if (p.loanAmount > 0 && p.loanWeeksRemaining <= 0) {
+        if (p.loanAmount > 0 && p.loanWeeksRemaining <= 0 && earnings > 0) {
           loanGarnishment = Math.min(Math.floor(earnings * 0.25), p.loanAmount);
           newLoanAmount = p.loanAmount - loanGarnishment;
           earnings -= loanGarnishment;

@@ -108,7 +108,8 @@ export function generateStrategicActions(ctx: ActionContext): AIAction[] {
         type: 'move-housing',
         priority: 55,
         description: 'Upgrade to Noble Heights',
-        details: { tier: 'noble' as HousingTier, cost: Math.round(RENT_COSTS.noble * ctx.priceModifier), rent: RENT_COSTS.noble },
+        // BUG FIX: Match human cost (first month + deposit = 2x), use price-adjusted rent
+        details: { tier: 'noble' as HousingTier, cost: Math.round(RENT_COSTS.noble * ctx.priceModifier) * 2, rent: Math.round(RENT_COSTS.noble * ctx.priceModifier) },
       });
     } else if (player.timeRemaining > moveCost('landlord') + 2) {
       actions.push({

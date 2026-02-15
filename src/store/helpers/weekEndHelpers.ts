@@ -60,8 +60,10 @@ interface WeekEndContext {
 // 1. Global System Processors
 // ============================================================
 
-/** Advance the economic cycle: trend changes, price drift, crash check */
+/** Advance the economic cycle: trend changes, price drift, crash check.
+ *  BUG FIX: Uses basePriceModifier (without weather/festival) to prevent permanent compounding. */
 function advanceEconomy(state: {
+  basePriceModifier: number;
   priceModifier: number;
   economyTrend: number;
   economyCycleWeeksLeft: number;
@@ -79,9 +81,11 @@ function advanceEconomy(state: {
   }
 
   // Drift priceModifier gradually toward trend direction
+  // BUG FIX: Use basePriceModifier (raw economy) to prevent weather/festival compounding
+  const basePrice = state.basePriceModifier ?? state.priceModifier; // fallback for old saves
   const drift = economyTrend * (0.02 + Math.random() * 0.04); // ±0.02-0.06
   const noise = (Math.random() - 0.5) * 0.03; // tiny random noise ±0.015
-  const priceModifier = Math.max(0.75, Math.min(1.25, state.priceModifier + drift + noise));
+  const priceModifier = Math.max(0.75, Math.min(1.25, basePrice + drift + noise));
 
   // H8: Market crash only during recession and low economy
   const crashResult = (economyTrend === -1 && priceModifier < 0.9)
@@ -431,27 +435,40 @@ function seizeCurrency(
   return seized;
 }
 
-/** Forced-sell stocks at 80% of current market value. Returns total gold recovered. */
+/** Forced-sell stocks at 80% of current market value. Returns total gold recovered.
+ *  BUG FIX: Only sell enough shares to cover remaining debt, not all shares. */
 function seizeStocks(p: Player, remaining: number, details: string[], stockPrices: Record<string, number>): number {
   if (remaining <= 0 || Object.keys(p.stocks).length === 0) return 0;
   let recovered = 0;
+  // Deep copy stocks to avoid mutating Zustand state via shared reference
+  p.stocks = { ...p.stocks };
   for (const stockId of Object.keys(p.stocks)) {
     if (remaining - recovered <= 0) break;
     const shares = p.stocks[stockId];
     if (shares > 0) {
       const price = stockPrices[stockId] || 50; // fallback to 50 if price unknown
-      const value = Math.min(Math.floor(shares * price * 0.8), remaining - recovered);
-      delete p.stocks[stockId];
+      const pricePerShare = Math.floor(price * 0.8);
+      const neededValue = remaining - recovered;
+      const sharesToSell = pricePerShare > 0 ? Math.min(shares, Math.ceil(neededValue / pricePerShare)) : shares;
+      const value = Math.min(Math.floor(sharesToSell * price * 0.8), neededValue);
+      if (sharesToSell >= shares) {
+        delete p.stocks[stockId];
+      } else {
+        p.stocks[stockId] = shares - sharesToSell;
+      }
       recovered += value;
-      details.push(`stocks (${shares} shares)`);
+      details.push(`stocks (${sharesToSell} shares of ${stockId})`);
     }
   }
   return recovered;
 }
 
-/** Liquidate appliances at 30% of original price. Returns total gold recovered. */
+/** Liquidate appliances at 30% of original price. Returns total gold recovered.
+ *  BUG FIX: Deep copy appliances to avoid mutating Zustand state via shared reference. */
 function seizeAppliances(p: Player, remaining: number, details: string[]): number {
   if (remaining <= 0 || Object.keys(p.appliances).length === 0) return 0;
+  // Deep copy to avoid mutating Zustand state
+  p.appliances = { ...p.appliances };
   let recovered = 0;
   let count = 0;
   for (const appId of Object.keys(p.appliances)) {
@@ -465,9 +482,12 @@ function seizeAppliances(p: Player, remaining: number, details: string[]): numbe
   return recovered;
 }
 
-/** Liquidate durable items at 30% of base price, unequipping as needed. Returns total gold recovered. */
+/** Liquidate durable items at 30% of base price, unequipping as needed. Returns total gold recovered.
+ *  BUG FIX: Deep copy durables to avoid mutating Zustand state via shared reference. */
 function seizeDurables(p: Player, remaining: number, details: string[]): number {
   if (remaining <= 0 || Object.keys(p.durables).length === 0) return 0;
+  // Deep copy to avoid mutating Zustand state
+  p.durables = { ...p.durables };
   let recovered = 0;
   let count = 0;
   for (const durId of Object.keys(p.durables)) {
@@ -784,6 +804,7 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
         week: newWeek,
         stockPrices: newStockPrices,
         priceModifier: finalPriceModifier,
+        basePriceModifier: economy.priceModifier, // Store raw economy modifier (before weather/festival)
         economyTrend: economy.economyTrend,
         economyCycleWeeksLeft: economy.economyCycleWeeksLeft,
         weather,
