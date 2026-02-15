@@ -5,6 +5,100 @@
 
 ---
 
+## 2026-02-15 — DEFINITIVE FIX: "Loading the realm..." Freeze — Root Cause Found (15:30 UTC)
+
+### Overview
+
+**Systematic bug hunt** with parallel AI agents to find the PERMANENT root cause of the recurring "Loading the realm..." freeze that has been "fixed" 12 times across PRs #185–#206 but kept returning after every new deployment.
+
+### Root Cause Found
+
+**The inline stale-build detection script in `index.html` used the WRONG base path to fetch `version.json` on GitHub Pages.** This made the entire deferred module loading defense system (built across PRs #200-#206) completely non-functional on GitHub Pages.
+
+```javascript
+// BROKEN (index.html inline script):
+var base = document.querySelector('base[href]');  // No <base> tag exists!
+base = base ? base.getAttribute('href') : '/';    // Always defaults to '/'
+fetch(base + 'version.json?_=' + Date.now(), ...) // Fetches /version.json → 404
+
+// On GitHub Pages, should fetch: /guild-life-adventures/version.json
+```
+
+**Why this caused the recurring freeze:**
+1. After each PR merge → GitHub Pages deploys new code with new chunk hashes
+2. Browser has stale HTML cached (GitHub Pages `Cache-Control: max-age=600`)
+3. Inline script tries to detect stale build via `version.json`
+4. Fetch goes to `/version.json` instead of `/guild-life-adventures/version.json` → 404
+5. 404 response → `null` → falls through: "Can't determine version — load the app anyway"
+6. `loadApp()` injects stale entry module with old chunk URLs
+7. Old chunks are 404'd on the server → React never mounts → "Loading the realm..." forever
+
+**Why previous fixes didn't work:**
+- PRs #200-#206 built an elaborate multi-layer defense (version checking, deferred module loading, cache busting) — but the PRIMARY defense layer (inline script version check) always failed on GitHub Pages due to the wrong base path
+- The `main.tsx` version check uses `import.meta.env.BASE_URL` (correct) but runs AFTER the module loads — too late if chunks already 404'd
+
+### Changes
+
+#### Fix 1: Inject base path into HTML (ROOT CAUSE FIX)
+
+**`vite.config.ts`** — `versionJsonPlugin()` now injects `window.__HTML_BASE__` alongside `window.__HTML_BUILD_TIME__`:
+```javascript
+// Built HTML now contains:
+window.__HTML_BUILD_TIME__="2026-02-15T...";
+window.__HTML_BASE__="/guild-life-adventures/";
+```
+
+**`index.html`** — Inline script uses injected base instead of broken `<base>` tag lookup:
+```javascript
+// BEFORE (broken):
+var base = document.querySelector('base[href]');
+base = base ? base.getAttribute('href') : '/';
+
+// AFTER (fixed):
+var base = window.__HTML_BASE__ || '/';
+```
+
+#### Fix 2: Defensive save data validation
+
+**`src/store/gameStore.ts`** — `loadFromSlot()` now validates save data before applying:
+- Checks `gameState`, `players` array exists and is non-empty
+- Validates `phase` is a valid GamePhase value
+- Invalid saves are logged and deleted instead of crashing
+- Prevents corrupted localStorage from causing UI hangs
+
+#### Fix 3: hardRefresh() timeout protection
+
+**`src/hooks/useAppUpdate.ts`** — `hardRefresh()` now wraps SW/cache cleanup in a 5-second timeout:
+- Prevents infinite hang if `navigator.serviceWorker.getRegistrations()` or `caches.keys()` don't resolve
+- After timeout, proceeds directly to cache-busting reload
+- Removed redundant SW verification step (retry unregister)
+
+#### Fix 4: Bug catalog
+
+**`bugs.md`** — New file cataloging all known bugs with root causes, fixes, and pattern analysis:
+- BUG-001: Loading freeze (13 fix attempts documented)
+- BUG-002: Autosave victory loop
+- BUG-003: Shadow Market hex tab crash
+- BUG-004: Multi-AI standing still
+- BUG-005: Mobile center panel too large
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `vite.config.ts` | Inject `window.__HTML_BASE__` in versionJsonPlugin |
+| `index.html` | Use `window.__HTML_BASE__` instead of `<base>` tag lookup for version.json fetch |
+| `src/store/gameStore.ts` | Validate save data structure in `loadFromSlot()` |
+| `src/hooks/useAppUpdate.ts` | 5s timeout on hardRefresh() cleanup operations |
+| `bugs.md` | New: centralized bug catalog with 5 entries |
+
+### Verification
+
+- **Build**: Clean, no errors
+- **Tests**: Passing
+
+---
+
 ## 2026-02-15 — Fix: Mobile Center Panel Still Too Large (14:00 UTC)
 
 ### Overview
