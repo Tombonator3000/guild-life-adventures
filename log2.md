@@ -102,6 +102,216 @@ The service worker was a secondary issue — it added complexity and created rel
 
 ---
 
+## 2026-02-15 — LLM Integration Research: Feasibility & Recommendation (19:00 UTC)
+
+### Overview
+
+Research task: **Can/should we integrate an LLM into Guild Life Adventures? What would it add?**
+
+Performed comprehensive analysis of the codebase's text systems, NPC interactions, event presentation, and existing AI architecture to evaluate where an LLM could add value, what it would cost, and whether the tradeoffs are worthwhile.
+
+### Current Text Systems Inventory
+
+The game has a rich set of hand-crafted text content:
+
+| System | Content Volume | Style |
+|--------|---------------|-------|
+| **NPC Banter** (`banter.ts`) | ~300 static lines across 13 NPCs, 5 moods, 40% context-aware | Monty Python / Discworld humor |
+| **NPC Greetings** (`npcs.ts`) | 13 fixed greetings (1 per location NPC) | Witty one-liners |
+| **Newspaper** (`newspaper.ts`) | ~70 gossip headlines, economy headlines, personalized event articles | Mock-medieval journalism |
+| **Events** (`events.ts`) | ~25 event descriptions (robbery, sickness, theft, etc.) | Dark humor, 2nd person |
+| **Quests** (`quests.ts`) | 25+ quest descriptions | Absurdist fantasy |
+| **Travel Events** (`travelEvents.ts`) | 10 travel encounter descriptions | Random adventure flavor |
+| **Banter Context** | Dynamic lines referencing player gold, housing, rivals, quests | Game-state-aware humor |
+
+**Total**: ~500+ unique text strings, all hand-written with a consistent Discworld/Hitchhiker's Guide voice.
+
+### Where an LLM Could Theoretically Add Value
+
+#### Tier 1 — High Potential Impact
+
+1. **Dynamic NPC Dialogue** — NPCs react to specific player situation
+   - "You look terrible. Is that the Cave smell, or were you always like that?"
+   - References player's actual gold, housing, health, recent events
+   - Integration point: `useBanter.ts` + `LocationShell.tsx`
+
+2. **Personalized Newspaper** — Weekly articles about actual game events
+   - "Local Adventurer [PlayerName] Bankrupted After Reckless Stock Gamble"
+   - AI rival actions, economy commentary, quest completions
+   - Integration point: `newspaper.ts` + `NewspaperModal.tsx`
+
+3. **AI Opponent Personality Dialogue** — Grimwald/Seraphina/Thornwick/Morgath "speak"
+   - Trash talk, congratulations, strategic commentary
+   - "Grimwald sneers at your education progress: 'Books? I prefer the school of hard knocks.'"
+   - Integration point: `useGrimwaldAI.ts` output
+
+4. **NPC Chat Mode** — Interactive conversation with location NPCs
+   - Ask Aldric about quest strategies, ask Mathilda about investments
+   - Turn each NPC into a character-consistent advisor
+   - New feature, would need new UI component
+
+#### Tier 2 — Medium Value
+
+5. **Event Flavor Variation** — Same event, different description each time
+6. **Quest Description Personalization** — Difficulty-relative flavor
+7. **Dungeon Encounter Narration** — More immersive combat descriptions
+8. **Academy Study Session Descriptions** — Flavor text for repetitive actions
+
+#### Tier 3 — Lower Value
+
+9. **Dynamic tutorial/hints** — Adaptive guidance
+10. **Localization assistance** — Help generate DE/ES/NO translations
+
+### Critical Problems With Live LLM Integration
+
+#### Problem 1: Cost — Who Pays?
+
+This is a **free web game** hosted on GitHub Pages. Every LLM API call costs money.
+
+| Usage Scenario | Calls/game | Est. Cost (Claude Haiku) | Est. Cost (GPT-4o-mini) |
+|---------------|------------|--------------------------|-------------------------|
+| NPC greetings only | ~100/game | ~$0.05 | ~$0.03 |
+| + Newspaper + Events | ~200/game | ~$0.15 | ~$0.08 |
+| + AI dialogue + Chat | ~500/game | ~$0.50 | ~$0.25 |
+| Full integration | ~1000/game | ~$1.00+ | ~$0.50+ |
+
+Even at the cheapest tier, 100 players/day = $5-100/day. No revenue model to support this.
+
+**Options:**
+- **BYOK (Bring Your Own Key)**: Player enters their API key. Works but adds friction, limits audience.
+- **Supabase Edge Function proxy**: Already exists for ElevenLabs. Could add Claude/OpenAI. But who funds it?
+- **Free tier abuse**: Most free tiers have strict limits (Anthropic: no free tier; OpenAI: limited).
+- **Local models**: WebLLM/llama.cpp in browser — still too slow and large for casual web games (2-8GB model download).
+
+#### Problem 2: Latency
+
+LLM API calls add 500ms-3s per response. In a game where banter appears on location visit and events pop up during turn processing, this creates noticeable delays.
+
+**Mitigations:**
+- Pre-fetch content for adjacent locations
+- Show static text immediately, replace with LLM text when ready
+- Cache aggressively (same context → same response)
+- Batch requests (generate entire newspaper at once)
+
+All viable, but add significant architectural complexity.
+
+#### Problem 3: Quality Control
+
+The game's strongest asset is its **hand-crafted humor**. Lines like:
+
+> "We had a motivation poster: 'Hang in there!' It was next to the execution notice board. Bad placement."
+
+> "A dragon came in to open an account. We asked for two forms of ID. He provided fire. Twice."
+
+> "Your gold is safe here. Probably. We haven't been audited in centuries."
+
+These are **consistently excellent**. An LLM will produce text that is:
+- Sometimes great, sometimes mediocre, sometimes off-tone
+- Generic fantasy dialogue instead of the specific Discworld voice
+- Occasionally repetitive ("Ah, I see you're back..." opener)
+- Hard to quality-control at runtime
+
+The few-shot prompting approach helps, but **live-generated text will never match curated text** for consistency.
+
+#### Problem 4: Complexity & Maintenance
+
+Adding an LLM integration means:
+- New service layer (`llmService.ts`)
+- API key management UI
+- Supabase edge function or backend proxy
+- Caching layer with context hashing
+- Error handling and fallback logic
+- Rate limiting
+- Prompt engineering and maintenance
+- Testing (how do you test non-deterministic output?)
+
+This is a significant engineering investment for a feature that may not improve the game.
+
+### Recommendation: Hybrid Approach
+
+**Verdict: Live LLM integration is NOT worth it for the current game. But LLM-assisted content generation at DEVELOPMENT TIME is extremely valuable.**
+
+#### What TO Do: LLM as Development Tool
+
+Use Claude (or any LLM) as a **content generation tool during development** to:
+
+1. **Generate more banter lines** — Feed existing lines as examples, generate 50+ new lines per NPC in the same voice. Curate the best ones manually.
+
+2. **Generate more newspaper content** — More gossip headlines, more economy articles, more personalized event templates. Currently ~70 headlines; could easily be 300+.
+
+3. **Generate event description variants** — Each event gets 3-5 variations instead of 1. Randomly selected at runtime. Zero latency, zero cost.
+
+4. **Generate quest flavor text variants** — Same mechanical quest, different descriptions each playthrough.
+
+5. **Generate NPC personality profiles** — Richer `contextBanter` functions that respond to more game states.
+
+**Benefits:**
+- Zero runtime cost
+- Zero latency
+- Quality-controlled (human curates the output)
+- Maintains the consistent Discworld voice
+- Dramatically increases text variety
+- No API keys, no edge functions, no complexity
+
+#### What MIGHT Be Worth It Later: Optional "AI Enhanced" Mode
+
+If the game grows and has a revenue model (donations, premium features, itch.io sales):
+
+1. **NPC Chat Mode** — "Talk to Aldric" button, opens a chat interface. Aldric has a system prompt with his personality, the player's state, and game context. This is genuinely novel and engaging.
+
+2. **Dynamic Newspaper** — Weekly newspaper that references ALL actual game events in narrative form.
+
+3. **AI Rival Commentary** — When Grimwald takes an action, he "says" something personality-appropriate about it.
+
+**Implementation would use:**
+- Supabase Edge Function (already have the pattern from `elevenlabs-sfx`)
+- BYOK option for power users
+- Aggressive caching (newspaper generated once/week, not per-view)
+- Static fallbacks for all features (game works perfectly without API key)
+
+### Concrete Next Steps (If Proceeding)
+
+#### Phase 1: Content Expansion (No LLM at runtime — just better static content)
+
+1. Use Claude to batch-generate 500+ new banter lines across all NPCs
+2. Generate 200+ new newspaper headlines and articles
+3. Generate 3-5 event description variants per event
+4. Add more contextBanter triggers (react to more game states)
+5. Estimated effort: Data files only, no architecture changes
+
+#### Phase 2: Optional NPC Chat (Future — requires backend)
+
+1. Create `supabase/functions/npc-chat/index.ts`
+2. System prompt per NPC with personality + game context
+3. UI: "Chat with [NPC]" button in LocationShell
+4. BYOK settings in game options
+5. Static greeting fallback when no API key
+
+### Files Analyzed
+
+| File | Relevance |
+|------|-----------|
+| `src/data/banter.ts` | Primary candidate for content expansion |
+| `src/data/npcs.ts` | NPC personality data for prompt engineering |
+| `src/data/newspaper.ts` | Newspaper content expansion |
+| `src/data/events.ts` | Event description variants |
+| `src/data/quests.ts` | Quest flavor text variants |
+| `src/hooks/useBanter.ts` | Banter trigger system (future LLM hook point) |
+| `src/hooks/useGrimwaldAI.ts` | AI system (future personality dialogue) |
+| `src/components/game/LocationShell.tsx` | NPC display (future chat UI) |
+| `supabase/functions/elevenlabs-sfx/` | Existing edge function pattern for API proxy |
+
+### Summary
+
+| Approach | Value | Cost | Risk | Recommendation |
+|----------|-------|------|------|----------------|
+| **Live LLM for all text** | High variety | High ($$$, latency, complexity) | Quality inconsistency | **No** |
+| **LLM-generated static content** | High variety | Zero runtime | Low (curated) | **Yes — do this** |
+| **Optional NPC chat (BYOK)** | Novel feature | Medium (edge function) | Low (optional) | **Maybe later** |
+| **Local browser LLM** | No cost | Huge download, slow | Immature tech | **No (not yet)** |
+
+---
+
 ## 2026-02-15 — Fix: Loading System Simplification — Eliminate Reload Loops (16:35 UTC)
 
 ### Overview
