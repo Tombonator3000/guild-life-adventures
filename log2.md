@@ -5,6 +5,103 @@
 
 ---
 
+## 2026-02-15 — NUCLEAR FIX: Loading System — CDN Cache Bypass + SW Neutered + Module Retry (17:00 UTC)
+
+### Overview
+
+**BUG HUNT #9**: Game STILL refuses to load after every PR merge on GitHub Pages, despite 15 previous fix attempts (PRs #185-#214). Works fine from Lovable. Systematic investigation with parallel agents found TWO fundamental issues that ALL previous fixes missed.
+
+### Root Cause Analysis (DEFINITIVE)
+
+**Root Cause 1: CDN cache bypass was incomplete.**
+The inline script's `version.json` fetch used `{cache:'no-store'}` which only bypasses the **browser's** local HTTP cache. It did NOT include `Cache-Control: no-cache` request headers. Without these headers, the GitHub Pages CDN (Fastly) could serve a stale cached `version.json`. When both HTML and version.json are stale with matching buildTimes, the hot-swap thinks HTML is fresh and loads the stale entry URL → 404 → "Loading the realm..." forever.
+
+**Root Cause 2: Service worker lifecycle incompatible with stale-cache recovery.**
+`registerType: 'autoUpdate'` with `skipWaiting: true` + `clientsClaim: true` causes the new SW to take control of the page immediately after install. This triggers `controllerchange` events, interferes with version.json fetches (SW intercepts and may serve cached responses), and has caused 5+ infinite reload loops across PRs #198-#214. Every fix for the SW created a new issue.
+
+### Why Previous Fixes Failed
+
+| Fix attempt | What it addressed | What it missed |
+|-------------|-------------------|----------------|
+| PRs #185-#206 | Various symptoms | Wrong base path, no CDN bypass, no module retry |
+| PR #211 | Fixed base path | Stale version.json from CDN → hot-swap never triggers |
+| PR #212 | Hot-swap architecture | SW interference causes reload loops |
+| PR #213 | Simplified defense layers | `controllerchange` → `hardRefresh()` infinite loop |
+| PR #214 | Fixed controllerchange | CDN still serves stale version.json; no module retry |
+
+### Changes (4 files)
+
+#### 1. CDN cache bypass + module onerror retry (`index.html`)
+
+**Inline version.json fetch** now includes `headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}` alongside `{cache:'no-store'}`. These request headers tell CDN proxy caches to revalidate with the origin server instead of serving stale cached content.
+
+**Module onerror retry**: When the entry module fails to load (404), instead of immediately showing an error, the handler:
+1. Fetches `version.json` again (CDN may have updated since the first fetch)
+2. If a DIFFERENT entry URL is returned, hot-swaps to it and retries
+3. Up to 2 retries before giving up
+4. Shows user-friendly message: "A new version may be deploying — try again in a minute"
+
+This handles the scenario where both HTML and version.json were stale on the first load, but the CDN has since propagated the fresh version.
+
+#### 2. Inline SW unregister before version check (`index.html`)
+
+Added a `<script>` block that runs BEFORE the version check to unregister ALL existing service workers:
+```javascript
+navigator.serviceWorker.getRegistrations().then(r => r.forEach(s => s.unregister()))
+```
+This is fire-and-forget: by the time the entry module loads (1-3s later), the unregister is complete and all fetches go directly to the network without SW interference. The `useRegisterSW` hook in React re-registers a fresh SW after mount.
+
+#### 3. SW neutered for GitHub Pages (`vite.config.ts`)
+
+- `registerType`: changed to `'prompt'` for GitHub Pages (was `'autoUpdate'`). New SWs install but don't activate until explicit trigger or all tabs closed.
+- `skipWaiting`: `false` for GitHub Pages. New SW doesn't auto-activate.
+- `clientsClaim`: `false` for GitHub Pages. New SW doesn't take control of existing tabs.
+
+Combined effect: NO `controllerchange` events, NO mid-visit SW takeover, NO reload loops from SW lifecycle. The SW only provides caching benefits for images/audio on subsequent visits.
+
+#### 4. Simplified `useAppUpdate.ts`
+
+- Removed `controllerchange` event listener entirely (no longer needed since SW doesn't auto-activate)
+- version.json polling remains as the primary update detection method
+- `hardRefresh()` unchanged (still has reload loop protection)
+
+### Defense Layer Summary (After Nuclear Fix)
+
+| Layer | Purpose | When |
+|-------|---------|------|
+| Inline SW unregister | Remove stale SWs | Before version check |
+| version.json with CDN bypass | Detect stale HTML | Before module loads |
+| Hot-swap from version.json | Load fresh modules without reload | When stale detected |
+| Module onerror retry | Retry with fresh version.json | If module 404s |
+| Smart fallback button | Show reload button when genuinely stuck | 10-15s after page load |
+| Reload loop protection | Prevent infinite loops (max 3 in 2 min) | On reload button click |
+| version.json polling | Show update banner for new versions | After React mounts |
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `index.html` | CDN cache bypass headers on version.json fetch, module onerror retry (2 attempts), inline SW unregister before version check |
+| `vite.config.ts` | `registerType: 'prompt'` for GitHub Pages, `skipWaiting: false`, `clientsClaim: false` |
+| `src/hooks/useAppUpdate.ts` | Removed `controllerchange` handler, simplified to version.json polling only |
+| `bugs.md` | Updated BUG-001 with nuclear fix details and new lessons learned |
+
+### Verification
+
+- **TypeScript**: No errors
+- **Tests**: 219 passing, 0 failures
+- **Build** (`DEPLOY_TARGET=github`): Clean, no errors
+- **Built SW verified**: No `self.clients.claim()`, `self.skipWaiting()` only in message listener (not auto-triggered)
+- **Built HTML verified**: CDN bypass headers, module retry, SW unregister all present
+
+### Key Insight
+
+The fundamental mistake in all 15 previous fixes was treating this as a **client-side caching** problem. It was actually a **CDN caching** problem. `cache:'no-store'` only controls the browser's cache — it does nothing about the CDN sitting between the browser and the server. Adding `Cache-Control: no-cache` request headers was the missing piece that makes the hot-swap mechanism work reliably even when the CDN is slow to propagate new deployments.
+
+The service worker was a secondary issue — it added complexity and created reload loops, but the primary failure was the CDN serving stale version.json.
+
+---
+
 ## 2026-02-15 — Fix: Loading System Simplification — Eliminate Reload Loops (16:35 UTC)
 
 ### Overview

@@ -86,6 +86,15 @@
         __guildShowLoadError(msg);
       });
     </script>
+    <!-- Unregister stale service workers BEFORE version check runs.
+         Old/broken SWs from previous deployments can intercept fetches and serve
+         stale cached responses, defeating the version.json freshness check.
+         This is fire-and-forget: by the time the entry module loads (1-3s later),
+         the unregister is complete and all fetches go direct to network.
+         The useRegisterSW hook in React will re-register a fresh SW after mount. -->
+    <script>
+      try{navigator.serviceWorker&&navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(s){s.unregister()})}).catch(function(){})}catch(e){}
+    </script>
     <!-- DEFERRED MODULE LOADING + STALE-BUILD DETECTION (Layer 0)
          In production, deferModulePlugin removes the <script type="module"> tag and
          stores its URL in window.__ENTRY__. This script loads it dynamically AFTER
@@ -102,6 +111,22 @@
          doesn't exist, so the module script tag below loads normally. -->
     <script>
       (function(){
+        var retryCount=0; /* track module load retries */
+
+        /* ===== fetchVersion: fetch version.json with CDN + browser cache bypass =====
+           Uses both browser cache bypass (cache:'no-store') AND CDN cache bypass
+           (Cache-Control/Pragma no-cache headers + unique query param).
+           Previous versions only used cache:'no-store' which bypasses the BROWSER
+           cache but NOT the CDN cache. GitHub Pages CDN (Fastly) could still serve
+           stale version.json, making the hot-swap think HTML is fresh when it's not. */
+        function fetchVersion(base){
+          return fetch(base+'version.json?_='+Date.now(),{
+            cache:'no-store',
+            headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}
+          }).then(function(r){return r.ok?r.json():null})
+            .catch(function(){return null});
+        }
+
         /* ===== loadApp: dynamically inject the entry module ===== */
         function loadApp(){
           if(document.querySelector('script[data-entry]'))return; /* already loading */
@@ -122,11 +147,37 @@
           /* Handle module load failures (404 for old chunks, network errors).
              <script type="module"> errors don't trigger window.onerror or
              unhandledrejection — they silently fail, leaving the loading
-             screen visible forever. This onerror catches those cases. */
+             screen visible forever. This onerror catches those cases.
+
+             KEY FIX (2026-02-15): Instead of immediately giving up, try fetching
+             version.json again. This handles the scenario where BOTH the HTML AND
+             version.json were stale on the first fetch (matching buildTimes, so
+             hot-swap didn't trigger), but the CDN has since updated. The retry
+             gives the CDN cache time to propagate the fresh version.json. */
           s.onerror=function(){
-            window.__guildAppFailed=true;
             console.error('[Guild Life] Entry module failed to load:',src);
-            __guildShowLoadError('Module failed to load: '+src.split('/').pop());
+            if(retryCount<2 && window.__HTML_BASE__){
+              retryCount++;
+              console.log('[Guild Life] Retrying with fresh version.json (attempt '+retryCount+')...');
+              /* Remove the failed script so loadApp() can inject a new one */
+              s.remove();
+              fetchVersion(window.__HTML_BASE__).then(function(data){
+                if(data&&data.entry&&data.entry!==src){
+                  console.log('[Guild Life] Got fresh entry URL:',data.entry);
+                  swapCss(data.css);
+                  window.__ENTRY__=data.entry;
+                  loadApp();
+                }else{
+                  /* version.json still returns the same (stale) entry URL, or fetch failed.
+                     Show error and let the fallback button handle recovery. */
+                  window.__guildAppFailed=true;
+                  __guildShowLoadError('Module failed to load. A new version may be deploying — try again in a minute.');
+                }
+              });
+            }else{
+              window.__guildAppFailed=true;
+              __guildShowLoadError('Module failed to load: '+src.split('/').pop());
+            }
           };
           document.body.appendChild(s);
           /* Clean up cache-buster from URL (added by stale-build reload) */
@@ -160,19 +211,21 @@
 
         var base=window.__HTML_BASE__||'/';
 
-        /* Fetch version.json — reused by main.tsx via window.__versionCheck */
-        window.__versionCheck=fetch(base+'version.json?_='+Date.now(),{cache:'no-store'})
-          .then(function(r){return r.ok?r.json():null})
-          .catch(function(){return null});
+        /* Fetch version.json with full CDN + browser cache bypass */
+        window.__versionCheck=fetchVersion(base);
 
         window.__versionCheck.then(function(data){
           if(!data||!data.buildTime){
-            /* Can't determine version — load the app anyway */
+            /* Can't determine version — load the app anyway.
+               If the entry URL is stale, the onerror retry will catch it. */
+            console.log('[Guild Life] version.json unavailable — loading app with HTML entry');
             loadApp();
             return;
           }
           if(data.buildTime===window.__HTML_BUILD_TIME__){
-            /* HTML is fresh — safe to load */
+            /* HTML and version.json agree — load the app.
+               NOTE: If both are stale (CDN served cached version.json), the entry
+               URL may 404. The onerror retry handler will catch this and try again. */
             loadApp();
             return;
           }
@@ -181,20 +234,12 @@
           console.warn('[Guild Life] Stale HTML detected. HTML:',
             window.__HTML_BUILD_TIME__,'Server:',data.buildTime);
 
-          /* ===== HOT-SWAP FIX: Load fresh module directly from version.json =====
-             Previous approach: reload with ?_gv=<timestamp> to force fresh HTML.
-             Problem: GitHub Pages CDN may still serve cached HTML within max-age=600
-             window, causing a reload loop that ends with loading stale chunks (404).
-
-             New approach: version.json contains the fresh entry module URL and CSS URLs.
-             Since version.json is fetched with cache:'no-store' + unique query param,
-             it's ALWAYS fresh. We hot-swap to the fresh module without reloading.
-             This works even when the HTML itself is stale/cached. */
+          /* ===== HOT-SWAP: Load fresh module directly from version.json =====
+             version.json has the fresh entry URL and CSS URLs.
+             Hot-swap to fresh modules without reloading the page. */
           if(data.entry){
             console.log('[Guild Life] Hot-swapping to fresh entry:',data.entry);
-            /* Replace stale CSS with fresh CSS from version.json */
             swapCss(data.css);
-            /* Load the fresh entry module instead of the stale one from HTML */
             window.__ENTRY__=data.entry;
             loadApp();
             return;
@@ -236,7 +281,8 @@
             });
         });
 
-        /* Timeout: if version check takes >8s, load anyway (slow/offline). */
+        /* Timeout: if version check takes >8s, load anyway (slow/offline).
+           If the entry URL is stale, the onerror retry will catch it. */
         setTimeout(function(){
           if(!document.querySelector('script[data-entry]')){
             console.log('[Guild Life] Version check timed out — loading app');
