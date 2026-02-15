@@ -83,6 +83,23 @@ Instead of reloading (fragile), the inline script now hot-swaps the entry module
 2. When stale HTML detected: swap `window.__ENTRY__` to fresh URL, replace CSS links, load directly
 3. Added `onerror` handler on `<script type="module">` to catch silent 404s
 
+### Why Hot-Swap Still Caused "Clear Cache" Loop (found 2026-02-15)
+
+The hot-swap mechanism works correctly. The problem was the DEFENSE LAYERS fighting each other:
+
+1. **Premature fallback button** — appeared after 3s, before module finished loading (4-8s on slow connections). Users clicked it → unnecessary reload → same button appeared → loop.
+2. **`checkStaleBuild()` in main.tsx had no reload limit** — if inline script's version.json fetch failed transiently, this function would detect stale and reload with NO loop counter → infinite reloads.
+3. **`cacheReload()` fire-and-forget** — SW unregister + cache delete started but not awaited (300ms delay). Reload could fire while old SW still active.
+4. **`useAppUpdate` auto-reload on mount** — conflicted with inline hot-swap, causing double detection and double reloads.
+
+### Fix: Simplify Defense Layers (2026-02-15)
+
+- Added loading state flags (`__guildAppLoading`, `__guildAppFailed`, `__guildReactMounted`) for smart fallback timing
+- Added reload loop protection (max 3 reloads in 2 min via sessionStorage)
+- Made `cacheReload()` await cleanup before reloading (3s timeout)
+- Removed `checkStaleBuild()` from main.tsx (redundant with inline script)
+- Removed auto-reload from `useAppUpdate` (shows banner instead)
+
 ---
 
 ## BUG-002: Autosave Victory Loop
