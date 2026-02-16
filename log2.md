@@ -5,6 +5,79 @@
 
 ---
 
+## 2026-02-16 — BUG HUNT #3: Dependability Bug + Event Spam + Startup Hardening (09:00 UTC)
+
+### Overview
+
+**BUG HUNT #3**: Three bugs fixed using parallel AI agents for investigation.
+
+### Bug 1: Game Startup Hang After PR Push (Hardening)
+
+**Problem**: Game hangs on "Loading the realm..." after pushing a PR. Works fine from Lovable.
+
+**Root cause**: Existing loading pipeline had race conditions and premature fallback display:
+1. Fallback button showed at 10s even when version check was still running legitimately
+2. Watchdog and onerror could create parallel retry chains (no deduplication)
+3. No flag to track whether version check pipeline was in progress
+
+**Fix** (index.html):
+- Added `__guildVersionCheckStarted` flag — fallback button now waits if version check is running
+- Added `retryInProgress` deduplication — prevents watchdog + onerror from creating parallel retry chains
+- Increased fallback button timeout from 10-12s to 15s — gives pipeline enough time on slow connections
+- Added `.catch()` to clear retry lock on fetch failures
+
+### Bug 2: Dependability Drops Even When Player Worked
+
+**Problem**: Player gets "dependability dropped — your employer noticed you didn't show up for work this week" even after working.
+
+**Root cause** (weekEndHelpers.ts:670-672): `resetWeeklyFlags()` was called BEFORE `processEmployment()`. This reset `workedThisTurn` to `false` before it was checked, so the penalty ALWAYS triggered regardless of whether the player actually worked.
+
+**Fix**:
+1. Swapped order: `processEmployment()` now runs BEFORE `resetWeeklyFlags()`
+2. Changed penalty from flat `-2` to `-10%` of current dependability (as designed)
+
+```typescript
+// BEFORE (broken):
+resetWeeklyFlags(p);        // ← Sets workedThisTurn = false
+processEmployment(p, ...);  // ← Checks workedThisTurn (always false!)
+
+// AFTER (fixed):
+processEmployment(p, ...);  // ← Checks workedThisTurn (correct value)
+resetWeeklyFlags(p);        // ← Now safe to reset
+```
+
+### Bug 3: Too Many Week Events + Event Spam
+
+**Problem**: Multiple events stack per week (theft + sickness + clothing damage etc.). Events happen too frequently.
+
+**Fix**:
+1. **Location events**: Added 20% gate check — only 1 in 5 location visits even checks for an event
+2. **Weekly theft**: Added 30% gate check — theft roll only happens 30% of weeks (down from 100%)
+3. **Max 1 random event per week**: Split `processFinances` and `processSickness` into deterministic and random parts. Deterministic always runs (interest, ongoing sickness drain). Random parts (theft, new sickness) are mutually exclusive — max 1 per week per player.
+
+**Effective probability changes**:
+| Event | Before | After |
+|-------|--------|-------|
+| Location event per move | ~20-40% | ~4-8% (20% gate × probability) |
+| Weekly theft (Slums) | ~25% | ~7.5% (30% gate × 25%) |
+| Theft + Sickness same week | Possible | Impossible (max 1) |
+
+### Changes (3 files)
+
+| File | Changes |
+|------|---------|
+| `index.html` | Version check flag, retry dedup, 15s fallback timeout |
+| `src/store/helpers/weekEndHelpers.ts` | Fixed processPlayerWeekEnd order, 10% dep penalty, split random/deterministic processors, max 1 random event/week |
+| `src/data/events.ts` | 20% gate on location events, 30% gate on weekly theft |
+
+### Test Results
+
+- **219 tests passing**, 0 failures
+- TypeScript: clean, no errors
+- Build: clean (both default and production)
+
+---
+
 ## 2026-02-16 — BUG HUNT #2: SW Race Condition + Loading Progress + Module Cache-Bust (08:00 UTC)
 
 ### Overview
