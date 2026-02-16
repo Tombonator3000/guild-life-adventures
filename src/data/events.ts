@@ -436,7 +436,11 @@ export const checkForEvent = (
   location: LocationId,
   gold: number
 ): GameEvent | null => {
-  // First, filter events by conditions only (no probability roll yet)
+  // Gate check: only 20% chance of any event triggering at all per move.
+  // This makes events feel rare and special rather than constant.
+  if (Math.random() > 0.20) return null;
+
+  // Filter events by conditions only (no probability roll yet)
   const eligibleEvents = RANDOM_EVENTS.filter(event => {
     if (event.conditions) {
       if (event.conditions.housing && !event.conditions.housing.includes(housing)) {
@@ -465,13 +469,17 @@ export const checkForEvent = (
 };
 
 export const checkWeeklyTheft = (housing: HousingTier, gold: number): GameEvent | null => {
+  // Gate check: only 30% chance of even checking for theft each week.
+  // Combined with individual event probability, makes theft occasional rather than constant.
+  if (Math.random() > 0.30) return null;
+
   const theftEvents = RANDOM_EVENTS.filter(event =>
     event.id.includes('shadowfingers') &&
     event.conditions?.housing?.includes(housing) &&
     (!event.conditions?.minGold || gold >= event.conditions.minGold)
   );
 
-  // Homeless players are more vulnerable to theft (1.5x probability, was 2x — too harsh)
+  // Homeless players are more vulnerable to theft (1.5x probability)
   const homelessMultiplier = housing === 'homeless' ? 1.5 : 1;
 
   for (const event of theftEvents) {

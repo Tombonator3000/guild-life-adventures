@@ -223,3 +223,27 @@ Systematic bug hunt with parallel agents. No new code bugs found in recent PRs (
 8. **Proactive watchdog > reactive error handlers** — Some failures produce no signal; check the end result (did React mount?) rather than waiting for specific errors
 9. **Chain async cleanup before dependent operations** — Fire-and-forget cleanup can race with the operations that depend on it being complete
 10. **Show progress during loading** — Users interpret static text as frozen; dynamic status prevents premature cache clears
+11. **Deduplicate retry attempts** — Watchdog and onerror can fire independently; use a lock flag to prevent parallel retry chains
+12. **Track pipeline state for fallback UI** — Without a `versionCheckStarted` flag, the fallback button can show prematurely while version check is still running normally
+
+---
+
+## BUG-006: Dependability Always Drops (Even When Player Worked)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | High |
+| **Status** | FIXED (2026-02-16) |
+| **Root cause** | `resetWeeklyFlags()` called BEFORE `processEmployment()` in `processPlayerWeekEnd()` — reset `workedThisTurn` to false before checking it |
+| **Fix** | Swapped call order: employment check runs first, then weekly flags reset. Also changed penalty from flat -2 to -10% |
+
+---
+
+## BUG-007: Too Many Events Per Week (Event Spam)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | Medium |
+| **Status** | FIXED (2026-02-16) |
+| **Root cause** | 9+ independent event systems could all trigger in the same week. No cap on random events per week. High individual probabilities compounded. |
+| **Fix** | (1) Added 20% gate on location events, 30% gate on weekly theft. (2) Split deterministic/random processors. (3) Max 1 random event per week per player (theft OR sickness, not both). |

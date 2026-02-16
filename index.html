@@ -115,6 +115,8 @@
       (function(){
         var retryCount=0; /* track module load retries */
         var watchdogFired=false; /* prevent double watchdog */
+        var retryInProgress=false; /* prevent parallel retry chains */
+        window.__guildVersionCheckStarted=false; /* track version check progress */
 
         /* ===== unregisterSW: unregister all service workers and return a promise =====
            Old/broken SWs from previous deployments can intercept fetches and serve
@@ -203,6 +205,8 @@
            failed due to CDN serving a 404 for a not-yet-propagated file, but the
            cache-buster forces a fresh CDN lookup which may succeed. */
         function retryWithFreshVersion(failedSrc){
+          if(retryInProgress)return; /* prevent parallel retry chains */
+          retryInProgress=true;
           if(retryCount>=3 || !window.__HTML_BASE__){
             window.__guildAppFailed=true;
             __guildShowLoadError('Module failed to load: '+(failedSrc||'').split('/').pop()+'. Try refreshing in a minute.');
@@ -216,6 +220,7 @@
           if(old)old.remove();
 
           fetchVersion(window.__HTML_BASE__).then(function(data){
+            retryInProgress=false; /* allow next retry after this one resolves */
             if(window.__guildReactMounted)return; /* mounted while we waited */
             if(data&&data.entry&&data.entry!==failedSrc){
               /* Got a different (fresh) entry URL — hot-swap */
@@ -245,7 +250,7 @@
               window.__guildAppFailed=true;
               __guildShowLoadError('Module failed to load. A new version may be deploying — try again in a minute.');
             }
-          });
+          }).catch(function(){retryInProgress=false;});
         }
 
         /* ===== swapCss: replace stale CSS links with fresh ones ===== */
@@ -275,6 +280,7 @@
            and serve a cached response before unregistration completed.
            Now we chain: unregister first, THEN fetch version.json. */
         __guildSetStatus('Checking for updates...');
+        window.__guildVersionCheckStarted=true;
 
         /* Unregister SWs first (max 2s timeout to avoid hanging) */
         var swDone=unregisterSW();
@@ -468,12 +474,13 @@
           if(window.__guildAppFailed)return true;
           var elapsed=Date.now()-startTime;
           /* Module is still loading — give it a reasonable window.
-             12s is enough for version check (8s max) + module load (2-4s). */
-          if(window.__guildAppLoading&&elapsed<12000)return false;
-          /* Loading hasn't started after 10s (version check hung) */
-          if(!window.__guildAppLoading&&elapsed>10000)return true;
-          /* 12+ seconds and still not mounted — genuine timeout */
-          return elapsed>=12000;
+             15s is enough for version check + module load + React mount. */
+          if(window.__guildAppLoading&&elapsed<15000)return false;
+          /* Version check is still running — don't show button prematurely.
+             Give version check up to 15s before showing fallback. */
+          if(window.__guildVersionCheckStarted&&!window.__guildAppLoading&&elapsed<15000)return false;
+          /* 15+ seconds and still not mounted — genuine timeout */
+          return elapsed>=15000;
         }
 
         function guildFallbackCheck(){

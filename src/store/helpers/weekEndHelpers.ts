@@ -182,9 +182,10 @@ function processEmployment(p: Player, crashResult: MarketCrashResult, msgs: stri
     // Unemployed: heavy decay (-5/week)
     p.dependability = Math.max(0, p.dependability - 5);
   } else if (!p.workedThisTurn) {
-    // Employed but didn't work this turn: mild decay (-2/week)
+    // Employed but didn't work this turn: 10% decay
     // Simulates employer noticing absence / unreliability
-    p.dependability = Math.max(0, p.dependability - 2);
+    const depPenalty = Math.max(1, Math.round(p.dependability * 0.10));
+    p.dependability = Math.max(0, p.dependability - depPenalty);
     if (!p.isAI) {
       msgs.push(`${p.name}'s dependability dropped — your employer noticed you didn't show up for work this week.`);
     }
@@ -379,8 +380,8 @@ function processHousing(p: Player, msgs: string[], newsEvents: PlayerNewsEventDa
   }
 }
 
-/** Process investments, savings interest, and Shadowfingers theft */
-function processFinances(p: Player, msgs: string[]): void {
+/** Process investments and savings interest (deterministic — always runs) */
+function processFinances(p: Player): void {
   // Investment returns (0.5% weekly)
   if (p.investments > 0) {
     const returns = Math.floor(p.investments * 0.005);
@@ -392,8 +393,10 @@ function processFinances(p: Player, msgs: string[]): void {
     const interest = Math.floor(p.savings * 0.001);
     p.savings += interest;
   }
+}
 
-  // Shadowfingers theft
+/** Random Shadowfingers theft check (separate from deterministic finances) */
+function processTheft(p: Player, msgs: string[]): boolean {
   const theftEvent = checkWeeklyTheft(p.housing, p.gold);
   if (theftEvent && theftEvent.effect.gold) {
     p.gold = Math.max(0, p.gold + theftEvent.effect.gold);
@@ -403,31 +406,34 @@ function processFinances(p: Player, msgs: string[]): void {
     if (!p.isAI) {
       msgs.push(pickEventMessage(theftEvent));
     }
+    return true;
+  }
+  return false;
+}
+
+/** Ongoing sickness health drain (deterministic — always runs if sick) */
+function processOngoingSickness(p: Player, msgs: string[]): void {
+  if (!p.isSick) return;
+  const SICKNESS_WEEKLY_DRAIN = 5;
+  p.health = Math.max(0, p.health - SICKNESS_WEEKLY_DRAIN);
+  p.happiness = Math.max(0, p.happiness - 2);
+  if (!p.isAI) {
+    msgs.push(`${p.name}'s sickness worsens! -${SICKNESS_WEEKLY_DRAIN} health, -2 happiness. Visit a healer soon!`);
   }
 }
 
-/** Random sickness check (5% chance) + ongoing sickness health drain */
-function processSickness(p: Player, msgs: string[]): void {
-  // Ongoing sickness: gradual health drain each week if player doesn't cure it
-  // Gets progressively worse: -5 HP per week while sick
-  if (p.isSick) {
-    const SICKNESS_WEEKLY_DRAIN = 5;
-    p.health = Math.max(0, p.health - SICKNESS_WEEKLY_DRAIN);
-    p.happiness = Math.max(0, p.happiness - 2);
-    if (!p.isAI) {
-      msgs.push(`${p.name}'s sickness worsens! -${SICKNESS_WEEKLY_DRAIN} health, -2 happiness. Visit a healer soon!`);
-    }
-    return; // Already sick — skip new sickness roll
-  }
-
-  // New sickness: 5% weekly chance
+/** Random new sickness check (5% chance — separate from ongoing drain) */
+function processRandomSickness(p: Player, msgs: string[]): boolean {
+  if (p.isSick) return false; // Already sick — skip roll
   if (Math.random() < 0.05) {
     p.isSick = true;
     p.health = Math.max(0, p.health - 15);
     if (!p.isAI) {
       msgs.push(`${p.name} has fallen ill! Visit a healer to recover.`);
     }
+    return true;
   }
+  return false;
 }
 
 /** Seize gold from a currency source (savings, gold, investments). Returns amount recovered. */
@@ -668,18 +674,30 @@ function updateRentTracking(p: Player): void {
 // ============================================================
 
 function processPlayerWeekEnd(p: Player, ctx: WeekEndContext, msgs: string[], newsEvents: PlayerNewsEventData[]): void {
-  resetWeeklyFlags(p);
+  // IMPORTANT: processEmployment must run BEFORE resetWeeklyFlags so that
+  // workedThisTurn is still set when checking for dependability penalty.
+  // Previous order (reset then check) caused penalty to ALWAYS trigger.
   processEmployment(p, ctx.economy.crashResult, msgs, newsEvents);
+  resetWeeklyFlags(p);
+
+  // Deterministic processors (always run — not random events)
   processNeeds(p, ctx.isClothingDegradation, msgs);
   processWeatherOnPlayer(p, ctx.weather, msgs);
   processFestivalOnPlayer(p, ctx.festival);
   processHousing(p, msgs, newsEvents);
-  processFinances(p, msgs);
-  processSickness(p, msgs);
+  processFinances(p); // Interest/investments — always runs
+  processOngoingSickness(p, msgs); // Ongoing drain — always runs if sick
   processLoans(p, msgs, newsEvents, ctx.stockPrices);
   processLeisure(p, ctx.newWeek, msgs);
   processAging(p, ctx.newWeek, msgs);
   updateRentTracking(p);
+
+  // Random event processors — max 1 per week per player.
+  // Only one of theft or new sickness can trigger per week to prevent event spam.
+  const hadTheft = processTheft(p, msgs);
+  if (!hadTheft) {
+    processRandomSickness(p, msgs);
+  }
 }
 
 // ============================================================
