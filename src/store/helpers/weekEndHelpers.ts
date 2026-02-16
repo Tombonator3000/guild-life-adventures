@@ -19,7 +19,7 @@ import {
   HEALTH_CRISIS_CHANCE,
   HEALTH_CRISIS_DAMAGE,
 } from '@/types/game.types';
-import { checkWeeklyTheft, checkMarketCrash } from '@/data/events';
+import { checkWeeklyTheft, checkMarketCrash, pickEventMessage } from '@/data/events';
 import type { MarketCrashResult } from '@/data/events';
 import { getGameOption } from '@/data/gameOptions';
 import { getItem, CLOTHING_DEGRADATION_PER_WEEK, getClothingTier, CLOTHING_TIER_LABELS, CLOTHING_THRESHOLDS } from '@/data/items';
@@ -391,7 +391,7 @@ function processFinances(p: Player, msgs: string[]): void {
       p.happiness = Math.max(0, p.happiness + theftEvent.effect.happiness);
     }
     if (!p.isAI) {
-      msgs.push(`Shadowfingers struck! ${p.name} lost ${Math.abs(theftEvent.effect.gold)} gold!`);
+      msgs.push(pickEventMessage(theftEvent));
     }
   }
 }

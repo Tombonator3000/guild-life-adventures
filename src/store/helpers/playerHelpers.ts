@@ -7,7 +7,7 @@ import {
   checkStreetRobbery,
 } from '@/data/shadowfingers';
 import { rollTravelEvent, formatTravelEvent } from '@/data/travelEvents';
-import { checkForEvent } from '@/data/events';
+import { checkForEvent, pickEventMessage, pickEventDescription } from '@/data/events';
 
 export function createPlayerActions(set: SetFn, get: GetFn) {
   return {
@@ -85,7 +85,7 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
 
           // Show event message to human players only
           if (!arrivalPlayer.isAI) {
-            const message = `[${locationEvent.id}] ${locationEvent.name}: ${locationEvent.effect.message}`;
+            const message = `[${locationEvent.id}] ${locationEvent.name}: ${pickEventDescription(locationEvent)}\n${pickEventMessage(locationEvent)}`;
             const existing = get().eventMessage;
             set({
               eventMessage: existing ? existing + '\n' + message : message,
