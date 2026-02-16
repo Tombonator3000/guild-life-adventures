@@ -24,7 +24,7 @@ import type { MarketCrashResult } from '@/data/events';
 import { getGameOption } from '@/data/gameOptions';
 import { getItem, CLOTHING_DEGRADATION_PER_WEEK, getClothingTier, CLOTHING_TIER_LABELS, CLOTHING_THRESHOLDS } from '@/data/items';
 import { getJob } from '@/data/jobs';
-import { updateStockPrices } from '@/data/stocks';
+import { updateStockPrices, calculateDividends, updatePriceHistory } from '@/data/stocks';
 import { selectWeekendActivity } from '@/data/weekends';
 import { advanceWeather, CLEAR_WEATHER, isWeatherFestivalConflict } from '@/data/weather';
 import type { WeatherState } from '@/data/weather';
@@ -380,8 +380,8 @@ function processHousing(p: Player, msgs: string[], newsEvents: PlayerNewsEventDa
   }
 }
 
-/** Process investments and savings interest (deterministic — always runs) */
-function processFinances(p: Player): void {
+/** Process investments, savings interest, and stock dividends (deterministic — always runs) */
+function processFinances(p: Player, stockPrices: Record<string, number>, msgs: string[]): void {
   // Investment returns (0.5% weekly)
   if (p.investments > 0) {
     const returns = Math.floor(p.investments * 0.005);
@@ -392,6 +392,17 @@ function processFinances(p: Player): void {
   if (p.savings > 0) {
     const interest = Math.floor(p.savings * 0.001);
     p.savings += interest;
+  }
+
+  // Stock dividends (paid weekly based on portfolio value and each stock's dividend rate)
+  if (Object.keys(p.stocks).length > 0) {
+    const dividends = calculateDividends(p.stocks, stockPrices);
+    if (dividends > 0) {
+      p.gold += dividends;
+      if (!p.isAI) {
+        msgs.push(`Stock dividends paid: +${dividends}g`);
+      }
+    }
   }
 }
 
@@ -685,7 +696,7 @@ function processPlayerWeekEnd(p: Player, ctx: WeekEndContext, msgs: string[], ne
   processWeatherOnPlayer(p, ctx.weather, msgs);
   processFestivalOnPlayer(p, ctx.festival);
   processHousing(p, msgs, newsEvents);
-  processFinances(p); // Interest/investments — always runs
+  processFinances(p, ctx.stockPrices, msgs); // Interest/investments/dividends — always runs
   processOngoingSickness(p, msgs); // Ongoing drain — always runs if sick
   processLoans(p, msgs, newsEvents, ctx.stockPrices);
   processLeisure(p, ctx.newWeek, msgs);
@@ -819,7 +830,8 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
 
       // --- Step 4: Update stock prices ---
       const isStockCrash = economy.economyTrend === -1 && Math.random() < 0.10;
-      const newStockPrices = updateStockPrices(state.stockPrices, isStockCrash);
+      const newStockPrices = updateStockPrices(state.stockPrices, isStockCrash, economy.economyTrend);
+      const newStockPriceHistory = updatePriceHistory(state.stockPriceHistory || {}, newStockPrices);
       if (isStockCrash) {
         eventMessages.push('MARKET CRASH! Stock prices have plummeted!');
       }
@@ -832,6 +844,7 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
       const weekEndState = {
         week: newWeek,
         stockPrices: newStockPrices,
+        stockPriceHistory: newStockPriceHistory,
         priceModifier: finalPriceModifier,
         basePriceModifier: economy.priceModifier, // Store raw economy modifier (before weather/festival)
         economyTrend: economy.economyTrend,

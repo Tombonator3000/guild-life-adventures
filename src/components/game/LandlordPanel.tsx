@@ -6,6 +6,7 @@ import { HOUSING_DATA, HOUSING_TIERS } from '@/data/housing';
 import { toast } from 'sonner';
 import { playSFX } from '@/audio/sfxManager';
 import { useTranslation } from '@/i18n';
+import { useBanterStore } from '@/store/banterStore';
 
 interface LandlordPanelProps {
   player: Player;
@@ -137,10 +138,13 @@ export function LandlordPanel({
               spendTime(player.id, 1);
               if (result.success) {
                 playSFX('rent-paid');
-                toast.success(result.message);
-              } else {
-                toast.error(result.message);
               }
+              // Show landlord response as NPC speech bubble instead of toast
+              useBanterStore.getState().setBanter(
+                { text: result.message, mood: result.success ? 'grumpy' : 'warning' },
+                'landlord',
+                'Tomas'
+              );
             }}
           />
           <p className="text-xs text-[#8b6914] italic">
