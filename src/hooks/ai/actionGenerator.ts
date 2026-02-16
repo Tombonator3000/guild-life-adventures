@@ -28,6 +28,7 @@ import {
   generateRivalryActions,
 } from './actions';
 import { getCounterStrategyWeights, type CounterStrategyWeights } from './playerObserver';
+import { identifyNeededVisits, planTurnRoute } from './turnPlanner';
 
 /**
  * Maps each AI action type to its personality weight category.
@@ -82,7 +83,7 @@ function applyPersonalityWeights(actions: AIAction[], personality: AIPersonality
  * Apply time-budget awareness: boost quick actions late in turn,
  * boost high-value actions early in turn.
  */
-function applyTimeBudgetAwareness(actions: AIAction[], turnTimeRatio: number): void {
+function applyTimeBudgetAwareness(actions: AIAction[], turnTimeRatio: number, planningDepth: number): void {
   for (const action of actions) {
     if (turnTimeRatio < 0.25) {
       // Late in turn (< 15 hours left): boost quick errands, penalize long activities
@@ -102,6 +103,128 @@ function applyTimeBudgetAwareness(actions: AIAction[], turnTimeRatio: number): v
       if (highValueActions.includes(action.type)) {
         action.priority += 5; // Small boost for productive activities early
       }
+    }
+
+    // HARD AI: Mid-turn optimization (25-80% time remaining)
+    // Avoid movement to distant locations when medium actions remain at current location
+    if (planningDepth >= 3 && turnTimeRatio >= 0.25 && turnTimeRatio <= 0.8) {
+      // Boost non-movement actions that can be done at current location
+      if (action.type !== 'move' && action.type !== 'end-turn') {
+        action.priority += 3; // Prefer doing something at current location over moving
+      }
+    }
+  }
+}
+
+/**
+ * HARD AI: Apply travel cost penalty to move actions.
+ * Actions requiring long travel should have reduced priority relative to their value.
+ * This prevents the AI from wasting hours traveling to distant locations for low-value tasks.
+ */
+function applyTravelCostPenalty(
+  actions: AIAction[],
+  currentLocation: string,
+  efficiencyWeight: number,
+  weatherMoveExtra: number,
+): void {
+  if (efficiencyWeight < 0.5) return; // Only for medium+ AI
+
+  for (const action of actions) {
+    if (action.type === 'move' && action.location) {
+      const baseSteps = calculatePathDistance(currentLocation as any, action.location);
+      const totalCost = baseSteps + baseSteps * weatherMoveExtra;
+
+      // Penalty scales with distance and efficiency weight
+      // 1 step = -1 priority, 5 steps = -5 * eff priority
+      // Hard AI (eff=0.9): 5 steps = -4.5 penalty
+      const penalty = Math.round(totalCost * efficiencyWeight * 1.0);
+      action.priority -= penalty;
+
+      // Extra penalty for distant moves when late in turn
+      if (totalCost >= 4) {
+        action.priority -= Math.round(totalCost * 0.5);
+      }
+    }
+  }
+}
+
+/**
+ * HARD AI: Location batching bonus.
+ * When we're already at a location, boost all non-move actions
+ * that can be performed here. This prevents the AI from leaving
+ * a location before doing everything it can there.
+ */
+function applyLocationBatchingBonus(actions: AIAction[], currentLocation: string): void {
+  // Count how many non-move actions are available at current location
+  const localActions = actions.filter(a => a.type !== 'move' && a.type !== 'end-turn');
+
+  if (localActions.length > 1) {
+    // Boost all local actions to encourage batching
+    for (const action of localActions) {
+      action.priority += 5;
+    }
+  }
+}
+
+/**
+ * HARD AI: Goal completion sprint with smarter calculation.
+ * When a goal is close to completion, calculate exact actions needed
+ * and boost those specific actions significantly.
+ */
+function applySmartGoalSprint(
+  actions: AIAction[],
+  progress: import('./types').GoalProgress,
+  planningDepth: number,
+): void {
+  if (planningDepth < 3) return; // Hard AI only
+
+  // Find goals that are 65%+ complete (more aggressive sprint threshold for hard AI)
+  const sprintTargets: { goal: string; gap: number; progress: number }[] = [];
+
+  if (progress.wealth.progress >= 0.65 && progress.wealth.progress < 1.0) {
+    sprintTargets.push({ goal: 'wealth', gap: progress.wealth.target - progress.wealth.current, progress: progress.wealth.progress });
+  }
+  if (progress.happiness.progress >= 0.65 && progress.happiness.progress < 1.0) {
+    sprintTargets.push({ goal: 'happiness', gap: progress.happiness.target - progress.happiness.current, progress: progress.happiness.progress });
+  }
+  if (progress.education.progress >= 0.65 && progress.education.progress < 1.0) {
+    sprintTargets.push({ goal: 'education', gap: progress.education.target - progress.education.current, progress: progress.education.progress });
+  }
+  if (progress.career.progress >= 0.65 && progress.career.progress < 1.0) {
+    sprintTargets.push({ goal: 'career', gap: progress.career.target - progress.career.current, progress: progress.career.progress });
+  }
+
+  if (sprintTargets.length === 0) return;
+
+  // Sort by closest to completion
+  sprintTargets.sort((a, b) => b.progress - a.progress);
+
+  const topSprint = sprintTargets[0];
+  const sprintBoost = Math.round(15 + (topSprint.progress - 0.65) * 30); // 15-25 boost
+
+  // Boost actions that directly contribute to the sprint target
+  for (const action of actions) {
+    switch (topSprint.goal) {
+      case 'wealth':
+        if (['work', 'deposit-bank', 'complete-quest', 'sell-stock'].includes(action.type)) {
+          action.priority += sprintBoost;
+        }
+        break;
+      case 'happiness':
+        if (['buy-appliance', 'rest', 'buy-ticket', 'graduate'].includes(action.type)) {
+          action.priority += sprintBoost;
+        }
+        break;
+      case 'education':
+        if (['study', 'graduate'].includes(action.type)) {
+          action.priority += sprintBoost;
+        }
+        break;
+      case 'career':
+        if (['work', 'apply-job'].includes(action.type)) {
+          action.priority += sprintBoost;
+        }
+        break;
     }
   }
 }
@@ -268,7 +391,7 @@ export function generateActions(
   // ============================================
   // TIME BUDGET: Adjust priorities based on turn phase
   // ============================================
-  applyTimeBudgetAwareness(actions, turnTimeRatio);
+  applyTimeBudgetAwareness(actions, turnTimeRatio, settings.planningDepth);
 
   // ============================================
   // AI-12: ROUTE OPTIMIZATION
@@ -284,6 +407,44 @@ export function generateActions(
   for (const action of actions) {
     if (action.type === 'move' && action.location && (locationNeeds[action.location] || 0) > 1) {
       action.priority += 5 * (locationNeeds[action.location] - 1);
+    }
+  }
+
+  // ============================================
+  // HARD AI: Travel cost penalty (cost-adjusted scoring)
+  // ============================================
+  applyTravelCostPenalty(actions, currentLocation, settings.efficiencyWeight, weatherMoveExtra);
+
+  // ============================================
+  // HARD AI: Location batching bonus
+  // ============================================
+  if (settings.planningDepth >= 3) {
+    applyLocationBatchingBonus(actions, currentLocation);
+  }
+
+  // ============================================
+  // HARD AI: Smart goal sprint (65% threshold instead of 80%)
+  // ============================================
+  applySmartGoalSprint(actions, progress, settings.planningDepth);
+
+  // ============================================
+  // HARD AI: Turn plan route optimization
+  // ============================================
+  if (settings.planningDepth >= 3 && turnTimeRatio > 0.7) {
+    // Only plan at start of turn — boost actions aligned with the optimal route
+    const neededVisits = identifyNeededVisits(
+      player, settings, progress, goals, weatherMoveExtra, priceModifier, rivals
+    );
+    const plan = planTurnRoute(currentLocation, neededVisits, player.timeRemaining, weatherMoveExtra);
+
+    // Boost moves to the first planned location
+    if (plan.visits.length > 0) {
+      const nextPlannedLocation = plan.visits[0].location;
+      for (const action of actions) {
+        if (action.type === 'move' && action.location === nextPlannedLocation) {
+          action.priority += 12; // Strong boost for planned route
+        }
+      }
     }
   }
 

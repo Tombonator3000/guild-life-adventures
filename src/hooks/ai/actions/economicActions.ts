@@ -127,7 +127,10 @@ function generateStockActions(ctx: ActionContext): AIAction[] {
   const personalityGambling = ctx.personality.weights.gambling;
 
   // Buy stocks: strategic AI with gold buffer, focused on wealth
-  if (settings.planningDepth >= 2 && player.gold > 300 && weakestGoal === 'wealth' && currentLocation === 'bank') {
+  // HARD AI: Lower gold threshold and don't require wealth to be weakest goal
+  const goldThreshold = settings.planningDepth >= 3 ? 200 : 300;
+  const wealthReq = settings.planningDepth >= 3 ? true : (weakestGoal === 'wealth');
+  if (settings.planningDepth >= 2 && player.gold > goldThreshold && wealthReq && currentLocation === 'bank') {
     const bestStock = pickBestStockToBuy(player, settings, stockPrices, personalityGambling);
     if (bestStock) {
       actions.push({
