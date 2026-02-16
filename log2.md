@@ -5,6 +5,110 @@
 
 ---
 
+## 2026-02-16 — BUG HUNT #2: SW Race Condition + Loading Progress + Module Cache-Bust (08:00 UTC)
+
+### Overview
+
+**BUG HUNT #2**: Systematic bug hunt using parallel AI agents. Game still refused to start after PRs #216-#220. Investigated entire loading pipeline, module initialization chain, recent PR diffs, build output, and all 219 tests.
+
+### Investigation Findings
+
+**Build/TypeScript/Tests**: All pass — 219 tests, 0 failures, 0 TypeScript errors, clean build (both default and DEPLOY_TARGET=github).
+
+**Recent PRs analyzed** (since nuclear fix PR #215):
+- PR #216: Mobile layout mode for zone editor — UI-only, no startup impact
+- PR #218: Static content expansion (banter, events, quests, newspapers) — additive data, no startup impact
+- PR #219: Variant helper functions + WeatherOverlay hook fix — no startup-blocking changes
+- PR #220: Watchdog timer + retry improvements — defense layers, no startup-blocking changes
+
+**Module-level side effects analyzed** (critical path):
+- `audioManager.ts` — Singleton creates AudioContext + Audio elements at import time. Has try-catch, should not hang.
+- `ambientManager.ts` — Same pattern, try-catch protected.
+- `sfxManager.ts` — Creates 8-element Audio pool at import time. Try-catch protected.
+- `speechNarrator.ts` — Accesses window.speechSynthesis. Try-catch protected.
+- `webAudioBridge.ts` — Lazy getContext() with try-catch.
+- `gameStore.ts` — Zustand store creation + auto-save subscription. Try-catch wrapped.
+
+**Conclusion**: No new code bugs in recent PRs. The hang is BUG-001 (CDN stale cache) with three newly identified edge cases.
+
+### Root Causes Found
+
+**1. SW unregister race condition (index.html)**
+The service worker unregister was in a separate `<script>` block (fire-and-forget), while the version.json fetch started immediately in the next `<script>` block. An old SW could intercept the version.json fetch and serve a cached response before unregistration completed. This meant the entire CDN bypass mechanism was defeated by the old SW serving stale version.json.
+
+**Fix**: Merged SW unregister into the main loading IIFE. Chain unregister BEFORE version check using `Promise.race([unregisterSW(), timeout(2s)])` → `.then(fetchVersion)`. The version.json fetch now only starts AFTER SW cleanup completes (or times out after 2s).
+
+**2. No loading progress feedback (index.html + main.tsx)**
+The loading screen showed static "Loading the realm..." text throughout the entire loading pipeline (SW cleanup → version check → module load → React mount). Users had no way to know if the app was making progress or frozen. Many clicked "Clear Cache & Reload" prematurely, entering a reload loop.
+
+**Fix**: Added `__guildSetStatus(msg)` function that updates the `#loading-status` element. The loading pipeline now shows:
+- "Checking for updates..." (during SW unregister + version check)
+- "Loading game modules..." (when entry module is injected)
+- "Starting game..." (when React mount begins)
+- "Retrying... (attempt N/3)" (during retry)
+- "Loading is slow — retrying..." (watchdog trigger)
+
+**3. Module retry with same CDN-cached URL (index.html)**
+When version.json returned the same entry URL on retry (CDN still stale), the code waited 2s then tried the exact same URL. This could fail the same way since CDN would serve the same cached 404 response.
+
+**Fix**: When retry gets the same entry URL, append `?_cb=timestamp` cache-buster to the module URL. This forces the CDN to treat it as a new request and fetch fresh from origin, bypassing its cache.
+
+**4. Favicon 404 on GitHub Pages (index.html)**
+`<link rel="icon" href="/favicon.png">` used an absolute path, resolving to `tombonator3000.github.io/favicon.png` instead of `tombonator3000.github.io/guild-life-adventures/favicon.png`. Same issue with apple-touch-icon.
+
+**Fix**: Changed to relative paths: `href="favicon.png"` (no leading slash).
+
+### Changes (3 files)
+
+#### 1. index.html — Loading pipeline overhaul
+
+| Change | Detail |
+|--------|--------|
+| SW unregister chained | `Promise.race([unregisterSW(), timeout(2s)])` → `.then(fetchVersion)` |
+| Loading progress | `__guildSetStatus()` updates status text at each stage |
+| Module cache-bust | On retry with same URL, append `?_cb=timestamp` to force CDN bypass |
+| Favicon paths | Changed from absolute (`/favicon.png`) to relative (`favicon.png`) |
+| Watchdog timer | Reduced from 12s to 10s for faster retry |
+| Error pipeline | Added `.catch()` on main promise chain — loads app anyway if pipeline fails |
+| Removed separate SW script | SW unregister moved inside main IIFE for proper chaining |
+
+#### 2. src/main.tsx — Loading progress signals
+
+| Change | Detail |
+|--------|--------|
+| `__guildSetStatus` type | Added to Window interface declaration |
+| `setStatus()` helper | Calls `__guildSetStatus()` from inline script |
+| Progress updates | "Loading game modules..." before import, "Starting game..." before mount |
+
+#### 3. bugs.md — Updated with new findings
+
+Added "Additional Hardening (2026-02-16, session 2)" section with 5 new edge cases and 2 new lessons learned.
+
+### Defense Layer Summary (After Session 2)
+
+| Layer | Purpose | When |
+|-------|---------|------|
+| **SW unregister (chained)** | Remove stale SWs | Before version check (awaited, max 2s) |
+| version.json with CDN bypass | Detect stale HTML | After SW cleanup |
+| Hot-swap from version.json | Load fresh modules without reload | When stale detected |
+| Module onerror + retry | Retry with fresh version.json on 404 | If module fails to load |
+| **Module cache-bust** | Bypass CDN for same-URL retries | When retry gets same entry URL |
+| Watchdog timer (10s) | Detect silent failures, retry hot-swap | 10s after module injection |
+| Mount timeout (15s) | Signal failure if import hangs | 15s after mount() called |
+| **Loading progress text** | Show user what's happening | Throughout entire pipeline |
+| Smart fallback button | Show reload button when genuinely stuck | 12s after page load |
+| Reload loop protection | Prevent infinite loops (max 3 in 2 min) | On any programmatic reload |
+| version.json polling | Show update banner for new versions | After React mounts |
+
+### Verification
+
+- **TypeScript**: No errors
+- **Tests**: 219 passing, 0 failures
+- **Build** (`DEPLOY_TARGET=github`): Clean, no errors
+- **Built HTML verified**: All 7 checks pass (base path, entry URL, favicon, SW chaining, status function, version.json, no dev script)
+
+---
+
 ## 2026-02-16 — BUG HUNT: Loading System Hardening — Watchdog Timer + Retry Improvements (07:25 UTC)
 
 ### Overview
