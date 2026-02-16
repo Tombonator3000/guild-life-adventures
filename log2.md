@@ -3348,3 +3348,62 @@ Quest descriptions in the quest panel now use `pickQuestDescription(quest)` inst
 - **No breaking changes** — all variant helpers fall back to default description/message when no variants exist
 
 ---
+
+## 2026-02-16 — Fix Duplicate Events, Event Naming, 1-Per-Turn Limit, Dependability Decay (08:05 UTC)
+
+### Overview
+
+Four event system improvements addressing duplicate event text, event naming, event frequency limits, and dependability mechanics.
+
+### Changes
+
+| # | Issue | Fix | Files |
+|---|-------|-----|-------|
+| 1 | **Duplicate event messages** | Added `[...new Set(eventMessages)]` deduplication before displaying weekend events. Identical messages from multiple processing pipelines are now collapsed into one. | `weekEndHelpers.ts` |
+| 2 | **Max 1 random location event per turn per player** | Added `hadRandomEventThisTurn` flag to Player. `checkForEvent()` in `movePlayer()` now skips if flag is true. Flag set when event triggers, reset at start of each turn and weekly reset. | `game.types.ts`, `gameStore.ts`, `playerHelpers.ts`, `weekEndHelpers.ts`, `turnHelpers.ts` |
+| 3 | **Event naming: WEEKEND EVENTS vs WEEK X EVENT** | Added `eventSource: 'weekend' \| 'weekly' \| null` to GameState. Weekend processing (`processWeekEnd` + `startTurn`) sets `eventSource: 'weekend'`. Gameplay events (location events, travel events, spoilage) set `eventSource: 'weekly'`. `useLocationClick.ts` now shows title "WEEKEND EVENTS" or "WEEK X EVENT" based on `eventSource`. | `game.types.ts`, `gameStore.ts`, `weekEndHelpers.ts`, `startTurnHelpers.ts`, `playerHelpers.ts`, `turnHelpers.ts`, `useLocationClick.ts`, `networkState.ts` |
+| 4 | **Dependability decay when not working** | Added `workedThisTurn` flag to Player, set `true` by `workShift()`. In `processEmployment()`: if player has a job but `workedThisTurn === false`, dependability drops by 2/week (vs 5/week for unemployed). Human players get a warning message. Flag reset at start of each turn and weekly reset. | `game.types.ts`, `gameStore.ts`, `workEducationHelpers.ts`, `weekEndHelpers.ts`, `turnHelpers.ts` |
+
+### New Player Fields
+
+| Field | Type | Default | Purpose |
+|-------|------|---------|---------|
+| `workedThisTurn` | `boolean` | `false` | Tracks if player worked at least one shift this turn |
+| `hadRandomEventThisTurn` | `boolean` | `false` | Limits random location events to 1 per turn per player |
+
+### New GameState Field
+
+| Field | Type | Default | Purpose |
+|-------|------|---------|---------|
+| `eventSource` | `'weekend' \| 'weekly' \| null` | `null` | Distinguishes weekend processing events from gameplay events for title display |
+
+### Dependability Decay Rules
+
+| Condition | Decay/Week | Message |
+|-----------|-----------|---------|
+| Unemployed (no job) | -5 | (none — existing behavior) |
+| Employed but didn't work this turn | -2 | "dependability dropped — employer noticed you didn't show up" |
+| Employed and worked | +1/shift | (none — existing behavior via workShift) |
+
+### Files Modified
+
+```
+src/types/game.types.ts               — Added workedThisTurn, hadRandomEventThisTurn to Player; eventSource to GameState
+src/store/gameStore.ts                 — Added defaults for new fields; eventSource in init/reset/load/dismiss
+src/store/helpers/playerHelpers.ts     — 1-per-turn random event limit; eventSource: 'weekly' for location/travel events
+src/store/helpers/weekEndHelpers.ts    — Dedup eventMessages; eventSource: 'weekend'; reset new flags; dependability decay logic
+src/store/helpers/startTurnHelpers.ts  — eventSource: 'weekend' for start-of-turn events
+src/store/helpers/turnHelpers.ts       — eventSource: 'weekly' for spoilage; reset new flags on turn start
+src/store/helpers/workEducationHelpers.ts — Set workedThisTurn: true in workShift
+src/hooks/useLocationClick.ts          — Read eventSource; dynamic title "WEEKEND EVENTS" / "WEEK X EVENT"
+src/network/networkState.ts            — Serialize/deserialize eventSource for online multiplayer sync
+```
+
+### Verification
+
+- **TypeScript**: Clean, no errors
+- **Tests**: 219 passing, 0 failures (10 test files)
+- **Build**: Clean production build
+- **Save compatibility**: Old saves load correctly (new boolean fields default to `undefined`/falsy)
+
+---

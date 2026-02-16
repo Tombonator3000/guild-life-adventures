@@ -91,7 +91,7 @@ function processEndOfTurnSpoilage(set: SetFn, get: GetFn, playerId: string): voi
     const combined = existing
       ? existing + '\n' + eventMessages.join('\n')
       : eventMessages.join('\n');
-    set({ eventMessage: combined, phase: 'event' });
+    set({ eventMessage: combined, eventSource: 'weekly' as const, phase: 'event' });
   }
 }
 
@@ -188,7 +188,7 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           currentPlayerIndex: nextIndex,
           players: freshState.players.map((p, index) =>
             index === nextIndex
-              ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: homeLocation, dungeonAttemptsThisTurn: 0 }
+              ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: homeLocation, dungeonAttemptsThisTurn: 0, hadRandomEventThisTurn: false, workedThisTurn: false }
               : p
           ),
           selectedLocation: null,

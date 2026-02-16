@@ -260,6 +260,9 @@ export interface Player {
   activeCurses: ActiveCurse[];                // Active personal curses afflicting this player
   hasProtectiveAmulet: boolean;               // Blocks next incoming hex/curse (consumed on use)
   hexCastCooldown: number;                    // Weeks until player can cast another hex (0 = ready)
+  // Turn tracking flags
+  workedThisTurn: boolean;                    // True if player worked at least one shift this turn (reset weekly)
+  hadRandomEventThisTurn: boolean;            // True if player already had a random location event this turn (max 1 per turn)
 }
 
 export interface GoalSettings {
@@ -291,6 +294,7 @@ export interface GameState {
   goalSettings: GoalSettings;
   winner: string | null;
   eventMessage: string | null;
+  eventSource: 'weekend' | 'weekly' | null; // Whether event is from weekend processing or gameplay
   rentDueWeek: number; // Week when rent is next due
   aiDifficulty: AIDifficulty; // Grimwald AI difficulty level
   // Stock Market prices (updated each week)

@@ -119,6 +119,7 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
               experience: newExperience,
               shiftsWorkedSinceHire: (player.shiftsWorkedSinceHire || 0) + 1,
               totalShiftsWorked: (player.totalShiftsWorked || 0) + 1,
+              workedThisTurn: true,
               rentDebt: newRentDebt,
               loanAmount: newLoanAmount,
               loanWeeksRemaining: newLoanAmount <= 0 ? 0 : player.loanWeeksRemaining,
