@@ -15,6 +15,7 @@ import {
   getJobLocation,
 } from '../strategy';
 import type { ActionContext } from './actionContext';
+// Note: GAP-3 (salary negotiation) and GAP-8 (voluntary homeless) added below
 
 /**
  * Generate general strategic actions (always considered)
@@ -140,6 +141,46 @@ export function generateStrategicActions(ctx: ActionContext): AIAction[] {
           description: 'Travel to landlord to downgrade housing',
         });
       }
+    }
+  }
+
+  // GAP-3: Salary negotiation — request a raise when worked enough shifts
+  if (player.currentJob && player.timeRemaining >= 2) {
+    const job = getJob(player.currentJob);
+    if (job) {
+      const jobLocation = getJobLocation(job);
+      // requestRaise requires 3+ shifts at current job, success chance = 40% base + dependability
+      // Only attempt if dependability is decent (> 30) for reasonable success chance
+      const shiftsAtJob = (player.totalShiftsWorked || 0);
+      if (shiftsAtJob >= 3 && player.dependability >= 30 && player.currentWage < job.baseWage * 2.5) {
+        if (currentLocation === jobLocation) {
+          actions.push({
+            type: 'request-raise',
+            priority: 48,
+            description: `Request raise at ${job.name}`,
+            details: { jobId: job.id },
+          });
+        }
+      }
+    }
+  }
+
+  // GAP-8: Voluntary downgrade to homeless when completely broke and about to be evicted
+  if (player.housing !== 'homeless' && player.gold < 30 && player.savings < 20 && player.weeksSinceRent >= 3) {
+    if (currentLocation === 'landlord') {
+      actions.push({
+        type: 'downgrade-housing',
+        priority: 65,
+        description: 'Go homeless to avoid eviction penalties',
+        details: { tier: 'homeless' as HousingTier },
+      });
+    } else if (player.timeRemaining > moveCost('landlord') + 2) {
+      actions.push({
+        type: 'move',
+        location: 'landlord',
+        priority: 60,
+        description: 'Travel to landlord to downgrade to homeless',
+      });
     }
   }
 

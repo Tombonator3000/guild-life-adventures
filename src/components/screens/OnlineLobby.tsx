@@ -6,7 +6,7 @@ import { PLAYER_COLORS, AI_DIFFICULTY_NAMES } from '@/types/game.types';
 import type { AIDifficulty } from '@/types/game.types';
 import {
   Globe, Users, Copy, Check, ArrowLeft, Play, Wifi, WifiOff,
-  Loader2, Bot, Brain, Zap, Crown, UserPlus,
+  Loader2, Bot, Brain, Zap, Crown, UserPlus, Pencil,
 } from 'lucide-react';
 import { CharacterPortrait } from '@/components/game/CharacterPortrait';
 import { PortraitPicker } from '@/components/game/PortraitPicker';
@@ -29,6 +29,7 @@ export function OnlineLobby() {
     startOnlineGame,
     updateSettings,
     updatePortrait,
+    updatePlayerName,
     disconnect,
     setLocalPlayerName,
   } = useOnlineGame();
@@ -39,6 +40,8 @@ export function OnlineLobby() {
   const [copied, setCopied] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [showPortraitPicker, setShowPortraitPicker] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [lobbyNameInput, setLobbyNameInput] = useState('');
 
   // --- Actions ---
 
@@ -310,8 +313,47 @@ export function OnlineLobby() {
                           isAI={false}
                         />
                       </button>
-                      <span className="font-display text-amber-900 flex-1">{p.name}</span>
-                      {p.peerId === 'host' && (
+                      {isMe && editingName ? (
+                        <form
+                          className="flex-1 flex items-center gap-1"
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            if (lobbyNameInput.trim()) {
+                              updatePlayerName(lobbyNameInput.trim());
+                            }
+                            setEditingName(false);
+                          }}
+                        >
+                          <input
+                            type="text"
+                            value={lobbyNameInput}
+                            onChange={(e) => setLobbyNameInput(e.target.value)}
+                            className="flex-1 px-2 py-1 bg-input border border-border rounded font-display text-sm text-amber-900 focus:outline-none focus:ring-1 focus:ring-primary"
+                            maxLength={20}
+                            autoFocus
+                            onBlur={() => {
+                              if (lobbyNameInput.trim()) {
+                                updatePlayerName(lobbyNameInput.trim());
+                              }
+                              setEditingName(false);
+                            }}
+                          />
+                        </form>
+                      ) : (
+                        <span className="font-display text-amber-900 flex-1 flex items-center gap-1">
+                          {p.name}
+                          {isMe && (
+                            <button
+                              onClick={() => { setLobbyNameInput(p.name); setEditingName(true); }}
+                              className="p-0.5 rounded hover:bg-amber-100 transition-colors"
+                              title="Edit name"
+                            >
+                              <Pencil className="w-3 h-3 text-amber-600" />
+                            </button>
+                          )}
+                        </span>
+                      )}
+                      {p.peerId === 'host' && !editingName && (
                         <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded font-display">Host</span>
                       )}
                       {p.isReady && p.peerId !== 'host' && (
@@ -498,11 +540,50 @@ export function OnlineLobby() {
                           isAI={false}
                         />
                       </button>
-                      <span className="font-display text-amber-900 flex-1">{p.name}</span>
+                      {isMe && editingName ? (
+                        <form
+                          className="flex-1 flex items-center gap-1"
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            if (lobbyNameInput.trim()) {
+                              updatePlayerName(lobbyNameInput.trim());
+                            }
+                            setEditingName(false);
+                          }}
+                        >
+                          <input
+                            type="text"
+                            value={lobbyNameInput}
+                            onChange={(e) => setLobbyNameInput(e.target.value)}
+                            className="flex-1 px-2 py-1 bg-input border border-border rounded font-display text-sm text-amber-900 focus:outline-none focus:ring-1 focus:ring-primary"
+                            maxLength={20}
+                            autoFocus
+                            onBlur={() => {
+                              if (lobbyNameInput.trim()) {
+                                updatePlayerName(lobbyNameInput.trim());
+                              }
+                              setEditingName(false);
+                            }}
+                          />
+                        </form>
+                      ) : (
+                        <span className="font-display text-amber-900 flex-1 flex items-center gap-1">
+                          {p.name}
+                          {isMe && (
+                            <button
+                              onClick={() => { setLobbyNameInput(p.name); setEditingName(true); }}
+                              className="p-0.5 rounded hover:bg-amber-100 transition-colors"
+                              title="Edit name"
+                            >
+                              <Pencil className="w-3 h-3 text-amber-600" />
+                            </button>
+                          )}
+                        </span>
+                      )}
                       {p.peerId === 'host' && (
                         <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded font-display">Host</span>
                       )}
-                      {isMe && (
+                      {isMe && !editingName && (
                         <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded font-display">You</span>
                       )}
                     </div>

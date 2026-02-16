@@ -6,13 +6,16 @@
  */
 
 import { getAvailableQuests, canTakeQuest } from '@/data/quests';
+import { getJob } from '@/data/jobs';
 import { DEGREES } from '@/data/education';
-import { calculateGoalProgress, getWeakestGoal } from '../strategy';
+import { DEFENSE_ITEMS } from '@/data/hexes';
+import { calculateGoalProgress, getWeakestGoal, getJobLocation } from '../strategy';
 import type { AIAction, GoalProgress } from '../types';
 import type { ActionContext } from './actionContext';
 import type { Player } from '@/types/game.types';
 import { getGameOption } from '@/data/gameOptions';
 import { getHexById } from '@/data/hexes';
+import { useGameStore } from '@/store/gameStore';
 
 /**
  * Calculate a rival's goal progress to understand their strategy
@@ -181,6 +184,73 @@ export function generateRivalryActions(ctx: ActionContext): AIAction[] {
         description: 'Buy Protective Amulet for defense',
         details: {},
       });
+    }
+  }
+
+  // === GAP-6: Dispel hexed locations ===
+  // If a location the AI needs is hexed, buy a dispel scroll and use it
+  if (getGameOption('enableHexesCurses')) {
+    const locationHexes = useGameStore.getState().locationHexes || [];
+    const hexedLocationsForMe = locationHexes.filter(
+      h => h.casterId !== player.id && h.weeksRemaining > 0
+    );
+
+    if (hexedLocationsForMe.length > 0) {
+      // Check if we're at a hexed location and have gold for dispel (250g base)
+      const dispelItem = DEFENSE_ITEMS.find(d => d.id === 'dispel-scroll');
+      const dispelCost = dispelItem ? Math.round(dispelItem.basePrice * ctx.priceModifier) : 250;
+
+      // Find if current location is hexed
+      const currentHex = hexedLocationsForMe.find(h => h.targetLocation === currentLocation);
+      if (currentHex && player.gold >= dispelCost) {
+        actions.push({
+          type: 'dispel-hex',
+          priority: 70,
+          description: `Dispel hex on ${currentLocation}`,
+          details: { cost: dispelCost, location: currentLocation },
+        });
+      }
+      // Or if a key location we need (work, academy, guild hall) is hexed, travel there
+      else {
+        const currentJobDef = player.currentJob ? getJob(player.currentJob) : null;
+        const jobLocation = currentJobDef ? getJobLocation(currentJobDef) : null;
+        const importantLocations = ['academy', 'guild-hall', jobLocation].filter(Boolean) as string[];
+        const hexedImportant = hexedLocationsForMe.find(h =>
+          importantLocations.includes(h.targetLocation)
+        );
+        if (hexedImportant && player.gold >= dispelCost + 50 && player.timeRemaining > 5) {
+          actions.push({
+            type: 'move',
+            location: hexedImportant.targetLocation as import('@/types/game.types').LocationId,
+            priority: 58,
+            description: `Travel to dispel hex on ${hexedImportant.targetLocation}`,
+          });
+        }
+      }
+    }
+  }
+
+  // === GAP-7: Graveyard dark ritual ===
+  // Hard AI with hex focus visits graveyard for cheap hex scrolls (15% backfire risk)
+  if (getGameOption('enableHexesCurses') && settings.planningDepth >= 3 && threatIsClose) {
+    const personalityAggro = ctx.personality.weights.gambling;
+    // Only gambler personalities (>= 1.0 weight) risk the dark ritual
+    if (personalityAggro >= 1.0 && player.gold >= 100 && player.hexScrolls.length < 2) {
+      if (currentLocation === 'graveyard') {
+        actions.push({
+          type: 'dark-ritual',
+          priority: 50,
+          description: 'Perform dark ritual for hex scroll',
+          details: { cost: 100 },
+        });
+      } else if (player.timeRemaining > moveCost('graveyard') + 4) {
+        actions.push({
+          type: 'move',
+          location: 'graveyard' as import('@/types/game.types').LocationId,
+          priority: 45,
+          description: 'Travel to graveyard for dark ritual',
+        });
+      }
     }
   }
 

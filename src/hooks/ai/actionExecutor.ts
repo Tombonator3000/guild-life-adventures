@@ -70,6 +70,13 @@ export interface StoreActions {
   castPersonalCurse: (playerId: string, hexId: string, targetId: string) => { success: boolean; message: string };
   buyProtectiveAmulet: (playerId: string, cost: number) => void;
   addHexScrollToPlayer: (playerId: string, hexId: string) => void;
+  dispelLocationHex: (playerId: string, cost: number) => { success: boolean; message: string };
+  performDarkRitual: (playerId: string, cost: number) => { success: boolean; message: string; backfired?: boolean };
+  // Appliance repair
+  repairAppliance: (playerId: string, applianceId: string) => number;
+  forgeRepairAppliance: (playerId: string, applianceId: string) => number;
+  // Salary
+  requestRaise: (playerId: string) => { success: boolean; newWage?: number; message: string };
   endTurn: () => void;
 }
 
@@ -554,6 +561,50 @@ function handleBuyAmulet(player: Player, _action: AIAction, store: StoreActions)
   return true;
 }
 
+// ─── GAP-2: Appliance Repair ─────────────────────────────────────────────
+
+function handleRepairAppliance(player: Player, action: AIAction, store: StoreActions): boolean {
+  const applianceId = action.details?.applianceId as string;
+  const location = action.details?.location as string;
+  if (!applianceId) return false;
+  const appliance = player.appliances[applianceId];
+  if (!appliance || !appliance.isBroken) return false;
+  if (location === 'forge') {
+    store.forgeRepairAppliance(player.id, applianceId);
+  } else {
+    store.repairAppliance(player.id, applianceId);
+  }
+  store.spendTime(player.id, 1);
+  return true;
+}
+
+// ─── GAP-3: Salary Negotiation ───────────────────────────────────────────
+
+function handleRequestRaise(player: Player, _action: AIAction, store: StoreActions): boolean {
+  if (!player.currentJob) return false;
+  const result = store.requestRaise(player.id);
+  store.spendTime(player.id, 1);
+  return result.success;
+}
+
+// ─── GAP-6: Dispel Location Hex ──────────────────────────────────────────
+
+function handleDispelHex(player: Player, action: AIAction, store: StoreActions): boolean {
+  const cost = (action.details?.cost as number) || 250;
+  if (player.gold < cost) return false;
+  const result = store.dispelLocationHex(player.id, cost);
+  return result.success;
+}
+
+// ─── GAP-7: Graveyard Dark Ritual ────────────────────────────────────────
+
+function handleDarkRitual(player: Player, action: AIAction, store: StoreActions): boolean {
+  const cost = (action.details?.cost as number) || 100;
+  if (player.gold < cost) return false;
+  const result = store.performDarkRitual(player.id, cost);
+  return result.success;
+}
+
 // ─── Turn Control ───────────────────────────────────────────────────────
 
 function handleEndTurn(_player: Player, _action: AIAction, store: StoreActions): boolean {
@@ -605,6 +656,10 @@ const ACTION_HANDLERS: Record<AIActionType, ActionHandler> = {
   'cast-curse': handleCastCurse,
   'cast-location-hex': handleCastLocationHex,
   'buy-amulet': handleBuyAmulet,
+  'repair-appliance': handleRepairAppliance,
+  'request-raise': handleRequestRaise,
+  'dispel-hex': handleDispelHex,
+  'dark-ritual': handleDarkRitual,
   'end-turn': handleEndTurn,
 };
 

@@ -196,7 +196,7 @@ function processStarvationCheck(
   if (hasFreshFood) {
     // Consume 1 fresh food unit instead of starving
     updatePlayerById(set, playerId, (p) => ({ freshFood: Math.max(0, p.freshFood - 1) }));
-    eventMessages.push(`${player.name}'s Preservation Box provided fresh food, preventing starvation.`);
+    // Fresh food consumed silently — no need for verbose message
     return false;
   }
 

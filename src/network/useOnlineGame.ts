@@ -327,6 +327,35 @@ export function useOnlineGame() {
         break;
       }
 
+      case 'name-change': {
+        setLobbyPlayers(prev => {
+          // Sanitize new name: trim, cap at 20 chars, strip control characters
+          const sanitized = (typeof message.newName === 'string' ? message.newName : 'Guest')
+            .trim()
+            .replace(/[\x00-\x1F\x7F]/g, '')
+            .slice(0, 20) || 'Guest';
+          // Prevent duplicate names
+          const existingName = prev.find(p => p.name === sanitized && p.peerId !== fromPeerId);
+          const displayName = existingName
+            ? `${sanitized} (${prev.findIndex(p => p.peerId === fromPeerId) + 1})`
+            : sanitized;
+          const updated = prev.map(p =>
+            p.peerId === fromPeerId ? { ...p, name: displayName } : p
+          );
+          // Update peer name for reconnection
+          peerManager.setPeerName(fromPeerId, displayName);
+          const lobby: LobbyState = {
+            roomCode,
+            hostName: localPlayerName,
+            players: updated,
+            settings,
+          };
+          peerManager.broadcast({ type: 'lobby-update', lobby });
+          return updated;
+        });
+        break;
+      }
+
       case 'leave': {
         handlePlayerDisconnect(fromPeerId);
         break;
@@ -596,6 +625,34 @@ export function useOnlineGame() {
     }
   }, [isHost, roomCode, localPlayerName, settings]);
 
+  // --- Name Update (guest can change name in lobby) ---
+
+  const updatePlayerName = useCallback((newName: string) => {
+    if (isHost) {
+      // Host updates locally and broadcasts
+      const sanitized = newName.trim().slice(0, 20) || 'Host';
+      setLocalPlayerName(sanitized);
+      setLobbyPlayers(prev => {
+        const updated = prev.map(p =>
+          p.peerId === 'host' ? { ...p, name: sanitized } : p
+        );
+        const lobby: LobbyState = {
+          roomCode,
+          hostName: sanitized,
+          players: updated,
+          settings,
+        };
+        peerManager.broadcast({ type: 'lobby-update', lobby });
+        return updated;
+      });
+    } else {
+      // Guest sends name change to host
+      const sanitized = newName.trim().slice(0, 20) || 'Guest';
+      setLocalPlayerName(sanitized);
+      peerManager.sendToHost({ type: 'name-change', newName: sanitized });
+    }
+  }, [isHost, roomCode, settings]);
+
   // --- Disconnect ---
 
   const disconnect = useCallback(() => {
@@ -659,6 +716,7 @@ export function useOnlineGame() {
     startOnlineGame,
     updateSettings,
     updatePortrait,
+    updatePlayerName,
     disconnect,
     setLocalPlayerName,
     attemptReconnect,

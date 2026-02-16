@@ -85,6 +85,10 @@ export type AIActionType =
   | 'cast-curse'
   | 'cast-location-hex'
   | 'buy-amulet'
+  | 'repair-appliance'
+  | 'request-raise'
+  | 'dispel-hex'
+  | 'dark-ritual'
   | 'end-turn';
 
 export interface AIAction {

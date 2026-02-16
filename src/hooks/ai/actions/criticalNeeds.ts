@@ -102,6 +102,31 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
   const hasUrgentRent = player.weeksSinceRent >= 3;
   const isLandlordOpen = isRentWeek || hasUrgentRent;
 
+  // GAP-1: Proactive rent prepayment — pay on rent week even if not urgently behind
+  if (isRentWeek && player.housing !== 'homeless' && player.weeksSinceRent >= 1 && urgency.rent < 0.5) {
+    const prepayRentCost = player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing];
+    if (player.gold >= prepayRentCost) {
+      if (currentLocation === 'landlord') {
+        actions.push({
+          type: 'pay-rent',
+          priority: 55,
+          description: 'Prepay rent to stay ahead',
+          details: { cost: prepayRentCost },
+        });
+      } else {
+        const movementCost = moveCost('landlord');
+        if (player.timeRemaining > movementCost + 2) {
+          actions.push({
+            type: 'move',
+            location: 'landlord',
+            priority: 50,
+            description: 'Travel to landlord to prepay rent',
+          });
+        }
+      }
+    }
+  }
+
   if (urgency.rent >= 0.5 && player.housing !== 'homeless' && isLandlordOpen) {
     const rentCost = player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing];
     if (player.gold >= rentCost) {
