@@ -70,7 +70,11 @@ async function mount() {
     console.log('[Guild Life] Loading app modules...');
     const { default: App } = await import("./App.tsx");
     console.log('[Guild Life] Mounting React app...');
-    createRoot(document.getElementById("root")!).render(<App />);
+    const root = document.getElementById("root");
+    if (!root) {
+      throw new Error('Root element not found');
+    }
+    createRoot(root).render(<App />);
     // Signal to the fallback script that React has mounted successfully.
     // This prevents the "Clear Cache & Reload" button from appearing
     // after React is already running.
@@ -81,4 +85,13 @@ async function mount() {
   }
 }
 
-mount();
+// Safety timeout: if mount() hangs (import never resolves, module evaluation hangs),
+// signal failure so the watchdog and fallback button can act.
+const mountTimeout = setTimeout(() => {
+  if (!window.__guildReactMounted && !window.__guildAppFailed) {
+    console.error('[Guild Life] Mount timeout — module import may have hung');
+    window.__guildAppFailed = true;
+  }
+}, 15000);
+
+mount().finally(() => clearTimeout(mountTimeout));

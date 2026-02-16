@@ -112,6 +112,7 @@
     <script>
       (function(){
         var retryCount=0; /* track module load retries */
+        var watchdogFired=false; /* prevent double watchdog */
 
         /* ===== fetchVersion: fetch version.json with CDN + browser cache bypass =====
            Uses both browser cache bypass (cache:'no-store') AND CDN cache bypass
@@ -153,33 +154,29 @@
              version.json again. This handles the scenario where BOTH the HTML AND
              version.json were stale on the first fetch (matching buildTimes, so
              hot-swap didn't trigger), but the CDN has since updated. The retry
-             gives the CDN cache time to propagate the fresh version.json. */
+             gives the CDN cache time to propagate the fresh version.json.
+
+             KEY FIX (2026-02-16): When version.json returns the SAME entry URL
+             (CDN still stale), wait 2s and retry instead of giving up immediately.
+             CDN propagation can take several seconds. */
           s.onerror=function(){
             console.error('[Guild Life] Entry module failed to load:',src);
-            if(retryCount<2 && window.__HTML_BASE__){
-              retryCount++;
-              console.log('[Guild Life] Retrying with fresh version.json (attempt '+retryCount+')...');
-              /* Remove the failed script so loadApp() can inject a new one */
-              s.remove();
-              fetchVersion(window.__HTML_BASE__).then(function(data){
-                if(data&&data.entry&&data.entry!==src){
-                  console.log('[Guild Life] Got fresh entry URL:',data.entry);
-                  swapCss(data.css);
-                  window.__ENTRY__=data.entry;
-                  loadApp();
-                }else{
-                  /* version.json still returns the same (stale) entry URL, or fetch failed.
-                     Show error and let the fallback button handle recovery. */
-                  window.__guildAppFailed=true;
-                  __guildShowLoadError('Module failed to load. A new version may be deploying — try again in a minute.');
-                }
-              });
-            }else{
-              window.__guildAppFailed=true;
-              __guildShowLoadError('Module failed to load: '+src.split('/').pop());
-            }
+            retryWithFreshVersion(src);
           };
           document.body.appendChild(s);
+
+          /* ===== WATCHDOG: catch silent failures =====
+             Some failure modes don't trigger onerror (module loads 200 OK but
+             internal imports fail, or module evaluation hangs). This watchdog
+             runs 12s after injection. If React still hasn't mounted AND no error
+             was reported, try hot-swap recovery from fresh version.json. */
+          setTimeout(function(){
+            if(window.__guildReactMounted||window.__guildAppFailed||watchdogFired)return;
+            watchdogFired=true;
+            console.warn('[Guild Life] Watchdog: React not mounted 12s after module injection');
+            retryWithFreshVersion(src);
+          },12000);
+
           /* Clean up cache-buster from URL (added by stale-build reload) */
           if(location.search.indexOf('_gv=')!==-1){
             try{
@@ -188,6 +185,43 @@
               history.replaceState(null,'',url.toString());
             }catch(e){}
           }
+        }
+
+        /* ===== retryWithFreshVersion: fetch version.json and hot-swap =====
+           Shared retry logic for both onerror and watchdog.
+           When CDN returns the same entry URL, waits 2s and retries once more
+           (gives CDN propagation time) instead of giving up immediately. */
+        function retryWithFreshVersion(failedSrc){
+          if(retryCount>=3 || !window.__HTML_BASE__){
+            window.__guildAppFailed=true;
+            __guildShowLoadError('Module failed to load: '+(failedSrc||'').split('/').pop()+'. Try refreshing in a minute.');
+            return;
+          }
+          retryCount++;
+          console.log('[Guild Life] Retrying with fresh version.json (attempt '+retryCount+'/3)...');
+          /* Remove any failed script so loadApp() can inject a new one */
+          var old=document.querySelector('script[data-entry]');
+          if(old)old.remove();
+
+          fetchVersion(window.__HTML_BASE__).then(function(data){
+            if(window.__guildReactMounted)return; /* mounted while we waited */
+            if(data&&data.entry&&data.entry!==failedSrc){
+              console.log('[Guild Life] Got fresh entry URL:',data.entry);
+              swapCss(data.css);
+              window.__ENTRY__=data.entry;
+              loadApp();
+            }else if(retryCount<3){
+              /* CDN may still be propagating — wait 2s and try again */
+              console.log('[Guild Life] Same entry URL from CDN — waiting 2s before retry...');
+              setTimeout(function(){
+                if(window.__guildReactMounted)return;
+                retryWithFreshVersion(failedSrc);
+              },2000);
+            }else{
+              window.__guildAppFailed=true;
+              __guildShowLoadError('Module failed to load. A new version may be deploying — try again in a minute.');
+            }
+          });
         }
 
         /* ===== swapCss: replace stale CSS links with fresh ones ===== */
@@ -226,6 +260,7 @@
             /* HTML and version.json agree — load the app.
                NOTE: If both are stale (CDN served cached version.json), the entry
                URL may 404. The onerror retry handler will catch this and try again. */
+            console.log('[Guild Life] Build times match — loading app');
             loadApp();
             return;
           }
@@ -392,13 +427,14 @@
           if(window.__guildReactMounted)return false;
           /* Module explicitly failed to load */
           if(window.__guildAppFailed)return true;
-          /* Module is still loading — give it time */
           var elapsed=Date.now()-startTime;
-          if(window.__guildAppLoading&&elapsed<15000)return false;
+          /* Module is still loading — give it a reasonable window.
+             12s is enough for version check (8s max) + module load (2-4s). */
+          if(window.__guildAppLoading&&elapsed<12000)return false;
           /* Loading hasn't started after 10s (version check hung) */
           if(!window.__guildAppLoading&&elapsed>10000)return true;
-          /* 15+ seconds and still not mounted — genuine timeout */
-          return elapsed>=15000;
+          /* 12+ seconds and still not mounted — genuine timeout */
+          return elapsed>=12000;
         }
 
         function guildFallbackCheck(){

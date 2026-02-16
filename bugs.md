@@ -189,6 +189,15 @@ Even after 15 fix attempts, TWO fundamental problems remained:
 - Multiple defense layers built but the PRIMARY defense (inline version check) was broken
 - All other defenses are secondary: they handle edge cases but can't prevent the core issue
 
+### Additional Hardening (2026-02-16)
+
+Even after the nuclear fix, edge cases remained where the loading system could hang silently:
+
+1. **Watchdog timer** (12s after module injection) — catches silent module failures where `onerror` never fires (module loads but evaluation hangs, dependency imports fail silently)
+2. **Mount timeout** (15s) — if `import("./App.tsx")` never resolves, sets `__guildAppFailed` flag so fallback button and watchdog can act
+3. **CDN propagation retry** — when version.json returns the same stale entry URL, waits 2s and retries (up to 3 attempts) instead of giving up immediately
+4. **Faster fallback button** — reduced from 15s to 12s threshold
+
 ### Lessons Learned
 1. **Test with the actual deployment target** — The `<base>` tag lookup was never tested on GitHub Pages
 2. **Verify defense layers actually fire** — The inline script's 404 was silently swallowed
@@ -197,3 +206,4 @@ Even after 15 fix attempts, TWO fundamental problems remained:
 5. **`cache:'no-store'` only bypasses browser cache, NOT CDN cache** — Must also send `Cache-Control: no-cache` request header for CDN bypass
 6. **Service workers and stale-cache recovery are fundamentally incompatible** — Disable aggressive SW behavior (skipWaiting/clientsClaim) on CDN-cached hosts
 7. **Add retry mechanisms, not just detection** — When a module 404s, try fetching version.json again instead of immediately giving up
+8. **Proactive watchdog > reactive error handlers** — Some failures produce no signal; check the end result (did React mount?) rather than waiting for specific errors
