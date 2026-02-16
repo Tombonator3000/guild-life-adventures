@@ -470,6 +470,8 @@ export interface QuestChain {
   completionBonusHappiness: number;
   /** Minimum guild rank to start the chain */
   requiredGuildRank: GuildRank;
+  /** Humorous completion summary shown when the whole chain is finished */
+  completionSummary?: string[];
 }
 
 export const QUEST_CHAINS: QuestChain[] = [
@@ -480,6 +482,11 @@ export const QUEST_CHAINS: QuestChain[] = [
     requiredGuildRank: 'journeyman',
     completionBonusGold: 200,
     completionBonusHappiness: 15,
+    completionSummary: [
+      "QUEST COMPLETE: The Dragon Conspiracy\n\nAgainst all odds, common sense, and basic self-preservation instincts, you have defeated the dragon conspiracy. The conspirators turned out to be three dragons in a trenchcoat running a pyramid scheme. The kingdom is saved, mostly because the dragons forgot to file their evil permits.\n\nThe Guild Treasurer described your reward as 'distressingly generous.' Your mother would be proud. Assuming she believed any of this, which she wouldn't.",
+      "QUEST COMPLETE: The Dragon Conspiracy\n\nYou did it. You actually did it. The dragon conspiracy has been unraveled like a cheap sweater in a cat sanctuary. Turns out the whole plot was run by a dragon who just wanted planning permission for a larger cave. The bureaucracy of evil knows no bounds.\n\nSeveral buildings were only mildly singed. The Mayor has declared a holiday in your honor, mainly because he was looking for an excuse to close the tax office.",
+      "QUEST COMPLETE: The Dragon Conspiracy\n\nThe conspiracy is over. The dragons have been firmly asked to leave. One of them cried. You're not sure how you feel about that.\n\nIn the grand tradition of heroes throughout history, you emerged victorious, slightly charred, and deeply confused about what just happened. The important thing is: you got paid. The less important thing is: the kingdom is safe. Priorities.",
+    ],
     steps: [
       {
         id: 'dragon-conspiracy-1',
@@ -537,6 +544,11 @@ export const QUEST_CHAINS: QuestChain[] = [
     requiredGuildRank: 'apprentice',
     completionBonusGold: 150,
     completionBonusHappiness: 12,
+    completionSummary: [
+      "QUEST COMPLETE: The Scholar's Secret\n\nYou sealed the ancient breach, saved forbidden knowledge from being lost forever, and only slightly destabilized the fabric of reality. The Academy Dean has publicly denied the hidden library exists while privately asking if you could return the books you borrowed.\n\nThe dying scholar, it turns out, wasn't actually dying — he just had really bad allergies. He sends his thanks and a fruit basket. The fruit basket was hexed. Classic scholar humor.",
+      "QUEST COMPLETE: The Scholar's Secret\n\nThe breach is sealed. The forbidden knowledge is safe. The librarian has forgiven you for the overdue books, mostly because you saved reality. There's still a fine, though. There's always a fine.\n\nYou've learned things that would make most people's heads spin. Your head did, in fact, spin. Twice. The healers say it should stop doing that within the week. Probably.",
+      "QUEST COMPLETE: The Scholar's Secret\n\nCongratulations! You have successfully performed forbidden magic, survived a basement full of angry books, and closed a hole in reality using nothing but arcane knowledge and a startling lack of concern for your own safety.\n\nThe Academy has awarded you an honorary degree in 'Applied Recklessness.' The ceremony is next Thursday. Refreshments will be provided. The refreshments may also be forbidden. You'll fit right in.",
+    ],
     steps: [
       {
         id: 'scholars-secret-1',
@@ -591,6 +603,14 @@ export const QUEST_CHAINS: QuestChain[] = [
 
 export function getQuestChain(chainId: string): QuestChain | undefined {
   return QUEST_CHAINS.find(c => c.id === chainId);
+}
+
+/** Get a random humorous completion summary for a quest chain */
+export function getChainCompletionSummary(chain: QuestChain): string {
+  if (!chain.completionSummary || chain.completionSummary.length === 0) {
+    return `QUEST COMPLETE: ${chain.name}\n\nYou have completed the entire quest chain. The guild is impressed. You are slightly less impressed, having done all the actual work. But gold is gold, and glory is... well, it's nice, but it doesn't pay rent.`;
+  }
+  return chain.completionSummary[Math.floor(Math.random() * chain.completionSummary.length)];
 }
 
 /** Get the next step for a player in a chain, or null if chain is complete */

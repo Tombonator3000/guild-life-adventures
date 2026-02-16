@@ -3762,3 +3762,85 @@ Previously, players had to click "Continue" in the event panel to dismiss events
 - **Save compatibility**: Old saves work — new `textSize` field defaults via merge with DEFAULT_OPTIONS
 
 ---
+
+## 2026-02-16 — Fix AI Gaps + Quest Chain Humor + Multiplayer Name Edit (22:00 UTC)
+
+### Overview
+
+Four-part session:
+1. **AI gap fixes** — 8 of 10 gaps from the AI gap analysis implemented
+2. **Remove verbose Preservation Box message** — "provided fresh food, preventing starvation" removed
+3. **Quest chain completion summaries** — Monty Python/Hitchhiker's Guide humor on chain completion
+4. **Multiplayer name/portrait editing** — Joining players can now edit their name and portrait in lobby
+
+### Task 1: AI Gap Fixes (8 of 10)
+
+| Gap | Status | File | Description |
+|-----|--------|------|-------------|
+| 1. Rent prepayment | DONE | `criticalNeeds.ts` | AI now proactively pays rent on rent weeks even when not urgently behind (priority 55) |
+| 2. Appliance repair | DONE | `economicActions.ts` | New `generateApplianceRepairActions()` — prioritizes preservation-box > cooking-fire, prefers Forge (cheaper). Added `repair-appliance` action type + executor handler |
+| 3. Salary negotiation | DONE | `strategicActions.ts` | AI requests raise when worked 3+ shifts and dependability >= 30. Added `request-raise` action type + executor handler |
+| 4. Festival awareness | DONE | `goalActions.ts` | All 4 festivals now boost relevant AI actions: Harvest → food stockup, Winter Solstice → study boost, Midsummer Fair → work boost, Spring Tournament → dungeon boost |
+| 5. Insurance purchase | SKIPPED | N/A | Insurance system doesn't exist in the game (no `hasInsurance`, `buyInsurance` properties in game.types.ts) |
+| 6. Dispel scroll usage | DONE | `rivalryActions.ts` | AI dispels hexed locations it needs (work, academy, guild hall). Buys dispel scroll at Enchanter. Added `dispel-hex` action type + executor handler |
+| 7. Graveyard dark ritual | DONE | `rivalryActions.ts` | Hard AI with gambling personality >= 1.0 performs dark rituals when < 2 hex scrolls. Added `dark-ritual` action type + executor handler |
+| 8. Voluntary homeless | DONE | `strategicActions.ts` | AI goes homeless voluntarily when gold < 30, savings < 20, rent 3+ weeks behind — avoids worse eviction penalties |
+| 9. Free actions at 0h | BLOCKED | N/A | Requires game-wide change first |
+| 10. Delete useAI.ts | DONE | Deleted `src/hooks/useAI.ts` | 230 lines of dead code removed. Not imported anywhere. |
+
+**Files changed**:
+- `src/hooks/ai/types.ts` — Added 4 new action types: `repair-appliance`, `request-raise`, `dispel-hex`, `dark-ritual`
+- `src/hooks/ai/actionExecutor.ts` — Added 4 new handler functions + StoreActions entries for: `repairAppliance`, `forgeRepairAppliance`, `requestRaise`, `dispelLocationHex`, `performDarkRitual`
+- `src/hooks/useGrimwaldAI.ts` — Wired up 5 new store actions to storeActions bundle
+- `src/hooks/ai/actions/criticalNeeds.ts` — GAP-1: Proactive rent prepayment
+- `src/hooks/ai/actions/economicActions.ts` — GAP-2: Appliance repair sub-generator
+- `src/hooks/ai/actions/strategicActions.ts` — GAP-3: Salary negotiation + GAP-8: Voluntary homeless
+- `src/hooks/ai/actions/goalActions.ts` — GAP-4: Festival-aware priority boosts
+- `src/hooks/ai/actions/rivalryActions.ts` — GAP-6: Dispel scroll + GAP-7: Dark ritual
+- Deleted: `src/hooks/useAI.ts`
+
+### Task 2: Remove Preservation Box Message
+
+Removed the verbose `"Preservation Box provided fresh food, preventing starvation"` message from `startTurnHelpers.ts:199`. Fresh food consumption now happens silently — no need to spam the player with obvious information.
+
+### Task 3: Quest Chain Completion Summary
+
+When a player completes ALL steps of a quest chain, a humorous story summary now appears in the center panel. Written in Monty Python / Hitchhiker's Guide to the Galaxy style humor.
+
+**Implementation**:
+- Added `completionSummary` field to `QuestChain` interface (array of variant strings)
+- Added 3 humorous completion summaries per chain (randomly selected):
+  - **Dragon Conspiracy**: Dragons in a trenchcoat, evil permits, distressingly generous rewards
+  - **Scholar's Secret**: Hexed fruit baskets, head-spinning, honorary degree in "Applied Recklessness"
+- Added `getChainCompletionSummary()` helper function with a generic fallback
+- `completeChainQuest()` in questHelpers.ts now sets `eventMessage` with the summary on final step (human players only)
+- Event system recognizes `[quest-chain-complete]` tag for proper title ("QUEST CHAIN COMPLETE!") and bonus-type styling
+- Uses the existing EventPanel center panel display system — no new components needed
+
+**Files changed**:
+- `src/data/quests.ts` — `completionSummary` field + data + `getChainCompletionSummary()` helper
+- `src/store/helpers/questHelpers.ts` — Trigger event on chain completion
+- `src/hooks/useLocationClick.ts` — Recognize quest-chain-complete event type + custom title
+
+### Task 4: Multiplayer Name/Portrait Editing for Joining Players
+
+Both host and joining players can now edit their name and select a portrait from the lobby. Previously, guests could only change their portrait but not their name after joining.
+
+**Implementation**:
+- Added `name-change` message type to `GuestMessage` union
+- Added `handleHostMessage` case for `'name-change'` — sanitizes name, prevents duplicates, broadcasts lobby update
+- Added `updatePlayerName()` function in `useOnlineGame` hook (works for both host and guest)
+- Added inline name editing UI with pencil icon in both host-lobby and guest-lobby player lists
+- Name editing uses inline form with auto-submit on blur and Enter key
+
+**Files changed**:
+- `src/network/types.ts` — Added `name-change` to GuestMessage
+- `src/network/useOnlineGame.ts` — Handler + `updatePlayerName` function + export
+- `src/components/screens/OnlineLobby.tsx` — Pencil icon, inline edit form, state management
+
+### Verification
+
+- **TypeScript**: Clean, no errors (npx tsc --noEmit)
+- **No new dependencies added**
+
+---

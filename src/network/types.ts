@@ -51,6 +51,7 @@ export type GuestMessage =
   | { type: 'ping'; timestamp: number }
   | { type: 'leave' }
   | { type: 'portrait-select'; portraitId: string | null }
+  | { type: 'name-change'; newName: string }
   | { type: 'movement-start'; playerId: string; path: LocationId[] };
 
 export type NetworkMessage = HostMessage | GuestMessage;

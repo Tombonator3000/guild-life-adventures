@@ -210,10 +210,80 @@ function pickBestStockToBuy(
   return bestStock;
 }
 
+/** GAP-2: Repair broken appliances at Enchanter or Forge */
+function generateApplianceRepairActions(ctx: ActionContext): AIAction[] {
+  const actions: AIAction[] = [];
+  const { player, currentLocation, moveCost, priceModifier } = ctx;
+
+  // Find broken appliances that the player owns
+  const brokenAppliances = Object.entries(player.appliances)
+    .filter(([, v]) => v && v.isBroken)
+    .map(([id, v]) => ({ id, originalPrice: v!.originalPrice }));
+
+  if (brokenAppliances.length === 0) return actions;
+
+  // Prioritize by importance: preservation-box > cooking-fire > others
+  const priorityOrder = ['preservation-box', 'cooking-fire', 'scrying-mirror', 'memory-crystal'];
+  brokenAppliances.sort((a, b) => {
+    const ai = priorityOrder.indexOf(a.id);
+    const bi = priorityOrder.indexOf(b.id);
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  });
+
+  const topBroken = brokenAppliances[0];
+  // Repair cost: 50% of original price at Enchanter, 25% at Forge
+  const enchanterRepairCost = Math.round(topBroken.originalPrice * 0.5 * priceModifier);
+  const forgeRepairCost = Math.round(topBroken.originalPrice * 0.25 * priceModifier);
+
+  // Priority higher for preservation box (prevents food spoilage cascade)
+  const basePriority = topBroken.id === 'preservation-box' ? 62 : 52;
+
+  // Prefer Forge (cheaper) if closer or equidistant
+  const forgeDist = moveCost('forge');
+  const enchanterDist = moveCost('enchanter');
+  const preferForge = forgeDist <= enchanterDist && player.gold >= forgeRepairCost;
+
+  if (preferForge) {
+    if (currentLocation === 'forge' && player.gold >= forgeRepairCost) {
+      actions.push({
+        type: 'repair-appliance',
+        priority: basePriority,
+        description: `Repair ${topBroken.id} at Forge (cheap)`,
+        details: { applianceId: topBroken.id, cost: forgeRepairCost, location: 'forge' },
+      });
+    } else if (player.gold >= forgeRepairCost && player.timeRemaining > forgeDist + 2) {
+      actions.push({
+        type: 'move',
+        location: 'forge',
+        priority: basePriority - 5,
+        description: `Travel to Forge to repair ${topBroken.id}`,
+      });
+    }
+  } else if (player.gold >= enchanterRepairCost) {
+    if (currentLocation === 'enchanter') {
+      actions.push({
+        type: 'repair-appliance',
+        priority: basePriority,
+        description: `Repair ${topBroken.id} at Enchanter`,
+        details: { applianceId: topBroken.id, cost: enchanterRepairCost, location: 'enchanter' },
+      });
+    } else if (player.timeRemaining > enchanterDist + 2) {
+      actions.push({
+        type: 'move',
+        location: 'enchanter',
+        priority: basePriority - 5,
+        description: `Travel to Enchanter to repair ${topBroken.id}`,
+      });
+    }
+  }
+
+  return actions;
+}
+
 // ─── Main generator ────────────────────────────────────────────────────
 
 /**
- * Generate economic actions (sickness, loans, fresh food, tickets, pawning, lottery, stocks).
+ * Generate economic actions (sickness, loans, fresh food, tickets, pawning, lottery, stocks, appliance repair).
  * Each subsystem is handled by a focused sub-generator for readability.
  */
 export function generateEconomicActions(ctx: ActionContext): AIAction[] {
@@ -223,6 +293,7 @@ export function generateEconomicActions(ctx: ActionContext): AIAction[] {
     ...generateLoanActions(ctx),
     ...generatePawningActions(ctx),
     ...generateStockActions(ctx),
+    ...generateApplianceRepairActions(ctx),
   ];
 
   // AI-5: Fresh food management

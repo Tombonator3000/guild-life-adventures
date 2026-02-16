@@ -90,6 +90,12 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     castPersonalCurse: store.castPersonalCurse,
     buyProtectiveAmulet: store.buyProtectiveAmulet,
     addHexScrollToPlayer: store.addHexScrollToPlayer,
+    // GAP actions: dispel, dark ritual, appliance repair, salary negotiation
+    dispelLocationHex: store.dispelLocationHex,
+    performDarkRitual: store.performDarkRitual,
+    repairAppliance: store.repairAppliance,
+    forgeRepairAppliance: store.forgeRepairAppliance,
+    requestRaise: store.requestRaise,
     endTurn: store.endTurn,
   }), [store]);
 

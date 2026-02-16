@@ -211,6 +211,7 @@ export function useLocationClick({
     if (msg.includes('starving') || msg.includes('food spoiled')) return 'starvation';
     if (msg.includes('ill') || msg.includes('food poisoning') || msg.includes('exhausted')) return 'sickness';
     if (msg.includes('lottery') || msg.includes('Arcane Tome') || msg.includes('birthday')) return 'bonus';
+    if (msg.includes('quest-chain-complete')) return 'bonus';
     return 'info';
   };
 
@@ -220,7 +221,9 @@ export function useLocationClick({
   // Title depends on event source: weekend processing vs gameplay events
   const eventTitle = eventSource === 'weekend'
     ? 'WEEKEND EVENTS'
-    : `WEEK ${week} EVENT`;
+    : eventMessage?.includes('[quest-chain-complete]')
+      ? 'QUEST CHAIN COMPLETE!'
+      : `WEEK ${week} EVENT`;
   const currentEvent: GameEvent | null = eventMessage ? {
     id: extractEventId(eventMessage),
     title: eventTitle,

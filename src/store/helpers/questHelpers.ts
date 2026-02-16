@@ -17,6 +17,7 @@ import {
   getScaledQuestGold,
   getScaledQuestHappiness,
   getReputationGoldMultiplier,
+  getChainCompletionSummary,
 } from '@/data/quests';
 import { calculateStockValue } from '@/data/stocks';
 import { checkAchievements, updateAchievementStats } from '@/data/achievements';
@@ -219,6 +220,18 @@ export function createQuestActions(set: SetFn, get: GetFn) {
           };
         }),
       }));
+
+      // Show humorous chain completion summary for human players
+      if (isLastStep) {
+        const completedPlayer = get().players.find(p => p.id === playerId);
+        if (completedPlayer && !completedPlayer.isAI) {
+          const summary = getChainCompletionSummary(chain);
+          const rewardLine = `\n+${chain.completionBonusGold}g bonus | +${chain.completionBonusHappiness} happiness | +3 reputation`;
+          const existing = get().eventMessage;
+          const fullMsg = `[quest-chain-complete] ${summary}${rewardLine}`;
+          set({ eventMessage: existing ? existing + '\n' + fullMsg : fullMsg, eventSource: 'gameplay', phase: 'event' });
+        }
+      }
 
       // Check for guild rank promotion
       get().promoteGuildRank(playerId);

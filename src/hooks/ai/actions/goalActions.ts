@@ -7,6 +7,7 @@
 
 import { getJob } from '@/data/jobs';
 import { DEGREES } from '@/data/education';
+import { FESTIVALS } from '@/data/festivals';
 import type { AIAction } from '../types';
 import {
   getBestAvailableJob,
@@ -310,6 +311,83 @@ export function generateGoalActions(ctx: ActionContext): AIAction[] {
         }
       }
       break;
+    }
+  }
+
+  // ============================================
+  // GAP-4: Festival-aware priority boosts
+  // ============================================
+  if (ctx.activeFestival) {
+    const festival = FESTIVALS.find(f => f.id === ctx.activeFestival);
+    if (festival) {
+      // Harvest Festival: prices 15% lower — stock up on food
+      if (festival.priceMultiplier < 1.0 && player.gold > 100) {
+        if (player.foodLevel < 60 && (currentLocation === 'general-store' || currentLocation === 'rusty-tankard')) {
+          actions.push({
+            type: 'buy-food',
+            priority: 52,
+            description: 'Stock up on food during festival discount',
+            details: { cost: Math.round(15 * priceModifier), foodGain: 15 },
+          });
+        }
+      }
+      // Winter Solstice: education bonus — boost study priority
+      if (festival.educationBonus > 0 && player.timeRemaining >= 6) {
+        const nextDeg = getNextDegree(player, settings);
+        if (nextDeg && player.gold >= nextDeg.costPerSession) {
+          if (currentLocation === 'academy') {
+            actions.push({
+              type: 'study',
+              priority: 75,
+              description: `Study during ${festival.name} (bonus progress!)`,
+              details: { degreeId: nextDeg.id, cost: nextDeg.costPerSession, hours: nextDeg.hoursPerSession },
+            });
+          } else if (player.timeRemaining > moveCost('academy') + nextDeg.hoursPerSession) {
+            actions.push({
+              type: 'move',
+              location: 'academy',
+              priority: 70,
+              description: `Travel to academy for ${festival.name} study bonus`,
+            });
+          }
+        }
+      }
+      // Midsummer Fair: wage bonus — boost work priority
+      if (festival.wageMultiplier > 1.0 && player.currentJob) {
+        const festJob = getJob(player.currentJob);
+        if (festJob && player.timeRemaining >= festJob.hoursPerShift) {
+          const festJobLoc = getJobLocation(festJob);
+          if (currentLocation === festJobLoc) {
+            actions.push({
+              type: 'work',
+              priority: 72,
+              description: `Work during ${festival.name} (bonus wages!)`,
+              details: { jobId: festJob.id, hours: festJob.hoursPerShift, wage: player.currentWage },
+            });
+          }
+        }
+      }
+      // Spring Tournament: dungeon gold bonus — boost dungeon priority
+      if (festival.dungeonGoldMultiplier > 1.0) {
+        const dungeonFloor = getBestDungeonFloor(player, settings);
+        if (dungeonFloor !== null) {
+          if (currentLocation === 'cave') {
+            actions.push({
+              type: 'explore-dungeon',
+              priority: 74,
+              description: `Explore dungeon during ${festival.name} (bonus gold!)`,
+              details: { floorId: dungeonFloor },
+            });
+          } else if (player.timeRemaining > moveCost('cave') + 8) {
+            actions.push({
+              type: 'move',
+              location: 'cave',
+              priority: 69,
+              description: `Travel to cave for ${festival.name} dungeon bonus`,
+            });
+          }
+        }
+      }
     }
   }
 
