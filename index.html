@@ -11,7 +11,10 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
+    <!-- Favicon and apple-touch-icon paths are relative so they work on both
+         root-hosted (Lovable) and subpath-hosted (GitHub Pages) deployments.
+         Previously these used absolute "/" paths which 404'd on GitHub Pages. -->
+    <link rel="icon" type="image/png" href="favicon.png" />
     <title>Guild Life</title>
     <meta name="description" content="A fantasy life simulation game inspired by Jones in the Fast Lane">
     <meta name="author" content="Guild Life Adventures" />
@@ -45,7 +48,7 @@
       <!-- Loading screen — visible until React mounts and replaces this content -->
       <div id="loading-screen" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1f170a;color:#e8dcc8;font-family:serif;text-align:center;padding:2rem;">
         <h1 style="font-size:2rem;margin-bottom:1rem;color:#d4a537;">Guild Life Adventures</h1>
-        <p style="font-size:1rem;opacity:0.7;">Loading the realm...</p>
+        <p id="loading-status" style="font-size:1rem;opacity:0.7;">Loading the realm...</p>
         <noscript><p style="margin-top:1rem;color:#c44;">JavaScript is required to play this game.</p></noscript>
       </div>
     </div>
@@ -59,6 +62,11 @@
       window.__guildAppLoading=false;  /* true once loadApp() injects module */
       window.__guildAppFailed=false;   /* true if module fails to load */
       window.__guildReactMounted=false; /* true once React renders */
+      /* Update the loading status text so users see progress, not a frozen screen */
+      function __guildSetStatus(msg){
+        var el=document.getElementById('loading-status');
+        if(el)el.textContent=msg;
+      }
       function __guildShowLoadError(msg){
         window.__guildAppFailed=true;
         setTimeout(function(){
@@ -86,15 +94,6 @@
         __guildShowLoadError(msg);
       });
     </script>
-    <!-- Unregister stale service workers BEFORE version check runs.
-         Old/broken SWs from previous deployments can intercept fetches and serve
-         stale cached responses, defeating the version.json freshness check.
-         This is fire-and-forget: by the time the entry module loads (1-3s later),
-         the unregister is complete and all fetches go direct to network.
-         The useRegisterSW hook in React will re-register a fresh SW after mount. -->
-    <script>
-      try{navigator.serviceWorker&&navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(s){s.unregister()})}).catch(function(){})}catch(e){}
-    </script>
     <!-- DEFERRED MODULE LOADING + STALE-BUILD DETECTION (Layer 0)
          In production, deferModulePlugin removes the <script type="module"> tag and
          stores its URL in window.__ENTRY__. This script loads it dynamically AFTER
@@ -107,12 +106,30 @@
          entry module URL from version.json and load the fresh module directly.
          version.json is always fresh (fetched with cache:'no-store' + unique URL).
 
+         KEY FIX (2026-02-16): Chain SW unregister BEFORE version check to prevent
+         old SWs from intercepting the version.json fetch with cached responses.
+
          In development, window.__HTML_BUILD_TIME__ is undefined and window.__ENTRY__
          doesn't exist, so the module script tag below loads normally. -->
     <script>
       (function(){
         var retryCount=0; /* track module load retries */
         var watchdogFired=false; /* prevent double watchdog */
+
+        /* ===== unregisterSW: unregister all service workers and return a promise =====
+           Old/broken SWs from previous deployments can intercept fetches and serve
+           stale cached responses, defeating the version.json freshness check.
+           MUST complete BEFORE version.json fetch to prevent SW interference.
+           Previous versions were fire-and-forget — the version check could race ahead
+           while the old SW was still active, causing it to serve cached version.json. */
+        function unregisterSW(){
+          try{
+            if(!navigator.serviceWorker)return Promise.resolve();
+            return navigator.serviceWorker.getRegistrations().then(function(regs){
+              return Promise.all(regs.map(function(r){return r.unregister()}));
+            }).catch(function(){});
+          }catch(e){return Promise.resolve();}
+        }
 
         /* ===== fetchVersion: fetch version.json with CDN + browser cache bypass =====
            Uses both browser cache bypass (cache:'no-store') AND CDN cache bypass
@@ -134,6 +151,7 @@
           var src=window.__ENTRY__;
           if(!src)return; /* dev mode — module script is in the HTML */
           window.__guildAppLoading=true;
+          __guildSetStatus('Loading game modules...');
           console.log('[Guild Life] Loading entry module:',src);
           /* Re-add modulepreload hints for performance */
           (window.__PRELOADS__||[]).forEach(function(href){
@@ -148,17 +166,7 @@
           /* Handle module load failures (404 for old chunks, network errors).
              <script type="module"> errors don't trigger window.onerror or
              unhandledrejection — they silently fail, leaving the loading
-             screen visible forever. This onerror catches those cases.
-
-             KEY FIX (2026-02-15): Instead of immediately giving up, try fetching
-             version.json again. This handles the scenario where BOTH the HTML AND
-             version.json were stale on the first fetch (matching buildTimes, so
-             hot-swap didn't trigger), but the CDN has since updated. The retry
-             gives the CDN cache time to propagate the fresh version.json.
-
-             KEY FIX (2026-02-16): When version.json returns the SAME entry URL
-             (CDN still stale), wait 2s and retry instead of giving up immediately.
-             CDN propagation can take several seconds. */
+             screen visible forever. This onerror catches those cases. */
           s.onerror=function(){
             console.error('[Guild Life] Entry module failed to load:',src);
             retryWithFreshVersion(src);
@@ -168,14 +176,15 @@
           /* ===== WATCHDOG: catch silent failures =====
              Some failure modes don't trigger onerror (module loads 200 OK but
              internal imports fail, or module evaluation hangs). This watchdog
-             runs 12s after injection. If React still hasn't mounted AND no error
+             runs 10s after injection. If React still hasn't mounted AND no error
              was reported, try hot-swap recovery from fresh version.json. */
           setTimeout(function(){
             if(window.__guildReactMounted||window.__guildAppFailed||watchdogFired)return;
             watchdogFired=true;
-            console.warn('[Guild Life] Watchdog: React not mounted 12s after module injection');
+            __guildSetStatus('Loading is slow — retrying...');
+            console.warn('[Guild Life] Watchdog: React not mounted 10s after module injection');
             retryWithFreshVersion(src);
-          },12000);
+          },10000);
 
           /* Clean up cache-buster from URL (added by stale-build reload) */
           if(location.search.indexOf('_gv=')!==-1){
@@ -189,8 +198,10 @@
 
         /* ===== retryWithFreshVersion: fetch version.json and hot-swap =====
            Shared retry logic for both onerror and watchdog.
-           When CDN returns the same entry URL, waits 2s and retries once more
-           (gives CDN propagation time) instead of giving up immediately. */
+           KEY FIX (2026-02-16): When CDN returns the same entry URL, try loading
+           the module with a cache-busting query param. The original URL may have
+           failed due to CDN serving a 404 for a not-yet-propagated file, but the
+           cache-buster forces a fresh CDN lookup which may succeed. */
         function retryWithFreshVersion(failedSrc){
           if(retryCount>=3 || !window.__HTML_BASE__){
             window.__guildAppFailed=true;
@@ -198,6 +209,7 @@
             return;
           }
           retryCount++;
+          __guildSetStatus('Retrying... (attempt '+retryCount+'/3)');
           console.log('[Guild Life] Retrying with fresh version.json (attempt '+retryCount+'/3)...');
           /* Remove any failed script so loadApp() can inject a new one */
           var old=document.querySelector('script[data-entry]');
@@ -206,13 +218,25 @@
           fetchVersion(window.__HTML_BASE__).then(function(data){
             if(window.__guildReactMounted)return; /* mounted while we waited */
             if(data&&data.entry&&data.entry!==failedSrc){
+              /* Got a different (fresh) entry URL — hot-swap */
               console.log('[Guild Life] Got fresh entry URL:',data.entry);
               swapCss(data.css);
               window.__ENTRY__=data.entry;
               loadApp();
+            }else if(data&&data.entry){
+              /* Same entry URL — CDN may be stale OR the module truly failed.
+                 Try loading with cache-buster appended to force CDN bypass. */
+              var bustUrl=data.entry+(data.entry.indexOf('?')===-1?'?':'&')+'_cb='+Date.now();
+              console.log('[Guild Life] Same entry URL — trying with cache-buster:',bustUrl);
+              window.__ENTRY__=bustUrl;
+              /* Wait 1s for CDN propagation before retrying */
+              setTimeout(function(){
+                if(window.__guildReactMounted)return;
+                loadApp();
+              },1000);
             }else if(retryCount<3){
-              /* CDN may still be propagating — wait 2s and try again */
-              console.log('[Guild Life] Same entry URL from CDN — waiting 2s before retry...');
+              /* version.json unavailable — wait 2s and try again */
+              console.log('[Guild Life] version.json unavailable — waiting 2s before retry...');
               setTimeout(function(){
                 if(window.__guildReactMounted)return;
                 retryWithFreshVersion(failedSrc);
@@ -245,10 +269,21 @@
 
         var base=window.__HTML_BASE__||'/';
 
-        /* Fetch version.json with full CDN + browser cache bypass */
-        window.__versionCheck=fetchVersion(base);
+        /* ===== STEP 1: Unregister stale SWs THEN check version =====
+           Previous versions ran SW unregister and version check in parallel.
+           This caused a race: old SW could intercept the version.json fetch
+           and serve a cached response before unregistration completed.
+           Now we chain: unregister first, THEN fetch version.json. */
+        __guildSetStatus('Checking for updates...');
 
-        window.__versionCheck.then(function(data){
+        /* Unregister SWs first (max 2s timeout to avoid hanging) */
+        var swDone=unregisterSW();
+        var swTimeout=new Promise(function(r){setTimeout(r,2000)});
+        Promise.race([swDone,swTimeout]).then(function(){
+          /* SWs unregistered (or timed out) — now safe to fetch version.json */
+          return fetchVersion(base);
+        }).then(function(data){
+          if(document.querySelector('script[data-entry]'))return; /* loadApp already called */
           if(!data||!data.buildTime){
             /* Can't determine version — load the app anyway.
                If the entry URL is stale, the onerror retry will catch it. */
@@ -314,16 +349,20 @@
                 }catch(e){location.reload();}
               },500);
             });
+        }).catch(function(){
+          /* Entire pipeline failed — load the app with whatever entry we have */
+          console.error('[Guild Life] Loading pipeline failed — loading app anyway');
+          loadApp();
         });
 
-        /* Timeout: if version check takes >8s, load anyway (slow/offline).
+        /* Timeout: if entire pipeline takes >10s, load anyway (slow/offline).
            If the entry URL is stale, the onerror retry will catch it. */
         setTimeout(function(){
           if(!document.querySelector('script[data-entry]')){
-            console.log('[Guild Life] Version check timed out — loading app');
+            console.log('[Guild Life] Loading pipeline timed out — loading app');
             loadApp();
           }
-        },8000);
+        },10000);
       })();
     </script>
     <!-- Dev mode entry point — in production, deferModulePlugin removes the
@@ -336,7 +375,7 @@
 
          Logic: Show button when:
          1. Module failed to load (__guildAppFailed), OR
-         2. 15+ seconds elapsed and app still loading (genuine timeout), OR
+         2. 12+ seconds elapsed and app still loading (genuine timeout), OR
          3. Loading hasn't even started after 10s (version check hung)
          Never show if React has mounted (__guildReactMounted). -->
     <script>

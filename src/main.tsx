@@ -21,6 +21,15 @@ declare global {
     __HTML_BUILD_TIME__?: string;
     __guildReactMounted?: boolean;
     __guildAppFailed?: boolean;
+    __guildSetStatus?: (msg: string) => void;
+  }
+}
+
+// Update the loading status text on the loading screen.
+// Shows progress to the user so they know the app isn't frozen.
+function setStatus(msg: string) {
+  if (typeof window.__guildSetStatus === 'function') {
+    window.__guildSetStatus(msg);
   }
 }
 
@@ -46,20 +55,6 @@ function showMountError(error: unknown) {
   `;
 }
 
-// NOTE: checkStaleBuild() was REMOVED from here.
-// The inline script in index.html already handles stale-build detection with hot-swap.
-// Having a SECOND stale check here was redundant and caused reload loops because:
-// 1. Inline script detects stale → hot-swaps to fresh module (no reload needed)
-// 2. Fresh module loads with correct __BUILD_TIME__
-// 3. This check would see matching times → no-op (harmless)
-// BUT: If inline script's version.json fetch failed:
-// 1. Inline script falls through → loads module with possibly stale __BUILD_TIME__
-// 2. This check would fetch version.json again → mismatch → reload
-// 3. Reload might get stale HTML again → checkStaleBuild reloads again → LOOP
-// No reload limit was in place, causing infinite reload loops.
-// The inline script's 8s timeout + hot-swap handles this case better.
-// The useAppUpdate hook handles ongoing version polling after mount.
-
 // Dynamic import of App — catches module-level failures in the entire
 // component tree (store, hooks, audio singletons, data modules).
 // Static imports (like `import App from "./App"`) execute during module
@@ -67,8 +62,10 @@ function showMountError(error: unknown) {
 // Dynamic import() converts them to catchable rejected promises.
 async function mount() {
   try {
+    setStatus('Loading game modules...');
     console.log('[Guild Life] Loading app modules...');
     const { default: App } = await import("./App.tsx");
+    setStatus('Starting game...');
     console.log('[Guild Life] Mounting React app...');
     const root = document.getElementById("root");
     if (!root) {

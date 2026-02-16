@@ -198,6 +198,20 @@ Even after the nuclear fix, edge cases remained where the loading system could h
 3. **CDN propagation retry** — when version.json returns the same stale entry URL, waits 2s and retries (up to 3 attempts) instead of giving up immediately
 4. **Faster fallback button** — reduced from 15s to 12s threshold
 
+### Additional Hardening (2026-02-16, session 2)
+
+Systematic bug hunt with parallel agents. No new code bugs found in recent PRs (#216, #218, #219, #220). Build, TypeScript, and 219 tests all pass. Root cause remains BUG-001 CDN cache with three newly identified edge cases:
+
+1. **SW unregister race condition** — The SW unregister was fire-and-forget (async) but the version.json fetch started immediately in a separate `<script>` block. An old SW could intercept the version.json fetch and serve cached response before unregistration completed. **Fix**: Chain SW unregister BEFORE version check using `Promise.race([unregisterSW(), timeout(2s)])` → then fetchVersion.
+
+2. **No user feedback during loading** — Static "Loading the realm..." text gave no indication of progress, causing users to think the app was frozen and click Clear Cache prematurely. **Fix**: Dynamic status text via `__guildSetStatus()`: "Checking for updates..." → "Loading game modules..." → "Starting game..." → "Retrying... (attempt N/3)" → "Loading is slow — retrying..."
+
+3. **Module retry with same URL** — When version.json returned the same entry URL (CDN propagation delay), the retry waited 2s then tried again with the exact same URL. **Fix**: Append `?_cb=timestamp` cache-buster to the module URL on retry, forcing CDN to fetch fresh from origin.
+
+4. **Favicon 404 on GitHub Pages** — `<link rel="icon" href="/favicon.png">` resolved to `tombonator3000.github.io/favicon.png` instead of `/guild-life-adventures/favicon.png`. Same for apple-touch-icon. **Fix**: Changed to relative paths (`href="favicon.png"`).
+
+5. **Reduced watchdog timer** — From 12s to 10s for faster retry on silent failures.
+
 ### Lessons Learned
 1. **Test with the actual deployment target** — The `<base>` tag lookup was never tested on GitHub Pages
 2. **Verify defense layers actually fire** — The inline script's 404 was silently swallowed
@@ -207,3 +221,5 @@ Even after the nuclear fix, edge cases remained where the loading system could h
 6. **Service workers and stale-cache recovery are fundamentally incompatible** — Disable aggressive SW behavior (skipWaiting/clientsClaim) on CDN-cached hosts
 7. **Add retry mechanisms, not just detection** — When a module 404s, try fetching version.json again instead of immediately giving up
 8. **Proactive watchdog > reactive error handlers** — Some failures produce no signal; check the end result (did React mount?) rather than waiting for specific errors
+9. **Chain async cleanup before dependent operations** — Fire-and-forget cleanup can race with the operations that depend on it being complete
+10. **Show progress during loading** — Users interpret static text as frozen; dynamic status prevents premature cache clears
