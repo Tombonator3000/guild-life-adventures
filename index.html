@@ -103,98 +103,91 @@
     <!-- DEFERRED MODULE LOADING + STALE-BUILD DETECTION (Layer 0)
          In production, deferModulePlugin removes the <script type="module"> tag and
          stores its URL in window.__ENTRY__. This script loads it dynamically AFTER
-         confirming the HTML is fresh via version.json. This eliminates the race
-         condition where stale HTML starts loading non-existent JS chunks in parallel
-         with the version check.
+         confirming the HTML is fresh via version.json.
 
-         KEY FIX (2026-02-15): When stale HTML is detected, instead of reloading
-         (which may serve the SAME stale HTML from CDN cache), we hot-swap the
-         entry module URL from version.json and load the fresh module directly.
-         version.json is always fresh (fetched with cache:'no-store' + unique URL).
-
-         KEY FIX (2026-02-16): Chain SW unregister BEFORE version check to prevent
-         old SWs from intercepting the version.json fetch with cached responses.
+         KEY FIX (2026-02-16): Replaced complex hot-swap/retry logic with simple
+         auto-reload approach. Previous versions tried to hot-swap stale entry URLs
+         in-page, but this failed when GitHub Pages CDN cached version.json too
+         (Fastly doesn't honor client-side Cache-Control headers). Now we just
+         reload the page with ?_gv=timestamp which creates a CDN cache miss,
+         getting fresh HTML from origin. Combined with selfDestroying SW in
+         vite.config.ts, this eliminates both CDN stale cache and SW interference.
 
          In development, window.__HTML_BUILD_TIME__ is undefined and window.__ENTRY__
          doesn't exist, so the module script tag below loads normally. -->
     <script>
       (function(){
-        var retryCount=0; /* track module load retries */
-        var watchdogFired=false; /* prevent double watchdog */
-        var retryInProgress=false; /* prevent parallel retry chains */
-        window.__guildVersionCheckStarted=false; /* track version check progress */
+        var RELOAD_KEY='guild-reload-count';
+        var RELOAD_WINDOW=120000; /* 2 min */
+        var MAX_RELOADS=3;
 
-        /* ===== unregisterSW: unregister all service workers and return a promise =====
-           Old/broken SWs from previous deployments can intercept fetches and serve
-           stale cached responses, defeating the version.json freshness check.
-           MUST complete BEFORE version.json fetch to prevent SW interference.
-           Previous versions were fire-and-forget — the version check could race ahead
-           while the old SW was still active, causing it to serve cached version.json. */
-        function unregisterSW(){
+        function getReloadCount(){
+          try{
+            var d=JSON.parse(sessionStorage.getItem(RELOAD_KEY)||'null');
+            if(!d||Date.now()-d.ts>RELOAD_WINDOW)return 0;
+            return d.count||0;
+          }catch(e){return 0;}
+        }
+        /* Auto-reload with CDN cache-busting URL.
+           ?_gv=timestamp changes the full page URL → CDN cache miss → fresh HTML from origin.
+           Uses sessionStorage counter to prevent infinite reload loops (max 3 in 2 min). */
+        function autoReload(reason){
+          if(getReloadCount()>=MAX_RELOADS){
+            console.warn('[Guild Life] Reload limit reached — showing manual recovery');
+            window.__guildAppFailed=true;
+            __guildShowLoadError('New version deploying. Please wait a minute and refresh, or clear your browser cache.');
+            return;
+          }
+          console.log('[Guild Life] Auto-reloading:',reason);
+          __guildSetStatus('Updating — reloading...');
+          try{
+            var d=JSON.parse(sessionStorage.getItem(RELOAD_KEY)||'null');
+            if(!d||Date.now()-d.ts>RELOAD_WINDOW)d={ts:Date.now(),count:0};
+            d.count++;
+            sessionStorage.setItem(RELOAD_KEY,JSON.stringify(d));
+          }catch(e){}
+          try{
+            var u=new URL(location.href);
+            u.searchParams.set('_gv',String(Date.now()));
+            location.replace(u.toString());
+          }catch(e){location.reload();}
+        }
+
+        /* Unregister legacy SWs. Users with old SWs from pre-fix deployments
+           need cleanup. The selfDestroying SW handles future cleanup, but this
+           covers the transition for existing users. */
+        function cleanupSWs(){
           try{
             if(!navigator.serviceWorker)return Promise.resolve();
             return navigator.serviceWorker.getRegistrations().then(function(regs){
-              return Promise.all(regs.map(function(r){return r.unregister()}));
+              return Promise.all(regs.map(function(r){return r.unregister();}));
             }).catch(function(){});
           }catch(e){return Promise.resolve();}
         }
 
-        /* ===== fetchVersion: fetch version.json with CDN + browser cache bypass =====
-           Uses both browser cache bypass (cache:'no-store') AND CDN cache bypass
-           (Cache-Control/Pragma no-cache headers + unique query param).
-           Previous versions only used cache:'no-store' which bypasses the BROWSER
-           cache but NOT the CDN cache. GitHub Pages CDN (Fastly) could still serve
-           stale version.json, making the hot-swap think HTML is fresh when it's not. */
-        function fetchVersion(base){
-          return fetch(base+'version.json?_='+Date.now(),{
-            cache:'no-store',
-            headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}
-          }).then(function(r){return r.ok?r.json():null})
-            .catch(function(){return null});
-        }
-
-        /* ===== loadApp: dynamically inject the entry module ===== */
         function loadApp(){
-          if(document.querySelector('script[data-entry]'))return; /* already loading */
+          if(document.querySelector('script[data-entry]'))return;
           var src=window.__ENTRY__;
-          if(!src)return; /* dev mode — module script is in the HTML */
+          if(!src)return; /* dev mode */
           window.__guildAppLoading=true;
           __guildSetStatus('Loading game modules...');
           console.log('[Guild Life] Loading entry module:',src);
-          /* Re-add modulepreload hints for performance */
+          /* Re-add modulepreload hints */
           (window.__PRELOADS__||[]).forEach(function(href){
             var l=document.createElement('link');
             l.rel='modulepreload';l.crossOrigin='';l.href=href;
             document.head.appendChild(l);
           });
-          /* Inject the entry module */
           var s=document.createElement('script');
           s.type='module';s.crossOrigin='';s.src=src;
           s.setAttribute('data-entry','1');
-          /* Handle module load failures (404 for old chunks, network errors).
-             <script type="module"> errors don't trigger window.onerror or
-             unhandledrejection — they silently fail, leaving the loading
-             screen visible forever. This onerror catches those cases. */
+          /* Entry module 404 (stale chunks deleted) → auto-reload to get fresh HTML */
           s.onerror=function(){
-            console.error('[Guild Life] Entry module failed to load:',src);
-            retryWithFreshVersion(src);
+            console.error('[Guild Life] Entry module 404:',src);
+            autoReload('entry module 404');
           };
           document.body.appendChild(s);
-
-          /* ===== WATCHDOG: catch silent failures =====
-             Some failure modes don't trigger onerror (module loads 200 OK but
-             internal imports fail, or module evaluation hangs). This watchdog
-             runs 10s after injection. If React still hasn't mounted AND no error
-             was reported, try hot-swap recovery from fresh version.json. */
-          setTimeout(function(){
-            if(window.__guildReactMounted||window.__guildAppFailed||watchdogFired)return;
-            watchdogFired=true;
-            __guildSetStatus('Loading is slow — retrying...');
-            console.warn('[Guild Life] Watchdog: React not mounted 10s after module injection');
-            retryWithFreshVersion(src);
-          },10000);
-
-          /* Clean up cache-buster from URL (added by stale-build reload) */
+          /* Clean up ?_gv from URL bar */
           if(location.search.indexOf('_gv=')!==-1){
             try{
               var url=new URL(location.href);
@@ -204,297 +197,120 @@
           }
         }
 
-        /* ===== retryWithFreshVersion: fetch version.json and hot-swap =====
-           Shared retry logic for both onerror and watchdog.
-           KEY FIX (2026-02-16): When CDN returns the same entry URL, try loading
-           the module with a cache-busting query param. The original URL may have
-           failed due to CDN serving a 404 for a not-yet-propagated file, but the
-           cache-buster forces a fresh CDN lookup which may succeed. */
-        function retryWithFreshVersion(failedSrc){
-          if(retryInProgress)return; /* prevent parallel retry chains */
-          retryInProgress=true;
-          if(retryCount>=3 || !window.__HTML_BASE__){
-            window.__guildAppFailed=true;
-            __guildShowLoadError('Module failed to load: '+(failedSrc||'').split('/').pop()+'. Try refreshing in a minute.');
-            return;
-          }
-          retryCount++;
-          __guildSetStatus('Retrying... (attempt '+retryCount+'/3)');
-          console.log('[Guild Life] Retrying with fresh version.json (attempt '+retryCount+'/3)...');
-          /* Remove any failed script so loadApp() can inject a new one */
-          var old=document.querySelector('script[data-entry]');
-          if(old)old.remove();
-
-          fetchVersion(window.__HTML_BASE__).then(function(data){
-            retryInProgress=false; /* allow next retry after this one resolves */
-            if(window.__guildReactMounted)return; /* mounted while we waited */
-            if(data&&data.entry&&data.entry!==failedSrc){
-              /* Got a different (fresh) entry URL — hot-swap */
-              console.log('[Guild Life] Got fresh entry URL:',data.entry);
-              swapCss(data.css);
-              window.__ENTRY__=data.entry;
-              loadApp();
-            }else if(data&&data.entry){
-              /* Same entry URL — CDN may be stale OR the module truly failed.
-                 Try loading with cache-buster appended to force CDN bypass. */
-              var bustUrl=data.entry+(data.entry.indexOf('?')===-1?'?':'&')+'_cb='+Date.now();
-              console.log('[Guild Life] Same entry URL — trying with cache-buster:',bustUrl);
-              window.__ENTRY__=bustUrl;
-              /* Wait 1s for CDN propagation before retrying */
-              setTimeout(function(){
-                if(window.__guildReactMounted)return;
-                loadApp();
-              },1000);
-            }else if(retryCount<3){
-              /* version.json unavailable — wait 2s and try again */
-              console.log('[Guild Life] version.json unavailable — waiting 2s before retry...');
-              setTimeout(function(){
-                if(window.__guildReactMounted)return;
-                retryWithFreshVersion(failedSrc);
-              },2000);
-            }else{
-              window.__guildAppFailed=true;
-              __guildShowLoadError('Module failed to load. A new version may be deploying — try again in a minute.');
-            }
-          }).catch(function(){retryInProgress=false;});
-        }
-
-        /* ===== swapCss: replace stale CSS links with fresh ones ===== */
-        function swapCss(freshCssUrls){
-          if(!freshCssUrls||!freshCssUrls.length)return;
-          /* Remove stale CSS links (Vite-generated ones in /assets/) */
-          var staleLinks=document.querySelectorAll('link[rel="stylesheet"][href*="/assets/"]');
-          for(var i=0;i<staleLinks.length;i++){staleLinks[i].remove();}
-          /* Add fresh CSS links */
-          for(var j=0;j<freshCssUrls.length;j++){
-            var link=document.createElement('link');
-            link.rel='stylesheet';link.crossOrigin='';link.href=freshCssUrls[j];
-            document.head.appendChild(link);
-          }
-        }
-
-        if(!window.__HTML_BUILD_TIME__){
-          /* Dev mode — no version check, module loads from HTML script tag */
-          return;
-        }
+        if(!window.__HTML_BUILD_TIME__){return;} /* dev mode */
 
         var base=window.__HTML_BASE__||'/';
-
-        /* ===== STEP 1: Unregister stale SWs THEN check version =====
-           Previous versions ran SW unregister and version check in parallel.
-           This caused a race: old SW could intercept the version.json fetch
-           and serve a cached response before unregistration completed.
-           Now we chain: unregister first, THEN fetch version.json. */
         __guildSetStatus('Checking for updates...');
         window.__guildVersionCheckStarted=true;
 
-        /* Unregister SWs first (max 2s timeout to avoid hanging) */
-        var swDone=unregisterSW();
-        var swTimeout=new Promise(function(r){setTimeout(r,2000)});
+        /* Step 1: Clean up legacy SWs (max 2s) */
+        var swDone=cleanupSWs();
+        var swTimeout=new Promise(function(r){setTimeout(r,2000);});
         Promise.race([swDone,swTimeout]).then(function(){
-          /* SWs unregistered (or timed out) — now safe to fetch version.json */
-          return fetchVersion(base);
+          /* Step 2: Fetch version.json with cache bypass */
+          return fetch(base+'version.json?_='+Date.now(),{
+            cache:'no-store',
+            headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}
+          }).then(function(r){return r.ok?r.json():null;})
+            .catch(function(){return null;});
         }).then(function(data){
-          if(document.querySelector('script[data-entry]'))return; /* loadApp already called */
-          if(!data||!data.buildTime){
-            /* Can't determine version — load the app anyway.
-               If the entry URL is stale, the onerror retry will catch it. */
-            console.log('[Guild Life] version.json unavailable — loading app with HTML entry');
-            loadApp();
+          if(document.querySelector('script[data-entry]'))return;
+          if(data&&data.buildTime&&data.buildTime!==window.__HTML_BUILD_TIME__){
+            /* Stale HTML detected — version.json is fresh.
+               Auto-reload to get fresh HTML with correct entry URL. */
+            console.warn('[Guild Life] Stale HTML detected. HTML:',
+              window.__HTML_BUILD_TIME__,'Server:',data.buildTime);
+            autoReload('stale HTML detected');
             return;
           }
-          if(data.buildTime===window.__HTML_BUILD_TIME__){
-            /* HTML and version.json agree — load the app.
-               NOTE: If both are stale (CDN served cached version.json), the entry
-               URL may 404. The onerror retry handler will catch this and try again. */
+          /* Build times match (both fresh, or both stale from CDN) or
+             version.json unavailable. Load the app — if entry 404s,
+             onerror will trigger auto-reload to get fresh HTML. */
+          if(data&&data.buildTime){
             console.log('[Guild Life] Build times match — loading app');
-            loadApp();
-            return;
+          }else{
+            console.log('[Guild Life] version.json unavailable — loading app');
           }
-
-          /* ===== STALE BUILD DETECTED ===== */
-          console.warn('[Guild Life] Stale HTML detected. HTML:',
-            window.__HTML_BUILD_TIME__,'Server:',data.buildTime);
-
-          /* ===== HOT-SWAP: Load fresh module directly from version.json =====
-             version.json has the fresh entry URL and CSS URLs.
-             Hot-swap to fresh modules without reloading the page. */
-          if(data.entry){
-            console.log('[Guild Life] Hot-swapping to fresh entry:',data.entry);
-            swapCss(data.css);
-            window.__ENTRY__=data.entry;
-            loadApp();
-            return;
-          }
-
-          /* Fallback for older deploys without entry in version.json:
-             clear caches and reload with cache-busting URL */
-          console.warn('[Guild Life] version.json missing entry URL — falling back to reload');
-
-          /* Clear SW caches, then reload */
-          Promise.resolve()
-            .then(function(){
-              var promises=[];
-              if(navigator.serviceWorker){
-                promises.push(
-                  navigator.serviceWorker.getRegistrations().then(function(regs){
-                    return Promise.all(regs.map(function(r){return r.unregister()}));
-                  })
-                );
-              }
-              if(window.caches){
-                promises.push(
-                  caches.keys().then(function(keys){
-                    return Promise.all(keys.map(function(k){return caches.delete(k)}));
-                  })
-                );
-              }
-              return Promise.all(promises);
-            })
-            .catch(function(){})
-            .then(function(){
-              setTimeout(function(){
-                try{
-                  var url=new URL(location.href);
-                  url.searchParams.set('_gv',String(Date.now()));
-                  location.replace(url.toString());
-                }catch(e){location.reload();}
-              },500);
-            });
+          loadApp();
         }).catch(function(){
-          /* Entire pipeline failed — load the app with whatever entry we have */
-          console.error('[Guild Life] Loading pipeline failed — loading app anyway');
+          console.error('[Guild Life] Version check failed — loading app');
           loadApp();
         });
 
-        /* Timeout: if entire pipeline takes >10s, load anyway (slow/offline).
-           If the entry URL is stale, the onerror retry will catch it. */
+        /* Pipeline timeout: if version check hangs >8s, load anyway */
         setTimeout(function(){
           if(!document.querySelector('script[data-entry]')){
-            console.log('[Guild Life] Loading pipeline timed out — loading app');
+            console.log('[Guild Life] Pipeline timed out — loading app');
             loadApp();
           }
-        },10000);
+        },8000);
       })();
     </script>
     <!-- Dev mode entry point — in production, deferModulePlugin removes the
          built version and stores it in window.__ENTRY__ for deferred loading -->
     <script type="module" src="/src/main.tsx"></script>
-    <!-- Fallback: polling loop checks if React has mounted.
-         Shows "Clear Cache & Reload" button ONLY when loading has genuinely failed,
-         not just because it's slow. Previous version showed button after 3s which
-         caused users to enter reload loops on slower connections.
-
-         Logic: Show button when:
-         1. Module failed to load (__guildAppFailed), OR
-         2. 12+ seconds elapsed and app still loading (genuine timeout), OR
-         3. Loading hasn't even started after 10s (version check hung)
-         Never show if React has mounted (__guildReactMounted). -->
+    <!-- Fallback: Shows "Clear Cache & Reload" button when loading genuinely fails.
+         Auto-reload in Layer 0 handles most cases. This is the manual escape hatch
+         for edge cases where auto-reload reaches its limit or React fails to mount. -->
     <script>
       (function(){
         var shown=false;
         var startTime=Date.now();
         var RELOAD_KEY='guild-reload-count';
+        var TIMEOUT=12000; /* 12s — auto-reload handles fast recovery, this is the safety net */
 
-        function getReloadCount(){
-          try{
-            var d=JSON.parse(sessionStorage.getItem(RELOAD_KEY)||'null');
-            if(!d||Date.now()-d.ts>120000)return 0; /* reset after 2 min */
-            return d.count||0;
-          }catch(e){return 0;}
+        function shouldShowButton(){
+          if(window.__guildReactMounted)return false;
+          if(window.__guildAppFailed)return true;
+          var elapsed=Date.now()-startTime;
+          if(window.__guildAppLoading&&elapsed<TIMEOUT)return false;
+          if(window.__guildVersionCheckStarted&&!window.__guildAppLoading&&elapsed<TIMEOUT)return false;
+          return elapsed>=TIMEOUT;
         }
-        function bumpReloadCount(){
+
+        function manualReload(btn){
+          if(btn){btn.textContent='Reloading...';btn.disabled=true;}
+          /* Check reload loop */
+          var count=0;
           try{
             var d=JSON.parse(sessionStorage.getItem(RELOAD_KEY)||'null');
-            if(!d||Date.now()-d.ts>120000)d={ts:Date.now(),count:0};
-            d.count++;
-            sessionStorage.setItem(RELOAD_KEY,JSON.stringify(d));
+            if(d&&Date.now()-d.ts<120000)count=d.count||0;
           }catch(e){}
-        }
-
-        function cacheReload(btn){
-          var count=getReloadCount();
           if(count>=3){
-            /* Reload loop detected — show manual recovery steps instead */
             var ls=document.getElementById('loading-screen');
-            if(ls){
-              var existing=ls.querySelector('.loop-info');
-              if(!existing){
-                var d=document.createElement('div');
-                d.className='loop-info';
-                d.style.cssText='margin-top:1rem;max-width:400px;';
-                d.innerHTML='<p style="color:#d4a537;font-size:0.95rem;margin-bottom:0.5rem;">Multiple reloads detected</p>'
-                  +'<p style="font-size:0.8rem;opacity:0.8;">Try these steps:</p>'
-                  +'<ol style="font-size:0.8rem;opacity:0.8;text-align:left;margin:0.5rem 0;">'
-                  +'<li>Open a new tab/window</li>'
-                  +'<li>Clear your browser cache (Ctrl+Shift+Del)</li>'
-                  +'<li>Navigate to the game URL directly</li>'
-                  +'</ol>'
-                  +'<button onclick="try{sessionStorage.removeItem(\'guild-reload-count\');localStorage.clear()}catch(e){}try{var u=new URL(location.href);u.searchParams.set(\'_gv\',Date.now());location.replace(u.toString())}catch(e){location.reload()}" '
-                  +'style="margin-top:0.5rem;padding:.5rem 1.5rem;background:#c44;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:0.9rem;">Hard Reset (clears all game data)</button>';
-                ls.appendChild(d);
-              }
+            if(ls&&!ls.querySelector('.loop-info')){
+              var div=document.createElement('div');
+              div.className='loop-info';
+              div.style.cssText='margin-top:1rem;max-width:400px;';
+              div.innerHTML='<p style="color:#d4a537;font-size:0.95rem;margin-bottom:0.5rem;">Multiple reloads detected</p>'
+                +'<p style="font-size:0.8rem;opacity:0.8;">A new version may still be deploying. Try:</p>'
+                +'<ol style="font-size:0.8rem;opacity:0.8;text-align:left;margin:0.5rem 0;">'
+                +'<li>Wait 1-2 minutes, then refresh</li>'
+                +'<li>Open a new tab and navigate to the game URL</li>'
+                +'<li>Clear your browser cache (Ctrl+Shift+Del)</li>'
+                +'</ol>'
+                +'<button onclick="try{sessionStorage.removeItem(\'guild-reload-count\');localStorage.clear()}catch(e){}try{var u=new URL(location.href);u.searchParams.set(\'_gv\',Date.now());location.replace(u.toString())}catch(e){location.reload()}" '
+                +'style="margin-top:0.5rem;padding:.5rem 1.5rem;background:#c44;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:0.9rem;">Hard Reset (clears all game data)</button>';
+              ls.appendChild(div);
             }
             return;
           }
-
-          /* Show "Reloading..." and disable button to prevent double-clicks */
-          if(btn){btn.textContent='Reloading...';btn.disabled=true;}
-          bumpReloadCount();
-
-          /* AWAIT cache cleanup before reloading (previous version was fire-and-forget
-             with only 300ms delay — SW might still be active during reload) */
-          var cleanup=[];
+          /* Bump counter and reload with cache-buster */
           try{
-            if(navigator.serviceWorker){
-              cleanup.push(navigator.serviceWorker.getRegistrations().then(function(r){
-                return Promise.all(r.map(function(s){return s.unregister()}));
-              }));
-            }
+            var dd=JSON.parse(sessionStorage.getItem(RELOAD_KEY)||'null');
+            if(!dd||Date.now()-dd.ts>120000)dd={ts:Date.now(),count:0};
+            dd.count++;
+            sessionStorage.setItem(RELOAD_KEY,JSON.stringify(dd));
           }catch(e){}
-          try{
-            if(window.caches){
-              cleanup.push(caches.keys().then(function(n){
-                return Promise.all(n.map(function(k){return caches.delete(k)}));
-              }));
-            }
-          }catch(e){}
-
-          /* Wait for cleanup (max 3s), then reload with cache-busting */
-          var done=false;
-          function doReload(){
-            if(done)return;done=true;
-            try{var u=new URL(location.href);u.searchParams.set('_gv',Date.now());location.replace(u.toString());}
-            catch(e){location.reload();}
-          }
-          Promise.all(cleanup).catch(function(){}).then(function(){
-            setTimeout(doReload,200);
-          });
-          setTimeout(doReload,3000); /* fallback if cleanup hangs */
+          try{var u=new URL(location.href);u.searchParams.set('_gv',Date.now());location.replace(u.toString());}
+          catch(e){location.reload();}
         }
 
-        function shouldShowButton(){
-          /* React mounted — no need for fallback */
-          if(window.__guildReactMounted)return false;
-          /* Module explicitly failed to load */
-          if(window.__guildAppFailed)return true;
-          var elapsed=Date.now()-startTime;
-          /* Module is still loading — give it a reasonable window.
-             15s is enough for version check + module load + React mount. */
-          if(window.__guildAppLoading&&elapsed<15000)return false;
-          /* Version check is still running — don't show button prematurely.
-             Give version check up to 15s before showing fallback. */
-          if(window.__guildVersionCheckStarted&&!window.__guildAppLoading&&elapsed<15000)return false;
-          /* 15+ seconds and still not mounted — genuine timeout */
-          return elapsed>=15000;
-        }
-
-        function guildFallbackCheck(){
+        var t=setInterval(function(){
           var root=document.getElementById('root');
           var ls=root&&root.querySelector('#loading-screen');
-          if(!ls){shown=true;return;}
-          if(shown)return;
-          if(!shouldShowButton())return;
+          if(!ls){clearInterval(t);return;}
+          if(shown||!shouldShowButton())return;
           shown=true;
           var p=document.createElement('p');
           p.className='fallback-btn';
@@ -502,16 +318,9 @@
           var btn=document.createElement('button');
           btn.textContent='Clear Cache & Reload';
           btn.style.cssText='padding:.75rem 2rem;font-size:1rem;font-family:serif;background:linear-gradient(135deg,hsl(45,85%,55%),hsl(35,70%,40%));color:#1f170a;border:none;border-radius:.25rem;cursor:pointer;font-weight:bold;';
-          btn.onclick=function(){cacheReload(btn);};
+          btn.onclick=function(){manualReload(btn);};
           p.appendChild(btn);
           ls.appendChild(p);
-        }
-        /* Poll every 2s (checks shouldShowButton which has smart timing) */
-        var t=setInterval(function(){
-          var root=document.getElementById('root');
-          var ls=root&&root.querySelector('#loading-screen');
-          if(!ls){clearInterval(t);return;}
-          guildFallbackCheck();
         },2000);
       })();
     </script>
