@@ -3,6 +3,19 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+## 2026-02-16 — Build Error Check #2 (16:36 UTC)
+
+### Results
+
+- **Build**: ✅ Clean — no TypeScript errors, no build failures
+- **Tests**: ✅ 281/281 passing across 14 test files, 0 failures
+- **Console**: ✅ No errors logged
+- **Previous fixes verified**: `eventSource: 'weekly'` in questHelpers.ts still working
+
+### No action needed — project remains build-clean.
+
+---
+
 ## 2026-02-16 — Build Error Check (13:30 UTC)
 
 ### Results
