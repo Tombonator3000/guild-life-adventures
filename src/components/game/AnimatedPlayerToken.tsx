@@ -119,6 +119,7 @@ export function AnimatedPlayerToken({
         playerName={player.name}
         size={80}
         isAI={player.isAI}
+        hasCurse={player.activeCurses.length > 0}
       />
     </div>
   );

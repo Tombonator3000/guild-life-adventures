@@ -3,6 +3,44 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+## 2026-02-16 — Hex Visual Effect + AI Hex Purchasing (17:30 UTC)
+
+### Part 1: Cursed Player Portrait Visual Effect
+
+Added pulsing purple "curse aura" overlay on player portraits when a player has active hexes/curses.
+
+**Changes:**
+- `CharacterPortrait.tsx` — Added `hasCurse` prop + `CurseOverlay` component (pulsing purple box-shadow)
+- `tailwind.config.ts` — Added `curse-pulse` keyframe + animation
+- `PlayerToken.tsx`, `AnimatedPlayerToken.tsx`, `ResourcePanel.tsx`, `TurnOrderPanel.tsx`, `PlayersTab.tsx` — Pass `hasCurse={player.activeCurses.length > 0}`
+
+### Part 2: AI Hex Scroll Purchasing
+
+AI opponents can now buy hex scrolls from Shadow Market and Enchanter, and will travel there when a rival is threatening.
+
+**Changes:**
+- `types.ts` — Added `'buy-hex-scroll'` to `AIActionType`
+- `rivalryActions.ts` — Added hex scroll purchase logic (priority 60, Morgath +10 boost) + travel-to-shadow-market action (priority 50). Prefers personal/sabotage curses over location hexes.
+- `actionExecutor.ts` — Added `handleBuyHexScroll` handler + map entry
+
+### Files Modified (11)
+
+| File | Changes |
+|------|---------|
+| `src/components/game/CharacterPortrait.tsx` | hasCurse prop + CurseOverlay component |
+| `tailwind.config.ts` | curse-pulse keyframe + animation |
+| `src/components/game/PlayerToken.tsx` | Pass hasCurse |
+| `src/components/game/AnimatedPlayerToken.tsx` | Pass hasCurse |
+| `src/components/game/ResourcePanel.tsx` | Pass hasCurse |
+| `src/components/game/TurnOrderPanel.tsx` | Pass hasCurse |
+| `src/components/game/tabs/PlayersTab.tsx` | Pass hasCurse |
+| `src/hooks/ai/types.ts` | Added buy-hex-scroll action type |
+| `src/hooks/ai/actions/rivalryActions.ts` | Hex purchase + travel logic |
+| `src/hooks/ai/actionExecutor.ts` | handleBuyHexScroll handler |
+| `log2.md` | This entry |
+
+---
+
 ## 2026-02-16 — Build Error Check #2 (16:36 UTC)
 
 ### Results

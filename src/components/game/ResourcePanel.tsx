@@ -23,6 +23,7 @@ export function ResourcePanel() {
             size={32}
             isAI={player.isAI}
             className="shadow-lg flex-shrink-0"
+            hasCurse={player.activeCurses.length > 0}
           />
           <div>
             <h2 className="font-display text-lg font-bold text-card-foreground leading-tight">

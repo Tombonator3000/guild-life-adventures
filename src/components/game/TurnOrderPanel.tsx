@@ -77,6 +77,7 @@ export function TurnOrderPanel({
                   playerName={player.name}
                   size={16}
                   isAI={player.isAI}
+                  hasCurse={player.activeCurses.length > 0}
                 />
 
                 {/* Name and status */}

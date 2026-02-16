@@ -8,7 +8,8 @@
 import { getAvailableQuests, canTakeQuest } from '@/data/quests';
 import { getJob } from '@/data/jobs';
 import { DEGREES } from '@/data/education';
-import { DEFENSE_ITEMS } from '@/data/hexes';
+import { DEFENSE_ITEMS, getShadowMarketHexStock, getEnchanterHexStock, getHexPrice } from '@/data/hexes';
+import type { HexDefinition } from '@/data/hexes';
 import { calculateGoalProgress, getWeakestGoal, getJobLocation } from '../strategy';
 import type { AIAction, GoalProgress } from '../types';
 import type { ActionContext } from './actionContext';
@@ -171,6 +172,50 @@ export function generateRivalryActions(ctx: ActionContext): AIAction[] {
           });
           break;
         }
+      }
+    }
+  }
+
+  // === RIVALRY: Buy Hex Scrolls ===
+  if (getGameOption('enableHexesCurses') && player.hexScrolls.length === 0 && threatIsClose && player.gold >= 80) {
+    let availableHexes: HexDefinition[] = [];
+    if (currentLocation === 'shadow-market') {
+      const state = useGameStore.getState();
+      availableHexes = getShadowMarketHexStock(state.week);
+    } else if (currentLocation === 'enchanter') {
+      availableHexes = getEnchanterHexStock(player);
+    }
+
+    if (availableHexes.length > 0) {
+      // Prefer personal curses (direct impact on rival)
+      const sorted = [...availableHexes].sort((a, b) => {
+        const aPersonal = a.category === 'personal' || a.category === 'sabotage' ? 1 : 0;
+        const bPersonal = b.category === 'personal' || b.category === 'sabotage' ? 1 : 0;
+        return bPersonal - aPersonal;
+      });
+      const hex = sorted[0];
+      const cost = getHexPrice(hex, ctx.priceModifier);
+      if (player.gold >= cost && cost > 0) {
+        const basePriority = 60;
+        const morgathBoost = ctx.personality.id === 'morgath' ? 10 : 0;
+        actions.push({
+          type: 'buy-hex-scroll',
+          priority: basePriority + morgathBoost,
+          description: `Buy ${hex.name} scroll`,
+          details: { hexId: hex.id, cost },
+        });
+      }
+    }
+
+    // Travel to Shadow Market if not there and need scrolls
+    if (currentLocation !== 'shadow-market' && currentLocation !== 'enchanter' && player.gold >= 100) {
+      if (player.timeRemaining > moveCost('shadow-market') + 3) {
+        actions.push({
+          type: 'move',
+          location: 'shadow-market',
+          priority: 50 * ctx.personality.weights.rivalry,
+          description: 'Travel to Shadow Market for hex scrolls',
+        });
       }
     }
   }

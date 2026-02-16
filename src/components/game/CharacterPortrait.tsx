@@ -13,6 +13,8 @@ interface CharacterPortraitProps {
   isAI?: boolean;
   /** Shape of the portrait frame. Default 'circle'. */
   shape?: 'circle' | 'rect';
+  /** Show cursed aura when player has active hexes */
+  hasCurse?: boolean;
 }
 
 /**
@@ -28,6 +30,7 @@ export function CharacterPortrait({
   className = '',
   isAI = false,
   shape = 'circle',
+  hasCurse = false,
 }: CharacterPortraitProps) {
   const [imageError, setImageError] = useState(false);
   const portrait = getPortrait(portraitId);
@@ -43,7 +46,7 @@ export function CharacterPortrait({
   if (!portrait) {
     return (
       <div
-        className={`${roundedClass} border-2 border-white/60 flex items-center justify-center ${className}`}
+        className={`${roundedClass} border-2 border-white/60 flex items-center justify-center relative ${className}`}
         style={{
           width: size,
           height: actualHeight,
@@ -58,6 +61,7 @@ export function CharacterPortrait({
         >
           {isAI ? 'AI' : playerName.charAt(0).toUpperCase()}
         </span>
+        {hasCurse && <CurseOverlay size={size} height={actualHeight} shape={shape} />}
       </div>
     );
   }
@@ -66,7 +70,7 @@ export function CharacterPortrait({
 
   return (
     <div
-      className={`${roundedClass} border-2 border-white/60 overflow-hidden ${className}`}
+      className={`${roundedClass} border-2 border-white/60 overflow-hidden relative ${className}`}
       style={{
         width: size,
         height: actualHeight,
@@ -86,7 +90,23 @@ export function CharacterPortrait({
       ) : (
         <PlaceholderPortrait portrait={portrait} size={size} isAI={isAI} />
       )}
+      {hasCurse && <CurseOverlay size={size} height={actualHeight} shape={shape} />}
     </div>
+  );
+}
+
+/** Pulsing purple curse aura overlay */
+function CurseOverlay({ size, height, shape }: { size: number; height: number; shape: 'circle' | 'rect' }) {
+  return (
+    <div
+      className={`absolute inset-0 pointer-events-none animate-curse-pulse ${
+        shape === 'circle' ? 'rounded-full' : 'rounded-lg'
+      }`}
+      style={{
+        boxShadow: '0 0 8px 3px rgba(147, 51, 234, 0.5), inset 0 0 6px 2px rgba(147, 51, 234, 0.3)',
+        border: '1px solid rgba(147, 51, 234, 0.4)',
+      }}
+    />
   );
 }
 

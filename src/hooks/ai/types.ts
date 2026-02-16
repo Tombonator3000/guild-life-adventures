@@ -85,6 +85,7 @@ export type AIActionType =
   | 'cast-curse'
   | 'cast-location-hex'
   | 'buy-amulet'
+  | 'buy-hex-scroll'
   | 'repair-appliance'
   | 'request-raise'
   | 'dispel-hex'

@@ -552,6 +552,16 @@ function handleCastLocationHex(player: Player, action: AIAction, store: StoreAct
   return result.success;
 }
 
+function handleBuyHexScroll(player: Player, action: AIAction, store: StoreActions): boolean {
+  const hexId = action.details?.hexId as string;
+  const cost = (action.details?.cost as number) || 0;
+  if (!hexId || player.gold < cost || cost <= 0) return false;
+  store.modifyGold(player.id, -cost);
+  store.addHexScrollToPlayer(player.id, hexId);
+  store.spendTime(player.id, 1);
+  return true;
+}
+
 function handleBuyAmulet(player: Player, _action: AIAction, store: StoreActions): boolean {
   if (player.hasProtectiveAmulet) return false;
   const state = useGameStore.getState();
@@ -656,6 +666,7 @@ const ACTION_HANDLERS: Record<AIActionType, ActionHandler> = {
   'cast-curse': handleCastCurse,
   'cast-location-hex': handleCastLocationHex,
   'buy-amulet': handleBuyAmulet,
+  'buy-hex-scroll': handleBuyHexScroll,
   'repair-appliance': handleRepairAppliance,
   'request-raise': handleRequestRaise,
   'dispel-hex': handleDispelHex,
