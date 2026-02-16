@@ -73,6 +73,7 @@ export function serializeGameState(): SerializedGameState {
     goalSettings: s.goalSettings,
     winner: s.winner,
     eventMessage: s.eventMessage,
+    eventSource: s.eventSource,
     rentDueWeek: s.rentDueWeek,
     aiDifficulty: s.aiDifficulty,
     stockPrices: s.stockPrices,
@@ -135,10 +136,12 @@ export function applyNetworkState(state: SerializedGameState) {
   if (!dismissedEvents.has('eventMessage')) {
     update.phase = state.phase;
     update.eventMessage = state.eventMessage;
+    update.eventSource = (state as Record<string, unknown>).eventSource ?? null;
   } else if (state.eventMessage === null) {
     // Host cleared the event — safe to sync and remove dismissal
     update.phase = state.phase;
     update.eventMessage = null;
+    update.eventSource = null;
     dismissedEvents.delete('eventMessage');
   } else {
     // Keep guest's local phase (they dismissed the event)

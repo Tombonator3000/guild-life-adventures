@@ -65,11 +65,12 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
       }
 
       // Location-based random events (pickpocketing, food poisoning, guild bonuses, etc.)
+      // Limited to 1 random event per turn per player
       const arrivalPlayer = get().players.find(p => p.id === playerId);
-      if (arrivalPlayer) {
+      if (arrivalPlayer && !arrivalPlayer.hadRandomEventThisTurn) {
         const locationEvent = checkForEvent(arrivalPlayer.housing, location, arrivalPlayer.gold);
         if (locationEvent) {
-          // Apply all effects from the event
+          // Apply all effects from the event + mark that player had a random event this turn
           set((state) => ({
             players: state.players.map((p) => {
               if (p.id !== playerId) return p;
@@ -79,6 +80,7 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
                 health: Math.max(0, Math.min(p.maxHealth, p.health + (locationEvent.effect.health || 0))),
                 happiness: Math.max(0, Math.min(100, p.happiness + (locationEvent.effect.happiness || 0))),
                 clothingCondition: Math.max(0, p.clothingCondition + (locationEvent.effect.clothing || 0)),
+                hadRandomEventThisTurn: true,
               };
             }),
           }));
@@ -89,6 +91,7 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
             const existing = get().eventMessage;
             set({
               eventMessage: existing ? existing + '\n' + message : message,
+              eventSource: 'weekly' as const,
               phase: 'event',
             });
           }
@@ -121,6 +124,7 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
             const existing = get().eventMessage;
             set({
               eventMessage: existing ? existing + '\n' + message : message,
+              eventSource: 'weekly' as const,
               phase: 'event',
             });
           }

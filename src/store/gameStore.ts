@@ -152,6 +152,9 @@ const createPlayer = (
   activeCurses: [],
   hasProtectiveAmulet: false,
   hexCastCooldown: 0,
+  // Turn tracking flags
+  workedThisTurn: false,
+  hadRandomEventThisTurn: false,
 });
 
 export const useGameStore = create<GameStore>((set, get) => {
@@ -181,6 +184,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
     winner: null,
     eventMessage: null,
+    eventSource: null,
     rentDueWeek: 4,
     selectedLocation: null,
     shadowfingersEvent: null,
@@ -251,6 +255,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         goalSettings: goals,
         winner: null,
         eventMessage: null,
+        eventSource: null,
         rentDueWeek: 4,
         selectedLocation: null,
         shadowfingersEvent: null,
@@ -303,6 +308,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         week: 1,
         winner: null,
         eventMessage: null,
+        eventSource: null,
         selectedLocation: null,
         shadowfingersEvent: null,
         deathEvent: null,
@@ -320,7 +326,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     selectLocation: (location) => set({ selectedLocation: location }),
     dismissEvent: () => {
       if (get().networkMode === 'guest') markEventDismissed('eventMessage');
-      set({ eventMessage: null, phase: 'playing' });
+      set({ eventMessage: null, eventSource: null, phase: 'playing' });
     },
     dismissShadowfingersEvent: () => {
       if (get().networkMode === 'guest') markEventDismissed('shadowfingersEvent');
@@ -405,6 +411,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         },
         winner: gs.winner,
         eventMessage: null,
+        eventSource: null,
         rentDueWeek: gs.rentDueWeek,
         selectedLocation: null,
         shadowfingersEvent: null,

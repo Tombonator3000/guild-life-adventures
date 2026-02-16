@@ -41,6 +41,7 @@ export function useLocationClick({
     selectLocation,
     week,
     eventMessage,
+    eventSource,
     weather,
   } = useGameStore();
   const currentPlayer = useCurrentPlayer();
@@ -208,9 +209,13 @@ export function useLocationClick({
   // Convert eventMessage to GameEvent format
   // Strip embedded ID tag from display text
   const cleanMessage = eventMessage?.replace(/\[[a-z0-9-]+\]\s*/g, '') ?? null;
+  // Title depends on event source: weekend processing vs gameplay events
+  const eventTitle = eventSource === 'weekend'
+    ? 'WEEKEND EVENTS'
+    : `WEEK ${week} EVENT`;
   const currentEvent: GameEvent | null = eventMessage ? {
     id: extractEventId(eventMessage),
-    title: 'Week ' + week + ' Events',
+    title: eventTitle,
     description: cleanMessage!,
     type: extractEventType(eventMessage),
   } : null;

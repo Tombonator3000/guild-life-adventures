@@ -162,12 +162,14 @@ function calculateFinalPrice(
 // ============================================================
 // Each function modifies the player object in-place and may push event messages.
 
-/** Reset weekly flags: newspaper, dungeon fatigue, resurrection, bounties, quest cooldown */
+/** Reset weekly flags: newspaper, dungeon fatigue, resurrection, bounties, quest cooldown, work/event tracking */
 function resetWeeklyFlags(p: Player): void {
   p.hasNewspaper = false;
   p.dungeonAttemptsThisTurn = 0;
   p.wasResurrectedThisWeek = false;
   p.completedBountiesThisWeek = [];
+  p.workedThisTurn = false;
+  p.hadRandomEventThisTurn = false;
   if (p.questCooldownWeeksLeft > 0) {
     p.questCooldownWeeksLeft -= 1;
   }
@@ -175,9 +177,17 @@ function resetWeeklyFlags(p: Player): void {
 
 /** Process employment: dependability decay, job loss, market crash effects (Jones-style 3-tier) */
 function processEmployment(p: Player, crashResult: MarketCrashResult, msgs: string[], newsEvents: PlayerNewsEventData[]): void {
-  // B5: Dependability decay only if unemployed
+  // Dependability decay
   if (!p.currentJob) {
+    // Unemployed: heavy decay (-5/week)
     p.dependability = Math.max(0, p.dependability - 5);
+  } else if (!p.workedThisTurn) {
+    // Employed but didn't work this turn: mild decay (-2/week)
+    // Simulates employer noticing absence / unreliability
+    p.dependability = Math.max(0, p.dependability - 2);
+    if (!p.isAI) {
+      msgs.push(`${p.name}'s dependability dropped — your employer noticed you didn't show up for work this week.`);
+    }
   }
 
   // Jones-style 3-tier market crash effects (process BEFORE low-dep firing so crash penalty applies)
@@ -838,18 +848,22 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
       const firstPlayer = hexPlayers[firstAliveIndex];
       const firstPlayerHome: LocationId = getHomeLocation(firstPlayer.housing);
 
+      // Deduplicate event messages (same message can appear from multiple sources)
+      const uniqueMessages = [...new Set(eventMessages)];
+
       set({
         ...weekEndState,
         currentPlayerIndex: firstAliveIndex,
         players: hexPlayers.map((p, index) =>
           index === firstAliveIndex
-            ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: firstPlayerHome, dungeonAttemptsThisTurn: 0 }
+            ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: firstPlayerHome, dungeonAttemptsThisTurn: 0, hadRandomEventThisTurn: false, workedThisTurn: false }
             : p
         ),
         rentDueWeek: isRentDue ? newWeek : state.rentDueWeek,
         selectedLocation: null,
-        eventMessage: eventMessages.length > 0 ? eventMessages.join('\n') : null,
-        phase: eventMessages.length > 0 ? 'event' : 'playing',
+        eventMessage: uniqueMessages.length > 0 ? uniqueMessages.join('\n') : null,
+        eventSource: uniqueMessages.length > 0 ? 'weekend' as const : null,
+        phase: uniqueMessages.length > 0 ? 'event' : 'playing',
       });
 
       // Check for apartment robbery at start of first alive player's turn
