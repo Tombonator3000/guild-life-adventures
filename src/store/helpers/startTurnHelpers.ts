@@ -78,9 +78,15 @@ function processApplianceBreakage(
   const player = getPlayer(get, playerId);
   if (player.gold <= 500) return;
 
+  const currentWeek = get().week;
+
   for (const applianceId of Object.keys(player.appliances)) {
     const ownedAppliance = player.appliances[applianceId];
     if (ownedAppliance.isBroken) continue;
+
+    // Breakage cooldown: immune for 2 weeks after repair/purchase
+    if (ownedAppliance.repairedWeek != null && currentWeek - ownedAppliance.repairedWeek < 2) continue;
+
     if (!checkApplianceBreakage(ownedAppliance.source, player.gold)) continue;
 
     const repairCost = calculateRepairCost(ownedAppliance.originalPrice);
