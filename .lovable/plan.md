@@ -1,57 +1,68 @@
 
 
-# Festival Grafikk og Animasjoner
+## Two-Part Plan: Hex Visual Effect + AI Hex Purchasing
 
-Legge til visuell grafikk og animasjoner for de 4 sesongfestivalene, etter same monster som WeatherOverlay. Hvert festival far unike AI-genererte teksturer og CSS-animasjoner som vises over spillbrettet nar festivalen er aktiv.
+### Part 1: Cursed Player Portrait Visual Effect
 
-## De 4 festivalene og deres visuelle konsept
+Add a magical "cursed" overlay effect on player portraits when a player has active curses/hexes. This will be a pulsing purple/dark aura visible on all portrait instances.
 
-### 1. Harvest Festival (Hostfestival)
-- **AI-teksturer**: Fallende hveteaks og eplblader, gylden kornkrans-border
-- **Animasjoner**: Sakte fallende kornaks-partikler, varm gylden glod-overlay, "abundance shimmer"
-- **Fargepalett**: Gull, rav, varm oransje
+**What the player sees:**
+- A glowing, pulsing purple/dark magical aura around the portrait frame
+- Subtle animated particle-like effect (CSS-only, using box-shadow and keyframes)
+- Visible on the game board token, sidebar portrait, turn order panel, and players tab
 
-### 2. Winter Solstice (Vintersolverv)
-- **AI-teksturer**: Iskrystaller, frostrammer, nordlys-bands
-- **Animasjoner**: Glittrende frost-partikler som faller sakte, nordlys-lignende fargebolgerer oppe, blatt/lilla skimmer
-- **Fargepalett**: Isblatt, lilla, solv
+**Implementation:**
 
-### 3. Spring Tournament (Varturnering)
-- **AI-teksturer**: Turnerings-bannere/flagg, sverd-kryss-emblem, konfetti
-- **Animasjoner**: Vaiende bannere pa sidene, fallende konfetti-partikler, glimt-effekter
-- **Fargepalett**: Rod, gull, solvhvit
+1. **Modify `CharacterPortrait.tsx`** — Add an optional `hasCurse` prop. When true, render an overlay `div` with a pulsing purple/dark aura animation using CSS `box-shadow` and a new keyframe animation.
 
-### 4. Midsummer Fair (Midtsommerfest)
-- **AI-teksturer**: Festlige lanterner, fargerike band/streamers, blomsterkranser
-- **Animasjoner**: Svevende lanterner som stiger opp, fargerike streamers, varm festlig glod
-- **Fargepalett**: Varme farger, gront, gult, rodt
+2. **Add CSS keyframe** `curse-pulse` in `tailwind.config.ts` — A subtle purple glow that pulses in and out (alternating opacity/spread of a purple box-shadow).
 
-## Teknisk implementering
+3. **Pass `hasCurse` prop** from these components:
+   - `PlayerToken.tsx` — check `player.activeCurses.length > 0`
+   - `AnimatedPlayerToken.tsx` — same check
+   - `ResourcePanel.tsx` — same check  
+   - `TurnOrderPanel.tsx` — same check
+   - `PlayersTab.tsx` — same check
 
-### Nye filer
-- `src/components/game/FestivalOverlay.tsx` — Ny komponent etter WeatherOverlay-monstre
-- 8 AI-genererte PNG-teksturer i `src/assets/`:
-  - `harvest-grain.png`, `harvest-glow.png`
-  - `solstice-frost.png`, `solstice-aurora.png`
-  - `tourney-banner.png`, `tourney-confetti.png`
-  - `fair-lantern.png`, `fair-streamers.png`
+### Part 2: AI Hex Scroll Purchasing
 
-### Endringer i eksisterende filer
-- **`GameBoard.tsx`**: Importere `FestivalOverlay` og rendre den ved siden av `WeatherOverlay`, med `activeFestival` fra store
-- **`log.md`**: Dokumentere endringene
+The AI can already **cast** hexes and buy amulets, but it **never buys hex scrolls**. This is the critical missing link — the AI generates cast actions only when `hexScrolls.length > 0`, but never acquires scrolls.
 
-### FestivalOverlay-arkitektur
-- Tar `activeFestival: FestivalId | null` som prop
-- Returnerer `null` nar ingen festival er aktiv
-- Bruker `pointer-events: none` og `z-index: 34` (under weather pa 35)
-- Hver festival har sin egen sub-komponent (HarvestLayer, SolsticeLayer, TourneyLayer, FairLayer)
-- CSS `@keyframes`-animasjoner for partikler og overlays
-- AI-genererte PNG-teksturer som bakgrunnsbilder med blend modes
+**Implementation:**
 
-### Animasjonsdetaljer per festival
+1. **Add `'buy-hex-scroll'` to `AIActionType`** in `src/hooks/ai/types.ts`.
 
-**Harvest**: Fallende kornaks (15-20 partikler, slow fall 8-12s), gylden overlay med `screen` blend, pulserende varmt lys
-**Solstice**: Frostpartikler (glitter, 25 stk), nordlys-gradient som oscillerer horisontalt, blatt skimmer
-**Tourney**: Konfetti-partikler (30 stk, multi-farge, rotasjon), banner-lignende elementer pa sidene med svaie-animasjon
-**Fair**: Lanterner som stiger opp (10-15 stk, slow rise 10-15s), streamer-overlay, varm festglod
+2. **Add purchase logic in `rivalryActions.ts`** — When hex feature is enabled, rival is threatening, AI has gold, and AI is at Shadow Market or Enchanter with no scrolls:
+   - Pick an appropriate hex from the current stock (`getShadowMarketHexStock` or `getEnchanterHexStock`)
+   - Prefer personal curses (direct impact) over location hexes
+   - Generate a `buy-hex-scroll` action with priority ~60
+   - Morgath personality gets a priority boost (aggressive)
+
+3. **Add `handleBuyHexScroll` handler in `actionExecutor.ts`** — Calls `store.buyHexScroll(player.id, hexId, cost)`.
+
+4. **Add handler to `ACTION_HANDLERS` map** in `actionExecutor.ts`.
+
+5. **Add travel-to-shadow-market action** — If AI has gold, no scrolls, and rival is threatening, generate a move action to Shadow Market (priority ~50) so the AI proactively visits to buy hexes.
+
+### Technical Details
+
+```text
+Files to modify:
+  src/components/game/CharacterPortrait.tsx    -- add hasCurse prop + overlay
+  tailwind.config.ts                           -- add curse-pulse animation
+  src/components/game/PlayerToken.tsx           -- pass hasCurse
+  src/components/game/AnimatedPlayerToken.tsx   -- pass hasCurse
+  src/components/game/ResourcePanel.tsx         -- pass hasCurse
+  src/components/game/TurnOrderPanel.tsx        -- pass hasCurse
+  src/components/game/tabs/PlayersTab.tsx       -- pass hasCurse
+  src/hooks/ai/types.ts                        -- add 'buy-hex-scroll' type
+  src/hooks/ai/actions/rivalryActions.ts        -- add buy logic + travel
+  src/hooks/ai/actionExecutor.ts               -- add handler
+  log2.md                                      -- log changes
+```
+
+### Estimated scope
+- ~120 lines of new code across 11 files
+- No new dependencies
+- All existing tests remain unaffected (hex buying is additive)
 
