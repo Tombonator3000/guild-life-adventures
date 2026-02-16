@@ -3844,3 +3844,13 @@ Both host and joining players can now edit their name and select a portrait from
 - **No new dependencies added**
 
 ---
+
+## 2026-02-16 — Build Error Fix (eventSource type) (~afternoon UTC)
+
+### Fix
+- **File**: `src/store/helpers/questHelpers.ts` line 232
+- **Error**: `Type '"gameplay"' is not assignable to type '"weekend" | "weekly"'`
+- **Cause**: `eventSource` was set to `'gameplay'` but the type only allows `'weekend' | 'weekly' | null`
+- **Fix**: Changed to `'weekly'` — quest chain completion events happen during the weekly gameplay phase
+
+---

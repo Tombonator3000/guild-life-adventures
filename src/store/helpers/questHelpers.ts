@@ -229,7 +229,7 @@ export function createQuestActions(set: SetFn, get: GetFn) {
           const rewardLine = `\n+${chain.completionBonusGold}g bonus | +${chain.completionBonusHappiness} happiness | +3 reputation`;
           const existing = get().eventMessage;
           const fullMsg = `[quest-chain-complete] ${summary}${rewardLine}`;
-          set({ eventMessage: existing ? existing + '\n' + fullMsg : fullMsg, eventSource: 'gameplay', phase: 'event' });
+          set({ eventMessage: existing ? existing + '\n' + fullMsg : fullMsg, eventSource: 'weekly', phase: 'event' });
         }
       }
 
