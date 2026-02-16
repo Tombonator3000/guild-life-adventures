@@ -3,6 +3,29 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+## 2026-02-16 — Bug Fixes: Broken Appliance Display + Finances Panel (21:00 UTC)
+
+### Bug 1: Broken Preservation Box shows "(Owned)" instead of "(Broken!)"
+
+**Problem**: When a hex curse broke the Preservation Box, the Enchanter panel still showed "(Owned)" with no indication it was broken. Player's food kept spoiling with no explanation.
+
+**Fix**: `EnchanterPanel.tsx` now checks `ownedAppliance.isBroken` and shows "(Broken!)" in red text with a red border highlight. The buy button remains disabled for working owned items but the broken state is now clearly visible.
+
+### Bug 2: Finances panel shows 0g Savings / 0g Investments despite having stocks
+
+**Problem**: `SideInfoTabs.tsx` Finances section showed `player.investments` (legacy field, always 0) and `player.savings` separately. Stock portfolio value was not included, making it look like the player had no investments.
+
+**Fix**: Created `FinancesSection` component that uses `useGameStore` to get `stockPrices` and `calculateStockValue()` to compute actual portfolio value. "Investments" now shows `player.investments + stockValue`. When stocks > 0, shows a sub-line "(Xg in stocks)".
+
+### Files Modified (2)
+
+| File | Changes |
+|------|---------|
+| `src/components/game/EnchanterPanel.tsx` | Broken appliance detection, "(Broken!)" label, red border |
+| `src/components/game/SideInfoTabs.tsx` | FinancesSection with stock value calculation, TrendingUp icon |
+
+---
+
 ## 2026-02-16 — Hex Scrolls in Inventory (19:30 UTC)
 
 ### Problem

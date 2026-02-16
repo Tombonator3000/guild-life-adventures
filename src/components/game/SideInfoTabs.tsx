@@ -2,7 +2,7 @@
 // Clean tabs-only design with Stats, Inventory, and Goals
 
 import { useState } from 'react';
-import { Package, Target, BarChart3, Clock, Coins, Heart, Smile, Utensils, Home, Sparkles, Skull, Shield, Shirt, Briefcase, GraduationCap, PiggyBank } from 'lucide-react';
+import { Package, Target, BarChart3, Clock, Coins, Heart, Smile, Utensils, Home, Sparkles, Skull, Shield, Shirt, Briefcase, GraduationCap, PiggyBank, TrendingUp } from 'lucide-react';
 import type { Player, GoalSettings } from '@/types/game.types';
 import { GoalProgress } from './GoalProgress';
 import { InventoryGrid } from './InventoryGrid';
@@ -12,6 +12,8 @@ import { HOUSING_DATA } from '@/data/housing';
 import { getJob } from '@/data/jobs';
 import { CharacterPortrait } from './CharacterPortrait';
 import { useTranslation } from '@/i18n';
+import { useGameStore } from '@/store/gameStore';
+import { calculateStockValue } from '@/data/stocks';
 
 type TabId = 'stats' | 'inventory' | 'goals';
 
@@ -223,13 +225,7 @@ function StatsTab({ player }: { player: Player }) {
       </StatSection>
 
       {/* Finances */}
-      <StatSection title="Finances">
-        <StatRow icon={<PiggyBank className="w-3.5 h-3.5" />} label="Savings" value={`${player.savings}g`} />
-        <StatRow icon={<Coins className="w-3.5 h-3.5" />} label="Investments" value={`${player.investments}g`} />
-        {player.loanAmount > 0 && (
-          <StatRow icon={<Skull className="w-3.5 h-3.5" />} label="Loan Debt" value={`-${player.loanAmount}g`} warning />
-        )}
-      </StatSection>
+      <FinancesSection player={player} />
 
       {/* Education */}
       <StatSection title="Education">
@@ -246,6 +242,30 @@ function StatsTab({ player }: { player: Player }) {
         )}
       </StatSection>
     </div>
+  );
+}
+
+// ============================================
+// FINANCES SECTION (with stock portfolio value)
+// ============================================
+function FinancesSection({ player }: { player: Player }) {
+  const stockPrices = useGameStore(s => s.stockPrices);
+  const stockValue = calculateStockValue(player.stocks, stockPrices);
+  const totalInvested = player.investments + stockValue;
+
+  return (
+    <StatSection title="Finances">
+      <StatRow icon={<PiggyBank className="w-3.5 h-3.5" />} label="Savings" value={`${player.savings}g`} />
+      <StatRow icon={<TrendingUp className="w-3.5 h-3.5" />} label="Investments" value={`${totalInvested}g`} />
+      {stockValue > 0 && (
+        <div className="text-[9px] text-secondary pl-5 -mt-0.5">
+          ({stockValue}g in stocks)
+        </div>
+      )}
+      {player.loanAmount > 0 && (
+        <StatRow icon={<Skull className="w-3.5 h-3.5" />} label="Loan Debt" value={`-${player.loanAmount}g`} warning />
+      )}
+    </StatSection>
   );
 }
 
