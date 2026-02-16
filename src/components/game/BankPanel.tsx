@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Player } from '@/types/game.types';
 import { LOAN_MIN_SHIFTS_REQUIRED } from '@/types/game.types';
-import { STOCKS, calculateStockValue } from '@/data/stocks';
+import { STOCKS, calculateStockValue, calculateDividends } from '@/data/stocks';
 import {
   JonesSectionHeader,
   JonesMenuItem,
@@ -21,6 +21,33 @@ interface BankPanelProps {
   takeLoan: (playerId: string, amount: number) => void;
   repayLoan: (playerId: string, amount: number) => void;
   stockPrices: Record<string, number>;
+  stockPriceHistory?: Record<string, number[]>;
+}
+
+/** Tiny SVG sparkline for stock price history */
+function Sparkline({ prices, width = 60, height = 16 }: { prices: number[]; width?: number; height?: number }) {
+  if (!prices || prices.length < 2) return null;
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const range = max - min || 1;
+  const points = prices.map((p, i) => {
+    const x = (i / (prices.length - 1)) * width;
+    const y = height - ((p - min) / range) * (height - 2) - 1;
+    return `${x},${y}`;
+  }).join(' ');
+  const isUp = prices[prices.length - 1] >= prices[0];
+  return (
+    <svg width={width} height={height} className="inline-block ml-1">
+      <polyline
+        points={points}
+        fill="none"
+        stroke={isUp ? '#2a7a2a' : '#8b4a4a'}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
 type BankView = 'main' | 'broker' | 'loans';
@@ -34,11 +61,13 @@ export function BankPanel({
   takeLoan,
   repayLoan,
   stockPrices,
+  stockPriceHistory,
 }: BankPanelProps) {
   const { t } = useTranslation();
   const [view, setView] = useState<BankView>('main');
 
   const stockValue = calculateStockValue(player.stocks, stockPrices);
+  const weeklyDividends = calculateDividends(player.stocks, stockPrices);
   const totalWealth = player.gold + player.savings + player.investments + stockValue - player.loanAmount;
 
   if (view === 'broker') {
@@ -50,6 +79,9 @@ export function BankPanel({
         </div>
         <JonesInfoRow label={t('panelBank.portfolioValue')} value={`${stockValue}g`} darkText largeText />
         <JonesInfoRow label={t('panelBank.cash')} value={`${player.gold}g`} darkText largeText />
+        {weeklyDividends > 0 && (
+          <JonesInfoRow label="Weekly Dividends" value={`+${weeklyDividends}g`} valueClass="text-[#2a7a2a]" darkText largeText />
+        )}
 
         <JonesSectionHeader title={t('panelBank.availableStocks')} />
         {STOCKS.map(stock => {
@@ -57,12 +89,29 @@ export function BankPanel({
           const owned = player.stocks[stock.id] || 0;
           const canBuy = player.gold >= price;
           const canSell = owned > 0;
+          const history = stockPriceHistory?.[stock.id] || [];
+          const prevPrice = history.length >= 2 ? history[history.length - 2] : stock.basePrice;
+          const priceChange = price - prevPrice;
+          const pctChange = prevPrice > 0 ? ((priceChange / prevPrice) * 100).toFixed(1) : '0.0';
+          const dividendPerShare = Math.floor(price * stock.dividendRate);
 
           return (
             <div key={stock.id} className="px-2 py-1.5 border-b border-[#8b7355]">
-              <div className="flex justify-between items-baseline font-mono text-sm">
-                <span className="text-[#3d2a14]">{t(`stocks.${stock.id}.name`) || stock.name}</span>
-                <span className="text-[#c9a227] font-bold">{price}g</span>
+              <div className="flex justify-between items-center font-mono text-sm">
+                <span className="text-[#3d2a14] text-xs">{t(`stocks.${stock.id}.name`) || stock.name}</span>
+                <div className="flex items-center gap-1">
+                  <Sparkline prices={history} />
+                  <span className="text-[#c9a227] font-bold">{price}g</span>
+                </div>
+              </div>
+              {/* Price change and dividend info */}
+              <div className="flex justify-between items-center text-xs mt-0.5">
+                <span className={priceChange >= 0 ? 'text-[#2a7a2a]' : 'text-[#8b4a4a]'}>
+                  {priceChange >= 0 ? '+' : ''}{priceChange}g ({priceChange >= 0 ? '+' : ''}{pctChange}%)
+                </span>
+                <span className="text-[#6b5a42]">
+                  Div: {dividendPerShare}g/wk
+                </span>
               </div>
               <div className="flex justify-between items-center mt-0.5">
                 <span className="text-xs text-[#6b5a42]">
@@ -83,7 +132,6 @@ export function BankPanel({
                   <button
                     onClick={() => {
                       sellStock(player.id, stock.id, 1);
-                      const sellPrice = stock.isTBill ? Math.floor(price * 0.97) : price;
                       toast.success(t('panelBank.soldShare', { name: t(`stocks.${stock.id}.name`) || stock.name }));
                     }}
                     disabled={!canSell}
@@ -97,7 +145,7 @@ export function BankPanel({
           );
         })}
         <div className="mt-2 text-xs text-[#6b5a42] px-2">
-          {t('panelBank.sellFee')}
+          {t('panelBank.sellFee')} Dividends paid weekly on owned shares.
         </div>
         <div className="mt-2 px-2">
           <JonesButton label={t('common.back').toUpperCase()} onClick={() => setView('main')} variant="secondary" />
@@ -191,7 +239,8 @@ export function BankPanel({
       <JonesInfoRow label={t('panelBank.cash')} value={`${player.gold}g`} darkText largeText />
       <JonesInfoRow label={t('panelBank.savings')} value={`${player.savings}g`} darkText largeText />
       <JonesInfoRow label={t('stats.investments')} value={`${player.investments}g`} darkText largeText />
-      {stockValue > 0 && <JonesInfoRow label={t('panelBank.availableStocks').charAt(0) + t('panelBank.availableStocks').slice(1).toLowerCase() + ':'} value={`${stockValue}g`} darkText largeText />}
+      {stockValue > 0 && <JonesInfoRow label="Stocks:" value={`${stockValue}g`} darkText largeText />}
+      {weeklyDividends > 0 && <JonesInfoRow label="Dividends:" value={`+${weeklyDividends}g/wk`} valueClass="text-[#2a7a2a]" darkText largeText />}
       {player.loanAmount > 0 && <JonesInfoRow label={t('stats.loanDebt')} value={`-${player.loanAmount}g`} valueClass="text-red-600" darkText largeText />}
       <JonesInfoRow label={t('panelBank.totalWealth')} value={`${totalWealth}g`} valueClass="text-[#c9a227] font-bold" darkText largeText />
 

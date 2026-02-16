@@ -299,6 +299,8 @@ export interface GameState {
   aiDifficulty: AIDifficulty; // Grimwald AI difficulty level
   // Stock Market prices (updated each week)
   stockPrices: Record<string, number>;
+  // Stock price history (last 8 weeks per stock, for sparkline charts)
+  stockPriceHistory: Record<string, number[]>;
   // Weekend event result for display
   weekendEvent: WeekendEventResult | null;
   // Weather system (rare weather events with particle effects)

@@ -71,6 +71,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     week: store.week,
     weeklyNewsEvents: store.weeklyNewsEvents,
     stockPrices: store.stockPrices,
+    stockPriceHistory: store.stockPriceHistory || {},
     modifyGold: store.modifyGold,
     modifyHappiness: store.modifyHappiness,
     modifyHealth: store.modifyHealth,

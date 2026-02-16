@@ -8,7 +8,7 @@ import type {
 } from '@/types/game.types';
 import { PLAYER_COLORS, AI_COLOR, AI_OPPONENTS, HOURS_PER_TURN, STARTING_AGE } from '@/types/game.types';
 import type { AIConfig } from '@/types/game.types';
-import { getInitialStockPrices } from '@/data/stocks';
+import { getInitialStockPrices, getInitialPriceHistory } from '@/data/stocks';
 import { CLEAR_WEATHER } from '@/data/weather';
 import type { WeatherType, WeatherParticle } from '@/data/weather';
 import { FESTIVALS } from '@/data/festivals';
@@ -190,6 +190,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     shadowfingersEvent: null,
     aiDifficulty: 'medium' as AIDifficulty,
     stockPrices: getInitialStockPrices(),
+    stockPriceHistory: getInitialPriceHistory(),
     weekendEvent: null,
     weather: { ...CLEAR_WEATHER },
     activeFestival: null,
@@ -261,6 +262,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         shadowfingersEvent: null,
         aiDifficulty,
         stockPrices: getInitialStockPrices(),
+    stockPriceHistory: getInitialPriceHistory(),
         weekendEvent: null,
         weather: { ...CLEAR_WEATHER },
         activeFestival: null,
@@ -317,6 +319,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         activeFestival: null,
         locationHexes: [],
         stockPrices: getInitialStockPrices(),
+    stockPriceHistory: getInitialPriceHistory(),
         priceModifier: 1.0,
         basePriceModifier: 1.0,
         economyTrend: 0,
@@ -417,6 +420,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         shadowfingersEvent: null,
         aiDifficulty: gs.aiDifficulty,
         stockPrices: gs.stockPrices || getInitialStockPrices(),
+        stockPriceHistory: gs.stockPriceHistory || getInitialPriceHistory(),
         weekendEvent: null,
         weather: gs.weather || { ...CLEAR_WEATHER },
         activeFestival: gs.activeFestival || null,

@@ -77,6 +77,7 @@ export function serializeGameState(): SerializedGameState {
     rentDueWeek: s.rentDueWeek,
     aiDifficulty: s.aiDifficulty,
     stockPrices: s.stockPrices,
+    stockPriceHistory: s.stockPriceHistory,
     weekendEvent: s.weekendEvent,
     weather: s.weather,
     activeFestival: s.activeFestival,
@@ -127,6 +128,7 @@ export function applyNetworkState(state: SerializedGameState) {
     rentDueWeek: state.rentDueWeek,
     aiDifficulty: state.aiDifficulty,
     stockPrices: state.stockPrices,
+    stockPriceHistory: state.stockPriceHistory,
     weather: state.weather,
     activeFestival: state.activeFestival ?? null,
   };

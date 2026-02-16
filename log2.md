@@ -5,6 +5,88 @@
 
 ---
 
+## 2026-02-16 — Landlord Speech Bubble + Stock Market Overhaul (11:00 UTC)
+
+### Overview
+
+Three areas addressed: landlord UI fix, comprehensive stock market overhaul, and BUG-001 status review.
+
+### BUG-001 Status Review
+
+Parallel agent investigation confirmed **all 4 defense layers are active and functioning**:
+1. Inline stale-build detection with CDN bypass headers
+2. Watchdog timer + silent failure detection (10s/15s)
+3. SW neutering for GitHub Pages (registerType:'prompt', no skipWaiting/clientsClaim)
+4. Fallback UI with reload loop protection (max 3 in 2min)
+
+**No remaining code vulnerabilities found.** The persistent post-PR startup issue is caused by GitHub Pages CDN cache TTL (10 minutes). The defense layers handle it correctly — users may see brief "Loading..." followed by automatic retry and recovery.
+
+### Fix: Landlord "Beg for More Time" Speech Bubble
+
+**Problem**: When player begs Tomas for more time, his response appeared as a toast notification in the lower-right corner instead of as an NPC speech bubble.
+
+**Fix**: Replaced `toast.success()/toast.error()` calls with `useBanterStore.getState().setBanter()` to display Tomas's response in the existing BanterBubble speech bubble system. Success uses 'grumpy' mood (he's reluctantly agreeing), failure uses 'warning' mood.
+
+### Stock Market Overhaul (6 improvements)
+
+**Problem**: Stock system rated 4/10 — broken price formula, no dividends, no price history, unrealistic crash mechanics, no economy trend influence.
+
+**Changes**:
+
+1. **Fixed price formula** (was biased +5% toward positive):
+   ```typescript
+   // BEFORE (broken — range was -0.95v to +1.05v):
+   const change = (Math.random() * 2 - 0.95) * stock.volatility;
+   // AFTER (symmetric — range is -v to +v):
+   const randomChange = (Math.random() - 0.5) * 2 * stock.volatility;
+   ```
+
+2. **Added dividend system** — each stock pays weekly dividends based on share value:
+   - Crystal Mine: 0.2%/wk (growth stock — value from price swings)
+   - Potion Consortium: 0.5%/wk (balanced)
+   - Enchanting Guild: 0.8%/wk (income stock)
+   - Crown Bonds: 1.0%/wk (safe yield)
+   - Dividends auto-paid in gold during week-end processing
+
+3. **Added economy trend influence** — stock prices now respond to economic cycles:
+   - Boom (+1): +3% upward bias per week
+   - Recession (-1): -3% downward bias per week
+   - Mean reversion: 5% weekly pull toward base price (prevents runaway prices)
+
+4. **Crash severity tiers** (replaced flat 30-60% loss):
+   - Minor (50% chance): -15% to -25%
+   - Moderate (35% chance): -30% to -50%
+   - Major (15% chance): -50% to -70%
+   - Stable stocks lose less (volatility-scaled cushion)
+
+5. **Price history tracking** — last 8 weeks of prices per stock stored in GameState
+
+6. **Enhanced broker UI**:
+   - SVG sparkline charts showing 8-week price trends
+   - Weekly price change with +/-% indicator (green/red)
+   - Dividend per share display (Div: Xg/wk)
+   - Portfolio dividends summary on main bank view
+   - Cap raised from 5x to 8x base price
+
+### Changes (8 files)
+
+| File | Changes |
+|------|---------|
+| `src/components/game/LandlordPanel.tsx` | Imported useBanterStore, replaced toast with setBanter for beg action |
+| `src/data/stocks.ts` | Added dividendRate field, fixed price formula, added economy trend + mean reversion, crash severity tiers, dividend calculation, price history functions |
+| `src/types/game.types.ts` | Added `stockPriceHistory: Record<string, number[]>` to GameState |
+| `src/store/gameStore.ts` | Added getInitialPriceHistory import, stockPriceHistory to initial state + startGame + resetForNewGame + loadGame |
+| `src/store/helpers/weekEndHelpers.ts` | Updated processFinances for dividends, passed economyTrend to updateStockPrices, added price history update |
+| `src/components/game/BankPanel.tsx` | Added Sparkline component, dividend display, price change indicators, stockPriceHistory prop |
+| `src/components/game/locationTabs.tsx` | Added stockPriceHistory to LocationTabContext, passed to BankPanel |
+| `src/components/game/LocationPanel.tsx` | Added stockPriceHistory to context |
+| `src/network/networkState.ts` | Added stockPriceHistory to serialization/deserialization |
+
+### Test Results
+
+- **219 tests passing**, 0 failures
+- TypeScript: clean, no errors
+- Build: clean
 ## 2026-02-16 — AI System Gap Analysis (10:45 UTC)
 
 ### Overview

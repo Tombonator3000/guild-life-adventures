@@ -60,6 +60,7 @@ export interface LocationTabContext {
   week: number;
   weeklyNewsEvents: GameStore['weeklyNewsEvents'];
   stockPrices: GameStore['stockPrices'];
+  stockPriceHistory: GameStore['stockPriceHistory'];
   // Store actions (subset used by location panels)
   modifyGold: GameStore['modifyGold'];
   modifyHappiness: GameStore['modifyHappiness'];
@@ -300,7 +301,7 @@ function academyTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function bankTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, depositToBank, withdrawFromBank, buyStock, sellStock, takeLoan, repayLoan, stockPrices } = ctx;
+  const { player, depositToBank, withdrawFromBank, buyStock, sellStock, takeLoan, repayLoan, stockPrices, stockPriceHistory } = ctx;
   return [{
     id: 'banking',
     label: 'Services',
@@ -314,6 +315,7 @@ function bankTabs(ctx: LocationTabContext): LocationTab[] {
         takeLoan={takeLoan}
         repayLoan={repayLoan}
         stockPrices={stockPrices}
+        stockPriceHistory={stockPriceHistory}
       />
     ),
   }];
