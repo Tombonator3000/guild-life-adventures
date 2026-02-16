@@ -3,6 +3,35 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+## 2026-02-16 — Hex Scrolls in Inventory (19:30 UTC)
+
+### Problem
+Hex scrolls obtained from Dark Ritual at the Graveyard had no way to be activated — they only showed as text in the Stats tab. Players needed to be at Shadow Market or Enchanter to cast them.
+
+### Fix
+Added hex scrolls as interactive items in the Inventory tab. Players can now click a scroll to use it from anywhere.
+
+**Changes:**
+- `InventoryGrid.tsx` — Added hex scroll section above regular inventory grid with click-to-use UI. Personal/sabotage scrolls show a target picker (list of rival players). Location hexes cast directly on click. Shows cast time and quantity.
+- `ItemIcon.tsx` — Added `HexScrollIcon` SVG (purple scroll with arcane symbol) + mapping for `hex-scroll` item ID.
+- `buildInventoryItems()` — Now includes `player.hexScrolls` as inventory items with `isHexScroll`, `hexId`, `hexCategory`, `castTime` metadata.
+
+### How it works
+1. Player buys/receives a hex scroll (from Dark Ritual, Shadow Market, or Enchanter)
+2. Scroll appears in "Hex Scrolls" section of the Inventory tab
+3. Click the scroll → for personal/sabotage: shows target picker with rival names → click a rival to cast
+4. For location hexes: casts directly on click (no target needed)
+5. Time cost and scroll consumption handled by existing store actions
+
+### Files Modified (2)
+
+| File | Changes |
+|------|---------|
+| `src/components/game/InventoryGrid.tsx` | Hex scroll section with casting UI, target picker, imports for hex system |
+| `src/components/game/ItemIcon.tsx` | HexScrollIcon SVG + mapping |
+
+---
+
 ## 2026-02-16 — Hex Visual Effect + AI Hex Purchasing (17:30 UTC)
 
 ### Part 1: Cursed Player Portrait Visual Effect
