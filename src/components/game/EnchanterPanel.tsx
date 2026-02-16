@@ -87,21 +87,26 @@ export function EnchanterPanel({ player, priceModifier, onSpendTime }: Enchanter
       <div className="space-y-2">
         {appliances.map(appliance => {
           const price = Math.round(appliance.enchanterPrice * priceModifier);
-          const alreadyOwns = !!player.appliances[appliance.id];
+          const ownedAppliance = player.appliances[appliance.id];
+          const alreadyOwns = !!ownedAppliance;
+          const isBroken = alreadyOwns && ownedAppliance.isBroken;
           const isFirstPurchase = !player.applianceHistory.includes(appliance.id);
 
           return (
             <div
               key={appliance.id}
-              className="bg-[#e0d4b8] border border-[#8b7355] rounded p-2"
+              className={`bg-[#e0d4b8] border rounded p-2 ${isBroken ? 'border-destructive/60' : 'border-[#8b7355]'}`}
               onMouseEnter={() => setPreview(applianceToPreview(appliance, 'enchanter'))}
               onMouseLeave={() => setPreview(null)}
             >
               <div className="flex justify-between items-start mb-1">
                 <div>
                   <span className="font-display font-semibold text-sm text-[#3d2a14]">{t(`appliances.${appliance.id}.name`) || appliance.name}</span>
-                  {alreadyOwns && (
+                  {alreadyOwns && !isBroken && (
                     <span className="ml-2 text-xs text-secondary">(Owned)</span>
+                  )}
+                  {isBroken && (
+                    <span className="ml-2 text-xs text-destructive font-semibold">(Broken!)</span>
                   )}
                 </div>
                 <span className="text-[#8b6914] font-bold">{price}g</span>
@@ -121,10 +126,10 @@ export function EnchanterPanel({ player, priceModifier, onSpendTime }: Enchanter
                 </div>
                 <button
                   onClick={() => handleBuyAppliance(appliance.id, price)}
-                  disabled={player.gold < price || alreadyOwns}
+                  disabled={player.gold < price || (alreadyOwns && !isBroken)}
                   className="gold-button text-xs py-1 px-2 disabled:opacity-50"
                 >
-                  {alreadyOwns ? 'Owned' : 'Buy'}
+                  {alreadyOwns && !isBroken ? 'Owned' : isBroken ? 'Owned' : 'Buy'}
                 </button>
               </div>
             </div>
