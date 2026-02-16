@@ -2,6 +2,7 @@
 // Supports: regular quests, quest chains (B1), bounties (B2),
 // difficulty scaling indicators (B3), cooldown display (B4), reputation (B5)
 
+import { useMemo } from 'react';
 import { AlertTriangle, Check, X, Trophy } from 'lucide-react';
 import { playSFX } from '@/audio/sfxManager';
 import type { Quest } from '@/data/quests';
@@ -17,6 +18,7 @@ import {
   getReputationGoldMultiplier,
   getReputationMilestone,
   getNextReputationMilestone,
+  pickQuestDescription,
 } from '@/data/quests';
 import type { Player } from '@/types/game.types';
 import {
@@ -157,7 +159,7 @@ function resolveActiveQuest(player: Player, week: number): {
     type: 'quest',
     name: quest.name,
     rank: quest.rank,
-    description: quest.description,
+    description: pickQuestDescription(quest),
     goldReward: quest.goldReward,
     timeRequired: quest.timeRequired,
     healthRisk: quest.healthRisk,
@@ -167,6 +169,15 @@ function resolveActiveQuest(player: Player, week: number): {
 
 export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest, onAbandonQuest, onTakeChainQuest, onTakeBounty }: QuestPanelProps) {
   const activeQuestData = resolveActiveQuest(player, week);
+
+  // Pick stable random quest descriptions per quest set (avoids re-randomizing on every re-render)
+  const questDescriptions = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const q of quests) {
+      map[q.id] = pickQuestDescription(q);
+    }
+    return map;
+  }, [quests]);
 
   // Bounties are handled by BountyBoardPanel — skip active bounty display here
   if (activeQuestData && activeQuestData.type !== 'bounty') {
@@ -321,7 +332,7 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
                     {QUEST_RANK_INFO[quest.rank].name}
                   </span>
                 </div>
-                <p className="text-xs text-[#6b5a42] mt-0.5 line-clamp-1">{quest.description}</p>
+                <p className="text-xs text-[#6b5a42] mt-0.5 line-clamp-1">{questDescriptions[quest.id] || quest.description}</p>
 
                 <div className="flex items-center gap-2 text-xs mt-1">
                   <ScaledRewardDisplay baseGold={quest.goldReward} baseHappiness={quest.happinessReward} player={player} />

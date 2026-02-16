@@ -3073,3 +3073,96 @@ Massively expanded all static content across the game's data files to improve re
 - **Zero breaking changes** — all additions are optional/backward compatible
 
 ---
+
+## 2026-02-16 — Wire Variant Helper Functions into UI + Fix WeatherOverlay Hook Violation
+
+### Overview
+
+Integrated the four variant helper functions (`pickEventDescription`, `pickEventMessage`, `pickTravelDescription`, `pickQuestDescription`) that were defined in the previous session but never wired into the actual game code. Also fixed a critical `rules-of-hooks` violation in `WeatherOverlay.tsx` where `useMemo` was called after an early return, violating React's hook rules and potentially causing runtime crashes or the "Loading the realm" hang.
+
+### Changes
+
+#### 1. Fix: WeatherOverlay.tsx — Conditional useMemo Hook Violation (CRITICAL)
+
+`useMemo` was called AFTER `if (!particle) return null;` at line 27, violating React's rule that hooks must be called in the same order on every render. This could cause React to crash or behave unpredictably.
+
+**Fix**: Moved the `useMemo` call above the early return. The hook now always runs but returns an empty array when `particle` is null. The early return happens after the hook call.
+
+```tsx
+// BEFORE (broken):
+export function WeatherOverlay({ particle, weatherType }) {
+  if (!particle) return null;        // ← early return BEFORE hook
+  const particles = useMemo(...)     // ← hook called conditionally!
+
+// AFTER (fixed):
+export function WeatherOverlay({ particle, weatherType }) {
+  const count = particle ? PARTICLE_COUNTS[particle] : 0;
+  const particles = useMemo(() => {  // ← hook always called
+    if (!particle) return [];
+    return Array.from(...)
+  }, [particle, count]);
+  if (!particle) return null;        // ← early return AFTER hook
+```
+
+#### 2. Wire pickEventMessage + pickEventDescription into Location Events (`playerHelpers.ts`)
+
+Location events (triggered on arrival at locations) now use both variant helpers:
+- `pickEventDescription(event)` — provides a random description variant (narrative intro)
+- `pickEventMessage(event)` — provides a random effect message variant (mechanical outcome)
+
+The event message format changed from:
+```
+[event-id] Event Name: effect.message
+```
+To:
+```
+[event-id] Event Name: pickEventDescription(event)
+pickEventMessage(event)
+```
+
+This gives each event two lines of varied text instead of one static line.
+
+#### 3. Wire pickEventMessage into Weekly Theft Events (`weekEndHelpers.ts`)
+
+Shadowfingers theft events during week-end processing now use `pickEventMessage(theftEvent)` instead of a hardcoded message template. Each theft now shows a random message variant (e.g., "Lost 50 gold to the Shadowfingers. They were so quiet, even your dreams didn't notice." instead of always "Shadowfingers struck! {name} lost {amount} gold!").
+
+#### 4. Wire pickTravelDescription into Travel Events (`travelEvents.ts`)
+
+The `formatTravelEvent()` function now calls `pickTravelDescription(event)` instead of using `event.description` directly. Every travel event message will now show a random description variant, adding variety to the 10 travel events (each has 3-5 variants).
+
+#### 5. Wire pickQuestDescription into Quest Panel (`QuestPanel.tsx`)
+
+Quest descriptions in the quest panel now use `pickQuestDescription(quest)` instead of static `quest.description`:
+- **Active quest display**: Uses `pickQuestDescription` in `resolveActiveQuest()` for the active quest description
+- **Quest list**: Uses `useMemo` to pick stable random descriptions per quest set, preventing re-randomization on every React re-render
+- Added `import { useMemo } from 'react'` and `pickQuestDescription` import
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/game/WeatherOverlay.tsx` | Fixed conditional `useMemo` hook violation — moved hook above early return |
+| `src/store/helpers/playerHelpers.ts` | Imported `pickEventMessage` + `pickEventDescription`, wired into location event message |
+| `src/store/helpers/weekEndHelpers.ts` | Imported `pickEventMessage`, wired into Shadowfingers theft message |
+| `src/data/travelEvents.ts` | `formatTravelEvent()` now calls `pickTravelDescription()` instead of using `event.description` |
+| `src/components/game/QuestPanel.tsx` | Imported `pickQuestDescription` + `useMemo`, wired into active quest and quest list rendering |
+| `log2.md` | This entry |
+
+### Integration Summary
+
+| Helper Function | Where Wired | Effect |
+|----------------|-------------|--------|
+| `pickEventDescription` | `playerHelpers.ts` — location event messages | Random narrative intro for each location event |
+| `pickEventMessage` | `playerHelpers.ts` — location event messages | Random effect message for location events |
+| `pickEventMessage` | `weekEndHelpers.ts` — weekly theft events | Random theft message variants |
+| `pickTravelDescription` | `travelEvents.ts` — `formatTravelEvent()` | Random travel event descriptions |
+| `pickQuestDescription` | `QuestPanel.tsx` — quest list + active quest | Random quest descriptions with `useMemo` stability |
+
+### Verification
+
+- **Build**: Clean production build, no TypeScript errors
+- **Tests**: 219 passing, 0 failures (10 test files)
+- **Lint**: WeatherOverlay `react-hooks/rules-of-hooks` error eliminated (was 15 errors, now 14)
+- **No breaking changes** — all variant helpers fall back to default description/message when no variants exist
+
+---

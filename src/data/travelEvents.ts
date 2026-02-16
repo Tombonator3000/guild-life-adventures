@@ -245,7 +245,7 @@ export function rollTravelEvent(stepsTraveled: number): TravelEvent | null {
  * Build an event message string from a travel event.
  */
 export function formatTravelEvent(event: TravelEvent): string {
-  const parts: string[] = [event.description];
+  const parts: string[] = [pickTravelDescription(event)];
 
   const effects: string[] = [];
   if (event.goldEffect > 0) effects.push(`+${event.goldEffect}g`);

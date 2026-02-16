@@ -24,12 +24,12 @@ const PARTICLE_COUNTS: Record<WeatherParticle, number> = {
  * layered over the game board. pointer-events: none so it doesn't block clicks.
  */
 export function WeatherOverlay({ particle, weatherType }: WeatherOverlayProps) {
-  if (!particle) return null;
-
-  const count = PARTICLE_COUNTS[particle];
+  const count = particle ? PARTICLE_COUNTS[particle] : 0;
 
   // Pre-generate random offsets so they're stable across renders
+  // Hook must be called unconditionally (React rules of hooks)
   const particles = useMemo(() => {
+    if (!particle) return [];
     return Array.from({ length: count }, (_, i) => ({
       id: i,
       left: Math.random() * 100,
@@ -40,6 +40,8 @@ export function WeatherOverlay({ particle, weatherType }: WeatherOverlayProps) {
       drift: (Math.random() - 0.5) * getDriftRange(particle),
     }));
   }, [particle, count]);
+
+  if (!particle) return null;
 
   return (
     <>
