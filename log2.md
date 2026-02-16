@@ -87,6 +87,128 @@ Parallel agent investigation confirmed **all 4 defense layers are active and fun
 - **219 tests passing**, 0 failures
 - TypeScript: clean, no errors
 - Build: clean
+## 2026-02-16 — AI System Gap Analysis (10:45 UTC)
+
+### Overview
+
+Full audit of the AI system to identify missing behaviors, gaps, and improvement opportunities. Reviewed all 8 AI files (`types.ts`, `strategy.ts`, `actionGenerator.ts`, `actionExecutor.ts`, `playerObserver.ts`, `difficultyAdjuster.ts`) plus all 6 action generators (`criticalNeeds.ts`, `goalActions.ts`, `strategicActions.ts`, `economicActions.ts`, `questDungeonActions.ts`, `rivalryActions.ts`), cross-referenced with `todo.md`, `bugs.md`, `MEMORY.md`, and `AUDIT-2026-02-12.md`.
+
+### What the AI System Currently Does Well
+
+| Area | Status | Details |
+|------|--------|---------|
+| Critical needs (food, rent, clothing, health) | ✅ Complete | 3-tier clothing, price-adjusted food, spoilage awareness, Preservation Box logic |
+| Goal-oriented actions | ✅ Complete | Weakest-goal focus, sprint-when-near-complete, all 5 goals supported |
+| Job system | ✅ Complete | Apply, upgrade, work, clothing tier checks, job blocking (rivals) |
+| Education | ✅ Complete | Degree pursuit, graduation, strategic degree selection (job unlocks) |
+| Banking | ✅ Complete | Deposit, withdraw, robbery protection strategy |
+| Loans | ✅ Complete | Emergency take, full/partial repay, default-aware (garnishment urgency) |
+| Stocks | ✅ Complete | Buy undervalued, sell overvalued, T-Bill safety, personality-based gambling |
+| Dungeon | ✅ Complete | Floor selection, power ratio check, equipment upgrade path, rare drops |
+| Quests | ✅ Complete | Best quest selection, chain quests, bounties, cooldown awareness |
+| Equipment | ✅ Complete | Buy weapons/armor/shield, tempering, repair, sell/pawn when broke |
+| Rivalry | ✅ Complete | Quest stealing, education racing, banking defense, hex casting |
+| Personalities | ✅ Complete | 4 unique personalities with weight multipliers and behavior modifiers |
+| Counter-strategy | ✅ Complete | Player observation, strategy profiling, competitive/gap-exploit weights |
+| Dynamic difficulty | ✅ Complete | Rubber-banding based on AI vs human performance gap |
+| Time budget | ✅ Complete | Early/late turn action priority adjustments |
+| Route optimization | ✅ Complete | Multi-need location boosting |
+| Mistakes | ✅ Complete | 3 mistake types (skip, swap, impulsive) with difficulty-scaled chance |
+
+### Missing AI Behaviors (Gaps Found)
+
+#### 1. **Rent Prepayment** (from todo.md backlog — Medium priority)
+**Status**: NOT IMPLEMENTED
+**Impact**: AI only pays rent when urgently behind (3+ weeks). It never prepays rent during rent weeks, meaning it often gets 2 weeks behind before reacting.
+**Fix**: In `criticalNeeds.ts`, add a rent payment action at moderate priority (~55) when `isRentWeek` is true and `weeksSinceRent >= 1`, not just when urgency is >= 0.5.
+
+#### 2. **Appliance Repair** (from todo.md backlog — Medium priority)
+**Status**: NOT IMPLEMENTED
+**Impact**: When appliances break (Preservation Box, Cooking Fire, etc.), the AI never repairs them. Broken Preservation Box causes food spoilage; broken Cooking Fire loses +3 food/turn bonus.
+**Fix**: Add repair logic in `strategicActions.ts` or `economicActions.ts`. Check for broken appliances, travel to Enchanter/Forge, pay repair cost.
+**Note**: Need to check if a `repairAppliance` store action exists.
+
+#### 3. **Salary Negotiation** (raise request)
+**Status**: NOT IMPLEMENTED
+**Impact**: When priceModifier increases the market wage above the AI's locked wage, the AI never requests a raise. Human players can do this at Guild Hall.
+**Fix**: In `strategicActions.ts`, check if `calculateOfferedWage(currentJob, priceModifier) > currentWage` and add `negotiate-raise` action. Need to add handler in `actionExecutor.ts`.
+
+#### 4. **Festival Awareness** (partial)
+**Status**: PARTIALLY IMPLEMENTED (context passed but not used in decisions)
+**Impact**: `activeFestival` is passed to all action generators via `ActionContext`, but no action generator actually uses it. Festivals can provide bonuses (e.g., Harvest Festival boosts food-related activities).
+**Fix**: In `goalActions.ts` and `strategicActions.ts`, check `ctx.activeFestival` and adjust priorities. E.g., during Harvest Festival, boost food buying; during Scholar's Week, boost studying.
+
+#### 5. **Insurance Purchase**
+**Status**: NOT IMPLEMENTED
+**Impact**: AI never buys insurance (available at Enchanter). Insurance protects against doctor visit costs and sickness penalties. Cautious personalities (Seraphina) should value this.
+**Fix**: Add insurance purchase logic in `economicActions.ts`. Check `player.hasInsurance`, `player.insuranceWeeksLeft`, and `player.gold`.
+
+#### 6. **Dispel Scroll Usage**
+**Status**: NOT IMPLEMENTED (buying amulets IS implemented)
+**Impact**: When an opponent hexes a location the AI needs (e.g., Academy sealed), the AI has no way to dispel it. It just avoids the location.
+**Fix**: In `rivalryActions.ts`, check for hexed locations that block needed actions. If AI has a Dispel Scroll, travel to the hexed location and use it.
+
+#### 7. **Graveyard Dark Ritual**
+**Status**: NOT IMPLEMENTED
+**Impact**: AI never uses the Graveyard to perform dark rituals (free random hex scroll, 15% backfire chance). Risk-taking personalities (Morgath) should consider this.
+**Fix**: Add ritual action in `rivalryActions.ts` or `economicActions.ts` when at Graveyard and hex system is enabled.
+
+#### 8. **Housing Downgrade to Homeless** (strategic)
+**Status**: PARTIALLY IMPLEMENTED (downgrade noble→slums exists, but never to homeless)
+**Impact**: When AI is completely broke and can't afford any rent, it never voluntarily goes homeless. It waits for eviction which has worse penalties.
+**Fix**: In `strategicActions.ts`, add voluntary homeless downgrade when gold < 30 and savings < 20 and weeksSinceRent >= 3.
+
+#### 9. **Free Actions at 0 Hours** (from todo.md backlog)
+**Status**: NOT IMPLEMENTED (game-wide, not AI-specific)
+**Impact**: When time hits 0, AI just ends turn. It should still be able to buy items, deposit money, etc. (Jones-style free actions).
+**Note**: This requires game-wide support first (todo.md backlog item), then AI support.
+
+#### 10. **`useAI.ts` is Obsolete / Dead Code**
+**Status**: UNUSED (replaced by `useGrimwaldAI.ts` + modular AI system)
+**Impact**: `src/hooks/useAI.ts` (230 lines) appears to be the original simple AI that was replaced by the full modular system. It imports store actions directly and has a primitive priority list.
+**Fix**: Verify it's not imported anywhere, then delete it.
+
+### Priority Ranking for Implementation
+
+| # | Gap | Priority | Effort | Impact |
+|---|-----|----------|--------|--------|
+| 1 | Rent prepayment | Medium | Low (10 lines) | Prevents late rent penalties |
+| 2 | Appliance repair | Medium | Medium (30 lines) | Prevents food spoilage cascade |
+| 3 | Delete useAI.ts dead code | Low | Trivial | Code hygiene |
+| 4 | Salary negotiation | Low | Medium (20 lines) | Better AI income |
+| 5 | Festival awareness | Low | Medium (20 lines) | Smarter AI behavior |
+| 6 | Insurance purchase | Low | Low (15 lines) | Cautious AI defense |
+| 7 | Dispel scroll usage | Low | Medium (20 lines) | Counter-hex defense |
+| 8 | Graveyard ritual | Low | Low (15 lines) | Risk-taking behavior |
+| 9 | Voluntary homeless | Low | Low (10 lines) | Edge case survival |
+| 10 | Free actions at 0h | Blocked | High | Needs game-wide change |
+
+### Test Coverage
+
+Current AI test coverage (added 2026-02-16):
+- `src/hooks/ai/__tests__/strategy.test.ts` — 16 tests (goalProgress, weakestGoal, urgency, banking)
+- `src/hooks/ai/__tests__/actionGenerator.test.ts` — 21 tests (personalities, difficulty, weights, time budget)
+- `src/hooks/ai/actions/__tests__/rivalryActions.test.ts` — 5 tests (rivalry conditions)
+- `src/data/__tests__/hexes.test.ts` — 20 tests (hex data, pricing, location blocking)
+- Total: **62 AI-specific tests** + 281 total project tests
+
+### Files Reviewed
+
+| File | Lines | Assessment |
+|------|-------|------------|
+| `src/hooks/ai/types.ts` | 251 | Clean, well-documented |
+| `src/hooks/ai/strategy.ts` | 469 | Comprehensive, good coverage |
+| `src/hooks/ai/actionGenerator.ts` | 308 | Well-structured orchestrator |
+| `src/hooks/ai/actionExecutor.ts` | 625 | 34 handlers, handler-map pattern |
+| `src/hooks/ai/playerObserver.ts` | 331 | Solid observation + counter-strategy |
+| `src/hooks/ai/difficultyAdjuster.ts` | ~100 | Rubber-banding works well |
+| `src/hooks/ai/actions/criticalNeeds.ts` | 235 | Missing rent prepayment |
+| `src/hooks/ai/actions/goalActions.ts` | 332 | Solid, festival awareness missing |
+| `src/hooks/ai/actions/strategicActions.ts` | 166 | Missing salary negotiation |
+| `src/hooks/ai/actions/economicActions.ts` | 259 | Missing insurance, appliance repair |
+| `src/hooks/ai/actions/questDungeonActions.ts` | ~200 | Complete |
+| `src/hooks/ai/actions/rivalryActions.ts` | 188 | Missing dispel scroll, graveyard |
+| `src/hooks/useAI.ts` | 230 | **DEAD CODE** — appears unused |
 
 ---
 
