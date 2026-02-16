@@ -6,6 +6,10 @@ import { ItemIcon } from './ItemIcon';
 import { ARMORY_ITEMS, GENERAL_STORE_ITEMS, ENCHANTER_ITEMS, getAppliance, calculateCombatStats, TEMPER_BONUS, type Item } from '@/data/items';
 import type { Player, EquipmentSlot } from '@/types/game.types';
 import { useGameStore } from '@/store/gameStore';
+import { getGameOption } from '@/data/gameOptions';
+import { getHexById } from '@/data/hexes';
+import { Scroll, MapPin, Target, Flame, Skull } from 'lucide-react';
+import { toast } from 'sonner';
 
 // Grid constants
 const GRID_COLS = 5;
@@ -33,6 +37,11 @@ interface InventoryItem {
     defense?: number;
     blockChance?: number;
   };
+  // Hex scroll fields
+  isHexScroll?: boolean;
+  hexId?: string;
+  hexCategory?: 'location' | 'personal' | 'sabotage';
+  castTime?: number;
 }
 
 interface InventoryGridProps {
@@ -40,16 +49,21 @@ interface InventoryGridProps {
 }
 
 export function InventoryGrid({ player }: InventoryGridProps) {
-  const { equipItem, unequipItem } = useGameStore();
+  const store = useGameStore();
+  const { equipItem, unequipItem } = store;
+  const players = useGameStore(s => s.players);
   const [draggedItem, setDraggedItem] = useState<InventoryItem | null>(null);
   const [hoveredItem, setHoveredItem] = useState<InventoryItem | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [castingScroll, setCastingScroll] = useState<string | null>(null); // hexId being cast
   const gridRef = useRef<HTMLDivElement>(null);
 
   // Build inventory items from player data
   const inventoryItems = buildInventoryItems(player);
   const equippedItems = inventoryItems.filter(i => i.equipped);
   const bagItems = inventoryItems.filter(i => !i.equipped);
+
+  const rivals = players.filter(p => p.id !== player.id && !p.isGameOver);
 
   // Handle drag start
   const handleDragStart = useCallback((e: React.DragEvent, item: InventoryItem) => {
@@ -87,6 +101,40 @@ export function InventoryGrid({ player }: InventoryGridProps) {
   const handleMouseLeave = useCallback(() => {
     setHoveredItem(null);
   }, []);
+
+  // Handle hex scroll click — open target picker or cast directly
+  const handleScrollClick = useCallback((item: InventoryItem) => {
+    if (!item.isHexScroll || !item.hexId) return;
+    
+    if (item.hexCategory === 'location') {
+      // Location hexes cast directly (no target needed)
+      const result = store.castLocationHex(player.id, item.hexId);
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+      setCastingScroll(null);
+    } else {
+      // Personal/sabotage — toggle target picker
+      setCastingScroll(prev => prev === item.hexId ? null : item.hexId!);
+    }
+  }, [store, player.id]);
+
+  // Handle casting on a target
+  const handleCastOnTarget = useCallback((hexId: string, targetId: string) => {
+    const result = store.castPersonalCurse(player.id, hexId, targetId);
+    if (result.success) {
+      toast.success(result.message);
+    } else {
+      toast.error(result.message);
+    }
+    setCastingScroll(null);
+  }, [store, player.id]);
+
+  // Get hex scroll items for the special section
+  const hexScrollItems = bagItems.filter(i => i.isHexScroll);
+  const regularBagItems = bagItems.filter(i => !i.isHexScroll);
 
   return (
     <div className="relative" ref={gridRef}>
@@ -132,6 +180,81 @@ export function InventoryGrid({ player }: InventoryGridProps) {
         </div>
       </div>
 
+      {/* Hex Scrolls Section — clickable to use */}
+      {hexScrollItems.length > 0 && (
+        <div className="mb-2 bg-purple-900/20 rounded p-1.5 border border-purple-700/40">
+          <h4 className="text-[9px] font-display font-bold text-purple-800 mb-1 uppercase tracking-wide flex items-center gap-1">
+            <Scroll className="w-3 h-3" /> Hex Scrolls
+          </h4>
+          <div className="space-y-1">
+            {hexScrollItems.map(item => {
+              const isActive = castingScroll === item.hexId;
+              const canCast = player.timeRemaining >= (item.castTime || 0);
+              const categoryIcon = item.hexCategory === 'location' 
+                ? <MapPin className="w-3 h-3" />
+                : item.hexCategory === 'sabotage'
+                  ? <Flame className="w-3 h-3" />
+                  : <Target className="w-3 h-3" />;
+              
+              return (
+                <div key={item.hexId}>
+                  <button
+                    onClick={() => handleScrollClick(item)}
+                    disabled={!canCast}
+                    className={`
+                      w-full flex items-center justify-between text-[10px] rounded px-1.5 py-1 transition-all
+                      ${isActive 
+                        ? 'bg-purple-700 text-purple-100 ring-1 ring-purple-400' 
+                        : 'bg-purple-100/80 text-purple-900 hover:bg-purple-200 border border-purple-300/50'
+                      }
+                      disabled:opacity-40 disabled:cursor-not-allowed
+                    `}
+                    title={`${item.name} — ${item.description} (${item.castTime}h)`}
+                  >
+                    <span className="flex items-center gap-1 font-semibold truncate">
+                      {categoryIcon}
+                      {item.name}
+                    </span>
+                    <span className="flex items-center gap-1 shrink-0">
+                      <span className="opacity-70">×{item.quantity}</span>
+                      <span className="text-[8px] opacity-60">({item.castTime}h)</span>
+                    </span>
+                  </button>
+
+                  {/* Target picker (shown when scroll is selected) */}
+                  {isActive && (item.hexCategory === 'personal' || item.hexCategory === 'sabotage') && (
+                    <div className="mt-1 ml-2 space-y-0.5">
+                      <div className="text-[8px] text-purple-300 font-semibold uppercase">Cast on:</div>
+                      {rivals.length === 0 && (
+                        <div className="text-[9px] text-purple-400 italic">No targets available</div>
+                      )}
+                      {rivals.map(rival => (
+                        <button
+                          key={rival.id}
+                          onClick={() => handleCastOnTarget(item.hexId!, rival.id)}
+                          className="w-full flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded
+                            bg-purple-800/50 text-purple-200 hover:bg-purple-600 transition-colors
+                            border border-purple-600/30"
+                        >
+                          <Skull className="w-3 h-3 text-purple-400" />
+                          <span className="font-medium">{rival.name}</span>
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => setCastingScroll(null)}
+                        className="text-[8px] text-purple-400 hover:text-purple-200 mt-0.5"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Inventory Grid */}
       <div className="bg-parchment-dark/40 rounded p-1.5 border border-wood-light/40">
         <h4 className="text-[9px] font-display font-bold text-wood mb-1 uppercase tracking-wide">
@@ -144,7 +267,7 @@ export function InventoryGrid({ player }: InventoryGridProps) {
           onDrop={handleInventoryDrop}
         >
           {Array.from({ length: GRID_COLS * GRID_ROWS }).map((_, index) => {
-            const item = bagItems[index];
+            const item = regularBagItems[index];
             return (
               <InventorySlot
                 key={index}
@@ -184,7 +307,7 @@ export function InventoryGrid({ player }: InventoryGridProps) {
       </div>
 
       {/* Tooltip */}
-      {hoveredItem && (
+      {hoveredItem && !hoveredItem.isHexScroll && (
         <ItemTooltip item={hoveredItem} position={tooltipPos} />
       )}
     </div>
@@ -506,6 +629,27 @@ function buildInventoryItems(player: Player): InventoryItem[] {
       quantity: 1,
     });
   });
+
+  // Add hex scrolls (when feature is enabled)
+  if (getGameOption('enableHexesCurses')) {
+    player.hexScrolls.forEach(scroll => {
+      const hex = getHexById(scroll.hexId);
+      if (hex) {
+        items.push({
+          id: `hex-${scroll.hexId}`,
+          itemId: 'hex-scroll', // generic scroll icon
+          name: hex.name,
+          description: hex.description,
+          category: 'hex-scroll',
+          quantity: scroll.quantity,
+          isHexScroll: true,
+          hexId: hex.id,
+          hexCategory: hex.category,
+          castTime: hex.castTime,
+        });
+      }
+    });
+  }
 
   return items;
 }

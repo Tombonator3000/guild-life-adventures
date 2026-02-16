@@ -88,6 +88,9 @@ function getIconForItem(itemId: string, category?: ItemCategory): IconFn {
   if (itemId === 'lottery-ticket') return LotteryTicketIcon;
   if (itemId.includes('ticket')) return TicketIcon;
   
+  // Hex scrolls
+  if (itemId === 'hex-scroll') return HexScrollIcon;
+  
   // Fallback by category
   if (category === 'weapon') return SwordIcon;
   if (category === 'armor') return LeatherArmorIcon;
@@ -522,6 +525,19 @@ const TicketIcon: IconFn = ({ size, strokeWidth }) => (
 const LuxuryIcon: IconFn = ({ size, strokeWidth }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M12 3L14 9H20L15 13L17 19L12 15L7 19L9 13L4 9H10L12 3Z" fill="#FFD700" stroke="#DAA520" strokeWidth={strokeWidth}/>
+  </svg>
+);
+
+const HexScrollIcon: IconFn = ({ size, strokeWidth }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="7" y="3" width="10" height="18" rx="2" fill="#2D1B4E" stroke="#7C3AED" strokeWidth={strokeWidth}/>
+    <path d="M7 5C5.5 5 5 4 5 3C5 4.5 5.5 6 7 6" fill="#2D1B4E" stroke="#7C3AED" strokeWidth={strokeWidth * 0.7}/>
+    <path d="M17 5C18.5 5 19 4 19 3C19 4.5 18.5 6 17 6" fill="#2D1B4E" stroke="#7C3AED" strokeWidth={strokeWidth * 0.7}/>
+    <path d="M7 19C5.5 19 5 20 5 21C5 19.5 5.5 18 7 18" fill="#2D1B4E" stroke="#7C3AED" strokeWidth={strokeWidth * 0.7}/>
+    <path d="M17 19C18.5 19 19 20 19 21C19 19.5 18.5 18 17 18" fill="#2D1B4E" stroke="#7C3AED" strokeWidth={strokeWidth * 0.7}/>
+    <circle cx="12" cy="10" r="2.5" fill="none" stroke="#A78BFA" strokeWidth={strokeWidth}/>
+    <path d="M12 7.5V6M12 14V12.5M9.5 10H8M16 10H14.5" stroke="#A78BFA" strokeWidth={strokeWidth * 0.5}/>
+    <path d="M10 16H14" stroke="#7C3AED" strokeWidth={strokeWidth * 0.5}/>
   </svg>
 );
 
