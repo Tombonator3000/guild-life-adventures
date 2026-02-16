@@ -5,6 +5,84 @@
 
 ---
 
+## 2026-02-16 — BUG HUNT: Loading System Hardening — Watchdog Timer + Retry Improvements (07:25 UTC)
+
+### Overview
+
+**BUG HUNT**: Systematic bug hunt using parallel AI agents. Game refused to start after PR #219, hanging on "Loading the realm..." / Clear Cache. Investigated all recent changes (PRs #216, #218, #219) and the entire loading pipeline.
+
+### Investigation Findings
+
+**Build/TypeScript/Tests**: All pass — 219 tests, 0 failures, 0 TypeScript errors, clean build.
+
+**Recent PRs analyzed** (since nuclear fix PR #215):
+- PR #216: Mobile layout mode for zone editor — UI-only, no startup impact
+- PR #218: Static content expansion (banter, events, quests, newspapers) — additive data, no startup impact
+- PR #219: Variant helper functions wired into UI + WeatherOverlay hook fix — no startup-blocking changes
+
+**Root cause**: No specific code bug found in recent PRs. The hang is the recurring BUG-001 (CDN stale cache after deployment). While the nuclear fix (PR #215) addressed the core scenario, several edge cases remained:
+
+1. **Silent module failures** — If the module loads (200 OK) but hangs during initialization, no `onerror` fires. The loading screen stays visible with no recovery mechanism.
+2. **CDN propagation delay** — When the onerror retry fetches version.json and gets the SAME stale entry URL, it gave up immediately instead of waiting for CDN propagation.
+3. **No mount timeout** — If `import("./App.tsx")` hangs (never resolves), `__guildAppFailed` is never set, so the watchdog/fallback button wait too long.
+4. **Fallback button timing** — The 15-second threshold was too generous. 12 seconds is enough for version check (8s max) + module load (2-4s).
+
+### Changes (2 files)
+
+#### 1. Watchdog timer + improved retry (`index.html`)
+
+**Watchdog timer**: After `loadApp()` injects the module script, a 12-second watchdog timer starts. If React hasn't mounted AND no error was reported, it triggers the same retry logic as `onerror`. This catches:
+- Module loads successfully but hangs during initialization
+- Module `onerror` doesn't fire for certain failure modes
+- Dependency imports fail silently within the module
+
+**Improved retry logic** (`retryWithFreshVersion()`):
+- Shared function between `onerror` and watchdog (was inline before)
+- 3 retry attempts (was 2)
+- When version.json returns the SAME entry URL (CDN still propagating), waits 2 seconds and retries instead of giving up immediately
+- Checks `__guildReactMounted` between retries (stop if app loaded while waiting)
+
+**Faster fallback button**: Reduced threshold from 15s to 12s for showing the Clear Cache button.
+
+#### 2. Mount timeout safety net (`src/main.tsx`)
+
+Added a 15-second timeout in `mount()`. If `import("./App.tsx")` never resolves (hung module evaluation), the timeout sets `__guildAppFailed = true`, which enables the fallback button and watchdog to act. The timeout is cleared on successful mount via `.finally()`.
+
+### Defense Layer Summary (After Hardening)
+
+| Layer | Purpose | When |
+|-------|---------|------|
+| Inline SW unregister | Remove stale SWs | Before version check |
+| version.json with CDN bypass | Detect stale HTML | Before module loads |
+| Hot-swap from version.json | Load fresh modules without reload | When stale detected |
+| Module onerror + retry | Retry with fresh version.json on 404 | If module fails to load |
+| **NEW: Watchdog timer** | Detect silent failures, retry hot-swap | 12s after module injection |
+| **NEW: Mount timeout** | Signal failure if import hangs | 15s after mount() called |
+| Smart fallback button | Show reload button when genuinely stuck | 12s after page load |
+| Reload loop protection | Prevent infinite loops (max 3 in 2 min) | On any programmatic reload |
+| version.json polling | Show update banner for new versions | After React mounts |
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `index.html` | Watchdog timer (12s), shared `retryWithFreshVersion()` (3 attempts with 2s delay), faster fallback (12s) |
+| `src/main.tsx` | Mount timeout (15s), `__guildAppFailed` flag on timeout |
+
+### Verification
+
+- **TypeScript**: No errors
+- **Tests**: 219 passing, 0 failures
+- **Build** (`DEPLOY_TARGET=github`): Clean, no errors
+- **Built HTML verified**: Watchdog timer, retry logic, mount timeout all present
+- **version.json verified**: Correct entry URL and CSS URLs
+
+### Key Insight
+
+The previous defense layers were **reactive only** — they waited for explicit error signals (`onerror`, `unhandledrejection`). But some failure modes produce NO signal: module evaluation hangs, dependency imports fail silently within an ES module, or the `onerror` event doesn't fire on certain browsers. The watchdog timer is a **proactive** defense that catches ALL of these by checking the end result (did React mount?) rather than waiting for a specific error.
+
+---
+
 ## 2026-02-15 — NUCLEAR FIX: Loading System — CDN Cache Bypass + SW Neutered + Module Retry (17:00 UTC)
 
 ### Overview
