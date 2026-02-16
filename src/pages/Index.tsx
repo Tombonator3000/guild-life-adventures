@@ -1,5 +1,6 @@
 import { lazy, Suspense, Component, type ReactNode } from 'react';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
+import { useGameOptions } from '@/hooks/useGameOptions';
 import { TitleScreen } from '@/components/screens/TitleScreen';
 
 /**
@@ -117,12 +118,13 @@ function ScreenLoader() {
 const Index = () => {
   const { phase, eventMessage, selectedLocation, weekendEvent } = useGameStore();
   const currentPlayer = useCurrentPlayer();
+  const { options } = useGameOptions();
 
   // TitleScreen is eagerly loaded — always renders immediately.
   // All other screens are lazy-loaded inside Suspense.
   if (phase === 'title') {
     return (
-      <>
+      <div data-text-size={options.textSize}>
         <TitleScreen />
         {/* Audio controller lazy-loaded separately — if audio modules fail,
             the game still starts. SilentErrorBoundary swallows load errors. */}
@@ -137,7 +139,7 @@ const Index = () => {
             />
           </Suspense>
         </SilentErrorBoundary>
-      </>
+      </div>
     );
   }
 
@@ -158,7 +160,7 @@ const Index = () => {
   })();
 
   return (
-    <>
+    <div data-text-size={options.textSize}>
       <Suspense fallback={<ScreenLoader />}>{screen}</Suspense>
       <SilentErrorBoundary>
         <Suspense fallback={null}>
@@ -171,7 +173,7 @@ const Index = () => {
           />
         </Suspense>
       </SilentErrorBoundary>
-    </>
+    </div>
   );
 };
 

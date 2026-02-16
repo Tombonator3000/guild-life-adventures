@@ -21,7 +21,7 @@ import { useAppUpdate } from '@/hooks/useAppUpdate';
 import { getBuildVersion } from '@/components/game/UpdateBanner';
 import { useTranslation, LANGUAGE_OPTIONS } from '@/i18n';
 import type { Language } from '@/i18n';
-import type { GameOptions, BorderStyle } from '@/data/gameOptions';
+import type { GameOptions, BorderStyle, TextSize } from '@/data/gameOptions';
 
 type Tab = 'gameplay' | 'audio' | 'display' | 'speed';
 
@@ -510,6 +510,29 @@ function DisplayTab({
   return (
     <div className="space-y-4">
       <SectionHeader title={t('optionsMenu.interface')} />
+
+      {/* Text Size */}
+      <OptionRow
+        icon={<Frame className="w-4 h-4 text-amber-400" />}
+        label="Text Size"
+        description="Increase text size for better readability"
+        control={
+          <select
+            value={options.textSize}
+            onChange={(e) => setOption('textSize', e.target.value as TextSize)}
+            className="text-xs p-1.5 rounded border border-border bg-background/50 text-card-foreground font-display min-w-[100px]"
+          >
+            {([
+              { value: 'small', label: 'Small (Default)' },
+              { value: 'medium', label: 'Medium' },
+              { value: 'large', label: 'Large' },
+              { value: 'x-large', label: 'X-Large' },
+            ] as { value: TextSize; label: string }[]).map(({ value, label }) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        }
+      />
 
       <OptionRow
         icon={<Monitor className="w-4 h-4 text-emerald-400" />}

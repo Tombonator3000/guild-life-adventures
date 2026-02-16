@@ -276,7 +276,7 @@ export function CavePanel({
         <h4 className="font-display text-lg text-muted-foreground flex items-center gap-2">
           <Sparkles className="w-5 h-5" /> {t('panelCave.dungeonFloors')}
         </h4>
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           {t('panelCave.enterDungeon')}
         </p>
       </div>
@@ -310,7 +310,7 @@ export function CavePanel({
       </div>
 
       {/* Equipment summary */}
-      <div className="bg-[#2d1f0f] border border-[#8b7355] rounded p-2 text-xs font-mono">
+      <div className="bg-[#2d1f0f] border border-[#8b7355] rounded p-2 text-sm font-mono">
         <div className="text-[#a09080] uppercase tracking-wide mb-1">
           {t('panelArmory.equipped')}
         </div>
@@ -532,27 +532,27 @@ export function CavePanel({
               {/* Expanded details */}
               {isExpanded && (
                 <div className="px-3 pb-3 space-y-2 border-t border-[#8b7355]/30">
-                  <p className="text-xs text-[#a09080] mt-2 italic">
+                  <p className="text-sm text-[#a09080] mt-2 italic">
                     {floor.description}
                   </p>
 
                   {/* Stats row */}
-                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs font-mono">
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-mono">
                     <span className="text-[#a09080] flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> {encounterTime}h/encounter ({totalTimeCost}h total)
+                      <Clock className="w-3.5 h-3.5" /> {encounterTime}h/enc ({totalTimeCost}h total)
                     </span>
                     <span className="text-[#c9a227]">
                       💰 {floor.goldRange[0]}-{floor.goldRange[1]}g
                     </span>
                     <span className="text-red-400 flex items-center gap-1">
-                      <Heart className="w-3 h-3" /> {floor.healthRisk[0]}
+                      <Heart className="w-3.5 h-3.5" /> {floor.healthRisk[0]}
                       -{floor.healthRisk[1]} dmg
                     </span>
                   </div>
 
                   {/* Boss info */}
-                  <div className="text-xs flex items-center gap-1.5">
-                    <Skull className="w-3.5 h-3.5 text-red-600" />
+                  <div className="text-sm flex items-center gap-1.5">
+                    <Skull className="w-4 h-4 text-red-600" />
                     <span className="text-red-300">
                       Boss: {floor.boss.name}
                     </span>
@@ -562,7 +562,7 @@ export function CavePanel({
                   </div>
 
                   {/* Rare drop hint */}
-                  <div className="text-xs text-[#8b7355]">
+                  <div className="text-sm text-[#8b7355]">
                     ✦ Rare Drop:{' '}
                     {player.dungeonFloorsCleared.includes(floor.id)
                       ? floor.rareDrop.name
@@ -572,13 +572,13 @@ export function CavePanel({
 
                   {/* Re-run mini-boss hint */}
                   {player.dungeonFloorsCleared.includes(floor.id) && (
-                    <div className="text-xs text-amber-600">
+                    <div className="text-sm text-amber-600">
                       ★ 15% chance of wandering mini-boss on re-runs
                     </div>
                   )}
 
                   {/* Dungeon modifier info */}
-                  <div className="text-xs text-[#8b7355]">
+                  <div className="text-sm text-[#8b7355]">
                     ⚡ Random modifier may apply (60% chance per run)
                   </div>
 
@@ -586,19 +586,19 @@ export function CavePanel({
                   {status === 'available' && (
                     <div className="space-y-0.5">
                       {reqCheck.canEnter ? (
-                        <div className="text-xs text-green-400">
+                        <div className="text-sm text-green-400">
                           ✓ All requirements met
                         </div>
                       ) : (
                         reqCheck.reasons.map((reason, i) => (
-                          <div key={i} className="text-xs text-red-400">
+                          <div key={i} className="text-sm text-red-400">
                             ✗ {reason}
                           </div>
                         ))
                       )}
                       {floor.requirements.recommendedDegrees.length >
                         0 && (
-                        <div className="text-xs text-[#8b7355]">
+                        <div className="text-sm text-[#8b7355]">
                           Recommended:{' '}
                           {floor.requirements.recommendedDegrees
                             .map(
@@ -613,15 +613,15 @@ export function CavePanel({
 
                   {/* Cleared badge */}
                   {status === 'cleared' && (
-                    <div className="text-xs text-green-400">
+                    <div className="text-sm text-green-400">
                       ✓ Floor cleared! Run again for gold.
                     </div>
                   )}
 
                   {/* Personal best */}
                   {dungeonRecords[floor.id] && (
-                    <div className="text-xs text-[#c9a227] flex items-center gap-1">
-                      <Trophy className="w-3 h-3" />
+                    <div className="text-sm text-[#c9a227] flex items-center gap-1">
+                      <Trophy className="w-3.5 h-3.5" />
                       Best: {dungeonRecords[floor.id].bestGold}g | Runs: {dungeonRecords[floor.id].runs} | Total: {dungeonRecords[floor.id].totalGold}g
                     </div>
                   )}

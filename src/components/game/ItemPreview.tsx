@@ -75,19 +75,7 @@ export function ItemPreviewPanel({ accentColor = '#8b7355' }: ItemPreviewPanelPr
   const { preview } = useItemPreview();
 
   if (!preview) {
-    return (
-      <div
-        className="mt-2 border rounded p-2 text-center"
-        style={{
-          borderColor: accentColor,
-          backgroundColor: 'rgba(224, 212, 184, 0.5)',
-        }}
-      >
-        <div className="text-[10px] text-[#8b7355] italic">
-          Hover over an item to preview
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (

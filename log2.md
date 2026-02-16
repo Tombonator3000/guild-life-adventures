@@ -3407,3 +3407,78 @@ src/network/networkState.ts            — Serialize/deserialize eventSource for
 - **Save compatibility**: Old saves load correctly (new boolean fields default to `undefined`/falsy)
 
 ---
+
+## 2026-02-16 — UI/UX Improvements: Text Size, Panel Borders, Cave, Events (Session 3)
+
+### Overview
+
+Playtester feedback batch: text too small, panel borders distracting, cave hard to read, unwanted placeholder text, event dismiss flow too clunky.
+
+### Changes
+
+#### 1. Text Size Adjustment (New Setting)
+
+Added global text size scaling option to Options > Display. Players can choose between Small (default/original), Medium (+12.5%), Large (+25%), and X-Large (+37.5%).
+
+**Implementation**:
+- Added `TextSize` type (`'small' | 'medium' | 'large' | 'x-large'`) to `gameOptions.ts`
+- Added `textSize` field to `GameOptions` interface with default `'small'`
+- Added CSS `[data-text-size]` attribute selectors in `index.css` that scale `font-size` on the game container
+- Applied `data-text-size` attribute on the root `<div>` in `Index.tsx` (affects all game screens)
+- Added dropdown selector in `OptionsMenu.tsx` Display tab
+
+**Files changed**: `src/data/gameOptions.ts`, `src/index.css`, `src/pages/Index.tsx`, `src/components/game/OptionsMenu.tsx`
+
+#### 2. Panel Borders Default Changed to "None"
+
+Changed `borderStyle` default from `'stone'` to `'none'` in `gameOptions.ts`. Existing users who previously saved their options keep their chosen border style (merge with defaults handles this).
+
+**Files changed**: `src/data/gameOptions.ts`
+
+#### 3. Cave/Dungeon Layout Improvements
+
+Improved readability throughout the cave/dungeon system:
+
+- **Encounter images**: Increased from `w-24 h-24` to `w-40 h-40` (monsters and treasures now much more visible)
+- **Encounter text**: Upgraded from `text-xs` to `text-sm` across encounter intro, stats, descriptions
+- **Boss label**: Larger and bolder
+- **Floor details**: All expanded floor info text upgraded from `text-xs` to `text-sm`
+- **Equipment summary**: Text upgraded from `text-xs` to `text-sm`
+- **Icons**: Slightly larger icons in floor details (w-3 h-3 → w-3.5 h-3.5)
+
+**Files changed**: `src/components/game/CavePanel.tsx`, `src/components/game/combat/EncounterIntro.tsx`, `src/components/game/combat/EncounterResultView.tsx`
+
+#### 4. Removed "Hover over an item to preview" Placeholder
+
+The `ItemPreviewPanel` now returns `null` when no item is being previewed, instead of showing the placeholder text. Cleaner UI, less visual noise.
+
+**Files changed**: `src/components/game/ItemPreview.tsx`
+
+#### 5. Auto-Dismiss Event Notifications on Location Click
+
+Previously, players had to click "Continue" in the event panel to dismiss events before they could interact with the game board. Now, clicking any location on the board while an event is showing will automatically dismiss the event notification. This makes the flow much smoother — players can immediately click where they want to go next.
+
+**Implementation**: Added early return in `handleLocationClick()` that checks for `phase === 'event'` and calls `dismissEvent()`.
+
+**Files changed**: `src/hooks/useLocationClick.ts`
+
+### Files Changed Summary
+
+| File | Change |
+|------|--------|
+| `src/data/gameOptions.ts` | Added `TextSize` type, `textSize` field, changed `borderStyle` default to `'none'` |
+| `src/index.css` | Added `[data-text-size]` CSS selectors for font scaling |
+| `src/pages/Index.tsx` | Applied `data-text-size` attribute on root container |
+| `src/components/game/OptionsMenu.tsx` | Added text size dropdown in Display tab |
+| `src/components/game/CavePanel.tsx` | Larger text throughout (text-xs → text-sm) |
+| `src/components/game/combat/EncounterIntro.tsx` | Larger encounter images (w-24→w-40), larger text |
+| `src/components/game/combat/EncounterResultView.tsx` | Larger result header |
+| `src/components/game/ItemPreview.tsx` | Removed "Hover over an item" placeholder |
+| `src/hooks/useLocationClick.ts` | Auto-dismiss events on location click |
+
+### Verification
+
+- **TypeScript**: Clean, no errors
+- **Save compatibility**: Old saves work — new `textSize` field defaults via merge with DEFAULT_OPTIONS
+
+---
