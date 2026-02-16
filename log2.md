@@ -3854,3 +3854,106 @@ Both host and joining players can now edit their name and select a portrait from
 - **Fix**: Changed to `'weekly'` — quest chain completion events happen during the weekly gameplay phase
 
 ---
+
+## 2026-02-16 — Smarter AI Opponents: Master-Level Improvements (~afternoon UTC)
+
+### Problem
+AI opponents with "master" difficulty were too easy to beat. Despite having `planningDepth: 3`, `mistakeChance: 0.02`, `aggressiveness: 0.8`, and `efficiencyWeight: 0.9`, the hard AI played inefficiently because:
+1. **No turn planning** — AI regenerated actions from scratch after every single action, causing aimless back-and-forth movement
+2. **No travel cost awareness** — High-priority actions at distant locations would win over nearby useful actions, wasting hours on movement
+3. **No location batching** — AI would do one action at a location, then consider moving elsewhere, missing opportunities to do multiple things at the same spot
+4. **Weak goal sprint** — Sprint threshold at 80% was too late; by then the human player was often already ahead
+5. **Reactive-only play** — AI only considered current turn state, never planning ahead
+6. **Poor resource management** — Food/clothing buying was always reactive (urgent only), never proactive
+7. **No education-career pipeline** — Didn't understand that degrees unlock better jobs which increase wealth
+8. **Simplistic work decisions** — Didn't consider how many shifts it could fit or whether the travel was worth it
+
+### Research
+Researched online game AI techniques:
+- **Utility-based AI** (The Sims, Catan Digital) — score actions with mathematical utility functions
+- **GOAP** (Goal-Oriented Action Planning) — plan action sequences to achieve goals
+- **Multi-objective optimization** — balance competing goals using Pareto-optimal decisions
+- **Fair AI without cheating** — make AI feel smart through better decision-making, not resource bonuses
+- **Jones in the Fast Lane AI** — original game's AI was also criticized as too easy, validating our problem
+
+### Changes Made
+
+#### 1. Turn Planning System (NEW: `src/hooks/ai/turnPlanner.ts`)
+- Plans optimal route through board locations at start of turn
+- Uses greedy nearest-neighbor heuristic with value weighting: `score = totalValue / (travelCost + actionHours)`
+- Groups actions by location for batching
+- Identifies needed visits based on current state (work, study, food, banking, etc.)
+- Only active for hard AI (`planningDepth >= 3`)
+
+#### 2. Travel Cost Penalty (`actionGenerator.ts`)
+- New `applyTravelCostPenalty()`: Move actions to distant locations get reduced priority
+- Formula: `penalty = travelSteps * efficiencyWeight * 1.0`
+- Extra penalty for 4+ step moves
+- Prevents AI from wasting 5+ hours traveling for a low-value action
+
+#### 3. Location Batching Bonus (`actionGenerator.ts`)
+- New `applyLocationBatchingBonus()`: When at a location with 2+ available actions, all non-move actions get +5 priority
+- Ensures AI does everything it can at current location before considering movement
+- Example: At bank, deposits AND buys stocks before leaving
+
+#### 4. Smart Goal Sprint (`actionGenerator.ts`)
+- New `applySmartGoalSprint()`: Activates at 65% goal completion (vs old 80%)
+- Boost scales from 15-25 based on how close to completion
+- Targets specific action types per goal (work/deposit for wealth, study/graduate for education, etc.)
+- Hard AI only
+
+#### 5. Proactive Resource Management (`criticalNeeds.ts`)
+- **Food**: Hard AI buys food opportunistically when at a food location and below 70 food (not just urgent <50)
+- **Clothing**: Anticipates degradation (3/week) and upgrades clothing proactively 2 weeks before hitting tier boundary
+- Both only activate for `planningDepth >= 3`
+
+#### 6. Education-Career Pipeline (`strategicActions.ts`)
+- Hard AI identifies jobs where it's 1 degree away from qualifying
+- If already started studying that degree, boosts priority significantly (72) to finish it
+- Calculates wage improvement to prioritize high-ROI degree paths
+- Uses `ALL_JOBS` data to find upgrade opportunities
+
+#### 7. Smarter Work Decisions (`strategicActions.ts`)
+- Calculates value-per-hour (`wage / hoursPerShift`) to adjust work priority
+- High-wage jobs get higher work priority (up to +15)
+- Travel-to-work priority scales with number of shifts available at destination
+- More shifts possible = higher priority to travel there
+
+#### 8. Proactive Banking (`strategicActions.ts`)
+- In slums: bank when gold > 100 (robbery protection), keep 80g on hand
+- Elsewhere: bank when gold > 250, keep 120g on hand
+- Smart withdrawal: calculates upcoming expenses (rent + food + buffer) instead of withdrawing fixed 100g
+
+#### 9. Multi-Goal Awareness (`goalActions.ts`)
+- Hard AI generates reduced-priority actions (50-55) for SECOND weakest goal
+- Prevents falling too far behind on multiple fronts simultaneously
+- Only when second-weakest goal is below 60% completion
+
+#### 10. Near-Graduation Boost (`goalActions.ts`)
+- When 1-2 study sessions from completing a degree, adds +10 priority to study and +8 to travel-to-academy
+- Prevents AI from getting distracted right before finishing a degree
+
+#### 11. Time Budget Improvements (`actionGenerator.ts`)
+- Mid-turn (25-80% time remaining): non-move actions at current location get +3 priority
+- Reduces unnecessary movement during the productive middle of a turn
+
+### Files Changed
+- `src/hooks/ai/turnPlanner.ts` — NEW: Turn planning system with route optimization
+- `src/hooks/ai/actionGenerator.ts` — Travel cost penalty, location batching, smart sprint, turn plan integration
+- `src/hooks/ai/actions/criticalNeeds.ts` — Proactive food and clothing buying
+- `src/hooks/ai/actions/strategicActions.ts` — Education-career pipeline, smarter work, proactive banking
+- `src/hooks/ai/actions/goalActions.ts` — Multi-goal awareness, near-graduation boost
+- `src/hooks/ai/actions/economicActions.ts` — Lower stock investment threshold for hard AI
+
+### Testing
+- TypeScript: `npx tsc --noEmit` — 0 errors
+- Tests: `bun run test` — 281/281 passed (14 test files, all green)
+- Lint: Pre-existing errors only, no new issues from these changes
+
+### Technical Notes
+- All improvements gated behind `settings.planningDepth >= 3` (hard AI only) — easy/medium AI unchanged
+- No "cheating" (resource bonuses, extra time, hidden information) — AI just makes smarter decisions
+- Priority adjustments are additive and relatively small (+3 to +25) to work with existing utility system
+- Turn planner uses heuristic approach (greedy nearest-neighbor) — fast enough for real-time use
+
+---

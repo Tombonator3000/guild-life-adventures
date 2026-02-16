@@ -52,19 +52,23 @@ export function generateGoalActions(ctx: ActionContext): AIAction[] {
         else if (player.gold >= nextDegree.costPerSession &&
                  player.timeRemaining >= nextDegree.hoursPerSession) {
           if (currentLocation === 'academy') {
+            // HARD AI: Higher study priority when close to graduating
+            const nearGraduationBoost = settings.planningDepth >= 3 && sessionsLeft <= 2 ? 10 : 0;
             actions.push({
               type: 'study',
-              priority: 70 + (settings.aggressiveness * 20),
-              description: `Study ${nextDegree.name}`,
+              priority: 70 + (settings.aggressiveness * 20) + nearGraduationBoost,
+              description: `Study ${nextDegree.name}${sessionsLeft <= 2 ? ' (almost done!)' : ''}`,
               details: { degreeId: nextDegree.id, cost: nextDegree.costPerSession, hours: nextDegree.hoursPerSession },
             });
           } else {
             const movementCost = moveCost('academy');
             if (player.timeRemaining > movementCost + nextDegree.hoursPerSession) {
+              // HARD AI: Higher travel priority when close to graduating
+              const nearGradTravelBoost = settings.planningDepth >= 3 && sessionsLeft <= 2 ? 8 : 0;
               actions.push({
                 type: 'move',
                 location: 'academy',
-                priority: 65,
+                priority: 65 + nearGradTravelBoost,
                 description: 'Travel to academy to study',
               });
             }
@@ -402,6 +406,76 @@ export function generateGoalActions(ctx: ActionContext): AIAction[] {
           description: `Graduate from ${degree.name}`,
           details: { degreeId },
         });
+      }
+    }
+  }
+
+  // ============================================
+  // HARD AI: Multi-goal awareness — don't completely ignore non-weakest goals
+  // Generate lower-priority actions for SECOND weakest goal too
+  // This prevents the AI from falling too far behind on multiple fronts
+  // ============================================
+  if (settings.planningDepth >= 3) {
+    // Find second-weakest goal
+    const goalProgresses = [
+      { goal: 'wealth', progress: progress.wealth.progress },
+      { goal: 'happiness', progress: progress.happiness.progress },
+      { goal: 'education', progress: progress.education.progress },
+      { goal: 'career', progress: progress.career.progress },
+    ].filter(g => g.goal !== weakestGoal)
+     .sort((a, b) => a.progress - b.progress);
+
+    const secondWeakest = goalProgresses[0];
+    if (secondWeakest && secondWeakest.progress < 0.6) {
+      // Generate a reduced-priority action for the second weakest goal
+      switch (secondWeakest.goal) {
+        case 'education': {
+          const deg = getNextDegree(player, settings);
+          if (deg && currentLocation === 'academy' && player.gold >= deg.costPerSession
+              && player.timeRemaining >= deg.hoursPerSession) {
+            actions.push({
+              type: 'study',
+              priority: 55, // Lower than primary goal actions
+              description: `Study ${deg.name} (secondary focus)`,
+              details: { degreeId: deg.id, cost: deg.costPerSession, hours: deg.hoursPerSession },
+            });
+          }
+          break;
+        }
+        case 'wealth': {
+          if (player.currentJob) {
+            const job = getJob(player.currentJob);
+            if (job) {
+              const jobLoc = getJobLocation(job);
+              if (currentLocation === jobLoc && player.timeRemaining >= job.hoursPerShift) {
+                actions.push({
+                  type: 'work',
+                  priority: 55,
+                  description: `Work shift (secondary wealth focus)`,
+                  details: { jobId: job.id, hours: job.hoursPerShift, wage: player.currentWage },
+                });
+              }
+            }
+          }
+          break;
+        }
+        case 'career': {
+          if (player.currentJob) {
+            const job = getJob(player.currentJob);
+            if (job) {
+              const jobLoc = getJobLocation(job);
+              if (currentLocation === jobLoc && player.timeRemaining >= job.hoursPerShift) {
+                actions.push({
+                  type: 'work',
+                  priority: 52,
+                  description: `Work to build dependability (secondary career focus)`,
+                  details: { jobId: job.id, hours: job.hoursPerShift, wage: player.currentWage },
+                });
+              }
+            }
+          }
+          break;
+        }
       }
     }
   }

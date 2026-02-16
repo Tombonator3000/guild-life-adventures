@@ -24,6 +24,52 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
   // 1. FOOD - Prevent starvation (-20 hours penalty is devastating)
   // H9 FIX: Apply priceModifier to food costs (AI was ignoring economy inflation/deflation)
   // Without Preservation Box, General Store food may spoil at turn end — prefer Tavern
+  // HARD AI: Proactive food — buy when already at a food location and not fully stocked
+  const isAtFoodLocation = currentLocation === 'general-store' || currentLocation === 'rusty-tankard' || currentLocation === 'shadow-market';
+  if (ctx.settings.planningDepth >= 3 && isAtFoodLocation && player.foodLevel < 70 && urgency.food <= 0.5 && player.gold >= 15) {
+    const pm = ctx.priceModifier;
+    const hasBox = player.appliances['preservation-box'] && !player.appliances['preservation-box'].isBroken;
+    if (currentLocation === 'rusty-tankard') {
+      actions.push({
+        type: 'buy-food',
+        priority: 52, // Below critical needs but above low-priority actions
+        description: 'Stock up on food while at tavern (proactive)',
+        details: { cost: Math.round(12 * pm), foodGain: 15 },
+      });
+    } else if (currentLocation === 'general-store' && hasBox) {
+      actions.push({
+        type: 'buy-food',
+        priority: 50,
+        description: 'Stock up on food while at store (proactive)',
+        details: { cost: Math.round(15 * pm), foodGain: 15 },
+      });
+    } else if (currentLocation === 'shadow-market') {
+      actions.push({
+        type: 'buy-food',
+        priority: 48,
+        description: 'Grab cheap food while at market (proactive)',
+        details: { cost: Math.round(6 * pm), foodGain: 10 },
+      });
+    }
+  }
+
+  // HARD AI: Buy clothing proactively when at a clothing store and below optimal level
+  if (ctx.settings.planningDepth >= 3 && (currentLocation === 'armory' || currentLocation === 'general-store')) {
+    const pm = ctx.priceModifier;
+    const condition = player.clothingCondition;
+    // Anticipate degradation: -3/week means clothes at 45 will drop below casual (15) in ~10 weeks
+    // Hard AI buys clothes when they drop within 2 weeks of next tier boundary
+    const degradeBuffer = 6; // 2 weeks * 3/week
+    if (condition > 0 && condition < 40 + degradeBuffer && condition >= 15 && player.gold >= Math.round(60 * pm)) {
+      actions.push({
+        type: 'buy-clothing',
+        priority: 48,
+        description: 'Proactively upgrade clothing before degradation',
+        details: { cost: Math.round(60 * pm), clothingGain: 60 },
+      });
+    }
+  }
+
   if (urgency.food > 0.5) {
     const pm = ctx.priceModifier;
     const hasBox = player.appliances['preservation-box'] && !player.appliances['preservation-box'].isBroken;

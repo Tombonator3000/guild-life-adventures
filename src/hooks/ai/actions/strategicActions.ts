@@ -7,7 +7,7 @@
 
 import type { HousingTier } from '@/types/game.types';
 import { RENT_COSTS } from '@/types/game.types';
-import { getJob } from '@/data/jobs';
+import { getJob, ALL_JOBS } from '@/data/jobs';
 import type { AIAction } from '../types';
 import {
   getBestAvailableJob,
@@ -80,19 +80,82 @@ export function generateStrategicActions(ctx: ActionContext): AIAction[] {
     if (job && player.timeRemaining >= job.hoursPerShift) {
       const jobLocation = getJobLocation(job);
       if (currentLocation === jobLocation) {
+        // HARD AI: Calculate value-per-hour to determine work priority more accurately
+        const valuePerHour = player.currentWage / job.hoursPerShift;
+        // Base priority scales with how much wealth we need
+        const wealthNeedBoost = progress.wealth.progress < 0.5 ? 20 : (progress.wealth.progress < 0.8 ? 10 : 0);
+        // Hard AI recognizes high-wage jobs are more valuable per hour
+        const wageBoost = settings.planningDepth >= 3 ? Math.min(15, Math.round(valuePerHour * 2)) : 0;
+
         actions.push({
           type: 'work',
-          priority: 50 + (progress.wealth.progress < 0.5 ? 20 : 0),
+          priority: 50 + wealthNeedBoost + wageBoost,
           description: `Work shift as ${job.name}`,
           details: { jobId: job.id, hours: job.hoursPerShift, wage: player.currentWage },
         });
       } else if (player.timeRemaining > moveCost(jobLocation) + job.hoursPerShift) {
-        actions.push({
-          type: 'move',
-          location: jobLocation,
-          priority: 45,
-          description: 'Travel to work',
-        });
+        // HARD AI: Only travel to work if we can fit at least 1 shift
+        // and the hourly value justifies the travel time
+        const travelTime = moveCost(jobLocation);
+        const hoursAtWork = player.timeRemaining - travelTime;
+        const shiftsAvailable = Math.floor(hoursAtWork / job.hoursPerShift);
+
+        if (shiftsAvailable >= 1) {
+          // Hard AI: priority scales with number of shifts we can do there
+          const shiftBonus = settings.planningDepth >= 3 ? Math.min(10, shiftsAvailable * 3) : 0;
+          actions.push({
+            type: 'move',
+            location: jobLocation,
+            priority: 45 + shiftBonus,
+            description: 'Travel to work',
+          });
+        }
+      }
+    }
+  }
+
+  // HARD AI: Education-Career Pipeline Planning
+  // Recognize that getting a degree -> unlocking better job -> more wealth is the optimal play
+  if (settings.planningDepth >= 3 && player.currentJob) {
+    const currentJob = getJob(player.currentJob);
+    if (currentJob) {
+      // Check if there are better jobs we ALMOST qualify for
+      const bestPotentialJob = ALL_JOBS
+        .filter(j => j.baseWage > currentJob.baseWage * 1.3)
+        .filter(j => {
+          // Check what degree we're missing
+          const reqDegrees = j.requiredDegrees || [];
+          const missingDegrees = reqDegrees.filter(d => !player.completedDegrees.includes(d as any));
+          // Jobs where we need exactly 1 more degree are high-priority targets
+          return missingDegrees.length === 1;
+        })
+        .sort((a, b) => b.baseWage - a.baseWage)[0];
+
+      if (bestPotentialJob) {
+        const reqDegrees = bestPotentialJob.requiredDegrees || [];
+        const missingDegree = reqDegrees.find(d => !player.completedDegrees.includes(d as any));
+        if (missingDegree) {
+          // Boost studying this specific degree
+          const progressOnMissing = player.degreeProgress[missingDegree as keyof typeof player.degreeProgress] || 0;
+          if (progressOnMissing > 0) {
+            // We've already started — high priority to finish
+            if (currentLocation === 'academy') {
+              actions.push({
+                type: 'study',
+                priority: 72, // Higher than normal study
+                description: `Finish ${missingDegree} to unlock ${bestPotentialJob.name}`,
+                details: { degreeId: missingDegree },
+              });
+            } else if (player.timeRemaining > moveCost('academy') + 6) {
+              actions.push({
+                type: 'move',
+                location: 'academy',
+                priority: 65,
+                description: `Rush to academy to finish degree for ${bestPotentialJob.name}`,
+              });
+            }
+          }
+        }
       }
     }
   }
@@ -199,6 +262,54 @@ export function generateStrategicActions(ctx: ActionContext): AIAction[] {
         location: 'bank',
         priority: 60,
         description: 'Travel to bank to withdraw',
+      });
+    }
+  }
+
+  // HARD AI: Proactive banking — deposit excess gold to protect from robbery and earn interest
+  // In slums, robbery risk is real. Hard AI banks more aggressively.
+  if (settings.planningDepth >= 3 && player.gold > 150) {
+    const robberyRisk = player.housing === 'slums';
+    const depositThreshold = robberyRisk ? 100 : 250; // Bank sooner in slums
+    if (player.gold > depositThreshold) {
+      const keepOnHand = robberyRisk ? 80 : 120; // Gold to keep for expenses
+      const depositAmount = Math.floor(player.gold - keepOnHand);
+      if (depositAmount > 30) {
+        if (currentLocation === 'bank') {
+          actions.push({
+            type: 'deposit-bank',
+            priority: robberyRisk ? 58 : 45,
+            description: robberyRisk ? 'Deposit gold to protect from robbery' : 'Deposit excess gold for interest',
+            details: { amount: depositAmount },
+          });
+        } else if (player.timeRemaining > moveCost('bank') + 2 && robberyRisk) {
+          // Only travel specifically for banking if robbery risk is high
+          actions.push({
+            type: 'move',
+            location: 'bank',
+            priority: 48,
+            description: 'Travel to bank to protect gold from robbery',
+          });
+        }
+        // Otherwise, banking will happen opportunistically when passing through
+      }
+    }
+  }
+
+  // HARD AI: Smarter withdrawal — calculate how much we actually need
+  if (settings.planningDepth >= 3 && player.gold < 50 && player.savings > 100) {
+    // Calculate upcoming expenses
+    const rentCost = player.housing !== 'homeless' ? (player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing]) : 0;
+    const foodCost = player.foodLevel < 30 ? 15 : 0;
+    const neededGold = Math.max(80, rentCost + foodCost + 50); // 50g buffer
+    const withdrawAmount = Math.min(neededGold, player.savings);
+
+    if (withdrawAmount > 30 && currentLocation === 'bank') {
+      actions.push({
+        type: 'withdraw-bank',
+        priority: 68,
+        description: `Withdraw ${withdrawAmount}g for upcoming expenses`,
+        details: { amount: withdrawAmount },
       });
     }
   }
