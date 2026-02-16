@@ -145,6 +145,7 @@ export interface OwnedAppliance {
   source: ApplianceSource;
   isBroken: boolean;
   purchasedFirstTime: boolean; // True if this was first purchase of this type (for happiness)
+  repairedWeek?: number; // Week when last repaired — immune to breakage for 2 weeks after repair
 }
 
 // Durable items that can be owned and potentially stolen

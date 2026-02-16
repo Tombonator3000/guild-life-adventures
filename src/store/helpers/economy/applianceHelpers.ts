@@ -37,6 +37,7 @@ export function createApplianceActions(set: SetFn, get: GetFn) {
             source,
             isBroken: false,
             purchasedFirstTime: isFirstTime,
+            repairedWeek: get().week, // Immune to breakage for 2 weeks after purchase
           };
 
           const newHistory = isFirstTime
@@ -76,6 +77,7 @@ export function createApplianceActions(set: SetFn, get: GetFn) {
           newAppliances[applianceId] = {
             ...newAppliances[applianceId],
             isBroken: false,
+            repairedWeek: get().week, // Immune to breakage for 2 weeks after repair
           };
 
           return {

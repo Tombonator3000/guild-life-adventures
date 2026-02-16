@@ -3,6 +3,33 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+## 2026-02-16 — BUG FIX: Preservation Box Breaking Every Turn (22:00 UTC)
+
+### Problem
+Player reported Preservation Box breaking every single turn, even immediately after repairing it. Food kept spoiling because the box was always broken at turn start.
+
+### Root Cause
+The `processApplianceBreakage()` function in `startTurnHelpers.ts` runs at the start of every turn and rolls a breakage check (1/51 chance for enchanter items, 1/36 for market). There was **no cooldown** — a just-repaired appliance could break again on the very next turn. Combined with possible AI hex casting (`Appliance Jinx`), this created a frustrating loop where the player was constantly repairing and losing food.
+
+### Fix: 2-Week Breakage Immunity After Repair/Purchase
+1. **Added `repairedWeek?: number` field** to `OwnedAppliance` interface in `game.types.ts`
+2. **Set `repairedWeek` on repair** — in `applianceHelpers.ts` (Enchanter repair) and `equipmentHelpers.ts` (Forge repair)
+3. **Set `repairedWeek` on purchase** — in `applianceHelpers.ts` (buying new appliance)
+4. **Skip breakage check** — in `startTurnHelpers.ts`, if `currentWeek - repairedWeek < 2`, skip that appliance's breakage roll
+
+This means after repairing or buying an appliance, it's safe for 2 full turns before it can break again.
+
+### Files Modified (4)
+
+| File | Changes |
+|------|---------|
+| `src/types/game.types.ts` | Added `repairedWeek?: number` to `OwnedAppliance` |
+| `src/store/helpers/startTurnHelpers.ts` | Breakage cooldown check using `repairedWeek` |
+| `src/store/helpers/economy/applianceHelpers.ts` | Set `repairedWeek` on repair and purchase |
+| `src/store/helpers/economy/equipmentHelpers.ts` | Set `repairedWeek` on Forge repair |
+
+---
+
 ## 2026-02-16 — Bug Fixes: Broken Appliance Display + Finances Panel (21:00 UTC)
 
 ### Bug 1: Broken Preservation Box shows "(Owned)" instead of "(Broken!)"
