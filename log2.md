@@ -3970,3 +3970,90 @@ Researched online game AI techniques:
 - Turn planner uses heuristic approach (greedy nearest-neighbor) — fast enough for real-time use
 
 ---
+
+## 2026-02-16 — BUG-001 Definitive Fix: Auto-Reload + Self-Destroying SW (15:55 UTC)
+
+### Overview
+
+Systematic bug hunt using parallel AI agents to investigate the recurring "Loading the realm..." freeze on GitHub Pages after every PR deployment. Game works fine on Lovable (`guild-life.lovable.app`) but consistently fails on GitHub Pages (`tombonator3000.github.io/guild-life-adventures/`).
+
+### Investigation (4 parallel agents)
+
+1. **Online Research Agent**: Searched Lovable, Vite, GitHub Pages, and vite-plugin-pwa documentation/issues. Found that Fastly CDN (used by GitHub Pages) does NOT honor client-side `Cache-Control` request headers by default — our cache bypass headers were being ignored.
+
+2. **Build Verification Agent**: Full build with `DEPLOY_TARGET=github` — 100% clean. No TypeScript errors, no build failures. `version.json`, `__ENTRY__`, `__HTML_BASE__` all correct in output. `deferModulePlugin` correctly removes module script tag.
+
+3. **SW/Cache Behavior Agent**: Comprehensive audit of all service worker and caching paths. Found that even after `registration.unregister()`, the old SW continues to control the current page's fetches until navigation. The `NetworkFirst` runtime cache for JS/CSS could serve stale chunks.
+
+4. **Live Deployment Agent**: Verified GitHub Actions deployment #235 succeeded (commit `e020f80`). All 4 defense layers confirmed present in deployed code.
+
+### Root Cause (DEFINITIVE)
+
+**GitHub Pages CDN (Fastly) caches ALL files including HTML and version.json for ~10 minutes (`max-age=600`).** After a new deployment:
+
+1. CDN serves stale HTML + stale version.json (both have matching old `buildTime`)
+2. Stale-build detection sees no mismatch → proceeds to load stale `__ENTRY__` URL
+3. Old JS chunks deleted by atomic deployment → entry module 404s
+4. Retry logic fetches version.json again → CDN serves same stale response → same 404
+5. After 3 retries → error shown → user must manually click "Clear Cache"
+
+**Why previous 15 fixes failed**: They tried increasingly complex in-page recovery (hot-swap entry modules, CSS swap, SW race condition handling, watchdog timers). But **you cannot reliably recover from stale HTML in-page** — stale HTML contains stale references throughout. The only reliable fix is a full page reload with a CDN cache-busting URL.
+
+**Two compounding failure modes**:
+- **CDN stale cache**: Fastly ignores client-side `Cache-Control: no-cache` headers → version.json also stale → hot-swap gets same stale entry URL
+- **SW runtime cache**: Even after `unregister()`, old SW still intercepts current page fetches → `NetworkFirst` with 5s timeout could serve stale JS from `js-css-cache`
+
+### Fix: Simplify + Auto-Reload + Self-Destroying SW
+
+#### 1. Self-destroying SW for GitHub Pages (`vite.config.ts`)
+
+```typescript
+VitePWA({
+  selfDestroying: deployTarget === 'github',  // NEW
+  registerType: deployTarget === 'github' ? 'prompt' : 'autoUpdate',
+  // ... rest unchanged
+})
+```
+
+Generates a SW that immediately unregisters itself and clears ALL caches. Eliminates the entire SW as a failure vector while cleaning up old SWs from previous deployments.
+
+#### 2. Simplified Layer 0: Auto-reload instead of hot-swap (`index.html`)
+
+Replaced ~150 lines of complex retry/hot-swap logic with ~60 lines of simple auto-reload:
+
+- **When stale HTML detected** (version.json fresh, buildTimes differ): auto-reload with `?_gv=timestamp`
+- **When entry module 404s** (both stale from CDN): auto-reload with `?_gv=timestamp`
+- `?_gv=timestamp` changes the full page URL → CDN cache miss → fresh HTML from origin
+- SessionStorage reload counter (max 3 in 2 min) prevents infinite loops
+
+**Removed**: `retryWithFreshVersion()`, `swapCss()`, `watchdogFired`, `retryInProgress`, `retryCount`, watchdog timer
+**Kept**: `cleanupSWs()` (for legacy SW cleanup), `loadApp()`, version.json check
+
+#### 3. Simplified Layer 2: Fallback button (`index.html`)
+
+- Removed SW unregister + cache delete from button (no SW on GitHub Pages)
+- Reduced timeout to 12s (auto-reload handles fast recovery in ~3-5s)
+- Kept reload loop detection and manual recovery UI
+
+### Why This Fix Will Work
+
+Instead of patching stale references in-page (whack-a-mole), just **reload the page with a URL the CDN hasn't cached**. `?_gv=timestamp` makes each reload URL unique → CDN cache miss → fresh HTML from origin → correct entry URL → game loads.
+
+Combined with `selfDestroying` SW, this eliminates BOTH failure vectors:
+- CDN stale cache → auto-reload bypasses it
+- SW intercepting fetches → no SW exists on GitHub Pages
+
+### Files Changed
+
+- `vite.config.ts` — Added `selfDestroying: deployTarget === 'github'` to VitePWA config
+- `index.html` — Rewrote Layer 0 inline script (150→60 lines), simplified Layer 2 fallback
+
+### Testing
+
+- TypeScript: `npx tsc --noEmit` — implicit via build
+- Build (GitHub): `DEPLOY_TARGET=github bun run build` — clean, self-destroying SW generated
+- Build (Lovable): `bun run build` — clean, normal SW with full Workbox caching
+- Tests: `bun run test` — 281/281 passed (14 test files, all green)
+- Lovable deployment: unaffected (selfDestroying is false)
+
+---

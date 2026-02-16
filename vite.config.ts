@@ -163,12 +163,14 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && lovableTaggerPlugin,
     VitePWA({
-      // CRITICAL FIX (2026-02-15): On GitHub Pages, use 'prompt' instead of 'autoUpdate'.
-      // 'autoUpdate' forces skipWaiting + clientsClaim which causes the new SW to
-      // take control mid-visit → controllerchange fires → has caused 5+ infinite
-      // reload loops across PRs #198-#214. 'prompt' makes the SW wait for explicit
-      // activation, eliminating all mid-visit takeover bugs.
-      // On Lovable (no CDN cache issues), 'autoUpdate' is safe and provides seamless updates.
+      // CRITICAL FIX (2026-02-16): On GitHub Pages, use a self-destroying SW.
+      // The SW adds no value on GitHub Pages (no offline support needed) but causes
+      // multiple failure modes: stale runtime cache serving old JS chunks, race
+      // conditions with the stale-build detection, controllerchange reload loops.
+      // selfDestroying generates a SW that immediately unregisters itself and clears
+      // all caches — cleaning up old SWs from previous deployments automatically.
+      // On Lovable (no CDN cache issues), normal PWA with autoUpdate works fine.
+      selfDestroying: deployTarget === 'github',
       registerType: deployTarget === 'github' ? 'prompt' : 'autoUpdate',
       // Only precache essential PWA icons. All other assets (music, images, SFX)
       // are cached on-demand via runtimeCaching rules below. This reduces SW install

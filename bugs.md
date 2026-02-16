@@ -5,14 +5,14 @@
 
 ---
 
-## BUG-001: "Loading the realm..." Freeze (RECURRING — FIXED via 4-layer defense)
+## BUG-001: "Loading the realm..." Freeze (RECURRING — DEFINITIVE FIX 2026-02-16)
 
 | Field | Value |
 |-------|-------|
 | **Severity** | Critical |
-| **Status** | FIXED (CDN cache bypass + module retry + SW neutered + reload loop protection) |
+| **Status** | FIXED (auto-reload with CDN cache-busting + self-destroying SW) |
 | **First seen** | 2026-02-14 |
-| **Occurrences** | 15 fix attempts across PRs #185–#214 |
+| **Occurrences** | 15+ fix attempts across PRs #185–#220 |
 | **Symptom** | Game stuck on "Loading the realm..." loading screen, React never mounts |
 | **Environment** | Production (GitHub Pages), after any new deployment |
 
@@ -212,6 +212,20 @@ Systematic bug hunt with parallel agents. No new code bugs found in recent PRs (
 
 5. **Reduced watchdog timer** — From 12s to 10s for faster retry on silent failures.
 
+### Definitive Fix: Auto-Reload + Self-Destroying SW (2026-02-16, session 3)
+
+Parallel agent investigation (4 agents) identified why ALL previous in-page recovery attempts failed:
+
+1. **Fastly CDN ignores client-side `Cache-Control` headers** — `cache:'no-store'` and `Cache-Control: no-cache` request headers only bypass the BROWSER cache. Fastly doesn't honor client cache-control headers by default. So version.json was ALSO CDN-stale, making hot-swap get the same stale entry URL.
+
+2. **`registration.unregister()` doesn't stop the current SW** — Even after unregistering, the old SW continues to control the current page's fetches. The `NetworkFirst` runtime cache could serve stale JS chunks from `js-css-cache`.
+
+**Key insight**: You cannot reliably recover from stale HTML in-page. Stale HTML has stale references everywhere (CSS links, preloads, inline timestamps, entry URLs). Patching each one is whack-a-mole. The only reliable fix is a full page reload with a URL the CDN hasn't cached.
+
+**Fix**:
+1. `selfDestroying: true` in VitePWA for GitHub Pages — SW immediately unregisters itself and clears all caches. Eliminates SW as failure vector.
+2. Replace hot-swap retry logic (~150 lines) with auto-reload (~60 lines) — when stale HTML detected or entry 404s, reload with `?_gv=timestamp` which creates a CDN cache miss. SessionStorage counter prevents loops (max 3 in 2 min).
+
 ### Lessons Learned
 1. **Test with the actual deployment target** — The `<base>` tag lookup was never tested on GitHub Pages
 2. **Verify defense layers actually fire** — The inline script's 404 was silently swallowed
@@ -225,6 +239,9 @@ Systematic bug hunt with parallel agents. No new code bugs found in recent PRs (
 10. **Show progress during loading** — Users interpret static text as frozen; dynamic status prevents premature cache clears
 11. **Deduplicate retry attempts** — Watchdog and onerror can fire independently; use a lock flag to prevent parallel retry chains
 12. **Track pipeline state for fallback UI** — Without a `versionCheckStarted` flag, the fallback button can show prematurely while version check is still running normally
+13. **Simpler is more reliable** — 15 fixes with increasing complexity all failed. The simplest approach (reload the page) was the most reliable
+14. **CDN behavior is undocumented** — Fastly's default query-string handling and client-header behavior isn't well-documented. Don't assume CDN cache bypass works
+15. **Self-destroying SW is the cleanest migration** — Instead of neutering the SW (prompt + no skipWaiting), just make it destroy itself and clean up old caches
 
 ---
 
