@@ -6,6 +6,7 @@
 const STORAGE_KEY = 'guild-life-options';
 
 export type BorderStyle = 'stone' | 'leather' | 'wood' | 'iron' | 'parchment' | 'none';
+export type TextSize = 'small' | 'medium' | 'large' | 'x-large';
 
 export interface GameOptions {
   // === Gameplay ===
@@ -20,6 +21,7 @@ export interface GameOptions {
   compactUI: boolean;          // Use compact stat displays
   showTurnNotifications: boolean; // Show turn-change notifications
   borderStyle: BorderStyle;    // Side panel border style: stone, leather, or none
+  textSize: TextSize;          // Global text size scaling
 
   // === Game Speed ===
   autoEndTurn: boolean;        // Auto-end turn when time runs out
@@ -40,7 +42,8 @@ const DEFAULT_OPTIONS: GameOptions = {
   showEventAnimations: true,
   compactUI: false,
   showTurnNotifications: true,
-  borderStyle: 'stone',         // Default: stone wall borders
+  borderStyle: 'none',          // Default: no decorative borders
+  textSize: 'small',            // Default: small (original size)
 
   // Game Speed
   autoEndTurn: false,

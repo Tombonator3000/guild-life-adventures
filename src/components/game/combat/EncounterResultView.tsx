@@ -44,8 +44,8 @@ export function EncounterResultView({
     <div className="space-y-3 animate-in fade-in duration-300">
       {/* Result header */}
       <div className="text-center">
-        <div className="text-2xl mb-1">{icon}</div>
-        <h3 className="font-display text-base text-[#e0d4b8]">{enc.name}</h3>
+        <div className="text-3xl mb-1">{icon}</div>
+        <h3 className="font-display text-lg text-[#e0d4b8]">{enc.name}</h3>
       </div>
 
       {/* Result details */}

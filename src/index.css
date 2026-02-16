@@ -207,3 +207,18 @@
     }
   }
 }
+
+/* === Text Size Scaling === */
+/* Applied via data-text-size attribute on the game container */
+[data-text-size="small"] {
+  font-size: 100%;
+}
+[data-text-size="medium"] {
+  font-size: 112.5%;
+}
+[data-text-size="large"] {
+  font-size: 125%;
+}
+[data-text-size="x-large"] {
+  font-size: 137.5%;
+}

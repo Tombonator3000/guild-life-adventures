@@ -42,12 +42,20 @@ export function useLocationClick({
     week,
     eventMessage,
     eventSource,
+    phase,
+    dismissEvent,
     weather,
   } = useGameStore();
   const currentPlayer = useCurrentPlayer();
 
   const handleLocationClick = (locationId: string) => {
     if (!currentPlayer) return;
+
+    // Auto-dismiss event notifications when clicking any location
+    if (phase === 'event' && eventMessage) {
+      dismissEvent();
+      return;
+    }
 
     const weatherExtraCostPerStep = (weather?.movementCostExtra) || 0;
 
