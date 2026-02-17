@@ -592,7 +592,7 @@ function processLeisure(p: Player, newWeek: number, msgs: string[]): void {
   if (weekendResult) {
     const { activity, ticketUsed } = weekendResult;
     p.gold = Math.max(0, p.gold - activity.cost);
-    p.happiness = Math.min(100, p.happiness + activity.happiness);
+    p.happiness = Math.max(0, Math.min(100, p.happiness + activity.happiness));
     if (ticketUsed) {
       p.tickets = p.tickets.filter(t => t !== ticketUsed);
     }

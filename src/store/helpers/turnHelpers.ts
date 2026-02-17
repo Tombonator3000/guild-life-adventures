@@ -54,7 +54,10 @@ function processEndOfTurnSpoilage(set: SetFn, get: GetFn, playerId: string): voi
   }));
 
   // Check if player now has a Preservation Box (they might have bought one during the turn)
-  const hasPreservationBox = player.appliances['preservation-box'] && !player.appliances['preservation-box'].isBroken;
+  // Re-read fresh state after set() to avoid stale reference
+  const freshPlayer = get().players.find(p => p.id === playerId);
+  if (!freshPlayer) return;
+  const hasPreservationBox = freshPlayer.appliances['preservation-box'] && !freshPlayer.appliances['preservation-box'].isBroken;
   if (hasPreservationBox) return; // Food is safe now
 
   // 80% chance that the unpreserved food has gone bad
