@@ -770,6 +770,39 @@ export const getEquipStats = (itemId: string): EquipmentStats | undefined => {
   return item?.equipStats;
 };
 
+// Calculate a single equipment slot's effective stats with temper bonuses and durability
+function getSlotStats(
+  itemId: string | null,
+  slot: 'weapon' | 'armor' | 'shield',
+  temperedItems?: string[],
+  equipmentDurability?: Record<string, number>,
+): { attack: number; defense: number; blockChance: number } {
+  if (!itemId) return { attack: 0, defense: 0, blockChance: 0 };
+
+  const stats = getEquipStats(itemId);
+  let attack = stats?.attack || 0;
+  let defense = stats?.defense || 0;
+  let blockChance = stats?.blockChance || 0;
+
+  // Apply temper bonuses
+  if (temperedItems?.includes(itemId)) {
+    const bonus = TEMPER_BONUS[slot];
+    attack += ('attack' in bonus) ? bonus.attack : 0;
+    defense += ('defense' in bonus) ? bonus.defense : 0;
+    blockChance += ('blockChance' in bonus) ? bonus.blockChance : 0;
+  }
+
+  // Apply durability multiplier
+  if (equipmentDurability) {
+    const mult = getDurabilityMultiplier(equipmentDurability[itemId] ?? MAX_DURABILITY);
+    attack = Math.floor(attack * mult);
+    defense = Math.floor(defense * mult);
+    blockChance = blockChance * mult;
+  }
+
+  return { attack, defense, blockChance };
+}
+
 // Calculate total combat stats for a player's equipment
 // Includes temper bonuses when temperedItems array is provided
 // Includes durability multiplier when equipmentDurability map is provided
@@ -780,54 +813,15 @@ export const calculateCombatStats = (
   temperedItems?: string[],
   equipmentDurability?: Record<string, number>,
 ): { attack: number; defense: number; blockChance: number } => {
-  let attack = 0;
-  let defense = 0;
-  let blockChance = 0;
+  const weapon = getSlotStats(equippedWeapon, 'weapon', temperedItems, equipmentDurability);
+  const armor = getSlotStats(equippedArmor, 'armor', temperedItems, equipmentDurability);
+  const shield = getSlotStats(equippedShield, 'shield', temperedItems, equipmentDurability);
 
-  if (equippedWeapon) {
-    const stats = getEquipStats(equippedWeapon);
-    let weaponAtk = stats?.attack || 0;
-    if (temperedItems?.includes(equippedWeapon)) {
-      weaponAtk += TEMPER_BONUS.weapon.attack;
-    }
-    // Apply durability multiplier
-    if (equipmentDurability) {
-      const dur = equipmentDurability[equippedWeapon] ?? MAX_DURABILITY;
-      weaponAtk = Math.floor(weaponAtk * getDurabilityMultiplier(dur));
-    }
-    attack += weaponAtk;
-  }
-  if (equippedArmor) {
-    const stats = getEquipStats(equippedArmor);
-    let armorDef = stats?.defense || 0;
-    if (temperedItems?.includes(equippedArmor)) {
-      armorDef += TEMPER_BONUS.armor.defense;
-    }
-    if (equipmentDurability) {
-      const dur = equipmentDurability[equippedArmor] ?? MAX_DURABILITY;
-      armorDef = Math.floor(armorDef * getDurabilityMultiplier(dur));
-    }
-    defense += armorDef;
-  }
-  if (equippedShield) {
-    const stats = getEquipStats(equippedShield);
-    let shieldDef = stats?.defense || 0;
-    let shieldBlock = stats?.blockChance || 0;
-    if (temperedItems?.includes(equippedShield)) {
-      shieldDef += TEMPER_BONUS.shield.defense;
-      shieldBlock += TEMPER_BONUS.shield.blockChance;
-    }
-    if (equipmentDurability) {
-      const dur = equipmentDurability[equippedShield] ?? MAX_DURABILITY;
-      const mult = getDurabilityMultiplier(dur);
-      shieldDef = Math.floor(shieldDef * mult);
-      shieldBlock = shieldBlock * mult;
-    }
-    defense += shieldDef;
-    blockChance = shieldBlock;
-  }
-
-  return { attack, defense, blockChance };
+  return {
+    attack: weapon.attack,
+    defense: armor.defense + shield.defense,
+    blockChance: shield.blockChance,
+  };
 };
 
 // === Clothing Tier System (Jones-style) ===

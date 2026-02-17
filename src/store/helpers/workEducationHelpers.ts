@@ -27,6 +27,66 @@ const DEGREE_TO_PATH: Record<string, string> = {
   'advanced-scholar': 'priest',
 };
 
+/** Calculate base earnings with festival/curse/bonus multipliers */
+function calculateEarnings(
+  hours: number, effectiveWage: number,
+  festivalId: string | null,
+  player: { permanentGoldBonus: number; activeCurses?: Array<{ effects: Array<{ type: string; magnitude: number }> }> },
+): number {
+  // Flat 15% efficiency bonus + festival wage multiplier
+  const festivalMult = festivalId
+    ? (FESTIVALS.find(f => f.id === festivalId)?.wageMultiplier ?? 1.0)
+    : 1.0;
+  let earnings = Math.floor(hours * effectiveWage * 1.15 * festivalMult);
+
+  // Curse of Poverty
+  const povertyCurse = hasCurseEffect(player as never, 'wage-reduction');
+  if (povertyCurse) {
+    earnings = Math.floor(earnings * (1 - povertyCurse.magnitude));
+  }
+
+  // Permanent gold bonus from rare drops
+  if (player.permanentGoldBonus > 0) {
+    earnings = Math.floor(earnings * (1 + player.permanentGoldBonus));
+  }
+
+  return earnings;
+}
+
+/** Deduct rent and loan garnishments from earnings, returning adjusted values */
+function applyGarnishments(
+  earnings: number,
+  player: { weeksSinceRent: number; housing: string; rentDebt: number; loanAmount: number; loanWeeksRemaining: number },
+): { earnings: number; rentDebt: number; loanAmount: number } {
+  let result = earnings;
+  let rentDebt = player.rentDebt;
+  let loanAmount = player.loanAmount;
+
+  // Rent garnishment: 50% + 2g interest if overdue 4+ weeks
+  if (player.weeksSinceRent >= 4 && player.housing !== 'homeless') {
+    const garnishment = Math.floor(result * 0.5) + 2;
+    rentDebt = Math.max(0, rentDebt - garnishment);
+    result -= garnishment;
+  }
+
+  // Loan garnishment: 25% if overdue and earnings still positive
+  if (loanAmount > 0 && player.loanWeeksRemaining <= 0 && result > 0) {
+    const loanGarnishment = Math.min(Math.floor(result * 0.25), loanAmount);
+    loanAmount -= loanGarnishment;
+    result -= loanGarnishment;
+  }
+
+  return { earnings: result, rentDebt, loanAmount };
+}
+
+/** Calculate happiness penalty for working (progression-based + age penalty) */
+function calculateWorkHappinessPenalty(gameWeek: number, playerAge: number, hours: number): number {
+  const basePenalty = gameWeek <= 4 ? 0 : 1;
+  const agingEnabled = getGameOption('enableAging');
+  const agePenalty = (agingEnabled && playerAge >= WORK_HAPPINESS_AGE && hours >= 6) ? 1 : 0;
+  return basePenalty + agePenalty;
+}
+
 export function createWorkEducationActions(set: SetFn, get: GetFn) {
   return {
     workShift: (playerId: string, hours: number, wage: number): boolean => {
@@ -35,7 +95,6 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
       set((state) => {
         const p = state.players.find(p => p.id === playerId);
         if (!p || p.timeRemaining < hours) return {};
-        // Bankruptcy Barrel: cannot work without any clothes
         if (p.clothingCondition <= 0) return {};
         // Clothing quality check: job refuses you if your clothes don't meet its tier
         if (p.currentJob) {
@@ -46,65 +105,10 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
           }
         }
 
-        // Use current wage if player has a job, otherwise use passed wage
         const effectiveWage = p.currentJob ? p.currentWage : wage;
-
-        // Work bonus: all shifts get a flat 15% efficiency bonus on earnings
-        // Applied to earnings directly (not hours) so all shift lengths benefit equally
-        // C1: Festival wage multiplier (e.g. Midsummer Fair +15%)
-        const festivalId = state.activeFestival;
-        const festivalWageMult = festivalId
-          ? (FESTIVALS.find(f => f.id === festivalId)?.wageMultiplier ?? 1.0)
-          : 1.0;
-        let earnings = Math.floor(hours * effectiveWage * 1.15 * festivalWageMult);
-
-        // Curse of Poverty: reduce wages
-        const povertyCurse = hasCurseEffect(p, 'wage-reduction');
-        if (povertyCurse) {
-          earnings = Math.floor(earnings * (1 - povertyCurse.magnitude));
-        }
-
-        // Apply permanent gold bonus from rare drops (e.g., Goblin's Lucky Coin)
-        if (p.permanentGoldBonus > 0) {
-          earnings = Math.floor(earnings * (1 + p.permanentGoldBonus));
-        }
-
-        // Garnishment: 50% + 2 gold interest if rent is overdue (4+ weeks)
-        let garnishment = 0;
-        let newRentDebt = p.rentDebt;
-        if (p.weeksSinceRent >= 4 && p.housing !== 'homeless') {
-          garnishment = Math.floor(earnings * 0.5) + 2;
-          newRentDebt = Math.max(0, newRentDebt - garnishment);
-          earnings -= garnishment;
-        }
-
-        // Loan garnishment: 25% of wages if loan is overdue (0 weeks remaining)
-        // BUG FIX: Only garnish if earnings are positive (rent garnishment can push earnings negative)
-        let loanGarnishment = 0;
-        let newLoanAmount = p.loanAmount;
-        if (p.loanAmount > 0 && p.loanWeeksRemaining <= 0 && earnings > 0) {
-          loanGarnishment = Math.min(Math.floor(earnings * 0.25), p.loanAmount);
-          newLoanAmount = p.loanAmount - loanGarnishment;
-          earnings -= loanGarnishment;
-        }
-
-        // Dependability increases with work (capped at maxDependability)
-        // +1 per shift (was +2 — slowed to prevent skipping job tiers)
-        const newDependability = Math.min(p.maxDependability, p.dependability + 1);
-
-        // Experience increases (capped at maxExperience like Jones)
-        // Half of hours worked (was 1:1 — slowed to enforce meaningful time at each job tier)
-        const newExperience = Math.min(p.maxExperience, p.experience + Math.ceil(hours / 2));
-
-        // Work happiness penalty scales with game progression:
-        // Weeks 1-4: no penalty (let players get established)
-        // Weeks 5+: -1 happiness (mild fatigue)
-        // Age 45+ (if aging enabled): extra -1 happiness on long shifts (6+ hours)
-        const gameWeek = state.week;
-        const basePenalty = gameWeek <= 4 ? 0 : 1;
-        const agingEnabled = getGameOption('enableAging');
-        const agePenalty = (agingEnabled && (p.age ?? 18) >= WORK_HAPPINESS_AGE && hours >= 6) ? 1 : 0;
-        const happinessPenalty = basePenalty + agePenalty;
+        const baseEarnings = calculateEarnings(hours, effectiveWage, state.activeFestival, p);
+        const { earnings, rentDebt, loanAmount } = applyGarnishments(baseEarnings, p);
+        const happinessPenalty = calculateWorkHappinessPenalty(state.week, p.age ?? 18, hours);
 
         success = true;
         return {
@@ -115,14 +119,14 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
               gold: player.gold + Math.max(0, earnings),
               timeRemaining: Math.max(0, player.timeRemaining - hours),
               happiness: Math.max(0, player.happiness - happinessPenalty),
-              dependability: newDependability,
-              experience: newExperience,
+              dependability: Math.min(p.maxDependability, p.dependability + 1),
+              experience: Math.min(p.maxExperience, p.experience + Math.ceil(hours / 2)),
               shiftsWorkedSinceHire: (player.shiftsWorkedSinceHire || 0) + 1,
               totalShiftsWorked: (player.totalShiftsWorked || 0) + 1,
               workedThisTurn: true,
-              rentDebt: newRentDebt,
-              loanAmount: newLoanAmount,
-              loanWeeksRemaining: newLoanAmount <= 0 ? 0 : player.loanWeeksRemaining,
+              rentDebt,
+              loanAmount,
+              loanWeeksRemaining: loanAmount <= 0 ? 0 : player.loanWeeksRemaining,
             };
           }),
         };

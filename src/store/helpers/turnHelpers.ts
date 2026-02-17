@@ -19,6 +19,23 @@ export function getHomeLocation(housing: string): LocationId {
   return 'slums';
 }
 
+/** Find the next alive player index, wrapping around the player array.
+ *  Returns the index and whether the wrap crossed the week boundary (index 0). */
+function findNextAlivePlayer(
+  players: ReadonlyArray<{ isGameOver: boolean }>,
+  startIndex: number,
+): { index: number; isNewWeek: boolean } {
+  const total = players.length;
+  for (let i = 1; i <= total; i++) {
+    const idx = (startIndex + i) % total;
+    if (!players[idx].isGameOver) {
+      return { index: idx, isNewWeek: idx <= startIndex };
+    }
+  }
+  // All players dead — fall back to index 0, trigger week-end
+  return { index: 0, isNewWeek: true };
+}
+
 /**
  * End-of-turn spoilage check: If the player bought food this turn without a Preservation Box,
  * there's an 80% chance the food has gone bad. If it went bad, 55% chance the player gets sick
@@ -120,56 +137,27 @@ export function createTurnActions(set: SetFn, get: GetFn) {
       // C1 FIX: Re-read state after checkVictory, which may have mutated state
       const postVictoryState = get();
 
-      // Find next alive player
-      const findNextAlivePlayer = (startIndex: number): { index: number; isNewWeek: boolean } => {
-        let index = startIndex;
-        let loopCount = 0;
-        let crossedWeekBoundary = false;
-        const totalPlayers = postVictoryState.players.length;
-
-        while (loopCount < totalPlayers) {
-          index = (index + 1) % totalPlayers;
-          if (index === 0) crossedWeekBoundary = true;
-
-          // Check if this player is alive
-          if (!postVictoryState.players[index].isGameOver) {
-            return { index, isNewWeek: crossedWeekBoundary };
-          }
-
-          // If we've checked a full loop and all players are dead, game over
-          loopCount++;
-          if (loopCount >= totalPlayers) {
-            // All players are game over - this shouldn't normally happen
-            return { index: 0, isNewWeek: true };
-          }
-        }
-
-        return { index: (startIndex + 1) % totalPlayers, isNewWeek: (startIndex + 1) % totalPlayers === 0 };
-      };
-
       // Check if only one player remains alive - they win (multiplayer only)
       // In single-player, the player must achieve all goals to win
       const alivePlayers = postVictoryState.players.filter(p => !p.isGameOver);
-      if (alivePlayers.length === 1 && postVictoryState.players.length > 1) {
+      if (alivePlayers.length <= 1) {
         try { deleteSave(0); } catch { /* ignore */ }
-        set({
-          winner: alivePlayers[0].id,
-          phase: 'victory',
-          eventMessage: `${alivePlayers[0].name} is the last one standing and wins the game!`,
-        });
+        if (alivePlayers.length === 1 && postVictoryState.players.length > 1) {
+          set({
+            winner: alivePlayers[0].id,
+            phase: 'victory',
+            eventMessage: `${alivePlayers[0].name} is the last one standing and wins the game!`,
+          });
+        } else {
+          set({
+            phase: 'victory',
+            eventMessage: 'All players have perished. Game Over!',
+          });
+        }
         return;
       }
 
-      if (alivePlayers.length === 0) {
-        try { deleteSave(0); } catch { /* ignore */ }
-        set({
-          phase: 'victory',
-          eventMessage: 'All players have perished. Game Over!',
-        });
-        return;
-      }
-
-      const { index: nextIndex, isNewWeek } = findNextAlivePlayer(postVictoryState.currentPlayerIndex);
+      const { index: nextIndex, isNewWeek } = findNextAlivePlayer(postVictoryState.players, postVictoryState.currentPlayerIndex);
 
       if (isNewWeek) {
         get().processWeekEnd();

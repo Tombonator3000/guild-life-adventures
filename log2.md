@@ -3,6 +3,105 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+## 2026-02-17 — Code Audit & Refactor Complex Code (10:00 UTC)
+
+### Overview
+
+Full codebase complexity audit using 6 parallel agents, followed by refactoring of 5 high-complexity functions across 5 files. All refactorings maintain identical behavior while improving clarity, testability, and reducing code duplication.
+
+### Audit Process
+
+Launched 6 parallel audit agents covering:
+1. **gameStore.ts + store helpers** — Found 12 high-complexity findings
+2. **GameBoard.tsx** — Found 7 complexity issues (component too large, scattered state)
+3. **LocationPanel.tsx + locationTabs.tsx** — Found 8 findings (nested ternaries, large context)
+4. **weekEndHelpers/startTurnHelpers/turnHelpers/playerHelpers/workEducationHelpers** — Found 13 findings
+5. **combatResolver.ts, events.ts, items.ts** — Found 10 findings (3x code repetition, nested drops)
+6. **AI system + network** — Found 10 findings (161-line generateActions, duplicated name sanitization)
+
+**Total findings: 60 complexity issues** (12 HIGH, 18 MEDIUM-HIGH, 30 MEDIUM)
+
+### Refactoring 1: `calculateCombatStats` (items.ts)
+
+**Problem**: 3 nearly identical code blocks (weapon/armor/shield) each with the same temper-bonus + durability-multiplier logic, totaling 45 lines of duplicated patterns.
+
+**Fix**: Extracted `getSlotStats()` helper function that handles a single equipment slot generically. The main function now calls it 3 times and combines results. Reduced from 55 lines to 22 lines in the main function.
+
+```typescript
+// BEFORE: 3x repeated blocks like this
+if (equippedWeapon) {
+  const stats = getEquipStats(equippedWeapon);
+  let weaponAtk = stats?.attack || 0;
+  if (temperedItems?.includes(equippedWeapon)) { weaponAtk += TEMPER_BONUS.weapon.attack; }
+  if (equipmentDurability) { ... }
+  attack += weaponAtk;
+}
+// ... repeated for armor and shield
+
+// AFTER: Single generic helper + 3 calls
+const weapon = getSlotStats(equippedWeapon, 'weapon', temperedItems, equipmentDurability);
+const armor = getSlotStats(equippedArmor, 'armor', temperedItems, equipmentDurability);
+const shield = getSlotStats(equippedShield, 'shield', temperedItems, equipmentDurability);
+return { attack: weapon.attack, defense: armor.defense + shield.defense, blockChance: shield.blockChance };
+```
+
+### Refactoring 2: `endTurn` / `findNextAlivePlayer` (turnHelpers.ts)
+
+**Problem**: `findNextAlivePlayer` was a 25-line closure nested inside `endTurn`, with confusing week boundary tracking (crossedWeekBoundary flag, manual loop counter, unreachable fallback return). Game-over checks had duplicated `deleteSave` + `set()` patterns.
+
+**Fix**:
+- Extracted `findNextAlivePlayer` to module-level pure function with simpler loop (`for` instead of `while` + manual counter)
+- Simplified week boundary detection: `idx <= startIndex` instead of tracking a flag
+- Consolidated game-over checks: merged `alivePlayers.length === 1` and `=== 0` into a single `<= 1` guard
+
+### Refactoring 3: `workShift` (workEducationHelpers.ts)
+
+**Problem**: 100-line monolithic function mixing 4 distinct concerns: earnings calculation (festival mult, curse, gold bonus), garnishment deductions (rent + loan), happiness penalty calculation, and state update. High cyclomatic complexity.
+
+**Fix**: Extracted 3 pure helper functions:
+- `calculateEarnings(hours, wage, festivalId, player)` — festival/curse/bonus pipeline
+- `applyGarnishments(earnings, player)` — rent + loan deductions
+- `calculateWorkHappinessPenalty(gameWeek, playerAge, hours)` — progression-based penalty
+
+The main `workShift` function now reads as: validate → calculate earnings → apply garnishments → calculate penalty → update state.
+
+### Refactoring 4: `processEmployment` (weekEndHelpers.ts)
+
+**Problem**: 47 lines with 4-level nested conditionals for market crash effects (3 severity tiers with different consequences), duplicated `firePlayer` logic (job = null, wage = 0, shiftsWorkedSinceHire = 0) in 2 places.
+
+**Fix**:
+- Extracted `applyDependabilityDecay()` for employment-status-based decay
+- Extracted `firePlayer()` utility for job field reset (eliminates duplication)
+- Created `CRASH_EFFECTS` lookup table mapping severity → `{ happinessLoss, firesPlayer, cutsWage }`
+- Main function now reads the lookup table instead of 3 nested if/else branches
+
+### Refactoring 5: `fenceTabs` (locationTabs.tsx)
+
+**Problem**: `onBuyUsedItem` had a 4-branch if/else chain for item effects. `onGamble` had 4 chained ternary operators for odds/payout/happiness per stake level (e.g. `stake === 10 ? 0.4 : stake === 50 ? 0.3 : 0.2`).
+
+**Fix**:
+- Created `USED_ITEM_EFFECTS` lookup table mapping item ID → effect handler
+- Created `GAMBLE_TABLE` lookup table mapping stake → `{ chance, payout, winHappiness, loseHappiness, time }`
+- Both callbacks now do a single table lookup instead of conditional chains
+
+### Files Modified (5)
+
+| File | Changes |
+|------|---------|
+| `src/data/items.ts` | Extracted `getSlotStats()`, refactored `calculateCombatStats` |
+| `src/store/helpers/turnHelpers.ts` | Extracted `findNextAlivePlayer` to module level, simplified game-over checks |
+| `src/store/helpers/workEducationHelpers.ts` | Extracted `calculateEarnings`, `applyGarnishments`, `calculateWorkHappinessPenalty` |
+| `src/store/helpers/weekEndHelpers.ts` | Extracted `applyDependabilityDecay`, `firePlayer`, `CRASH_EFFECTS` lookup |
+| `src/components/game/locationTabs.tsx` | Extracted `USED_ITEM_EFFECTS`, `GAMBLE_TABLE` lookup tables |
+
+### Test Results
+
+- **Tests**: ✅ 296/296 passing across 16 test files, 0 failures
+- **TypeScript**: ✅ Clean, no errors
+- **Behavior**: Identical — all refactorings are structural only
+
+---
+
 ## 2026-02-16 — Build Error Check #3 (20:26 UTC)
 
 ### Results
