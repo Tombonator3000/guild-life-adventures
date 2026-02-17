@@ -3,6 +3,68 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+## 2026-02-17 — Code Audit & Refactor Round 5 (18:00 UTC)
+
+### Overview
+
+Full codebase audit using 4 parallel agents (store+helpers, components, data files, AI+network). Identified 40+ complex functions across all areas. Selected 3 high-impact refactoring targets and applied structural changes maintaining identical behavior. All 296 tests pass. TypeScript compiles clean. Build succeeds.
+
+### Refactoring 19: `generateStrategicActions` (strategicActions.ts)
+
+**Problem**: 296-line monolithic function containing 9 semi-independent strategic concerns (job seeking, job upgrading, working, education-career pipeline, housing upgrade/downgrade, salary negotiation, voluntary homeless, withdrawals, proactive banking) in a single function body. Each section had its own guard conditions, location checks, and action creation — making it hard to understand, test, or modify any individual strategy without reading the entire function.
+
+**Fix**: Extracted 11 focused sub-generator functions via dispatch table pattern:
+- `generateJobSeekingActions()` — apply for first job
+- `generateJobUpgradeActions()` — upgrade to better-paying job
+- `generateWorkActions()` — work shifts with HARD AI value-per-hour scoring
+- `generateEducationPipelineActions()` — HARD AI degree-to-job pipeline
+- `generateHousingUpgradeActions()` — upgrade to Noble Heights
+- `generateHousingDowngradeActions()` — downgrade when can't afford rent
+- `generateSalaryNegotiationActions()` — request raises
+- `generateVoluntaryHomelessActions()` — go homeless to avoid eviction
+- `generateWithdrawalActions()` — basic bank withdrawal
+- `generateProactiveBankingActions()` — HARD AI robbery protection deposits
+- `generateSmartWithdrawalActions()` — HARD AI expense-aware withdrawal
+
+`STRATEGY_GENERATORS` dispatch array replaces the monolith. Main `generateStrategicActions()` is now 1 line: `flatMap` over generators.
+
+### Refactoring 20: `applyNetworkState` (networkState.ts)
+
+**Problem**: 4 near-identical event sync blocks (shadowfingersEvent, applianceBreakageEvent, weekendEvent, deathEvent), each following the exact same pattern: check dismissed → sync value / check null → clear dismissal. Adding a new event type required copy-pasting 6 lines and adjusting field names. The special `eventMessage` block (which also controls phase/eventSource) was mixed in, making it unclear which events follow the shared pattern vs. have custom logic.
+
+**Fix**: Created `SYNCABLE_EVENT_FIELDS` data-driven array — each entry maps a dismiss key to a read function. A single `for...of` loop replaces the 4 duplicated blocks. The special `eventMessage` handling (with phase/eventSource side effects) remains as explicit code above the loop, making the distinction clear. Adding new syncable events is now a 1-line array entry.
+
+### Refactoring 21: `createProcessWeekEnd` (weekEndHelpers.ts)
+
+**Problem**: 139-line orchestrator function with 3 inline logic blocks: (1) weather-festival conflict resolution (15 lines with nested conditionals), (2) stock market update with crash message (6 lines), (3) game-over/last-standing/normal-transition branching (45 lines with 3 conditional branches each calling `set()` differently).
+
+**Fix**: Extracted 3 named helper functions:
+- `resolveWeatherFestivalConflict()` — pure function taking weather, festival, and previous weather type, returning resolved weather + messages
+- `advanceStockMarket()` — updates stock prices and appends crash message
+- `resolveWeekEndOutcome()` — handles all 3 end-of-week branches (all dead, last standing, normal transition)
+
+Main orchestrator reduced from 139 to ~50 lines with clear step labels.
+
+### Files Modified (3)
+
+| File | Changes |
+|------|---------|
+| `src/hooks/ai/actions/strategicActions.ts` | 296-line monolith → 11 sub-generators + dispatch array |
+| `src/network/networkState.ts` | `SYNCABLE_EVENT_FIELDS` array + loop replacing 4 duplicated blocks |
+| `src/store/helpers/weekEndHelpers.ts` | 3 extracted helpers: `resolveWeatherFestivalConflict`, `advanceStockMarket`, `resolveWeekEndOutcome` |
+
+### Test Results
+
+```
+Test Files  16 passed (16)
+Tests       296 passed (296)
+Duration    11.00s
+```
+
+TypeScript: 0 errors. Build: clean. All behavior preserved.
+
+---
+
 ## 2026-02-17 — Code Audit & Refactor Round 4 (16:00 UTC)
 
 ### Overview

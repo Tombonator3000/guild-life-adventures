@@ -770,45 +770,130 @@ function processDeathChecks(players: Player[], msgs: string[]): void {
 }
 
 // ============================================================
-// 4. Main Orchestrator
+// 4. Orchestrator Helpers
+// ============================================================
+
+/** Resolve weather-festival conflicts: festival takes priority over contradictory weather */
+function resolveWeatherFestivalConflict(
+  rawWeather: WeatherState,
+  festival: Festival | null,
+  weatherMsgs: string[],
+  prevWeatherType: string,
+): { weather: WeatherState; messages: string[] } {
+  if (!festival || rawWeather.type === 'clear' || !isWeatherFestivalConflict(rawWeather.type, festival.id)) {
+    return { weather: rawWeather, messages: weatherMsgs };
+  }
+
+  const weather = { ...CLEAR_WEATHER };
+  // If weather was previously active and just got cleared by festival, announce it
+  if (prevWeatherType !== 'clear') {
+    return { weather, messages: [`The ${festival.name} celebrations dispel the ${rawWeather.name.toLowerCase()}. Fair skies return!`] };
+  }
+  // New weather was rolled but immediately suppressed — no announcement needed
+  return { weather, messages: [] };
+}
+
+/** Update stock prices and generate crash message if applicable */
+function advanceStockMarket(
+  currentPrices: Record<string, number>,
+  currentHistory: Record<string, number[]> | undefined,
+  economyTrend: number,
+  messages: string[],
+): { stockPrices: Record<string, number>; stockPriceHistory: Record<string, number[]> } {
+  const isStockCrash = economyTrend === -1 && Math.random() < 0.10;
+  const stockPrices = updateStockPrices(currentPrices, isStockCrash, economyTrend);
+  const stockPriceHistory = updatePriceHistory(currentHistory || {}, stockPrices);
+  if (isStockCrash) {
+    messages.push('MARKET CRASH! Stock prices have plummeted!');
+  }
+  return { stockPrices, stockPriceHistory };
+}
+
+/** Determine the week-end outcome: all dead, last standing, or normal transition */
+function resolveWeekEndOutcome(
+  players: Player[],
+  totalPlayerCount: number,
+  eventMessages: string[],
+  weekEndState: Record<string, unknown>,
+  rentDueWeek: number,
+  newWeek: number,
+  set: SetFn,
+  get: GetFn,
+): void {
+  const firstAliveIndex = players.findIndex(p => !p.isGameOver);
+
+  // All players dead
+  if (firstAliveIndex === -1) {
+    try { deleteSave(0); } catch { /* ignore */ }
+    set({ ...weekEndState, phase: 'victory', eventMessage: 'All players have perished. Game Over!' });
+    return;
+  }
+
+  // Last player standing wins
+  const alivePlayers = players.filter(p => !p.isGameOver);
+  if (alivePlayers.length === 1 && totalPlayerCount > 1) {
+    try { deleteSave(0); } catch { /* ignore */ }
+    set({
+      ...weekEndState,
+      winner: alivePlayers[0].id,
+      phase: 'victory',
+      eventMessage: `${alivePlayers[0].name} is the last one standing and wins the game!`,
+    });
+    return;
+  }
+
+  // Normal week transition
+  const firstPlayer = players[firstAliveIndex];
+  const firstPlayerHome: LocationId = getHomeLocation(firstPlayer.housing);
+  const uniqueMessages = [...new Set(eventMessages)];
+  const isRentDue = newWeek % 4 === 0;
+
+  set({
+    ...weekEndState,
+    currentPlayerIndex: firstAliveIndex,
+    players: players.map((p, index) =>
+      index === firstAliveIndex
+        ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: firstPlayerHome, dungeonAttemptsThisTurn: 0, hadRandomEventThisTurn: false, workedThisTurn: false }
+        : p
+    ),
+    rentDueWeek: isRentDue ? newWeek : rentDueWeek,
+    selectedLocation: null,
+    eventMessage: uniqueMessages.length > 0 ? uniqueMessages.join('\n') : null,
+    eventSource: uniqueMessages.length > 0 ? 'weekend' as const : null,
+    phase: uniqueMessages.length > 0 ? 'event' : 'playing',
+  });
+
+  // Check for apartment robbery at start of first alive player's turn
+  if (firstPlayer && !firstPlayer.isGameOver) {
+    get().startTurn(firstPlayer.id);
+  }
+}
+
+// ============================================================
+// 5. Main Orchestrator
 // ============================================================
 
 export function createProcessWeekEnd(set: SetFn, get: GetFn) {
   return () => {
       const state = get();
       const newWeek = state.week + 1;
-      // C6: Track weeks played for achievements
       updateAchievementStats({ totalWeeksPlayed: 1 });
       const eventMessages: string[] = [];
 
       // --- Step 1: Advance global systems ---
       const economy = advanceEconomy(state);
-      // Check festival first (deterministic schedule) so we can resolve weather conflicts
       const { festival, activeFestivalId, messages: festivalMsgs } = checkFestival(newWeek);
       const { weather: rawWeather, messages: weatherMsgs } = advanceWeatherSystem(state.weather);
-
-      // Resolve weather-festival conflicts: festival takes priority over contradictory weather
-      // e.g., Drought ("food prices soar") can't co-occur with Harvest Festival ("prices reduced 15%")
-      let weather = rawWeather;
-      let finalWeatherMsgs = weatherMsgs;
-      if (festival && rawWeather.type !== 'clear' && isWeatherFestivalConflict(rawWeather.type, festival.id)) {
-        weather = { ...CLEAR_WEATHER };
-        // If weather was previously active and just got cleared by festival, announce it
-        const prevType = state.weather?.type ?? 'clear';
-        if (prevType !== 'clear') {
-          finalWeatherMsgs = [`The ${festival.name} celebrations dispel the ${rawWeather.name.toLowerCase()}. Fair skies return!`];
-        } else {
-          // New weather was rolled but immediately suppressed — no announcement needed
-          finalWeatherMsgs = [];
-        }
-      }
+      const { weather, messages: finalWeatherMsgs } = resolveWeatherFestivalConflict(
+        rawWeather, festival, weatherMsgs, state.weather?.type ?? 'clear',
+      );
 
       const finalPriceModifier = calculateFinalPrice(economy.priceModifier, weather, festival);
       eventMessages.push(...finalWeatherMsgs, ...festivalMsgs);
 
       const ctx: WeekEndContext = {
         newWeek,
-        isClothingDegradation: true, // Now weekly (was newWeek % 8 === 0)
+        isClothingDegradation: true,
         economy,
         weather,
         festival,
@@ -817,7 +902,6 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
 
       // --- Step 2: Process all players ---
       const newsEvents: PlayerNewsEventData[] = [];
-      // Add crash severity as a news event if any crash happened
       if (economy.crashResult.severity !== 'none') {
         newsEvents.push({ type: `crash-${economy.crashResult.severity}` });
       }
@@ -830,85 +914,30 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
 
       // --- Step 2b: Process hex/curse expiration ---
       const hexResult = processHexExpiration(updatedPlayers, state.locationHexes);
-      const hexPlayers = hexResult.players;
-      const hexLocationHexes = hexResult.locationHexes;
       eventMessages.push(...hexResult.messages);
 
       // --- Step 3: Death checks ---
-      processDeathChecks(hexPlayers, eventMessages);
+      processDeathChecks(hexResult.players, eventMessages);
 
       // --- Step 4: Update stock prices ---
-      const isStockCrash = economy.economyTrend === -1 && Math.random() < 0.10;
-      const newStockPrices = updateStockPrices(state.stockPrices, isStockCrash, economy.economyTrend);
-      const newStockPriceHistory = updatePriceHistory(state.stockPriceHistory || {}, newStockPrices);
-      if (isStockCrash) {
-        eventMessages.push('MARKET CRASH! Stock prices have plummeted!');
-      }
+      const { stockPrices: newStockPrices, stockPriceHistory: newStockPriceHistory } =
+        advanceStockMarket(state.stockPrices, state.stockPriceHistory, economy.economyTrend, eventMessages);
 
-      // --- Step 5: Check game-over conditions and set up new week ---
-      const firstAliveIndex = hexPlayers.findIndex(p => !p.isGameOver);
-      const isRentDue = newWeek % 4 === 0;
-
-      // Shared state fields updated every week-end
+      // --- Step 5: Resolve outcome and set state ---
       const weekEndState = {
         week: newWeek,
         stockPrices: newStockPrices,
         stockPriceHistory: newStockPriceHistory,
         priceModifier: finalPriceModifier,
-        basePriceModifier: economy.priceModifier, // Store raw economy modifier (before weather/festival)
+        basePriceModifier: economy.priceModifier,
         economyTrend: economy.economyTrend,
         economyCycleWeeksLeft: economy.economyCycleWeeksLeft,
         weather,
         activeFestival: activeFestivalId,
         weeklyNewsEvents: newsEvents,
-        locationHexes: hexLocationHexes,
+        locationHexes: hexResult.locationHexes,
       };
 
-      // All players dead
-      if (firstAliveIndex === -1) {
-        try { deleteSave(0); } catch { /* ignore */ }
-        set({ ...weekEndState, phase: 'victory', eventMessage: 'All players have perished. Game Over!' });
-        return;
-      }
-
-      // Last player standing wins
-      const alivePlayers = hexPlayers.filter(p => !p.isGameOver);
-      if (alivePlayers.length === 1 && updatedPlayers.length > 1) {
-        try { deleteSave(0); } catch { /* ignore */ }
-        set({
-          ...weekEndState,
-          winner: alivePlayers[0].id,
-          phase: 'victory',
-          eventMessage: `${alivePlayers[0].name} is the last one standing and wins the game!`,
-        });
-        return;
-      }
-
-      // Normal week transition
-      const firstPlayer = hexPlayers[firstAliveIndex];
-      const firstPlayerHome: LocationId = getHomeLocation(firstPlayer.housing);
-
-      // Deduplicate event messages (same message can appear from multiple sources)
-      const uniqueMessages = [...new Set(eventMessages)];
-
-      set({
-        ...weekEndState,
-        currentPlayerIndex: firstAliveIndex,
-        players: hexPlayers.map((p, index) =>
-          index === firstAliveIndex
-            ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: firstPlayerHome, dungeonAttemptsThisTurn: 0, hadRandomEventThisTurn: false, workedThisTurn: false }
-            : p
-        ),
-        rentDueWeek: isRentDue ? newWeek : state.rentDueWeek,
-        selectedLocation: null,
-        eventMessage: uniqueMessages.length > 0 ? uniqueMessages.join('\n') : null,
-        eventSource: uniqueMessages.length > 0 ? 'weekend' as const : null,
-        phase: uniqueMessages.length > 0 ? 'event' : 'playing',
-      });
-
-      // Check for apartment robbery at start of first alive player's turn
-      if (firstPlayer && !firstPlayer.isGameOver) {
-        get().startTurn(firstPlayer.id);
-      }
+      resolveWeekEndOutcome(hexResult.players, updatedPlayers.length, eventMessages, weekEndState, state.rentDueWeek, newWeek, set, get);
   };
 }
