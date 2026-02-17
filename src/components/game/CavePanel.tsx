@@ -70,6 +70,241 @@ function getFloorStatus(
   return 'available';
 }
 
+// ─── Durability indicator (reusable for weapon/armor/shield) ────
+
+function DurabilityIndicator({ itemId, icon, durabilityMap }: {
+  itemId: string | null;
+  icon: string;
+  durabilityMap: Record<string, number> | undefined;
+}) {
+  if (!itemId) return null;
+  const dur = durabilityMap?.[itemId] ?? MAX_DURABILITY;
+  const cond = getDurabilityCondition(dur);
+  const color = cond === 'broken' ? 'text-red-500' : cond === 'poor' ? 'text-red-400' : cond === 'worn' ? 'text-amber-400' : 'text-green-400';
+  return <span className={color}>{icon} {dur}%</span>;
+}
+
+// ─── Equipment repair warning ───────────────────────────────────
+
+function RepairWarning({ equippedItems, durabilityMap }: {
+  equippedItems: (string | null)[];
+  durabilityMap: Record<string, number> | undefined;
+}) {
+  const items = equippedItems.filter(Boolean) as string[];
+  if (items.length === 0) return null;
+  const hasBroken = items.some(id => (durabilityMap?.[id] ?? MAX_DURABILITY) <= 0);
+  const hasPoor = items.some(id => {
+    const dur = durabilityMap?.[id] ?? MAX_DURABILITY;
+    return dur > 0 && dur <= 25;
+  });
+  if (hasBroken) return <div className="text-red-400 mt-1">Equipment broken! Repair at the Forge.</div>;
+  if (hasPoor) return <div className="text-amber-400 mt-1">Equipment wearing out. Visit the Forge soon.</div>;
+  return null;
+}
+
+// ─── Floor card (expanded details + enter button) ───────────────
+
+interface FloorCardProps {
+  floor: DungeonFloor;
+  player: Player;
+  combatStats: ReturnType<typeof calculateCombatStats>;
+  attemptsRemaining: number;
+  dungeonRecords: Record<number, { bestGold: number; runs: number; totalGold: number }>;
+  expandedFloor: number | null;
+  setExpandedFloor: (id: number | null) => void;
+  onEnterFloor: (floor: DungeonFloor) => void;
+}
+
+function FloorCard({
+  floor, player, combatStats, attemptsRemaining,
+  dungeonRecords, expandedFloor, setExpandedFloor, onEnterFloor,
+}: FloorCardProps) {
+  const status = getFloorStatus(floor, player.dungeonFloorsCleared);
+  const isExpanded = expandedFloor === floor.id;
+  const reqCheck = checkFloorRequirements(
+    floor, player.dungeonFloorsCleared,
+    player.equippedWeapon, player.equippedArmor,
+    combatStats, player.completedDegrees,
+  );
+  const totalTimeCost = getFloorTimeCost(floor, combatStats);
+  const encounterTime = getEncounterTimeCost(floor, combatStats);
+  const canAttempt =
+    status !== 'locked' &&
+    reqCheck.canEnter &&
+    player.timeRemaining >= encounterTime &&
+    player.health > 10 &&
+    attemptsRemaining > 0;
+
+  const borderColor =
+    status === 'cleared'
+      ? 'border-l-green-600'
+      : status === 'available'
+        ? reqCheck.canEnter
+          ? 'border-l-amber-500'
+          : 'border-l-red-800'
+        : 'border-l-gray-700';
+
+  const bgColor =
+    status === 'cleared'
+      ? 'bg-green-950/30'
+      : status === 'locked'
+        ? 'bg-gray-950/30'
+        : 'bg-[#2d1f0f]';
+
+  const isUltraEndgame = floor.id === 6;
+
+  return (
+    <div
+      className={`border border-[#8b7355] ${borderColor} border-l-4 rounded ${bgColor} ${isUltraEndgame ? 'ring-1 ring-amber-500/30' : ''}`}
+    >
+      {/* Floor header — clickable */}
+      <button
+        className="w-full flex items-center gap-2 p-2 text-left hover:bg-white/5 transition-colors"
+        onClick={() => setExpandedFloor(isExpanded ? null : floor.id)}
+      >
+        {isExpanded ? (
+          <ChevronDown className="w-3.5 h-3.5 text-[#8b7355] flex-shrink-0" />
+        ) : (
+          <ChevronRight className="w-3.5 h-3.5 text-[#8b7355] flex-shrink-0" />
+        )}
+        <span className={`text-xs font-mono w-5 ${isUltraEndgame ? 'text-amber-400' : 'text-[#8b7355]'}`}>
+          F{floor.id}
+        </span>
+        <span className={`text-sm flex-1 truncate ${isUltraEndgame ? 'text-amber-300 font-display' : 'text-[#e0d4b8]'}`}>
+          {floor.name}
+        </span>
+
+        {/* Status icon */}
+        {status === 'cleared' && (
+          <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+        )}
+        {status === 'available' && reqCheck.canEnter && (
+          <span className="text-amber-400 text-sm flex-shrink-0">⚔</span>
+        )}
+        {status === 'available' && !reqCheck.canEnter && (
+          <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
+        )}
+        {status === 'locked' && (
+          <Lock className="w-4 h-4 text-gray-600 flex-shrink-0" />
+        )}
+      </button>
+
+      {/* Expanded details */}
+      {isExpanded && (
+        <div className="px-3 pb-3 space-y-2 border-t border-[#8b7355]/30">
+          <p className="text-sm text-[#a09080] mt-2 italic">{floor.description}</p>
+
+          {/* Stats row */}
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-mono">
+            <span className="text-[#a09080] flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" /> {encounterTime}h/enc ({totalTimeCost}h total)
+            </span>
+            <span className="text-[#c9a227]">
+              💰 {floor.goldRange[0]}-{floor.goldRange[1]}g
+            </span>
+            <span className="text-red-400 flex items-center gap-1">
+              <Heart className="w-3.5 h-3.5" /> {floor.healthRisk[0]}-{floor.healthRisk[1]} dmg
+            </span>
+          </div>
+
+          {/* Boss info */}
+          <div className="text-sm flex items-center gap-1.5">
+            <Skull className="w-4 h-4 text-red-600" />
+            <span className="text-red-300">Boss: {floor.boss.name}</span>
+            <span className="text-[#8b7355]">(Power {floor.boss.basePower})</span>
+          </div>
+
+          {/* Rare drop hint */}
+          <div className="text-sm text-[#8b7355]">
+            ✦ Rare Drop:{' '}
+            {player.dungeonFloorsCleared.includes(floor.id) ? floor.rareDrop.name : '???'} (5%)
+          </div>
+
+          {/* Re-run mini-boss hint */}
+          {player.dungeonFloorsCleared.includes(floor.id) && (
+            <div className="text-sm text-amber-600">
+              ★ 15% chance of wandering mini-boss on re-runs
+            </div>
+          )}
+
+          {/* Dungeon modifier info */}
+          <div className="text-sm text-[#8b7355]">
+            ⚡ Random modifier may apply (60% chance per run)
+          </div>
+
+          {/* Requirements check */}
+          {status === 'available' && (
+            <div className="space-y-0.5">
+              {reqCheck.canEnter ? (
+                <div className="text-sm text-green-400">✓ All requirements met</div>
+              ) : (
+                reqCheck.reasons.map((reason, i) => (
+                  <div key={i} className="text-sm text-red-400">✗ {reason}</div>
+                ))
+              )}
+              {floor.requirements.recommendedDegrees.length > 0 && (
+                <div className="text-sm text-[#8b7355]">
+                  Recommended:{' '}
+                  {floor.requirements.recommendedDegrees
+                    .map((d) => DEGREE_NAMES[d] || d)
+                    .join(', ')}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Cleared badge */}
+          {status === 'cleared' && (
+            <div className="text-sm text-green-400">✓ Floor cleared! Run again for gold.</div>
+          )}
+
+          {/* Personal best */}
+          {dungeonRecords[floor.id] && (
+            <div className="text-sm text-[#c9a227] flex items-center gap-1">
+              <Trophy className="w-3.5 h-3.5" />
+              Best: {dungeonRecords[floor.id].bestGold}g | Runs: {dungeonRecords[floor.id].runs} | Total: {dungeonRecords[floor.id].totalGold}g
+            </div>
+          )}
+
+          {/* Enter / Re-enter button */}
+          {status !== 'locked' && (
+            <button
+              className={
+                'w-full py-1.5 px-3 text-sm font-display rounded ' +
+                'bg-gradient-to-r from-amber-800 to-amber-700 ' +
+                'hover:from-amber-700 hover:to-amber-600 ' +
+                'disabled:opacity-40 disabled:cursor-not-allowed ' +
+                'text-[#e0d4b8] border border-amber-600/50 transition-all'
+              }
+              disabled={!canAttempt}
+              onClick={() => onEnterFloor(floor)}
+            >
+              {canAttempt
+                ? status === 'cleared'
+                  ? `Re-enter Floor ${floor.id}`
+                  : `Enter Floor ${floor.id}`
+                : attemptsRemaining <= 0
+                  ? 'Too fatigued (max attempts)'
+                  : !reqCheck.canEnter
+                    ? 'Requirements not met'
+                    : player.timeRemaining < encounterTime
+                      ? 'Not enough time'
+                      : 'Too injured'}
+            </button>
+          )}
+
+          {/* Locked message */}
+          {status === 'locked' && (
+            <div className="text-xs text-gray-500 text-center py-1">
+              Clear Floor {floor.requirements.previousFloorCleared} to unlock
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main component ──────────────────────────────────────────────
 
 export function CavePanel({
@@ -330,38 +565,16 @@ export function CavePanel({
         {/* Durability indicators */}
         {(player.equippedWeapon || player.equippedArmor || player.equippedShield) && (
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[#a09080]">
-            {player.equippedWeapon && (() => {
-              const dur = player.equipmentDurability?.[player.equippedWeapon] ?? MAX_DURABILITY;
-              const cond = getDurabilityCondition(dur);
-              const color = cond === 'broken' ? 'text-red-500' : cond === 'poor' ? 'text-red-400' : cond === 'worn' ? 'text-amber-400' : 'text-green-400';
-              return <span className={color}>⚔ {dur}%</span>;
-            })()}
-            {player.equippedArmor && (() => {
-              const dur = player.equipmentDurability?.[player.equippedArmor] ?? MAX_DURABILITY;
-              const cond = getDurabilityCondition(dur);
-              const color = cond === 'broken' ? 'text-red-500' : cond === 'poor' ? 'text-red-400' : cond === 'worn' ? 'text-amber-400' : 'text-green-400';
-              return <span className={color}>🛡 {dur}%</span>;
-            })()}
-            {player.equippedShield && (() => {
-              const dur = player.equipmentDurability?.[player.equippedShield] ?? MAX_DURABILITY;
-              const cond = getDurabilityCondition(dur);
-              const color = cond === 'broken' ? 'text-red-500' : cond === 'poor' ? 'text-red-400' : cond === 'worn' ? 'text-amber-400' : 'text-green-400';
-              return <span className={color}>🔰 {dur}%</span>;
-            })()}
+            <DurabilityIndicator itemId={player.equippedWeapon} icon="⚔" durabilityMap={player.equipmentDurability} />
+            <DurabilityIndicator itemId={player.equippedArmor} icon="🛡" durabilityMap={player.equipmentDurability} />
+            <DurabilityIndicator itemId={player.equippedShield} icon="🔰" durabilityMap={player.equipmentDurability} />
           </div>
         )}
         {/* Repair warning */}
-        {(player.equippedWeapon || player.equippedArmor || player.equippedShield) && (() => {
-          const items = [player.equippedWeapon, player.equippedArmor, player.equippedShield].filter(Boolean);
-          const hasBroken = items.some(id => (player.equipmentDurability?.[id!] ?? MAX_DURABILITY) <= 0);
-          const hasPoor = items.some(id => {
-            const dur = player.equipmentDurability?.[id!] ?? MAX_DURABILITY;
-            return dur > 0 && dur <= 25;
-          });
-          if (hasBroken) return <div className="text-red-400 mt-1">Equipment broken! Repair at the Forge.</div>;
-          if (hasPoor) return <div className="text-amber-400 mt-1">Equipment wearing out. Visit the Forge soon.</div>;
-          return null;
-        })()}
+        <RepairWarning
+          equippedItems={[player.equippedWeapon, player.equippedArmor, player.equippedShield]}
+          durabilityMap={player.equipmentDurability}
+        />
         {combatStats.attack === 0 && (
           <div className="text-[#8b7355] mt-1">
             Tip: Equip gear at the Armory before entering the dungeon!
@@ -446,226 +659,19 @@ export function CavePanel({
 
       {/* Floor selection */}
       <div className="space-y-1.5">
-        {DUNGEON_FLOORS.map((floor) => {
-          const status = getFloorStatus(
-            floor,
-            player.dungeonFloorsCleared,
-          );
-          const isExpanded = expandedFloor === floor.id;
-          const reqCheck = checkFloorRequirements(
-            floor,
-            player.dungeonFloorsCleared,
-            player.equippedWeapon,
-            player.equippedArmor,
-            combatStats,
-            player.completedDegrees,
-          );
-          const totalTimeCost = getFloorTimeCost(floor, combatStats);
-          const encounterTime = getEncounterTimeCost(floor, combatStats);
-          const canAttempt =
-            status !== 'locked' &&
-            reqCheck.canEnter &&
-            player.timeRemaining >= encounterTime &&
-            player.health > 10 &&
-            attemptsRemaining > 0;
-
-          const borderColor =
-            status === 'cleared'
-              ? 'border-l-green-600'
-              : status === 'available'
-                ? reqCheck.canEnter
-                  ? 'border-l-amber-500'
-                  : 'border-l-red-800'
-                : 'border-l-gray-700';
-
-          const bgColor =
-            status === 'cleared'
-              ? 'bg-green-950/30'
-              : status === 'locked'
-                ? 'bg-gray-950/30'
-                : 'bg-[#2d1f0f]';
-
-          // Floor 6 gets a special golden glow
-          const isUltraEndgame = floor.id === 6;
-
-          return (
-            <div
-              key={floor.id}
-              className={`border border-[#8b7355] ${borderColor} border-l-4 rounded ${bgColor} ${isUltraEndgame ? 'ring-1 ring-amber-500/30' : ''}`}
-            >
-              {/* Floor header — clickable */}
-              <button
-                className="w-full flex items-center gap-2 p-2 text-left hover:bg-white/5 transition-colors"
-                onClick={() =>
-                  setExpandedFloor(isExpanded ? null : floor.id)
-                }
-              >
-                {isExpanded ? (
-                  <ChevronDown className="w-3.5 h-3.5 text-[#8b7355] flex-shrink-0" />
-                ) : (
-                  <ChevronRight className="w-3.5 h-3.5 text-[#8b7355] flex-shrink-0" />
-                )}
-                <span className={`text-xs font-mono w-5 ${isUltraEndgame ? 'text-amber-400' : 'text-[#8b7355]'}`}>
-                  F{floor.id}
-                </span>
-                <span className={`text-sm flex-1 truncate ${isUltraEndgame ? 'text-amber-300 font-display' : 'text-[#e0d4b8]'}`}>
-                  {floor.name}
-                </span>
-
-                {/* Status icon */}
-                {status === 'cleared' && (
-                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                )}
-                {status === 'available' && reqCheck.canEnter && (
-                  <span className="text-amber-400 text-sm flex-shrink-0">
-                    ⚔
-                  </span>
-                )}
-                {status === 'available' && !reqCheck.canEnter && (
-                  <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                )}
-                {status === 'locked' && (
-                  <Lock className="w-4 h-4 text-gray-600 flex-shrink-0" />
-                )}
-              </button>
-
-              {/* Expanded details */}
-              {isExpanded && (
-                <div className="px-3 pb-3 space-y-2 border-t border-[#8b7355]/30">
-                  <p className="text-sm text-[#a09080] mt-2 italic">
-                    {floor.description}
-                  </p>
-
-                  {/* Stats row */}
-                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-mono">
-                    <span className="text-[#a09080] flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" /> {encounterTime}h/enc ({totalTimeCost}h total)
-                    </span>
-                    <span className="text-[#c9a227]">
-                      💰 {floor.goldRange[0]}-{floor.goldRange[1]}g
-                    </span>
-                    <span className="text-red-400 flex items-center gap-1">
-                      <Heart className="w-3.5 h-3.5" /> {floor.healthRisk[0]}
-                      -{floor.healthRisk[1]} dmg
-                    </span>
-                  </div>
-
-                  {/* Boss info */}
-                  <div className="text-sm flex items-center gap-1.5">
-                    <Skull className="w-4 h-4 text-red-600" />
-                    <span className="text-red-300">
-                      Boss: {floor.boss.name}
-                    </span>
-                    <span className="text-[#8b7355]">
-                      (Power {floor.boss.basePower})
-                    </span>
-                  </div>
-
-                  {/* Rare drop hint */}
-                  <div className="text-sm text-[#8b7355]">
-                    ✦ Rare Drop:{' '}
-                    {player.dungeonFloorsCleared.includes(floor.id)
-                      ? floor.rareDrop.name
-                      : '???'}{' '}
-                    (5%)
-                  </div>
-
-                  {/* Re-run mini-boss hint */}
-                  {player.dungeonFloorsCleared.includes(floor.id) && (
-                    <div className="text-sm text-amber-600">
-                      ★ 15% chance of wandering mini-boss on re-runs
-                    </div>
-                  )}
-
-                  {/* Dungeon modifier info */}
-                  <div className="text-sm text-[#8b7355]">
-                    ⚡ Random modifier may apply (60% chance per run)
-                  </div>
-
-                  {/* Requirements check */}
-                  {status === 'available' && (
-                    <div className="space-y-0.5">
-                      {reqCheck.canEnter ? (
-                        <div className="text-sm text-green-400">
-                          ✓ All requirements met
-                        </div>
-                      ) : (
-                        reqCheck.reasons.map((reason, i) => (
-                          <div key={i} className="text-sm text-red-400">
-                            ✗ {reason}
-                          </div>
-                        ))
-                      )}
-                      {floor.requirements.recommendedDegrees.length >
-                        0 && (
-                        <div className="text-sm text-[#8b7355]">
-                          Recommended:{' '}
-                          {floor.requirements.recommendedDegrees
-                            .map(
-                              (d) =>
-                                DEGREE_NAMES[d] || d,
-                            )
-                            .join(', ')}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Cleared badge */}
-                  {status === 'cleared' && (
-                    <div className="text-sm text-green-400">
-                      ✓ Floor cleared! Run again for gold.
-                    </div>
-                  )}
-
-                  {/* Personal best */}
-                  {dungeonRecords[floor.id] && (
-                    <div className="text-sm text-[#c9a227] flex items-center gap-1">
-                      <Trophy className="w-3.5 h-3.5" />
-                      Best: {dungeonRecords[floor.id].bestGold}g | Runs: {dungeonRecords[floor.id].runs} | Total: {dungeonRecords[floor.id].totalGold}g
-                    </div>
-                  )}
-
-                  {/* Enter / Re-enter button */}
-                  {status !== 'locked' && (
-                    <button
-                      className={
-                        'w-full py-1.5 px-3 text-sm font-display rounded ' +
-                        'bg-gradient-to-r from-amber-800 to-amber-700 ' +
-                        'hover:from-amber-700 hover:to-amber-600 ' +
-                        'disabled:opacity-40 disabled:cursor-not-allowed ' +
-                        'text-[#e0d4b8] border border-amber-600/50 transition-all'
-                      }
-                      disabled={!canAttempt}
-                      onClick={() => handleEnterFloor(floor)}
-                    >
-                      {canAttempt
-                        ? status === 'cleared'
-                          ? `Re-enter Floor ${floor.id}`
-                          : `Enter Floor ${floor.id}`
-                        : attemptsRemaining <= 0
-                          ? 'Too fatigued (max attempts)'
-                          : !reqCheck.canEnter
-                            ? 'Requirements not met'
-                            : player.timeRemaining < encounterTime
-                              ? 'Not enough time'
-                              : 'Too injured'}
-                    </button>
-                  )}
-
-                  {/* Locked message */}
-                  {status === 'locked' && (
-                    <div className="text-xs text-gray-500 text-center py-1">
-                      Clear Floor{' '}
-                      {floor.requirements.previousFloorCleared} to
-                      unlock
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {DUNGEON_FLOORS.map((floor) => (
+          <FloorCard
+            key={floor.id}
+            floor={floor}
+            player={player}
+            combatStats={combatStats}
+            attemptsRemaining={attemptsRemaining}
+            dungeonRecords={dungeonRecords}
+            expandedFloor={expandedFloor}
+            setExpandedFloor={setExpandedFloor}
+            onEnterFloor={handleEnterFloor}
+          />
+        ))}
       </div>
 
       {/* Rest in Cave */}

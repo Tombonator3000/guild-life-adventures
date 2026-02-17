@@ -3,6 +3,69 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+## 2026-02-17 — Code Audit & Refactor Round 4 (16:00 UTC)
+
+### Overview
+
+Full codebase audit using 4 parallel agents (store+helpers, components, data files, AI+network). Identified 40+ complex functions across all areas. Selected 3 high-impact refactoring targets and applied structural changes maintaining identical behavior. All 296 tests pass. TypeScript compiles clean. Build succeeds.
+
+### Refactoring 16: `generateGoalActions` (goalActions.ts)
+
+**Problem**: 484-line monolithic function with a 5-case switch statement, where each case contained 40-100 lines of goal-specific logic. Adding festival bonuses and secondary goal awareness added 2 more dense sections at the bottom. The switch made it hard to understand any single goal's strategy without scrolling through the entire function.
+
+**Fix**: Extracted 8 focused functions via dispatch table pattern:
+- `generateEducationActions()` — study/graduate decisions
+- `generateWealthActions()` — work/banking decisions
+- `generateHappinessActions()` — appliance/relaxation decisions
+- `generateCareerActions()` — job seeking/dependability decisions
+- `generateAdventureActions()` — guild pass/quest/dungeon decisions
+- `generateFestivalBonusActions()` — festival-aware boosts
+- `generateGraduationActions()` — opportunistic graduation checks
+- `generateSecondaryGoalActions()` — HARD AI multi-goal awareness
+
+`GOAL_ACTION_GENERATORS` dispatch table replaces the switch. Main `generateGoalActions()` is now 10 lines that combines results from 4 generators.
+
+### Refactoring 17: `CavePanel` (CavePanel.tsx)
+
+**Problem**: 697-line component with 3 identical durability indicator patterns (weapon/armor/shield each had 4 identical lines of `getDurabilityCondition()` → color mapping → span rendering), a 10-line repair warning with duplicated item checking, and a 175-line floor card section (lines 491-667) inlined inside a `.map()` callback.
+
+**Fix**: Extracted 3 sub-components:
+- `DurabilityIndicator` — reusable component taking `itemId`, `icon`, `durabilityMap` props. Eliminates 3×4=12 lines of duplicate IIFE patterns → 3 one-line `<DurabilityIndicator>` calls
+- `RepairWarning` — extracted equipment broken/poor check into standalone component
+- `FloorCard` — 175-line floor expansion card (header, stats, boss, requirements, enter button) extracted with clean props interface. The main component's `.map()` is now a single `<FloorCard>` call
+
+### Refactoring 18: `generateCriticalActions` (criticalNeeds.ts)
+
+**Problem**: 306-line monolithic function handling 4 independent critical needs (food, rent, clothing, health) in one long function body with deeply nested conditionals. Food section alone was 115 lines with 3-level nesting. Clothing had cascading tier fallback logic. Each section's scope was hard to identify since they blended together.
+
+**Fix**: Extracted 4 focused functions:
+- `generateFoodActions()` — proactive + urgent food buying with store preference logic
+- `generateRentActions()` — prepayment + eviction prevention
+- `generateClothingActions()` — proactive upgrade + tier-based purchasing with fallback
+- `generateHealthActions()` — healer visit decisions
+
+Main `generateCriticalActions()` is now 6 lines that spreads results from 4 generators.
+
+### Files Modified (3)
+
+| File | Changes |
+|------|---------|
+| `src/hooks/ai/actions/goalActions.ts` | Switch → dispatch table + 8 extracted functions |
+| `src/components/game/CavePanel.tsx` | `DurabilityIndicator`, `RepairWarning`, `FloorCard` sub-components |
+| `src/hooks/ai/actions/criticalNeeds.ts` | 4 per-need functions replacing monolith |
+
+### Test Results
+
+```
+Test Files  16 passed (16)
+Tests       296 passed (296)
+Duration    10.43s
+```
+
+TypeScript: 0 errors. Build: clean. All behavior preserved.
+
+---
+
 ## 2026-02-17 — Code Audit & Refactor Round 3 (14:00 UTC)
 
 ### Overview

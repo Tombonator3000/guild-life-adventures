@@ -3,6 +3,8 @@
  *
  * Generates actions for critical needs: food, rent, clothing, health.
  * These are always checked first with highest priorities.
+ *
+ * Refactored: Each need extracted into a focused function for clarity.
  */
 
 import { RENT_COSTS } from '@/types/game.types';
@@ -10,29 +12,21 @@ import { getGameOption } from '@/data/gameOptions';
 import type { AIAction } from '../types';
 import type { ActionContext } from './actionContext';
 
-/**
- * Generate actions for critical needs (food, rent, clothing, health)
- */
-export function generateCriticalActions(ctx: ActionContext): AIAction[] {
+// ─── Food actions ──────────────────────────────────────────────
+
+function generateFoodActions(ctx: ActionContext): AIAction[] {
   const actions: AIAction[] = [];
   const { player, urgency, currentLocation, moveCost } = ctx;
+  const pm = ctx.priceModifier;
 
-  // ============================================
-  // CRITICAL NEEDS (Always check first)
-  // ============================================
-
-  // 1. FOOD - Prevent starvation (-20 hours penalty is devastating)
-  // H9 FIX: Apply priceModifier to food costs (AI was ignoring economy inflation/deflation)
-  // Without Preservation Box, General Store food may spoil at turn end — prefer Tavern
   // HARD AI: Proactive food — buy when already at a food location and not fully stocked
   const isAtFoodLocation = currentLocation === 'general-store' || currentLocation === 'rusty-tankard' || currentLocation === 'shadow-market';
   if (ctx.settings.planningDepth >= 3 && isAtFoodLocation && player.foodLevel < 70 && urgency.food <= 0.5 && player.gold >= 15) {
-    const pm = ctx.priceModifier;
     const hasBox = player.appliances['preservation-box'] && !player.appliances['preservation-box'].isBroken;
     if (currentLocation === 'rusty-tankard') {
       actions.push({
         type: 'buy-food',
-        priority: 52, // Below critical needs but above low-priority actions
+        priority: 52,
         description: 'Stock up on food while at tavern (proactive)',
         details: { cost: Math.round(12 * pm), foodGain: 15 },
       });
@@ -53,30 +47,12 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
     }
   }
 
-  // HARD AI: Buy clothing proactively when at a clothing store and below optimal level
-  if (ctx.settings.planningDepth >= 3 && (currentLocation === 'armory' || currentLocation === 'general-store')) {
-    const pm = ctx.priceModifier;
-    const condition = player.clothingCondition;
-    // Anticipate degradation: -3/week means clothes at 45 will drop below casual (15) in ~10 weeks
-    // Hard AI buys clothes when they drop within 2 weeks of next tier boundary
-    const degradeBuffer = 6; // 2 weeks * 3/week
-    if (condition > 0 && condition < 40 + degradeBuffer && condition >= 15 && player.gold >= Math.round(60 * pm)) {
-      actions.push({
-        type: 'buy-clothing',
-        priority: 48,
-        description: 'Proactively upgrade clothing before degradation',
-        details: { cost: Math.round(60 * pm), clothingGain: 60 },
-      });
-    }
-  }
-
+  // Urgent food — prevent starvation (-20 hours penalty)
   if (urgency.food > 0.5) {
-    const pm = ctx.priceModifier;
     const hasBox = player.appliances['preservation-box'] && !player.appliances['preservation-box'].isBroken;
     const cheapestFoodCost = Math.round(6 * pm); // Shadow Market mystery meat base 6g
     if (player.gold >= cheapestFoodCost) {
       if (currentLocation === 'general-store' && hasBox && player.gold >= Math.round(15 * pm)) {
-        // With Preservation Box: buy cheese at General Store (15g for 15 food, safe)
         actions.push({
           type: 'buy-food',
           priority: 100,
@@ -103,7 +79,6 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
         const tavernCost = moveCost('rusty-tankard');
         const marketCost = moveCost('shadow-market');
         if (!hasBox) {
-          // Without Preservation Box: prefer Tavern (safe) or Shadow Market (cheap)
           if (tavernCost <= marketCost && player.timeRemaining > tavernCost + 2) {
             actions.push({
               type: 'move',
@@ -120,7 +95,6 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
             });
           }
         } else {
-          // With Preservation Box: General Store is efficient
           if (storeCost <= tavernCost && player.timeRemaining > storeCost + 2) {
             actions.push({
               type: 'move',
@@ -141,14 +115,20 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
     }
   }
 
-  // 2. RENT - Prevent eviction (huge penalty)
-  // Landlord is only open during rent weeks (every 4th week) or when urgently behind (3+ weeks overdue)
-  // Trigger at >= 0.5 (2 weeks overdue) instead of > 0.5 to give AI time to travel and pay
+  return actions;
+}
+
+// ─── Rent actions ──────────────────────────────────────────────
+
+function generateRentActions(ctx: ActionContext): AIAction[] {
+  const actions: AIAction[] = [];
+  const { player, urgency, currentLocation, moveCost } = ctx;
+
   const isRentWeek = (ctx.week + 1) % 4 === 0;
   const hasUrgentRent = player.weeksSinceRent >= 3;
   const isLandlordOpen = isRentWeek || hasUrgentRent;
 
-  // GAP-1: Proactive rent prepayment — pay on rent week even if not urgently behind
+  // Proactive rent prepayment — pay on rent week even if not urgently behind
   if (isRentWeek && player.housing !== 'homeless' && player.weeksSinceRent >= 1 && urgency.rent < 0.5) {
     const prepayRentCost = player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing];
     if (player.gold >= prepayRentCost) {
@@ -173,6 +153,7 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
     }
   }
 
+  // Urgent rent — prevent eviction
   if (urgency.rent >= 0.5 && player.housing !== 'homeless' && isLandlordOpen) {
     const rentCost = player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing];
     if (player.gold >= rentCost) {
@@ -197,90 +178,108 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
     }
   }
 
-  // 3. CLOTHING - Jones-style 3-tier system (casual/dress/business)
-  // Thresholds: casual=15, dress=40, business=70
-  // AI buys the appropriate tier based on career needs
-  {
-    const pm = ctx.priceModifier;
-    const isNaked = player.clothingCondition <= 0;
+  return actions;
+}
+
+// ─── Clothing actions ──────────────────────────────────────────
+
+function generateClothingActions(ctx: ActionContext): AIAction[] {
+  const actions: AIAction[] = [];
+  const { player, urgency, currentLocation, moveCost } = ctx;
+  const pm = ctx.priceModifier;
+
+  // HARD AI: Proactive clothing when at a clothing store
+  if (ctx.settings.planningDepth >= 3 && (currentLocation === 'armory' || currentLocation === 'general-store')) {
     const condition = player.clothingCondition;
+    const degradeBuffer = 6; // 2 weeks * 3/week
+    if (condition > 0 && condition < 40 + degradeBuffer && condition >= 15 && player.gold >= Math.round(60 * pm)) {
+      actions.push({
+        type: 'buy-clothing',
+        priority: 48,
+        description: 'Proactively upgrade clothing before degradation',
+        details: { cost: Math.round(60 * pm), clothingGain: 60 },
+      });
+    }
+  }
 
-    // Determine what tier the AI needs based on its current/target job
-    // Business tier for high-level jobs, dress for mid, casual for entry
-    let targetCondition = 0;
-    let clothingCost = 0;
-    let tierDesc = '';
+  // Determine needed clothing tier based on urgency
+  const isNaked = player.clothingCondition <= 0;
+  const condition = player.clothingCondition;
 
-    if (isNaked || urgency.clothing >= 0.8) {
-      // Emergency: buy cheapest clothes (Peasant Garb = 12g → condition 35)
-      targetCondition = 35;
-      clothingCost = Math.round(12 * pm);
-      tierDesc = 'casual (emergency)';
-    } else if (condition < 15 && urgency.clothing > 0.5) {
-      // Basic casual (Common Tunic = 25g → condition 45)
+  let targetCondition = 0;
+  let clothingCost = 0;
+  let tierDesc = '';
+
+  if (isNaked || urgency.clothing >= 0.8) {
+    targetCondition = 35;
+    clothingCost = Math.round(12 * pm);
+    tierDesc = 'casual (emergency)';
+  } else if (condition < 15 && urgency.clothing > 0.5) {
+    targetCondition = 45;
+    clothingCost = Math.round(25 * pm);
+    tierDesc = 'casual';
+  } else if (condition < 40 && urgency.clothing > 0.4) {
+    targetCondition = 60;
+    clothingCost = Math.round(60 * pm);
+    tierDesc = 'dress';
+    if (player.gold < clothingCost) {
       targetCondition = 45;
       clothingCost = Math.round(25 * pm);
       tierDesc = 'casual';
-    } else if (condition < 40 && urgency.clothing > 0.4) {
-      // Dress tier needed for mid jobs (Fine Clothes = 60g → condition 60)
+    }
+  } else if (condition < 70 && urgency.clothing > 0.2) {
+    targetCondition = 90;
+    clothingCost = Math.round(175 * pm);
+    tierDesc = 'business';
+    if (player.gold < clothingCost) {
       targetCondition = 60;
       clothingCost = Math.round(60 * pm);
       tierDesc = 'dress';
-      if (player.gold < clothingCost) {
-        targetCondition = 45;
-        clothingCost = Math.round(25 * pm);
-        tierDesc = 'casual';
-      }
-    } else if (condition < 70 && urgency.clothing > 0.2) {
-      // Business tier needed for top jobs (Noble Attire = 175g → condition 90)
-      targetCondition = 90;
-      clothingCost = Math.round(175 * pm);
-      tierDesc = 'business';
-      // Fallback to dress if can't afford business
-      if (player.gold < clothingCost) {
-        targetCondition = 60;
-        clothingCost = Math.round(60 * pm);
-        tierDesc = 'dress';
-      }
-      // Fallback to casual if can't afford dress
-      if (player.gold < clothingCost) {
-        targetCondition = 45;
-        clothingCost = Math.round(25 * pm);
-        tierDesc = 'casual';
-      }
     }
+    if (player.gold < clothingCost) {
+      targetCondition = 45;
+      clothingCost = Math.round(25 * pm);
+      tierDesc = 'casual';
+    }
+  }
 
-    const needsClothing = targetCondition > condition && clothingCost > 0;
-    const clothingPriority = isNaked ? 95 : 75;
+  const needsClothing = targetCondition > condition && clothingCost > 0;
+  const clothingPriority = isNaked ? 95 : 75;
 
-    if (needsClothing && player.gold >= clothingCost) {
-      if (currentLocation === 'armory' || currentLocation === 'general-store') {
+  if (needsClothing && player.gold >= clothingCost) {
+    if (currentLocation === 'armory' || currentLocation === 'general-store') {
+      actions.push({
+        type: 'buy-clothing',
+        priority: clothingPriority,
+        description: isNaked ? 'Buy clothing urgently (cannot work naked)' : `Buy ${tierDesc} clothing for work`,
+        details: { cost: clothingCost, clothingGain: targetCondition },
+      });
+    } else {
+      const movementCost = Math.min(moveCost('armory'), moveCost('general-store'));
+      if (player.timeRemaining > movementCost + 2) {
         actions.push({
-          type: 'buy-clothing',
-          priority: clothingPriority,
-          description: isNaked ? 'Buy clothing urgently (cannot work naked)' : `Buy ${tierDesc} clothing for work`,
-          details: { cost: clothingCost, clothingGain: targetCondition },
+          type: 'move',
+          location: moveCost('armory') < moveCost('general-store') ? 'armory' : 'general-store',
+          priority: isNaked ? 90 : 70,
+          description: isNaked ? 'Travel urgently to buy clothing' : `Travel to buy ${tierDesc} clothing`,
         });
-      } else {
-        const movementCost = Math.min(moveCost('armory'), moveCost('general-store'));
-        if (player.timeRemaining > movementCost + 2) {
-          actions.push({
-            type: 'move',
-            location: moveCost('armory') < moveCost('general-store') ? 'armory' : 'general-store',
-            priority: isNaked ? 90 : 70,
-            description: isNaked ? 'Travel urgently to buy clothing' : `Travel to buy ${tierDesc} clothing`,
-          });
-        }
       }
     }
   }
 
-  // 4. HEALTH - Visit healer if health is low
-  // Older players (40+, if aging enabled) are more cautious about health
-  // Cap threshold to maxHealth to prevent infinite healing loop at elder ages
+  return actions;
+}
+
+// ─── Health actions ────────────────────────────────────────────
+
+function generateHealthActions(ctx: ActionContext): AIAction[] {
+  const actions: AIAction[] = [];
+  const { player, currentLocation, moveCost } = ctx;
+
   const agingOn = getGameOption('enableAging');
   const rawAgeThreshold = (agingOn && (player.age ?? 18) >= 40) ? 65 : 50;
   const ageHealthThreshold = Math.min(rawAgeThreshold, Math.floor(player.maxHealth * 0.8));
+
   if (player.health < ageHealthThreshold && player.gold >= 30) {
     if (currentLocation === 'enchanter') {
       actions.push({
@@ -303,4 +302,21 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
   }
 
   return actions;
+}
+
+// ─── Main entry point ──────────────────────────────────────────
+
+/**
+ * Generate actions for critical needs (food, rent, clothing, health).
+ *
+ * Each need is handled by a focused function. Results are combined
+ * into a single action list for the priority-based action system.
+ */
+export function generateCriticalActions(ctx: ActionContext): AIAction[] {
+  return [
+    ...generateFoodActions(ctx),
+    ...generateRentActions(ctx),
+    ...generateClothingActions(ctx),
+    ...generateHealthActions(ctx),
+  ];
 }
