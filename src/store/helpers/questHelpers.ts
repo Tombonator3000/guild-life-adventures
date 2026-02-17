@@ -256,9 +256,17 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       const updatedPlayer = get().players.find(p => p.id === playerId);
       if (updatedPlayer && !updatedPlayer.isAI) {
         updateAchievementStats({ totalQuestsCompleted: 1, totalGoldEarned: quest.goldReward });
+        const evaluation = evaluateGoals(updatedPlayer, get().goalSettings, get().stockPrices);
         checkAchievements({
+          gold: updatedPlayer.gold,
+          totalWealth: evaluation.totalWealth,
+          happiness: updatedPlayer.happiness,
+          completedDegrees: updatedPlayer.completedDegrees.length,
           completedQuests: updatedPlayer.completedQuests,
+          dungeonFloorsCleared: updatedPlayer.dungeonFloorsCleared.length,
           guildRank: updatedPlayer.guildRank,
+          housing: updatedPlayer.housing,
+          week: get().week,
         });
       }
 

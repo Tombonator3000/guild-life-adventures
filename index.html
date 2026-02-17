@@ -81,10 +81,11 @@
           if(ls.querySelector('.error-info'))return;
           var d=document.createElement('div');
           d.className='error-info';
-          d.style.cssText='margin-top:1rem;';
+          d.style.cssText='margin-top:1rem;max-width:500px;';
           d.innerHTML='<p style="color:#c44;font-size:0.95rem;">Failed to load the realm</p>'
-            +'<p style="font-size:0.8rem;opacity:0.7;max-width:500px;word-break:break-word;">'+msg+'</p>'
-            +'<button onclick="try{var u=new URL(location.href);u.searchParams.set(\'_gv\',Date.now());location.replace(u.toString())}catch(e){location.reload()}" style="margin-top:1rem;padding:.5rem 1.5rem;background:#d4a537;color:#1f170a;border:none;border-radius:4px;cursor:pointer;font-size:1rem;">Reload</button>';
+            +'<p style="font-size:0.8rem;opacity:0.7;word-break:break-word;">'+msg+'</p>'
+            +'<button onclick="try{var u=new URL(location.href);u.searchParams.set(\'_gv\',Date.now());location.replace(u.toString())}catch(e){location.reload()}" style="margin-top:1rem;padding:.5rem 1.5rem;background:#d4a537;color:#1f170a;border:none;border-radius:4px;cursor:pointer;font-size:1rem;">Reload</button>'
+            +'<br><button onclick="try{sessionStorage.clear();localStorage.clear()}catch(e){}try{if(caches)caches.keys().then(function(k){k.forEach(function(n){caches.delete(n)})}).catch(function(){})}catch(e){}try{if(navigator.serviceWorker)navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(reg){reg.unregister()})}).catch(function(){})}catch(e){}setTimeout(function(){try{var u=new URL(location.href);u.searchParams.set(\'_gv\',Date.now());location.replace(u.toString())}catch(e){location.reload()}},500)" style="margin-top:.5rem;padding:.4rem 1rem;background:#c44;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:.85rem;">Nuclear Reset (clears all data)</button>';
           ls.appendChild(d);
         },2000);
       }
@@ -165,9 +166,9 @@
           }catch(e){return Promise.resolve();}
         }
 
-        function loadApp(){
+        function loadApp(overrideSrc){
           if(document.querySelector('script[data-entry]'))return;
-          var src=window.__ENTRY__;
+          var src=overrideSrc||window.__ENTRY__;
           if(!src)return; /* dev mode */
           window.__guildAppLoading=true;
           __guildSetStatus('Loading game modules...');
@@ -216,10 +217,27 @@
         }).then(function(data){
           if(document.querySelector('script[data-entry]'))return;
           if(data&&data.buildTime&&data.buildTime!==window.__HTML_BUILD_TIME__){
-            /* Stale HTML detected — version.json is fresh.
-               Auto-reload to get fresh HTML with correct entry URL. */
+            /* Stale HTML detected — version.json has fresh data.
+               Try hot-swap: use version.json's entry URL directly instead of
+               reloading (reload may serve same stale HTML from CDN cache). */
             console.warn('[Guild Life] Stale HTML detected. HTML:',
               window.__HTML_BUILD_TIME__,'Server:',data.buildTime);
+            if(data.entry){
+              console.log('[Guild Life] Hot-swapping to fresh entry:',data.entry);
+              /* Swap CSS to match the fresh build */
+              if(data.css&&Array.isArray(data.css)){
+                var oldLinks=document.querySelectorAll('link[rel="stylesheet"][crossorigin]');
+                oldLinks.forEach(function(l){l.remove();});
+                data.css.forEach(function(href){
+                  var link=document.createElement('link');
+                  link.rel='stylesheet';link.crossOrigin='';link.href=href;
+                  document.head.appendChild(link);
+                });
+              }
+              loadApp(data.entry);
+              return;
+            }
+            /* No entry URL in version.json — fall back to reload */
             autoReload('stale HTML detected');
             return;
           }
@@ -312,15 +330,40 @@
           if(!ls){clearInterval(t);return;}
           if(shown||!shouldShowButton())return;
           shown=true;
+          /* Show diagnostic info */
+          var diag=document.createElement('p');
+          diag.style.cssText='font-size:0.7rem;opacity:0.5;margin-top:1rem;max-width:400px;word-break:break-all;';
+          diag.textContent='[diag] entry='+String(window.__ENTRY__||'none')
+            +' build='+String(window.__HTML_BUILD_TIME__||'dev')
+            +' loading='+String(window.__guildAppLoading)
+            +' failed='+String(window.__guildAppFailed)
+            +' mounted='+String(window.__guildReactMounted)
+            +' errors='+String((window.__guildLoadErrors||[]).length);
+          ls.appendChild(diag);
           var p=document.createElement('p');
           p.className='fallback-btn';
-          p.style.cssText='margin-top:1.5rem;font-family:serif;';
+          p.style.cssText='margin-top:1rem;font-family:serif;';
           var btn=document.createElement('button');
           btn.textContent='Clear Cache & Reload';
           btn.style.cssText='padding:.75rem 2rem;font-size:1rem;font-family:serif;background:linear-gradient(135deg,hsl(45,85%,55%),hsl(35,70%,40%));color:#1f170a;border:none;border-radius:.25rem;cursor:pointer;font-weight:bold;';
           btn.onclick=function(){manualReload(btn);};
           p.appendChild(btn);
           ls.appendChild(p);
+          /* Nuclear reset button */
+          var p2=document.createElement('p');
+          p2.style.cssText='margin-top:0.5rem;';
+          var btn2=document.createElement('button');
+          btn2.textContent='Nuclear Reset (clears all data)';
+          btn2.style.cssText='padding:.4rem 1.5rem;font-size:.85rem;font-family:serif;background:#c44;color:#fff;border:none;border-radius:.25rem;cursor:pointer;';
+          btn2.onclick=function(){
+            btn2.textContent='Resetting...';btn2.disabled=true;
+            try{sessionStorage.clear();localStorage.clear();}catch(e){}
+            try{if(window.caches)caches.keys().then(function(k){k.forEach(function(n){caches.delete(n)})}).catch(function(){});}catch(e){}
+            try{if(navigator.serviceWorker)navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(reg){reg.unregister()})}).catch(function(){});}catch(e){}
+            setTimeout(function(){try{var u=new URL(location.href);u.searchParams.set('_gv',Date.now());location.replace(u.toString())}catch(e){location.reload();}},500);
+          };
+          p2.appendChild(btn2);
+          ls.appendChild(p2);
         },2000);
       })();
     </script>
