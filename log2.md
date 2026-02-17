@@ -3,6 +3,70 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+## 2026-02-17 — Code Audit & Refactor Round 6 (20:00 UTC)
+
+### Overview
+
+Full codebase audit using 4 parallel agents (store+helpers, components, data files, AI+network). Identified 40+ complex functions across all areas. Selected 3 high-impact refactoring targets and applied structural changes maintaining identical behavior. All 296 tests pass. TypeScript compiles clean. Build succeeds.
+
+### Refactoring 22: `generateRivalryActions` (rivalryActions.ts)
+
+**Problem**: 256-line monolithic function containing 8 semi-independent rivalry behaviors (quest competition, education racing, aggressive banking, hex casting, hex scroll purchase, amulet purchase, dispel actions, dark ritual) in a single function body. Each section had its own guard conditions, location checks, and hex-system gating — making it hard to understand, test, or modify any individual rivalry behavior without reading the entire function.
+
+**Fix**: Extracted 8 focused sub-generator functions via dispatch table pattern:
+- `generateQuestCompetition()` — grab high-value quests before rival
+- `generateEducationRacing()` — study faster to outpace rival
+- `generateAggressiveBanking()` — deposit to protect gold
+- `generateHexCasting()` — use scrolls to curse biggest threat
+- `generateHexScrollPurchase()` — acquire ammunition for curses
+- `generateAmuletPurchase()` — defense against rival hexes
+- `generateDispelActions()` — clear enemy hexes from key locations
+- `generateDarkRitualActions()` — Hard AI gambler graveyard ritual
+
+Introduced `RivalryContext` interface wrapping `ActionContext` + threat analysis (biggestThreat, threatIsClose, rivalFocus). `RIVALRY_GENERATORS` dispatch array replaces the monolith. Main `generateRivalryActions()` is now 10 lines: find threat, build context, `flatMap` over generators.
+
+### Refactoring 23: `checkVictory` (questHelpers.ts)
+
+**Problem**: 74-line function with mixed concerns — goal evaluation calculations interleaved with two nearly identical `checkAchievements()` call blocks (one for milestone tracking, one for victory recording). The duplicated achievement data objects differed only in the `isVictory` flag and an extra `gold` field. Adding a new goal type or achievement field required editing both blocks.
+
+**Fix**: Extracted 2 helper functions:
+- `evaluateGoals()` — pure function (no side effects) that calculates wealth, education, career, adventure values and returns a `GoalEvaluation` object with all `*Met` booleans and `allMet` aggregate
+- `trackAchievements()` — single function handling both milestone and victory achievement tracking, accepting `isVictory` flag to control behavior
+
+Main `checkVictory()` reduced from 74 to 18 lines: evaluate → track milestones → if won: track victory + set state.
+
+### Refactoring 24: `attemptCurseReflection` (hexHelpers.ts)
+
+**Problem**: 3 outcome branches (reflect, remove, fail) each had their own `set()` call with near-identical `players.map()` callbacks. All 3 shared the same gold/time deduction; reflect and remove also shared curse removal; only reflect added the curse transfer. The duplicated structure made it easy to introduce inconsistencies when modifying the shared gold/time logic.
+
+**Fix**: Consolidated into a single `set()` call with conditional spread:
+- Base update: `gold - cost`, `timeRemaining - 3` (all outcomes)
+- Conditional curse removal: `...(curseRemoved && { activeCurses: slice(1) })` (reflect + remove)
+- Conditional curse transfer: check `result === 'reflect'` inside the map for caster
+- Outcome messages extracted into `OUTCOME_MESSAGES` lookup table
+
+Reduced 3 separate `set()` calls (56 lines) to 1 call (18 lines) + message lookup (12 lines).
+
+### Files Modified (3)
+
+| File | Changes |
+|------|---------|
+| `src/hooks/ai/actions/rivalryActions.ts` | 256-line monolith → 8 sub-generators + `RivalryContext` + dispatch array |
+| `src/store/helpers/questHelpers.ts` | `evaluateGoals()` + `trackAchievements()` extracted; `checkVictory` 74→18 lines |
+| `src/store/helpers/hexHelpers.ts` | `attemptCurseReflection` 3 branches → 1 `set()` + `OUTCOME_MESSAGES` lookup |
+
+### Test Results
+
+```
+Test Files  16 passed (16)
+Tests       296 passed (296)
+Duration    10.63s
+```
+
+TypeScript: 0 errors. Build: clean. All behavior preserved.
+
+---
+
 ## 2026-02-17 — Code Audit & Refactor Round 5 (18:00 UTC)
 
 ### Overview

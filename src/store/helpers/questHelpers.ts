@@ -6,7 +6,7 @@
 // B4: Quest failure consequences (applied in abandonQuest)
 // B5: Guild reputation (incremented on quest/chain/bounty completion)
 
-import type { LocationId, HousingTier, DeathEvent } from '@/types/game.types';
+import type { LocationId, HousingTier, DeathEvent, GoalSettings, Player } from '@/types/game.types';
 import { GUILD_PASS_COST, GUILD_RANK_ORDER, GUILD_RANK_REQUIREMENTS } from '@/types/game.types';
 import { getGameOption } from '@/data/gameOptions';
 import {
@@ -115,6 +115,66 @@ function calculateQuestReward(
     : baseHappiness;
   const healthLoss = Math.random() < 0.5 ? healthRisk : Math.floor(healthRisk / 2);
   return { finalGold, finalHappiness, healthLoss };
+}
+
+// ── Goal evaluation (pure function — no side effects) ───────────────
+
+interface GoalEvaluation {
+  totalWealth: number;
+  wealthMet: boolean;
+  happinessMet: boolean;
+  educationMet: boolean;
+  careerMet: boolean;
+  adventureMet: boolean;
+  allMet: boolean;
+}
+
+function evaluateGoals(
+  player: Player,
+  goals: GoalSettings,
+  stockPrices: Record<string, number>,
+): GoalEvaluation {
+  const stockValue = calculateStockValue(player.stocks, stockPrices);
+  const totalWealth = player.gold + player.savings + player.investments + stockValue - player.loanAmount;
+  const totalEducation = player.completedDegrees.length * 9;
+  const adventureValue = player.completedQuests + player.dungeonFloorsCleared.length;
+
+  const wealthMet = totalWealth >= goals.wealth;
+  const happinessMet = player.happiness >= goals.happiness;
+  const educationMet = totalEducation >= goals.education;
+  const careerMet = player.dependability >= goals.career;
+  const adventureMet = goals.adventure <= 0 || adventureValue >= goals.adventure;
+
+  return {
+    totalWealth,
+    wealthMet, happinessMet, educationMet, careerMet, adventureMet,
+    allMet: wealthMet && happinessMet && educationMet && careerMet && adventureMet,
+  };
+}
+
+/** Track achievements for human players (milestone check or victory) */
+function trackAchievements(
+  player: Player,
+  evaluation: GoalEvaluation,
+  week: number,
+  isVictory: boolean,
+) {
+  if (player.isAI) return;
+  if (isVictory) {
+    updateAchievementStats({ gamesWon: 1 });
+  }
+  checkAchievements({
+    gold: player.gold,
+    totalWealth: evaluation.totalWealth,
+    happiness: player.happiness,
+    completedDegrees: player.completedDegrees.length,
+    completedQuests: player.completedQuests,
+    dungeonFloorsCleared: player.dungeonFloorsCleared.length,
+    guildRank: player.guildRank,
+    housing: player.housing,
+    week,
+    isVictory,
+  });
 }
 
 export function createQuestActions(set: SetFn, get: GetFn) {
@@ -458,74 +518,24 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       const player = state.players.find(p => p.id === playerId);
       if (!player) return false;
 
-      const goals = state.goalSettings;
-
-      // Calculate total wealth (Jones-style Liquid Assets)
-      // Cash + Bank + Investments + Stock Value - Loans
-      const stockValue = calculateStockValue(player.stocks, state.stockPrices);
-      const totalWealth = player.gold + player.savings + player.investments + stockValue - player.loanAmount;
-      const wealthMet = totalWealth >= goals.wealth;
-
-      // Check happiness
-      const happinessMet = player.happiness >= goals.happiness;
-
-      // Calculate total education using completedDegrees (Jones-style system)
-      // Each degree is worth 9 education points (like Jones in the Fast Lane)
-      const totalEducation = player.completedDegrees.length * 9;
-      const educationMet = totalEducation >= goals.education;
-
-      // M28 FIX: Career = dependability (available even when unemployed)
-      const careerValue = player.dependability;
-      const careerMet = careerValue >= goals.career;
-
-      // Check adventure goal (optional — 0 means disabled)
-      // Adventure score = quests completed + unique dungeon floors cleared
-      const adventureValue = player.completedQuests + player.dungeonFloorsCleared.length;
-      const adventureMet = goals.adventure <= 0 || adventureValue >= goals.adventure;
+      const evaluation = evaluateGoals(player, state.goalSettings, state.stockPrices);
 
       // C6: Check achievements on every victory check (covers turn-end milestones)
-      if (!player.isAI) {
-        checkAchievements({
-          gold: player.gold,
-          totalWealth,
-          happiness: player.happiness,
-          completedDegrees: player.completedDegrees.length,
-          completedQuests: player.completedQuests,
-          dungeonFloorsCleared: player.dungeonFloorsCleared.length,
-          guildRank: player.guildRank,
-          housing: player.housing,
-          week: state.week,
-          isVictory: false,
-        });
-      }
+      trackAchievements(player, evaluation, state.week, false);
 
-      if (wealthMet && happinessMet && educationMet && careerMet && adventureMet) {
-        // C6: Record victory achievement + stats
-        if (!player.isAI) {
-          updateAchievementStats({ gamesWon: 1 });
-          checkAchievements({
-            totalWealth,
-            happiness: player.happiness,
-            completedDegrees: player.completedDegrees.length,
-            completedQuests: player.completedQuests,
-            dungeonFloorsCleared: player.dungeonFloorsCleared.length,
-            guildRank: player.guildRank,
-            housing: player.housing,
-            week: state.week,
-            isVictory: true,
-          });
-        }
-        // Delete autosave to prevent "Continue → instant re-victory" loop
-        try { deleteSave(0); } catch { /* ignore */ }
-        set({
-          winner: playerId,
-          phase: 'victory',
-          eventMessage: `${player.name} has achieved all victory goals and wins the game!`,
-        });
-        return true;
-      }
+      if (!evaluation.allMet) return false;
 
-      return false;
+      // C6: Record victory achievement + stats
+      trackAchievements(player, evaluation, state.week, true);
+
+      // Delete autosave to prevent "Continue → instant re-victory" loop
+      try { deleteSave(0); } catch { /* ignore */ }
+      set({
+        winner: playerId,
+        phase: 'victory',
+        eventMessage: `${player.name} has achieved all victory goals and wins the game!`,
+      });
+      return true;
     },
   };
 }
