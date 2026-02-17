@@ -12,8 +12,7 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <!-- Favicon and apple-touch-icon paths are relative so they work on both
-         root-hosted (Lovable) and subpath-hosted (GitHub Pages) deployments.
-         Previously these used absolute "/" paths which 404'd on GitHub Pages. -->
+         root-hosted (Lovable) and subpath-hosted (GitHub Pages) deployments. -->
     <link rel="icon" type="image/png" href="favicon.png">
     <title>Guild Life</title>
     <meta name="description" content="A fantasy life simulation game inspired by Jones in the Fast Lane">
@@ -37,10 +36,10 @@
     <meta property="og:type" content="website" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    
-  
-  
-  
+
+
+
+
   <meta property="og:title" content="Guild Life">
   <meta name="twitter:title" content="Guild Life">
   <meta property="og:description" content="A fantasy life simulation game inspired by Jones in the Fast Lane">
@@ -58,314 +57,44 @@
         <noscript><p style="margin-top:1rem;color:#c44;">JavaScript is required to play this game.</p></noscript>
       </div>
     </div>
-    <!-- Catch JS errors that occur before React mounts (module load failures, etc.) -->
+    <!-- Minimal error handler — catches JS errors before React mounts -->
     <script>
-      window.__guildLoadErrors=[];
-      /* Loading state flags — used by fallback script to decide when to show
-         the "Clear Cache & Reload" button. Without these, the fallback shows
-         too early (before the module has time to load), causing users to click
-         it and enter a reload loop. */
-      window.__guildAppLoading=false;  /* true once loadApp() injects module */
-      window.__guildAppFailed=false;   /* true if module fails to load */
-      window.__guildReactMounted=false; /* true once React renders */
-      /* Update the loading status text so users see progress, not a frozen screen */
-      function __guildSetStatus(msg){
+      window.__guildReactMounted=false;
+      function __guildShowError(msg){
+        var ls=document.getElementById('loading-screen');
+        if(!ls||ls.querySelector('.error-info'))return;
         var el=document.getElementById('loading-status');
-        if(el)el.textContent=msg;
+        if(el)el.textContent='Failed to load the realm';
+        var d=document.createElement('div');
+        d.className='error-info';
+        d.style.cssText='margin-top:1rem;max-width:500px;';
+        d.innerHTML='<p style="color:#c44;font-size:0.9rem;word-break:break-word;">'+msg+'</p>'
+          +'<button onclick="location.reload()" style="margin-top:1rem;padding:.5rem 1.5rem;background:#d4a537;color:#1f170a;border:none;border-radius:4px;cursor:pointer;font-size:1rem;">Reload</button>';
+        ls.appendChild(d);
       }
-      function __guildShowLoadError(msg){
-        window.__guildAppFailed=true;
-        setTimeout(function(){
-          var ls=document.getElementById('loading-screen');
-          if(!ls)return;
-          if(ls.querySelector('.error-info'))return;
-          var d=document.createElement('div');
-          d.className='error-info';
-          d.style.cssText='margin-top:1rem;max-width:500px;';
-          d.innerHTML='<p style="color:#c44;font-size:0.95rem;">Failed to load the realm</p>'
-            +'<p style="font-size:0.8rem;opacity:0.7;word-break:break-word;">'+msg+'</p>'
-            +'<button onclick="try{var u=new URL(location.href);u.searchParams.set(\'_gv\',Date.now());location.replace(u.toString())}catch(e){location.reload()}" style="margin-top:1rem;padding:.5rem 1.5rem;background:#d4a537;color:#1f170a;border:none;border-radius:4px;cursor:pointer;font-size:1rem;">Reload</button>'
-            +'<br><button onclick="try{sessionStorage.clear();localStorage.clear()}catch(e){}try{if(caches)caches.keys().then(function(k){k.forEach(function(n){caches.delete(n)})}).catch(function(){})}catch(e){}try{if(navigator.serviceWorker)navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(reg){reg.unregister()})}).catch(function(){})}catch(e){}setTimeout(function(){try{var u=new URL(location.href);u.searchParams.set(\'_gv\',Date.now());location.replace(u.toString())}catch(e){location.reload()}},500)" style="margin-top:.5rem;padding:.4rem 1rem;background:#c44;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:.85rem;">Nuclear Reset (clears all data)</button>';
-          ls.appendChild(d);
-        },2000);
-      }
-      window.onerror=function(msg,src,line,col,err){
-        window.__guildLoadErrors.push({msg:msg,src:src,err:err});
-        __guildShowLoadError(msg);
-      };
-      /* ES module loading failures produce rejected promises, not synchronous errors.
-         Without this handler, the loading screen stays visible forever with no error shown. */
+      window.onerror=function(msg){__guildShowError(String(msg));};
       window.addEventListener('unhandledrejection',function(e){
         var msg=e.reason&&e.reason.message?e.reason.message:String(e.reason||'Module loading failed');
-        window.__guildLoadErrors.push({msg:msg,err:e.reason});
-        __guildShowLoadError(msg);
+        __guildShowError(msg);
       });
     </script>
-    <!-- DEFERRED MODULE LOADING + STALE-BUILD DETECTION (Layer 0)
-         In production, deferModulePlugin removes the <script type="module"> tag and
-         stores its URL in window.__ENTRY__. This script loads it dynamically AFTER
-         confirming the HTML is fresh via version.json.
-
-         KEY FIX (2026-02-16): Replaced complex hot-swap/retry logic with simple
-         auto-reload approach. Previous versions tried to hot-swap stale entry URLs
-         in-page, but this failed when GitHub Pages CDN cached version.json too
-         (Fastly doesn't honor client-side Cache-Control headers). Now we just
-         reload the page with ?_gv=timestamp which creates a CDN cache miss,
-         getting fresh HTML from origin. Combined with selfDestroying SW in
-         vite.config.ts, this eliminates both CDN stale cache and SW interference.
-
-         In development, window.__HTML_BUILD_TIME__ is undefined and window.__ENTRY__
-         doesn't exist, so the module script tag below loads normally. -->
-    <script>
-      (function(){
-        var RELOAD_KEY='guild-reload-count';
-        var RELOAD_WINDOW=120000; /* 2 min */
-        var MAX_RELOADS=3;
-
-        function getReloadCount(){
-          try{
-            var d=JSON.parse(sessionStorage.getItem(RELOAD_KEY)||'null');
-            if(!d||Date.now()-d.ts>RELOAD_WINDOW)return 0;
-            return d.count||0;
-          }catch(e){return 0;}
-        }
-        /* Auto-reload with CDN cache-busting URL.
-           ?_gv=timestamp changes the full page URL → CDN cache miss → fresh HTML from origin.
-           Uses sessionStorage counter to prevent infinite reload loops (max 3 in 2 min). */
-        function autoReload(reason){
-          if(getReloadCount()>=MAX_RELOADS){
-            console.warn('[Guild Life] Reload limit reached — showing manual recovery');
-            window.__guildAppFailed=true;
-            __guildShowLoadError('New version deploying. Please wait a minute and refresh, or clear your browser cache.');
-            return;
-          }
-          console.log('[Guild Life] Auto-reloading:',reason);
-          __guildSetStatus('Updating — reloading...');
-          try{
-            var d=JSON.parse(sessionStorage.getItem(RELOAD_KEY)||'null');
-            if(!d||Date.now()-d.ts>RELOAD_WINDOW)d={ts:Date.now(),count:0};
-            d.count++;
-            sessionStorage.setItem(RELOAD_KEY,JSON.stringify(d));
-          }catch(e){}
-          try{
-            var u=new URL(location.href);
-            u.searchParams.set('_gv',String(Date.now()));
-            location.replace(u.toString());
-          }catch(e){location.reload();}
-        }
-
-        /* Unregister legacy SWs. Users with old SWs from pre-fix deployments
-           need cleanup. The selfDestroying SW handles future cleanup, but this
-           covers the transition for existing users. */
-        function cleanupSWs(){
-          try{
-            if(!navigator.serviceWorker)return Promise.resolve();
-            return navigator.serviceWorker.getRegistrations().then(function(regs){
-              return Promise.all(regs.map(function(r){return r.unregister();}));
-            }).catch(function(){});
-          }catch(e){return Promise.resolve();}
-        }
-
-        function loadApp(overrideSrc){
-          if(document.querySelector('script[data-entry]'))return;
-          var src=overrideSrc||window.__ENTRY__;
-          if(!src)return; /* dev mode */
-          window.__guildAppLoading=true;
-          __guildSetStatus('Loading game modules...');
-          console.log('[Guild Life] Loading entry module:',src);
-          /* Re-add modulepreload hints */
-          (window.__PRELOADS__||[]).forEach(function(href){
-            var l=document.createElement('link');
-            l.rel='modulepreload';l.crossOrigin='';l.href=href;
-            document.head.appendChild(l);
-          });
-          var s=document.createElement('script');
-          s.type='module';s.crossOrigin='';s.src=src;
-          s.setAttribute('data-entry','1');
-          /* Entry module 404 (stale chunks deleted) → auto-reload to get fresh HTML */
-          s.onerror=function(){
-            console.error('[Guild Life] Entry module 404:',src);
-            autoReload('entry module 404');
-          };
-          document.body.appendChild(s);
-          /* Clean up ?_gv from URL bar */
-          if(location.search.indexOf('_gv=')!==-1){
-            try{
-              var url=new URL(location.href);
-              url.searchParams.delete('_gv');
-              history.replaceState(null,'',url.toString());
-            }catch(e){}
-          }
-        }
-
-        if(!window.__HTML_BUILD_TIME__){return;} /* dev mode */
-
-        var base=window.__HTML_BASE__||'/';
-        __guildSetStatus('Checking for updates...');
-        window.__guildVersionCheckStarted=true;
-
-        /* Step 1: Clean up legacy SWs (max 2s) */
-        var swDone=cleanupSWs();
-        var swTimeout=new Promise(function(r){setTimeout(r,2000);});
-        Promise.race([swDone,swTimeout]).then(function(){
-          /* Step 2: Fetch version.json with cache bypass */
-          return fetch(base+'version.json?_='+Date.now(),{
-            cache:'no-store',
-            headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}
-          }).then(function(r){return r.ok?r.json():null;})
-            .catch(function(){return null;});
-        }).then(function(data){
-          if(document.querySelector('script[data-entry]'))return;
-          if(data&&data.buildTime&&data.buildTime!==window.__HTML_BUILD_TIME__){
-            /* Stale HTML detected — version.json has fresh data.
-               Try hot-swap: use version.json's entry URL directly instead of
-               reloading (reload may serve same stale HTML from CDN cache). */
-            console.warn('[Guild Life] Stale HTML detected. HTML:',
-              window.__HTML_BUILD_TIME__,'Server:',data.buildTime);
-            if(data.entry){
-              console.log('[Guild Life] Hot-swapping to fresh entry:',data.entry);
-              /* Swap CSS to match the fresh build */
-              if(data.css&&Array.isArray(data.css)){
-                var oldLinks=document.querySelectorAll('link[rel="stylesheet"][crossorigin]');
-                oldLinks.forEach(function(l){l.remove();});
-                data.css.forEach(function(href){
-                  var link=document.createElement('link');
-                  link.rel='stylesheet';link.crossOrigin='';link.href=href;
-                  document.head.appendChild(link);
-                });
-              }
-              loadApp(data.entry);
-              return;
-            }
-            /* No entry URL in version.json — fall back to reload */
-            autoReload('stale HTML detected');
-            return;
-          }
-          /* Build times match (both fresh, or both stale from CDN) or
-             version.json unavailable. Load the app — if entry 404s,
-             onerror will trigger auto-reload to get fresh HTML. */
-          if(data&&data.buildTime){
-            console.log('[Guild Life] Build times match — loading app');
-          }else{
-            console.log('[Guild Life] version.json unavailable — loading app');
-          }
-          loadApp();
-        }).catch(function(){
-          console.error('[Guild Life] Version check failed — loading app');
-          loadApp();
-        });
-
-        /* Pipeline timeout: if version check hangs >8s, load anyway */
-        setTimeout(function(){
-          if(!document.querySelector('script[data-entry]')){
-            console.log('[Guild Life] Pipeline timed out — loading app');
-            loadApp();
-          }
-        },8000);
-      })();
-    </script>
-    <!-- Dev mode entry point — in production, deferModulePlugin removes the
-         built version and stores it in window.__ENTRY__ for deferred loading -->
+    <!-- Entry point — Vite replaces this with the production hashed module in build.
+         scriptErrorPlugin adds onerror to catch 404s from stale HTML. -->
     <script type="module" src="/src/main.tsx"></script>
-    <!-- Fallback: Shows "Clear Cache & Reload" button when loading genuinely fails.
-         Auto-reload in Layer 0 handles most cases. This is the manual escape hatch
-         for edge cases where auto-reload reaches its limit or React fails to mount. -->
+    <!-- Fallback: if React hasn't mounted after 15s, show a reload button -->
     <script>
-      (function(){
-        var shown=false;
-        var startTime=Date.now();
-        var RELOAD_KEY='guild-reload-count';
-        var TIMEOUT=12000; /* 12s — auto-reload handles fast recovery, this is the safety net */
-
-        function shouldShowButton(){
-          if(window.__guildReactMounted)return false;
-          if(window.__guildAppFailed)return true;
-          var elapsed=Date.now()-startTime;
-          if(window.__guildAppLoading&&elapsed<TIMEOUT)return false;
-          if(window.__guildVersionCheckStarted&&!window.__guildAppLoading&&elapsed<TIMEOUT)return false;
-          return elapsed>=TIMEOUT;
-        }
-
-        function manualReload(btn){
-          if(btn){btn.textContent='Reloading...';btn.disabled=true;}
-          /* Check reload loop */
-          var count=0;
-          try{
-            var d=JSON.parse(sessionStorage.getItem(RELOAD_KEY)||'null');
-            if(d&&Date.now()-d.ts<120000)count=d.count||0;
-          }catch(e){}
-          if(count>=3){
-            var ls=document.getElementById('loading-screen');
-            if(ls&&!ls.querySelector('.loop-info')){
-              var div=document.createElement('div');
-              div.className='loop-info';
-              div.style.cssText='margin-top:1rem;max-width:400px;';
-              div.innerHTML='<p style="color:#d4a537;font-size:0.95rem;margin-bottom:0.5rem;">Multiple reloads detected</p>'
-                +'<p style="font-size:0.8rem;opacity:0.8;">A new version may still be deploying. Try:</p>'
-                +'<ol style="font-size:0.8rem;opacity:0.8;text-align:left;margin:0.5rem 0;">'
-                +'<li>Wait 1-2 minutes, then refresh</li>'
-                +'<li>Open a new tab and navigate to the game URL</li>'
-                +'<li>Clear your browser cache (Ctrl+Shift+Del)</li>'
-                +'</ol>'
-                +'<button onclick="try{sessionStorage.removeItem(\'guild-reload-count\');localStorage.clear()}catch(e){}try{var u=new URL(location.href);u.searchParams.set(\'_gv\',Date.now());location.replace(u.toString())}catch(e){location.reload()}" '
-                +'style="margin-top:0.5rem;padding:.5rem 1.5rem;background:#c44;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:0.9rem;">Hard Reset (clears all game data)</button>';
-              ls.appendChild(div);
-            }
-            return;
-          }
-          /* Bump counter and reload with cache-buster */
-          try{
-            var dd=JSON.parse(sessionStorage.getItem(RELOAD_KEY)||'null');
-            if(!dd||Date.now()-dd.ts>120000)dd={ts:Date.now(),count:0};
-            dd.count++;
-            sessionStorage.setItem(RELOAD_KEY,JSON.stringify(dd));
-          }catch(e){}
-          try{var u=new URL(location.href);u.searchParams.set('_gv',Date.now());location.replace(u.toString());}
-          catch(e){location.reload();}
-        }
-
-        var t=setInterval(function(){
-          var root=document.getElementById('root');
-          var ls=root&&root.querySelector('#loading-screen');
-          if(!ls){clearInterval(t);return;}
-          if(shown||!shouldShowButton())return;
-          shown=true;
-          /* Show diagnostic info */
-          var diag=document.createElement('p');
-          diag.style.cssText='font-size:0.7rem;opacity:0.5;margin-top:1rem;max-width:400px;word-break:break-all;';
-          diag.textContent='[diag] entry='+String(window.__ENTRY__||'none')
-            +' build='+String(window.__HTML_BUILD_TIME__||'dev')
-            +' loading='+String(window.__guildAppLoading)
-            +' failed='+String(window.__guildAppFailed)
-            +' mounted='+String(window.__guildReactMounted)
-            +' errors='+String((window.__guildLoadErrors||[]).length);
-          ls.appendChild(diag);
-          var p=document.createElement('p');
-          p.className='fallback-btn';
-          p.style.cssText='margin-top:1rem;font-family:serif;';
-          var btn=document.createElement('button');
-          btn.textContent='Clear Cache & Reload';
-          btn.style.cssText='padding:.75rem 2rem;font-size:1rem;font-family:serif;background:linear-gradient(135deg,hsl(45,85%,55%),hsl(35,70%,40%));color:#1f170a;border:none;border-radius:.25rem;cursor:pointer;font-weight:bold;';
-          btn.onclick=function(){manualReload(btn);};
-          p.appendChild(btn);
-          ls.appendChild(p);
-          /* Nuclear reset button */
-          var p2=document.createElement('p');
-          p2.style.cssText='margin-top:0.5rem;';
-          var btn2=document.createElement('button');
-          btn2.textContent='Nuclear Reset (clears all data)';
-          btn2.style.cssText='padding:.4rem 1.5rem;font-size:.85rem;font-family:serif;background:#c44;color:#fff;border:none;border-radius:.25rem;cursor:pointer;';
-          btn2.onclick=function(){
-            btn2.textContent='Resetting...';btn2.disabled=true;
-            try{sessionStorage.clear();localStorage.clear();}catch(e){}
-            try{if(window.caches)caches.keys().then(function(k){k.forEach(function(n){caches.delete(n)})}).catch(function(){});}catch(e){}
-            try{if(navigator.serviceWorker)navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(reg){reg.unregister()})}).catch(function(){});}catch(e){}
-            setTimeout(function(){try{var u=new URL(location.href);u.searchParams.set('_gv',Date.now());location.replace(u.toString())}catch(e){location.reload();}},500);
-          };
-          p2.appendChild(btn2);
-          ls.appendChild(p2);
-        },2000);
-      })();
+      setTimeout(function(){
+        if(window.__guildReactMounted)return;
+        var ls=document.getElementById('loading-screen');
+        if(!ls)return;
+        var el=document.getElementById('loading-status');
+        if(el)el.textContent='Taking longer than expected...';
+        var btn=document.createElement('button');
+        btn.textContent='Reload';
+        btn.style.cssText='display:block;margin:1rem auto 0;padding:.5rem 1.5rem;background:#d4a537;color:#1f170a;border:none;border-radius:4px;cursor:pointer;font-size:1rem;';
+        btn.onclick=function(){location.reload();};
+        ls.appendChild(btn);
+      },15000);
     </script>
   </body>
 </html>
