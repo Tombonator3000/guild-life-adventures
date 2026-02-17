@@ -175,52 +175,61 @@ function resetWeeklyFlags(p: Player): void {
   }
 }
 
-/** Process employment: dependability decay, job loss, market crash effects (Jones-style 3-tier) */
-function processEmployment(p: Player, crashResult: MarketCrashResult, msgs: string[], newsEvents: PlayerNewsEventData[]): void {
-  // Dependability decay
+/** Apply dependability decay based on employment + work status */
+function applyDependabilityDecay(p: Player, msgs: string[]): void {
   if (!p.currentJob) {
-    // Unemployed: heavy decay (-5/week)
-    p.dependability = Math.max(0, p.dependability - 5);
+    p.dependability = Math.max(0, p.dependability - 5); // Unemployed: heavy decay
   } else if (!p.workedThisTurn) {
-    // Employed but didn't work this turn: 10% decay
-    // Simulates employer noticing absence / unreliability
-    const depPenalty = Math.max(1, Math.round(p.dependability * 0.10));
+    const depPenalty = Math.max(1, Math.round(p.dependability * 0.10)); // 10% decay
     p.dependability = Math.max(0, p.dependability - depPenalty);
     if (!p.isAI) {
       msgs.push(`${p.name}'s dependability dropped — your employer noticed you didn't show up for work this week.`);
     }
   }
+}
 
-  // Jones-style 3-tier market crash effects (process BEFORE low-dep firing so crash penalty applies)
-  if (crashResult.severity === 'major' && p.currentJob) {
-    // Major crash: fired (Jones-style layoff)
-    const jobName = p.currentJob;
-    p.currentJob = null;
-    p.currentWage = 0;
-    p.shiftsWorkedSinceHire = 0;
-    p.happiness = Math.max(0, p.happiness - 20);
-    if (!p.isAI) msgs.push(`${p.name}: ${crashResult.message}`);
-    newsEvents.push({ type: 'fired', playerName: p.name, jobName });
-  } else if (crashResult.severity === 'moderate' && p.currentJob && crashResult.wageMultiplier) {
-    // Moderate crash: 80% wage (Jones-style pay cut)
-    p.currentWage = Math.floor(p.currentWage * crashResult.wageMultiplier);
-    p.happiness = Math.max(0, p.happiness - 10);
-    if (!p.isAI) msgs.push(`${p.name}: ${crashResult.message}`);
-    newsEvents.push({ type: 'paycut', playerName: p.name, percentage: 20 });
+/** Fire the player, resetting job fields */
+function firePlayer(p: Player): void {
+  p.currentJob = null;
+  p.currentWage = 0;
+  p.shiftsWorkedSinceHire = 0;
+}
+
+/** Market crash effect definitions by severity tier (Jones-style 3-tier) */
+const CRASH_EFFECTS: Record<string, { happinessLoss: number; firesPlayer: boolean; cutsWage: boolean }> = {
+  major:    { happinessLoss: 20, firesPlayer: true,  cutsWage: false },
+  moderate: { happinessLoss: 10, firesPlayer: false, cutsWage: true },
+  minor:    { happinessLoss: 3,  firesPlayer: false, cutsWage: false },
+};
+
+/** Process employment: dependability decay, market crash effects, low-dep firing */
+function processEmployment(p: Player, crashResult: MarketCrashResult, msgs: string[], newsEvents: PlayerNewsEventData[]): void {
+  applyDependabilityDecay(p, msgs);
+
+  // Apply market crash effects (process BEFORE low-dep firing so crash penalty applies)
+  const effect = crashResult.severity ? CRASH_EFFECTS[crashResult.severity] : null;
+  if (effect && p.currentJob) {
+    p.happiness = Math.max(0, p.happiness - effect.happinessLoss);
+    if (!p.isAI) msgs.push(crashResult.message || `Market ${crashResult.severity} crash!`);
+
+    if (effect.firesPlayer) {
+      const jobName = p.currentJob;
+      firePlayer(p);
+      newsEvents.push({ type: 'fired', playerName: p.name, jobName });
+    } else if (effect.cutsWage && crashResult.wageMultiplier) {
+      p.currentWage = Math.floor(p.currentWage * crashResult.wageMultiplier);
+      newsEvents.push({ type: 'paycut', playerName: p.name, percentage: 20 });
+    }
   } else if (crashResult.severity === 'minor') {
-    // Minor crash: just prices drop (already applied in advanceEconomy), small happiness hit
+    // Minor crash still hits happiness even without a job
     p.happiness = Math.max(0, p.happiness - 3);
     if (!p.isAI) msgs.push(crashResult.message || 'Minor market dip — prices have dropped.');
   }
 
   // Fire player with too-low dependability (after crash so crash penalties still apply)
   if (p.currentJob && p.dependability < 20) {
-    p.currentJob = null;
-    p.currentWage = 0;
-    p.shiftsWorkedSinceHire = 0;
-    if (!p.isAI) {
-      msgs.push(`${p.name} was fired due to poor dependability!`);
-    }
+    firePlayer(p);
+    if (!p.isAI) msgs.push(`${p.name} was fired due to poor dependability!`);
   }
 }
 
