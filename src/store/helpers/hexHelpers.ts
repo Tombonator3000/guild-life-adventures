@@ -349,63 +349,47 @@ export function createHexActions(set: SetFn, get: GetFn) {
 
       const result = rollCurseReflection();
       const curse = player.activeCurses[0]; // oldest curse
+      const curseRemoved = result === 'reflect' || result === 'remove';
 
-      if (result === 'reflect') {
-        // Reflect curse back to caster
-        const caster = state.players.find(p => p.id === curse.casterId);
-        set((s) => ({
-          players: s.players.map((p) => {
-            if (p.id === playerId) {
-              return {
-                ...p,
-                gold: p.gold - cost,
-                timeRemaining: Math.max(0, p.timeRemaining - 3),
-                activeCurses: p.activeCurses.slice(1),
-              };
-            }
-            if (p.id === curse.casterId && !p.isGameOver) {
-              return {
-                ...p,
-                activeCurses: [...p.activeCurses, { ...curse, casterId: playerId, casterName: player.name }],
-              };
-            }
-            return p;
-          }),
-        }));
-        return {
+      // Single set() call — all outcomes deduct gold+time; reflect/remove also strip the curse
+      set((s) => ({
+        players: s.players.map((p) => {
+          if (p.id === playerId) {
+            return {
+              ...p,
+              gold: p.gold - cost,
+              timeRemaining: Math.max(0, p.timeRemaining - 3),
+              ...(curseRemoved && { activeCurses: p.activeCurses.slice(1) }),
+            };
+          }
+          // Reflect: transfer curse to original caster
+          if (result === 'reflect' && p.id === curse.casterId && !p.isGameOver) {
+            return {
+              ...p,
+              activeCurses: [...p.activeCurses, { ...curse, casterId: playerId, casterName: player.name }],
+            };
+          }
+          return p;
+        }),
+      }));
+
+      // Outcome messages
+      const OUTCOME_MESSAGES: Record<string, { success: boolean; message: string }> = {
+        reflect: {
           success: true,
-          message: `The curse rebounds! ${caster?.name || 'The caster'} is now afflicted with ${getHexById(curse.hexId)?.name || 'the curse'}!`,
-        };
-      } else if (result === 'remove') {
-        // Simply remove the curse
-        set((s) => ({
-          players: s.players.map((p) =>
-            p.id === playerId
-              ? {
-                  ...p,
-                  gold: p.gold - cost,
-                  timeRemaining: Math.max(0, p.timeRemaining - 3),
-                  activeCurses: p.activeCurses.slice(1),
-                }
-              : p
-          ),
-        }));
-        return { success: true, message: 'The dark energy dissipates. The curse has been broken!' };
-      } else {
-        // Failed — lose gold and time but curse remains
-        set((s) => ({
-          players: s.players.map((p) =>
-            p.id === playerId
-              ? {
-                  ...p,
-                  gold: p.gold - cost,
-                  timeRemaining: Math.max(0, p.timeRemaining - 3),
-                }
-              : p
-          ),
-        }));
-        return { success: false, message: 'The spirits refuse to cooperate. The curse persists, and your gold is lost.' };
-      }
+          message: `The curse rebounds! ${state.players.find(p => p.id === curse.casterId)?.name || 'The caster'} is now afflicted with ${getHexById(curse.hexId)?.name || 'the curse'}!`,
+        },
+        remove: {
+          success: true,
+          message: 'The dark energy dissipates. The curse has been broken!',
+        },
+        fail: {
+          success: false,
+          message: 'The spirits refuse to cooperate. The curse persists, and your gold is lost.',
+        },
+      };
+
+      return OUTCOME_MESSAGES[result] || OUTCOME_MESSAGES.fail;
     },
 
     // ── Add hex scroll to inventory (from dungeon drops) ──────────

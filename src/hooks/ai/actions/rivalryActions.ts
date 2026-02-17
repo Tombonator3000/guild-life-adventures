@@ -3,6 +3,8 @@
  *
  * Competitive behaviors: AI steals jobs, quests, and education
  * that rival players are pursuing. Only active on medium/hard difficulty.
+ *
+ * Architecture: 8 focused sub-generators dispatched from main function.
  */
 
 import { getAvailableQuests, canTakeQuest } from '@/data/quests';
@@ -11,27 +13,31 @@ import { DEGREES } from '@/data/education';
 import { DEFENSE_ITEMS, getShadowMarketHexStock, getEnchanterHexStock, getHexPrice } from '@/data/hexes';
 import type { HexDefinition } from '@/data/hexes';
 import { calculateGoalProgress, getWeakestGoal, getJobLocation } from '../strategy';
-import type { AIAction, GoalProgress } from '../types';
+import type { AIAction } from '../types';
 import type { ActionContext } from './actionContext';
 import type { Player } from '@/types/game.types';
 import { getGameOption } from '@/data/gameOptions';
 import { getHexById } from '@/data/hexes';
 import { useGameStore } from '@/store/gameStore';
 
-/**
- * Calculate a rival's goal progress to understand their strategy
- */
+// ── Shared rivalry context passed to each sub-generator ─────────────
+
+interface RivalryContext {
+  ctx: ActionContext;
+  biggestThreat: Player;
+  threatIsClose: boolean;
+  rivalFocus: 'wealth' | 'happiness' | 'education' | 'career';
+}
+
+// ── Helper functions ────────────────────────────────────────────────
+
 function getRivalFocus(rival: Player, goals: ActionContext['goals']): 'wealth' | 'happiness' | 'education' | 'career' {
   const progress = calculateGoalProgress(rival, goals);
   const weakest = getWeakestGoal(progress);
-  // Filter out 'adventure' since AI rivalry only tracks the 4 core goals
   if (weakest === 'adventure') return 'wealth';
   return weakest;
 }
 
-/**
- * Check if a rival is close to winning (any goal >= 85%)
- */
 function isRivalThreatening(rival: Player, goals: ActionContext['goals']): boolean {
   const progress = calculateGoalProgress(rival, goals);
   return progress.overall >= 0.70 ||
@@ -41,263 +47,291 @@ function isRivalThreatening(rival: Player, goals: ActionContext['goals']): boole
     progress.career.progress >= 0.85;
 }
 
+function findBiggestThreat(rivals: Player[], goals: ActionContext['goals']): Player | null {
+  let best: Player | null = null;
+  let bestProgress = 0;
+  for (const rival of rivals) {
+    const rProgress = calculateGoalProgress(rival, goals);
+    if (rProgress.overall > bestProgress) {
+      bestProgress = rProgress.overall;
+      best = rival;
+    }
+  }
+  return best;
+}
+
+// ── Sub-generators ──────────────────────────────────────────────────
+
+/** Compete for quests — grab high-value quests before rival */
+function generateQuestCompetition({ ctx, biggestThreat, threatIsClose, rivalFocus }: RivalryContext): AIAction[] {
+  const { player, currentLocation, moveCost } = ctx;
+  if (!player.hasGuildPass || player.activeQuest || player.questCooldownWeeksLeft > 0) return [];
+  if (biggestThreat.activeQuest !== null) return []; // rival already on a quest
+  if (!(rivalFocus === 'wealth' || rivalFocus === 'career') || !threatIsClose) return [];
+
+  const available = getAvailableQuests(player.guildRank);
+  const takeable = available.filter(q => {
+    const check = canTakeQuest(q, player.guildRank, player.education, player.inventory, player.dungeonFloorsCleared);
+    return check.canTake && q.timeRequired <= player.timeRemaining && q.healthRisk <= player.health - 20;
+  });
+  if (takeable.length === 0) return [];
+
+  takeable.sort((a, b) => b.goldReward - a.goldReward);
+  if (currentLocation === 'guild-hall') {
+    return [{
+      type: 'take-quest',
+      priority: 68,
+      description: `Grab quest before ${biggestThreat.name}`,
+      details: { questId: takeable[0].id },
+    }];
+  }
+  if (player.timeRemaining > moveCost('guild-hall') + 2) {
+    return [{
+      type: 'move',
+      location: 'guild-hall',
+      priority: 63,
+      description: `Race to guild hall to take quest`,
+    }];
+  }
+  return [];
+}
+
+/** Block education path — study faster to outpace rival */
+function generateEducationRacing({ ctx, biggestThreat, threatIsClose, rivalFocus }: RivalryContext): AIAction[] {
+  const { player, currentLocation } = ctx;
+  if (rivalFocus !== 'education' || !threatIsClose || currentLocation !== 'academy') return [];
+
+  for (const [degreeIdStr, progressCount] of Object.entries(player.degreeProgress)) {
+    const degreeId = degreeIdStr as import('@/types/game.types').DegreeId;
+    if (progressCount > 0 && !player.completedDegrees.includes(degreeId)) {
+      const degree = DEGREES[degreeId as keyof typeof DEGREES];
+      if (degree && player.gold >= degree.costPerSession && player.timeRemaining >= degree.hoursPerSession) {
+        return [{
+          type: 'study',
+          priority: 73,
+          description: `Study faster to outpace ${biggestThreat.name}`,
+          details: { degreeId, cost: degree.costPerSession, hours: degree.hoursPerSession },
+        }];
+      }
+    }
+  }
+  return [];
+}
+
+/** Aggressive banking — deposit to protect gold from wealthy rival */
+function generateAggressiveBanking({ ctx, biggestThreat, threatIsClose, rivalFocus }: RivalryContext): AIAction[] {
+  const { player, currentLocation } = ctx;
+  if (!threatIsClose || rivalFocus !== 'wealth' || player.gold <= 150 || currentLocation !== 'bank') return [];
+
+  const depositAmount = Math.floor(player.gold * 0.6);
+  if (depositAmount <= 50) return [];
+
+  return [{
+    type: 'deposit-bank',
+    priority: 62,
+    description: `Protect gold from ${biggestThreat.name}`,
+    details: { amount: depositAmount },
+  }];
+}
+
+/** Hex casting — use scrolls to curse biggest threat */
+function generateHexCasting({ ctx, biggestThreat, threatIsClose }: RivalryContext): AIAction[] {
+  const { player, currentLocation } = ctx;
+  if (!getGameOption('enableHexesCurses') || player.hexScrolls.length === 0 || !threatIsClose) return [];
+
+  const castLocations = ['shadow-market', 'enchanter', 'graveyard'] as const;
+  if (!castLocations.includes(currentLocation as typeof castLocations[number])) return [];
+
+  for (const scroll of player.hexScrolls) {
+    const hex = getHexById(scroll.hexId);
+    if (!hex || player.timeRemaining < hex.castTime) continue;
+    if (hex.category === 'personal' || hex.category === 'sabotage') {
+      return [{
+        type: 'cast-curse',
+        priority: 72,
+        description: `Curse ${biggestThreat.name} with ${hex.name}`,
+        details: { hexId: hex.id, targetId: biggestThreat.id },
+      }];
+    }
+    if (hex.category === 'location') {
+      return [{
+        type: 'cast-location-hex',
+        priority: 65,
+        description: `Hex a location to block ${biggestThreat.name}`,
+        details: { hexId: hex.id },
+      }];
+    }
+  }
+  return [];
+}
+
+/** Buy hex scrolls — acquire ammunition for curses */
+function generateHexScrollPurchase({ ctx, biggestThreat, threatIsClose }: RivalryContext): AIAction[] {
+  const { player, currentLocation, moveCost } = ctx;
+  if (!getGameOption('enableHexesCurses') || player.hexScrolls.length !== 0 || !threatIsClose || player.gold < 80) return [];
+
+  const actions: AIAction[] = [];
+
+  let availableHexes: HexDefinition[] = [];
+  if (currentLocation === 'shadow-market') {
+    const state = useGameStore.getState();
+    availableHexes = getShadowMarketHexStock(state.week);
+  } else if (currentLocation === 'enchanter') {
+    availableHexes = getEnchanterHexStock(player);
+  }
+
+  if (availableHexes.length > 0) {
+    const sorted = [...availableHexes].sort((a, b) => {
+      const aPersonal = a.category === 'personal' || a.category === 'sabotage' ? 1 : 0;
+      const bPersonal = b.category === 'personal' || b.category === 'sabotage' ? 1 : 0;
+      return bPersonal - aPersonal;
+    });
+    const hex = sorted[0];
+    const cost = getHexPrice(hex, ctx.priceModifier);
+    if (player.gold >= cost && cost > 0) {
+      const morgathBoost = ctx.personality.id === 'morgath' ? 10 : 0;
+      actions.push({
+        type: 'buy-hex-scroll',
+        priority: 60 + morgathBoost,
+        description: `Buy ${hex.name} scroll`,
+        details: { hexId: hex.id, cost },
+      });
+    }
+  }
+
+  // Travel to Shadow Market if not at a hex shop
+  if (currentLocation !== 'shadow-market' && currentLocation !== 'enchanter' && player.gold >= 100) {
+    if (player.timeRemaining > moveCost('shadow-market') + 3) {
+      actions.push({
+        type: 'move',
+        location: 'shadow-market',
+        priority: 50 * ctx.personality.weights.rivalry,
+        description: 'Travel to Shadow Market for hex scrolls',
+      });
+    }
+  }
+
+  return actions;
+}
+
+/** Buy Protective Amulet — defense against rival hexes */
+function generateAmuletPurchase({ ctx, threatIsClose }: RivalryContext): AIAction[] {
+  const { player, currentLocation } = ctx;
+  if (!getGameOption('enableHexesCurses') || player.hasProtectiveAmulet || player.gold <= 500 || !threatIsClose) return [];
+  if (currentLocation !== 'enchanter') return [];
+
+  return [{
+    type: 'buy-amulet',
+    priority: 55,
+    description: 'Buy Protective Amulet for defense',
+    details: {},
+  }];
+}
+
+/** Dispel hexed locations — clear enemy hexes from key locations */
+function generateDispelActions({ ctx }: RivalryContext): AIAction[] {
+  const { player, currentLocation } = ctx;
+  if (!getGameOption('enableHexesCurses')) return [];
+
+  const locationHexes = useGameStore.getState().locationHexes || [];
+  const hexedLocationsForMe = locationHexes.filter(
+    h => h.casterId !== player.id && h.weeksRemaining > 0
+  );
+  if (hexedLocationsForMe.length === 0) return [];
+
+  const dispelItem = DEFENSE_ITEMS.find(d => d.id === 'dispel-scroll');
+  const dispelCost = dispelItem ? Math.round(dispelItem.basePrice * ctx.priceModifier) : 250;
+
+  // Dispel at current location
+  const currentHex = hexedLocationsForMe.find(h => h.targetLocation === currentLocation);
+  if (currentHex && player.gold >= dispelCost) {
+    return [{
+      type: 'dispel-hex',
+      priority: 70,
+      description: `Dispel hex on ${currentLocation}`,
+      details: { cost: dispelCost, location: currentLocation },
+    }];
+  }
+
+  // Travel to dispel important hexed location
+  const currentJobDef = player.currentJob ? getJob(player.currentJob) : null;
+  const jobLocation = currentJobDef ? getJobLocation(currentJobDef) : null;
+  const importantLocations = ['academy', 'guild-hall', jobLocation].filter(Boolean) as string[];
+  const hexedImportant = hexedLocationsForMe.find(h =>
+    importantLocations.includes(h.targetLocation)
+  );
+  if (hexedImportant && player.gold >= dispelCost + 50 && player.timeRemaining > 5) {
+    return [{
+      type: 'move',
+      location: hexedImportant.targetLocation as import('@/types/game.types').LocationId,
+      priority: 58,
+      description: `Travel to dispel hex on ${hexedImportant.targetLocation}`,
+    }];
+  }
+
+  return [];
+}
+
+/** Dark ritual — Hard AI gambler visits graveyard for cheap hex scrolls */
+function generateDarkRitualActions({ ctx, threatIsClose }: RivalryContext): AIAction[] {
+  const { player, settings, currentLocation, moveCost } = ctx;
+  if (!getGameOption('enableHexesCurses') || settings.planningDepth < 3 || !threatIsClose) return [];
+
+  const personalityAggro = ctx.personality.weights.gambling;
+  if (personalityAggro < 1.0 || player.gold < 100 || player.hexScrolls.length >= 2) return [];
+
+  if (currentLocation === 'graveyard') {
+    return [{
+      type: 'dark-ritual',
+      priority: 50,
+      description: 'Perform dark ritual for hex scroll',
+      details: { cost: 100 },
+    }];
+  }
+  if (player.timeRemaining > moveCost('graveyard') + 4) {
+    return [{
+      type: 'move',
+      location: 'graveyard' as import('@/types/game.types').LocationId,
+      priority: 45,
+      description: 'Travel to graveyard for dark ritual',
+    }];
+  }
+  return [];
+}
+
+// ── Dispatch table ──────────────────────────────────────────────────
+
+const RIVALRY_GENERATORS: Array<(rc: RivalryContext) => AIAction[]> = [
+  generateQuestCompetition,
+  generateEducationRacing,
+  generateAggressiveBanking,
+  generateHexCasting,
+  generateHexScrollPurchase,
+  generateAmuletPurchase,
+  generateDispelActions,
+  generateDarkRitualActions,
+];
+
+// ── Main entry point ────────────────────────────────────────────────
+
 /**
  * Generate rivalry-driven actions (C4)
  * Only strategic AI (medium/hard) engages in rivalry.
  */
 export function generateRivalryActions(ctx: ActionContext): AIAction[] {
-  const actions: AIAction[] = [];
-  const { player, goals, settings, rivals, currentLocation, moveCost } = ctx;
+  const { goals, settings, rivals } = ctx;
 
-  // Only medium/hard AI engages in rivalry
-  if (settings.planningDepth < 2 || rivals.length === 0) return actions;
+  if (settings.planningDepth < 2 || rivals.length === 0) return [];
 
-  // Find the most threatening rival (closest to winning)
-  let biggestThreat: Player | null = null;
-  let biggestThreatProgress = 0;
-  for (const rival of rivals) {
-    const rProgress = calculateGoalProgress(rival, goals);
-    if (rProgress.overall > biggestThreatProgress) {
-      biggestThreatProgress = rProgress.overall;
-      biggestThreat = rival;
-    }
-  }
+  const biggestThreat = findBiggestThreat(rivals, goals);
+  if (!biggestThreat) return [];
 
-  if (!biggestThreat) return actions;
-  const threatIsClose = isRivalThreatening(biggestThreat, goals);
-  const rivalFocus = getRivalFocus(biggestThreat, goals);
+  const rc: RivalryContext = {
+    ctx,
+    biggestThreat,
+    threatIsClose: isRivalThreatening(biggestThreat, goals),
+    rivalFocus: getRivalFocus(biggestThreat, goals),
+  };
 
-  // === RIVALRY: Job stealing removed — jobs held by other players are now blocked ===
-  // Players cannot take a job that another player currently holds.
-
-  // === RIVALRY: Compete for quests ===
-  // If a rival is quest-focused, try to grab available quests first
-  if (player.hasGuildPass && !player.activeQuest && player.questCooldownWeeksLeft === 0) {
-    const rivalHasActiveQuest = biggestThreat.activeQuest !== null;
-    // If rival is NOT on a quest, we should grab one before they do
-    if (!rivalHasActiveQuest && (rivalFocus === 'wealth' || rivalFocus === 'career') && threatIsClose) {
-      const available = getAvailableQuests(player.guildRank);
-      const takeable = available.filter(q => {
-        const check = canTakeQuest(q, player.guildRank, player.education, player.inventory, player.dungeonFloorsCleared);
-        return check.canTake && q.timeRequired <= player.timeRemaining && q.healthRisk <= player.health - 20;
-      });
-
-      if (takeable.length > 0) {
-        // Pick highest gold quest to deny rival
-        takeable.sort((a, b) => b.goldReward - a.goldReward);
-        if (currentLocation === 'guild-hall') {
-          actions.push({
-            type: 'take-quest',
-            priority: 68,
-            description: `Grab quest before ${biggestThreat.name}`,
-            details: { questId: takeable[0].id },
-          });
-        } else if (player.timeRemaining > moveCost('guild-hall') + 2) {
-          actions.push({
-            type: 'move',
-            location: 'guild-hall',
-            priority: 63,
-            description: `Race to guild hall to take quest`,
-          });
-        }
-      }
-    }
-  }
-
-  // === RIVALRY: Block education path ===
-  // If rival is focused on education and we share the same available degrees,
-  // boost our own education priority to stay competitive
-  if (rivalFocus === 'education' && threatIsClose) {
-    // Boost priority of our own education actions (already generated by goalActions)
-    // We add a "study race" action with higher priority using actual degree data
-    if (currentLocation === 'academy') {
-      for (const [degreeIdStr, progressCount] of Object.entries(player.degreeProgress)) {
-        const degreeId = degreeIdStr as import('@/types/game.types').DegreeId;
-        // BUG FIX: Skip already-completed degrees (prevents wasting gold/time)
-        if (progressCount > 0 && !player.completedDegrees.includes(degreeId)) {
-          const degree = DEGREES[degreeId as keyof typeof DEGREES];
-          if (degree && player.gold >= degree.costPerSession && player.timeRemaining >= degree.hoursPerSession) {
-            actions.push({
-              type: 'study',
-              priority: 73, // higher than normal education priority
-              description: `Study faster to outpace ${biggestThreat.name}`,
-              details: { degreeId, cost: degree.costPerSession, hours: degree.hoursPerSession },
-            });
-            break; // Only add one rivalry study action
-          }
-        }
-      }
-    }
-  }
-
-  // === RIVALRY: Aggressive banking when rival is wealthy ===
-  // If rival has more gold, deposit to bank more aggressively to protect savings
-  if (threatIsClose && rivalFocus === 'wealth' && player.gold > 150) {
-    if (currentLocation === 'bank') {
-      const depositAmount = Math.floor(player.gold * 0.6);
-      if (depositAmount > 50) {
-        actions.push({
-          type: 'deposit-bank',
-          priority: 62,
-          description: `Protect gold from ${biggestThreat.name}`,
-          details: { amount: depositAmount },
-        });
-      }
-    }
-  }
-
-  // === RIVALRY: Hex casting (when enabled) ===
-  if (getGameOption('enableHexesCurses') && player.hexScrolls.length > 0 && threatIsClose) {
-    const castLocations = ['shadow-market', 'enchanter', 'graveyard'] as const;
-    if (castLocations.includes(currentLocation as typeof castLocations[number])) {
-      // Cast personal curses on biggest threat
-      for (const scroll of player.hexScrolls) {
-        const hex = getHexById(scroll.hexId);
-        if (!hex || player.timeRemaining < hex.castTime) continue;
-        if (hex.category === 'personal' || hex.category === 'sabotage') {
-          actions.push({
-            type: 'cast-curse',
-            priority: 72,
-            description: `Curse ${biggestThreat.name} with ${hex.name}`,
-            details: { hexId: hex.id, targetId: biggestThreat.id },
-          });
-          break; // One hex action per turn
-        }
-        if (hex.category === 'location') {
-          actions.push({
-            type: 'cast-location-hex',
-            priority: 65,
-            description: `Hex a location to block ${biggestThreat.name}`,
-            details: { hexId: hex.id },
-          });
-          break;
-        }
-      }
-    }
-  }
-
-  // === RIVALRY: Buy Hex Scrolls ===
-  if (getGameOption('enableHexesCurses') && player.hexScrolls.length === 0 && threatIsClose && player.gold >= 80) {
-    let availableHexes: HexDefinition[] = [];
-    if (currentLocation === 'shadow-market') {
-      const state = useGameStore.getState();
-      availableHexes = getShadowMarketHexStock(state.week);
-    } else if (currentLocation === 'enchanter') {
-      availableHexes = getEnchanterHexStock(player);
-    }
-
-    if (availableHexes.length > 0) {
-      // Prefer personal curses (direct impact on rival)
-      const sorted = [...availableHexes].sort((a, b) => {
-        const aPersonal = a.category === 'personal' || a.category === 'sabotage' ? 1 : 0;
-        const bPersonal = b.category === 'personal' || b.category === 'sabotage' ? 1 : 0;
-        return bPersonal - aPersonal;
-      });
-      const hex = sorted[0];
-      const cost = getHexPrice(hex, ctx.priceModifier);
-      if (player.gold >= cost && cost > 0) {
-        const basePriority = 60;
-        const morgathBoost = ctx.personality.id === 'morgath' ? 10 : 0;
-        actions.push({
-          type: 'buy-hex-scroll',
-          priority: basePriority + morgathBoost,
-          description: `Buy ${hex.name} scroll`,
-          details: { hexId: hex.id, cost },
-        });
-      }
-    }
-
-    // Travel to Shadow Market if not there and need scrolls
-    if (currentLocation !== 'shadow-market' && currentLocation !== 'enchanter' && player.gold >= 100) {
-      if (player.timeRemaining > moveCost('shadow-market') + 3) {
-        actions.push({
-          type: 'move',
-          location: 'shadow-market',
-          priority: 50 * ctx.personality.weights.rivalry,
-          description: 'Travel to Shadow Market for hex scrolls',
-        });
-      }
-    }
-  }
-
-  // === RIVALRY: Buy Protective Amulet (defense) ===
-  if (getGameOption('enableHexesCurses') && !player.hasProtectiveAmulet && player.gold > 500 && threatIsClose) {
-    if (currentLocation === 'enchanter') {
-      actions.push({
-        type: 'buy-amulet',
-        priority: 55,
-        description: 'Buy Protective Amulet for defense',
-        details: {},
-      });
-    }
-  }
-
-  // === GAP-6: Dispel hexed locations ===
-  // If a location the AI needs is hexed, buy a dispel scroll and use it
-  if (getGameOption('enableHexesCurses')) {
-    const locationHexes = useGameStore.getState().locationHexes || [];
-    const hexedLocationsForMe = locationHexes.filter(
-      h => h.casterId !== player.id && h.weeksRemaining > 0
-    );
-
-    if (hexedLocationsForMe.length > 0) {
-      // Check if we're at a hexed location and have gold for dispel (250g base)
-      const dispelItem = DEFENSE_ITEMS.find(d => d.id === 'dispel-scroll');
-      const dispelCost = dispelItem ? Math.round(dispelItem.basePrice * ctx.priceModifier) : 250;
-
-      // Find if current location is hexed
-      const currentHex = hexedLocationsForMe.find(h => h.targetLocation === currentLocation);
-      if (currentHex && player.gold >= dispelCost) {
-        actions.push({
-          type: 'dispel-hex',
-          priority: 70,
-          description: `Dispel hex on ${currentLocation}`,
-          details: { cost: dispelCost, location: currentLocation },
-        });
-      }
-      // Or if a key location we need (work, academy, guild hall) is hexed, travel there
-      else {
-        const currentJobDef = player.currentJob ? getJob(player.currentJob) : null;
-        const jobLocation = currentJobDef ? getJobLocation(currentJobDef) : null;
-        const importantLocations = ['academy', 'guild-hall', jobLocation].filter(Boolean) as string[];
-        const hexedImportant = hexedLocationsForMe.find(h =>
-          importantLocations.includes(h.targetLocation)
-        );
-        if (hexedImportant && player.gold >= dispelCost + 50 && player.timeRemaining > 5) {
-          actions.push({
-            type: 'move',
-            location: hexedImportant.targetLocation as import('@/types/game.types').LocationId,
-            priority: 58,
-            description: `Travel to dispel hex on ${hexedImportant.targetLocation}`,
-          });
-        }
-      }
-    }
-  }
-
-  // === GAP-7: Graveyard dark ritual ===
-  // Hard AI with hex focus visits graveyard for cheap hex scrolls (15% backfire risk)
-  if (getGameOption('enableHexesCurses') && settings.planningDepth >= 3 && threatIsClose) {
-    const personalityAggro = ctx.personality.weights.gambling;
-    // Only gambler personalities (>= 1.0 weight) risk the dark ritual
-    if (personalityAggro >= 1.0 && player.gold >= 100 && player.hexScrolls.length < 2) {
-      if (currentLocation === 'graveyard') {
-        actions.push({
-          type: 'dark-ritual',
-          priority: 50,
-          description: 'Perform dark ritual for hex scroll',
-          details: { cost: 100 },
-        });
-      } else if (player.timeRemaining > moveCost('graveyard') + 4) {
-        actions.push({
-          type: 'move',
-          location: 'graveyard' as import('@/types/game.types').LocationId,
-          priority: 45,
-          description: 'Travel to graveyard for dark ritual',
-        });
-      }
-    }
-  }
-
-  return actions;
+  return RIVALRY_GENERATORS.flatMap(gen => gen(rc));
 }
