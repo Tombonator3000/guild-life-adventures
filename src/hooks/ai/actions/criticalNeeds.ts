@@ -8,6 +8,7 @@
  */
 
 import { RENT_COSTS } from '@/types/game.types';
+import { CLOTHING_DEGRADATION_PER_WEEK } from '@/data/items';
 import { getGameOption } from '@/data/gameOptions';
 import type { AIAction } from '../types';
 import type { ActionContext } from './actionContext';
@@ -191,7 +192,7 @@ function generateClothingActions(ctx: ActionContext): AIAction[] {
   // HARD AI: Proactive clothing when at a clothing store
   if (ctx.settings.planningDepth >= 3 && (currentLocation === 'armory' || currentLocation === 'general-store')) {
     const condition = player.clothingCondition;
-    const degradeBuffer = 6; // 2 weeks * 3/week
+    const degradeBuffer = CLOTHING_DEGRADATION_PER_WEEK * 2; // 2 weeks of degradation
     if (condition > 0 && condition < 40 + degradeBuffer && condition >= 15 && player.gold >= Math.round(60 * pm)) {
       actions.push({
         type: 'buy-clothing',

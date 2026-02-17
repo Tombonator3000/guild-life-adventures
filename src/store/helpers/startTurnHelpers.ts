@@ -355,7 +355,8 @@ export function createStartTurn(set: SetFn, get: GetFn) {
       const state = get();
       const player = state.players.find(p => p.id === playerId);
       // C2: AI players no longer skipped - they get all the same penalties
-      if (!player) return;
+      // Skip dead players — they shouldn't receive starvation, breakage, or any turn-start effects
+      if (!player || player.isGameOver) return;
 
       // C8: Collect event messages instead of overwriting with each set() call
       const eventMessages: string[] = [];

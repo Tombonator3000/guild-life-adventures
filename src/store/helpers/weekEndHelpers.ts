@@ -488,7 +488,7 @@ function seizeStocks(p: Player, remaining: number, details: string[], stockPrice
       const pricePerShare = Math.floor(price * 0.8);
       const neededValue = remaining - recovered;
       const sharesToSell = pricePerShare > 0 ? Math.min(shares, Math.ceil(neededValue / pricePerShare)) : shares;
-      const value = Math.min(Math.floor(sharesToSell * price * 0.8), neededValue);
+      const value = Math.min(sharesToSell * pricePerShare, neededValue);
       if (sharesToSell >= shares) {
         delete p.stocks[stockId];
       } else {

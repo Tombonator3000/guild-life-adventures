@@ -4921,3 +4921,80 @@ Duration    13.05s
 TypeScript: 0 errors. Build: clean. All behavior preserved.
 
 ---
+
+## 2026-02-17 — Agent-Based Code Audit (13:30 UTC)
+
+### Overview
+
+Full codebase audit using 5 parallel agents covering: (1) store + helpers, (2) game components, (3) data + game logic, (4) AI + hooks, (5) network + types + audio. Agents identified ~70 findings total. After manual verification, 3 confirmed bugs were fixed. All 296 tests pass. TypeScript compiles clean.
+
+### Audit Methodology
+
+5 specialized Explore agents ran in parallel, each reading and analyzing all files in their domain:
+
+| Agent | Scope | Files Audited | Findings |
+|-------|-------|---------------|----------|
+| Store & Helpers | gameStore, turn/weekEnd/player/quest/workEducation/hex/banking helpers | 9 files | 8 findings (2 CRITICAL, 3 HIGH, 3 MEDIUM) |
+| Components | GameBoard, LocationPanel, CavePanel, CombatView, InventoryGrid, screens | 14 files | 5 findings (0 CRITICAL, 1 HIGH, 3 MEDIUM, 1 LOW) |
+| Data & Logic | jobs, items, education, locations, quests, dungeon, combat, events, hexes | 17 files | 8 findings (1 CRITICAL, 2 HIGH, 3 MEDIUM, 2 LOW) |
+| AI & Hooks | useGrimwaldAI, ai/*, criticalNeeds, goalActions, strategicActions | 15 files | 21 findings (1 CRITICAL, 8 HIGH, 10 MEDIUM, 2 LOW) |
+| Network & Audio | PeerManager, NetworkActionProxy, useNetworkSync, audio managers, types | 15 files | 20 findings (2 CRITICAL, 8 HIGH, 6 MEDIUM, 4 LOW) |
+
+### Verified & Fixed Bugs (3)
+
+#### Fix 1: Dead players processed in startTurn (HIGH)
+
+**File:** `src/store/helpers/startTurnHelpers.ts`
+**Problem:** `createStartTurn()` checked `if (!player) return` but did NOT check `player.isGameOver`. Dead players received starvation penalties (-20 hours), food spoilage, appliance breakage, homelessness penalties, robbery checks, and start-of-turn bonuses — all meaningless for a dead player.
+**Fix:** Changed guard to `if (!player || player.isGameOver) return;`
+
+#### Fix 2: seizeStocks value calculation inconsistency (MEDIUM)
+
+**File:** `src/store/helpers/weekEndHelpers.ts`
+**Problem:** `seizeStocks()` computed `pricePerShare = Math.floor(price * 0.8)` on line 488 for share counting, but then recalculated the seized value as `Math.floor(sharesToSell * price * 0.8)` on line 491 instead of using `sharesToSell * pricePerShare`. Due to floating-point arithmetic and flooring order, these can differ — e.g. with price 73: floor(73×0.8)=58, 3×58=174 vs floor(3×73×0.8)=floor(175.2)=175.
+**Fix:** Changed to `sharesToSell * pricePerShare` for consistency with the share count calculation.
+
+#### Fix 3: Hardcoded clothing degradation buffer in AI (LOW)
+
+**File:** `src/hooks/ai/actions/criticalNeeds.ts`
+**Problem:** `degradeBuffer` was hardcoded as `6` with a comment "2 weeks * 3/week". The constant `CLOTHING_DEGRADATION_PER_WEEK` (= 3) exists in `src/data/items.ts` and is used elsewhere, but this AI function didn't reference it.
+**Fix:** Added `import { CLOTHING_DEGRADATION_PER_WEEK } from '@/data/items'` and changed to `CLOTHING_DEGRADATION_PER_WEEK * 2`.
+
+### Notable Findings NOT Fixed (Backlog)
+
+| Area | Finding | Severity | Reason Deferred |
+|------|---------|----------|-----------------|
+| Store | `seize*` functions mutate player via `p.stocks = { ...p.stocks }` pattern | MEDIUM | Works within Zustand's set() pattern; copies are created before mutation |
+| Store | `checkDeath` overwrites existing `eventMessage` | HIGH | Previously logged; requires event message accumulation redesign |
+| Network | Reconnecting peer with new peerId not matched to player slot | HIGH | Previously logged; requires reconnection architecture rework |
+| Network | `modifyGold` exploitable with repeated positive amounts | HIGH | Previously logged; requires guest action whitelist redesign |
+| Network | Host migration retry doesn't reset connection timeout | HIGH | Previously logged; requires PeerManager refactor |
+| Network | Zombie turn detection race (reconnect during 5s window) | HIGH | Edge case in reconnection timing |
+| Network | Room code format not validated before join | HIGH | Minor UX issue, generic error still shown |
+| Components | GameBoard useEffect missing lastHumanPlayerId dep | MEDIUM | Intentional — adding it would create infinite loop |
+| Components | CavePanel uses getState() inside event handler | MEDIUM | Works correctly; style preference |
+| AI | turnPlanner hardcoded +2 hour overhead per shift | MEDIUM | Design choice; actual travel cost varies |
+| AI | currentWage division without guard in strategicActions | MEDIUM | Requires currentJob check before; safe in practice |
+| Audio | synthSFX creates separate AudioContext from webAudioBridge | MEDIUM | Previously logged; requires audio architecture unification |
+| Audio | SFX pool round-robin can cut off sounds | MEDIUM | Acceptable for rapid-fire SFX |
+| Data | Floor 5 has only 1 hex drop (Hex of Ruin) | LOW | Game balance issue, not a code bug |
+
+### Files Modified (3)
+
+| File | Changes |
+|------|---------|
+| `src/store/helpers/startTurnHelpers.ts` | Added `player.isGameOver` check to skip dead players |
+| `src/store/helpers/weekEndHelpers.ts` | Fixed seizeStocks value: `sharesToSell * pricePerShare` instead of recomputing |
+| `src/hooks/ai/actions/criticalNeeds.ts` | Imported `CLOTHING_DEGRADATION_PER_WEEK` constant; replaced hardcoded `6` |
+
+### Test Results
+
+```
+Test Files  16 passed (16)
+Tests       296 passed (296)
+Duration    11.63s
+```
+
+TypeScript: 0 errors. All behavior preserved.
+
+---
