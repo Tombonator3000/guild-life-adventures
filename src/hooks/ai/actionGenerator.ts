@@ -155,11 +155,14 @@ function applyTravelCostPenalty(
  * a location before doing everything it can there.
  */
 function applyLocationBatchingBonus(actions: AIAction[], currentLocation: string): void {
-  // Count how many non-move actions are available at current location
-  const localActions = actions.filter(a => a.type !== 'move' && a.type !== 'end-turn');
+  // Boost actions that can be performed at the current location (no move needed)
+  const localActions = actions.filter(a =>
+    a.type !== 'move' && a.type !== 'end-turn' &&
+    (!a.location || a.location === currentLocation)
+  );
 
   if (localActions.length > 1) {
-    // Boost all local actions to encourage batching
+    // Boost local actions to encourage batching at current location
     for (const action of localActions) {
       action.priority += 5;
     }

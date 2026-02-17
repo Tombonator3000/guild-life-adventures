@@ -4810,3 +4810,114 @@ These were valid observations but lower priority or design-level changes:
 - Build: `bun run build` — successful
 
 ---
+
+## 2026-02-17 — Code Audit #5: 5-Agent Parallel Deep Audit (13:00 UTC)
+
+### Overview
+
+Full codebase audit using 5 parallel agents covering all code areas: (1) Store & helpers, (2) Game components, (3) Data files & hooks, (4) AI system, (5) Network & audio. Total 48 findings identified (5 HIGH, 18 MEDIUM, 25 LOW). 10 high-impact bugs fixed. All 296 tests pass. TypeScript compiles clean. Build succeeds.
+
+### Audit Agents & Coverage
+
+| Agent | Area | Files Audited | Findings |
+|-------|------|---------------|----------|
+| 1 | Store & Helpers | gameStore, weekEndHelpers, hexHelpers, bankingHelpers, playerHelpers, questHelpers, etc. | 10 |
+| 2 | Game Components | GameBoard, LocationPanel, CavePanel, CombatView, InventoryGrid, locationTabs, VictoryScreen, etc. | 12 |
+| 3 | Data & Hooks | jobs, items, education, locations, quests, dungeon, combatResolver, events, achievements, useGrimwaldAI | 14 |
+| 4 | AI System | useGrimwaldAI, ai/types, strategy, actionGenerator, actionExecutor, playerObserver, all action generators | 9 |
+| 5 | Network & Audio | PeerManager, NetworkActionProxy, useNetworkSync, useOnlineGame, audioManager, ambientManager, synthSFX | 17 |
+
+### Bugs Fixed (10)
+
+#### Fix 1: `resolveWeekEndOutcome` missing `players` in victory/all-dead paths (HIGH)
+**File:** `src/store/helpers/weekEndHelpers.ts`
+**Problem:** Both "all players dead" and "last player standing" early-return paths called `set()` with `weekEndState` but omitted the `players` array. The processed players (after food depletion, aging, death checks) were never written to the store. Victory screen displayed stale pre-processing player data.
+**Fix:** Added `players` to both `set()` calls.
+
+#### Fix 2: `hexCastCooldown` never validated before casting (MEDIUM)
+**File:** `src/store/helpers/hexHelpers.ts`
+**Problem:** `applyCasterCost()` sets `hexCastCooldown: 3` after casting, and `processHexExpiration()` decrements it weekly. But `validateCasterPrereqs()` never checked if cooldown > 0. Players could spam-cast multiple hexes per turn, bypassing the intended 3-week cooldown.
+**Fix:** Added cooldown check as first validation in `validateCasterPrereqs()`.
+
+#### Fix 3: `payRent` doesn't reset `rentExtensionUsed` (MEDIUM)
+**File:** `src/store/helpers/economy/bankingHelpers.ts`
+**Problem:** `prepayRent` correctly resets `rentExtensionUsed: false`, but regular `payRent` doesn't. After begging for more time and then paying rent normally, the flag remains `true` forever, permanently blocking the "beg for more time" option.
+**Fix:** Added `rentExtensionUsed: false` to `payRent` return object.
+
+#### Fix 4: `InventoryGrid` combat stats missing equipment durability (MEDIUM)
+**File:** `src/components/game/InventoryGrid.tsx`
+**Problem:** `getPlayerCombatStats()` called `calculateCombatStats()` with only 4 args, omitting `equipmentDurability`. ATK/DEF/BLK values displayed in inventory were higher than actual values used in combat (which accounts for durability degradation).
+**Fix:** Added `player.equipmentDurability` as 5th argument.
+
+#### Fix 5: AI raise eligibility uses wrong field (MEDIUM)
+**File:** `src/hooks/ai/actions/strategicActions.ts`
+**Problem:** AI salary negotiation checked `player.totalShiftsWorked` (lifetime total across all jobs) instead of `player.shiftsWorkedSinceHire` (shifts at current job). The store's `requestRaise` checks `shiftsWorkedSinceHire`. AI generated premature raise requests after switching jobs that always failed at the store level.
+**Fix:** Changed to `player.shiftsWorkedSinceHire || 0`.
+
+#### Fix 6: `applyLocationBatchingBonus` ignores `currentLocation` (MEDIUM)
+**File:** `src/hooks/ai/actionGenerator.ts`
+**Problem:** The Hard AI batching bonus (+5 priority) was applied to ALL non-move actions, regardless of whether they could be executed at the current location. Actions requiring travel to a different location received the bonus, causing the AI to choose actions that immediately fail.
+**Fix:** Added location filter: only actions without a `location` field or with `location === currentLocation` receive the bonus.
+
+#### Fix 7: Adventure goal moves to guild hall with no quest available (LOW)
+**File:** `src/hooks/ai/actions/goalActions.ts`
+**Problem:** In `generateAdventureActions`, the else-if branch for moving to guild hall didn't check if `adventureQuest` was non-null. AI would waste time traveling to the guild hall when no quests were available.
+**Fix:** Added `adventureQuest &&` condition to the else-if branch.
+
+#### Fix 8: `audioManager.stop()` doesn't cancel active crossfade (MEDIUM)
+**File:** `src/audio/audioManager.ts`
+**Problem:** `stop()` called `fadeOut()` on both decks but didn't clear `this.fadeInterval`. If called during an active crossfade, the crossfade interval continued running, competing with the fade-out for volume control, causing audio glitches.
+**Fix:** Added `clearInterval(this.fadeInterval)` before fade-out calls.
+
+#### Fix 9: `ambientManager.stop()` same crossfade issue (MEDIUM)
+**File:** `src/audio/ambientManager.ts`
+**Problem:** Identical to Fix 8. `stop()` didn't cancel active crossfade interval.
+**Fix:** Added `clearInterval(this.fadeInterval)` before fade-out calls.
+
+#### Fix 10: `handlePlayerDisconnect` bypasses ref pattern in leave handler (MEDIUM)
+**File:** `src/network/useOnlineGame.ts`
+**Problem:** In `handleHostMessage` case `'leave'`, `handlePlayerDisconnect(fromPeerId)` was called directly instead of through `handlePlayerDisconnectRef.current`. The ref pattern was set up specifically to avoid stale closure issues between `useCallback` hooks with different dependency arrays. The direct call could use a stale version of the disconnect handler.
+**Fix:** Changed to `handlePlayerDisconnectRef.current?.(fromPeerId)`.
+
+### Notable Findings NOT Fixed (Backlog)
+
+| Area | Finding | Severity | Reason Deferred |
+|------|---------|----------|-----------------|
+| Store | `checkDeath` overwrites existing `eventMessage` | HIGH | Requires rethinking event message accumulation pattern |
+| Network | Reconnecting peer with new peerId not matched to player slot | HIGH | Requires reconnection architecture rework |
+| Network | `modifyGold` exploitable with repeated positive amounts | HIGH | Requires rethinking guest action whitelist design |
+| Network | Host migration retry doesn't reset connection timeout | HIGH | Requires PeerManager refactor |
+| Components | `getWorkInfo` earnings don't match actual `workShift` | MEDIUM | Cosmetic UI discrepancy, needs wage calculation refactor |
+| Components | CavePanel spends time before full validation | HIGH | Rare race condition, needs dungeon flow redesign |
+| Data | `festival-all` achievement uses cumulative counter | MEDIUM | Requires stats tracking schema change |
+| AI | Goal sprint logic excludes adventure goal | LOW | Optional goal, lower priority |
+| AI | `useMemo([store])` defeats memoization in useGrimwaldAI | LOW | Performance only, no functional impact |
+| Audio | synthSFX creates separate AudioContext from webAudioBridge | MEDIUM | Requires audio architecture unification |
+| Network | disconnectHandlers called twice for same peer | MEDIUM | Requires reconnection handler redesign |
+
+### Files Modified (10)
+
+| File | Changes |
+|------|---------|
+| `src/store/helpers/weekEndHelpers.ts` | Added `players` to victory/all-dead `set()` calls |
+| `src/store/helpers/hexHelpers.ts` | Added cooldown check in `validateCasterPrereqs()` |
+| `src/store/helpers/economy/bankingHelpers.ts` | Added `rentExtensionUsed: false` to `payRent` |
+| `src/components/game/InventoryGrid.tsx` | Added `equipmentDurability` to combat stats calculation |
+| `src/hooks/ai/actions/strategicActions.ts` | Changed `totalShiftsWorked` → `shiftsWorkedSinceHire` |
+| `src/hooks/ai/actionGenerator.ts` | Added location filter to batching bonus |
+| `src/hooks/ai/actions/goalActions.ts` | Added null check for adventure quest before move |
+| `src/audio/audioManager.ts` | Clear crossfade interval in `stop()` |
+| `src/audio/ambientManager.ts` | Clear crossfade interval in `stop()` |
+| `src/network/useOnlineGame.ts` | Use ref pattern for disconnect handler in leave case |
+
+### Test Results
+
+```
+Test Files  16 passed (16)
+Tests       296 passed (296)
+Duration    13.05s
+```
+
+TypeScript: 0 errors. Build: clean. All behavior preserved.
+
+---

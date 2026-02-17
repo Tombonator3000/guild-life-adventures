@@ -354,6 +354,9 @@ const VALID_CAST_LOCATIONS: LocationId[] = ['shadow-market', 'enchanter', 'grave
 /** Shared caster prereq checks: scroll ownership, casting location, time */
 type HexResult = { success: boolean; message: string };
 function validateCasterPrereqs(player: Player, hex: HexDefinition): HexResult | null {
+  if (player.hexCastCooldown > 0) {
+    return { success: false, message: `Your hex casting is on cooldown for ${player.hexCastCooldown} more week(s).` };
+  }
   if (!player.hexScrolls.some(s => s.hexId === hex.id && s.quantity > 0)) {
     return { success: false, message: 'You do not have this scroll.' };
   }

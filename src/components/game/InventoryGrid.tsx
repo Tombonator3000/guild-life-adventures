@@ -627,5 +627,5 @@ function buildInventoryItems(player: Player): InventoryItem[] {
 
 // Helper: Calculate all combat stats in a single call
 function getPlayerCombatStats(player: Player) {
-  return calculateCombatStats(player.equippedWeapon, player.equippedArmor, player.equippedShield, player.temperedItems);
+  return calculateCombatStats(player.equippedWeapon, player.equippedArmor, player.equippedShield, player.temperedItems, player.equipmentDurability);
 }

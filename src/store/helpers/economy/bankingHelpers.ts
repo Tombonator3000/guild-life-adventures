@@ -21,6 +21,7 @@ export function createBankingActions(set: SetFn, get: GetFn) {
             weeksSinceRent: 0,
             // M3 FIX: Clear rent debt when paying rent
             rentDebt: 0,
+            rentExtensionUsed: false,
           };
         }),
       }));
