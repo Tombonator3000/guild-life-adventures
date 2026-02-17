@@ -460,19 +460,19 @@ function ItemTooltip({ item, position }: ItemTooltipProps) {
       </div>
       {item.stats && (
         <div className="text-[18px] space-y-1 border-t border-gold/20 pt-2">
-          {item.stats.attack && (
+          {item.stats.attack != null && (
             <div className="flex justify-between">
               <span>Attack:</span>
               <span className="text-health font-bold">+{item.stats.attack}</span>
             </div>
           )}
-          {item.stats.defense && (
+          {item.stats.defense != null && (
             <div className="flex justify-between">
               <span>Defense:</span>
               <span className="text-time font-bold">+{item.stats.defense}</span>
             </div>
           )}
-          {item.stats.blockChance && (
+          {item.stats.blockChance != null && (
             <div className="flex justify-between">
               <span>Block:</span>
               <span className="text-secondary font-bold">{Math.round(item.stats.blockChance * 100)}%</span>

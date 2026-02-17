@@ -35,7 +35,7 @@ import { getGameOption } from '@/data/gameOptions';
 import { getEnchanterHexStock, getShadowMarketHexStock, isLocationHexed, getHexById } from '@/data/hexes';
 import type { ActiveLocationHex } from '@/data/hexes';
 import { isPlayerRuined } from '@/store/helpers/hexHelpers';
-import { useGameStore } from '@/store/gameStore';
+
 
 // Map location ID to the job location name used in jobs.ts
 const JOB_LOCATION_MAP: Record<string, string> = {
@@ -106,6 +106,8 @@ export interface LocationTabContext {
   forgeRepairAppliance: GameStore['forgeRepairAppliance'];
   forgeRepairEquipment: GameStore['forgeRepairEquipment'];
   salvageEquipment: GameStore['salvageEquipment'];
+  // Gameplay state for hex checking (passed reactively, not via getState)
+  locationHexes: GameStore['locationHexes'];
   // Callbacks for newspaper modal (owned by LocationPanel)
   onBuyNewspaper: () => void;
   onShowNewspaper: (newspaper: ReturnType<typeof generateNewspaper>) => void;
@@ -727,7 +729,7 @@ export function getLocationTabs(locationId: LocationId, isHere: boolean, ctx: Lo
 
   // Check for location hex or Hex of Ruin blockage
   if (getGameOption('enableHexesCurses')) {
-    const locationHexes = useGameStore.getState().locationHexes;
+    const locationHexes = ctx.locationHexes;
     const activeHex = isLocationHexed(locationId, ctx.player.id, locationHexes);
     const isRuined = isPlayerRuined(ctx.player);
 
