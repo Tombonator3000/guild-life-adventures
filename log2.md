@@ -4736,3 +4736,77 @@ Combined with `selfDestroying` SW, this eliminates BOTH failure vectors:
 - Lovable deployment: unaffected (selfDestroying is false)
 
 ---
+
+## 2026-02-17 — 5-Agent Parallel Code Audit (12:10–12:30 UTC)
+
+### Overview
+
+Full codebase audit using 5 parallel agents covering all source code. Each agent scanned a different area for bugs, logic errors, dead code, type safety issues, and potential runtime crashes. Found **14 bugs** across all areas, fixed all of them in 3 commits. All 296 tests pass. TypeScript clean. Build succeeds.
+
+### Audit Methodology
+
+| Agent | Scope | Files Scanned | Findings |
+|-------|-------|---------------|----------|
+| Store + Helpers | gameStore.ts, all helpers/ | ~10 files | 24 findings (1 false positive CRITICAL, 3 HIGH, 5 MEDIUM, 6 LOW) |
+| Components | game/, screens/ | ~30+ .tsx files | 21 findings (3 HIGH, 11 MEDIUM, 7 LOW) |
+| Data Files | data/ (jobs, items, education, combat, etc.) | ~20 .ts files | 13 findings (1 HIGH, 3 MEDIUM, 9 LOW) |
+| Hooks + AI | hooks/, ai/ | ~15 .ts files | 20 findings (2 CRITICAL, 4 HIGH, 6 MEDIUM, 8 LOW) |
+| Network + Types + Audio | network/, types/, audio/, lib/ | ~15 .ts files | 17 findings (2 HIGH, 5 MEDIUM, 6 LOW) |
+
+**Total raw findings: 95** — after verification, **14 confirmed bugs fixed**, rest were false positives, style observations, or too-low-impact to fix.
+
+### Commit 1: Fix 7 bugs (store, AI, network)
+
+**Files changed (8):**
+
+| File | Fix |
+|------|-----|
+| `src/hooks/ai/actionExecutor.ts` | **CRITICAL**: AI weather movement cost off-by-one — `path.length` (includes start) → `baseCost` (actual steps). AI was paying 1 extra weather hour per move. |
+| `src/hooks/ai/actions/strategicActions.ts` | **CRITICAL**: AI education pipeline study action missing `cost`/`hours` in details — defaulted to 5g instead of actual degree cost (5–25g). Added DEGREES import + lookup. |
+| `src/network/useOnlineGame.ts` | **HIGH**: Lobby message filter missing `'name-change'` type — guests could never change name in lobby. Added to filter. |
+| `src/network/networkState.ts` | **HIGH**: `weeklyNewsEvents` and `locationHexes` missing from `serializeGameState()` and `applyNetworkState()` — hex/newspaper features invisible to guest players in multiplayer. Added both to serialize + apply. |
+| `src/types/game.types.ts` | **MEDIUM**: `FOOD_DEPLETION_PER_WEEK` was 25 but actual drain was hardcoded 35 — updated constant to 35. |
+| `src/store/helpers/weekEndHelpers.ts` | **MEDIUM**: Replaced hardcoded `35` with `FOOD_DEPLETION_PER_WEEK` constant. |
+| `src/store/gameStore.ts` | **MEDIUM**: `loadFromSlot` didn't restore `basePriceModifier` — economy base could reset after loading save. |
+| `src/hooks/ai/strategy.ts` | **HIGH**: Career progress missing `goals.career > 0` guard — division by zero possible (though unlikely). Added guard matching other goals. |
+
+### Commit 2: Fix 2 data bugs
+
+| File | Fix |
+|------|-----|
+| `src/data/newspaper.ts` | **HIGH**: Newspaper "Employment Opportunities" only sampled from `JOBS` (8 Guild Hall jobs) instead of `ALL_JOBS` (~40 jobs across all locations). Changed to `ALL_JOBS`. Also removed unused `Job` type import. |
+| `src/data/dungeon/floors.ts` | **MEDIUM**: `blessed-ground` modifier had both `damageMult: 0.8` AND `bonusDamageReduction: 0.2`, stacking to 36% reduction instead of described 20%. Set `damageMult: 1.0` so only `bonusDamageReduction` applies. |
+
+### Commit 3: Fix 5 component bugs
+
+| File | Fix |
+|------|-----|
+| `src/components/game/InventoryGrid.tsx` | **HIGH**: Tooltip used truthy checks for stats (`attack && ...`), hiding items with value 0. Changed to `!= null` checks. |
+| `src/components/game/locationTabs.tsx` | **HIGH**: Used `useGameStore.getState()` during render for hex data — bypassed React subscriptions, hex placements stale until unrelated re-render. Moved `locationHexes` into `LocationTabContext` for reactive updates. Removed dead `useGameStore` import. |
+| `src/components/game/LocationPanel.tsx` | Added `locationHexes` to context object passed to `getLocationTabs`. |
+| `src/components/game/ResourcePanel.tsx` | **MEDIUM**: `player.activeCurses.length` crash without null safety — would crash loading pre-hex saves. Added `?.` optional chaining. |
+| `src/components/game/PlayerToken.tsx` | **MEDIUM**: Same `activeCurses` crash risk. Added `?.` optional chaining. |
+| `src/components/game/VictoryEffects.tsx` | **MEDIUM**: `canvas.getContext('2d')!` non-null assertion. Added proper null check. |
+
+### Notable Findings NOT Fixed (Backlog)
+
+These were valid observations but lower priority or design-level changes:
+
+| Area | Finding | Severity | Reason Deferred |
+|------|---------|----------|-----------------|
+| Store | `useCurrentPlayer` can return undefined during title/setup | MEDIUM | Would require updating all callers |
+| Components | GameBoard missing `isMultiHuman` dep in useEffect | HIGH | Only affects edge case of player count changing mid-game |
+| Components | OptionsMenu fullscreen toggle not reactive | MEDIUM | Cosmetic — fullscreen state doesn't sync with F11 |
+| Network | Host disconnect fires handlers twice (immediate + timeout) | MEDIUM | Requires reconnection architecture rework |
+| Network | Duplicate AudioContext in synthSFX vs webAudioBridge | MEDIUM | Unification requires testing all audio paths |
+| AI | `useMemo` depends on entire Zustand store in useGrimwaldAI | HIGH | Performance — functionally correct, needs careful refactor |
+| AI | AI endTurn race condition with useAutoEndTurn | MEDIUM | Rare race, needs turn-locking mechanism |
+| Data | Duplicate Job/Quest interfaces in game.types.ts vs data/ | MEDIUM | Architectural cleanup, affects many imports |
+
+### Testing
+
+- TypeScript: `npx tsc --noEmit` — clean
+- Tests: `bun run test` — 296/296 passed (16 test files, all green)
+- Build: `bun run build` — successful
+
+---
