@@ -100,6 +100,10 @@ class AmbientManager {
     if (!this.currentTrackId) return;
     this.currentTrackId = null;
     this.clearResumeListener();
+    if (this.fadeInterval) {
+      clearInterval(this.fadeInterval);
+      this.fadeInterval = null;
+    }
     this.fadeOut(this.getActiveDeck(), this.getActiveGain());
     this.fadeOut(this.getInactiveDeck(), this.getInactiveGain());
   }

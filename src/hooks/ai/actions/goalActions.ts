@@ -290,7 +290,7 @@ function generateAdventureActions(ctx: ActionContext): AIAction[] {
         description: 'Take quest for adventure points',
         details: { questId: adventureQuest },
       });
-    } else if (player.timeRemaining > moveCost('guild-hall') + 2) {
+    } else if (adventureQuest && player.timeRemaining > moveCost('guild-hall') + 2) {
       actions.push({
         type: 'move',
         location: 'guild-hall',

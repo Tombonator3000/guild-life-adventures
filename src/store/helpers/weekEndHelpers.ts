@@ -826,7 +826,7 @@ function resolveWeekEndOutcome(
   // All players dead
   if (firstAliveIndex === -1) {
     try { deleteSave(0); } catch { /* ignore */ }
-    set({ ...weekEndState, phase: 'victory', eventMessage: 'All players have perished. Game Over!' });
+    set({ ...weekEndState, players, phase: 'victory', eventMessage: 'All players have perished. Game Over!' });
     return;
   }
 
@@ -836,6 +836,7 @@ function resolveWeekEndOutcome(
     try { deleteSave(0); } catch { /* ignore */ }
     set({
       ...weekEndState,
+      players,
       winner: alivePlayers[0].id,
       phase: 'victory',
       eventMessage: `${alivePlayers[0].name} is the last one standing and wins the game!`,

@@ -357,7 +357,7 @@ export function useOnlineGame() {
       }
 
       case 'leave': {
-        handlePlayerDisconnect(fromPeerId);
+        handlePlayerDisconnectRef.current?.(fromPeerId);
         break;
       }
     }

@@ -229,7 +229,7 @@ function generateSalaryNegotiationActions(ctx: ActionContext): AIAction[] {
   if (!job) return [];
 
   const jobLocation = getJobLocation(job);
-  const shiftsAtJob = player.totalShiftsWorked || 0;
+  const shiftsAtJob = player.shiftsWorkedSinceHire || 0;
   if (shiftsAtJob < 3 || player.dependability < 30 || player.currentWage >= job.baseWage * 2.5) return [];
 
   if (currentLocation === jobLocation) {
