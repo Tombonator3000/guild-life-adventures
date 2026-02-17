@@ -19,100 +19,77 @@ import type { LocationId } from '@/types/game.types';
  *
  * Returns an error string if invalid, or null if OK.
  */
-function validateActionArgs(name: string, args: unknown[], store: ReturnType<typeof useGameStore.getState>): string | null {
-  const playerId = typeof args[0] === 'string' ? args[0] : null;
-  const player = playerId ? store.players.find(p => p.id === playerId) : null;
 
+/** Validate that args[index] is a finite number within [min, max]. Returns error string or null. */
+function validateNumArg(args: unknown[], index: number, min: number, max: number, label: string): string | null {
+  const val = args[index];
+  if (typeof val !== 'number' || !isFinite(val)) return `Invalid ${label}`;
+  if (val < min || val > max) return `${label} out of range`;
+  return null;
+}
+
+/** Stat modifier validation rules: action name → { argIndex, maxAbsValue, label, oneSided? }
+ *  For modifyGold, negative amounts (spending) are unlimited — only cap positive (oneSided). */
+const STAT_MODIFIER_RULES: Record<string, { argIndex: number; max: number; label: string; positiveOnly?: boolean }> = {
+  modifyGold:       { argIndex: 1, max: 500, label: 'Gold',       positiveOnly: true },
+  modifyHealth:     { argIndex: 1, max: 100, label: 'Health' },
+  modifyHappiness:  { argIndex: 1, max: 50,  label: 'Happiness' },
+  modifyFood:       { argIndex: 1, max: 100, label: 'Food' },
+  modifyClothing:   { argIndex: 1, max: 100, label: 'Clothing' },
+  modifyMaxHealth:  { argIndex: 1, max: 25,  label: 'MaxHealth' },
+  modifyRelaxation: { argIndex: 1, max: 20,  label: 'Relaxation' },
+};
+
+/** Cost validation rules: action name → { argIndex, min, max, label } */
+const COST_VALIDATION_RULES: Record<string, { argIndex: number; min: number; max: number; label: string }> = {
+  temperEquipment:        { argIndex: 3, min: 0, max: 1000, label: 'temper cost' },
+  salvageEquipment:       { argIndex: 3, min: 0, max: 2000, label: 'salvage value' },
+  buyHexScroll:           { argIndex: 2, min: 1, max: 2000, label: 'hex scroll cost' },
+  buyProtectiveAmulet:    { argIndex: 1, min: 1, max: 5000, label: 'cost' },
+  cleanseCurse:           { argIndex: 1, min: 1, max: 5000, label: 'cost' },
+  performDarkRitual:      { argIndex: 1, min: 1, max: 5000, label: 'cost' },
+  dispelLocationHex:      { argIndex: 1, min: 1, max: 5000, label: 'cost' },
+  attemptCurseReflection: { argIndex: 1, min: 1, max: 5000, label: 'cost' },
+};
+
+function validateActionArgs(name: string, args: unknown[], store: ReturnType<typeof useGameStore.getState>): string | null {
+  // Stat modifier actions: validate amount is finite and within bounds
+  const statRule = STAT_MODIFIER_RULES[name];
+  if (statRule) {
+    const amount = args[statRule.argIndex];
+    if (typeof amount !== 'number' || !isFinite(amount)) return `Invalid amount`;
+    if (statRule.positiveOnly) {
+      if (amount > statRule.max) return `${statRule.label} amount too large`;
+    } else {
+      if (Math.abs(amount) > statRule.max) return `${statRule.label} amount too large`;
+    }
+    return null;
+  }
+
+  // Cost/value-based actions: validate finite number within [min, max]
+  const costRule = COST_VALIDATION_RULES[name];
+  if (costRule) {
+    return validateNumArg(args, costRule.argIndex, costRule.min, costRule.max, `Invalid ${costRule.label}`);
+  }
+
+  // Actions with custom validation logic
   switch (name) {
-    // Raw stat modifiers: cap magnitude to prevent abuse
-    case 'modifyGold': {
-      const amount = args[1];
-      if (typeof amount !== 'number' || !isFinite(amount)) return 'Invalid amount';
-      // Block adding more than 500 gold at once (no legitimate action gives that much)
-      // Negative amounts (spending) are fine — the store validates gold >= 0
-      if (amount > 500) return 'Gold amount too large';
-      return null;
-    }
-    case 'modifyHealth': {
-      const amount = args[1];
-      if (typeof amount !== 'number' || !isFinite(amount)) return 'Invalid amount';
-      if (Math.abs(amount as number) > 100) return 'Health amount too large';
-      return null;
-    }
-    case 'modifyHappiness': {
-      const amount = args[1];
-      if (typeof amount !== 'number' || !isFinite(amount)) return 'Invalid amount';
-      if (Math.abs(amount as number) > 50) return 'Happiness amount too large';
-      return null;
-    }
-    case 'modifyFood': {
-      const amount = args[1];
-      if (typeof amount !== 'number' || !isFinite(amount)) return 'Invalid amount';
-      if (Math.abs(amount as number) > 100) return 'Food amount too large';
-      return null;
-    }
-    case 'modifyClothing': {
-      const amount = args[1];
-      if (typeof amount !== 'number' || !isFinite(amount)) return 'Invalid amount';
-      if (Math.abs(amount as number) > 100) return 'Clothing amount too large';
-      return null;
-    }
-    case 'modifyMaxHealth': {
-      const amount = args[1];
-      if (typeof amount !== 'number' || !isFinite(amount)) return 'Invalid amount';
-      if (Math.abs(amount as number) > 25) return 'MaxHealth amount too large';
-      return null;
-    }
-    case 'modifyRelaxation': {
-      const amount = args[1];
-      if (typeof amount !== 'number' || !isFinite(amount)) return 'Invalid amount';
-      if (Math.abs(amount as number) > 20) return 'Relaxation amount too large';
-      return null;
-    }
-    // Job assignment: validate wage is reasonable (base jobs pay max ~25g/hr)
     case 'setJob': {
       const wage = args[2];
-      if (typeof wage === 'number' && (wage < 0 || wage > 100 || !isFinite(wage))) {
-        return 'Invalid wage';
-      }
+      if (typeof wage === 'number' && (wage < 0 || wage > 100 || !isFinite(wage))) return 'Invalid wage';
       return null;
     }
-    // Work shift: validate hours and wage
     case 'workShift': {
-      const hours = args[1];
-      const wage = args[2];
-      if (typeof hours !== 'number' || hours < 0 || hours > 60) return 'Invalid hours';
-      if (typeof wage !== 'number' || wage < 0 || wage > 100 || !isFinite(wage)) return 'Invalid wage';
-      // Cross-check: player should actually have this job at this wage
+      const playerId = typeof args[0] === 'string' ? args[0] : null;
+      const player = playerId ? store.players.find(p => p.id === playerId) : null;
+      const hoursErr = validateNumArg(args, 1, 0, 60, 'hours');
+      if (hoursErr) return hoursErr;
+      const wageErr = validateNumArg(args, 2, 0, 100, 'wage');
+      if (wageErr) return wageErr;
+      const wage = args[2] as number;
       if (player && player.currentWage > 0 && wage > player.currentWage * 1.5) {
         return 'Wage exceeds player current wage';
       }
-      return null;
-    }
-    // Equipment actions: validate cost/value bounds
-    case 'temperEquipment': {
-      const cost = args[3];
-      if (typeof cost !== 'number' || !isFinite(cost) || cost < 0 || cost > 1000) return 'Invalid temper cost';
-      return null;
-    }
-    case 'salvageEquipment': {
-      const value = args[3];
-      if (typeof value !== 'number' || !isFinite(value) || value < 0 || value > 2000) return 'Invalid salvage value';
-      return null;
-    }
-    // BUG FIX: Validate hex/curse cost parameters (prevent zero-cost exploits)
-    case 'buyHexScroll': {
-      const cost = args[2];
-      if (typeof cost !== 'number' || !isFinite(cost) || cost < 1 || cost > 2000) return 'Invalid hex scroll cost';
-      return null;
-    }
-    case 'buyProtectiveAmulet':
-    case 'cleanseCurse':
-    case 'performDarkRitual':
-    case 'dispelLocationHex':
-    case 'attemptCurseReflection': {
-      const cost = args[1];
-      if (typeof cost !== 'number' || !isFinite(cost) || cost < 1 || cost > 5000) return 'Invalid cost';
       return null;
     }
     default:
