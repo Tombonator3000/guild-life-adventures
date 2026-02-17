@@ -93,7 +93,7 @@ function handleMove(player: Player, action: AIAction, store: StoreActions): bool
   const weather = state.weather;
   const path = getPath(player.currentLocation, action.location);
   const weatherExtraCost = (baseCost > 0 && weather?.movementCostExtra)
-    ? path.length * weather.movementCostExtra
+    ? baseCost * weather.movementCostExtra
     : 0;
   const cost = baseCost + weatherExtraCost;
   if (player.timeRemaining < cost) return false;

@@ -89,6 +89,9 @@ export function serializeGameState(): SerializedGameState {
     shadowfingersEvent: s.shadowfingersEvent,
     applianceBreakageEvent: s.applianceBreakageEvent,
     deathEvent: s.deathEvent,
+    // Gameplay state that must be visible to all players
+    weeklyNewsEvents: s.weeklyNewsEvents,
+    locationHexes: s.locationHexes,
     // Excluded: selectedLocation, showTutorial, tutorialStep,
     //   aiSpeedMultiplier, skipAITurn — these are local UI preferences
   } as SerializedGameState;
@@ -145,6 +148,8 @@ export function applyNetworkState(state: SerializedGameState) {
     stockPriceHistory: state.stockPriceHistory,
     weather: state.weather,
     activeFestival: state.activeFestival ?? null,
+    weeklyNewsEvents: state.weeklyNewsEvents ?? [],
+    locationHexes: state.locationHexes ?? [],
   };
 
   // eventMessage is special: it also controls phase and eventSource

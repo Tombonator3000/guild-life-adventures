@@ -26,7 +26,7 @@ export function PlayerToken({ player, index, isCurrent }: PlayerTokenProps) {
         playerName={player.name}
         size={64}
         isAI={player.isAI}
-        hasCurse={player.activeCurses.length > 0}
+        hasCurse={(player.activeCurses?.length ?? 0) > 0}
       />
     </div>
   );

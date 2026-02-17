@@ -402,6 +402,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         players: migratedPlayers,
         week: gs.week,
         priceModifier: gs.priceModifier,
+        basePriceModifier: gs.basePriceModifier ?? gs.priceModifier,
         economyTrend: gs.economyTrend ?? 0,
         economyCycleWeeksLeft: gs.economyCycleWeeksLeft ?? 4,
         // Migrate old saves: career was guild rank 1-7, now dependability 10-100

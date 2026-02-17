@@ -385,7 +385,7 @@ export const DUNGEON_MODIFIERS: DungeonModifier[] = [
     id: 'blessed-ground',
     name: 'Blessed Ground',
     description: '-20% damage taken, healing +50%.',
-    damageMult: 0.8,
+    damageMult: 1.0,
     goldMult: 1.0,
     enemyPowerMult: 1.0,
     rareDropMult: 1.0,

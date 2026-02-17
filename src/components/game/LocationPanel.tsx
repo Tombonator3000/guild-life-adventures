@@ -116,6 +116,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     forgeRepairAppliance: store.forgeRepairAppliance,
     forgeRepairEquipment: store.forgeRepairEquipment,
     salvageEquipment: store.salvageEquipment,
+    locationHexes: store.locationHexes,
     onBuyNewspaper: handleBuyNewspaper,
     onShowNewspaper: handleShowNewspaper,
   };

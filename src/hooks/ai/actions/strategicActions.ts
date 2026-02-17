@@ -11,6 +11,7 @@
 import type { HousingTier } from '@/types/game.types';
 import { RENT_COSTS } from '@/types/game.types';
 import { getJob, ALL_JOBS } from '@/data/jobs';
+import { DEGREES } from '@/data/education';
 import type { AIAction } from '../types';
 import {
   getBestAvailableJob,
@@ -144,15 +145,16 @@ function generateEducationPipelineActions(ctx: ActionContext): AIAction[] {
   if (progressOnMissing <= 0) return [];
 
   // We've already started — high priority to finish
+  const degree = DEGREES[missingDegree as keyof typeof DEGREES];
   if (currentLocation === 'academy') {
     return [{
       type: 'study',
       priority: 72,
       description: `Finish ${missingDegree} to unlock ${bestPotentialJob.name}`,
-      details: { degreeId: missingDegree },
+      details: { degreeId: missingDegree, cost: degree?.costPerSession ?? 5, hours: degree?.hoursPerSession ?? 6 },
     }];
   }
-  if (player.timeRemaining > moveCost('academy') + 6) {
+  if (player.timeRemaining > moveCost('academy') + (degree?.hoursPerSession ?? 6)) {
     return [{
       type: 'move',
       location: 'academy',
