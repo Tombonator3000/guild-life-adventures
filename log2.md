@@ -3,6 +3,94 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+## 2026-02-17 — BUG-001 Fix #17: Radical Simplification of Startup Pipeline (18:45 UTC)
+
+### Problem
+
+Game still hangs on "Loading the realm..." / "Clear Cache & Reload" after every PR push via GitHub. Works when started from Lovable editor directly but breaks on deployed version after GitHub sync. Lovable reports "build error". This is the 17th fix attempt for BUG-001.
+
+### Root Cause: Overengineered Loading System
+
+After 16 incremental fix attempts (each adding more complexity), the startup pipeline had grown to ~300 lines of inline JS in index.html with:
+- `deferModulePlugin` (50 lines): Removed Vite's standard `<script type="module">` and replaced with hand-rolled deferred loading
+- Stale-build detection (150 lines): SW cleanup → version.json fetch → build-time comparison → hot-swap CSS/JS → auto-reload with CDN cache-busting
+- Fallback watchdog (100 lines): Multiple timeout chains (2s/8s/12s/15s), diagnostic info, nuclear reset button
+- Shared mutable state between plugins (`extractedEntry`, `extractedCss`)
+- Platform-specific globals (`__HTML_BUILD_TIME__`, `__HTML_BASE__`, `__ENTRY__`, `__PRELOADS__`)
+
+This system had too many failure modes: race conditions between SW cleanup and version check, hot-swap CSS removal gap, CDN-specific cache bypass limitations (Fastly vs Lovable CDN), reload loop protection masking actual failures. The `deferModulePlugin` in particular broke the standard Vite output that hosting platforms expect.
+
+### Investigation (4 Parallel Agents)
+
+1. **Startup pipeline agent**: Mapped the full loading flow from HTML → inline scripts → version.json → module loading → React mount. Identified 7 "stuck points" with different timeout/recovery behaviors.
+2. **Build config agent**: Analyzed vite.config.ts plugins, PWA config, platform-specific build paths. Found `deferModulePlugin` removes the standard `<script type="module">` that Vite and hosting platforms expect.
+3. **Plan agent**: Designed radical simplification strategy — remove the custom loading pipeline entirely and let Vite work as designed.
+4. **Online research agent**: Confirmed Lovable has known issues with complex build configurations when syncing from GitHub.
+
+### Fix Applied: Radical Simplification
+
+**Strategy**: Remove the fragile custom loading system entirely. Let Vite output its standard `<script type="module">` tag. Handle stale-cache edge case with a simple `onerror` handler.
+
+| # | File | Change |
+|---|------|--------|
+| 1 | `vite.config.ts` | **Removed** `deferModulePlugin()` (50 lines), `extractedEntry`/`extractedCss` shared state, `transformIndexHtml` hook from `versionJsonPlugin` |
+| 2 | `vite.config.ts` | **Simplified** `versionJsonPlugin()`: only writes `{ buildTime }` to version.json at build close. No HTML injection. |
+| 3 | `vite.config.ts` | **Added** `scriptErrorPlugin()` (15 lines): adds `onerror="__guildShowError(...)"` to Vite's entry `<script type="module">` tag for instant 404 detection |
+| 4 | `index.html` | **Removed** Script 2 (deferred loading + stale-build detection, ~150 lines) and Script 3 (fallback watchdog, ~100 lines) |
+| 5 | `index.html` | **Replaced** Script 1 (error handlers, 40 lines) with minimal error handler (18 lines): `__guildShowError()`, `window.onerror`, `unhandledrejection` |
+| 6 | `index.html` | **Added** simple 15s fallback timeout (12 lines): shows "Reload" button if React hasn't mounted |
+| 7 | `src/main.tsx` | **Removed** `__guildSetStatus`/`setStatus()`, `__guildAppFailed` flag, `__guildAppLoading` flag, `mountTimeout`, `showMountError()` function |
+| 8 | `src/main.tsx` | **Simplified** mount error handler: catches errors from `import("./App.tsx")`, shows error + reload button |
+
+### Before vs After
+
+| Metric | Before | After |
+|--------|--------|-------|
+| `index.html` inline JS | ~300 lines, 3 scripts | ~30 lines, 2 scripts |
+| `vite.config.ts` plugins | 2 complex (deferModulePlugin + versionJsonPlugin) | 2 simple (versionJsonPlugin + scriptErrorPlugin) |
+| `src/main.tsx` | 95 lines (7 global flags, 15s timeout, status updates) | 53 lines (1 global flag, dynamic import + error handling) |
+| Custom globals | 6 (`__ENTRY__`, `__PRELOADS__`, `__HTML_BUILD_TIME__`, `__HTML_BASE__`, `__guildAppLoading`, `__guildVersionCheckStarted`) | 1 (`__guildReactMounted`) |
+| Timeout chains | 4 (2s SW, 8s pipeline, 12s fallback, 15s mount) | 1 (15s fallback) |
+| Module loading | Custom deferred: inline script injects `<script>` after version check | Standard: Vite's `<script type="module">` loads directly |
+| Stale-cache recovery | Auto-reload loop (max 3) + hot-swap + version.json check | `onerror` on script tag → show "Reload" button + 15s fallback |
+
+### How Stale-Cache Is Now Handled
+
+```
+Normal flow: HTML → <script type="module" src="/assets/index-HASH.js"> → React mounts
+
+Stale-cache flow (old HTML, new chunks):
+  HTML → <script type="module" src="/assets/index-OLD.js"> → 404
+  → onerror fires → __guildShowError() shows "Failed to load game files — please reload."
+  → User clicks Reload → fresh HTML loads → game works
+
+Slow-load flow:
+  HTML → module loading takes >15s
+  → Fallback timeout shows "Taking longer than expected..." + Reload button
+```
+
+### What Was Preserved
+
+- `__BUILD_TIME__` Vite define (used by `useAppUpdate.ts` and `UpdateBanner.tsx`)
+- `versionJsonPlugin` writes `version.json` for in-app update polling
+- `selfDestroying: true` PWA config (cleans up old SWs)
+- `useAppUpdate.ts` version.json polling + `hardRefresh()` function
+- `ErrorBoundary` in `App.tsx`
+- Cache-control meta tags in HTML
+- `?_gv` URL cleanup in `main.tsx`
+
+### Verification
+
+```
+TypeScript: 0 errors
+Tests: 296/296 pass (16 test files)
+Build (Lovable): succeeds, dist/index.html has standard <script type="module"> with onerror
+Build (GitHub Pages): succeeds with DEPLOY_TARGET=github
+dist/version.json: { "buildTime": "..." } (no entry/css fields)
+```
+
+---
+
 ## 2026-02-17 — Code Audit & Refactor Round 7 (22:00 UTC)
 
 ### Overview
