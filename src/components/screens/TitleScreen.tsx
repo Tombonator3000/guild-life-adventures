@@ -32,9 +32,8 @@ export function TitleScreen() {
   const { t } = useTranslation();
 
   const handleContinue = () => {
-    enterFullscreen();
     if (loadFromSlot(0)) {
-      // loaded
+      enterFullscreen();
     }
   };
 
@@ -44,8 +43,8 @@ export function TitleScreen() {
   };
 
   const handleLoadSlot = (slot: number) => {
-    enterFullscreen();
     if (loadFromSlot(slot)) {
+      enterFullscreen();
       setShowLoadMenu(false);
     }
   };
