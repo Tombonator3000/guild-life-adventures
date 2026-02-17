@@ -5,14 +5,14 @@
 
 ---
 
-## BUG-001: "Loading the realm..." Freeze (RECURRING — FIX #16: 2026-02-17)
+## BUG-001: "Loading the realm..." Freeze (RECURRING — FIX #17: 2026-02-17)
 
 | Field | Value |
 |-------|-------|
 | **Severity** | Critical |
-| **Status** | FIXED (self-destroying SW on ALL platforms + hot-swap from version.json + nuclear reset) |
+| **Status** | FIXED (error handler moved to `<head>` + audio singleton hardening) |
 | **First seen** | 2026-02-14 |
-| **Occurrences** | 16 fix attempts across PRs #185–#235 |
+| **Occurrences** | 17 fix attempts across PRs #185–#241 |
 | **Symptom** | Game stuck on "Loading the realm..." loading screen, React never mounts |
 | **Environment** | Production (GitHub Pages + Lovable), after any new deployment |
 
@@ -134,6 +134,26 @@ Even after 15 fix attempts, TWO fundamental problems remained:
 2. **Module onerror retry**: When entry module 404s, automatically retry by fetching version.json again (CDN may have updated since first fetch) and hot-swap to fresh entry URL. Up to 2 retries.
 3. **Inline SW unregister**: Unregister ALL service workers as the first action in the loading pipeline, BEFORE the version check. Eliminates old/broken SWs from interfering with fetches.
 4. **SW neutered for GitHub Pages**: Changed `registerType` to `'prompt'` (was `'autoUpdate'`) and disabled `skipWaiting`/`clientsClaim` for GitHub Pages builds. New SWs install but don't activate until all tabs are closed. No mid-visit takeover, no `controllerchange` events, no reload loops.
+
+### Why PR #241's Simplified Startup Still Hung (found 2026-02-17)
+
+PR #241 radically simplified the startup pipeline (removed deferred loading, inline version check, etc.) but the hang persisted. **Two new root causes found via parallel AI agent investigation:**
+
+**Root Cause A — Script ordering bug in production HTML:**
+- In source `index.html`, the error handler script (`__guildShowError`) was in `<body>` and the module entry script came after it — correct order
+- Vite's production build moves `<script type="module">` to `<head>` but leaves the error handler in `<body>`
+- `scriptErrorPlugin` adds `onerror="__guildShowError(...)"` to the module script in `<head>`
+- When JS chunk 404s (stale cache), `onerror` fires → `__guildShowError` not yet defined (still in `<body>`) → `ReferenceError` → silent failure → stuck on "Loading the realm…" for 15s
+
+**Root Cause B — Unprotected `connectElement()` in audio singletons:**
+- `audioManager.ts` L74-75 and `ambientManager.ts` L69-70 called `connectElement()` outside try-catch
+- `sfxManager.ts` and `speechNarrator.ts` were properly wrapped
+- If `connectElement` throws on exotic environments, the module-level singleton crashes → import fails → React never mounts
+
+### Fix #17 (2026-02-17)
+
+1. **Moved error handler to `<head>`** — `__guildShowError`, `window.onerror`, and `unhandledrejection` listener now defined in `<head>` before Vite's module script. Verified in `dist/index.html`: error handler at L56, module script at L74.
+2. **Wrapped `connectElement()` in try-catch** — Both `audioManager.ts` and `ambientManager.ts` constructors now catch `connectElement` failures and fall back to `gainA/gainB = null` (element.volume fallback). Matches existing pattern in `sfxManager.ts`.
 
 ---
 
