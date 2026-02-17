@@ -5,6 +5,50 @@ import type { LocationId } from '@/types/game.types';
 import { toast } from 'sonner';
 import { playSFX } from '@/audio/sfxManager';
 
+/** Calculate weather-adjusted movement cost for a given number of steps */
+function calculateWeatherCost(steps: number, weatherExtraCostPerStep: number): number {
+  return steps + Math.floor(steps * weatherExtraCostPerStep);
+}
+
+/** Attempt partial travel: calculate max steps affordable and return partial path, or null if can't move */
+function calculatePartialTravel(
+  path: LocationId[],
+  timeAvailable: number,
+  weatherExtraCostPerStep: number,
+): { partialPath: LocationId[]; partialDest: LocationId; partialCost: number } | null {
+  const totalSteps = path.length - 1;
+  if (totalSteps <= 0 || timeAvailable <= 0) return null;
+  const costPerStep = 1 + weatherExtraCostPerStep;
+  const stepsCanTake = Math.floor(timeAvailable / costPerStep) || Math.min(timeAvailable, totalSteps);
+  if (stepsCanTake <= 0 || path.length <= 1) return null;
+  const partialPath = path.slice(0, stepsCanTake + 1);
+  return {
+    partialPath,
+    partialDest: partialPath[partialPath.length - 1],
+    partialCost: calculateWeatherCost(stepsCanTake, weatherExtraCostPerStep),
+  };
+}
+
+/** Data-driven event ID detection from message text */
+const WEATHER_EVENT_MAP: [string, string][] = [
+  ['snow', 'snowstorm'], ['thunder', 'thunderstorm'], ['drought', 'drought'],
+  ['rain', 'harvest-rain'], ['fog', 'enchanted-fog'],
+];
+const FESTIVAL_EVENT_MAP: [string, string][] = [
+  ['Harvest Festival', 'harvest-festival'], ['Winter Solstice', 'winter-solstice'],
+  ['Spring Tournament', 'spring-tournament'], ['Midsummer Fair', 'midsummer-fair'],
+];
+const KEYWORD_EVENT_MAP: [string, string][] = [
+  ['Shadowfingers', 'shadowfingers-theft'], ['evicted', 'eviction'],
+  ['starving', 'starvation'], ['food poisoning', 'food-poisoning'],
+  ['fallen ill', 'illness'], ['food spoiled', 'food-poisoning'],
+  ['exhausted', 'illness'], ['slept on the streets', 'homeless'],
+  ['fired', 'layoff'], ['Rent is overdue', 'eviction'],
+  ['gear stolen', 'apartment-robbery'], ['Arcane Tome', 'lucky-find'],
+  ['lottery', 'lottery-win'], ['birthday', 'birthday'],
+];
+const CLOTHING_KEYWORD: [string, string][] = [['clothing', 'poor condition']];
+
 export function useLocationClick({
   animatingPlayer,
   isOnline,
@@ -57,50 +101,28 @@ export function useLocationClick({
       return;
     }
 
-    const weatherExtraCostPerStep = (weather?.movementCostExtra) || 0;
+    const weatherExtra = (weather?.movementCostExtra) || 0;
 
     // During animation: allow the animating player to redirect to a new destination
     if (animatingPlayer) {
       if (animatingPlayer === currentPlayer.id && locationId !== currentPlayer.currentLocation) {
-        // Get the intermediate location where the player currently is
         const intermediateLocation = getCurrentIntermediateLocation();
-        if (!intermediateLocation) return;
-
-        // If clicking the location we're currently at, ignore
-        if (locationId === intermediateLocation) return;
+        if (!intermediateLocation || locationId === intermediateLocation) return;
 
         const dest = locationId as LocationId;
-        const accumulatedSteps = getAccumulatedSteps();
-        const accumulatedTimeCost = accumulatedSteps + Math.floor(accumulatedSteps * weatherExtraCostPerStep);
-
-        // Calculate new path from intermediate location to new destination (shortest)
+        const accumulatedTimeCost = calculateWeatherCost(getAccumulatedSteps(), weatherExtra);
         const newPath = getPath(intermediateLocation, dest);
-        const newSteps = newPath.length - 1;
-        const newTimeCost = newSteps + Math.floor(newSteps * weatherExtraCostPerStep);
-        const totalTimeCost = accumulatedTimeCost + newTimeCost;
+        const totalTimeCost = accumulatedTimeCost + calculateWeatherCost(newPath.length - 1, weatherExtra);
 
         if (currentPlayer.timeRemaining >= totalTimeCost) {
-          // Full redirect travel
           playSFX('footstep');
           redirectAnimation(currentPlayer.id, dest, totalTimeCost, newPath);
           if (isOnline) broadcastMovement(currentPlayer.id, newPath);
         } else if (currentPlayer.timeRemaining > accumulatedTimeCost) {
-          // Partial redirect: can take some steps toward new destination
-          const remainingTime = currentPlayer.timeRemaining - accumulatedTimeCost;
-          const costPerStep = 1 + weatherExtraCostPerStep;
-          const stepsCanTake = Math.floor(remainingTime / costPerStep) || Math.min(remainingTime, newSteps);
-          if (stepsCanTake > 0 && newPath.length > 1) {
-            const partialPath = newPath.slice(0, stepsCanTake + 1);
-            const partialDest = partialPath[partialPath.length - 1];
-            const partialNewCost = stepsCanTake + Math.floor(stepsCanTake * weatherExtraCostPerStep);
-            redirectAnimation(
-              currentPlayer.id,
-              partialDest,
-              accumulatedTimeCost + partialNewCost,
-              partialPath,
-              true,
-            );
-            if (isOnline) broadcastMovement(currentPlayer.id, partialPath);
+          const partial = calculatePartialTravel(newPath, currentPlayer.timeRemaining - accumulatedTimeCost, weatherExtra);
+          if (partial) {
+            redirectAnimation(currentPlayer.id, partial.partialDest, accumulatedTimeCost + partial.partialCost, partial.partialPath, true);
+            if (isOnline) broadcastMovement(currentPlayer.id, partial.partialPath);
           }
         } else {
           toast.error('No time remaining!');
@@ -109,96 +131,72 @@ export function useLocationClick({
       return;
     }
 
-    // Online mode: only allow clicks when it's this client's turn
+    // Online mode: spectators can select locations to view info
     if (isOnline && !isLocalPlayerTurn) {
-      // In spectator mode, allow selecting locations to view info
-      if (selectedLocation === locationId) {
-        selectLocation(null);
-      } else {
-        selectLocation(locationId as LocationId);
-      }
+      selectLocation(selectedLocation === locationId ? null : locationId as LocationId);
       return;
     }
 
-    const isCurrentLocation = currentPlayer.currentLocation === locationId;
-
-    if (isCurrentLocation) {
-      // If already here, toggle the location panel
+    // At current location: toggle panel
+    if (currentPlayer.currentLocation === locationId) {
       if (selectedLocation === locationId) {
         selectLocation(null);
       } else {
         playSFX('door-open');
         selectLocation(locationId as LocationId);
       }
-    } else {
-      // Travel to a different location — always use shortest path, no direction popup
-      const dest = locationId as LocationId;
-      const from = currentPlayer.currentLocation as LocationId;
+      return;
+    }
 
-      const travelPath = getPath(from, dest);
-      const baseCost = travelPath.length - 1;
-      const weatherExtraCost = baseCost > 0 ? Math.floor(baseCost * weatherExtraCostPerStep) : 0;
-      const moveCost = baseCost + weatherExtraCost;
+    // Travel to a different location
+    const dest = locationId as LocationId;
+    const travelPath = getPath(currentPlayer.currentLocation as LocationId, dest);
+    const moveCost = calculateWeatherCost(travelPath.length - 1, weatherExtra);
 
-      if (currentPlayer.timeRemaining >= moveCost) {
-        playSFX('footstep');
-        startAnimation(currentPlayer.id, dest, moveCost, travelPath);
-        if (isOnline) broadcastMovement(currentPlayer.id, travelPath);
-      } else if (currentPlayer.timeRemaining > 0) {
-        const costPerStep = 1 + weatherExtraCostPerStep;
-        const stepsCanTake = Math.floor(currentPlayer.timeRemaining / costPerStep) || Math.min(currentPlayer.timeRemaining, baseCost);
-        if (stepsCanTake > 0 && travelPath.length > 1) {
-          const partialPath = travelPath.slice(0, stepsCanTake + 1);
-          const partialDest = partialPath[partialPath.length - 1];
-          const partialCost = stepsCanTake + Math.floor(stepsCanTake * weatherExtraCostPerStep);
-          startAnimation(currentPlayer.id, partialDest, partialCost, partialPath, true);
-          if (isOnline) broadcastMovement(currentPlayer.id, partialPath);
-        } else {
-          toast.error('No time remaining!');
-        }
+    if (currentPlayer.timeRemaining >= moveCost) {
+      playSFX('footstep');
+      startAnimation(currentPlayer.id, dest, moveCost, travelPath);
+      if (isOnline) broadcastMovement(currentPlayer.id, travelPath);
+    } else if (currentPlayer.timeRemaining > 0) {
+      const partial = calculatePartialTravel(travelPath, currentPlayer.timeRemaining, weatherExtra);
+      if (partial) {
+        startAnimation(currentPlayer.id, partial.partialDest, partial.partialCost, partial.partialPath, true);
+        if (isOnline) broadcastMovement(currentPlayer.id, partial.partialPath);
       } else {
         toast.error('No time remaining!');
       }
+    } else {
+      toast.error('No time remaining!');
     }
   };
 
-  // Extract event ID from message text via embedded tag or keyword matching
+  // Extract event ID from message text via embedded tag or data-driven keyword matching
   const extractEventId = (msg: string): string => {
-    // Check for embedded travel event ID: [event-id] Travel Event: ...
+    // Embedded ID tag takes highest priority: [event-id] Travel Event: ...
     const idMatch = msg.match(/^\[([a-z0-9-]+)\]/);
     if (idMatch) return idMatch[1];
 
-    // Weather graphics get FIRST priority — display weather woodcut over other events
-    if (msg.includes('Weather:') && msg.includes('snow')) return 'snowstorm';
-    if (msg.includes('Weather:') && msg.includes('thunder')) return 'thunderstorm';
-    if (msg.includes('Weather:') && msg.includes('drought')) return 'drought';
-    if (msg.includes('Weather:') && msg.includes('rain')) return 'harvest-rain';
-    if (msg.includes('Weather:') && msg.includes('fog')) return 'enchanted-fog';
+    // Weather graphics (require "Weather:" prefix + keyword)
+    if (msg.includes('Weather:')) {
+      for (const [keyword, eventId] of WEATHER_EVENT_MAP) {
+        if (msg.includes(keyword)) return eventId;
+      }
+    }
 
-    // Festival graphics get second priority
-    if (msg.includes('Harvest Festival')) return 'harvest-festival';
-    if (msg.includes('Winter Solstice')) return 'winter-solstice';
-    if (msg.includes('Spring Tournament')) return 'spring-tournament';
-    if (msg.includes('Midsummer Fair')) return 'midsummer-fair';
+    // Festival graphics
+    for (const [keyword, eventId] of FESTIVAL_EVENT_MAP) {
+      if (msg.includes(keyword)) return eventId;
+    }
 
-    // Keyword-based detection for weekly/turn events
-    if (msg.includes('Shadowfingers')) return 'shadowfingers-theft';
-    if (msg.includes('evicted')) return 'eviction';
-    if (msg.includes('starving')) return 'starvation';
-    if (msg.includes('food poisoning')) return 'food-poisoning';
-    if (msg.includes('fallen ill')) return 'illness';
-    if (msg.includes('food spoiled')) return 'food-poisoning';
-    if (msg.includes('exhausted')) return 'illness';
-    if (msg.includes('slept on the streets')) return 'homeless';
-    if (msg.includes('clothing') && msg.includes('poor condition')) return 'clothing-torn';
-    if (msg.includes('fired')) return 'layoff';
-    if (msg.includes('Rent is overdue')) return 'eviction';
-    if (msg.includes('gear stolen')) return 'apartment-robbery';
-    if (msg.includes('Arcane Tome')) return 'lucky-find';
-    if (msg.includes('lottery')) return 'lottery-win';
-    if (msg.includes('birthday')) return 'birthday';
+    // Clothing has a two-keyword check
+    if (CLOTHING_KEYWORD.every(([a, b]) => msg.includes(a) && msg.includes(b))) return 'clothing-torn';
 
-    // Weekend activity ID embedded anywhere in multi-line message: [rw-nap], [ticket-jousting], etc.
+    // Single-keyword events
+    for (const [keyword, eventId] of KEYWORD_EVENT_MAP) {
+      if (msg.includes(keyword)) return eventId;
+    }
+
+    // Weekend activity ID embedded in multi-line messages
     const weekendMatch = msg.match(/\[(rw-[a-z-]+|ticket-[a-z-]+|scrying-weekend|memory-weekend|music-weekend|cooking-weekend|study-weekend)\]/);
     if (weekendMatch) return weekendMatch[1];
 

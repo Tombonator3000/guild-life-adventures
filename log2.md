@@ -3,6 +3,65 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+## 2026-02-17 — Code Audit & Refactor Round 7 (22:00 UTC)
+
+### Overview
+
+Full codebase audit using 4 parallel agents (store+helpers, components, data+hooks, network+locationTabs). Identified 25+ complex functions across all areas. Selected 3 high-impact refactoring targets and applied structural changes maintaining identical behavior. All 296 tests pass. TypeScript compiles clean. Build succeeds.
+
+### Refactoring 25: `castPersonalCurse` + `castLocationHex` + `applySabotageHex` (hexHelpers.ts)
+
+**Problem**: `castPersonalCurse` was a 105-line function with 7 sequential validations, amulet defense handling, sabotage dispatch, and curse application all mixed together. The caster cost update pattern (`timeRemaining`, `hexScrolls`, `hexCastCooldown`) was duplicated 4 times across `castLocationHex`, `castPersonalCurse` (amulet branch), `castPersonalCurse` (main branch), and `applySabotageHex`. The casting prerequisite checks (scroll ownership, valid location, enough time) were duplicated between `castLocationHex` and `castPersonalCurse`.
+
+**Fix**: Extracted 3 shared helpers:
+- `VALID_CAST_LOCATIONS` — constant array replacing 2 inline declarations
+- `validateCasterPrereqs(player, hex)` — shared scroll/location/time validation returning error or null (used by both `castLocationHex` and `castPersonalCurse`)
+- `applyCasterCost(player, hex)` — shared caster state update returning `Partial<Player>` (used by all 4 call sites)
+
+`castPersonalCurse` reduced from 105 to 60 lines. `castLocationHex` reduced from 55 to 40 lines. All 4 caster cost duplications consolidated to `...applyCasterCost(p, hex)`.
+
+### Refactoring 26: `handleLocationClick` + `extractEventId` (useLocationClick.ts)
+
+**Problem**: `handleLocationClick` was 113 lines with 4+ nesting levels. Weather cost calculation (`steps + Math.floor(steps * weatherExtra)`) duplicated 5 times across redirect and normal travel branches. Partial travel logic (calculate steps affordable, build partial path, invoke animation) duplicated in both the redirect branch and normal travel branch. `extractEventId` used 20+ cascading `if (msg.includes(...))` statements — adding a new event type required adding yet another if-statement.
+
+**Fix**: Extracted 2 pure helper functions + 4 data-driven lookup tables:
+- `calculateWeatherCost(steps, weatherExtra)` — single source of truth for weather-adjusted movement cost (replaces 5 inline calculations)
+- `calculatePartialTravel(path, timeAvailable, weatherExtra)` — returns `{ partialPath, partialDest, partialCost }` or null (replaces 2 duplicated partial travel blocks)
+- `WEATHER_EVENT_MAP`, `FESTIVAL_EVENT_MAP`, `KEYWORD_EVENT_MAP`, `CLOTHING_KEYWORD` — data-driven lookup arrays replacing 20+ cascading if-statements in `extractEventId`
+
+`handleLocationClick` reduced from 113 to 75 lines. `extractEventId` converted from 40 lines of if-statements to 25 lines of loop-over-table lookups. Adding new event types is now a 1-line array entry.
+
+### Refactoring 27: `buildInventoryItems` + combat stat helpers (InventoryGrid.tsx)
+
+**Problem**: `buildInventoryItems` had 3 nearly identical 18-line blocks for equipped items (weapon, armor, shield). Each block followed the exact same pattern: check if player has item → find item data → check tempered → push to array. They differed only in the player field name (`equippedWeapon`/`equippedArmor`/`equippedShield`) and the slot type string. Additionally, 3 separate `calculateTotalAttack`/`calculateTotalDefense`/`calculateTotalBlockChance` functions each independently called `calculateCombatStats` with the same arguments — 3 redundant calls that could be 1.
+
+**Fix**:
+- Created `EQUIP_SLOTS` data array mapping `{ slot, playerField }` for weapon/armor/shield
+- Replaced 3×18=54 lines of duplicate equipped item building with a single 15-line `for...of` loop over `EQUIP_SLOTS`
+- Consolidated 3 separate `calculateTotal*` functions into single `getPlayerCombatStats(player)` helper, called once before the JSX return
+
+`buildInventoryItems` equipped section reduced from 54 to 15 lines. 3 redundant `calculateCombatStats` calls → 1 call.
+
+### Files Modified (3)
+
+| File | Changes |
+|------|---------|
+| `src/store/helpers/hexHelpers.ts` | `validateCasterPrereqs` + `applyCasterCost` + `VALID_CAST_LOCATIONS` extracted; 4 caster cost duplications → shared helper |
+| `src/hooks/useLocationClick.ts` | `calculateWeatherCost` + `calculatePartialTravel` extracted; `extractEventId` → data-driven lookup tables |
+| `src/components/game/InventoryGrid.tsx` | `EQUIP_SLOTS` loop replaces 3 duplicate blocks; `getPlayerCombatStats` consolidates 3 redundant calls |
+
+### Test Results
+
+```
+Test Files  16 passed (16)
+Tests       296 passed (296)
+Duration    11.02s
+```
+
+TypeScript: 0 errors. Build: clean. All behavior preserved.
+
+---
+
 ## 2026-02-17 — Bug Hunt #4: Startup Hang Fix (09:50 UTC)
 
 ### Problem

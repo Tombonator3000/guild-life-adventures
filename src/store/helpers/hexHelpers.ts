@@ -48,24 +48,13 @@ export function createHexActions(set: SetFn, get: GetFn) {
         return { success: false, message: 'Invalid hex.' };
       }
 
-      // Must have the scroll
-      const scrollIdx = player.hexScrolls.findIndex(s => s.hexId === hexId && s.quantity > 0);
-      if (scrollIdx === -1) return { success: false, message: 'You do not have this scroll.' };
-
       // Only one location hex active per caster
       const existingHex = state.locationHexes.find(h => h.casterId === playerId);
       if (existingHex) return { success: false, message: 'You already have an active location hex.' };
 
-      // Must be at a valid casting location (Shadow Market, Enchanter, or Graveyard)
-      const castLocations: LocationId[] = ['shadow-market', 'enchanter', 'graveyard'];
-      if (!castLocations.includes(player.currentLocation)) {
-        return { success: false, message: 'You must be at the Shadow Market, Enchanter, or Graveyard to cast.' };
-      }
-
-      // Must have enough time
-      if (player.timeRemaining < hex.castTime) {
-        return { success: false, message: 'Not enough time to cast this hex.' };
-      }
+      // Shared prereqs: scroll, location, time
+      const prereqError = validateCasterPrereqs(player, hex);
+      if (prereqError) return prereqError;
 
       // Apply the hex
       const newLocationHex: ActiveLocationHex = {
@@ -79,14 +68,7 @@ export function createHexActions(set: SetFn, get: GetFn) {
       set((s) => ({
         locationHexes: [...s.locationHexes, newLocationHex],
         players: s.players.map((p) =>
-          p.id === playerId
-            ? {
-                ...p,
-                timeRemaining: Math.max(0, p.timeRemaining - hex.castTime),
-                hexScrolls: removeHexScroll(p.hexScrolls, hexId),
-                hexCastCooldown: 3, // 3-turn cooldown
-              }
-            : p
+          p.id === playerId ? { ...p, ...applyCasterCost(p, hex) } : p
         ),
       }));
 
@@ -104,104 +86,60 @@ export function createHexActions(set: SetFn, get: GetFn) {
       const target = state.players.find(p => p.id === targetId);
       const hex = getHexById(hexId);
 
+      // Basic validation
       if (!player || !target || !hex || !hex.effect || hex.category === 'location') {
         return { success: false, message: 'Invalid curse.' };
       }
-      if (playerId === targetId) {
-        return { success: false, message: 'You cannot curse yourself.' };
-      }
-      if (target.isGameOver) {
-        return { success: false, message: 'Target is out of the game.' };
-      }
-
-      // Must have the scroll
-      const scrollIdx = player.hexScrolls.findIndex(s => s.hexId === hexId && s.quantity > 0);
-      if (scrollIdx === -1) return { success: false, message: 'You do not have this scroll.' };
-
-      // Max 1 curse per target (from different casters)
+      if (playerId === targetId) return { success: false, message: 'You cannot curse yourself.' };
+      if (target.isGameOver) return { success: false, message: 'Target is out of the game.' };
       if (target.activeCurses.length >= 1 && hex.category === 'personal') {
         return { success: false, message: `${target.name} is already cursed.` };
       }
 
-      // Must be at a valid casting location
-      const castLocations: LocationId[] = ['shadow-market', 'enchanter', 'graveyard'];
-      if (!castLocations.includes(player.currentLocation)) {
-        return { success: false, message: 'You must be at the Shadow Market, Enchanter, or Graveyard to cast.' };
-      }
+      // Shared prereqs: scroll, location, time
+      const prereqError = validateCasterPrereqs(player, hex);
+      if (prereqError) return prereqError;
 
-      if (player.timeRemaining < hex.castTime) {
-        return { success: false, message: 'Not enough time to cast this curse.' };
-      }
-
-      // Check target's Protective Amulet (blocks hex, consumed)
+      // Protective Amulet absorbs the hex (except Hex of Ruin)
       if (target.hasProtectiveAmulet && hex.id !== 'hex-of-ruin') {
         set((s) => ({
           players: s.players.map((p) => {
-            if (p.id === playerId) {
-              return {
-                ...p,
-                timeRemaining: Math.max(0, p.timeRemaining - hex.castTime),
-                hexScrolls: removeHexScroll(p.hexScrolls, hexId),
-                hexCastCooldown: 3,
-              };
-            }
-            if (p.id === targetId) {
-              return { ...p, hasProtectiveAmulet: false };
-            }
+            if (p.id === playerId) return { ...p, ...applyCasterCost(p, hex) };
+            if (p.id === targetId) return { ...p, hasProtectiveAmulet: false };
             return p;
           }),
         }));
-        return {
-          success: true,
-          message: `${target.name}'s Protective Amulet absorbed your ${hex.name}! The amulet shatters.`,
-        };
+        return { success: true, message: `${target.name}'s Protective Amulet absorbed your ${hex.name}! The amulet shatters.` };
       }
 
-      // Apply sabotage hexes (instant effects)
+      // Sabotage hexes apply instantly
       if (hex.category === 'sabotage') {
         return applySabotageHex(set, get, playerId, targetId, hex);
       }
 
       // Apply personal curse (duration-based)
       const newCurse: ActiveCurse = {
-        hexId,
-        casterId: playerId,
-        casterName: player.name,
-        effectType: hex.effect.type,
-        magnitude: hex.effect.magnitude,
+        hexId, casterId: playerId, casterName: player.name,
+        effectType: hex.effect.type, magnitude: hex.effect.magnitude,
         weeksRemaining: hex.duration,
       };
 
       set((s) => ({
         players: s.players.map((p) => {
-          if (p.id === playerId) {
-            return {
-              ...p,
-              timeRemaining: Math.max(0, p.timeRemaining - hex.castTime),
-              hexScrolls: removeHexScroll(p.hexScrolls, hexId),
-              hexCastCooldown: 3,
-            };
-          }
+          if (p.id === playerId) return { ...p, ...applyCasterCost(p, hex) };
           if (p.id === targetId) {
-            // Handle legendary ruin's gold penalty
+            const curseUpdate: Partial<Player> = { activeCurses: [...p.activeCurses, newCurse] };
+            // Legendary ruin also applies immediate gold loss
             if (hex.effect!.type === 'legendary-ruin') {
-              const goldLoss = Math.floor(p.gold * hex.effect!.magnitude);
-              return {
-                ...p,
-                activeCurses: [...p.activeCurses, newCurse],
-                gold: Math.max(0, p.gold - goldLoss),
-              };
+              curseUpdate.gold = Math.max(0, p.gold - Math.floor(p.gold * hex.effect!.magnitude));
             }
-            return { ...p, activeCurses: [...p.activeCurses, newCurse] };
+            return { ...p, ...curseUpdate };
           }
           return p;
         }),
       }));
 
-      return {
-        success: true,
-        message: `You cast ${hex.name} on ${target.name}! ${hex.description}`,
-      };
+      return { success: true, message: `You cast ${hex.name} on ${target.name}! ${hex.description}` };
     },
 
     // ── Buy Protective Amulet ─────────────────────────────────────
@@ -410,6 +348,33 @@ export function createHexActions(set: SetFn, get: GetFn) {
 // Internal Helpers
 // ============================================================
 
+/** Valid locations where hexes/curses can be cast */
+const VALID_CAST_LOCATIONS: LocationId[] = ['shadow-market', 'enchanter', 'graveyard'];
+
+/** Shared caster prereq checks: scroll ownership, casting location, time */
+type HexResult = { success: boolean; message: string };
+function validateCasterPrereqs(player: Player, hex: HexDefinition): HexResult | null {
+  if (!player.hexScrolls.some(s => s.hexId === hex.id && s.quantity > 0)) {
+    return { success: false, message: 'You do not have this scroll.' };
+  }
+  if (!VALID_CAST_LOCATIONS.includes(player.currentLocation)) {
+    return { success: false, message: 'You must be at the Shadow Market, Enchanter, or Graveyard to cast.' };
+  }
+  if (player.timeRemaining < hex.castTime) {
+    return { success: false, message: 'Not enough time to cast this hex.' };
+  }
+  return null; // all checks passed
+}
+
+/** Shared caster cost: deduct time, consume scroll, apply cooldown */
+function applyCasterCost(p: Player, hex: HexDefinition): Partial<Player> {
+  return {
+    timeRemaining: Math.max(0, p.timeRemaining - hex.castTime),
+    hexScrolls: removeHexScroll(p.hexScrolls, hex.id),
+    hexCastCooldown: 3,
+  };
+}
+
 function addHexScroll(scrolls: Player['hexScrolls'], hexId: string): Player['hexScrolls'] {
   const existing = scrolls.find(s => s.hexId === hexId);
   if (existing) {
@@ -472,12 +437,8 @@ function applySabotageHex(
 
   set((s) => ({
     players: s.players.map((p) => {
-      if (p.id === playerId) {
-        return { ...p, timeRemaining: Math.max(0, p.timeRemaining - hex.castTime), hexScrolls: removeHexScroll(p.hexScrolls, hex.id), hexCastCooldown: 3 };
-      }
-      if (p.id === targetId && handler) {
-        return { ...p, ...handler.apply(p) };
-      }
+      if (p.id === playerId) return { ...p, ...applyCasterCost(p, hex) };
+      if (p.id === targetId && handler) return { ...p, ...handler.apply(p) };
       return p;
     }),
   }));
