@@ -163,15 +163,17 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && lovableTaggerPlugin,
     VitePWA({
-      // CRITICAL FIX (2026-02-16): On GitHub Pages, use a self-destroying SW.
-      // The SW adds no value on GitHub Pages (no offline support needed) but causes
-      // multiple failure modes: stale runtime cache serving old JS chunks, race
-      // conditions with the stale-build detection, controllerchange reload loops.
-      // selfDestroying generates a SW that immediately unregisters itself and clears
-      // all caches — cleaning up old SWs from previous deployments automatically.
-      // On Lovable (no CDN cache issues), normal PWA with autoUpdate works fine.
-      selfDestroying: deployTarget === 'github',
-      registerType: deployTarget === 'github' ? 'prompt' : 'autoUpdate',
+      // CRITICAL FIX (2026-02-17): Self-destroying SW on ALL platforms.
+      // The SW has caused 15+ startup failures (BUG-001) across deployments:
+      // - Stale runtime cache serving old JS chunks via NetworkFirst
+      // - registration.unregister() doesn't stop SW controlling current page
+      // - Race conditions between SW cleanup and version.json fetch
+      // - controllerchange reload loops from skipWaiting/clientsClaim
+      // The SW's caching adds marginal value (game requires network anyway)
+      // but creates catastrophic failure modes. Self-destroying on ALL platforms
+      // eliminates the SW as a failure vector entirely.
+      selfDestroying: true,
+      registerType: 'prompt',
       // Only precache essential PWA icons. All other assets (music, images, SFX)
       // are cached on-demand via runtimeCaching rules below. This reduces SW install
       // from 40 MB / 322 entries to <1 MB / ~12 entries, preventing the scenario where
@@ -243,81 +245,16 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
-        maximumFileSizeToCacheInBytes: 15 * 1024 * 1024, // 15 MB (game-board.jpeg is ~10 MB)
-        // ===== CRITICAL FIX: DO NOT PRECACHE JS OR CSS =====
-        // JS/CSS files are content-hashed by Vite (e.g., index-abc123.js).
-        // The browser's HTTP cache handles them correctly using the hash.
-        // When JS/CSS are in the SW precache, deploys create a race condition:
-        //   1. New SW activates (skipWaiting + clientsClaim)
-        //   2. New SW cleans up old precache entries (cleanupOutdatedCaches)
-        //   3. But browser may still have old HTML referencing old chunk hashes
-        //   4. Old chunks are gone from precache → 404 → "Loading the realm..." forever
-        // By only precaching static assets (images, fonts, icons), the SW provides
-        // offline-capable media while JS/CSS always come fresh from the network.
-        // Only precache PWA icons — NOT the 300+ game images (40 MB).
-        // Images, audio, and NPC portraits are cached on-demand via CacheFirst
-        // runtime caching below. This makes SW install near-instant.
-        globPatterns: ["pwa-*.png", "favicon.ico"],
-        globIgnores: ["**/version.json"], // Never precache — fetched with no-store for update detection
-        cleanupOutdatedCaches: true, // Remove old precache entries when new SW activates
-        // Don't serve cached HTML for navigation — always fetch fresh from network
-        // This prevents stale index.html from being served after GitHub Pages deployments
+        // With selfDestroying: true, the SW immediately unregisters itself and
+        // clears all caches on install. These settings are minimal since the SW
+        // won't actually serve any requests.
+        globPatterns: [],
+        globIgnores: ["**/*"],
         navigateFallback: null,
-        // CRITICAL FIX (2026-02-15): On GitHub Pages, DON'T use skipWaiting + clientsClaim.
-        // These cause the new SW to take control of the page IMMEDIATELY after install,
-        // which fires the 'controllerchange' event and has caused 5+ infinite reload loops
-        // across PRs #198-#214. Without these, the new SW waits until all tabs are closed
-        // before activating — no mid-visit takeover, no reload loops.
-        // On Lovable (basePath '/'), this isn't an issue because there's no CDN cache.
-        skipWaiting: deployTarget !== 'github',
-        clientsClaim: deployTarget !== 'github',
-        runtimeCaching: [
-          // JS/CSS: NetworkFirst — always try network, fall back to cache only when offline.
-          // This prevents stale JS chunks from being served after a new deployment.
-          {
-            urlPattern: /\.(?:js|css)$/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "js-css-cache",
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-              networkTimeoutSeconds: 5, // Fall back to cache after 5s if network hangs
-            },
-          },
-          {
-            urlPattern: /\.(?:mp3)$/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "music-cache",
-              expiration: {
-                maxEntries: 100, // All music + ambient + SFX files
-                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-          {
-            urlPattern: /\.(?:jpg|jpeg|png|svg|webp)$/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "image-cache",
-              expiration: {
-                maxEntries: 500, // All game images cached on demand
-                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-        ],
+        skipWaiting: false,
+        clientsClaim: false,
+        // No runtime caching — SW self-destructs before it can cache anything.
+        runtimeCaching: [],
       },
     }),
     versionJsonPlugin(),

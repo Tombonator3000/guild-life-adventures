@@ -5,16 +5,16 @@
 
 ---
 
-## BUG-001: "Loading the realm..." Freeze (RECURRING — DEFINITIVE FIX 2026-02-16)
+## BUG-001: "Loading the realm..." Freeze (RECURRING — FIX #16: 2026-02-17)
 
 | Field | Value |
 |-------|-------|
 | **Severity** | Critical |
-| **Status** | FIXED (auto-reload with CDN cache-busting + self-destroying SW) |
+| **Status** | FIXED (self-destroying SW on ALL platforms + hot-swap from version.json + nuclear reset) |
 | **First seen** | 2026-02-14 |
-| **Occurrences** | 15+ fix attempts across PRs #185–#220 |
+| **Occurrences** | 16 fix attempts across PRs #185–#235 |
 | **Symptom** | Game stuck on "Loading the realm..." loading screen, React never mounts |
-| **Environment** | Production (GitHub Pages), after any new deployment |
+| **Environment** | Production (GitHub Pages + Lovable), after any new deployment |
 
 ### Root Cause (DEFINITIVE — found 2026-02-15)
 
@@ -242,6 +242,15 @@ Parallel agent investigation (4 agents) identified why ALL previous in-page reco
 13. **Simpler is more reliable** — 15 fixes with increasing complexity all failed. The simplest approach (reload the page) was the most reliable
 14. **CDN behavior is undocumented** — Fastly's default query-string handling and client-header behavior isn't well-documented. Don't assume CDN cache bypass works
 15. **Self-destroying SW is the cleanest migration** — Instead of neutering the SW (prompt + no skipWaiting), just make it destroy itself and clean up old caches
+
+### Fix #16: Universal Self-Destroying SW + Hot-Swap (2026-02-17)
+
+Previous "definitive fix" only applied self-destroying SW to GitHub Pages. On Lovable, the SW was still active with skipWaiting + clientsClaim, causing the same stale cache issues. Fix:
+
+1. **`selfDestroying: true` on ALL platforms** — SW is universally a liability for this game. The marginal value of image/music caching doesn't justify the catastrophic failure modes.
+2. **Hot-swap from version.json** — When stale HTML detected AND version.json has a fresh `entry` URL, load it directly (plus swap CSS links) instead of reloading. Eliminates CDN-ignores-query-params failure mode.
+3. **Nuclear Reset button** — Clears sessionStorage, localStorage, Cache Storage, unregisters all SWs, then reloads with cache-buster. Last resort escape hatch.
+4. **Diagnostic info on fallback** — Shows entry URL, build time, loading flags, and error count to aid debugging.
 
 ---
 

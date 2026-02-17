@@ -3,6 +3,84 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+## 2026-02-17 — Bug Hunt #4: Startup Hang Fix (09:50 UTC)
+
+### Problem
+Game still hangs on "Loading the realm..." / "Clear Cache & Reload" after deployment. BUG-001 persists despite 15+ previous fix attempts. Game refuses to start on Lovable platform.
+
+### Investigation (Parallel Agent Deep Dive)
+4 parallel agents analyzed:
+1. Context files (MEMORY.md, log2.md, todo.md, bugs.md) — 15 previous fix attempts documented
+2. Full startup flow: HTML → inline scripts → version.json → module loading → React mount
+3. Recent refactoring commits (audit rounds 1-6) — no startup code modified
+4. All eagerly-loaded modules for runtime errors
+
+**Build passes. TypeScript clean. All 296 tests pass. Issue is deployment/runtime only.**
+
+### Root Causes Identified
+
+**1. SW NOT self-destroying on Lovable (CRITICAL)**
+The self-destroying SW fix from 2026-02-16 was only applied for GitHub Pages (`selfDestroying: deployTarget === 'github'`). On Lovable (default deployment), the SW remained active with `skipWaiting: true` + `clientsClaim: true`, causing:
+- Stale JS chunks served via `NetworkFirst` runtime cache
+- `registration.unregister()` doesn't stop SW controlling current page
+- Race conditions between SW cleanup and version.json fetch
+
+**2. Auto-reload insufficient for all CDNs**
+`?_gv=timestamp` cache-busting works on GitHub Pages (Fastly respects query params) but may not work on all CDN configurations. When both HTML and CDN cache are stale, auto-reload serves same stale HTML → loop.
+
+**3. Hot-swap entry URL not used**
+`version.json` already contained the fresh `entry` URL but the inline script only checked `buildTime` mismatch and reloaded — it never tried to load the correct entry directly from version.json.
+
+**4. No diagnostic info on loading screen**
+When loading fails, users see "Loading the realm..." with no info about what failed, making debugging impossible.
+
+**5. Incomplete checkAchievements in questHelpers.ts (secondary)**
+Refactoring audit round 3 introduced incomplete `checkAchievements()` call at completeQuest — only passed 2 fields instead of 9. Wouldn't cause startup hang but would break achievement tracking on quest completion.
+
+### Fixes Applied
+
+| # | File | Change |
+|---|------|--------|
+| 1 | `vite.config.ts` | `selfDestroying: true` on ALL platforms (was `github` only). Stripped all workbox runtime caching config (SW self-destructs before caching anything) |
+| 2 | `index.html` | Hot-swap: when version.json has different buildTime AND provides `entry` URL, load it directly (swap CSS too) instead of reloading. Eliminates CDN cache problem. |
+| 3 | `index.html` | `loadApp(overrideSrc)` — accepts optional entry URL override for hot-swap |
+| 4 | `index.html` | Nuclear Reset button on error screen — clears sessionStorage, localStorage, Cache Storage, unregisters SWs, then reloads with cache-buster |
+| 5 | `index.html` | Diagnostic info shown on fallback screen: entry URL, build time, loading/failed/mounted flags, error count |
+| 6 | `questHelpers.ts` | Fixed `checkAchievements()` call in `completeQuest` — now passes all 9 context fields (gold, totalWealth, happiness, completedDegrees, completedQuests, dungeonFloorsCleared, guildRank, housing, week) |
+
+### Defense Layer Summary (after fix)
+
+```
+Layer 0: Inline script
+  → Unregister all SWs (chained before version check)
+  → Fetch version.json with cache bypass
+  → If stale HTML + version.json has entry: HOT-SWAP (new!)
+  → If stale HTML + no entry: auto-reload with ?_gv=
+  → If entry 404: auto-reload
+  → Pipeline timeout (8s): force load
+
+Layer 1: Error handlers
+  → window.onerror: show error + reload button
+  → unhandledrejection: show error + reload button
+  → Both: Nuclear Reset button (new!)
+
+Layer 2: Fallback button (12s)
+  → Diagnostic info shown (new!)
+  → Clear Cache & Reload
+  → Nuclear Reset (new!)
+
+Layer 3: Self-destroying SW (new: ALL platforms)
+  → Old SWs from previous deployments self-destruct
+  → Clears all caches
+  → No runtime caching = no stale chunks ever
+```
+
+### Verification
+- TypeScript: clean (0 errors)
+- Tests: 296/296 pass
+- Build: succeeds, SW is self-destroying, version.json has entry URL
+- Production HTML: hot-swap logic present, diagnostic info present, nuclear reset present
+
 ## 2026-02-17 — Code Audit & Refactor Round 6 (20:00 UTC)
 
 ### Overview
