@@ -3,6 +3,63 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+## 2026-02-17 — Code Audit & Refactor Round 3 (14:00 UTC)
+
+### Overview
+
+Launched 4 parallel audit agents across the entire codebase (store+helpers, components, data files, AI+network). Identified 40+ complex functions across all areas. Selected 5 high-value refactoring targets and applied structural-only changes maintaining identical behavior. All 296 tests pass. TypeScript compiles clean.
+
+### Refactoring 11: `checkAchievements` (achievements.ts)
+
+**Problem**: 24 repetitive `if (condition) tryUnlock('id')` statements — identical pattern repeated for every achievement. Adding a new achievement means adding yet another if-statement. No separation of data (conditions) from logic (unlock mechanism).
+
+**Fix**: Created `ACHIEVEMENT_CONDITIONS` data-driven array — each entry maps an achievement ID to a `check(ctx, stats)` function. The function body is now a single `for...of` loop over the conditions array. Added `AchievementContext` interface for type safety. 48 → 12 lines of logic + a declarative conditions table.
+
+### Refactoring 12: `checkDeath` (questHelpers.ts)
+
+**Problem**: 3 near-identical branches (paid resurrection, free respawn, permadeath), each creating a `DeathEvent` object with similar fields and calling `set()` with duplicated player update patterns. Adding a new death resolution path requires duplicating 20+ lines.
+
+**Fix**: Extracted `resolveDeathOutcome()` — a pure function that takes player data and returns `{ isPermadeath, playerUpdate, deathEvent, aiMessage }`. Extracted `calculateResurrectionCost()` and `RESURRECTION_HAPPINESS_PENALTY` constant. The `checkDeath()` function body is now 12 lines: call resolver, apply result via single `set()`.
+
+### Refactoring 13: `validateActionArgs` (useNetworkSync.ts)
+
+**Problem**: 100-line switch statement with 15+ cases, where 7 follow the exact same pattern (check typeof, isFinite, bounds) and 6 follow another identical pattern (cost validation). Each new action type requires copying and adjusting an entire case block.
+
+**Fix**: Created `STAT_MODIFIER_RULES` map (7 entries: modifyGold, modifyHealth, modifyHappiness, modifyFood, modifyClothing, modifyMaxHealth, modifyRelaxation) and `COST_VALIDATION_RULES` map (8 entries: temperEquipment, salvageEquipment, buyHexScroll, hex/curse actions). Extracted `validateNumArg()` utility. The switch now only handles 2 special cases (setJob, workShift) that need custom logic. 100 → 65 lines with better extensibility.
+
+### Refactoring 14: `movePlayer` event messaging (playerHelpers.ts)
+
+**Problem**: 2 identical 6-line blocks for appending event messages to the game's event display. The pattern `const existing = get().eventMessage; set({ eventMessage: existing ? existing + '\n' + message : message, eventSource: 'weekly', phase: 'event' })` was duplicated verbatim for location events and travel events.
+
+**Fix**: Extracted `appendEventMessage(get, set, message)` helper function. Both call sites now use a single-line call. Eliminates the duplicate null-coalescing append logic.
+
+### Refactoring 15: Quest reward calculation (questHelpers.ts)
+
+**Problem**: `completeQuest()`, `completeChainQuest()`, and `completeBounty()` all duplicate the same reward scaling pipeline: `getScaledQuestGold() → getReputationGoldMultiplier() → Math.round()`, plus the health risk randomization (`Math.random() < 0.5 ? full : half`). Each function had 6-8 lines of identical calculation code.
+
+**Fix**: Extracted `calculateQuestReward(baseGold, baseHappiness, healthRisk, dungeonFloorsCleared, guildReputation, scaleHappiness?)` — returns `{ finalGold, finalHappiness, healthLoss }`. All three completion functions now call this single helper. Added `scaleHappiness` parameter (false for bounties which don't scale happiness).
+
+### Files Modified (5)
+
+| File | Changes |
+|------|---------|
+| `src/data/achievements.ts` | `ACHIEVEMENT_CONDITIONS` array + `AchievementContext` interface, single-loop `checkAchievements` |
+| `src/store/helpers/questHelpers.ts` | `resolveDeathOutcome()`, `calculateResurrectionCost()`, `calculateQuestReward()` helpers |
+| `src/network/useNetworkSync.ts` | `STAT_MODIFIER_RULES` + `COST_VALIDATION_RULES` maps, `validateNumArg()` utility |
+| `src/store/helpers/playerHelpers.ts` | `appendEventMessage()` helper for event message display |
+
+### Test Results
+
+```
+Test Files  16 passed (16)
+Tests       296 passed (296)
+Duration    10.42s
+```
+
+TypeScript: 0 errors. All behavior preserved.
+
+---
+
 ## 2026-02-17 — Code Audit & Refactor Round 2 (12:00 UTC)
 
 ### Overview

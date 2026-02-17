@@ -178,11 +178,8 @@ export function updateAchievementStats(updates: Partial<AchievementStats>): void
   saveAchievements(progress);
 }
 
-/**
- * Check all achievements against current stats and unlock any that qualify.
- * Returns array of newly unlocked achievement IDs.
- */
-export function checkAchievements(context: {
+/** Context passed to achievement condition checks */
+interface AchievementContext {
   gold?: number;
   totalWealth?: number;
   happiness?: number;
@@ -194,57 +191,65 @@ export function checkAchievements(context: {
   week?: number;
   isVictory?: boolean;
   festivalsAttended?: string[];
-}): string[] {
+}
+
+/** Data-driven achievement conditions: each entry maps an achievement ID to its unlock check */
+const ACHIEVEMENT_CONDITIONS: { id: string; check: (ctx: AchievementContext, stats: AchievementStats) => boolean }[] = [
+  // Wealth
+  { id: 'first-100g',    check: (ctx)        => (ctx.gold ?? 0) >= 100 || (ctx.totalWealth ?? 0) >= 100 },
+  { id: 'wealthy-1000',  check: (ctx)        => (ctx.totalWealth ?? 0) >= 1000 },
+  { id: 'tycoon-5000',   check: (ctx)        => (ctx.totalWealth ?? 0) >= 5000 },
+  { id: 'gold-hoarder',  check: (_ctx, stats) => stats.totalGoldEarned >= 10000 },
+  // Combat
+  { id: 'first-dungeon', check: (ctx, stats) => (ctx.dungeonFloorsCleared ?? 0) >= 1 || stats.totalDungeonFloorsCleared >= 1 },
+  { id: 'dungeon-5',     check: (_ctx, stats) => stats.totalDungeonFloorsCleared >= 5 },
+  { id: 'temple-cleared',check: (ctx)        => (ctx.dungeonFloorsCleared ?? 0) >= 6 },
+  { id: 'dungeon-master', check: (_ctx, stats) => stats.totalDungeonFloorsCleared >= 20 },
+  { id: 'boss-slayer',   check: (_ctx, stats) => stats.bossesDefeated >= 10 },
+  // Education
+  { id: 'first-degree',  check: (ctx, stats) => (ctx.completedDegrees ?? 0) >= 1 || stats.totalDegreesEarned >= 1 },
+  { id: 'triple-degree', check: (ctx)        => (ctx.completedDegrees ?? 0) >= 3 },
+  { id: 'all-degrees',   check: (_ctx, stats) => stats.totalDegreesEarned >= 15 },
+  // Social
+  { id: 'first-quest',   check: (ctx, stats) => (ctx.completedQuests ?? 0) >= 1 || stats.totalQuestsCompleted >= 1 },
+  { id: 'quest-10',      check: (_ctx, stats) => stats.totalQuestsCompleted >= 10 },
+  { id: 'guild-master',  check: (ctx)        => ctx.guildRank === 'guild-master' },
+  { id: 'noble-life',    check: (ctx)        => ctx.housing === 'noble' },
+  // Exploration
+  { id: 'festival-goer', check: (_ctx, stats) => stats.festivalsAttended >= 1 },
+  { id: 'festival-all',  check: (_ctx, stats) => stats.festivalsAttended >= 4 },
+  { id: 'survivor-50',   check: (ctx)        => (ctx.week ?? 0) >= 50 },
+  { id: 'veteran-player',check: (_ctx, stats) => stats.gamesPlayed >= 5 },
+  // Mastery
+  { id: 'first-win',     check: (ctx)        => !!ctx.isVictory },
+  { id: 'speed-win',     check: (ctx)        => !!ctx.isVictory && (ctx.week ?? 999) <= 30 },
+  { id: 'triple-win',    check: (_ctx, stats) => stats.gamesWon >= 3 },
+  { id: 'max-happiness', check: (ctx)        => (ctx.happiness ?? 0) >= 100 },
+];
+
+/**
+ * Check all achievements against current stats and unlock any that qualify.
+ * Returns array of newly unlocked achievement IDs.
+ */
+export function checkAchievements(context: AchievementContext): string[] {
   const progress = loadAchievements();
   const stats = progress.stats;
   const newlyUnlocked: string[] = [];
 
-  const tryUnlock = (id: string) => {
-    if (!progress.unlocked[id]) {
+  for (const { id, check } of ACHIEVEMENT_CONDITIONS) {
+    if (!progress.unlocked[id] && check(context, stats)) {
       if (unlockAchievement(id)) {
         newlyUnlocked.push(id);
       }
     }
-  };
+  }
 
-  // Wealth checks
-  if ((context.gold ?? 0) >= 100 || (context.totalWealth ?? 0) >= 100) tryUnlock('first-100g');
-  if ((context.totalWealth ?? 0) >= 1000) tryUnlock('wealthy-1000');
-  if ((context.totalWealth ?? 0) >= 5000) tryUnlock('tycoon-5000');
-  if (stats.totalGoldEarned >= 10000) tryUnlock('gold-hoarder');
-
-  // Combat checks
-  if ((context.dungeonFloorsCleared ?? 0) >= 1 || stats.totalDungeonFloorsCleared >= 1) tryUnlock('first-dungeon');
-  if (stats.totalDungeonFloorsCleared >= 5) tryUnlock('dungeon-5');
-  if ((context.dungeonFloorsCleared ?? 0) >= 6) tryUnlock('temple-cleared');
-  if (stats.totalDungeonFloorsCleared >= 20) tryUnlock('dungeon-master');
-  if (stats.bossesDefeated >= 10) tryUnlock('boss-slayer');
-
-  // Education checks
-  if ((context.completedDegrees ?? 0) >= 1 || stats.totalDegreesEarned >= 1) tryUnlock('first-degree');
-  if ((context.completedDegrees ?? 0) >= 3) tryUnlock('triple-degree');
-  if (stats.totalDegreesEarned >= 15) tryUnlock('all-degrees');
-
-  // Social checks
-  if ((context.completedQuests ?? 0) >= 1 || stats.totalQuestsCompleted >= 1) tryUnlock('first-quest');
-  if (stats.totalQuestsCompleted >= 10) tryUnlock('quest-10');
-  if (context.guildRank === 'guild-master') tryUnlock('guild-master');
-  if (context.housing === 'noble') tryUnlock('noble-life');
-
-  // Exploration checks
-  if (stats.festivalsAttended >= 1) tryUnlock('festival-goer');
-  if (stats.festivalsAttended >= 4) tryUnlock('festival-all');
-  if ((context.week ?? 0) >= 50) tryUnlock('survivor-50');
-  if (stats.gamesPlayed >= 5) tryUnlock('veteran-player');
-
-  // Mastery checks
-  if (context.isVictory) tryUnlock('first-win');
-  if (context.isVictory && (context.week ?? 999) <= 30) tryUnlock('speed-win');
-  if (stats.gamesWon >= 3) tryUnlock('triple-win');
-  if ((context.happiness ?? 0) >= 100) tryUnlock('max-happiness');
-
-  // Meta: completionist
-  if (Object.keys(progress.unlocked).length >= 20) tryUnlock('completionist');
+  // Meta: completionist (depends on total unlock count, checked last)
+  if (!progress.unlocked['completionist'] && Object.keys(progress.unlocked).length >= 20) {
+    if (unlockAchievement('completionist')) {
+      newlyUnlocked.push('completionist');
+    }
+  }
 
   return newlyUnlocked;
 }

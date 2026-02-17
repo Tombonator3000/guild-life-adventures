@@ -9,6 +9,16 @@ import {
 import { rollTravelEvent, formatTravelEvent } from '@/data/travelEvents';
 import { checkForEvent, pickEventMessage, pickEventDescription } from '@/data/events';
 
+/** Append an event message to the existing eventMessage, showing as a 'weekly' event phase (human players only) */
+function appendEventMessage(get: GetFn, set: SetFn, message: string): void {
+  const existing = get().eventMessage;
+  set({
+    eventMessage: existing ? existing + '\n' + message : message,
+    eventSource: 'weekly' as const,
+    phase: 'event',
+  });
+}
+
 export function createPlayerActions(set: SetFn, get: GetFn) {
   return {
     movePlayer: (playerId: string, location: LocationId, timeCost: number) => {
@@ -85,15 +95,8 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
             }),
           }));
 
-          // Show event message to human players only
           if (!arrivalPlayer.isAI) {
-            const message = `[${locationEvent.id}] ${locationEvent.name}: ${pickEventDescription(locationEvent)}\n${pickEventMessage(locationEvent)}`;
-            const existing = get().eventMessage;
-            set({
-              eventMessage: existing ? existing + '\n' + message : message,
-              eventSource: 'weekly' as const,
-              phase: 'event',
-            });
+            appendEventMessage(get, set, `[${locationEvent.id}] ${locationEvent.name}: ${pickEventDescription(locationEvent)}\n${pickEventMessage(locationEvent)}`);
           }
         }
       }
@@ -118,15 +121,8 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
             }),
           }));
 
-          // Show travel event to human players
           if (!currentPlayer.isAI) {
-            const message = `[${travelEvent.id}] Travel Event: ${travelEvent.name} — ${formatTravelEvent(travelEvent)}`;
-            const existing = get().eventMessage;
-            set({
-              eventMessage: existing ? existing + '\n' + message : message,
-              eventSource: 'weekly' as const,
-              phase: 'event',
-            });
+            appendEventMessage(get, set, `[${travelEvent.id}] Travel Event: ${travelEvent.name} — ${formatTravelEvent(travelEvent)}`);
           }
         }
       }

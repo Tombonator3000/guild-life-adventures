@@ -24,6 +24,99 @@ import { checkAchievements, updateAchievementStats } from '@/data/achievements';
 import { deleteSave } from '@/data/saveLoad';
 import type { SetFn, GetFn } from '../storeTypes';
 
+// Resurrection cost: base 100g + 10% of wealth above 500g, capped at 2000g
+const RESURRECTION_HAPPINESS_PENALTY = 8;
+
+function calculateResurrectionCost(gold: number, savings: number): number {
+  const totalWealth = gold + savings;
+  return Math.min(2000, Math.max(100, 100 + Math.floor((Math.max(0, totalWealth - 500)) * 0.10)));
+}
+
+/** Determine death outcome: paid resurrection, free respawn, or permadeath */
+function resolveDeathOutcome(player: { id: string; name: string; gold: number; savings: number; happiness: number; wasResurrectedThisWeek: boolean }) {
+  const scaledCost = calculateResurrectionCost(player.gold, player.savings);
+  const enablePermadeath = getGameOption('enablePermadeath');
+
+  // Path 1: Paid resurrection (has savings, not already resurrected this week)
+  if (player.savings >= scaledCost && !player.wasResurrectedThisWeek) {
+    return {
+      isPermadeath: false,
+      playerUpdate: {
+        health: 50,
+        savings: player.savings - scaledCost,
+        happiness: Math.max(0, player.happiness - RESURRECTION_HAPPINESS_PENALTY),
+        currentLocation: 'graveyard' as LocationId,
+        wasResurrectedThisWeek: true,
+      },
+      deathEvent: {
+        playerId: player.id,
+        playerName: player.name,
+        isPermadeath: false,
+        wasResurrected: true,
+        message: `You fell in battle but the spirits of the Graveyard have restored you!\n\n${scaledCost} gold was taken from your savings.\nThe trauma of death weighs on your spirit (-${RESURRECTION_HAPPINESS_PENALTY} happiness).`,
+      } as DeathEvent,
+      aiMessage: `${player.name} fell but was resurrected at the Graveyard! ${scaledCost}g taken from savings.`,
+    };
+  }
+
+  // Path 2: Free respawn (permadeath disabled)
+  if (!enablePermadeath) {
+    return {
+      isPermadeath: false,
+      playerUpdate: {
+        health: 20,
+        happiness: Math.max(0, player.happiness - RESURRECTION_HAPPINESS_PENALTY),
+        currentLocation: 'graveyard' as LocationId,
+        wasResurrectedThisWeek: true,
+      },
+      deathEvent: {
+        playerId: player.id,
+        playerName: player.name,
+        isPermadeath: false,
+        wasResurrected: false,
+        message: `Your body crumbles to the ground... but death is not the end.\n\nThe ancient magic of the Graveyard pulls your spirit back from the void. You awaken among the tombstones, weakened but alive.\nThe trauma of death weighs on your spirit (-${RESURRECTION_HAPPINESS_PENALTY} happiness).`,
+      } as DeathEvent,
+      aiMessage: `${player.name} died but was resurrected at the Graveyard with 20 HP.`,
+    };
+  }
+
+  // Path 3: Permadeath
+  return {
+    isPermadeath: true,
+    playerUpdate: { isGameOver: true },
+    deathEvent: {
+      playerId: player.id,
+      playerName: player.name,
+      isPermadeath: true,
+      wasResurrected: false,
+      message: "The cold embrace of death claims you. There is no coming back.\n\nYour adventure ends here, brave soul. May the next adventurer fare better.",
+    } as DeathEvent,
+    aiMessage: `${player.name} has perished! Permadeath claimed another soul.`,
+  };
+}
+
+/** Shared reward calculation for quests, chain steps, and bounties.
+ *  B3: Scales gold (and optionally happiness) by dungeon progression.
+ *  B5: Applies reputation gold multiplier.
+ *  Randomizes health risk (50% full / 50% half). */
+function calculateQuestReward(
+  baseGold: number,
+  baseHappiness: number,
+  healthRisk: number,
+  dungeonFloorsCleared: number[],
+  guildReputation: number,
+  scaleHappiness = true,
+): { finalGold: number; finalHappiness: number; healthLoss: number } {
+  const scaledGold = getScaledQuestGold(baseGold, dungeonFloorsCleared);
+  const repMultiplier = getReputationGoldMultiplier(guildReputation);
+  const finalGold = Math.round(scaledGold * repMultiplier);
+  const finalHappiness = scaleHappiness
+    ? getScaledQuestHappiness(baseHappiness, dungeonFloorsCleared)
+    : baseHappiness;
+  const healthLoss = Math.random() < 0.5 ? healthRisk : Math.floor(healthRisk / 2);
+  return { finalGold, finalHappiness, healthLoss };
+}
+
 export function createQuestActions(set: SetFn, get: GetFn) {
   return {
     buyGuildPass: (playerId: string) => {
@@ -82,23 +175,15 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
-
-          // B3: Scale rewards based on dungeon progression
-          const scaledGold = getScaledQuestGold(quest.goldReward, p.dungeonFloorsCleared);
-          const scaledHappiness = getScaledQuestHappiness(quest.happinessReward, p.dungeonFloorsCleared);
-
-          // B5: Apply reputation gold multiplier
-          const repMultiplier = getReputationGoldMultiplier(p.guildReputation);
-          const finalGold = Math.round(scaledGold * repMultiplier);
-
-          // Apply quest rewards and risks
-          const healthLoss = Math.random() < 0.5 ? quest.healthRisk : Math.floor(quest.healthRisk / 2);
-
+          const { finalGold, finalHappiness, healthLoss } = calculateQuestReward(
+            quest.goldReward, quest.happinessReward, quest.healthRisk,
+            p.dungeonFloorsCleared, p.guildReputation,
+          );
           return {
             ...p,
             gold: p.gold + finalGold,
             health: Math.max(0, p.health - healthLoss),
-            happiness: Math.min(100, p.happiness + scaledHappiness),
+            happiness: Math.min(100, p.happiness + finalHappiness),
             timeRemaining: Math.max(0, p.timeRemaining - quest.timeRequired),
             completedQuests: p.completedQuests + 1,
             guildReputation: p.guildReputation + 1,
@@ -187,36 +272,25 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
-
-          // B3: Scale rewards
-          const scaledGold = getScaledQuestGold(step.goldReward, p.dungeonFloorsCleared);
-          const scaledHappiness = getScaledQuestHappiness(step.happinessReward, p.dungeonFloorsCleared);
-          // B5: Reputation multiplier
-          const repMultiplier = getReputationGoldMultiplier(p.guildReputation);
-          let finalGold = Math.round(scaledGold * repMultiplier);
-          let finalHappiness = scaledHappiness;
-
+          const reward = calculateQuestReward(
+            step.goldReward, step.happinessReward, step.healthRisk,
+            p.dungeonFloorsCleared, p.guildReputation,
+          );
           // Chain completion bonus
-          if (isLastStep) {
-            finalGold += chain.completionBonusGold;
-            finalHappiness += chain.completionBonusHappiness;
-          }
-
-          const healthLoss = Math.random() < 0.5 ? step.healthRisk : Math.floor(step.healthRisk / 2);
-
-          const newChainProgress = { ...p.questChainProgress, [chainId]: stepsCompleted + 1 };
+          const bonusGold = isLastStep ? chain.completionBonusGold : 0;
+          const bonusHappiness = isLastStep ? chain.completionBonusHappiness : 0;
 
           return {
             ...p,
-            gold: p.gold + finalGold,
-            health: Math.max(0, p.health - healthLoss),
-            happiness: Math.min(100, p.happiness + finalHappiness),
+            gold: p.gold + reward.finalGold + bonusGold,
+            health: Math.max(0, p.health - reward.healthLoss),
+            happiness: Math.min(100, p.happiness + reward.finalHappiness + bonusHappiness),
             timeRemaining: Math.max(0, p.timeRemaining - step.timeRequired),
             // M7 FIX: Only increment completedQuests on final chain step (not each step)
             completedQuests: p.completedQuests + (isLastStep ? 1 : 0),
             guildReputation: p.guildReputation + (isLastStep ? 3 : 1), // chain completion = 3 rep
             activeQuest: null,
-            questChainProgress: newChainProgress,
+            questChainProgress: { ...p.questChainProgress, [chainId]: stepsCompleted + 1 },
           };
         }),
       }));
@@ -274,20 +348,15 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
-
-          // B3: Scale rewards (bounties scale too, but from a lower base)
-          const scaledGold = getScaledQuestGold(bounty.goldReward, p.dungeonFloorsCleared);
-          // B5: Reputation multiplier
-          const repMultiplier = getReputationGoldMultiplier(p.guildReputation);
-          const finalGold = Math.round(scaledGold * repMultiplier);
-
-          const healthLoss = Math.random() < 0.5 ? bounty.healthRisk : Math.floor(bounty.healthRisk / 2);
-
+          const { finalGold, finalHappiness, healthLoss } = calculateQuestReward(
+            bounty.goldReward, bounty.happinessReward, bounty.healthRisk,
+            p.dungeonFloorsCleared, p.guildReputation, false, // bounties don't scale happiness
+          );
           return {
             ...p,
             gold: p.gold + finalGold,
             health: Math.max(0, p.health - healthLoss),
-            happiness: Math.min(100, p.happiness + bounty.happinessReward),
+            happiness: Math.min(100, p.happiness + finalHappiness),
             timeRemaining: Math.max(0, p.timeRemaining - bounty.timeRequired),
             guildReputation: p.guildReputation + 1,
             activeQuest: null,
@@ -331,97 +400,19 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       const state = get();
       const player = state.players.find(p => p.id === playerId);
       if (!player || player.isGameOver) return false;
+      if (player.health > 0) return false;
 
-      if (player.health <= 0) {
-        const enablePermadeath = getGameOption('enablePermadeath');
+      const resolution = resolveDeathOutcome(player);
 
-        // Resurrection cost scales with total wealth (gold + savings)
-        // Base cost 100g, plus 10% of total wealth above 500g (min 100, max 2000)
-        const totalWealth = player.gold + player.savings;
-        const scaledCost = Math.min(2000, Math.max(100, 100 + Math.floor((Math.max(0, totalWealth - 500)) * 0.10)));
-        const resurrectionHappinessPenalty = 8;
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId ? { ...p, ...resolution.playerUpdate } : p
+        ),
+        deathEvent: player.isAI ? null : resolution.deathEvent,
+        eventMessage: player.isAI ? resolution.aiMessage : null,
+      }));
 
-        // Check for resurrection (if has savings and wasn't already resurrected this week)
-        if (player.savings >= scaledCost && !player.wasResurrectedThisWeek) {
-          const deathEvent: DeathEvent = {
-            playerId,
-            playerName: player.name,
-            isPermadeath: false,
-            wasResurrected: true,
-            message: `You fell in battle but the spirits of the Graveyard have restored you!\n\n${scaledCost} gold was taken from your savings.\nThe trauma of death weighs on your spirit (-${resurrectionHappinessPenalty} happiness).`,
-          };
-          set((state) => ({
-            players: state.players.map((p) =>
-              p.id === playerId
-                ? {
-                    ...p,
-                    health: 50,
-                    savings: p.savings - scaledCost,
-                    happiness: Math.max(0, p.happiness - resurrectionHappinessPenalty),
-                    currentLocation: 'graveyard' as LocationId,
-                    wasResurrectedThisWeek: true,
-                  }
-                : p
-            ),
-            deathEvent: player.isAI ? null : deathEvent,
-            eventMessage: player.isAI
-              ? `${player.name} fell but was resurrected at the Graveyard! ${scaledCost}g taken from savings.`
-              : null,
-          }));
-          return false;
-        }
-
-        // Permadeath OFF: respawn at graveyard with 20 HP (no gold cost, but happiness penalty)
-        if (!enablePermadeath) {
-          const deathEvent: DeathEvent = {
-            playerId,
-            playerName: player.name,
-            isPermadeath: false,
-            wasResurrected: false,
-            message: `Your body crumbles to the ground... but death is not the end.\n\nThe ancient magic of the Graveyard pulls your spirit back from the void. You awaken among the tombstones, weakened but alive.\nThe trauma of death weighs on your spirit (-${resurrectionHappinessPenalty} happiness).`,
-          };
-          set((state) => ({
-            players: state.players.map((p) =>
-              p.id === playerId
-                ? {
-                    ...p,
-                    health: 20,
-                    happiness: Math.max(0, p.happiness - resurrectionHappinessPenalty),
-                    currentLocation: 'graveyard' as LocationId,
-                    wasResurrectedThisWeek: true,
-                  }
-                : p
-            ),
-            deathEvent: player.isAI ? null : deathEvent,
-            eventMessage: player.isAI
-              ? `${player.name} died but was resurrected at the Graveyard with 20 HP.`
-              : null,
-          }));
-          return false;
-        }
-
-        // Permadeath ON: player is permanently eliminated
-        const deathEvent: DeathEvent = {
-          playerId,
-          playerName: player.name,
-          isPermadeath: true,
-          wasResurrected: false,
-          message: "The cold embrace of death claims you. There is no coming back.\n\nYour adventure ends here, brave soul. May the next adventurer fare better.",
-        };
-        set((state) => ({
-          players: state.players.map((p) =>
-            p.id === playerId
-              ? { ...p, isGameOver: true }
-              : p
-          ),
-          deathEvent: player.isAI ? null : deathEvent,
-          eventMessage: player.isAI
-            ? `${player.name} has perished! Permadeath claimed another soul.`
-            : null,
-        }));
-        return true; // Player is dead
-      }
-      return false;
+      return resolution.isPermadeath;
     },
 
     promoteGuildRank: (playerId: string) => {
