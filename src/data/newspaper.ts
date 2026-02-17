@@ -1,7 +1,7 @@
 // Guild Life - The Guildholm Herald (Newspaper System)
 
-import type { Job, PlayerNewsEventData } from '@/types/game.types';
-import { JOBS } from './jobs';
+import type { PlayerNewsEventData } from '@/types/game.types';
+import { ALL_JOBS } from './jobs';
 import { QUESTS } from './quests';
 
 export interface NewsArticle {
@@ -202,7 +202,7 @@ export function generateNewspaper(week: number, priceModifier: number, economyTr
   });
 
   // Jobs article
-  const randomJobs = [...JOBS].sort(() => Math.random() - 0.5).slice(0, 3);
+  const randomJobs = [...ALL_JOBS].sort(() => Math.random() - 0.5).slice(0, 3);
   const jobHeadlines = [
     "Employment Opportunities This Week",
     "Guild Hall Posts New Job Listings",
