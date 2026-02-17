@@ -62,6 +62,7 @@ export function InventoryGrid({ player }: InventoryGridProps) {
   const inventoryItems = buildInventoryItems(player);
   const equippedItems = inventoryItems.filter(i => i.equipped);
   const bagItems = inventoryItems.filter(i => !i.equipped);
+  const combatStats = getPlayerCombatStats(player);
 
   const rivals = players.filter(p => p.id !== player.id && !p.isGameOver);
 
@@ -287,16 +288,16 @@ export function InventoryGrid({ player }: InventoryGridProps) {
       <div className="mt-2 bg-wood/80 rounded p-1.5 text-[9px]">
         <div className="flex justify-between text-parchment">
           <span>ATK</span>
-          <span className="font-bold text-gold">{calculateTotalAttack(player)}</span>
+          <span className="font-bold text-gold">{combatStats.attack}</span>
         </div>
         <div className="flex justify-between text-parchment">
           <span>DEF</span>
-          <span className="font-bold text-gold">{calculateTotalDefense(player)}</span>
+          <span className="font-bold text-gold">{combatStats.defense}</span>
         </div>
-        {calculateTotalBlockChance(player) > 0 && (
+        {combatStats.blockChance > 0 && (
           <div className="flex justify-between text-parchment">
             <span>BLK</span>
-            <span className="font-bold text-gold">{Math.round(calculateTotalBlockChance(player) * 100)}%</span>
+            <span className="font-bold text-gold">{Math.round(combatStats.blockChance * 100)}%</span>
           </div>
         )}
         {player.temperedItems.length > 0 && (
@@ -516,68 +517,38 @@ function ItemTooltip({ item, position }: ItemTooltipProps) {
   );
 }
 
+// Equipment slot → player field mapping for building equipped items
+const EQUIP_SLOTS: { slot: EquipmentSlot; playerField: 'equippedWeapon' | 'equippedArmor' | 'equippedShield' }[] = [
+  { slot: 'weapon', playerField: 'equippedWeapon' },
+  { slot: 'armor', playerField: 'equippedArmor' },
+  { slot: 'shield', playerField: 'equippedShield' },
+];
+
 // Helper: Build inventory items from player data
 function buildInventoryItems(player: Player): InventoryItem[] {
   const items: InventoryItem[] = [];
   const allItems = [...ARMORY_ITEMS, ...GENERAL_STORE_ITEMS, ...ENCHANTER_ITEMS];
 
-  // Add equipped items
-  if (player.equippedWeapon) {
-    const itemData = allItems.find(i => i.id === player.equippedWeapon);
-    if (itemData) {
-      const isTempered = player.temperedItems.includes(player.equippedWeapon);
-      items.push({
-        id: `equipped-${itemData.id}`,
-        itemId: itemData.id,
-        name: itemData.name,
-        description: itemData.description,
-        category: itemData.category,
-        quantity: 1,
-        equipped: true,
-        tempered: isTempered,
-        slot: 'weapon',
-        stats: itemData.equipStats,
-        temperedStats: isTempered ? TEMPER_BONUS.weapon : undefined,
-      });
-    }
-  }
-  if (player.equippedArmor) {
-    const itemData = allItems.find(i => i.id === player.equippedArmor);
-    if (itemData) {
-      const isTempered = player.temperedItems.includes(player.equippedArmor);
-      items.push({
-        id: `equipped-${itemData.id}`,
-        itemId: itemData.id,
-        name: itemData.name,
-        description: itemData.description,
-        category: itemData.category,
-        quantity: 1,
-        equipped: true,
-        tempered: isTempered,
-        slot: 'armor',
-        stats: itemData.equipStats,
-        temperedStats: isTempered ? TEMPER_BONUS.armor : undefined,
-      });
-    }
-  }
-  if (player.equippedShield) {
-    const itemData = allItems.find(i => i.id === player.equippedShield);
-    if (itemData) {
-      const isTempered = player.temperedItems.includes(player.equippedShield);
-      items.push({
-        id: `equipped-${itemData.id}`,
-        itemId: itemData.id,
-        name: itemData.name,
-        description: itemData.description,
-        category: itemData.category,
-        quantity: 1,
-        equipped: true,
-        tempered: isTempered,
-        slot: 'shield',
-        stats: itemData.equipStats,
-        temperedStats: isTempered ? TEMPER_BONUS.shield : undefined,
-      });
-    }
+  // Add equipped items (weapon, armor, shield)
+  for (const { slot, playerField } of EQUIP_SLOTS) {
+    const equippedId = player[playerField];
+    if (!equippedId) continue;
+    const itemData = allItems.find(i => i.id === equippedId);
+    if (!itemData) continue;
+    const isTempered = player.temperedItems.includes(equippedId);
+    items.push({
+      id: `equipped-${itemData.id}`,
+      itemId: itemData.id,
+      name: itemData.name,
+      description: itemData.description,
+      category: itemData.category,
+      quantity: 1,
+      equipped: true,
+      tempered: isTempered,
+      slot,
+      stats: itemData.equipStats,
+      temperedStats: isTempered ? TEMPER_BONUS[slot] : undefined,
+    });
   }
 
   // Add durables from inventory
@@ -654,20 +625,7 @@ function buildInventoryItems(player: Player): InventoryItem[] {
   return items;
 }
 
-// Helper: Calculate total attack (including temper bonuses)
-function calculateTotalAttack(player: Player): number {
-  const stats = calculateCombatStats(player.equippedWeapon, player.equippedArmor, player.equippedShield, player.temperedItems);
-  return stats.attack;
-}
-
-// Helper: Calculate total defense (including temper bonuses)
-function calculateTotalDefense(player: Player): number {
-  const stats = calculateCombatStats(player.equippedWeapon, player.equippedArmor, player.equippedShield, player.temperedItems);
-  return stats.defense;
-}
-
-// Helper: Calculate total block chance (including temper bonuses)
-function calculateTotalBlockChance(player: Player): number {
-  const stats = calculateCombatStats(player.equippedWeapon, player.equippedArmor, player.equippedShield, player.temperedItems);
-  return stats.blockChance;
+// Helper: Calculate all combat stats in a single call
+function getPlayerCombatStats(player: Player) {
+  return calculateCombatStats(player.equippedWeapon, player.equippedArmor, player.equippedShield, player.temperedItems);
 }
