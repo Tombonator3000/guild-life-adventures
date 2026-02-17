@@ -95,6 +95,21 @@ export function serializeGameState(): SerializedGameState {
 }
 
 /**
+ * Event fields that require dismissed-event tracking on the guest side.
+ * Each entry maps a dismiss key to how the field is read from serialized state.
+ * Some fields need casting because SerializedGameState uses a broader type.
+ */
+const SYNCABLE_EVENT_FIELDS: Array<{
+  key: string;
+  read: (s: SerializedGameState) => unknown;
+}> = [
+  { key: 'shadowfingersEvent', read: s => s.shadowfingersEvent },
+  { key: 'applianceBreakageEvent', read: s => s.applianceBreakageEvent },
+  { key: 'weekendEvent', read: s => s.weekendEvent },
+  { key: 'deathEvent', read: s => (s as unknown as Record<string, unknown>).deathEvent ?? null },
+];
+
+/**
  * Apply state from host to local Zustand store (guest only).
  * Preserves local UI state (selectedLocation, tutorial, AI speed).
  * Skips event fields that the guest has locally dismissed (prevents modal flicker).
@@ -105,7 +120,6 @@ export function applyNetworkState(state: SerializedGameState) {
     console.error('[Network] Store accessor not set — cannot apply state');
     return;
   }
-  const store = storeAccessor.getState();
 
   // Clear dismissed events on turn change or new week (prevents persistence bugs)
   if (state.currentPlayerIndex !== lastSyncedPlayerIndex || state.week !== lastSyncedWeek) {
@@ -114,7 +128,7 @@ export function applyNetworkState(state: SerializedGameState) {
     lastSyncedWeek = state.week ?? -1;
   }
 
-  // Build the update object
+  // Build the update object — always-synced fields first
   const update: Record<string, unknown> = {
     currentPlayerIndex: state.currentPlayerIndex,
     players: state.players,
@@ -133,8 +147,7 @@ export function applyNetworkState(state: SerializedGameState) {
     activeFestival: state.activeFestival ?? null,
   };
 
-  // Only sync event fields if the guest hasn't locally dismissed them
-  // This prevents the "modal reappears after dismiss" flicker bug
+  // eventMessage is special: it also controls phase and eventSource
   if (!dismissedEvents.has('eventMessage')) {
     update.phase = state.phase;
     update.eventMessage = state.eventMessage;
@@ -153,32 +166,18 @@ export function applyNetworkState(state: SerializedGameState) {
     }
   }
 
-  if (!dismissedEvents.has('shadowfingersEvent')) {
-    update.shadowfingersEvent = state.shadowfingersEvent as typeof store.shadowfingersEvent;
-  } else if (state.shadowfingersEvent == null) {
-    update.shadowfingersEvent = null;
-    dismissedEvents.delete('shadowfingersEvent');
-  }
-
-  if (!dismissedEvents.has('applianceBreakageEvent')) {
-    update.applianceBreakageEvent = state.applianceBreakageEvent as typeof store.applianceBreakageEvent;
-  } else if (state.applianceBreakageEvent == null) {
-    update.applianceBreakageEvent = null;
-    dismissedEvents.delete('applianceBreakageEvent');
-  }
-
-  if (!dismissedEvents.has('weekendEvent')) {
-    update.weekendEvent = state.weekendEvent;
-  } else if (state.weekendEvent == null) {
-    update.weekendEvent = null;
-    dismissedEvents.delete('weekendEvent');
-  }
-
-  if (!dismissedEvents.has('deathEvent')) {
-    update.deathEvent = (state as unknown as Record<string, unknown>).deathEvent ?? null;
-  } else if ((state as unknown as Record<string, unknown>).deathEvent == null) {
-    update.deathEvent = null;
-    dismissedEvents.delete('deathEvent');
+  // Sync remaining event fields using the shared pattern:
+  // - Not dismissed → sync from host
+  // - Dismissed but host cleared → sync null and remove dismissal
+  // - Dismissed and host still has value → skip (guest already dismissed)
+  for (const { key, read } of SYNCABLE_EVENT_FIELDS) {
+    const value = read(state);
+    if (!dismissedEvents.has(key)) {
+      update[key] = value;
+    } else if (value == null) {
+      update[key] = null;
+      dismissedEvents.delete(key);
+    }
   }
 
   storeAccessor.setState(update);
