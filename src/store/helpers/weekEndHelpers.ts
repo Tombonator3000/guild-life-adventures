@@ -18,6 +18,7 @@ import {
   HEALTH_CRISIS_AGE,
   HEALTH_CRISIS_CHANCE,
   HEALTH_CRISIS_DAMAGE,
+  FOOD_DEPLETION_PER_WEEK,
 } from '@/types/game.types';
 import { checkWeeklyTheft, checkMarketCrash, pickEventMessage } from '@/data/events';
 import type { MarketCrashResult } from '@/data/events';
@@ -239,9 +240,9 @@ function processNeeds(p: Player, _isClothingDegradation: boolean, msgs: string[]
   const decayCurse = hasCurseEffect(p, 'food-clothing-decay');
   const decayMultiplier = decayCurse ? decayCurse.magnitude : 1;
 
-  // Food depletion — 35/week so players must buy food almost every round
+  // Food depletion — uses FOOD_DEPLETION_PER_WEEK so players must buy food almost every round
   // (unless they have a Preservation Box with stored fresh food as backup)
-  const foodDrain = Math.round(35 * decayMultiplier);
+  const foodDrain = Math.round(FOOD_DEPLETION_PER_WEEK * decayMultiplier);
   p.foodLevel = Math.max(0, p.foodLevel - foodDrain);
 
   // Clear store-bought food flag when all food is consumed (Tavern food doesn't set this flag)

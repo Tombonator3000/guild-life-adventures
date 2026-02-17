@@ -45,7 +45,7 @@ export function calculateGoalProgress(
 
   // BUG FIX: Career = dependability (Jones-style), shown even when unemployed (matches checkVictory)
   const careerValue = player.dependability;
-  const careerProgress = Math.min(1, careerValue / goals.career);
+  const careerProgress = goals.career > 0 ? Math.min(1, careerValue / goals.career) : 1;
 
   // Adventure = quests + dungeon floors (optional, 0 = disabled)
   const adventureTarget = goals.adventure ?? 0;
