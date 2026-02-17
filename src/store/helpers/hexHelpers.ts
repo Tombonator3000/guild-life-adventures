@@ -440,6 +440,40 @@ function removeHexScroll(scrolls: Player['hexScrolls'], hexId: string): Player['
     .filter(s => s.quantity > 0);
 }
 
+// Sabotage effect handlers — each returns the target player update and a result message
+type SabotageHandler = {
+  apply: (p: Player) => Partial<Player>;
+  message: (target: Player) => string;
+};
+
+const SABOTAGE_EFFECTS: Record<string, SabotageHandler> = {
+  'destroy-weapon': {
+    apply: (p) => ({ equippedWeapon: null, equipmentDurability: removeKey(p.equipmentDurability, p.equippedWeapon) }),
+    message: (t) => t.equippedWeapon ? 'Their weapon shatters into pieces!' : 'They had no weapon to destroy.',
+  },
+  'destroy-armor': {
+    apply: (p) => ({ equippedArmor: null, equipmentDurability: removeKey(p.equipmentDurability, p.equippedArmor) }),
+    message: (t) => t.equippedArmor ? 'Their armor dissolves into rust!' : 'They had no armor to destroy.',
+  },
+  'destroy-food': {
+    apply: () => ({ foodLevel: 0, freshFood: 0 }),
+    message: () => 'All their food has rotted away!',
+  },
+  'break-appliance': {
+    apply: (p) => {
+      const working = Object.entries(p.appliances).filter(([_, a]) => !a.isBroken);
+      if (working.length === 0) return {};
+      const [appId] = working[Math.floor(Math.random() * working.length)];
+      return { appliances: { ...p.appliances, [appId]: { ...p.appliances[appId], isBroken: true } } };
+    },
+    message: () => 'One of their enchanted devices has been jinxed!',
+  },
+  'destroy-clothing': {
+    apply: () => ({ clothingCondition: 0 }),
+    message: () => 'Their clothes unravel into rags!',
+  },
+};
+
 /** Apply instant sabotage effects */
 function applySabotageHex(
   set: SetFn, get: GetFn,
@@ -449,80 +483,22 @@ function applySabotageHex(
     return { success: false, message: 'Invalid sabotage hex — no effect defined.' };
   }
   const state = get();
-  const player = state.players.find(p => p.id === playerId)!;
   const target = state.players.find(p => p.id === targetId)!;
-  const effectType = hex.effect.type;
+  const handler = SABOTAGE_EFFECTS[hex.effect.type];
 
   set((s) => ({
     players: s.players.map((p) => {
       if (p.id === playerId) {
-        return {
-          ...p,
-          timeRemaining: Math.max(0, p.timeRemaining - hex.castTime),
-          hexScrolls: removeHexScroll(p.hexScrolls, hex.id),
-          hexCastCooldown: 3,
-        };
+        return { ...p, timeRemaining: Math.max(0, p.timeRemaining - hex.castTime), hexScrolls: removeHexScroll(p.hexScrolls, hex.id), hexCastCooldown: 3 };
       }
-      if (p.id === targetId) {
-        switch (effectType) {
-          case 'destroy-weapon':
-            return {
-              ...p,
-              equippedWeapon: null,
-              equipmentDurability: removeKey(p.equipmentDurability, p.equippedWeapon),
-            };
-          case 'destroy-armor':
-            return {
-              ...p,
-              equippedArmor: null,
-              equipmentDurability: removeKey(p.equipmentDurability, p.equippedArmor),
-            };
-          case 'destroy-food':
-            return { ...p, foodLevel: 0, freshFood: 0 };
-          case 'break-appliance': {
-            const workingAppliances = Object.entries(p.appliances).filter(([_, a]) => !a.isBroken);
-            if (workingAppliances.length === 0) return p;
-            const randomIdx = Math.floor(Math.random() * workingAppliances.length);
-            const [appId] = workingAppliances[randomIdx];
-            return {
-              ...p,
-              appliances: {
-                ...p.appliances,
-                [appId]: { ...p.appliances[appId], isBroken: true },
-              },
-            };
-          }
-          case 'destroy-clothing':
-            return { ...p, clothingCondition: 0 };
-          default:
-            return p;
-        }
+      if (p.id === targetId && handler) {
+        return { ...p, ...handler.apply(p) };
       }
       return p;
     }),
   }));
 
-  let effectMsg = '';
-  switch (effectType) {
-    case 'destroy-weapon':
-      effectMsg = target.equippedWeapon ? 'Their weapon shatters into pieces!' : 'They had no weapon to destroy.';
-      break;
-    case 'destroy-armor':
-      effectMsg = target.equippedArmor ? 'Their armor dissolves into rust!' : 'They had no armor to destroy.';
-      break;
-    case 'destroy-food':
-      effectMsg = 'All their food has rotted away!';
-      break;
-    case 'break-appliance':
-      effectMsg = 'One of their enchanted devices has been jinxed!';
-      break;
-    case 'destroy-clothing':
-      effectMsg = 'Their clothes unravel into rags!';
-      break;
-    default:
-      effectMsg = 'Dark magic takes its toll.';
-  }
-
+  const effectMsg = handler?.message(target) ?? 'Dark magic takes its toll.';
   return { success: true, message: `You cast ${hex.name} on ${target.name}! ${effectMsg}` };
 }
 

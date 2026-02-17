@@ -178,53 +178,30 @@ function applySmartGoalSprint(
 ): void {
   if (planningDepth < 3) return; // Hard AI only
 
-  // Find goals that are 65%+ complete (more aggressive sprint threshold for hard AI)
-  const sprintTargets: { goal: string; gap: number; progress: number }[] = [];
+  // Goal sprint actions — maps each goal to actions that directly contribute to it
+  const GOAL_SPRINT_ACTIONS: Record<string, string[]> = {
+    wealth: ['work', 'deposit-bank', 'complete-quest', 'sell-stock'],
+    happiness: ['buy-appliance', 'rest', 'buy-ticket', 'graduate'],
+    education: ['study', 'graduate'],
+    career: ['work', 'apply-job'],
+  };
 
-  if (progress.wealth.progress >= 0.65 && progress.wealth.progress < 1.0) {
-    sprintTargets.push({ goal: 'wealth', gap: progress.wealth.target - progress.wealth.current, progress: progress.wealth.progress });
-  }
-  if (progress.happiness.progress >= 0.65 && progress.happiness.progress < 1.0) {
-    sprintTargets.push({ goal: 'happiness', gap: progress.happiness.target - progress.happiness.current, progress: progress.happiness.progress });
-  }
-  if (progress.education.progress >= 0.65 && progress.education.progress < 1.0) {
-    sprintTargets.push({ goal: 'education', gap: progress.education.target - progress.education.current, progress: progress.education.progress });
-  }
-  if (progress.career.progress >= 0.65 && progress.career.progress < 1.0) {
-    sprintTargets.push({ goal: 'career', gap: progress.career.target - progress.career.current, progress: progress.career.progress });
-  }
+  // Find goals that are 65%+ complete (more aggressive sprint threshold for hard AI)
+  const GOAL_KEYS = ['wealth', 'happiness', 'education', 'career'] as const;
+  const sprintTargets = GOAL_KEYS
+    .filter(g => progress[g].progress >= 0.65 && progress[g].progress < 1.0)
+    .map(g => ({ goal: g, gap: progress[g].target - progress[g].current, progress: progress[g].progress }))
+    .sort((a, b) => b.progress - a.progress);
 
   if (sprintTargets.length === 0) return;
 
-  // Sort by closest to completion
-  sprintTargets.sort((a, b) => b.progress - a.progress);
-
   const topSprint = sprintTargets[0];
   const sprintBoost = Math.round(15 + (topSprint.progress - 0.65) * 30); // 15-25 boost
+  const boostActions = new Set(GOAL_SPRINT_ACTIONS[topSprint.goal]);
 
-  // Boost actions that directly contribute to the sprint target
   for (const action of actions) {
-    switch (topSprint.goal) {
-      case 'wealth':
-        if (['work', 'deposit-bank', 'complete-quest', 'sell-stock'].includes(action.type)) {
-          action.priority += sprintBoost;
-        }
-        break;
-      case 'happiness':
-        if (['buy-appliance', 'rest', 'buy-ticket', 'graduate'].includes(action.type)) {
-          action.priority += sprintBoost;
-        }
-        break;
-      case 'education':
-        if (['study', 'graduate'].includes(action.type)) {
-          action.priority += sprintBoost;
-        }
-        break;
-      case 'career':
-        if (['work', 'apply-job'].includes(action.type)) {
-          action.priority += sprintBoost;
-        }
-        break;
+    if (boostActions.has(action.type)) {
+      action.priority += sprintBoost;
     }
   }
 }

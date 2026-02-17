@@ -503,44 +503,36 @@ export interface MarketCrashResult {
   message?: string;
 }
 
-// Determine crash severity (Jones-style 3-tier system)
-// Called once per week — severity applies globally to all players
+// Jones-style 3-tier crash system — probability thresholds are cumulative
 // Minor: prices drop further (no job effects)
 // Moderate: 80% wage cut + price drop
 // Major: fired + price drop
+const CRASH_TIERS: { threshold: number; result: MarketCrashResult }[] = [
+  {
+    threshold: 0.02, // 2% chance
+    result: {
+      type: 'layoff', severity: 'major', priceDropBonus: -0.08,
+      message: 'MAJOR MARKET CRASH! Mass layoffs across Guildholm. Your employer has let you go. They called it "restructuring." You can call it "unemployment."',
+    },
+  },
+  {
+    threshold: 0.07, // 5% chance (cumulative 7%)
+    result: {
+      type: 'paycut', severity: 'moderate', wageMultiplier: 0.8, priceDropBonus: -0.05,
+      message: 'Moderate market downturn! Your employer has reduced wages by 20%. "We\'re all in this together," they said, while counting their gold.',
+    },
+  },
+  {
+    threshold: 0.15, // 8% chance (cumulative 15%)
+    result: {
+      type: 'none', severity: 'minor', priceDropBonus: -0.03,
+      message: 'Minor market dip — prices have dropped slightly across Guildholm.',
+    },
+  },
+];
+
+// Called once per week — severity applies globally to all players
 export const checkMarketCrash = (_hasJob: boolean): MarketCrashResult => {
   const roll = Math.random();
-
-  // Major crash: 2% chance — layoffs (Jones: fired)
-  if (roll < 0.02) {
-    return {
-      type: 'layoff',
-      severity: 'major',
-      priceDropBonus: -0.08,
-      message: 'MAJOR MARKET CRASH! Mass layoffs across Guildholm. Your employer has let you go. They called it "restructuring." You can call it "unemployment."',
-    };
-  }
-
-  // Moderate crash: 5% chance — pay cut to 80% (Jones: 80% wage)
-  if (roll < 0.07) {
-    return {
-      type: 'paycut',
-      severity: 'moderate',
-      wageMultiplier: 0.8,
-      priceDropBonus: -0.05,
-      message: 'Moderate market downturn! Your employer has reduced wages by 20%. "We\'re all in this together," they said, while counting their gold.',
-    };
-  }
-
-  // Minor crash: 8% chance — prices drop, no job effects
-  if (roll < 0.15) {
-    return {
-      type: 'none',
-      severity: 'minor',
-      priceDropBonus: -0.03,
-      message: 'Minor market dip — prices have dropped slightly across Guildholm.',
-    };
-  }
-
-  return { type: 'none', severity: 'none' };
+  return CRASH_TIERS.find(tier => roll < tier.threshold)?.result ?? { type: 'none', severity: 'none' };
 };

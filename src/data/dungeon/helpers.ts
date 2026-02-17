@@ -44,6 +44,28 @@ export function getAllFloors(): DungeonFloor[] {
 // Requirements Checking
 // ============================================================
 
+/** Check degree requirements — if completedDegrees is missing, assume none met */
+function checkDegreeRequirements(requiredDegrees: DegreeId[] | undefined, completedDegrees?: DegreeId[]): string[] {
+  if (!requiredDegrees || requiredDegrees.length === 0) return [];
+  return requiredDegrees
+    .filter(degreeId => !completedDegrees?.includes(degreeId))
+    .map(degreeId => `Requires ${getDegreeName(degreeId)} degree`);
+}
+
+/** Check equipment stat requirement (weapon or armor) */
+function checkEquipmentRequirement(
+  requiredId: string | undefined,
+  equipped: string | null,
+  stat: number,
+  minStat: number,
+  labels: { equipMsg: string; statLabel: string },
+): string[] {
+  if (!requiredId) return [];
+  if (!equipped) return [labels.equipMsg];
+  if (stat < minStat) return [`Need at least ${minStat} ${labels.statLabel} (have ${stat})`];
+  return [];
+}
+
 /**
  * Check if a player meets requirements for a floor.
  * Returns { canEnter: true } or { canEnter: false, reasons: string[] }
@@ -56,50 +78,23 @@ export function checkFloorRequirements(
   combatStats: { attack: number; defense: number },
   completedDegrees?: DegreeId[],
 ): { canEnter: boolean; reasons: string[] } {
-  const reasons: string[] = [];
   const req = floor.requirements;
 
-  // Check previous floor cleared
-  if (req.previousFloorCleared > 0 && !floorsCleared.includes(req.previousFloorCleared)) {
-    reasons.push(`Clear Floor ${req.previousFloorCleared} first`);
-  }
+  const reasons = [
+    // Previous floor
+    ...(req.previousFloorCleared > 0 && !floorsCleared.includes(req.previousFloorCleared)
+      ? [`Clear Floor ${req.previousFloorCleared} first`] : []),
+    // Degrees
+    ...checkDegreeRequirements(req.requiredDegrees, completedDegrees),
+    // Weapon
+    ...checkEquipmentRequirement(req.minimumWeapon, equippedWeapon, combatStats.attack, req.minimumAttack,
+      { equipMsg: `Equip a weapon (need ${getWeaponName(req.minimumWeapon!)})`, statLabel: 'ATK' }),
+    // Armor
+    ...checkEquipmentRequirement(req.minimumArmor, equippedArmor, combatStats.defense, req.minimumDefense,
+      { equipMsg: `Equip armor (need ${getArmorName(req.minimumArmor!)})`, statLabel: 'DEF' }),
+  ];
 
-  // Check required degrees (e.g., Loremaster for Floor 6)
-  if (req.requiredDegrees && req.requiredDegrees.length > 0 && completedDegrees) {
-    for (const degreeId of req.requiredDegrees) {
-      if (!completedDegrees.includes(degreeId)) {
-        reasons.push(`Requires ${getDegreeName(degreeId)} degree`);
-      }
-    }
-  } else if (req.requiredDegrees && req.requiredDegrees.length > 0 && !completedDegrees) {
-    // If we don't have degree info, assume not met
-    for (const degreeId of req.requiredDegrees) {
-      reasons.push(`Requires ${getDegreeName(degreeId)} degree`);
-    }
-  }
-
-  // Check minimum weapon
-  if (req.minimumWeapon && !equippedWeapon) {
-    reasons.push(`Equip a weapon (need ${getWeaponName(req.minimumWeapon)})`);
-  } else if (req.minimumWeapon && equippedWeapon) {
-    if (combatStats.attack < req.minimumAttack) {
-      reasons.push(`Need at least ${req.minimumAttack} ATK (have ${combatStats.attack})`);
-    }
-  }
-
-  // Check minimum armor
-  if (req.minimumArmor && !equippedArmor) {
-    reasons.push(`Equip armor (need ${getArmorName(req.minimumArmor)})`);
-  } else if (req.minimumArmor && equippedArmor) {
-    if (combatStats.defense < req.minimumDefense) {
-      reasons.push(`Need at least ${req.minimumDefense} DEF (have ${combatStats.defense})`);
-    }
-  }
-
-  return {
-    canEnter: reasons.length === 0,
-    reasons,
-  };
+  return { canEnter: reasons.length === 0, reasons };
 }
 
 /** Human-readable weapon name for requirement messages */

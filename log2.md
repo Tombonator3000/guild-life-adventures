@@ -3,6 +3,60 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+## 2026-02-17 — Code Audit & Refactor Round 2 (12:00 UTC)
+
+### Overview
+
+Continuation of earlier audit session. Launched 4 parallel audit agents covering gameStore + helpers, GameBoard + LocationPanel + locationTabs, data files (combatResolver, events, quests, dungeon), and AI + network + startTurnHelpers. Identified 40+ additional complexity findings. Selected 5 high-value refactoring targets and applied structural-only changes (identical behavior).
+
+### Refactoring 6: `checkMarketCrash` (events.ts)
+
+**Problem**: 36-line function with cascading `if (roll < threshold)` checks using magic numbers (0.02, 0.07, 0.15). Each branch returns a similar object literal. Adding a new crash tier requires inserting a new if-block in the right position.
+
+**Fix**: Created `CRASH_TIERS` lookup table — an array of `{ threshold, result }` entries. The function body is now a single line: `CRASH_TIERS.find(tier => roll < tier.threshold)?.result ?? default`. Reduced from 36 lines to 1 line of logic + a data table.
+
+### Refactoring 7: `processRobberyCheck` (startTurnHelpers.ts)
+
+**Problem**: 3 nearly identical if-blocks checking stolen equipment for weapon, armor, and shield slots. Each block: checks `stolenItemIds.has()`, sets `equipmentUnequip[field] = null`, finds the stolen item name. 15 lines of duplicated logic.
+
+**Fix**: Created `EQUIPMENT_SLOTS` array with `{ field, value }` entries and replaced the 3 if-blocks with a single `for...of` loop. Same null-assignment, same name lookup, but now iterates over the slot array.
+
+### Refactoring 8: `applySmartGoalSprint` (actionGenerator.ts)
+
+**Problem**: 4 identical if-blocks filtering goals by progress threshold (wealth, happiness, education, career). Below that, a 4-case switch statement mapping each goal to its sprint action types. Adding a new goal requires changes in 2 places.
+
+**Fix**: Created `GOAL_SPRINT_ACTIONS` lookup mapping goal → action types, and `GOAL_KEYS` array. Replaced 4 if-blocks with `.filter().map()` chain. Replaced switch with `Set` lookup from the map. Total: 57 → 22 lines.
+
+### Refactoring 9: `applySabotageHex` (hexHelpers.ts)
+
+**Problem**: 83-line function with TWO switch statements on the same `effectType` — first one applies the state mutation (destroy-weapon, destroy-armor, etc.), second one generates the result message. Same 6 cases duplicated. Adding a new sabotage type requires editing both switches.
+
+**Fix**: Created `SABOTAGE_EFFECTS` handler map — each entry has `apply(player)` returning a `Partial<Player>` update, and `message(target)` returning the result string. The function now does a single map lookup for both mutation and messaging. 83 → 50 lines, single source of truth per effect.
+
+### Refactoring 10: `checkFloorRequirements` (dungeon/helpers.ts)
+
+**Problem**: 53 lines with redundant conditional branches. Degree checking had duplicate for-loops for `completedDegrees` present vs absent (identical behavior). Equipment checks had nested if/else for weapon and armor with near-identical structure.
+
+**Fix**: Extracted `checkDegreeRequirements()` — handles both cases (degrees present or absent) in a single filter+map. Extracted `checkEquipmentRequirement()` — generic helper for weapon/armor stat checks. Main function now spreads results from all validators into a flat reasons array. 53 → 41 lines, no nesting.
+
+### Files Modified (5)
+
+| File | Changes |
+|------|---------|
+| `src/data/events.ts` | `CRASH_TIERS` lookup table, single-line `checkMarketCrash` |
+| `src/store/helpers/startTurnHelpers.ts` | `EQUIPMENT_SLOTS` array + loop in `processRobberyCheck` |
+| `src/hooks/ai/actionGenerator.ts` | `GOAL_SPRINT_ACTIONS` map + `GOAL_KEYS` array in `applySmartGoalSprint` |
+| `src/store/helpers/hexHelpers.ts` | `SABOTAGE_EFFECTS` handler map, unified `applySabotageHex` |
+| `src/data/dungeon/helpers.ts` | Extracted `checkDegreeRequirements` + `checkEquipmentRequirement` |
+
+### Test Results
+
+- **Tests**: 296/296 passing across 16 test files, 0 failures
+- **TypeScript**: Clean, no errors
+- **Behavior**: Identical — all refactorings are structural only
+
+---
+
 ## 2026-02-17 — Code Audit & Refactor Complex Code (10:00 UTC)
 
 ### Overview

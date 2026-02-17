@@ -274,22 +274,20 @@ function processRobberyCheck(
   }
 
   // Check if any equipped items were stolen — unequip them
-  const equipmentUnequip: { equippedWeapon?: null; equippedArmor?: null; equippedShield?: null } = {};
+  const EQUIPMENT_SLOTS = [
+    { field: 'equippedWeapon' as const, value: player.equippedWeapon },
+    { field: 'equippedArmor' as const, value: player.equippedArmor },
+    { field: 'equippedShield' as const, value: player.equippedShield },
+  ] as const;
+
+  const equipmentUnequip: Partial<Record<typeof EQUIPMENT_SLOTS[number]['field'], null>> = {};
   const lostEquipmentNames: string[] = [];
-  if (player.equippedWeapon && stolenItemIds.has(player.equippedWeapon)) {
-    equipmentUnequip.equippedWeapon = null;
-    const stolen = robberyResult.stolenItems.find(s => s.itemId === player.equippedWeapon);
-    lostEquipmentNames.push(stolen?.itemName || player.equippedWeapon);
-  }
-  if (player.equippedArmor && stolenItemIds.has(player.equippedArmor)) {
-    equipmentUnequip.equippedArmor = null;
-    const stolen = robberyResult.stolenItems.find(s => s.itemId === player.equippedArmor);
-    lostEquipmentNames.push(stolen?.itemName || player.equippedArmor);
-  }
-  if (player.equippedShield && stolenItemIds.has(player.equippedShield)) {
-    equipmentUnequip.equippedShield = null;
-    const stolen = robberyResult.stolenItems.find(s => s.itemId === player.equippedShield);
-    lostEquipmentNames.push(stolen?.itemName || player.equippedShield);
+  for (const slot of EQUIPMENT_SLOTS) {
+    if (slot.value && stolenItemIds.has(slot.value)) {
+      equipmentUnequip[slot.field] = null;
+      const stolen = robberyResult.stolenItems.find(s => s.itemId === slot.value);
+      lostEquipmentNames.push(stolen?.itemName || slot.value);
+    }
   }
 
   // Apply robbery effects (gameplay changes apply to all players)
