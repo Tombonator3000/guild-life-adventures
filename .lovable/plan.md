@@ -1,68 +1,121 @@
 
+# Oppgave: Hex-Curse Appliance Notifikasjon med Bilde + AI Brettvandring
 
-## Two-Part Plan: Hex Visual Effect + AI Hex Purchasing
+## Kontekst fra kodebasen
 
-### Part 1: Cursed Player Portrait Visual Effect
+**Nåværende hex-notifikasjon**: Vises som en `toast.error(...)` i `GameBoard.tsx` — en liten melding i hjørnet. Ingen bilde, ingen sentral panel-visning.
 
-Add a magical "cursed" overlay effect on player portraits when a player has active curses/hexes. This will be a pulsing purple/dark aura visible on all portrait instances.
+**Nåværende AI-bevegelse**: `handleMove()` i `actionExecutor.ts` kaller `store.movePlayer()` direkte — ingen `startAnimation()`. AI-tokens teleporterer instant, uten visuelle steg rundt brettet.
 
-**What the player sees:**
-- A glowing, pulsing purple/dark magical aura around the portrait frame
-- Subtle animated particle-like effect (CSS-only, using box-shadow and keyframes)
-- Visible on the game board token, sidebar portrait, turn order panel, and players tab
+**Animasjonssystemet**: `usePlayerAnimation.ts` har `startRemoteAnimation()` for nettspill og `startAnimation()` for menneskelige spillere. Begge bruker `AnimatedPlayerToken` som allerede støtter path-animasjon langs brettet.
 
-**Implementation:**
+---
 
-1. **Modify `CharacterPortrait.tsx`** — Add an optional `hasCurse` prop. When true, render an overlay `div` with a pulsing purple/dark aura animation using CSS `box-shadow` and a new keyframe animation.
+## Del 1: Hex-Curse Appliance Notifikasjon med Bilde
 
-2. **Add CSS keyframe** `curse-pulse` in `tailwind.config.ts` — A subtle purple glow that pulses in and out (alternating opacity/spread of a purple box-shadow).
+### Tilnærming
 
-3. **Pass `hasCurse` prop** from these components:
-   - `PlayerToken.tsx` — check `player.activeCurses.length > 0`
-   - `AnimatedPlayerToken.tsx` — same check
-   - `ResourcePanel.tsx` — same check  
-   - `TurnOrderPanel.tsx` — same check
-   - `PlayersTab.tsx` — same check
+I stedet for bare en toast, vil vi vise en **sentral panel-notifikasjon** (som `EventPanel`) med et AI-generert woodcut-bilde. Vi bruker Gemini til å generere et bilde (svart blekk på pergament, medieval whimsical stil) og legger det inn som en ny `CurseApplianceModal`.
 
-### Part 2: AI Hex Scroll Purchasing
+### Tekniske steg
 
-The AI can already **cast** hexes and buy amulets, but it **never buys hex scrolls**. This is the critical missing link — the AI generates cast actions only when `hexScrolls.length > 0`, but never acquires scrolls.
+**1. Generer bilde med Gemini**
+- Prompt: `"Medieval woodcut whimsical illustration of a dark sorcerer casting a hex curse, magical energy destroying a mechanical box appliance, black ink on aged parchment, detailed line work, fantasy RPG, 1:1 square"`
+- Lagres i `public/events/` eller `src/assets/events/` som `hex-appliance-curse.jpg`
 
-**Implementation:**
+**2. Ny komponent: `CurseAppliancePanel.tsx`**
+- Vises i center panel når `applianceBreakageEvent.fromCurse === true`
+- Innhold:
+  - Bilde øverst (woodcut, sepia filter som andre event-bilder)
+  - Tittel: `🔮 Cursed by [CurserName]!`
+  - Tekst: `[ApplianceName] has been destroyed by dark magic!`
+  - Repair-info: `Repair cost: Xg at the Enchanter`
+  - OK-knapp som kaller `dismissApplianceBreakageEvent()`
 
-1. **Add `'buy-hex-scroll'` to `AIActionType`** in `src/hooks/ai/types.ts`.
+**3. Integrasjon i `GameBoard.tsx`**
+- Endre betingelsen for center panel-visning: sjekk `applianceBreakageEvent?.fromCurse` i tillegg til `selectedLocation` og `phase === 'event'`
+- Vanlig appliance-breakage beholder toast-notifikasjonen
 
-2. **Add purchase logic in `rivalryActions.ts`** — When hex feature is enabled, rival is threatening, AI has gold, and AI is at Shadow Market or Enchanter with no scrolls:
-   - Pick an appropriate hex from the current stock (`getShadowMarketHexStock` or `getEnchanterHexStock`)
-   - Prefer personal curses (direct impact) over location hexes
-   - Generate a `buy-hex-scroll` action with priority ~60
-   - Morgath personality gets a priority boost (aggressive)
+**Berørte filer:**
+- `src/components/game/CurseAppliancePanel.tsx` (ny)
+- `src/components/game/GameBoard.tsx` (legg til ny visningsbetingelse)
+- `src/assets/events/index.ts` (legg til nytt bilde-import, valgfritt)
 
-3. **Add `handleBuyHexScroll` handler in `actionExecutor.ts`** — Calls `store.buyHexScroll(player.id, hexId, cost)`.
+---
 
-4. **Add handler to `ACTION_HANDLERS` map** in `actionExecutor.ts`.
+## Del 2: AI Motstandere Følger Sti Rundt Brettet
 
-5. **Add travel-to-shadow-market action** — If AI has gold, no scrolls, and rival is threatening, generate a move action to Shadow Market (priority ~50) so the AI proactively visits to buy hexes.
+### Nåværende problem
 
-### Technical Details
-
-```text
-Files to modify:
-  src/components/game/CharacterPortrait.tsx    -- add hasCurse prop + overlay
-  tailwind.config.ts                           -- add curse-pulse animation
-  src/components/game/PlayerToken.tsx           -- pass hasCurse
-  src/components/game/AnimatedPlayerToken.tsx   -- pass hasCurse
-  src/components/game/ResourcePanel.tsx         -- pass hasCurse
-  src/components/game/TurnOrderPanel.tsx        -- pass hasCurse
-  src/components/game/tabs/PlayersTab.tsx       -- pass hasCurse
-  src/hooks/ai/types.ts                        -- add 'buy-hex-scroll' type
-  src/hooks/ai/actions/rivalryActions.ts        -- add buy logic + travel
-  src/hooks/ai/actionExecutor.ts               -- add handler
-  log2.md                                      -- log changes
+`handleMove()` i `actionExecutor.ts`:
+```typescript
+store.movePlayer(player.id, action.location, cost);  // teleporterer
 ```
 
-### Estimated scope
-- ~120 lines of new code across 11 files
-- No new dependencies
-- All existing tests remain unaffected (hex buying is additive)
+Menneskelige spillere bruker `startAnimation(path)` → `AnimatedPlayerToken` → visuell vandring. AI hopper bare til destinasjon.
 
+### Tilnærming
+
+AI-bevegelse skal **ikke endre spillogikken** — `movePlayer()` kalles fortsatt. Men vi trenger at GameBoard ser AI-bevegelsen og viser animasjonen visuelt.
+
+**Løsning: Expose `startAnimation` via en global callback/ref i GameBoard**
+
+Siden AI (`actionExecutor.ts`) er utenfor React-komponenten, trenger vi en bro:
+
+**Alternativ A (enklest og renest):** Registrer en global `animateAIMove` callback i `useGameStore` eller en separat singleton ref. `handleMove()` kaller callbacken hvis tilgjengelig, og GameBoard registrerer den ved mount.
+
+**Valgt løsning: Singleton ref-basert AI-animasjonsbro**
+
+```typescript
+// src/hooks/useAIAnimationBridge.ts (ny fil)
+// Singleton ref som holder animasjonskallback fra GameBoard
+let aiAnimateCallback: ((playerId: string, path: LocationId[]) => void) | null = null;
+
+export function registerAIAnimateCallback(cb: typeof aiAnimateCallback) {
+  aiAnimateCallback = cb;
+}
+export function triggerAIAnimation(playerId: string, path: LocationId[]) {
+  aiAnimateCallback?.(playerId, path);
+}
+```
+
+### Tekniske steg
+
+**1. Ny fil: `src/hooks/useAIAnimationBridge.ts`**
+- Eksporterer `registerAIAnimateCallback` og `triggerAIAnimation`
+
+**2. Endre `GameBoard.tsx`**
+- Kall `registerAIAnimateCallback(startRemoteAnimation)` i en `useEffect` ved mount
+- Rydd opp (null) ved unmount
+
+**3. Endre `actionExecutor.ts` — `handleMove()`**
+- Etter `store.movePlayer()` kalles: kall `triggerAIAnimation(player.id, path)`
+- Hent `path` med den allerede-tilgjengelige `getPath()` funksjonen (allerede importert!)
+- NB: `path` er allerede tilgjengelig siden vi bruker `getPath()` for weather-beregning
+
+**4. Timing-hensyn**
+- `movePlayer()` oppdaterer state umiddelbart
+- `triggerAIAnimation()` starter visuell animasjon
+- Tokenet som er i animasjon vises av `AnimatedPlayerToken`, mens det statiske tokenet skjules (dette er allerede håndtert — `playersHere` filtrerer `animatingPlayer`)
+
+**Berørte filer:**
+- `src/hooks/useAIAnimationBridge.ts` (ny)
+- `src/components/game/GameBoard.tsx` (registrer callback)
+- `src/hooks/ai/actionExecutor.ts` (trigger animasjon fra `handleMove`)
+
+---
+
+## Rekkefølge
+
+1. Generer curse-bilde med Gemini
+2. Lag `CurseAppliancePanel.tsx` med bildet
+3. Integrer i `GameBoard.tsx` (center panel)
+4. Lag `useAIAnimationBridge.ts`
+5. Koble inn i `GameBoard.tsx` og `actionExecutor.ts`
+6. Logg til `log2.md`
+
+## Risikovurdering
+
+- **AI-animasjon**: Lav risiko — spillogikk forblir uendret, kun visuell animasjon. `startRemoteAnimation` er allerede designet for nøyaktig dette (nettspill bruker den uten `movePlayer`-kall).
+- **Curse panel**: Lav risiko — ny komponent, minimal endring i GameBoard conditional rendering.
+- **Timing**: AI-animasjon kjører asynkront, men siden AI har `setTimeout`-basert stepping med `decisionDelay`, vil animasjonene naturlig vises mellom handlinger.
