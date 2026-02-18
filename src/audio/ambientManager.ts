@@ -66,8 +66,17 @@ class AmbientManager {
 
     // Route through Web Audio API GainNodes — required for iOS volume control
     // Returns null if AudioContext is unavailable (falls back to element.volume)
-    this.gainA = connectElement(this.deckA);
-    this.gainB = connectElement(this.deckB);
+    // Wrapped in try-catch: connectElement creates an AudioContext at module load time.
+    // If this throws (e.g. dummy Audio element from catch above), it must not crash
+    // the singleton — a crash here prevents React from mounting.
+    try {
+      this.gainA = connectElement(this.deckA);
+      this.gainB = connectElement(this.deckB);
+    } catch (e) {
+      console.warn('[Ambient] connectElement failed:', e);
+      this.gainA = null;
+      this.gainB = null;
+    }
 
     this.settings = loadSettings();
     this.cachedSettings = { ...this.settings };

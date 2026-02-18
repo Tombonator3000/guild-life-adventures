@@ -46,18 +46,11 @@
   <meta name="twitter:description" content="A fantasy life simulation game inspired by Jones in the Fast Lane">
   <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/3c0a908b-5a62-431a-a708-020b4d0fa1ab?Expires=1771244125&amp;GoogleAccessId=go-api-on-aws%40gpt-engineer-390607.iam.gserviceaccount.com&amp;Signature=wR%2BZ4DTsgG9wr3TPvYhrgNa30rotLNwaBlRwUNFjew4Lv5ycErcHa8JphLrqYKM5RPCt%2FaVMVrpTEIc46341%2B4F6bWsff8X5fSu5ZIPX4Z%2FhBjTxFJKQqcxyjgM97baz7WzH%2F3cUCFU9pEpFkZsiE7prnl%2FgaQXPFGTultcX%2BFXtGW4RPZY6xDbu%2BKeKBv4yhomH8RMBhKxa7Nm9y3AD45JW6%2BMCHRCW4LJQfl0WzS1Tn50ENlog6jf79sKCT5GwzGZX0dnuYY0XR95HpGyXugo%2FipcVDh%2FBzcvf%2BHpBvegdtP7ki6DJYMGucNXN9ecuGArQ5x47m8pbZZqLr39cbw%3D%3D">
   <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/3c0a908b-5a62-431a-a708-020b4d0fa1ab?Expires=1771244125&amp;GoogleAccessId=go-api-on-aws%40gpt-engineer-390607.iam.gserviceaccount.com&amp;Signature=wR%2BZ4DTsgG9wr3TPvYhrgNa30rotLNwaBlRwUNFjew4Lv5ycErcHa8JphLrqYKM5RPCt%2FaVMVrpTEIc46341%2B4F6bWsff8X5fSu5ZIPX4Z%2FhBjTxFJKQqcxyjgM97baz7WzH%2F3cUCFU9pEpFkZsiE7prnl%2FgaQXPFGTultcX%2BFXtGW4RPZY6xDbu%2BKeKBv4yhomH8RMBhKxa7Nm9y3AD45JW6%2BMCHRCW4LJQfl0WzS1Tn50ENlog6jf79sKCT5GwzGZX0dnuYY0XR95HpGyXugo%2FipcVDh%2FBzcvf%2BHpBvegdtP7ki6DJYMGucNXN9ecuGArQ5x47m8pbZZqLr39cbw%3D%3D">
-</head>
 
-  <body>
-    <div id="root">
-      <!-- Loading screen — visible until React mounts and replaces this content -->
-      <div id="loading-screen" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1f170a;color:#e8dcc8;font-family:serif;text-align:center;padding:2rem;">
-        <h1 style="font-size:2rem;margin-bottom:1rem;color:#d4a537;">Guild Life Adventures</h1>
-        <p id="loading-status" style="font-size:1rem;opacity:0.7;">Loading the realm...</p>
-        <noscript><p style="margin-top:1rem;color:#c44;">JavaScript is required to play this game.</p></noscript>
-      </div>
-    </div>
-    <!-- Minimal error handler — catches JS errors before React mounts -->
+    <!-- Error handler — MUST be in <head> before Vite's module script.
+         Vite moves <script type="module"> to <head> in production builds.
+         If the JS chunk 404s (stale cache), the onerror attribute fires immediately.
+         __guildShowError must already be defined or we get a silent ReferenceError. -->
     <script>
       window.__guildReactMounted=false;
       function __guildShowError(msg){
@@ -78,6 +71,17 @@
         __guildShowError(msg);
       });
     </script>
+</head>
+
+  <body>
+    <div id="root">
+      <!-- Loading screen — visible until React mounts and replaces this content -->
+      <div id="loading-screen" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1f170a;color:#e8dcc8;font-family:serif;text-align:center;padding:2rem;">
+        <h1 style="font-size:2rem;margin-bottom:1rem;color:#d4a537;">Guild Life Adventures</h1>
+        <p id="loading-status" style="font-size:1rem;opacity:0.7;">Loading the realm...</p>
+        <noscript><p style="margin-top:1rem;color:#c44;">JavaScript is required to play this game.</p></noscript>
+      </div>
+    </div>
     <!-- Entry point — Vite replaces this with the production hashed module in build.
          scriptErrorPlugin adds onerror to catch 404s from stale HTML. -->
     <script type="module" src="/src/main.tsx"></script>

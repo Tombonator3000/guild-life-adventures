@@ -5086,3 +5086,48 @@ Duration    11.63s
 TypeScript: 0 errors. All behavior preserved.
 
 ---
+
+## 2026-02-17 22:00 — Systematic Bug Hunt: BUG-001 "Loading the realm…" Hang
+
+### Investigation (5 parallel AI agents)
+
+Launched 5 agents to systematically hunt the root cause:
+
+1. **App.tsx startup chain** — Traced: `main.tsx → App.tsx → Index.tsx → TitleScreen → useMusic → audioManager`. Confirmed eager import chain triggers audioManager singleton at module load.
+2. **gameStore initialization** — Safe. No circular runtime deps. Store helpers use type-only imports.
+3. **Audio system** — Found `connectElement()` calls in audioManager (L74-75) and ambientManager (L69-70) OUTSIDE try-catch. sfxManager and speechNarrator properly wrapped. Risk: if `connectElement` throws on exotic environments, the singleton crashes → React never mounts.
+4. **Circular imports** — None found. NetworkActionProxy/networkState use accessor pattern.
+5. **Recent PR changes** — PR #241 simplified startup but didn't address the script ordering bug.
+
+### Root Causes Found
+
+**CRITICAL — Script ordering bug in production HTML:**
+- Source `index.html`: error handler (`__guildShowError`) is in `<body>`, module script is after it → OK
+- Built `dist/index.html`: Vite moves `<script type="module">` to `<head>`, but error handler stays in `<body>`
+- `scriptErrorPlugin` adds `onerror="__guildShowError(...)"` to the module script
+- When JS chunk 404s (stale cache after deploy), `onerror` fires → `__guildShowError` not defined yet → `ReferenceError` → silent failure → stuck on "Loading the realm…" with no feedback for 15 seconds
+
+**HIGH — Unprotected connectElement() in audio singletons:**
+- `audioManager.ts` L74-75 and `ambientManager.ts` L69-70 call `connectElement()` outside try-catch
+- `sfxManager.ts` and `speechNarrator.ts` properly wrapped (no issue)
+- Defense-in-depth concern: if `connectElement` bypasses its internal try-catch, the singleton crashes at import time
+
+### Fixes Applied
+
+**Fix 1: Move error handler to `<head>` (`index.html`)**
+- Moved the `<script>` block defining `window.__guildReactMounted`, `__guildShowError`, `window.onerror`, and `unhandledrejection` from `<body>` to `<head>` (before `</head>`)
+- Now in production build, `__guildShowError` is defined at L56 and the module script at L74 — correct order
+- If JS chunk 404s, user immediately sees "Failed to load game files — please reload" with a Reload button
+
+**Fix 2: Wrap `connectElement()` in try-catch (`audioManager.ts`, `ambientManager.ts`)**
+- Wrapped `connectElement(this.deckA)` and `connectElement(this.deckB)` calls in try-catch
+- On failure: `console.warn`, set gainA/gainB to null (falls back to `element.volume`)
+- Matches existing pattern in `sfxManager.ts`
+
+### Verification
+
+```
+Build: ✓ 0 errors, 12.14s
+Tests: ✓ 296 passed (16 files), 10.95s
+dist/index.html: __guildShowError defined at L56, module script at L74 ✓
+```
