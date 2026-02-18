@@ -39,6 +39,8 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { useGameBoardKeyboard } from '@/hooks/useGameBoardKeyboard';
 import { useLocationClick } from '@/hooks/useLocationClick';
 import { StoneBorderFrame } from './StoneBorderFrame';
+import { CurseAppliancePanel } from './CurseAppliancePanel';
+import { registerAIAnimateCallback } from '@/hooks/useAIAnimationBridge';
 
 export function GameBoard() {
   const {
@@ -156,25 +158,25 @@ export function GameBoard() {
   });
 
   // Show appliance/equipment breakage notification
+  // Curse breakage: shown as center panel (CurseAppliancePanel) — NOT auto-dismissed here
+  // Regular breakage: toast warning, auto-dismissed
   useEffect(() => {
-    if (applianceBreakageEvent) {
+    if (applianceBreakageEvent && !applianceBreakageEvent.fromCurse) {
       const appliance = getAppliance(applianceBreakageEvent.applianceId);
       const name = appliance?.name || applianceBreakageEvent.applianceId;
-      if (applianceBreakageEvent.fromCurse) {
-        const curser = applianceBreakageEvent.curserName ?? 'An enemy';
-        toast.error(
-          `🔮 ${curser} cursed your ${name}! It has been destroyed by dark magic. Repair cost: ${applianceBreakageEvent.repairCost}g at the Enchanter.`,
-          { duration: 8000 }
-        );
-      } else {
-        toast.warning(
-          `Your ${name} broke! Repair cost: ${applianceBreakageEvent.repairCost}g at the Enchanter or Market.`,
-          { duration: 6000 }
-        );
-      }
+      toast.warning(
+        `Your ${name} broke! Repair cost: ${applianceBreakageEvent.repairCost}g at the Enchanter or Market.`,
+        { duration: 6000 }
+      );
       dismissApplianceBreakageEvent();
     }
   }, [applianceBreakageEvent, dismissApplianceBreakageEvent]);
+
+  // Register AI animation callback so actionExecutor can trigger board path animations
+  useEffect(() => {
+    registerAIAnimateCallback(startRemoteAnimation);
+    return () => registerAIAnimateCallback(null);
+  }, [startRemoteAnimation]);
 
   // Remote movement animation: when another player moves in online mode, animate their token
   useEffect(() => {
@@ -322,7 +324,7 @@ export function GameBoard() {
           {/* Center UI panel */}
           {/* Mobile: positioned via mobileOverrides when location selected or event, hidden otherwise */}
           {/* Desktop: always visible, positioned within the board frame */}
-          {(!isMobile || selectedLocation || (phase === 'event' && currentEvent)) && (
+          {(!isMobile || selectedLocation || (phase === 'event' && currentEvent) || (applianceBreakageEvent?.fromCurse)) && (
             <div
               className={`absolute overflow-hidden z-10 ${isMobile ? 'rounded-xl' : ''}`}
               style={{
@@ -333,7 +335,14 @@ export function GameBoard() {
               }}
             >
               <div className={`w-full h-full overflow-hidden flex flex-col bg-card/95 ${isMobile ? 'rounded-xl' : 'rounded-t-lg'}`}>
-                {phase === 'event' && currentEvent ? (
+                {applianceBreakageEvent?.fromCurse ? (
+                  <CurseAppliancePanel
+                    applianceId={applianceBreakageEvent.applianceId}
+                    repairCost={applianceBreakageEvent.repairCost}
+                    curserName={applianceBreakageEvent.curserName}
+                    onDismiss={dismissApplianceBreakageEvent}
+                  />
+                ) : phase === 'event' && currentEvent ? (
                   <EventPanel event={currentEvent} onDismiss={dismissEvent} />
                 ) : selectedLocation ? (
                   <LocationPanel locationId={selectedLocation} />
