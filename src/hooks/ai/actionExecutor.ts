@@ -11,6 +11,7 @@ import { RENT_COSTS, GUILD_PASS_COST, LOAN_MIN_SHIFTS_REQUIRED } from '@/types/g
 import { getJob, canWorkJob, calculateOfferedWage } from '@/data/jobs';
 import { DEGREES } from '@/data/education';
 import { calculatePathDistance, getPath } from '@/data/locations';
+import { triggerAIAnimation } from '@/hooks/useAIAnimationBridge';
 import { peerManager } from '@/network/PeerManager';
 import { calculateCombatStats, CLOTHING_THRESHOLDS } from '@/data/items';
 import { getFloor, calculateEducationBonuses, getEncounterTimeCost, getLootMultiplier, ENCOUNTERS_PER_FLOOR } from '@/data/dungeon';
@@ -102,6 +103,8 @@ function handleMove(player: Player, action: AIAction, store: StoreActions): bool
     peerManager.broadcast({ type: 'movement-animation', playerId: player.id, path });
   }
   store.movePlayer(player.id, action.location, cost);
+  // Trigger visual path animation for AI token on the board
+  triggerAIAnimation(player.id, path);
   return true;
 }
 

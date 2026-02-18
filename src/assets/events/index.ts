@@ -33,6 +33,7 @@ import clothingTorn from './clothing-torn.jpg';
 import homeless from './homeless.jpg';
 import birthday from './birthday.jpg';
 import applianceBreak from './appliance-break.jpg';
+import hexApplianceCurse from './hex-appliance-curse.jpg';
 import lotteryWin from './lottery-win.jpg';
 
 // Weather Events
@@ -132,6 +133,8 @@ export const EVENT_IMAGES: Record<string, string> = {
   'birthday': birthday,
   'appliance-break': applianceBreak,
   'appliance-breakage': applianceBreak,
+  'hex-appliance-curse': hexApplianceCurse,
+  'curse-appliance': hexApplianceCurse,
   'lottery-win': lotteryWin,
   'lottery': lotteryWin,
 
