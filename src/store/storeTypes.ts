@@ -85,7 +85,7 @@ export interface GameStore extends GameState {
   prepayRent: (playerId: string, weeks: number, totalCost: number) => void;
   moveToHousing: (playerId: string, tier: HousingTier, cost: number, lockInRent: number) => void;
   begForMoreTime: (playerId: string) => { success: boolean; message: string };
-  applianceBreakageEvent: { playerId: string; applianceId: string; repairCost: number } | null;
+  applianceBreakageEvent: { playerId: string; applianceId: string; repairCost: number; fromCurse?: boolean; curserName?: string } | null;
   dismissApplianceBreakageEvent: () => void;
   // Death event modal
   dismissDeathEvent: () => void;

@@ -438,12 +438,32 @@ function applySabotageHex(
   const target = state.players.find(p => p.id === targetId)!;
   const handler = SABOTAGE_EFFECTS[hex.effect.type];
 
+  let brokenApplianceId: string | null = null;
+  if (hex.effect.type === 'break-appliance') {
+    const working = Object.entries(target.appliances).filter(([_, a]) => !a.isBroken);
+    if (working.length > 0) {
+      brokenApplianceId = working[Math.floor(Math.random() * working.length)][0];
+    }
+  }
+
   set((s) => ({
     players: s.players.map((p) => {
       if (p.id === playerId) return { ...p, ...applyCasterCost(p, hex) };
       if (p.id === targetId && handler) return { ...p, ...handler.apply(p) };
       return p;
     }),
+    // Show curse-appliance-breakage notification for non-AI targets
+    ...(hex.effect.type === 'break-appliance' && brokenApplianceId && !target.isAI
+      ? {
+          applianceBreakageEvent: {
+            playerId: targetId,
+            applianceId: brokenApplianceId,
+            repairCost: Math.floor((target.appliances[brokenApplianceId]?.originalPrice ?? 100) * 0.5),
+            fromCurse: true,
+            curserName: state.players.find(p => p.id === playerId)?.name ?? 'Someone',
+          },
+        }
+      : {}),
   }));
 
   const effectMsg = handler?.message(target) ?? 'Dark magic takes its toll.';
