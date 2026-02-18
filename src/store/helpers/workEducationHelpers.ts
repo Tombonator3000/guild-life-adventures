@@ -1,7 +1,7 @@
 // Work and education helpers
 // workShift, requestRaise, studySession, completeEducationLevel, studyDegree, completeDegree
 
-import type { EducationPath, DegreeId } from '@/types/game.types';
+import type { EducationPath, DegreeId, Player } from '@/types/game.types';
 import { GRADUATION_BONUSES, getDegree } from '@/data/education';
 import { WORK_HAPPINESS_AGE } from '@/types/game.types';
 import { getJob } from '@/data/jobs';
@@ -31,7 +31,7 @@ const DEGREE_TO_PATH: Record<string, string> = {
 function calculateEarnings(
   hours: number, effectiveWage: number,
   festivalId: string | null,
-  player: { permanentGoldBonus: number; activeCurses?: Array<{ effects: Array<{ type: string; magnitude: number }> }> },
+  player: Pick<Player, 'permanentGoldBonus' | 'activeCurses'>,
 ): number {
   // Flat 15% efficiency bonus + festival wage multiplier
   const festivalMult = festivalId
@@ -40,7 +40,7 @@ function calculateEarnings(
   let earnings = Math.floor(hours * effectiveWage * 1.15 * festivalMult);
 
   // Curse of Poverty
-  const povertyCurse = hasCurseEffect(player as never, 'wage-reduction');
+  const povertyCurse = hasCurseEffect(player as Player, 'wage-reduction');
   if (povertyCurse) {
     earnings = Math.floor(earnings * (1 - povertyCurse.magnitude));
   }

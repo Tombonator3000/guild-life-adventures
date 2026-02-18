@@ -160,10 +160,18 @@ export function GameBoard() {
     if (applianceBreakageEvent) {
       const appliance = getAppliance(applianceBreakageEvent.applianceId);
       const name = appliance?.name || applianceBreakageEvent.applianceId;
-      toast.warning(
-        `Your ${name} broke! Repair cost: ${applianceBreakageEvent.repairCost}g at the Enchanter or Market.`,
-        { duration: 6000 }
-      );
+      if (applianceBreakageEvent.fromCurse) {
+        const curser = applianceBreakageEvent.curserName ?? 'An enemy';
+        toast.error(
+          `🔮 ${curser} cursed your ${name}! It has been destroyed by dark magic. Repair cost: ${applianceBreakageEvent.repairCost}g at the Enchanter.`,
+          { duration: 8000 }
+        );
+      } else {
+        toast.warning(
+          `Your ${name} broke! Repair cost: ${applianceBreakageEvent.repairCost}g at the Enchanter or Market.`,
+          { duration: 6000 }
+        );
+      }
       dismissApplianceBreakageEvent();
     }
   }, [applianceBreakageEvent, dismissApplianceBreakageEvent]);
