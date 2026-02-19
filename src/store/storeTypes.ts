@@ -150,6 +150,9 @@ export interface GameStore extends GameState {
   // Debug actions (developer panel)
   setDebugWeather: (type: string) => void;
   setDebugFestival: (festivalId: string | null) => void;
+  // AI activity feed
+  appendAIActivity: (entry: import('@/types/game.types').AIActivityEntry) => void;
+  clearAIActivity: () => void;
 }
 
 // Zustand set/get function types

@@ -104,6 +104,14 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
    */
   const executeAction = useCallback((player: Player, action: AIAction): boolean => {
     actionLogRef.current.push(`${player.name}: ${action.description}`);
+    // Publish to the AI activity feed (shown in Players tab)
+    useGameStore.getState().appendAIActivity({
+      playerId: player.id,
+      playerName: player.name,
+      playerColor: player.color,
+      action: action.description,
+      week: useGameStore.getState().week,
+    });
     return executeAIAction(player, action, storeActions);
   }, [storeActions]);
 
@@ -239,6 +247,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
   const resetAdaptiveSystems = useCallback(() => {
     resetObservations();
     resetPerformanceHistory();
+    useGameStore.getState().clearAIActivity();
   }, []);
 
   /**

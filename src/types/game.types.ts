@@ -324,6 +324,17 @@ export interface GameState {
   weeklyNewsEvents: PlayerNewsEventData[];
   // Hexes & Curses: active location hexes on the board
   locationHexes: ActiveLocationHex[];
+  // AI activity feed — recent AI opponent actions (shown in Players tab)
+  aiActivityLog: AIActivityEntry[];
+}
+
+// AI activity log entry — records what an AI opponent did during their turn
+export interface AIActivityEntry {
+  playerId: string;
+  playerName: string;
+  playerColor: string;
+  action: string;   // e.g. "Move to General Store", "Study Arcane Studies"
+  week: number;
 }
 
 // Serializable news event data (used in GameState, mirrors newspaper.ts PlayerNewsEvent)

@@ -4,6 +4,7 @@
 import { Crown, Skull, Bot } from 'lucide-react';
 import { CharacterPortrait } from '../CharacterPortrait';
 import type { Player, GoalSettings } from '@/types/game.types';
+import { AIActivityFeed } from './AIActivityFeed';
 
 interface PlayersTabProps {
   players: Player[];
@@ -117,6 +118,9 @@ export function PlayersTab({ players, currentPlayerIndex, goalSettings }: Player
           </div>
         );
       })}
+
+      {/* AI Activity Feed */}
+      <AIActivityFeed />
 
       {/* Game Tip */}
       <div className="pt-2 mt-2 border-t border-amber-300/50">

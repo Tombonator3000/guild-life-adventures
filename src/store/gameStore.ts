@@ -210,6 +210,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     roomCode: null as string | null,
     weeklyNewsEvents: [],
     locationHexes: [],
+    aiActivityLog: [],
 
     // Game setup (not network-wrapped — guarded explicitly)
     startNewGame: (playerNames, includeAI, goals, aiDifficulty = 'medium', aiConfigs, playerPortraits) => {
@@ -268,6 +269,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         activeFestival: null,
         deathEvent: null,
         locationHexes: [],
+        aiActivityLog: [],
       });
     },
 
@@ -318,6 +320,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         weather: { ...CLEAR_WEATHER },
         activeFestival: null,
         locationHexes: [],
+        aiActivityLog: [],
         stockPrices: getInitialStockPrices(),
     stockPriceHistory: getInitialPriceHistory(),
         priceModifier: 1.0,
@@ -485,6 +488,16 @@ export const useGameStore = create<GameStore>((set, get) => {
         }
       }
     },
+
+    // AI activity feed actions
+    appendAIActivity: (entry) => {
+      set((state) => {
+        const updated = [...state.aiActivityLog, entry];
+        // Keep last 30 entries
+        return { aiActivityLog: updated.length > 30 ? updated.slice(-30) : updated };
+      });
+    },
+    clearAIActivity: () => set({ aiActivityLog: [] }),
   };
 });
 
