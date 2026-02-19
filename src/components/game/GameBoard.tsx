@@ -28,6 +28,7 @@ import { GameBoardOverlays } from './GameBoardOverlays';
 import { DebugOverlay } from './DebugOverlay';
 import { GraveyardCrows } from './GraveyardCrows';
 import gameBoard from '@/assets/game-board.jpeg';
+import { CursePanelOverlay } from './CursePanelOverlay';
 import type { LocationId } from '@/types/game.types';
 import { toast } from 'sonner';
 import { useNetworkSync } from '@/network/useNetworkSync';
@@ -79,6 +80,7 @@ export function GameBoard() {
   // Online mode: is it this client's turn?
   const isLocalPlayerTurn = !isOnline || (currentPlayer?.id === localPlayerId);
   const isWaitingForOtherPlayer = isOnline && !isLocalPlayerTurn && !currentPlayer?.isAI;
+  const isCursed = (currentPlayer?.activeCurses?.length ?? 0) > 0;
 
   const [showZoneEditor, setShowZoneEditor] = useState(false);
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
@@ -334,7 +336,8 @@ export function GameBoard() {
                 height: `${activeCenterPanel.height}%`,
               }}
             >
-              <div className={`w-full h-full overflow-hidden flex flex-col bg-card/95 ${isMobile ? 'rounded-xl' : 'rounded-t-lg'}`}>
+              <div className={`w-full h-full overflow-hidden flex flex-col bg-card/95 relative ${isMobile ? 'rounded-xl' : 'rounded-t-lg'}`}>
+                {isCursed && !applianceBreakageEvent?.fromCurse && <CursePanelOverlay isMobile={isMobile} />}
                 {applianceBreakageEvent?.fromCurse ? (
                   <CurseAppliancePanel
                     applianceId={applianceBreakageEvent.applianceId}
