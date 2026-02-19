@@ -5192,3 +5192,36 @@ Tutorial and manual contained multiple factual errors and outdated information t
 | Floor Sweeper location | `jobs/definitions.ts:17` | `location: 'Guild Hall'`, 4g/hr |
 | Dungeon floors | `dungeon/floors.ts` | 6 floors (1-6, including Forgotten Temple) |
 | Rent first due | `gameStore.ts:260` | `rentDueWeek: 4` |
+
+## 2026-02-19 — Feature: AI Opponent Activity Feed (22:30 UTC)
+
+### Task
+User requested visibility into what AI opponents do during their turns. Previously all AI actions were console-only (`[Grimwald AI]` log prefix). Players had no in-game way to observe what opponents were doing.
+
+Also discussed: fast move home when time is up, and food sickness without preservation. Only the activity feed was implemented this session.
+
+### Implementation
+
+**New: `AIActivityEntry` type + `aiActivityLog` in `GameState`**
+- `src/types/game.types.ts` — added `AIActivityEntry` interface and `aiActivityLog: AIActivityEntry[]` to `GameState`
+- Each entry stores `playerId`, `playerName`, `playerColor`, `action`, `week`
+
+**New: Store actions**
+- `src/store/storeTypes.ts` — added `appendAIActivity` and `clearAIActivity` to `GameStore`
+- `src/store/gameStore.ts` — initial state `aiActivityLog: []`, trimmed to last 30 entries on append, cleared on `startNewGame` and `resetForNewGame` and `resetAdaptiveSystems`
+
+**Modified: `useGrimwaldAI.ts`**
+- `executeAction` now calls `useGameStore.getState().appendAIActivity(...)` in addition to the existing console log — every AI action is published to the store in real-time
+- `resetAdaptiveSystems` now calls `clearAIActivity()` for clean slate on new game
+
+**New: `AIActivityFeed` component**
+- `src/components/game/tabs/AIActivityFeed.tsx` — pure display component, reads `aiActivityLog` from store, shows last 15 entries newest-first with color dot + player name + action text
+
+**Modified: `PlayersTab.tsx`**
+- Imports and renders `<AIActivityFeed />` between player list and the "Click locations to travel" tip
+
+### Result
+- 296 tests pass (all green)
+- Live feed visible in Players tab as AI opponents take actions
+- Feed auto-hides when empty (no AI in game)
+- Committed: `c917719` on branch `claude/opponent-behavior-analysis-0ni5O`
