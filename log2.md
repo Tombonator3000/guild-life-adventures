@@ -5131,3 +5131,64 @@ Build: ✓ 0 errors, 12.14s
 Tests: ✓ 296 passed (16 files), 10.95s
 dist/index.html: __guildShowError defined at L56, module script at L74 ✓
 ```
+
+---
+
+## 2026-02-19 — Tutorial & Manual Revision (12:00 UTC)
+
+### Problem
+
+Tutorial and manual contained multiple factual errors and outdated information that confused new players:
+1. Tutorial step 2 said "You start homeless! Visit the Landlord" — players actually start in The Slums with housing
+2. Tutorial mentioned "Floor Sweeper" but didn't say where to find or work the job (Guild Hall)
+3. Multiple stale values from older game versions (food drain 25→35, 2hr entry cost removed, wrong starting stats)
+4. Dungeon floor count wrong in tutorial (said 5, actually 6)
+5. Career goal description mentioned non-existent "guild rank"
+
+### Tutorial Fixes (TutorialOverlay.tsx)
+
+| Step | Before | After |
+|------|--------|-------|
+| 2 (was Housing, now Job) | "You start homeless! Visit the Landlord" | "Head to the Guild Hall and apply for Floor Sweeper (4g/hr) or Porter" — reordered to be step 2 since it's the actual first priority |
+| 3 (was Job, now Housing) | "Visit the Guild Hall for employment" (no location info) | "You start with a room in The Slums (75g/week). Rent due every 4 weeks. No need to visit Landlord right away." |
+| 4 Food & Clothing | "-20 hour starvation penalty", vague food info | "Food depletes by 35/week. Lose 20 hours if starving. Tavern food is safe; General Store spoils without Preservation Box." |
+| 5 Movement | "Entering a building costs 2 hours" | Removed 2hr entry cost (was removed from game). "Moving costs 1 hour per step." |
+| 6 Education | "multiple study sessions" (vague) | "10 study sessions (6 hours each, 60 hours total per degree)" |
+| 7 Banking | "cash + savings + investments + stocks" | "cash + savings + investments" (removed redundant "stocks") |
+| 8 Cave | "5 floors" | "6 floors" |
+| 9 Victory | "reach the required guild rank through dependability" | "build dependability by working consistently - you must be employed!" |
+
+### Manual Fixes (UserManual.tsx)
+
+| Chapter | Fix |
+|---------|-----|
+| Getting Started | Starting stats: Happiness 10→50, Dependability 0→50, Clothing "6 weeks"→"35 condition (Casual tier)", Gold "~100g (varies)"→"100g". First turn priorities: added specific job names, Tavern as safe food option, noted rent not due until week 4. |
+| The Board | Removed "Entering a location costs an additional 2 hours" and "5 hours total" example. Updated to just 1hr/step. |
+| Turns & Time | Removed "Entering a location: 2 hours" row from time cost table. Updated starvation: added -20 hours + 25% doctor visit chance alongside -10 HP/-8 happiness. |
+| Health & Food | Food drain 25→35 per week. Starvation: added -20 hours and 25% doctor visit. |
+| Items & Shops | Food drain reference 25→35 per week. Updated starvation description. |
+| Housing | Rent table header "Rent/4 Weeks"→"Rent/Week" (values are per-week: 75g, 120g). Added note that players start in The Slums with first rent due week 4. |
+
+### Files Changed
+
+| # | File | Changes |
+|---|------|---------|
+| 1 | `src/components/game/TutorialOverlay.tsx` | Rewrote 8 of 9 tutorial steps: reordered (job→housing), fixed facts, added locations |
+| 2 | `src/components/game/UserManual.tsx` | Fixed 6 chapters: starting stats, movement costs, food drain, starvation, housing |
+
+### What Was Verified Against Code
+
+| Mechanic | Source | Verified Value |
+|----------|--------|---------------|
+| Starting housing | `gameStore.ts:72` | `housing: 'slums'` (NOT homeless) |
+| Starting gold | `gameStore.ts:64` | `gold: 100` |
+| Starting happiness | `gameStore.ts:66` | `happiness: 50` |
+| Starting dependability | `gameStore.ts:93` | `dependability: 50` |
+| Starting clothing | `gameStore.ts` | `clothingCondition: 35` |
+| Food drain per week | `game.types.ts:401` | `FOOD_DEPLETION_PER_WEEK = 35` |
+| Starvation time penalty | `startTurnHelpers.ts:210` | `STARVATION_TIME_PENALTY = 20` |
+| Starvation HP/happiness | `game.types.ts:402-403` | -10 HP, -8 happiness |
+| Entry cost | `locations.ts` (getMovementCost) | Path distance only, no +2 |
+| Floor Sweeper location | `jobs/definitions.ts:17` | `location: 'Guild Hall'`, 4g/hr |
+| Dungeon floors | `dungeon/floors.ts` | 6 floors (1-6, including Forgotten Temple) |
+| Rent first due | `gameStore.ts:260` | `rentDueWeek: 4` |
