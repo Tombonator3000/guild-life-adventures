@@ -310,8 +310,40 @@ function PlayerStateSection({ playerId }: { playerId: string | undefined }) {
   const modifyMaxHealth = useGameStore(s => s.modifyMaxHealth);
   const buyGuildPass = useGameStore(s => s.buyGuildPass);
   const promoteGuildRank = useGameStore(s => s.promoteGuildRank);
+  const setState = useGameStore.setState;
 
   if (!playerId) return null;
+
+  const injectTestCurse = () => {
+    setState(s => ({
+      players: s.players.map(p =>
+        p.id === playerId
+          ? {
+              ...p,
+              activeCurses: [
+                ...p.activeCurses,
+                {
+                  hexId: 'appliance-jinx',
+                  casterId: 'debug',
+                  casterName: 'DEBUG',
+                  effectType: 'break-appliance' as const,
+                  magnitude: 1,
+                  weeksRemaining: 3,
+                },
+              ],
+            }
+          : p
+      ),
+    }));
+  };
+
+  const clearCurses = () => {
+    setState(s => ({
+      players: s.players.map(p =>
+        p.id === playerId ? { ...p, activeCurses: [] } : p
+      ),
+    }));
+  };
 
   return (
     <OptionSection title="Player State">
@@ -328,6 +360,14 @@ function PlayerStateSection({ playerId }: { playerId: string | undefined }) {
         <button onClick={() => promoteGuildRank(playerId)} className={DEBUG_BTN}>
           Promote Guild Rank
         </button>
+        <div className="grid grid-cols-2 gap-1 pt-1 border-t border-purple-400/30">
+          <button onClick={injectTestCurse} className={`${SMALL_BTN} bg-purple-900/30 border-purple-500/50 text-purple-700 hover:bg-purple-200`}>
+            🔮 Add Curse
+          </button>
+          <button onClick={clearCurses} className={`${SMALL_BTN} bg-purple-100/20 border-purple-400/30 text-purple-600 hover:bg-purple-100`}>
+            ✨ Clear Curse
+          </button>
+        </div>
       </div>
     </OptionSection>
   );
