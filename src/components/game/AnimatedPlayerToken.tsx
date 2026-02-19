@@ -96,10 +96,12 @@ export function AnimatedPlayerToken({
 
   if (!position) return null;
 
+  const hasCurse = player.activeCurses.length > 0;
+
   return (
     <div
       className={cn(
-        'absolute w-20 h-20 rounded-full shadow-xl z-50',
+        'absolute w-20 h-20 rounded-full shadow-xl z-50 relative',
         isCurrent && !animationPath && 'ring-2 ring-yellow-400 ring-offset-1 animate-bounce',
         animationPath && 'scale-110'
       )}
@@ -107,7 +109,6 @@ export function AnimatedPlayerToken({
         left: `${position.x}%`,
         top: `${position.y}%`,
         transform: 'translate(-50%, -50%)',
-        // Smooth CSS transition matching JS interval for fluid movement
         transition: `left ${ANIMATION_STEP_MS}ms ease-in-out, top ${ANIMATION_STEP_MS}ms ease-in-out`,
         boxShadow: `0 4px 15px rgba(0,0,0,0.4), 0 0 ${isCurrent ? '20px' : '10px'} ${player.color}`,
       }}
@@ -119,8 +120,45 @@ export function AnimatedPlayerToken({
         playerName={player.name}
         size={80}
         isAI={player.isAI}
-        hasCurse={player.activeCurses.length > 0}
+        hasCurse={hasCurse}
       />
+      {hasCurse && (
+        <>
+          {/* 🔮 badge */}
+          <div
+            className="absolute -top-1 -right-1 z-10 rounded-full
+                       w-5 h-5 flex items-center justify-center leading-none
+                       animate-curse-pulse select-none pointer-events-none"
+            style={{
+              fontSize: '10px',
+              background: 'rgba(59, 7, 100, 0.85)',
+              border: '1px solid rgba(192, 132, 252, 0.6)',
+            }}
+          >
+            🔮
+          </div>
+          {/* Partikler */}
+          {[
+            { left: '15%', delay: 0 },
+            { left: '50%', delay: 0.7 },
+            { left: '80%', delay: 1.3 },
+          ].map((p, i) => (
+            <span
+              key={i}
+              className="absolute animate-curse-particle pointer-events-none select-none"
+              style={{
+                left: p.left,
+                bottom: '100%',
+                fontSize: '8px',
+                color: 'rgb(192, 132, 252)',
+                animationDelay: `${p.delay}s`,
+              }}
+            >
+              ✦
+            </span>
+          ))}
+        </>
+      )}
     </div>
   );
 }
