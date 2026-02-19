@@ -41,6 +41,7 @@ import { useGameBoardKeyboard } from '@/hooks/useGameBoardKeyboard';
 import { useLocationClick } from '@/hooks/useLocationClick';
 import { StoneBorderFrame } from './StoneBorderFrame';
 import { CurseAppliancePanel } from './CurseAppliancePanel';
+import { CurseToadPanel } from './CurseToadPanel';
 import { registerAIAnimateCallback } from '@/hooks/useAIAnimationBridge';
 
 export function GameBoard() {
@@ -65,6 +66,8 @@ export function GameBoard() {
     setShowTutorial,
     applianceBreakageEvent,
     dismissApplianceBreakageEvent,
+    toadCurseEvent,
+    dismissToadCurseEvent,
     deathEvent,
     dismissDeathEvent,
     weather,
@@ -333,7 +336,7 @@ export function GameBoard() {
           {/* Center UI panel */}
           {/* Mobile: positioned via mobileOverrides when location selected or event, hidden otherwise */}
           {/* Desktop: always visible, positioned within the board frame */}
-          {(!isMobile || selectedLocation || (phase === 'event' && currentEvent) || (applianceBreakageEvent?.fromCurse)) && (
+          {(!isMobile || selectedLocation || (phase === 'event' && currentEvent) || (applianceBreakageEvent?.fromCurse) || toadCurseEvent) && (
             <div
               className={`absolute overflow-hidden z-10 ${isMobile ? 'rounded-xl' : ''}`}
               style={{
@@ -344,8 +347,14 @@ export function GameBoard() {
               }}
             >
               <div className={`w-full h-full overflow-hidden flex flex-col bg-card/95 relative ${isMobile ? 'rounded-xl' : 'rounded-t-lg'}`}>
-                {isCursed && !applianceBreakageEvent?.fromCurse && <CursePanelOverlay isMobile={isMobile} />}
-                {applianceBreakageEvent?.fromCurse ? (
+                {isCursed && !applianceBreakageEvent?.fromCurse && !toadCurseEvent && <CursePanelOverlay isMobile={isMobile} />}
+                {toadCurseEvent ? (
+                  <CurseToadPanel
+                    hoursLost={toadCurseEvent.hoursLost}
+                    curserName={toadCurseEvent.curserName}
+                    onDismiss={dismissToadCurseEvent}
+                  />
+                ) : applianceBreakageEvent?.fromCurse ? (
                   <CurseAppliancePanel
                     applianceId={applianceBreakageEvent.applianceId}
                     repairCost={applianceBreakageEvent.repairCost}

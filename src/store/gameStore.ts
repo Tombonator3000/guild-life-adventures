@@ -359,6 +359,11 @@ export const useGameStore = create<GameStore>((set, get) => {
       if (get().networkMode === 'guest') markEventDismissed('applianceBreakageEvent');
       set({ applianceBreakageEvent: null });
     },
+    // Toad curse event state
+    toadCurseEvent: null,
+    dismissToadCurseEvent: () => {
+      set({ toadCurseEvent: null });
+    },
     // Weekend event state
     dismissWeekendEvent: () => {
       if (get().networkMode === 'guest') markEventDismissed('weekendEvent');
