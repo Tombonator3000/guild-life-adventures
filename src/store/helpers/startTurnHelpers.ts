@@ -435,7 +435,14 @@ export function createStartTurn(set: SetFn, get: GetFn) {
           timeRemaining: Math.max(0, p.timeRemaining - toadCurse.magnitude),
         }));
         if (!currentPlayer.isAI) {
-          eventMessages.push(`🐸 ${currentPlayer.name} is still a frog! Ribbiting around wastes ${toadCurse.magnitude} hours.`);
+          // Find the caster name from the active curse
+          const activeToadCurse = currentPlayer.activeCurses?.find(c => c.effectType === 'toad-transformation');
+          set({
+            toadCurseEvent: {
+              hoursLost: toadCurse.magnitude,
+              curserName: activeToadCurse?.casterName,
+            },
+          });
         }
         currentPlayer = getPlayer(get, playerId);
       }

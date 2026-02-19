@@ -87,6 +87,9 @@ export interface GameStore extends GameState {
   begForMoreTime: (playerId: string) => { success: boolean; message: string };
   applianceBreakageEvent: { playerId: string; applianceId: string; repairCost: number; fromCurse?: boolean; curserName?: string } | null;
   dismissApplianceBreakageEvent: () => void;
+  // Toad curse event (shown at start of turn)
+  toadCurseEvent: { hoursLost: number; curserName?: string } | null;
+  dismissToadCurseEvent: () => void;
   // Death event modal
   dismissDeathEvent: () => void;
   // Equipment actions
