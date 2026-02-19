@@ -43,7 +43,8 @@ export type HexEffectType =
   | 'destroy-food'         // Spoilage Curse: destroy all food
   | 'break-appliance'      // Appliance Jinx: break random appliance
   | 'destroy-clothing'     // Wardrobe Hex: clothing → 0
-  | 'legendary-ruin';      // Hex of Ruin: close all shops + lose 25% gold
+  | 'legendary-ruin'       // Hex of Ruin: close all shops + lose 25% gold
+  | 'toad-transformation'; // Curse of the Toad: become a frog, lose 40 hours
 
 export interface HexSource {
   location: 'enchanter' | 'shadow-market' | 'graveyard' | 'dungeon';
@@ -266,6 +267,21 @@ export const PERSONAL_CURSES: HexDefinition[] = [
     sources: [
       { location: 'enchanter', requiresFloorCleared: 2 },
       { location: 'dungeon', dungeonFloor: 3, dropChance: 0.04 },
+    ],
+  },
+  {
+    id: 'curse-of-the-toad',
+    name: 'Curse of the Toad',
+    category: 'personal',
+    description: 'Target turns into a frog for 1 week, losing 40 hours of time.',
+    flavorText: 'Ribbit. Your fingers are green. Your legs are shorter. Oh no.',
+    basePrice: 450,
+    castTime: 2,
+    duration: 1,
+    effect: { type: 'toad-transformation', magnitude: 40 },
+    sources: [
+      { location: 'shadow-market' },
+      { location: 'enchanter', requiresFloorCleared: 3 },
     ],
   },
 ];

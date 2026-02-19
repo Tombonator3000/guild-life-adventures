@@ -69,6 +69,7 @@ export function GameBoard() {
     dismissDeathEvent,
     weather,
   } = useGameStore();
+  const locationHexes = useGameStore(s => s.locationHexes);
   const { event: shadowfingersEvent, dismiss: dismissShadowfingers } = useShadowfingersModal();
   const { isOnline, isGuest, networkMode, broadcastMovement, remoteAnimation, clearRemoteAnimation, latency } = useNetworkSync();
   const localPlayerId = useGameStore(s => s.localPlayerId);
@@ -266,6 +267,10 @@ export function GameBoard() {
               const moveCost = baseMoveCost + weatherExtra;
               const isCurrentLocation = currentPlayer?.currentLocation === location.id;
 
+              const activeHex = locationHexes?.find(
+                h => h.targetLocation === location.id && h.weeksRemaining > 0
+              );
+
               return (
                 <LocationZone
                   key={location.id}
@@ -274,6 +279,8 @@ export function GameBoard() {
                   isCurrentLocation={isCurrentLocation && !animatingPlayer}
                   moveCost={moveCost}
                   onClick={() => handleLocationClick(location.id)}
+                  isHexed={!!activeHex}
+                  hexCasterName={activeHex?.casterName}
                 >
                   {playersHere.map((player, index) => (
                     <PlayerToken
