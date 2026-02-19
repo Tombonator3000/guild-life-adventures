@@ -293,41 +293,43 @@ function GettingStartedChapter() {
 
       <H2>Your First Turn</H2>
       <P>
-        You start with a small amount of gold, basic clothing, some food, and a room in
+        You start with 100 gold, basic clothing, some food, and a room in
         The Slums. Your immediate priorities should be:
       </P>
       <P>
         <strong>1. Get a job.</strong> Head to the <strong>Guild Hall</strong> and apply for an
-        entry-level position. You'll need a job to earn gold.
+        entry-level position like Floor Sweeper (4g/hr) or Porter — no requirements needed.
+        The Guild Hall is also your workplace, so you can start working immediately.
       </P>
       <P>
-        <strong>2. Buy food.</strong> Visit the <strong>General Store</strong> or
-        <strong> Rusty Tankard</strong> to stock up. Running out of food causes starvation
-        penalties (-10 HP, -8 happiness at turn start).
+        <strong>2. Buy food.</strong> Visit the <strong>Rusty Tankard</strong> for safe food, or
+        the <strong>General Store</strong> (but food spoils without a Preservation Box!). Running
+        out of food costs you 20 hours and can trigger a doctor visit.
       </P>
       <P>
-        <strong>3. Work.</strong> Go to your workplace and put in hours. Each hour of work
+        <strong>3. Work.</strong> Go to your workplace and put in hours. Each 6-hour shift
         earns wages and builds experience and dependability.
       </P>
 
       <Tip>
         Don't spend too many hours moving around on your first turn. Pick 2-3 key actions
-        and focus. You have 60 hours, but movement and building entry eat into that fast.
+        and focus. You have 60 hours, but movement eats into that fast. Rent isn't due
+        until week 4, so focus on earning gold first.
       </Tip>
 
       <H2>Starting Stats</H2>
       <Table
         headers={['Stat', 'Starting Value']}
         rows={[
-          ['Gold', '~100g (varies)'],
+          ['Gold', '100g'],
           ['Health', '100 HP'],
-          ['Happiness', '10'],
-          ['Food Supply', '50 units'],
-          ['Clothing', '6 weeks worth'],
+          ['Happiness', '50'],
+          ['Food Supply', '50 units (~1 week)'],
+          ['Clothing', '35 condition (Casual tier)'],
           ['Relaxation', '30'],
           ['Experience', '0'],
-          ['Dependability', '0'],
-          ['Housing', 'The Slums'],
+          ['Dependability', '50'],
+          ['Housing', 'The Slums (rent due week 4)'],
         ]}
       />
     </div>
@@ -368,15 +370,14 @@ function BoardChapter() {
 
       <H2>Movement</H2>
       <P>
-        Moving between adjacent locations costs <strong>1 hour per step</strong>. Entering a
-        location costs an additional <strong>2 hours</strong>. So traveling 3 steps and entering
-        costs 5 hours total. Click any location on the board to travel there directly.
+        Moving between adjacent locations costs <strong>1 hour per step</strong>. So traveling
+        3 steps costs 3 hours. Click any location on the board to travel there — the game
+        automatically picks the shortest path (clockwise or counter-clockwise).
       </P>
 
       <Tip>
         Plan your route to minimize travel time. If the Guild Hall and Forge are nearby,
-        visit them in the same turn. A full lap around the board takes about 10 hours of
-        movement alone.
+        visit them in the same turn. A full lap around the board is about 8 steps.
       </Tip>
     </div>
   );
@@ -399,7 +400,6 @@ function TurnsChapter() {
         headers={['Action', 'Time Cost']}
         rows={[
           ['Movement per step', '1 hour'],
-          ['Entering a location', '2 hours'],
           ['Working (per session)', '6 hours'],
           ['Studying (per lesson)', '6 hours'],
           ['Dungeon floor (varies)', '6–28 hours'],
@@ -419,8 +419,9 @@ function TurnsChapter() {
       <H2>Start-of-Turn Events</H2>
       <P>At the start of each turn, several things happen automatically:</P>
       <P>
-        <strong>Food check:</strong> If you have no food, you suffer starvation penalties
-        (-10 health, -8 happiness).
+        <strong>Food check:</strong> If you have no food, you lose 20 hours searching for
+        food, plus suffer -10 health and -8 happiness. There's also a 25% chance of
+        collapsing and needing a doctor visit.
       </P>
       <P>
         <strong>Rent check:</strong> Every 4 weeks, rent is due. Unpaid rent leads to
@@ -573,12 +574,17 @@ function HousingChapter() {
         Office</strong> to pay rent or upgrade your living situation.
       </P>
 
+      <P>
+        You start the game with a room in <strong>The Slums</strong>. Rent is due every 4 weeks,
+        with your first payment due on week 4.
+      </P>
+
       <H2>Housing Tiers</H2>
       <Table
-        headers={['Tier', 'Rent/4 Weeks', 'Happiness', 'Theft Risk', 'Notes']}
+        headers={['Tier', 'Rent/Week', 'Happiness', 'Theft Risk', 'Notes']}
         rows={[
           ['Homeless', '0g', '-3/turn', '50%', 'Sleeping on streets. Very dangerous.'],
-          ['The Slums', '75g', '0', '25%', 'Cheap but Shadowfingers lurks.'],
+          ['The Slums', '75g', '0', '25%', 'Starting home. Cheap but Shadowfingers lurks.'],
           ['Noble Heights', '120g', '+3/turn', '0%', 'Luxury and completely safe.'],
         ]}
       />
@@ -619,8 +625,9 @@ function ItemsChapter() {
         Tavern food is always safe but more expensive. Invest in a Preservation Box early!
       </P>
       <P>
-        Food depletes by <strong>25 units per week</strong>. If you reach 0 food at the start
-        of a turn, you suffer starvation penalties. Keep at least one week's supply on hand.
+        Food depletes by <strong>35 units per week</strong>. If you reach 0 food at the start
+        of a turn, you lose 20 hours and suffer health/happiness penalties. Keep at least
+        one week's supply on hand.
       </P>
 
       <H2>Appliances (Enchanter's Workshop & Shadow Market)</H2>
@@ -715,9 +722,10 @@ function HealthChapter() {
 
       <H2>Food & Starvation</H2>
       <P>
-        Food depletes by <strong>25 units per week</strong> automatically. If you start a turn
-        with 0 food, you suffer starvation: <strong>-10 health</strong> and
-        <strong> -8 happiness</strong>. Always keep food stocked!
+        Food depletes by <strong>35 units per week</strong> automatically. If you start a turn
+        with 0 food, you lose <strong>20 hours</strong> searching for food, suffer
+        <strong> -10 health</strong> and <strong>-8 happiness</strong>, and have a 25% chance of
+        needing a doctor visit. Always keep food stocked!
       </P>
 
       <H2>Food Sources</H2>
