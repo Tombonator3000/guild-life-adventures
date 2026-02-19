@@ -428,6 +428,18 @@ export function createStartTurn(set: SetFn, get: GetFn) {
         currentPlayer = getPlayer(get, playerId);
       }
 
+      // --- Phase 6c: Curse of the Toad (40h time loss + transformation) ---
+      const toadCurse = hasCurseEffect(currentPlayer, 'toad-transformation');
+      if (toadCurse) {
+        updatePlayerById(set, playerId, (p) => ({
+          timeRemaining: Math.max(0, p.timeRemaining - toadCurse.magnitude),
+        }));
+        if (!currentPlayer.isAI) {
+          eventMessages.push(`🐸 ${currentPlayer.name} is still a frog! Ribbiting around wastes ${toadCurse.magnitude} hours.`);
+        }
+        currentPlayer = getPlayer(get, playerId);
+      }
+
       // --- Phase 7: Start-of-turn bonuses ---
       processStartOfTurnBonuses(set, playerId, currentPlayer, get().week, eventMessages);
 

@@ -15,6 +15,8 @@ interface CharacterPortraitProps {
   shape?: 'circle' | 'rect';
   /** Show cursed aura when player has active hexes */
   hasCurse?: boolean;
+  /** Show frog transformation when player has toad-transformation curse */
+  isToad?: boolean;
 }
 
 /**
@@ -31,6 +33,7 @@ export function CharacterPortrait({
   isAI = false,
   shape = 'circle',
   hasCurse = false,
+  isToad = false,
 }: CharacterPortraitProps) {
   const [imageError, setImageError] = useState(false);
   const portrait = getPortrait(portraitId);
@@ -41,6 +44,25 @@ export function CharacterPortrait({
   useEffect(() => {
     setImageError(false);
   }, [portraitId]);
+
+  // Toad transformation: show 🐸 instead of portrait
+  if (isToad) {
+    return (
+      <div
+        className={`${roundedClass} border-2 border-purple-500/80 flex items-center justify-center relative ${className}`}
+        style={{
+          width: size,
+          height: actualHeight,
+          backgroundColor: '#166534',
+          minWidth: size,
+          minHeight: actualHeight,
+        }}
+      >
+        <span style={{ fontSize: size * 0.65, lineHeight: 1 }} role="img" aria-label="frog">🐸</span>
+        <CurseOverlay size={size} height={actualHeight} shape={shape} />
+      </div>
+    );
+  }
 
   // If no portrait selected, show colored circle with initial
   if (!portrait) {
