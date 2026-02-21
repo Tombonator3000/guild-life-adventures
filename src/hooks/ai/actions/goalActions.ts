@@ -14,10 +14,12 @@ import type { AIAction } from '../types';
 import {
   getBestAvailableJob,
   getNextDegree,
+  getNextDegreeByROI,
   calculateBankingStrategy,
   getJobLocation,
   getBestQuest,
   getBestDungeonFloor,
+  forecastCashFlow,
 } from '../strategy';
 import type { ActionContext } from './actionContext';
 
@@ -25,10 +27,20 @@ import type { ActionContext } from './actionContext';
 
 function generateEducationActions(ctx: ActionContext): AIAction[] {
   const actions: AIAction[] = [];
-  const { player, settings, currentLocation, moveCost } = ctx;
+  const { player, settings, currentLocation, moveCost, week } = ctx;
 
-  const nextDegree = getNextDegree(player, settings);
+  // Hard AI uses ROI-ranked degree selection; medium/easy use existing logic
+  const nextDegree = getNextDegreeByROI(player, settings);
   if (!nextDegree) return actions;
+
+  // Cash flow check: don't start an expensive degree if we'll run short
+  if (settings.planningDepth >= 2) {
+    const forecast = forecastCashFlow(player, week, 2);
+    if (forecast.shortfallRisk && player.gold < nextDegree.costPerSession * 3) {
+      // Skip education this turn if cash flow is tight
+      return actions;
+    }
+  }
 
   const degreeProgress = player.degreeProgress[nextDegree.id] || 0;
   const sessionsLeft = nextDegree.sessionsRequired - degreeProgress;
@@ -72,7 +84,7 @@ function generateEducationActions(ctx: ActionContext): AIAction[] {
 
 function generateWealthActions(ctx: ActionContext): AIAction[] {
   const actions: AIAction[] = [];
-  const { player, currentLocation, moveCost } = ctx;
+  const { player, currentLocation, moveCost, settings, week } = ctx;
 
   // Prioritize working if we have a good job
   if (player.currentJob) {
@@ -100,15 +112,23 @@ function generateWealthActions(ctx: ActionContext): AIAction[] {
     }
   }
 
-  // Banking strategy - deposit excess to avoid robbery
-  const banking = calculateBankingStrategy(player, ctx.settings);
-  if (banking.deposit > 50) {
+  // Banking strategy — use cash flow forecast for strategic AI (safe deposit amount)
+  let depositAmount: number;
+  if (settings.planningDepth >= 2) {
+    const forecast = forecastCashFlow(player, week, 2);
+    depositAmount = forecast.safeBankingAmount;
+  } else {
+    const banking = calculateBankingStrategy(player, settings);
+    depositAmount = banking.deposit;
+  }
+
+  if (depositAmount > 50) {
     if (currentLocation === 'bank') {
       actions.push({
         type: 'deposit-bank',
         priority: 60,
-        description: `Deposit ${banking.deposit}g in bank`,
-        details: { amount: banking.deposit },
+        description: `Deposit ${depositAmount}g in bank (forecast-safe)`,
+        details: { amount: depositAmount },
       });
     } else if (player.timeRemaining > moveCost('bank') + 2) {
       actions.push({

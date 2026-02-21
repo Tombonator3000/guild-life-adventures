@@ -18,12 +18,14 @@ import type { Player } from '@/types/game.types';
 
 // Import from extracted modules
 import { DIFFICULTY_SETTINGS } from '@/hooks/ai/types';
-import type { AIDifficulty, AIAction } from '@/hooks/ai/types';
+import type { AIDifficulty, AIAction, CommitmentPlan } from '@/hooks/ai/types';
 import { calculateGoalProgress, calculateResourceUrgency, getWeakestGoal } from '@/hooks/ai/strategy';
 import { generateActions } from '@/hooks/ai/actionGenerator';
 import { executeAIAction, type StoreActions } from '@/hooks/ai/actionExecutor';
 import { observeHumanPlayers, resetObservations } from '@/hooks/ai/playerObserver';
 import { recordPerformance, calculateAdjustment, applyAdjustment, resetPerformanceHistory } from '@/hooks/ai/difficultyAdjuster';
+import { recordAIGoalProgress, resetVelocityData } from '@/hooks/ai/goalVelocityTracker';
+import { generateCommitmentPlan, isCommitmentValid } from '@/hooks/ai/commitmentPlan';
 
 // Re-export types for backwards compatibility
 export type { AIDifficulty, AIAction, GoalProgress, ResourceUrgency } from '@/hooks/ai/types';
@@ -38,6 +40,8 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
   const actionLogRef = useRef<string[]>([]);
   // Track actions that failed this turn to avoid re-attempting them
   const failedActionsRef = useRef<Set<string>>(new Set());
+  // Commitment plan: persists across turns for 2-4 turn strategic focus
+  const commitmentPlanRef = useRef<CommitmentPlan | null>(null);
 
   const store = useGameStore();
   const { goalSettings, endTurn } = store;
@@ -125,6 +129,24 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     observeHumanPlayers(humanPlayers, initState.week);
     recordPerformance(player, humanPlayers, goalSettings, initState.week);
 
+    // ── Goal velocity tracking: record progress snapshot at turn start ──
+    const initProgress = calculateGoalProgress(player, goalSettings, initState.stockPrices);
+    recordAIGoalProgress(player.id, initProgress, initState.week);
+
+    // ── Commitment plan: validate existing plan or generate a new one ──
+    if (commitmentPlanRef.current && !isCommitmentValid(
+      commitmentPlanRef.current, player, initProgress, initState.week
+    )) {
+      console.log(`[Grimwald AI] ${player.name} commitment plan expired: ${commitmentPlanRef.current.description}`);
+      commitmentPlanRef.current = null;
+    }
+    if (!commitmentPlanRef.current) {
+      commitmentPlanRef.current = generateCommitmentPlan(player, initProgress, baseSettings, initState.week);
+      if (commitmentPlanRef.current) {
+        console.log(`[Grimwald AI] ${player.name} new commitment: ${commitmentPlanRef.current.description}`);
+      }
+    }
+
     // ── Calculate dynamic difficulty adjustment ──
     const adjustment = calculateAdjustment(player.id);
     const settings = applyAdjustment(baseSettings, adjustment);
@@ -154,7 +176,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
           const fastState = useGameStore.getState();
           const fastPlayer = fastState.players.find(p => p.id === player.id);
           if (!fastPlayer || fastPlayer.timeRemaining < 1 || fastPlayer.isGameOver) break;
-          const fastActions = generateActions(fastPlayer, goalSettings, settings, fastState.week, fastState.priceModifier, fastState.stockPrices);
+          const fastActions = generateActions(fastPlayer, goalSettings, settings, fastState.week, fastState.priceModifier, fastState.stockPrices, commitmentPlanRef.current);
           if (fastActions[0].type === 'end-turn') break;
           const success = executeAction(fastPlayer, fastActions[0]);
           if (!success) {
@@ -181,14 +203,15 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         return;
       }
 
-      // Generate possible actions (with adjusted settings)
+      // Generate possible actions (with adjusted settings + commitment plan)
       const actions = generateActions(
         currentPlayer,
         goalSettings,
         settings,
         state.week,
         state.priceModifier,
-        state.stockPrices
+        state.stockPrices,
+        commitmentPlanRef.current,
       );
 
       // Filter out actions that already failed this turn (prevent re-attempting)
@@ -242,6 +265,8 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
   const resetAdaptiveSystems = useCallback(() => {
     resetObservations();
     resetPerformanceHistory();
+    resetVelocityData();
+    commitmentPlanRef.current = null;
   }, []);
 
   /**

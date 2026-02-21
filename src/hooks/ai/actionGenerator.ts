@@ -11,7 +11,7 @@ import { HOURS_PER_TURN } from '@/types/game.types';
 import { calculatePathDistance } from '@/data/locations';
 import { useGameStore } from '@/store/gameStore';
 
-import type { DifficultySettings, AIAction, AIPersonality } from './types';
+import type { DifficultySettings, AIAction, AIPersonality, CommitmentPlan } from './types';
 import { getAIPersonality } from './types';
 import {
   calculateGoalProgress,
@@ -29,6 +29,8 @@ import {
 } from './actions';
 import { getCounterStrategyWeights, type CounterStrategyWeights } from './playerObserver';
 import { identifyNeededVisits, planTurnRoute } from './turnPlanner';
+import { getVelocityAdjustments } from './goalVelocityTracker';
+import { getCommitmentBonus } from './commitmentPlan';
 
 /**
  * Maps each AI action type to its personality weight category.
@@ -284,6 +286,39 @@ function applyMistakes(actions: AIAction[], mistakeChance: number): void {
 }
 
 /**
+ * Apply velocity-based priority adjustments.
+ * Boosts actions for goals that have momentum; boosts alternatives for stuck goals.
+ */
+function applyVelocityAdjustments(
+  actions: AIAction[],
+  playerId: string,
+  week: number,
+  planningDepth: number,
+): void {
+  const adjustments = getVelocityAdjustments(playerId, week, planningDepth);
+  for (const action of actions) {
+    const multiplier = adjustments[action.type];
+    if (multiplier && multiplier !== 1.0) {
+      action.priority = Math.round(action.priority * multiplier);
+    }
+  }
+}
+
+/**
+ * Apply commitment plan priority bonus to aligned actions.
+ * Gives the AI a sense of purpose and direction across multiple turns.
+ */
+function applyCommitmentBonus(actions: AIAction[], plan: CommitmentPlan | null): void {
+  if (!plan) return;
+  for (const action of actions) {
+    const bonus = getCommitmentBonus(plan, action.type);
+    if (bonus > 0) {
+      action.priority += bonus;
+    }
+  }
+}
+
+/**
  * Main AI decision engine - generates prioritized list of possible actions
  */
 export function generateActions(
@@ -292,7 +327,8 @@ export function generateActions(
   settings: DifficultySettings,
   week: number,
   priceModifier: number,
-  stockPrices?: Record<string, number>
+  stockPrices?: Record<string, number>,
+  commitmentPlan?: CommitmentPlan | null,
 ): AIAction[] {
   const progress = calculateGoalProgress(player, goals, stockPrices);
   const urgency = calculateResourceUrgency(player);
@@ -367,6 +403,16 @@ export function generateActions(
     const counterWeights = getCounterStrategyWeights(humanRivalIds, settings.planningDepth);
     applyCounterStrategyWeights(actions, counterWeights);
   }
+
+  // ============================================
+  // VELOCITY: Boost alternatives for stuck goals, momentum for fast ones
+  // ============================================
+  applyVelocityAdjustments(actions, player.id, week, settings.planningDepth);
+
+  // ============================================
+  // COMMITMENT: Bonus for actions aligned with the current multi-turn plan
+  // ============================================
+  applyCommitmentBonus(actions, commitmentPlan ?? null);
 
   // ============================================
   // TIME BUDGET: Adjust priorities based on turn phase
