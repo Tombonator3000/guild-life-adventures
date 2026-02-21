@@ -3,6 +3,52 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+## 2026-02-21 — UI Fixes: Cursed Panel, Dirty Tricks, Sound FX, Player Home, Fresh Food (UTC 09:30)
+
+### Overview
+
+Five bug fixes and feature improvements based on player feedback.
+
+### Fix 1: Cursed Dialog Text Color (CurseAppliancePanel + CurseToadPanel)
+- **Problem**: Text using `text-foreground` (CSS var `--foreground: 40 30% 90%` = near-white) was invisible on `bg-card` (beige/parchment) background
+- **Fix**: Replaced `text-foreground` on bold highlight spans with hardcoded `text-[#3d2a14]` (dark parchment brown)
+- **Fix**: Changed `variant="outline"` Button to explicit dark purple button (`bg-purple-900 text-amber-100`) — readable and fitting the hex/curse theme
+- **Files**: `src/components/game/CurseAppliancePanel.tsx`, `src/components/game/CurseToadPanel.tsx`
+
+### Fix 2: Image Too Large in Curse Panels
+- **Problem**: `maxHeight: '45%'` / `'50%'` caused the curse image to dominate the center panel, pushing content off-screen
+- **Fix**: Reduced to `maxHeight: '32%'`, changed `object-cover` → `object-contain` for proper centering
+- **Files**: `src/components/game/CurseAppliancePanel.tsx`, `src/components/game/CurseToadPanel.tsx`
+
+### Fix 3: Dirty Tricks Text Unreadable
+- **Problem**: `HexShopPanel` used `accentColor = '#991b1b'` (dark red) for section headers in shadow-market variant — near-invisible on most backgrounds
+- **Fix**: Changed to `'#c084fc'` (bright violet/purple) — high-contrast and thematically appropriate for dark magic
+- **File**: `src/components/game/HexShopPanel.tsx`
+
+### Feature 4: Sound Effect on Curse/Hex Cast
+- Added `'curse-cast'` to `SFX_LIBRARY` (file: `curse-cast.mp3`, falls back to synth)
+- Synth fallback: ominous descending tritone (440Hz → 311Hz → 196Hz, sawtooth wave + noise burst)
+- `playSFX('curse-cast')` called on successful `handleCastLocationHex` and `handleCastCurse` in `HexShopPanel`
+- `CurseAppliancePanel` and `CurseToadPanel` play the sound on mount (when player is cursed by enemy)
+- **Files**: `src/audio/sfxManager.ts`, `src/audio/synthSFX.ts`, `src/components/game/HexShopPanel.tsx`, `src/components/game/CurseAppliancePanel.tsx`, `src/components/game/CurseToadPanel.tsx`
+
+### Fix 5: Player Icon Returns Home at Turn End
+- **Problem**: In multi-player, ending player's icon stayed at their last visited location during the next player's turn
+- **Fix**: `endTurn()` else branch now also resets the ending player's `currentLocation` to `getHomeLocation(housing)` in the same `set()` call that advances to the next player
+- **File**: `src/store/helpers/turnHelpers.ts`
+
+### Feature 6: Preservation Box Auto-Replenishes Food Weekly
+- **Problem**: Fresh food in Preservation Box only prevented starvation (Phase 3), but the food meter still dropped each week
+- **Fix**: `processNeeds()` now auto-consumes fresh food units after weekly depletion if player has a working Preservation Box. Each unit restores `FOOD_DEPLETION_PER_WEEK` (35) food points, so 1 unit per week keeps the meter full
+- Players receive a message when auto-replenishment occurs (AI players silently benefit)
+- **File**: `src/store/helpers/weekEndHelpers.ts`
+
+### Verification
+- 332 tests all pass (`bun run test`)
+- Build succeeds without errors (`bun run build`)
+
+---
+
 ## 2026-02-21 — Enhanced AI Intelligence: 4 New Systems (UTC 09:00)
 
 ### Overview

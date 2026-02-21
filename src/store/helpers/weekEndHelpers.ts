@@ -250,6 +250,22 @@ function processNeeds(p: Player, _isClothingDegradation: boolean, msgs: string[]
     p.hasStoreBoughtFood = false;
   }
 
+  // Auto-replenish from Preservation Box fresh food supply.
+  // If the player has a working Preservation Box and stored fresh food, automatically consume
+  // units each week to keep the food meter topped up (1 unit = 1 week's worth of food drain).
+  const hasWorkingBox = p.appliances['preservation-box'] && !p.appliances['preservation-box'].isBroken;
+  if (hasWorkingBox && p.freshFood > 0 && p.foodLevel < 100) {
+    const FOOD_PER_UNIT = FOOD_DEPLETION_PER_WEEK; // 35 per unit — replaces one week's drain
+    const deficit = 100 - p.foodLevel;
+    const unitsNeeded = Math.ceil(deficit / FOOD_PER_UNIT);
+    const unitsConsumed = Math.min(unitsNeeded, p.freshFood);
+    p.freshFood = Math.max(0, p.freshFood - unitsConsumed);
+    p.foodLevel = Math.min(100, p.foodLevel + unitsConsumed * FOOD_PER_UNIT);
+    if (!p.isAI) {
+      msgs.push(`Preservation Box: ${unitsConsumed} fresh food unit${unitsConsumed !== 1 ? 's' : ''} auto-consumed to replenish food (+${unitsConsumed * FOOD_PER_UNIT} food).`);
+    }
+  }
+
   // Starvation note: Jones only penalizes -20 hours at turn start (handled in startTurnHelpers).
   // Week-end just depletes food — no additional health/happiness penalty here.
 

@@ -1,6 +1,7 @@
 import hexCurseImage from '@/assets/events/hex-appliance-curse.jpg';
-import { Button } from '@/components/ui/button';
 import { getAppliance } from '@/data/items';
+import { playSFX } from '@/audio/sfxManager';
+import { useEffect } from 'react';
 
 interface CurseAppliancePanelProps {
   applianceId: string;
@@ -19,14 +20,18 @@ export function CurseAppliancePanel({
   const applianceName = appliance?.name ?? applianceId;
   const curser = curserName ?? 'An enemy';
 
+  useEffect(() => {
+    playSFX('curse-cast');
+  }, []);
+
   return (
     <div className="flex flex-col h-full bg-card text-card-foreground overflow-hidden">
       {/* Woodcut image with sepia filter */}
-      <div className="relative flex-shrink-0 overflow-hidden" style={{ maxHeight: '45%' }}>
+      <div className="relative flex-shrink-0 overflow-hidden flex items-center justify-center" style={{ maxHeight: '32%' }}>
         <img
           src={hexCurseImage}
           alt="Dark sorcerer casting a hex curse"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
           style={{ filter: 'sepia(0.3) brightness(0.92)' }}
         />
         {/* Purple vignette overlay for hex atmosphere */}
@@ -47,26 +52,24 @@ export function CurseAppliancePanel({
 
         {/* Appliance destroyed */}
         <p className="text-sm text-muted-foreground leading-snug">
-          Your <span className="font-semibold text-foreground">{applianceName}</span> has been
+          Your <span className="font-semibold text-[#3d2a14]">{applianceName}</span> has been
           destroyed by dark magic!
         </p>
 
         {/* Repair info */}
         <div className="mt-1 rounded-md border border-border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
           Repair cost:{' '}
-          <span className="font-semibold text-foreground">{repairCost}g</span> at the{' '}
-          <span className="font-semibold text-foreground">Enchanter</span>
+          <span className="font-semibold text-[#3d2a14]">{repairCost}g</span> at the{' '}
+          <span className="font-semibold text-[#3d2a14]">Enchanter</span>
         </div>
 
         {/* Dismiss button */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="mt-2 w-full"
+        <button
+          className="mt-2 w-full bg-purple-900 text-amber-100 hover:bg-purple-800 border border-purple-700 text-sm font-semibold rounded px-3 py-1.5 transition-colors"
           onClick={onDismiss}
         >
           Understood
-        </Button>
+        </button>
       </div>
     </div>
   );
