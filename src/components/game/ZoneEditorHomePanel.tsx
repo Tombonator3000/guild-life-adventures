@@ -26,7 +26,7 @@ export const ALL_HOME_ITEMS: { id: string; icon: string; label: string; type: 'a
 /** Item icon: tries a JPG from public/items/, falls back to emoji */
 function ItemIcon({ itemId, icon, label }: { itemId: string; icon: string; label: string }) {
   const [imgFailed, setImgFailed] = useState(false);
-  const src = `${import.meta.env.BASE_URL}items/${itemId}.jpg`;
+  const src = `${import.meta.env.BASE_URL}items/${itemId}.png`;
 
   if (!imgFailed) {
     return (

@@ -45,7 +45,7 @@ function resolvePos(
 /** Item icon component: tries a JPG image first, falls back to emoji */
 function ItemIcon({ itemId, icon, size = 'normal' }: { itemId: string; icon: string; size?: 'normal' | 'small' }) {
   const [imgFailed, setImgFailed] = useState(false);
-  const src = `${import.meta.env.BASE_URL}items/${itemId}.jpg`;
+  const src = `${import.meta.env.BASE_URL}items/${itemId}.png`;
   const emojiStyle = {
     fontSize: size === 'small'
       ? 'clamp(0.8rem, 2vw, 1.4rem)'
