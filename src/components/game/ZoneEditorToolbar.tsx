@@ -83,6 +83,16 @@ export function ZoneEditorToolbar({
           >
             Mobile
           </button>
+          <button
+            onClick={() => setEditorMode('home')}
+            className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+              editorMode === 'home'
+                ? 'bg-rose-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Home
+          </button>
         </div>
         <label className="flex items-center gap-2 text-white">
           <input

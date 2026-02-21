@@ -4,7 +4,7 @@
  * so edits survive page reloads without needing to copy code.
  */
 
-import type { ZoneConfig, CenterPanelLayout, AnimationLayerConfig, MobileZoneOverrides } from '@/types/game.types';
+import type { ZoneConfig, CenterPanelLayout, AnimationLayerConfig, MobileZoneOverrides, HomeItemPositions } from '@/types/game.types';
 import type { CenterPanelConfig } from '@/components/game/ZoneEditor';
 import type { MovementWaypoint } from '@/data/locations';
 
@@ -17,8 +17,31 @@ export interface ZoneEditorSaveData {
   layout?: CenterPanelLayout; // Optional for backwards compat with pre-layout saves
   animationLayers?: AnimationLayerConfig[]; // Optional for backwards compat
   mobileOverrides?: MobileZoneOverrides; // Optional for backwards compat
+  homeItemPositions?: HomeItemPositions; // Optional for backwards compat
   savedAt: number;
 }
+
+/** Default home item positions matching the hardcoded values in RoomScene.tsx */
+export const DEFAULT_HOME_ITEM_POSITIONS: HomeItemPositions = {
+  // Appliances
+  'scrying-mirror':      { left: 8,  bottom: 38 },
+  'simple-scrying-glass':{ left: 8,  bottom: 38 },
+  'memory-crystal':      { left: 72, bottom: 44 },
+  'music-box':           { left: 60, bottom: 28 },
+  'cooking-fire':        { left: 82, bottom: 22 },
+  'preservation-box':    { left: 85, bottom: 38 },
+  'arcane-tome':         { left: 22, bottom: 30 },
+  'frost-chest':         { left: 90, bottom: 32 },
+  // Durables
+  'candles':      { left: 45, bottom: 52 },
+  'blanket':      { left: 35, bottom: 18 },
+  'furniture':    { left: 38, bottom: 32 },
+  'glow-orb':     { left: 50, bottom: 58 },
+  'warmth-stone': { left: 75, bottom: 16 },
+  'dagger':       { left: 15, bottom: 52 },
+  'sword':        { left: 12, bottom: 56 },
+  'shield':       { left: 18, bottom: 56 },
+};
 
 /**
  * Save zone editor config to localStorage
@@ -30,6 +53,7 @@ export function saveZoneConfig(
   layout?: CenterPanelLayout,
   animationLayers?: AnimationLayerConfig[],
   mobileOverrides?: MobileZoneOverrides,
+  homeItemPositions?: HomeItemPositions,
 ): boolean {
   try {
     const data: ZoneEditorSaveData = {
@@ -39,6 +63,7 @@ export function saveZoneConfig(
       layout,
       animationLayers,
       mobileOverrides,
+      homeItemPositions,
       savedAt: Date.now(),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));

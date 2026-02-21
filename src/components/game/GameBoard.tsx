@@ -117,6 +117,7 @@ export function GameBoard() {
     layout,
     animationLayers,
     mobileOverrides,
+    savedHomeItemPositions,
     handleSaveZones,
     handleResetZones,
     getLocationWithCustomPosition,
@@ -468,6 +469,7 @@ export function GameBoard() {
           initialLayout={layout}
           initialAnimationLayers={animationLayers}
           initialMobileOverrides={mobileOverrides}
+          initialHomeItemPositions={savedHomeItemPositions}
         />
       )}
 
