@@ -181,6 +181,13 @@ function applyDependabilityDecay(p: Player, msgs: string[]): void {
   if (!p.currentJob) {
     p.dependability = Math.max(0, p.dependability - 5); // Unemployed: heavy decay
   } else if (!p.workedThisTurn) {
+    // Don't penalise dependability when clothing is blocking the player from working —
+    // the employer knows the player is unable to meet the dress code, not skipping.
+    const job = getJob(p.currentJob);
+    if (job) {
+      const threshold = CLOTHING_THRESHOLDS[job.requiredClothing as keyof typeof CLOTHING_THRESHOLDS] ?? 0;
+      if (p.clothingCondition < threshold) return;
+    }
     const depPenalty = Math.max(1, Math.round(p.dependability * 0.10)); // 10% decay
     p.dependability = Math.max(0, p.dependability - depPenalty);
     if (!p.isAI) {
@@ -261,9 +268,6 @@ function processNeeds(p: Player, _isClothingDegradation: boolean, msgs: string[]
     const unitsConsumed = Math.min(unitsNeeded, p.freshFood);
     p.freshFood = Math.max(0, p.freshFood - unitsConsumed);
     p.foodLevel = Math.min(100, p.foodLevel + unitsConsumed * FOOD_PER_UNIT);
-    if (!p.isAI) {
-      msgs.push(`Preservation Box: ${unitsConsumed} fresh food unit${unitsConsumed !== 1 ? 's' : ''} auto-consumed to replenish food (+${unitsConsumed * FOOD_PER_UNIT} food).`);
-    }
   }
 
   // Starvation note: Jones only penalizes -20 hours at turn start (handled in startTurnHelpers).
@@ -277,26 +281,28 @@ function processNeeds(p: Player, _isClothingDegradation: boolean, msgs: string[]
   const newTier = getClothingTier(p.clothingCondition);
 
   if (!p.isAI) {
+    // Pre-check: will the job-requirement message fire? If so, skip the generic tier/worn messages
+    // to avoid showing both at once.
+    const _clothingJob = p.currentJob && p.clothingCondition > 0 ? getJob(p.currentJob) : null;
+    const _jobThreshold = _clothingJob
+      ? (CLOTHING_THRESHOLDS[_clothingJob.requiredClothing as keyof typeof CLOTHING_THRESHOLDS] ?? 0)
+      : 0;
+    const belowJobThreshold = !!(_clothingJob && p.clothingCondition < _jobThreshold);
+
     if (p.clothingCondition <= 0) {
       msgs.push(`${p.name}'s clothing has been destroyed! Cannot work until you buy new clothes.`);
-    } else if (newTier !== prevTier) {
-      // Warn when dropping to a lower tier
+    } else if (newTier !== prevTier && !belowJobThreshold) {
+      // Warn when dropping to a lower tier (only if not already showing job-requirement message)
       const tierLabel = CLOTHING_TIER_LABELS[newTier];
       msgs.push(`${p.name}'s clothing has worn down to ${tierLabel} quality. Better jobs may require an upgrade.`);
-    } else if (p.clothingCondition > 0 && p.clothingCondition <= CLOTHING_THRESHOLDS.casual) {
+    } else if (!belowJobThreshold && p.clothingCondition > 0 && p.clothingCondition <= CLOTHING_THRESHOLDS.casual) {
       msgs.push(`${p.name}'s clothing is nearly worn out!`);
     }
 
-    // Warn if clothing has dropped below current job's requirement
-    if (p.currentJob && p.clothingCondition > 0) {
-      const job = getJob(p.currentJob);
-      if (job) {
-        const jobThreshold = CLOTHING_THRESHOLDS[job.requiredClothing as keyof typeof CLOTHING_THRESHOLDS] ?? 0;
-        if (p.clothingCondition < jobThreshold) {
-          const requiredLabel = CLOTHING_TIER_LABELS[job.requiredClothing as keyof typeof CLOTHING_TIER_LABELS] ?? job.requiredClothing;
-          msgs.push(`${p.name}'s clothing is too worn for ${job.name}! Requires ${requiredLabel} quality. You cannot work until you upgrade your clothes.`);
-        }
-      }
+    // Show job-requirement message once (merged — replaces both the tier-drop and a separate notice)
+    if (belowJobThreshold && _clothingJob) {
+      const requiredLabel = CLOTHING_TIER_LABELS[_clothingJob.requiredClothing as keyof typeof CLOTHING_TIER_LABELS] ?? _clothingJob.requiredClothing;
+      msgs.push(`${p.name}'s clothing is too worn for ${_clothingJob.name}! Requires ${requiredLabel} quality. You cannot work until you upgrade your clothes.`);
     }
   }
 }

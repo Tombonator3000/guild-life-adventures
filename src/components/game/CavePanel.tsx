@@ -146,9 +146,9 @@ function FloorCard({
 
   const bgColor =
     status === 'cleared'
-      ? 'bg-green-950/30'
+      ? 'bg-green-950'
       : status === 'locked'
-        ? 'bg-gray-950/30'
+        ? 'bg-gray-900'
         : 'bg-[#2d1f0f]';
 
   const isUltraEndgame = floor.id === 6;
@@ -461,12 +461,12 @@ export function CavePanel({
 
   if (!hasCaveAccess) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-3 bg-[#1a110a] rounded p-2">
         <div>
-          <h4 className="font-display text-lg text-muted-foreground flex items-center gap-2">
+          <h4 className="font-display text-lg text-[#c9b888] flex items-center gap-2">
             <Lock className="w-5 h-5" /> {t('panelCave.dungeonFloors')}
           </h4>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-[#c9b888] mt-1">
             {t('panelCave.floorLocked')}
           </p>
         </div>
@@ -505,13 +505,13 @@ export function CavePanel({
   // ─── Floor selection view ──────────────────────────────────
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 bg-[#1a110a] rounded p-2">
       {/* Header */}
       <div>
-        <h4 className="font-display text-lg text-muted-foreground flex items-center gap-2">
+        <h4 className="font-display text-lg text-[#c9b888] flex items-center gap-2">
           <Sparkles className="w-5 h-5" /> {t('panelCave.dungeonFloors')}
         </h4>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-sm text-[#c9b888] mt-1">
           {t('panelCave.enterDungeon')}
         </p>
       </div>
