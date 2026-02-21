@@ -147,6 +147,10 @@ const createPlayer = (
   completedBountiesThisWeek: [],
   questCooldownWeeksLeft: 0,
   guildReputation: 0,
+  // Non-linear quest chains
+  nlChainProgress: {},
+  nlChainCompleted: [],
+  pendingNLChainChoice: null,
   // Hexes & Curses
   hexScrolls: [],
   activeCurses: [],
