@@ -141,6 +141,11 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
         return { success: false, message: "You don't have a job to request a raise for." };
       }
 
+      // Only one raise request allowed per turn
+      if (player.raiseAttemptedThisTurn) {
+        return { success: false, message: "You've already requested a raise this turn. Try again next week." };
+      }
+
       // Must work at least 3 shifts before requesting a raise
       const MIN_SHIFTS_FOR_RAISE = 3;
       const shiftsWorked = player.shiftsWorkedSinceHire || 0;
@@ -167,7 +172,7 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
         set((state) => ({
           players: state.players.map((p) =>
             p.id === playerId
-              ? { ...p, currentWage: newWage }
+              ? { ...p, currentWage: newWage, raiseAttemptedThisTurn: true }
               : p
           ),
         }));
@@ -178,13 +183,33 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
         set((state) => ({
           players: state.players.map((p) =>
             p.id === playerId
-              ? { ...p, dependability: Math.max(0, p.dependability - 3) }
+              ? { ...p, dependability: Math.max(0, p.dependability - 3), raiseAttemptedThisTurn: true }
               : p
           ),
         }));
 
         return { success: false, message: "Your raise request was denied. Keep working to build your case." };
       }
+    },
+
+    useRemainingTime: (playerId: string) => {
+      set((state) => {
+        const p = state.players.find(pl => pl.id === playerId);
+        if (!p || p.timeRemaining <= 0) return {};
+        const hoursRested = p.timeRemaining;
+        // 1 happiness per 4 hours of rest, minimum 1 if any hours remain
+        const happinessGain = Math.max(1, Math.floor(hoursRested / 4));
+        return {
+          players: state.players.map(player =>
+            player.id !== playerId ? player : {
+              ...player,
+              timeRemaining: 0,
+              happiness: Math.min(100, player.happiness + happinessGain),
+            }
+          ),
+        };
+      });
+      get().endTurn();
     },
 
     // M4 FIX: Add validation to negotiateRaise (bounds check, job existence, wage cap)

@@ -141,11 +141,12 @@ export function createTurnActions(set: SetFn, get: GetFn) {
       const postVictoryState = get();
 
       // Check if only one player remains alive - they win (multiplayer only)
-      // In single-player, the player must achieve all goals to win
+      // In single-player, the player must achieve all goals to win — never trigger here
       const alivePlayers = postVictoryState.players.filter(p => !p.isGameOver);
-      if (alivePlayers.length <= 1) {
+      const isMultiplayer = postVictoryState.players.length > 1;
+      if (isMultiplayer && alivePlayers.length <= 1) {
         try { deleteSave(0); } catch { /* ignore */ }
-        if (alivePlayers.length === 1 && postVictoryState.players.length > 1) {
+        if (alivePlayers.length === 1) {
           set({
             winner: alivePlayers[0].id,
             phase: 'victory',
@@ -183,7 +184,7 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           currentPlayerIndex: nextIndex,
           players: freshState.players.map((p, index) => {
             if (index === nextIndex) {
-              return { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: homeLocation, dungeonAttemptsThisTurn: 0, hadRandomEventThisTurn: false, workedThisTurn: false };
+              return { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: homeLocation, dungeonAttemptsThisTurn: 0, hadRandomEventThisTurn: false, workedThisTurn: false, raiseAttemptedThisTurn: false };
             }
             if (endingHomeLocation && index === endingPlayerIdx) {
               return { ...p, currentLocation: endingHomeLocation };
