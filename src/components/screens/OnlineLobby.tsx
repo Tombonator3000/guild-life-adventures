@@ -507,28 +507,28 @@ export function OnlineLobby() {
               <p className="text-xs text-amber-600 mt-2">Share this code with other players</p>
               <ConnectionIndicator status={connectionStatus} />
 
-              {/* Public listing toggle */}
-              {firebaseAvailable && (
-                <div className="mt-3 pt-3 border-t border-border/50">
-                  <label className="flex items-center justify-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isPublic}
-                      onChange={(e) => setPublicRoom(e.target.checked, lobbyPlayers)}
-                      className="w-4 h-4 accent-primary"
-                    />
-                    <Search className="w-4 h-4 text-amber-700" />
-                    <span className="font-display text-sm text-amber-900">
-                      List in public lobby browser
-                    </span>
-                  </label>
-                  {isPublic && (
-                    <p className="text-xs text-green-700 text-center mt-1">
-                      Others can find and join this room without a code
-                    </p>
-                  )}
-                </div>
-              )}
+              {/* Public listing toggle — always visible; uses Firebase when configured, P2P discovery otherwise */}
+              <div className="mt-3 pt-3 border-t border-border/50">
+                <label className="flex items-center justify-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isPublic}
+                    onChange={(e) => setPublicRoom(e.target.checked, lobbyPlayers)}
+                    className="w-4 h-4 accent-primary"
+                  />
+                  <Search className="w-4 h-4 text-amber-700" />
+                  <span className="font-display text-sm text-amber-900">
+                    {firebaseAvailable ? 'List in public lobby browser' : 'Make room discoverable'}
+                  </span>
+                </label>
+                {isPublic && (
+                  <p className="text-xs text-green-700 text-center mt-1">
+                    {firebaseAvailable
+                      ? 'Others can find and join this room without a code'
+                      : 'Others can find your room via P2P discovery'}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Players List */}

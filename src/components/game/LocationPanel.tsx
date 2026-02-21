@@ -119,6 +119,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     locationHexes: store.locationHexes,
     onBuyNewspaper: handleBuyNewspaper,
     onShowNewspaper: handleShowNewspaper,
+    setEventMessage: store.setEventMessage,
   };
 
   // Home locations get a full-panel visual room display (special case)
