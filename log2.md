@@ -5,6 +5,54 @@
 
 ---
 
+## 2026-02-21 16:30 UTC — Spectator Mode, Quick-Chat Emotes, Animated UI Transitions
+
+### Overview
+Three polish/multiplayer features implemented from the todo backlog.
+
+### 1. Spectator Mode for Dead Players
+- New `SpectatorOverlay.tsx` component
+- Activates when `localPlayer.isGameOver && phase === 'playing'` and at least one player remains alive
+- UI: translucent vignette overlay, "Spectating" banner at top with skull icon, current turn indicator at bottom
+- Dead players can still watch the board, see movements, and use chat
+- Works in both online and local multiplayer
+- No gameplay logic changes — purely visual overlay
+
+### 2. Quick-Chat Emotes (Multiplayer)
+- New `EmotePanel.tsx` with 8 predefined emotes: GG 🎉, LOL 😂, Nice 👍, Ouch 💀, Hmm 🤔, Hurry ⏳, Rich 💰, Cursed 🐸
+- Emotes sent as `emote:<id>` via existing chat protocol (no new message types needed)
+- Emote bar rendered above chat input in `ChatPanel`
+- `EmoteBubble` component: floating animated bubble on the board when emote received
+- 1.5s cooldown between emote sends (spam prevention)
+- Emotes render inline in chat with large emoji + label
+- `isEmoteMessage()` / `getEmoteFromMessage()` utility functions
+
+### 3. Animated UI Transitions (CSS)
+- New keyframes in `tailwind.config.ts`:
+  - `emote-float`: emote bubble rise + fade (2.5s)
+  - `slide-up`: panel entry from below (0.25s)
+  - `slide-down`: panel entry from above (0.25s)
+  - `scale-in`: modal/panel scale-up entry (0.2s)
+- Applied to:
+  - Center info panel (`animate-scale-in`)
+  - Turn transition privacy screen (`animate-fade-in` + `animate-scale-in`)
+  - AI thinking overlay modal (`animate-scale-in`)
+  - Waiting for player overlay (`animate-slide-up` + `animate-scale-in`)
+  - Chat messages (`animate-slide-up`)
+
+### Files Changed (7)
+| File | Change |
+|------|--------|
+| `src/components/game/SpectatorOverlay.tsx` | **NEW** — Spectator mode UI overlay |
+| `src/components/game/EmotePanel.tsx` | **NEW** — Emote definitions, EmotePanel, EmoteBubble |
+| `src/components/game/ChatPanel.tsx` | Added emote bar, emote bubble rendering, emote message display |
+| `src/components/game/GameBoard.tsx` | Added SpectatorOverlay, isSpectating logic, animate-scale-in on center panel |
+| `src/components/game/GameBoardOverlays.tsx` | Added animate-slide-up, animate-scale-in to overlays |
+| `src/components/game/TurnTransition.tsx` | Added animate-fade-in, animate-scale-in |
+| `tailwind.config.ts` | Added 4 new keyframes + 4 animations |
+
+---
+
 ## 2026-02-21 15:36 UTC — Three Major Features: Stats Dashboard, Non-Linear Quests, Interactive Tutorial
 
 ### Overview

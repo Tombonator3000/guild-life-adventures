@@ -45,7 +45,7 @@ import { CurseToadPanel } from './CurseToadPanel';
 import { registerAIAnimateCallback } from '@/hooks/useAIAnimationBridge';
 import { ChatPanel } from './ChatPanel';
 import { ContextualTips } from './ContextualTips';
-
+import { SpectatorOverlay } from './SpectatorOverlay';
 export function GameBoard() {
   const {
     players,
@@ -87,6 +87,10 @@ export function GameBoard() {
   const isLocalPlayerTurn = !isOnline || (currentPlayer?.id === localPlayerId);
   const isWaitingForOtherPlayer = isOnline && !isLocalPlayerTurn && !currentPlayer?.isAI;
   const isCursed = (currentPlayer?.activeCurses?.length ?? 0) > 0;
+
+  // Spectator mode: local player is dead but game continues
+  const localPlayer = isOnline ? players.find(p => p.id === localPlayerId) : currentPlayer;
+  const isSpectating = !!(localPlayer?.isGameOver && phase === 'playing' && players.some(p => !p.isGameOver));
 
   const [showZoneEditor, setShowZoneEditor] = useState(false);
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
@@ -349,7 +353,7 @@ export function GameBoard() {
                 height: `${activeCenterPanel.height}%`,
               }}
             >
-              <div className={`w-full h-full overflow-hidden flex flex-col bg-card/95 relative ${isMobile ? 'rounded-xl' : 'rounded-t-lg'}`}>
+              <div className={`w-full h-full overflow-hidden flex flex-col bg-card/95 relative ${isMobile ? 'rounded-xl' : 'rounded-t-lg'} animate-scale-in`}>
                 {isCursed && !applianceBreakageEvent?.fromCurse && !toadCurseEvent && <CursePanelOverlay isMobile={isMobile} />}
                 {toadCurseEvent ? (
                   <CurseToadPanel
@@ -526,6 +530,14 @@ export function GameBoard() {
 
       {/* Contextual tips for new players */}
       {phase === 'playing' && <ContextualTips />}
+
+      {/* Spectator overlay for dead players */}
+      {isSpectating && localPlayer && (
+        <SpectatorOverlay
+          player={localPlayer}
+          currentTurnPlayer={currentPlayer}
+        />
+      )}
     </div>
   );
 }

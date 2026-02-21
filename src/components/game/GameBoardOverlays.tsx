@@ -47,8 +47,8 @@ export function GameBoardOverlays({
     <>
       {/* Online: Waiting for other player overlay */}
       {isWaitingForOtherPlayer && phase === 'playing' && (
-        <div className={`fixed ${isMobile ? 'bottom-2' : 'bottom-4'} left-1/2 -translate-x-1/2 z-40`}>
-          <div className={`parchment-panel ${isMobile ? 'px-3 py-2' : 'px-6 py-3'} flex items-center gap-3 shadow-lg`}>
+        <div className={`fixed ${isMobile ? 'bottom-2' : 'bottom-4'} left-1/2 -translate-x-1/2 z-40 animate-slide-up`}>
+          <div className={`parchment-panel ${isMobile ? 'px-3 py-2' : 'px-6 py-3'} flex items-center gap-3 shadow-lg animate-scale-in`}>
             <Globe className="w-5 h-5 text-primary animate-pulse" />
             <span className={`font-display text-card-foreground ${isMobile ? 'text-sm' : ''}`}>
               Waiting for <strong>{currentPlayer?.name}</strong>...
@@ -91,7 +91,7 @@ export function GameBoardOverlays({
       {aiIsThinking && currentPlayer?.isAI && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/30 pointer-events-none" />
-          <div className={`relative parchment-panel ${isMobile ? 'p-5 min-w-[280px]' : 'p-8 min-w-[360px]'} flex flex-col items-center gap-4`}>
+          <div className={`relative parchment-panel ${isMobile ? 'p-5 min-w-[280px]' : 'p-8 min-w-[360px]'} flex flex-col items-center gap-4 animate-scale-in`}>
             {/* AI Portrait */}
             <div className="relative">
               <CharacterPortrait

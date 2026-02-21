@@ -116,6 +116,24 @@ export default {
           "0%":   { transform: "translateY(0px) scale(1)",    opacity: "0.9" },
           "100%": { transform: "translateY(-28px) scale(0)", opacity: "0" },
         },
+        "emote-float": {
+          "0%":   { opacity: "0", transform: "translateX(-50%) translateY(20px) scale(0.8)" },
+          "15%":  { opacity: "1", transform: "translateX(-50%) translateY(0) scale(1)" },
+          "75%":  { opacity: "1", transform: "translateX(-50%) translateY(-10px) scale(1)" },
+          "100%": { opacity: "0", transform: "translateX(-50%) translateY(-40px) scale(0.9)" },
+        },
+        "slide-up": {
+          "0%":   { opacity: "0", transform: "translateY(8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "slide-down": {
+          "0%":   { opacity: "0", transform: "translateY(-8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "scale-in": {
+          "0%":   { opacity: "0", transform: "scale(0.95)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -126,6 +144,10 @@ export default {
         "curse-pulse": "curse-pulse 2s ease-in-out infinite",
         "curse-particle": "curse-particle 2s ease-out infinite",
         "fade-in": "fade-in 0.3s ease-out",
+        "emote-float": "emote-float 2.5s ease-out forwards",
+        "slide-up": "slide-up 0.25s ease-out",
+        "slide-down": "slide-down 0.25s ease-out",
+        "scale-in": "scale-in 0.2s ease-out",
       },
     },
   },
