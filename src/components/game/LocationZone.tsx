@@ -39,6 +39,7 @@ export function LocationZone({
 
   return (
     <div
+      data-zone-id={location.id}
       className={cn(
         'location-zone group',
         isSelected && 'active'

@@ -44,6 +44,7 @@ import { CurseAppliancePanel } from './CurseAppliancePanel';
 import { CurseToadPanel } from './CurseToadPanel';
 import { registerAIAnimateCallback } from '@/hooks/useAIAnimationBridge';
 import { ChatPanel } from './ChatPanel';
+import { ContextualTips } from './ContextualTips';
 
 export function GameBoard() {
   const {
@@ -522,6 +523,9 @@ export function GameBoard() {
           playerColor={currentPlayer.color}
         />
       )}
+
+      {/* Contextual tips for new players */}
+      {phase === 'playing' && <ContextualTips />}
     </div>
   );
 }

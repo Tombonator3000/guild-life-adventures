@@ -5,6 +5,35 @@
 
 ---
 
+## 2026-02-21 15:36 UTC — Three Major Features: Stats Dashboard, Non-Linear Quests, Interactive Tutorial
+
+### Overview
+Implemented three new systems from the todo backlog in one session.
+
+### 1. Weekly Stat Tracking + Post-Game Statistics Dashboard
+- Added `WeeklySnapshot` and `PlayerGameStats` interfaces to Player
+- Snapshots recorded at week end; PostGameStats component with Recharts line graphs + player comparison
+- Integrated into VictoryScreen with toggle button
+
+### 2. Non-Linear Quest Chains with Branching Choices
+- New `src/data/questChains.ts` with `NonLinearQuestChain`/`QuestChainChoice` interfaces
+- Two chains: Thieves' Guild Affair (5 steps, 3 paths) and Cursed Artifact (4 steps, branching)
+- Data layer complete; QuestPanel UI integration pending
+
+### 3. Interactive Contextual Tutorial System
+- New `ContextualTips.tsx` with 10 priority-based auto-triggering tips
+- Zone highlighting via `data-zone-id` + CSS gold pulse animation
+- Integrated into GameBoard during playing phase
+
+### Files Changed (12)
+`game.types.ts`, `gameStore.ts`, `weekEndHelpers.ts`, `PostGameStats.tsx` (NEW), `VictoryScreen.tsx`, `questChains.ts` (NEW), `ContextualTips.tsx` (NEW), `LocationZone.tsx`, `GameBoard.tsx`, `index.css`, `tailwind.config.ts`
+
+### Tests: 332/332 passing
+
+### Remaining: Quest chain UI (choice modal in QuestPanel), gameStats tracking calls in store helpers, network sync for new fields
+
+---
+
 ## 2026-02-21 13:00 UTC — AI Freeze Fix + Dragons_Lair Music + Toad Portrait
 
 ### Overview
