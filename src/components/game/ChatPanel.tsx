@@ -5,6 +5,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle, Send, X } from 'lucide-react';
 import type { ChatMessage } from '@/network/types';
+import { EmotePanel, isEmoteMessage, getEmoteFromMessage, EmoteBubble } from './EmotePanel';
 
 interface ChatPanelProps {
   messages: ChatMessage[];
@@ -65,6 +66,19 @@ export function ChatPanel({ messages, onSend, playerName, playerColor }: ChatPan
     e.stopPropagation();
   };
 
+  // Track emote bubbles to display on the board
+  const [activeEmotes, setActiveEmotes] = useState<{ key: number; msg: ChatMessage }[]>([]);
+  const emoteKeyRef = useRef(0);
+
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const last = messages[messages.length - 1];
+    if (isEmoteMessage(last.text)) {
+      const key = ++emoteKeyRef.current;
+      setActiveEmotes(prev => [...prev, { key, msg: last }]);
+    }
+  }, [messages.length]);
+
   return (
     <div className="fixed bottom-4 right-4 z-30 flex flex-col items-end gap-2">
       {/* Chat Panel */}
@@ -93,22 +107,36 @@ export function ChatPanel({ messages, onSend, playerName, playerColor }: ChatPan
                 No messages yet. Say hello!
               </p>
             ) : (
-              messages.map((msg, i) => (
-                <div key={i} className="flex flex-col">
-                  <span
-                    className="text-xs font-semibold font-display"
-                    style={{ color: msg.senderColor || '#d97706' }}
-                  >
-                    {msg.senderName}
-                  </span>
-                  <span className="text-xs text-amber-200 leading-snug break-words">
-                    {msg.text}
-                  </span>
-                </div>
-              ))
+              messages.map((msg, i) => {
+                const emote = getEmoteFromMessage(msg.text);
+                return (
+                  <div key={i} className="flex flex-col animate-slide-up">
+                    <span
+                      className="text-xs font-semibold font-display"
+                      style={{ color: msg.senderColor || '#d97706' }}
+                    >
+                      {msg.senderName}
+                    </span>
+                    {emote ? (
+                      <span className="text-lg">{emote.emoji} <span className="text-xs text-amber-200">{emote.label}</span></span>
+                    ) : (
+                      <span className="text-xs text-amber-200 leading-snug break-words">
+                        {msg.text}
+                      </span>
+                    )}
+                  </div>
+                );
+              })
             )}
             <div ref={bottomRef} />
           </div>
+
+          {/* Emote bar */}
+          <EmotePanel
+            onSendEmote={onSend}
+            playerName={playerName}
+            playerColor={playerColor}
+          />
 
           {/* Input */}
           <div className="flex items-center gap-1.5 px-2 py-2 border-t border-amber-800/30">
@@ -132,6 +160,15 @@ export function ChatPanel({ messages, onSend, playerName, playerColor }: ChatPan
           </div>
         </div>
       )}
+
+      {/* Emote Bubbles (floating on board) */}
+      {activeEmotes.map(({ key, msg }) => (
+        <EmoteBubble
+          key={key}
+          message={msg}
+          onDone={() => setActiveEmotes(prev => prev.filter(e => e.key !== key))}
+        />
+      ))}
 
       {/* Toggle Button */}
       <button

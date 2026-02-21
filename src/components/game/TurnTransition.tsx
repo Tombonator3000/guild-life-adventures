@@ -19,8 +19,8 @@ export function TurnTransition({ player, onReady }: TurnTransitionProps) {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-      <div className="parchment-panel p-8 flex flex-col items-center gap-4 max-w-sm mx-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 animate-fade-in">
+      <div className="parchment-panel p-8 flex flex-col items-center gap-4 max-w-sm mx-4 animate-scale-in">
         <Shield className="w-12 h-12 text-primary" />
         <h2 className="font-display text-2xl text-card-foreground text-center">
           Pass the device to
