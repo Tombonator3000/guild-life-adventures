@@ -6,7 +6,7 @@ import { PLAYER_COLORS, AI_DIFFICULTY_NAMES } from '@/types/game.types';
 import type { AIDifficulty } from '@/types/game.types';
 import {
   Globe, Users, Copy, Check, ArrowLeft, Play, Wifi, WifiOff,
-  Loader2, Bot, Brain, Zap, Crown, UserPlus, Pencil, Search, RefreshCw,
+  Loader2, Bot, Brain, Zap, Crown, UserPlus, Pencil, Search, RefreshCw, Eye,
 } from 'lucide-react';
 import { CharacterPortrait } from '@/components/game/CharacterPortrait';
 import { PortraitPicker } from '@/components/game/PortraitPicker';
@@ -14,7 +14,7 @@ import gameBoard from '@/assets/game-board.jpeg';
 import { subscribeToGameListings, type GameListing } from '@/network/gameListing';
 import { isFirebaseConfigured } from '@/lib/firebase';
 
-type LobbyView = 'menu' | 'creating' | 'joining' | 'host-lobby' | 'guest-lobby' | 'browse';
+type LobbyView = 'menu' | 'creating' | 'joining' | 'host-lobby' | 'guest-lobby' | 'browse' | 'spectating';
 
 export function OnlineLobby() {
   const { setPhase } = useGameStore();
@@ -27,8 +27,11 @@ export function OnlineLobby() {
     settings,
     error,
     isPublic,
+    isSpectator,
+    spectatorCount,
     createRoom,
     joinRoom,
+    spectateRoom,
     startOnlineGame,
     updateSettings,
     updatePortrait,
@@ -122,6 +125,19 @@ export function OnlineLobby() {
     try {
       await joinRoom(code, nameInput.trim());
       setView('guest-lobby');
+    } catch {
+      // Error shown via useOnlineGame error state
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const handleSpectateFromBrowse = async (code: string) => {
+    if (!nameInput.trim()) return;
+    setConnecting(true);
+    try {
+      await spectateRoom(code, nameInput.trim());
+      setView('spectating');
     } catch {
       // Error shown via useOnlineGame error state
     } finally {
@@ -326,6 +342,14 @@ export function OnlineLobby() {
                   )}
                   Join
                 </button>
+                <button
+                  onClick={() => isValidRoomCode(codeInput) && handleSpectateFromBrowse(codeInput)}
+                  disabled={!isValidRoomCode(codeInput) || connecting}
+                  className="wood-frame text-parchment font-display text-sm px-4 py-2 flex items-center gap-1.5 hover:brightness-110 disabled:opacity-50"
+                >
+                  <Eye className="w-4 h-4" />
+                  Spectate
+                </button>
               </div>
             </div>
           </div>
@@ -415,13 +439,24 @@ export function OnlineLobby() {
                             <span className="text-xs text-amber-600 font-mono">{game.roomCode}</span>
                           </div>
                         </div>
-                        <button
-                          onClick={() => handleJoinFromBrowse(game.roomCode)}
-                          disabled={connecting || game.playerCount >= game.maxPlayers || game.isStarted}
-                          className="gold-button text-sm px-4 py-1.5 whitespace-nowrap disabled:opacity-50"
-                        >
-                          {connecting ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Join'}
-                        </button>
+                        <div className="flex flex-col gap-1.5">
+                          <button
+                            onClick={() => handleJoinFromBrowse(game.roomCode)}
+                            disabled={connecting || game.playerCount >= game.maxPlayers || game.isStarted}
+                            className="gold-button text-sm px-4 py-1.5 whitespace-nowrap disabled:opacity-50"
+                          >
+                            {connecting ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Join'}
+                          </button>
+                          {game.isStarted && (
+                            <button
+                              onClick={() => handleSpectateFromBrowse(game.roomCode)}
+                              disabled={connecting}
+                              className="wood-frame text-parchment text-xs px-3 py-1 whitespace-nowrap flex items-center gap-1 justify-center hover:brightness-110 disabled:opacity-50"
+                            >
+                              <Eye className="w-3 h-3" /> Spectate
+                            </button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -458,13 +493,22 @@ export function OnlineLobby() {
                         <span className="text-xs text-amber-600 font-mono">{game.roomCode}</span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleJoinFromBrowse(game.roomCode)}
-                      disabled={connecting || game.playerCount >= game.maxPlayers}
-                      className="gold-button text-sm px-4 py-1.5 whitespace-nowrap disabled:opacity-50"
-                    >
-                      {connecting ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Join'}
-                    </button>
+                    <div className="flex flex-col gap-1.5">
+                      <button
+                        onClick={() => handleJoinFromBrowse(game.roomCode)}
+                        disabled={connecting || game.playerCount >= game.maxPlayers}
+                        className="gold-button text-sm px-4 py-1.5 whitespace-nowrap disabled:opacity-50"
+                      >
+                        {connecting ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Join'}
+                      </button>
+                      <button
+                        onClick={() => handleSpectateFromBrowse(game.roomCode)}
+                        disabled={connecting}
+                        className="wood-frame text-parchment text-xs px-3 py-1 whitespace-nowrap flex items-center gap-1 justify-center hover:brightness-110 disabled:opacity-50"
+                      >
+                        <Eye className="w-3 h-3" /> Spectate
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -478,6 +522,34 @@ export function OnlineLobby() {
                 <ArrowLeft className="w-4 h-4 inline mr-1" />
                 Back
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* --- Spectating (waiting for game state) --- */}
+        {view === 'spectating' && (
+          <div className="w-full max-w-md">
+            <div className="parchment-panel p-6 text-center">
+              <Eye className="w-12 h-12 text-primary mx-auto mb-4" />
+              <h2 className="font-display text-xl text-amber-900 mb-2">Spectator Mode</h2>
+              <p className="text-sm text-amber-700 mb-4">
+                Connecting as spectator to room <strong className="font-mono">{roomCode}</strong>...
+              </p>
+              <ConnectionIndicator status={connectionStatus} />
+              {spectatorCount > 0 && (
+                <p className="text-xs text-amber-600 mt-2">
+                  {spectatorCount} spectator{spectatorCount !== 1 ? 's' : ''} watching
+                </p>
+              )}
+              <div className="flex justify-center mt-4">
+                <button
+                  onClick={handleBack}
+                  className="px-4 py-2 wood-frame text-parchment font-display text-sm hover:brightness-110"
+                >
+                  <ArrowLeft className="w-4 h-4 inline mr-1" />
+                  Leave
+                </button>
+              </div>
             </div>
           </div>
         )}

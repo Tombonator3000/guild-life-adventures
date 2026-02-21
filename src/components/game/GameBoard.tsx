@@ -88,9 +88,10 @@ export function GameBoard() {
   const isWaitingForOtherPlayer = isOnline && !isLocalPlayerTurn && !currentPlayer?.isAI;
   const isCursed = (currentPlayer?.activeCurses?.length ?? 0) > 0;
 
-  // Spectator mode: local player is dead but game continues
+  // Spectator mode: local player is dead OR joined as pure spectator (no localPlayerId)
   const localPlayer = isOnline ? players.find(p => p.id === localPlayerId) : currentPlayer;
-  const isSpectating = !!(localPlayer?.isGameOver && phase === 'playing' && players.some(p => !p.isGameOver));
+  const isPureSpectator = isOnline && !localPlayerId;
+  const isSpectating = isPureSpectator || !!(localPlayer?.isGameOver && phase === 'playing' && players.some(p => !p.isGameOver));
 
   const [showZoneEditor, setShowZoneEditor] = useState(false);
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
@@ -531,11 +532,12 @@ export function GameBoard() {
       {/* Contextual tips for new players */}
       {phase === 'playing' && <ContextualTips />}
 
-      {/* Spectator overlay for dead players */}
-      {isSpectating && localPlayer && (
+      {/* Spectator overlay for dead players or pure spectators */}
+      {isSpectating && (
         <SpectatorOverlay
           player={localPlayer}
           currentTurnPlayer={currentPlayer}
+          isPureSpectator={isPureSpectator}
         />
       )}
     </div>

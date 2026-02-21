@@ -5,6 +5,41 @@
 
 ---
 
+## 2026-02-21 17:00 UTC — Full Spectator Mode for Online Multiplayer
+
+### Overview
+Extended spectator mode so external viewers can join and watch a live online game without taking a player slot.
+
+### Architecture
+- New `spectate` guest→host message: peer joins as spectator, not player
+- Host tracks spectators in `spectatorPeersRef` (Set), separate from lobby players
+- Spectators receive `state-sync` broadcasts but have no `localPlayerId` → NetworkActionProxy blocks all actions automatically
+- `spectator-accepted` host→guest message confirms spectator status and sends initial game state
+- Spectator disconnect removes from set (no lobby/slot impact)
+
+### UI Changes
+- **OnlineLobby**: "Spectate" button on in-progress games (both Firebase and PeerJS browse views)
+- **Join Room**: "Spectate" button alongside "Join" when entering a room code
+- **Spectating view**: Shows Eye icon, room code, spectator count while connecting
+- **SpectatorOverlay**: Updated to handle both dead-player and pure-spectator modes
+- **GameBoard**: Detects `isPureSpectator` when `isOnline && !localPlayerId`
+
+### Files Changed (7)
+| File | Change |
+|------|--------|
+| `src/network/types.ts` | Added `spectate` guest msg, `spectator-accepted` host msg |
+| `src/network/useOnlineGame.ts` | `spectateRoom()`, spectator tracking, `spectate` handler, return `isSpectator`/`spectatorCount` |
+| `src/components/screens/OnlineLobby.tsx` | Spectate buttons (browse + join), spectating view, `Eye` icon |
+| `src/components/game/SpectatorOverlay.tsx` | `isPureSpectator` prop, updated for both modes |
+| `src/components/game/GameBoard.tsx` | `isPureSpectator` detection, pass to SpectatorOverlay |
+
+### Security
+- Spectators have no `localPlayerId` → `senderPlayerId` is null → host rejects all actions as "Unknown player"
+- No peer→player mapping for spectators → can't impersonate players
+- Chat still works (routed through existing chat-message protocol)
+
+---
+
 ## 2026-02-21 16:30 UTC — Spectator Mode, Quick-Chat Emotes, Animated UI Transitions
 
 ### Overview
