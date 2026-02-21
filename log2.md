@@ -3,6 +3,54 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+---
+
+## 2026-02-21 11:20 UTC — PeerJS Game Discovery + Chat Verification
+
+### Overview
+Implementert PeerJS-native "Search for Online Games" som fallback når Firebase ikke er konfigurert. In-game chat bekreftet fullt fungerende via eksisterende WebRTC DataChannels.
+
+### Problem
+`OnlineLobby.tsx` browse-view viste kun Firebase-baserte spill. Når `VITE_FIREBASE_*` env vars mangler, ble det vist en dead-end "Lobby Browser Not Configured" melding.
+
+### Løsning: PeerJS Peer List Discovery
+
+**Teknisk tilnærming:**
+1. `GET https://0.peerjs.com/peerjs/peers` → JSON array av alle tilkoblede peer IDs
+2. Filtrer for `guild-life-` prefix → aktive game rooms
+3. For hvert rom: opprett midlertidig `Peer`, koble til host, send `{type: 'discovery-probe'}`
+4. Host svarer med `{type: 'discovery-info', hostName, playerCount, maxPlayers, hasAI, isStarted}`
+5. Temp peer destroyes etter svar eller 4s timeout
+
+**Discovery handshake:** Host besvarer probes uten å legge prober til i lobbyen (ingen lobby-state endres). `isStarted: true` settes hvis spillet allerede er i gang (`phase === 'playing' || 'victory'`).
+
+### Filer endret (4)
+
+| Fil | Endring |
+|-----|---------|
+| `src/network/types.ts` | `discovery-probe` til GuestMessage, `discovery-info` til HostMessage |
+| `src/network/peerDiscovery.ts` | **NY** — `searchPeerGames()`, `fetchGuildPeerRoomCodes()`, `probeRoom()` |
+| `src/network/useOnlineGame.ts` | Host handler for `discovery-probe` → svarer med `discovery-info` |
+| `src/components/screens/OnlineLobby.tsx` | PeerJS discovery UI i browse-view (erstatter "Not Configured") |
+
+### Chat Status (eksisterende, bekreftet fungerende)
+- `src/components/game/ChatPanel.tsx` — kollapsibelt chat UI, unread badge
+- `src/network/useNetworkSync.ts` — `sendChatMessage()` + `chatMessages` state
+- `src/components/game/GameBoard.tsx:516` — `<ChatPanel>` vises når `isOnline === true`
+- Meldinger rutes P2P via WebRTC DataChannels (ingen server nødvendig)
+- Guest → Host → broadcast til alle (host re-broadcaster)
+
+### UI-detaljer (PeerJS browse view)
+- "Search for Games" knapp med spinner
+- Viser oppdagede spill med: vertsnavn, spillercount, AI-status, "In Progress" badge
+- Join-knapp disablet hvis spillet er fullt eller allerede startet
+- Graceful fallback: tom liste (ingen feil) hvis PeerJS server er utilgjengelig
+
+### Testresultater
+- TypeScript: `bunx tsc --noEmit` — 0 feil
+- Tests: `bun run test` — 332/332 passed (17 test files, alle grønne)
+- Branch: `claude/peerjs-game-search-bii3D` pushet til remote
+
 ## 2026-02-21 — Firebase Environment Setup (UTC 12:00)
 
 ### Overview
