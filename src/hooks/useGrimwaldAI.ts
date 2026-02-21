@@ -196,7 +196,10 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
       // Check exit conditions
       if (actionsRemaining <= 0 || currentPlayer.timeRemaining < 1 || currentPlayer.isGameOver) {
         console.log(`[Grimwald AI] Turn complete. Actions: ${actionLogRef.current.join(' -> ')}`);
-        if (currentPlayer.timeRemaining > 0) {
+        // FIX: always call endTurn unless the player is already game over (death system handles that case)
+        // Previously used `timeRemaining > 0` guard which skipped endTurn when time hit exactly 0,
+        // freezing the turn permanently.
+        if (!currentPlayer.isGameOver) {
           endTurn();
         }
         isExecutingRef.current = false;

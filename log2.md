@@ -5,6 +5,62 @@
 
 ---
 
+## 2026-02-21 13:00 UTC — AI Freeze Fix + Dragons_Lair Music + Toad Portrait
+
+### Overview
+Three bug fixes / feature additions in one session.
+
+### 1. AI Turn Freeze Bug (Critical)
+**Symptom**: AI opponents would suddenly stop taking turns mid-game, forcing the human player to control them manually.
+
+**Root Cause** (`src/hooks/useGrimwaldAI.ts:197-203`):
+The AI turn exit-condition block had a logic error:
+```typescript
+// BUGGY:
+if (actionsRemaining <= 0 || currentPlayer.timeRemaining < 1 || currentPlayer.isGameOver) {
+  if (currentPlayer.timeRemaining > 0) {  // ← skipped when time = exactly 0
+    endTurn();
+  }
+  isExecutingRef.current = false;
+  return;
+}
+```
+When `timeRemaining` dropped to exactly `0` (not negative, not fractional — exactly zero), the outer condition (`< 1`) triggered but the inner guard (`> 0`) blocked `endTurn()` from being called. The AI returned without advancing the turn. Since `currentPlayer` never changed, `aiIsThinking` stayed `true`, and `useAITurnHandler`'s effect never re-fired. Turn frozen permanently.
+
+**Trigger**: The Tavern Brawl mechanic (PR #253) and/or Partial Time Rest fix (PR #251) introduced new time-spending paths that can leave `timeRemaining` at exactly `0`.
+
+**Fix**: Replaced `timeRemaining > 0` guard with `!currentPlayer.isGameOver`:
+```typescript
+// FIXED:
+if (!currentPlayer.isGameOver) {
+  endTurn();
+}
+```
+This calls `endTurn()` whenever time runs out (including at exactly 0), while still skipping it when the death system has already handled turn advancement.
+
+### 2. Dragons_Lair.mp3 — About Screen Music
+**Files**: `CreditsScreen.tsx`, `musicConfig.ts`
+- Added `'music/Dragons_Lair.mp3'` to the `MUSIC_FILES` array in `CreditsScreen.tsx` (was uploaded to `/public/music/` but not in the random credits pool)
+- Added `'dragons-lair'` entry to `MUSIC_TRACKS` in `musicConfig.ts` for completeness
+
+Dragon's Lair can now play as one of 12 possible credits tracks when the About button is clicked.
+
+### 3. Toad Portrait — toad.jpg as Player Icon
+**File**: `src/components/game/CharacterPortrait.tsx`
+- When a player has the Curse of the Toad (`isToad = true`), the portrait now shows `toad.jpg` (from `/public/npcs/toad.jpg`) instead of a 🐸 emoji on a green square
+- Falls back to the emoji if the image fails to load
+- Uses the same `imageError` state already present in the component
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `src/hooks/useGrimwaldAI.ts` | AI freeze fix: `timeRemaining > 0` → `!isGameOver` |
+| `src/components/screens/CreditsScreen.tsx` | Added `Dragons_Lair.mp3` to music pool |
+| `src/audio/musicConfig.ts` | Added `dragons-lair` track entry |
+| `src/components/game/CharacterPortrait.tsx` | toad.jpg image for toad curse |
+
+---
+
 ## 2026-02-21 11:20 UTC — PeerJS Game Discovery + Chat Verification
 
 ### Overview
