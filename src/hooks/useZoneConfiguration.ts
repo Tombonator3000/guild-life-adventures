@@ -2,17 +2,12 @@ import { useState, useEffect } from 'react';
 import type { ZoneConfig, CenterPanelLayout, AnimationLayerConfig, MobileZoneOverrides } from '@/types/game.types';
 import type { CenterPanelConfig } from '@/components/game/ZoneEditor';
 import type { MovementWaypoint } from '@/data/locations';
-import { ZONE_CONFIGS, LOCATIONS, MOVEMENT_PATHS } from '@/data/locations';
+import { ZONE_CONFIGS, LOCATIONS, MOVEMENT_PATHS, CENTER_PANEL_CONFIG, MOBILE_ZONE_CONFIGS, MOBILE_CENTER_PANEL_CONFIG, MOBILE_CENTER_PANEL_LAYOUT } from '@/data/locations';
 import { loadZoneConfig, saveZoneConfig, clearZoneConfig } from '@/data/zoneStorage';
-import { DEFAULT_LAYOUT, DEFAULT_ANIMATION_LAYERS, DEFAULT_MOBILE_CENTER_PANEL, DEFAULT_MOBILE_LAYOUT } from '@/hooks/useZoneEditorState';
+import { DEFAULT_LAYOUT, DEFAULT_ANIMATION_LAYERS } from '@/hooks/useZoneEditorState';
 import { toast } from 'sonner';
 
-const DEFAULT_CENTER_PANEL: CenterPanelConfig = {
-  top: 22.6,
-  left: 22.0,
-  width: 56.4,
-  height: 53.6,
-};
+const DEFAULT_CENTER_PANEL: CenterPanelConfig = CENTER_PANEL_CONFIG;
 
 // Merge saved zones with current ZONE_CONFIGS so newly added locations always appear
 function mergeWithDefaults(savedZones: ZoneConfig[]): ZoneConfig[] {
@@ -51,9 +46,9 @@ export function useZoneConfiguration() {
       };
     }
     return {
-      zones: ZONE_CONFIGS,
-      centerPanel: DEFAULT_MOBILE_CENTER_PANEL,
-      layout: DEFAULT_MOBILE_LAYOUT,
+      zones: MOBILE_ZONE_CONFIGS,
+      centerPanel: MOBILE_CENTER_PANEL_CONFIG,
+      layout: MOBILE_CENTER_PANEL_LAYOUT,
     };
   });
 
@@ -90,9 +85,9 @@ export function useZoneConfiguration() {
     setLayout(DEFAULT_LAYOUT);
     setAnimationLayers(DEFAULT_ANIMATION_LAYERS);
     setMobileOverrides({
-      zones: ZONE_CONFIGS,
-      centerPanel: DEFAULT_MOBILE_CENTER_PANEL,
-      layout: DEFAULT_MOBILE_LAYOUT,
+      zones: MOBILE_ZONE_CONFIGS,
+      centerPanel: MOBILE_CENTER_PANEL_CONFIG,
+      layout: MOBILE_CENTER_PANEL_LAYOUT,
     });
     Object.keys(MOVEMENT_PATHS).forEach(k => delete MOVEMENT_PATHS[k]);
     toast.success('Zone config reset to defaults');

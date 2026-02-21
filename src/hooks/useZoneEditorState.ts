@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { ZONE_CONFIGS, BOARD_PATH, MOVEMENT_PATHS } from '@/data/locations';
+import { ZONE_CONFIGS, BOARD_PATH, MOVEMENT_PATHS, CENTER_PANEL_CONFIG, CENTER_PANEL_LAYOUT, MOBILE_CENTER_PANEL_CONFIG, MOBILE_CENTER_PANEL_LAYOUT, MOBILE_ZONE_CONFIGS } from '@/data/locations';
 import { hasSavedZoneConfig } from '@/data/zoneStorage';
 import type { ZoneConfig, LocationId, LayoutElement, LayoutElementId, CenterPanelLayout, AnimationLayerConfig, MobileZoneOverrides } from '@/types/game.types';
 import type { MovementWaypoint } from '@/data/locations';
@@ -19,11 +19,7 @@ export const DEFAULT_ANIMATION_LAYERS: AnimationLayerConfig[] = [
 ];
 
 // Default layout: NPC left column, text right column, item preview below NPC
-export const DEFAULT_LAYOUT: CenterPanelLayout = {
-  npc: { x: 0, y: 0, width: 25, height: 100 },
-  text: { x: 27, y: 0, width: 73, height: 100 },
-  itemPreview: { x: 0, y: 60, width: 25, height: 40 },
-};
+export const DEFAULT_LAYOUT: CenterPanelLayout = CENTER_PANEL_LAYOUT;
 
 export const LAYOUT_ELEMENT_LABELS: Record<LayoutElementId, { label: string; color: string; borderColor: string }> = {
   npc: { label: 'NPC Portrait', color: 'rgba(168, 85, 247, 0.3)', borderColor: '#a855f7' },
@@ -31,27 +27,11 @@ export const LAYOUT_ELEMENT_LABELS: Record<LayoutElementId, { label: string; col
   itemPreview: { label: 'Item Preview', color: 'rgba(245, 158, 11, 0.3)', borderColor: '#f59e0b' },
 };
 
-const DEFAULT_CENTER_PANEL: CenterPanelConfig = {
-  top: 22.6,
-  left: 22.0,
-  width: 56.4,
-  height: 53.6,
-};
+const DEFAULT_CENTER_PANEL: CenterPanelConfig = CENTER_PANEL_CONFIG;
 
-// Default mobile center panel: bottom sheet style
-export const DEFAULT_MOBILE_CENTER_PANEL: CenterPanelConfig = {
-  top: 68.0,
-  left: 4.0,
-  width: 92.0,
-  height: 30.0,
-};
+export const DEFAULT_MOBILE_CENTER_PANEL: CenterPanelConfig = MOBILE_CENTER_PANEL_CONFIG;
 
-// Default mobile layout: NPC on left (smaller), text takes most space
-export const DEFAULT_MOBILE_LAYOUT: CenterPanelLayout = {
-  npc: { x: 0, y: 0, width: 20, height: 100 },
-  text: { x: 22, y: 0, width: 78, height: 100 },
-  itemPreview: { x: 0, y: 65, width: 20, height: 35 },
-};
+export const DEFAULT_MOBILE_LAYOUT: CenterPanelLayout = MOBILE_CENTER_PANEL_LAYOUT;
 
 // Get adjacent location pairs (edges in the ring)
 export function getAdjacentPairs(): [LocationId, LocationId][] {
@@ -122,10 +102,10 @@ export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPane
   const [mobileZones, setMobileZones] = useState<ZoneConfig[]>(() => {
     if (initialMobileOverrides?.zones) {
       const savedIds = new Set(initialMobileOverrides.zones.map(z => z.id));
-      const missing = ZONE_CONFIGS.filter(z => !savedIds.has(z.id));
+      const missing = MOBILE_ZONE_CONFIGS.filter(z => !savedIds.has(z.id));
       return missing.length > 0 ? [...initialMobileOverrides.zones, ...missing] : [...initialMobileOverrides.zones];
     }
-    return [...ZONE_CONFIGS];
+    return [...MOBILE_ZONE_CONFIGS];
   });
   const [mobileCenterPanel, setMobileCenterPanel] = useState<CenterPanelConfig>(
     initialMobileOverrides?.centerPanel || DEFAULT_MOBILE_CENTER_PANEL
@@ -666,7 +646,7 @@ ${mobileStr}`;
     setSelectedLayoutElement(null);
     setAnimationLayers([...DEFAULT_ANIMATION_LAYERS]);
     setSelectedAnimationLayer(null);
-    setMobileZones([...ZONE_CONFIGS]);
+    setMobileZones([...MOBILE_ZONE_CONFIGS]);
     setMobileCenterPanel(DEFAULT_MOBILE_CENTER_PANEL);
     setMobileLayout({ ...DEFAULT_MOBILE_LAYOUT });
     setSelectedMobileZone(null);

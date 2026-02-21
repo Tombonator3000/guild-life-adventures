@@ -3,6 +3,43 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+## 2026-02-21 — Centralized Zone Config Standard Setup (UTC)
+
+### Overview
+
+Established a single source of truth for all zone layout constants by adding named exports to `src/data/locations.ts`. Updated `useZoneEditorState.ts` and `useZoneConfiguration.ts` to consume these constants instead of local duplicates. Also updated the mobile defaults to match the new standard layout.
+
+### What Changed
+
+**New exports added to `src/data/locations.ts`**:
+- `CENTER_PANEL_CONFIG` — `{ top: 22.6, left: 22.0, width: 56.4, height: 53.6 }`
+- `CENTER_PANEL_LAYOUT` — `{ npc: {0,0,25,100}, text: {27,0,73,100}, itemPreview: {0,60,25,40} }`
+- `MOBILE_ZONE_CONFIGS` — 15-zone array (same values as `ZONE_CONFIGS`)
+- `MOBILE_CENTER_PANEL_CONFIG` — `{ top: 22.6, left: 22.0, width: 56.4, height: 53.6 }` (matches desktop)
+- `MOBILE_CENTER_PANEL_LAYOUT` — `{ npc: {0,0,25,100}, text: {25,0,75,100}, itemPreview: {0,58.4,25.2,41.6} }`
+
+**Updated `src/hooks/useZoneEditorState.ts`**:
+- Imports the 5 new constants from `locations.ts`
+- `DEFAULT_CENTER_PANEL` now references `CENTER_PANEL_CONFIG`
+- `DEFAULT_LAYOUT` now references `CENTER_PANEL_LAYOUT`
+- `DEFAULT_MOBILE_CENTER_PANEL` now references `MOBILE_CENTER_PANEL_CONFIG` (was bottom-sheet: top:68, left:4, width:92, height:30)
+- `DEFAULT_MOBILE_LAYOUT` now references `MOBILE_CENTER_PANEL_LAYOUT` (was: npc:20w, text:78w, itemPreview:20w/65y/35h)
+- Mobile zone init and reset now use `MOBILE_ZONE_CONFIGS`
+
+**Updated `src/hooks/useZoneConfiguration.ts`**:
+- Imports `CENTER_PANEL_CONFIG`, `MOBILE_ZONE_CONFIGS`, `MOBILE_CENTER_PANEL_CONFIG`, `MOBILE_CENTER_PANEL_LAYOUT` from `locations.ts`
+- Removed local `DEFAULT_MOBILE_CENTER_PANEL`/`DEFAULT_MOBILE_LAYOUT` imports from `useZoneEditorState`
+- `handleResetZones` and default mobile overrides now use the centralized constants
+
+### Files Changed
+- `src/data/locations.ts`
+- `src/hooks/useZoneEditorState.ts`
+- `src/hooks/useZoneConfiguration.ts`
+
+### Type Check
+- `bunx tsc --noEmit` — 0 errors
+
+
 ## 2026-02-21 — User Manual: Dark Magic Chapter + Opponent Visibility Feature (UTC)
 
 ### Overview
