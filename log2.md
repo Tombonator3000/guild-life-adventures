@@ -3,6 +3,49 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+## 2026-02-21 — Cave UI + Weekend Message Fixes (UTC 10:20)
+
+### Overview
+
+Four gameplay quality-of-life fixes reported by the user after playtesting.
+
+### Fix 1 — Cave UI Readability (`CavePanel.tsx`)
+
+**Root cause:** `LocationShell` renders all location tab content on a parchment background (`#f0e8d8 → #e8dcc8`). `CavePanel` had no background of its own, so cleared/locked floor cards used semi-transparent overlays (`bg-green-950/30`, `bg-gray-950/30`) that blended into the beige, making the cream `text-[#e0d4b8]` unreadable. Header used `text-muted-foreground` (faded gray) which also read poorly.
+
+**Fix:**
+- Both the floor-selection and cave-access-gated returns now wrapped in `bg-[#1a110a] rounded p-2` — full dark cave atmosphere.
+- Cleared floor cards: `bg-green-950/30` → `bg-green-950` (solid).
+- Locked floor cards: `bg-gray-950/30` → `bg-gray-900` (solid).
+- Header text: `text-muted-foreground` → `text-[#c9b888]` (amber-cream, readable on dark bg).
+
+### Fix 2 — Remove Preservation Box Weekend Message (`weekEndHelpers.ts`)
+
+**Root cause:** `processNeeds()` pushed a verbose "Preservation Box: N fresh food unit(s) auto-consumed..." message every week the box activated. The box working silently is expected UX — the player doesn't need to see this every weekend.
+
+**Fix:** Removed the `msgs.push(...)` inside the preservation box auto-replenish block.
+
+### Fix 3 — Deduplicate Clothing Degradation Messages (`weekEndHelpers.ts`)
+
+**Root cause:** `processNeeds()` ran two independent message blocks. When clothing dropped a tier AND crossed a job requirement threshold simultaneously, both the generic tier-drop message ("worn down to Casual quality") AND the job-specific message ("too worn for Shop Manager!") were pushed — creating confusing duplicate info.
+
+**Fix:** Pre-compute `belowJobThreshold` before the tier-drop check. If the job-requirement message will fire, the tier-drop and nearly-worn messages are suppressed. Only one message per week about clothing per player.
+
+### Fix 4 — Dependability Penalty Unfair When Clothing Blocks Work (`weekEndHelpers.ts`)
+
+**Root cause:** `workShift()` silently returns `{}` (no state change) when clothing condition is below the job's threshold. This leaves `workedThisTurn = false`. At week end, `applyDependabilityDecay` then penalised dependability for "not showing up" — even though the player was blocked by dress code, not absent by choice. This created a cascade: bad clothes → silent work failure → dep penalty → eventual firing.
+
+**Fix:** In `applyDependabilityDecay`, before applying the no-show penalty, check if the player's current clothing is below their job's required threshold. If so, return early — no dep penalty. The clothing message (fix 3) already informs the player of the situation.
+
+### Files Changed
+- `src/components/game/CavePanel.tsx` — UI contrast fixes
+- `src/store/helpers/weekEndHelpers.ts` — message dedup, dep fix, preservation box
+
+### Tests
+- 332 tests, all passing.
+
+---
+
 ## 2026-02-21 — Search Online Games + In-Game Chat (UTC 11:00)
 
 ### Overview
