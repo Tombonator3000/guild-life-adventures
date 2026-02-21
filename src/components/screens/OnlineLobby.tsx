@@ -47,10 +47,16 @@ export function OnlineLobby() {
   const [editingName, setEditingName] = useState(false);
   const [lobbyNameInput, setLobbyNameInput] = useState('');
 
-  // Browse Games state
+  // Browse Games state (Firebase)
   const [gameListings, setGameListings] = useState<GameListing[]>([]);
   const [listingsLoading, setListingsLoading] = useState(false);
   const firebaseAvailable = isFirebaseConfigured();
+
+  // Browse Games state (PeerJS fallback — used when Firebase is not configured)
+  const [peerGames, setPeerGames] = useState<import('@/network/peerDiscovery').PeerDiscoveredGame[]>([]);
+  const [peerSearching, setPeerSearching] = useState(false);
+  const [peerSearchError, setPeerSearchError] = useState<string | null>(null);
+  const [peerSearched, setPeerSearched] = useState(false);
 
   // Subscribe to game listings when in browse view
   useEffect(() => {
@@ -120,6 +126,23 @@ export function OnlineLobby() {
       // Error shown via useOnlineGame error state
     } finally {
       setConnecting(false);
+    }
+  };
+
+  const handlePeerSearch = async () => {
+    setPeerSearching(true);
+    setPeerSearchError(null);
+    setPeerGames([]);
+    setPeerSearched(false);
+    try {
+      const { searchPeerGames } = await import('@/network/peerDiscovery');
+      const games = await searchPeerGames();
+      setPeerGames(games);
+    } catch {
+      setPeerSearchError('Could not reach the PeerJS server. Check your connection.');
+    } finally {
+      setPeerSearching(false);
+      setPeerSearched(true);
     }
   };
 
@@ -331,13 +354,78 @@ export function OnlineLobby() {
             </div>
 
             {!firebaseAvailable ? (
-              <div className="parchment-panel p-6 text-center">
-                <Globe className="w-10 h-10 text-amber-400 mx-auto mb-3" />
-                <p className="font-display text-amber-800 mb-1">Lobby Browser Not Configured</p>
-                <p className="text-xs text-amber-700">
-                  Add Firebase environment variables to enable public game search.
-                  See <code className="bg-amber-100 px-1 rounded">.env.example</code> for setup instructions.
-                </p>
+              <div className="space-y-3">
+                <div className="parchment-panel p-5 text-center">
+                  <Globe className="w-8 h-8 text-amber-600 mx-auto mb-2" />
+                  <p className="font-display text-sm text-amber-800 mb-3">
+                    Search for public games via PeerJS network
+                  </p>
+                  <button
+                    onClick={handlePeerSearch}
+                    disabled={peerSearching}
+                    className="gold-button flex items-center gap-2 mx-auto disabled:opacity-50"
+                  >
+                    {peerSearching
+                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                      : <Search className="w-4 h-4" />}
+                    {peerSearching ? 'Searching the realm...' : 'Search for Games'}
+                  </button>
+                  {!peerSearched && (
+                    <p className="text-xs text-amber-600 mt-2">
+                      Tip: add Firebase env vars to enable live game listing.
+                    </p>
+                  )}
+                </div>
+
+                {peerSearchError && (
+                  <div className="parchment-panel p-3 text-center text-xs text-destructive">
+                    {peerSearchError}
+                  </div>
+                )}
+
+                {peerSearched && !peerSearching && peerGames.length === 0 && !peerSearchError && (
+                  <div className="parchment-panel p-6 text-center">
+                    <Users className="w-8 h-8 text-amber-400 mx-auto mb-2" />
+                    <p className="font-display text-amber-800 mb-1 text-sm">No public games found</p>
+                    <p className="text-xs text-amber-700">Make sure the host has made their room public, then search again.</p>
+                  </div>
+                )}
+
+                {peerGames.length > 0 && (
+                  <div className="space-y-3">
+                    {peerGames.map(game => (
+                      <div key={game.roomCode} className="parchment-panel p-4 flex items-center justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-display text-amber-900 font-semibold truncate">{game.hostName}&apos;s Game</p>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            <span className="text-xs bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
+                              <Users className="w-3 h-3 inline mr-0.5" />
+                              {game.playerCount}/{game.maxPlayers}
+                            </span>
+                            {game.hasAI && (
+                              <span className="text-xs bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
+                                <Bot className="w-3 h-3 inline mr-0.5" />AI
+                              </span>
+                            )}
+                            {game.isStarted && (
+                              <span className="text-xs bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded">
+                                In Progress
+                              </span>
+                            )}
+                            <span className="text-xs text-amber-600 font-mono">{game.roomCode}</span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleJoinFromBrowse(game.roomCode)}
+                          disabled={connecting || game.playerCount >= game.maxPlayers || game.isStarted}
+                          className="gold-button text-sm px-4 py-1.5 whitespace-nowrap disabled:opacity-50"
+                        >
+                          {connecting ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Join'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : listingsLoading ? (
               <div className="parchment-panel p-8 flex flex-col items-center gap-3">

@@ -195,7 +195,7 @@ export function useOnlineGame() {
     const unsubMessage = peerManager.onMessage((message: NetworkMessage, fromPeerId: string) => {
       if (isHost) {
         const msg = message as GuestMessage;
-        if (msg.type === 'join' || msg.type === 'ready' || msg.type === 'leave' || msg.type === 'reconnect' || msg.type === 'portrait-select' || msg.type === 'name-change') {
+        if (msg.type === 'join' || msg.type === 'ready' || msg.type === 'leave' || msg.type === 'reconnect' || msg.type === 'portrait-select' || msg.type === 'name-change' || msg.type === 'discovery-probe') {
           handleHostMessageRef.current?.(msg, fromPeerId);
         }
       } else {
@@ -378,8 +378,22 @@ export function useOnlineGame() {
         handlePlayerDisconnectRef.current?.(fromPeerId);
         break;
       }
+
+      case 'discovery-probe': {
+        // Respond with game metadata — do NOT add to lobby
+        const gamePhase = useGameStore.getState().phase;
+        peerManager.sendTo(fromPeerId, {
+          type: 'discovery-info',
+          hostName: localPlayerName,
+          playerCount: lobbyPlayers.length,
+          maxPlayers: 4,
+          hasAI: settings.includeAI,
+          isStarted: gamePhase === 'playing' || gamePhase === 'victory',
+        });
+        break;
+      }
     }
-  }, [roomCode, localPlayerName, settings]);
+  }, [roomCode, localPlayerName, settings, lobbyPlayers.length]);
 
   // Guest: Handle lobby messages from host
   const handleGuestMessage = useCallback((message: HostMessage) => {
