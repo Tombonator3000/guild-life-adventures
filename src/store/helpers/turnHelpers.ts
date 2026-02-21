@@ -174,14 +174,22 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           return;
         }
         // C9: Move player to their home location at start of turn
+        // Also return the ending player to their home so their icon doesn't stay at last visited location
         const homeLocation: LocationId = getHomeLocation(nextPlayer.housing);
+        const endingPlayerIdx = postVictoryState.currentPlayerIndex;
+        const endingPlayerForHome = freshState.players[endingPlayerIdx];
+        const endingHomeLocation: LocationId | null = endingPlayerForHome ? getHomeLocation(endingPlayerForHome.housing) : null;
         set({
           currentPlayerIndex: nextIndex,
-          players: freshState.players.map((p, index) =>
-            index === nextIndex
-              ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: homeLocation, dungeonAttemptsThisTurn: 0, hadRandomEventThisTurn: false, workedThisTurn: false }
-              : p
-          ),
+          players: freshState.players.map((p, index) => {
+            if (index === nextIndex) {
+              return { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: homeLocation, dungeonAttemptsThisTurn: 0, hadRandomEventThisTurn: false, workedThisTurn: false };
+            }
+            if (endingHomeLocation && index === endingPlayerIdx) {
+              return { ...p, currentLocation: endingHomeLocation };
+            }
+            return p;
+          }),
           selectedLocation: null,
         });
         // Check for apartment robbery at start of turn

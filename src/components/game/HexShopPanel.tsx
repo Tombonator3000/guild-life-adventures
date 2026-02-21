@@ -9,6 +9,7 @@ import type { Player } from '@/types/game.types';
 import { Flame, Shield, Target, MapPin, Skull } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { playSFX } from '@/audio/sfxManager';
 
 interface HexShopPanelProps {
   player: Player;
@@ -37,6 +38,7 @@ export function HexShopPanel({ player, players, priceModifier, availableHexes, s
   const handleCastLocationHex = (hexId: string) => {
     const result = store.castLocationHex(player.id, hexId);
     if (result.success) {
+      playSFX('curse-cast');
       toast.success(result.message);
     } else {
       toast.error(result.message);
@@ -46,6 +48,7 @@ export function HexShopPanel({ player, players, priceModifier, availableHexes, s
   const handleCastCurse = (hexId: string, targetId: string) => {
     const result = store.castPersonalCurse(player.id, hexId, targetId);
     if (result.success) {
+      playSFX('curse-cast');
       toast.success(result.message);
     } else {
       toast.error(result.message);
@@ -73,7 +76,7 @@ export function HexShopPanel({ player, players, priceModifier, availableHexes, s
   const personalCurses = availableHexes.filter(h => h.category === 'personal');
   const sabotageHexes = availableHexes.filter(h => h.category === 'sabotage');
 
-  const accentColor = variant === 'enchanter' ? '#6b21a8' : '#991b1b';
+  const accentColor = variant === 'enchanter' ? '#6b21a8' : '#c084fc';
   const bgColor = variant === 'enchanter' ? 'bg-purple-50' : 'bg-red-50';
 
   return (

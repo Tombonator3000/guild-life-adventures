@@ -367,6 +367,17 @@ export const SYNTH_SOUNDS: Record<string, (volume: number) => void> = {
       playNoise(0.08, vol * 0.1, 2000);
     }, 100);
   },
+
+  // Dark magic — ominous descending tritone (devil's interval)
+  'curse-cast': (vol) => {
+    playNoise(0.15, vol * 0.25, 500);
+    playSequence([
+      { freq: 440, duration: 0.3, delay: 0 },
+      { freq: 311, duration: 0.35, delay: 0.25 },
+      { freq: 196, duration: 0.5, delay: 0.55 },
+    ], vol * 0.45, 'sawtooth');
+    setTimeout(() => playNoise(0.3, vol * 0.15, 300), 400);
+  },
 };
 
 /** Play a synthesized sound effect. Returns true if sound exists. */

@@ -65,6 +65,9 @@ export const SFX_LIBRARY = {
   'weather-thunder': { file: 'weather-thunder.mp3', volume: 0.5 },
   'festival': { file: 'festival.mp3', volume: 0.5 },
   'travel-event': { file: 'travel-event.mp3', volume: 0.5 },
+
+  // Dark magic
+  'curse-cast': { file: 'curse-cast.mp3', volume: 0.65 },
 } as const;
 
 export type SFXId = keyof typeof SFX_LIBRARY;
