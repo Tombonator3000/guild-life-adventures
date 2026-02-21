@@ -187,7 +187,7 @@ export interface Player {
   educationProgress: Record<EducationPath, number>; // Sessions completed for current level
   // New Jones-style degree system
   completedDegrees: DegreeId[]; // Array of completed degrees
-  degreeProgress: Record<DegreeId, number>; // Sessions completed per degree (0-10)
+  degreeProgress: Partial<Record<DegreeId, number>>; // Sessions completed per degree (0-10)
   maxDependability: number; // Max dependability (increases with graduation)
   maxExperience: number; // Max experience (increases with graduation)
   completedQuests: number;
