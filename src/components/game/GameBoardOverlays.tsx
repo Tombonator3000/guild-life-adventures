@@ -3,6 +3,7 @@ import type { AIDifficulty } from '@/types/game.types';
 import { TurnTransition } from './TurnTransition';
 import { CharacterPortrait } from './CharacterPortrait';
 import { Bot, Brain, SkipForward, FastForward, Play, Globe, Wifi } from 'lucide-react';
+import { useGameOptions } from '@/hooks/useGameOptions';
 
 export function GameBoardOverlays({
   isMobile,
@@ -16,6 +17,7 @@ export function GameBoardOverlays({
   showTurnTransition,
   onTurnTransitionReady,
   aiIsThinking,
+  currentAIAction,
   aiDifficulty,
   aiSpeedMultiplier,
   setAISpeedMultiplier,
@@ -32,11 +34,15 @@ export function GameBoardOverlays({
   showTurnTransition: boolean;
   onTurnTransitionReady: () => void;
   aiIsThinking: boolean;
+  currentAIAction: string;
   aiDifficulty: AIDifficulty;
   aiSpeedMultiplier: number;
   setAISpeedMultiplier: (speed: number) => void;
   setSkipAITurn: (skip: boolean) => void;
 }) {
+  const { options } = useGameOptions();
+  const showActions = options.showOpponentActions;
+
   return (
     <>
       {/* Online: Waiting for other player overlay */}
@@ -106,11 +112,19 @@ export function GameBoardOverlays({
                 {currentPlayer?.name || 'AI'} is Scheming...
               </h3>
             </div>
-            <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground text-center max-w-xs`}>
-              {(currentPlayer?.aiDifficulty || aiDifficulty) === 'easy' && 'Hmm, let me think about this...'}
-              {(currentPlayer?.aiDifficulty || aiDifficulty) === 'medium' && 'Calculating optimal strategy...'}
-              {(currentPlayer?.aiDifficulty || aiDifficulty) === 'hard' && 'Analyzing all possibilities with precision!'}
-            </p>
+            {showActions && currentAIAction ? (
+              <div className="text-center max-w-xs">
+                <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground italic`}>
+                  {currentAIAction}
+                </p>
+              </div>
+            ) : (
+              <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground text-center max-w-xs`}>
+                {(currentPlayer?.aiDifficulty || aiDifficulty) === 'easy' && 'Hmm, let me think about this...'}
+                {(currentPlayer?.aiDifficulty || aiDifficulty) === 'medium' && 'Calculating optimal strategy...'}
+                {(currentPlayer?.aiDifficulty || aiDifficulty) === 'hard' && 'Analyzing all possibilities with precision!'}
+              </p>
+            )}
             <div className="flex gap-1.5 mb-1">
               <span className="w-2.5 h-2.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
               <span className="w-2.5 h-2.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />

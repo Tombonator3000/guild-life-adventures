@@ -126,7 +126,7 @@ export function GameBoard() {
   const activeLayout = isMobile ? mobileOverrides.layout : layout;
 
   // AI turns only run on host/local — guests receive AI state via sync
-  const { aiIsThinking } = useAITurnHandler({
+  const { aiIsThinking, currentAIAction } = useAITurnHandler({
     currentPlayer: networkMode !== 'guest' ? currentPlayer : undefined,
     phase: networkMode !== 'guest' ? phase : 'title', // prevent AI trigger on guest
     aiDifficulty,
@@ -482,6 +482,7 @@ export function GameBoard() {
         showTurnTransition={showTurnTransition}
         onTurnTransitionReady={() => setShowTurnTransition(false)}
         aiIsThinking={aiIsThinking}
+        currentAIAction={currentAIAction}
         aiDifficulty={aiDifficulty}
         aiSpeedMultiplier={aiSpeedMultiplier}
         setAISpeedMultiplier={setAISpeedMultiplier}

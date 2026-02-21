@@ -7,7 +7,7 @@ import { useState, useRef, useEffect } from 'react';
 import {
   X, BookOpen, Map, Clock, Briefcase, GraduationCap, Home,
   ShoppingBag, Heart, Sword, Coins, Skull, Calendar, Trophy,
-  Lightbulb, ChevronLeft, ChevronRight, ScrollText,
+  Lightbulb, ChevronLeft, ChevronRight, ScrollText, Sparkles,
 } from 'lucide-react';
 
 interface UserManualProps {
@@ -27,6 +27,7 @@ type ChapterId =
   | 'combat'
   | 'economy'
   | 'crime'
+  | 'dark-magic'
   | 'weekends'
   | 'victory'
   | 'tips';
@@ -50,6 +51,7 @@ const CHAPTERS: Chapter[] = [
   { id: 'combat', title: 'Combat & Dungeon', icon: <Sword className="w-4 h-4" /> },
   { id: 'economy', title: 'Economy', icon: <Coins className="w-4 h-4" /> },
   { id: 'crime', title: 'Crime & Theft', icon: <Skull className="w-4 h-4" /> },
+  { id: 'dark-magic', title: 'Dark Magic', icon: <Sparkles className="w-4 h-4" /> },
   { id: 'weekends', title: 'Weekends', icon: <Calendar className="w-4 h-4" /> },
   { id: 'victory', title: 'Victory', icon: <Trophy className="w-4 h-4" /> },
   { id: 'tips', title: 'Tips & Strategy', icon: <Lightbulb className="w-4 h-4" /> },
@@ -160,6 +162,7 @@ function ChapterContent({ chapter }: { chapter: ChapterId }) {
     case 'combat': return <CombatChapter />;
     case 'economy': return <EconomyChapter />;
     case 'crime': return <CrimeChapter />;
+    case 'dark-magic': return <DarkMagicChapter />;
     case 'weekends': return <WeekendsChapter />;
     case 'victory': return <VictoryChapter />;
     case 'tips': return <TipsChapter />;
@@ -932,6 +935,126 @@ function CrimeChapter() {
         The #1 defense against theft is upgrading from The Slums. Noble Heights has zero
         theft risk. If you can't afford to move yet, keep your relaxation high and deposit
         gold in the bank before heading home.
+      </Tip>
+    </div>
+  );
+}
+
+function DarkMagicChapter() {
+  return (
+    <div>
+      <H1>Dark Magic — Hexes, Curses & Scrolls</H1>
+      <P>
+        Dark magic is an <strong>optional feature</strong> — enable it in game setup under
+        "Hexes & Curses". When active, players can buy hex scrolls from the
+        <strong> Enchanter's Workshop</strong>, <strong>Shadow Market</strong>, or earn them as
+        dungeon drops. Three categories of dark magic are available.
+      </P>
+
+      <H2>Location Hexes</H2>
+      <P>
+        Location hexes block opponents from using a specific location for 1–2 weeks.
+        You are <em>not</em> blocked from your own hexed location. Cast them while standing
+        at any location — the hex travels to the target.
+      </P>
+      <Table
+        headers={['Hex', 'Target', 'Cost', 'Duration', 'Effect']}
+        rows={[
+          ['Seal of Ignorance', 'Academy', '500g', '2 weeks', 'Opponents cannot study'],
+          ['Embargo Decree', 'Guild Hall', '600g', '2 weeks', 'Opponents cannot get jobs or quests'],
+          ['Market Blight', 'General Store', '400g', '1 week', 'Opponents cannot buy food/items'],
+          ['Forge Curse', 'Forge', '350g', '2 weeks', 'Opponents cannot temper or repair'],
+          ['Vault Seal', 'Bank', 'Drop only', '1 week', 'Opponents cannot bank/invest'],
+          ['Dungeon Ward', 'Cave', '450g', '2 weeks', 'Opponents cannot enter the dungeon'],
+        ]}
+      />
+      <Tip>
+        Vault Seal and several other powerful hexes are dungeon-drop-only — they cannot be
+        purchased in any shop. Keep an eye on your scroll inventory after boss fights.
+      </Tip>
+
+      <H2>Personal Curses</H2>
+      <P>
+        Personal curses apply a debuff to a specific player for several weeks. You must target
+        a rival and spend cast time (2 hours). Curses are listed in your inventory under
+        "Your Scrolls."
+      </P>
+      <Table
+        headers={['Curse', 'Cost', 'Duration', 'Effect']}
+        rows={[
+          ['Curse of Poverty', '500g', '3 weeks', 'Target wages −40%'],
+          ['Hex of Clumsiness', '400g', '3 weeks', 'Equipment degrades 3× faster'],
+          ['Curse of Lethargy', 'Drop only', '2 weeks', 'Target loses 10 extra hours/turn'],
+          ['Hex of Misfortune', '350g', '4 weeks', 'Double robbery chance + 25% random bad events/week'],
+          ['Curse of Decay', '300g', '3 weeks', 'Food spoils 2× faster, clothing degrades 2× faster'],
+          ['Hex of Confusion', '450g', '2 weeks', 'Target needs +2 extra study sessions per degree'],
+          ['Curse of the Toad', '450g', '1 week', 'Target turns into a frog — loses 40 hours'],
+          ['Hex of Ruin', 'Floor 5 drop', '1 week', 'ALL shops closed + 25% gold loss. Cannot be warded.'],
+        ]}
+      />
+
+      <H2>Sabotage Scrolls</H2>
+      <P>
+        Sabotage hexes take instant effect — no duration, damage is permanent.
+        Cast time is 2 hours. Most are dungeon-drop-only.
+      </P>
+      <Table
+        headers={['Scroll', 'Cost', 'Effect']}
+        rows={[
+          ['Shatter Hex', 'Drop only (Floor 4)', "Permanently destroys target's weapon"],
+          ['Corrode Hex', 'Drop only (Floor 4)', "Permanently destroys target's armor"],
+          ['Spoilage Curse', '300g', "Destroys ALL of target's stored food"],
+          ['Appliance Jinx', '250g', 'Breaks one random appliance the target owns'],
+          ['Wardrobe Hex', '200g', "Reduces target's clothing condition to 0"],
+        ]}
+      />
+
+      <H2>Where to Get Scrolls</H2>
+      <Table
+        headers={['Source', 'What It Offers']}
+        rows={[
+          ["Enchanter's Workshop", 'Seal of Ignorance, Dungeon Ward, Hex of Confusion, Appliance Jinx (needs dungeon progress)'],
+          ['Shadow Market', 'Rotating stock of 3–4 scrolls per week (changes weekly)'],
+          ['Graveyard — Dark Ritual', 'Random scroll for 200g + 4h. 15% chance the ritual backfires on you!'],
+          ['Dungeon Boss Drops', 'Floors 3–5 drop powerful scrolls including Vault Seal, Lethargy, Shatter, Corrode, Hex of Ruin'],
+        ]}
+      />
+
+      <H2>Defense — Protecting Yourself</H2>
+      <P>
+        Two items defend against dark magic. Both are available at the
+        <strong> Enchanter's Workshop</strong>.
+      </P>
+      <Table
+        headers={['Item', 'Cost', 'Effect']}
+        rows={[
+          ['Protective Amulet', '400g', 'Automatically blocks the next hex/curse cast on you. Consumed on use.'],
+          ['Dispel Scroll', '250g', 'Remove a location hex — must be used AT the hexed location. Costs 1 hour.'],
+        ]}
+      />
+      <P>
+        The <strong>Graveyard</strong> also offers two paid services for cursed players:
+      </P>
+      <Table
+        headers={['Service', 'Cost', 'Time', 'Outcome']}
+        rows={[
+          ['Curse Reflection', '150g', '3h', '35% reflect to caster / 25% remove / 40% fail'],
+          ['Purification', '300g', '3h', 'Guaranteed removal of one active curse'],
+        ]}
+      />
+
+      <H2>Active Curses</H2>
+      <P>
+        If you have active curses, they appear in the <strong>Graveyard panel</strong> under
+        "Active Afflictions." Each shows the curse name, who cast it, and weeks remaining.
+        A purple glow effect also appears on your location panel when cursed.
+      </P>
+
+      <Tip>
+        Hexes & Curses add a rivalry layer — but watch out for backfires and reflections.
+        The Protective Amulet is the safest defense when you're winning and expect retaliation.
+        The Hex of Ruin (Floor 5 drop) is the most devastating attack in the game — and the
+        only one that cannot be blocked by a Protective Amulet.
       </Tip>
     </div>
   );

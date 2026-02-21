@@ -13,6 +13,7 @@ interface UseAITurnHandlerParams {
 
 export function useAITurnHandler({ currentPlayer, phase, aiDifficulty }: UseAITurnHandlerParams) {
   const [aiIsThinking, setAiIsThinking] = useState(false);
+  const [currentAIAction, setCurrentAIAction] = useState<string>('');
   const aiTurnStartedRef = useRef(false);
   const lastAIPlayerIdRef = useRef<string | null>(null);
 
@@ -50,6 +51,7 @@ export function useAITurnHandler({ currentPlayer, phase, aiDifficulty }: UseAITu
       aiTurnStartedRef.current = true;
       lastAIPlayerIdRef.current = currentPlayer.id;
       setAiIsThinking(true);
+      setCurrentAIAction('');
 
       // Show toast notification with the AI's actual name
       toast.info(`${currentPlayer.name} is planning...`, {
@@ -59,7 +61,7 @@ export function useAITurnHandler({ currentPlayer, phase, aiDifficulty }: UseAITu
 
       // Small delay before AI starts to let the UI settle
       setTimeout(() => {
-        runAITurn(currentPlayer);
+        runAITurn(currentPlayer, (desc) => setCurrentAIAction(desc));
       }, 1000);
     }
 
@@ -68,6 +70,7 @@ export function useAITurnHandler({ currentPlayer, phase, aiDifficulty }: UseAITu
       aiTurnStartedRef.current = false;
       lastAIPlayerIdRef.current = null;
       setAiIsThinking(false);
+      setCurrentAIAction('');
     }
   }, [currentPlayer, phase, aiIsThinking, runAITurn]);
 
@@ -85,5 +88,5 @@ export function useAITurnHandler({ currentPlayer, phase, aiDifficulty }: UseAITu
     }
   }, [currentPlayer?.id]);
 
-  return { aiIsThinking };
+  return { aiIsThinking, currentAIAction };
 }

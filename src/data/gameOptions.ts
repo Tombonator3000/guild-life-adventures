@@ -26,6 +26,9 @@ export interface GameOptions {
   // === Game Speed ===
   autoEndTurn: boolean;        // Auto-end turn when time runs out
 
+  // === Opponent Visibility ===
+  showOpponentActions: boolean; // Show what AI/opponent is doing during their turn (menus, actions)
+
   // Note: Dark mode, music, and SFX have their own dedicated storage/managers.
   // They are surfaced in the OptionsMenu UI but managed by their own systems.
 }
@@ -47,6 +50,9 @@ const DEFAULT_OPTIONS: GameOptions = {
 
   // Game Speed
   autoEndTurn: false,
+
+  // Opponent Visibility
+  showOpponentActions: false,   // Off by default — opt-in transparency feature
 };
 
 let cachedOptions: GameOptions | null = null;

@@ -1,7 +1,7 @@
 // OptionsTab - Save/Load, audio controls, AI speed, border style, keyboard shortcuts
 // Uses AudioVolumeControl for deduplicated music/ambient/SFX sliders
 
-import { Save, Play, FastForward, SkipForward, Music, Sparkles, Bell, Frame } from 'lucide-react';
+import { Save, Play, FastForward, SkipForward, Music, Sparkles, Bell, Frame, Eye, EyeOff } from 'lucide-react';
 import { useAudioSettings } from '@/hooks/useMusic';
 import { useSFXSettings } from '@/hooks/useSFX';
 import { useAmbientSettings } from '@/hooks/useAmbient';
@@ -143,6 +143,29 @@ export function OptionsTab({
             Skip AI Turn (Space)
           </button>
         )}
+      </OptionSection>
+
+      {/* Opponent Visibility */}
+      <OptionSection title="Opponent Visibility">
+        <button
+          onClick={() => setOption('showOpponentActions', !options.showOpponentActions)}
+          className={`w-full flex items-center justify-between gap-2 p-2 rounded border text-xs font-display transition-colors ${
+            options.showOpponentActions
+              ? 'bg-amber-200 border-amber-600 text-amber-900'
+              : 'bg-amber-100/30 border-amber-300/50 text-amber-700 hover:bg-amber-100'
+          }`}
+        >
+          <span className="flex items-center gap-1.5">
+            {options.showOpponentActions ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+            Show opponent actions
+          </span>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded ${options.showOpponentActions ? 'bg-amber-600 text-amber-50' : 'bg-amber-200 text-amber-700'}`}>
+            {options.showOpponentActions ? 'ON' : 'OFF'}
+          </span>
+        </button>
+        <p className="text-[9px] text-amber-700 mt-1">
+          Show what your opponent is doing during their turn.
+        </p>
       </OptionSection>
 
       {/* Keyboard Shortcuts */}
