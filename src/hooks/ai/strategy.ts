@@ -4,7 +4,7 @@
  * Pure strategy and analysis functions with no React or store dependencies.
  */
 
-import type { Player, LocationId } from '@/types/game.types';
+import type { Player, LocationId, DegreeId } from '@/types/game.types';
 import { getAvailableJobs, getJob, ALL_JOBS, canWorkJob, type Job } from '@/data/jobs';
 import { getAvailableDegrees, type Degree } from '@/data/education';
 import { DUNGEON_FLOORS, checkFloorRequirements, getFloorTimeCost, calculateEducationBonuses } from '@/data/dungeon';
@@ -580,7 +580,7 @@ export function forecastCashFlow(player: Player, week: number, weeksAhead: numbe
  *   payoffWeeks = remainingTuition / weeklyGainEstimate
  *   weeklyGainEstimate = (projectedWage - currentWage) × shiftsPerWeek × hoursPerShift
  */
-export function calculateDegreeROI(degreeId: string, player: Player): DegreeROI {
+export function calculateDegreeROI(degreeId: DegreeId | string, player: Player): DegreeROI {
   const degree = DEGREES[degreeId as keyof typeof DEGREES];
   if (!degree) {
     return {
@@ -604,7 +604,7 @@ export function calculateDegreeROI(degreeId: string, player: Player): DegreeROI 
   for (const job of ALL_JOBS) {
     if (job.baseWage <= bestUnlockedWage) continue;
     // Check if this degree is required for the job
-    if (!job.requiredDegrees.includes(degreeId)) continue;
+    if (!job.requiredDegrees.includes(degreeId as DegreeId)) continue;
     // Check if all other required degrees are already completed
     const allPrereqsMet = job.requiredDegrees.every(req => degreesAfter.includes(req));
     if (!allPrereqsMet) continue;
