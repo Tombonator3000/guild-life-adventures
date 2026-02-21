@@ -5624,3 +5624,65 @@ Tutorial and manual contained multiple factual errors and outdated information t
 | Floor Sweeper location | `jobs/definitions.ts:17` | `location: 'Guild Hall'`, 4g/hr |
 | Dungeon floors | `dungeon/floors.ts` | 6 floors (1-6, including Forgotten Temple) |
 | Rent first due | `gameStore.ts:260` | `rentDueWeek: 4` |
+
+---
+
+## 2026-02-21 — Tavern Brawl Mechanic + Public Lobby Toggle Fix (claude/tavern-brawl-mechanic-RUeOu)
+
+### Summary
+
+Two features implemented and one doc created:
+1. **Tavern Brawl** — drinking 7+ ales at the Rusty Tankard now carries a 35% chance per mug of triggering a brawl event with health loss and a funny center-panel message.
+2. **Public Lobby Toggle** — the "make room public" toggle in the host lobby is now always visible (previously hidden when Firebase was not configured).
+3. **MULTIPLAYER.md** — new living document tracking all multiplayer work, architecture, known issues, and future plans.
+
+---
+
+### Task 1: Tavern Brawl Mechanic
+
+**Problem:** Drinking unlimited ale had no downside — only +1 happiness per mug.
+
+**Implementation:**
+
+| File | Change |
+|------|--------|
+| `src/components/game/TavernPanel.tsx` | Added `alesDrunk` state, `modifyHealth` + `setEventMessage` props, brawl roll logic, 5 funny message variants |
+| `src/components/game/locationTabs.tsx` | Added `setEventMessage: GameStore['setEventMessage']` to `LocationTabContext` interface; updated `tavernTabs()` to pass `modifyHealth` and `setEventMessage` to `TavernPanel` |
+| `src/components/game/LocationPanel.tsx` | Added `setEventMessage: store.setEventMessage` to the `ctx` object passed to tab factories |
+
+**Mechanic details:**
+- `alesDrunk` is local React state — resets when panel is closed/reopened (per-session tracking)
+- After each ale purchase, counter increments
+- When `alesDrunk > 6`: 35% chance of brawl
+- Brawl damage: 5–15 health (random)
+- 5 message variants chosen randomly, each with distinct flavour text
+- Uses existing `setEventMessage` → `EventPanel` pipeline (no new UI components needed)
+
+---
+
+### Task 2: Public Lobby Toggle Always Visible
+
+**Problem:** `{firebaseAvailable && (...toggle...)}` hid the toggle when Firebase env vars weren't set, even though PeerJS game discovery works automatically without Firebase.
+
+**Fix:** `src/components/screens/OnlineLobby.tsx`
+- Removed `{firebaseAvailable && ...}` guard
+- Toggle now always renders for the host
+- Label/description text adapts based on `firebaseAvailable`:
+  - With Firebase: "List in public lobby browser" / "Others can find and join this room without a code"
+  - Without Firebase: "Make room discoverable" / "Others can find your room via P2P discovery"
+- `useOnlineGame.ts` unchanged — `registerGameListing` already returns a no-op when Firebase is absent (`gameListing.ts:33`)
+
+---
+
+### Task 3: MULTIPLAYER.md
+
+Created `/home/user/guild-life-adventures/MULTIPLAYER.md` with:
+- System overview table
+- Connection flow diagram
+- Discovery methods explanation
+- Feature status table
+- 2026-02-21 fix documentation
+- Known issues table (M1–M4)
+- Architecture notes (host authority model, state serialisation, peer ID format)
+- Future work checklist
+

@@ -111,6 +111,7 @@ export interface LocationTabContext {
   // Callbacks for newspaper modal (owned by LocationPanel)
   onBuyNewspaper: () => void;
   onShowNewspaper: (newspaper: ReturnType<typeof generateNewspaper>) => void;
+  setEventMessage: GameStore['setEventMessage'];
 }
 
 /** Build work info for the standardized footer bar */
@@ -250,7 +251,7 @@ function guildHallTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function tavernTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, priceModifier, modifyGold, spendTime, modifyFood, modifyHappiness } = ctx;
+  const { player, priceModifier, modifyGold, spendTime, modifyFood, modifyHappiness, modifyHealth, setEventMessage } = ctx;
   return [{
     id: 'menu',
     label: 'Menu',
@@ -262,6 +263,8 @@ function tavernTabs(ctx: LocationTabContext): LocationTab[] {
         spendTime={spendTime}
         modifyFood={modifyFood}
         modifyHappiness={modifyHappiness}
+        modifyHealth={modifyHealth}
+        setEventMessage={setEventMessage}
       />
     ),
   }];
