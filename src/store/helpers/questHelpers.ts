@@ -1,6 +1,7 @@
 // Quest and game status helpers
 // takeQuest, completeQuest, abandonQuest, checkDeath, promoteGuildRank, evictPlayer, checkVictory
 // B1: takeChainQuest, completeChainQuest
+// B1-NL: takeNonLinearChain, completeNonLinearChainStep, makeNLChainChoice
 // B2: takeBounty, completeBounty
 // B3: Quest difficulty scaling (applied in completeQuest/completeChainQuest/completeBounty)
 // B4: Quest failure consequences (applied in abandonQuest)
@@ -22,6 +23,14 @@ import {
 import { calculateStockValue } from '@/data/stocks';
 import { checkAchievements, updateAchievementStats } from '@/data/achievements';
 import { deleteSave } from '@/data/saveLoad';
+import {
+  NON_LINEAR_QUEST_CHAINS,
+  getNonLinearChain,
+  getCurrentNonLinearStep,
+  canTakeNonLinearChainStep,
+  calculateChoiceRewards,
+} from '@/data/questChains';
+import type { QuestChainChoice } from '@/data/questChains';
 import type { SetFn, GetFn } from '../storeTypes';
 
 // Resurrection cost: base 100g + 10% of wealth above 500g, capped at 2000g
@@ -223,6 +232,12 @@ export function createQuestActions(set: SetFn, get: GetFn) {
         return;
       }
 
+      // Check if active quest is a non-linear chain step
+      if (player.activeQuest.startsWith('nlchain:')) {
+        get().completeNonLinearChainStep(playerId);
+        return;
+      }
+
       // Check if active quest is a bounty
       if (player.activeQuest.startsWith('bounty:')) {
         get().completeBounty(playerId);
@@ -379,6 +394,157 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       get().promoteGuildRank(playerId);
 
       // Check death
+      get().checkDeath(playerId);
+    },
+
+    // ============================================================
+    // B1-NL: Non-Linear Quest Chain actions
+    // ============================================================
+
+    takeNonLinearChain: (playerId: string, chainId: string) => {
+      const state = get();
+      const player = state.players.find(p => p.id === playerId);
+      if (!player) return;
+      if (!player.hasGuildPass) return;
+      if (player.activeQuest) return;
+      if (player.questCooldownWeeksLeft > 0) return;
+
+      const chain = getNonLinearChain(chainId);
+      if (!chain) return;
+
+      const stepIndex = player.nlChainProgress[chainId] ?? 0;
+      const step = getCurrentNonLinearStep(chainId, stepIndex);
+      if (!step) return;
+      if (player.nlChainCompleted.includes(chainId)) return;
+
+      const canTake = canTakeNonLinearChainStep(chain, step, player.guildRank, player.education, player.dungeonFloorsCleared);
+      if (!canTake.canTake) return;
+
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? { ...p, activeQuest: `nlchain:${chainId}` }
+            : p
+        ),
+      }));
+    },
+
+    completeNonLinearChainStep: (playerId: string) => {
+      const state = get();
+      const player = state.players.find(p => p.id === playerId);
+      if (!player || !player.activeQuest) return;
+
+      const chainId = player.activeQuest.replace('nlchain:', '');
+      const chain = getNonLinearChain(chainId);
+      if (!chain) return;
+
+      const stepIndex = player.nlChainProgress[chainId] ?? 0;
+      const step = getCurrentNonLinearStep(chainId, stepIndex);
+      if (!step) return;
+
+      // If step has choices, show choice modal instead of auto-completing
+      if (step.choices && step.choices.length > 0) {
+        set((state) => ({
+          players: state.players.map((p) =>
+            p.id === playerId
+              ? { ...p, pendingNLChainChoice: { chainId, stepIndex } }
+              : p
+          ),
+        }));
+        return;
+      }
+
+      // No choices — auto-advance to next step or complete chain
+      const isLastStep = stepIndex + 1 >= chain.steps.length;
+      const reward = calculateQuestReward(
+        step.baseGoldReward, step.baseHappinessReward, step.baseHealthRisk,
+        player.dungeonFloorsCleared, player.guildReputation,
+      );
+      const bonusGold = isLastStep ? chain.completionBonusGold : 0;
+      const bonusHappiness = isLastStep ? chain.completionBonusHappiness : 0;
+
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          return {
+            ...p,
+            gold: p.gold + reward.finalGold + bonusGold,
+            health: Math.max(0, p.health - reward.healthLoss),
+            happiness: Math.min(100, p.happiness + reward.finalHappiness + bonusHappiness),
+            timeRemaining: Math.max(0, p.timeRemaining - step.baseTimeRequired),
+            completedQuests: p.completedQuests + (isLastStep ? 1 : 0),
+            guildReputation: p.guildReputation + (isLastStep ? 3 : 1),
+            activeQuest: null,
+            nlChainProgress: { ...p.nlChainProgress, [chainId]: stepIndex + 1 },
+            nlChainCompleted: isLastStep ? [...p.nlChainCompleted, chainId] : p.nlChainCompleted,
+          };
+        }),
+      }));
+
+      get().promoteGuildRank(playerId);
+      get().checkDeath(playerId);
+    },
+
+    makeNLChainChoice: (playerId: string, choiceId: string) => {
+      const state = get();
+      const player = state.players.find(p => p.id === playerId);
+      if (!player || !player.pendingNLChainChoice) return;
+
+      const { chainId, stepIndex } = player.pendingNLChainChoice;
+      const chain = getNonLinearChain(chainId);
+      if (!chain) return;
+
+      const step = getCurrentNonLinearStep(chainId, stepIndex);
+      if (!step || !step.choices) return;
+
+      const choice = step.choices.find(c => c.id === choiceId);
+      if (!choice) return;
+
+      const rewards = calculateChoiceRewards(step, choice);
+      const scaledReward = calculateQuestReward(
+        rewards.gold, rewards.happiness, rewards.healthRisk,
+        player.dungeonFloorsCleared, player.guildReputation,
+      );
+
+      const nextStepIndex = choice.nextStepIndex === 'complete' ? chain.steps.length : choice.nextStepIndex;
+      const isComplete = nextStepIndex >= chain.steps.length;
+      const bonusGold = isComplete ? chain.completionBonusGold : 0;
+      const bonusHappiness = isComplete ? chain.completionBonusHappiness : 0;
+
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          return {
+            ...p,
+            gold: p.gold + scaledReward.finalGold + bonusGold,
+            health: Math.max(0, p.health - scaledReward.healthLoss),
+            happiness: Math.min(100, p.happiness + scaledReward.finalHappiness + bonusHappiness),
+            timeRemaining: Math.max(0, p.timeRemaining - rewards.time),
+            completedQuests: p.completedQuests + (isComplete ? 1 : 0),
+            guildReputation: p.guildReputation + (isComplete ? 3 : 1),
+            activeQuest: null,
+            pendingNLChainChoice: null,
+            nlChainProgress: { ...p.nlChainProgress, [chainId]: nextStepIndex },
+            nlChainCompleted: isComplete ? [...p.nlChainCompleted, chainId] : p.nlChainCompleted,
+          };
+        }),
+      }));
+
+      // Show outcome text
+      if (choice.outcomeText) {
+        const completedPlayer = get().players.find(p => p.id === playerId);
+        if (completedPlayer && !completedPlayer.isAI) {
+          const prefix = isComplete ? `[quest-chain-complete] ${chain.name} — COMPLETE\n\n` : '';
+          const rewardLine = isComplete
+            ? `\n\n+${chain.completionBonusGold}g bonus | +${chain.completionBonusHappiness} happiness | +3 reputation`
+            : '';
+          const msg = `${prefix}${choice.outcomeText}${rewardLine}`;
+          const existing = get().eventMessage;
+          set({ eventMessage: existing ? existing + '\n' + msg : msg, eventSource: 'weekly', phase: 'event' });
+        }
+      }
+
+      get().promoteGuildRank(playerId);
       get().checkDeath(playerId);
     },
 

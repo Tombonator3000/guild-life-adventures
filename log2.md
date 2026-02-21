@@ -5814,3 +5814,58 @@ New **"Home"** mode added to the Zone Editor (rose/pink button in toolbar).
 ### Tests
 332/332 passing ✓ | 0 TypeScript errors ✓
 
+---
+
+## 2026-02-21 ~16:30 UTC — Non-Linear Quest Chain UI Integration
+
+### Overview
+Built the full QuestPanel UI integration for non-linear quest chains with branching choices.
+
+### Changes
+
+#### Player State (`game.types.ts`)
+- Added `nlChainProgress: Record<string, number>` — tracks current step index per chain
+- Added `nlChainCompleted: string[]` — IDs of completed non-linear chains
+- Added `pendingNLChainChoice: { chainId, stepIndex } | null` — triggers choice modal
+
+#### Store Actions (`questHelpers.ts`)
+- `takeNonLinearChain(playerId, chainId)` — accepts an NL chain step as active quest (`nlchain:` prefix)
+- `completeNonLinearChainStep(playerId)` — completes step; if choices exist, sets `pendingNLChainChoice` instead of auto-advancing
+- `makeNLChainChoice(playerId, choiceId)` — resolves choice, applies modified rewards, advances to next step or completes chain
+- `completeQuest` now delegates to `completeNonLinearChainStep` for `nlchain:` prefix
+
+#### Store Types (`storeTypes.ts`)
+- Added `takeNonLinearChain`, `completeNonLinearChainStep`, `makeNLChainChoice` to `GameStore`
+
+#### Network (`network/types.ts`)
+- Added all 3 new actions to `FORWARDABLE_ACTIONS`
+
+#### ChainChoiceModal (`ChainChoiceModal.tsx`) — NEW
+- Modal showing 2-3 choices per step with reward modifiers
+- Shows actual gold/happiness/HP/time values after modifier application
+- Modifier badges (e.g., "+50% gold", "-50% risk") for clarity
+- "→ Completes Chain" indicator for terminal choices
+
+#### QuestPanel Updates
+- Added "BRANCHING QUESTS" section with GitBranch icon
+- Shows current step, requirements, choice count indicator
+- Active NL chain quest display with "Branching" badge
+- Pending choice modal auto-appears when step has choices
+- New props: `onTakeNonLinearChain`, `onMakeNLChainChoice`
+
+#### LocationPanel + locationTabs Wiring
+- Added `takeNonLinearChain` and `makeNLChainChoice` to `LocationTabContext`
+- Wired through to QuestPanel in Guild Hall tabs
+
+### Files Modified
+- `src/types/game.types.ts` — Player NL chain fields
+- `src/store/gameStore.ts` — createPlayer defaults
+- `src/store/storeTypes.ts` — GameStore interface
+- `src/store/helpers/questHelpers.ts` — 3 new actions + completeQuest delegation
+- `src/network/types.ts` — forwardable actions
+- `src/components/game/QuestPanel.tsx` — NL chain UI + choice modal integration
+- `src/components/game/locationTabs.tsx` — wiring
+- `src/components/game/LocationPanel.tsx` — context
+
+### Files Created
+- `src/components/game/ChainChoiceModal.tsx` — Choice modal component

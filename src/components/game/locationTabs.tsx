@@ -82,6 +82,8 @@ export interface LocationTabContext {
   completeQuest: GameStore['completeQuest'];
   abandonQuest: GameStore['abandonQuest'];
   takeChainQuest: GameStore['takeChainQuest'];
+  takeNonLinearChain: GameStore['takeNonLinearChain'];
+  makeNLChainChoice: GameStore['makeNLChainChoice'];
   takeBounty: GameStore['takeBounty'];
   buyGuildPass: GameStore['buyGuildPass'];
   sellItem: GameStore['sellItem'];
@@ -142,7 +144,7 @@ export function getWorkInfo(locationId: LocationId, ctx: LocationTabContext): Wo
 
 function guildHallTabs(ctx: LocationTabContext): LocationTab[] {
   const { player, players, priceModifier, week, setJob, negotiateRaise, spendTime,
-    takeQuest, completeQuest, abandonQuest, takeChainQuest, takeBounty, buyGuildPass, requestRaise } = ctx;
+    takeQuest, completeQuest, abandonQuest, takeChainQuest, takeNonLinearChain, makeNLChainChoice, takeBounty, buyGuildPass, requestRaise } = ctx;
   const currentJobData = player.currentJob ? getJob(player.currentJob) : null;
   const availableQuests = getAvailableQuests(player.guildRank);
   const canWorkAtGuildHall = currentJobData && currentJobData.location === 'Guild Hall';
@@ -207,6 +209,8 @@ function guildHallTabs(ctx: LocationTabContext): LocationTab[] {
           onAbandonQuest={() => abandonQuest(player.id)}
           onTakeChainQuest={(chainId) => takeChainQuest(player.id, chainId)}
           onTakeBounty={(bountyId) => takeBounty(player.id, bountyId)}
+          onTakeNonLinearChain={(chainId) => takeNonLinearChain(player.id, chainId)}
+          onMakeNLChainChoice={(choiceId) => makeNLChainChoice(player.id, choiceId)}
         />
       ),
     },

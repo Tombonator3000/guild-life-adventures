@@ -62,6 +62,10 @@ export interface GameStore extends GameState {
   // Quest Chain actions (B1)
   takeChainQuest: (playerId: string, chainId: string) => void;
   completeChainQuest: (playerId: string) => void;
+  // Non-linear quest chain actions
+  takeNonLinearChain: (playerId: string, chainId: string) => void;
+  completeNonLinearChainStep: (playerId: string) => void;
+  makeNLChainChoice: (playerId: string, choiceId: string) => void;
   // Bounty actions (B2)
   takeBounty: (playerId: string, bountyId: string) => void;
   completeBounty: (playerId: string) => void;

@@ -92,6 +92,8 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     completeQuest: store.completeQuest,
     abandonQuest: store.abandonQuest,
     takeChainQuest: store.takeChainQuest,
+    takeNonLinearChain: store.takeNonLinearChain,
+    makeNLChainChoice: store.makeNLChainChoice,
     takeBounty: store.takeBounty,
     buyGuildPass: store.buyGuildPass,
     sellItem: store.sellItem,

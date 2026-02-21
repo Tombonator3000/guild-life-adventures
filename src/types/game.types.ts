@@ -257,6 +257,11 @@ export interface Player {
   equipmentDurability: Record<string, number>; // itemId -> durability (100 = perfect, 0 = broken)
   // Quest Chain progress (B1)
   questChainProgress: Record<string, number>; // chainId → steps completed (0-indexed)
+  // Non-linear quest chain progress
+  nlChainProgress: Record<string, number>; // chainId → current step index
+  nlChainCompleted: string[]; // IDs of completed non-linear chains
+  /** Pending choice after completing a non-linear chain step (null = no pending choice) */
+  pendingNLChainChoice: { chainId: string; stepIndex: number } | null;
   // Repeatable Bounties (B2)
   completedBountiesThisWeek: string[];        // bounty IDs completed this week (reset weekly)
   // Quest Failure Consequences (B4)

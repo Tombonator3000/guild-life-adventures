@@ -1,9 +1,10 @@
 // Guild Life - Quest Panel Component
 // Supports: regular quests, quest chains (B1), bounties (B2),
-// difficulty scaling indicators (B3), cooldown display (B4), reputation (B5)
+// difficulty scaling indicators (B3), cooldown display (B4), reputation (B5),
+// non-linear quest chains (B1-NL)
 
-import { useMemo } from 'react';
-import { AlertTriangle, Check, X, Trophy } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { AlertTriangle, Check, X, Trophy, GitBranch } from 'lucide-react';
 import { playSFX } from '@/audio/sfxManager';
 import type { Quest } from '@/data/quests';
 import {
@@ -20,11 +21,18 @@ import {
   getNextReputationMilestone,
   pickQuestDescription,
 } from '@/data/quests';
+import {
+  NON_LINEAR_QUEST_CHAINS,
+  getCurrentNonLinearStep,
+  canTakeNonLinearChainStep,
+  calculateChoiceRewards,
+} from '@/data/questChains';
 import type { Player } from '@/types/game.types';
 import {
   JonesSectionHeader,
   JonesButton,
 } from './JonesStylePanel';
+import { ChainChoiceModal } from './ChainChoiceModal';
 
 interface QuestPanelProps {
   quests: Quest[];
@@ -35,6 +43,8 @@ interface QuestPanelProps {
   onAbandonQuest: () => void;
   onTakeChainQuest: (chainId: string) => void;
   onTakeBounty: (bountyId: string) => void;
+  onTakeNonLinearChain: (chainId: string) => void;
+  onMakeNLChainChoice: (choiceId: string) => void;
 }
 
 export function ScaledRewardDisplay({ baseGold, baseHappiness, player }: { baseGold: number; baseHappiness: number; player: Player }) {
@@ -102,9 +112,9 @@ function CooldownWarning({ weeksLeft }: { weeksLeft: number }) {
   );
 }
 
-/** Resolve active quest details (could be regular, chain, or bounty) */
+/** Resolve active quest details (could be regular, chain, bounty, or non-linear chain) */
 function resolveActiveQuest(player: Player, week: number): {
-  type: 'quest' | 'chain' | 'bounty';
+  type: 'quest' | 'chain' | 'bounty' | 'nlchain';
   name: string;
   rank: string;
   description: string;
@@ -114,6 +124,25 @@ function resolveActiveQuest(player: Player, week: number): {
   happinessReward: number;
 } | null {
   if (!player.activeQuest) return null;
+
+  if (player.activeQuest.startsWith('nlchain:')) {
+    const chainId = player.activeQuest.replace('nlchain:', '');
+    const chain = NON_LINEAR_QUEST_CHAINS.find(c => c.id === chainId);
+    if (!chain) return null;
+    const stepIndex = player.nlChainProgress[chainId] ?? 0;
+    const step = getCurrentNonLinearStep(chainId, stepIndex);
+    if (!step) return null;
+    return {
+      type: 'nlchain',
+      name: `${chain.name} — ${step.name}`,
+      rank: step.rank,
+      description: step.description + (step.choices && step.choices.length > 0 ? ' (Choices available on completion)' : ''),
+      goldReward: step.baseGoldReward,
+      timeRequired: step.baseTimeRequired,
+      healthRisk: step.baseHealthRisk,
+      happinessReward: step.baseHappinessReward,
+    };
+  }
 
   if (player.activeQuest.startsWith('chain:')) {
     const chainId = player.activeQuest.replace('chain:', '');
@@ -167,7 +196,7 @@ function resolveActiveQuest(player: Player, week: number): {
   };
 }
 
-export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest, onAbandonQuest, onTakeChainQuest, onTakeBounty }: QuestPanelProps) {
+export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest, onAbandonQuest, onTakeChainQuest, onTakeBounty, onTakeNonLinearChain, onMakeNLChainChoice }: QuestPanelProps) {
   const activeQuestData = resolveActiveQuest(player, week);
 
   // Pick stable random quest descriptions per quest set (avoids re-randomizing on every re-render)
@@ -187,12 +216,12 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
       <div className="space-y-2">
         <ReputationBar player={player} />
 
-        <JonesSectionHeader title={`ACTIVE ${activeQuestData.type === 'chain' ? 'CHAIN QUEST' : 'QUEST'}`} />
+        <JonesSectionHeader title={`ACTIVE ${activeQuestData.type === 'chain' ? 'CHAIN QUEST' : activeQuestData.type === 'nlchain' ? 'BRANCHING QUEST' : 'QUEST'}`} />
         <div className="bg-[#e0d4b8] border border-[#c9a227] ring-1 ring-[#c9a227] p-2 rounded">
           <div className="flex justify-between items-baseline">
             <span className="font-mono text-sm text-[#3d2a14] font-bold">{activeQuestData.name}</span>
             <span className={`font-mono text-xs font-bold ${rankInfo.color}`}>
-              {activeQuestData.type === 'chain' ? 'Chain' : rankInfo.name}
+              {activeQuestData.type === 'chain' ? 'Chain' : activeQuestData.type === 'nlchain' ? 'Branching' : rankInfo.name}
             </span>
           </div>
           <p className="text-xs text-[#6b5a42] mt-1">{activeQuestData.description}</p>
@@ -224,6 +253,22 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
             </div>
           </div>
         </div>
+
+        {/* Pending NL Chain Choice Modal */}
+        {player.pendingNLChainChoice && (() => {
+          const { chainId, stepIndex } = player.pendingNLChainChoice;
+          const step = getCurrentNonLinearStep(chainId, stepIndex);
+          if (!step || !step.choices) return null;
+          return (
+            <ChainChoiceModal
+              stepName={step.name}
+              choices={step.choices}
+              step={step}
+              onChoice={(choiceId) => onMakeNLChainChoice(choiceId)}
+              onCancel={() => {}} // Can't cancel — must choose
+            />
+          );
+        })()}
       </div>
     );
   }
@@ -303,6 +348,93 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
           );
         })}
       </div>
+
+      {/* Non-Linear Quest Chains */}
+      <JonesSectionHeader title="BRANCHING QUESTS" />
+      <div className="space-y-1">
+        {NON_LINEAR_QUEST_CHAINS.map(chain => {
+          const stepIndex = player.nlChainProgress[chain.id] ?? 0;
+          const isComplete = player.nlChainCompleted.includes(chain.id);
+          const step = isComplete ? null : getCurrentNonLinearStep(chain.id, stepIndex);
+          const canStart = step ? canTakeNonLinearChainStep(chain, step, player.guildRank, player.education, player.dungeonFloorsCleared) : { canTake: false };
+          const hasActiveQuest = !!player.activeQuest;
+          const hasCooldown = player.questCooldownWeeksLeft > 0;
+          const hasTime = step ? player.timeRemaining >= step.baseTimeRequired : false;
+          const isDisabled = isComplete || !canStart.canTake || hasActiveQuest || hasCooldown || !hasTime;
+
+          return (
+            <div key={chain.id} className={`bg-[#e0d4b8] border p-2 rounded ${isComplete ? 'border-green-500' : 'border-[#8b7355]'}`}>
+              <div className="flex justify-between items-baseline">
+                <span className="font-mono text-sm text-[#3d2a14]">
+                  <GitBranch className="w-3 h-3 inline mr-1 text-purple-600" />
+                  {chain.name}
+                </span>
+                <span className="font-mono text-xs text-purple-700 font-bold">
+                  Branching {isComplete ? '✓' : `(step ${stepIndex + 1})`}
+                </span>
+              </div>
+              <p className="text-xs text-[#6b5a42] mt-0.5">{chain.description}</p>
+
+              {isComplete ? (
+                <div className="flex items-center gap-1 text-xs text-green-600 font-mono font-bold mt-1">
+                  <Check className="w-3 h-3" /> Chain Complete!
+                </div>
+              ) : step && (
+                <>
+                  <div className="text-xs text-[#6b5a42] mt-1">
+                    Next: <span className="text-[#3d2a14] font-bold">{step.name}</span> — {step.description}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs mt-1">
+                    <ScaledRewardDisplay baseGold={step.baseGoldReward} baseHappiness={step.baseHappinessReward} player={player} />
+                    <span className="text-[#6b5a42]">{step.baseTimeRequired}h</span>
+                    {step.baseHealthRisk > 0 && <span className="text-red-600">-{step.baseHealthRisk}HP</span>}
+                  </div>
+                  {step.choices && step.choices.length > 0 && (
+                    <div className="text-xs text-purple-600 mt-1 font-mono">
+                      ⚑ {step.choices.length} choices available on completion
+                    </div>
+                  )}
+                  {!canStart.canTake && canStart.reason && (
+                    <div className="flex items-center gap-1 text-xs text-red-600 mt-1">
+                      <AlertTriangle className="w-3 h-3" /> {canStart.reason}
+                    </div>
+                  )}
+                </>
+              )}
+
+              <div className="flex justify-between items-center mt-1">
+                <span className="text-xs text-[#8b7355]">
+                  {isComplete ? '' : `Requires ${chain.requiredGuildRank} rank`}
+                </span>
+                {!isComplete && (
+                  <JonesButton
+                    label={stepIndex === 0 ? 'Begin Chain' : `Continue Step ${stepIndex + 1}`}
+                    onClick={() => { playSFX('quest-accept'); onTakeNonLinearChain(chain.id); }}
+                    disabled={isDisabled}
+                    variant={canStart.canTake ? 'primary' : 'secondary'}
+                  />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Pending NL Chain Choice Modal (when not on active quest) */}
+      {player.pendingNLChainChoice && (() => {
+        const { chainId, stepIndex } = player.pendingNLChainChoice;
+        const step = getCurrentNonLinearStep(chainId, stepIndex);
+        if (!step || !step.choices) return null;
+        return (
+          <ChainChoiceModal
+            stepName={step.name}
+            choices={step.choices}
+            step={step}
+            onChoice={(choiceId) => onMakeNLChainChoice(choiceId)}
+            onCancel={() => {}}
+          />
+        );
+      })()}
 
       {/* Regular Quests */}
       <JonesSectionHeader title="AVAILABLE QUESTS" />
