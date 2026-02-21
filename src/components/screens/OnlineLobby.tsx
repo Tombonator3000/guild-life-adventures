@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useOnlineGame } from '@/network/useOnlineGame';
 import { isValidRoomCode } from '@/network/roomCodes';
@@ -6,13 +6,15 @@ import { PLAYER_COLORS, AI_DIFFICULTY_NAMES } from '@/types/game.types';
 import type { AIDifficulty } from '@/types/game.types';
 import {
   Globe, Users, Copy, Check, ArrowLeft, Play, Wifi, WifiOff,
-  Loader2, Bot, Brain, Zap, Crown, UserPlus, Pencil,
+  Loader2, Bot, Brain, Zap, Crown, UserPlus, Pencil, Search, RefreshCw,
 } from 'lucide-react';
 import { CharacterPortrait } from '@/components/game/CharacterPortrait';
 import { PortraitPicker } from '@/components/game/PortraitPicker';
 import gameBoard from '@/assets/game-board.jpeg';
+import { subscribeToGameListings, type GameListing } from '@/network/gameListing';
+import { isFirebaseConfigured } from '@/lib/firebase';
 
-type LobbyView = 'menu' | 'creating' | 'joining' | 'host-lobby' | 'guest-lobby';
+type LobbyView = 'menu' | 'creating' | 'joining' | 'host-lobby' | 'guest-lobby' | 'browse';
 
 export function OnlineLobby() {
   const { setPhase } = useGameStore();
@@ -24,6 +26,7 @@ export function OnlineLobby() {
     localPlayerName,
     settings,
     error,
+    isPublic,
     createRoom,
     joinRoom,
     startOnlineGame,
@@ -32,6 +35,7 @@ export function OnlineLobby() {
     updatePlayerName,
     disconnect,
     setLocalPlayerName,
+    setPublicRoom,
   } = useOnlineGame();
 
   const [view, setView] = useState<LobbyView>('menu');
@@ -42,6 +46,22 @@ export function OnlineLobby() {
   const [showPortraitPicker, setShowPortraitPicker] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [lobbyNameInput, setLobbyNameInput] = useState('');
+
+  // Browse Games state
+  const [gameListings, setGameListings] = useState<GameListing[]>([]);
+  const [listingsLoading, setListingsLoading] = useState(false);
+  const firebaseAvailable = isFirebaseConfigured();
+
+  // Subscribe to game listings when in browse view
+  useEffect(() => {
+    if (view !== 'browse' || !firebaseAvailable) return;
+    setListingsLoading(true);
+    const unsub = subscribeToGameListings((games) => {
+      setGameListings(games);
+      setListingsLoading(false);
+    });
+    return unsub;
+  }, [view, firebaseAvailable]);
 
   // --- Actions ---
 
@@ -87,6 +107,19 @@ export function OnlineLobby() {
       setPhase('title');
     } else {
       setView('menu');
+    }
+  };
+
+  const handleJoinFromBrowse = async (code: string) => {
+    if (!nameInput.trim()) return;
+    setConnecting(true);
+    try {
+      await joinRoom(code, nameInput.trim());
+      setView('guest-lobby');
+    } catch {
+      // Error shown via useOnlineGame error state
+    } finally {
+      setConnecting(false);
     }
   };
 
@@ -150,7 +183,7 @@ export function OnlineLobby() {
               />
             </div>
 
-            {/* Create / Join Buttons */}
+            {/* Create / Join / Browse Buttons */}
             <div className="grid grid-cols-2 gap-4">
               <button
                 onClick={() => setView('creating')}
@@ -172,6 +205,19 @@ export function OnlineLobby() {
                 <span className="text-xs text-amber-700">Enter a code</span>
               </button>
             </div>
+
+            {/* Browse Public Games */}
+            <button
+              onClick={() => setView('browse')}
+              disabled={!nameInput.trim()}
+              className="w-full parchment-panel p-4 hover:border-primary transition-colors text-center disabled:opacity-50 flex items-center justify-center gap-3"
+            >
+              <Search className="w-6 h-6 text-amber-700" />
+              <div className="text-left">
+                <span className="font-display text-base text-amber-900 block">Search Online Games</span>
+                <span className="text-xs text-amber-700">Browse public rooms — no code needed</span>
+              </div>
+            </button>
 
             <div className="flex justify-center">
               <button
@@ -262,6 +308,92 @@ export function OnlineLobby() {
           </div>
         )}
 
+        {/* --- Browse Public Games --- */}
+        {view === 'browse' && (
+          <div className="w-full max-w-lg space-y-4">
+            <div className="parchment-panel p-4 flex items-center justify-between">
+              <h2 className="font-display text-xl text-amber-900 flex items-center gap-2">
+                <Search className="w-5 h-5" />
+                Public Games
+              </h2>
+              {firebaseAvailable && (
+                <button
+                  onClick={() => {
+                    setListingsLoading(true);
+                    // Re-trigger by toggling off/on — unsub & resub handled by effect
+                  }}
+                  className="p-1.5 rounded hover:bg-amber-100 transition-colors"
+                  title="Refresh list"
+                >
+                  <RefreshCw className={`w-4 h-4 text-amber-700 ${listingsLoading ? 'animate-spin' : ''}`} />
+                </button>
+              )}
+            </div>
+
+            {!firebaseAvailable ? (
+              <div className="parchment-panel p-6 text-center">
+                <Globe className="w-10 h-10 text-amber-400 mx-auto mb-3" />
+                <p className="font-display text-amber-800 mb-1">Lobby Browser Not Configured</p>
+                <p className="text-xs text-amber-700">
+                  Add Firebase environment variables to enable public game search.
+                  See <code className="bg-amber-100 px-1 rounded">.env.example</code> for setup instructions.
+                </p>
+              </div>
+            ) : listingsLoading ? (
+              <div className="parchment-panel p-8 flex flex-col items-center gap-3">
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                <p className="font-display text-amber-700 text-sm">Searching the realm...</p>
+              </div>
+            ) : gameListings.length === 0 ? (
+              <div className="parchment-panel p-8 text-center">
+                <Users className="w-10 h-10 text-amber-400 mx-auto mb-3" />
+                <p className="font-display text-amber-800 mb-1">No public games found</p>
+                <p className="text-xs text-amber-700">Create a public room to let others discover your game!</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {gameListings.map((game) => (
+                  <div key={game.roomCode} className="parchment-panel p-4 flex items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-display text-amber-900 font-semibold truncate">{game.hostName}&apos;s Game</p>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        <span className="text-xs bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
+                          <Users className="w-3 h-3 inline mr-0.5" />
+                          {game.playerCount}/{game.maxPlayers}
+                        </span>
+                        {game.hasAI && (
+                          <span className="text-xs bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
+                            <Bot className="w-3 h-3 inline mr-0.5" />
+                            AI
+                          </span>
+                        )}
+                        <span className="text-xs text-amber-600 font-mono">{game.roomCode}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleJoinFromBrowse(game.roomCode)}
+                      disabled={connecting || game.playerCount >= game.maxPlayers}
+                      className="gold-button text-sm px-4 py-1.5 whitespace-nowrap disabled:opacity-50"
+                    >
+                      {connecting ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Join'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex justify-center">
+              <button
+                onClick={() => setView('menu')}
+                className="px-6 py-2 wood-frame text-parchment font-display text-sm hover:brightness-110"
+              >
+                <ArrowLeft className="w-4 h-4 inline mr-1" />
+                Back
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* --- Host Lobby --- */}
         {view === 'host-lobby' && (
           <div className="w-full max-w-2xl space-y-4">
@@ -286,6 +418,29 @@ export function OnlineLobby() {
               </div>
               <p className="text-xs text-amber-600 mt-2">Share this code with other players</p>
               <ConnectionIndicator status={connectionStatus} />
+
+              {/* Public listing toggle */}
+              {firebaseAvailable && (
+                <div className="mt-3 pt-3 border-t border-border/50">
+                  <label className="flex items-center justify-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isPublic}
+                      onChange={(e) => setPublicRoom(e.target.checked, lobbyPlayers)}
+                      className="w-4 h-4 accent-primary"
+                    />
+                    <Search className="w-4 h-4 text-amber-700" />
+                    <span className="font-display text-sm text-amber-900">
+                      List in public lobby browser
+                    </span>
+                  </label>
+                  {isPublic && (
+                    <p className="text-xs text-green-700 text-center mt-1">
+                      Others can find and join this room without a code
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Players List */}

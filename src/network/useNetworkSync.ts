@@ -8,7 +8,7 @@ import { useGameStore } from '@/store/gameStore';
 import { setNetworkActionSender, trackPendingAction, resolveAction } from './NetworkActionProxy';
 import { serializeGameState, applyNetworkState, executeAction } from './networkState';
 import { ALLOWED_GUEST_ACTIONS } from './types';
-import type { NetworkMessage, GuestMessage, HostMessage } from './types';
+import type { NetworkMessage, GuestMessage, HostMessage, ChatMessage } from './types';
 import type { LocationId } from '@/types/game.types';
 
 /**
@@ -156,6 +156,22 @@ export function useNetworkSync() {
 
   // Latency display (guest only, in ms)
   const [latency, setLatency] = useState(0);
+
+  // In-game chat messages (online mode only, not persisted)
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+
+  const sendChatMessage = useCallback((text: string, senderName: string, senderColor: string) => {
+    if (networkMode === 'local') return;
+    const message: ChatMessage = { senderName, senderColor, text, timestamp: Date.now() };
+    if (networkMode === 'host') {
+      // Show immediately and broadcast to all guests
+      setChatMessages(prev => [...prev, message].slice(-100));
+      peerManager.broadcast({ type: 'chat-message', message });
+    } else if (networkMode === 'guest') {
+      // Send to host (host will broadcast back to everyone)
+      peerManager.sendToHost({ type: 'chat-message', message });
+    }
+  }, [networkMode]);
 
   // Turn timeout tracking (host only)
   const turnTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -420,6 +436,10 @@ export function useNetworkSync() {
               resetTurnTimeout();
             }
           }
+        } else if (msg.type === 'chat-message') {
+          // Rebroadcast to all guests and show locally
+          peerManager.broadcast({ type: 'chat-message', message: msg.message });
+          setChatMessages(prev => [...prev, msg.message].slice(-100));
         }
         // Note: ping/pong now handled internally by PeerManager heartbeat system
       } else if (networkMode === 'guest') {
@@ -446,6 +466,8 @@ export function useNetworkSync() {
           if (player) {
             console.log(`[NetworkSync] Turn timeout for: ${player.name}`);
           }
+        } else if (msg.type === 'chat-message') {
+          setChatMessages(prev => [...prev, msg.message].slice(-100));
         }
       }
     });
@@ -520,5 +542,7 @@ export function useNetworkSync() {
     remoteAnimation,
     clearRemoteAnimation,
     latency,
+    chatMessages,
+    sendChatMessage,
   };
 }
