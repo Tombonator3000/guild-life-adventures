@@ -5742,3 +5742,46 @@ Created `/home/user/guild-life-adventures/MULTIPLAYER.md` with:
 - Architecture notes (host authority model, state serialisation, peer ID format)
 - Future work checklist
 
+
+---
+
+## 2026-02-21 — Home Object Layout Editor (Zone Editor "Home" Mode)
+
+**Session**: Add visual home layout editor to the Zone Editor
+
+### Feature Added
+
+New **"Home"** mode added to the Zone Editor (rose/pink button in toolbar).
+
+**What it does:**
+- Shows the actual room background (Noble Heights or Slums) with a toggle
+- Displays ALL 16 purchasable home items (8 appliances + 8 durables) as draggable objects
+- Click an item to select it (yellow highlight + coordinate label)
+- Drag items to reposition them in the room
+- Right panel shows selected item name + numeric `left%` / `bottom%` inputs for precise placement
+- "Apply & Save" persists positions to `localStorage` (same `guild-life-zone-config` key, new `homeItemPositions` field)
+- **Positions immediately apply in the live game** (HomePanel → RoomScene reads from localStorage)
+- "Reset Defaults" reverts home positions to the original hardcoded values
+
+**Item rendering: JPG-first with emoji fallback**
+- Each item tries to load `public/items/{itemId}.jpg`
+- On load error (file doesn't exist), falls back to emoji icon
+- Forward-compatible: add JPG files to `public/items/` and they appear automatically
+
+### Files Modified
+- `src/types/game.types.ts` — Added `HomeItemPosition` interface and `HomeItemPositions` type
+- `src/data/zoneStorage.ts` — Added `homeItemPositions` field to `ZoneEditorSaveData`; added `DEFAULT_HOME_ITEM_POSITIONS` constant; extended `saveZoneConfig` signature
+- `src/hooks/useZoneEditorState.ts` — Extended `EditorMode` to include `'home'`; added home drag state + `handleHomeItemMouseDown`; updated `handleMouseMove`, `handleMouseUp`, `handleReset`, `handleSave`; added `initialHomeItemPositions` prop
+- `src/hooks/useZoneConfiguration.ts` — Extended `handleSaveZones` to pass `homeItemPositions`; expose `savedHomeItemPositions` from hook
+- `src/components/game/ZoneEditorToolbar.tsx` — Added "Home" mode button (rose color)
+- `src/components/game/ZoneEditor.tsx` — Conditionally renders `ZoneEditorHomePanel` when mode is 'home'; updated `onSave` and `initialHomeItemPositions` props
+- `src/components/game/GameBoard.tsx` — Destructures `savedHomeItemPositions` from hook; passes to ZoneEditor
+- `src/components/game/home/RoomScene.tsx` — Added `customPositions?: HomeItemPositions` prop; `resolvePos()` helper; `ItemIcon` component (JPG+emoji fallback)
+- `src/components/game/HomePanel.tsx` — Loads `homeItemPositions` from localStorage via `useMemo`; passes to `RoomScene`
+
+### Files Created
+- `src/components/game/ZoneEditorHomePanel.tsx` — Full home layout editor canvas with room toggle, draggable items, and properties panel
+
+### Tests
+332/332 passing ✓ | 0 TypeScript errors ✓
+

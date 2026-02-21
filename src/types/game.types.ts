@@ -63,6 +63,15 @@ export interface MobileZoneOverrides {
   layout: CenterPanelLayout;          // Sub-element layout within center panel for mobile
 }
 
+/** Home item position within the room scene (percentages: left from left, bottom from bottom) */
+export interface HomeItemPosition {
+  left: number;   // % from left edge (0–100)
+  bottom: number; // % from bottom edge (0–100)
+}
+
+/** Map of item ID → position in the room scene */
+export type HomeItemPositions = Record<string, HomeItemPosition>;
+
 /** A group of animated elements (e.g., graveyard crows) with adjustable position/properties */
 export interface AnimationLayerConfig {
   id: string;            // e.g., 'graveyard-crows'

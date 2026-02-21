@@ -1,8 +1,10 @@
+import { useMemo } from 'react';
 import type { Player, LocationId } from '@/types/game.types';
 import { useTranslation } from '@/i18n';
 import { HOUSING_DATA } from '@/data/housing';
 import { JonesButton } from './JonesStylePanel';
 import { RoomScene, HomeActionBar, ApplianceLegend } from './home';
+import { loadZoneConfig } from '@/data/zoneStorage';
 
 interface HomePanelProps {
   player: Player;
@@ -90,6 +92,9 @@ export function HomePanel({
     );
   }
 
+  // Load custom item positions set via the Zone Editor's Home Layout mode
+  const customPositions = useMemo(() => loadZoneConfig()?.homeItemPositions, []);
+
   const housingData = HOUSING_DATA[player.housing];
   const isNoble = player.housing === 'noble';
   const isSlums = player.housing === 'slums';
@@ -158,6 +163,7 @@ export function HomePanel({
         brokenAppliances={brokenAppliances}
         ownedDurables={ownedDurables}
         relaxation={player.relaxation}
+        customPositions={customPositions}
       />
 
       <HomeActionBar

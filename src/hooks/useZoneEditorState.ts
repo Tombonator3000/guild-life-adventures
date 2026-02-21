@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { ZONE_CONFIGS, BOARD_PATH, MOVEMENT_PATHS, CENTER_PANEL_CONFIG, CENTER_PANEL_LAYOUT, MOBILE_CENTER_PANEL_CONFIG, MOBILE_CENTER_PANEL_LAYOUT, MOBILE_ZONE_CONFIGS } from '@/data/locations';
-import { hasSavedZoneConfig } from '@/data/zoneStorage';
-import type { ZoneConfig, LocationId, LayoutElement, LayoutElementId, CenterPanelLayout, AnimationLayerConfig, MobileZoneOverrides } from '@/types/game.types';
+import { hasSavedZoneConfig, DEFAULT_HOME_ITEM_POSITIONS } from '@/data/zoneStorage';
+import type { ZoneConfig, LocationId, LayoutElement, LayoutElementId, CenterPanelLayout, AnimationLayerConfig, MobileZoneOverrides, HomeItemPositions } from '@/types/game.types';
 import type { MovementWaypoint } from '@/data/locations';
 
 export interface CenterPanelConfig {
@@ -11,7 +11,7 @@ export interface CenterPanelConfig {
   height: number;
 }
 
-export type EditorMode = 'zones' | 'paths' | 'layout' | 'animations' | 'mobile';
+export type EditorMode = 'zones' | 'paths' | 'layout' | 'animations' | 'mobile' | 'home';
 
 // Default animation layers — each entry is a draggable group of animated elements on the board
 export const DEFAULT_ANIMATION_LAYERS: AnimationLayerConfig[] = [
@@ -52,7 +52,7 @@ export function getZoneCenter(zones: ZoneConfig[], locationId: LocationId): [num
 
 interface UseZoneEditorStateProps {
   onClose: () => void;
-  onSave: (configs: ZoneConfig[], centerPanel: CenterPanelConfig, paths: Record<string, MovementWaypoint[]>, layout: CenterPanelLayout, animationLayers: AnimationLayerConfig[], mobileOverrides?: MobileZoneOverrides) => void;
+  onSave: (configs: ZoneConfig[], centerPanel: CenterPanelConfig, paths: Record<string, MovementWaypoint[]>, layout: CenterPanelLayout, animationLayers: AnimationLayerConfig[], mobileOverrides?: MobileZoneOverrides, homeItemPositions?: HomeItemPositions) => void;
   onReset?: () => void;
   initialCenterPanel?: CenterPanelConfig;
   initialZones?: ZoneConfig[];
@@ -60,9 +60,10 @@ interface UseZoneEditorStateProps {
   initialLayout?: CenterPanelLayout;
   initialAnimationLayers?: AnimationLayerConfig[];
   initialMobileOverrides?: MobileZoneOverrides;
+  initialHomeItemPositions?: HomeItemPositions;
 }
 
-export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPanel, initialZones, initialPaths, initialLayout, initialAnimationLayers, initialMobileOverrides }: UseZoneEditorStateProps) {
+export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPanel, initialZones, initialPaths, initialLayout, initialAnimationLayers, initialMobileOverrides, initialHomeItemPositions }: UseZoneEditorStateProps) {
   const [zones, setZones] = useState<ZoneConfig[]>(() => {
     if (!initialZones) return [...ZONE_CONFIGS];
     // Merge with defaults so newly added locations always appear
@@ -118,6 +119,14 @@ export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPane
   const mobileDragStartRef = useRef<{ x: number; y: number; zone: ZoneConfig } | null>(null);
   const mobileCenterDragStartRef = useRef<{ x: number; y: number; panel: CenterPanelConfig } | null>(null);
   const mobileLayoutDragStartRef = useRef<{ x: number; y: number; element: LayoutElement } | null>(null);
+
+  // Home layout editing state
+  const [homeItemPositions, setHomeItemPositions] = useState<HomeItemPositions>(
+    () => initialHomeItemPositions ? { ...initialHomeItemPositions } : { ...DEFAULT_HOME_ITEM_POSITIONS }
+  );
+  const [homeRoomType, setHomeRoomType] = useState<'slums' | 'noble'>('noble');
+  const [selectedHomeItem, setSelectedHomeItem] = useState<string | null>(null);
+  const homeItemDragStartRef = useRef<{ x: number; y: number; item: { left: number; bottom: number } } | null>(null);
 
   const adjacentPairs = getAdjacentPairs();
 
@@ -251,8 +260,45 @@ export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPane
     mobileCenterDragStartRef.current = null;
   }, [editorMode, mobileLayout, getPercentPosition, getBoardToMobileCenterPanelPercent]);
 
+  // === HOME LAYOUT EDITING HANDLERS ===
+
+  const handleHomeItemMouseDown = useCallback((e: React.MouseEvent, itemId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (editorMode !== 'home') return;
+    setSelectedHomeItem(itemId);
+    setIsDragging(true);
+    setDragMode('move');
+    const pos = getPercentPosition(e.clientX, e.clientY);
+    const current = homeItemPositions[itemId];
+    if (current) {
+      homeItemDragStartRef.current = { x: pos.x, y: pos.y, item: { ...current } };
+    }
+    dragStartRef.current = null;
+    centerDragStartRef.current = null;
+    layoutDragStartRef.current = null;
+    animDragStartRef.current = null;
+  }, [editorMode, homeItemPositions, getPercentPosition]);
+
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     const pos = getPercentPosition(e.clientX, e.clientY);
+
+    // Handle home item dragging
+    if (editorMode === 'home' && isDragging && selectedHomeItem && homeItemDragStartRef.current) {
+      const deltaX = pos.x - homeItemDragStartRef.current.x;
+      const deltaY = pos.y - homeItemDragStartRef.current.y;
+      const original = homeItemDragStartRef.current.item;
+      setHomeItemPositions(prev => ({
+        ...prev,
+        [selectedHomeItem]: {
+          // left tracks mouse X directly
+          left: Math.max(0, Math.min(100, Math.round((original.left + deltaX) * 10) / 10)),
+          // bottom is inverted: dragging down (deltaY > 0) moves item toward bottom (bottom decreases)
+          bottom: Math.max(0, Math.min(100, Math.round((original.bottom - deltaY) * 10) / 10)),
+        },
+      }));
+      return;
+    }
 
     // Handle waypoint dragging in path mode
     if (editorMode === 'paths' && draggingWaypoint !== null && selectedEdge) {
@@ -463,6 +509,7 @@ export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPane
     mobileDragStartRef.current = null;
     mobileCenterDragStartRef.current = null;
     mobileLayoutDragStartRef.current = null;
+    homeItemDragStartRef.current = null;
   }, []);
 
   useEffect(() => {
@@ -651,6 +698,8 @@ ${mobileStr}`;
     setMobileLayout({ ...DEFAULT_MOBILE_LAYOUT });
     setSelectedMobileZone(null);
     setSelectedMobileLayoutElement(null);
+    setHomeItemPositions({ ...DEFAULT_HOME_ITEM_POSITIONS });
+    setSelectedHomeItem(null);
   } : undefined;
 
   const mobileOverrides: MobileZoneOverrides = {
@@ -659,7 +708,7 @@ ${mobileStr}`;
     layout: mobileLayout,
   };
 
-  const handleSave = () => onSave(zones, centerPanel, paths, layout, animationLayers, mobileOverrides);
+  const handleSave = () => onSave(zones, centerPanel, paths, layout, animationLayers, mobileOverrides, homeItemPositions);
 
   return {
     zones,
@@ -729,5 +778,13 @@ ${mobileStr}`;
     mobileOverrides,
     selectedMobileZoneData: selectedMobileZone && selectedMobileZone !== 'center-panel'
       ? mobileZones.find(z => z.id === selectedMobileZone) : null,
+    // Home layout state
+    homeItemPositions,
+    setHomeItemPositions,
+    homeRoomType,
+    setHomeRoomType,
+    selectedHomeItem,
+    setSelectedHomeItem,
+    handleHomeItemMouseDown,
   };
 }

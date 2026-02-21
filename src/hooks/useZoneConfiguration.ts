@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import type { ZoneConfig, CenterPanelLayout, AnimationLayerConfig, MobileZoneOverrides } from '@/types/game.types';
+import type { ZoneConfig, CenterPanelLayout, AnimationLayerConfig, MobileZoneOverrides, HomeItemPositions } from '@/types/game.types';
 import type { CenterPanelConfig } from '@/components/game/ZoneEditor';
 import type { MovementWaypoint } from '@/data/locations';
 import { ZONE_CONFIGS, LOCATIONS, MOVEMENT_PATHS, CENTER_PANEL_CONFIG, MOBILE_ZONE_CONFIGS, MOBILE_CENTER_PANEL_CONFIG, MOBILE_CENTER_PANEL_LAYOUT } from '@/data/locations';
-import { loadZoneConfig, saveZoneConfig, clearZoneConfig } from '@/data/zoneStorage';
+import { loadZoneConfig, saveZoneConfig, clearZoneConfig, DEFAULT_HOME_ITEM_POSITIONS } from '@/data/zoneStorage';
 import { DEFAULT_LAYOUT, DEFAULT_ANIMATION_LAYERS } from '@/hooks/useZoneEditorState';
 import { toast } from 'sonner';
 
@@ -61,7 +61,7 @@ export function useZoneConfiguration() {
     }
   }, []);
 
-  const handleSaveZones = (zones: ZoneConfig[], newCenterPanel: CenterPanelConfig, paths?: Record<string, MovementWaypoint[]>, newLayout?: CenterPanelLayout, newAnimationLayers?: AnimationLayerConfig[], newMobileOverrides?: MobileZoneOverrides) => {
+  const handleSaveZones = (zones: ZoneConfig[], newCenterPanel: CenterPanelConfig, paths?: Record<string, MovementWaypoint[]>, newLayout?: CenterPanelLayout, newAnimationLayers?: AnimationLayerConfig[], newMobileOverrides?: MobileZoneOverrides, newHomeItemPositions?: HomeItemPositions) => {
     setCustomZones(zones);
     setCenterPanel(newCenterPanel);
     if (newLayout) setLayout(newLayout);
@@ -74,7 +74,7 @@ export function useZoneConfiguration() {
       Object.entries(paths).forEach(([k, v]) => { MOVEMENT_PATHS[k] = v; });
     }
     // Persist to localStorage
-    saveZoneConfig(zones, newCenterPanel, activePaths, newLayout, newAnimationLayers, newMobileOverrides);
+    saveZoneConfig(zones, newCenterPanel, activePaths, newLayout, newAnimationLayers, newMobileOverrides, newHomeItemPositions);
     toast.success('Zone config saved to localStorage');
   };
 
@@ -112,12 +112,16 @@ export function useZoneConfiguration() {
     return location;
   };
 
+  // Load saved home item positions (read-only; the zone editor manages the write path)
+  const savedHomeItemPositions = loadZoneConfig()?.homeItemPositions || DEFAULT_HOME_ITEM_POSITIONS;
+
   return {
     customZones,
     centerPanel,
     layout,
     animationLayers,
     mobileOverrides,
+    savedHomeItemPositions,
     handleSaveZones,
     handleResetZones,
     getLocationWithCustomPosition,
