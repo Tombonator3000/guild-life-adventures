@@ -50,7 +50,8 @@ export type HostMessage =
   | { type: 'turn-timeout'; playerId: string }
   | { type: 'host-migrated'; newHostPeerId: string; gameState: SerializedGameState }
   | { type: 'chat-message'; message: ChatMessage }
-  | { type: 'discovery-info'; hostName: string; playerCount: number; maxPlayers: number; hasAI: boolean; isStarted: boolean };
+  | { type: 'discovery-info'; hostName: string; playerCount: number; maxPlayers: number; hasAI: boolean; isStarted: boolean }
+  | { type: 'spectator-accepted'; spectatorCount: number };
 
 // Guest → Host messages
 export type GuestMessage =
@@ -64,7 +65,8 @@ export type GuestMessage =
   | { type: 'name-change'; newName: string }
   | { type: 'movement-start'; playerId: string; path: LocationId[] }
   | { type: 'chat-message'; message: ChatMessage }
-  | { type: 'discovery-probe' };
+  | { type: 'discovery-probe' }
+  | { type: 'spectate'; spectatorName: string };
 
 export type NetworkMessage = HostMessage | GuestMessage;
 

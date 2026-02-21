@@ -39,6 +39,10 @@ export function useOnlineGame() {
   const [error, setError] = useState<string | null>(null);
   // Track disconnected players that may reconnect (for UI display)
   const [disconnectedPlayers, setDisconnectedPlayers] = useState<string[]>([]);
+  // Spectator tracking
+  const [spectatorCount, setSpectatorCount] = useState(0);
+  const spectatorPeersRef = useRef(new Set<string>());
+  const [isSpectator, setIsSpectator] = useState(false);
 
   // Track if we're in online game mode
   const isOnlineRef = useRef(false);
@@ -100,6 +104,26 @@ export function useOnlineGame() {
       peerManager.sendToHost({ type: 'join', playerName });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to join room';
+      setError(msg);
+      throw err;
+    }
+  }, []);
+
+  // --- Guest: Spectate Room (join as spectator, no player slot) ---
+
+  const spectateRoom = useCallback(async (code: string, spectatorName: string) => {
+    try {
+      setError(null);
+      setLocalPlayerName(spectatorName);
+      await peerManager.joinRoom(code);
+      setRoomCode(code.toUpperCase());
+      setIsHost(false);
+      setIsSpectator(true);
+      isOnlineRef.current = true;
+
+      peerManager.sendToHost({ type: 'spectate', spectatorName });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to spectate room';
       setError(msg);
       throw err;
     }
@@ -195,14 +219,15 @@ export function useOnlineGame() {
     const unsubMessage = peerManager.onMessage((message: NetworkMessage, fromPeerId: string) => {
       if (isHost) {
         const msg = message as GuestMessage;
-        if (msg.type === 'join' || msg.type === 'ready' || msg.type === 'leave' || msg.type === 'reconnect' || msg.type === 'portrait-select' || msg.type === 'name-change' || msg.type === 'discovery-probe') {
+        if (msg.type === 'join' || msg.type === 'ready' || msg.type === 'leave' || msg.type === 'reconnect' || msg.type === 'portrait-select' || msg.type === 'name-change' || msg.type === 'discovery-probe' || msg.type === 'spectate') {
           handleHostMessageRef.current?.(msg, fromPeerId);
         }
       } else {
         const msg = message as HostMessage;
         if (msg.type === 'lobby-update' || msg.type === 'game-start' ||
             msg.type === 'kicked' || msg.type === 'player-disconnected' ||
-            msg.type === 'player-reconnected' || msg.type === 'host-migrated') {
+            msg.type === 'player-reconnected' || msg.type === 'host-migrated' ||
+            msg.type === 'spectator-accepted') {
           handleGuestMessageRef.current?.(msg);
         }
       }
@@ -392,6 +417,19 @@ export function useOnlineGame() {
         });
         break;
       }
+
+      case 'spectate': {
+        // Add peer as a spectator — they receive state-sync but can't act
+        spectatorPeersRef.current.add(fromPeerId);
+        const count = spectatorPeersRef.current.size;
+        setSpectatorCount(count);
+        // Send current game state immediately
+        const gameState = serializeGameState();
+        peerManager.sendTo(fromPeerId, { type: 'spectator-accepted', spectatorCount: count });
+        peerManager.sendTo(fromPeerId, { type: 'state-sync', gameState });
+        console.log(`[OnlineGame] Spectator joined: ${message.spectatorName} (${count} spectators)`);
+        break;
+      }
     }
   }, [roomCode, localPlayerName, settings, lobbyPlayers.length]);
 
@@ -461,12 +499,32 @@ export function useOnlineGame() {
         disconnect();
         break;
       }
+
+      case 'spectator-accepted': {
+        // We've been accepted as a spectator — set up spectator mode
+        useGameStore.setState({
+          networkMode: 'guest' as const,
+          localPlayerId: null, // No player ID — spectator
+          roomCode: roomCode,
+        });
+        setSpectatorCount(message.spectatorCount);
+        console.log(`[OnlineGame] Accepted as spectator (${message.spectatorCount} total)`);
+        break;
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [localPlayerName, roomCode]);
 
   // Host: Handle player disconnect
   const handlePlayerDisconnect = useCallback((peerId: string) => {
+    // Check if disconnected peer is a spectator
+    if (spectatorPeersRef.current.has(peerId)) {
+      spectatorPeersRef.current.delete(peerId);
+      setSpectatorCount(spectatorPeersRef.current.size);
+      console.log(`[OnlineGame] Spectator disconnected (${spectatorPeersRef.current.size} remaining)`);
+      return;
+    }
+
     const phase = useGameStore.getState().phase;
     const isInGame = phase === 'playing' || phase === 'event' || phase === 'victory';
 
@@ -782,10 +840,13 @@ export function useOnlineGame() {
     disconnectedPlayers,
     isMigrating,
     isPublic,
+    isSpectator,
+    spectatorCount,
 
     // Actions
     createRoom,
     joinRoom,
+    spectateRoom,
     startOnlineGame,
     updateSettings,
     updatePortrait,
