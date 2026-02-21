@@ -3,6 +3,56 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+## 2026-02-21 — User Manual: Dark Magic Chapter + Opponent Visibility Feature (UTC)
+
+### Overview
+
+Two tasks completed:
+1. **User Manual** — Audited coverage of hexes/curses/dark scrolls. The manual had zero documentation on dark magic. Added a full "Dark Magic" chapter.
+2. **Opponent Visibility** — New optional setting: "Show opponent actions." When enabled, the AI thinking overlay shows the AI's current action description (e.g., "Working shift at Guild Hall") instead of the generic "Calculating strategy..." text.
+
+---
+
+### Task 1: User Manual — Dark Magic Chapter
+
+**Gap found**: The `UserManual.tsx` (Adventurer's Manual) had 15 chapters covering welcome, board, turns, jobs, education, housing, items, health, combat, economy, crime, weekends, victory, and tips — but **no chapter on hexes, curses, or dark scrolls**, despite these being a significant game system toggled via `enableHexesCurses`.
+
+**New chapter added**: "Dark Magic" (inserted between Crime & Theft and Weekends).
+
+**Content covers**:
+- System introduction (optional feature, enabled in game setup)
+- **Location Hexes** (6 hexes: Seal of Ignorance, Embargo Decree, Market Blight, Forge Curse, Vault Seal, Dungeon Ward) — targets, costs, durations, effects
+- **Personal Curses** (7 curses + Legendary Hex of Ruin) — all 8 with full costs, durations, and debuff effects
+- **Sabotage Scrolls** (5 instant-effect scrolls) — costs and effects
+- **Where to get scrolls** — Enchanter, Shadow Market, Graveyard Dark Ritual (200g, 4h, 15% backfire), Dungeon drops
+- **Defense**: Protective Amulet (400g, blocks next hex), Dispel Scroll (250g, remove location hex)
+- **Graveyard services**: Curse Reflection (150g, 3h, 35/25/40% outcome) and Purification (300g, 3h, guaranteed remove)
+- **Active curses UI** — purple glow effect, Graveyard panel "Active Afflictions" list
+- Tip about Hex of Ruin being the only hex that cannot be blocked by Protective Amulet
+
+**Files changed**: `src/components/game/UserManual.tsx`
+
+---
+
+### Task 2: Opponent Visibility Feature
+
+**Feature**: Optional setting to show what the AI/opponent is doing during their turn. When enabled, the AI thinking overlay displays a live description of each action the AI executes (e.g., "Working shift", "Moving to Academy", "Studying Scholar Degree") instead of the generic difficulty-based message.
+
+**Implementation**:
+
+| # | File | Change |
+|---|------|--------|
+| 1 | `src/data/gameOptions.ts` | Added `showOpponentActions: boolean` option (default: `false`) |
+| 2 | `src/hooks/useGrimwaldAI.ts` | `executeAction()` now accepts optional `onActionStart?: (desc: string) => void` callback; `runAITurn()` accepts and threads it through |
+| 3 | `src/hooks/useAITurnHandler.ts` | Added `currentAIAction` state; passes `setCurrentAIAction` as `onActionStart` to `runAITurn`; resets on turn end/switch |
+| 4 | `src/components/game/GameBoard.tsx` | Destructures `currentAIAction` from `useAITurnHandler`, passes to `GameBoardOverlays` |
+| 5 | `src/components/game/GameBoardOverlays.tsx` | Added `currentAIAction` prop; reads `showOpponentActions` from game options; conditionally renders action text vs. generic message |
+| 6 | `src/components/game/tabs/OptionsTab.tsx` | Added "Opponent Visibility" section with ON/OFF toggle button; Eye/EyeOff icon indicates current state |
+
+**UX**: When "Show opponent actions" is OFF (default), behavior is unchanged — the overlay shows "Hmm, let me think..." / "Calculating optimal strategy..." / "Analyzing all possibilities with precision!" by difficulty. When ON, the overlay shows the actual action description text as the AI executes it, updating on each step.
+
+---
+
 ## 2026-02-17 — BUG-001 Fix #17: Radical Simplification of Startup Pipeline (18:45 UTC)
 
 ### Problem

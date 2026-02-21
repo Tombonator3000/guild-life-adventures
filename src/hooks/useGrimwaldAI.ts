@@ -102,15 +102,18 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
   /**
    * Execute a single AI action — delegates to the handler map in actionExecutor.ts
    */
-  const executeAction = useCallback((player: Player, action: AIAction): boolean => {
+  const executeAction = useCallback((player: Player, action: AIAction, onActionStart?: (desc: string) => void): boolean => {
     actionLogRef.current.push(`${player.name}: ${action.description}`);
+    onActionStart?.(action.description);
     return executeAIAction(player, action, storeActions);
   }, [storeActions]);
 
   /**
    * Run the AI's turn
+   * @param player The AI player
+   * @param onActionStart Optional callback — called with a human-readable description each time an action begins
    */
-  const runAITurn = useCallback(async (player: Player) => {
+  const runAITurn = useCallback(async (player: Player, onActionStart?: (desc: string) => void) => {
     if (isExecutingRef.current) return;
     isExecutingRef.current = true;
     actionLogRef.current = [];
@@ -203,7 +206,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
       }
 
       // Execute action
-      const success = executeAction(currentPlayer, bestAction);
+      const success = executeAction(currentPlayer, bestAction, onActionStart);
       actionsRemaining--;
 
       if (!success) {
