@@ -49,7 +49,8 @@ export type HostMessage =
   | { type: 'movement-animation'; playerId: string; path: LocationId[] }
   | { type: 'turn-timeout'; playerId: string }
   | { type: 'host-migrated'; newHostPeerId: string; gameState: SerializedGameState }
-  | { type: 'chat-message'; message: ChatMessage };
+  | { type: 'chat-message'; message: ChatMessage }
+  | { type: 'discovery-info'; hostName: string; playerCount: number; maxPlayers: number; hasAI: boolean; isStarted: boolean };
 
 // Guest → Host messages
 export type GuestMessage =
@@ -62,7 +63,8 @@ export type GuestMessage =
   | { type: 'portrait-select'; portraitId: string | null }
   | { type: 'name-change'; newName: string }
   | { type: 'movement-start'; playerId: string; path: LocationId[] }
-  | { type: 'chat-message'; message: ChatMessage };
+  | { type: 'chat-message'; message: ChatMessage }
+  | { type: 'discovery-probe' };
 
 export type NetworkMessage = HostMessage | GuestMessage;
 
