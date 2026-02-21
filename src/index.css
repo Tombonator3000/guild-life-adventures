@@ -196,6 +196,23 @@
     /* No visual highlight - only tooltip shows */
   }
 
+  /* Contextual tip zone highlighting */
+  .location-zone.zone-highlighted {
+    animation: zone-highlight-pulse 1.5s ease-in-out infinite;
+    z-index: 20;
+  }
+
+  @keyframes zone-highlight-pulse {
+    0%, 100% {
+      box-shadow: 0 0 12px 4px rgba(201, 162, 39, 0.4);
+      outline: 2px solid rgba(201, 162, 39, 0.5);
+    }
+    50% {
+      box-shadow: 0 0 24px 8px rgba(201, 162, 39, 0.7);
+      outline: 3px solid rgba(201, 162, 39, 0.8);
+    }
+  }
+
   /* Touch feedback for wood-frame buttons on mobile (supplement :hover) */
   @media (hover: none) {
     .wood-frame:active {

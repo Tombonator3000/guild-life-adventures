@@ -156,6 +156,29 @@ const createPlayer = (
   workedThisTurn: false,
   hadRandomEventThisTurn: false,
   raiseAttemptedThisTurn: false,
+  // Post-game dashboard tracking
+  weeklySnapshots: [],
+  gameStats: {
+    totalGoldEarned: 0,
+    totalGoldSpent: 0,
+    totalQuestsCompleted: 0,
+    totalBountiesCompleted: 0,
+    totalDungeonRuns: 0,
+    totalDungeonFloors: 0,
+    totalShiftsWorked: 0,
+    totalHoursWorked: 0,
+    totalDegreesEarned: 0,
+    totalHealingReceived: 0,
+    totalDamageTaken: 0,
+    totalRentPaid: 0,
+    locationVisits: {},
+    mostVisitedLocation: '',
+    longestJobHeld: null,
+    hexesCast: 0,
+    hexesReceived: 0,
+    timesRobbed: 0,
+    deathCount: 0,
+  },
 });
 
 export const useGameStore = create<GameStore>((set, get) => {

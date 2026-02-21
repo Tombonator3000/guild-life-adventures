@@ -274,6 +274,44 @@ export interface Player {
   workedThisTurn: boolean;                    // True if player worked at least one shift this turn (reset weekly)
   hadRandomEventThisTurn: boolean;            // True if player already had a random location event this turn (max 1 per turn)
   raiseAttemptedThisTurn: boolean;            // True if player already requested a raise this turn (reset on turn switch)
+  // Weekly stat snapshots for post-game dashboard
+  weeklySnapshots: WeeklySnapshot[];          // One snapshot per week, recorded at week end
+  // Cumulative game stats for post-game dashboard
+  gameStats: PlayerGameStats;                 // Lifetime stats tracked during the game
+}
+
+/** Weekly snapshot of key metrics for post-game graphs */
+export interface WeeklySnapshot {
+  week: number;
+  gold: number;
+  health: number;
+  happiness: number;
+  education: number;       // completedDegrees.length * 9
+  dependability: number;
+  totalWealth: number;     // gold + savings + investments + stocks - loan
+}
+
+/** Cumulative game stats for post-game dashboard */
+export interface PlayerGameStats {
+  totalGoldEarned: number;
+  totalGoldSpent: number;
+  totalQuestsCompleted: number;
+  totalBountiesCompleted: number;
+  totalDungeonRuns: number;
+  totalDungeonFloors: number;
+  totalShiftsWorked: number;
+  totalHoursWorked: number;
+  totalDegreesEarned: number;
+  totalHealingReceived: number;
+  totalDamageTaken: number;
+  totalRentPaid: number;
+  locationVisits: Record<string, number>;     // locationId -> visit count
+  mostVisitedLocation: string;
+  longestJobHeld: { jobName: string; weeks: number } | null;
+  hexesCast: number;
+  hexesReceived: number;
+  timesRobbed: number;
+  deathCount: number;
 }
 
 export interface GoalSettings {

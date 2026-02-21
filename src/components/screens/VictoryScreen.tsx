@@ -1,12 +1,15 @@
 import { useGameStore } from '@/store/gameStore';
 import { calculateStockValue } from '@/data/stocks';
-import { Crown, Trophy, Scroll, Coins, Heart, GraduationCap, Star, Check, X, Compass } from 'lucide-react';
+import { Crown, Trophy, Scroll, Coins, Heart, GraduationCap, Star, Check, X, Compass, BarChart3 } from 'lucide-react';
 import gameBoard from '@/assets/game-board.jpeg';
 import { VictoryEffects } from '@/components/game/VictoryEffects';
 import { getGameOption } from '@/data/gameOptions';
+import { PostGameStats } from './PostGameStats';
+import { useState } from 'react';
 
 export function VictoryScreen() {
   const { setPhase, resetForNewGame, winner, players, goalSettings, eventMessage, stockPrices } = useGameStore();
+  const [showStats, setShowStats] = useState(false);
 
   const winningPlayer = players.find(p => p.id === winner);
 
@@ -159,6 +162,22 @@ export function VictoryScreen() {
             )}
           </div>
         </div>
+
+        {/* Stats Toggle */}
+        <button
+          onClick={() => setShowStats(!showStats)}
+          className="flex items-center gap-2 px-6 py-2 mb-4 bg-[#e0d4b8] border border-[#8b7355] rounded-lg font-display text-sm text-[#3d2a14] hover:bg-[#d4c8a8] transition-colors"
+        >
+          <BarChart3 className="w-4 h-4" />
+          {showStats ? 'Hide Statistics' : 'Show Game Statistics'}
+        </button>
+
+        {/* Post-Game Stats Dashboard */}
+        {showStats && (
+          <div className="parchment-panel p-6 mb-8 max-w-2xl w-full">
+            <PostGameStats players={players} winnerId={winner} />
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex gap-4">

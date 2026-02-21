@@ -934,6 +934,20 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
         const p = { ...player };
         if (p.isGameOver) return p;
         processPlayerWeekEnd(p, ctx, eventMessages, newsEvents);
+        // Record weekly snapshot for post-game dashboard
+        const stockValue = Object.entries(p.stocks || {}).reduce((sum, [stockId, shares]) => {
+          return sum + (shares * (ctx.stockPrices[stockId] || 0));
+        }, 0);
+        const snapshot = {
+          week: newWeek,
+          gold: p.gold,
+          health: p.health,
+          happiness: p.happiness,
+          education: (p.completedDegrees?.length || 0) * 9,
+          dependability: p.dependability,
+          totalWealth: p.gold + p.savings + p.investments + stockValue - p.loanAmount,
+        };
+        p.weeklySnapshots = [...(p.weeklySnapshots || []), snapshot];
         return p;
       });
 
