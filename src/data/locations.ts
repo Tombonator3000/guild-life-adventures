@@ -1,4 +1,4 @@
-import type { Location, ZoneConfig, LocationId } from '@/types/game.types';
+import type { Location, ZoneConfig, LocationId, CenterPanelLayout } from '@/types/game.types';
 
 // Jones-style board path - locations form a ring that players travel around
 // The path goes clockwise from top-left around the board
@@ -174,6 +174,53 @@ export const MOVEMENT_PATHS: Record<string, MovementWaypoint[]> = {
   'landlord_noble-heights': [[22.2, 20.5]],
   'noble-heights_graveyard': [[13.0, 31.6], [5.1, 38.3]],
   'graveyard_general-store': [[5.6, 52.6]],
+};
+
+// Center info panel configuration
+export const CENTER_PANEL_CONFIG = {
+  top: 22.6,
+  left: 22.0,
+  width: 56.4,
+  height: 53.6,
+};
+
+// Center panel layout — sub-element positions (% of center panel)
+export const CENTER_PANEL_LAYOUT: CenterPanelLayout = {
+  npc: { x: 0.0, y: 0.0, width: 25.0, height: 100.0 },
+  text: { x: 27.0, y: 0.0, width: 73.0, height: 100.0 },
+  itemPreview: { x: 0.0, y: 60.0, width: 25.0, height: 40.0 },
+};
+
+// Mobile zone overrides (same as desktop defaults)
+export const MOBILE_ZONE_CONFIGS: ZoneConfig[] = [
+  { id: 'noble-heights', x: 1.1, y: 0.0, width: 19.3, height: 24.5 },
+  { id: 'landlord', x: 25.4, y: 1.6, width: 12.8, height: 18.7 },
+  { id: 'slums', x: 41.1, y: 0.7, width: 20.2, height: 19.7 },
+  { id: 'fence', x: 63.3, y: 0.9, width: 14.5, height: 18.9 },
+  { id: 'general-store', x: 6.4, y: 35.3, width: 14.4, height: 18.0 },
+  { id: 'shadow-market', x: 80.1, y: 0.9, width: 18.0, height: 18.9 },
+  { id: 'rusty-tankard', x: 81.1, y: 22.3, width: 16.1, height: 18.2 },
+  { id: 'armory', x: 80.6, y: 41.9, width: 13.9, height: 18.7 },
+  { id: 'forge', x: 4.6, y: 76.7, width: 17.7, height: 15.2 },
+  { id: 'guild-hall', x: 23.2, y: 76.3, width: 15.7, height: 16.3 },
+  { id: 'cave', x: 41.9, y: 78.8, width: 15.5, height: 14.9 },
+  { id: 'academy', x: 60.3, y: 77.8, width: 17.9, height: 16.1 },
+  { id: 'enchanter', x: 80.5, y: 67.0, width: 14.4, height: 26.1 },
+  { id: 'bank', x: 1.3, y: 55.4, width: 17.9, height: 17.7 },
+  { id: 'graveyard', x: 0.0, y: 24.7, width: 5.6, height: 17.0 },
+];
+
+export const MOBILE_CENTER_PANEL_CONFIG = {
+  top: 22.6,
+  left: 22.0,
+  width: 56.4,
+  height: 53.6,
+};
+
+export const MOBILE_CENTER_PANEL_LAYOUT: CenterPanelLayout = {
+  npc: { x: 0.0, y: 0.0, width: 25.0, height: 100.0 },
+  text: { x: 25.0, y: 0.0, width: 75.0, height: 100.0 },
+  itemPreview: { x: 0.0, y: 58.4, width: 25.2, height: 41.6 },
 };
 
 // Get the movement path key for two adjacent locations (always clockwise order)
