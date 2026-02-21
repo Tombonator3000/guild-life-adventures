@@ -12,6 +12,7 @@ import type { Player } from '@/types/game.types';
 import { LOAN_MIN_SHIFTS_REQUIRED } from '@/types/game.types';
 import type { AIAction, DifficultySettings } from '../types';
 import type { ActionContext } from './actionContext';
+import { forecastCashFlow } from '../strategy';
 
 // ─── Sub-generators ────────────────────────────────────────────────────
 
@@ -42,14 +43,32 @@ function generateSicknessActions(ctx: ActionContext): AIAction[] {
 /** AI-3: Loan system — take, repay full, or repay partial */
 function generateLoanActions(ctx: ActionContext): AIAction[] {
   const actions: AIAction[] = [];
-  const { player, currentLocation, moveCost } = ctx;
+  const { player, currentLocation, moveCost, week, settings } = ctx;
 
-  // Take loan when critically broke (can't afford food or rent)
-  if (player.loanAmount <= 0 && player.gold < 20 && player.savings < 20 && (player.totalShiftsWorked || 0) >= LOAN_MIN_SHIFTS_REQUIRED) {
-    if (currentLocation === 'bank') {
-      actions.push({ type: 'take-loan', priority: 72, description: 'Take emergency loan from bank', details: { amount: 200 } });
-    } else if (player.timeRemaining > moveCost('bank') + 2) {
-      actions.push({ type: 'move', location: 'bank', priority: 68, description: 'Travel to bank for emergency loan' });
+  // Take loan: use cash flow forecast for strategic AI, simple threshold for easy AI
+  const canTakeLoan = player.loanAmount <= 0 && (player.totalShiftsWorked || 0) >= LOAN_MIN_SHIFTS_REQUIRED;
+  if (canTakeLoan) {
+    let shouldBorrow = false;
+    let loanAmount = 200;
+
+    if (settings.planningDepth >= 2) {
+      // Strategic AI: only borrow if forecast shows actual shortfall risk
+      const forecast = forecastCashFlow(player, week, 3);
+      if (forecast.shortfallRisk && forecast.recommendedLoanAmount > 0) {
+        shouldBorrow = true;
+        loanAmount = forecast.recommendedLoanAmount;
+      }
+    } else {
+      // Easy AI: borrow when critically broke (original behavior)
+      shouldBorrow = player.gold < 20 && player.savings < 20;
+    }
+
+    if (shouldBorrow) {
+      if (currentLocation === 'bank') {
+        actions.push({ type: 'take-loan', priority: 72, description: `Take loan of ${loanAmount}g from bank`, details: { amount: loanAmount } });
+      } else if (player.timeRemaining > moveCost('bank') + 2) {
+        actions.push({ type: 'move', location: 'bank', priority: 68, description: 'Travel to bank for loan' });
+      }
     }
   }
 

@@ -254,3 +254,95 @@ export function getAIPersonality(playerId: string): AIPersonality {
   const personalityId = AI_ID_TO_PERSONALITY[playerId] || 'grimwald';
   return AI_PERSONALITIES[personalityId];
 }
+
+// ============================================
+// CASH FLOW FORECASTING
+// ============================================
+
+/** Projected cash flow for the next N turns */
+export interface CashFlowForecast {
+  /** Projected gold at end of each future turn */
+  projectedGold: number[];
+  /** Turns until next rent payment is due (0 = this turn) */
+  rentDueInTurns: number;
+  /** True if any projected turn drops below 50g */
+  shortfallRisk: boolean;
+  /** How much the AI can safely bank without risking shortfall */
+  safeBankingAmount: number;
+  /** Recommended loan amount (0 = no loan needed) */
+  recommendedLoanAmount: number;
+}
+
+// ============================================
+// EDUCATION ROI
+// ============================================
+
+/** Return-on-investment analysis for a degree */
+export interface DegreeROI {
+  degreeId: string;
+  degreeName: string;
+  /** Total remaining cost to complete this degree */
+  remainingTuition: number;
+  /** Current hourly wage (0 if unemployed) */
+  currentHourlyWage: number;
+  /** Best hourly wage this degree directly unlocks */
+  projectedHourlyWage: number;
+  /** Estimated weekly earnings gain from the wage increase */
+  weeklyGainEstimate: number;
+  /** Weeks to break even (remainingTuition / weeklyGainEstimate) */
+  payoffWeeks: number;
+  /** Composite score: higher = better investment (inverted payoff + wage boost) */
+  roiScore: number;
+  /** Best job ID this degree unlocks, or null if it only adds education points */
+  unlocksJobId: string | null;
+}
+
+// ============================================
+// COMMITMENT PLANNER
+// ============================================
+
+export type CommitmentPlanType =
+  | 'earn-degree'
+  | 'save-housing'
+  | 'dungeon-run'
+  | 'career-push'
+  | 'wealth-sprint';
+
+/**
+ * A multi-step plan the AI commits to for 2-4 turns.
+ * Prevents thrashing between competing priorities each action.
+ */
+export interface CommitmentPlan {
+  type: CommitmentPlanType;
+  /** Specific target (degree ID, job ID, dungeon floor number, etc.) */
+  targetId?: string;
+  /** Human-readable description for logging */
+  description: string;
+  /** Turn the plan was started */
+  startTurn: number;
+  /** Max turns before the plan is abandoned */
+  maxDuration: number;
+  /** Action types that advance this plan — get priority bonus */
+  alignedActions: AIActionType[];
+  /** Priority bonus applied to aligned actions */
+  priorityBonus: number;
+}
+
+// ============================================
+// GOAL VELOCITY TRACKER
+// ============================================
+
+/** Per-goal velocity data for one AI player */
+export interface GoalVelocityData {
+  /** Last 5 turns of progress values (0-1) */
+  progressHistory: number[];
+  /** Exponential moving average of progress deltas (EMA α=0.4) */
+  velocity: number;
+  /** Consecutive turns with velocity below STUCK_THRESHOLD */
+  stuckTurns: number;
+  /** Turn number when we last tried to unstick (to avoid thrashing) */
+  lastUnstickTurn: number;
+}
+
+/** Velocity threshold below which a goal is considered "stuck" */
+export const STUCK_VELOCITY_THRESHOLD = 0.008;

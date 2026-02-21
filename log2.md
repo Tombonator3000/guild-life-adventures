@@ -3,6 +3,58 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+## 2026-02-21 — Enhanced AI Intelligence: 4 New Systems (UTC 09:00)
+
+### Overview
+
+Implemented four major enhancements to make AI opponents qualitatively smarter. The existing AI system was already sophisticated (utility scoring, personalities, dynamic difficulty, counter-strategy) but re-evaluated every action greedily without memory or forward planning. These enhancements give the AI commitment, foresight, and better economic reasoning.
+
+### Root Cause
+
+AI opponents would "thrash" — starting to study a degree, then working a shift, then studying again, never finishing the degree. They also took emergency loans unnecessarily and picked suboptimal degrees.
+
+### Changes
+
+**New Files:**
+- `src/hooks/ai/goalVelocityTracker.ts` — tracks per-goal progress velocity per turn. Detects when goals are stuck (no progress for 3+ turns) and boosts alternative actions. EMA-based, per-AI-player module state.
+- `src/hooks/ai/commitmentPlan.ts` — generates multi-turn commitment plans (earn-degree, save-housing, dungeon-run, career-push, wealth-sprint). Aligned actions get +20 to +35 priority bonus. Plans last 2-4 turns depending on difficulty. Medium AI: 2-turn plans. Hard AI: 4-turn plans with ROI-aware degree chain planning.
+
+**Modified Files:**
+- `src/hooks/ai/types.ts` — added: `CashFlowForecast`, `DegreeROI`, `CommitmentPlan`, `CommitmentPlanType`, `GoalVelocityData`, `STUCK_VELOCITY_THRESHOLD`
+- `src/hooks/ai/strategy.ts` — added: `forecastCashFlow()`, `calculateDegreeROI()`, `getRankedDegreesROI()`, `getNextDegreeByROI()`, `getDegreeUnlockChain()`
+- `src/hooks/ai/actionGenerator.ts` — added: `applyVelocityAdjustments()`, `applyCommitmentBonus()`. New optional `commitmentPlan` parameter on `generateActions()`.
+- `src/hooks/ai/actions/economicActions.ts` — loan action now uses cash flow forecast for strategic AI (only borrows if forecast shows actual shortfall, not just low current gold)
+- `src/hooks/ai/actions/goalActions.ts` — education actions use `getNextDegreeByROI()` for Hard AI; banking uses `forecastCashFlow().safeBankingAmount` for safe deposits
+- `src/hooks/useGrimwaldAI.ts` — added `commitmentPlanRef`, calls velocity tracker and plan generator at turn start, passes plan to `generateActions()`; `resetAdaptiveSystems()` also resets velocity data
+
+**New Tests:**
+- `src/hooks/ai/__tests__/newSystems.test.ts` — 36 new tests covering all 4 systems
+
+### Enhancement Details
+
+1. **Cash Flow Forecasting** (`forecastCashFlow`): Projects gold for next 3 turns. Accounts for job income, food costs, rent schedule, and loan garnishment. Provides `safeBankingAmount` and `shortfallRisk` signals.
+
+2. **Education ROI Calculator** (`calculateDegreeROI`): Scores each degree by (payoff weeks + wage boost + education points). Hard AI picks highest-ROI degree; easy/medium use existing logic. Also added `getDegreeUnlockChain()` for degree pipeline planning.
+
+3. **Goal Velocity Tracker** (`goalVelocityTracker.ts`): EMA-based velocity tracking per goal per AI. Detects stuck goals (3+ turns near-zero velocity) and boosts alternative approaches with UNSTICK_COOLDOWN to prevent thrashing.
+
+4. **Commitment Planner** (`commitmentPlan.ts`): Generates multi-step plans at turn start. All aligned actions get priority bonus. Plans validated each turn — abandoned on crisis, goal completion, or timeout.
+
+### Test Results
+- All 332 tests pass (36 new + 296 existing)
+- Build clean (`bun run build` ✓)
+
+### Outcome
+
+Hard AI now:
+- Pursues degrees to completion (commitment)
+- Picks highest-ROI degree via chain planning
+- Banks only safe amounts based on cash flow
+- Pivots strategy when stuck for 3+ turns
+- Commits to wealth sprint when near victory
+
+---
+
 ## 2026-02-21 — Centralized Zone Config Standard Setup (UTC)
 
 ### Overview

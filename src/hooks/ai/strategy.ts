@@ -18,7 +18,9 @@ import {
   canTakeChainStep,
 } from '@/data/quests';
 
-import type { DifficultySettings, GoalProgress, ResourceUrgency } from './types';
+import { DEGREES } from '@/data/education';
+import { RENT_COSTS } from '@/types/game.types';
+import type { DifficultySettings, GoalProgress, ResourceUrgency, CashFlowForecast, DegreeROI } from './types';
 
 /**
  * Calculate the AI's progress toward all victory goals
@@ -466,4 +468,258 @@ export function getBestChainQuest(player: Player, settings: DifficultySettings):
   }
 
   return null;
+}
+
+// ============================================================
+// CASH FLOW FORECASTING
+// ============================================================
+
+/**
+ * Forecast the AI's gold position for the next N turns.
+ *
+ * Models: job income, food costs, rent schedule, loan repayment.
+ * Used by economic and critical-needs generators to make proactive
+ * decisions rather than reacting to crises.
+ *
+ * Estimates per turn:
+ *   + wage income (shifts × wage × hours)
+ *   - food costs (~25-35g depending on housing)
+ *   - rent (if due that turn, every 4 weeks)
+ *   - loan garnishment (25% of wages if in default)
+ */
+export function forecastCashFlow(player: Player, week: number, weeksAhead: number = 3): CashFlowForecast {
+  // ─── Income estimation ─────────────────────────────────
+  // Estimate usable hours per turn (total 60h minus travel/overhead)
+  const USABLE_HOURS_PER_TURN = 40;
+  const job = player.currentJob ? getJob(player.currentJob) : null;
+  const hourlyWage = player.currentWage ?? 0;
+  const hoursPerShift = job?.hoursPerShift ?? 8;
+  const shiftsPerTurn = job ? Math.floor(USABLE_HOURS_PER_TURN / hoursPerShift) : 0;
+  const grossIncomePerTurn = shiftsPerTurn * hoursPerShift * hourlyWage;
+
+  // Loan default: 25% wage garnishment
+  const loanInDefault = player.loanAmount > 0 && player.loanWeeksRemaining <= 0;
+  const netIncomePerTurn = loanInDefault
+    ? Math.round(grossIncomePerTurn * 0.75)
+    : grossIncomePerTurn;
+
+  // ─── Food cost estimation ──────────────────────────────
+  // Slums/homeless: cheaper food (~20g/turn), Noble: ~30g/turn
+  const foodCostPerTurn = player.housing === 'noble' ? 30 : 20;
+
+  // ─── Rent schedule ─────────────────────────────────────
+  const rentCost = player.housing !== 'homeless'
+    ? (player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing])
+    : 0;
+
+  // Calculate when rent is next due — criticalNeeds.ts uses: isRentWeek = (week + 1) % 4 === 0
+  let rentDueInTurns = 999;
+  if (rentCost > 0) {
+    for (let i = 1; i <= 4; i++) {
+      if ((week + i) % 4 === 0) {
+        rentDueInTurns = i - 1; // 0-indexed (0 = this turn)
+        break;
+      }
+    }
+    if (rentDueInTurns === 999) rentDueInTurns = 4;
+  }
+
+  // ─── Project gold for each future turn ─────────────────
+  const projectedGold: number[] = [];
+  let runningGold = player.gold;
+
+  for (let t = 1; t <= weeksAhead; t++) {
+    runningGold += netIncomePerTurn;
+    runningGold -= foodCostPerTurn;
+
+    // Rent due this turn?
+    if (rentCost > 0 && (week + t) % 4 === 0) {
+      runningGold -= rentCost;
+    }
+
+    projectedGold.push(Math.round(runningGold));
+  }
+
+  // ─── Derive actionable signals ──────────────────────────
+  const SHORTFALL_THRESHOLD = 50;
+  const shortfallRisk = projectedGold.some(g => g < SHORTFALL_THRESHOLD);
+
+  // Safe banking: how much we can deposit without risking a shortfall
+  const nextTurnOutflow = foodCostPerTurn + (rentDueInTurns === 0 ? rentCost : 0) + SHORTFALL_THRESHOLD;
+  const safeBankingAmount = Math.max(0, player.gold - nextTurnOutflow - 50);
+
+  // Loan recommendation: only if we'd go below threshold and have no savings cushion
+  let recommendedLoanAmount = 0;
+  if (shortfallRisk && player.savings < 100 && player.loanAmount === 0) {
+    const worstGold = Math.min(...projectedGold);
+    if (worstGold < 0) {
+      recommendedLoanAmount = Math.min(200, Math.abs(worstGold) + 100);
+    }
+  }
+
+  return {
+    projectedGold,
+    rentDueInTurns,
+    shortfallRisk,
+    safeBankingAmount,
+    recommendedLoanAmount,
+  };
+}
+
+// ============================================================
+// EDUCATION ROI CALCULATOR
+// ============================================================
+
+/**
+ * Calculate the return-on-investment for a specific degree.
+ *
+ * ROI is measured in weeks to break even on tuition costs via
+ * the wage increase the degree unlocks.
+ *
+ * Formula:
+ *   payoffWeeks = remainingTuition / weeklyGainEstimate
+ *   weeklyGainEstimate = (projectedWage - currentWage) × shiftsPerWeek × hoursPerShift
+ */
+export function calculateDegreeROI(degreeId: string, player: Player): DegreeROI {
+  const degree = DEGREES[degreeId as keyof typeof DEGREES];
+  if (!degree) {
+    return {
+      degreeId, degreeName: degreeId, remainingTuition: 0, currentHourlyWage: 0,
+      projectedHourlyWage: 0, weeklyGainEstimate: 0, payoffWeeks: 999, roiScore: 0, unlocksJobId: null,
+    };
+  }
+
+  const sessionsCompleted = player.degreeProgress[degreeId as keyof typeof player.degreeProgress] ?? 0;
+  const sessionsRemaining = Math.max(0, degree.sessionsRequired - sessionsCompleted);
+  const remainingTuition = sessionsRemaining * degree.costPerSession;
+
+  const currentJob = player.currentJob ? getJob(player.currentJob) : null;
+  const currentHourlyWage = player.currentWage ?? 0;
+
+  // Find the best job unlocked by this degree that we don't already qualify for
+  const degreesAfter = [...player.completedDegrees, degreeId];
+  let bestUnlockedJob: Job | null = null;
+  let bestUnlockedWage = currentHourlyWage;
+
+  for (const job of ALL_JOBS) {
+    if (job.baseWage <= bestUnlockedWage) continue;
+    // Check if this degree is required for the job
+    if (!job.requiredDegrees.includes(degreeId)) continue;
+    // Check if all other required degrees are already completed
+    const allPrereqsMet = job.requiredDegrees.every(req => degreesAfter.includes(req));
+    if (!allPrereqsMet) continue;
+    bestUnlockedJob = job;
+    bestUnlockedWage = job.baseWage;
+  }
+
+  const projectedHourlyWage = bestUnlockedWage;
+  const hourlyGain = projectedHourlyWage - currentHourlyWage;
+
+  // Estimate weekly gain: assume 3 shifts at current job's hours per week
+  const hoursPerShift = currentJob?.hoursPerShift ?? 8;
+  const SHIFTS_PER_WEEK_ESTIMATE = 3;
+  const weeklyGainEstimate = hourlyGain * hoursPerShift * SHIFTS_PER_WEEK_ESTIMATE;
+
+  // Payoff weeks: infinite if no gain, 0 if already paid
+  const payoffWeeks = weeklyGainEstimate > 0
+    ? Math.round(remainingTuition / weeklyGainEstimate)
+    : (remainingTuition === 0 ? 0 : 999);
+
+  // ROI score: higher is better
+  // Factors: fast payoff, high wage unlock, education points value
+  const payoffScore = payoffWeeks > 0 ? Math.max(0, 100 - payoffWeeks * 5) : 50;
+  const wageScore = Math.min(50, hourlyGain * 2);
+  const educationScore = degree.educationPoints;
+  const roiScore = payoffScore + wageScore + educationScore;
+
+  return {
+    degreeId,
+    degreeName: degree.name,
+    remainingTuition,
+    currentHourlyWage,
+    projectedHourlyWage,
+    weeklyGainEstimate,
+    payoffWeeks,
+    roiScore,
+    unlocksJobId: bestUnlockedJob?.id ?? null,
+  };
+}
+
+/**
+ * Rank all available degrees by ROI for this player.
+ * Hard AI picks the top ROI degree; medium AI picks from top 2.
+ */
+export function getRankedDegreesROI(player: Player, settings: DifficultySettings): DegreeROI[] {
+  const available = getAvailableDegrees(player.completedDegrees);
+  if (available.length === 0) return [];
+
+  return available
+    .map(d => calculateDegreeROI(d.id, player))
+    .sort((a, b) => b.roiScore - a.roiScore);
+}
+
+/**
+ * Get the degree the AI should study next.
+ * Hard AI uses full ROI ranking; medium/easy use existing logic.
+ */
+export function getNextDegreeByROI(player: Player, settings: DifficultySettings): import('@/data/education').Degree | null {
+  if (settings.planningDepth < 3) {
+    return getNextDegree(player, settings);
+  }
+
+  const ranked = getRankedDegreesROI(player, settings);
+  if (ranked.length === 0) return null;
+
+  const bestId = ranked[0].degreeId;
+  return DEGREES[bestId as keyof typeof DEGREES] ?? null;
+}
+
+/**
+ * Get the full prerequisite chain of degrees needed to unlock a target job.
+ * Returns degrees in topological order (prerequisites first).
+ */
+export function getDegreeUnlockChain(targetJobId: string, player: Player): import('@/data/education').Degree[] {
+  const targetJob = ALL_JOBS.find(j => j.id === targetJobId);
+  if (!targetJob || targetJob.requiredDegrees.length === 0) return [];
+
+  const chain: import('@/data/education').Degree[] = [];
+  const needed = new Set<string>();
+
+  // BFS to collect all required degrees (including transitive prerequisites)
+  const queue = [...targetJob.requiredDegrees];
+  while (queue.length > 0) {
+    const degId = queue.shift()!;
+    if (player.completedDegrees.includes(degId as any)) continue;
+    if (needed.has(degId)) continue;
+
+    const deg = DEGREES[degId as keyof typeof DEGREES];
+    if (!deg) continue;
+
+    needed.add(degId);
+    for (const prereq of deg.prerequisites) {
+      if (!player.completedDegrees.includes(prereq as any) && !needed.has(prereq)) {
+        queue.push(prereq);
+      }
+    }
+  }
+
+  // Topological sort: prerequisites before dependents
+  const sorted: string[] = [];
+  const visited = new Set<string>();
+  function visit(id: string): void {
+    if (visited.has(id)) return;
+    visited.add(id);
+    const deg = DEGREES[id as keyof typeof DEGREES];
+    if (deg) {
+      for (const prereq of deg.prerequisites) {
+        if (needed.has(prereq)) visit(prereq);
+      }
+    }
+    sorted.push(id);
+  }
+  for (const id of needed) visit(id);
+
+  return sorted
+    .map(id => DEGREES[id as keyof typeof DEGREES])
+    .filter(Boolean) as import('@/data/education').Degree[];
 }
