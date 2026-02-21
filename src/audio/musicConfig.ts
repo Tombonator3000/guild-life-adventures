@@ -20,6 +20,7 @@ export const MUSIC_TRACKS: Record<string, MusicTrack> = {
   'noble-heights':    { id: 'noble-heights',    file: '10Noble-Heights.mp3',      label: 'Noble Heights' },
   'cave':             { id: 'cave',             file: '20Cave.mp3',               label: 'The Cave' },
   'winner':           { id: 'winner',           file: '19Winner.mp3',             label: 'Victory' },
+  'dragons-lair':     { id: 'dragons-lair',     file: 'Dragons_Lair.mp3',         label: "Dragon's Lair" },
 };
 
 // Screen-level music (menus, setup, victory)

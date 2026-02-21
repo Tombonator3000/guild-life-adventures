@@ -45,11 +45,12 @@ export function CharacterPortrait({
     setImageError(false);
   }, [portraitId]);
 
-  // Toad transformation: show 🐸 instead of portrait
+  // Toad transformation: show toad.jpg instead of portrait (emoji fallback if image fails)
   if (isToad) {
+    const toadSrc = `${import.meta.env.BASE_URL}npcs/toad.jpg`;
     return (
       <div
-        className={`${roundedClass} border-2 border-purple-500/80 flex items-center justify-center relative ${className}`}
+        className={`${roundedClass} border-2 border-purple-500/80 overflow-hidden relative ${className}`}
         style={{
           width: size,
           height: actualHeight,
@@ -58,7 +59,22 @@ export function CharacterPortrait({
           minHeight: actualHeight,
         }}
       >
-        <span style={{ fontSize: size * 0.65, lineHeight: 1 }} role="img" aria-label="frog">🐸</span>
+        {!imageError ? (
+          <img
+            src={toadSrc}
+            alt="Toad (cursed)"
+            className="w-full h-full object-cover"
+            onError={() => setImageError(true)}
+            draggable={false}
+          />
+        ) : (
+          <span
+            className="flex items-center justify-center w-full h-full"
+            style={{ fontSize: size * 0.65, lineHeight: 1 }}
+            role="img"
+            aria-label="frog"
+          >🐸</span>
+        )}
         <CurseOverlay size={size} height={actualHeight} shape={shape} />
       </div>
     );

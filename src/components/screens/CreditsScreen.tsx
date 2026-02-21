@@ -18,6 +18,7 @@ const MUSIC_FILES = [
   'music/18OhWhatAWeekend.mp3',
   'music/19Winner.mp3',
   'music/20Cave.mp3',
+  'music/Dragons_Lair.mp3',
 ];
 
 const CREDITS_TEXT = [
