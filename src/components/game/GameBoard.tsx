@@ -43,6 +43,7 @@ import { StoneBorderFrame } from './StoneBorderFrame';
 import { CurseAppliancePanel } from './CurseAppliancePanel';
 import { CurseToadPanel } from './CurseToadPanel';
 import { registerAIAnimateCallback } from '@/hooks/useAIAnimationBridge';
+import { ChatPanel } from './ChatPanel';
 
 export function GameBoard() {
   const {
@@ -74,7 +75,7 @@ export function GameBoard() {
   } = useGameStore();
   const locationHexes = useGameStore(s => s.locationHexes);
   const { event: shadowfingersEvent, dismiss: dismissShadowfingers } = useShadowfingersModal();
-  const { isOnline, isGuest, networkMode, broadcastMovement, remoteAnimation, clearRemoteAnimation, latency } = useNetworkSync();
+  const { isOnline, isGuest, networkMode, broadcastMovement, remoteAnimation, clearRemoteAnimation, latency, chatMessages, sendChatMessage } = useNetworkSync();
   const localPlayerId = useGameStore(s => s.localPlayerId);
   const roomCodeDisplay = useGameStore(s => s.roomCode);
 
@@ -509,6 +510,16 @@ export function GameBoard() {
 
       {/* PWA Update Notification */}
       <UpdateBanner />
+
+      {/* In-game chat (online multiplayer only) */}
+      {isOnline && currentPlayer && (
+        <ChatPanel
+          messages={chatMessages}
+          onSend={sendChatMessage}
+          playerName={currentPlayer.name}
+          playerColor={currentPlayer.color}
+        />
+      )}
     </div>
   );
 }

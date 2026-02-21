@@ -28,6 +28,14 @@ export interface OnlineGameSettings {
 
 // --- Network Messages ---
 
+// Chat message — sent by both host and guests, routed through host
+export interface ChatMessage {
+  senderName: string;
+  senderColor: string;
+  text: string;
+  timestamp: number;
+}
+
 // Host → Guest messages
 export type HostMessage =
   | { type: 'lobby-update'; lobby: LobbyState }
@@ -40,7 +48,8 @@ export type HostMessage =
   | { type: 'pong'; timestamp: number }
   | { type: 'movement-animation'; playerId: string; path: LocationId[] }
   | { type: 'turn-timeout'; playerId: string }
-  | { type: 'host-migrated'; newHostPeerId: string; gameState: SerializedGameState };
+  | { type: 'host-migrated'; newHostPeerId: string; gameState: SerializedGameState }
+  | { type: 'chat-message'; message: ChatMessage };
 
 // Guest → Host messages
 export type GuestMessage =
@@ -52,7 +61,8 @@ export type GuestMessage =
   | { type: 'leave' }
   | { type: 'portrait-select'; portraitId: string | null }
   | { type: 'name-change'; newName: string }
-  | { type: 'movement-start'; playerId: string; path: LocationId[] };
+  | { type: 'movement-start'; playerId: string; path: LocationId[] }
+  | { type: 'chat-message'; message: ChatMessage };
 
 export type NetworkMessage = HostMessage | GuestMessage;
 

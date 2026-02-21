@@ -3,6 +3,103 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+## 2026-02-21 — Search Online Games + In-Game Chat (UTC 11:00)
+
+### Overview
+
+Implemented two new multiplayer features: a public game discovery lobby browser and an in-game chat system. This was in the multiplayer.md Future Work list (Priority 3: Features — "Lobby browser/matchmaking").
+
+**Context**: User asked "is it possible to add a 'search for online games' function to the game?" — Yes, and done! Combined with in-game chat for a complete social multiplayer experience.
+
+### Architecture Decision
+
+- **Lobby Browser**: Firebase Realtime Database (free tier) — stores public game listings. Required because players have no WebRTC connection before joining; need a shared external store.
+- **In-game Chat**: WebRTC P2P via existing DataChannels — reuses current PeerJS infrastructure, no new backend. Chat messages are just a new message type in the existing protocol.
+
+### New Files
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| `src/lib/firebase.ts` | 37 | Firebase init with env var config. `isFirebaseConfigured()` check for graceful degradation |
+| `src/network/gameListing.ts` | 97 | `registerGameListing()`, `updateListingPlayerCount()`, `subscribeToGameListings()` |
+| `src/components/game/ChatPanel.tsx` | 128 | Collapsible chat UI — message list, input, unread badge, auto-scroll |
+| `.env.example` | 45 | Firebase setup instructions with recommended security rules |
+
+### Modified Files
+
+**`src/network/types.ts`:**
+- Added `ChatMessage` interface: `{ senderName, senderColor, text, timestamp }`
+- Added `{ type: 'chat-message'; message: ChatMessage }` to both `HostMessage` and `GuestMessage`
+
+**`src/network/useNetworkSync.ts`:**
+- Added `chatMessages: ChatMessage[]` state (max 100 messages, FIFO)
+- Added `sendChatMessage(text, senderName, senderColor)` callback
+- Host: receives chat from guest → rebroadcasts to all → adds to own state
+- Guest: receives chat from host → adds to state
+- Both exposed in hook return value
+
+**`src/network/useOnlineGame.ts`:**
+- Added Firebase imports (`registerGameListing`, `updateListingPlayerCount`)
+- Added `isPublic` state + `isPublicRef` (ref for stale-closure safety)
+- Added `publicCleanupRef` (stores Firebase cleanup function)
+- Added `setPublicRoom(makePublic, currentPlayers)` — registers/deregisters in Firebase
+- Updates player count in listing when guests join
+- Auto-deregisters listing on `startOnlineGame()` and `disconnect()`
+- Exposed `isPublic` and `setPublicRoom` in return value
+
+**`src/components/screens/OnlineLobby.tsx`:**
+- Added `'browse'` to `LobbyView` type
+- Added "Search Online Games" button in main menu (full-width, below Create/Join)
+- Added browse view: real-time game list from Firebase, join button per game
+- Firebase not configured → graceful fallback with setup instructions
+- Loading state → spinner with "Searching the realm..."
+- No games → friendly empty state
+- Host lobby: added "List in public lobby browser" checkbox (only visible if Firebase configured)
+- New imports: `subscribeToGameListings`, `isFirebaseConfigured`, `Search`, `RefreshCw` icons
+
+**`src/components/game/GameBoard.tsx`:**
+- Added `ChatPanel` import
+- Extracts `chatMessages`, `sendChatMessage` from `useNetworkSync()`
+- Renders `<ChatPanel>` in bottom-right corner only when `isOnline && currentPlayer`
+
+### GameListing Data Model (Firebase path: `guild-life/openGames/{roomCode}`)
+
+```typescript
+interface GameListing {
+  roomCode: string;
+  hostName: string;
+  playerCount: number;     // updated live as guests join
+  maxPlayers: number;      // always 4
+  goals: { wealth, happiness, education, career };
+  hasAI: boolean;
+  createdAt: number;       // serverTimestamp(), stale after 5 min
+}
+```
+
+### Chat Protocol
+
+```
+Guest sends:  { type: 'chat-message', message: { senderName, senderColor, text, timestamp } }
+Host receives → broadcasts to all peers → adds to own chatMessages state
+All guests receive: { type: 'chat-message', message: ... } → add to chatMessages state
+Host self-send: directly adds to state + broadcasts
+```
+
+### Firebase Setup (user must do this)
+
+1. Create Firebase project at console.firebase.google.com
+2. Enable Realtime Database
+3. Copy 4 config values to `.env.local` (see `.env.example`)
+4. Set recommended security rules (in `.env.example`)
+5. If Firebase not configured, the UI shows a "not configured" message — rest of game unaffected
+
+### Verification
+
+- 332 tests all pass (`bun run test`) — no regressions
+- Build succeeds without TypeScript errors (`bun run build`)
+
+---
+
 ## 2026-02-21 — UI Fixes: Cursed Panel, Dirty Tricks, Sound FX, Player Home, Fresh Food (UTC 09:30)
 
 ### Overview

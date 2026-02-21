@@ -18,6 +18,7 @@ import type {
   SerializedGameState,
 } from './types';
 import { PLAYER_COLORS } from '@/types/game.types';
+import { registerGameListing, updateListingPlayerCount } from './gameListing';
 
 /** Time to wait for host reconnection before triggering host migration (ms) */
 const HOST_MIGRATION_TIMEOUT = 10000;
@@ -41,6 +42,11 @@ export function useOnlineGame() {
 
   // Track if we're in online game mode
   const isOnlineRef = useRef(false);
+
+  // Public game listing state (host only)
+  const [isPublic, setIsPublic] = useState(false);
+  const isPublicRef = useRef(false);
+  const publicCleanupRef = useRef<(() => Promise<void>) | null>(null);
 
   // Store lobby data for host migration (all peer IDs and slots)
   const storedLobbyRef = useRef<LobbyPlayer[]>([]);
@@ -151,6 +157,14 @@ export function useOnlineGame() {
       }
     });
     peerManager.setPeerPlayerMap(peerMap);
+
+    // Remove public listing — game is starting, no more joiners
+    if (publicCleanupRef.current) {
+      publicCleanupRef.current().catch(() => {});
+      publicCleanupRef.current = null;
+      isPublicRef.current = false;
+      setIsPublic(false);
+    }
 
     // Broadcast initial game state + lobby data to all guests
     const gameState = serializeGameState();
@@ -266,6 +280,10 @@ export function useOnlineGame() {
           const updated = [...prev, newPlayer];
           // Store peer name for reconnection
           peerManager.setPeerName(fromPeerId, displayName);
+          // Update public listing player count if room is listed
+          if (isPublicRef.current) {
+            updateListingPlayerCount(roomCode, updated.length).catch(() => {});
+          }
           // Broadcast lobby update
           const lobby: LobbyState = {
             roomCode,
@@ -601,6 +619,39 @@ export function useOnlineGame() {
     });
   }, [isHost, roomCode, localPlayerName, lobbyPlayers]);
 
+  // --- Public Room Listing (host only) ---
+
+  const setPublicRoom = useCallback(async (makePublic: boolean, currentPlayers: LobbyPlayer[]) => {
+    if (!isHost) return;
+
+    if (makePublic && !isPublicRef.current) {
+      // Register the listing in Firebase
+      const cleanup = await registerGameListing({
+        roomCode,
+        hostName: localPlayerName,
+        playerCount: currentPlayers.length,
+        maxPlayers: 4,
+        goals: {
+          wealth: settings.goals.wealth,
+          happiness: settings.goals.happiness,
+          education: settings.goals.education,
+          career: settings.goals.career,
+        },
+        hasAI: settings.includeAI,
+        createdAt: Date.now(),
+      });
+      publicCleanupRef.current = cleanup;
+      isPublicRef.current = true;
+      setIsPublic(true);
+    } else if (!makePublic && isPublicRef.current) {
+      // Remove the listing
+      await publicCleanupRef.current?.();
+      publicCleanupRef.current = null;
+      isPublicRef.current = false;
+      setIsPublic(false);
+    }
+  }, [isHost, roomCode, localPlayerName, settings]);
+
   // --- Portrait Update ---
 
   const updatePortrait = useCallback((portraitId: string | null) => {
@@ -661,6 +712,13 @@ export function useOnlineGame() {
       clearTimeout(hostMigrationTimerRef.current);
       hostMigrationTimerRef.current = null;
     }
+    // Remove public listing if active
+    if (publicCleanupRef.current) {
+      publicCleanupRef.current().catch(() => {});
+      publicCleanupRef.current = null;
+      isPublicRef.current = false;
+      setIsPublic(false);
+    }
     // Notify peers before destroying
     if (peerManager.isHost) {
       peerManager.broadcast({ type: 'kicked', reason: 'Host closed the room' });
@@ -709,6 +767,7 @@ export function useOnlineGame() {
     error,
     disconnectedPlayers,
     isMigrating,
+    isPublic,
 
     // Actions
     createRoom,
@@ -720,5 +779,6 @@ export function useOnlineGame() {
     disconnect,
     setLocalPlayerName,
     attemptReconnect,
+    setPublicRoom,
   };
 }
