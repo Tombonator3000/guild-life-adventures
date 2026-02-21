@@ -41,6 +41,7 @@ export interface GameStore extends GameState {
   workShift: (playerId: string, hours: number, wage: number) => boolean;
   requestRaise: (playerId: string) => { success: boolean; newWage?: number; message: string };
   negotiateRaise: (playerId: string, newWage: number) => void;
+  useRemainingTime: (playerId: string) => void;
   studySession: (playerId: string, path: EducationPath, cost: number, hours: number) => void;
   completeEducationLevel: (playerId: string, path: EducationPath) => void;
   studyDegree: (playerId: string, degreeId: DegreeId, cost: number, hours: number) => void;

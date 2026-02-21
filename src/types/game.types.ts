@@ -264,6 +264,7 @@ export interface Player {
   // Turn tracking flags
   workedThisTurn: boolean;                    // True if player worked at least one shift this turn (reset weekly)
   hadRandomEventThisTurn: boolean;            // True if player already had a random location event this turn (max 1 per turn)
+  raiseAttemptedThisTurn: boolean;            // True if player already requested a raise this turn (reset on turn switch)
 }
 
 export interface GoalSettings {

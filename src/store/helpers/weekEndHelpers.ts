@@ -171,6 +171,7 @@ function resetWeeklyFlags(p: Player): void {
   p.completedBountiesThisWeek = [];
   p.workedThisTurn = false;
   p.hadRandomEventThisTurn = false;
+  p.raiseAttemptedThisTurn = false;
   if (p.questCooldownWeeksLeft > 0) {
     p.questCooldownWeeksLeft -= 1;
   }
@@ -877,7 +878,7 @@ function resolveWeekEndOutcome(
     currentPlayerIndex: firstAliveIndex,
     players: players.map((p, index) =>
       index === firstAliveIndex
-        ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: firstPlayerHome, dungeonAttemptsThisTurn: 0, hadRandomEventThisTurn: false, workedThisTurn: false }
+        ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: firstPlayerHome, dungeonAttemptsThisTurn: 0, hadRandomEventThisTurn: false, workedThisTurn: false, raiseAttemptedThisTurn: false }
         : p
     ),
     rentDueWeek: isRentDue ? newWeek : rentDueWeek,

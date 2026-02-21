@@ -155,6 +155,7 @@ const createPlayer = (
   // Turn tracking flags
   workedThisTurn: false,
   hadRandomEventThisTurn: false,
+  raiseAttemptedThisTurn: false,
 });
 
 export const useGameStore = create<GameStore>((set, get) => {
