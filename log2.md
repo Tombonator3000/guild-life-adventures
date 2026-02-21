@@ -3,6 +3,65 @@
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 
+## 2026-02-21 — Firebase Environment Setup (UTC 12:00)
+
+### Overview
+
+Created `.env.local` from `.env.example` to enable the Firebase Realtime Database integration for the public lobby browser ("Search Online Games") feature.
+
+### What Was Done
+
+- Copied `.env.example` → `.env.local` (placeholder values; user must fill in real credentials)
+- `.env.local` is gitignored — not committed
+
+### Required Variables (fill in `.env.local`)
+
+| Variable | Description |
+|----------|-------------|
+| `VITE_FIREBASE_API_KEY` | Firebase web app API key |
+| `VITE_FIREBASE_AUTH_DOMAIN` | `<project-id>.firebaseapp.com` |
+| `VITE_FIREBASE_DATABASE_URL` | `https://<project-id>-default-rtdb.firebaseio.com` |
+| `VITE_FIREBASE_PROJECT_ID` | Firebase project ID |
+
+### User Next Steps
+
+1. Go to https://console.firebase.google.com
+2. Create/select a project → Add a web app (`</>` icon)
+3. Enable **Realtime Database** (choose region, start in test mode)
+4. Copy the 4 config values from Firebase app settings into `.env.local`
+5. In Firebase console → Database → Rules, paste the recommended rules from `.env.example`:
+   ```json
+   {
+     "rules": {
+       "guild-life": {
+         "openGames": {
+           ".read": true,
+           "$roomCode": {
+             ".write": true,
+             ".validate": "newData.hasChildren(['roomCode','hostName','playerCount','maxPlayers','createdAt'])"
+           }
+         }
+       }
+     }
+   }
+   ```
+6. Run `bun run dev` — the "Search Online Games" button in the multiplayer lobby should now show live public games
+
+### Relevant Files
+
+- `.env.local` — **created** (placeholder values, gitignored)
+- `.env.example` — template with full instructions
+- `src/lib/firebase.ts` — `isFirebaseConfigured()` / `getFirebaseDb()` — graceful degradation if vars missing
+- `src/network/gameListing.ts` — `registerGameListing()`, `subscribeToGameListings()`
+- `src/components/screens/OnlineLobby.tsx` — lobby browser UI
+
+### Notes
+
+- Game works fully without Firebase; lobby browser shows "not configured" message instead
+- For GitHub Actions deployment: add the 4 vars as repository secrets (see `.env.example` footer)
+
+---
+
 ## 2026-02-21 — Cave UI + Weekend Message Fixes (UTC 10:20)
 
 ### Overview
