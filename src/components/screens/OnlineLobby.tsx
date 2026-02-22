@@ -379,10 +379,10 @@ export function OnlineLobby() {
 
             {!firebaseAvailable ? (
               <div className="space-y-3">
-                <div className="parchment-panel p-5 text-center">
+              <div className="parchment-panel p-5 text-center">
                   <Globe className="w-8 h-8 text-amber-600 mx-auto mb-2" />
                   <p className="font-display text-sm text-amber-800 mb-3">
-                    Search for public games via PeerJS network
+                    Search for public games
                   </p>
                   <button
                     onClick={handlePeerSearch}
@@ -396,7 +396,7 @@ export function OnlineLobby() {
                   </button>
                   {!peerSearched && (
                     <p className="text-xs text-amber-600 mt-2">
-                      Tip: add Firebase env vars to enable live game listing.
+                      Finds games in other browser tabs instantly. For cross-network play, share the room code directly.
                     </p>
                   )}
                 </div>
@@ -411,7 +411,9 @@ export function OnlineLobby() {
                   <div className="parchment-panel p-6 text-center">
                     <Users className="w-8 h-8 text-amber-400 mx-auto mb-2" />
                     <p className="font-display text-amber-800 mb-1 text-sm">No public games found</p>
-                    <p className="text-xs text-amber-700">Make sure the host has made their room public, then search again.</p>
+                    <p className="text-xs text-amber-700">
+                      No rooms found in other tabs on this browser. For cross-network games, ask the host for a room code.
+                    </p>
                   </div>
                 )}
 
@@ -597,7 +599,7 @@ export function OnlineLobby() {
                   <p className="text-xs text-green-700 text-center mt-1">
                     {firebaseAvailable
                       ? 'Others can find and join this room without a code'
-                      : 'Others can find your room via P2P discovery'}
+                      : 'Discoverable by other tabs on this browser. Share the room code for cross-network play.'}
                   </p>
                 )}
               </div>
