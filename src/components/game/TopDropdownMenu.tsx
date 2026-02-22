@@ -7,11 +7,12 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   BarChart3, Package, Target, Users, Trophy, Settings, Code,
-  Coins, Clock, CloudSun, ChevronDown, X, LayoutDashboard
+  Coins, Clock, CloudSun, ChevronDown, X, LayoutDashboard, Hourglass
 } from 'lucide-react';
 import { SideInfoTabs } from './SideInfoTabs';
 import { RightSideTabs } from './RightSideTabs';
 import type { Player, GoalSettings } from '@/types/game.types';
+import { HOURS_PER_TURN } from '@/types/game.types';
 import type { WeatherState } from '@/data/weather';
 import { useTranslation } from '@/i18n';
 
@@ -188,6 +189,14 @@ export function TopDropdownMenu({
             <span className="text-[9px]">
               {economyTrend === 1 ? '↑' : economyTrend === -1 ? '↓' : '↔'}
             </span>
+          </span>
+          <span className="text-parchment/40">|</span>
+          <span className="flex items-center gap-1" title={`${player.timeRemaining} hours remaining this week`}>
+            <Hourglass className={`w-3 h-3 ${player.timeRemaining <= 10 ? 'text-red-400' : 'text-amber-300'}`} />
+            <span className={player.timeRemaining <= 10 ? 'text-red-300 font-bold' : 'text-parchment/90'}>
+              {player.timeRemaining}
+            </span>
+            <span className="text-parchment/50 text-[9px]">/{HOURS_PER_TURN}h</span>
           </span>
           {weather && weather.type !== 'clear' && (
             <>
