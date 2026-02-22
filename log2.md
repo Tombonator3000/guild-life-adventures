@@ -28,6 +28,46 @@
 
 ---
 
+## 2026-02-22 — Multiplayer UX: Honest Discovery, Reconnect Button, Event Queue
+
+### Problems Fixed
+
+1. **"Make room discoverable" was misleading**: Shows "Others can find your room via P2P discovery" but BroadcastChannel only works within the same browser. Cross-network discovery requires Firebase (not configured by default). Users searching from other browsers get "no public games found".
+
+2. **"Disconnected" with no way to reconnect**: The ConnectionIndicator in the guest lobby showed Disconnected/Error status but had no button to retry. `attemptReconnect` existed in the hook but was never wired to the UI.
+
+3. **Multiple events all shown at once**: Week-end processing (theft, weather, sickness, lottery, aging, etc.) joined all event messages with `\n` into a single panel. User wants events shown one at a time.
+
+### Solutions
+
+**Discovery messaging (OnlineLobby.tsx)**
+- Browse panel header: "Public Games" → "Local Games" when Firebase not configured
+- Browse panel description: explicitly states "Only finds games in other tabs on this browser. For cross-network play, share the room code directly."
+- Host lobby toggle: "Make room discoverable" → "Make discoverable (same browser only)"
+- Main menu browse button: conditional text explaining scope when Firebase absent
+- Firebase code unchanged — works properly when env vars configured
+
+**Reconnect button (OnlineLobby.tsx)**
+- `ConnectionIndicator` now accepts optional `onReconnect?: () => void` prop
+- When status is `disconnected`, `reconnecting`, or `error` AND handler provided: shows a "Reconnect" button
+- Guest lobby passes `attemptReconnect` from `useOnlineGame` as `onReconnect`
+
+**Event queue (GameBoard.tsx)**
+- Added `eventQueueIdx` state, reset on each new event batch via `useEffect`
+- Split `eventMessage` by `\n` into individual event lines
+- Builds `queuedEvent` with single line + progress counter title like "Weekend Events (2/4)"
+- `handleEventDismiss`: increments queue or calls `dismissEvent()` when all events shown
+- No store changes; pure UI-layer fix
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/screens/OnlineLobby.tsx` | Discovery text, ConnectionIndicator reconnect button |
+| `src/components/game/GameBoard.tsx` | Event queue state + handleEventDismiss |
+
+---
+
 ## 2026-02-21 17:00 UTC — Full Spectator Mode for Online Multiplayer
 
 ### Overview

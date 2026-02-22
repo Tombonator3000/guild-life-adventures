@@ -211,6 +211,38 @@ export function GameBoard() {
     getAccumulatedSteps,
   });
 
+  // Event queue: show one event at a time when multiple events fire in a single week-end batch
+  const [eventQueueIdx, setEventQueueIdx] = useState(0);
+
+  // Reset queue index whenever a new event batch arrives
+  useEffect(() => {
+    setEventQueueIdx(0);
+  }, [currentEvent?.id]);
+
+  // Derive per-event data for the queue
+  const eventLines = currentEvent?.description.split('\n').filter(Boolean) ?? [];
+  const totalEventCount = eventLines.length;
+  const currentEventLine = eventLines[eventQueueIdx] ?? eventLines[0] ?? '';
+  const queuedEvent: typeof currentEvent = currentEvent
+    ? {
+        ...currentEvent,
+        title: totalEventCount > 1
+          ? `${currentEvent.title} (${eventQueueIdx + 1}/${totalEventCount})`
+          : currentEvent.title,
+        description: currentEventLine,
+      }
+    : null;
+
+  // Advance through the event queue, or fully dismiss when all events shown
+  const handleEventDismiss = () => {
+    if (eventQueueIdx < totalEventCount - 1) {
+      setEventQueueIdx(idx => idx + 1);
+    } else {
+      setEventQueueIdx(0);
+      dismissEvent();
+    }
+  };
+
   const SIDE_PANEL_WIDTH_PERCENT = 12;
 
   return (
@@ -344,7 +376,7 @@ export function GameBoard() {
           {/* Center UI panel */}
           {/* Mobile: positioned via mobileOverrides when location selected or event, hidden otherwise */}
           {/* Desktop: always visible, positioned within the board frame */}
-          {(!isMobile || selectedLocation || (phase === 'event' && currentEvent) || (applianceBreakageEvent?.fromCurse) || toadCurseEvent) && (
+          {(!isMobile || selectedLocation || (phase === 'event' && queuedEvent) || (applianceBreakageEvent?.fromCurse) || toadCurseEvent) && (
             <div
               className={`absolute overflow-hidden z-10 ${isMobile ? 'rounded-xl' : ''}`}
               style={{
@@ -369,8 +401,8 @@ export function GameBoard() {
                     curserName={applianceBreakageEvent.curserName}
                     onDismiss={dismissApplianceBreakageEvent}
                   />
-                ) : phase === 'event' && currentEvent ? (
-                  <EventPanel event={currentEvent} onDismiss={dismissEvent} />
+                ) : phase === 'event' && queuedEvent ? (
+                  <EventPanel event={queuedEvent} onDismiss={handleEventDismiss} />
                 ) : selectedLocation ? (
                   <LocationPanel locationId={selectedLocation} />
                 ) : (
