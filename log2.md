@@ -6066,3 +6066,38 @@ Implemented a **fullboard mode** with a `TopDropdownMenu` component that slides 
 
 ### Files Created
 - `src/components/game/TopDropdownMenu.tsx`
+
+---
+
+## 2026-02-22 — Trigger Bar Full-Panel Fix
+
+### Task
+Seksjonstabs i triggerbaren skal åpne HELE panelet (ikke bare delvis).
+Tabs: Stats | Items | Goals | Players | Awards | Options | Dev
+
+### Problem
+Forrige implementasjon viste kun én kolonne om gangen:
+- Klikk på Stats/Items/Goals → kun venstre kolonne (256px bred)
+- Klikk på Players/Awards/Options/Dev → kun høyre kolonne (320px bred)
+Resulterte i at panelet alltid åpnet seg "halv" — brukeren ønsket at HELE vinduet åpner seg.
+
+### Løsning
+Redesignet `TopDropdownMenu.tsx` slik at når et tab klikkes:
+1. **Begge sidebars vises alltid** side om side (full bredde)
+2. **Panelhøyde** økt fra `min(56vh, 420px)` til `min(80vh, 650px)`
+3. **`max-h` animasjon** økt fra `max-h-[56vh]` til `max-h-[80vh]`
+4. **Venstre kolonne** alltid `w-72` (288px), ikke lenger kollapset til `w-0`
+5. **Høyre kolonne** fyller gjenværende bredde med `flex-1 min-w-0`
+6. Fjernet `isLeftSection`/`isRightSection` kondisjonell kolonnebredde-logikk
+7. Separate state-variabler `leftTab` og `rightTab`:
+   - Klikk på venstre-tab → oppdaterer `leftTab`, remounter kun `SideInfoTabs`
+   - Klikk på høyre-tab → oppdaterer `rightTab`, remounter kun `RightSideTabs`
+8. `activeSection` brukes fortsatt til highlight-styling i trigger-baren
+
+### Endrede filer
+- `src/components/game/TopDropdownMenu.tsx` — full omskrivning av panel-logikk
+
+### Resultat
+- `bunx tsc --noEmit` → 0 feil
+- Triggerbaren har alle 7 tabs: Stats | Items | Goals | Players | Awards | Options | Dev
+- Klikk på hvilket som helst tab åpner nå full-bredde panel (begge sidebars synlige)

@@ -1,13 +1,13 @@
 // TopDropdownMenu - Jones-style top pulldown menu for fullboard mode
 // A thin trigger bar sits at the top of the screen. Hovering or clicking it
 // slides down a panel with all the information from both sidebars.
+// Clicking any tab opens the FULL panel (both sidebars side-by-side) at 80vh.
 // Inspired by the original Jones in the Fast Lane menu system.
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   BarChart3, Package, Target, Users, Trophy, Settings, Code,
-  Coins, Smile, GraduationCap, TrendingUp, Compass,
-  LayoutDashboard, Clock, CloudSun, ChevronDown, X
+  Coins, Clock, CloudSun, ChevronDown, X, LayoutDashboard
 } from 'lucide-react';
 import { SideInfoTabs } from './SideInfoTabs';
 import { RightSideTabs } from './RightSideTabs';
@@ -16,6 +16,8 @@ import type { WeatherState } from '@/data/weather';
 import { useTranslation } from '@/i18n';
 
 type PanelSection = 'stats' | 'inventory' | 'goals' | 'players' | 'achievements' | 'options' | 'developer';
+type LeftTabId = 'stats' | 'inventory' | 'goals';
+type RightTabId = 'players' | 'achievements' | 'options' | 'developer';
 
 interface TopDropdownMenuProps {
   // Player / left sidebar
@@ -69,14 +71,14 @@ const RIGHT_SECTIONS: { id: PanelSection; label: string; icon: React.ReactNode }
   { id: 'developer', label: 'Dev', icon: <Code className="w-3.5 h-3.5" /> },
 ];
 
-// Which internal tab each section maps to in SideInfoTabs / RightSideTabs
-const LEFT_TAB_MAP: Record<string, 'stats' | 'inventory' | 'goals'> = {
+// Which internal tab each section maps to
+const LEFT_TAB_MAP: Record<string, LeftTabId> = {
   stats: 'stats',
   inventory: 'inventory',
   goals: 'goals',
 };
 
-const RIGHT_TAB_MAP: Record<string, 'players' | 'achievements' | 'options' | 'developer'> = {
+const RIGHT_TAB_MAP: Record<string, RightTabId> = {
   players: 'players',
   achievements: 'achievements',
   options: 'options',
@@ -106,8 +108,13 @@ export function TopDropdownMenu({
 }: TopDropdownMenuProps) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
-  // Which column is shown: left (stats/inv/goals) or right (players/options)
   const [activeSection, setActiveSection] = useState<PanelSection>('stats');
+
+  // Left and right tabs are tracked independently so clicking a right-side tab
+  // does not remount the left sidebar (and vice versa).
+  const [leftTab, setLeftTab] = useState<LeftTabId>('stats');
+  const [rightTab, setRightTab] = useState<RightTabId>('players');
+
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -123,7 +130,7 @@ export function TopDropdownMenu({
     hideTimerRef.current = setTimeout(() => setIsExpanded(false), 350);
   }, [cancelHide]);
 
-  // Listen to global mouse position — open when cursor within 8px of top edge
+  // Open when cursor is within 8px of the top edge
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (e.clientY <= 8) {
@@ -135,23 +142,24 @@ export function TopDropdownMenu({
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [cancelHide]);
 
-  // Cleanup timer on unmount
+  // Cleanup on unmount
   useEffect(() => () => { cancelHide(); }, [cancelHide]);
 
-  const isLeftSection = LEFT_SECTIONS.some(s => s.id === activeSection);
-  const isRightSection = RIGHT_SECTIONS.some(s => s.id === activeSection);
-
-  // Determine which internal tab each sidebar should open to
-  const leftInitialTab = LEFT_TAB_MAP[activeSection] ?? 'stats';
-  const rightInitialTab = RIGHT_TAB_MAP[activeSection] ?? 'players';
-
   const handleSectionClick = (sectionId: PanelSection) => {
+    // Clicking the active section again collapses the panel
     if (activeSection === sectionId && isExpanded) {
       setIsExpanded(false);
-    } else {
-      setActiveSection(sectionId);
-      setIsExpanded(true);
-      cancelHide();
+      return;
+    }
+    setActiveSection(sectionId);
+    setIsExpanded(true);
+    cancelHide();
+
+    // Update the relevant sidebar tab
+    if (sectionId in LEFT_TAB_MAP) {
+      setLeftTab(LEFT_TAB_MAP[sectionId]);
+    } else if (sectionId in RIGHT_TAB_MAP) {
+      setRightTab(RIGHT_TAB_MAP[sectionId]);
     }
   };
 
@@ -192,9 +200,8 @@ export function TopDropdownMenu({
           )}
         </div>
 
-        {/* Center: section tab buttons */}
+        {/* Center: section tab buttons — all 7 in one row */}
         <div className="flex-1 flex items-center justify-center gap-0.5">
-          {/* Separator */}
           <span className="text-parchment/30 text-xs mr-1">│</span>
 
           {LEFT_SECTIONS.map(s => (
@@ -257,60 +264,49 @@ export function TopDropdownMenu({
         </div>
       </div>
 
-      {/* ── Dropdown panel ───────────────────────────────────────────── */}
+      {/* ── Dropdown panel — FULL WIDTH, both sidebars always visible ── */}
       <div
         className={`
           overflow-hidden transition-all duration-250 ease-out
-          ${isExpanded ? 'max-h-[56vh] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}
+          ${isExpanded ? 'max-h-[80vh] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}
         `}
       >
-        <div className="bg-parchment/97 border-b-2 border-wood-dark shadow-2xl flex"
-          style={{ height: 'min(56vh, 420px)' }}
+        <div
+          className="bg-parchment/97 border-b-2 border-wood-dark shadow-2xl flex w-full"
+          style={{ height: 'min(80vh, 650px)' }}
         >
-          {/* Left column: player stats/inventory/goals */}
-          <div
-            className={`flex-shrink-0 border-r-2 border-wood-dark/30 overflow-hidden transition-all duration-200 ${
-              isLeftSection ? 'w-64' : 'w-0'
-            }`}
-          >
-            {isLeftSection && (
-              <SideInfoTabs
-                key={`left-${leftInitialTab}`}
-                player={player}
-                goals={goals}
-                isCurrentPlayer={true}
-                initialTab={leftInitialTab}
-              />
-            )}
+          {/* Left column: Stats / Items / Goals — fixed width */}
+          <div className="w-72 flex-shrink-0 border-r-2 border-wood-dark/30 overflow-hidden">
+            <SideInfoTabs
+              key={`left-${leftTab}`}
+              player={player}
+              goals={goals}
+              isCurrentPlayer={true}
+              initialTab={leftTab}
+            />
           </div>
 
-          {/* Right column: players/achievements/options/dev */}
-          <div
-            className={`flex-shrink-0 overflow-hidden transition-all duration-200 ${
-              isRightSection ? 'w-80' : 'w-0'
-            }`}
-          >
-            {isRightSection && (
-              <RightSideTabs
-                key={`right-${rightInitialTab}`}
-                players={players}
-                currentPlayerIndex={currentPlayerIndex}
-                goalSettings={goals}
-                onOpenSaveMenu={onOpenSaveMenu}
-                onToggleDebugOverlay={onToggleDebugOverlay}
-                onToggleZoneEditor={onToggleZoneEditor}
-                showDebugOverlay={showDebugOverlay}
-                aiIsThinking={aiIsThinking}
-                aiSpeedMultiplier={aiSpeedMultiplier}
-                onSetAISpeed={onSetAISpeed}
-                onSkipAITurn={onSkipAITurn}
-                initialTab={rightInitialTab}
-              />
-            )}
+          {/* Right column: Players / Awards / Options / Dev — fills remaining space */}
+          <div className="flex-1 min-w-0 overflow-hidden">
+            <RightSideTabs
+              key={`right-${rightTab}`}
+              players={players}
+              currentPlayerIndex={currentPlayerIndex}
+              goalSettings={goals}
+              onOpenSaveMenu={onOpenSaveMenu}
+              onToggleDebugOverlay={onToggleDebugOverlay}
+              onToggleZoneEditor={onToggleZoneEditor}
+              showDebugOverlay={showDebugOverlay}
+              aiIsThinking={aiIsThinking}
+              aiSpeedMultiplier={aiSpeedMultiplier}
+              onSetAISpeed={onSetAISpeed}
+              onSkipAITurn={onSkipAITurn}
+              initialTab={rightTab}
+            />
           </div>
 
-          {/* Close handle at right edge of open panel */}
-          <div className="flex items-start pt-2 pl-1">
+          {/* Close handle at right edge */}
+          <div className="flex items-start pt-2 pl-1 flex-shrink-0">
             <button
               onClick={() => setIsExpanded(false)}
               className="p-1 rounded hover:bg-wood/20 text-wood-dark/50 hover:text-wood-dark transition-colors"
