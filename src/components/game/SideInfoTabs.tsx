@@ -35,10 +35,11 @@ interface SideInfoTabsProps {
   player: Player;
   goals: GoalSettings;
   isCurrentPlayer: boolean;
+  initialTab?: TabId;
 }
 
-export function SideInfoTabs({ player, goals, isCurrentPlayer }: SideInfoTabsProps) {
-  const [activeTab, setActiveTab] = useState<TabId>('stats');
+export function SideInfoTabs({ player, goals, isCurrentPlayer, initialTab }: SideInfoTabsProps) {
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab ?? 'stats');
   const { t } = useTranslation();
   const TABS = getTabs(t);
 
