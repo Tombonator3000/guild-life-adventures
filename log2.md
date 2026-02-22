@@ -5,6 +5,31 @@
 
 ---
 
+## 2026-02-22 — Trigger Bar: Time Display + Fullboard Header Hide
+
+### Task
+- Add player's time (hours remaining) to the TopDropdownMenu trigger bar alongside week and market
+- Hide the center GameBoardHeader (week + market) when fullboard mode is active
+
+### Changes
+
+**`src/components/game/TopDropdownMenu.tsx`**
+- Imported `Hourglass` from lucide-react and `HOURS_PER_TURN` from game types
+- Added time remaining display (`player.timeRemaining / HOURS_PER_TURN h`) in the left info section of the trigger bar, between market and weather
+- Shows red/warning styling when `timeRemaining <= 10`
+- Always visible — the trigger bar is always shown in fullboard mode, so time is always accessible
+
+**`src/components/game/GameBoard.tsx`**
+- Changed `{!isMobile && (` to `{!isMobile && !fullboardMode && (` for the `GameBoardHeader` render
+- This removes the week/market panel from the center-top when fullboard mode is on (it's now shown in the trigger bar instead)
+
+### Result
+- In fullboard mode: trigger bar shows `Week N | Market %↑ | ⌛ Xh/60h` always at the top
+- In normal mode: the parchment panel in the center top still shows week/market as before
+- No TypeScript errors
+
+---
+
 ## 2026-02-22 — P2P Game Discovery Fix
 
 ### Problem

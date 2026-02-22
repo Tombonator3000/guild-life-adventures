@@ -417,8 +417,8 @@ export function GameBoard() {
             </div>
           )}
 
-          {/* Week and price indicator (desktop only) */}
-          {!isMobile && (
+          {/* Week and price indicator (desktop only, hidden in fullboard mode) */}
+          {!isMobile && !fullboardMode && (
             <GameBoardHeader
               week={week}
               priceModifier={priceModifier}
