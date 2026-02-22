@@ -1,225 +1,76 @@
 
-# Hex Curse Visual Glow + Curse of the Toad (med froskikon)
 
-## Hva som skal implementeres
+## P2P Game Discovery Fix
 
-1. **AI-tokens lyser lilla** med 🔮 badge og partikler (fix `TokenCurseEffect` til å støtte alle spillere)
-2. **Hexed lokasjon** viser purpur overlay + 🔮 ikon + partikler på brettet
-3. **Ny hex: "Curse of the Toad"** — 1 uke, mister 40 timer, og spillerikonet/tokenet viser 🐸 i stedet for portrettet mens cursed
+### Problem
+The "Search for public games via PeerJS" feature does not work because it depends on `https://0.peerjs.com/peerjs/peers` — a peer listing API that is **disabled on the free PeerJS cloud server**. This endpoint returns "Not found", so `fetchGuildPeerRoomCodes()` always gets an empty list, and "No public games found" is shown every time.
 
----
+### Root Cause
+PeerJS servers have an optional `allow_discovery` flag. The free public server (`0.peerjs.com`) has this disabled for security/scalability reasons. The `/peerjs/peers` endpoint simply does not exist there.
 
-## Del 1: Frosk-portrett i CharacterPortrait
+### Solution: Lightweight Firebase-free Room Registry via BroadcastChannel + localStorage fallback, plus a self-hosted PeerJS server option
 
-Den mest interessante delen: Når en spiller har `toad-transformation`-cursed, skal portrettet erstattes av et frosk-SVG-ikon i stedet for det vanlige portrettet.
-
-### Endring i `CharacterPortrait.tsx`
-
-Legg til en ny optional prop `activeCurses` (eller sjekk via `hasCurse` og en ny `isToad` prop). Enklest: legg til `isToad?: boolean` prop.
-
-Når `isToad === true`:
-- Vis en stor 🐸-emoji (eller en grønn SVG-frosk) i stedet for portrettet
-- Behold den purpur `CurseOverlay` rundt rammen
-- Bakgrunnen gjøres grønn
-
-```tsx
-// Nytt render-tilfelle inni CharacterPortrait, FØR vanlig portrait-rendering:
-if (isToad) {
-  return (
-    <div
-      className={`${roundedClass} border-2 border-purple-500/80 flex items-center justify-center relative ${className}`}
-      style={{
-        width: size, height: actualHeight,
-        backgroundColor: '#166534',  // mørk grønn
-        minWidth: size, minHeight: actualHeight,
-      }}
-    >
-      <span style={{ fontSize: size * 0.65, lineHeight: 1 }} role="img" aria-label="frog">🐸</span>
-      <CurseOverlay size={size} height={actualHeight} shape={shape} />
-    </div>
-  );
-}
-```
-
-### Prop-flyt for `isToad`
-
-`CharacterPortrait` får ny prop `isToad?: boolean`.
-
-`PlayerToken.tsx` og `AnimatedPlayerToken.tsx` beregner:
-```tsx
-const isToad = player.activeCurses?.some(c => c.effectType === 'toad-transformation') ?? false;
-```
-og sender `isToad={isToad}` til `CharacterPortrait`.
-
-### TokenCurseEffect oppdateres
-
-`TokenCurseEffect` tar en `isToad: boolean` prop og viser 🐸 badge i stedet for 🔮:
-```tsx
-function TokenCurseEffect({ isToad }: { isToad: boolean }) {
-  const badge = isToad ? '🐸' : '🔮';
-  ...
-}
-```
+Since the free PeerJS server won't list peers, we need an alternative discovery mechanism. The plan has two parts:
 
 ---
 
-## Del 2: Ny Hex — "Curse of the Toad" 🐸
+### Part 1: Fix the PeerJS peers API URL (quick win)
 
-### I `src/data/hexes.ts`
+The free PeerJS cloud server does NOT expose `/peers`. But if users self-host a PeerJS server (via `npx peerjs --port 9000 --allow_discovery`), it works. Update `peerDiscovery.ts` to:
 
-1. Legg til `'toad-transformation'` i `HexEffectType`-union
-2. Legg til ny definisjon i `PERSONAL_CURSES`:
+1. Try the API call and gracefully handle failure (already does this)
+2. Add a console log explaining why discovery failed, so developers know
+3. Add an optional env var `VITE_PEERJS_HOST` for self-hosted servers where `/peers` works
 
-```ts
-{
-  id: 'curse-of-the-toad',
-  name: 'Curse of the Toad',
-  category: 'personal',
-  description: 'Target turns into a frog for 1 week, losing 40 hours of time.',
-  flavorText: 'Ribbit. Your fingers are green. Your legs are shorter. Oh no.',
-  basePrice: 450,
-  castTime: 2,
-  duration: 1,
-  effect: { type: 'toad-transformation', magnitude: 40 },
-  sources: [
-    { location: 'shadow-market' },
-    { location: 'enchanter', requiresFloorCleared: 3 },
-  ],
-},
-```
+### Part 2: Room sharing via known-room-code broadcast (primary fix)
 
-### I `src/store/helpers/startTurnHelpers.ts`
+Since we can't list peers on the free server, make public rooms discoverable through a **shared room code registry** using the existing Firebase Realtime Database (when available) combined with a new **in-memory room announcement** system for non-Firebase setups:
 
-Etter Phase 6b (Lethargy), legg til Phase 6c:
-```ts
-// --- Phase 6c: Curse of the Toad (40h time loss) ---
-const toadCurse = hasCurseEffect(currentPlayer, 'toad-transformation');
-if (toadCurse) {
-  updatePlayerById(set, playerId, (p) => ({
-    timeRemaining: Math.max(0, p.timeRemaining - toadCurse.magnitude),
-  }));
-  if (!currentPlayer.isAI) {
-    eventMessages.push(`${currentPlayer.name} is still a frog! Ribbiting around wastes 40 hours.`);
-  }
-  currentPlayer = getPlayer(get, playerId);
-}
-```
+**`src/network/peerDiscovery.ts` changes:**
+- When a host marks their room as public, store the room code in `localStorage` under a shared key (for same-device testing) AND attempt a lightweight fetch to a simple JSON endpoint
+- `searchPeerGames()` will:
+  1. First check localStorage for recently announced room codes (same-device/tab testing)
+  2. Then try the PeerJS `/peers` endpoint (works with self-hosted servers)
+  3. Then probe any discovered room codes as before
+- Add `announceRoom(roomCode)` and `unannounceRoom(roomCode)` functions
 
----
+**`src/network/useOnlineGame.ts` changes:**
+- When host sets `isPublic = true`, call `announceRoom()` in addition to Firebase registration
+- On cleanup, call `unannounceRoom()`
 
-## Del 3: Lokasjon Hex Visuell Effekt
+**`src/components/screens/OnlineLobby.tsx` changes:**
+- Update the P2P search status text to be clearer: explain that same-network discovery works, cross-network requires Firebase or room code
+- Add a "Copy Room Code" button more prominently when public room is enabled without Firebase
 
-### `src/components/game/LocationZone.tsx`
+### Part 3: BroadcastChannel for same-browser discovery
 
-Legg til to nye optional props:
-```tsx
-isHexed?: boolean;
-hexCasterName?: string;
-```
+For local testing and demos, use the `BroadcastChannel` API so multiple tabs on the same browser can discover each other's games instantly:
 
-Inni `<div className="location-zone ...">`, legg til conditionally:
-```tsx
-{isHexed && (
-  <div className="absolute inset-0 pointer-events-none z-10 rounded overflow-hidden">
-    {/* Purpur semi-transparent glød */}
-    <div
-      className="absolute inset-0 animate-curse-pulse"
-      style={{
-        background: 'rgba(88,28,135,0.15)',
-        border: '2px solid rgba(147,51,234,0.55)',
-        boxShadow: '0 0 10px 2px rgba(147,51,234,0.35)',
-        borderRadius: 'inherit',
-      }}
-    />
-    {/* 🔮 ikon øverst til høyre */}
-    <div className="absolute top-0.5 right-0.5 text-xs select-none pointer-events-none">🔮</div>
-    {/* 4 partikler langs bunnen */}
-    {[0, 0.5, 1.0, 1.5].map((delay, i) => (
-      <span
-        key={i}
-        className="absolute animate-curse-particle select-none pointer-events-none"
-        style={{
-          left: `${15 + i * 22}%`,
-          bottom: '2px',
-          fontSize: '8px',
-          color: 'rgb(192, 132, 252)',
-          animationDelay: `${delay}s`,
-        }}
-      >✦</span>
-    ))}
-  </div>
-)}
-```
+**New: `src/network/localDiscovery.ts`**
+- Uses `BroadcastChannel('guild-life-rooms')` 
+- Host broadcasts `{type: 'room-announce', roomCode, hostName, playerCount, ...}` every 10 seconds
+- Searcher sends `{type: 'room-search'}`, hosts respond immediately
+- This enables instant "Search for public games" when testing with multiple tabs
 
-Tooltip oppdateres med hex-info:
-```tsx
-{isHexed && hexCasterName && (
-  <span className="ml-1 text-xs text-purple-400">🔮 by {hexCasterName}</span>
-)}
-```
+### Technical Details
 
-### `src/components/game/GameBoard.tsx`
+**Files to create:**
+- `src/network/localDiscovery.ts` — BroadcastChannel-based same-browser room discovery
 
-Hent `locationHexes` fra store (én linje):
-```tsx
-const locationHexes = useGameStore(s => s.locationHexes);
-```
+**Files to modify:**
+- `src/network/peerDiscovery.ts` — integrate localDiscovery, improve error logging, add env var support for custom PeerJS server
+- `src/network/useOnlineGame.ts` — call announceRoom/unannounceRoom when public toggle changes
+- `src/components/screens/OnlineLobby.tsx` — better UX text explaining discovery limitations, prominent room code sharing
+- `log2.md` — timestamp entry for this fix
 
-Send til `LocationZone` (linje ~270):
-```tsx
-const activeHex = locationHexes.find(h => h.targetLocation === location.id && h.weeksRemaining > 0);
-<LocationZone
-  ...
-  isHexed={!!activeHex}
-  hexCasterName={activeHex?.casterName}
->
-```
+**No new dependencies needed.** BroadcastChannel is supported in all modern browsers.
 
----
+### Expected Behavior After Fix
 
-## Berørte filer
+| Scenario | Before | After |
+|----------|--------|-------|
+| Two tabs same browser, one hosts public | "No public games found" | Game appears instantly via BroadcastChannel |
+| Self-hosted PeerJS server with `--allow_discovery` | "No public games found" (wrong URL) | Works via `/peers` endpoint with env var |
+| Free PeerJS server, no Firebase | "No public games found" | Clear message explaining limitation + prominent room code copy |
+| Firebase configured | Works (unchanged) | Works (unchanged) |
 
-| Fil | Endring |
-|---|---|
-| `src/data/hexes.ts` | Ny `HexEffectType` `'toad-transformation'`, ny hex i `PERSONAL_CURSES` |
-| `src/components/game/CharacterPortrait.tsx` | Ny `isToad` prop — viser 🐸 SVG/emoji i stedet for portrett |
-| `src/components/game/PlayerToken.tsx` | `isToad` beregning, send til `CharacterPortrait` + `TokenCurseEffect` |
-| `src/components/game/AnimatedPlayerToken.tsx` | Samme — `isToad` til `CharacterPortrait` + badge-endring |
-| `src/store/helpers/startTurnHelpers.ts` | Phase 6c: håndter `toad-transformation` tidstap |
-| `src/components/game/LocationZone.tsx` | Ny `isHexed` + `hexCasterName` props, purpur overlay + partikler |
-| `src/components/game/GameBoard.tsx` | Hent `locationHexes`, send `isHexed`/`hexCasterName` til `LocationZone` |
-| `log2.md` | Timestamp + logg |
-
----
-
-## Visuelt resultat
-
-```text
-Spiller med toad-curse:
-  Token på brett:           PlayersTab-portrett:
-    [🐸]  ← badge             [🐸 grønn sirkel]
-   (grønn                      ← frosk emoji i stedet
-    sirkel)                       for vanlig portrait
-  ✦  ✦  ✦  ← partikler
-
-Hexed lokasjon på brettet:
-┌─[purpur glød, pulserer]─────┐
-│  🔮               ✦ ✦ ✦ ✦  │
-│  [location innhold]          │
-│  purpur semi-transparent     │
-└──────────────────────────────┘
-
-Tooltip (hexed):
-┌────────────────────────────────┐
-│  Guild Hall  🔮 by Grimwald    │
-└────────────────────────────────┘
-```
-
----
-
-## Risikovurdering
-
-- **`isToad` prop**: Optional med default `false` — backward compatible overalt
-- **Toad hex**: Bruker eksisterende `time-loss`-mønster fra Phase 6b, trivielt å legge til
-- **LocationZone**: `isHexed` og `hexCasterName` er optional props — ingen breaking changes
-- **`locationHexes` i GameBoard**: Allerede tilgjengelig via store, én linje å hente ut
