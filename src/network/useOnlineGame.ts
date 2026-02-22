@@ -19,6 +19,7 @@ import type {
 } from './types';
 import { PLAYER_COLORS } from '@/types/game.types';
 import { registerGameListing, updateListingPlayerCount } from './gameListing';
+import { announceRoom, unannounceRoom, updateAnnouncedRoom } from './localDiscovery';
 
 /** Time to wait for host reconnection before triggering host migration (ms) */
 const HOST_MIGRATION_TIMEOUT = 10000;
@@ -186,9 +187,10 @@ export function useOnlineGame() {
     if (publicCleanupRef.current) {
       publicCleanupRef.current().catch(() => {});
       publicCleanupRef.current = null;
-      isPublicRef.current = false;
-      setIsPublic(false);
     }
+    unannounceRoom();
+    isPublicRef.current = false;
+    setIsPublic(false);
 
     // Broadcast initial game state + lobby data to all guests
     const gameState = serializeGameState();
@@ -308,6 +310,7 @@ export function useOnlineGame() {
           // Update public listing player count if room is listed
           if (isPublicRef.current) {
             updateListingPlayerCount(roomCode, updated.length).catch(() => {});
+            updateAnnouncedRoom({ playerCount: updated.length });
           }
           // Broadcast lobby update
           const lobby: LobbyState = {
@@ -713,12 +716,24 @@ export function useOnlineGame() {
         createdAt: Date.now(),
       });
       publicCleanupRef.current = cleanup;
+
+      // Also announce via BroadcastChannel + localStorage for local discovery
+      announceRoom({
+        roomCode,
+        hostName: localPlayerName,
+        playerCount: currentPlayers.length,
+        maxPlayers: 4,
+        hasAI: settings.includeAI,
+        isStarted: false,
+      });
+
       isPublicRef.current = true;
       setIsPublic(true);
     } else if (!makePublic && isPublicRef.current) {
       // Remove the listing
       await publicCleanupRef.current?.();
       publicCleanupRef.current = null;
+      unannounceRoom();
       isPublicRef.current = false;
       setIsPublic(false);
     }
@@ -788,9 +803,10 @@ export function useOnlineGame() {
     if (publicCleanupRef.current) {
       publicCleanupRef.current().catch(() => {});
       publicCleanupRef.current = null;
-      isPublicRef.current = false;
-      setIsPublic(false);
     }
+    unannounceRoom();
+    isPublicRef.current = false;
+    setIsPublic(false);
     // Notify peers before destroying
     if (peerManager.isHost) {
       peerManager.broadcast({ type: 'kicked', reason: 'Host closed the room' });

@@ -5,6 +5,29 @@
 
 ---
 
+## 2026-02-22 — P2P Game Discovery Fix
+
+### Problem
+"Search for public games via PeerJS" always showed "No public games found" because the free PeerJS cloud server disables the `/peers` endpoint.
+
+### Solution — Multi-layer discovery
+1. **BroadcastChannel + localStorage** (`src/network/localDiscovery.ts`): Instant same-browser/same-device room discovery. Hosts broadcast room info every 10s; searchers get instant responses.
+2. **Self-hosted PeerJS support**: `VITE_PEERJS_HOST` env var for servers with `--allow_discovery`.
+3. **Integrated search**: `searchPeerGames()` now combines local + PeerJS results.
+4. **Host announce/unannounce**: `useOnlineGame.ts` calls `announceRoom()` / `unannounceRoom()` when toggling public.
+5. **Better UX text**: Clear messaging about discovery scope (same-browser vs cross-network).
+
+### Files Changed (5)
+| File | Change |
+|------|--------|
+| `src/network/localDiscovery.ts` | NEW — BroadcastChannel + localStorage room registry |
+| `src/network/peerDiscovery.ts` | Integrated local discovery, env var support, better logging |
+| `src/network/useOnlineGame.ts` | Wire announceRoom/unannounceRoom on public toggle + cleanup |
+| `src/components/screens/OnlineLobby.tsx` | Clearer UX text for discovery scope |
+| `.env.example` | Added VITE_PEERJS_HOST documentation |
+
+---
+
 ## 2026-02-21 17:00 UTC — Full Spectator Mode for Online Multiplayer
 
 ### Overview
