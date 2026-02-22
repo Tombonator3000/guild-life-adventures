@@ -39,6 +39,7 @@ export function OnlineLobby() {
     disconnect,
     setLocalPlayerName,
     setPublicRoom,
+    attemptReconnect,
   } = useOnlineGame();
 
   const [view, setView] = useState<LobbyView>('menu');
@@ -254,7 +255,9 @@ export function OnlineLobby() {
               <Search className="w-6 h-6 text-amber-700" />
               <div className="text-left">
                 <span className="font-display text-base text-amber-900 block">Search Online Games</span>
-                <span className="text-xs text-amber-700">Browse public rooms — no code needed</span>
+                <span className="text-xs text-amber-700">
+                  {firebaseAvailable ? 'Browse public rooms — no code needed' : 'Find games in this browser — or use a room code'}
+                </span>
               </div>
             </button>
 
@@ -361,7 +364,7 @@ export function OnlineLobby() {
             <div className="parchment-panel p-4 flex items-center justify-between">
               <h2 className="font-display text-xl text-amber-900 flex items-center gap-2">
                 <Search className="w-5 h-5" />
-                Public Games
+                {firebaseAvailable ? 'Public Games' : 'Local Games'}
               </h2>
               {firebaseAvailable && (
                 <button
@@ -381,8 +384,11 @@ export function OnlineLobby() {
               <div className="space-y-3">
               <div className="parchment-panel p-5 text-center">
                   <Globe className="w-8 h-8 text-amber-600 mx-auto mb-2" />
-                  <p className="font-display text-sm text-amber-800 mb-3">
-                    Search for public games
+                  <p className="font-display text-sm text-amber-800 mb-1">
+                    Search for local games
+                  </p>
+                  <p className="text-xs text-amber-600 mb-3">
+                    Only finds games in other tabs on this browser.<br/>For cross-network play, share the room code directly.
                   </p>
                   <button
                     onClick={handlePeerSearch}
@@ -592,7 +598,7 @@ export function OnlineLobby() {
                   />
                   <Search className="w-4 h-4 text-amber-700" />
                   <span className="font-display text-sm text-amber-900">
-                    {firebaseAvailable ? 'List in public lobby browser' : 'Make room discoverable'}
+                    {firebaseAvailable ? 'List in public lobby browser' : 'Make discoverable (same browser only)'}
                   </span>
                 </label>
                 {isPublic && (
@@ -830,7 +836,7 @@ export function OnlineLobby() {
               <span className="font-mono text-3xl font-bold text-amber-900 tracking-[0.3em]">
                 {roomCode}
               </span>
-              <ConnectionIndicator status={connectionStatus} />
+              <ConnectionIndicator status={connectionStatus} onReconnect={attemptReconnect} />
             </div>
 
             <div className="parchment-panel p-6">
@@ -954,22 +960,35 @@ export function OnlineLobby() {
   );
 }
 
-function ConnectionIndicator({ status }: { status: string }) {
+function ConnectionIndicator({ status, onReconnect }: { status: string; onReconnect?: () => void }) {
   const isConnected = status === 'connected';
+  const showReconnect = !!onReconnect && (status === 'disconnected' || status === 'reconnecting' || status === 'error');
   return (
-    <div className="flex items-center justify-center gap-1.5 mt-2">
-      {isConnected ? (
-        <Wifi className="w-3 h-3 text-green-600" />
-      ) : (
-        <WifiOff className="w-3 h-3 text-amber-600" />
+    <div className="flex flex-col items-center gap-1 mt-2">
+      <div className="flex items-center justify-center gap-1.5">
+        {isConnected ? (
+          <Wifi className="w-3 h-3 text-green-600" />
+        ) : (
+          <WifiOff className="w-3 h-3 text-amber-600" />
+        )}
+        <span className={`text-xs ${isConnected ? 'text-green-600' : 'text-amber-600'}`}>
+          {status === 'connected' ? 'Connected' :
+           status === 'connecting' ? 'Connecting...' :
+           status === 'reconnecting' ? 'Reconnecting...' :
+           status === 'error' ? 'Connection error' :
+           'Disconnected'}
+        </span>
+      </div>
+      {showReconnect && (
+        <button
+          onClick={onReconnect}
+          disabled={status === 'reconnecting'}
+          className="flex items-center gap-1 text-xs px-3 py-1 wood-frame text-parchment font-display hover:brightness-110 disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3 h-3 ${status === 'reconnecting' ? 'animate-spin' : ''}`} />
+          {status === 'reconnecting' ? 'Reconnecting...' : 'Reconnect'}
+        </button>
       )}
-      <span className={`text-xs ${isConnected ? 'text-green-600' : 'text-amber-600'}`}>
-        {status === 'connected' ? 'Connected' :
-         status === 'connecting' ? 'Connecting...' :
-         status === 'reconnecting' ? 'Reconnecting...' :
-         status === 'error' ? 'Connection error' :
-         'Disconnected'}
-      </span>
     </div>
   );
 }
