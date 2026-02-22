@@ -263,6 +263,11 @@ export function createQuestActions(set: SetFn, get: GetFn) {
             completedQuests: p.completedQuests + 1,
             guildReputation: p.guildReputation + 1,
             activeQuest: null,
+            gameStats: {
+              ...p.gameStats,
+              totalQuestsCompleted: (p.gameStats.totalQuestsCompleted || 0) + 1,
+              totalGoldEarned: (p.gameStats.totalGoldEarned || 0) + finalGold,
+            },
           };
         }),
       }));
@@ -369,11 +374,15 @@ export function createQuestActions(set: SetFn, get: GetFn) {
             health: Math.max(0, p.health - reward.healthLoss),
             happiness: Math.min(100, p.happiness + reward.finalHappiness + bonusHappiness),
             timeRemaining: Math.max(0, p.timeRemaining - step.timeRequired),
-            // M7 FIX: Only increment completedQuests on final chain step (not each step)
             completedQuests: p.completedQuests + (isLastStep ? 1 : 0),
-            guildReputation: p.guildReputation + (isLastStep ? 3 : 1), // chain completion = 3 rep
+            guildReputation: p.guildReputation + (isLastStep ? 3 : 1),
             activeQuest: null,
             questChainProgress: { ...p.questChainProgress, [chainId]: stepsCompleted + 1 },
+            gameStats: {
+              ...p.gameStats,
+              totalQuestsCompleted: (p.gameStats.totalQuestsCompleted || 0) + (isLastStep ? 1 : 0),
+              totalGoldEarned: (p.gameStats.totalGoldEarned || 0) + reward.finalGold + bonusGold,
+            },
           };
         }),
       }));
@@ -477,6 +486,11 @@ export function createQuestActions(set: SetFn, get: GetFn) {
             activeQuest: null,
             nlChainProgress: { ...p.nlChainProgress, [chainId]: stepIndex + 1 },
             nlChainCompleted: isLastStep ? [...p.nlChainCompleted, chainId] : p.nlChainCompleted,
+            gameStats: {
+              ...p.gameStats,
+              totalQuestsCompleted: (p.gameStats.totalQuestsCompleted || 0) + (isLastStep ? 1 : 0),
+              totalGoldEarned: (p.gameStats.totalGoldEarned || 0) + reward.finalGold + bonusGold,
+            },
           };
         }),
       }));
@@ -526,6 +540,11 @@ export function createQuestActions(set: SetFn, get: GetFn) {
             pendingNLChainChoice: null,
             nlChainProgress: { ...p.nlChainProgress, [chainId]: nextStepIndex },
             nlChainCompleted: isComplete ? [...p.nlChainCompleted, chainId] : p.nlChainCompleted,
+            gameStats: {
+              ...p.gameStats,
+              totalQuestsCompleted: (p.gameStats.totalQuestsCompleted || 0) + (isComplete ? 1 : 0),
+              totalGoldEarned: (p.gameStats.totalGoldEarned || 0) + scaledReward.finalGold + bonusGold,
+            },
           };
         }),
       }));
@@ -595,6 +614,11 @@ export function createQuestActions(set: SetFn, get: GetFn) {
             guildReputation: p.guildReputation + 1,
             activeQuest: null,
             completedBountiesThisWeek: [...p.completedBountiesThisWeek, bountyId],
+            gameStats: {
+              ...p.gameStats,
+              totalBountiesCompleted: (p.gameStats.totalBountiesCompleted || 0) + 1,
+              totalGoldEarned: (p.gameStats.totalGoldEarned || 0) + finalGold,
+            },
           };
         }),
       }));
@@ -640,7 +664,14 @@ export function createQuestActions(set: SetFn, get: GetFn) {
 
       set((state) => ({
         players: state.players.map((p) =>
-          p.id === playerId ? { ...p, ...resolution.playerUpdate } : p
+          p.id === playerId ? {
+            ...p,
+            ...resolution.playerUpdate,
+            gameStats: {
+              ...p.gameStats,
+              deathCount: (p.gameStats.deathCount || 0) + 1,
+            },
+          } : p
         ),
         deathEvent: player.isAI ? null : resolution.deathEvent,
         eventMessage: player.isAI ? resolution.aiMessage : null,

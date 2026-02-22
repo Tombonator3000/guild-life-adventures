@@ -251,7 +251,11 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
       set((state) => ({
         players: state.players.map((p) =>
           p.id === playerId
-            ? { ...p, dungeonAttemptsThisTurn: (p.dungeonAttemptsThisTurn || 0) + 1 }
+            ? {
+                ...p,
+                dungeonAttemptsThisTurn: (p.dungeonAttemptsThisTurn || 0) + 1,
+                gameStats: { ...p.gameStats, totalDungeonRuns: (p.gameStats.totalDungeonRuns || 0) + 1 },
+              }
             : p
         ),
       }));
