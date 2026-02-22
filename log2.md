@@ -6015,3 +6015,54 @@ Built the full QuestPanel UI integration for non-linear quest chains with branch
 
 ### Files Created
 - `src/components/game/ChainChoiceModal.tsx` — Choice modal component
+
+---
+
+## 2026-02-22 — Fullboard Mode: Jones-Style Top Dropdown Menu
+
+### Feature Request
+Player wanted ability to play with ONLY the game board visible (no sidebars), accessing all options/stats via a pulldown that appears when the mouse is moved to the very top of the screen — inspired by the original Jones in the Fast Lane menu system.
+
+### Solution
+Implemented a **fullboard mode** with a `TopDropdownMenu` component that slides down from the top edge of the screen when the cursor approaches.
+
+#### Architecture
+- **`TopDropdownMenu.tsx`** (new) — Fixed overlay bar at `top: 0` with `z-index: 60`:
+  - Always-visible 32px trigger bar showing: Week, Market %, Weather, section tabs, End Turn button, "Sidebars" exit button
+  - Global `mousemove` listener: opens panel when `clientY <= 8px`
+  - `onMouseLeave` with 350ms delay collapses panel
+  - Expandable content panel slides open (`max-h` transition) to `min(56vh, 420px)`
+  - Two-column layout: left 256px = SideInfoTabs (stats/inventory/goals), right 320px = RightSideTabs (players/achievements/options/dev)
+  - Clicking a section tab while panel is open collapses it (toggle behaviour)
+  - `initialTab` prop on both sidebars lets dropdown deep-link to the right tab
+  - X button to close panel manually
+
+- **`GameBoard.tsx`** — Added `fullboardMode` state:
+  - When `true`: left and right sidebars are hidden (conditional render), board fills full width, main div gets `paddingTop: 2rem` to avoid content sitting under the trigger bar, `TopDropdownMenu` is rendered
+  - When `false`: normal 3-column layout with sidebars
+  - `onToggleFullboard` prop wired to right sidebar header button
+
+- **`RightSideTabs.tsx`** — Added:
+  - `LayoutDashboard` icon button in header (tooltip: "Fullboard mode – hide sidebars (B)")
+  - Optional `onToggleFullboard?: () => void` prop
+  - Optional `initialTab?: TabId` prop
+
+- **`SideInfoTabs.tsx`** — Added optional `initialTab?: TabId` prop
+
+- **`useGameBoardKeyboard.ts`** — Added `B` key shortcut to toggle fullboard mode. Optional `setFullboardMode` param added to interface.
+
+#### How to Use
+1. Click the `⊟` (LayoutDashboard) icon in the top-right sidebar header
+2. OR press `B` on keyboard
+3. To reveal the pulldown: move mouse to very top of screen (within 8px)
+4. Click a section tab (Stats, Items, Goals, Players, Awards, Options, Dev) to open that section
+5. To return to normal layout: click "Sidebars" button in the trigger bar, or press `B` again
+
+### Files Modified
+- `src/components/game/GameBoard.tsx`
+- `src/components/game/RightSideTabs.tsx`
+- `src/components/game/SideInfoTabs.tsx`
+- `src/hooks/useGameBoardKeyboard.ts`
+
+### Files Created
+- `src/components/game/TopDropdownMenu.tsx`

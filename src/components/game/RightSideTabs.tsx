@@ -3,7 +3,7 @@
 // Follows the medieval parchment aesthetic with amber-800/900 text colors
 
 import { useState } from 'react';
-import { Settings, Code, Users, Target, Coins, Smile, GraduationCap, TrendingUp, Menu, Trophy, Compass, Maximize, Minimize, Crown } from 'lucide-react';
+import { Settings, Code, Users, Target, Coins, Smile, GraduationCap, TrendingUp, Menu, Trophy, Compass, Maximize, Minimize, Crown, LayoutDashboard } from 'lucide-react';
 import { AchievementsPanel } from './AchievementsPanel';
 import { PlayersTab } from './tabs/PlayersTab';
 import { OptionsTab } from './tabs/OptionsTab';
@@ -42,6 +42,8 @@ interface RightSideTabsProps {
   aiSpeedMultiplier: number;
   onSetAISpeed: (speed: number) => void;
   onSkipAITurn: () => void;
+  initialTab?: TabId;
+  onToggleFullboard?: () => void;
 }
 
 export function RightSideTabs({
@@ -56,8 +58,10 @@ export function RightSideTabs({
   aiSpeedMultiplier,
   onSetAISpeed,
   onSkipAITurn,
+  initialTab,
+  onToggleFullboard,
 }: RightSideTabsProps) {
-  const [activeTab, setActiveTab] = useState<TabId>('players');
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab ?? 'players');
   const { isFullscreen, toggleFullscreen } = useFullscreen();
   const { t } = useTranslation();
   const TABS = getTabs(t);
@@ -83,6 +87,15 @@ export function RightSideTabs({
               : <Maximize className="w-3.5 h-3.5 text-parchment" />
             }
           </button>
+          {onToggleFullboard && (
+            <button
+              onClick={onToggleFullboard}
+              className="p-1 rounded hover:bg-white/10 transition-colors"
+              title="Fullboard mode – hide sidebars (B)"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5 text-parchment" />
+            </button>
+          )}
           <button
             onClick={onOpenSaveMenu}
             className="p-1 rounded hover:bg-white/10 transition-colors"

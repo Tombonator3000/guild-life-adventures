@@ -15,6 +15,7 @@ export function useGameBoardKeyboard({
   showTutorial,
   setShowTutorial,
   isLocalPlayerTurn,
+  setFullboardMode,
 }: {
   setShowZoneEditor: React.Dispatch<React.SetStateAction<boolean>>;
   setShowDebugOverlay: React.Dispatch<React.SetStateAction<boolean>>;
@@ -28,6 +29,7 @@ export function useGameBoardKeyboard({
   showTutorial: boolean;
   setShowTutorial: (show: boolean) => void;
   isLocalPlayerTurn: boolean;
+  setFullboardMode?: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -75,8 +77,13 @@ export function useGameBoardKeyboard({
           document.documentElement.requestFullscreen().catch(() => {});
         }
       }
+      // B = Toggle fullboard mode (hide/show sidebars)
+      if (e.key === 'b' && !e.ctrlKey && !e.metaKey && !showGameMenu) {
+        e.preventDefault();
+        setFullboardMode?.(prev => !prev);
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [aiIsThinking, setSkipAITurn, showGameMenu, currentPlayer, phase, endTurn, showTutorial, setShowTutorial, isLocalPlayerTurn]);
+  }, [aiIsThinking, setSkipAITurn, showGameMenu, currentPlayer, phase, endTurn, showTutorial, setShowTutorial, isLocalPlayerTurn, setFullboardMode]);
 }

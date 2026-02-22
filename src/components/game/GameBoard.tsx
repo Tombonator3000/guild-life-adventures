@@ -46,6 +46,7 @@ import { registerAIAnimateCallback } from '@/hooks/useAIAnimationBridge';
 import { ChatPanel } from './ChatPanel';
 import { ContextualTips } from './ContextualTips';
 import { SpectatorOverlay } from './SpectatorOverlay';
+import { TopDropdownMenu } from './TopDropdownMenu';
 export function GameBoard() {
   const {
     players,
@@ -100,6 +101,7 @@ export function GameBoard() {
   const [showRightDrawer, setShowRightDrawer] = useState(false);
   const [showTurnTransition, setShowTurnTransition] = useState(false);
   const [lastHumanPlayerId, setLastHumanPlayerId] = useState<string | null>(null);
+  const [fullboardMode, setFullboardMode] = useState(false);
   const isMobile = useIsMobile();
 
   // Privacy screen between turns in local multiplayer (2+ human players)
@@ -169,6 +171,7 @@ export function GameBoard() {
     showTutorial,
     setShowTutorial,
     isLocalPlayerTurn,
+    setFullboardMode,
   });
 
   // Show appliance/equipment breakage notification
@@ -246,7 +249,9 @@ export function GameBoard() {
   const SIDE_PANEL_WIDTH_PERCENT = 12;
 
   return (
-    <div className={`w-screen h-screen-safe overflow-hidden bg-background flex safe-area-all ${isMobile ? 'flex-col' : 'flex-row'}`}>
+    <div className={`w-screen h-screen-safe overflow-hidden bg-background flex safe-area-all ${isMobile ? 'flex-col' : 'flex-row'}`}
+      style={!isMobile && fullboardMode ? { paddingTop: '2rem' } : undefined}
+    >
       {/* Mobile HUD - compact top bar (mobile only) */}
       {isMobile && currentPlayer && (
         <MobileHUD
@@ -262,8 +267,8 @@ export function GameBoard() {
         />
       )}
 
-      {/* Left Side Panel - desktop only */}
-      {!isMobile && (
+      {/* Left Side Panel - desktop only, hidden in fullboard mode */}
+      {!isMobile && !fullboardMode && (
         <div
           className="relative z-30 flex flex-col flex-shrink-0 h-full"
           style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
@@ -425,8 +430,8 @@ export function GameBoard() {
         </div>
       </div>
 
-      {/* Right Side Panel - desktop only */}
-      {!isMobile && (
+      {/* Right Side Panel - desktop only, hidden in fullboard mode */}
+      {!isMobile && !fullboardMode && (
         <div
           className="relative z-30 flex flex-col flex-shrink-0 h-full"
           style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
@@ -444,6 +449,7 @@ export function GameBoard() {
               aiSpeedMultiplier={aiSpeedMultiplier}
               onSetAISpeed={setAISpeedMultiplier}
               onSkipAITurn={() => setSkipAITurn(true)}
+              onToggleFullboard={() => setFullboardMode(true)}
             />
           </StoneBorderFrame>
         </div>
@@ -570,6 +576,31 @@ export function GameBoard() {
           player={localPlayer}
           currentTurnPlayer={currentPlayer}
           isPureSpectator={isPureSpectator}
+        />
+      )}
+
+      {/* Top dropdown menu — only shown in fullboard mode (desktop) */}
+      {!isMobile && fullboardMode && currentPlayer && (
+        <TopDropdownMenu
+          player={currentPlayer}
+          goals={goalSettings}
+          players={players}
+          currentPlayerIndex={currentPlayerIndex}
+          onOpenSaveMenu={() => setShowGameMenu(true)}
+          onToggleDebugOverlay={() => setShowDebugOverlay(prev => !prev)}
+          onToggleZoneEditor={() => setShowZoneEditor(true)}
+          showDebugOverlay={showDebugOverlay}
+          aiIsThinking={aiIsThinking}
+          aiSpeedMultiplier={aiSpeedMultiplier}
+          onSetAISpeed={setAISpeedMultiplier}
+          onSkipAITurn={() => setSkipAITurn(true)}
+          week={week}
+          priceModifier={priceModifier}
+          economyTrend={economyTrend}
+          weather={weather}
+          onEndTurn={endTurn}
+          endTurnDisabled={!isLocalPlayerTurn || aiIsThinking || !!(currentPlayer?.isAI)}
+          onExitFullboard={() => setFullboardMode(false)}
         />
       )}
     </div>
