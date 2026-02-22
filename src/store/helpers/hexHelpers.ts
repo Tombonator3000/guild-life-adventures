@@ -68,7 +68,11 @@ export function createHexActions(set: SetFn, get: GetFn) {
       set((s) => ({
         locationHexes: [...s.locationHexes, newLocationHex],
         players: s.players.map((p) =>
-          p.id === playerId ? { ...p, ...applyCasterCost(p, hex) } : p
+          p.id === playerId ? {
+            ...p,
+            ...applyCasterCost(p, hex),
+            gameStats: { ...p.gameStats, hexesCast: (p.gameStats.hexesCast || 0) + 1 },
+          } : p
         ),
       }));
 
@@ -126,9 +130,16 @@ export function createHexActions(set: SetFn, get: GetFn) {
 
       set((s) => ({
         players: s.players.map((p) => {
-          if (p.id === playerId) return { ...p, ...applyCasterCost(p, hex) };
+          if (p.id === playerId) return {
+            ...p,
+            ...applyCasterCost(p, hex),
+            gameStats: { ...p.gameStats, hexesCast: (p.gameStats.hexesCast || 0) + 1 },
+          };
           if (p.id === targetId) {
-            const curseUpdate: Partial<Player> = { activeCurses: [...p.activeCurses, newCurse] };
+            const curseUpdate: Partial<Player> = {
+              activeCurses: [...p.activeCurses, newCurse],
+              gameStats: { ...p.gameStats, hexesReceived: (p.gameStats.hexesReceived || 0) + 1 },
+            };
             // Legendary ruin also applies immediate gold loss
             if (hex.effect!.type === 'legendary-ruin') {
               curseUpdate.gold = Math.max(0, p.gold - Math.floor(p.gold * hex.effect!.magnitude));

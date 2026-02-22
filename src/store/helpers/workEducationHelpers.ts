@@ -127,6 +127,12 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
               rentDebt,
               loanAmount,
               loanWeeksRemaining: loanAmount <= 0 ? 0 : player.loanWeeksRemaining,
+              gameStats: {
+                ...player.gameStats,
+                totalGoldEarned: (player.gameStats.totalGoldEarned || 0) + Math.max(0, earnings),
+                totalShiftsWorked: (player.gameStats.totalShiftsWorked || 0) + 1,
+                totalHoursWorked: (player.gameStats.totalHoursWorked || 0) + hours,
+              },
             };
           }),
         };
@@ -324,6 +330,10 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
             dependability: Math.min(p.maxDependability, p.dependability + GRADUATION_BONUSES.dependability),
             maxDependability: p.maxDependability + GRADUATION_BONUSES.maxDependability,
             maxExperience: p.maxExperience + GRADUATION_BONUSES.maxExperience,
+            gameStats: {
+              ...p.gameStats,
+              totalDegreesEarned: (p.gameStats.totalDegreesEarned || 0) + 1,
+            },
           };
         }),
       }));
