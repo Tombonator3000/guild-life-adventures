@@ -5,6 +5,45 @@
 
 ---
 
+## 2026-02-23 — Refactor: Combat Resolver Math + CavePanel Result Handling
+
+### Task
+- Find and refactor overly complex code for clarity while maintaining the same behaviour
+
+### Files Changed
+
+**`src/data/combatResolver.ts`** — `resolveCombat` and `resolveTrap`
+
+`resolveCombat` refactoring:
+- `effAtk` is now a single `const` ternary (arcane penalty) instead of `let effAtk; if (...) effAtk *= 0.3`
+- Extracted `powerScaleMult = Math.max(0.3, 1 - ratio * 0.5)` with comment explaining the inverse-proportion relationship
+- Extracted `totalReductionMult = Math.max(0, 1 - eduBonuses.damageReduction - modDmgReduc)` — the M27 FIX clamp is now named and applied in a single `Math.floor(... * totalReductionMult)` instead of a separate second pass
+- `blocked` is now a single `const` expression instead of `let blocked = false; if (...) { blocked = true; }`
+- Extracted `goldRatio = Math.min(1.5, ratio)` with comment explaining the gold cap
+- Replaced `mod ? mod.x : default` ternaries with `mod?.x ?? default` optional-chaining throughout
+
+`resolveTrap` refactoring:
+- Same `mod?.x ?? default` optional-chaining pattern
+- Added `totalReductionMult = Math.max(0, ...)` clamp (consistent with resolveCombat; prevents potential negative damage if reductions sum > 1)
+- Combined `let d = ...; d = Math.max(1, d)` into a single const expression
+
+**`src/components/game/CavePanel.tsx`** — `handleCombatComplete`
+
+Extracted two pure helper functions above `FloorCard`:
+- `formatEquipmentWear(loss: EquipmentDurabilityLoss): string | null` — builds the durability toast message or returns null; no side effects
+- `showCombatOutcomeToast(result, floor)` — fires the correct toast variant (success/neutral/error) for the three combat outcomes
+
+`handleCombatComplete` reduced from 82 lines to 40 lines. Reads as a linear sequence of named steps: gold → equipment wear → death check → happiness → floor clear → rare drop → hex scroll → record update → outcome toast → close.
+
+Also added `import type { EquipmentDurabilityLoss } from '@/data/combatResolver'` for the helper's type signature.
+
+### Verification
+- 332 tests pass (all previously passing — no regressions)
+- Both changed files lint-clean (0 errors, 0 warnings)
+- No behaviour change; all calculations produce identical results
+
+---
+
 ## 2026-02-22 — Trigger Bar: Time Display + Fullboard Header Hide
 
 ### Task

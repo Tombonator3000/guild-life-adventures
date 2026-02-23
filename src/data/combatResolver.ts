@@ -193,6 +193,7 @@ function resolveHealing(ctx: EncounterContext): TypeResult {
 
 function resolveTrap(ctx: EncounterContext): TypeResult {
   const { encounter, eduBonuses, mod, noArmorDamageMult, bonuses } = ctx;
+
   const canDisarm = eduBonuses.canDisarmTraps && !(mod?.disableDisarm);
   if (encounter.isDisarmable && canDisarm) {
     bonuses.push('Trap Sense');
@@ -201,51 +202,55 @@ function resolveTrap(ctx: EncounterContext): TypeResult {
   if (mod?.disableDisarm && encounter.isDisarmable && eduBonuses.canDisarmTraps) {
     bonuses.push('Cannot disarm! (Echoing Darkness)');
   }
-  const modDamageMult = mod ? mod.damageMult : 1.0;
-  const modDmgReduc = mod ? mod.bonusDamageReduction : 0;
-  let d = Math.floor(encounter.baseDamage * (1 - eduBonuses.damageReduction - modDmgReduc) * noArmorDamageMult * modDamageMult);
-  d = Math.max(1, d);
-  if (eduBonuses.damageReduction > 0) {
-    bonuses.push(`-${Math.round(eduBonuses.damageReduction * 100)}% dmg`);
-  }
+
+  const modDamageMult = mod?.damageMult ?? 1.0;
+  const modDmgReduc = mod?.bonusDamageReduction ?? 0;
+  // Clamp combined reduction to [0, 1] to prevent negative damage (consistent with resolveCombat)
+  const totalReductionMult = Math.max(0, 1 - eduBonuses.damageReduction - modDmgReduc);
+  const d = Math.max(1, Math.floor(encounter.baseDamage * totalReductionMult * noArmorDamageMult * modDamageMult));
+  if (eduBonuses.damageReduction > 0) bonuses.push(`-${Math.round(eduBonuses.damageReduction * 100)}% dmg`);
+
   return { damageDealt: d };
 }
 
 function resolveCombat(ctx: EncounterContext): TypeResult {
   const { encounter, combatStats, eduBonuses, mod, noArmorDamageMult, noWeaponGoldMult, attackPower, bonuses } = ctx;
-  let effAtk = attackPower;
-  if (encounter.requiresArcane && !eduBonuses.canDamageEthereal) effAtk *= 0.3;
+
+  // Arcane penalty: ethereal enemies require Arcane Sight to fight at full strength
+  const effAtk = (encounter.requiresArcane && !eduBonuses.canDamageEthereal)
+    ? attackPower * 0.3
+    : attackPower;
   if (encounter.requiresArcane && eduBonuses.canDamageEthereal) bonuses.push('Arcane Sight');
 
+  // Power ratio > 1 means player is stronger; < 1 means enemy is stronger
   const effectiveEnemyPower = encounter.basePower * (mod?.enemyPowerMult ?? 1.0);
   const playerPower = effAtk + combatStats.defense * 0.5;
   const ratio = playerPower / Math.max(1, effectiveEnemyPower);
 
-  // Damage: inversely proportional to power ratio
-  const modDamageMult = mod ? mod.damageMult : 1.0;
-  const modDmgReduc = mod ? mod.bonusDamageReduction : 0;
-  let d = Math.floor(encounter.baseDamage * Math.max(0.3, 1 - ratio * 0.5) * noArmorDamageMult * modDamageMult);
-  // M27 FIX: Clamp damage reduction multiplier to minimum 0 to prevent negative damage
-  d = Math.floor(d * Math.max(0, 1 - eduBonuses.damageReduction - modDmgReduc));
-  if (eduBonuses.damageReduction > 0) {
-    bonuses.push(`-${Math.round(eduBonuses.damageReduction * 100)}% dmg`);
-  }
+  // --- Damage taken ---
+  // Higher power ratio = less damage (capped: ratio can reduce damage by at most 70%)
+  const powerScaleMult = Math.max(0.3, 1 - ratio * 0.5);
+  const modDamageMult = mod?.damageMult ?? 1.0;
+  const modDmgReduc = mod?.bonusDamageReduction ?? 0;
+  // M27 FIX: clamp combined reduction to [0, 1] to prevent negative damage
+  const totalReductionMult = Math.max(0, 1 - eduBonuses.damageReduction - modDmgReduc);
+  let d = Math.floor(encounter.baseDamage * powerScaleMult * noArmorDamageMult * modDamageMult * totalReductionMult);
+  if (eduBonuses.damageReduction > 0) bonuses.push(`-${Math.round(eduBonuses.damageReduction * 100)}% dmg`);
 
-  let blocked = false;
-  if (combatStats.blockChance > 0 && Math.random() < combatStats.blockChance) {
-    d = Math.floor(d * 0.5);
-    blocked = true;
-  }
-  d = Math.max(1, d);
+  // Block: halves damage if it triggers
+  const blocked = combatStats.blockChance > 0 && Math.random() < combatStats.blockChance;
+  if (blocked) d = Math.floor(d * 0.5);
+  d = Math.max(1, d); // always deal at least 1 damage
 
-  // Gold: proportional to power ratio (capped at 1.5x)
-  const modGoldMult = mod ? mod.goldMult : 1.0;
+  // --- Gold earned ---
+  // Higher power ratio = more gold earned (capped at 1.5× the base)
+  const goldRatio = Math.min(1.5, ratio);
+  const modGoldMult = mod?.goldMult ?? 1.0;
   const goldEarned = Math.floor(
-    encounter.baseGold * (1 + eduBonuses.goldBonus) * Math.min(1.5, ratio) * noWeaponGoldMult * modGoldMult,
+    encounter.baseGold * (1 + eduBonuses.goldBonus) * goldRatio * noWeaponGoldMult * modGoldMult,
   );
-  if (eduBonuses.goldBonus > 0) {
-    bonuses.push(`+${Math.round(eduBonuses.goldBonus * 100)}% gold`);
-  }
+  if (eduBonuses.goldBonus > 0) bonuses.push(`+${Math.round(eduBonuses.goldBonus * 100)}% gold`);
+
   return { damageDealt: d, goldEarned, blocked };
 }
 

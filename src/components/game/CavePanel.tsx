@@ -33,6 +33,7 @@ import {
   type DungeonFloor,
 } from '@/data/dungeon';
 import { CombatView, type CombatRunResult } from './CombatView';
+import type { EquipmentDurabilityLoss } from '@/data/combatResolver';
 
 interface CavePanelProps {
   player: Player;
@@ -100,6 +101,44 @@ function RepairWarning({ equippedItems, durabilityMap }: {
   if (hasBroken) return <div className="text-red-400 mt-1">Equipment broken! Repair at the Forge.</div>;
   if (hasPoor) return <div className="text-amber-400 mt-1">Equipment wearing out. Visit the Forge soon.</div>;
   return null;
+}
+
+// ─── Combat result helpers ────────────────────────────────────────
+
+/**
+ * Returns a human-readable equipment wear summary string, or null if nothing degraded.
+ * Pure function — no side effects.
+ */
+function formatEquipmentWear(loss: EquipmentDurabilityLoss): string | null {
+  const parts: string[] = [];
+  if (loss.weaponLoss > 0) parts.push(`Weapon -${loss.weaponLoss}`);
+  if (loss.armorLoss > 0) parts.push(`Armor -${loss.armorLoss}`);
+  if (loss.shieldLoss > 0) parts.push(`Shield -${loss.shieldLoss}`);
+  return parts.length > 0 ? `Equipment wear: ${parts.join(', ')} durability` : null;
+}
+
+/**
+ * Fires the appropriate toast for a completed combat run.
+ * Pure side-effect helper — only shows notifications, mutates no state.
+ */
+function showCombatOutcomeToast(result: CombatRunResult, floor: DungeonFloor): void {
+  if (result.success) {
+    const firstClearBonus = result.isFirstClear
+      ? `, +${floor.happinessOnClear} happiness, +${floor.dependabilityOnClear} dep`
+      : '';
+    toast.success(
+      `Floor ${floor.id}: ${floor.name} — ${result.isFirstClear ? 'CLEARED!' : 'Completed!'} ` +
+        `+${result.goldEarned}g, -${result.totalDamage} HP` + firstClearBonus,
+      { duration: 5000 },
+    );
+  } else if (result.retreated) {
+    toast(`Floor ${floor.id}: ${floor.name} — Retreated. +${result.goldEarned}g`, { duration: 4000 });
+  } else {
+    toast.error(
+      `Floor ${floor.id}: ${floor.name} — Defeated! +${result.goldEarned}g, -${result.totalDamage} HP`,
+      { duration: 5000 },
+    );
+  }
 }
 
 // ─── Floor card (expanded details + enter button) ───────────────
@@ -376,49 +415,32 @@ export function CavePanel({
 
   const handleCombatComplete = (result: CombatRunResult) => {
     if (!activeFloor) return;
+    const { applyDurabilityLoss, checkDeath, updatePlayerDungeonRecord } = useGameStore.getState();
 
-    // Apply gold earned
+    // Gold
     if (result.goldEarned > 0) modifyGold(player.id, result.goldEarned);
 
-    // Apply equipment durability loss
-    const { applyDurabilityLoss } = useGameStore.getState();
-    if (result.durabilityLoss) {
-      applyDurabilityLoss(player.id, result.durabilityLoss);
-      // Notify player of equipment degradation
-      const losses: string[] = [];
-      if (result.durabilityLoss.weaponLoss > 0) losses.push(`Weapon -${result.durabilityLoss.weaponLoss}`);
-      if (result.durabilityLoss.armorLoss > 0) losses.push(`Armor -${result.durabilityLoss.armorLoss}`);
-      if (result.durabilityLoss.shieldLoss > 0) losses.push(`Shield -${result.durabilityLoss.shieldLoss}`);
-      if (losses.length > 0) {
-        toast(`Equipment wear: ${losses.join(', ')} durability`, { duration: 3000 });
-      }
-    }
+    // Equipment durability
+    applyDurabilityLoss(player.id, result.durabilityLoss);
+    const wearMessage = formatEquipmentWear(result.durabilityLoss);
+    if (wearMessage) toast(wearMessage, { duration: 3000 });
 
-    // Health was already applied per-encounter via handleEncounterHealthDelta
-    // Only do a final death check in case something was missed
-    const { checkDeath } = useGameStore.getState();
+    // Health was applied per-encounter; do a final death check in case something was missed
     checkDeath(player.id);
 
-    // Apply happiness change
-    if (result.happinessChange !== 0) {
-      modifyHappiness(player.id, result.happinessChange);
-    }
+    // Happiness
+    if (result.happinessChange !== 0) modifyHappiness(player.id, result.happinessChange);
 
-    // Mark floor as cleared on first successful clear
-    if (result.isFirstClear) {
-      clearDungeonFloor(player.id, activeFloor.id);
-    }
+    // First-clear reward
+    if (result.isFirstClear) clearDungeonFloor(player.id, activeFloor.id);
 
-    // Apply rare drop effect
+    // Rare drop
     if (result.rareDropName) {
       applyRareDrop(player.id, activeFloor.rareDrop.id);
-      toast.success(
-        `RARE DROP: ${result.rareDropName}! ${activeFloor.rareDrop.description}`,
-        { duration: 6000 },
-      );
+      toast.success(`RARE DROP: ${result.rareDropName}! ${activeFloor.rareDrop.description}`, { duration: 6000 });
     }
 
-    // Apply hex scroll drop (if hexes enabled and boss dropped one)
+    // Hex scroll drop (if hexes enabled and boss dropped one)
     if (result.hexScrollDropId) {
       const { addHexScrollToPlayer } = useGameStore.getState();
       addHexScrollToPlayer(player.id, result.hexScrollDropId);
@@ -430,28 +452,10 @@ export function CavePanel({
     }
 
     // M31 FIX: Use proper store action instead of direct setState
-    const { updatePlayerDungeonRecord } = useGameStore.getState();
     updatePlayerDungeonRecord(player.id, activeFloor.id, result.goldEarned, result.encountersCompleted);
 
-    if (result.success) {
-      const firstClearBonus = result.isFirstClear
-        ? `, +${activeFloor.happinessOnClear} happiness, +${activeFloor.dependabilityOnClear} dep`
-        : '';
-      toast.success(
-        `Floor ${activeFloor.id}: ${activeFloor.name} — ${result.isFirstClear ? 'CLEARED!' : 'Completed!'} ` +
-          `+${result.goldEarned}g, -${result.totalDamage} HP` + firstClearBonus,
-        { duration: 5000 },
-      );
-    } else if (result.retreated) {
-      toast(`Floor ${activeFloor.id}: ${activeFloor.name} — Retreated. +${result.goldEarned}g`, {
-        duration: 4000,
-      });
-    } else {
-      toast.error(
-        `Floor ${activeFloor.id}: ${activeFloor.name} — Defeated! +${result.goldEarned}g, -${result.totalDamage} HP`,
-        { duration: 5000 },
-      );
-    }
+    // Outcome notification
+    showCombatOutcomeToast(result, activeFloor);
 
     // Return to floor selection
     setActiveFloor(null);
