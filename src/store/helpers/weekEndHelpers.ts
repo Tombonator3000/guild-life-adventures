@@ -284,6 +284,9 @@ function applyDependabilityDecay(p: Player, msgs: string[]): void {
   } else if (!p.workedThisTurn) {
     // Don't penalise dependability when clothing is blocking the player from working —
     // the employer knows the player is unable to meet the dress code, not skipping.
+    // Also exempt naked players (clothingCondition <= 0): workShift blocks them via the
+    // same <= 0 check, but threshold=0 for 'none' jobs means '0 < 0' never fires here.
+    if (p.clothingCondition <= 0) return;
     const job = getJob(p.currentJob);
     if (job) {
       const threshold = CLOTHING_THRESHOLDS[job.requiredClothing as keyof typeof CLOTHING_THRESHOLDS] ?? 0;
