@@ -620,7 +620,7 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       set((state) => ({
         players: state.players.map((p) =>
           p.id === playerId
-            ? { ...p, activeQuest: `bounty:${bountyId}` }
+            ? { ...p, activeQuest: `bounty:${bountyId}`, questLocationProgress: [] }
             : p
         ),
       }));
@@ -634,6 +634,9 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       const bountyId = player.activeQuest.replace('bounty:', '');
       const bounty = getBounty(bountyId);
       if (!bounty) return;
+
+      // LOQ: Block completion if not all location objectives are done
+      if (!allLocationObjectivesDone(player.activeQuest, player.questLocationProgress ?? [])) return;
 
       set((state) => ({
         players: state.players.map((p) => {

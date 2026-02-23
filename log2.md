@@ -6628,3 +6628,37 @@ Systematisk bug-jakt med 4 parallelle agenter + manuell gjennomgang.
 - `src/components/game/HomePanel.tsx` — quest objective banner
 - `src/test/questLOQ.test.ts` — NEW: 15 LOQ integrity tests
 - `log2.md` — denne oppføringen
+
+---
+
+## 2026-02-23 23:55 UTC — FEATURE: Bounty LOQ (Location Objectives for Bounties)
+
+### Timestamp: 2026-02-23 23:55
+
+### Endringer
+
+Bounties krever nå at spilleren reiser til en spesifikk lokasjon på brettet før de kan fullføres i Guild Hall — akkurat som vanlige quests.
+
+1. **Bounty interface** — Lagt til `locationObjectives?: LocationObjective[]` i `Bounty` interface
+2. **Alle 9 bounties** har nå 1 LOQ hver:
+   - `bounty-rats` → Rusty Tankard (sjekk kjelleren)
+   - `bounty-patrol` → Armory (hent patruljerutstyr)
+   - `bounty-herbs` → Cave (plukk ville urter)
+   - `bounty-delivery` → General Store (hent pakken)
+   - `bounty-escort` → Rusty Tankard (møt reisende)
+   - `bounty-cleanup` → Forge (lån verktøy)
+   - `bounty-gather` → Cave (gå inn i hulen)
+   - `bounty-lost-item` → Fence (spør hæleren)
+   - `bounty-sparring` → Armory (møt opp på treningsplassen)
+3. **Quest engine** — `getQuestLocationObjectives` håndterer nå `bounty:` prefix
+4. **completeBounty** — Blokkerer fullføring inntil alle LOQ er fullført
+5. **takeBounty** — Resetter `questLocationProgress` ved aksept
+6. **BountyBoardPanel** — Viser LOQ-sjekkliste med ✓/📍 ikoner, blokkerer "Complete"-knappen
+7. **Tester** — Oppdatert fra 19 → 20 tester, bounty LOQ dekket
+
+### Filer endret
+- `src/data/quests.ts` — Bounty interface + LOQ data for alle 9 bounties + engine
+- `src/store/helpers/questHelpers.ts` — LOQ-sjekk i completeBounty + reset i takeBounty
+- `src/components/game/BountyBoardPanel.tsx` — LOQ-progresjon i UI
+- `src/test/questLOQ.test.ts` — Oppdatert med bounty LOQ-tester
+- `log2.md` — denne oppføringen

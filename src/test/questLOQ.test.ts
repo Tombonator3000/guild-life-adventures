@@ -4,12 +4,13 @@ import {
   QUEST_CHAINS,
   getQuestLocationObjectives,
   allLocationObjectivesDone,
+  getWeeklyBounties,
 } from '@/data/quests';
 import { BOARD_PATH } from '@/data/locations';
 
 const HOME_LOCATIONS = ['noble-heights', 'slums'];
 
-// Collect ALL objectives across regular quests and chain steps
+// Collect ALL objectives across regular quests, chain steps, and bounties
 function getAllObjectives() {
   const results: { source: string; obj: { id: string; locationId: string } }[] = [];
 
@@ -22,6 +23,17 @@ function getAllObjectives() {
     for (const step of chain.steps) {
       for (const o of step.locationObjectives ?? []) {
         results.push({ source: `chain:${chain.id}/step:${step.id}`, obj: o });
+      }
+    }
+  }
+  // Check bounties from weeks 1-20 to cover all rotating bounties
+  const seenBountyIds = new Set<string>();
+  for (let w = 1; w <= 20; w++) {
+    for (const b of getWeeklyBounties(w)) {
+      if (seenBountyIds.has(b.id)) continue;
+      seenBountyIds.add(b.id);
+      for (const o of b.locationObjectives ?? []) {
+        results.push({ source: `bounty:${b.id}`, obj: o });
       }
     }
   }
@@ -100,8 +112,10 @@ describe('getQuestLocationObjectives', () => {
     expect(getQuestLocationObjectives(null)).toEqual([]);
   });
 
-  it('returns [] for bounty quest', () => {
-    expect(getQuestLocationObjectives('bounty:bounty-rats')).toEqual([]);
+  it('returns objectives for a bounty quest', () => {
+    const objs = getQuestLocationObjectives('bounty:bounty-rats');
+    expect(objs.length).toBeGreaterThan(0);
+    expect(objs[0].id).toBe('br-tavern');
   });
 
   it('returns [] for nlchain quest (not yet supported)', () => {
@@ -128,9 +142,12 @@ describe('getQuestLocationObjectives', () => {
 });
 
 describe('allLocationObjectivesDone', () => {
-  it('returns true for quest with no objectives', () => {
-    // bounties have no LOQ
-    expect(allLocationObjectivesDone('bounty:bounty-rats', [])).toBe(true);
+  it('returns false for bounty with LOQ and no progress', () => {
+    expect(allLocationObjectivesDone('bounty:bounty-rats', [])).toBe(false);
+  });
+
+  it('returns true for bounty with LOQ when objective completed', () => {
+    expect(allLocationObjectivesDone('bounty:bounty-rats', ['br-tavern'])).toBe(true);
   });
 
   it('returns false when no progress on a quest with objectives', () => {
