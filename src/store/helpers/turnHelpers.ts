@@ -65,8 +65,9 @@ function processEndOfTurnSpoilage(set: SetFn, get: GetFn, playerId: string): voi
 
   const eventMessages: string[] = [];
 
-  // Food has gone bad — reduce foodLevel (some of what was bought spoiled)
-  const foodLost = Math.min(player.foodLevel, Math.floor(player.foodLevel * 0.5)); // Lose up to 50% of current food
+  // Fresh food has gone bad — only freshFood is cleared, regular foodLevel is unaffected.
+  // Buying fresh food without a Preservation Box spoils the fresh food, not the player's
+  // existing bread/cheese stock.
   const freshFoodLost = player.freshFood; // All unpreserved fresh food spoils
 
   set((state) => ({
@@ -74,16 +75,14 @@ function processEndOfTurnSpoilage(set: SetFn, get: GetFn, playerId: string): voi
       if (p.id !== playerId) return p;
       return {
         ...p,
-        foodLevel: Math.max(0, p.foodLevel - foodLost),
-        freshFood: 0, // hasPreservationBox is always false here (early return on line 40)
+        freshFood: 0, // hasPreservationBox is always false here (early return above)
       };
     }),
   }));
 
   eventMessages.push(
-    `${player.name}'s food has gone bad! Without a Preservation Box, the food spoiled.`
-    + (foodLost > 0 ? ` Lost ${foodLost} food.` : '')
-    + (freshFoodLost > 0 ? ` ${freshFoodLost} units of fresh food ruined.` : '')
+    `${player.name}'s fresh food has gone bad! Without a Preservation Box, fresh food cannot be stored.`
+    + (freshFoodLost > 0 ? ` Lost ${freshFoodLost} units of fresh food.` : '')
   );
 
   // 55% chance of getting sick from the spoiled food — doctor visit

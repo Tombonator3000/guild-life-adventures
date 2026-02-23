@@ -98,6 +98,10 @@ Junior Academy → Scholar Path → Loremaster / Commerce Degree
 - Tutorial toggle: always call `setShowTutorial(enableTutorial)` unconditionally on game start — do NOT use `if (enableTutorial) setShowTutorial(true)` (omitting the false branch leaves a stale true from previous session)
 - OG meta image: use `https://guild-life.com/og-image.png` (stable). Never use signed cloud storage URLs (they expire). Place a 1200×630 PNG at `public/og-image.png`.
 - Player portrait classes defined in `src/data/portraits.ts` → `PLAYER_PORTRAITS` array. Add new classes there; place matching images in `public/portraits/<id>.jpg`.
+- Regular food (bread/cheese) is shelf-stable: `buyFoodWithSpoilage` must NOT set `foodBoughtWithoutPreservation: true`. Only `buyFreshFood` (fresh vegetables/meat) sets this flag for end-of-turn spoilage. Setting it on regular food causes starvation after purchase (end-of-turn 50% reduction + weekly drain = 0 food).
+- `applyDependabilityDecay` (weekEndHelpers.ts): must check `clothingCondition <= 0` (naked) BEFORE the clothing threshold check. Jobs with `requiredClothing: 'none'` have threshold=0, so `0 < 0` is false and naked players are not exempted — but `workShift` blocks them via `<= 0`. Keep both checks in sync.
+- `processEndOfTurnSpoilage` (turnHelpers.ts): only clears `freshFood = 0` when fresh food spoils. Do NOT reduce `foodLevel` — that was causing existing regular food to be halved when fresh food spoiled.
+- Employment check order: `processEmployment` MUST run BEFORE `resetWeeklyFlags` in `processPlayerWeekEnd` so `workedThisTurn` is still set when checking for the dependability penalty.
 
 ## Testing
 

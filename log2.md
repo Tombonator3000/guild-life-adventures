@@ -6295,3 +6295,62 @@ Alle inline tall erstattet med konstanter, inkl. processDeathChecks bruker nå R
 - 0 TypeScript-feil (build clean) ✓
 - Alle balanseall er nå navngitte konstanter — enklere å justere spillbalansen
 - Branch: `claude/refactor-codebase-kNC1Q` pushed til origin
+
+---
+
+## 2026-02-23 — Bug Hunt: False Dependability Drop & False Starvation
+
+### Rapporterte Bugs
+1. Spiller får "dependability dropped — your employer noticed you didn't show up for work this week." selv om han har jobbet.
+2. Spiller får "Starving! Lost 20 Hours searching for food." selv om han kjøpte Loaf of Bread/Wheel of Cheese hos General Store.
+
+### Root Cause Analyse
+
+**Bug 1 (Dependability Drop)**:
+`applyDependabilityDecay` (weekEndHelpers.ts) hadde en manglende sjekk for nakne spillere med jobber som krever `requiredClothing: 'none'`.
+- `CLOTHING_THRESHOLDS['none'] = 0`
+- Nakne spillere (`clothingCondition = 0`) kan ikke jobbe (`workShift` sjekker `<= 0`)
+- Men `applyDependabilityDecay` sjekket bare `clothingCondition < threshold` → `0 < 0 = false` → ikke fritatt!
+- Berørte jobber: Floor Sweeper, Market Porter, Forge Laborer, Dishwasher
+- Fix: Lagt til `if (p.clothingCondition <= 0) return;` FØR threshold-sjekken
+
+**Bug 2 (Falsk Sult)**:
+`buyFoodWithSpoilage` (itemHelpers.ts) satte `foodBoughtWithoutPreservation: true` for vanlig mat (brød/ost).
+- Dette trigget `processEndOfTurnSpoilage` ved turnslutt → 80% sjanse for å miste 50% av foodLevel
+- Kombinert med ukentlig drain på 35: selv med mat synker foodLevel til 0 → SULTING!
+- Eksempel: kjøper brød (+10), 80% sjanse → food = 5, ukentlig drain → 0 → sulter neste tur
+
+**Bug 3 (Relatert til Bug 2)**:
+`processEndOfTurnSpoilage` (turnHelpers.ts) reduserte `foodLevel` med 50% i tillegg til å fjerne `freshFood`.
+- Dette var feil: når ferskmat råtner, skal bare `freshFood` fjernes, ikke eksisterende vanlig mat
+- Eksempel: spiller har 50 food og kjøper ferskmat uten box → ferskmat råtner → eksisterende 50 food kuttes til 25 urettferdig
+
+### Rettinger
+
+**Fix 1** (`src/store/helpers/weekEndHelpers.ts`, linje 284-290):
+```typescript
+// Lagt til nakken-sjekk FØR threshold-sjekken:
+if (p.clothingCondition <= 0) return; // Naken → kan ikke jobbe, ingen straff
+```
+
+**Fix 2** (`src/store/helpers/economy/itemHelpers.ts`, linje 138-159):
+- Fjernet `...(!hasPreservationBox ? { foodBoughtWithoutPreservation: true } : {})` fra `buyFoodWithSpoilage`
+- Vanlig mat (brød/ost) er holdbar — setter ikke end-of-turn spoilage-flag
+- Kun `buyFreshFood` (grønnsaker/kjøtt) setter `foodBoughtWithoutPreservation: true`
+
+**Fix 3** (`src/store/helpers/turnHelpers.ts`, linje 66-87):
+- Fjernet `foodLevel`-reduksjon fra `processEndOfTurnSpoilage`
+- Nå fjernes kun `freshFood = 0` når ferskmat råtner
+- Eksisterende vanlig mat (`foodLevel`) er upåvirket av ferskmats råtning
+- Oppdatert melding: "fresh food has gone bad!" istedenfor "food has gone bad!"
+
+**Testoppdateringer** (`src/test/freshFood.test.ts`):
+- Oppdatert test: `buyFoodWithSpoilage` uten box setter IKKE `foodBoughtWithoutPreservation` (var `true`, nå `false`)
+- Oppdatert test: `processEndOfTurnSpoilage` fjerner `freshFood` men endrer ikke `foodLevel`
+
+### Resultat
+- 332/332 tester bestått ✓
+- Bug 1: Nakne spillere med 'none'-jobb får ikke lenger urettferdig "didn't show up" melding
+- Bug 2: Kjøper brød/ost → mat reduseres ikke med 50% → sulter ikke etter matinnkjøp
+- Bug 3: Ferskmat råtner → kun freshFood fjernes, ikke eksisterende foodLevel
+- Branch: `claude/fix-bug-hu-u3Cfh` klar for push

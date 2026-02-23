@@ -135,27 +135,27 @@ export function createItemActions(set: SetFn, get: GetFn) {
       return false; // Spoilage is now hidden — checked at turn end
     },
 
-    // Buy regular food at General Store — spoilage risk is hidden, checked at turn end
+    // Buy regular food at General Store (bread, cheese) — shelf-stable, no end-of-turn spoilage.
+    // processRegularFoodSpoilage at turn start handles sickness risk for stored food.
     buyFoodWithSpoilage: (playerId: string, foodValue: number, cost: number): boolean => {
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
           if (p.gold < cost) return p;
 
-          const hasPreservationBox = p.appliances['preservation-box'] && !p.appliances['preservation-box'].isBroken;
           const newGold = p.gold - cost;
 
           return {
             ...p,
             gold: newGold,
             foodLevel: Math.min(100, p.foodLevel + foodValue),
-            // Track that food was bought without preservation (spoilage checked at turn end)
-            ...(!hasPreservationBox ? { foodBoughtWithoutPreservation: true } : {}),
+            // Regular food is shelf-stable — do NOT set foodBoughtWithoutPreservation.
+            // Only fresh food (buyFreshFood) sets that flag for end-of-turn spoilage.
             hasStoreBoughtFood: true,
           };
         }),
       }));
-      return false; // Spoilage is now hidden — checked at turn end
+      return false;
     },
   };
 }

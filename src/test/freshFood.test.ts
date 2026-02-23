@@ -194,15 +194,16 @@ describe('Fresh Food - buyFreshFood', () => {
 describe('Regular Food - buyFoodWithSpoilage', () => {
   beforeEach(resetAndStart);
 
-  it('always adds food on purchase without Preservation Box (spoilage hidden until turn end)', () => {
+  it('always adds food on purchase without Preservation Box (shelf-stable, no end-of-turn spoilage)', () => {
     setGold(500);
     setFoodLevel(50);
     const spoiled = useGameStore.getState().buyFoodWithSpoilage(playerId, 10, 8);
     const p = useGameStore.getState().players[0];
-    expect(spoiled).toBe(false); // No instant spoilage
+    expect(spoiled).toBe(false); // No spoilage
     expect(p.foodLevel).toBe(60); // 50 + 10 — food always goes through
     expect(p.gold).toBe(492);
-    expect(p.foodBoughtWithoutPreservation).toBe(true); // Flag set for turn-end check
+    // Regular food (bread/cheese) is shelf-stable — does NOT set end-of-turn spoilage flag
+    expect(p.foodBoughtWithoutPreservation).toBe(false);
   });
 
   it('always adds food on purchase with Preservation Box (no spoilage flag)', () => {
@@ -447,20 +448,22 @@ describe('End-of-turn Spoilage Check', () => {
     vi.restoreAllMocks();
   });
 
-  it('spoils food at turn end when flag is set and no Preservation Box (80% chance)', () => {
+  it('spoils fresh food at turn end when flag is set and no Preservation Box (80% chance)', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.3); // < 0.80 = food goes bad, < 0.55 = gets sick
     setGold(500);
     setFoodLevel(60);
-    // Set the flag as if food was bought without preservation
+    // Set the flag as if fresh food was bought without preservation
     useGameStore.setState((state) => ({
       players: state.players.map(p =>
-        p.id === playerId ? { ...p, foodBoughtWithoutPreservation: true } : p
+        p.id === playerId ? { ...p, foodBoughtWithoutPreservation: true, freshFood: 3 } : p
       ),
     }));
     useGameStore.getState().endTurn();
     const p = useGameStore.getState().players.find(pp => pp.id === playerId)!;
     expect(p.foodBoughtWithoutPreservation).toBe(false); // Flag reset
-    expect(p.foodLevel).toBeLessThan(60); // Some food lost
+    // Only freshFood is cleared — regular foodLevel is unaffected by fresh food spoilage
+    expect(p.freshFood).toBe(0); // Fresh food spoiled
+    expect(p.foodLevel).toBe(60); // Regular food unchanged
     expect(p.isSick).toBe(true); // Got sick from spoiled food
   });
 
