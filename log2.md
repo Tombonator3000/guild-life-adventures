@@ -6126,3 +6126,51 @@ Redesignet `TopDropdownMenu.tsx` slik at når et tab klikkes:
 - `bunx tsc --noEmit` → 0 feil
 - Triggerbaren har alle 7 tabs: Stats | Items | Goals | Players | Awards | Options | Dev
 - Klikk på hvilket som helst tab åpner nå full-bredde panel (begge sidebars synlige)
+
+---
+
+## 2026-02-23 — Refactor: Magic Number Extraction
+
+### Oppgave
+Refactor complex code and improve code quality across store helpers.
+
+### Analyse
+Gjennomgikk de 30 største filene (67 827 linjer totalt). Identifiserte tre filer med flest innebygde tall uten navn:
+- `weekEndHelpers.ts` (982 linjer) — største helperfil, massevis av anonyme tall
+- `workEducationHelpers.ts` (348 linjer) — raise-/garnishment-logikk
+- `gameStore.ts` (559 linjer) — debug weather-map inline
+
+### Endringer
+
+#### `src/store/helpers/workEducationHelpers.ts`
+Lagt til 10 modulnivå-konstanter med JSDoc:
+- `WORK_EFFICIENCY_BONUS = 1.15` — erstatter `1.15` i calculateEarnings
+- `MIN_SHIFTS_FOR_RAISE = 3` — hevet fra lokal var til modul
+- `RAISE_BASE_CHANCE = 0.4`, `RAISE_DEPENDABILITY_DIVISOR = 200`, `RAISE_CHANCE_CAP = 0.95`
+- `RAISE_BONUS_PER_SHIFT = 0.02`, `MAX_BONUS_SHIFTS = 10`
+- `RAISE_AMOUNT_PERCENT = 0.15`, `MAX_WAGE_MULTIPLIER = 3`
+- `RENT_GARNISHMENT_RATE = 0.5`, `RENT_OVERDUE_INTEREST = 2`, `LOAN_GARNISHMENT_RATE = 0.25`
+- `REST_HOURS_PER_HAPPINESS = 4`
+
+#### `src/store/helpers/weekEndHelpers.ts`
+Lagt til 40+ modulnivå-konstanter gruppert i 7 seksjoner:
+- **Economy cycle**: ECONOMY_CYCLE_MIN/RAND, ECONOMY_BOOM/STABLE_THRESHOLD, drift/noise params, PRICE_MOD/FINAL_MIN/MAX
+- **Stock**: STOCK_CRASH_CHANCE, STOCK_FALLBACK_PRICE, FORCED_SELL_RATE, LIQUIDATION_RATE
+- **Finances**: INVESTMENT_WEEKLY_RATE, SAVINGS_WEEKLY_RATE, LOAN_INTEREST_RATE/CAP
+- **Housing debt**: WEEKS_BEFORE_RENT_DEBT/EVICTION, RENT_DEBT_ACCRUAL_RATE, EVICTION_HAPPINESS_PENALTY
+- **Lottery**: LOTTERY_GRAND/SMALL_PRIZE_CHANCE, PRIZE amounts, happiness bonuses
+- **Health**: SICKNESS_WEEKLY_DRAIN (hevet fra lokal var), RANDOM_SICKNESS_CHANCE, RELAXATION_WEEKLY_DECAY
+- **Dependability**: UNEMPLOYED_PENALTY, NO_WORK_RATE, FIRE_THRESHOLD
+- **Resurrection**: BASE_COST, MAX_COST, WEALTH_THRESHOLD/RATE, HAPPINESS_PENALTY — dokumentert "keep in sync with questHelpers.ts"
+
+Alle inline tall erstattet med konstanter, inkl. processDeathChecks bruker nå RESURRECTION_HAPPINESS_PENALTY konsistent for alle paths.
+
+#### `src/store/gameStore.ts`
+- Ekstrahert `DEBUG_WEATHER_PRESETS` til modulnivå-konstant (rydder opp 15-linje inline objekt i setDebugWeather)
+- `setDebugWeather` forenklet med early-return-mønster
+
+### Resultat
+- 332/332 tester bestått ✓
+- 0 TypeScript-feil (build clean) ✓
+- Alle balanseall er nå navngitte konstanter — enklere å justere spillbalansen
+- Branch: `claude/refactor-codebase-kNC1Q` pushed til origin
