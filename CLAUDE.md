@@ -96,6 +96,7 @@ Junior Academy → Scholar Path → Loremaster / Commerce Degree
 - AI-generated item graphics cached in IndexedDB (homeItemImageCache.ts), not localStorage (base64 too large)
 - Home item room graphics use "Medieval woodcut whimsical illustration" prompt style for consistency
 - Tutorial toggle: always call `setShowTutorial(enableTutorial)` unconditionally on game start — do NOT use `if (enableTutorial) setShowTutorial(true)` (omitting the false branch leaves a stale true from previous session)
+- Tutorial system: only ONE tutorial system exists — `ContextualTips` (context-aware interactive guide). `TutorialOverlay` (9-step static tutorial) has been removed from rendering. `ContextualTips` uses `if (!showTutorial || ...) return null` — it shows ONLY when tutorial is ON, hides when OFF. Do NOT re-add `TutorialOverlay` or create a second tutorial system.
 - OG meta image: use `https://guild-life.com/og-image.png` (stable). Never use signed cloud storage URLs (they expire). Place a 1200×630 PNG at `public/og-image.png`.
 - Player portrait classes defined in `src/data/portraits.ts` → `PLAYER_PORTRAITS` array. Add new classes there; place matching images in `public/portraits/<id>.jpg`.
 - Regular food (bread/cheese) is shelf-stable: `buyFoodWithSpoilage` must NOT set `foodBoughtWithoutPreservation: true`. Only `buyFreshFood` (fresh vegetables/meat) sets this flag for end-of-turn spoilage. Setting it on regular food causes starvation after purchase (end-of-turn 50% reduction + weekly drain = 0 food).
