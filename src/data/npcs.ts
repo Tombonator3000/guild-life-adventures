@@ -116,7 +116,7 @@ export const LOCATION_NPCS: Partial<Record<LocationId, LocationNPC>> = {
     title: 'Barkeep',
     portrait: '🧔',
     portraitImage: 'npcs/magnus.jpg',
-    greeting: 'What\'ll it be? And no, we don\'t serve \"something non-alcoholic.\"',
+    greeting: 'What\'ll it be? And no, we don\'t serve "something non-alcoholic."',
     bgColor: '#3a2a1a',
     accentColor: '#ffb74d',
     frameColor: '#5c3a1a',

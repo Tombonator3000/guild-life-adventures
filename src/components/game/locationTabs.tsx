@@ -743,7 +743,7 @@ export function getLocationTabs(locationId: LocationId, isHere: boolean, ctx: Lo
     if (activeHex || isRuined) {
       const hexName = activeHex ? (getHexById(activeHex.hexId)?.name || 'Unknown Hex') : 'Hex of Ruin';
       const casterName = activeHex ? activeHex.casterName : 'dark forces';
-      const weeksLeft = activeHex ? activeHex.weeksRemaining : (ctx.player.activeCurses.find(c => c.effectType === 'legendary-ruin')?.weeksRemaining || 1);
+      const weeksLeft = activeHex ? activeHex.weeksRemaining : (ctx.player.activeCurses?.find(c => c.effectType === 'legendary-ruin')?.weeksRemaining || 1);
       return [{
         id: 'hexed',
         label: 'Sealed',

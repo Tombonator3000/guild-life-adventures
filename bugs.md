@@ -293,3 +293,47 @@ Previous "definitive fix" only applied self-destroying SW to GitHub Pages. On Lo
 | **Status** | FIXED (2026-02-16) |
 | **Root cause** | 9+ independent event systems could all trigger in the same week. No cap on random events per week. High individual probabilities compounded. |
 | **Fix** | (1) Added 20% gate on location events, 30% gate on weekly theft. (2) Split deterministic/random processors. (3) Max 1 random event per week per player (theft OR sickness, not both). |
+
+---
+
+## BUG-008: `useRemainingTime` Flagged as Hook Rule Violation (2026-02-23)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | Medium (lint error blocks CI) |
+| **Status** | FIXED (2026-02-23) |
+| **Root cause** | Zustand store action named `useRemainingTime` in `workEducationHelpers.ts`. ESLint's `react-hooks/rules-of-hooks` treats any function starting with `use` as a React hook. Using it in an `onClick` callback (`() => useRemainingTime(player.id)`) triggered the lint error "React Hook cannot be called inside a callback". |
+| **Fix** | Renamed to `spendRemainingTime` in `storeTypes.ts`, `workEducationHelpers.ts`, and `ResourcePanel.tsx`. |
+
+---
+
+## BUG-009: Dragon Scale Shield Unsalvageable (basePrice: 0) (2026-02-23)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | Low-Medium |
+| **Status** | FIXED (2026-02-23) |
+| **Root cause** | `dragon-scale-shield` in `RARE_DROP_ITEMS` had `basePrice: 0` (correct for a dungeon drop with no purchase price). But `getSalvageValue()` computes `Math.round(item.basePrice * 0.6 * priceModifier)` → 0g. Same for `getTemperCost()` which uses `Math.max(30, ...)` (floor saves it), but salvage is permanently 0. |
+| **Fix** | Set `basePrice: 800` → salvage value 480g (reasonable for a legendary rare drop). |
+
+---
+
+## BUG-010: `activeCurses?.find()` Missing Optional Chain (2026-02-23)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | Medium (crash risk on old saves) |
+| **Status** | FIXED (2026-02-23) |
+| **Root cause** | `locationTabs.tsx` line 746: `ctx.player.activeCurses.find(...)` would crash if `activeCurses` is undefined on saves pre-dating the curses feature. TypeScript types it as non-optional, but save migration doesn't guarantee it's initialized. |
+| **Fix** | Changed to `ctx.player.activeCurses?.find(...)` for defensive null safety. |
+
+---
+
+## BUG-011: Variable Shadowing in workShift (p vs player) (2026-02-23)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | Low (code correctness, not runtime bug) |
+| **Status** | FIXED (2026-02-23) |
+| **Root cause** | `workEducationHelpers.ts` `workShift` used outer `p` (pre-mutation snapshot from `state.players.find()`) on lines 165-166 for `dependability` and `experience` updates, while lines 162-164 and 167+ all correctly used inner `player` (the `state.players.map()` iteration variable). Both variables point to the same player object so values were identical, but the mixing was confusing and inconsistent. |
+| **Fix** | Changed `p.maxDependability`, `p.dependability`, `p.maxExperience`, `p.experience` to `player.*` on lines 165-166. |

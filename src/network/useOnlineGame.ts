@@ -289,6 +289,7 @@ export function useOnlineGame() {
           // Sanitize player name: trim, cap at 20 chars, strip control characters
           const sanitized = (typeof message.playerName === 'string' ? message.playerName : 'Guest')
             .trim()
+            // eslint-disable-next-line no-control-regex
             .replace(/[\x00-\x1F\x7F]/g, '')
             .slice(0, 20) || 'Guest';
           // Prevent duplicate names
@@ -378,6 +379,7 @@ export function useOnlineGame() {
           // Sanitize new name: trim, cap at 20 chars, strip control characters
           const sanitized = (typeof message.newName === 'string' ? message.newName : 'Guest')
             .trim()
+            // eslint-disable-next-line no-control-regex
             .replace(/[\x00-\x1F\x7F]/g, '')
             .slice(0, 20) || 'Guest';
           // Prevent duplicate names
