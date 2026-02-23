@@ -1,97 +1,66 @@
 
 
-## Generate AI Room Graphics for All 16 Home Items
+## Quest LOQ Integrity Tests + Bug Fixes
 
-### What
-Use Gemini AI to generate dedicated room-placement graphics for all 16 buyable home items. Currently these items show emoji fallbacks because `public/items/{id}.png` files don't exist.
+### Bugs Found
 
-### The 16 Items
+1. **CRITICAL: `lost-cat` quest is broken** -- The quest has an objective at `noble-heights`, but `LocationPanel.tsx` returns `HomePanel` early for home locations (line 130-144), so the quest objective banner is never shown. Player cannot complete "Check Noble Heights" and the quest is permanently stuck.
 
-**8 Appliances:** scrying-mirror, simple-scrying-glass, memory-crystal, music-box, cooking-fire, preservation-box, arcane-tome, frost-chest
+2. **NL chains skip LOQ entirely** -- `getQuestLocationObjectives` returns `[]` for `nlchain:` quests (line 832). The `NonLinearChainStep` interface has no `locationObjectives` field.
 
-**8 Durables:** candles, blanket, furniture, glow-orb, warmth-stone, dagger, sword, shield
+3. **No validation for duplicate objective IDs** -- If two quests accidentally share an objective ID, progress could bleed across quests.
 
-### Implementation
+### Fix 1: `lost-cat` quest objective location
 
-**1. New Edge Function: `supabase/functions/generate-home-item/index.ts`**
-- Based on existing `generate-border/index.ts` pattern (same auth, CORS, error handling)
-- Takes `itemId` and `itemName` as input
-- Uses `google/gemini-2.5-flash-image` via Lovable AI Gateway
-- Prompt: "Medieval woodcut whimsical illustration of [item description] as placed in a medieval room, black ink on aged parchment, detailed line work, fantasy RPG item icon, 1:1 square, 512x512"
-- Each item gets a tailored description (e.g. "an ornate scrying mirror hanging on a stone wall", "flickering candles on a wooden shelf")
-- Returns base64 image data
-- Handles 429/402 rate limits
+Change the `noble-heights` objective to a non-home location (e.g. `landlord` -- the Landlord's office is thematically adjacent to Noble Heights). This avoids the HomePanel early-return problem entirely without needing to refactor LocationPanel.
 
-**2. New Utility: `src/utils/homeItemImageCache.ts`**
-- IndexedDB cache for generated images (base64 is too large for localStorage)
-- `getCachedImage(itemId)` / `setCachedImage(itemId, dataUrl)` / `getAllCachedIds()` / `clearCache()`
-- Simple wrapper around raw IndexedDB (no new dependencies)
+**File:** `src/data/quests.ts`
+- Change `lost-cat-home` objective: `locationId: 'noble-heights'` to `locationId: 'landlord'`
+- Update description/actionText to fit ("Ask the Landlord" instead of "Check Noble Heights")
 
-**3. New Admin Component: `src/components/game/home/HomeItemGenerator.tsx`**
-- Admin panel accessible from HomePanel (debug/dev mode toggle)
-- "Generate All Room Graphics" button
-- Generates items sequentially with 3-second delays between requests (rate limit protection)
-- Progress bar showing current item being generated
-- Stores results in IndexedDB cache
-- "Clear Cache" option to regenerate
-- Preview grid of all 16 items showing generated vs missing
+### Fix 2: Add quest objective banner to HomePanel
 
-**4. Update `RoomScene.tsx` ItemIcon Component**
-- Add `useEffect` + state to check IndexedDB cache on mount
-- Priority: IndexedDB cached image -> `public/items/{id}.png` -> emoji fallback
-- Async loading with the same image element pattern
+Even after fixing `lost-cat`, the HomePanel should still show quest objectives if a future quest uses home locations. Add the quest objective banner to `HomePanel.tsx` as a secondary fix.
 
-**5. Update `HomePanel.tsx`**
-- Add a small admin button (only visible in dev) to open the generator
+**File:** `src/components/game/HomePanel.tsx`
+- Import `getQuestLocationObjectives` and add the same objective banner logic
+- Show it above the room scene when a pending objective exists at the current home location
 
-**6. Update `supabase/config.toml`** (create if missing)
-- Add `generate-home-item` function with `verify_jwt = false`
+### Fix 3: Test file for LOQ integrity
 
-**7. Update `log2.md`** with timestamp entry
+Create `src/test/questLOQ.test.ts` with the following test cases:
 
-**8. Update `CLAUDE.md`** with lessons learned
+| Test | What it verifies |
+|------|-----------------|
+| All quest LOQ locationIds are valid | Every `locationId` in every objective exists in the `LocationId` type / BOARD_PATH |
+| No objectives at home locations | Ensures no quest sends the player to noble-heights or slums (HomePanel dead-end) |
+| No duplicate objective IDs across all quests | Every objective ID is globally unique |
+| Chain quest steps have valid LOQ locationIds | Same validation for QUEST_CHAINS steps |
+| getQuestLocationObjectives returns correct data | Unit test for regular quests, chain quests, and bounties |
+| allLocationObjectivesDone works correctly | Test with empty, partial, and full progress |
+| Objective IDs match their parent quest prefix | Convention check (e.g. `rat-ext-*` belongs to `rat-extermination`) |
+| Every quest has at least one LOQ | Verify no quest was missed |
 
-### Technical Details
+### Improvement Ideas (noted, not implemented now)
 
-**Files to create (3):**
-| File | Purpose |
-|------|---------|
-| `supabase/functions/generate-home-item/index.ts` | Edge function for Gemini image generation |
-| `src/utils/homeItemImageCache.ts` | IndexedDB cache utility |
-| `src/components/game/home/HomeItemGenerator.tsx` | Admin UI for generating + previewing images |
+- **NL chain LOQ support**: Add `locationObjectives` to `NonLinearChainStep` and update `getQuestLocationObjectives` to handle `nlchain:` prefixed quests
+- **Bounty LOQ**: Add simple location objectives to bounties for more engaging gameplay
+- **Quest objective ordering**: Currently objectives must be completed in order (array index). Could support unordered objectives for more flexibility
+- **LOQ time cost**: Objectives are free (no time spent). Could add a `timeCost` field per objective
 
-**Files to modify (4):**
+### Technical Summary
+
+**Files to modify (3):**
+
 | File | Change |
 |------|--------|
-| `src/components/game/home/RoomScene.tsx` | ItemIcon checks IndexedDB cache first |
-| `src/components/game/HomePanel.tsx` | Add generator toggle button |
+| `src/data/quests.ts` | Fix `lost-cat` objective from `noble-heights` to `landlord` |
+| `src/components/game/HomePanel.tsx` | Add quest objective banner as safety net |
 | `log2.md` | Timestamp entry |
-| `CLAUDE.md` | Updated conventions |
 
 **Files to create (1):**
+
 | File | Purpose |
 |------|---------|
-| `supabase/config.toml` | Edge function configuration |
-
-**No new dependencies needed.** IndexedDB is a native browser API.
-
-### Item Prompt Descriptions
-
-Each item gets a specific room-placement description:
-- **scrying-mirror**: "ornate magical mirror with swirling mist, mounted on a stone wall"
-- **simple-scrying-glass**: "small enchanted crystal ball on a wooden stand"
-- **memory-crystal**: "glowing purple crystal on a pedestal, storing magical memories"
-- **music-box**: "ornate wooden music box with arcane runes, lid slightly open"
-- **cooking-fire**: "eternal magical cooking flame in a stone hearth"
-- **preservation-box**: "enchanted wooden chest with frost runes for preserving food"
-- **arcane-tome**: "large ancient spellbook on a lectern, pages glowing faintly"
-- **frost-chest**: "ice-encrusted storage chest radiating cold mist"
-- **candles**: "cluster of melting candles in a brass holder on a shelf"
-- **blanket**: "thick wool blanket draped over a simple wooden bed"
-- **furniture**: "basic medieval wooden chair and small table"
-- **glow-orb**: "floating magical orb emitting warm golden light"
-- **warmth-stone**: "enchanted hearthstone glowing with inner warmth on the floor"
-- **dagger**: "ornate dagger mounted on a wall bracket"
-- **sword**: "longsword displayed on a wall-mounted rack"
-- **shield**: "round wooden shield with iron boss hanging on the wall"
+| `src/test/questLOQ.test.ts` | LOQ integrity and dead-end validation tests |
 
