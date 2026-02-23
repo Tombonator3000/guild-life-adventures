@@ -83,6 +83,27 @@ export const PLAYER_PORTRAITS: PortraitDefinition[] = [
     category: 'human',
     placeholderColors: { bg: '#8B6914', accent: '#FFD700', skin: '#F5DEB3' },
   },
+  {
+    id: 'druid',
+    name: 'Druid',
+    imagePath: 'portraits/druid.jpg',
+    category: 'human',
+    placeholderColors: { bg: '#1A5C2A', accent: '#66BB6A', skin: '#C8A882' },
+  },
+  {
+    id: 'necromancer',
+    name: 'Necromancer',
+    imagePath: 'portraits/necromancer.jpg',
+    category: 'human',
+    placeholderColors: { bg: '#1A0A2E', accent: '#7B2FBE', skin: '#C4B5C0' },
+  },
+  {
+    id: 'monk',
+    name: 'Monk',
+    imagePath: 'portraits/monk.jpg',
+    category: 'human',
+    placeholderColors: { bg: '#8B4500', accent: '#D4A06A', skin: '#E8C49A' },
+  },
 ];
 
 // AI opponent portraits (assigned automatically)
