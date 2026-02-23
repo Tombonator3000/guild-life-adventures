@@ -38,6 +38,106 @@ import type { SetFn, GetFn } from '../storeTypes';
 import { getHomeLocation } from './turnHelpers';
 
 // ============================================================
+// Balance Constants
+// ============================================================
+
+// Economy cycle
+/** Minimum duration (weeks) of each economic trend phase */
+const ECONOMY_CYCLE_MIN = 3;
+/** Random additional weeks added to each economic trend phase (0 to N-1) */
+const ECONOMY_CYCLE_RAND = 5;
+/** Probability threshold for a boom trend when cycle resets */
+const ECONOMY_BOOM_THRESHOLD = 0.35;
+/** Probability threshold for a stable trend (above boom, below this = recession) */
+const ECONOMY_STABLE_THRESHOLD = 0.70;
+/** Minimum drift magnitude per week toward trend direction */
+const ECONOMY_DRIFT_BASE = 0.02;
+/** Additional random drift component (0 to this value) */
+const ECONOMY_DRIFT_RAND = 0.04;
+/** Half-amplitude of random weekly price noise */
+const ECONOMY_NOISE_HALF = 0.015;
+/** Lower bound for the raw economy price modifier */
+const PRICE_MOD_MIN = 0.75;
+/** Upper bound for the raw economy price modifier */
+const PRICE_MOD_MAX = 1.25;
+/** Lower bound for the final combined price modifier (economy × weather × festival) */
+const PRICE_FINAL_MIN = 0.70;
+/** Upper bound for the final combined price modifier */
+const PRICE_FINAL_MAX = 1.35;
+/** Probability of a stock crash during a stock-level crash event */
+const STOCK_CRASH_CHANCE = 0.10;
+/** Fallback share price used when a stock's current price is unknown */
+const STOCK_FALLBACK_PRICE = 50;
+/** Fraction of market value received when stocks are seized to cover debt */
+const FORCED_SELL_RATE = 0.8;
+/** Fraction of original purchase price received when appliances/durables are liquidated */
+const LIQUIDATION_RATE = 0.3;
+
+// Finances
+/** Weekly return rate on investments (compound) */
+const INVESTMENT_WEEKLY_RATE = 0.005;
+/** Weekly interest rate on savings (compound) */
+const SAVINGS_WEEKLY_RATE = 0.001;
+/** Weekly interest rate charged on outstanding loans */
+const LOAN_INTEREST_RATE = 0.10;
+/** Maximum loan balance after interest (prevents infinite growth) */
+const LOAN_INTEREST_CAP = 2000;
+
+// Housing debt thresholds
+/** Weeks overdue before rent debt starts accruing at RENT_DEBT_ACCRUAL_RATE */
+const WEEKS_BEFORE_RENT_DEBT = 4;
+/** Fraction of rent cost added to debt each week once WEEKS_BEFORE_RENT_DEBT is exceeded */
+const RENT_DEBT_ACCRUAL_RATE = 0.25;
+/** Weeks overdue before eviction is triggered */
+const WEEKS_BEFORE_EVICTION = 8;
+/** Happiness penalty applied on eviction */
+const EVICTION_HAPPINESS_PENALTY = 30;
+
+// Lottery (Fortune's Wheel)
+/** Probability of the grand prize per ticket drawn */
+const LOTTERY_GRAND_PRIZE_CHANCE = 0.001;
+/** Probability of a small prize per ticket drawn (must be > LOTTERY_GRAND_PRIZE_CHANCE) */
+const LOTTERY_SMALL_PRIZE_CHANCE = 0.06;
+/** Gold amount awarded for the grand prize */
+const LOTTERY_GRAND_PRIZE = 500;
+/** Gold amount awarded for a small prize */
+const LOTTERY_SMALL_PRIZE = 20;
+/** Happiness gained on winning the grand prize */
+const LOTTERY_GRAND_HAPPINESS = 25;
+/** Happiness gained on winning any non-grand prize */
+const LOTTERY_WIN_HAPPINESS = 5;
+
+// Relaxation
+/** Happiness-like relaxation points lost per week (floor at 10) */
+const RELAXATION_WEEKLY_DECAY = 1;
+
+// Health & sickness
+/** Health points lost per week while the player is sick */
+const SICKNESS_WEEKLY_DRAIN = 5;
+/** Probability per week of randomly contracting a new illness */
+const RANDOM_SICKNESS_CHANCE = 0.05;
+
+// Dependability
+/** Flat dependability points lost per week while unemployed */
+const DEPENDABILITY_UNEMPLOYED_PENALTY = 5;
+/** Fraction of current dependability lost per week for missing a shift (without clothing excuse) */
+const DEPENDABILITY_NO_WORK_RATE = 0.10;
+/** Dependability value at or below which the player is automatically fired */
+const DEPENDABILITY_FIRE_THRESHOLD = 20;
+
+// Resurrection (shared formula — keep in sync with questHelpers.ts)
+/** Base cost in gold to be resurrected by healers */
+const RESURRECTION_BASE_COST = 100;
+/** Maximum resurrection cost regardless of wealth */
+const RESURRECTION_MAX_COST = 2000;
+/** Wealth above this threshold contributes to the scaled resurrection cost */
+const RESURRECTION_WEALTH_THRESHOLD = 500;
+/** Fraction of wealth above RESURRECTION_WEALTH_THRESHOLD added to base cost */
+const RESURRECTION_WEALTH_RATE = 0.10;
+/** Happiness penalty applied after being resurrected */
+const RESURRECTION_HAPPINESS_PENALTY = 8;
+
+// ============================================================
 // Types
 // ============================================================
 
@@ -76,18 +176,18 @@ function advanceEconomy(state: {
   // Time to change trend?
   if (economyCycleWeeksLeft <= 0) {
     const roll = Math.random();
-    if (roll < 0.35) economyTrend = 1;       // boom
-    else if (roll < 0.70) economyTrend = 0;   // stable
-    else economyTrend = -1;                    // recession
-    economyCycleWeeksLeft = 3 + Math.floor(Math.random() * 5); // 3-7 weeks
+    if (roll < ECONOMY_BOOM_THRESHOLD) economyTrend = 1;        // boom
+    else if (roll < ECONOMY_STABLE_THRESHOLD) economyTrend = 0; // stable
+    else economyTrend = -1;                                      // recession
+    economyCycleWeeksLeft = ECONOMY_CYCLE_MIN + Math.floor(Math.random() * ECONOMY_CYCLE_RAND);
   }
 
   // Drift priceModifier gradually toward trend direction
   // BUG FIX: Use basePriceModifier (raw economy) to prevent weather/festival compounding
   const basePrice = state.basePriceModifier ?? state.priceModifier; // fallback for old saves
-  const drift = economyTrend * (0.02 + Math.random() * 0.04); // ±0.02-0.06
-  const noise = (Math.random() - 0.5) * 0.03; // tiny random noise ±0.015
-  const priceModifier = Math.max(0.75, Math.min(1.25, basePrice + drift + noise));
+  const drift = economyTrend * (ECONOMY_DRIFT_BASE + Math.random() * ECONOMY_DRIFT_RAND);
+  const noise = (Math.random() - 0.5) * (ECONOMY_NOISE_HALF * 2); // tiny random noise
+  const priceModifier = Math.max(PRICE_MOD_MIN, Math.min(PRICE_MOD_MAX, basePrice + drift + noise));
 
   // H8: Market crash only during recession and low economy
   const crashResult = (economyTrend === -1 && priceModifier < 0.9)
@@ -155,7 +255,7 @@ function calculateFinalPrice(
 ): number {
   const weatherAdjusted = basePriceMod * weather.priceMultiplier;
   const festivalMult = festival ? festival.priceMultiplier : 1.0;
-  return Math.max(0.70, Math.min(1.35, weatherAdjusted * festivalMult));
+  return Math.max(PRICE_FINAL_MIN, Math.min(PRICE_FINAL_MAX, weatherAdjusted * festivalMult));
 }
 
 // ============================================================
@@ -180,7 +280,7 @@ function resetWeeklyFlags(p: Player): void {
 /** Apply dependability decay based on employment + work status */
 function applyDependabilityDecay(p: Player, msgs: string[]): void {
   if (!p.currentJob) {
-    p.dependability = Math.max(0, p.dependability - 5); // Unemployed: heavy decay
+    p.dependability = Math.max(0, p.dependability - DEPENDABILITY_UNEMPLOYED_PENALTY);
   } else if (!p.workedThisTurn) {
     // Don't penalise dependability when clothing is blocking the player from working —
     // the employer knows the player is unable to meet the dress code, not skipping.
@@ -189,7 +289,7 @@ function applyDependabilityDecay(p: Player, msgs: string[]): void {
       const threshold = CLOTHING_THRESHOLDS[job.requiredClothing as keyof typeof CLOTHING_THRESHOLDS] ?? 0;
       if (p.clothingCondition < threshold) return;
     }
-    const depPenalty = Math.max(1, Math.round(p.dependability * 0.10)); // 10% decay
+    const depPenalty = Math.max(1, Math.round(p.dependability * DEPENDABILITY_NO_WORK_RATE));
     p.dependability = Math.max(0, p.dependability - depPenalty);
     if (!p.isAI) {
       msgs.push(`${p.name}'s dependability dropped — your employer noticed you didn't show up for work this week.`);
@@ -236,7 +336,7 @@ function processEmployment(p: Player, crashResult: MarketCrashResult, msgs: stri
   }
 
   // Fire player with too-low dependability (after crash so crash penalties still apply)
-  if (p.currentJob && p.dependability < 20) {
+  if (p.currentJob && p.dependability < DEPENDABILITY_FIRE_THRESHOLD) {
     firePlayer(p);
     if (!p.isAI) msgs.push(`${p.name} was fired due to poor dependability!`);
   }
@@ -359,14 +459,14 @@ function processFestivalOnPlayer(p: Player, festival: Festival | null): void {
 function processHousing(p: Player, msgs: string[], newsEvents: PlayerNewsEventData[]): void {
   if (p.housing === 'homeless') return;
 
-  // C4: Rent debt accumulation (4+ weeks overdue)
-  if (p.weeksSinceRent >= 4) {
+  // C4: Rent debt accumulation (WEEKS_BEFORE_RENT_DEBT+ weeks overdue)
+  if (p.weeksSinceRent >= WEEKS_BEFORE_RENT_DEBT) {
     const rentCost = p.lockedRent > 0 ? p.lockedRent : RENT_COSTS[p.housing];
-    p.rentDebt += Math.floor(rentCost * 0.25);
+    p.rentDebt += Math.floor(rentCost * RENT_DEBT_ACCRUAL_RATE);
   }
 
-  // Eviction check — after 8 weeks without paying rent
-  if (p.weeksSinceRent >= 8) {
+  // Eviction check — after WEEKS_BEFORE_EVICTION weeks without paying rent
+  if (p.weeksSinceRent >= WEEKS_BEFORE_EVICTION) {
     // Collect names of lost equipment for notification
     const lostGear: string[] = [];
     for (const slot of [p.equippedWeapon, p.equippedArmor, p.equippedShield]) {
@@ -392,7 +492,7 @@ function processHousing(p: Player, msgs: string[], newsEvents: PlayerNewsEventDa
     p.equippedWeapon = null;
     p.equippedArmor = null;
     p.equippedShield = null;
-    p.happiness = Math.max(0, p.happiness - 30);
+    p.happiness = Math.max(0, p.happiness - EVICTION_HAPPINESS_PENALTY);
 
     if (!p.isAI) {
       let evictionMsg = `${p.name} has been evicted! All possessions lost.`;
@@ -408,22 +508,22 @@ function processHousing(p: Player, msgs: string[], newsEvents: PlayerNewsEventDa
       msgs.push(evictionMsg);
     }
     newsEvents.push({ type: 'eviction', playerName: p.name });
-  } else if (p.weeksSinceRent >= 4 && !p.isAI) {
+  } else if (p.weeksSinceRent >= WEEKS_BEFORE_RENT_DEBT && !p.isAI) {
     msgs.push(`${p.name}: Rent is overdue! Wages will be garnished 50%.`);
   }
 }
 
 /** Process investments, savings interest, and stock dividends (deterministic — always runs) */
 function processFinances(p: Player, stockPrices: Record<string, number>, msgs: string[]): void {
-  // Investment returns (0.5% weekly)
+  // Investment returns (INVESTMENT_WEEKLY_RATE per week)
   if (p.investments > 0) {
-    const returns = Math.floor(p.investments * 0.005);
+    const returns = Math.floor(p.investments * INVESTMENT_WEEKLY_RATE);
     p.investments += returns;
   }
 
-  // Savings interest (0.1% weekly)
+  // Savings interest (SAVINGS_WEEKLY_RATE per week)
   if (p.savings > 0) {
-    const interest = Math.floor(p.savings * 0.001);
+    const interest = Math.floor(p.savings * SAVINGS_WEEKLY_RATE);
     p.savings += interest;
   }
 
@@ -458,7 +558,6 @@ function processTheft(p: Player, msgs: string[]): boolean {
 /** Ongoing sickness health drain (deterministic — always runs if sick) */
 function processOngoingSickness(p: Player, msgs: string[]): void {
   if (!p.isSick) return;
-  const SICKNESS_WEEKLY_DRAIN = 5;
   p.health = Math.max(0, p.health - SICKNESS_WEEKLY_DRAIN);
   p.happiness = Math.max(0, p.happiness - 2);
   if (!p.isAI) {
@@ -466,10 +565,10 @@ function processOngoingSickness(p: Player, msgs: string[]): void {
   }
 }
 
-/** Random new sickness check (5% chance — separate from ongoing drain) */
+/** Random new sickness check (RANDOM_SICKNESS_CHANCE per week — separate from ongoing drain) */
 function processRandomSickness(p: Player, msgs: string[]): boolean {
   if (p.isSick) return false; // Already sick — skip roll
-  if (Math.random() < 0.05) {
+  if (Math.random() < RANDOM_SICKNESS_CHANCE) {
     p.isSick = true;
     p.health = Math.max(0, p.health - 15);
     if (!p.isAI) {
@@ -496,7 +595,7 @@ function seizeCurrency(
   return seized;
 }
 
-/** Forced-sell stocks at 80% of current market value. Returns total gold recovered.
+/** Forced-sell stocks at FORCED_SELL_RATE of current market value. Returns total gold recovered.
  *  BUG FIX: Only sell enough shares to cover remaining debt, not all shares. */
 function seizeStocks(p: Player, remaining: number, details: string[], stockPrices: Record<string, number>): number {
   if (remaining <= 0 || Object.keys(p.stocks).length === 0) return 0;
@@ -507,8 +606,8 @@ function seizeStocks(p: Player, remaining: number, details: string[], stockPrice
     if (remaining - recovered <= 0) break;
     const shares = p.stocks[stockId];
     if (shares > 0) {
-      const price = stockPrices[stockId] || 50; // fallback to 50 if price unknown
-      const pricePerShare = Math.floor(price * 0.8);
+      const price = stockPrices[stockId] || STOCK_FALLBACK_PRICE;
+      const pricePerShare = Math.floor(price * FORCED_SELL_RATE);
       const neededValue = remaining - recovered;
       const sharesToSell = pricePerShare > 0 ? Math.min(shares, Math.ceil(neededValue / pricePerShare)) : shares;
       const value = Math.min(sharesToSell * pricePerShare, neededValue);
@@ -524,7 +623,7 @@ function seizeStocks(p: Player, remaining: number, details: string[], stockPrice
   return recovered;
 }
 
-/** Liquidate appliances at 30% of original price. Returns total gold recovered.
+/** Liquidate appliances at LIQUIDATION_RATE of original price. Returns total gold recovered.
  *  BUG FIX: Deep copy appliances to avoid mutating Zustand state via shared reference. */
 function seizeAppliances(p: Player, remaining: number, details: string[]): number {
   if (remaining <= 0 || Object.keys(p.appliances).length === 0) return 0;
@@ -534,7 +633,7 @@ function seizeAppliances(p: Player, remaining: number, details: string[]): numbe
   let count = 0;
   for (const appId of Object.keys(p.appliances)) {
     if (remaining - recovered <= 0) break;
-    const value = Math.min(Math.floor(p.appliances[appId].originalPrice * 0.3), remaining - recovered);
+    const value = Math.min(Math.floor(p.appliances[appId].originalPrice * LIQUIDATION_RATE), remaining - recovered);
     recovered += value;
     delete p.appliances[appId];
     count++;
@@ -543,7 +642,7 @@ function seizeAppliances(p: Player, remaining: number, details: string[]): numbe
   return recovered;
 }
 
-/** Liquidate durable items at 30% of base price, unequipping as needed. Returns total gold recovered.
+/** Liquidate durable items at LIQUIDATION_RATE of base price, unequipping as needed. Returns total gold recovered.
  *  BUG FIX: Deep copy durables to avoid mutating Zustand state via shared reference. */
 function seizeDurables(p: Player, remaining: number, details: string[]): number {
   if (remaining <= 0 || Object.keys(p.durables).length === 0) return 0;
@@ -555,7 +654,7 @@ function seizeDurables(p: Player, remaining: number, details: string[]): number 
     if (remaining - recovered <= 0) break;
     const item = getItem(durId);
     if (item) {
-      const value = Math.min(Math.floor(item.basePrice * 0.3), remaining - recovered);
+      const value = Math.min(Math.floor(item.basePrice * LIQUIDATION_RATE), remaining - recovered);
       recovered += value;
       if (p.equippedWeapon === durId) p.equippedWeapon = null;
       if (p.equippedArmor === durId) p.equippedArmor = null;
@@ -572,9 +671,9 @@ function seizeDurables(p: Player, remaining: number, details: string[]): number 
 function processLoans(p: Player, msgs: string[], newsEvents: PlayerNewsEventData[], stockPrices: Record<string, number>): void {
   if (p.loanAmount <= 0) return;
 
-  // 10% weekly interest, capped at 2x max borrow (2000g)
-  const interest = Math.ceil(p.loanAmount * 0.10);
-  p.loanAmount = Math.min(p.loanAmount + interest, 2000);
+  // LOAN_INTEREST_RATE weekly interest, capped at LOAN_INTEREST_CAP
+  const interest = Math.ceil(p.loanAmount * LOAN_INTEREST_RATE);
+  p.loanAmount = Math.min(p.loanAmount + interest, LOAN_INTEREST_CAP);
   p.loanWeeksRemaining = Math.max(0, p.loanWeeksRemaining - 1);
 
   if (p.loanWeeksRemaining > 0 || p.loanAmount <= 0) return;
@@ -627,20 +726,20 @@ function processLeisure(p: Player, newWeek: number, msgs: string[]): void {
 
   // Lottery drawing (Fortune's Wheel)
   // C11: Fixed lottery EV - negative EV as intended
-  // EV per ticket: 0.001*500 + 0.059*20 = 0.5 + 1.18 = 1.68g per 10g ticket
+  // EV per ticket: LOTTERY_GRAND_PRIZE_CHANCE*LOTTERY_GRAND_PRIZE + (LOTTERY_SMALL_PRIZE_CHANCE-LOTTERY_GRAND_PRIZE_CHANCE)*LOTTERY_SMALL_PRIZE
   if (p.lotteryTickets > 0) {
     let lotteryWinnings = 0;
     for (let i = 0; i < p.lotteryTickets; i++) {
       const roll = Math.random();
-      if (roll < 0.001) { // 0.1% grand prize per ticket
-        lotteryWinnings += 500;
-      } else if (roll < 0.06) { // 5.9% small prize per ticket
-        lotteryWinnings += 20;
+      if (roll < LOTTERY_GRAND_PRIZE_CHANCE) {
+        lotteryWinnings += LOTTERY_GRAND_PRIZE;
+      } else if (roll < LOTTERY_SMALL_PRIZE_CHANCE) {
+        lotteryWinnings += LOTTERY_SMALL_PRIZE;
       }
     }
     if (lotteryWinnings > 0) {
       p.gold += lotteryWinnings;
-      p.happiness = Math.min(100, p.happiness + (lotteryWinnings >= 500 ? 25 : 5));
+      p.happiness = Math.min(100, p.happiness + (lotteryWinnings >= LOTTERY_GRAND_PRIZE ? LOTTERY_GRAND_HAPPINESS : LOTTERY_WIN_HAPPINESS));
       if (!p.isAI) {
         msgs.push(`Fortune's Wheel: ${p.name} won ${lotteryWinnings}g!`);
       }
@@ -650,8 +749,8 @@ function processLeisure(p: Player, newWeek: number, msgs: string[]): void {
     p.lotteryTickets = 0; // Reset tickets after drawing
   }
 
-  // Relaxation decay (-1 per week, Jones-style)
-  p.relaxation = Math.max(10, p.relaxation - 1);
+  // Relaxation decay (RELAXATION_WEEKLY_DECAY per week, Jones-style)
+  p.relaxation = Math.max(10, p.relaxation - RELAXATION_WEEKLY_DECAY);
 }
 
 /** Process aging system: birthdays, milestones, elder decay, health crises */
@@ -764,28 +863,30 @@ function processDeathChecks(players: Player[], msgs: string[]): void {
       } else {
         // Non-permadeath: respawn with minimal HP
         p.health = 20;
-        p.happiness = Math.max(0, p.happiness - 8);
-        msgs.push(`${p.name} barely survived! -8 happiness.`);
+        p.happiness = Math.max(0, p.happiness - RESURRECTION_HAPPINESS_PENALTY);
+        msgs.push(`${p.name} barely survived! -${RESURRECTION_HAPPINESS_PENALTY} happiness.`);
       }
       continue;
     }
 
-    // Scaled resurrection cost (same formula as checkDeath)
+    // Scaled resurrection cost (same formula as checkDeath in questHelpers.ts)
     const totalWealth = p.gold + p.savings;
-    const scaledCost = Math.min(2000, Math.max(100, 100 + Math.floor((Math.max(0, totalWealth - 500)) * 0.10)));
-    const resurrectionHappinessPenalty = 8;
+    const scaledCost = Math.min(
+      RESURRECTION_MAX_COST,
+      Math.max(RESURRECTION_BASE_COST, RESURRECTION_BASE_COST + Math.floor((Math.max(0, totalWealth - RESURRECTION_WEALTH_THRESHOLD)) * RESURRECTION_WEALTH_RATE)),
+    );
 
     if (p.savings >= scaledCost) {
       p.health = 50;
       p.savings -= scaledCost;
-      p.happiness = Math.max(0, p.happiness - resurrectionHappinessPenalty);
+      p.happiness = Math.max(0, p.happiness - RESURRECTION_HAPPINESS_PENALTY);
       p.wasResurrectedThisWeek = true;
-      msgs.push(`${p.name} was revived by healers! ${scaledCost}g from savings, -${resurrectionHappinessPenalty} happiness.`);
+      msgs.push(`${p.name} was revived by healers! ${scaledCost}g from savings, -${RESURRECTION_HAPPINESS_PENALTY} happiness.`);
     } else if (!enablePermadeath) {
       // Non-permadeath: respawn with minimal HP
       p.health = 20;
-      p.happiness = Math.max(0, p.happiness - 8);
-      msgs.push(`${p.name} barely survived the week! -8 happiness.`);
+      p.happiness = Math.max(0, p.happiness - RESURRECTION_HAPPINESS_PENALTY);
+      msgs.push(`${p.name} barely survived the week! -${RESURRECTION_HAPPINESS_PENALTY} happiness.`);
     } else {
       p.isGameOver = true;
       msgs.push(`${p.name} has perished!`);
@@ -824,7 +925,7 @@ function advanceStockMarket(
   economyTrend: number,
   messages: string[],
 ): { stockPrices: Record<string, number>; stockPriceHistory: Record<string, number[]> } {
-  const isStockCrash = economyTrend === -1 && Math.random() < 0.10;
+  const isStockCrash = economyTrend === -1 && Math.random() < STOCK_CRASH_CHANCE;
   const stockPrices = updateStockPrices(currentPrices, isStockCrash, economyTrend);
   const stockPriceHistory = updatePriceHistory(currentHistory || {}, stockPrices);
   if (isStockCrash) {
