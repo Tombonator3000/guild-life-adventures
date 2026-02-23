@@ -11,17 +11,23 @@ interface LocationZoneProps {
   children?: ReactNode;
   isHexed?: boolean;
   hexCasterName?: string;
+  /** LOQ: This location has a pending (uncompleted) quest objective */
+  isQuestObjective?: boolean;
+  /** LOQ: This location's quest objective has been completed */
+  isQuestObjectiveDone?: boolean;
 }
 
-export function LocationZone({ 
-  location, 
-  isSelected, 
+export function LocationZone({
+  location,
+  isSelected,
   isCurrentLocation,
-  moveCost, 
-  onClick, 
+  moveCost,
+  onClick,
   children,
   isHexed = false,
   hexCasterName,
+  isQuestObjective = false,
+  isQuestObjectiveDone = false,
 }: LocationZoneProps) {
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
 
@@ -72,6 +78,43 @@ export function LocationZone({
               <span className="ml-1 text-xs text-purple-400">🔮 by {hexCasterName}</span>
             )}
           </div>
+        </div>
+      )}
+
+      {/* LOQ: Quest objective overlay — golden pulse for pending, green checkmark for done */}
+      {(isQuestObjective || isQuestObjectiveDone) && (
+        <div className="absolute inset-0 pointer-events-none z-10 rounded overflow-hidden">
+          {isQuestObjective && !isQuestObjectiveDone && (
+            <>
+              {/* Pulsing golden glow */}
+              <div
+                className="absolute inset-0 animate-quest-pulse"
+                style={{
+                  background: 'rgba(180,130,0,0.18)',
+                  border: '2px solid rgba(212,175,55,0.75)',
+                  boxShadow: '0 0 12px 3px rgba(212,175,55,0.45)',
+                  borderRadius: 'inherit',
+                }}
+              />
+              {/* ⚔ quest icon top-right */}
+              <div className="absolute top-0.5 right-0.5 text-xs select-none pointer-events-none" title="Quest objective">⚔</div>
+            </>
+          )}
+          {isQuestObjectiveDone && (
+            <>
+              {/* Soft green done overlay */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: 'rgba(22,101,52,0.12)',
+                  border: '2px solid rgba(34,197,94,0.55)',
+                  borderRadius: 'inherit',
+                }}
+              />
+              {/* ✓ done icon top-right */}
+              <div className="absolute top-0.5 right-0.5 text-xs select-none pointer-events-none text-green-400" title="Objective complete">✓</div>
+            </>
+          )}
         </div>
       )}
 

@@ -2,7 +2,7 @@ import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { getLocation, getMovementCost, getPath } from '@/data/locations';
 import type { LocationId } from '@/types/game.types';
 import { playSFX } from '@/audio/sfxManager';
-import { MapPin, Clock, ArrowRight, X } from 'lucide-react';
+import { MapPin, Clock, ArrowRight, X, Swords } from 'lucide-react';
 import { HomePanel } from './HomePanel';
 import { LocationShell } from './LocationShell';
 import { LOCATION_NPCS } from '@/data/npcs';
@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { NEWSPAPER_COST, generateNewspaper } from '@/data/newspaper';
 import { getLocationTabs, getWorkInfo } from './locationTabs';
 import type { LocationTabContext } from './locationTabs';
+import { getQuestLocationObjectives } from '@/data/quests';
 
 interface LocationPanelProps {
   locationId: LocationId;
@@ -91,6 +92,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     takeQuest: store.takeQuest,
     completeQuest: store.completeQuest,
     abandonQuest: store.abandonQuest,
+    completeLocationObjective: store.completeLocationObjective,
     takeChainQuest: store.takeChainQuest,
     takeNonLinearChain: store.takeNonLinearChain,
     makeNLChainChoice: store.makeNLChainChoice,
@@ -146,9 +148,39 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
   const tabs = getLocationTabs(locationId, isHere, ctx);
   const workInfo = isHere ? getWorkInfo(locationId, ctx) : null;
 
+  // LOQ: Check if current location has a pending quest objective
+  const questObjectives = getQuestLocationObjectives(player.activeQuest);
+  const questProgress = player.questLocationProgress ?? [];
+  const pendingObjectiveHere = isHere
+    ? questObjectives.find(o => o.locationId === locationId && !questProgress.includes(o.id))
+    : null;
+
+  const handleCompleteObjective = () => {
+    if (!pendingObjectiveHere) return;
+    playSFX('quest-complete');
+    store.completeLocationObjective(player.id, pendingObjectiveHere.id);
+    toast.success(pendingObjectiveHere.completionText, { duration: 5000 });
+  };
+
   return (
     <>
       <div className={`h-full flex flex-col overflow-hidden ${isHere ? '' : 'parchment-panel p-3'}`}>
+        {/* LOQ: Quest objective banner — shown when at an objective location */}
+        {pendingObjectiveHere && (
+          <div className="flex-shrink-0 bg-amber-900/80 border border-amber-400/70 px-3 py-2 flex items-center gap-2 z-20">
+            <Swords className="w-4 h-4 text-amber-300 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-amber-200 text-xs font-semibold leading-tight truncate">Quest Objective</p>
+              <p className="text-amber-100/80 text-xs leading-tight truncate">{pendingObjectiveHere.description}</p>
+            </div>
+            <button
+              onClick={handleCompleteObjective}
+              className="flex-shrink-0 px-2 py-1 bg-amber-500 hover:bg-amber-400 text-amber-950 rounded text-xs font-bold transition-colors"
+            >
+              {pendingObjectiveHere.actionText}
+            </button>
+          </div>
+        )}
         {/* When at location: full LocationShell with header/footer */}
         {isHere && npc && tabs ? (
           <LocationShell

@@ -81,6 +81,7 @@ export interface LocationTabContext {
   takeQuest: GameStore['takeQuest'];
   completeQuest: GameStore['completeQuest'];
   abandonQuest: GameStore['abandonQuest'];
+  completeLocationObjective: GameStore['completeLocationObjective'];
   takeChainQuest: GameStore['takeChainQuest'];
   takeNonLinearChain: GameStore['takeNonLinearChain'];
   makeNLChainChoice: GameStore['makeNLChainChoice'];

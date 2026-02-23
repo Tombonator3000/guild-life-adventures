@@ -59,6 +59,8 @@ export interface GameStore extends GameState {
   takeQuest: (playerId: string, questId: string) => void;
   completeQuest: (playerId: string) => void;
   abandonQuest: (playerId: string) => void;
+  /** LOQ: Complete a single location objective at the player's current location */
+  completeLocationObjective: (playerId: string, objectiveId: string) => void;
   // Quest Chain actions (B1)
   takeChainQuest: (playerId: string, chainId: string) => void;
   completeChainQuest: (playerId: string) => void;

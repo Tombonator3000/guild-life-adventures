@@ -255,6 +255,8 @@ export interface Player {
   temperedItems: string[];         // Item IDs that have been tempered at the Forge (once per item)
   // Equipment durability (0-100, degrades in dungeon combat, repair at Forge)
   equipmentDurability: Record<string, number>; // itemId -> durability (100 = perfect, 0 = broken)
+  // Location-based quest objectives (LOQ): completed objective IDs for the active quest
+  questLocationProgress: string[];
   // Quest Chain progress (B1)
   questChainProgress: Record<string, number>; // chainId → steps completed (0-indexed)
   // Non-linear quest chain progress

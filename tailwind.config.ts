@@ -109,6 +109,10 @@ export default {
           "0%, 100%": { opacity: "0.5", boxShadow: "0 0 8px 3px rgba(147, 51, 234, 0.4), inset 0 0 6px 2px rgba(147, 51, 234, 0.2)" },
           "50%": { opacity: "1", boxShadow: "0 0 16px 6px rgba(147, 51, 234, 0.7), inset 0 0 10px 4px rgba(147, 51, 234, 0.4)" },
         },
+        "quest-pulse": {
+          "0%, 100%": { opacity: "0.55", boxShadow: "0 0 10px 3px rgba(212,175,55,0.4), inset 0 0 6px 2px rgba(212,175,55,0.15)" },
+          "50%": { opacity: "1", boxShadow: "0 0 20px 7px rgba(212,175,55,0.65), inset 0 0 12px 4px rgba(212,175,55,0.3)" },
+        },
         "fade-in": {
           "0%": { opacity: "0", transform: "translateY(10px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
@@ -143,6 +147,7 @@ export default {
         "float": "float 3s ease-in-out infinite",
         "shimmer": "shimmer 2s linear infinite",
         "curse-pulse": "curse-pulse 2s ease-in-out infinite",
+        "quest-pulse": "quest-pulse 1.8s ease-in-out infinite",
         "curse-particle": "curse-particle 2s ease-out infinite",
         "fade-in": "fade-in 0.3s ease-out",
         "emote-float": "emote-float 2.5s ease-out forwards",

@@ -4,7 +4,7 @@
 // non-linear quest chains (B1-NL)
 
 import { useMemo, useState } from 'react';
-import { AlertTriangle, Check, X, Trophy, GitBranch } from 'lucide-react';
+import { AlertTriangle, Check, X, Trophy, GitBranch, MapPin, Circle } from 'lucide-react';
 import { playSFX } from '@/audio/sfxManager';
 import type { Quest } from '@/data/quests';
 import {
@@ -20,6 +20,8 @@ import {
   getReputationMilestone,
   getNextReputationMilestone,
   pickQuestDescription,
+  getQuestLocationObjectives,
+  allLocationObjectivesDone,
 } from '@/data/quests';
 import {
   NON_LINEAR_QUEST_CHAINS,
@@ -212,6 +214,13 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
   if (activeQuestData && activeQuestData.type !== 'bounty') {
     const rankInfo = QUEST_RANK_INFO[activeQuestData.rank as keyof typeof QUEST_RANK_INFO] || { name: activeQuestData.rank, color: 'text-muted-foreground' };
 
+    // LOQ: Location objectives for regular quests
+    const locationObjectives = activeQuestData.type === 'quest'
+      ? getQuestLocationObjectives(player.activeQuest)
+      : [];
+    const questProgress = player.questLocationProgress ?? [];
+    const objectivesDone = allLocationObjectivesDone(player.activeQuest, questProgress);
+
     return (
       <div className="space-y-2">
         <ReputationBar player={player} />
@@ -226,6 +235,28 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
           </div>
           <p className="text-xs text-[#6b5a42] mt-1">{activeQuestData.description}</p>
 
+          {/* LOQ: Location objectives checklist */}
+          {locationObjectives.length > 0 && (
+            <div className="mt-2 border border-amber-600/40 bg-amber-950/20 rounded p-1.5 space-y-1">
+              <div className="flex items-center gap-1 text-xs text-amber-300 font-semibold">
+                <MapPin className="w-3 h-3" />
+                Objectives
+              </div>
+              {locationObjectives.map((obj) => {
+                const done = questProgress.includes(obj.id);
+                return (
+                  <div key={obj.id} className={`flex items-center gap-1.5 text-xs ${done ? 'text-green-400' : 'text-amber-200'}`}>
+                    {done
+                      ? <Check className="w-3 h-3 text-green-400 flex-shrink-0" />
+                      : <Circle className="w-3 h-3 text-amber-400 flex-shrink-0" />}
+                    <span className={done ? 'line-through opacity-60' : ''}>{obj.actionText}</span>
+                    {!done && <span className="text-amber-400/70 ml-auto text-xs">→ {obj.locationId.replace(/-/g, ' ')}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           <div className="flex items-center gap-3 text-xs mt-2">
             <ScaledRewardDisplay baseGold={activeQuestData.goldReward} baseHappiness={activeQuestData.happinessReward} player={player} />
             <span className="text-[#6b5a42]">{activeQuestData.timeRequired}h</span>
@@ -236,11 +267,14 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
             {player.timeRemaining < activeQuestData.timeRequired && (
               <span className="text-red-600 text-xs">Not enough time!</span>
             )}
+            {locationObjectives.length > 0 && !objectivesDone && (
+              <span className="text-amber-600 text-xs">Complete all objectives first!</span>
+            )}
             <div className="flex gap-2 ml-auto">
               <JonesButton
                 label="Complete Quest"
                 onClick={() => { playSFX('quest-complete'); onCompleteQuest(); }}
-                disabled={player.timeRemaining < activeQuestData.timeRequired}
+                disabled={player.timeRemaining < activeQuestData.timeRequired || !objectivesDone}
                 variant="primary"
               />
               <button

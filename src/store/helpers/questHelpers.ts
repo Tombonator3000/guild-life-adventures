@@ -19,6 +19,8 @@ import {
   getScaledQuestHappiness,
   getReputationGoldMultiplier,
   getChainCompletionSummary,
+  getQuestLocationObjectives,
+  allLocationObjectivesDone,
 } from '@/data/quests';
 import { calculateStockValue } from '@/data/stocks';
 import { checkAchievements, updateAchievementStats } from '@/data/achievements';
@@ -215,7 +217,33 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       set((state) => ({
         players: state.players.map((p) =>
           p.id === playerId
-            ? { ...p, activeQuest: questId }
+            ? { ...p, activeQuest: questId, questLocationProgress: [] }
+            : p
+        ),
+      }));
+    },
+
+    /** LOQ: Complete a single location objective at the player's current location */
+    completeLocationObjective: (playerId: string, objectiveId: string) => {
+      const state = get();
+      const player = state.players.find(p => p.id === playerId);
+      if (!player || !player.activeQuest) return;
+
+      const objectives = getQuestLocationObjectives(player.activeQuest);
+      const objective = objectives.find(o => o.id === objectiveId);
+      if (!objective) return;
+
+      // Must be at the correct location
+      if (player.currentLocation !== objective.locationId) return;
+
+      // Already completed
+      const progress = player.questLocationProgress ?? [];
+      if (progress.includes(objectiveId)) return;
+
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? { ...p, questLocationProgress: [...(p.questLocationProgress ?? []), objectiveId] }
             : p
         ),
       }));
@@ -247,6 +275,9 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       const quest = getQuest(player.activeQuest);
       if (!quest) return;
 
+      // LOQ: Block completion if not all location objectives are done
+      if (!allLocationObjectivesDone(player.activeQuest, player.questLocationProgress ?? [])) return;
+
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
@@ -263,6 +294,7 @@ export function createQuestActions(set: SetFn, get: GetFn) {
             completedQuests: p.completedQuests + 1,
             guildReputation: p.guildReputation + 1,
             activeQuest: null,
+            questLocationProgress: [],
             gameStats: {
               ...p.gameStats,
               totalQuestsCompleted: (p.gameStats.totalQuestsCompleted || 0) + 1,
@@ -305,6 +337,7 @@ export function createQuestActions(set: SetFn, get: GetFn) {
             ? {
                 ...p,
                 activeQuest: null,
+                questLocationProgress: [],
                 happiness: Math.max(0, p.happiness - 2),
                 dependability: Math.max(0, p.dependability - 3),
                 questCooldownWeeksLeft: 2,
