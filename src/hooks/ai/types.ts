@@ -72,6 +72,7 @@ export type AIActionType =
   | 'take-chain-quest'
   | 'take-bounty'
   | 'complete-quest'
+  | 'complete-location-objective'
   | 'cure-sickness'
   | 'take-loan'
   | 'repay-loan'

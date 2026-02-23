@@ -73,6 +73,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     takeChainQuest: store.takeChainQuest,
     takeBounty: store.takeBounty,
     completeQuest: store.completeQuest,
+    completeLocationObjective: store.completeLocationObjective,
     clearDungeonFloor: store.clearDungeonFloor,
     applyRareDrop: store.applyRareDrop,
     cureSickness: store.cureSickness,
