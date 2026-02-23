@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getAppliance } from '@/data/items';
+import { getCachedHomeItemImage } from '@/utils/homeItemImageCache';
 import type { HomeItemPositions } from '@/types/game.types';
 
 // Default appliance positions within the room scene (percentages)
@@ -42,10 +43,26 @@ function resolvePos(
   return { left: defaultLeft, bottom: defaultBottom };
 }
 
-/** Item icon component: tries a JPG image first, falls back to emoji */
+/** Item icon component: tries IndexedDB cache first, then PNG file, then emoji fallback */
 function ItemIcon({ itemId, icon, size = 'normal' }: { itemId: string; icon: string; size?: 'normal' | 'small' }) {
   const [imgFailed, setImgFailed] = useState(false);
-  const src = `${import.meta.env.BASE_URL}items/${itemId}.png`;
+  const [cachedSrc, setCachedSrc] = useState<string | null>(null);
+  const [cacheChecked, setCacheChecked] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCachedHomeItemImage(itemId).then(url => {
+      if (!cancelled) {
+        setCachedSrc(url);
+        setCacheChecked(true);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [itemId]);
+
+  const fileSrc = `${import.meta.env.BASE_URL}items/${itemId}.png`;
+  const imgSrc = cachedSrc || fileSrc;
+
   const emojiStyle = {
     fontSize: size === 'small'
       ? 'clamp(0.8rem, 2vw, 1.4rem)'
@@ -56,10 +73,17 @@ function ItemIcon({ itemId, icon, size = 'normal' }: { itemId: string; icon: str
   if (!imgFailed) {
     return (
       <img
-        src={src}
+        src={imgSrc}
         alt={itemId}
         draggable={false}
-        onError={() => setImgFailed(true)}
+        onError={() => {
+          if (cachedSrc) {
+            // Cached image failed, try file
+            setCachedSrc(null);
+          } else {
+            setImgFailed(true);
+          }
+        }}
         style={{
           width: size === 'small' ? 'clamp(20px, 3.5vw, 36px)' : 'clamp(28px, 4vw, 48px)',
           height: size === 'small' ? 'clamp(20px, 3.5vw, 36px)' : 'clamp(28px, 4vw, 48px)',

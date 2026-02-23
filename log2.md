@@ -5,6 +5,50 @@
 
 ---
 
+## 2026-02-23 — AI-Generated Room Item Graphics (16 Home Items)
+
+### Task
+Generate dedicated room-placement graphics for all 16 buyable home items (8 appliances + 8 durables) using Gemini AI via Lovable AI Gateway. Items previously showed emoji fallbacks.
+
+### Implementation
+
+**New Edge Function: `supabase/functions/generate-home-item/index.ts`**
+- Uses `google/gemini-2.5-flash-image` to generate medieval woodcut style icons
+- 16 tailored prompts (one per item) with room-placement descriptions
+- Rate limit handling (429/402)
+- No JWT required (public game asset generator)
+
+**New IndexedDB Cache: `src/utils/homeItemImageCache.ts`**
+- Raw IndexedDB wrapper (no dependencies) for base64 image storage
+- Functions: getCachedHomeItemImage, setCachedHomeItemImage, getAllCachedIds, clearHomeItemCache
+
+**New Admin UI: `src/components/game/home/HomeItemGenerator.tsx`**
+- Accessible via 🎨 button in HomePanel header (dev mode only)
+- Sequential generation with 3-second delays between requests
+- Progress bar, per-item generation, clear cache, preview grid
+
+**Updated: `src/components/game/home/RoomScene.tsx` — ItemIcon**
+- Priority: IndexedDB cached image → public/items/{id}.png → emoji fallback
+- useEffect checks cache on mount per item
+
+**Updated: `src/components/game/HomePanel.tsx`**
+- Added generator toggle (dev mode), moved useMemo before early returns
+
+**Created: `supabase/config.toml`**
+- Added generate-home-item, generate-border, elevenlabs-sfx entries
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `supabase/functions/generate-home-item/index.ts` | **NEW** — Gemini image generation edge function |
+| `src/utils/homeItemImageCache.ts` | **NEW** — IndexedDB cache for generated images |
+| `src/components/game/home/HomeItemGenerator.tsx` | **NEW** — Admin UI for batch generation |
+| `src/components/game/home/RoomScene.tsx` | ItemIcon checks IndexedDB cache first |
+| `src/components/game/HomePanel.tsx` | Generator toggle, hook ordering fix |
+| `supabase/config.toml` | **NEW** — Edge function configuration |
+
+---
+
 ## 2026-02-23 — Refactor: Combat Resolver Math + CavePanel Result Handling
 
 ### Task

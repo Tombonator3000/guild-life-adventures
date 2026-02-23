@@ -1,0 +1,8 @@
+[functions.generate-border]
+verify_jwt = false
+
+[functions.generate-home-item]
+verify_jwt = false
+
+[functions.elevenlabs-sfx]
+verify_jwt = false

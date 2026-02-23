@@ -91,6 +91,10 @@ Junior Academy → Scholar Path → Loremaster / Commerce Degree
 - All game text in English
 - Zone positions defined as percentages in `ZONE_CONFIGS`
 - Appliances have break chances (1/51 enchanter, 1/36 market)
+- All React hooks (useState, useMemo, useEffect) MUST be called before any early returns in components
+- Edge functions use direct fetch with VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY (no supabase client import)
+- AI-generated item graphics cached in IndexedDB (homeItemImageCache.ts), not localStorage (base64 too large)
+- Home item room graphics use "Medieval woodcut whimsical illustration" prompt style for consistency
 
 ## Testing
 
@@ -100,3 +104,8 @@ bun run test:watch        # Watch mode
 ```
 
 Tests are in `src/test/` directory.
+
+## Admin Tools
+
+- `/admin/sfx` — Sound effect generator (ElevenLabs)
+- HomePanel 🎨 button (dev mode) — Room item graphics generator (Gemini)

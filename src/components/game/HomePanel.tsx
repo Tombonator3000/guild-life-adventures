@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { Player, LocationId } from '@/types/game.types';
 import { useTranslation } from '@/i18n';
 import { HOUSING_DATA } from '@/data/housing';
 import { JonesButton } from './JonesStylePanel';
 import { RoomScene, HomeActionBar, ApplianceLegend } from './home';
+import { HomeItemGenerator } from './home/HomeItemGenerator';
 import { loadZoneConfig } from '@/data/zoneStorage';
 
 interface HomePanelProps {
@@ -33,8 +34,8 @@ export function HomePanel({
   onDone,
 }: HomePanelProps) {
   const { t } = useTranslation();
-
-  // Homeless player — show homeless message
+  const [showGenerator, setShowGenerator] = useState(false);
+  const customPositions = useMemo(() => loadZoneConfig()?.homeItemPositions, []);
   if (player.housing === 'homeless') {
     return (
       <div className="h-full flex flex-col items-center justify-center bg-[#1a1410] p-4">
@@ -93,7 +94,7 @@ export function HomePanel({
   }
 
   // Load custom item positions set via the Zone Editor's Home Layout mode
-  const customPositions = useMemo(() => loadZoneConfig()?.homeItemPositions, []);
+  // customPositions moved to top (before early returns)
 
   const housingData = HOUSING_DATA[player.housing];
   const isNoble = player.housing === 'noble';
@@ -134,11 +135,15 @@ export function HomePanel({
   const floorColor = isNoble ? '#6b4e2e' : isSlums ? '#4a3828' : '#5a4430';
   const floorAccent = isNoble ? '#7d5e3e' : isSlums ? '#3a2a1a' : '#6a5440';
 
+  if (showGenerator) {
+    return <HomeItemGenerator onClose={() => setShowGenerator(false)} />;
+  }
+
   return (
     <div className="h-full flex flex-col overflow-hidden select-none" style={{ background: '#1a1410' }}>
       {/* Header banner */}
       <div
-        className="text-center py-1.5 font-bold tracking-widest uppercase text-white shrink-0"
+        className="text-center py-1.5 font-bold tracking-widest uppercase text-white shrink-0 relative"
         style={{
           background: isNoble
             ? 'linear-gradient(180deg, #6b4e8a 0%, #4a3568 100%)'
@@ -150,6 +155,15 @@ export function HomePanel({
         }}
       >
         {isNoble ? t('housing.noble.name') : t('housing.slums.name')}
+        {import.meta.env.DEV && (
+          <button
+            onClick={() => setShowGenerator(true)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-xs opacity-40 hover:opacity-100"
+            title="Generate room item graphics"
+          >
+            🎨
+          </button>
+        )}
       </div>
 
       <RoomScene
