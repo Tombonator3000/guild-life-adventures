@@ -163,6 +163,7 @@ const createPlayer = (
   // Equipment durability
   equipmentDurability: {},
   // Quest system B-features
+  questLocationProgress: [],
   questChainProgress: {},
   completedBountiesThisWeek: [],
   questCooldownWeeksLeft: 0,

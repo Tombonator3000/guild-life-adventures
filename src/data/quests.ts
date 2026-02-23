@@ -1,7 +1,21 @@
 // Guild Life - Quest System Data
 
-import type { QuestRank, GuildRank, EducationPath } from '@/types/game.types';
+import type { QuestRank, GuildRank, EducationPath, LocationId } from '@/types/game.types';
 import { GUILD_RANK_ORDER } from '@/types/game.types';
+
+/** A single location stop the player must visit to advance or complete a quest */
+export interface LocationObjective {
+  /** Unique ID used to track completion in player.questLocationProgress */
+  id: string;
+  /** Board location the player must travel to */
+  locationId: LocationId;
+  /** Short verb phrase shown on the action button, e.g. "Gather Herbs" */
+  actionText: string;
+  /** One-liner shown in LocationPanel to explain what to do here */
+  description: string;
+  /** Flavour text displayed as a toast when the objective is completed */
+  completionText: string;
+}
 
 export interface Quest {
   id: string;
@@ -23,6 +37,12 @@ export interface Quest {
   requiresDungeonFloor?: number;
   /** Requires ALL dungeon floors to be cleared */
   requiresAllDungeonFloors?: boolean;
+  /**
+   * Location-based objectives (LOQ). When defined, the player must visit each
+   * listed location in order and complete the action there before the quest can
+   * be handed in at the Guild Hall. Quests without this field work as before.
+   */
+  locationObjectives?: LocationObjective[];
 }
 
 /** Pick a random quest description variant or fall back to the default */
@@ -97,6 +117,22 @@ export const QUESTS: Quest[] = [
     timeRequired: 3,
     healthRisk: 0,
     happinessReward: 1,
+    locationObjectives: [
+      {
+        id: 'package-delivery-forge',
+        locationId: 'forge',
+        actionText: 'Pick Up Package',
+        description: 'Collect the package from the Forge before delivering it.',
+        completionText: 'You collect a heavy, faintly humming package from the Forge. You consider asking what\'s inside. You decide not to. Wise.',
+      },
+      {
+        id: 'package-delivery-academy',
+        locationId: 'academy',
+        actionText: 'Deliver Package',
+        description: 'Deliver the package to the scholars at the Academy.',
+        completionText: 'The Academy scholars receive the package with barely-concealed excitement. One whispers "finally." Another pets it. You don\'t ask.',
+      },
+    ],
   },
   {
     id: 'herb-gathering',
@@ -113,6 +149,22 @@ export const QUESTS: Quest[] = [
     timeRequired: 4,
     healthRisk: 0,
     happinessReward: 2,
+    locationObjectives: [
+      {
+        id: 'herb-gathering-cave',
+        locationId: 'cave',
+        actionText: 'Gather Wild Herbs',
+        description: 'Collect medicinal herbs from the cave entrance and surrounding wilderness.',
+        completionText: 'You gather a bundle of wild herbs from the cave mouth. The cave mushrooms smell... interesting. You pocket a few extra.',
+      },
+      {
+        id: 'herb-gathering-enchanter',
+        locationId: 'enchanter',
+        actionText: 'Analyze the Herbs',
+        description: 'Have the Enchanter examine and prepare the herbs for delivery.',
+        completionText: 'The Enchanter examines your herbs and pronounces them "mostly not poisonous." She bottles the useful ones. The rest she keeps. For "research."',
+      },
+    ],
   },
   {
     id: 'lost-cat',
@@ -129,6 +181,29 @@ export const QUESTS: Quest[] = [
     timeRequired: 6,
     healthRisk: 0,
     happinessReward: 3,
+    locationObjectives: [
+      {
+        id: 'lost-cat-tavern',
+        locationId: 'rusty-tankard',
+        actionText: 'Ask About the Cat',
+        description: 'Check if anyone at the tavern has spotted the missing cat.',
+        completionText: 'The barkeeper saw a haughty cat leave yesterday. "It paid for its own drink," he says. "Class act." You note the cat\'s direction.',
+      },
+      {
+        id: 'lost-cat-market',
+        locationId: 'shadow-market',
+        actionText: 'Search the Alleys',
+        description: 'Search the back alleys of the Shadow Market for signs of the cat.',
+        completionText: 'You find cat fur, a chewed fish bone, and three suspicious merchants who refuse to make eye contact. The cat was definitely here.',
+      },
+      {
+        id: 'lost-cat-home',
+        locationId: 'noble-heights',
+        actionText: 'Check Noble Heights',
+        description: 'Return to Noble Heights — the cat may have wandered home on its own.',
+        completionText: 'The cat is already home, seated on a velvet cushion, judging you for taking so long. It was never lost. It was on holiday.',
+      },
+    ],
   },
 
   // D-Rank Quests — solid income, some risk
@@ -148,6 +223,22 @@ export const QUESTS: Quest[] = [
     healthRisk: 10,
     happinessReward: 3,
     requiredEducation: { path: 'fighter', level: 1 },
+    locationObjectives: [
+      {
+        id: 'escort-merchant-tavern',
+        locationId: 'rusty-tankard',
+        actionText: 'Meet the Merchant',
+        description: 'Rendezvous with the merchant at the Rusty Tankard before setting off.',
+        completionText: 'You find Gerald the merchant deep into a story about his cousin\'s turnip farm. You\'ve already heard too much. Escorting begins.',
+      },
+      {
+        id: 'escort-merchant-bank',
+        locationId: 'bank',
+        actionText: 'Escort to the Bank',
+        description: 'Safely escort the merchant and his goods to the Bank.',
+        completionText: 'Gerald and his gold arrive at the Bank intact. He\'s still talking about turnips. You\'re paid regardless. Worth it.',
+      },
+    ],
   },
   {
     id: 'guard-duty',
@@ -180,6 +271,22 @@ export const QUESTS: Quest[] = [
     timeRequired: 8,
     healthRisk: 5,
     happinessReward: 2,
+    locationObjectives: [
+      {
+        id: 'courier-run-bank',
+        locationId: 'bank',
+        actionText: 'Collect the Documents',
+        description: 'Pick up the sealed documents from the Bank Clerk before delivery.',
+        completionText: 'You collect a sealed bundle stamped "URGENT" three times. The date on the seal says two weeks ago. You don\'t mention this.',
+      },
+      {
+        id: 'courier-run-academy',
+        locationId: 'academy',
+        actionText: 'Deliver Documents',
+        description: 'Deliver the sealed documents to the Academy administrators.',
+        completionText: 'The Academy receives the documents with visible relief. "We\'ve been waiting weeks," they say. You nod. You don\'t ask why they didn\'t send for them sooner.',
+      },
+    ],
   },
 
   // C-Rank Quests — good rewards for competent adventurers
@@ -199,6 +306,22 @@ export const QUESTS: Quest[] = [
     healthRisk: 20,
     happinessReward: 4,
     requiredEducation: { path: 'fighter', level: 2 },
+    locationObjectives: [
+      {
+        id: 'bandit-hunt-market',
+        locationId: 'shadow-market',
+        actionText: 'Gather Intelligence',
+        description: 'Bribe an informant at the Shadow Market to find the bandits\' hideout.',
+        completionText: 'A shady informant confirms the bandits camp near the cave — for a modest fee and a handshake he pretends not to enjoy.',
+      },
+      {
+        id: 'bandit-hunt-cave',
+        locationId: 'cave',
+        actionText: 'Storm the Lair',
+        description: 'Track the bandits to their cave hideout and drive them out.',
+        completionText: 'You rout the bandits from their cave. Their leader weeps openly. His name was apparently Whiskers Jr. This explains the matching scarves.',
+      },
+    ],
   },
   {
     id: 'lost-artifact',
@@ -215,6 +338,22 @@ export const QUESTS: Quest[] = [
     timeRequired: 12,
     healthRisk: 15,
     happinessReward: 4,
+    locationObjectives: [
+      {
+        id: 'lost-artifact-fence',
+        locationId: 'fence',
+        actionText: 'Question the Fence',
+        description: 'Ask the Fence if he knows who sold the stolen artifact.',
+        completionText: 'The Fence nervously admits to "acquiring" something from a hooded figure. For a modest bribe, he reveals exactly where he found it.',
+      },
+      {
+        id: 'lost-artifact-academy',
+        locationId: 'academy',
+        actionText: 'Authenticate the Artifact',
+        description: 'Have Academy scholars verify the artifact is genuine before handing it in.',
+        completionText: 'The scholars confirm it\'s genuine. They also confirm it\'s mildly cursed. "Negligibly," they say. "Practically not at all." You hand it in anyway.',
+      },
+    ],
   },
   {
     id: 'curse-investigation',
@@ -232,6 +371,22 @@ export const QUESTS: Quest[] = [
     healthRisk: 10,
     happinessReward: 3,
     requiredEducation: { path: 'mage', level: 1 },
+    locationObjectives: [
+      {
+        id: 'curse-investigation-graveyard',
+        locationId: 'graveyard',
+        actionText: 'Investigate the Graveyard',
+        description: 'Search the graveyard for signs of unusual arcane activity.',
+        completionText: 'The graveyard is unnervingly active tonight. You discover strange arcane residue and encounter a miffed ghost named Reginald who insists he was here first.',
+      },
+      {
+        id: 'curse-investigation-enchanter',
+        locationId: 'enchanter',
+        actionText: 'Analyze the Evidence',
+        description: 'Bring your findings to the Enchanter for expert analysis.',
+        completionText: 'The Enchanter examines your samples with great interest. "Old binding magic," she says. "Very old. And thoroughly annoyed." She charges extra for the diagnosis.',
+      },
+    ],
   },
 
   // B-Rank Quests — high rewards for experienced adventurers
@@ -438,6 +593,28 @@ export function canTakeQuest(
 
 export function getQuest(id: string): Quest | undefined {
   return QUESTS.find(q => q.id === id);
+}
+
+/**
+ * Returns the location objectives for the given active quest ID.
+ * Returns [] for chain/bounty/nlchain quests (not location-based).
+ */
+export function getQuestLocationObjectives(activeQuestId: string | null): LocationObjective[] {
+  if (!activeQuestId) return [];
+  // Only regular quests support location objectives for now
+  if (activeQuestId.startsWith('chain:') || activeQuestId.startsWith('bounty:') || activeQuestId.startsWith('nlchain:')) return [];
+  const quest = getQuest(activeQuestId);
+  return quest?.locationObjectives ?? [];
+}
+
+/**
+ * Returns true if all location objectives for the active quest are satisfied.
+ * Quests without objectives are always "satisfied" (hand in at Guild Hall as before).
+ */
+export function allLocationObjectivesDone(activeQuestId: string | null, questLocationProgress: string[]): boolean {
+  const objectives = getQuestLocationObjectives(activeQuestId);
+  if (objectives.length === 0) return true;
+  return objectives.every(obj => questLocationProgress.includes(obj.id));
 }
 
 // ============================================================

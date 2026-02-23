@@ -32,6 +32,7 @@ import type { LocationId } from '@/types/game.types';
 import { toast } from 'sonner';
 import { useNetworkSync } from '@/network/useNetworkSync';
 import { useZoneConfiguration } from '@/hooks/useZoneConfiguration';
+import { getQuestLocationObjectives } from '@/data/quests';
 import { useAITurnHandler } from '@/hooks/useAITurnHandler';
 import { useAutoEndTurn } from '@/hooks/useAutoEndTurn';
 import { usePlayerAnimation } from '@/hooks/usePlayerAnimation';
@@ -318,6 +319,13 @@ export function GameBoard() {
                 h => h.targetLocation === location.id && h.weeksRemaining > 0
               );
 
+              // LOQ: Quest objective markers
+              const questObjectives = getQuestLocationObjectives(currentPlayer?.activeQuest ?? null);
+              const questProgress = currentPlayer?.questLocationProgress ?? [];
+              const objForLocation = questObjectives.find(o => o.locationId === location.id);
+              const isQuestObjective = !!objForLocation && !questProgress.includes(objForLocation.id);
+              const isQuestObjectiveDone = !!objForLocation && questProgress.includes(objForLocation.id);
+
               return (
                 <LocationZone
                   key={location.id}
@@ -328,6 +336,8 @@ export function GameBoard() {
                   onClick={() => handleLocationClick(location.id)}
                   isHexed={!!activeHex}
                   hexCasterName={activeHex?.casterName}
+                  isQuestObjective={isQuestObjective}
+                  isQuestObjectiveDone={isQuestObjectiveDone}
                 >
                   {playersHere.map((player, index) => (
                     <PlayerToken
