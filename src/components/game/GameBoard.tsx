@@ -15,7 +15,6 @@ import { MOVEMENT_PATHS } from '@/data/locations';
 import { SideInfoTabs } from './SideInfoTabs';
 import { RightSideTabs } from './RightSideTabs';
 import { SaveLoadMenu } from './SaveLoadMenu';
-import { TutorialOverlay } from './TutorialOverlay';
 import { MobileHUD } from './MobileHUD';
 import { MobileDrawer } from './MobileDrawer';
 import { WeatherOverlay } from './WeatherOverlay';
@@ -539,11 +538,6 @@ export function GameBoard() {
       {/* Save/Load Menu */}
       {showGameMenu && (
         <SaveLoadMenu onClose={() => setShowGameMenu(false)} />
-      )}
-
-      {/* Tutorial Overlay */}
-      {showTutorial && currentPlayer && !currentPlayer.isAI && (
-        <TutorialOverlay onClose={() => setShowTutorial(false)} />
       )}
 
       {/* Death Modal */}

@@ -5,6 +5,53 @@
 
 ---
 
+## 2026-02-23 — BUG FIX: Duplicate Tutorial Systems / Interactive Guide Showing When Tutorial Off
+
+### Timestamp: 2026-02-23
+
+### Bug Report
+Two tutorial systems were running simultaneously and the interactive guide (ContextualTips) was appearing even when the player had disabled the tutorial in GameSetup.
+
+### Root Cause Analysis
+
+Two separate tutorial systems existed in the codebase:
+
+| Component | Type | Behavior |
+|-----------|------|----------|
+| `TutorialOverlay` | 9-step step-by-step tutorial | Shown when `showTutorial=true` |
+| `ContextualTips` | Context-aware interactive tips | Shown when `showTutorial=false` (inverted logic!) |
+
+**ContextualTips had inverted logic**: it used `if (showTutorial || ...) return null` — meaning it HIDES during the tutorial overlay and SHOWS when tutorial is off. This caused the interactive guide to appear for players who had explicitly unchecked "Show Tutorial" in GameSetup.
+
+**Conceptual overlap**: Both systems appeared in the same area of the screen (bottom of game board) and served the same purpose. Only the contextual tips (reactive, game-state-aware) are needed.
+
+### Fix
+
+**`src/components/game/GameBoard.tsx`**
+- Removed `import { TutorialOverlay } from './TutorialOverlay'`
+- Removed `TutorialOverlay` render block (was: `{showTutorial && currentPlayer && !currentPlayer.isAI && <TutorialOverlay ... />}`)
+
+**`src/components/game/ContextualTips.tsx`**
+- Changed guard from `if (showTutorial || ...)` to `if (!showTutorial || ...)`
+- Now shows only when tutorial is ON, hides when tutorial is OFF
+- Correctly respects the user's tutorial preference from GameSetup
+
+### Result
+- Tutorial OFF → no tutorial UI at all
+- Tutorial ON → ContextualTips shows (context-aware interactive tips)
+- T-key keyboard shortcut still toggles tutorial correctly
+- `TutorialOverlay.tsx` kept as dead code (no longer imported anywhere)
+- Build: clean
+- Tests: 332/332 passing
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `src/components/game/GameBoard.tsx` | Removed TutorialOverlay import + render |
+| `src/components/game/ContextualTips.tsx` | Fixed guard logic (inverted `showTutorial` check) |
+
+---
+
 ## 2026-02-23 — OG Tags, Tutorial Toggle Fix, Game Duration, New Portraits, itch.io Launcher
 
 ### Tasks Completed

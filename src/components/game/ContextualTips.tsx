@@ -126,8 +126,8 @@ export function ContextualTips() {
     }
   }, [activeTip]);
 
-  // Don't show during tutorial or for AI, or if no tip
-  if (showTutorial || !player || player.isAI || !activeTip) return null;
+  // Don't show when tutorial is disabled, for AI players, or if no tip applies
+  if (!showTutorial || !player || player.isAI || !activeTip) return null;
 
   return (
     <>
