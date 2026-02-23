@@ -402,6 +402,7 @@ describe('isCommitmentValid', () => {
     const progress = makeProgress();
     const plan: CommitmentPlan = {
       type: 'wealth-sprint',
+      playerId: player.id,
       description: 'test',
       startTurn: 1,
       maxDuration: 2,
@@ -417,6 +418,7 @@ describe('isCommitmentValid', () => {
     const progress = makeProgress({ wealth: 1.0 });
     const plan: CommitmentPlan = {
       type: 'wealth-sprint',
+      playerId: player.id,
       description: 'test',
       startTurn: 5,
       maxDuration: 4,
@@ -431,6 +433,7 @@ describe('isCommitmentValid', () => {
     const progress = makeProgress();
     const plan: CommitmentPlan = {
       type: 'earn-degree',
+      playerId: player.id,
       targetId: 'trade-guild',
       description: 'test',
       startTurn: 1,
@@ -446,6 +449,7 @@ describe('isCommitmentValid', () => {
     const progress = makeProgress({ wealth: 0.5 });
     const plan: CommitmentPlan = {
       type: 'earn-degree',
+      playerId: player.id,
       targetId: 'trade-guild',
       description: 'test',
       startTurn: 1,
@@ -465,6 +469,7 @@ describe('getCommitmentBonus', () => {
   it('returns priorityBonus for aligned action', () => {
     const plan: CommitmentPlan = {
       type: 'wealth-sprint',
+      playerId: 'ai-grimwald',
       description: 'test',
       startTurn: 1,
       maxDuration: 2,
@@ -478,6 +483,7 @@ describe('getCommitmentBonus', () => {
   it('returns 0 for non-aligned action', () => {
     const plan: CommitmentPlan = {
       type: 'earn-degree',
+      playerId: 'ai-grimwald',
       description: 'test',
       startTurn: 1,
       maxDuration: 2,

@@ -314,6 +314,8 @@ export type CommitmentPlanType =
  */
 export interface CommitmentPlan {
   type: CommitmentPlanType;
+  /** Player this plan belongs to — prevents AI players from inheriting each other's plan */
+  playerId: string;
   /** Specific target (degree ID, job ID, dungeon floor number, etc.) */
   targetId?: string;
   /** Human-readable description for logging */
