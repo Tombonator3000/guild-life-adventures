@@ -47,6 +47,26 @@ function wrapWithNetworkGuard<T extends Record<string, unknown>>(actions: T): T 
 // Re-export ShadowfingersEvent from storeTypes for consumers
 export type { ShadowfingersEvent } from './storeTypes';
 
+// ============================================================
+// Debug weather presets (developer panel only)
+// ============================================================
+const DEBUG_WEATHER_PRESETS: Record<string, {
+  name: string;
+  description: string;
+  particle: string | null;
+  movementCostExtra: number;
+  priceMultiplier: number;
+  happinessPerWeek: number;
+  robberyMultiplier: number;
+  foodSpoilageChance: number;
+}> = {
+  'snowstorm':    { name: 'Snowstorm',      description: 'DEBUG: Forced snowstorm.',    particle: 'snow',        movementCostExtra: 1, priceMultiplier: 1.10, happinessPerWeek: -2, robberyMultiplier: 0.5, foodSpoilageChance: 0 },
+  'thunderstorm': { name: 'Thunderstorm',   description: 'DEBUG: Forced thunderstorm.', particle: 'rain',        movementCostExtra: 1, priceMultiplier: 1.05, happinessPerWeek: -1, robberyMultiplier: 1.5, foodSpoilageChance: 0 },
+  'drought':      { name: 'Drought',        description: 'DEBUG: Forced drought.',      particle: 'heatwave',    movementCostExtra: 0, priceMultiplier: 1.15, happinessPerWeek: -2, robberyMultiplier: 1.0, foodSpoilageChance: 0.25 },
+  'enchanted-fog':{ name: 'Enchanted Fog',  description: 'DEBUG: Forced fog.',          particle: 'fog',         movementCostExtra: 1, priceMultiplier: 0.95, happinessPerWeek:  3, robberyMultiplier: 1.2, foodSpoilageChance: 0 },
+  'harvest-rain': { name: 'Harvest Rain',   description: 'DEBUG: Forced rain.',         particle: 'light-rain',  movementCostExtra: 0, priceMultiplier: 0.90, happinessPerWeek:  2, robberyMultiplier: 1.0, foodSpoilageChance: 0 },
+};
+
 const createPlayer = (
   id: string,
   name: string,
@@ -475,32 +495,24 @@ export const useGameStore = create<GameStore>((set, get) => {
     setDebugWeather: (type: string) => {
       if (type === 'clear') {
         set({ weather: { ...CLEAR_WEATHER } });
-      } else {
-        // Import weather events data to set specific weather
-        const weatherMap: Record<string, { name: string; description: string; particle: string | null; movementCostExtra: number; priceMultiplier: number; happinessPerWeek: number; robberyMultiplier: number; foodSpoilageChance: number }> = {
-          'snowstorm': { name: 'Snowstorm', description: 'DEBUG: Forced snowstorm.', particle: 'snow', movementCostExtra: 1, priceMultiplier: 1.10, happinessPerWeek: -2, robberyMultiplier: 0.5, foodSpoilageChance: 0 },
-          'thunderstorm': { name: 'Thunderstorm', description: 'DEBUG: Forced thunderstorm.', particle: 'rain', movementCostExtra: 1, priceMultiplier: 1.05, happinessPerWeek: -1, robberyMultiplier: 1.5, foodSpoilageChance: 0 },
-          'drought': { name: 'Drought', description: 'DEBUG: Forced drought.', particle: 'heatwave', movementCostExtra: 0, priceMultiplier: 1.15, happinessPerWeek: -2, robberyMultiplier: 1.0, foodSpoilageChance: 0.25 },
-          'enchanted-fog': { name: 'Enchanted Fog', description: 'DEBUG: Forced fog.', particle: 'fog', movementCostExtra: 1, priceMultiplier: 0.95, happinessPerWeek: 3, robberyMultiplier: 1.2, foodSpoilageChance: 0 },
-          'harvest-rain': { name: 'Harvest Rain', description: 'DEBUG: Forced rain.', particle: 'light-rain', movementCostExtra: 0, priceMultiplier: 0.90, happinessPerWeek: 2, robberyMultiplier: 1.0, foodSpoilageChance: 0 },
-        };
-        const data = weatherMap[type];
-        if (data) {
-          set({
-            weather: {
-              type: type as WeatherType,
-              name: data.name,
-              description: data.description,
-              weeksRemaining: 99, // Persist until manually cleared
-              particle: data.particle as WeatherParticle | null,
-              movementCostExtra: data.movementCostExtra,
-              priceMultiplier: data.priceMultiplier,
-              happinessPerWeek: data.happinessPerWeek,
-              robberyMultiplier: data.robberyMultiplier,
-              foodSpoilageChance: data.foodSpoilageChance,
-            },
-          });
-        }
+        return;
+      }
+      const data = DEBUG_WEATHER_PRESETS[type];
+      if (data) {
+        set({
+          weather: {
+            type: type as WeatherType,
+            name: data.name,
+            description: data.description,
+            weeksRemaining: 99, // Persist until manually cleared
+            particle: data.particle as WeatherParticle | null,
+            movementCostExtra: data.movementCostExtra,
+            priceMultiplier: data.priceMultiplier,
+            happinessPerWeek: data.happinessPerWeek,
+            robberyMultiplier: data.robberyMultiplier,
+            foodSpoilageChance: data.foodSpoilageChance,
+          },
+        });
       }
     },
     setDebugFestival: (festivalId: string | null) => {
