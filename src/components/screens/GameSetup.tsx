@@ -115,10 +115,8 @@ export function GameSetup() {
       aiOpponents.length > 0 ? aiOpponents : undefined,
       playerPortraits
     );
-    if (enableTutorial) {
-      setTutorialStep(0);
-      setShowTutorial(true);
-    }
+    setTutorialStep(0);
+    setShowTutorial(enableTutorial);
   };
 
   // Preset game lengths (education in points: each degree = 9 pts)
@@ -127,6 +125,25 @@ export function GameSetup() {
     standard: { wealth: 5000, happiness: 100, education: 45, career: 75, adventure: 0 }, // 5 degrees
     epic: { wealth: 10000, happiness: 100, education: 90, career: 100, adventure: 0 },   // 10 degrees
   };
+
+  // Estimate game duration based on goals
+  const estimatedDuration = (() => {
+    const degrees = Math.floor(goals.education / 9);
+    const wealthK = goals.wealth / 1000;
+    const careerPct = goals.career / 100;
+    const adventureBonus = goals.adventure > 0 ? goals.adventure * 0.5 : 0;
+    // Each degree ≈ 10-15 min, wealth ≈ 5 min per 1000g, career ≈ 20 min at max
+    const baseMinutes = degrees * 12 + wealthK * 5 + careerPct * 20 + adventureBonus;
+    const numHumans = playerNames.length;
+    const numAI = aiOpponents.length;
+    const totalPlrs = Math.max(numHumans + numAI, 1);
+    // More players = longer game
+    const scaled = baseMinutes * (0.7 + totalPlrs * 0.15);
+    const lo = Math.round(scaled * 0.8 / 5) * 5;
+    const hi = Math.round(scaled * 1.3 / 5) * 5;
+    if (hi >= 180) return `${Math.round(lo / 60 * 2) / 2}–${Math.round(hi / 60 * 2) / 2} hours`;
+    return `${lo}–${hi} minutes`;
+  })();
 
   return (
     <div className="relative min-h-screen-safe overflow-x-hidden overflow-y-auto">
@@ -314,7 +331,7 @@ export function GameSetup() {
             </p>
 
             {/* Preset buttons */}
-            <div className="flex gap-2 mb-4">
+            <div className="flex gap-2 mb-3">
               <button
                 onClick={() => setGoals({ ...presets.quick, adventure: goals.adventure })}
                 className="flex-1 p-2 wood-frame text-parchment text-sm font-display hover:brightness-110"
@@ -334,6 +351,10 @@ export function GameSetup() {
                 Epic Quest
               </button>
             </div>
+            {/* Estimated duration */}
+            <p className="text-xs text-amber-700/80 italic mb-4 text-center">
+              ⏱ Estimated game length: <span className="font-semibold text-amber-800">{estimatedDuration}</span> per player
+            </p>
 
             <div className="grid grid-cols-2 gap-4">
               <GoalSlider

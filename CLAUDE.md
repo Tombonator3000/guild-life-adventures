@@ -95,6 +95,9 @@ Junior Academy → Scholar Path → Loremaster / Commerce Degree
 - Edge functions use direct fetch with VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY (no supabase client import)
 - AI-generated item graphics cached in IndexedDB (homeItemImageCache.ts), not localStorage (base64 too large)
 - Home item room graphics use "Medieval woodcut whimsical illustration" prompt style for consistency
+- Tutorial toggle: always call `setShowTutorial(enableTutorial)` unconditionally on game start — do NOT use `if (enableTutorial) setShowTutorial(true)` (omitting the false branch leaves a stale true from previous session)
+- OG meta image: use `https://guild-life.com/og-image.png` (stable). Never use signed cloud storage URLs (they expire). Place a 1200×630 PNG at `public/og-image.png`.
+- Player portrait classes defined in `src/data/portraits.ts` → `PLAYER_PORTRAITS` array. Add new classes there; place matching images in `public/portraits/<id>.jpg`.
 
 ## Testing
 

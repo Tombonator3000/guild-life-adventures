@@ -5,6 +5,44 @@
 
 ---
 
+## 2026-02-23 — OG Tags, Tutorial Toggle Fix, Game Duration, New Portraits, itch.io Launcher
+
+### Tasks Completed
+
+**1. Open Graph meta tags (index.html)**
+- Replaced expired signed Google Storage URL in `og:image` with stable `https://guild-life.com/og-image.png`
+- Added missing `og:url` pointing to `https://guild-life.com/`
+- Added `og:image:width`/`og:image:height` (1200×630) for Facebook compliance
+- Added `og:site_name`
+- Cleaned up duplicate/scattered OG tags into one tidy block
+- Note: place a 1200×630 PNG at `public/og-image.png` and deploy to see the preview live
+
+**2. Tutorial toggle bug fix (GameSetup.tsx)**
+- Bug: unchecking "Show Tutorial" had no effect — `setShowTutorial(false)` was never called when checkbox was off
+- Fix: changed conditional `if (enableTutorial) { setShowTutorial(true) }` to always call `setShowTutorial(enableTutorial)`
+- The toggle now correctly enables/disables the tutorial
+
+**3. Estimated game duration (GameSetup.tsx)**
+- Added live `estimatedDuration` calculation based on current goals (education degrees, wealth target, career goal, adventure points, player count)
+- Displayed as italic note below preset buttons: "⏱ Estimated game length: X–Y minutes per player"
+- Updates reactively as players adjust sliders or switch presets
+
+**4. 3 new player classes (portraits.ts)**
+- Added Druid (forest green, #1A5C2A bg)
+- Added Necromancer (dark purple, #1A0A2E bg)
+- Added Monk (earth brown, #8B4500 bg)
+- Total human portraits now: 11
+- Image paths: `portraits/druid.jpg`, `portraits/necromancer.jpg`, `portraits/monk.jpg`
+- Drop matching files in `public/portraits/` to replace placeholder SVGs
+
+**5. itch.io launcher (itchio-launcher.html)**
+- Created `itchio-launcher.html` at project root
+- Uses `<meta http-equiv="refresh">` + `window.location.replace()` to redirect to `https://guild-life.com/`
+- Styled loading screen matches game's dark parchment theme
+- Upload this file to itch.io as the game HTML — it will forward players to the live game
+
+---
+
 ## 2026-02-23 — AI-Generated Room Item Graphics (16 Home Items)
 
 ### Task
