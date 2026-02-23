@@ -5,6 +5,37 @@
 
 ---
 
+## 2026-02-23 23:12 UTC — FEATURE: AI LOQ Support (Location Objective Awareness)
+
+### Timestamp: 2026-02-23 23:12
+
+### Problem
+AI opponents (Grimwald, Seraphina, Thornwick, Morgath) would try to complete quests directly at the Guild Hall, ignoring location objectives. Since `completeQuest` now checks `allLocationObjectivesDone()`, the AI would silently fail and get stuck.
+
+### Solution
+Full AI LOQ awareness:
+
+1. **New action type `complete-location-objective`** — AI can now complete individual LOQ objectives
+2. **Quest completion logic rewritten** in `questDungeonActions.ts`:
+   - Checks for pending location objectives before generating "go to Guild Hall" action
+   - Finds the next uncompleted objective and generates travel + completion actions
+   - Only generates "complete quest at Guild Hall" when ALL objectives are done
+3. **Priority structure**: Complete objective (72) > Travel to objective (68) > Complete at Guild Hall (70) > Travel to Guild Hall (65)
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `src/hooks/ai/types.ts` | Added `'complete-location-objective'` to `AIActionType` |
+| `src/hooks/ai/actionExecutor.ts` | Added `completeLocationObjective` to `StoreActions`; new `handleCompleteLocationObjective` handler |
+| `src/hooks/ai/actions/questDungeonActions.ts` | Rewrote quest completion to check LOQ first; imports `getQuestLocationObjectives`, `allLocationObjectivesDone` |
+| `src/hooks/useGrimwaldAI.ts` | Added `completeLocationObjective` to store actions bundle |
+| `src/network/types.ts` | Added `completeLocationObjective` to multiplayer whitelist |
+
+### Verification
+- 332/332 tests pass, no TypeScript errors
+
+---
+
 ## 2026-02-23 23:07 UTC — FEATURE: Complete LOQ Coverage (All Quests + Chain Quests)
 
 ### Timestamp: 2026-02-23 23:07

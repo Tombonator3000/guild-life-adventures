@@ -212,6 +212,7 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'makeNLChainChoice',
   'takeBounty',
   'completeQuest',
+  'completeLocationObjective',
   'completeBounty',
   'completeChainQuest',
   'abandonQuest',

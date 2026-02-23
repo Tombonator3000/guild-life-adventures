@@ -50,6 +50,7 @@ export interface StoreActions {
   takeChainQuest: (playerId: string, chainId: string) => void;
   takeBounty: (playerId: string, bountyId: string) => void;
   completeQuest: (playerId: string) => void;
+  completeLocationObjective: (playerId: string, objectiveId: string) => void;
   clearDungeonFloor: (playerId: string, floorId: number) => void;
   applyRareDrop: (playerId: string, dropId: string) => void;
   cureSickness: (playerId: string) => void;
@@ -438,6 +439,13 @@ function handleCompleteQuest(player: Player, action: AIAction, store: StoreActio
   return true;
 }
 
+function handleCompleteLocationObjective(player: Player, action: AIAction, store: StoreActions): boolean {
+  const objectiveId = action.details?.objectiveId as string;
+  if (!objectiveId || !player.activeQuest) return false;
+  store.completeLocationObjective(player.id, objectiveId);
+  return true;
+}
+
 // ─── Dungeon ────────────────────────────────────────────────────────────
 
 /** Validate that the player can attempt a dungeon floor. Returns false if blocked. */
@@ -655,6 +663,7 @@ const ACTION_HANDLERS: Record<AIActionType, ActionHandler> = {
   'take-chain-quest': handleTakeChainQuest,
   'take-bounty': handleTakeBounty,
   'complete-quest': handleCompleteQuest,
+  'complete-location-objective': handleCompleteLocationObjective,
   'explore-dungeon': handleExploreDungeon,
   'cure-sickness': handleCureSickness,
   'take-loan': handleTakeLoan,

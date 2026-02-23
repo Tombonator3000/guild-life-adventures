@@ -3,11 +3,13 @@
  *
  * Generates actions for guild pass purchase, equipment upgrades,
  * quest management (B1 chains, B2 bounties), and dungeon exploration.
+ * LOQ: AI now completes location objectives before heading to Guild Hall.
  */
 
 import { getFloor, getFloorTimeCost } from '@/data/dungeon';
 import { FESTIVALS } from '@/data/festivals';
 import { calculateCombatStats, ARMORY_ITEMS, getTemperCost, TEMPER_TIME, EQUIPMENT_REPAIR_TIME, getEquipmentRepairCost, getItem } from '@/data/items';
+import { getQuestLocationObjectives, allLocationObjectivesDone } from '@/data/quests';
 import type { AIAction } from '../types';
 import {
   getBestDungeonFloor,
@@ -191,20 +193,51 @@ export function generateQuestDungeonActions(ctx: ActionContext): AIAction[] {
     }
   }
 
-  // Complete active quest (handles regular, chain, and bounty)
-  if (player.activeQuest && currentLocation === 'guild-hall') {
-    actions.push({
-      type: 'complete-quest',
-      priority: 70,
-      description: 'Complete active quest',
-    });
-  } else if (player.activeQuest && player.timeRemaining > moveCost('guild-hall') + 2) {
-    actions.push({
-      type: 'move',
-      location: 'guild-hall',
-      priority: 65,
-      description: 'Travel to guild hall to complete quest',
-    });
+  // Complete active quest — LOQ: must complete location objectives first
+  if (player.activeQuest) {
+    const objectives = getQuestLocationObjectives(player.activeQuest, player.questChainProgress);
+    const progress = player.questLocationProgress ?? [];
+    const allDone = allLocationObjectivesDone(player.activeQuest, progress, player.questChainProgress);
+
+    if (!allDone) {
+      // Find next pending objective and travel to / complete it
+      const nextObjective = objectives.find(o => !progress.includes(o.id));
+      if (nextObjective) {
+        if (currentLocation === nextObjective.locationId) {
+          // At objective location — complete it
+          actions.push({
+            type: 'complete-location-objective',
+            priority: 72,
+            description: `Complete quest objective: ${nextObjective.actionText}`,
+            details: { objectiveId: nextObjective.id },
+          });
+        } else if (player.timeRemaining > moveCost(nextObjective.locationId) + 2) {
+          // Travel to objective location
+          actions.push({
+            type: 'move',
+            location: nextObjective.locationId,
+            priority: 68,
+            description: `Travel to ${nextObjective.locationId} for quest objective`,
+          });
+        }
+      }
+    } else {
+      // All objectives done — go complete at Guild Hall
+      if (currentLocation === 'guild-hall') {
+        actions.push({
+          type: 'complete-quest',
+          priority: 70,
+          description: 'Complete active quest',
+        });
+      } else if (player.timeRemaining > moveCost('guild-hall') + 2) {
+        actions.push({
+          type: 'move',
+          location: 'guild-hall',
+          priority: 65,
+          description: 'Travel to guild hall to complete quest',
+        });
+      }
+    }
   }
 
   // Explore dungeon (H9: respect attempts limit and health, cave gating)
