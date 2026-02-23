@@ -5,6 +5,67 @@
 
 ---
 
+## 2026-02-23 — FEATURE: Location-Based Quest Objectives (LOQ System)
+
+### Timestamp: 2026-02-23
+
+### Feature Summary
+
+Quests are now more interactive and engaging: 7 existing quests converted to require players to physically travel to specific board locations to complete intermediate objectives before handing in at the Guild Hall. This makes map navigation more purposeful and increases player agency.
+
+### Motivation
+
+Previously all quests were accepted and completed at the Guild Hall with no physical travel requirement for quest completion. The board's ring layout and location variety weren't being leveraged by the quest system.
+
+### Implementation
+
+**New data model — `LocationObjective` interface in `src/data/quests.ts`:**
+```typescript
+interface LocationObjective {
+  id: string;               // unique ID for progress tracking
+  locationId: LocationId;   // board location to travel to
+  actionText: string;       // button text e.g. "Gather Herbs"
+  description: string;      // shown in LocationPanel when at this location
+  completionText: string;   // toast flavour text on completion
+}
+```
+
+**Player state addition (`src/types/game.types.ts`):**
+```typescript
+questLocationProgress: string[];  // completed objective IDs for active quest
+```
+
+**Store action — `completeLocationObjective(playerId, objectiveId)`:**
+- Checks player is at the correct location
+- Appends objectiveId to `questLocationProgress`
+- `completeQuest` is blocked until all objectives done (`allLocationObjectivesDone()`)
+- `abandonQuest` clears `questLocationProgress`
+
+**7 Quests converted:**
+| Quest | Rank | Locations |
+|-------|------|-----------|
+| Herb Gathering | E | Cave → Enchanter |
+| Lost Cat | E | Rusty Tankard → Shadow Market → Noble Heights |
+| Package Delivery | E | Forge → Academy |
+| Escort Merchant | D | Rusty Tankard → Bank |
+| Courier Run | D | Bank → Academy |
+| Bandit Hunt | C | Shadow Market → Cave |
+| Lost Artifact | C | Fence → Academy |
+| Curse Investigation | C | Graveyard → Enchanter |
+
+**UI changes:**
+- `LocationZone.tsx`: golden pulsing glow (`animate-quest-pulse`) on pending objective locations; green checkmark when done
+- `LocationPanel.tsx`: amber banner with action button when player is at an objective location; button fires `completeLocationObjective`
+- `QuestPanel.tsx`: objectives checklist (✓ done / ○ pending) with location hints; Complete Quest disabled until all objectives met
+- `GameBoard.tsx`: computes `isQuestObjective` / `isQuestObjectiveDone` per location and passes to `LocationZone`
+- `tailwind.config.ts`: new `quest-pulse` keyframe animation
+
+**Files changed:** `src/types/game.types.ts`, `src/data/quests.ts`, `src/store/helpers/questHelpers.ts`, `src/store/storeTypes.ts`, `src/store/gameStore.ts`, `src/components/game/LocationZone.tsx`, `src/components/game/GameBoard.tsx`, `src/components/game/LocationPanel.tsx`, `src/components/game/locationTabs.tsx`, `src/components/game/QuestPanel.tsx`, `tailwind.config.ts`
+
+**Commit:** `6bf3dd1` on branch `claude/implement-quest-system-UyyT3`
+
+---
+
 ## 2026-02-23 — BUG FIX: Duplicate Tutorial Systems / Interactive Guide Showing When Tutorial Off
 
 ### Timestamp: 2026-02-23
