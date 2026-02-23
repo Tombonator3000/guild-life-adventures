@@ -7,7 +7,7 @@ import { CharacterPortrait } from './CharacterPortrait';
 
 export function ResourcePanel() {
   const player = useCurrentPlayer();
-  const { endTurn, useRemainingTime, goalSettings, week } = useGameStore();
+  const { endTurn, spendRemainingTime, goalSettings, week } = useGameStore();
 
   if (!player) return null;
 
@@ -44,7 +44,7 @@ export function ResourcePanel() {
           </button>
           {player.timeRemaining > 0 && (
             <button
-              onClick={() => useRemainingTime(player.id)}
+              onClick={() => spendRemainingTime(player.id)}
               className="text-[10px] py-0.5 px-2 rounded bg-amber-900/40 hover:bg-amber-900/60 text-amber-200 transition-colors"
               title={`Rest for ${player.timeRemaining}h and end turn`}
             >

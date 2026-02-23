@@ -632,7 +632,7 @@ export const RARE_DROP_ITEMS: Item[] = [
     id: 'dragon-scale-shield',
     name: 'Dragon Scale Shield',
     category: 'shield',
-    basePrice: 0,
+    basePrice: 800,
     description: 'A shield forged from actual dragon scales. The dragon wants it back. +20 Defense, +20% Block.',
     isDurable: true,
     isUnstealable: true,

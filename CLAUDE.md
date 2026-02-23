@@ -102,6 +102,9 @@ Junior Academy → Scholar Path → Loremaster / Commerce Degree
 - `applyDependabilityDecay` (weekEndHelpers.ts): must check `clothingCondition <= 0` (naked) BEFORE the clothing threshold check. Jobs with `requiredClothing: 'none'` have threshold=0, so `0 < 0` is false and naked players are not exempted — but `workShift` blocks them via `<= 0`. Keep both checks in sync.
 - `processEndOfTurnSpoilage` (turnHelpers.ts): only clears `freshFood = 0` when fresh food spoils. Do NOT reduce `foodLevel` — that was causing existing regular food to be halved when fresh food spoiled.
 - Employment check order: `processEmployment` MUST run BEFORE `resetWeeklyFlags` in `processPlayerWeekEnd` so `workedThisTurn` is still set when checking for the dependability penalty.
+- Zustand store actions MUST NOT start with `use` — ESLint's `react-hooks/rules-of-hooks` treats any `use`-prefixed function as a React hook and will error if it's called inside a callback. Use verbs like `spend`, `apply`, `process`, `buy` instead (e.g., `spendRemainingTime` not `useRemainingTime`).
+- Rare drop items (RARE_DROP_ITEMS in items.ts) must have a non-zero `basePrice` for salvage/temper to work. Items with `basePrice: 0` return 0g from `getSalvageValue()` (no Math.max floor). Use a representative market value (e.g., 800g for legendary gear).
+- `activeCurses` on Player should always be accessed with optional chaining (`player.activeCurses?.find(...)`) in UI code to guard against old saves that may not have this field initialized.
 
 ## Testing
 

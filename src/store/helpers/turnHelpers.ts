@@ -68,7 +68,7 @@ function processEndOfTurnSpoilage(set: SetFn, get: GetFn, playerId: string): voi
   // Fresh food has gone bad — only freshFood is cleared, regular foodLevel is unaffected.
   // Buying fresh food without a Preservation Box spoils the fresh food, not the player's
   // existing bread/cheese stock.
-  const freshFoodLost = player.freshFood; // All unpreserved fresh food spoils
+  const freshFoodLost = freshPlayer.freshFood; // All unpreserved fresh food spoils
 
   set((state) => ({
     players: state.players.map(p => {

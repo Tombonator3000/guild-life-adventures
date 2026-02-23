@@ -62,6 +62,7 @@ function tryEarnDegreePlan(
       const firstDegree = chain[0];
       return {
         type: 'earn-degree',
+        playerId: player.id,
         targetId: firstDegree.id,
         description: `Earn ${firstDegree.name} → unlock ${best.unlocksJobId} chain`,
         startTurn: week,
@@ -75,6 +76,7 @@ function tryEarnDegreePlan(
   // Single degree commitment
   return {
     type: 'earn-degree',
+    playerId: player.id,
     targetId: best.degreeId,
     description: `Earn ${best.degreeName} (ROI score: ${Math.round(best.roiScore)})`,
     startTurn: week,
@@ -100,6 +102,7 @@ function trySaveHousingPlan(
     // Can afford now — commit to actually doing it (work + move)
     return {
       type: 'save-housing',
+      playerId: player.id,
       description: 'Move to Noble Heights (can afford now)',
       startTurn: week,
       maxDuration: 1,
@@ -112,6 +115,7 @@ function trySaveHousingPlan(
   if (goldNeeded < 200 && player.savings + player.gold > nobleFirstMonth) {
     return {
       type: 'save-housing',
+      playerId: player.id,
       description: `Save ${goldNeeded}g more for Noble Heights`,
       startTurn: week,
       maxDuration: 2,
@@ -136,6 +140,7 @@ function tryDungeonRunPlan(
   if (progress.adventure && progress.adventure.target > 0 && progress.adventure.progress < 0.7) {
     return {
       type: 'dungeon-run',
+      playerId: player.id,
       description: 'Dungeon run for adventure progress',
       startTurn: week,
       maxDuration: settings.planningDepth >= 3 ? 3 : 2,
@@ -160,6 +165,7 @@ function tryCareerPushPlan(
 
   return {
     type: 'career-push',
+    playerId: player.id,
     description: 'Career push: work + quests for dependability',
     startTurn: week,
     maxDuration: settings.planningDepth >= 3 ? 3 : 2,
@@ -182,6 +188,7 @@ function tryWealthSprintPlan(
 
   return {
     type: 'wealth-sprint',
+    playerId: player.id,
     description: `Wealth sprint (${Math.round(progress.wealth.progress * 100)}% complete)`,
     startTurn: week,
     maxDuration: 2,
@@ -250,6 +257,9 @@ export function isCommitmentValid(
   progress: GoalProgress,
   week: number,
 ): boolean {
+  // Wrong player — discard plan when a different AI's turn starts
+  if (plan.playerId !== player.id) return false;
+
   // Expired
   if (week - plan.startTurn >= plan.maxDuration) return false;
 

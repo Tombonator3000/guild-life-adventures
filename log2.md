@@ -6354,3 +6354,60 @@ if (p.clothingCondition <= 0) return; // Naken → kan ikke jobbe, ingen straff
 - Bug 2: Kjøper brød/ost → mat reduseres ikke med 50% → sulter ikke etter matinnkjøp
 - Bug 3: Ferskmat råtner → kun freshFood fjernes, ikke eksisterende foodLevel
 - Branch: `claude/fix-bug-hu-u3Cfh` klar for push
+
+---
+
+## 2026-02-23 — Bug Hunt (claude/fix-bug-hu-K9bBi)
+
+Systematisk bug-jakt med 4 parallelle agenter + manuell gjennomgang.
+
+### Metode
+- Baseline: 332 tester bestått, 37 lint-feil
+- Agent 1: Store/turn-logikk (weekEndHelpers, turnHelpers, workEducationHelpers)
+- Agent 2: Data-filer (jobs, education, items, locations, events, quests)
+- Agent 3: AI/multiplayer (actionGenerator, actionExecutor, useGrimwaldAI)
+- Agent 4: UI-komponenter (10 filer, hook-ordering-sjekk)
+
+### Bugs funnet og fikset
+
+**1. `useRemainingTime` → `spendRemainingTime` (lint-feil: falsk hook-navn)**
+- `ResourcePanel.tsx` linje 47 brukte en Zustand-action som het `useRemainingTime`
+- ESLint sin `react-hooks/rules-of-hooks` flagget det som en hook kalt inne i callback
+- Løsning: Omdøpt til `spendRemainingTime` i storeTypes.ts, workEducationHelpers.ts og ResourcePanel.tsx
+
+**2. `npcs.ts` linje 119: Unødvendig escape i streng**
+- `\"` inne i enkelt-anførselstegn er unødvendig og ga lint-feil `no-useless-escape`
+- Løsning: Fjernet backslash: `\"` → `"`
+
+**3. `useOnlineGame.ts` linjer 292 og 382: Kontroll-tegn regex**
+- `/[\x00-\x1F\x7F]/g` for navnesanering flagget av `no-control-regex`
+- Koden er korrekt (sanering av spillernavn i P2P), men trengte eslint-disable
+- Løsning: Lagt til `// eslint-disable-next-line no-control-regex`
+
+**4. `tailwind.config.ts` linje 154: `require()` → ESM import**
+- `plugins: [require("tailwindcss-animate")]` ga `@typescript-eslint/no-require-imports`
+- Løsning: Konvertert til `import tailwindcssAnimate from "tailwindcss-animate"` øverst
+
+**5. `dragon-scale-shield` basePrice: 0 → 800**
+- Sjeldent dungeon-drop-item hadde basePrice: 0
+- `getSalvageValue()` regner `basePrice * 0.6 * priceModifier` = 0g salvage (umulig å selge)
+- Løsning: Satt `basePrice: 800` → 480g salvage-verdi (rimelig for legendary-gjenstand)
+
+**6. `locationTabs.tsx` linje 746: Manglende null-sikkerhet på `activeCurses`**
+- `ctx.player.activeCurses.find(...)` ville krasje hvis `activeCurses` var undefined (gamle saves)
+- Løsning: Lagt til optional chaining: `ctx.player.activeCurses?.find(...)`
+
+**7. `workEducationHelpers.ts` linjer 165-166: Variabel-blanding `p` vs `player`**
+- `workShift` brukte ytre `p` (pre-mutation snapshot) i stedet for indre `player` (map-variabel)
+- Funksjonelt identisk (samme objekt), men forvirret og brøt mønsteret fra linje 162-164
+- Løsning: `p.maxDependability/p.dependability/p.maxExperience/p.experience` → `player.*`
+
+**8. `turnHelpers.ts` linje 71: Foreldet referanse i melding**
+- `freshFoodLost = player.freshFood` brukte gammel `player`-referanse (linje 46)
+- `freshPlayer` fra linje 58 er den korrekte post-set()-referansen
+- Løsning: Byttet til `freshPlayer.freshFood` (funksjonelt uendret, men korrekt koding)
+
+### Verifisering
+- 332/332 tester bestått ✓
+- Lint-feil redusert: 37 → 27 errors (resterende er `no-explicit-any` og shadcn-boilerplate)
+- Branch: `claude/fix-bug-hu-K9bBi`

@@ -162,8 +162,8 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
               gold: player.gold + Math.max(0, earnings),
               timeRemaining: Math.max(0, player.timeRemaining - hours),
               happiness: Math.max(0, player.happiness - happinessPenalty),
-              dependability: Math.min(p.maxDependability, p.dependability + 1),
-              experience: Math.min(p.maxExperience, p.experience + Math.ceil(hours / 2)),
+              dependability: Math.min(player.maxDependability, player.dependability + 1),
+              experience: Math.min(player.maxExperience, player.experience + Math.ceil(hours / 2)),
               shiftsWorkedSinceHire: (player.shiftsWorkedSinceHire || 0) + 1,
               totalShiftsWorked: (player.totalShiftsWorked || 0) + 1,
               workedThisTurn: true,
@@ -240,7 +240,7 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
       }
     },
 
-    useRemainingTime: (playerId: string) => {
+    spendRemainingTime: (playerId: string) => {
       set((state) => {
         const p = state.players.find(pl => pl.id === playerId);
         if (!p || p.timeRemaining <= 0) return {};

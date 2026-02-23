@@ -293,3 +293,70 @@ Previous "definitive fix" only applied self-destroying SW to GitHub Pages. On Lo
 | **Status** | FIXED (2026-02-16) |
 | **Root cause** | 9+ independent event systems could all trigger in the same week. No cap on random events per week. High individual probabilities compounded. |
 | **Fix** | (1) Added 20% gate on location events, 30% gate on weekly theft. (2) Split deterministic/random processors. (3) Max 1 random event per week per player (theft OR sickness, not both). |
+
+---
+
+## BUG-008: `useRemainingTime` Flagged as Hook Rule Violation (2026-02-23)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | Medium (lint error blocks CI) |
+| **Status** | FIXED (2026-02-23) |
+| **Root cause** | Zustand store action named `useRemainingTime` in `workEducationHelpers.ts`. ESLint's `react-hooks/rules-of-hooks` treats any function starting with `use` as a React hook. Using it in an `onClick` callback (`() => useRemainingTime(player.id)`) triggered the lint error "React Hook cannot be called inside a callback". |
+| **Fix** | Renamed to `spendRemainingTime` in `storeTypes.ts`, `workEducationHelpers.ts`, and `ResourcePanel.tsx`. |
+
+---
+
+## BUG-009: Dragon Scale Shield Unsalvageable (basePrice: 0) (2026-02-23)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | Low-Medium |
+| **Status** | FIXED (2026-02-23) |
+| **Root cause** | `dragon-scale-shield` in `RARE_DROP_ITEMS` had `basePrice: 0` (correct for a dungeon drop with no purchase price). But `getSalvageValue()` computes `Math.round(item.basePrice * 0.6 * priceModifier)` → 0g. Same for `getTemperCost()` which uses `Math.max(30, ...)` (floor saves it), but salvage is permanently 0. |
+| **Fix** | Set `basePrice: 800` → salvage value 480g (reasonable for a legendary rare drop). |
+
+---
+
+## BUG-010: `activeCurses?.find()` Missing Optional Chain (2026-02-23)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | Medium (crash risk on old saves) |
+| **Status** | FIXED (2026-02-23) |
+| **Root cause** | `locationTabs.tsx` line 746: `ctx.player.activeCurses.find(...)` would crash if `activeCurses` is undefined on saves pre-dating the curses feature. TypeScript types it as non-optional, but save migration doesn't guarantee it's initialized. |
+| **Fix** | Changed to `ctx.player.activeCurses?.find(...)` for defensive null safety. |
+
+---
+
+## BUG-011: Variable Shadowing in workShift (p vs player) (2026-02-23)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | Low (code correctness, not runtime bug) |
+| **Status** | FIXED (2026-02-23) |
+| **Root cause** | `workEducationHelpers.ts` `workShift` used outer `p` (pre-mutation snapshot from `state.players.find()`) on lines 165-166 for `dependability` and `experience` updates, while lines 162-164 and 167+ all correctly used inner `player` (the `state.players.map()` iteration variable). Both variables point to the same player object so values were identical, but the mixing was confusing and inconsistent. |
+| **Fix** | Changed `p.maxDependability`, `p.dependability`, `p.maxExperience`, `p.experience` to `player.*` on lines 165-166. |
+
+---
+
+## BUG-012: CommitmentPlan Shared Across AI Players (2026-02-23)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | Medium (incorrect AI behavior in multi-AI games) |
+| **Status** | FIXED (2026-02-23) |
+| **Root cause** | `useGrimwaldAI` is a single hook instance shared by all AI players. The `commitmentPlanRef` is one ref holding one `CommitmentPlan`. `CommitmentPlan` had no `playerId` field, and `isCommitmentValid()` never checked player identity. When AI Player A finished their turn and AI Player B's turn started, Player B would inherit Player A's commitment plan. If the plan was still "valid" under Player B's game state (e.g., same degree not yet earned), Player B would follow it for up to `maxDuration` turns instead of generating their own plan. |
+| **Fix** | Added `playerId: string` to the `CommitmentPlan` interface in `types.ts`. All 7 plan creation points in `commitmentPlan.ts` now include `playerId: player.id`. `isCommitmentValid()` now returns `false` immediately if `plan.playerId !== player.id`, ensuring each AI player always generates their own commitment plan. Updated 6 test plan objects in `newSystems.test.ts` with `playerId`. |
+
+---
+
+## BUG-013: failedActionsRef Blocks Re-attempt After State Change (2026-02-23, KNOWN)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | Low (AI suboptimal play, not a crash) |
+| **Status** | KNOWN — not fixed (complex to solve safely) |
+| **Root cause** | `useGrimwaldAI.ts`: When an AI action fails (e.g. "buy food" fails because gold < price), the action key is added to `failedActionsRef` to prevent infinite retry loops. But if the AI later earns enough gold during the same turn, the "buy food" action remains blocked for the rest of the turn — the ref is only cleared at turn start. The failure reason was transient but the block is permanent for the turn. |
+| **Impact** | AI may fail to buy food/essentials when gold was the issue, potentially starving despite being able to afford it later in the turn. |
+| **Non-fix reason** | The failedActionsRef exists to prevent infinite retry loops. A proper fix requires tracking *why* an action failed to know when to retry — a significant refactor of AI action execution. Mitigated by: turns are 1 week, most actions get retried next turn, and starvation is handled by the weekly food check. |
