@@ -320,7 +320,7 @@ export function GameBoard() {
               );
 
               // LOQ: Quest objective markers
-              const questObjectives = getQuestLocationObjectives(currentPlayer?.activeQuest ?? null);
+              const questObjectives = getQuestLocationObjectives(currentPlayer?.activeQuest ?? null, currentPlayer?.questChainProgress);
               const questProgress = currentPlayer?.questLocationProgress ?? [];
               const objForLocation = questObjectives.find(o => o.locationId === location.id);
               const isQuestObjective = !!objForLocation && !questProgress.includes(objForLocation.id);

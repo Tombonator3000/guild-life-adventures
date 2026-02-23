@@ -101,6 +101,22 @@ export const QUESTS: Quest[] = [
     timeRequired: 5,
     healthRisk: 5,
     happinessReward: 2,
+    locationObjectives: [
+      {
+        id: 'rat-ext-tavern',
+        locationId: 'rusty-tankard',
+        actionText: 'Investigate the Cellar',
+        description: 'Descend into the tavern cellar to assess the rat situation.',
+        completionText: 'The cellar is worse than expected. The rats have fortified positions. One appears to be wearing a tiny helmet. This is organised resistance.',
+      },
+      {
+        id: 'rat-ext-store',
+        locationId: 'general-store',
+        actionText: 'Buy Rat Traps',
+        description: 'Purchase specialised rat traps from the General Store.',
+        completionText: 'You acquire the General Store\'s finest rat traps. The merchant throws in a free cheese sample. "For bait," he says. You eat it anyway.',
+      },
+    ],
   },
   {
     id: 'package-delivery',
@@ -255,6 +271,22 @@ export const QUESTS: Quest[] = [
     timeRequired: 6,
     healthRisk: 5,
     happinessReward: 2,
+    locationObjectives: [
+      {
+        id: 'guard-duty-armory',
+        locationId: 'armory',
+        actionText: 'Collect Guard Equipment',
+        description: 'Pick up your guard-issue lantern and halberd from the Armory.',
+        completionText: 'The armourer hands you a dented lantern and a halberd that\'s seen better decades. "Standard issue," he says. Standards are low.',
+      },
+      {
+        id: 'guard-duty-gate',
+        locationId: 'landlord',
+        actionText: 'Report for Duty',
+        description: 'Report to the city gate near the Landlord\'s Office for your night shift.',
+        completionText: 'You stand watch for eight hours. A fox passes by. A drunk argues with a wall. The wall wins. Shift complete.',
+      },
+    ],
   },
   {
     id: 'courier-run',
@@ -406,6 +438,29 @@ export const QUESTS: Quest[] = [
     healthRisk: 35,
     happinessReward: 6,
     requiredEducation: { path: 'fighter', level: 2 },
+    locationObjectives: [
+      {
+        id: 'monster-slay-tavern',
+        locationId: 'rusty-tankard',
+        actionText: 'Interview Witnesses',
+        description: 'Talk to the frightened farmers at the tavern about the beast\'s habits.',
+        completionText: 'Three farmers describe the beast. One says "wolf." Another says "bear." The third says "Steve." His name is Steve, apparently. Now you know.',
+      },
+      {
+        id: 'monster-slay-armory',
+        locationId: 'armory',
+        actionText: 'Prepare Hunting Gear',
+        description: 'Sharpen your weapons and stock up on supplies for the hunt.',
+        completionText: 'The armourer sharpens your blade and sells you a "monster-repellent salve." It smells like garlic. It works on monsters and social situations alike.',
+      },
+      {
+        id: 'monster-slay-cave',
+        locationId: 'cave',
+        actionText: 'Track the Beast',
+        description: 'Follow the beast\'s tracks to its lair in the caves.',
+        completionText: 'You find the beast\'s lair. Steve is sleeping. Steve is enormous. Steve wakes up grumpy. The fight is brief but educational.',
+      },
+    ],
   },
   {
     id: 'dungeon-dive',
@@ -423,6 +478,29 @@ export const QUESTS: Quest[] = [
     healthRisk: 30,
     happinessReward: 7,
     requiresDungeonFloor: 1,
+    locationObjectives: [
+      {
+        id: 'dungeon-dive-guild',
+        locationId: 'guild-hall',
+        actionText: 'Get Expedition Orders',
+        description: 'Receive your dungeon expedition briefing from the Guild.',
+        completionText: 'The guild master hands you a map. "It\'s outdated," he admits. "But the dungeon doesn\'t move." You hope he\'s right.',
+      },
+      {
+        id: 'dungeon-dive-enchanter',
+        locationId: 'enchanter',
+        actionText: 'Buy Protection Scrolls',
+        description: 'Stock up on protective enchantments before descending.',
+        completionText: 'The Enchanter sells you a scroll of protection. "Mostly protection," she corrects. "Some protection. A little. Good luck."',
+      },
+      {
+        id: 'dungeon-dive-cave',
+        locationId: 'cave',
+        actionText: 'Enter the Dungeon',
+        description: 'Descend into the dungeon and prove your prowess.',
+        completionText: 'You emerge from the dungeon battered but triumphant. Your "protection" scroll turned out to be a grocery list. Still survived.',
+      },
+    ],
   },
   {
     id: 'exorcism',
@@ -440,6 +518,22 @@ export const QUESTS: Quest[] = [
     healthRisk: 25,
     happinessReward: 5,
     requiredEducation: { path: 'priest', level: 2 },
+    locationObjectives: [
+      {
+        id: 'exorcism-enchanter',
+        locationId: 'enchanter',
+        actionText: 'Prepare Holy Wards',
+        description: 'Acquire sanctified wards and incense from the Enchanter.',
+        completionText: 'The Enchanter prepares your exorcism kit. "I included extra candles," she says. "The spirits hate the lavender ones. Personally, I find that relatable."',
+      },
+      {
+        id: 'exorcism-graveyard',
+        locationId: 'graveyard',
+        actionText: 'Consecrate the Grounds',
+        description: 'Perform a consecration ritual at the graveyard to weaken the spirits.',
+        completionText: 'You consecrate the grounds with considerable chanting and incense. The spirits are weakened. The neighbours are annoyed. Spiritual warfare is noisy.',
+      },
+    ],
   },
 
   // A-Rank Quests — elite rewards
@@ -459,6 +553,29 @@ export const QUESTS: Quest[] = [
     healthRisk: 40,
     happinessReward: 9,
     requiredEducation: { path: 'fighter', level: 2 },
+    locationObjectives: [
+      {
+        id: 'dragon-inv-academy',
+        locationId: 'academy',
+        actionText: 'Research Dragon Lore',
+        description: 'Study ancient dragon texts at the Academy before heading into the mountains.',
+        completionText: 'The Academy\'s dragon section is surprisingly extensive. You learn that dragons are "large, angry, and fire-adjacent." Groundbreaking scholarship.',
+      },
+      {
+        id: 'dragon-inv-armory',
+        locationId: 'armory',
+        actionText: 'Acquire Fire-Resistant Gear',
+        description: 'Purchase fire-resistant armour modifications at the Armory.',
+        completionText: 'The armourer coats your gear in fire-retardant paste. "Tested on actual fire," he says. "Not dragon fire, mind you. Regular fire. Should be fine. Probably."',
+      },
+      {
+        id: 'dragon-inv-cave',
+        locationId: 'cave',
+        actionText: 'Scout the Dragon\'s Territory',
+        description: 'Enter the mountain caves to find evidence of dragon activity.',
+        completionText: 'You find enormous claw marks, scorched rock, and a pile of melted armour belonging to previous investigators. The investigation is going well.',
+      },
+    ],
   },
   {
     id: 'demon-cult',
@@ -475,6 +592,29 @@ export const QUESTS: Quest[] = [
     timeRequired: 22,
     healthRisk: 50,
     happinessReward: 10,
+    locationObjectives: [
+      {
+        id: 'demon-cult-shadow',
+        locationId: 'shadow-market',
+        actionText: 'Find a Cult Informant',
+        description: 'Bribe someone at the Shadow Market to reveal the cult\'s meeting place.',
+        completionText: 'A hooded figure whispers the cult\'s location for an unreasonable sum of gold. "They meet beneath the old chapel," he says. "Wear something dark."',
+      },
+      {
+        id: 'demon-cult-graveyard',
+        locationId: 'graveyard',
+        actionText: 'Disrupt the Summoning Circle',
+        description: 'Find and destroy the summoning circle hidden among the graves.',
+        completionText: 'You destroy the outer summoning circle. The cult won\'t be happy. The thing they were summoning is probably relieved.',
+      },
+      {
+        id: 'demon-cult-enchanter',
+        locationId: 'enchanter',
+        actionText: 'Create Banishment Seals',
+        description: 'Have the Enchanter craft banishment seals for the final confrontation.',
+        completionText: 'The Enchanter creates three banishment seals. "Use them wisely," she says. "They were expensive to make." She charges you anyway.',
+      },
+    ],
   },
   {
     id: 'ancient-evil',
@@ -492,6 +632,29 @@ export const QUESTS: Quest[] = [
     healthRisk: 45,
     happinessReward: 9,
     requiredEducation: { path: 'mage', level: 2 },
+    locationObjectives: [
+      {
+        id: 'ancient-evil-academy',
+        locationId: 'academy',
+        actionText: 'Study Sealing Rituals',
+        description: 'Research ancient sealing magic at the Academy archives.',
+        completionText: 'The Academy archives contain three relevant texts. Two are helpful. One tries to bite you. Standard academic experience.',
+      },
+      {
+        id: 'ancient-evil-graveyard',
+        locationId: 'graveyard',
+        actionText: 'Locate the Tomb',
+        description: 'Find the cracking tomb among the oldest graves.',
+        completionText: 'The tomb pulses with dark energy. The ground trembles. A nearby headstone falls over apologetically. This is definitely the one.',
+      },
+      {
+        id: 'ancient-evil-enchanter',
+        locationId: 'enchanter',
+        actionText: 'Forge the Seal',
+        description: 'Have the Enchanter forge a new magical seal using the ancient formula.',
+        completionText: 'The Enchanter forges the seal with visible concern. "This should hold for another 3,000 years," she says. "Should." You notice the emphasis.',
+      },
+    ],
   },
 
   // S-Rank Quests (legendary) — massive rewards for top-tier adventurers
@@ -511,6 +674,29 @@ export const QUESTS: Quest[] = [
     healthRisk: 60,
     happinessReward: 15,
     requiresAllDungeonFloors: true,
+    locationObjectives: [
+      {
+        id: 'deep-clear-forge',
+        locationId: 'forge',
+        actionText: 'Commission Expedition Gear',
+        description: 'Have the master smith forge specialised deep-dungeon equipment.',
+        completionText: 'The smith forges gear designed for extended dungeon survival. "It\'s my finest work," he says. "Try to bring it back in one piece. Or at all."',
+      },
+      {
+        id: 'deep-clear-enchanter',
+        locationId: 'enchanter',
+        actionText: 'Enchant Your Equipment',
+        description: 'Layer protective enchantments onto your gear for the deep floors.',
+        completionText: 'Your equipment hums with arcane energy. The Enchanter warns: "The enchantments will fade. The things down there won\'t." Encouraging.',
+      },
+      {
+        id: 'deep-clear-cave',
+        locationId: 'cave',
+        actionText: 'Begin the Deep Descent',
+        description: 'Enter the dungeon for the ultimate challenge — all six floors.',
+        completionText: 'Six floors. Six bosses. One you. The legends will speak of this day. Assuming you survive to tell anyone.',
+      },
+    ],
   },
   {
     id: 'dragon-slayer',
@@ -528,6 +714,36 @@ export const QUESTS: Quest[] = [
     healthRisk: 70,
     happinessReward: 20,
     requiredEducation: { path: 'fighter', level: 2 },
+    locationObjectives: [
+      {
+        id: 'dragon-slay-academy',
+        locationId: 'academy',
+        actionText: 'Study Dragon Weaknesses',
+        description: 'Research the ancient wyrm\'s vulnerabilities in the Academy\'s restricted section.',
+        completionText: 'The restricted section reveals the dragon\'s weakness: its left knee. Also its ego. The ego is a bigger target.',
+      },
+      {
+        id: 'dragon-slay-forge',
+        locationId: 'forge',
+        actionText: 'Forge a Dragon-Slaying Blade',
+        description: 'Commission the master smith to forge a weapon worthy of dragonslaying.',
+        completionText: 'The smith spends three days on the blade. "It\'ll cut through dragon scale," he promises. "I think. I\'ve never actually tried. Nobody has. And returned."',
+      },
+      {
+        id: 'dragon-slay-armory',
+        locationId: 'armory',
+        actionText: 'Assemble Dragon-Scale Armour',
+        description: 'Piece together the best armour the Armory can provide for the fight.',
+        completionText: 'You\'re outfitted in the finest armour gold can buy. The armourer salutes you. "If you survive," he says, "I want that armour back." He\'s serious.',
+      },
+      {
+        id: 'dragon-slay-cave',
+        locationId: 'cave',
+        actionText: 'Face the Dragon',
+        description: 'Enter the dragon\'s mountain lair for the final confrontation.',
+        completionText: 'You stand before the dragon. It\'s bigger than advertised. It regards you with ancient, intelligent eyes. "Another one," it sighs. The fight begins.',
+      },
+    ],
   },
 ];
 
@@ -599,10 +815,21 @@ export function getQuest(id: string): Quest | undefined {
  * Returns the location objectives for the given active quest ID.
  * Returns [] for chain/bounty/nlchain quests (not location-based).
  */
-export function getQuestLocationObjectives(activeQuestId: string | null): LocationObjective[] {
+export function getQuestLocationObjectives(
+  activeQuestId: string | null,
+  chainProgress?: Record<string, number>,
+): LocationObjective[] {
   if (!activeQuestId) return [];
-  // Only regular quests support location objectives for now
-  if (activeQuestId.startsWith('chain:') || activeQuestId.startsWith('bounty:') || activeQuestId.startsWith('nlchain:')) return [];
+  // Chain quests: look up the current step's objectives
+  if (activeQuestId.startsWith('chain:')) {
+    const chainId = activeQuestId.replace('chain:', '');
+    const chain = getQuestChain(chainId);
+    if (!chain) return [];
+    const stepIndex = chainProgress?.[chainId] ?? 0;
+    const step = chain.steps[stepIndex];
+    return step?.locationObjectives ?? [];
+  }
+  if (activeQuestId.startsWith('bounty:') || activeQuestId.startsWith('nlchain:')) return [];
   const quest = getQuest(activeQuestId);
   return quest?.locationObjectives ?? [];
 }
@@ -611,8 +838,12 @@ export function getQuestLocationObjectives(activeQuestId: string | null): Locati
  * Returns true if all location objectives for the active quest are satisfied.
  * Quests without objectives are always "satisfied" (hand in at Guild Hall as before).
  */
-export function allLocationObjectivesDone(activeQuestId: string | null, questLocationProgress: string[]): boolean {
-  const objectives = getQuestLocationObjectives(activeQuestId);
+export function allLocationObjectivesDone(
+  activeQuestId: string | null,
+  questLocationProgress: string[],
+  chainProgress?: Record<string, number>,
+): boolean {
+  const objectives = getQuestLocationObjectives(activeQuestId, chainProgress);
   if (objectives.length === 0) return true;
   return objectives.every(obj => questLocationProgress.includes(obj.id));
 }
@@ -634,8 +865,9 @@ export interface QuestChainStep {
   happinessReward: number;
   requiredEducation?: { path: EducationPath; level: number };
   requiresDungeonFloor?: number;
+  /** Location objectives — player must visit locations before completing step */
+  locationObjectives?: LocationObjective[];
 }
-
 export interface QuestChain {
   id: string;
   name: string;
@@ -679,6 +911,22 @@ export const QUEST_CHAINS: QuestChain[] = [
         timeRequired: 10,
         healthRisk: 10,
         happinessReward: 4,
+        locationObjectives: [
+          {
+            id: 'dc1-tavern',
+            locationId: 'rusty-tankard',
+            actionText: 'Interview Witnesses',
+            description: 'Talk to tavern patrons who saw the mysterious fires.',
+            completionText: 'A drunken merchant describes the fire: "It came from above. With wings. And opinions." That narrows it down to dragons or pigeons.',
+          },
+          {
+            id: 'dc1-forge',
+            locationId: 'forge',
+            actionText: 'Analyze Scorch Marks',
+            description: 'Have the blacksmith examine residue from the burn marks.',
+            completionText: 'The smith sniffs the residue. "Dragon fire. Definitely. You can tell by the way it melts steel." He seems impressed rather than concerned.',
+          },
+        ],
       },
       {
         id: 'dragon-conspiracy-2',
@@ -695,6 +943,22 @@ export const QUEST_CHAINS: QuestChain[] = [
         healthRisk: 25,
         happinessReward: 6,
         requiredEducation: { path: 'fighter', level: 1 },
+        locationObjectives: [
+          {
+            id: 'dc2-shadow',
+            locationId: 'shadow-market',
+            actionText: 'Track the Smugglers',
+            description: 'Follow leads at the Shadow Market to find the weapon smuggling ring.',
+            completionText: 'A nervous fence confirms: dragon-forged blades are being sold through the docks. "Don\'t tell them I told you," he whispers. "They breathe fire."',
+          },
+          {
+            id: 'dc2-armory',
+            locationId: 'armory',
+            actionText: 'Examine Confiscated Weapons',
+            description: 'Inspect the seized dragon-forged weapons at the Armory.',
+            completionText: 'The weapons bear a maker\'s mark — a dragon claw. The armourer admits they\'re magnificent. "Beautiful craftsmanship. Terrible implications."',
+          },
+        ],
       },
       {
         id: 'dragon-conspiracy-3',
@@ -711,6 +975,22 @@ export const QUEST_CHAINS: QuestChain[] = [
         healthRisk: 45,
         happinessReward: 10,
         requiresDungeonFloor: 3,
+        locationObjectives: [
+          {
+            id: 'dc3-enchanter',
+            locationId: 'enchanter',
+            actionText: 'Acquire Fire Wards',
+            description: 'Purchase powerful fire protection from the Enchanter before storming the lair.',
+            completionText: 'The Enchanter layers three fire wards onto your gear. "This should handle dragon breath," she says. "Regular dragon breath. Not angry dragon breath. Good luck."',
+          },
+          {
+            id: 'dc3-cave',
+            locationId: 'cave',
+            actionText: 'Infiltrate the Mountain Lair',
+            description: 'Enter the mountain caves to reach the conspirators\' hidden base.',
+            completionText: 'Deep in the mountains, you find the lair. Three dragons sit around a table covered in plans. One wears reading glasses. The conspiracy is real. And oddly bureaucratic.',
+          },
+        ],
       },
     ],
   },
@@ -742,6 +1022,22 @@ export const QUEST_CHAINS: QuestChain[] = [
         healthRisk: 0,
         happinessReward: 3,
         requiredEducation: { path: 'mage', level: 1 },
+        locationObjectives: [
+          {
+            id: 'ss1-fence',
+            locationId: 'fence',
+            actionText: 'Buy the Journal',
+            description: 'The scholar\'s journal surfaced at the Fence. Acquire it before someone else does.',
+            completionText: 'The Fence sells you a battered journal for an outrageous price. "Academic memorabilia," he calls it. "Rare. Possibly cursed. No refunds."',
+          },
+          {
+            id: 'ss1-academy',
+            locationId: 'academy',
+            actionText: 'Decode the Cipher',
+            description: 'Use the Academy\'s cipher reference books to crack the journal\'s code.',
+            completionText: 'After hours of cross-referencing, the cipher breaks. The journal describes a hidden library and a "breach that must not open." Uplifting stuff.',
+          },
+        ],
       },
       {
         id: 'scholars-secret-2',
@@ -757,6 +1053,22 @@ export const QUEST_CHAINS: QuestChain[] = [
         timeRequired: 12,
         healthRisk: 15,
         happinessReward: 5,
+        locationObjectives: [
+          {
+            id: 'ss2-shadow',
+            locationId: 'shadow-market',
+            actionText: 'Find the Key',
+            description: 'A black market dealer has the key to the hidden library. Find her.',
+            completionText: 'A cloaked woman hands you an ornate key. "The library remembers its visitors," she warns. "Don\'t touch the blue books. Or the red ones. Or... just don\'t touch anything."',
+          },
+          {
+            id: 'ss2-academy',
+            locationId: 'academy',
+            actionText: 'Enter the Hidden Library',
+            description: 'Use the key to access the forbidden archive beneath the Academy.',
+            completionText: 'The hidden library is vast, dusty, and judgmental. A book falls from a shelf and lands open at your feet. "READ ME," it says, in handwritten ink. Libraries are pushy.',
+          },
+        ],
       },
       {
         id: 'scholars-secret-3',
@@ -773,6 +1085,22 @@ export const QUEST_CHAINS: QuestChain[] = [
         healthRisk: 30,
         happinessReward: 8,
         requiredEducation: { path: 'mage', level: 2 },
+        locationObjectives: [
+          {
+            id: 'ss3-enchanter',
+            locationId: 'enchanter',
+            actionText: 'Gather Ritual Components',
+            description: 'The Enchanter has the rare components needed for the sealing ritual.',
+            completionText: 'The Enchanter assembles the ritual components with visible unease. "These ingredients are forbidden for a reason," she says. "Several reasons. All of them on fire."',
+          },
+          {
+            id: 'ss3-graveyard',
+            locationId: 'graveyard',
+            actionText: 'Perform the Sealing',
+            description: 'The breach is in the oldest part of the graveyard. Seal it before it widens.',
+            completionText: 'The ritual is intense, loud, and slightly terrifying. The breach seals with a sound like reality hiccupping. The dead return to being dead. Normal service resumes.',
+          },
+        ],
       },
     ],
   },
