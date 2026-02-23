@@ -6601,3 +6601,30 @@ Systematisk bug-jakt med 4 parallelle agenter + manuell gjennomgang.
 - 332/332 tester bestått ✓
 - Lint-feil redusert: 37 → 27 errors (resterende er `no-explicit-any` og shadcn-boilerplate)
 - Branch: `claude/fix-bug-hu-K9bBi`
+
+---
+
+## 2026-02-23 23:45 UTC — FIX: Quest LOQ Integrity + Dead-End Bugs
+
+### Timestamp: 2026-02-23 23:45
+
+### Endringer
+
+1. **CRITICAL FIX: `lost-cat` quest dead-end** — Objective `lost-cat-home` pointed to `noble-heights` (home location), but `LocationPanel.tsx` returns `HomePanel` early so the quest banner never shows. Changed `locationId` to `landlord` with updated text.
+
+2. **HomePanel quest banner safety net** — Added quest objective banner rendering to `HomePanel.tsx` so future objectives at home locations are visible and completable. Same UI as `LocationPanel.tsx`.
+
+3. **LOQ integrity test suite** — Created `src/test/questLOQ.test.ts` with 15 tests:
+   - All locationIds valid board locations
+   - No objectives at home locations (dead-end prevention)
+   - No duplicate objective IDs
+   - Every quest and chain step has ≥1 LOQ
+   - Objective ID prefix convention
+   - `getQuestLocationObjectives` unit tests (regular, chain, bounty, nlchain)
+   - `allLocationObjectivesDone` unit tests (empty, partial, full, chain)
+
+### Filer endret
+- `src/data/quests.ts` — lost-cat objective: `noble-heights` → `landlord`
+- `src/components/game/HomePanel.tsx` — quest objective banner
+- `src/test/questLOQ.test.ts` — NEW: 15 LOQ integrity tests
+- `log2.md` — denne oppføringen
