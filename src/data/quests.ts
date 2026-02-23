@@ -829,7 +829,12 @@ export function getQuestLocationObjectives(
     const step = chain.steps[stepIndex];
     return step?.locationObjectives ?? [];
   }
-  if (activeQuestId.startsWith('bounty:') || activeQuestId.startsWith('nlchain:')) return [];
+  if (activeQuestId.startsWith('bounty:')) {
+    const bountyId = activeQuestId.replace('bounty:', '');
+    const bounty = getBounty(bountyId);
+    return bounty?.locationObjectives ?? [];
+  }
+  if (activeQuestId.startsWith('nlchain:')) return [];
   const quest = getQuest(activeQuestId);
   return quest?.locationObjectives ?? [];
 }
@@ -1179,18 +1184,101 @@ export interface Bounty {
   timeRequired: number;
   healthRisk: number;
   happinessReward: number;
+  /** Location objectives — player must visit locations before completing the bounty */
+  locationObjectives?: LocationObjective[];
 }
 
 const BOUNTY_POOL: Bounty[] = [
-  { id: 'bounty-rats', name: 'Cellar Rats', description: 'Clear rats from a merchant\'s cellar. Again. They always come back. It\'s basically a subscription service.', descriptionVariants: ['Clear rats from a merchant\'s cellar. Again. They always come back. It\'s basically a subscription service.', 'Rat extermination in the warehouse district. The rats have gotten organised. They have shifts.', 'Another cellar, another infestation. The rats outnumber the residents. Restore the balance.'], goldReward: 12, timeRequired: 3, healthRisk: 3, happinessReward: 1 },
-  { id: 'bounty-patrol', name: 'Night Patrol', description: 'Patrol the streets after dark. Mostly involves being cold, bored, and suspicious of shadows.', descriptionVariants: ['Patrol the streets after dark. Mostly involves being cold, bored, and suspicious of shadows.', 'Evening guard patrol needed. The job is 10% vigilance and 90% trying to stay awake.', 'Walk the streets. Look intimidating. Report anything unusual. Define "unusual" yourself.'], goldReward: 18, timeRequired: 4, healthRisk: 5, happinessReward: 1 },
-  { id: 'bounty-herbs', name: 'Herb Collection', description: 'Gather herbs for the healers. They want the green ones. Not the other green ones. The OTHER other green ones.', descriptionVariants: ['Gather herbs for the healers. They want the green ones. Not the other green ones. The OTHER other green ones.', 'The Enchanter needs specific plants. A diagram is provided. The diagram was drawn by someone who can\'t draw.', 'Collect healing herbs from the gardens. Don\'t eat them. The last person who ate them saw colours for a week.'], goldReward: 10, timeRequired: 3, healthRisk: 0, happinessReward: 2 },
-  { id: 'bounty-delivery', name: 'Urgent Parcel', description: 'Deliver a time-sensitive parcel. It was "urgent" three days ago. Now it\'s "extremely urgent." Same parcel.', descriptionVariants: ['Deliver a time-sensitive parcel. It was "urgent" three days ago. Now it\'s "extremely urgent." Same parcel.', 'Rush delivery across the city. The package rattles. Don\'t shake it. Don\'t ask. Just deliver.', 'A merchant needs something delivered. "Quickly," they say. "Yesterday," they mean. Time travel not included.'], goldReward: 14, timeRequired: 3, healthRisk: 0, happinessReward: 1 },
-  { id: 'bounty-escort', name: 'Traveler Escort', description: 'Escort a traveler to the gate. They walk slowly. They stop to look at things. Your patience will be tested.', descriptionVariants: ['Escort a traveler to the gate. They walk slowly. They stop to look at things. Your patience will be tested.', 'Accompany a nervous visitor through the city. They jump at shadows. There are many shadows. It\'s a long walk.', 'Bodyguard work for a traveler. The danger is mild. The small talk is brutal. Bring patience.'], goldReward: 20, timeRequired: 5, healthRisk: 8, happinessReward: 2 },
-  { id: 'bounty-cleanup', name: 'Rubble Clearing', description: 'Clear debris from a collapsed stall. The owner insists it "collapsed on its own." The insurance adjuster disagrees.', descriptionVariants: ['Clear debris from a collapsed stall. The owner insists it "collapsed on its own." The insurance adjuster disagrees.', 'Manual labour: clear rubble from a building site. It\'s honest work. Your back will file a complaint.', 'Clean-up duty after a structural failure in the market. Heavy lifting required. Pride optional.'], goldReward: 15, timeRequired: 4, healthRisk: 3, happinessReward: 1 },
-  { id: 'bounty-gather', name: 'Mushroom Foraging', description: 'Forage rare mushrooms from the cave mouth. "Rare" because smart people don\'t go near the cave mouth.', descriptionVariants: ['Forage rare mushrooms from the cave mouth. "Rare" because smart people don\'t go near the cave mouth.', 'Collect fungi from the cave entrance. The mushrooms glow. That\'s either valuable or radioactive. Probably valuable.', 'The Academy needs cave mushrooms. They grow where sensible people don\'t. Bring a basket. And courage.'], goldReward: 16, timeRequired: 4, healthRisk: 5, happinessReward: 2 },
-  { id: 'bounty-lost-item', name: 'Lost Heirloom', description: 'Find a lost ring in the slums. It\'s always a ring. Never a lost spoon. Nobody cries over spoons.', descriptionVariants: ['Find a lost ring in the slums. It\'s always a ring. Never a lost spoon. Nobody cries over spoons.', 'A family heirloom went missing. Search the Slums. Ask questions. Accept vague answers. Find the thing.', 'Locate a missing ring. The owner swears it has "sentimental value." The Fence swears it has "market value."'], goldReward: 22, timeRequired: 5, healthRisk: 0, happinessReward: 2 },
-  { id: 'bounty-sparring', name: 'Sparring Partner', description: 'Spar with a guard recruit at the Armory. He\'s new. Go easy on him. Or don\'t. Your call.', descriptionVariants: ['Spar with a guard recruit at the Armory. He\'s new. Go easy on him. Or don\'t. Your call.', 'The City Watch needs a sparring partner. The recruit is nervous. Your job is to be less nervous. And hit things.', 'Help train a new guard through practice combat. Try not to break him. They\'re short-staffed as it is.'], goldReward: 18, timeRequired: 4, healthRisk: 10, happinessReward: 1 },
+  {
+    id: 'bounty-rats',
+    name: 'Cellar Rats',
+    description: 'Clear rats from a merchant\'s cellar. Again. They always come back. It\'s basically a subscription service.',
+    descriptionVariants: ['Clear rats from a merchant\'s cellar. Again. They always come back. It\'s basically a subscription service.', 'Rat extermination in the warehouse district. The rats have gotten organised. They have shifts.', 'Another cellar, another infestation. The rats outnumber the residents. Restore the balance.'],
+    goldReward: 12, timeRequired: 3, healthRisk: 3, happinessReward: 1,
+    locationObjectives: [
+      { id: 'br-tavern', locationId: 'rusty-tankard', actionText: 'Check the Cellar', description: 'Investigate the rat situation in the tavern cellar.', completionText: 'The cellar is infested. The rats look organised. One waves at you. Rude.' },
+    ],
+  },
+  {
+    id: 'bounty-patrol',
+    name: 'Night Patrol',
+    description: 'Patrol the streets after dark. Mostly involves being cold, bored, and suspicious of shadows.',
+    descriptionVariants: ['Patrol the streets after dark. Mostly involves being cold, bored, and suspicious of shadows.', 'Evening guard patrol needed. The job is 10% vigilance and 90% trying to stay awake.', 'Walk the streets. Look intimidating. Report anything unusual. Define "unusual" yourself.'],
+    goldReward: 18, timeRequired: 4, healthRisk: 5, happinessReward: 1,
+    locationObjectives: [
+      { id: 'bp-armory', locationId: 'armory', actionText: 'Collect Patrol Gear', description: 'Pick up your patrol lantern and badge from the Armory.', completionText: 'You collect a lantern and a badge that says "PATROL." The badge is slightly bent. Standards remain consistent.' },
+    ],
+  },
+  {
+    id: 'bounty-herbs',
+    name: 'Herb Collection',
+    description: 'Gather herbs for the healers. They want the green ones. Not the other green ones. The OTHER other green ones.',
+    descriptionVariants: ['Gather herbs for the healers. They want the green ones. Not the other green ones. The OTHER other green ones.', 'The Enchanter needs specific plants. A diagram is provided. The diagram was drawn by someone who can\'t draw.', 'Collect healing herbs from the gardens. Don\'t eat them. The last person who ate them saw colours for a week.'],
+    goldReward: 10, timeRequired: 3, healthRisk: 0, happinessReward: 2,
+    locationObjectives: [
+      { id: 'bh-cave', locationId: 'cave', actionText: 'Pick Wild Herbs', description: 'Gather herbs from the cave entrance.', completionText: 'You pick a bundle of wild herbs. One tries to bite you. Standard foraging experience.' },
+    ],
+  },
+  {
+    id: 'bounty-delivery',
+    name: 'Urgent Parcel',
+    description: 'Deliver a time-sensitive parcel. It was "urgent" three days ago. Now it\'s "extremely urgent." Same parcel.',
+    descriptionVariants: ['Deliver a time-sensitive parcel. It was "urgent" three days ago. Now it\'s "extremely urgent." Same parcel.', 'Rush delivery across the city. The package rattles. Don\'t shake it. Don\'t ask. Just deliver.', 'A merchant needs something delivered. "Quickly," they say. "Yesterday," they mean. Time travel not included.'],
+    goldReward: 14, timeRequired: 3, healthRisk: 0, happinessReward: 1,
+    locationObjectives: [
+      { id: 'bd-store', locationId: 'general-store', actionText: 'Collect Parcel', description: 'Pick up the parcel from the General Store.', completionText: 'You collect a rattling parcel. The shopkeeper says "don\'t shake it." You already shook it. Twice.' },
+    ],
+  },
+  {
+    id: 'bounty-escort',
+    name: 'Traveler Escort',
+    description: 'Escort a traveler to the gate. They walk slowly. They stop to look at things. Your patience will be tested.',
+    descriptionVariants: ['Escort a traveler to the gate. They walk slowly. They stop to look at things. Your patience will be tested.', 'Accompany a nervous visitor through the city. They jump at shadows. There are many shadows. It\'s a long walk.', 'Bodyguard work for a traveler. The danger is mild. The small talk is brutal. Bring patience.'],
+    goldReward: 20, timeRequired: 5, healthRisk: 8, happinessReward: 2,
+    locationObjectives: [
+      { id: 'be-tavern', locationId: 'rusty-tankard', actionText: 'Meet the Traveler', description: 'Meet your escort client at the Rusty Tankard.', completionText: 'The traveler is already talking. They haven\'t stopped since you sat down. The escort hasn\'t even started yet.' },
+    ],
+  },
+  {
+    id: 'bounty-cleanup',
+    name: 'Rubble Clearing',
+    description: 'Clear debris from a collapsed stall. The owner insists it "collapsed on its own." The insurance adjuster disagrees.',
+    descriptionVariants: ['Clear debris from a collapsed stall. The owner insists it "collapsed on its own." The insurance adjuster disagrees.', 'Manual labour: clear rubble from a building site. It\'s honest work. Your back will file a complaint.', 'Clean-up duty after a structural failure in the market. Heavy lifting required. Pride optional.'],
+    goldReward: 15, timeRequired: 4, healthRisk: 3, happinessReward: 1,
+    locationObjectives: [
+      { id: 'bc-forge', locationId: 'forge', actionText: 'Borrow Tools', description: 'Borrow heavy clearing tools from the Forge.', completionText: 'The smith lends you a crowbar and a shovel. "Bring them back clean," he says. They won\'t be clean.' },
+    ],
+  },
+  {
+    id: 'bounty-gather',
+    name: 'Mushroom Foraging',
+    description: 'Forage rare mushrooms from the cave mouth. "Rare" because smart people don\'t go near the cave mouth.',
+    descriptionVariants: ['Forage rare mushrooms from the cave mouth. "Rare" because smart people don\'t go near the cave mouth.', 'Collect fungi from the cave entrance. The mushrooms glow. That\'s either valuable or radioactive. Probably valuable.', 'The Academy needs cave mushrooms. They grow where sensible people don\'t. Bring a basket. And courage.'],
+    goldReward: 16, timeRequired: 4, healthRisk: 5, happinessReward: 2,
+    locationObjectives: [
+      { id: 'bg-cave', locationId: 'cave', actionText: 'Enter the Cave', description: 'Venture into the cave mouth to find the rare mushrooms.', completionText: 'The mushrooms glow faintly. You fill your basket. Something deeper in the cave growls. You leave. Quickly.' },
+    ],
+  },
+  {
+    id: 'bounty-lost-item',
+    name: 'Lost Heirloom',
+    description: 'Find a lost ring in the slums. It\'s always a ring. Never a lost spoon. Nobody cries over spoons.',
+    descriptionVariants: ['Find a lost ring in the slums. It\'s always a ring. Never a lost spoon. Nobody cries over spoons.', 'A family heirloom went missing. Search the Slums. Ask questions. Accept vague answers. Find the thing.', 'Locate a missing ring. The owner swears it has "sentimental value." The Fence swears it has "market value."'],
+    goldReward: 22, timeRequired: 5, healthRisk: 0, happinessReward: 2,
+    locationObjectives: [
+      { id: 'bli-fence', locationId: 'fence', actionText: 'Ask the Fence', description: 'Check if the Fence has seen the missing heirloom.', completionText: 'The Fence whistles innocently. "Never seen it," he says, hiding something behind his back. You negotiate. The ring surfaces.' },
+    ],
+  },
+  {
+    id: 'bounty-sparring',
+    name: 'Sparring Partner',
+    description: 'Spar with a guard recruit at the Armory. He\'s new. Go easy on him. Or don\'t. Your call.',
+    descriptionVariants: ['Spar with a guard recruit at the Armory. He\'s new. Go easy on him. Or don\'t. Your call.', 'The City Watch needs a sparring partner. The recruit is nervous. Your job is to be less nervous. And hit things.', 'Help train a new guard through practice combat. Try not to break him. They\'re short-staffed as it is.'],
+    goldReward: 18, timeRequired: 4, healthRisk: 10, happinessReward: 1,
+    locationObjectives: [
+      { id: 'bs-armory', locationId: 'armory', actionText: 'Report to the Yard', description: 'Head to the Armory training yard for the sparring session.', completionText: 'The recruit stands ready. He\'s nervous. His sword wobbles. You spar. He improves. Slightly.' },
+    ],
+  },
 ];
 
 /** Get 3 bounties for a given week (deterministic rotation based on week number) */
