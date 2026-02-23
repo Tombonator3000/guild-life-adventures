@@ -1,76 +1,97 @@
 
 
-## P2P Game Discovery Fix
+## Generate AI Room Graphics for All 16 Home Items
 
-### Problem
-The "Search for public games via PeerJS" feature does not work because it depends on `https://0.peerjs.com/peerjs/peers` — a peer listing API that is **disabled on the free PeerJS cloud server**. This endpoint returns "Not found", so `fetchGuildPeerRoomCodes()` always gets an empty list, and "No public games found" is shown every time.
+### What
+Use Gemini AI to generate dedicated room-placement graphics for all 16 buyable home items. Currently these items show emoji fallbacks because `public/items/{id}.png` files don't exist.
 
-### Root Cause
-PeerJS servers have an optional `allow_discovery` flag. The free public server (`0.peerjs.com`) has this disabled for security/scalability reasons. The `/peerjs/peers` endpoint simply does not exist there.
+### The 16 Items
 
-### Solution: Lightweight Firebase-free Room Registry via BroadcastChannel + localStorage fallback, plus a self-hosted PeerJS server option
+**8 Appliances:** scrying-mirror, simple-scrying-glass, memory-crystal, music-box, cooking-fire, preservation-box, arcane-tome, frost-chest
 
-Since the free PeerJS server won't list peers, we need an alternative discovery mechanism. The plan has two parts:
+**8 Durables:** candles, blanket, furniture, glow-orb, warmth-stone, dagger, sword, shield
 
----
+### Implementation
 
-### Part 1: Fix the PeerJS peers API URL (quick win)
+**1. New Edge Function: `supabase/functions/generate-home-item/index.ts`**
+- Based on existing `generate-border/index.ts` pattern (same auth, CORS, error handling)
+- Takes `itemId` and `itemName` as input
+- Uses `google/gemini-2.5-flash-image` via Lovable AI Gateway
+- Prompt: "Medieval woodcut whimsical illustration of [item description] as placed in a medieval room, black ink on aged parchment, detailed line work, fantasy RPG item icon, 1:1 square, 512x512"
+- Each item gets a tailored description (e.g. "an ornate scrying mirror hanging on a stone wall", "flickering candles on a wooden shelf")
+- Returns base64 image data
+- Handles 429/402 rate limits
 
-The free PeerJS cloud server does NOT expose `/peers`. But if users self-host a PeerJS server (via `npx peerjs --port 9000 --allow_discovery`), it works. Update `peerDiscovery.ts` to:
+**2. New Utility: `src/utils/homeItemImageCache.ts`**
+- IndexedDB cache for generated images (base64 is too large for localStorage)
+- `getCachedImage(itemId)` / `setCachedImage(itemId, dataUrl)` / `getAllCachedIds()` / `clearCache()`
+- Simple wrapper around raw IndexedDB (no new dependencies)
 
-1. Try the API call and gracefully handle failure (already does this)
-2. Add a console log explaining why discovery failed, so developers know
-3. Add an optional env var `VITE_PEERJS_HOST` for self-hosted servers where `/peers` works
+**3. New Admin Component: `src/components/game/home/HomeItemGenerator.tsx`**
+- Admin panel accessible from HomePanel (debug/dev mode toggle)
+- "Generate All Room Graphics" button
+- Generates items sequentially with 3-second delays between requests (rate limit protection)
+- Progress bar showing current item being generated
+- Stores results in IndexedDB cache
+- "Clear Cache" option to regenerate
+- Preview grid of all 16 items showing generated vs missing
 
-### Part 2: Room sharing via known-room-code broadcast (primary fix)
+**4. Update `RoomScene.tsx` ItemIcon Component**
+- Add `useEffect` + state to check IndexedDB cache on mount
+- Priority: IndexedDB cached image -> `public/items/{id}.png` -> emoji fallback
+- Async loading with the same image element pattern
 
-Since we can't list peers on the free server, make public rooms discoverable through a **shared room code registry** using the existing Firebase Realtime Database (when available) combined with a new **in-memory room announcement** system for non-Firebase setups:
+**5. Update `HomePanel.tsx`**
+- Add a small admin button (only visible in dev) to open the generator
 
-**`src/network/peerDiscovery.ts` changes:**
-- When a host marks their room as public, store the room code in `localStorage` under a shared key (for same-device testing) AND attempt a lightweight fetch to a simple JSON endpoint
-- `searchPeerGames()` will:
-  1. First check localStorage for recently announced room codes (same-device/tab testing)
-  2. Then try the PeerJS `/peers` endpoint (works with self-hosted servers)
-  3. Then probe any discovered room codes as before
-- Add `announceRoom(roomCode)` and `unannounceRoom(roomCode)` functions
+**6. Update `supabase/config.toml`** (create if missing)
+- Add `generate-home-item` function with `verify_jwt = false`
 
-**`src/network/useOnlineGame.ts` changes:**
-- When host sets `isPublic = true`, call `announceRoom()` in addition to Firebase registration
-- On cleanup, call `unannounceRoom()`
+**7. Update `log2.md`** with timestamp entry
 
-**`src/components/screens/OnlineLobby.tsx` changes:**
-- Update the P2P search status text to be clearer: explain that same-network discovery works, cross-network requires Firebase or room code
-- Add a "Copy Room Code" button more prominently when public room is enabled without Firebase
-
-### Part 3: BroadcastChannel for same-browser discovery
-
-For local testing and demos, use the `BroadcastChannel` API so multiple tabs on the same browser can discover each other's games instantly:
-
-**New: `src/network/localDiscovery.ts`**
-- Uses `BroadcastChannel('guild-life-rooms')` 
-- Host broadcasts `{type: 'room-announce', roomCode, hostName, playerCount, ...}` every 10 seconds
-- Searcher sends `{type: 'room-search'}`, hosts respond immediately
-- This enables instant "Search for public games" when testing with multiple tabs
+**8. Update `CLAUDE.md`** with lessons learned
 
 ### Technical Details
 
-**Files to create:**
-- `src/network/localDiscovery.ts` — BroadcastChannel-based same-browser room discovery
+**Files to create (3):**
+| File | Purpose |
+|------|---------|
+| `supabase/functions/generate-home-item/index.ts` | Edge function for Gemini image generation |
+| `src/utils/homeItemImageCache.ts` | IndexedDB cache utility |
+| `src/components/game/home/HomeItemGenerator.tsx` | Admin UI for generating + previewing images |
 
-**Files to modify:**
-- `src/network/peerDiscovery.ts` — integrate localDiscovery, improve error logging, add env var support for custom PeerJS server
-- `src/network/useOnlineGame.ts` — call announceRoom/unannounceRoom when public toggle changes
-- `src/components/screens/OnlineLobby.tsx` — better UX text explaining discovery limitations, prominent room code sharing
-- `log2.md` — timestamp entry for this fix
+**Files to modify (4):**
+| File | Change |
+|------|--------|
+| `src/components/game/home/RoomScene.tsx` | ItemIcon checks IndexedDB cache first |
+| `src/components/game/HomePanel.tsx` | Add generator toggle button |
+| `log2.md` | Timestamp entry |
+| `CLAUDE.md` | Updated conventions |
 
-**No new dependencies needed.** BroadcastChannel is supported in all modern browsers.
+**Files to create (1):**
+| File | Purpose |
+|------|---------|
+| `supabase/config.toml` | Edge function configuration |
 
-### Expected Behavior After Fix
+**No new dependencies needed.** IndexedDB is a native browser API.
 
-| Scenario | Before | After |
-|----------|--------|-------|
-| Two tabs same browser, one hosts public | "No public games found" | Game appears instantly via BroadcastChannel |
-| Self-hosted PeerJS server with `--allow_discovery` | "No public games found" (wrong URL) | Works via `/peers` endpoint with env var |
-| Free PeerJS server, no Firebase | "No public games found" | Clear message explaining limitation + prominent room code copy |
-| Firebase configured | Works (unchanged) | Works (unchanged) |
+### Item Prompt Descriptions
+
+Each item gets a specific room-placement description:
+- **scrying-mirror**: "ornate magical mirror with swirling mist, mounted on a stone wall"
+- **simple-scrying-glass**: "small enchanted crystal ball on a wooden stand"
+- **memory-crystal**: "glowing purple crystal on a pedestal, storing magical memories"
+- **music-box**: "ornate wooden music box with arcane runes, lid slightly open"
+- **cooking-fire**: "eternal magical cooking flame in a stone hearth"
+- **preservation-box**: "enchanted wooden chest with frost runes for preserving food"
+- **arcane-tome**: "large ancient spellbook on a lectern, pages glowing faintly"
+- **frost-chest**: "ice-encrusted storage chest radiating cold mist"
+- **candles**: "cluster of melting candles in a brass holder on a shelf"
+- **blanket**: "thick wool blanket draped over a simple wooden bed"
+- **furniture**: "basic medieval wooden chair and small table"
+- **glow-orb**: "floating magical orb emitting warm golden light"
+- **warmth-stone**: "enchanted hearthstone glowing with inner warmth on the floor"
+- **dagger**: "ornate dagger mounted on a wall bracket"
+- **sword**: "longsword displayed on a wall-mounted rack"
+- **shield**: "round wooden shield with iron boss hanging on the wall"
 
