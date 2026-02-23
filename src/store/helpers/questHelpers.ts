@@ -229,7 +229,7 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       const player = state.players.find(p => p.id === playerId);
       if (!player || !player.activeQuest) return;
 
-      const objectives = getQuestLocationObjectives(player.activeQuest);
+      const objectives = getQuestLocationObjectives(player.activeQuest, player.questChainProgress);
       const objective = objectives.find(o => o.id === objectiveId);
       if (!objective) return;
 
@@ -388,6 +388,9 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       const step = chain.steps[stepsCompleted];
       if (!step) return;
 
+      // LOQ: Block completion if not all location objectives are done for this chain step
+      if (!allLocationObjectivesDone(player.activeQuest, player.questLocationProgress ?? [], player.questChainProgress)) return;
+
       const isLastStep = stepsCompleted + 1 >= chain.steps.length;
 
       set((state) => ({
@@ -410,6 +413,7 @@ export function createQuestActions(set: SetFn, get: GetFn) {
             completedQuests: p.completedQuests + (isLastStep ? 1 : 0),
             guildReputation: p.guildReputation + (isLastStep ? 3 : 1),
             activeQuest: null,
+            questLocationProgress: [],
             questChainProgress: { ...p.questChainProgress, [chainId]: stepsCompleted + 1 },
             gameStats: {
               ...p.gameStats,

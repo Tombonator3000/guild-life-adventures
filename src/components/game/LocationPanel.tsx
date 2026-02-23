@@ -149,7 +149,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
   const workInfo = isHere ? getWorkInfo(locationId, ctx) : null;
 
   // LOQ: Check if current location has a pending quest objective
-  const questObjectives = getQuestLocationObjectives(player.activeQuest);
+  const questObjectives = getQuestLocationObjectives(player.activeQuest, player.questChainProgress);
   const questProgress = player.questLocationProgress ?? [];
   const pendingObjectiveHere = isHere
     ? questObjectives.find(o => o.locationId === locationId && !questProgress.includes(o.id))

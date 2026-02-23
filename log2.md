@@ -5,6 +5,57 @@
 
 ---
 
+## 2026-02-23 23:07 UTC — FEATURE: Complete LOQ Coverage (All Quests + Chain Quests)
+
+### Timestamp: 2026-02-23 23:07
+
+### Summary
+
+Extended the Location-Based Quest Objectives (LOQ) system to cover ALL quests and quest chains. Previously 8/18 regular quests had LOQ; now all 18 do. Both linear quest chains (Dragon Conspiracy, Scholar's Secret) also received LOQ for every step.
+
+### Analysis Before Implementation
+
+**Regular Quests — 10 quests added LOQ:**
+- rat-extermination (E): Rusty Tankard → General Store
+- guard-duty (D): Armory → Landlord
+- monster-slaying (B): Rusty Tankard → Armory → Cave
+- dungeon-dive (B): Guild Hall → Enchanter → Cave
+- exorcism (B): Enchanter → Graveyard
+- dragon-investigation (A): Academy → Armory → Cave
+- demon-cult (A): Shadow Market → Graveyard → Enchanter
+- ancient-evil (A): Academy → Graveyard → Enchanter
+- deep-dungeon-clear (S): Forge → Enchanter → Cave
+- dragon-slayer (S): Academy → Forge → Armory → Cave
+
+**Quest Chains — all 6 steps added LOQ:**
+- Dragon Conspiracy Step 1: Rusty Tankard → Forge
+- Dragon Conspiracy Step 2: Shadow Market → Armory
+- Dragon Conspiracy Step 3: Enchanter → Cave
+- Scholar's Secret Step 1: Fence → Academy
+- Scholar's Secret Step 2: Shadow Market → Academy
+- Scholar's Secret Step 3: Enchanter → Graveyard
+
+### Technical Changes
+
+- `QuestChainStep` interface now supports `locationObjectives?: LocationObjective[]`
+- `getQuestLocationObjectives()` accepts optional `chainProgress` param for chain quests
+- `allLocationObjectivesDone()` accepts optional `chainProgress` param
+- `completeChainQuest` now checks LOQ before allowing step completion
+- `questLocationProgress` reset on chain step completion
+- All UI callers (LocationPanel, GameBoard, QuestPanel) pass `player.questChainProgress`
+
+### Files Changed
+- `src/data/quests.ts` — 10 quest LOQ + 6 chain step LOQ + interface/function updates
+- `src/store/helpers/questHelpers.ts` — LOQ check in completeChainQuest
+- `src/components/game/LocationPanel.tsx` — pass chainProgress
+- `src/components/game/GameBoard.tsx` — pass chainProgress
+- `src/components/game/QuestPanel.tsx` — chain quest LOQ support
+
+### Verification
+- 332/332 tests pass, no TypeScript errors
+
+---
+
 ## 2026-02-23 — FEATURE: Location-Based Quest Objectives (LOQ System)
 
 ### Timestamp: 2026-02-23
