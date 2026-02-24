@@ -39,6 +39,21 @@
 - `src/store/helpers/weekEndHelpers.ts`
 - `src/hooks/useGrimwaldAI.ts`
 - `CLAUDE.md` (conventions updated)
+## 2026-02-24 08:12 UTC — FIX: Active Bounty Hidden After Weekly Rotation
+
+### Problem
+Players could take a bounty, progress objectives, then reach Guild Hall and lose the active bounty completion card.
+Root cause: `BountyBoardPanel.resolveActiveBounty` looked up the active bounty via `getWeeklyBounties(week)`. When the week rotated, the active bounty could fall out of the weekly 3-item list, so the UI showed no completion controls.
+
+### Fix
+| File | Change |
+|------|--------|
+| `src/components/game/BountyBoardPanel.tsx` | `resolveActiveBounty` now uses `getBounty(bountyId)` from the full bounty pool instead of weekly subset |
+
+### Result
+- Active bounty card stays visible in Guild Hall even after week change
+- Complete/abandon controls remain accessible for in-progress bounties
+- Weekly bounty list still rotates normally for new bounty picks
 
 ---
 
