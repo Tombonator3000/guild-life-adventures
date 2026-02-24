@@ -5,6 +5,27 @@
 
 ---
 
+## 2026-02-24 07:03 UTC — FIX: NL Chain LOQ Display + Guild Hall Auto-Tab for Active Quest
+
+### Problems
+1. NL chain (branching quest) location objectives were not displayed in QuestPanel — the LOQ filter excluded `nlchain` type
+2. When visiting Guild Hall with an active quest/bounty, the Jobs tab was selected by default — players had to manually find the Quests/Bounties tab
+3. Quest completion was effectively hidden behind tab navigation
+
+### Fixes
+
+| File | Change |
+|------|--------|
+| `src/components/game/QuestPanel.tsx` L218 | Changed LOQ filter from `type === 'quest' \|\| type === 'chain'` to using `getQuestLocationObjectives()` directly (handles all types including nlchain) |
+| `src/components/game/LocationPanel.tsx` | Added `defaultTab` computation: auto-selects 'bounties' tab for active bounties, 'quests' tab for active quests/chains |
+| `src/components/game/LocationPanel.tsx` | Passes `defaultTab` to `LocationShell` so correct tab opens immediately |
+
+### Verification
+- 26/26 quest LOQ tests pass
+- NL chain objectives now visible in QuestPanel with checklist UI
+
+---
+
 ## 2026-02-24 06:36 UTC — FEATURE: Multi-LOQ for NL Chains + Quest Notifications via EventPanel
 
 ### Part 1: Expanded NL Chain LOQs (2-3 per step)

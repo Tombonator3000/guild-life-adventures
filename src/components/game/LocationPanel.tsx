@@ -148,6 +148,11 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
   const tabs = getLocationTabs(locationId, isHere, ctx);
   const workInfo = isHere ? getWorkInfo(locationId, ctx) : null;
 
+  // Auto-select the active quest/bounty tab at Guild Hall
+  const defaultTab = locationId === 'guild-hall' && player.activeQuest
+    ? (player.activeQuest.startsWith('bounty:') ? 'bounties' : 'quests')
+    : undefined;
+
   // LOQ: Check if current location has a pending quest objective
   const questObjectives = getQuestLocationObjectives(player.activeQuest, player.questChainProgress);
   const questProgress = player.questLocationProgress ?? [];
@@ -186,6 +191,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             key={locationId}
             npc={npc}
             tabs={tabs}
+            defaultTab={defaultTab}
             locationId={locationId}
             locationName={location.name}
             xlPortrait

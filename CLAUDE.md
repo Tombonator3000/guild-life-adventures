@@ -122,3 +122,5 @@ Tests are in `src/test/` directory.
 
 - `/admin/sfx` — Sound effect generator (ElevenLabs)
 - HomePanel 🎨 button (dev mode) — Room item graphics generator (Gemini)
+- `getQuestLocationObjectives()` handles ALL quest types (regular, chain, bounty, nlchain). Do NOT filter by quest type before calling it — it internally resolves the correct objectives for any prefix. Previously, QuestPanel filtered to only `quest`/`chain` types, causing nlchain LOQs to be invisible.
+- Guild Hall auto-tab: When a player has an active quest/bounty, `LocationPanel` computes `defaultTab` ('quests' or 'bounties') and passes it to `LocationShell` so the relevant tab opens automatically.
