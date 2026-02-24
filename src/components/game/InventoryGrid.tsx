@@ -210,7 +210,7 @@ export function InventoryGrid({ player }: InventoryGridProps) {
                       }
                       disabled:opacity-40 disabled:cursor-not-allowed
                     `}
-                    title={`${item.name} — ${item.description} (${item.castTime}h)`}
+                    title={`${item.name} — ${item.description} (${item.castTime ?? '?'}h)`}
                   >
                     <span className="flex items-center gap-1 font-semibold truncate">
                       {categoryIcon}
@@ -218,7 +218,7 @@ export function InventoryGrid({ player }: InventoryGridProps) {
                     </span>
                     <span className="flex items-center gap-1 shrink-0">
                       <span className="opacity-70">×{item.quantity}</span>
-                      <span className="text-[8px] opacity-60">({item.castTime}h)</span>
+                      <span className="text-[8px] opacity-60">({item.castTime ?? '?'}h)</span>
                     </span>
                   </button>
 

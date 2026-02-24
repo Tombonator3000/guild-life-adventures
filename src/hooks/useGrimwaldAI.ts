@@ -167,6 +167,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     let currentPlayer = player;
 
     const step = async () => {
+      try {
       // Get fresh player state
       const state = useGameStore.getState();
       currentPlayer = state.players.find(p => p.id === player.id) || currentPlayer;
@@ -270,6 +271,12 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
       const speedMult = useGameStore.getState().aiSpeedMultiplier || 1;
       const adjustedDelay = Math.max(50, Math.floor(settings.decisionDelay / speedMult));
       setTimeout(step, adjustedDelay);
+      } catch (err) {
+        // Guarantee flag is always reset — prevents AI from freezing permanently on uncaught error
+        console.error('[Grimwald AI] Uncaught error in step, resetting execution flag:', err);
+        isExecutingRef.current = false;
+        try { endTurn(); } catch { /* ignore secondary failure */ }
+      }
     };
 
     // Start the turn
@@ -286,6 +293,8 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     resetPerformanceHistory();
     resetVelocityData();
     commitmentPlanRef.current = null;
+    failedActionsRef.current.clear();
+    visitedLocationsRef.current.clear();
   }, []);
 
   /**
