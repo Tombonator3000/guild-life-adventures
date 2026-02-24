@@ -184,8 +184,12 @@ describe('allLocationObjectivesDone', () => {
     expect(allLocationObjectivesDone('nlchain:thieves-guild', [], { 'thieves-guild': 0 })).toBe(false);
   });
 
-  it('returns true for nlchain with LOQ when objective completed', () => {
-    expect(allLocationObjectivesDone('nlchain:thieves-guild', ['tg1-shadow'], { 'thieves-guild': 0 })).toBe(true);
+  it('returns true for nlchain with LOQ when all objectives completed', () => {
+    expect(allLocationObjectivesDone('nlchain:thieves-guild', ['tg1-shadow', 'tg1-tavern'], { 'thieves-guild': 0 })).toBe(true);
+  });
+
+  it('returns false for nlchain with partial LOQ progress', () => {
+    expect(allLocationObjectivesDone('nlchain:thieves-guild', ['tg1-shadow'], { 'thieves-guild': 0 })).toBe(false);
   });
 
   it('returns false when no progress on a quest with objectives', () => {

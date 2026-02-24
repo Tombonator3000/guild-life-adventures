@@ -107,6 +107,7 @@ Junior Academy → Scholar Path → Loremaster / Commerce Degree
 - Rare drop items (RARE_DROP_ITEMS in items.ts) must have a non-zero `basePrice` for salvage/temper to work. Items with `basePrice: 0` return 0g from `getSalvageValue()` (no Math.max floor). Use a representative market value (e.g., 800g for legendary gear).
 - `activeCurses` on Player should always be accessed with optional chaining (`player.activeCurses?.find(...)`) in UI code to guard against old saves that may not have this field initialized.
 - `getQuestLocationObjectives` and `allLocationObjectivesDone` accept optional `chainProgress` parameter for chain quest LOQ support. Always pass `player.questChainProgress` when calling these from UI code.
+- Quest objective completion notifications use EventPanel (center panel), NOT toasts. `completeLocationObjective` sets `eventMessage` with `[quest-objective]` tag + `phase: 'event'`. Do NOT add `toast.success()` after calling `completeLocationObjective`.
 
 ## Testing
 

@@ -102,6 +102,13 @@ export const NON_LINEAR_QUEST_CHAINS: NonLinearQuestChain[] = [
             description: 'Ask around the Shadow Market for information about the thieves\' guild.',
             completionText: 'A nervous merchant whispers a name. You\'re on the right track.',
           },
+          {
+            id: 'tg1-tavern',
+            locationId: 'rusty-tankard' as LocationId,
+            actionText: 'Gather Rumours',
+            description: 'Gather rumours from the regulars at the Rusty Tankard.',
+            completionText: 'A drunk dockworker slurs out a meeting place. Helpful, if you can decipher his accent.',
+          },
         ],
         choices: [
           {
@@ -157,6 +164,13 @@ export const NON_LINEAR_QUEST_CHAINS: NonLinearQuestChain[] = [
             description: 'Prepare for the raid by picking up equipment from the Armory.',
             completionText: 'The armourer hands you a dented shield. "Bring it back in one piece."',
           },
+          {
+            id: 'tg2-guild',
+            locationId: 'guild-hall' as LocationId,
+            actionText: 'Coordinate with Guard Captain',
+            description: 'Coordinate the raid plan with the guard captain at the Guild Hall.',
+            completionText: 'The captain marks positions on a crude map. "We go at dawn. Don\'t be late."',
+          },
         ],
         choices: [
           {
@@ -199,6 +213,13 @@ export const NON_LINEAR_QUEST_CHAINS: NonLinearQuestChain[] = [
             actionText: 'Meet the Fence',
             description: 'Your contact at the Fence will give you the heist target.',
             completionText: 'The fence slides a lockpick across the counter. "Third floor, second window. Don\'t mess it up."',
+          },
+          {
+            id: 'tg3-shadow',
+            locationId: 'shadow-market' as LocationId,
+            actionText: 'Scout the Location',
+            description: 'Scout the heist location at the Shadow Market.',
+            completionText: 'You count the guards, note the exits, and memorise the patrol pattern. Professional.',
           },
         ],
         choices: [
@@ -244,6 +265,20 @@ export const NON_LINEAR_QUEST_CHAINS: NonLinearQuestChain[] = [
             description: 'Exchange information with your double-agent contact at the Rusty Tankard.',
             completionText: 'Your contact slides an envelope across the table. "Both sides are getting suspicious. Be careful."',
           },
+          {
+            id: 'tg4-fence',
+            locationId: 'fence' as LocationId,
+            actionText: 'Exchange Coded Messages',
+            description: 'Exchange coded messages with the thieves\' network through the Fence.',
+            completionText: 'The fence decodes the message and burns it. "You\'re in deep. Hope you know what you\'re doing."',
+          },
+          {
+            id: 'tg4-bank',
+            locationId: 'bank' as LocationId,
+            actionText: 'Stash Earnings',
+            description: 'Stash your double-agent earnings at the Bank before anyone notices.',
+            completionText: 'The banker doesn\'t ask where the gold came from. Bankers never do.',
+          },
         ],
         choices: [
           {
@@ -287,6 +322,13 @@ export const NON_LINEAR_QUEST_CHAINS: NonLinearQuestChain[] = [
             description: 'Coordinate the final operation from the Guild Hall.',
             completionText: 'The guild mobilises. Whatever happens next, it ends tonight.',
           },
+          {
+            id: 'tg5-armory',
+            locationId: 'armory' as LocationId,
+            actionText: 'Final Gear Check',
+            description: 'Final gear check before the showdown at the Armory.',
+            completionText: 'Every blade sharpened, every strap tightened. You\'re as ready as you\'ll ever be.',
+          },
         ],
       },
     ],
@@ -320,6 +362,13 @@ export const NON_LINEAR_QUEST_CHAINS: NonLinearQuestChain[] = [
             actionText: 'Find the Artifact',
             description: 'Locate the whispering artifact among the Shadow Market stalls.',
             completionText: 'You find the artifact on a dusty shelf, glowing faintly. The merchant watches you nervously.',
+          },
+          {
+            id: 'ca1-enchanter',
+            locationId: 'enchanter' as LocationId,
+            actionText: 'Identify the Magic',
+            description: 'Have the Enchanter identify the artifact\'s magic before you commit.',
+            completionText: 'The enchanter\'s eyes widen. "This is old magic. Very old. And very angry."',
           },
         ],
         choices: [
@@ -376,6 +425,13 @@ export const NON_LINEAR_QUEST_CHAINS: NonLinearQuestChain[] = [
             description: 'Bring the artifact to the Academy for arcane analysis.',
             completionText: 'The head scholar adjusts her spectacles. "Fascinating. Also terrifying. Mostly terrifying."',
           },
+          {
+            id: 'ca2-enchanter',
+            locationId: 'enchanter' as LocationId,
+            actionText: 'Borrow Instruments',
+            description: 'Borrow arcane instruments from the Enchanter for the analysis.',
+            completionText: 'The enchanter reluctantly lends you a set of crystal lenses. "If you break them, you buy them."',
+          },
         ],
         choices: [
           {
@@ -431,6 +487,13 @@ export const NON_LINEAR_QUEST_CHAINS: NonLinearQuestChain[] = [
             description: 'Pick up dungeon supplies at the General Store before heading underground.',
             completionText: 'Rope, torches, antidotes. The shopkeeper asks no questions. Smart shopkeeper.',
           },
+          {
+            id: 'ca3-shadow',
+            locationId: 'shadow-market' as LocationId,
+            actionText: 'Meet the Merchant',
+            description: 'Meet the merchant at the Shadow Market for final instructions.',
+            completionText: 'The merchant draws a map on a napkin. "Floor two, third corridor, behind the statue. Don\'t touch anything else."',
+          },
         ],
         choices: [
           {
@@ -474,6 +537,20 @@ export const NON_LINEAR_QUEST_CHAINS: NonLinearQuestChain[] = [
             actionText: 'Prepare the Ritual',
             description: 'The Enchanter has the reagents needed for the purification ritual.',
             completionText: 'The enchanter hands you a vial of shimmering liquid. "One drop. No more. Probably."',
+          },
+          {
+            id: 'ca4-academy',
+            locationId: 'academy' as LocationId,
+            actionText: 'Consult Ritual Texts',
+            description: 'Consult the final ritual texts at the Academy.',
+            completionText: 'The ancient tome describes the ritual in excruciating detail. Step 47: "Do not sneeze."',
+          },
+          {
+            id: 'ca4-graveyard',
+            locationId: 'graveyard' as LocationId,
+            actionText: 'Gather Reagents',
+            description: 'Gather midnight reagents from the Graveyard.',
+            completionText: 'You collect the reagents by moonlight. The spirits watch silently. At least you hope they\'re just watching.',
           },
         ],
       },
