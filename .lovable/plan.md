@@ -1,66 +1,67 @@
 
 
-## Quest LOQ Integrity Tests + Bug Fixes
+## Two-Part Plan: Multi-LOQ for NL Chains + Quest Messages in Center Panel
 
-### Bugs Found
+### Part 1: Expand NL Chain LOQs to 2-3 per step
 
-1. **CRITICAL: `lost-cat` quest is broken** -- The quest has an objective at `noble-heights`, but `LocationPanel.tsx` returns `HomePanel` early for home locations (line 130-144), so the quest objective banner is never shown. Player cannot complete "Check Noble Heights" and the quest is permanently stuck.
+Currently each NL chain step has exactly 1 `locationObjective`. This will be expanded so most steps require visiting 2-3 locations before the step can be completed at Guild Hall.
 
-2. **NL chains skip LOQ entirely** -- `getQuestLocationObjectives` returns `[]` for `nlchain:` quests (line 832). The `NonLinearChainStep` interface has no `locationObjectives` field.
+**File: `src/data/questChains.ts`** -- Add additional objectives to each step:
 
-3. **No validation for duplicate objective IDs** -- If two quests accidentally share an objective ID, progress could bleed across quests.
+| Step | Current LOQ | New LOQ additions |
+|------|-------------|-------------------|
+| **Thieves' Guild** | | |
+| tg-1 (Street Rumours) | Shadow Market | + Rusty Tankard ("Gather rumours from the regulars") |
+| tg-2 (Guard Raid) | Armory | + Guild Hall ("Coordinate with the guard captain") |
+| tg-3 (Inside Job) | Fence | + Shadow Market ("Scout the heist location") |
+| tg-4 (Double Agent) | Rusty Tankard | + Fence ("Exchange coded messages") + Bank ("Stash your double-agent earnings") |
+| tg-5 (Reckoning) | Guild Hall | + Armory ("Final gear check before the showdown") |
+| **Cursed Artifact** | | |
+| ca-1 (Whispering Stone) | Shadow Market | + Enchanter ("Identify the artifact's magic") |
+| ca-2 (Arcane Analysis) | Academy | + Enchanter ("Borrow arcane instruments") |
+| ca-3 (Merchant's Favour) | General Store | + Shadow Market ("Meet the merchant for instructions") |
+| ca-4 (Purification) | Enchanter | + Academy ("Consult final ritual texts") + Graveyard ("Gather midnight reagents") |
 
-### Fix 1: `lost-cat` quest objective location
+**File: `src/test/questLOQ.test.ts`** -- Existing tests already validate multi-objective correctness (unique IDs, valid locations). No new test code needed, but the test count verification may need updating.
 
-Change the `noble-heights` objective to a non-home location (e.g. `landlord` -- the Landlord's office is thematically adjacent to Noble Heights). This avoids the HomePanel early-return problem entirely without needing to refactor LocationPanel.
+---
 
-**File:** `src/data/quests.ts`
-- Change `lost-cat-home` objective: `locationId: 'noble-heights'` to `locationId: 'landlord'`
-- Update description/actionText to fit ("Ask the Landlord" instead of "Check Noble Heights")
+### Part 2: Quest Notifications in Center Panel (Not Toasts)
 
-### Fix 2: Add quest objective banner to HomePanel
+**Problem**: When completing a quest location objective, the feedback is a `toast.success()` popup. The user wants all quest messages to appear in the center panel using the same `EventPanel` system as weekly events.
 
-Even after fixing `lost-cat`, the HomePanel should still show quest objectives if a future quest uses home locations. Add the quest objective banner to `HomePanel.tsx` as a secondary fix.
+**Approach**: Instead of calling `toast.success(completionText)`, the `completeLocationObjective` store action will set `eventMessage` and switch `phase` to `'event'`. The EventPanel will then display the message with a "Continue" button.
 
-**File:** `src/components/game/HomePanel.tsx`
-- Import `getQuestLocationObjectives` and add the same objective banner logic
-- Show it above the room scene when a pending objective exists at the current home location
-
-### Fix 3: Test file for LOQ integrity
-
-Create `src/test/questLOQ.test.ts` with the following test cases:
-
-| Test | What it verifies |
-|------|-----------------|
-| All quest LOQ locationIds are valid | Every `locationId` in every objective exists in the `LocationId` type / BOARD_PATH |
-| No objectives at home locations | Ensures no quest sends the player to noble-heights or slums (HomePanel dead-end) |
-| No duplicate objective IDs across all quests | Every objective ID is globally unique |
-| Chain quest steps have valid LOQ locationIds | Same validation for QUEST_CHAINS steps |
-| getQuestLocationObjectives returns correct data | Unit test for regular quests, chain quests, and bounties |
-| allLocationObjectivesDone works correctly | Test with empty, partial, and full progress |
-| Objective IDs match their parent quest prefix | Convention check (e.g. `rat-ext-*` belongs to `rat-extermination`) |
-| Every quest has at least one LOQ | Verify no quest was missed |
-
-### Improvement Ideas (noted, not implemented now)
-
-- **NL chain LOQ support**: Add `locationObjectives` to `NonLinearChainStep` and update `getQuestLocationObjectives` to handle `nlchain:` prefixed quests
-- **Bounty LOQ**: Add simple location objectives to bounties for more engaging gameplay
-- **Quest objective ordering**: Currently objectives must be completed in order (array index). Could support unordered objectives for more flexibility
-- **LOQ time cost**: Objectives are free (no time spent). Could add a `timeCost` field per objective
-
-### Technical Summary
-
-**Files to modify (3):**
+**Files to change:**
 
 | File | Change |
 |------|--------|
-| `src/data/quests.ts` | Fix `lost-cat` objective from `noble-heights` to `landlord` |
-| `src/components/game/HomePanel.tsx` | Add quest objective banner as safety net |
-| `log2.md` | Timestamp entry |
+| `src/store/helpers/questHelpers.ts` | `completeLocationObjective` sets `eventMessage` + `phase: 'event'` with the objective's `completionText` |
+| `src/components/game/LocationPanel.tsx` | Remove `toast.success()` call after `completeLocationObjective`; the store now handles display |
+| `src/components/game/HomePanel.tsx` | Same removal of `toast.success()` |
+| `src/hooks/useLocationClick.ts` | Add keyword detection for quest objective events (e.g. `quest-objective` tag) so `extractEventId` and `extractEventType` handle them correctly |
 
-**Files to create (1):**
+**How it works:**
 
-| File | Purpose |
-|------|---------|
-| `src/test/questLOQ.test.ts` | LOQ integrity and dead-end validation tests |
+1. Player clicks "Complete Objective" button on LocationPanel
+2. `completeLocationObjective` in store updates player progress AND sets `eventMessage: "[quest-objective] The completionText here"`, `phase: 'event'`
+3. GameBoard detects `phase === 'event'` and shows EventPanel in center panel
+4. Player clicks "Continue" to dismiss and return to location view
+
+**Event type mapping**: Quest objective completions will use type `'bonus'` (gold coin icon, positive green) since they are achievements. The `extractEventType` function in `useLocationClick.ts` will detect the `[quest-objective]` tag.
+
+---
+
+### Files Summary
+
+| File | Action |
+|------|--------|
+| `src/data/questChains.ts` | Add 2nd/3rd LOQ to each NL chain step |
+| `src/store/helpers/questHelpers.ts` | `completeLocationObjective` sets `eventMessage` + `phase: 'event'` |
+| `src/components/game/LocationPanel.tsx` | Remove `toast.success()` after objective completion |
+| `src/components/game/HomePanel.tsx` | Remove `toast.success()` after objective completion |
+| `src/hooks/useLocationClick.ts` | Add `quest-objective` to event ID/type detection |
+| `src/test/questLOQ.test.ts` | Update test counts if needed |
+| `log2.md` | Timestamp entry for both changes |
+| `CLAUDE.md` | Document convention: quest notifications use EventPanel, not toasts |
 
