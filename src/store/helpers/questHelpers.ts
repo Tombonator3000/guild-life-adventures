@@ -246,7 +246,7 @@ export function createQuestActions(set: SetFn, get: GetFn) {
             ? { ...p, questLocationProgress: [...(p.questLocationProgress ?? []), objectiveId] }
             : p
         ),
-        eventMessage: `[quest-objective] ${objective.completionText}`,
+        eventMessage: `[quest-objective:${player.activeQuest}] ${objective.completionText}`,
         phase: 'event' as const,
       }));
     },

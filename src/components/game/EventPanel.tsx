@@ -7,6 +7,7 @@ import type { GameEvent } from './EventModal';
 import { playSFX } from '@/audio/sfxManager';
 import { t } from '@/i18n';
 import { getEventImage } from '@/assets/events';
+import { getQuestImage } from '@/assets/quests';
 
 interface EventPanelProps {
   event: GameEvent;
@@ -76,7 +77,7 @@ export function EventPanel({ event, onDismiss }: EventPanelProps) {
         {/* Woodcut illustration or fallback icon */}
         <div className="flex-shrink-0 mb-3">
           {(() => {
-            const img = getEventImage(event.id, event.type);
+            const img = getQuestImage(event.id) || getEventImage(event.id, event.type);
             if (img) {
               return (
                 <img

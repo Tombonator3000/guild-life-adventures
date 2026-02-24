@@ -173,6 +173,8 @@ export function useLocationClick({
   // Extract event ID from message text via embedded tag or data-driven keyword matching
   const extractEventId = (msg: string): string => {
     // Embedded ID tag takes highest priority: [event-id] Travel Event: ...
+    const questObjMatch = msg.match(/^\[quest-objective:([a-z0-9:-]+)\]/);
+    if (questObjMatch) return questObjMatch[1];
     const idMatch = msg.match(/^\[([a-z0-9-]+)\]/);
     if (idMatch) return idMatch[1];
 
@@ -216,7 +218,7 @@ export function useLocationClick({
 
   // Convert eventMessage to GameEvent format
   // Strip embedded ID tag from display text
-  const cleanMessage = eventMessage?.replace(/\[[a-z0-9-]+\]\s*/g, '') ?? null;
+  const cleanMessage = eventMessage?.replace(/\[[a-z0-9:-]+\]\s*/g, '') ?? null;
   // Title depends on event source: weekend processing vs gameplay events
   const eventTitle = eventSource === 'weekend'
     ? 'WEEKEND EVENTS'
