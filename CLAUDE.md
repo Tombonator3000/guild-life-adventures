@@ -108,6 +108,7 @@ Junior Academy → Scholar Path → Loremaster / Commerce Degree
 - `activeCurses` on Player should always be accessed with optional chaining (`player.activeCurses?.find(...)`) in UI code to guard against old saves that may not have this field initialized.
 - `getQuestLocationObjectives` and `allLocationObjectivesDone` accept optional `chainProgress` parameter for chain quest LOQ support. Always pass `player.questChainProgress` when calling these from UI code.
 - Quest objective completion notifications use EventPanel (center panel), NOT toasts. `completeLocationObjective` sets `eventMessage` with `[quest-objective]` tag + `phase: 'event'`. Do NOT add `toast.success()` after calling `completeLocationObjective`.
+- End-of-turn remaining time: NO "Rest X & End" button exists. Remaining hours are auto-consumed in `endTurn` via `applyRemainingTimeAtLocation` (turnHelpers.ts): at job location → partial work shift; at own home → proportional relax/sleep bonuses (happiness, health, relaxation); anywhere else → generic rest (1 happiness per 4 hours). Do NOT re-add the button to ResourcePanel.
 
 ## Testing
 

@@ -1,0 +1,27 @@
+# log.md2 — Development Log (Session 2)
+
+## 2026-02-24 — Remove "Rest X & End" button; auto-use remaining time on End Turn
+
+### Context
+User requested removal of the "Rest {X}h & End" button that appeared below the End Turn button in ResourcePanel. Instead, remaining hours should be automatically used when End Turn is clicked, based on the player's current location.
+
+### Changes Made
+
+**`src/components/game/ResourcePanel.tsx`**
+- Removed `spendRemainingTime` from `useGameStore()` destructure
+- Removed the "Rest {X}h & End" button block entirely
+
+**`src/store/helpers/turnHelpers.ts`**
+- Added `import { getJob } from '@/data/jobs'`
+- Added `JOB_LOCATION_NAMES` map (locationId → job location name string)
+- Added `applyRemainingTimeAtLocation(set, get, playerId)` helper function:
+  - At job location (player has job + is at matching location): auto-work remaining hours via `workShift`. Falls through to generic rest if clothing check fails.
+  - At own home (slums renter at slums / noble renter at noble-heights): proportional happiness + health + relaxation bonuses scaled by hours/8 (sleep) and hours/relaxRate (relax)
+  - Anywhere else: generic rest — 1 happiness per 4 hours (min 1)
+- In `endTurn`: call `applyRemainingTimeAtLocation` BEFORE spoilage check; re-read `endingPlayer` from fresh state after mutation
+
+**`CLAUDE.md`**
+- Added convention note: no "Rest X & End" button; remaining time is auto-consumed in `endTurn` via `applyRemainingTimeAtLocation`
+
+### Test Results
+- 358 tests passed (18 test files) ✓
