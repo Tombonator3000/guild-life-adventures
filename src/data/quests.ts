@@ -2,6 +2,7 @@
 
 import type { QuestRank, GuildRank, EducationPath, LocationId } from '@/types/game.types';
 import { GUILD_RANK_ORDER } from '@/types/game.types';
+import { getNonLinearChain, getCurrentNonLinearStep } from '@/data/questChains';
 
 /** A single location stop the player must visit to advance or complete a quest */
 export interface LocationObjective {
@@ -834,7 +835,14 @@ export function getQuestLocationObjectives(
     const bounty = getBounty(bountyId);
     return bounty?.locationObjectives ?? [];
   }
-  if (activeQuestId.startsWith('nlchain:')) return [];
+  if (activeQuestId.startsWith('nlchain:')) {
+    const chainId = activeQuestId.replace('nlchain:', '');
+    const chain = getNonLinearChain(chainId);
+    if (!chain) return [];
+    const stepIndex = chainProgress?.[chainId] ?? 0;
+    const step = getCurrentNonLinearStep(chainId, stepIndex);
+    return step?.locationObjectives ?? [];
+  }
   const quest = getQuest(activeQuestId);
   return quest?.locationObjectives ?? [];
 }

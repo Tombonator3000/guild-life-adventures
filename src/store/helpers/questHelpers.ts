@@ -469,7 +469,7 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       set((state) => ({
         players: state.players.map((p) =>
           p.id === playerId
-            ? { ...p, activeQuest: `nlchain:${chainId}` }
+            ? { ...p, activeQuest: `nlchain:${chainId}`, questLocationProgress: [] }
             : p
         ),
       }));
@@ -487,6 +487,9 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       const stepIndex = player.nlChainProgress[chainId] ?? 0;
       const step = getCurrentNonLinearStep(chainId, stepIndex);
       if (!step) return;
+
+      // LOQ: Block step completion if location objectives are not done
+      if (!allLocationObjectivesDone(player.activeQuest, player.questLocationProgress ?? [], player.nlChainProgress)) return;
 
       // If step has choices, show choice modal instead of auto-completing
       if (step.choices && step.choices.length > 0) {
@@ -521,6 +524,7 @@ export function createQuestActions(set: SetFn, get: GetFn) {
             completedQuests: p.completedQuests + (isLastStep ? 1 : 0),
             guildReputation: p.guildReputation + (isLastStep ? 3 : 1),
             activeQuest: null,
+            questLocationProgress: [],
             nlChainProgress: { ...p.nlChainProgress, [chainId]: stepIndex + 1 },
             nlChainCompleted: isLastStep ? [...p.nlChainCompleted, chainId] : p.nlChainCompleted,
             gameStats: {
@@ -574,6 +578,7 @@ export function createQuestActions(set: SetFn, get: GetFn) {
             completedQuests: p.completedQuests + (isComplete ? 1 : 0),
             guildReputation: p.guildReputation + (isComplete ? 3 : 1),
             activeQuest: null,
+            questLocationProgress: [],
             pendingNLChainChoice: null,
             nlChainProgress: { ...p.nlChainProgress, [chainId]: nextStepIndex },
             nlChainCompleted: isComplete ? [...p.nlChainCompleted, chainId] : p.nlChainCompleted,
