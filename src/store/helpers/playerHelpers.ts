@@ -101,13 +101,14 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
         }
       }
 
-      // C7: Random travel events (10% chance on 3+ step trips)
-      const stepsTraveled = timeCost; // 1 hr/step
-      const travelEvent = rollTravelEvent(stepsTraveled);
-      if (travelEvent) {
-        const currentPlayer = get().players.find(p => p.id === playerId);
-        if (currentPlayer) {
-          // Apply travel event effects
+      // C7: Random travel events (15% chance on 3+ step trips) — max 1 per turn
+      // Re-fetch player to get updated hadRandomEventThisTurn after location event above
+      const travelCheckPlayer = get().players.find(p => p.id === playerId);
+      if (travelCheckPlayer && !travelCheckPlayer.hadRandomEventThisTurn) {
+        const stepsTraveled = timeCost; // 1 hr/step
+        const travelEvent = rollTravelEvent(stepsTraveled);
+        if (travelEvent) {
+          // Apply travel event effects + mark random event used for this turn
           set((state) => ({
             players: state.players.map((p) => {
               if (p.id !== playerId) return p;
@@ -117,11 +118,12 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
                 happiness: Math.max(0, Math.min(100, p.happiness + travelEvent.happinessEffect)),
                 timeRemaining: Math.max(0, p.timeRemaining - travelEvent.timeCost),
                 health: Math.max(0, Math.min(p.maxHealth, p.health + travelEvent.healthEffect)),
+                hadRandomEventThisTurn: true,
               };
             }),
           }));
 
-          if (!currentPlayer.isAI) {
+          if (!travelCheckPlayer.isAI) {
             appendEventMessage(get, set, `[${travelEvent.id}] Travel Event: ${travelEvent.name} — ${formatTravelEvent(travelEvent)}`);
           }
         }
