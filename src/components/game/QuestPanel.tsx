@@ -214,10 +214,8 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
   if (activeQuestData && activeQuestData.type !== 'bounty') {
     const rankInfo = QUEST_RANK_INFO[activeQuestData.rank as keyof typeof QUEST_RANK_INFO] || { name: activeQuestData.rank, color: 'text-muted-foreground' };
 
-    // LOQ: Location objectives for regular quests and chain quests
-    const locationObjectives = (activeQuestData.type === 'quest' || activeQuestData.type === 'chain')
-      ? getQuestLocationObjectives(player.activeQuest, player.questChainProgress)
-      : [];
+    // LOQ: Location objectives for regular quests, chain quests, and NL chains
+    const locationObjectives = getQuestLocationObjectives(player.activeQuest, player.questChainProgress);
     const questProgress = player.questLocationProgress ?? [];
     const objectivesDone = allLocationObjectivesDone(player.activeQuest, questProgress, player.questChainProgress);
 
