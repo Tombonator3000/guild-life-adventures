@@ -53,7 +53,6 @@ export function HomePanel({
     if (!pendingObjectiveHere) return;
     playSFX('quest-complete');
     store.completeLocationObjective(player.id, pendingObjectiveHere.id);
-    toast.success(pendingObjectiveHere.completionText, { duration: 5000 });
   };
   if (player.housing === 'homeless') {
     return (

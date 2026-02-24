@@ -5,6 +5,47 @@
 
 ---
 
+## 2026-02-24 06:36 UTC — FEATURE: Multi-LOQ for NL Chains + Quest Notifications via EventPanel
+
+### Part 1: Expanded NL Chain LOQs (2-3 per step)
+
+Each NL chain step now requires visiting 2-3 locations before completion at Guild Hall:
+
+| Step | LOQ Count | Locations |
+|------|-----------|-----------|
+| tg-1 Street Rumours | 2 | Shadow Market + Rusty Tankard |
+| tg-2 Guard Raid | 2 | Armory + Guild Hall |
+| tg-3 Inside Job | 2 | Fence + Shadow Market |
+| tg-4 Double Agent | 3 | Rusty Tankard + Fence + Bank |
+| tg-5 Reckoning | 2 | Guild Hall + Armory |
+| ca-1 Whispering Stone | 2 | Shadow Market + Enchanter |
+| ca-2 Arcane Analysis | 2 | Academy + Enchanter |
+| ca-3 Merchant's Favour | 2 | General Store + Shadow Market |
+| ca-4 Purification | 3 | Enchanter + Academy + Graveyard |
+
+### Part 2: Quest Notifications → Center Panel (EventPanel)
+
+Replaced `toast.success()` with EventPanel system for quest objective completions:
+- `completeLocationObjective` now sets `eventMessage: "[quest-objective] ..."` + `phase: 'event'`
+- Removed toast calls from LocationPanel and HomePanel
+- Added `[quest-objective]` tag detection in `useLocationClick.ts` (type: 'bonus', title: 'QUEST PROGRESS')
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `src/data/questChains.ts` | Added 2nd/3rd LOQ to all 9 NL chain steps |
+| `src/store/helpers/questHelpers.ts` | `completeLocationObjective` sets eventMessage + phase |
+| `src/components/game/LocationPanel.tsx` | Removed toast.success after objective completion |
+| `src/components/game/HomePanel.tsx` | Same toast removal |
+| `src/hooks/useLocationClick.ts` | Added quest-objective event type + title detection |
+| `src/test/questLOQ.test.ts` | Updated nlchain test for multi-LOQ |
+| `CLAUDE.md` | Documented quest notification convention |
+
+### Verification
+- 358/358 tests pass, no TypeScript errors
+
+---
+
 ## 2026-02-23 23:12 UTC — FEATURE: AI LOQ Support (Location Objective Awareness)
 
 ### Timestamp: 2026-02-23 23:12
