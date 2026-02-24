@@ -5,6 +5,30 @@
 
 ---
 
+## 2026-02-24 21:00 UTC — FEATURE: Quest & Bounty Woodcut Illustrations (42 images)
+
+### Summary
+Generated 42 AI woodcut illustrations for ALL quests, bounties, and chain steps using flux.schnell. Created `src/assets/quests/index.ts` with full mapping system and wired into EventPanel for quest-objective notifications.
+
+### Images Generated
+| Category | Count | IDs |
+|----------|-------|-----|
+| Regular Quests | 18 | rat-extermination through dragon-slayer |
+| Linear Chain Steps | 6 | dragon-conspiracy-1/2/3, scholars-secret-1/2/3 |
+| NL Chain Steps | 9 | tg-1 through tg-5, ca-1 through ca-4 |
+| Bounties | 9 | bounty-rats through bounty-sparring |
+
+### Technical Changes
+| File | Change |
+|------|--------|
+| `src/assets/quests/*.jpg` | 42 new woodcut images (512×512) |
+| `src/assets/quests/index.ts` | Import map + `getQuestImage()` function |
+| `src/components/game/EventPanel.tsx` | Added `getQuestImage` import; tries quest image before event image |
+| `src/store/helpers/questHelpers.ts` | `completeLocationObjective` now embeds quest ID: `[quest-objective:questId]` |
+| `src/hooks/useLocationClick.ts` | Extract quest ID from `[quest-objective:questId]` tag; fixed tag-stripping regex for colons |
+
+---
+
 ## 2026-02-24 — Events Capping & AI Oscillation Fixes
 
 ### Problems
