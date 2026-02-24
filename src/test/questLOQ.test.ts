@@ -6,11 +6,12 @@ import {
   allLocationObjectivesDone,
   getWeeklyBounties,
 } from '@/data/quests';
+import { NON_LINEAR_QUEST_CHAINS } from '@/data/questChains';
 import { BOARD_PATH } from '@/data/locations';
 
 const HOME_LOCATIONS = ['noble-heights', 'slums'];
 
-// Collect ALL objectives across regular quests, chain steps, and bounties
+// Collect ALL objectives across regular quests, chain steps, bounties, and NL chains
 function getAllObjectives() {
   const results: { source: string; obj: { id: string; locationId: string } }[] = [];
 
@@ -34,6 +35,14 @@ function getAllObjectives() {
       seenBountyIds.add(b.id);
       for (const o of b.locationObjectives ?? []) {
         results.push({ source: `bounty:${b.id}`, obj: o });
+      }
+    }
+  }
+  // NL chains
+  for (const chain of NON_LINEAR_QUEST_CHAINS) {
+    for (const step of chain.steps) {
+      for (const o of step.locationObjectives ?? []) {
+        results.push({ source: `nlchain:${chain.id}/step:${step.id}`, obj: o });
       }
     }
   }
@@ -82,16 +91,23 @@ describe('Quest LOQ Integrity', () => {
     expect(missing, 'Chain steps without LOQ').toHaveLength(0);
   });
 
+  it('every NL chain step has at least one LOQ', () => {
+    const missing: string[] = [];
+    for (const chain of NON_LINEAR_QUEST_CHAINS) {
+      for (const step of chain.steps) {
+        if (!step.locationObjectives || step.locationObjectives.length === 0) {
+          missing.push(`${chain.id}/${step.id}`);
+        }
+      }
+    }
+    expect(missing, 'NL chain steps without LOQ').toHaveLength(0);
+  });
+
   it('objective IDs match their parent quest/chain prefix', () => {
     const mismatched: string[] = [];
     for (const q of QUESTS) {
       for (const o of q.locationObjectives ?? []) {
-        // Derive a reasonable prefix from quest id (e.g. "rat-extermination" → "rat-ext")
-        // We just check the objective id starts with some part of the quest id
         const questWords = q.id.split('-');
-        const objPrefix = o.id.split('-').slice(0, questWords.length > 1 ? 2 : 1).join('-');
-        const questPrefix = questWords.slice(0, 2).join('-');
-        // Loose check: objective should contain at least the first word of the quest id
         if (!o.id.startsWith(questWords[0])) {
           mismatched.push(`${q.id} -> ${o.id}`);
         }
@@ -118,8 +134,22 @@ describe('getQuestLocationObjectives', () => {
     expect(objs[0].id).toBe('br-tavern');
   });
 
-  it('returns [] for nlchain quest (not yet supported)', () => {
-    expect(getQuestLocationObjectives('nlchain:some-chain')).toEqual([]);
+  it('returns objectives for nlchain quest', () => {
+    const objs = getQuestLocationObjectives('nlchain:thieves-guild', { 'thieves-guild': 0 });
+    expect(objs.length).toBeGreaterThan(0);
+    expect(objs[0].id).toBe('tg1-shadow');
+  });
+
+  it('returns correct nlchain objectives for different step indices', () => {
+    const objs1 = getQuestLocationObjectives('nlchain:thieves-guild', { 'thieves-guild': 1 });
+    expect(objs1[0].id).toBe('tg2-armory');
+
+    const objs4 = getQuestLocationObjectives('nlchain:cursed-artifact', { 'cursed-artifact': 0 });
+    expect(objs4[0].id).toBe('ca1-shadow');
+  });
+
+  it('returns [] for unknown nlchain', () => {
+    expect(getQuestLocationObjectives('nlchain:nonexistent', {})).toEqual([]);
   });
 
   it('returns correct objectives for chain quest step 0', () => {
@@ -148,6 +178,14 @@ describe('allLocationObjectivesDone', () => {
 
   it('returns true for bounty with LOQ when objective completed', () => {
     expect(allLocationObjectivesDone('bounty:bounty-rats', ['br-tavern'])).toBe(true);
+  });
+
+  it('returns false for nlchain with LOQ and no progress', () => {
+    expect(allLocationObjectivesDone('nlchain:thieves-guild', [], { 'thieves-guild': 0 })).toBe(false);
+  });
+
+  it('returns true for nlchain with LOQ when objective completed', () => {
+    expect(allLocationObjectivesDone('nlchain:thieves-guild', ['tg1-shadow'], { 'thieves-guild': 0 })).toBe(true);
   });
 
   it('returns false when no progress on a quest with objectives', () => {

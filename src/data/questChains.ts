@@ -7,7 +7,8 @@
  * - Choice outcomes affect gold/happiness/health differently
  */
 
-import type { QuestRank, EducationPath, GuildRank } from '@/types/game.types';
+import type { QuestRank, EducationPath, GuildRank, LocationId } from '@/types/game.types';
+import type { LocationObjective } from '@/data/quests';
 import { GUILD_RANK_ORDER } from '@/types/game.types';
 
 /** A choice the player can make at a quest chain step */
@@ -41,6 +42,8 @@ export interface NonLinearChainStep {
   requiresDungeonFloor?: number;
   /** If true, this step is optional — player can skip it */
   optional?: boolean;
+  /** Location objectives the player must complete before this step can be handed in */
+  locationObjectives?: LocationObjective[];
   /** Choices offered at completion of this step (if empty, auto-advance to next step) */
   choices?: QuestChainChoice[];
 }
@@ -91,6 +94,15 @@ export const NON_LINEAR_QUEST_CHAINS: NonLinearQuestChain[] = [
         baseTimeRequired: 6,
         baseHealthRisk: 5,
         baseHappinessReward: 2,
+        locationObjectives: [
+          {
+            id: 'tg1-shadow',
+            locationId: 'shadow-market' as LocationId,
+            actionText: 'Investigate Shadow Market',
+            description: 'Ask around the Shadow Market for information about the thieves\' guild.',
+            completionText: 'A nervous merchant whispers a name. You\'re on the right track.',
+          },
+        ],
         choices: [
           {
             id: 'tg-1-report',
@@ -137,6 +149,15 @@ export const NON_LINEAR_QUEST_CHAINS: NonLinearQuestChain[] = [
         baseHealthRisk: 20,
         baseHappinessReward: 4,
         requiredEducation: { path: 'fighter', level: 1 },
+        locationObjectives: [
+          {
+            id: 'tg2-armory',
+            locationId: 'armory' as LocationId,
+            actionText: 'Gear Up at the Armory',
+            description: 'Prepare for the raid by picking up equipment from the Armory.',
+            completionText: 'The armourer hands you a dented shield. "Bring it back in one piece."',
+          },
+        ],
         choices: [
           {
             id: 'tg-2-capture',
@@ -171,6 +192,15 @@ export const NON_LINEAR_QUEST_CHAINS: NonLinearQuestChain[] = [
         baseTimeRequired: 8,
         baseHealthRisk: 15,
         baseHappinessReward: 3,
+        locationObjectives: [
+          {
+            id: 'tg3-fence',
+            locationId: 'fence' as LocationId,
+            actionText: 'Meet the Fence',
+            description: 'Your contact at the Fence will give you the heist target.',
+            completionText: 'The fence slides a lockpick across the counter. "Third floor, second window. Don\'t mess it up."',
+          },
+        ],
         choices: [
           {
             id: 'tg-3-steal',
@@ -206,6 +236,15 @@ export const NON_LINEAR_QUEST_CHAINS: NonLinearQuestChain[] = [
         baseHealthRisk: 30,
         baseHappinessReward: 2,
         optional: true,
+        locationObjectives: [
+          {
+            id: 'tg4-tavern',
+            locationId: 'rusty-tankard' as LocationId,
+            actionText: 'Meet Your Contact',
+            description: 'Exchange information with your double-agent contact at the Rusty Tankard.',
+            completionText: 'Your contact slides an envelope across the table. "Both sides are getting suspicious. Be careful."',
+          },
+        ],
         choices: [
           {
             id: 'tg-4-continue',
@@ -240,6 +279,15 @@ export const NON_LINEAR_QUEST_CHAINS: NonLinearQuestChain[] = [
         baseTimeRequired: 14,
         baseHealthRisk: 25,
         baseHappinessReward: 8,
+        locationObjectives: [
+          {
+            id: 'tg5-guild',
+            locationId: 'guild-hall' as LocationId,
+            actionText: 'Rally the Guild',
+            description: 'Coordinate the final operation from the Guild Hall.',
+            completionText: 'The guild mobilises. Whatever happens next, it ends tonight.',
+          },
+        ],
       },
     ],
   },
@@ -265,6 +313,15 @@ export const NON_LINEAR_QUEST_CHAINS: NonLinearQuestChain[] = [
         baseTimeRequired: 6,
         baseHealthRisk: 10,
         baseHappinessReward: 2,
+        locationObjectives: [
+          {
+            id: 'ca1-shadow',
+            locationId: 'shadow-market' as LocationId,
+            actionText: 'Find the Artifact',
+            description: 'Locate the whispering artifact among the Shadow Market stalls.',
+            completionText: 'You find the artifact on a dusty shelf, glowing faintly. The merchant watches you nervously.',
+          },
+        ],
         choices: [
           {
             id: 'ca-1-buy',
@@ -311,6 +368,15 @@ export const NON_LINEAR_QUEST_CHAINS: NonLinearQuestChain[] = [
         baseHealthRisk: 15,
         baseHappinessReward: 4,
         requiredEducation: { path: 'mage', level: 1 },
+        locationObjectives: [
+          {
+            id: 'ca2-academy',
+            locationId: 'academy' as LocationId,
+            actionText: 'Consult the Scholars',
+            description: 'Bring the artifact to the Academy for arcane analysis.',
+            completionText: 'The head scholar adjusts her spectacles. "Fascinating. Also terrifying. Mostly terrifying."',
+          },
+        ],
         choices: [
           {
             id: 'ca-2-destroy',
@@ -357,6 +423,15 @@ export const NON_LINEAR_QUEST_CHAINS: NonLinearQuestChain[] = [
         baseHealthRisk: 25,
         baseHappinessReward: 5,
         requiresDungeonFloor: 2,
+        locationObjectives: [
+          {
+            id: 'ca3-store',
+            locationId: 'general-store' as LocationId,
+            actionText: 'Gather Supplies',
+            description: 'Pick up dungeon supplies at the General Store before heading underground.',
+            completionText: 'Rope, torches, antidotes. The shopkeeper asks no questions. Smart shopkeeper.',
+          },
+        ],
         choices: [
           {
             id: 'ca-3-complete',
@@ -392,6 +467,15 @@ export const NON_LINEAR_QUEST_CHAINS: NonLinearQuestChain[] = [
         baseHealthRisk: 35,
         baseHappinessReward: 10,
         requiredEducation: { path: 'mage', level: 2 },
+        locationObjectives: [
+          {
+            id: 'ca4-enchanter',
+            locationId: 'enchanter' as LocationId,
+            actionText: 'Prepare the Ritual',
+            description: 'The Enchanter has the reagents needed for the purification ritual.',
+            completionText: 'The enchanter hands you a vial of shimmering liquid. "One drop. No more. Probably."',
+          },
+        ],
       },
     ],
   },
