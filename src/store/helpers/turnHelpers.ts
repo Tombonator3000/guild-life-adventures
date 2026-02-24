@@ -11,6 +11,7 @@ import type { SetFn, GetFn } from '../storeTypes';
 import { deleteSave } from '@/data/saveLoad';
 import { createStartTurn } from './startTurnHelpers';
 import { createProcessWeekEnd } from './weekEndHelpers';
+import { getJob } from '@/data/jobs';
 
 // Players always start their turn at home: Noble Heights or The Slums
 // Shared utility used by startTurnHelpers, weekEndHelpers, and endTurn below
@@ -114,6 +115,82 @@ function processEndOfTurnSpoilage(set: SetFn, get: GetFn, playerId: string): voi
   }
 }
 
+/** Maps location IDs to job location names used in job definitions */
+const JOB_LOCATION_NAMES: Record<string, string> = {
+  'guild-hall': 'Guild Hall',
+  'bank': 'Bank',
+  'forge': 'Forge',
+  'academy': 'Academy',
+  'general-store': 'General Store',
+  'armory': 'Armory',
+  'enchanter': 'Enchanter',
+  'shadow-market': 'Shadow Market',
+  'rusty-tankard': 'Rusty Tankard',
+  'fence': 'Fence',
+};
+
+/**
+ * Auto-use remaining time at turn end based on current location:
+ * - At job location: partial work shift (proportional earnings, dependability, etc.)
+ * - At own home (slums/noble): proportional relax/sleep bonuses (happiness, health, relaxation)
+ * - Elsewhere: generic rest (1 happiness per 4 hours, min 1)
+ */
+function applyRemainingTimeAtLocation(set: SetFn, get: GetFn, playerId: string): void {
+  const player = get().players.find(p => p.id === playerId);
+  if (!player || player.timeRemaining <= 0) return;
+
+  const hours = player.timeRemaining;
+  const location = player.currentLocation as string;
+
+  // --- At job location: auto-work ---
+  const jobLocationName = JOB_LOCATION_NAMES[location];
+  const currentJob = player.currentJob ? getJob(player.currentJob) : null;
+  if (currentJob && jobLocationName && currentJob.location === jobLocationName) {
+    const worked = get().workShift(playerId, hours, 0);
+    if (worked) return;
+    // Can't work (naked/bad clothes) — fall through to generic rest
+  }
+
+  // --- At own home: proportional relax/sleep bonuses ---
+  const isAtOwnHome =
+    (location === 'noble-heights' && player.housing === 'noble') ||
+    (location === 'slums' && player.housing === 'slums');
+
+  if (isAtOwnHome) {
+    const relaxRate = player.housing === 'noble' ? 3 : 8;
+    const happinessFromRelax = Math.round((hours / relaxRate) * 3);
+    const happinessFromSleep = Math.round((hours / 8) * 8);
+    const healthFromSleep = Math.round((hours / 8) * 10);
+    const relaxationBonus = Math.round((hours / 8) * 5);
+    const totalHappiness = Math.max(1, happinessFromRelax + happinessFromSleep);
+
+    set((state) => ({
+      players: state.players.map(p =>
+        p.id !== playerId ? p : {
+          ...p,
+          timeRemaining: 0,
+          happiness: Math.min(100, p.happiness + totalHappiness),
+          health: Math.min(p.maxHealth, p.health + Math.max(0, healthFromSleep)),
+          relaxation: Math.min(100, (p.relaxation ?? 0) + Math.max(0, relaxationBonus)),
+        }
+      ),
+    }));
+    return;
+  }
+
+  // --- Generic rest (anywhere else) ---
+  const happinessGain = Math.max(1, Math.floor(hours / 4));
+  set((state) => ({
+    players: state.players.map(p =>
+      p.id !== playerId ? p : {
+        ...p,
+        timeRemaining: 0,
+        happiness: Math.min(100, p.happiness + happinessGain),
+      }
+    ),
+  }));
+}
+
 export function createTurnActions(set: SetFn, get: GetFn) {
   const startTurn = createStartTurn(set, get);
   const processWeekEnd = createProcessWeekEnd(set, get);
@@ -122,8 +199,14 @@ export function createTurnActions(set: SetFn, get: GetFn) {
     endTurn: () => {
       const state = get();
 
+      // --- Auto-use remaining time based on current location ---
+      const turningPlayer = state.players[state.currentPlayerIndex];
+      if (turningPlayer && !turningPlayer.isGameOver && turningPlayer.timeRemaining > 0) {
+        applyRemainingTimeAtLocation(set, get, turningPlayer.id);
+      }
+
       // --- End-of-turn spoilage check (before switching players) ---
-      const endingPlayer = state.players[state.currentPlayerIndex];
+      const endingPlayer = get().players[get().currentPlayerIndex];
       if (endingPlayer && !endingPlayer.isGameOver) {
         processEndOfTurnSpoilage(set, get, endingPlayer.id);
       }
