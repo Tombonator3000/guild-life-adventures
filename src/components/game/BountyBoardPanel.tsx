@@ -5,6 +5,7 @@ import { Check, X, Scroll, MapPin } from 'lucide-react';
 import { playSFX } from '@/audio/sfxManager';
 import {
   getWeeklyBounties,
+  getBounty,
   getScaledQuestGold,
   getScaledQuestHappiness,
   getReputationGoldMultiplier,
@@ -29,13 +30,14 @@ interface BountyBoardPanelProps {
   onBuyGuildPass: () => void;
 }
 
-function resolveActiveBounty(player: Player, week: number) {
+function resolveActiveBounty(player: Player) {
   if (!player.activeQuest) return null;
   if (!player.activeQuest.startsWith('bounty:')) return null;
 
   const bountyId = player.activeQuest.replace('bounty:', '');
-  const bounties = getWeeklyBounties(week);
-  const bounty = bounties.find(b => b.id === bountyId);
+  // IMPORTANT: Use full bounty pool lookup so active bounty remains resolvable
+  // even after weekly rotation changes.
+  const bounty = getBounty(bountyId);
   if (!bounty) return null;
 
   return {
@@ -51,7 +53,7 @@ function resolveActiveBounty(player: Player, week: number) {
 
 export function BountyBoardPanel({ player, week, onTakeBounty, onCompleteQuest, onAbandonQuest, onBuyGuildPass }: BountyBoardPanelProps) {
   const { t } = useTranslation();
-  const activeBounty = resolveActiveBounty(player, week);
+  const activeBounty = resolveActiveBounty(player);
   const bounties = getWeeklyBounties(week);
 
   return (
