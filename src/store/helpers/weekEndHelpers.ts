@@ -937,6 +937,30 @@ function advanceStockMarket(
   return { stockPrices, stockPriceHistory };
 }
 
+/** Critical patterns — always shown before ordinary weekend messages */
+const CRITICAL_EVENT_PATTERNS = [
+  'evict', 'starvat', 'perish', 'died', 'robbery',
+  'loan default', 'CRASH', 'resurrected', 'seized',
+  'garnish', 'defaulted', 'barely survived', 'health crisis',
+];
+
+/**
+ * Limit weekend event messages to max 2, prioritizing critical events.
+ * Critical events (eviction, starvation, death, etc.) fill slots first.
+ * Ordinary events (weekend activity, lottery, weather) fill remaining slots.
+ */
+function limitWeekendMessages(msgs: string[]): string[] {
+  const isCritical = (msg: string) =>
+    CRITICAL_EVENT_PATTERNS.some(p => msg.toLowerCase().includes(p.toLowerCase()));
+  const critical = msgs.filter(isCritical);
+  const ordinary = msgs.filter(m => !isCritical(m));
+  const result = [...critical.slice(0, 2)];
+  if (result.length < 2) {
+    result.push(...ordinary.slice(0, 2 - result.length));
+  }
+  return result;
+}
+
 /** Determine the week-end outcome: all dead, last standing, or normal transition */
 function resolveWeekEndOutcome(
   players: Player[],
@@ -974,7 +998,7 @@ function resolveWeekEndOutcome(
   // Normal week transition
   const firstPlayer = players[firstAliveIndex];
   const firstPlayerHome: LocationId = getHomeLocation(firstPlayer.housing);
-  const uniqueMessages = [...new Set(eventMessages)];
+  const uniqueMessages = limitWeekendMessages([...new Set(eventMessages)]);
   const isRentDue = newWeek % 4 === 0;
 
   set({

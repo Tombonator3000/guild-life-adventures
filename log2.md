@@ -5,6 +5,40 @@
 
 ---
 
+## 2026-02-24 — Events Capping & AI Oscillation Fixes
+
+### Problems
+1. **Weekend event spam** — End-of-week event panel showed 5-8 messages per week-end (weather, employment, housing, leisure, lottery, aging, sickness, loans all concatenated). Critical events like eviction were buried behind mundane ones.
+2. **Travel events uncapped** — `rollTravelEvent()` triggered on every 3+ step trip (10% each) with no per-turn limit. A player making multiple long moves could get several travel events in one turn.
+3. **AI oscillation** — AI turn loop re-evaluated from scratch every step. After visiting location A then moving to B, the `applyLocationBatchingBonus` (+5 for local actions) could make A look appealing again, causing the AI to move back. No visit history was tracked, allowing endless A→B→A→B cycles.
+
+### Fixes
+
+**1. Weekend events capped to max 2 (weekEndHelpers.ts)**
+- Added `CRITICAL_EVENT_PATTERNS` array and `limitWeekendMessages()` function above `resolveWeekEndOutcome`
+- Critical patterns: 'evict', 'starvat', 'perish', 'died', 'robbery', 'loan default', 'CRASH', 'resurrected', 'seized', 'garnish', 'defaulted', 'barely survived', 'health crisis'
+- Critical events fill slots first (max 2 total); ordinary events fill remaining slots
+- Applied in `resolveWeekEndOutcome`: `const uniqueMessages = limitWeekendMessages([...new Set(eventMessages)])`
+
+**2. Travel events gated + probability raised (travelEvents.ts + playerHelpers.ts)**
+- `TRAVEL_EVENT_CHANCE`: 0.10 → 0.15 (15% per eligible trip, feels more occasional but exciting)
+- `movePlayer` now re-fetches player state before rolling travel event (to get fresh `hadRandomEventThisTurn` after location event may have set it)
+- Travel event check wrapped in `if (travelCheckPlayer && !travelCheckPlayer.hadRandomEventThisTurn)`
+- Travel event state update now includes `hadRandomEventThisTurn: true` so subsequent moves in the same turn don't trigger another event
+
+**3. AI oscillation prevention (useGrimwaldAI.ts)**
+- Added `visitedLocationsRef = useRef<Set<string>>(new Set())`
+- Reset at each turn start: `clear()` then `add(player.currentLocation)`
+- Before selecting `bestAction`, apply OSCILLATION_PENALTY (-20 priority) to any `move` action targeting an already-visited location, then re-sort
+- After successful `move`, add destination to `visitedLocationsRef`
+- The -20 penalty is large enough to deter oscillation but small enough that truly necessary return visits (e.g. crisis at home) can still win out if no better option exists
+
+### Files Changed
+- `src/data/travelEvents.ts`
+- `src/store/helpers/playerHelpers.ts`
+- `src/store/helpers/weekEndHelpers.ts`
+- `src/hooks/useGrimwaldAI.ts`
+- `CLAUDE.md` (conventions updated)
 ## 2026-02-24 08:12 UTC — FIX: Active Bounty Hidden After Weekly Rotation
 
 ### Problem

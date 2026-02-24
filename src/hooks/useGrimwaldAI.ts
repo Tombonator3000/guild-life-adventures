@@ -40,6 +40,8 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
   const actionLogRef = useRef<string[]>([]);
   // Track actions that failed this turn to avoid re-attempting them
   const failedActionsRef = useRef<Set<string>>(new Set());
+  // Track visited locations this turn to prevent back-and-forth oscillation
+  const visitedLocationsRef = useRef<Set<string>>(new Set());
   // Commitment plan: persists across turns for 2-4 turn strategic focus
   const commitmentPlanRef = useRef<CommitmentPlan | null>(null);
 
@@ -123,6 +125,8 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     isExecutingRef.current = true;
     actionLogRef.current = [];
     failedActionsRef.current.clear(); // Reset failed action tracking for new turn
+    visitedLocationsRef.current.clear(); // Reset location history for new turn
+    visitedLocationsRef.current.add(player.currentLocation); // Mark starting location as visited
 
     // ── Observe human players & record performance for adaptive systems ──
     const initState = useGameStore.getState();
@@ -222,8 +226,16 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
       const actionKey = (a: AIAction) => `${a.type}:${a.location || ''}:${a.details?.degreeId || a.details?.jobId || a.details?.itemId || ''}`;
       const viableActions = actions.filter(a => a.type === 'end-turn' || !failedActionsRef.current.has(actionKey(a)));
 
+      // Apply oscillation penalty: strongly discourage returning to already-visited locations
+      const OSCILLATION_PENALTY = 20;
+      const penalizedActions = viableActions.map(a =>
+        (a.type === 'move' && a.location && visitedLocationsRef.current.has(a.location))
+          ? { ...a, priority: a.priority - OSCILLATION_PENALTY }
+          : a
+      ).sort((a, b) => b.priority - a.priority);
+
       // Get best viable action (fall back to full list if all filtered)
-      const bestAction = viableActions.length > 0 ? viableActions[0] : actions[0];
+      const bestAction = penalizedActions.length > 0 ? penalizedActions[0] : actions[0];
 
       if (bestAction.type === 'end-turn') {
         console.log(`[Grimwald AI] Ending turn. Log: ${actionLogRef.current.join(' -> ')}`);
@@ -240,6 +252,9 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         // Track failed action to avoid re-attempting this turn
         failedActionsRef.current.add(actionKey(bestAction));
         console.log(`[Grimwald AI] Action failed: ${bestAction.description}`);
+      } else if (bestAction.type === 'move' && bestAction.location) {
+        // Track visited location to prevent oscillation back to this spot
+        visitedLocationsRef.current.add(bestAction.location);
       }
 
       // Re-check death immediately after action execution
