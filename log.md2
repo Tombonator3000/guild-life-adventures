@@ -1,5 +1,40 @@
 # log.md2 — Development Log (Session 2)
 
+## 2026-02-25 — Fix curse appliance notification: show both Forge and Enchanter repair options
+
+### Problem
+When Grimwald cursed and broke an appliance, the `CurseAppliancePanel` showed:
+- "Repair cost: 70g at the Enchanter" (hardcoded single location)
+- Cost was wrong: `originalPrice * 0.5` (50% of purchase price), but actual Enchanter repair is only 5–25% of original
+- Forge (the cheaper option) was never mentioned
+
+### Root Cause
+`hexHelpers.ts` stored `repairCost = Math.floor(originalPrice * 0.5)` in the curse event — far too high and misleading. Normal breakage correctly uses `calculateRepairCost()` (5-25% random). The `CurseAppliancePanel` also hardcoded "at the Enchanter" in the UI.
+
+### Changes Made
+
+**`src/store/storeTypes.ts`**
+- Added `originalPrice?: number` field to `applianceBreakageEvent` type
+
+**`src/store/helpers/hexHelpers.ts`**
+- Added `import { calculateRepairCost } from '@/data/items'`
+- Changed curse `repairCost` from `Math.floor(originalPrice * 0.5)` → `calculateRepairCost(originalPrice)` (correct 5–25% range)
+- Added `originalPrice` field to the curse `applianceBreakageEvent` so the panel can compute both repair cost ranges
+
+**`src/components/game/CurseAppliancePanel.tsx`**
+- Replaced `repairCost` prop with `originalPrice` prop
+- Computes cost ranges: Enchanter 5–25%, Forge 50% of that (min 5g)
+- Now shows both repair options side-by-side:
+  - Forge: ~{forgeMin}–{forgeMax}g • 3h (in green, highlighted as cheaper)
+  - Enchanter: ~{enchanterMin}–{enchanterMax}g • 2h
+
+**`src/components/game/GameBoard.tsx`**
+- Updated `CurseAppliancePanel` invocation to pass `originalPrice` instead of `repairCost`
+- Fallback: `originalPrice ?? repairCost * 2` for old saves missing the field
+- Normal breakage toast updated: "at the Enchanter or Market" → "(Forge is cheaper)"
+
+---
+
 ## 2026-02-24 — Remove "Rest X & End" button; auto-use remaining time on End Turn
 
 ### Context
