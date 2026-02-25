@@ -154,7 +154,9 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     : undefined;
 
   // LOQ: Check if current location has a pending quest objective
-  const questObjectives = getQuestLocationObjectives(player.activeQuest, player.questChainProgress);
+  // Use nlChainProgress for nlchain quests, questChainProgress for linear chains
+  const chainProgressForLOQ = player.activeQuest?.startsWith('nlchain:') ? player.nlChainProgress : player.questChainProgress;
+  const questObjectives = getQuestLocationObjectives(player.activeQuest, chainProgressForLOQ);
   const questProgress = player.questLocationProgress ?? [];
   const pendingObjectiveHere = isHere
     ? questObjectives.find(o => o.locationId === locationId && !questProgress.includes(o.id))
