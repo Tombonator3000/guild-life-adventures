@@ -257,7 +257,7 @@ function generateCareerActions(ctx: ActionContext): AIAction[] {
 
   // Take and complete quests for guild rank promotion
   if (player.hasGuildPass && !player.activeQuest) {
-    const bestQuest = getBestQuest(player, settings);
+    const bestQuest = getBestQuest(player, settings, ctx.week);
     if (currentLocation === 'guild-hall' && bestQuest) {
       actions.push({
         type: 'take-quest',
@@ -302,7 +302,7 @@ function generateAdventureActions(ctx: ActionContext): AIAction[] {
 
   // Take quests
   if (player.hasGuildPass && !player.activeQuest) {
-    const adventureQuest = getBestQuest(player, settings);
+    const adventureQuest = getBestQuest(player, settings, ctx.week);
     if (currentLocation === 'guild-hall' && adventureQuest) {
       actions.push({
         type: 'take-quest',

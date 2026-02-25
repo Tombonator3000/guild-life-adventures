@@ -1,7 +1,7 @@
 // Quest & Bounty woodcut illustration imports
 // All AI-generated 512×512 medieval woodcut-style quest illustrations
 
-// Regular Quests (18)
+// Regular Quests (18 original)
 import ratExtermination from './rat-extermination.jpg';
 import packageDelivery from './package-delivery.jpg';
 import herbGathering from './herb-gathering.jpg';
@@ -20,6 +20,18 @@ import demonCult from './demon-cult.jpg';
 import ancientEvil from './ancient-evil.jpg';
 import deepDungeonClear from './deep-dungeon-clear.jpg';
 import dragonSlayer from './dragon-slayer.jpg';
+
+// Regular Quests (10 new — 2026-02-25)
+import wellRepair from './well-repair.jpg';
+import noticeBoard from './notice-board.jpg';
+import missingShipment from './missing-shipment.jpg';
+import tavernBrawl from './tavern-brawl.jpg';
+import poisonedWell from './poisoned-well.jpg';
+import hauntedLibrary from './haunted-library.jpg';
+import arenaChampion from './arena-champion.jpg';
+import spyNetwork from './spy-network.jpg';
+import lichPhylactery from './lich-phylactery.jpg';
+import warCouncil from './war-council.jpg';
 
 // Linear Quest Chains — Dragon Conspiracy (3 steps)
 import dragonConspiracy1 from './dragon-conspiracy-1.jpg';
@@ -44,6 +56,16 @@ import ca2Study from './ca-2-study.jpg';
 import ca3Favour from './ca-3-favour.jpg';
 import ca4PurifyRitual from './ca-4-purify-ritual.jpg';
 
+// Non-Linear Chains — Plague Doctor (3 steps, new 2026-02-25)
+import pd1Outbreak from './pd-1-outbreak.jpg';
+import pd2Source from './pd-2-source.jpg';
+import pd3Cure from './pd-3-cure.jpg';
+
+// Non-Linear Chains — Merchant Prince (3 steps, new 2026-02-25)
+import mp1Opportunity from './mp-1-opportunity.jpg';
+import mp2Rivals from './mp-2-rivals.jpg';
+import mp3Empire from './mp-3-empire.jpg';
+
 // Bounties (9)
 import bountyRats from './bounty-rats.jpg';
 import bountyPatrol from './bounty-patrol.jpg';
@@ -57,7 +79,7 @@ import bountySparring from './bounty-sparring.jpg';
 
 /** Map quest/bounty/chain step IDs to their woodcut illustrations */
 export const QUEST_IMAGES: Record<string, string> = {
-  // Regular Quests
+  // Regular Quests (original)
   'rat-extermination': ratExtermination,
   'package-delivery': packageDelivery,
   'herb-gathering': herbGathering,
@@ -77,6 +99,18 @@ export const QUEST_IMAGES: Record<string, string> = {
   'deep-dungeon-clear': deepDungeonClear,
   'dragon-slayer': dragonSlayer,
 
+  // Regular Quests (new)
+  'well-repair': wellRepair,
+  'notice-board': noticeBoard,
+  'missing-shipment': missingShipment,
+  'tavern-brawl': tavernBrawl,
+  'poisoned-well': poisonedWell,
+  'haunted-library': hauntedLibrary,
+  'arena-champion': arenaChampion,
+  'spy-network': spyNetwork,
+  'lich-phylactery': lichPhylactery,
+  'war-council': warCouncil,
+
   // Linear Chain Steps
   'dragon-conspiracy-1': dragonConspiracy1,
   'dragon-conspiracy-2': dragonConspiracy2,
@@ -85,7 +119,7 @@ export const QUEST_IMAGES: Record<string, string> = {
   'scholars-secret-2': scholarsSecret2,
   'scholars-secret-3': scholarsSecret3,
 
-  // Non-Linear Chain Steps
+  // Non-Linear Chain Steps (original)
   'tg-1-investigate': tg1Investigate,
   'tg-2-raid': tg2Raid,
   'tg-3-inside': tg3Inside,
@@ -96,11 +130,21 @@ export const QUEST_IMAGES: Record<string, string> = {
   'ca-3-favour': ca3Favour,
   'ca-4-purify-ritual': ca4PurifyRitual,
 
+  // Non-Linear Chain Steps (new)
+  'pd-1-outbreak': pd1Outbreak,
+  'pd-2-source': pd2Source,
+  'pd-3-cure': pd3Cure,
+  'mp-1-opportunity': mp1Opportunity,
+  'mp-2-rivals': mp2Rivals,
+  'mp-3-empire': mp3Empire,
+
   // Chain IDs (parent) — use first step image
   'dragon-conspiracy': dragonConspiracy1,
   'scholars-secret': scholarsSecret1,
   'thieves-guild': tg1Investigate,
   'cursed-artifact': ca1Acquire,
+  'plague-doctor': pd1Outbreak,
+  'merchant-prince': mp1Opportunity,
 
   // Bounties
   'bounty-rats': bountyRats,
@@ -116,13 +160,6 @@ export const QUEST_IMAGES: Record<string, string> = {
 
 /**
  * Get the woodcut illustration for a quest, bounty, or chain step.
- * 
- * Accepts various ID formats:
- * - Regular quest ID: 'rat-extermination'
- * - Chain step ID: 'dragon-conspiracy-1'
- * - NL chain step ID: 'tg-1-investigate'
- * - Bounty ID: 'bounty-rats'
- * - Active quest prefix: 'chain:dragon-conspiracy', 'bounty:bounty-rats', 'nlchain:thieves-guild'
  */
 export function getQuestImage(questId?: string | null): string | undefined {
   if (!questId) return undefined;
