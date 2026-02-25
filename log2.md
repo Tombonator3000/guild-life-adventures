@@ -5,6 +5,36 @@
 
 ---
 
+## 2026-02-25 — Expanded Bounty Pool (9→18), Weekly Rotation 4/week
+
+### Summary
+Added 9 new bounties to the bounty pool (total: 18) with unique LOQ objectives, humorous descriptions, description variants, and dedicated medieval woodcut illustrations. Increased weekly bounty rotation from 3→4 bounties per week for more variety.
+
+### New Bounties
+| ID | Name | Location | Gold | Time |
+|----|------|----------|------|------|
+| bounty-town-crier | Town Crier Duty | guild-hall | 10 | 3h |
+| bounty-cart-repair | Cart Repair | forge | 14 | 3h |
+| bounty-goblin-thief | Goblin Pickpocket | shadow-market | 16 | 4h |
+| bounty-well-testing | Water Testing | academy | 12 | 3h |
+| bounty-scribe-work | Scribe Assistance | academy | 11 | 3h |
+| bounty-graveyard-watch | Graveyard Watch | graveyard | 20 | 5h |
+| bounty-stray-hound | Stray Hound | fence | 13 | 3h |
+| bounty-fake-coins | Counterfeit Coins | bank | 24 | 5h |
+| bounty-barrel-chase | Runaway Barrels | general-store | 12 | 3h |
+
+### Changes
+| File | Change |
+|------|--------|
+| `src/data/quests.ts` | Added 9 bounties to BOUNTY_POOL; changed rotation from 3→4/week |
+| `src/assets/quests/*.jpg` | 9 new woodcut illustrations |
+| `src/assets/quests/index.ts` | Added 9 new bounty image imports and mappings |
+
+### Tests
+All 358 tests pass including questLOQ integrity suite.
+
+---
+
 ## 2026-02-25 — Weekend Clutter Reduction, Fullboard Gold, Quest Event Title
 
 ### Summary

@@ -66,7 +66,7 @@ import mp1Opportunity from './mp-1-opportunity.jpg';
 import mp2Rivals from './mp-2-rivals.jpg';
 import mp3Empire from './mp-3-empire.jpg';
 
-// Bounties (9)
+// Bounties (18)
 import bountyRats from './bounty-rats.jpg';
 import bountyPatrol from './bounty-patrol.jpg';
 import bountyHerbs from './bounty-herbs.jpg';
@@ -76,6 +76,15 @@ import bountyCleanup from './bounty-cleanup.jpg';
 import bountyGather from './bounty-gather.jpg';
 import bountyLostItem from './bounty-lost-item.jpg';
 import bountySparring from './bounty-sparring.jpg';
+import bountyTownCrier from './bounty-town-crier.jpg';
+import bountyCartRepair from './bounty-cart-repair.jpg';
+import bountyGoblinThief from './bounty-goblin-thief.jpg';
+import bountyWellTesting from './bounty-well-testing.jpg';
+import bountyScribeWork from './bounty-scribe-work.jpg';
+import bountyGraveyardWatch from './bounty-graveyard-watch.jpg';
+import bountyStrayHound from './bounty-stray-hound.jpg';
+import bountyFakeCoins from './bounty-fake-coins.jpg';
+import bountyBarrelChase from './bounty-barrel-chase.jpg';
 
 /** Map quest/bounty/chain step IDs to their woodcut illustrations */
 export const QUEST_IMAGES: Record<string, string> = {
@@ -156,6 +165,15 @@ export const QUEST_IMAGES: Record<string, string> = {
   'bounty-gather': bountyGather,
   'bounty-lost-item': bountyLostItem,
   'bounty-sparring': bountySparring,
+  'bounty-town-crier': bountyTownCrier,
+  'bounty-cart-repair': bountyCartRepair,
+  'bounty-goblin-thief': bountyGoblinThief,
+  'bounty-well-testing': bountyWellTesting,
+  'bounty-scribe-work': bountyScribeWork,
+  'bounty-graveyard-watch': bountyGraveyardWatch,
+  'bounty-stray-hound': bountyStrayHound,
+  'bounty-fake-coins': bountyFakeCoins,
+  'bounty-barrel-chase': bountyBarrelChase,
 };
 
 /**

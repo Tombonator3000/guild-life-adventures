@@ -1524,14 +1524,105 @@ const BOUNTY_POOL: Bounty[] = [
       { id: 'bs-armory', locationId: 'armory', actionText: 'Report to the Yard', description: 'Head to the Armory training yard for the sparring session.', completionText: 'The recruit stands ready. He\'s nervous. His sword wobbles. You spar. He improves. Slightly.' },
     ],
   },
+  // ── New bounties (2026-02-25) ──
+  {
+    id: 'bounty-town-crier',
+    name: 'Town Crier Duty',
+    description: 'Stand in the square and shout announcements. Nobody listens, but the Guild pays by the hour, not by the impact.',
+    descriptionVariants: ['Stand in the square and shout announcements. Nobody listens, but the Guild pays by the hour, not by the impact.', 'Read the weekly proclamations aloud. Loudly. The townsfolk pretend not to hear. The pigeons don\'t pretend.', 'Public announcement duty. Your voice is the news. The news is boring. Shout it anyway.'],
+    goldReward: 10, timeRequired: 3, healthRisk: 0, happinessReward: 2,
+    locationObjectives: [
+      { id: 'btc-guild', locationId: 'guild-hall', actionText: 'Collect Announcements', description: 'Pick up today\'s proclamations from the Guild Hall.', completionText: 'You receive a scroll of announcements. Half are about lost livestock. One is about a cheese emergency. Standard fare.' },
+    ],
+  },
+  {
+    id: 'bounty-cart-repair',
+    name: 'Cart Repair',
+    description: 'Fix a merchant\'s broken cart. The wheel fell off. Again. The same wheel. Third time this month.',
+    descriptionVariants: ['Fix a merchant\'s broken cart. The wheel fell off. Again. The same wheel. Third time this month.', 'A trader\'s cart broke down outside the gate. They need muscle, not brains. You qualify for at least one.', 'Emergency cart repair. The merchant is stranded. The cargo is perishable. The stress is palpable.'],
+    goldReward: 14, timeRequired: 3, healthRisk: 2, happinessReward: 1,
+    locationObjectives: [
+      { id: 'bcr-forge', locationId: 'forge', actionText: 'Get Repair Parts', description: 'Fetch a replacement axle pin from the Forge.', completionText: 'The smith hands you an iron pin. "Should last a month," he says. You both know it won\'t.' },
+    ],
+  },
+  {
+    id: 'bounty-goblin-thief',
+    name: 'Goblin Pickpocket',
+    description: 'A goblin has been stealing bread from market stalls. He\'s fast. He\'s small. He\'s surprisingly polite about it.',
+    descriptionVariants: ['A goblin has been stealing bread from market stalls. He\'s fast. He\'s small. He\'s surprisingly polite about it.', 'Catch the goblin pilferer. He only steals bread. Exclusively sourdough. Goblins have standards.', 'Market vendors report a tiny thief. Green skin. Big ears. Excellent taste in baked goods.'],
+    goldReward: 16, timeRequired: 4, healthRisk: 3, happinessReward: 2,
+    locationObjectives: [
+      { id: 'bgt-market', locationId: 'shadow-market', actionText: 'Stake Out the Stalls', description: 'Watch the market stalls for the goblin thief.', completionText: 'You spot the goblin mid-heist. He freezes. Drops the bread. Bows. Runs. Goblins are weird.' },
+    ],
+  },
+  {
+    id: 'bounty-well-testing',
+    name: 'Water Testing',
+    description: 'Test the town wells for contamination. Spoiler: they\'re all contaminated. The question is how much.',
+    descriptionVariants: ['Test the town wells for contamination. Spoiler: they\'re all contaminated. The question is how much.', 'The Academy wants water samples from the public wells. Bring a bucket. And gloves. Definitely gloves.', 'Well inspection duty. Look at the water. Smell the water. Do NOT taste the water.'],
+    goldReward: 12, timeRequired: 3, healthRisk: 2, happinessReward: 1,
+    locationObjectives: [
+      { id: 'bwt-academy', locationId: 'academy', actionText: 'Get Testing Kit', description: 'Collect the water testing supplies from the Academy.', completionText: 'The alchemist gives you vials and a colour chart. "If the water turns black, run." Encouraging.' },
+    ],
+  },
+  {
+    id: 'bounty-scribe-work',
+    name: 'Scribe Assistance',
+    description: 'Help the Academy scribe copy documents. Your handwriting is terrible but still better than the last volunteer.',
+    descriptionVariants: ['Help the Academy scribe copy documents. Your handwriting is terrible but still better than the last volunteer.', 'Document transcription needed. The scrolls are ancient. The ink is expensive. No pressure.', 'The Academy archives need copying. Tedious but safe. Your biggest enemy is paper cuts.'],
+    goldReward: 11, timeRequired: 3, healthRisk: 0, happinessReward: 1,
+    locationObjectives: [
+      { id: 'bsw-academy', locationId: 'academy', actionText: 'Report to Archives', description: 'Present yourself at the Academy archives for scribe duty.', completionText: 'The head scribe looks at your hands. Sighs. Hands you a quill anyway. You start copying. It\'s legible. Barely.' },
+    ],
+  },
+  {
+    id: 'bounty-graveyard-watch',
+    name: 'Graveyard Watch',
+    description: 'Guard the graveyard overnight. Nothing ever happens. That\'s what they said last time. Last time was different.',
+    descriptionVariants: ['Guard the graveyard overnight. Nothing ever happens. That\'s what they said last time. Last time was different.', 'Night shift at the cemetery. Bring a lantern. Bring courage. Bring a change of clothes, just in case.', 'The groundskeeper needs a night watch. The pay is decent. The company is dead. Literally.'],
+    goldReward: 20, timeRequired: 5, healthRisk: 8, happinessReward: 1,
+    locationObjectives: [
+      { id: 'bgw-grave', locationId: 'graveyard', actionText: 'Begin Night Watch', description: 'Report to the graveyard at dusk for the overnight watch.', completionText: 'The night passes. Mostly. Something scratched at a headstone around midnight. You didn\'t investigate. Nobody pays you enough for that.' },
+    ],
+  },
+  {
+    id: 'bounty-stray-hound',
+    name: 'Stray Hound',
+    description: 'Catch a stray dog terrorising the Slums. It\'s not vicious. It\'s just very large and very enthusiastic.',
+    descriptionVariants: ['Catch a stray dog terrorising the Slums. It\'s not vicious. It\'s just very large and very enthusiastic.', 'A loose hound is knocking over market carts. Someone needs to catch it. The dog disagrees.', 'Dog-catching duty. The animal is friendly. Aggressively friendly. Bruise-inducingly friendly.'],
+    goldReward: 13, timeRequired: 3, healthRisk: 4, happinessReward: 2,
+    locationObjectives: [
+      { id: 'bsh-fence', locationId: 'fence', actionText: 'Track the Hound', description: 'The Fence saw the dog heading toward the back alleys.', completionText: 'You find the dog. It finds you first. It knocks you over. Licks your face. You catch it. Sort of. It caught you.' },
+    ],
+  },
+  {
+    id: 'bounty-fake-coins',
+    name: 'Counterfeit Coins',
+    description: 'Investigate fake coins circulating in the market. The counterfeiter spelled "GOLD" wrong on them. Impressive dedication.',
+    descriptionVariants: ['Investigate fake coins circulating in the market. The counterfeiter spelled "GOLD" wrong on them. Impressive dedication.', 'Someone is passing fake coins. They\'re almost convincing. Almost. The edges are green.', 'Track down the source of counterfeit currency. The Bank is worried. The merchants are furious. The counterfeiter is ambitious.'],
+    goldReward: 24, timeRequired: 5, healthRisk: 5, happinessReward: 2,
+    locationObjectives: [
+      { id: 'bfc-bank', locationId: 'bank', actionText: 'Examine Sample Coins', description: 'The Bank has confiscated sample counterfeits for your investigation.', completionText: 'The coins are crude. One says "GLOD." Another says "TOTALLY REAL MONEY." You have a lead.' },
+    ],
+  },
+  {
+    id: 'bounty-barrel-chase',
+    name: 'Runaway Barrels',
+    description: 'Stop runaway barrels rolling through the market. The brewer insists it was an accident. The barrels disagree.',
+    descriptionVariants: ['Stop runaway barrels rolling through the market. The brewer insists it was an accident. The barrels disagree.', 'Barrels loose on the main road. Contents: ale. Velocity: increasing. Casualties: pending.', 'Chase down escaped beer barrels before they hit the fountain. Again. The fountain has suffered enough.'],
+    goldReward: 12, timeRequired: 3, healthRisk: 4, happinessReward: 2,
+    locationObjectives: [
+      { id: 'bbc-store', locationId: 'general-store', actionText: 'Get Rope & Net', description: 'Grab rope from the General Store to stop the barrels.', completionText: 'You grab rope and a net. The shopkeeper says "good luck." He\'s seen this before. He looks tired.' },
+    ],
+  },
 ];
 
-/** Get 3 bounties for a given week (deterministic rotation based on week number) */
+/** Get 4 bounties for a given week (deterministic rotation based on week number) */
 export function getWeeklyBounties(week: number): Bounty[] {
-  // Use week to deterministically pick 3 bounties
-  const offset = ((week - 1) * 3) % BOUNTY_POOL.length;
+  // Use week to deterministically pick 4 bounties from pool of 18
+  const offset = ((week - 1) * 4) % BOUNTY_POOL.length;
   const result: Bounty[] = [];
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 4; i++) {
     result.push(BOUNTY_POOL[(offset + i) % BOUNTY_POOL.length]);
   }
   return result;
