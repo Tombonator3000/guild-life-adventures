@@ -36,7 +36,7 @@ function generateEducationActions(ctx: ActionContext): AIAction[] {
   // Cash flow check: don't start an expensive degree if we'll run short
   if (settings.planningDepth >= 2) {
     const forecast = forecastCashFlow(player, week, 2);
-    if (forecast.shortfallRisk && player.gold < nextDegree.costPerSession * 3) {
+    if (forecast.shortfallRisk && player.gold < nextDegree.costPerSession + 15) {
       // Skip education this turn if cash flow is tight
       return actions;
     }
