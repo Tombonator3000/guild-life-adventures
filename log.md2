@@ -60,3 +60,48 @@ User requested removal of the "Rest {X}h & End" button that appeared below the E
 
 ### Test Results
 - 358 tests passed (18 test files) ✓
+
+---
+
+## 2026-02-25 — Random Event Rate & Weekend Event Display
+
+### Task 1: Reduce Random Event Chance to 5%, Max 1 Per Week
+
+**Problem**: Random events were too frequent (location events: 20% gate, travel events: 15%, theft: 30% gate, sickness: 5%). Players could get multiple events per week.
+
+**Changes**:
+
+**`src/data/events.ts`**
+- Location event gate: 20% → 5% (one per week enforced by `hadRandomEventThisTurn`)
+- `checkWeeklyTheft` gate: 30% → 5%
+
+**`src/data/travelEvents.ts`**
+- `TRAVEL_EVENT_CHANCE`: 0.15 → 0.05
+
+**`src/store/helpers/weekEndHelpers.ts`**
+- Added `WEEK_END_RANDOM_EVENT_CHANCE = 0.05` constant
+- In `processPlayerWeekEnd`: save `hadRandomEventThisTurn` BEFORE `resetWeeklyFlags` (saves pre-reset value as `hadEventThisWeek`)
+- Week-end random events (theft/sickness) now gated by both `!hadEventThisWeek` AND 5% roll
+- This ensures max 1 random event per week total — prevents double events from in-turn + week-end
+- `limitWeekendMessages` cap: 2 → 5 (all shown on 1 screen now, can show more)
+
+### Task 2: Weekend Events on 1 Screen (No Multiple Continues)
+
+**Problem**: Weekend event messages were paginated (1 "continue" click per line) because `GameBoard.tsx` split `description` by `\n` and queued each line separately.
+
+**Changes**:
+
+**`src/components/game/GameBoard.tsx`**
+- Added `eventSource` to store subscription
+- Added `isWeekendEvent = eventSource === 'weekend'` check
+- Weekend events: `eventLines = []`, `totalEventCount = 1`, `currentEventLine = full description`
+- Weekend events always dismiss with 1 click (no queue pagination)
+- `EventPanel` already supports multi-line via `description.split('\n')` — no EventPanel changes needed
+
+**`CLAUDE.md`**
+- Updated `hadRandomEventThisTurn` note to mention the week-end flag-save pattern
+- Added note about all random event chance rates (5% each)
+- Updated `limitWeekendMessages` note (max 5, single screen)
+
+### Test Impact
+- No logic regressions expected — changes are additive (additional gates reduce event frequency)

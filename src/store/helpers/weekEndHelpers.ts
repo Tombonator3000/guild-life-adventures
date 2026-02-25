@@ -41,6 +41,10 @@ import { getHomeLocation } from './turnHelpers';
 // Balance Constants
 // ============================================================
 
+// Random events
+/** 5% chance per week that a random event (theft or sickness) fires at week end */
+const WEEK_END_RANDOM_EVENT_CHANCE = 0.05;
+
 // Economy cycle
 /** Minimum duration (weeks) of each economic trend phase */
 const ECONOMY_CYCLE_MIN = 3;
@@ -824,6 +828,10 @@ function processPlayerWeekEnd(p: Player, ctx: WeekEndContext, msgs: string[], ne
   // workedThisTurn is still set when checking for dependability penalty.
   // Previous order (reset then check) caused penalty to ALWAYS trigger.
   processEmployment(p, ctx.economy.crashResult, msgs, newsEvents);
+
+  // Save whether player already had a random event during their turn this week.
+  // resetWeeklyFlags clears this flag — we save it first to enforce max 1 event per week total.
+  const hadEventThisWeek = p.hadRandomEventThisTurn;
   resetWeeklyFlags(p);
 
   // Deterministic processors (always run — not random events)
@@ -838,11 +846,14 @@ function processPlayerWeekEnd(p: Player, ctx: WeekEndContext, msgs: string[], ne
   processAging(p, ctx.newWeek, msgs);
   updateRentTracking(p);
 
-  // Random event processors — max 1 per week per player.
-  // Only one of theft or new sickness can trigger per week to prevent event spam.
-  const hadTheft = processTheft(p, msgs);
-  if (!hadTheft) {
-    processRandomSickness(p, msgs);
+  // Random event processors — 5% chance per week per player, max 1 total.
+  // Skip if the player already had a random event during their turn this week.
+  // Only one of theft or new sickness can trigger — no multiple simultaneous events.
+  if (!hadEventThisWeek && Math.random() < WEEK_END_RANDOM_EVENT_CHANCE) {
+    const hadTheft = processTheft(p, msgs);
+    if (!hadTheft) {
+      processRandomSickness(p, msgs);
+    }
   }
 }
 
@@ -945,18 +956,20 @@ const CRITICAL_EVENT_PATTERNS = [
 ];
 
 /**
- * Limit weekend event messages to max 2, prioritizing critical events.
+ * Limit weekend event messages to max 5, prioritizing critical events.
+ * All messages shown on one screen (no pagination), so we can show more.
  * Critical events (eviction, starvation, death, etc.) fill slots first.
  * Ordinary events (weekend activity, lottery, weather) fill remaining slots.
  */
 function limitWeekendMessages(msgs: string[]): string[] {
+  const MAX_WEEKEND_MESSAGES = 5;
   const isCritical = (msg: string) =>
     CRITICAL_EVENT_PATTERNS.some(p => msg.toLowerCase().includes(p.toLowerCase()));
   const critical = msgs.filter(isCritical);
   const ordinary = msgs.filter(m => !isCritical(m));
-  const result = [...critical.slice(0, 2)];
-  if (result.length < 2) {
-    result.push(...ordinary.slice(0, 2 - result.length));
+  const result = [...critical.slice(0, MAX_WEEKEND_MESSAGES)];
+  if (result.length < MAX_WEEKEND_MESSAGES) {
+    result.push(...ordinary.slice(0, MAX_WEEKEND_MESSAGES - result.length));
   }
   return result;
 }

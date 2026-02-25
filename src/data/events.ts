@@ -436,9 +436,9 @@ export const checkForEvent = (
   location: LocationId,
   gold: number
 ): GameEvent | null => {
-  // Gate check: only 20% chance of any event triggering at all per move.
-  // This makes events feel rare and special rather than constant.
-  if (Math.random() > 0.20) return null;
+  // Gate check: only 5% chance of any event triggering at all per move.
+  // This makes events rare — max 1 per week enforced by hadRandomEventThisTurn.
+  if (Math.random() > 0.05) return null;
 
   // Filter events by conditions only (no probability roll yet)
   const eligibleEvents = RANDOM_EVENTS.filter(event => {
@@ -469,9 +469,9 @@ export const checkForEvent = (
 };
 
 export const checkWeeklyTheft = (housing: HousingTier, gold: number): GameEvent | null => {
-  // Gate check: only 30% chance of even checking for theft each week.
-  // Combined with individual event probability, makes theft occasional rather than constant.
-  if (Math.random() > 0.30) return null;
+  // Gate check: only 5% chance of theft each week.
+  // Outer gate in processPlayerWeekEnd also guards this — combined makes theft rare.
+  if (Math.random() > 0.05) return null;
 
   const theftEvents = RANDOM_EVENTS.filter(event =>
     event.id.includes('shadowfingers') &&
