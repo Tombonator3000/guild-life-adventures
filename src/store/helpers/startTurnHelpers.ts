@@ -170,19 +170,19 @@ function processRegularFoodSpoilage(
   // Only spoil food bought from General Store — Tavern food is cooked/served fresh and doesn't spoil
   if (!player.hasStoreBoughtFood) return false;
 
-  // Food is spoiled but player eats it anyway (foodLevel NOT reduced — it still prevents starvation)
-  eventMessages.push(
-    `${player.name}'s food has gone bad without a Preservation Box!`
-  );
-
   // 55% chance of getting sick from eating spoiled food (Jones-style)
   if (Math.random() < SPOILED_FOOD_SICKNESS_CHANCE) {
+    // Merged message: sickness implies spoilage, no need for separate "food gone bad" line
     applyDoctorVisit(set, playerId, eventMessages,
-      `${player.name} got sick from eating spoiled food! Healer charged {cost}g. -10 Hours, -4 Happiness.`
+      `${player.name} got sick from spoiled food! No Preservation Box. Healer charged {cost}g. -10h, -4 Happiness.`
     );
     return true;
   }
 
+  // No sickness — still warn about spoilage
+  eventMessages.push(
+    `${player.name}'s food has gone bad without a Preservation Box!`
+  );
   return false;
 }
 
@@ -248,11 +248,13 @@ function processHomelessPenalty(
 
   const HOMELESS_HEALTH_PENALTY = 5;
   const HOMELESS_TIME_PENALTY = 8;
+  const HOMELESS_HAPPINESS_PENALTY = 3;
   updatePlayerById(set, playerId, (p) => ({
     health: Math.max(0, p.health - HOMELESS_HEALTH_PENALTY),
     timeRemaining: Math.max(0, p.timeRemaining - HOMELESS_TIME_PENALTY),
   }));
-  eventMessages.push(`${player.name} slept on the streets. -${HOMELESS_HEALTH_PENALTY} health, -${HOMELESS_TIME_PENALTY} hours.`);
+  // Merged message: combines street sleeping + misery penalty into one line
+  eventMessages.push(`${player.name} slept on the streets. -${HOMELESS_HEALTH_PENALTY} health, -${HOMELESS_TIME_PENALTY}h, -${HOMELESS_HAPPINESS_PENALTY} Happiness.`);
 }
 
 /** Phase 6: Check and process apartment robbery */
@@ -332,9 +334,7 @@ function processStartOfTurnBonuses(
     updatePlayerById(set, playerId, (p) => ({
       happiness: Math.max(0, Math.min(100, p.happiness + housingBonus)),
     }));
-    if (housingBonus < 0) {
-      eventMessages.push(`${player.name} is miserable without a home. (${housingBonus} Happiness)`);
-    }
+    // Homeless misery message is now merged into processHomelessPenalty — don't duplicate here
   }
 
   // --- Arcane Tome random income generation (Jones-style Computer: 15% chance, 10-60g) ---

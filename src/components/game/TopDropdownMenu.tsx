@@ -191,6 +191,11 @@ export function TopDropdownMenu({
             </span>
           </span>
           <span className="text-parchment/40">|</span>
+          <span className="flex items-center gap-1" title={`${player.gold} gold`}>
+            <Coins className="w-3 h-3 text-amber-300" />
+            <span className="text-amber-200 font-bold">{player.gold}g</span>
+          </span>
+          <span className="text-parchment/40">|</span>
           <span className="flex items-center gap-1" title={`${player.timeRemaining} hours remaining this week`}>
             <Hourglass className={`w-3 h-3 ${player.timeRemaining <= 10 ? 'text-red-400' : 'text-amber-300'}`} />
             <span className={player.timeRemaining <= 10 ? 'text-red-300 font-bold' : 'text-parchment/90'}>
