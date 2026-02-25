@@ -90,8 +90,9 @@ export function BountyBoardPanel({ player, week, onTakeBounty, onCompleteQuest, 
 
       {/* Active bounty completion UI */}
       {activeBounty && (() => {
-        const loqDone = allLocationObjectivesDone(player.activeQuest, player.questLocationProgress ?? [], player.questChainProgress);
-        const objectives = getQuestLocationObjectives(player.activeQuest, player.questChainProgress);
+        const chainProgressForLOQ = player.activeQuest?.startsWith('nlchain:') ? player.nlChainProgress : player.questChainProgress;
+        const loqDone = allLocationObjectivesDone(player.activeQuest, player.questLocationProgress ?? [], chainProgressForLOQ);
+        const objectives = getQuestLocationObjectives(player.activeQuest, chainProgressForLOQ);
         const progress = player.questLocationProgress ?? [];
         return (
         <>

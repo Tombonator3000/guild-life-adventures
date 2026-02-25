@@ -44,7 +44,9 @@ export function HomePanel({
   const store = useGameStore();
 
   // LOQ: Quest objective banner for home locations
-  const questObjectives = getQuestLocationObjectives(player.activeQuest, player.questChainProgress);
+  // Use nlChainProgress for nlchain quests, questChainProgress for linear chains
+  const chainProgressForLOQ = player.activeQuest?.startsWith('nlchain:') ? player.nlChainProgress : player.questChainProgress;
+  const questObjectives = getQuestLocationObjectives(player.activeQuest, chainProgressForLOQ);
   const questProgress = player.questLocationProgress ?? [];
   const pendingObjectiveHere = questObjectives.find(
     o => o.locationId === locationId && !questProgress.includes(o.id)

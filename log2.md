@@ -5,6 +5,37 @@
 
 ---
 
+## 2026-02-25 — FIX: NL Chain LOQ progress map used in ALL 6 call sites
+
+### Timestamp: 2026-02-25 13:00 UTC
+
+### Bug Fixed
+
+**NL chain quests (e.g. "The Inside Job") couldn't complete objectives — "Complete all objectives first!" stuck**
+- Root cause: Previous fix only patched `QuestPanel.tsx`. But 5 other call sites still passed `player.questChainProgress` instead of `player.nlChainProgress` for nlchain quests:
+  1. `LocationPanel.tsx` — LOQ banner at locations (objectives couldn't be completed)
+  2. `HomePanel.tsx` — LOQ banner at home locations
+  3. `GameBoard.tsx` — map objective markers (wrong locations highlighted)
+  4. `BountyBoardPanel.tsx` — bounty LOQ check
+  5. `questHelpers.ts` (store) — `completeLocationObjective` action couldn't find objectives
+  6. `questDungeonActions.ts` (AI) — AI couldn't resolve nlchain objectives
+- Fix: All 6 sites now use pattern: `const chainProgressForLOQ = activeQuest?.startsWith('nlchain:') ? player.nlChainProgress : player.questChainProgress;`
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `src/components/game/LocationPanel.tsx` | Use `chainProgressForLOQ` pattern |
+| `src/components/game/HomePanel.tsx` | Use `chainProgressForLOQ` pattern |
+| `src/components/game/GameBoard.tsx` | Use `chainProgressForLOQ` pattern |
+| `src/components/game/BountyBoardPanel.tsx` | Use `chainProgressForLOQ` pattern |
+| `src/store/helpers/questHelpers.ts` | Use `chainProgressForLOQ` pattern |
+| `src/hooks/ai/actions/questDungeonActions.ts` | Use `chainProgressForLOQ` pattern |
+| `CLAUDE.md` | Updated nlchain convention with ALL call sites listed |
+
+### Tests: 358/358 passed ✅
+
+---
+
 ## 2026-02-25 — FIX: Quest Event Title + NL Chain LOQ + Bounty Resolution (3 bugs)
 
 ### Timestamp: 2026-02-25 12:42 UTC
