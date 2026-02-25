@@ -5,6 +5,36 @@
 
 ---
 
+## 2026-02-25 — FIX: Event Background Images — JPG → PNG (transparent layer support)
+
+### Summary
+Changed event/weather overlay background image imports from `.jpg` to `.png` for the three assets that have proper PNG versions with transparent layers. PNG transparency allows the animated overlays to blend correctly without hard opaque backgrounds.
+
+### Problem
+`WeatherOverlay.tsx` imported:
+- `enchanted-fog-layer.jpg` (no transparency)
+- `heat-shimmer-layer.jpg` (no transparency)
+- `heat-shimmer-ground.jpg` (no transparency)
+
+PNG versions of all three exist in `src/assets/` with alpha channels, enabling correct transparent blending over the game board.
+
+### Fix
+| Old Import | New Import |
+|------------|------------|
+| `enchanted-fog-layer.jpg` | `enchanted-fog-layer.png` |
+| `heat-shimmer-layer.jpg` | `heat-shimmer-layer.png` |
+| `heat-shimmer-ground.jpg` | `heat-shimmer-ground.png` |
+
+`enchanted-fog-wisps.jpg` kept as-is (no PNG version exists).
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `src/components/game/WeatherOverlay.tsx` | 3 imports changed from `.jpg` → `.png` |
+| `log2.md` | This entry |
+
+---
+
 ## 2026-02-24 21:00 UTC — FEATURE: Quest & Bounty Woodcut Illustrations (42 images)
 
 ### Summary

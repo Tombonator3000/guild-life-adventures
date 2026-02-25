@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import type { WeatherParticle, WeatherType } from '@/data/weather';
-import enchantedFogLayer from '@/assets/enchanted-fog-layer.jpg';
+import enchantedFogLayer from '@/assets/enchanted-fog-layer.png';
 import enchantedFogWisps from '@/assets/enchanted-fog-wisps.jpg';
-import heatShimmerLayer from '@/assets/heat-shimmer-layer.jpg';
-import heatShimmerGround from '@/assets/heat-shimmer-ground.jpg';
+import heatShimmerLayer from '@/assets/heat-shimmer-layer.png';
+import heatShimmerGround from '@/assets/heat-shimmer-ground.png';
 
 interface WeatherOverlayProps {
   particle: WeatherParticle | null;
