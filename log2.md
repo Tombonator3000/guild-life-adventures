@@ -5,6 +5,38 @@
 
 ---
 
+## 2026-02-25 — Weekend Clutter Reduction, Fullboard Gold, Quest Event Title
+
+### Summary
+Three UI improvements to reduce information overload on the weekend screen, improve fullboard mode info density, and fix quest event title.
+
+### Changes
+
+**1. Weekend Message Clutter Reduction** (`startTurnHelpers.ts`, `weekEndHelpers.ts`)
+- Merged food spoilage + sickness into ONE message (sickness message now implies spoilage)
+- Merged homeless "slept on streets" + "miserable without home" into ONE message with all penalties
+- Removed separate "miserable" message from `processStartOfTurnBonuses` (happiness still applied)
+- `limitWeekendMessages`: reduced MAX from 5→4; suppresses mundane weekend activity (`[rw-*]` tags) when critical events occur
+
+**2. Fullboard Gold Display** (`TopDropdownMenu.tsx`)
+- Added gold amount with coin icon to the top trigger bar, positioned before the time display
+
+**3. Quest Event Title** (`useLocationClick.ts`)
+- Changed `[quest-objective]` event title from "QUEST PROGRESS" → "QUEST EVENT"
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `src/store/helpers/startTurnHelpers.ts` | Merged food+sickness, merged homeless+miserable messages |
+| `src/store/helpers/weekEndHelpers.ts` | Suppress mundane activity on critical events, MAX 5→4 |
+| `src/components/game/TopDropdownMenu.tsx` | Gold display in fullboard trigger bar |
+| `src/hooks/useLocationClick.ts` | Quest event title → "QUEST EVENT" |
+
+### Tests
+All 358 tests pass.
+
+---
+
 ## 2026-02-25 — FIX: Event Background Images — JPG → PNG (transparent layer support)
 
 ### Summary
