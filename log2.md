@@ -5,6 +5,38 @@
 
 ---
 
+## 2026-02-25 — FIX: Quest Event Title + NL Chain LOQ + Bounty Resolution (3 bugs)
+
+### Timestamp: 2026-02-25 12:42 UTC
+
+### Bugs Fixed
+
+**Bug 1: Quest objective events showed "WEEK X EVENT" instead of "QUEST EVENT"**
+- Root cause: `useLocationClick.ts` L227 checked `includes('[quest-objective]')` but actual tag is `[quest-objective:questId]` — the closing bracket is after the quest ID, so the substring `[quest-objective]` never matched
+- Fix: Changed to `includes('quest-objective')` (no brackets)
+
+**Bug 2: NL chain quests (e.g. "The Inside Job" tg-3) couldn't be completed**
+- Root cause: `QuestPanel.tsx` L218-220 passed `player.questChainProgress` to `getQuestLocationObjectives` and `allLocationObjectivesDone` for ALL quest types. But nlchain quests store progress in `player.nlChainProgress`, not `questChainProgress`. This caused `stepIndex = 0` fallback, showing step 0's LOQs instead of the current step's LOQs.
+- Fix: Use `player.nlChainProgress` when `activeQuestData.type === 'nlchain'`, `player.questChainProgress` otherwise
+
+**Bug 3: `QuestPanel.resolveActiveQuest` used `getWeeklyBounties(week)` for bounties**
+- Same bug as BountyBoardPanel (fixed earlier) but in a different code path. Active bounty disappears from QuestPanel after week rotation.
+- Fix: Use `getBounty(bountyId)` from full pool instead of weekly subset
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `src/hooks/useLocationClick.ts` L227 | `includes('[quest-objective]')` → `includes('quest-objective')` |
+| `src/components/game/QuestPanel.tsx` L16 | Added `getBounty` import |
+| `src/components/game/QuestPanel.tsx` L170-173 | `getWeeklyBounties` → `getBounty` |
+| `src/components/game/QuestPanel.tsx` L218-220 | Pass `nlChainProgress` for nlchain, `questChainProgress` for linear |
+| `CLAUDE.md` | Added nlchain LOQ and event title conventions |
+
+### Tests
+All 358 tests pass.
+
+---
+
 ## 2026-02-25 — Expanded Bounty Pool (9→18), Weekly Rotation 4/week
 
 ### Summary

@@ -14,6 +14,7 @@ import {
   QUEST_CHAINS,
   canTakeChainStep,
   getWeeklyBounties,
+  getBounty,
   getScaledQuestGold,
   getScaledQuestHappiness,
   getReputationGoldMultiplier,
@@ -168,8 +169,8 @@ function resolveActiveQuest(player: Player, week: number): {
 
   if (player.activeQuest.startsWith('bounty:')) {
     const bountyId = player.activeQuest.replace('bounty:', '');
-    const bounties = getWeeklyBounties(week);
-    const bounty = bounties.find(b => b.id === bountyId);
+    // Use getBounty (full pool) instead of getWeeklyBounties to avoid losing active bounty on week rotation
+    const bounty = getBounty(bountyId);
     if (!bounty) return null;
     return {
       type: 'bounty',
@@ -215,9 +216,11 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
     const rankInfo = QUEST_RANK_INFO[activeQuestData.rank as keyof typeof QUEST_RANK_INFO] || { name: activeQuestData.rank, color: 'text-muted-foreground' };
 
     // LOQ: Location objectives for regular quests, chain quests, and NL chains
-    const locationObjectives = getQuestLocationObjectives(player.activeQuest, player.questChainProgress);
+    // Use nlChainProgress for nlchain quests, questChainProgress for linear chains
+    const chainProgressForLOQ = activeQuestData.type === 'nlchain' ? player.nlChainProgress : player.questChainProgress;
+    const locationObjectives = getQuestLocationObjectives(player.activeQuest, chainProgressForLOQ);
     const questProgress = player.questLocationProgress ?? [];
-    const objectivesDone = allLocationObjectivesDone(player.activeQuest, questProgress, player.questChainProgress);
+    const objectivesDone = allLocationObjectivesDone(player.activeQuest, questProgress, chainProgressForLOQ);
 
     return (
       <div className="space-y-2">
