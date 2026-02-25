@@ -74,6 +74,7 @@ export function GameBoard() {
     deathEvent,
     dismissDeathEvent,
     weather,
+    eventSource,
   } = useGameStore();
   const locationHexes = useGameStore(s => s.locationHexes);
   const { event: shadowfingersEvent, dismiss: dismissShadowfingers } = useShadowfingersModal();
@@ -214,7 +215,7 @@ export function GameBoard() {
     getAccumulatedSteps,
   });
 
-  // Event queue: show one event at a time when multiple events fire in a single week-end batch
+  // Event queue: show one event at a time for gameplay events, but all at once for weekend summaries
   const [eventQueueIdx, setEventQueueIdx] = useState(0);
 
   // Reset queue index whenever a new event batch arrives
@@ -222,10 +223,14 @@ export function GameBoard() {
     setEventQueueIdx(0);
   }, [currentEvent?.id]);
 
-  // Derive per-event data for the queue
-  const eventLines = currentEvent?.description.split('\n').filter(Boolean) ?? [];
-  const totalEventCount = eventLines.length;
-  const currentEventLine = eventLines[eventQueueIdx] ?? eventLines[0] ?? '';
+  // Weekend events: show all messages on one screen (no pagination).
+  // Non-weekend events: paginate one line per "continue" click.
+  const isWeekendEvent = eventSource === 'weekend';
+  const eventLines = (!isWeekendEvent && currentEvent?.description.split('\n').filter(Boolean)) || [];
+  const totalEventCount = isWeekendEvent ? 1 : eventLines.length;
+  const currentEventLine = isWeekendEvent
+    ? (currentEvent?.description ?? '')
+    : (eventLines[eventQueueIdx] ?? eventLines[0] ?? '');
   const queuedEvent: typeof currentEvent = currentEvent
     ? {
         ...currentEvent,
@@ -236,9 +241,10 @@ export function GameBoard() {
       }
     : null;
 
-  // Advance through the event queue, or fully dismiss when all events shown
+  // Advance through the event queue, or fully dismiss when all events shown.
+  // Weekend events always dismiss immediately (single screen).
   const handleEventDismiss = () => {
-    if (eventQueueIdx < totalEventCount - 1) {
+    if (!isWeekendEvent && eventQueueIdx < totalEventCount - 1) {
       setEventQueueIdx(idx => idx + 1);
     } else {
       setEventQueueIdx(0);

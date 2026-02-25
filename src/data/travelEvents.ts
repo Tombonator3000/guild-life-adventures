@@ -206,7 +206,7 @@ export const TRAVEL_EVENTS: TravelEvent[] = [
 ];
 
 /** Chance of a travel event occurring (per trip of 3+ steps) */
-export const TRAVEL_EVENT_CHANCE = 0.15;
+export const TRAVEL_EVENT_CHANCE = 0.05;
 
 /** Minimum steps traveled to trigger an event */
 export const MIN_STEPS_FOR_EVENT = 3;
