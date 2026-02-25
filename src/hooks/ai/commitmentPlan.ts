@@ -66,7 +66,7 @@ function tryEarnDegreePlan(
         targetId: firstDegree.id,
         description: `Earn ${firstDegree.name} → unlock ${best.unlocksJobId} chain`,
         startTurn: week,
-        maxDuration: 4,
+        maxDuration: 6,
         alignedActions: ['study', 'graduate', 'move'] as AIActionType[],
         priorityBonus: 30,
       };
@@ -80,7 +80,7 @@ function tryEarnDegreePlan(
     targetId: best.degreeId,
     description: `Earn ${best.degreeName} (ROI score: ${Math.round(best.roiScore)})`,
     startTurn: week,
-    maxDuration: settings.planningDepth >= 3 ? 4 : 2,
+    maxDuration: settings.planningDepth >= 3 ? 6 : 4,
     alignedActions: ['study', 'graduate', 'move'] as AIActionType[],
     priorityBonus: 25,
   };

@@ -5,6 +5,39 @@
 
 ---
 
+## 2026-02-25 — AI Competitiveness Overhaul: Education Pipeline & Strategic Boost
+
+### Timestamp: 2026-02-25 14:37 UTC
+
+### Problem
+AI opponents were catastrophically weak at education and career progression. Stats from 37-week game:
+- Tuck (human): 54 Education, 6 Degrees, 109 Career, 1712g Wealth
+- Grimwald: 18 Education, 2 Degrees, 89 Career, 386g Wealth
+- Seraphina (Scholar!): 9 Education, 1 Degree, 86 Career, 0g Wealth
+
+### 7 Changes Implemented
+
+1. **Always-On Proactive Education** (strategicActions.ts): New `generateProactiveEducationActions` — medium+ AI pursues degrees regardless of weakest goal. Priority 45 (55 if in-progress). Fires when < 4 degrees and gold > costPerSession + 20.
+2. **Education-Career Pipeline Gate Removed** (strategicActions.ts): `generateEducationPipelineActions` no longer requires `progressOnMissing > 0`. AI will START degrees that unlock better jobs, not just finish ones randomly started.
+3. **Relaxed Cash Flow Gate** (goalActions.ts): Changed from `gold < costPerSession * 3` to `gold < costPerSession + 15`.
+4. **Extended Commitment Plan Duration** (commitmentPlan.ts): Medium: 2→4 turns, Hard: 4→6 turns for earn-degree plans.
+5. **Education Stepping Stone** (strategy.ts): `getWeakestGoal` redirects career/wealth to education when education progress < 50% and within 20% of weakest goal.
+6. **Work Priority Boost** (strategicActions.ts): Base work priority 50→55, wage boost cap 15→25 for hard AI, multiplier 2→3.
+7. **Personality weights already apply** — Change 5 from plan is naturally handled since proactive education actions now exist for personality weights to amplify.
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `src/hooks/ai/actions/strategicActions.ts` | Added proactive education generator; removed pipeline gate; boosted work priority |
+| `src/hooks/ai/actions/goalActions.ts` | Relaxed cash flow gate (×3 → +15) |
+| `src/hooks/ai/commitmentPlan.ts` | Extended degree plan duration (2→4, 4→6) |
+| `src/hooks/ai/strategy.ts` | Education stepping stone in getWeakestGoal |
+| `CLAUDE.md` | Documented AI education pipeline conventions |
+
+### Tests: 358/358 passed ✅
+
+---
+
 ## 2026-02-25 — FIX: NL Chain LOQ progress map used in ALL 6 call sites
 
 ### Timestamp: 2026-02-25 13:00 UTC

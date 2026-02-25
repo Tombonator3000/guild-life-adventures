@@ -99,6 +99,16 @@ export function getWeakestGoal(progress: GoalProgress): 'wealth' | 'happiness' |
 
   // Otherwise focus on weakest goal
   goals.sort((a, b) => a.progress - b.progress);
+
+  // Education stepping stone: if career or wealth is weakest but we have few degrees,
+  // redirect to education (degrees unlock better jobs → faster career/wealth)
+  const weakest = goals[0];
+  if ((weakest.name === 'career' || weakest.name === 'wealth') 
+      && progress.education.progress < 0.5 
+      && progress.education.progress < weakest.progress + 0.2) {
+    return 'education';
+  }
+
   return goals[0].name;
 }
 

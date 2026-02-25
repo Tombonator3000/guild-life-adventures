@@ -17,6 +17,7 @@ import {
   getBestAvailableJob,
   shouldUpgradeHousing,
   getJobLocation,
+  getNextDegreeByROI,
 } from '../strategy';
 import type { ActionContext } from './actionContext';
 
@@ -89,11 +90,11 @@ function generateWorkActions(ctx: ActionContext): AIAction[] {
     // HARD AI: Calculate value-per-hour to determine work priority more accurately
     const valuePerHour = player.currentWage / job.hoursPerShift;
     const wealthNeedBoost = progress.wealth.progress < 0.5 ? 20 : (progress.wealth.progress < 0.8 ? 10 : 0);
-    const wageBoost = settings.planningDepth >= 3 ? Math.min(15, Math.round(valuePerHour * 2)) : 0;
+    const wageBoost = settings.planningDepth >= 3 ? Math.min(25, Math.round(valuePerHour * 3)) : 0;
 
     return [{
       type: 'work',
-      priority: 50 + wealthNeedBoost + wageBoost,
+      priority: 55 + wealthNeedBoost + wageBoost,
       description: `Work shift as ${job.name}`,
       details: { jobId: job.id, hours: job.hoursPerShift, wage: player.currentWage },
     }];
@@ -142,15 +143,15 @@ function generateEducationPipelineActions(ctx: ActionContext): AIAction[] {
   if (!missingDegree) return [];
 
   const progressOnMissing = player.degreeProgress[missingDegree as keyof typeof player.degreeProgress] || 0;
-  if (progressOnMissing <= 0) return [];
 
-  // We've already started — high priority to finish
+  // High priority whether already started or not — this degree unlocks a better job
+  const alreadyStarted = progressOnMissing > 0;
   const degree = DEGREES[missingDegree as keyof typeof DEGREES];
   if (currentLocation === 'academy') {
     return [{
       type: 'study',
-      priority: 72,
-      description: `Finish ${missingDegree} to unlock ${bestPotentialJob.name}`,
+      priority: alreadyStarted ? 72 : 65,
+      description: `${alreadyStarted ? 'Finish' : 'Start'} ${missingDegree} to unlock ${bestPotentialJob.name}`,
       details: { degreeId: missingDegree, cost: degree?.costPerSession ?? 5, hours: degree?.hoursPerSession ?? 6 },
     }];
   }
@@ -158,8 +159,8 @@ function generateEducationPipelineActions(ctx: ActionContext): AIAction[] {
     return [{
       type: 'move',
       location: 'academy',
-      priority: 65,
-      description: `Rush to academy to finish degree for ${bestPotentialJob.name}`,
+      priority: alreadyStarted ? 65 : 58,
+      description: `${alreadyStarted ? 'Rush' : 'Go'} to academy to ${alreadyStarted ? 'finish' : 'start'} degree for ${bestPotentialJob.name}`,
     }];
   }
   return [];
@@ -349,11 +350,49 @@ function generateSmartWithdrawalActions(ctx: ActionContext): AIAction[] {
 // Sub-generator registry
 // ============================================
 
+/** Always-on proactive education: pursue degrees regardless of weakest goal */
+function generateProactiveEducationActions(ctx: ActionContext): AIAction[] {
+  const { player, settings, currentLocation, moveCost } = ctx;
+  if (player.completedDegrees.length >= 4) return []; // Enough degrees
+  if (settings.planningDepth < 2) return []; // Medium+ AI only
+
+  const nextDegree = getNextDegreeByROI(player, settings);
+  if (!nextDegree) return [];
+  if (player.gold < nextDegree.costPerSession + 20) return [];
+
+  // Check if already studying this (in-progress)
+  const progress = player.degreeProgress[nextDegree.id] || 0;
+  const sessionsLeft = nextDegree.sessionsRequired - progress;
+
+  // Higher priority if already in progress
+  const basePriority = progress > 0 ? 55 : 45;
+  // Seraphina/scholar types get natural boost via personality weights
+
+  if (currentLocation === 'academy' && player.timeRemaining >= nextDegree.hoursPerSession) {
+    return [{
+      type: 'study',
+      priority: basePriority,
+      description: `Study ${nextDegree.name} (proactive, ${sessionsLeft} sessions left)`,
+      details: { degreeId: nextDegree.id, cost: nextDegree.costPerSession, hours: nextDegree.hoursPerSession },
+    }];
+  }
+  if (player.timeRemaining > moveCost('academy') + nextDegree.hoursPerSession) {
+    return [{
+      type: 'move',
+      location: 'academy',
+      priority: basePriority - 5,
+      description: `Travel to academy to study ${nextDegree.name}`,
+    }];
+  }
+  return [];
+}
+
 const STRATEGY_GENERATORS: Array<(ctx: ActionContext) => AIAction[]> = [
   generateJobSeekingActions,
   generateJobUpgradeActions,
   generateWorkActions,
   generateEducationPipelineActions,
+  generateProactiveEducationActions,
   generateHousingUpgradeActions,
   generateHousingDowngradeActions,
   generateSalaryNegotiationActions,
