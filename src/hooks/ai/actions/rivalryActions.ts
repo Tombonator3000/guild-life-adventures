@@ -7,7 +7,7 @@
  * Architecture: 8 focused sub-generators dispatched from main function.
  */
 
-import { getAvailableQuests, canTakeQuest } from '@/data/quests';
+import { getWeeklyQuests, canTakeQuest } from '@/data/quests';
 import { getJob } from '@/data/jobs';
 import { DEGREES } from '@/data/education';
 import { DEFENSE_ITEMS, getShadowMarketHexStock, getEnchanterHexStock, getHexPrice } from '@/data/hexes';
@@ -69,7 +69,7 @@ function generateQuestCompetition({ ctx, biggestThreat, threatIsClose, rivalFocu
   if (biggestThreat.activeQuest !== null) return []; // rival already on a quest
   if (!(rivalFocus === 'wealth' || rivalFocus === 'career') || !threatIsClose) return [];
 
-  const available = getAvailableQuests(player.guildRank);
+  const available = getWeeklyQuests(player.guildRank, ctx.week);
   const takeable = available.filter(q => {
     const check = canTakeQuest(q, player.guildRank, player.education, player.inventory, player.dungeonFloorsCleared);
     return check.canTake && q.timeRequired <= player.timeRemaining && q.healthRisk <= player.health - 20;

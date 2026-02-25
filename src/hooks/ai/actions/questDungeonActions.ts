@@ -153,7 +153,7 @@ export function generateQuestDungeonActions(ctx: ActionContext): AIAction[] {
   }
 
   // Take quest if at guild hall and have pass
-  const bestQuest = getBestQuest(player, settings);
+  const bestQuest = getBestQuest(player, settings, ctx.week);
   if (bestQuest && !bestChain) { // prefer chain over regular quest
     if (currentLocation === 'guild-hall') {
       actions.push({
