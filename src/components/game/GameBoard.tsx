@@ -182,7 +182,7 @@ export function GameBoard() {
       const appliance = getAppliance(applianceBreakageEvent.applianceId);
       const name = appliance?.name || applianceBreakageEvent.applianceId;
       toast.warning(
-        `Your ${name} broke! Repair cost: ${applianceBreakageEvent.repairCost}g at the Enchanter or Market.`,
+        `Your ${name} broke! Repair cost: ~${applianceBreakageEvent.repairCost}g (Forge is cheaper).`,
         { duration: 6000 }
       );
       dismissApplianceBreakageEvent();
@@ -411,7 +411,7 @@ export function GameBoard() {
                 ) : applianceBreakageEvent?.fromCurse ? (
                   <CurseAppliancePanel
                     applianceId={applianceBreakageEvent.applianceId}
-                    repairCost={applianceBreakageEvent.repairCost}
+                    originalPrice={applianceBreakageEvent.originalPrice ?? applianceBreakageEvent.repairCost * 2}
                     curserName={applianceBreakageEvent.curserName}
                     onDismiss={dismissApplianceBreakageEvent}
                   />

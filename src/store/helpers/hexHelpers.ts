@@ -15,6 +15,7 @@ import {
   type ActiveCurse,
   type HexDefinition,
 } from '@/data/hexes';
+import { calculateRepairCost } from '@/data/items';
 
 export function createHexActions(set: SetFn, get: GetFn) {
   return {
@@ -469,7 +470,8 @@ function applySabotageHex(
           applianceBreakageEvent: {
             playerId: targetId,
             applianceId: brokenApplianceId,
-            repairCost: Math.floor((target.appliances[brokenApplianceId]?.originalPrice ?? 100) * 0.5),
+            repairCost: calculateRepairCost(target.appliances[brokenApplianceId]?.originalPrice ?? 100),
+            originalPrice: target.appliances[brokenApplianceId]?.originalPrice ?? 100,
             fromCurse: true,
             curserName: state.players.find(p => p.id === playerId)?.name ?? 'Someone',
           },

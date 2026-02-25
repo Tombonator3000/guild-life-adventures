@@ -108,6 +108,7 @@ Junior Academy → Scholar Path → Loremaster / Commerce Degree
 - `activeCurses` on Player should always be accessed with optional chaining (`player.activeCurses?.find(...)`) in UI code to guard against old saves that may not have this field initialized.
 - `getQuestLocationObjectives` and `allLocationObjectivesDone` accept optional `chainProgress` parameter for chain quest LOQ support. Always pass `player.questChainProgress` when calling these from UI code.
 - Quest objective completion notifications use EventPanel (center panel), NOT toasts. `completeLocationObjective` sets `eventMessage` with `[quest-objective]` tag + `phase: 'event'`. Do NOT add `toast.success()` after calling `completeLocationObjective`.
+- Appliance repair: Forge is cheaper (50% of Enchanter cost, min 5g, 3h) vs Enchanter (5–25% of `originalPrice`, 2h). The curse notification (`CurseAppliancePanel`) must show BOTH options. `hexHelpers.ts` stores `originalPrice` in `applianceBreakageEvent` so the panel can compute both ranges. Do NOT use `originalPrice * 0.5` as the displayed repair cost — that is the old wrong formula.
 - End-of-turn remaining time: NO "Rest X & End" button exists. Remaining hours are auto-consumed in `endTurn` via `applyRemainingTimeAtLocation` (turnHelpers.ts): at job location → partial work shift; at own home → proportional relax/sleep bonuses (happiness, health, relaxation); anywhere else → generic rest (1 happiness per 4 hours). Do NOT re-add the button to ResourcePanel.
 
 ## Testing
