@@ -326,8 +326,9 @@ export function generateEconomicActions(ctx: ActionContext): AIAction[] {
     }
   }
 
-  // AI-6: Weekend ticket purchases
-  if (player.tickets.length === 0 && player.gold > 150 && weakestGoal === 'happiness') {
+  // AI-6: Weekend ticket purchases — buy opportunistically when at Shadow Market with gold
+  // Priority is higher when happiness is the weakest goal, lower otherwise (cheap happiness)
+  if (player.tickets.length === 0 && player.gold > 150) {
     if (currentLocation === 'shadow-market') {
       const ticketOptions = [
         { type: 'bard-concert', cost: 40 },
@@ -336,7 +337,9 @@ export function generateEconomicActions(ctx: ActionContext): AIAction[] {
       ];
       const affordable = ticketOptions.find(t => player.gold >= t.cost);
       if (affordable) {
-        actions.push({ type: 'buy-ticket', priority: 48, description: `Buy ${affordable.type} ticket`, details: { ticketType: affordable.type, cost: affordable.cost } });
+        // High priority when happiness is weak, low-priority opportunistic purchase otherwise
+        const ticketPriority = weakestGoal === 'happiness' ? 48 : 30;
+        actions.push({ type: 'buy-ticket', priority: ticketPriority, description: `Buy ${affordable.type} ticket${weakestGoal !== 'happiness' ? ' (opportunistic)' : ''}`, details: { ticketType: affordable.type, cost: affordable.cost } });
       }
     }
   }
