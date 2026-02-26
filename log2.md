@@ -5,6 +5,24 @@
 
 ---
 
+## 2026-02-26 — Newspaper Scroll Design + Woodcut Illustrations
+
+### Timestamp: 2026-02-26
+
+### Changes
+Redesigned the Guildholm Herald newspaper modal with scroll background and woodcut article illustrations.
+
+**Graphics generated (9 total):** scroll-background.png, woodcut-economy.jpg, woodcut-jobs.jpg, woodcut-quests.jpg, woodcut-gossip.jpg, woodcut-events.jpg, woodcut-rent.jpg, woodcut-clothing.jpg, woodcut-dungeon.jpg — all in `src/assets/newspaper/`.
+
+**NewspaperModal.tsx redesign:** Scroll background fills modal, content positioned within readable area via percentage padding, each article has woodcut banner with gradient overlay, smart keyword-based image selection (rent/clothing/dungeon → specialized images), sepia filter on woodcuts, custom close button, dark amber text for parchment readability.
+
+| File | Change |
+|------|--------|
+| `src/components/game/NewspaperModal.tsx` | Complete redesign with scroll bg + woodcuts |
+| `src/assets/newspaper/` | 9 new AI-generated graphics |
+
+---
+
 ## 2026-02-26 — BUG-014 FIX: Seraphina (AI) Freezes During Her Turn
 
 ### Timestamp: 2026-02-26
