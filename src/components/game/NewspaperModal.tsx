@@ -1,6 +1,7 @@
 // Guild Life - The Guildholm Herald (Newspaper Modal with Scroll Design)
 
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Dialog,
   DialogContent,
@@ -106,100 +107,121 @@ export function NewspaperModal({ newspaper, onClose }: NewspaperModalProps) {
         className="border-0 bg-transparent shadow-none p-0 max-w-lg max-h-[90vh] overflow-hidden [&>button]:hidden"
         style={{ background: 'transparent' }}
       >
-        {/* Scroll background container */}
-        <div className="relative w-full" style={{ minHeight: '500px' }}>
-          {/* Scroll image as background */}
-          <img
-            src={scrollBg}
-            alt=""
-            className="absolute inset-0 w-full h-full object-fill pointer-events-none select-none"
-            draggable={false}
-          />
+        {/* Scroll background container with unrolling animation */}
+        <AnimatePresence>
+          {newspaper && (
+            <motion.div
+              className="relative w-full"
+              style={{ minHeight: '500px', transformOrigin: 'top center' }}
+              initial={{ scaleY: 0.05, scaleX: 0.92, opacity: 0.7 }}
+              animate={{ scaleY: 1, scaleX: 1, opacity: 1 }}
+              exit={{ scaleY: 0.05, scaleX: 0.92, opacity: 0 }}
+              transition={{
+                scaleY: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+                scaleX: { duration: 0.3, delay: 0.15, ease: 'easeOut' },
+                opacity: { duration: 0.25 },
+              }}
+            >
+              {/* Scroll image as background */}
+              <img
+                src={scrollBg}
+                alt=""
+                className="absolute inset-0 w-full h-full object-fill pointer-events-none select-none"
+                draggable={false}
+              />
 
-          {/* Content overlay positioned within the scroll's readable area */}
-          <div className="relative z-10 flex flex-col" style={{ padding: '12% 12% 14% 12%' }}>
-            {/* Header */}
-            <div className="text-center mb-3">
-              <h2
-                className="font-display text-2xl tracking-wide"
-                style={{ color: '#3d2b1a', textShadow: '0 1px 0 rgba(255,255,255,0.3)' }}
+              {/* Content fades in after scroll unrolls */}
+              <motion.div
+                className="relative z-10 flex flex-col"
+                style={{ padding: '12% 12% 14% 12%' }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.35 }}
               >
-                The Guildholm Herald
-              </h2>
-              <div className="flex items-center justify-between text-xs mt-1 px-2" style={{ color: '#5a4230' }}>
-                <span className="font-display">Week {newspaper.week} Edition</span>
-                <PriceTrend priceModifier={newspaper.priceModifier} />
-              </div>
-              {/* Decorative divider */}
-              <div className="mx-4 mt-2 border-t border-dashed" style={{ borderColor: '#a08060' }} />
-            </div>
+                {/* Header */}
+                <div className="text-center mb-3">
+                  <h2
+                    className="font-display text-2xl tracking-wide"
+                    style={{ color: '#3d2b1a', textShadow: '0 1px 0 rgba(255,255,255,0.3)' }}
+                  >
+                    The Guildholm Herald
+                  </h2>
+                  <div className="flex items-center justify-between text-xs mt-1 px-2" style={{ color: '#5a4230' }}>
+                    <span className="font-display">Week {newspaper.week} Edition</span>
+                    <PriceTrend priceModifier={newspaper.priceModifier} />
+                  </div>
+                  {/* Decorative divider */}
+                  <div className="mx-4 mt-2 border-t border-dashed" style={{ borderColor: '#a08060' }} />
+                </div>
 
-            {/* Close button */}
-            <button
-              onClick={onClose}
-              className="absolute top-[10%] right-[10%] z-20 w-7 h-7 flex items-center justify-center rounded-full text-lg font-bold hover:scale-110 transition-transform"
-              style={{ color: '#5a4230', background: 'rgba(200,180,150,0.5)' }}
-              aria-label="Close"
-            >
-              ×
-            </button>
-
-            {/* Articles — scrollable area */}
-            <div
-              className="flex-1 overflow-y-auto space-y-3 pr-1"
-              style={{ maxHeight: 'calc(70vh - 120px)' }}
-            >
-              {newspaper.articles.map((article, index) => (
-                <article
-                  key={index}
-                  className="rounded-sm overflow-hidden"
-                  style={{
-                    background: 'rgba(240, 228, 205, 0.65)',
-                    border: '1px solid rgba(160, 128, 96, 0.4)',
-                  }}
+                {/* Close button */}
+                <button
+                  onClick={onClose}
+                  className="absolute top-[10%] right-[10%] z-20 w-7 h-7 flex items-center justify-center rounded-full text-lg font-bold hover:scale-110 transition-transform"
+                  style={{ color: '#5a4230', background: 'rgba(200,180,150,0.5)' }}
+                  aria-label="Close"
                 >
-                  {/* Woodcut illustration banner */}
-                  <div className="relative w-full h-20 overflow-hidden">
-                    <img
-                      src={getArticleImage(article)}
-                      alt=""
-                      className="w-full h-full object-cover"
-                      style={{ filter: 'sepia(0.35) contrast(1.1)' }}
-                      draggable={false}
-                    />
-                    {/* Gradient overlay for text readability */}
-                    <div
-                      className="absolute inset-0"
-                      style={{
-                        background: 'linear-gradient(to bottom, rgba(240,228,205,0) 20%, rgba(240,228,205,0.85) 90%)',
-                      }}
-                    />
-                    {/* Headline overlaid on image bottom */}
-                    <h3
-                      className="absolute bottom-1 left-2 right-2 font-display font-bold text-sm leading-tight"
-                      style={{ color: '#2a1f10' }}
-                    >
-                      {article.headline}
-                    </h3>
-                  </div>
-                  {/* Article body */}
-                  <div className="px-3 py-2">
-                    <p className="text-xs leading-relaxed" style={{ color: '#4a3520', fontFamily: 'Crimson Text, serif' }}>
-                      {article.content}
-                    </p>
-                  </div>
-                </article>
-              ))}
-            </div>
+                  ×
+                </button>
 
-            {/* Footer tagline */}
-            <div className="text-center mt-2">
-              <p className="text-[10px] italic" style={{ color: '#7a6a55' }}>
-                "All the News That's Fit to Print in Guildholm"
-              </p>
-            </div>
-          </div>
-        </div>
+                {/* Articles — scrollable area */}
+                <div
+                  className="flex-1 overflow-y-auto space-y-3 pr-1"
+                  style={{ maxHeight: 'calc(70vh - 120px)' }}
+                >
+                  {newspaper.articles.map((article, index) => (
+                    <motion.article
+                      key={index}
+                      className="rounded-sm overflow-hidden"
+                      style={{
+                        background: 'rgba(240, 228, 205, 0.65)',
+                        border: '1px solid rgba(160, 128, 96, 0.4)',
+                      }}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25, delay: 0.4 + index * 0.08 }}
+                    >
+                      {/* Woodcut illustration banner */}
+                      <div className="relative w-full h-20 overflow-hidden">
+                        <img
+                          src={getArticleImage(article)}
+                          alt=""
+                          className="w-full h-full object-cover"
+                          style={{ filter: 'sepia(0.35) contrast(1.1)' }}
+                          draggable={false}
+                        />
+                        <div
+                          className="absolute inset-0"
+                          style={{
+                            background: 'linear-gradient(to bottom, rgba(240,228,205,0) 20%, rgba(240,228,205,0.85) 90%)',
+                          }}
+                        />
+                        <h3
+                          className="absolute bottom-1 left-2 right-2 font-display font-bold text-sm leading-tight"
+                          style={{ color: '#2a1f10' }}
+                        >
+                          {article.headline}
+                        </h3>
+                      </div>
+                      <div className="px-3 py-2">
+                        <p className="text-xs leading-relaxed" style={{ color: '#4a3520', fontFamily: 'Crimson Text, serif' }}>
+                          {article.content}
+                        </p>
+                      </div>
+                    </motion.article>
+                  ))}
+                </div>
+
+                {/* Footer tagline */}
+                <div className="text-center mt-2">
+                  <p className="text-[10px] italic" style={{ color: '#7a6a55' }}>
+                    "All the News That's Fit to Print in Guildholm"
+                  </p>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </DialogContent>
     </Dialog>
   );
