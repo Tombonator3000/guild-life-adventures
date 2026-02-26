@@ -1328,6 +1328,14 @@ Established a single source of truth for all zone layout constants by adding nam
 ### Type Check
 - `bunx tsc --noEmit` — 0 errors
 
+## 2026-02-26 — Newspaper Scroll-Unrolling Animation
+
+- Added `framer-motion` dependency
+- NewspaperModal scroll container now animates open with a vertical unrolling effect (`scaleY: 0.05 → 1`) using a custom easing curve
+- Content text fades in after the scroll finishes unrolling (0.35s delay)
+- Each article card staggers in with a subtle slide-up + fade (0.08s per article)
+- Exit animation rolls the scroll back up when closing
+
 
 ## 2026-02-21 — User Manual: Dark Magic Chapter + Opponent Visibility Feature (UTC)
 
