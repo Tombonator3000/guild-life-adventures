@@ -7039,3 +7039,28 @@ Bounties krever nå at spilleren reiser til en spesifikk lokasjon på brettet f�
 - `src/components/game/BountyBoardPanel.tsx` — LOQ-progresjon i UI
 - `src/test/questLOQ.test.ts` — Oppdatert med bounty LOQ-tester
 - `log2.md` — denne oppføringen
+
+---
+
+## 2026-02-26 — Newspaper Woodcut Illustrations for Personalized Articles
+
+### Endring
+Genererte 12 nye woodcut-illustrasjoner for personaliserte avisartikler og oppdaterte `getArticleImage()` mappingen.
+
+### Nye illustrasjoner (src/assets/newspaper/)
+- `woodcut-robbery.jpg` — Street robbery (Shadowfingers)
+- `woodcut-burglary.jpg` — Home break-in
+- `woodcut-death.jpg` — Death & resurrection
+- `woodcut-degree.jpg` — Graduation/degree earned
+- `woodcut-quest-complete.jpg` — Quest completed
+- `woodcut-fired.jpg` — Fired from job / pay cut
+- `woodcut-crash.jpg` — Market crash
+- `woodcut-starvation.jpg` — Starvation
+- `woodcut-loan.jpg` — Loan default / asset seizure
+- `woodcut-loan-repaid.jpg` — Loan repaid
+- `woodcut-sickness.jpg` — Illness / plague
+- `woodcut-eviction.jpg` — Eviction
+
+### Filer endret
+- `src/components/game/NewspaperModal.tsx` — 12 nye imports + utvidet `getArticleImage()` med keyword-matching for alle personaliserte artikkeltyper
+- `log2.md` — denne oppføringen

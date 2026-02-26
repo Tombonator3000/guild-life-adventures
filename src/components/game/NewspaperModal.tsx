@@ -20,6 +20,20 @@ import woodcutRent from '@/assets/newspaper/woodcut-rent.jpg';
 import woodcutClothing from '@/assets/newspaper/woodcut-clothing.jpg';
 import woodcutDungeon from '@/assets/newspaper/woodcut-dungeon.jpg';
 
+// Personalized article woodcuts
+import woodcutRobbery from '@/assets/newspaper/woodcut-robbery.jpg';
+import woodcutBurglary from '@/assets/newspaper/woodcut-burglary.jpg';
+import woodcutDeath from '@/assets/newspaper/woodcut-death.jpg';
+import woodcutDegree from '@/assets/newspaper/woodcut-degree.jpg';
+import woodcutQuestComplete from '@/assets/newspaper/woodcut-quest-complete.jpg';
+import woodcutFired from '@/assets/newspaper/woodcut-fired.jpg';
+import woodcutCrash from '@/assets/newspaper/woodcut-crash.jpg';
+import woodcutStarvation from '@/assets/newspaper/woodcut-starvation.jpg';
+import woodcutLoan from '@/assets/newspaper/woodcut-loan.jpg';
+import woodcutSickness from '@/assets/newspaper/woodcut-sickness.jpg';
+import woodcutEviction from '@/assets/newspaper/woodcut-eviction.jpg';
+import woodcutLoanRepaid from '@/assets/newspaper/woodcut-loan-repaid.jpg';
+
 interface NewspaperModalProps {
   newspaper: NewspaperType | null;
   onClose: () => void;
@@ -36,8 +50,24 @@ const CATEGORY_IMAGES: Record<string, string> = {
 /** Pick the best illustration for an article based on headline keywords */
 function getArticleImage(article: NewsArticle): string {
   const h = article.headline.toLowerCase();
-  // Special event subtypes
-  if (h.includes('rent') || h.includes('landlord') || h.includes('eviction')) return woodcutRent;
+
+  // Personalized article types (robbery, death, degree, quest, etc.)
+  if (h.includes('robbed') || h.includes('robbery') || h.includes('theft') || h.includes('mugged') || h.includes('pickpocket') || h.includes('shadowfingers strike')) return woodcutRobbery;
+  if (h.includes('break-in') || h.includes('burgl') || h.includes('home invasion') || h.includes('ransack')) return woodcutBurglary;
+  if (h.includes('death') || h.includes('died') || h.includes('obituary') || h.includes('resurrection') || h.includes('passes away')) return woodcutDeath;
+  if (h.includes('degree') || h.includes('graduat') || h.includes('scholar') || h.includes('academic') || h.includes('diploma')) return woodcutDegree;
+  if (h.includes('quest complete') || h.includes('quest triumph') || h.includes('hero returns') || h.includes('adventure complete') || h.includes('bounty claimed')) return woodcutQuestComplete;
+  if (h.includes('fired') || h.includes('terminated') || h.includes('dismissed') || h.includes('lost their job') || h.includes('sacked')) return woodcutFired;
+  if (h.includes('crash') || h.includes('collapse') || h.includes('catastrophe') || h.includes('crisis') || h.includes('layoff') || h.includes('mass')) return woodcutCrash;
+  if (h.includes('starv') || h.includes('hunger') || h.includes('famine')) return woodcutStarvation;
+  if (h.includes('loan default') || h.includes('seize') || h.includes('asset seizure') || h.includes('debt')) return woodcutLoan;
+  if (h.includes('loan repaid') || h.includes('debt free') || h.includes('paid off')) return woodcutLoanRepaid;
+  if (h.includes('sick') || h.includes('illness') || h.includes('plague') || h.includes('fever') || h.includes('disease')) return woodcutSickness;
+  if (h.includes('evict') || h.includes('thrown out') || h.includes('homeless')) return woodcutEviction;
+  if (h.includes('pay cut') || h.includes('wage') || h.includes('paycut')) return woodcutFired;
+
+  // Generic event subtypes
+  if (h.includes('rent') || h.includes('landlord')) return woodcutRent;
   if (h.includes('clothing') || h.includes('fashion') || h.includes('attire') || h.includes('dress code')) return woodcutClothing;
   if (h.includes('dungeon') || h.includes('cave') || h.includes('monster')) return woodcutDungeon;
   return CATEGORY_IMAGES[article.category] || woodcutGossip;
