@@ -46,17 +46,31 @@ function generateEducationActions(ctx: ActionContext): AIAction[] {
   const sessionsLeft = nextDegree.sessionsRequired - degreeProgress;
 
   // Can graduate?
-  if (sessionsLeft <= 0 && currentLocation === 'academy') {
-    actions.push({
-      type: 'graduate',
-      priority: 85,
-      description: `Graduate from ${nextDegree.name}`,
-      details: { degreeId: nextDegree.id },
-    });
+  if (sessionsLeft <= 0) {
+    if (currentLocation === 'academy') {
+      actions.push({
+        type: 'graduate',
+        priority: 85,
+        description: `Graduate from ${nextDegree.name}`,
+        details: { degreeId: nextDegree.id },
+      });
+    } else {
+      // Travel to academy to collect the free graduation — education points + happiness bonus
+      const movementCost = moveCost('academy');
+      if (player.timeRemaining > movementCost + 2) {
+        actions.push({
+          type: 'move',
+          location: 'academy',
+          priority: 82,
+          description: `Travel to academy to graduate from ${nextDegree.name} (free!)`,
+        });
+      }
+    }
+    return actions; // Don't try to study if sessions are already done
   }
   // Can study?
-  else if (player.gold >= nextDegree.costPerSession &&
-           player.timeRemaining >= nextDegree.hoursPerSession) {
+  if (player.gold >= nextDegree.costPerSession &&
+      player.timeRemaining >= nextDegree.hoursPerSession) {
     if (currentLocation === 'academy') {
       const nearGraduationBoost = settings.planningDepth >= 3 && sessionsLeft <= 2 ? 10 : 0;
       actions.push({
@@ -366,10 +380,10 @@ function generateFestivalBonusActions(ctx: ActionContext): AIAction[] {
 
   // Harvest Festival: prices 15% lower — stock up on food
   if (festival.priceMultiplier < 1.0 && player.gold > 100) {
-    if (player.foodLevel < 60 && (currentLocation === 'general-store' || currentLocation === 'rusty-tankard')) {
+    if (player.foodLevel < 70 && (currentLocation === 'general-store' || currentLocation === 'rusty-tankard')) {
       actions.push({
         type: 'buy-food',
-        priority: 52,
+        priority: 58, // Boosted: festival discounts are time-limited
         description: 'Stock up on food during festival discount',
         details: { cost: Math.round(15 * priceModifier), foodGain: 15 },
       });
@@ -383,7 +397,7 @@ function generateFestivalBonusActions(ctx: ActionContext): AIAction[] {
       if (currentLocation === 'academy') {
         actions.push({
           type: 'study',
-          priority: 75,
+          priority: 82, // Boosted: education festivals give bonus progress
           description: `Study during ${festival.name} (bonus progress!)`,
           details: { degreeId: nextDeg.id, cost: nextDeg.costPerSession, hours: nextDeg.hoursPerSession },
         });
@@ -391,7 +405,7 @@ function generateFestivalBonusActions(ctx: ActionContext): AIAction[] {
         actions.push({
           type: 'move',
           location: 'academy',
-          priority: 70,
+          priority: 76, // Boosted: worth traveling specifically for education festival
           description: `Travel to academy for ${festival.name} study bonus`,
         });
       }
@@ -406,9 +420,17 @@ function generateFestivalBonusActions(ctx: ActionContext): AIAction[] {
       if (currentLocation === festJobLoc) {
         actions.push({
           type: 'work',
-          priority: 72,
+          priority: 78, // Boosted: bonus wages are time-limited
           description: `Work during ${festival.name} (bonus wages!)`,
           details: { jobId: festJob.id, hours: festJob.hoursPerShift, wage: player.currentWage },
+        });
+      } else if (player.timeRemaining > moveCost(festJobLoc) + festJob.hoursPerShift) {
+        // Also travel to work during wage festival — it's worth it
+        actions.push({
+          type: 'move',
+          location: festJobLoc,
+          priority: 72,
+          description: `Travel to work during ${festival.name} for bonus wages`,
         });
       }
     }
@@ -421,7 +443,7 @@ function generateFestivalBonusActions(ctx: ActionContext): AIAction[] {
       if (currentLocation === 'cave') {
         actions.push({
           type: 'explore-dungeon',
-          priority: 74,
+          priority: 80, // Boosted: gold multiplier is significant
           description: `Explore dungeon during ${festival.name} (bonus gold!)`,
           details: { floorId: dungeonFloor },
         });
@@ -429,7 +451,7 @@ function generateFestivalBonusActions(ctx: ActionContext): AIAction[] {
         actions.push({
           type: 'move',
           location: 'cave',
-          priority: 69,
+          priority: 74, // Boosted: worth traveling for gold festival
           description: `Travel to cave for ${festival.name} dungeon bonus`,
         });
       }
@@ -442,20 +464,38 @@ function generateFestivalBonusActions(ctx: ActionContext): AIAction[] {
 // ─── Opportunistic graduation check ───────────────────────────
 
 function generateGraduationActions(ctx: ActionContext): AIAction[] {
-  if (ctx.currentLocation !== 'academy') return [];
-
   const actions: AIAction[] = [];
+  let hasPendingGraduation = false;
+
   for (const [degreeId, degree] of Object.entries(DEGREES)) {
     const progress = ctx.player.degreeProgress[degreeId as keyof typeof ctx.player.degreeProgress] || 0;
     if (progress >= degree.sessionsRequired && !ctx.player.completedDegrees.includes(degreeId as any)) {
+      if (ctx.currentLocation === 'academy') {
+        actions.push({
+          type: 'graduate',
+          priority: 88, // Very high - free bonuses
+          description: `Graduate from ${degree.name}`,
+          details: { degreeId },
+        });
+      } else {
+        hasPendingGraduation = true;
+      }
+    }
+  }
+
+  // Travel to academy if there are pending graduations (free education points + happiness)
+  if (hasPendingGraduation) {
+    const travelCost = ctx.moveCost('academy');
+    if (ctx.player.timeRemaining > travelCost + 2) {
       actions.push({
-        type: 'graduate',
-        priority: 88, // Very high - free bonuses
-        description: `Graduate from ${degree.name}`,
-        details: { degreeId },
+        type: 'move',
+        location: 'academy',
+        priority: 80, // High priority — graduation costs nothing but time
+        description: 'Travel to academy to collect pending degree graduation(s)',
       });
     }
   }
+
   return actions;
 }
 

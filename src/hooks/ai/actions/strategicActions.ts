@@ -51,12 +51,14 @@ function generateJobSeekingActions(ctx: ActionContext): AIAction[] {
 
 /** Upgrade to a better-paying job */
 function generateJobUpgradeActions(ctx: ActionContext): AIAction[] {
-  const { player, currentLocation, moveCost, rivals } = ctx;
+  const { player, settings, currentLocation, moveCost, rivals } = ctx;
   if (!player.currentJob) return [];
 
   const currentJob = getJob(player.currentJob);
   const bestJob = getBestAvailableJob(player, rivals);
-  if (!currentJob || !bestJob || bestJob.baseWage <= currentJob.baseWage * 1.2) return [];
+  // Hard AI upgrades for any >10% wage improvement; medium/easy require 20%
+  const upgradeThreshold = settings.planningDepth >= 3 ? 1.1 : 1.2;
+  if (!currentJob || !bestJob || bestJob.baseWage <= currentJob.baseWage * upgradeThreshold) return [];
 
   if (currentLocation === 'guild-hall') {
     return [{
@@ -118,17 +120,20 @@ function generateWorkActions(ctx: ActionContext): AIAction[] {
   return [];
 }
 
-/** HARD AI: Education-Career Pipeline — finish a degree to unlock a better job */
+/** Medium/Hard AI: Education-Career Pipeline — finish a degree to unlock a better job */
 function generateEducationPipelineActions(ctx: ActionContext): AIAction[] {
   const { player, settings, currentLocation, moveCost } = ctx;
-  if (settings.planningDepth < 3 || !player.currentJob) return [];
+  if (settings.planningDepth < 2 || !player.currentJob) return [];
 
   const currentJob = getJob(player.currentJob);
   if (!currentJob) return [];
 
+  // Hard AI requires only 20% wage improvement; medium requires 30%
+  const pipelineWageThreshold = settings.planningDepth >= 3 ? 1.2 : 1.3;
+
   // Find jobs where we need exactly 1 more degree (high-priority targets)
   const bestPotentialJob = ALL_JOBS
-    .filter(j => j.baseWage > currentJob.baseWage * 1.3)
+    .filter(j => j.baseWage > currentJob.baseWage * pipelineWageThreshold)
     .filter(j => {
       const reqDegrees = j.requiredDegrees || [];
       const missingDegrees = reqDegrees.filter(d => !player.completedDegrees.includes(d as any));
@@ -223,7 +228,7 @@ function generateHousingDowngradeActions(ctx: ActionContext): AIAction[] {
 
 /** Salary negotiation — request a raise after enough shifts */
 function generateSalaryNegotiationActions(ctx: ActionContext): AIAction[] {
-  const { player, currentLocation } = ctx;
+  const { player, settings, currentLocation, moveCost } = ctx;
   if (!player.currentJob || player.timeRemaining < 2) return [];
 
   const job = getJob(player.currentJob);
@@ -240,6 +245,20 @@ function generateSalaryNegotiationActions(ctx: ActionContext): AIAction[] {
       description: `Request raise at ${job.name}`,
       details: { jobId: job.id },
     }];
+  }
+
+  // Hard AI: travel to request raise if time allows (requires enough shifts + time for raise + shift)
+  // Only worth traveling specifically for raise if we have 6+ shifts (established employee)
+  if (settings.planningDepth >= 3 && shiftsAtJob >= 6) {
+    const travelCost = moveCost(jobLocation);
+    if (player.timeRemaining > travelCost + job.hoursPerShift + 2) {
+      return [{
+        type: 'move',
+        location: jobLocation,
+        priority: 42,
+        description: `Travel to ${job.name} to request raise (${shiftsAtJob} shifts worked)`,
+      }];
+    }
   }
   return [];
 }
@@ -353,7 +372,9 @@ function generateSmartWithdrawalActions(ctx: ActionContext): AIAction[] {
 /** Always-on proactive education: pursue degrees regardless of weakest goal */
 function generateProactiveEducationActions(ctx: ActionContext): AIAction[] {
   const { player, settings, currentLocation, moveCost } = ctx;
-  if (player.completedDegrees.length >= 4) return []; // Enough degrees
+  // Hard AI pursues up to 8 degrees; medium AI up to 5 (still leaves room for job-unlock degrees)
+  const degreeCap = settings.planningDepth >= 3 ? 8 : 5;
+  if (player.completedDegrees.length >= degreeCap) return [];
   if (settings.planningDepth < 2) return []; // Medium+ AI only
 
   const nextDegree = getNextDegreeByROI(player, settings);
