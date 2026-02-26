@@ -128,49 +128,75 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     visitedLocationsRef.current.clear(); // Reset location history for new turn
     visitedLocationsRef.current.add(player.currentLocation); // Mark starting location as visited
 
-    // ── Observe human players & record performance for adaptive systems ──
-    const initState = useGameStore.getState();
-    const humanPlayers = initState.players.filter(p => !p.isAI && !p.isGameOver);
-    observeHumanPlayers(humanPlayers, initState.week);
-    recordPerformance(player, humanPlayers, goalSettings, initState.week);
-
-    // ── Goal velocity tracking: record progress snapshot at turn start ──
-    const initProgress = calculateGoalProgress(player, goalSettings, initState.stockPrices);
-    recordAIGoalProgress(player.id, initProgress, initState.week);
-
-    // ── Commitment plan: validate existing plan or generate a new one ──
-    if (commitmentPlanRef.current && !isCommitmentValid(
-      commitmentPlanRef.current, player, initProgress, initState.week
-    )) {
-      console.log(`[Grimwald AI] ${player.name} commitment plan expired: ${commitmentPlanRef.current.description}`);
-      commitmentPlanRef.current = null;
-    }
-    if (!commitmentPlanRef.current) {
-      commitmentPlanRef.current = generateCommitmentPlan(player, initProgress, baseSettings, initState.week);
-      if (commitmentPlanRef.current) {
-        console.log(`[Grimwald AI] ${player.name} new commitment: ${commitmentPlanRef.current.description}`);
-      }
-    }
-
-    // ── Calculate dynamic difficulty adjustment ──
-    const adjustment = calculateAdjustment(player.id);
-    const settings = applyAdjustment(baseSettings, adjustment);
-
-    if (adjustment.active) {
-      console.log(`[Grimwald AI] ${player.name} difficulty adjusted: gap=${adjustment.performanceGap.toFixed(2)}, ` +
-        `mistakes=${settings.mistakeChance.toFixed(3)}, aggression=${settings.aggressiveness.toFixed(2)}`);
-    }
-
-    console.log(`[Grimwald AI] ${player.name} starting turn (${difficulty} difficulty)`);
+    // BUG FIX: Capture currentPlayerIndex at turn start to detect stale step execution.
+    // If useAutoEndTurn or any external code advances the turn while an AI step is still
+    // scheduled, the stale step's endTurn() call would double-advance the turn, skipping
+    // another player. The guard in step() aborts when the index no longer matches.
+    const startingPlayerIndex = useGameStore.getState().currentPlayerIndex;
 
     let actionsRemaining = 15; // Safety limit
     let currentPlayer = player;
+    let settings = baseSettings; // Set before step closure so it's always defined
+
+    // BUG FIX: Wrap initialization in try-catch so any exception in helper functions
+    // (observeHumanPlayers, recordPerformance, generateCommitmentPlan, etc.) resets
+    // isExecutingRef and calls endTurn rather than leaving the AI permanently frozen.
+    try {
+      // ── Observe human players & record performance for adaptive systems ──
+      const initState = useGameStore.getState();
+      const humanPlayers = initState.players.filter(p => !p.isAI && !p.isGameOver);
+      observeHumanPlayers(humanPlayers, initState.week);
+      recordPerformance(player, humanPlayers, goalSettings, initState.week);
+
+      // ── Goal velocity tracking: record progress snapshot at turn start ──
+      const initProgress = calculateGoalProgress(player, goalSettings, initState.stockPrices);
+      recordAIGoalProgress(player.id, initProgress, initState.week);
+
+      // ── Commitment plan: validate existing plan or generate a new one ──
+      if (commitmentPlanRef.current && !isCommitmentValid(
+        commitmentPlanRef.current, player, initProgress, initState.week
+      )) {
+        console.log(`[Grimwald AI] ${player.name} commitment plan expired: ${commitmentPlanRef.current.description}`);
+        commitmentPlanRef.current = null;
+      }
+      if (!commitmentPlanRef.current) {
+        commitmentPlanRef.current = generateCommitmentPlan(player, initProgress, baseSettings, initState.week);
+        if (commitmentPlanRef.current) {
+          console.log(`[Grimwald AI] ${player.name} new commitment: ${commitmentPlanRef.current.description}`);
+        }
+      }
+
+      // ── Calculate dynamic difficulty adjustment ──
+      const adjustment = calculateAdjustment(player.id);
+      settings = applyAdjustment(baseSettings, adjustment);
+
+      if (adjustment.active) {
+        console.log(`[Grimwald AI] ${player.name} difficulty adjusted: gap=${adjustment.performanceGap.toFixed(2)}, ` +
+          `mistakes=${settings.mistakeChance.toFixed(3)}, aggression=${settings.aggressiveness.toFixed(2)}`);
+      }
+
+      console.log(`[Grimwald AI] ${player.name} starting turn (${difficulty} difficulty)`);
+    } catch (initErr) {
+      console.error('[Grimwald AI] Init error in runAITurn, resetting execution flag:', initErr);
+      isExecutingRef.current = false;
+      try { endTurn(); } catch { /* ignore */ }
+      return;
+    }
 
     const step = async () => {
       try {
       // Get fresh player state
       const state = useGameStore.getState();
       currentPlayer = state.players.find(p => p.id === player.id) || currentPlayer;
+
+      // BUG FIX: Stale-step guard — abort if the turn was advanced externally (e.g. by
+      // useAutoEndTurn firing before the AI step). Without this, the stale step would
+      // see timeRemaining=0 and call endTurn() a second time, skipping the next player.
+      if (state.currentPlayerIndex !== startingPlayerIndex) {
+        console.log(`[Grimwald AI] Stale step for ${player.name} (expected idx ${startingPlayerIndex}, got ${state.currentPlayerIndex}), aborting`);
+        isExecutingRef.current = false;
+        return;
+      }
 
       // Check skip request
       if (state.skipAITurn) {

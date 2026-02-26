@@ -5,6 +5,39 @@
 
 ---
 
+## 2026-02-26 — BUG-014 FIX: Seraphina (AI) Freezes During Her Turn
+
+### Timestamp: 2026-02-26
+
+### Problem
+
+Seraphina (and any AI player) would often stop moving and stop taking actions during her turn, requiring a full game restart. Three concurrent root causes were identified via code analysis.
+
+### Root Causes (see bugs.md BUG-014 for full detail)
+
+**Root Cause A — `aiIsThinking` not reset after week-end events** (`useAITurnHandler.ts`)
+
+When `processWeekEnd()` fires, React batches `currentPlayerIndex` advance + `phase='event'` in one render. Effect 1 (watches `phase`) clears `lastAIPlayerIdRef` but NOT `aiIsThinking`. Effect 2 (watches `currentPlayer?.id`) then has `lastAIPlayerIdRef=null` so can't reset `aiIsThinking` either. If the first player of the new week is an AI, `aiIsThinking` stays `true` from the previous AI's turn, permanently blocking the start block → freeze.
+
+**Root Cause B — `useAutoEndTurn` races with easy AI step** (`useAutoEndTurn.ts`)
+
+`useAutoEndTurn` schedules `endTurn()` in 500ms when `timeRemaining <= 0`. Easy AI steps fire every 800ms. Timeline: 500ms `useAutoEndTurn` fires → turn advances → 800ms stale AI step fires → `endTurn()` again → double advance, skipping a player, causing cascading turn-management corruption.
+
+**Root Cause C — Stale AI step calls `endTurn()` after turn externally advanced** (`useGrimwaldAI.ts`)
+
+When any external code advances `currentPlayerIndex`, old scheduled step-callbacks still in the timer queue find `timeRemaining=0` and fire `endTurn()` again.
+
+### Fixes Applied
+
+| File | Change |
+|------|--------|
+| `src/hooks/useAITurnHandler.ts` | Added `setAiIsThinking(false)` in the `phase !== 'playing'` early-return block |
+| `src/hooks/useAutoEndTurn.ts` | Added `if (currentPlayer.isAI) return false;` guard at top of `checkAutoReturn` |
+| `src/hooks/useGrimwaldAI.ts` | Captured `startingPlayerIndex` before step loop; each step checks and aborts if `currentPlayerIndex` changed; wrapped initialization block in try-catch |
+
+### Tests
+
+357 pass, 1 pre-existing failure (window undefined in non-browser test env).
 ## 2026-02-25 — AI Competitiveness Overhaul: Education Pipeline & Strategic Boost
 
 ### Timestamp: 2026-02-25 14:37 UTC

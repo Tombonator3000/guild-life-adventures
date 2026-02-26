@@ -351,6 +351,49 @@ Previous "definitive fix" only applied self-destroying SW to GitHub Pages. On Lo
 
 ---
 
+## BUG-014: Seraphina (AI) Freezes — Three Concurrent Root Causes (2026-02-26, FIXED)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | Critical (game restart required) |
+| **Status** | FIXED (2026-02-26) |
+| **Symptom** | An AI player (most often Seraphina) stops taking any actions during her turn; game must be restarted |
+
+### Root Cause A — `aiIsThinking` not reset after week-end events
+
+**Files**: `useAITurnHandler.ts`
+
+When `processWeekEnd()` fires, two things happen simultaneously in one Zustand `set()` call:
+1. `currentPlayerIndex` advances to the first alive player of the new week
+2. `phase` is set to `'event'`
+
+React batches both. When Effect 1 fires (watches `phase`), it clears `aiTurnStartedRef` and `lastAIPlayerIdRef` but NOT `aiIsThinking`. Effect 2 fires next (watches `currentPlayer?.id`) but by then `lastAIPlayerIdRef` is already `null` (Effect 1 ran first), so the `lastAIPlayerIdRef && ...` condition is always `false`. If the first player of the new week is an AI, `aiIsThinking` stays `true` from the previous AI's turn, the reset block never fires (no `lastAIPlayerIdRef`), and the start block (`!aiIsThinking`) is permanently blocked → AI freezes.
+
+**Fix**: Added `setAiIsThinking(false)` inside the `phase !== 'playing'` early-return block in Effect 1. This resets `aiIsThinking` whenever the game is in event/setup/victory phase, guaranteeing it's `false` when `phase` returns to `'playing'`.
+
+### Root Cause B — `useAutoEndTurn` races with AI step loop (easy difficulty)
+
+**Files**: `useAutoEndTurn.ts`
+
+`useAutoEndTurn` watches `currentPlayer.timeRemaining` and schedules `endTurn()` in 500ms when time hits 0. The AI's step loop (easy difficulty = 800ms delay) fires AFTER the `useAutoEndTurn` timer. Timeline:
+- T+0: AI action reduces time to 0
+- T+500ms: `useAutoEndTurn` fires `endTurn()` → turn advances to next player
+- T+800ms: Stale AI step fires, finds `timeRemaining=0` for old player → fires `endTurn()` AGAIN → double-advance, skipping a player
+
+This cascades: `useAITurnHandler` starts the skipped player's `runAITurn` with a 1000ms delay, but the phantom `endTurn()` may advance past them too.
+
+**Fix**: Added `if (currentPlayer.isAI) return false;` at the top of `checkAutoReturn`. The AI manages its own `endTurn()` via `runAITurn/step()`. `useAutoEndTurn` is for human players only.
+
+### Root Cause C — Stale AI step calls `endTurn()` after turn was externally advanced
+
+**Files**: `useGrimwaldAI.ts`
+
+When any external code (Root Cause B, or future code) advances `currentPlayerIndex`, old scheduled step-callbacks from the previous AI's loop are still in the timer queue. When they fire, they find the old player's `timeRemaining=0` and call `endTurn()` again, double-advancing the game.
+
+**Fix**: `runAITurn` now captures `startingPlayerIndex = useGameStore.getState().currentPlayerIndex` before the step loop. Each `step()` call checks `state.currentPlayerIndex !== startingPlayerIndex` and returns early (with `isExecutingRef.current = false`) if the turn was advanced externally. Also wrapped the initialization block (before the step loop) in try-catch: if any helper function throws (e.g., `generateCommitmentPlan`, `recordPerformance`), `isExecutingRef` is reset and `endTurn()` is called so the game recovers rather than freezing with `isExecutingRef=true` permanently.
+
+---
+
 ## BUG-013: failedActionsRef Blocks Re-attempt After State Change (2026-02-23, KNOWN)
 
 | Field | Value |

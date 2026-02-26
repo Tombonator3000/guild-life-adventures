@@ -23,6 +23,12 @@ export function useAutoEndTurn() {
   const checkAutoReturn = useCallback(() => {
     if (!currentPlayer) return;
 
+    // BUG FIX: AI players manage their own endTurn via runAITurn/step().
+    // If useAutoEndTurn also fires endTurn for AI (e.g. 500ms timeout fires before the
+    // AI's 800ms step), the turn advances twice — skipping another player and leaving
+    // stale AI step callbacks that fire endTurn again in the now-wrong turn.
+    if (currentPlayer.isAI) return false;
+
     // Guest mode: guest can forward endTurn to host when time runs out,
     // but death/event handling is host-only (guest sees it via state sync).
     if (networkMode === 'guest') {
