@@ -153,7 +153,7 @@ export function generateQuestDungeonActions(ctx: ActionContext): AIAction[] {
   }
 
   // Take quest if at guild hall and have pass
-  const bestQuest = getBestQuest(player, settings);
+  const bestQuest = getBestQuest(player, settings, ctx.week);
   if (bestQuest && !bestChain) { // prefer chain over regular quest
     if (currentLocation === 'guild-hall') {
       actions.push({
@@ -195,9 +195,11 @@ export function generateQuestDungeonActions(ctx: ActionContext): AIAction[] {
 
   // Complete active quest — LOQ: must complete location objectives first
   if (player.activeQuest) {
-    const objectives = getQuestLocationObjectives(player.activeQuest, player.questChainProgress);
+    // Use nlChainProgress for nlchain quests, questChainProgress for linear chains
+    const chainProgressForLOQ = player.activeQuest.startsWith('nlchain:') ? player.nlChainProgress : player.questChainProgress;
+    const objectives = getQuestLocationObjectives(player.activeQuest, chainProgressForLOQ);
     const progress = player.questLocationProgress ?? [];
-    const allDone = allLocationObjectivesDone(player.activeQuest, progress, player.questChainProgress);
+    const allDone = allLocationObjectivesDone(player.activeQuest, progress, chainProgressForLOQ);
 
     if (!allDone) {
       // Find next pending objective and travel to / complete it

@@ -38,6 +38,161 @@ When any external code advances `currentPlayerIndex`, old scheduled step-callbac
 ### Tests
 
 357 pass, 1 pre-existing failure (window undefined in non-browser test env).
+## 2026-02-25 — AI Competitiveness Overhaul: Education Pipeline & Strategic Boost
+
+### Timestamp: 2026-02-25 14:37 UTC
+
+### Problem
+AI opponents were catastrophically weak at education and career progression. Stats from 37-week game:
+- Tuck (human): 54 Education, 6 Degrees, 109 Career, 1712g Wealth
+- Grimwald: 18 Education, 2 Degrees, 89 Career, 386g Wealth
+- Seraphina (Scholar!): 9 Education, 1 Degree, 86 Career, 0g Wealth
+
+### 7 Changes Implemented
+
+1. **Always-On Proactive Education** (strategicActions.ts): New `generateProactiveEducationActions` — medium+ AI pursues degrees regardless of weakest goal. Priority 45 (55 if in-progress). Fires when < 4 degrees and gold > costPerSession + 20.
+2. **Education-Career Pipeline Gate Removed** (strategicActions.ts): `generateEducationPipelineActions` no longer requires `progressOnMissing > 0`. AI will START degrees that unlock better jobs, not just finish ones randomly started.
+3. **Relaxed Cash Flow Gate** (goalActions.ts): Changed from `gold < costPerSession * 3` to `gold < costPerSession + 15`.
+4. **Extended Commitment Plan Duration** (commitmentPlan.ts): Medium: 2→4 turns, Hard: 4→6 turns for earn-degree plans.
+5. **Education Stepping Stone** (strategy.ts): `getWeakestGoal` redirects career/wealth to education when education progress < 50% and within 20% of weakest goal.
+6. **Work Priority Boost** (strategicActions.ts): Base work priority 50→55, wage boost cap 15→25 for hard AI, multiplier 2→3.
+7. **Personality weights already apply** — Change 5 from plan is naturally handled since proactive education actions now exist for personality weights to amplify.
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `src/hooks/ai/actions/strategicActions.ts` | Added proactive education generator; removed pipeline gate; boosted work priority |
+| `src/hooks/ai/actions/goalActions.ts` | Relaxed cash flow gate (×3 → +15) |
+| `src/hooks/ai/commitmentPlan.ts` | Extended degree plan duration (2→4, 4→6) |
+| `src/hooks/ai/strategy.ts` | Education stepping stone in getWeakestGoal |
+| `CLAUDE.md` | Documented AI education pipeline conventions |
+
+### Tests: 358/358 passed ✅
+
+---
+
+## 2026-02-25 — FIX: NL Chain LOQ progress map used in ALL 6 call sites
+
+### Timestamp: 2026-02-25 13:00 UTC
+
+### Bug Fixed
+
+**NL chain quests (e.g. "The Inside Job") couldn't complete objectives — "Complete all objectives first!" stuck**
+- Root cause: Previous fix only patched `QuestPanel.tsx`. But 5 other call sites still passed `player.questChainProgress` instead of `player.nlChainProgress` for nlchain quests:
+  1. `LocationPanel.tsx` — LOQ banner at locations (objectives couldn't be completed)
+  2. `HomePanel.tsx` — LOQ banner at home locations
+  3. `GameBoard.tsx` — map objective markers (wrong locations highlighted)
+  4. `BountyBoardPanel.tsx` — bounty LOQ check
+  5. `questHelpers.ts` (store) — `completeLocationObjective` action couldn't find objectives
+  6. `questDungeonActions.ts` (AI) — AI couldn't resolve nlchain objectives
+- Fix: All 6 sites now use pattern: `const chainProgressForLOQ = activeQuest?.startsWith('nlchain:') ? player.nlChainProgress : player.questChainProgress;`
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `src/components/game/LocationPanel.tsx` | Use `chainProgressForLOQ` pattern |
+| `src/components/game/HomePanel.tsx` | Use `chainProgressForLOQ` pattern |
+| `src/components/game/GameBoard.tsx` | Use `chainProgressForLOQ` pattern |
+| `src/components/game/BountyBoardPanel.tsx` | Use `chainProgressForLOQ` pattern |
+| `src/store/helpers/questHelpers.ts` | Use `chainProgressForLOQ` pattern |
+| `src/hooks/ai/actions/questDungeonActions.ts` | Use `chainProgressForLOQ` pattern |
+| `CLAUDE.md` | Updated nlchain convention with ALL call sites listed |
+
+### Tests: 358/358 passed ✅
+
+---
+
+## 2026-02-25 — FIX: Quest Event Title + NL Chain LOQ + Bounty Resolution (3 bugs)
+
+### Timestamp: 2026-02-25 12:42 UTC
+
+### Bugs Fixed
+
+**Bug 1: Quest objective events showed "WEEK X EVENT" instead of "QUEST EVENT"**
+- Root cause: `useLocationClick.ts` L227 checked `includes('[quest-objective]')` but actual tag is `[quest-objective:questId]` — the closing bracket is after the quest ID, so the substring `[quest-objective]` never matched
+- Fix: Changed to `includes('quest-objective')` (no brackets)
+
+**Bug 2: NL chain quests (e.g. "The Inside Job" tg-3) couldn't be completed**
+- Root cause: `QuestPanel.tsx` L218-220 passed `player.questChainProgress` to `getQuestLocationObjectives` and `allLocationObjectivesDone` for ALL quest types. But nlchain quests store progress in `player.nlChainProgress`, not `questChainProgress`. This caused `stepIndex = 0` fallback, showing step 0's LOQs instead of the current step's LOQs.
+- Fix: Use `player.nlChainProgress` when `activeQuestData.type === 'nlchain'`, `player.questChainProgress` otherwise
+
+**Bug 3: `QuestPanel.resolveActiveQuest` used `getWeeklyBounties(week)` for bounties**
+- Same bug as BountyBoardPanel (fixed earlier) but in a different code path. Active bounty disappears from QuestPanel after week rotation.
+- Fix: Use `getBounty(bountyId)` from full pool instead of weekly subset
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `src/hooks/useLocationClick.ts` L227 | `includes('[quest-objective]')` → `includes('quest-objective')` |
+| `src/components/game/QuestPanel.tsx` L16 | Added `getBounty` import |
+| `src/components/game/QuestPanel.tsx` L170-173 | `getWeeklyBounties` → `getBounty` |
+| `src/components/game/QuestPanel.tsx` L218-220 | Pass `nlChainProgress` for nlchain, `questChainProgress` for linear |
+| `CLAUDE.md` | Added nlchain LOQ and event title conventions |
+
+### Tests
+All 358 tests pass.
+
+---
+
+## 2026-02-25 — Expanded Bounty Pool (9→18), Weekly Rotation 4/week
+
+### Summary
+Added 9 new bounties to the bounty pool (total: 18) with unique LOQ objectives, humorous descriptions, description variants, and dedicated medieval woodcut illustrations. Increased weekly bounty rotation from 3→4 bounties per week for more variety.
+
+### New Bounties
+| ID | Name | Location | Gold | Time |
+|----|------|----------|------|------|
+| bounty-town-crier | Town Crier Duty | guild-hall | 10 | 3h |
+| bounty-cart-repair | Cart Repair | forge | 14 | 3h |
+| bounty-goblin-thief | Goblin Pickpocket | shadow-market | 16 | 4h |
+| bounty-well-testing | Water Testing | academy | 12 | 3h |
+| bounty-scribe-work | Scribe Assistance | academy | 11 | 3h |
+| bounty-graveyard-watch | Graveyard Watch | graveyard | 20 | 5h |
+| bounty-stray-hound | Stray Hound | fence | 13 | 3h |
+| bounty-fake-coins | Counterfeit Coins | bank | 24 | 5h |
+| bounty-barrel-chase | Runaway Barrels | general-store | 12 | 3h |
+
+### Changes
+| File | Change |
+|------|--------|
+| `src/data/quests.ts` | Added 9 bounties to BOUNTY_POOL; changed rotation from 3→4/week |
+| `src/assets/quests/*.jpg` | 9 new woodcut illustrations |
+| `src/assets/quests/index.ts` | Added 9 new bounty image imports and mappings |
+
+### Tests
+All 358 tests pass including questLOQ integrity suite.
+
+---
+
+## 2026-02-25 — Weekend Clutter Reduction, Fullboard Gold, Quest Event Title
+
+### Summary
+Three UI improvements to reduce information overload on the weekend screen, improve fullboard mode info density, and fix quest event title.
+
+### Changes
+
+**1. Weekend Message Clutter Reduction** (`startTurnHelpers.ts`, `weekEndHelpers.ts`)
+- Merged food spoilage + sickness into ONE message (sickness message now implies spoilage)
+- Merged homeless "slept on streets" + "miserable without home" into ONE message with all penalties
+- Removed separate "miserable" message from `processStartOfTurnBonuses` (happiness still applied)
+- `limitWeekendMessages`: reduced MAX from 5→4; suppresses mundane weekend activity (`[rw-*]` tags) when critical events occur
+
+**2. Fullboard Gold Display** (`TopDropdownMenu.tsx`)
+- Added gold amount with coin icon to the top trigger bar, positioned before the time display
+
+**3. Quest Event Title** (`useLocationClick.ts`)
+- Changed `[quest-objective]` event title from "QUEST PROGRESS" → "QUEST EVENT"
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `src/store/helpers/startTurnHelpers.ts` | Merged food+sickness, merged homeless+miserable messages |
+| `src/store/helpers/weekEndHelpers.ts` | Suppress mundane activity on critical events, MAX 5→4 |
+| `src/components/game/TopDropdownMenu.tsx` | Gold display in fullboard trigger bar |
+| `src/hooks/useLocationClick.ts` | Quest event title → "QUEST EVENT" |
+
+### Tests
+All 358 tests pass.
 
 ---
 

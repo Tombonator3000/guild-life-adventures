@@ -36,7 +36,7 @@ function generateEducationActions(ctx: ActionContext): AIAction[] {
   // Cash flow check: don't start an expensive degree if we'll run short
   if (settings.planningDepth >= 2) {
     const forecast = forecastCashFlow(player, week, 2);
-    if (forecast.shortfallRisk && player.gold < nextDegree.costPerSession * 3) {
+    if (forecast.shortfallRisk && player.gold < nextDegree.costPerSession + 15) {
       // Skip education this turn if cash flow is tight
       return actions;
     }
@@ -257,7 +257,7 @@ function generateCareerActions(ctx: ActionContext): AIAction[] {
 
   // Take and complete quests for guild rank promotion
   if (player.hasGuildPass && !player.activeQuest) {
-    const bestQuest = getBestQuest(player, settings);
+    const bestQuest = getBestQuest(player, settings, ctx.week);
     if (currentLocation === 'guild-hall' && bestQuest) {
       actions.push({
         type: 'take-quest',
@@ -302,7 +302,7 @@ function generateAdventureActions(ctx: ActionContext): AIAction[] {
 
   // Take quests
   if (player.hasGuildPass && !player.activeQuest) {
-    const adventureQuest = getBestQuest(player, settings);
+    const adventureQuest = getBestQuest(player, settings, ctx.week);
     if (currentLocation === 'guild-hall' && adventureQuest) {
       actions.push({
         type: 'take-quest',

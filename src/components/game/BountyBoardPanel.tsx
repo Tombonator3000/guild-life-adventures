@@ -51,6 +51,12 @@ function resolveActiveBounty(player: Player) {
   };
 }
 
+/** Try translation, fall back to raw text if key is returned as-is */
+function tt(t: (k: string) => string, key: string, fallback: string): string {
+  const v = t(key);
+  return v === key ? fallback : v;
+}
+
 export function BountyBoardPanel({ player, week, onTakeBounty, onCompleteQuest, onAbandonQuest, onBuyGuildPass }: BountyBoardPanelProps) {
   const { t } = useTranslation();
   const activeBounty = resolveActiveBounty(player);
@@ -84,18 +90,19 @@ export function BountyBoardPanel({ player, week, onTakeBounty, onCompleteQuest, 
 
       {/* Active bounty completion UI */}
       {activeBounty && (() => {
-        const loqDone = allLocationObjectivesDone(player.activeQuest, player.questLocationProgress ?? [], player.questChainProgress);
-        const objectives = getQuestLocationObjectives(player.activeQuest, player.questChainProgress);
+        const chainProgressForLOQ = player.activeQuest?.startsWith('nlchain:') ? player.nlChainProgress : player.questChainProgress;
+        const loqDone = allLocationObjectivesDone(player.activeQuest, player.questLocationProgress ?? [], chainProgressForLOQ);
+        const objectives = getQuestLocationObjectives(player.activeQuest, chainProgressForLOQ);
         const progress = player.questLocationProgress ?? [];
         return (
         <>
           <JonesSectionHeader title={t('panelBounty.weeklyBounties')} />
           <div className="bg-[#e0d4b8] border border-[#c9a227] ring-1 ring-[#c9a227] p-2 rounded">
             <div className="flex justify-between items-baseline">
-              <span className="font-mono text-sm text-[#3d2a14] font-bold">{t(`bounties.${activeBounty.id}.name`) || activeBounty.name}</span>
+              <span className="font-mono text-sm text-[#3d2a14] font-bold">{tt(t, `bounties.${activeBounty.id}.name`, activeBounty.name)}</span>
               <span className="font-mono text-xs font-bold text-[#8b6914]">{t('panelBounty.bountyBoard')}</span>
             </div>
-            <p className="text-xs text-[#6b5a42] mt-1">{t(`bounties.${activeBounty.id}.description`) || activeBounty.description}</p>
+            <p className="text-xs text-[#6b5a42] mt-1">{tt(t, `bounties.${activeBounty.id}.description`, activeBounty.description)}</p>
             {/* LOQ progress */}
             {objectives.length > 0 && (
               <div className="mt-1.5 space-y-0.5">
@@ -156,10 +163,10 @@ export function BountyBoardPanel({ player, week, onTakeBounty, onCompleteQuest, 
           return (
             <div key={bounty.id} className={`bg-[#e0d4b8] border p-2 rounded ${alreadyDone ? 'border-green-500' : 'border-[#8b7355]'}`}>
               <div className="flex justify-between items-baseline">
-                <span className="font-mono text-sm text-[#3d2a14]">{t(`bounties.${bounty.id}.name`) || bounty.name}</span>
+                <span className="font-mono text-sm text-[#3d2a14]">{tt(t, `bounties.${bounty.id}.name`, bounty.name)}</span>
                 <span className="font-mono text-sm text-[#8b6914] font-bold">+{getScaledQuestGold(bounty.goldReward, player.dungeonFloorsCleared)}g</span>
               </div>
-              <p className="text-xs text-[#6b5a42] mt-0.5 line-clamp-1">{t(`bounties.${bounty.id}.description`) || bounty.description}</p>
+              <p className="text-xs text-[#6b5a42] mt-0.5 line-clamp-1">{tt(t, `bounties.${bounty.id}.description`, bounty.description)}</p>
               <div className="flex items-center gap-2 text-xs text-[#6b5a42] mt-1">
                 <span>{bounty.timeRequired}h</span>
                 {bounty.healthRisk > 0 && <span className="text-red-600">-{bounty.healthRisk}HP</span>}

@@ -229,7 +229,9 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       const player = state.players.find(p => p.id === playerId);
       if (!player || !player.activeQuest) return;
 
-      const objectives = getQuestLocationObjectives(player.activeQuest, player.questChainProgress);
+      // Use nlChainProgress for nlchain quests, questChainProgress for linear chains
+      const chainProgressForLOQ = player.activeQuest.startsWith('nlchain:') ? player.nlChainProgress : player.questChainProgress;
+      const objectives = getQuestLocationObjectives(player.activeQuest, chainProgressForLOQ);
       const objective = objectives.find(o => o.id === objectiveId);
       if (!objective) return;
 

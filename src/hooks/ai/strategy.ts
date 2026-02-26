@@ -10,7 +10,7 @@ import { getAvailableDegrees, type Degree } from '@/data/education';
 import { DUNGEON_FLOORS, checkFloorRequirements, getFloorTimeCost, calculateEducationBonuses } from '@/data/dungeon';
 import { calculateCombatStats } from '@/data/items';
 import {
-  getAvailableQuests,
+  getWeeklyQuests,
   canTakeQuest,
   getWeeklyBounties,
   QUEST_CHAINS,
@@ -99,6 +99,16 @@ export function getWeakestGoal(progress: GoalProgress): 'wealth' | 'happiness' |
 
   // Otherwise focus on weakest goal
   goals.sort((a, b) => a.progress - b.progress);
+
+  // Education stepping stone: if career or wealth is weakest but we have few degrees,
+  // redirect to education (degrees unlock better jobs → faster career/wealth)
+  const weakest = goals[0];
+  if ((weakest.name === 'career' || weakest.name === 'wealth') 
+      && progress.education.progress < 0.5 
+      && progress.education.progress < weakest.progress + 0.2) {
+    return 'education';
+  }
+
   return goals[0].name;
 }
 
@@ -393,12 +403,12 @@ export function shouldBuyGuildPass(player: Player, settings: DifficultySettings)
  * Get the best quest the AI should take.
  * Also considers quest cooldown (B4).
  */
-export function getBestQuest(player: Player, settings: DifficultySettings): string | null {
+export function getBestQuest(player: Player, settings: DifficultySettings, week: number = 1): string | null {
   if (!player.hasGuildPass) return null;
   if (player.activeQuest) return null;
   if (player.questCooldownWeeksLeft > 0) return null; // B4: cooldown
 
-  const available = getAvailableQuests(player.guildRank);
+  const available = getWeeklyQuests(player.guildRank, week);
   const takeable = available.filter((q) => {
     const check = canTakeQuest(q, player.guildRank, player.education, player.inventory, player.dungeonFloorsCleared);
     if (!check.canTake) return false;

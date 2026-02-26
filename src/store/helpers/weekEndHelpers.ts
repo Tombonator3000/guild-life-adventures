@@ -962,11 +962,18 @@ const CRITICAL_EVENT_PATTERNS = [
  * Ordinary events (weekend activity, lottery, weather) fill remaining slots.
  */
 function limitWeekendMessages(msgs: string[]): string[] {
-  const MAX_WEEKEND_MESSAGES = 5;
+  const MAX_WEEKEND_MESSAGES = 4;
   const isCritical = (msg: string) =>
     CRITICAL_EVENT_PATTERNS.some(p => msg.toLowerCase().includes(p.toLowerCase()));
   const critical = msgs.filter(isCritical);
-  const ordinary = msgs.filter(m => !isCritical(m));
+  let ordinary = msgs.filter(m => !isCritical(m));
+
+  // Suppress mundane weekend activity messages when critical events occurred
+  // (e.g., don't show "Watched townsfolk..." when player was evicted)
+  if (critical.length > 0) {
+    ordinary = ordinary.filter(m => !m.includes('[rw-') && !m.includes('[ticket-') && !m.includes('[scrying-weekend') && !m.includes('[memory-weekend') && !m.includes('[music-weekend') && !m.includes('[cooking-weekend') && !m.includes('[study-weekend'));
+  }
+
   const result = [...critical.slice(0, MAX_WEEKEND_MESSAGES)];
   if (result.length < MAX_WEEKEND_MESSAGES) {
     result.push(...ordinary.slice(0, MAX_WEEKEND_MESSAGES - result.length));

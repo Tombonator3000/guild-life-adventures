@@ -748,6 +748,243 @@ export const QUESTS: Quest[] = [
   },
 ];
 
+// ── New quests added 2026-02-25 ──────────────────────────────
+
+/** Additional quests (appended to QUESTS) for weekly rotation variety */
+const EXTRA_QUESTS: Quest[] = [
+  // E-Rank
+  {
+    id: 'well-repair',
+    name: 'Well Repair',
+    description: 'Fix the town well before the entire district has to drink ale instead. Actually, maybe don\'t rush.',
+    descriptionVariants: [
+      'Fix the town well before the entire district has to drink ale instead. Actually, maybe don\'t rush.',
+      'The town well is broken. The townsfolk are thirsty. The tavern is thriving. Fix the well anyway.',
+      'Repair a collapsed well wall. You\'ll need tools, stones, and the patience of someone who doesn\'t mind getting wet.',
+    ],
+    rank: 'E',
+    goldReward: 20,
+    timeRequired: 4,
+    healthRisk: 3,
+    happinessReward: 2,
+    locationObjectives: [
+      { id: 'well-forge', locationId: 'forge', actionText: 'Get Repair Tools', description: 'Borrow masonry tools from the Forge.', completionText: 'The smith hands you a chisel and a bucket. "Try not to make it worse." Inspiring.' },
+      { id: 'well-store', locationId: 'general-store', actionText: 'Buy Materials', description: 'Purchase mortar and rope from the General Store.', completionText: 'You buy mortar, rope, and a suspicious amount of optimism. The well awaits.' },
+    ],
+  },
+  {
+    id: 'notice-board',
+    name: 'Notice Board Duty',
+    description: 'Post guild notices around the city. Nobody reads them. Post them anyway. Bureaucracy demands it.',
+    descriptionVariants: [
+      'Post guild notices around the city. Nobody reads them. Post them anyway. Bureaucracy demands it.',
+      'The guild needs notices posted. You\'re overqualified. They don\'t care. Take the hammer and nails.',
+      'Pin guild announcements across Guildholm. Dodging questions from nosy citizens is part of the job.',
+    ],
+    rank: 'E',
+    goldReward: 12,
+    timeRequired: 3,
+    healthRisk: 0,
+    happinessReward: 1,
+    locationObjectives: [
+      { id: 'notice-guild', locationId: 'guild-hall', actionText: 'Collect Notices', description: 'Pick up the stack of notices from the Guild Hall.', completionText: 'The clerk hands you fifty notices and one hammer. "Don\'t lose any." You\'ve already lost three.' },
+      { id: 'notice-tavern', locationId: 'rusty-tankard', actionText: 'Post at the Tavern', description: 'Pin notices at the Rusty Tankard where people actually gather.', completionText: 'You nail a notice to the tavern board. A drunk reads it upside down and applauds. Job done.' },
+    ],
+  },
+
+  // D-Rank
+  {
+    id: 'missing-shipment',
+    name: 'Missing Shipment',
+    description: 'A merchant\'s cargo vanished between the dock and the store. It didn\'t walk off. Probably. Check anyway.',
+    descriptionVariants: [
+      'A merchant\'s cargo vanished between the dock and the store. It didn\'t walk off. Probably. Check anyway.',
+      'Track down a missing trade shipment. The manifest says "miscellaneous goods." That\'s never good.',
+      'Cargo went missing. The merchant swears it was "right there." Right there is now empty. Investigate.',
+    ],
+    rank: 'D',
+    goldReward: 45,
+    timeRequired: 8,
+    healthRisk: 5,
+    happinessReward: 2,
+    locationObjectives: [
+      { id: 'missing-store', locationId: 'general-store', actionText: 'Review the Manifest', description: 'Examine the shipment manifest at the General Store.', completionText: 'The manifest lists twelve crates. Eleven arrived. One is "exploring independently," according to the merchant.' },
+      { id: 'missing-shadow', locationId: 'shadow-market', actionText: 'Check the Black Market', description: 'See if the missing goods turned up at the Shadow Market.', completionText: 'A stallkeeper is selling a suspiciously familiar crate. "Found it," he says. "By the road." You both know that\'s a lie.' },
+    ],
+  },
+  {
+    id: 'tavern-brawl',
+    name: 'Tavern Brawl',
+    description: 'Break up a fight at the Rusty Tankard. Or join it. The guild doesn\'t specify. They just want it to stop. Eventually.',
+    descriptionVariants: [
+      'Break up a fight at the Rusty Tankard. Or join it. The guild doesn\'t specify. They just want it to stop. Eventually.',
+      'A brawl has erupted at the tavern. Chairs are flying. So are opinions. Restore order by any means.',
+      'Tavern fight! The barkeeper wants peace. The patrons want blood. Find a compromise. Preferably with your fists.',
+    ],
+    rank: 'D',
+    goldReward: 35,
+    timeRequired: 5,
+    healthRisk: 15,
+    happinessReward: 3,
+    requiredEducation: { path: 'fighter', level: 1 },
+    locationObjectives: [
+      { id: 'tavern-brawl-fight', locationId: 'rusty-tankard', actionText: 'Enter the Fray', description: 'Wade into the tavern brawl and restore order.', completionText: 'The brawl is epic. A chair hits you. You hit back. The chair was unoccupied. You win anyway.' },
+      { id: 'tavern-brawl-armory', locationId: 'armory', actionText: 'Return Borrowed Weapons', description: 'Return the "borrowed" weapons the brawlers took from the Armory display.', completionText: 'You return three swords, a mace, and a decorative shield. The armourer doesn\'t ask. He doesn\'t want to know.' },
+    ],
+  },
+
+  // C-Rank
+  {
+    id: 'poisoned-well',
+    name: 'Poisoned Well',
+    description: 'Someone poisoned the Slums water supply. Find who and why. The "who" is usually someone petty. The "why" is always disappointing.',
+    descriptionVariants: [
+      'Someone poisoned the Slums water supply. Find who and why. The "who" is usually someone petty. The "why" is always disappointing.',
+      'The well water has turned green. The locals blame wizards. It\'s never wizards. Except when it is.',
+      'A poisoned water source threatens the Slums. Investigate before it spreads. Bring antidotes. And suspicion.',
+    ],
+    rank: 'C',
+    goldReward: 75,
+    timeRequired: 10,
+    healthRisk: 15,
+    happinessReward: 4,
+    requiredEducation: { path: 'mage', level: 1 },
+    locationObjectives: [
+      { id: 'poisoned-tavern', locationId: 'rusty-tankard', actionText: 'Test the Water', description: 'Collect a sample of the contaminated water near the Rusty Tankard.', completionText: 'The water is green, smells of almonds, and glows faintly. You collect a sample. You do not drink it. For once.' },
+      { id: 'poisoned-enchanter', locationId: 'enchanter', actionText: 'Identify the Poison', description: 'Have the Enchanter analyze the water sample.', completionText: 'The Enchanter identifies it as "Wyrm\'s Bile." Expensive, deliberate, and petty. Someone paid good money to be awful.' },
+      { id: 'poisoned-shadow', locationId: 'shadow-market', actionText: 'Find the Seller', description: 'Track down who sold the poison at the Shadow Market.', completionText: 'A nervous alchemist confesses to selling the poison. "It was for pest control!" he insists. The well is not a pest.' },
+    ],
+  },
+  {
+    id: 'haunted-library',
+    name: 'Haunted Library',
+    description: 'The Academy library has a ghost problem. The ghost keeps rearranging the shelves. Alphabetically. By author\'s middle name.',
+    descriptionVariants: [
+      'The Academy library has a ghost problem. The ghost keeps rearranging the shelves. Alphabetically. By author\'s middle name.',
+      'A spectral librarian haunts the Academy archives. It overdue-fines students who are already dead. Deal with it.',
+      'The library ghost has opinions about the Dewey system. Loud opinions. At 3 AM. The scholars want peace.',
+    ],
+    rank: 'C',
+    goldReward: 70,
+    timeRequired: 8,
+    healthRisk: 10,
+    happinessReward: 4,
+    requiredEducation: { path: 'priest', level: 1 },
+    locationObjectives: [
+      { id: 'haunted-academy', locationId: 'academy', actionText: 'Enter the Library', description: 'Investigate the haunted section of the Academy library after hours.', completionText: 'The library is silent. Then a book flies at your head. Then another. The ghost has strong opinions about your reading level.' },
+      { id: 'haunted-graveyard', locationId: 'graveyard', actionText: 'Find the Ghost\'s Grave', description: 'Search the graveyard for the librarian\'s original resting place.', completionText: 'You find the grave of "Edwina Bookworth, Librarian Eternal." The headstone has a late fee warning. Even in death.' },
+    ],
+  },
+
+  // B-Rank
+  {
+    id: 'arena-champion',
+    name: 'Arena Champion',
+    description: 'Enter the Guildholm fighting tournament. Three rounds. Three opponents. One winner. The crowd wants blood. Deliver.',
+    descriptionVariants: [
+      'Enter the Guildholm fighting tournament. Three rounds. Three opponents. One winner. The crowd wants blood. Deliver.',
+      'The arena tournament is this week. Sign up, fight well, try not to die publicly. It\'s embarrassing for everyone.',
+      'Prove your combat worth in the city arena. The opponents are tough. The crowd is drunk. Both are dangerous.',
+    ],
+    rank: 'B',
+    goldReward: 150,
+    timeRequired: 14,
+    healthRisk: 40,
+    happinessReward: 8,
+    requiredEducation: { path: 'fighter', level: 2 },
+    locationObjectives: [
+      { id: 'arena-armory', locationId: 'armory', actionText: 'Register & Gear Up', description: 'Register for the tournament and check your equipment at the Armory.', completionText: 'You sign the waiver. It\'s four pages long. The last page just says "good luck" in increasingly desperate handwriting.' },
+      { id: 'arena-tavern', locationId: 'rusty-tankard', actionText: 'Scout Opponents', description: 'Study your tournament opponents drinking at the tavern.', completionText: 'Your first opponent is huge. Your second is fast. Your third is both. The barkeeper offers condolences. And a drink.' },
+      { id: 'arena-guild', locationId: 'guild-hall', actionText: 'Fight in the Arena', description: 'Enter the Guild Hall arena and fight your way to victory.', completionText: 'Three fights. Three victories. The crowd roars. Your body aches. Someone throws flowers. Someone else throws a shoe. Glory.' },
+    ],
+  },
+  {
+    id: 'spy-network',
+    name: 'Spy Network',
+    description: 'Foreign agents are operating in Guildholm. Find them. They\'re very subtle. They wear matching cloaks. Spies are not subtle.',
+    descriptionVariants: [
+      'Foreign agents are operating in Guildholm. Find them. They\'re very subtle. They wear matching cloaks. Spies are not subtle.',
+      'Uncover a foreign espionage ring within the city. They think they\'re clever. They communicate via carrier pigeon. In broad daylight.',
+      'The city guard suspects foreign spies. They want proof. The spies want to remain undetected. One side will be disappointed.',
+    ],
+    rank: 'B',
+    goldReward: 130,
+    timeRequired: 12,
+    healthRisk: 25,
+    happinessReward: 5,
+    locationObjectives: [
+      { id: 'spy-shadow', locationId: 'shadow-market', actionText: 'Identify the Network', description: 'Use your contacts to identify suspected foreign agents.', completionText: 'A nervous informant points out three "merchants" who never actually sell anything. Suspicious doesn\'t begin to cover it.' },
+      { id: 'spy-fence', locationId: 'fence', actionText: 'Intercept Messages', description: 'Intercept coded messages being passed through the Fence.', completionText: 'You intercept a coded letter. It reads backwards as "MEET AT THE DOCK." Spycraft at its finest.' },
+      { id: 'spy-bank', locationId: 'bank', actionText: 'Follow the Money', description: 'Track the spy network\'s funding through the Bank.', completionText: 'The banker reveals large anonymous deposits. "Foreign exchange," the receipts say. Foreign indeed.' },
+    ],
+  },
+
+  // A-Rank
+  {
+    id: 'lich-phylactery',
+    name: 'Lich\'s Phylactery',
+    description: 'Find and destroy a lich\'s soul vessel. The lich disagrees with this plan. Strongly. With necromancy.',
+    descriptionVariants: [
+      'Find and destroy a lich\'s soul vessel. The lich disagrees with this plan. Strongly. With necromancy.',
+      'A lich threatens the region from its hidden crypt. Destroy the phylactery or the dead will keep rising. They\'re not friendly.',
+      'Locate and shatter a lich\'s phylactery. The lich has been dead for centuries. It didn\'t let that stop it. Don\'t let it stop you.',
+    ],
+    rank: 'A',
+    goldReward: 250,
+    timeRequired: 20,
+    healthRisk: 50,
+    happinessReward: 10,
+    requiredEducation: { path: 'mage', level: 2 },
+    locationObjectives: [
+      { id: 'lich-graveyard', locationId: 'graveyard', actionText: 'Search the Crypts', description: 'Search the old crypts for signs of the lich\'s presence.', completionText: 'The deepest crypt radiates cold. The dead stir. A skeleton waves. It\'s not friendly waving. It\'s attacking waving.' },
+      { id: 'lich-enchanter', locationId: 'enchanter', actionText: 'Forge a Disruption Gem', description: 'The Enchanter can create a gem to shatter the phylactery.', completionText: 'The disruption gem pulses with counter-magic. "One shot," the Enchanter warns. "Don\'t miss. The lich will be cross."' },
+      { id: 'lich-cave', locationId: 'cave', actionText: 'Destroy the Phylactery', description: 'Enter the lich\'s lair and shatter the soul vessel.', completionText: 'The phylactery shatters. The lich screams. The scream echoes for exactly 4.7 seconds. Then silence. Sweet, expensive silence.' },
+    ],
+  },
+  {
+    id: 'war-council',
+    name: 'War Council',
+    description: 'An orc warband approaches. The city needs a strategy. The orcs have one. It\'s "hit things." Counter-propose.',
+    descriptionVariants: [
+      'An orc warband approaches. The city needs a strategy. The orcs have one. It\'s "hit things." Counter-propose.',
+      'Defend Guildholm from an orc raiding party. They\'re large, angry, and numerous. You\'re determined. Possibly foolish. Same thing.',
+      'The orcs are coming. Again. This time with a siege engine made from a tree. A whole tree. Prepare the defenses.',
+    ],
+    rank: 'A',
+    goldReward: 230,
+    timeRequired: 18,
+    healthRisk: 45,
+    happinessReward: 9,
+    requiredEducation: { path: 'fighter', level: 2 },
+    locationObjectives: [
+      { id: 'war-guild', locationId: 'guild-hall', actionText: 'Attend War Council', description: 'Join the emergency war council at the Guild Hall.', completionText: 'The war council consists of you, three retired generals, and a cat. The cat has the best strategy. Nobody listens to the cat.' },
+      { id: 'war-armory', locationId: 'armory', actionText: 'Distribute Weapons', description: 'Help arm the militia at the Armory.', completionText: 'You arm forty volunteers. Thirty know which end of the sword is sharp. Progress.' },
+      { id: 'war-forge', locationId: 'forge', actionText: 'Fortify Defenses', description: 'Have the smith forge barricade spikes and reinforcements.', completionText: 'The smith forges iron spikes all night. "For the barricades," he says. "And for any orc who tries the front door."' },
+    ],
+  },
+];
+
+// Merge into main QUESTS array
+QUESTS.push(...EXTRA_QUESTS);
+
+/** How many regular quests to show per week (from the pool available to the player's rank) */
+const WEEKLY_QUEST_COUNT = 8;
+
+/** Get a weekly-rotating subset of available quests, seeded by week number */
+export function getWeeklyQuests(guildRank: GuildRank, week: number): Quest[] {
+  const available = getAvailableQuests(guildRank);
+  if (available.length <= WEEKLY_QUEST_COUNT) return available;
+
+  // Seeded shuffle: deterministic per week so all players see the same quests
+  const seed = week * 7919; // prime multiplier
+  const shuffled = [...available];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.abs((seed * (i + 1) * 31) % (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled.slice(0, WEEKLY_QUEST_COUNT);
+}
+
 export function getAvailableQuests(guildRank: GuildRank): Quest[] {
   const rankIndex = GUILD_RANK_ORDER.indexOf(guildRank);
 
@@ -1287,14 +1524,105 @@ const BOUNTY_POOL: Bounty[] = [
       { id: 'bs-armory', locationId: 'armory', actionText: 'Report to the Yard', description: 'Head to the Armory training yard for the sparring session.', completionText: 'The recruit stands ready. He\'s nervous. His sword wobbles. You spar. He improves. Slightly.' },
     ],
   },
+  // ── New bounties (2026-02-25) ──
+  {
+    id: 'bounty-town-crier',
+    name: 'Town Crier Duty',
+    description: 'Stand in the square and shout announcements. Nobody listens, but the Guild pays by the hour, not by the impact.',
+    descriptionVariants: ['Stand in the square and shout announcements. Nobody listens, but the Guild pays by the hour, not by the impact.', 'Read the weekly proclamations aloud. Loudly. The townsfolk pretend not to hear. The pigeons don\'t pretend.', 'Public announcement duty. Your voice is the news. The news is boring. Shout it anyway.'],
+    goldReward: 10, timeRequired: 3, healthRisk: 0, happinessReward: 2,
+    locationObjectives: [
+      { id: 'btc-guild', locationId: 'guild-hall', actionText: 'Collect Announcements', description: 'Pick up today\'s proclamations from the Guild Hall.', completionText: 'You receive a scroll of announcements. Half are about lost livestock. One is about a cheese emergency. Standard fare.' },
+    ],
+  },
+  {
+    id: 'bounty-cart-repair',
+    name: 'Cart Repair',
+    description: 'Fix a merchant\'s broken cart. The wheel fell off. Again. The same wheel. Third time this month.',
+    descriptionVariants: ['Fix a merchant\'s broken cart. The wheel fell off. Again. The same wheel. Third time this month.', 'A trader\'s cart broke down outside the gate. They need muscle, not brains. You qualify for at least one.', 'Emergency cart repair. The merchant is stranded. The cargo is perishable. The stress is palpable.'],
+    goldReward: 14, timeRequired: 3, healthRisk: 2, happinessReward: 1,
+    locationObjectives: [
+      { id: 'bcr-forge', locationId: 'forge', actionText: 'Get Repair Parts', description: 'Fetch a replacement axle pin from the Forge.', completionText: 'The smith hands you an iron pin. "Should last a month," he says. You both know it won\'t.' },
+    ],
+  },
+  {
+    id: 'bounty-goblin-thief',
+    name: 'Goblin Pickpocket',
+    description: 'A goblin has been stealing bread from market stalls. He\'s fast. He\'s small. He\'s surprisingly polite about it.',
+    descriptionVariants: ['A goblin has been stealing bread from market stalls. He\'s fast. He\'s small. He\'s surprisingly polite about it.', 'Catch the goblin pilferer. He only steals bread. Exclusively sourdough. Goblins have standards.', 'Market vendors report a tiny thief. Green skin. Big ears. Excellent taste in baked goods.'],
+    goldReward: 16, timeRequired: 4, healthRisk: 3, happinessReward: 2,
+    locationObjectives: [
+      { id: 'bgt-market', locationId: 'shadow-market', actionText: 'Stake Out the Stalls', description: 'Watch the market stalls for the goblin thief.', completionText: 'You spot the goblin mid-heist. He freezes. Drops the bread. Bows. Runs. Goblins are weird.' },
+    ],
+  },
+  {
+    id: 'bounty-well-testing',
+    name: 'Water Testing',
+    description: 'Test the town wells for contamination. Spoiler: they\'re all contaminated. The question is how much.',
+    descriptionVariants: ['Test the town wells for contamination. Spoiler: they\'re all contaminated. The question is how much.', 'The Academy wants water samples from the public wells. Bring a bucket. And gloves. Definitely gloves.', 'Well inspection duty. Look at the water. Smell the water. Do NOT taste the water.'],
+    goldReward: 12, timeRequired: 3, healthRisk: 2, happinessReward: 1,
+    locationObjectives: [
+      { id: 'bwt-academy', locationId: 'academy', actionText: 'Get Testing Kit', description: 'Collect the water testing supplies from the Academy.', completionText: 'The alchemist gives you vials and a colour chart. "If the water turns black, run." Encouraging.' },
+    ],
+  },
+  {
+    id: 'bounty-scribe-work',
+    name: 'Scribe Assistance',
+    description: 'Help the Academy scribe copy documents. Your handwriting is terrible but still better than the last volunteer.',
+    descriptionVariants: ['Help the Academy scribe copy documents. Your handwriting is terrible but still better than the last volunteer.', 'Document transcription needed. The scrolls are ancient. The ink is expensive. No pressure.', 'The Academy archives need copying. Tedious but safe. Your biggest enemy is paper cuts.'],
+    goldReward: 11, timeRequired: 3, healthRisk: 0, happinessReward: 1,
+    locationObjectives: [
+      { id: 'bsw-academy', locationId: 'academy', actionText: 'Report to Archives', description: 'Present yourself at the Academy archives for scribe duty.', completionText: 'The head scribe looks at your hands. Sighs. Hands you a quill anyway. You start copying. It\'s legible. Barely.' },
+    ],
+  },
+  {
+    id: 'bounty-graveyard-watch',
+    name: 'Graveyard Watch',
+    description: 'Guard the graveyard overnight. Nothing ever happens. That\'s what they said last time. Last time was different.',
+    descriptionVariants: ['Guard the graveyard overnight. Nothing ever happens. That\'s what they said last time. Last time was different.', 'Night shift at the cemetery. Bring a lantern. Bring courage. Bring a change of clothes, just in case.', 'The groundskeeper needs a night watch. The pay is decent. The company is dead. Literally.'],
+    goldReward: 20, timeRequired: 5, healthRisk: 8, happinessReward: 1,
+    locationObjectives: [
+      { id: 'bgw-grave', locationId: 'graveyard', actionText: 'Begin Night Watch', description: 'Report to the graveyard at dusk for the overnight watch.', completionText: 'The night passes. Mostly. Something scratched at a headstone around midnight. You didn\'t investigate. Nobody pays you enough for that.' },
+    ],
+  },
+  {
+    id: 'bounty-stray-hound',
+    name: 'Stray Hound',
+    description: 'Catch a stray dog terrorising the Slums. It\'s not vicious. It\'s just very large and very enthusiastic.',
+    descriptionVariants: ['Catch a stray dog terrorising the Slums. It\'s not vicious. It\'s just very large and very enthusiastic.', 'A loose hound is knocking over market carts. Someone needs to catch it. The dog disagrees.', 'Dog-catching duty. The animal is friendly. Aggressively friendly. Bruise-inducingly friendly.'],
+    goldReward: 13, timeRequired: 3, healthRisk: 4, happinessReward: 2,
+    locationObjectives: [
+      { id: 'bsh-fence', locationId: 'fence', actionText: 'Track the Hound', description: 'The Fence saw the dog heading toward the back alleys.', completionText: 'You find the dog. It finds you first. It knocks you over. Licks your face. You catch it. Sort of. It caught you.' },
+    ],
+  },
+  {
+    id: 'bounty-fake-coins',
+    name: 'Counterfeit Coins',
+    description: 'Investigate fake coins circulating in the market. The counterfeiter spelled "GOLD" wrong on them. Impressive dedication.',
+    descriptionVariants: ['Investigate fake coins circulating in the market. The counterfeiter spelled "GOLD" wrong on them. Impressive dedication.', 'Someone is passing fake coins. They\'re almost convincing. Almost. The edges are green.', 'Track down the source of counterfeit currency. The Bank is worried. The merchants are furious. The counterfeiter is ambitious.'],
+    goldReward: 24, timeRequired: 5, healthRisk: 5, happinessReward: 2,
+    locationObjectives: [
+      { id: 'bfc-bank', locationId: 'bank', actionText: 'Examine Sample Coins', description: 'The Bank has confiscated sample counterfeits for your investigation.', completionText: 'The coins are crude. One says "GLOD." Another says "TOTALLY REAL MONEY." You have a lead.' },
+    ],
+  },
+  {
+    id: 'bounty-barrel-chase',
+    name: 'Runaway Barrels',
+    description: 'Stop runaway barrels rolling through the market. The brewer insists it was an accident. The barrels disagree.',
+    descriptionVariants: ['Stop runaway barrels rolling through the market. The brewer insists it was an accident. The barrels disagree.', 'Barrels loose on the main road. Contents: ale. Velocity: increasing. Casualties: pending.', 'Chase down escaped beer barrels before they hit the fountain. Again. The fountain has suffered enough.'],
+    goldReward: 12, timeRequired: 3, healthRisk: 4, happinessReward: 2,
+    locationObjectives: [
+      { id: 'bbc-store', locationId: 'general-store', actionText: 'Get Rope & Net', description: 'Grab rope from the General Store to stop the barrels.', completionText: 'You grab rope and a net. The shopkeeper says "good luck." He\'s seen this before. He looks tired.' },
+    ],
+  },
 ];
 
-/** Get 3 bounties for a given week (deterministic rotation based on week number) */
+/** Get 4 bounties for a given week (deterministic rotation based on week number) */
 export function getWeeklyBounties(week: number): Bounty[] {
-  // Use week to deterministically pick 3 bounties
-  const offset = ((week - 1) * 3) % BOUNTY_POOL.length;
+  // Use week to deterministically pick 4 bounties from pool of 18
+  const offset = ((week - 1) * 4) % BOUNTY_POOL.length;
   const result: Bounty[] = [];
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 4; i++) {
     result.push(BOUNTY_POOL[(offset + i) % BOUNTY_POOL.length]);
   }
   return result;

@@ -224,8 +224,8 @@ export function useLocationClick({
     ? 'WEEKEND EVENTS'
     : eventMessage?.includes('[quest-chain-complete]')
       ? 'QUEST CHAIN COMPLETE!'
-      : eventMessage?.includes('[quest-objective]')
-        ? 'QUEST PROGRESS'
+      : eventMessage?.includes('quest-objective')
+        ? 'QUEST EVENT'
         : `WEEK ${week} EVENT`;
   const currentEvent: GameEvent | null = eventMessage ? {
     id: extractEventId(eventMessage),

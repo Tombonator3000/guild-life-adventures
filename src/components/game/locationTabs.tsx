@@ -7,7 +7,7 @@ import type { LocationId, Player } from '@/types/game.types';
 import type { LocationTab, WorkInfo } from './LocationShell';
 import type { GameStore } from '@/store/storeTypes';
 import { getJob } from '@/data/jobs';
-import { getAvailableQuests } from '@/data/quests';
+import { getWeeklyQuests } from '@/data/quests';
 import { NEWSPAPER_COST, generateNewspaper } from '@/data/newspaper';
 import { playSFX } from '@/audio/sfxManager';
 import { toast } from 'sonner';
@@ -147,7 +147,7 @@ function guildHallTabs(ctx: LocationTabContext): LocationTab[] {
   const { player, players, priceModifier, week, setJob, negotiateRaise, spendTime,
     takeQuest, completeQuest, abandonQuest, takeChainQuest, takeNonLinearChain, makeNLChainChoice, takeBounty, buyGuildPass, requestRaise } = ctx;
   const currentJobData = player.currentJob ? getJob(player.currentJob) : null;
-  const availableQuests = getAvailableQuests(player.guildRank);
+  const availableQuests = getWeeklyQuests(player.guildRank, week);
   const canWorkAtGuildHall = currentJobData && currentJobData.location === 'Guild Hall';
   const MIN_SHIFTS_FOR_RAISE = 3;
   const hasActiveBounty = player.activeQuest?.startsWith('bounty:') ?? false;
