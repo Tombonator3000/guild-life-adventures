@@ -37,6 +37,11 @@ export function useAITurnHandler({ currentPlayer, phase, aiDifficulty }: UseAITu
     if (!currentPlayer || phase !== 'playing') {
       aiTurnStartedRef.current = false;
       lastAIPlayerIdRef.current = null;
+      // BUG FIX: Reset aiIsThinking when leaving 'playing' phase (e.g. week-end events).
+      // Without this, aiIsThinking stays true from the last AI player's turn.
+      // When the phase returns to 'playing', lastAIPlayerIdRef is null so the reset
+      // block never fires, and aiIsThinking=true blocks the start block — AI freezes.
+      setAiIsThinking(false);
       return;
     }
 
