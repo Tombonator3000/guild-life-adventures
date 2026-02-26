@@ -319,6 +319,73 @@ function applyCommitmentBonus(actions: AIAction[], plan: CommitmentPlan | null):
 }
 
 /**
+ * Apply counter-strategy weights from observed human player behavior.
+ * Only runs when there are human rivals to observe.
+ */
+function applyCounterStrategy(
+  actions: AIAction[],
+  rivals: Player[],
+  planningDepth: number,
+): void {
+  const humanRivalIds = rivals.filter(r => !r.isAI).map(r => r.id);
+  if (humanRivalIds.length === 0) return;
+  const counterWeights = getCounterStrategyWeights(humanRivalIds, planningDepth);
+  applyCounterStrategyWeights(actions, counterWeights);
+}
+
+/**
+ * Route optimization: boost moves to locations that satisfy multiple needs.
+ * If two or more move actions target the same location, boost those moves
+ * proportionally so the AI prefers efficient multi-errand trips.
+ */
+function applyMultiNeedLocationBonus(actions: AIAction[]): void {
+  const locationNeeds: Record<string, number> = {};
+  for (const action of actions) {
+    if (action.type === 'move' && action.location) {
+      locationNeeds[action.location] = (locationNeeds[action.location] || 0) + 1;
+    }
+  }
+  for (const action of actions) {
+    if (action.type === 'move' && action.location && (locationNeeds[action.location] || 0) > 1) {
+      action.priority += 5 * (locationNeeds[action.location] - 1);
+    }
+  }
+}
+
+/**
+ * HARD AI: Turn plan route optimization.
+ * At the start of a turn (>70% time remaining), computes an optimal visit order
+ * and boosts moves toward the first planned destination.
+ */
+function applyTurnPlanRouteBoost(
+  actions: AIAction[],
+  player: Player,
+  settings: DifficultySettings,
+  progress: import('./types').GoalProgress,
+  goals: { wealth: number; happiness: number; education: number; career: number },
+  weatherMoveExtra: number,
+  priceModifier: number,
+  rivals: Player[],
+  turnTimeRatio: number,
+): void {
+  if (settings.planningDepth < 3 || turnTimeRatio <= 0.7) return;
+
+  const neededVisits = identifyNeededVisits(
+    player, settings, progress, goals, weatherMoveExtra, priceModifier, rivals
+  );
+  const plan = planTurnRoute(player.currentLocation, neededVisits, player.timeRemaining, weatherMoveExtra);
+
+  if (plan.visits.length > 0) {
+    const nextPlannedLocation = plan.visits[0].location;
+    for (const action of actions) {
+      if (action.type === 'move' && action.location === nextPlannedLocation) {
+        action.priority += 12; // Strong boost for planned route
+      }
+    }
+  }
+}
+
+/**
  * Main AI decision engine - generates prioritized list of possible actions
  */
 export function generateActions(
@@ -398,11 +465,7 @@ export function generateActions(
   // ============================================
   // COUNTER-STRATEGY: Adapt to observed human player behavior
   // ============================================
-  const humanRivalIds = rivals.filter(r => !r.isAI).map(r => r.id);
-  if (humanRivalIds.length > 0) {
-    const counterWeights = getCounterStrategyWeights(humanRivalIds, settings.planningDepth);
-    applyCounterStrategyWeights(actions, counterWeights);
-  }
+  applyCounterStrategy(actions, rivals, settings.planningDepth);
 
   // ============================================
   // VELOCITY: Boost alternatives for stuck goals, momentum for fast ones
@@ -422,19 +485,7 @@ export function generateActions(
   // ============================================
   // AI-12: ROUTE OPTIMIZATION
   // ============================================
-  // If multiple needs share a location, prefer that location
-  const locationNeeds: Record<string, number> = {};
-  for (const action of actions) {
-    if (action.type === 'move' && action.location) {
-      locationNeeds[action.location] = (locationNeeds[action.location] || 0) + 1;
-    }
-  }
-  // Boost priority for moves to locations with multiple needs
-  for (const action of actions) {
-    if (action.type === 'move' && action.location && (locationNeeds[action.location] || 0) > 1) {
-      action.priority += 5 * (locationNeeds[action.location] - 1);
-    }
-  }
+  applyMultiNeedLocationBonus(actions);
 
   // ============================================
   // HARD AI: Travel cost penalty (cost-adjusted scoring)
@@ -456,23 +507,7 @@ export function generateActions(
   // ============================================
   // HARD AI: Turn plan route optimization
   // ============================================
-  if (settings.planningDepth >= 3 && turnTimeRatio > 0.7) {
-    // Only plan at start of turn — boost actions aligned with the optimal route
-    const neededVisits = identifyNeededVisits(
-      player, settings, progress, goals, weatherMoveExtra, priceModifier, rivals
-    );
-    const plan = planTurnRoute(currentLocation, neededVisits, player.timeRemaining, weatherMoveExtra);
-
-    // Boost moves to the first planned location
-    if (plan.visits.length > 0) {
-      const nextPlannedLocation = plan.visits[0].location;
-      for (const action of actions) {
-        if (action.type === 'move' && action.location === nextPlannedLocation) {
-          action.priority += 12; // Strong boost for planned route
-        }
-      }
-    }
-  }
+  applyTurnPlanRouteBoost(actions, player, settings, progress, goals, weatherMoveExtra, priceModifier, rivals, turnTimeRatio);
 
   // ============================================
   // DEFAULT ACTION - End turn if nothing else
