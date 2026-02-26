@@ -956,6 +956,21 @@ const CRITICAL_EVENT_PATTERNS = [
 ];
 
 /**
+ * Tags used by mundane weekend activity messages (leisure events, ticket events, etc.).
+ * When critical events are present these messages are suppressed entirely.
+ */
+const MUNDANE_WEEKEND_TAGS = [
+  '[rw-', '[ticket-', '[scrying-weekend', '[memory-weekend',
+  '[music-weekend', '[cooking-weekend', '[study-weekend',
+];
+
+const isCriticalMessage = (msg: string): boolean =>
+  CRITICAL_EVENT_PATTERNS.some(p => msg.toLowerCase().includes(p.toLowerCase()));
+
+const isMundaneWeekendMessage = (msg: string): boolean =>
+  MUNDANE_WEEKEND_TAGS.some(tag => msg.includes(tag));
+
+/**
  * Limit weekend event messages to max 5, prioritizing critical events.
  * All messages shown on one screen (no pagination), so we can show more.
  * Critical events (eviction, starvation, death, etc.) fill slots first.
@@ -963,15 +978,13 @@ const CRITICAL_EVENT_PATTERNS = [
  */
 function limitWeekendMessages(msgs: string[]): string[] {
   const MAX_WEEKEND_MESSAGES = 4;
-  const isCritical = (msg: string) =>
-    CRITICAL_EVENT_PATTERNS.some(p => msg.toLowerCase().includes(p.toLowerCase()));
-  const critical = msgs.filter(isCritical);
-  let ordinary = msgs.filter(m => !isCritical(m));
+  const critical = msgs.filter(isCriticalMessage);
+  let ordinary = msgs.filter(m => !isCriticalMessage(m));
 
   // Suppress mundane weekend activity messages when critical events occurred
   // (e.g., don't show "Watched townsfolk..." when player was evicted)
   if (critical.length > 0) {
-    ordinary = ordinary.filter(m => !m.includes('[rw-') && !m.includes('[ticket-') && !m.includes('[scrying-weekend') && !m.includes('[memory-weekend') && !m.includes('[music-weekend') && !m.includes('[cooking-weekend') && !m.includes('[study-weekend'));
+    ordinary = ordinary.filter(m => !isMundaneWeekendMessage(m));
   }
 
   const result = [...critical.slice(0, MAX_WEEKEND_MESSAGES)];

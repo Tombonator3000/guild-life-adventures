@@ -1,5 +1,34 @@
 # log.md2 — Development Log (Session 2)
 
+## 2026-02-26 09:30 — Refactor: Code clarity improvements in actionGenerator.ts and weekEndHelpers.ts
+
+### Problem
+Two files had inline code blocks that were inconsistent with the surrounding pattern of named helper functions, making them harder to read and test in isolation.
+
+### Changes
+
+**1. `src/hooks/ai/actionGenerator.ts`**
+- Extracted 3 inline blocks from `generateActions()` into named functions:
+  - `applyCounterStrategy(actions, rivals, planningDepth)` — wraps the guard + counter-weight lookup that was inline in the function body
+  - `applyMultiNeedLocationBonus(actions)` — route optimization: boosts moves to locations that satisfy multiple needs (was an inline for-loop pair)
+  - `applyTurnPlanRouteBoost(actions, player, settings, ...)` — hard AI turn-plan route boost (was an inline if-block calling `identifyNeededVisits`/`planTurnRoute`)
+- `generateActions()` body now consists entirely of named function calls, consistent with the existing `applyPersonalityWeights`, `applyVelocityAdjustments`, etc.
+- **No behavior change** — identical logic, just reorganized
+
+**2. `src/store/helpers/weekEndHelpers.ts`**
+- In `limitWeekendMessages()`, extracted a long chain of `!m.includes(...)` into:
+  - `MUNDANE_WEEKEND_TAGS` constant array listing all weekend activity tag prefixes
+  - `isMundaneWeekendMessage(msg)` arrow function using `.some()` against the array
+  - `isCriticalMessage(msg)` arrow function (moved from inline lambda to named helper)
+- Makes adding/removing mundane tags in future a single-line change to the constant
+- **No behavior change** — identical filter logic
+
+### Tests
+- 358/358 passing ✓
+- Build clean ✓
+
+---
+
 ## 2026-02-26 07:54 — AI intelligence optimization: 7 improvements to AI decision-making
 
 ### Changes made
