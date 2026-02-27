@@ -25,6 +25,15 @@ import { announceRoom, unannounceRoom, updateAnnouncedRoom } from './localDiscov
 /** Time to wait for host reconnection before triggering host migration (ms) */
 const HOST_MIGRATION_TIMEOUT = 10000;
 
+/** Session storage key for page-refresh reconnect */
+const SESSION_STORAGE_KEY = 'guild-life-online-session';
+interface StoredSession {
+  roomCode: string;
+  playerName: string;
+  slot: number;
+  timestamp: number;
+}
+
 // --- Main Hook ---
 
 export function useOnlineGame() {
@@ -45,6 +54,24 @@ export function useOnlineGame() {
   const [spectatorCount, setSpectatorCount] = useState(0);
   const spectatorPeersRef = useRef(new Set<string>());
   const [isSpectator, setIsSpectator] = useState(false);
+
+  // Lobby chat messages (cleared on game start)
+  const [lobbyChatMessages, setLobbyChatMessages] = useState<ChatMessage[]>([]);
+
+  // Rejoin session (from sessionStorage after page refresh)
+  const [rejoinSession, setRejoinSession] = useState<StoredSession | null>(() => {
+    try {
+      const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
+      if (!stored) return null;
+      const session = JSON.parse(stored) as StoredSession;
+      // Expire after 30 minutes
+      if (Date.now() - session.timestamp > 30 * 60 * 1000) {
+        sessionStorage.removeItem(SESSION_STORAGE_KEY);
+        return null;
+      }
+      return session;
+    } catch { return null; }
+  });
 
   // Track if we're in online game mode
   const isOnlineRef = useRef(false);
