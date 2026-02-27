@@ -159,10 +159,10 @@ game metadata — no explicit "register" step required.
 
 | # | Issue | Severity | Status |
 |---|-------|----------|--------|
-| M1 | Guests can't recover if host disconnects mid-game | High | Open |
+| M1 | Guests can't recover if host disconnects mid-game | Medium | Mitigated — host migration auto-elects new host |
 | M2 | All players must be present at game start (no late join) | Medium | Open |
 | M3 | PeerJS free signaling server has rate limits (~50 req/10s) | Low | Acceptable for now |
-| M4 | No reconnect token — refreshing page as guest loses session | High | Open |
+| M4 | No reconnect token — refreshing page as guest loses session | ~~High~~ | **FIXED** — sessionStorage saves session; rejoin prompt on Online menu |
 
 *(See `bugs.md` for the full bug list)*
 
