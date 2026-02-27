@@ -78,7 +78,7 @@ export function GameBoard() {
   } = useGameStore();
   const locationHexes = useGameStore(s => s.locationHexes);
   const { event: shadowfingersEvent, dismiss: dismissShadowfingers } = useShadowfingersModal();
-  const { isOnline, isGuest, networkMode, broadcastMovement, remoteAnimation, clearRemoteAnimation, latency, chatMessages, sendChatMessage } = useNetworkSync();
+  const { isOnline, isGuest, networkMode, broadcastMovement, remoteAnimation, clearRemoteAnimation, latency, chatMessages, sendChatMessage, connectionStatus, attemptReconnect } = useNetworkSync();
   const localPlayerId = useGameStore(s => s.localPlayerId);
   const roomCodeDisplay = useGameStore(s => s.roomCode);
 
