@@ -571,12 +571,12 @@ export function GameBoard() {
       <UpdateBanner />
 
       {/* In-game chat (online multiplayer only) */}
-      {isOnline && currentPlayer && (
+      {isOnline && (
         <ChatPanel
           messages={chatMessages}
           onSend={sendChatMessage}
-          playerName={currentPlayer.name}
-          playerColor={currentPlayer.color}
+          playerName={isPureSpectator ? 'Spectator' : (localPlayer?.name || currentPlayer?.name || 'Player')}
+          playerColor={isPureSpectator ? '#9CA3AF' : (localPlayer?.color || currentPlayer?.color || '#888888')}
         />
       )}
 

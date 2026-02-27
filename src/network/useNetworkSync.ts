@@ -552,5 +552,7 @@ export function useNetworkSync() {
     latency,
     chatMessages,
     sendChatMessage,
+    connectionStatus,
+    attemptReconnect,
   };
 }

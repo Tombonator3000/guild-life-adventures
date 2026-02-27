@@ -976,5 +976,10 @@ export function useOnlineGame() {
     setLocalPlayerName,
     attemptReconnect,
     setPublicRoom,
+    lobbyChatMessages,
+    sendLobbyChat,
+    rejoinSession,
+    clearRejoinSession,
+    rejoinGame,
   };
 }
