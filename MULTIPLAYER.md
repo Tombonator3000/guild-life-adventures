@@ -14,7 +14,9 @@ There is no dedicated game server — the host's browser acts as the authority.
 |-----------|------|
 | `src/network/PeerManager.ts` | Core P2P connection manager, message bus |
 | `src/network/useOnlineGame.ts` | React hook — lobby state, host/guest logic |
-| `src/network/gameListing.ts` | Firebase Realtime Database for public game browser |
+| `src/network/gameListing.ts` | PartyKit WebSocket for public game browser (replaced Firebase 2026-02-27) |
+| `party/gameListings.ts` | PartyKit server — room registry (deploy: `npx partykit deploy`) |
+| `src/lib/partykit.ts` | PartyKit config helpers (`isPartykitConfigured`, `getPartykitHost`) |
 | `src/network/peerDiscovery.ts` | PeerJS signaling server fallback for finding public games |
 | `src/network/networkState.ts` | Game state serialisation / deserialisation for sync |
 | `src/network/roomCodes.ts` | Room code ↔ PeerJS peer ID conversion |
@@ -25,7 +27,7 @@ There is no dedicated game server — the host's browser acts as the authority.
 ```
 Host creates lobby
   → PeerManager opens peer with ID `guild-life-<roomCode>`
-  → Optional: registers in Firebase public listing
+  → Optional: registers in PartyKit public listing
   → Broadcasts lobby-update to all guests
 
 Guest joins with room code
@@ -37,7 +39,7 @@ Guest joins with room code
 ### Discovery methods
 
 1. **Room code** — guest types 6-char code directly (always works)
-2. **Firebase browser** — host marks room public; Firebase stores listing; guests browse (`subscribeToGameListings`)
+2. **PartyKit browser** — host marks room public; PartyKit WebSocket stores listing; guests subscribe live (`subscribeToGameListings`)
 3. **P2P discovery** — scans PeerJS signaling server for `guild-life-*` peers; probes each with `discovery-probe` handshake; no Firebase needed (`searchPeerGames` in `peerDiscovery.ts`)
 
 ---
@@ -49,13 +51,73 @@ Guest joins with room code
 | Host / guest lobby | ✅ Working | Up to 4 players |
 | Game state sync (host → guests) | ✅ Working | Full snapshot on start, delta on actions |
 | AI opponent (Grimwald) | ✅ Working | Runs on host only |
-| Public room via Firebase | ✅ Working | Requires Firebase env vars |
-| **Public room without Firebase** | ✅ Fixed (2026-02-21) | Toggle always visible; P2P discovery automatic |
-| Browse public games (Firebase) | ✅ Working | Live subscription |
+| Public room via PartyKit | ✅ Working | Requires `VITE_PARTYKIT_HOST` env var; deploy: `npx partykit deploy` |
+| **Public room without PartyKit** | ✅ Working | Toggle always visible; P2P discovery automatic |
+| Browse public games (PartyKit) | ✅ Working | Live WebSocket subscription via `subscribeToGameListings` |
 | Browse public games (P2P) | ✅ Working | Manual scan via `searchPeerGames` |
 | Chat / emotes | 🚧 Not started | |
 | Reconnect / rejoin | 🚧 Not started | Guests who disconnect lose their session |
 | Spectator mode | 🚧 Not started | |
+
+---
+
+## 2026-02-27 — Firebase → PartyKit Migration (Room Listing)
+
+### Why
+
+Firebase (900 KB bundle, 4 env vars, Google account required) was overkill for a small indie
+game with very few players. PartyKit offers a free tier via Cloudflare Workers, zero-config
+local dev (`npx partykit dev`), and a much simpler API.
+
+### What Changed
+
+| File | Change |
+|------|--------|
+| `party/gameListings.ts` | **New** — PartyKit server: room registry with Durable Object storage |
+| `partykit.json` | **New** — PartyKit project config |
+| `src/lib/partykit.ts` | **New** — `isPartykitConfigured()` + `getPartykitHost()` helpers |
+| `src/network/gameListing.ts` | **Replaced** — PartySocket WebSocket instead of Firebase SDK |
+| `src/components/screens/OnlineLobby.tsx` | `isFirebaseConfigured` → `isPartykitConfigured` |
+| `src/lib/firebase.ts` | **Deleted** |
+| `.env.example` | Updated docs: `VITE_PARTYKIT_HOST` replaces `VITE_FIREBASE_*` |
+| `package.json` | `firebase` removed, `partysocket` + `partykit` (dev) added |
+
+### How It Works
+
+One singleton PartyKit room (`registry`) acts as the room registry:
+- **Host** connects via `PartySocket`, sends `register` → server stores + broadcasts to all
+- **Guest** connects via `PartySocket`, receives current listing immediately on open, then live updates
+- Server auto-expires listings older than 5 minutes (stored in Durable Object storage)
+- `unregister` message sent on cleanup (host quits / game starts)
+
+### Setup (Production)
+
+```bash
+# 1. Login
+npx partykit login
+
+# 2. Deploy (once)
+npx partykit deploy
+# → guild-life-adventures.<your-name>.partykit.dev
+
+# 3. Add to GitHub secrets as VITE_PARTYKIT_HOST
+```
+
+### Setup (Local Dev)
+
+```bash
+# In one terminal:
+npx partykit dev
+
+# In .env.local:
+VITE_PARTYKIT_HOST=localhost:1999
+```
+
+### Fallback Behaviour
+
+Identical to before: if `VITE_PARTYKIT_HOST` is not set, `isPartykitConfigured()` returns
+`false`, all `gameListing.*` functions are no-ops, and the browse view shows the P2P local
+discovery scan instead.
 
 ---
 

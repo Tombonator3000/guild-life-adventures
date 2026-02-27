@@ -12,6 +12,7 @@
 - **Styling**: Tailwind CSS + shadcn/ui components
 - **Testing**: Vitest + Testing Library
 - **Package Manager**: Bun
+- **Multiplayer room listing**: PartyKit (`party/gameListings.ts`) — replaces Firebase (removed 2026-02-27)
 
 ## Quick Commands
 
@@ -148,3 +149,4 @@ Tests are in `src/test/` directory.
 - AI job upgrade threshold: hard AI upgrades for any >10% wage improvement (`upgradeThreshold = 1.1`); medium/easy require 20% (`1.2`).
 - AI education pipeline (depth >= 2): medium AI now participates in the job-unlock pipeline (was hard-only). Hard AI uses 1.2x wage target threshold; medium uses 1.3x.
 - AI festival actions: all festival bonus priorities boosted by ~6-10 points since festivals are time-limited. Wage festivals also generate a travel action to job location (not just boosting work when already there).
+- Multiplayer room listing uses PartyKit (NOT Firebase — Firebase was removed 2026-02-27). Use `isPartykitConfigured()` from `src/lib/partykit.ts`, NOT `isFirebaseConfigured`. Room listing server is `party/gameListings.ts`. Do NOT re-add the `firebase` npm package. Deploy with `npx partykit deploy`; dev with `npx partykit dev` + `VITE_PARTYKIT_HOST=localhost:1999`.

@@ -5,6 +5,44 @@
 
 ---
 
+## 2026-02-27 — Firebase → PartyKit Migration (Room Listing)
+
+### Timestamp: 2026-02-27
+
+### Summary
+
+Replaced Firebase Realtime Database with PartyKit for the public game lobby browser.
+Firebase was 900 KB, required 4 env vars and a Google account. PartyKit is purpose-built
+for real-time multiplayer, free at small scale, and takes 1 env var.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `party/gameListings.ts` | NEW — PartyKit server (room registry, Durable Object storage) |
+| `partykit.json` | NEW — PartyKit project config |
+| `src/lib/partykit.ts` | NEW — `isPartykitConfigured()` + `getPartykitHost()` |
+| `src/network/gameListing.ts` | REPLACED — PartySocket WebSocket vs Firebase SDK |
+| `src/components/screens/OnlineLobby.tsx` | `isFirebaseConfigured` → `isPartykitConfigured` |
+| `src/lib/firebase.ts` | DELETED |
+| `.env.example` | `VITE_PARTYKIT_HOST` replaces `VITE_FIREBASE_*` (4 vars → 1) |
+| `package.json` | `firebase` removed; `partysocket` + `partykit` (dev) added |
+
+### Architecture
+
+One PartyKit Durable Object room (`registry`) = global room listing. Hosts register,
+guests subscribe. Server auto-expires listings after 5 min.
+
+- Dev: `npx partykit dev` → `VITE_PARTYKIT_HOST=localhost:1999`
+- Prod: `npx partykit deploy` → `VITE_PARTYKIT_HOST=guild-life-adventures.<name>.partykit.dev`
+
+### CLAUDE.md Updated
+
+Added PartyKit to Tech Stack. Rule: use `isPartykitConfigured()` (from `src/lib/partykit.ts`),
+NOT `isFirebaseConfigured` (deleted). Do NOT re-add firebase package.
+
+---
+
 ## 2026-02-27 — Research: Firebase Alternatives for Room Discovery / Find Rooms
 
 ### Timestamp: 2026-02-27

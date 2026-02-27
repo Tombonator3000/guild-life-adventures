@@ -12,7 +12,7 @@ import { CharacterPortrait } from '@/components/game/CharacterPortrait';
 import { PortraitPicker } from '@/components/game/PortraitPicker';
 import gameBoard from '@/assets/game-board.jpeg';
 import { subscribeToGameListings, type GameListing } from '@/network/gameListing';
-import { isFirebaseConfigured } from '@/lib/firebase';
+import { isPartykitConfigured } from '@/lib/partykit';
 
 type LobbyView = 'menu' | 'creating' | 'joining' | 'host-lobby' | 'guest-lobby' | 'browse' | 'spectating';
 
@@ -51,12 +51,12 @@ export function OnlineLobby() {
   const [editingName, setEditingName] = useState(false);
   const [lobbyNameInput, setLobbyNameInput] = useState('');
 
-  // Browse Games state (Firebase)
+  // Browse Games state (PartyKit)
   const [gameListings, setGameListings] = useState<GameListing[]>([]);
   const [listingsLoading, setListingsLoading] = useState(false);
-  const firebaseAvailable = isFirebaseConfigured();
+  const partykitAvailable = isPartykitConfigured();
 
-  // Browse Games state (PeerJS fallback — used when Firebase is not configured)
+  // Browse Games state (PeerJS fallback — used when PartyKit is not configured)
   const [peerGames, setPeerGames] = useState<import('@/network/peerDiscovery').PeerDiscoveredGame[]>([]);
   const [peerSearching, setPeerSearching] = useState(false);
   const [peerSearchError, setPeerSearchError] = useState<string | null>(null);
@@ -64,14 +64,14 @@ export function OnlineLobby() {
 
   // Subscribe to game listings when in browse view
   useEffect(() => {
-    if (view !== 'browse' || !firebaseAvailable) return;
+    if (view !== 'browse' || !partykitAvailable) return;
     setListingsLoading(true);
     const unsub = subscribeToGameListings((games) => {
       setGameListings(games);
       setListingsLoading(false);
     });
     return unsub;
-  }, [view, firebaseAvailable]);
+  }, [view, partykitAvailable]);
 
   // --- Actions ---
 
@@ -256,7 +256,7 @@ export function OnlineLobby() {
               <div className="text-left">
                 <span className="font-display text-base text-amber-900 block">Search Online Games</span>
                 <span className="text-xs text-amber-700">
-                  {firebaseAvailable ? 'Browse public rooms — no code needed' : 'Find games in this browser — or use a room code'}
+                  {partykitAvailable ? 'Browse public rooms — no code needed' : 'Find games in this browser — or use a room code'}
                 </span>
               </div>
             </button>
@@ -364,9 +364,9 @@ export function OnlineLobby() {
             <div className="parchment-panel p-4 flex items-center justify-between">
               <h2 className="font-display text-xl text-amber-900 flex items-center gap-2">
                 <Search className="w-5 h-5" />
-                {firebaseAvailable ? 'Public Games' : 'Local Games'}
+                {partykitAvailable ? 'Public Games' : 'Local Games'}
               </h2>
-              {firebaseAvailable && (
+              {partykitAvailable && (
                 <button
                   onClick={() => {
                     setListingsLoading(true);
@@ -380,7 +380,7 @@ export function OnlineLobby() {
               )}
             </div>
 
-            {!firebaseAvailable ? (
+            {!partykitAvailable ? (
               <div className="space-y-3">
               <div className="parchment-panel p-5 text-center">
                   <Globe className="w-8 h-8 text-amber-600 mx-auto mb-2" />
@@ -587,7 +587,7 @@ export function OnlineLobby() {
               <p className="text-xs text-amber-600 mt-2">Share this code with other players</p>
               <ConnectionIndicator status={connectionStatus} />
 
-              {/* Public listing toggle — always visible; uses Firebase when configured, P2P discovery otherwise */}
+              {/* Public listing toggle — always visible; uses PartyKit when configured, P2P discovery otherwise */}
               <div className="mt-3 pt-3 border-t border-border/50">
                 <label className="flex items-center justify-center gap-2 cursor-pointer">
                   <input
@@ -598,12 +598,12 @@ export function OnlineLobby() {
                   />
                   <Search className="w-4 h-4 text-amber-700" />
                   <span className="font-display text-sm text-amber-900">
-                    {firebaseAvailable ? 'List in public lobby browser' : 'Make discoverable (same browser only)'}
+                    {partykitAvailable ? 'List in public lobby browser' : 'Make discoverable (same browser only)'}
                   </span>
                 </label>
                 {isPublic && (
                   <p className="text-xs text-green-700 text-center mt-1">
-                    {firebaseAvailable
+                    {partykitAvailable
                       ? 'Others can find and join this room without a code'
                       : 'Discoverable by other tabs on this browser. Share the room code for cross-network play.'}
                   </p>
