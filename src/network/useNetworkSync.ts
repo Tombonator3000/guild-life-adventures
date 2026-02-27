@@ -8,7 +8,7 @@ import { useGameStore } from '@/store/gameStore';
 import { setNetworkActionSender, trackPendingAction, resolveAction } from './NetworkActionProxy';
 import { serializeGameState, applyNetworkState, executeAction } from './networkState';
 import { ALLOWED_GUEST_ACTIONS } from './types';
-import type { NetworkMessage, GuestMessage, HostMessage, ChatMessage } from './types';
+import type { NetworkMessage, GuestMessage, HostMessage, ChatMessage, ConnectionStatus } from './types';
 import type { LocationId } from '@/types/game.types';
 
 /**
