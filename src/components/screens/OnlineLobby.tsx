@@ -41,6 +41,11 @@ export function OnlineLobby() {
     setLocalPlayerName,
     setPublicRoom,
     attemptReconnect,
+    lobbyChatMessages,
+    sendLobbyChat,
+    rejoinSession,
+    clearRejoinSession,
+    rejoinGame,
   } = useOnlineGame();
 
   const [view, setView] = useState<LobbyView>('menu');
