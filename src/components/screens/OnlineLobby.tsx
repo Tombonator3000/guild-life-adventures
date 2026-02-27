@@ -843,6 +843,14 @@ export function OnlineLobby() {
               )}
             </div>
 
+            {/* Lobby Chat */}
+            <LobbyChat
+              messages={lobbyChatMessages}
+              onSend={sendLobbyChat}
+              playerName={localPlayerName}
+              playerColor={myColor}
+            />
+
             {/* Action Buttons */}
             <div className="flex justify-center gap-4">
               <button
