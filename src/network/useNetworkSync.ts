@@ -525,6 +525,7 @@ export function useNetworkSync() {
 
     return () => {
       unsubMessage();
+      unsubStatus();
       unsubStore?.();
       unsubDisconnect?.();
       unsubReconnect?.();
