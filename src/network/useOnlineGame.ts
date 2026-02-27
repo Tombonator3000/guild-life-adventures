@@ -463,6 +463,13 @@ export function useOnlineGame() {
         console.log(`[OnlineGame] Spectator joined: ${message.spectatorName} (${count} spectators)`);
         break;
       }
+
+      case 'chat-message': {
+        const chatMsg = (message as { type: 'chat-message'; message: ChatMessage }).message;
+        peerManager.broadcast({ type: 'chat-message', message: chatMsg });
+        setLobbyChatMessages(prev => [...prev, chatMsg].slice(-100));
+        break;
+      }
     }
   }, [roomCode, localPlayerName, settings, lobbyPlayers.length]);
 
