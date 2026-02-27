@@ -71,5 +71,6 @@ jobs:
       - name: Deploy PartyKit server to Cloudflare
         run: npx partykit@latest deploy
         env:
+          PARTYKIT_LOGIN: ${{ secrets.PARTYKIT_LOGIN }}
           PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
         continue-on-error: true
