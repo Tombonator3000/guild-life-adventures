@@ -5,6 +5,92 @@
 
 ---
 
+## 2026-02-27 — Research: Firebase Alternatives for Room Discovery / Find Rooms
+
+### Timestamp: 2026-02-27
+
+### Context
+
+Firebase is currently used **only** in `src/network/gameListing.ts` for public game room listing:
+- `registerGameListing()` — writes a room entry to Firebase Realtime DB
+- `updateListingPlayerCount()` — updates player count when guests join
+- `subscribeToGameListings()` — live subscription to open rooms list
+
+Firebase is **optional** — if env vars are missing, all functions return no-ops and fall back to P2P discovery via PeerJS (`peerDiscovery.ts`). The actual game networking (WebRTC P2P via PeerJS) does NOT use Firebase.
+
+### Findings: Firebase Alternatives
+
+#### Option 1: ⭐ SUPABASE REALTIME (Best fit — already in project!)
+- **What**: Supabase Realtime Broadcast + Presence over WebSockets
+- **Why best**: `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are **already configured** in the project (used for Edge Functions). Zero new services to set up.
+- **How**: Use `supabase.channel('open-games').on('presence', ...)` or `Broadcast` to list rooms. The host joins the channel with their room metadata; guests subscribe and see all hosts. Or use a Supabase table with Realtime enabled (row-level subscription).
+- **Free tier**: 200 concurrent connections, 500MB DB, 2GB egress — fine for an indie game
+- **Cons**: Projects pause after 1 week with no API requests (free tier). Pro = $25/mo.
+- **API similarity to Firebase**: Very high — nearly a drop-in replace for `onValue(ref, handler)` → `supabase.channel(...).on('postgres_changes', handler).subscribe()`
+
+#### Option 2: PARTYKIT (Purpose-built multiplayer, edge-deployed)
+- **What**: Cloudflare Durable Objects-based multiplayer infrastructure. Each "party" = a room.
+- **DX**: Deploy with `npx partykit dev`, add `partykit.json`. Very simple API.
+- **Free tier**: Cloudflare Workers free tier included (100k requests/day). Generous.
+- **Use case**: Could replace both Firebase listing AND PeerJS signaling — full multiplayer platform. More than needed just for room discovery.
+- **Cons**: Would require bigger architectural shift. Paid for high-traffic use.
+
+#### Option 3: POCKETBASE (Self-hosted, free)
+- **What**: Single-binary backend with Realtime, REST, auth. MIT licensed.
+- **Host on**: PocketHost.io (free), $4/mo Hetzner VPS, Oracle Always Free etc.
+- **10,000+ persistent realtime connections** on $4 VPS (community benchmark)
+- **Cons**: Requires running/maintaining a server. Not serverless. Good for someone who controls their own infra.
+
+#### Option 4: COLYSEUS (Game-specific room matchmaking)
+- **What**: Node.js game server framework with built-in room creation, matchmaking, state sync.
+- **Use case**: Purpose-built for this exact problem — game rooms, player joining, state broadcast.
+- **Would replace**: Both Firebase listing AND PeerJS (Colyseus does authoritative server-side state)
+- **Cons**: Major architectural shift (currently P2P host-authoritative; Colyseus is server-authoritative). Overkill for room discovery alone.
+
+#### Option 5: ABLY / PUBNUB (Managed realtime pub/sub)
+- **What**: Managed WebSocket platforms with pub/sub, presence, history.
+- **Use case**: Host publishes to an `open-rooms` channel; guests subscribe and see all hosts.
+- **Free**: Ably free tier = 200 concurrent connections, 6M messages/mo. PubNub = 1M transactions/mo.
+- **Cons**: Another vendor to manage. More complex pricing at scale.
+
+#### Option 6: PUSHER (Simple managed pub/sub)
+- **What**: Managed WebSocket channels, presence feature.
+- **Free**: 200 connections, 200k messages/day on Spark (free) plan.
+- **Use case**: Same pattern as Ably — hosts publish room metadata, guests subscribe.
+- **Cons**: Smaller free tier than Ably.
+
+#### Option 7: Custom WebSocket Server (Railway/Render/Fly.io free tier)
+- **What**: Simple Node.js WebSocket server maintaining an in-memory room list.
+- **Host on**: Railway free tier ($5 credit/mo), Render free tier, Fly.io free allowance.
+- **Cons**: Uptime concerns on free tiers (sleep after inactivity). Must maintain a server.
+
+### Recommendation
+
+**Use Supabase Realtime** — it's already in the project (same credentials), free, and the API maps almost directly onto the existing Firebase `gameListing.ts` code. The refactor would be:
+
+```ts
+// BEFORE (Firebase)
+await set(ref(db, path), listing);
+onValue(listingsRef, handler);
+
+// AFTER (Supabase Realtime Presence)
+await supabase.channel('open-games')
+  .track({ roomCode, hostName, playerCount, ... });
+supabase.channel('open-games')
+  .on('presence', { event: 'sync' }, () => { ... })
+  .subscribe();
+```
+
+If Supabase is not wanted, **PartyKit** is the next best — purpose-built for this exact use case, excellent free tier, great DX.
+
+### No Code Changes Made
+
+This was a research/analysis session only. Implementation pending user decision.
+
+---
+
+---
+
 ## 2026-02-27 — Options Menu + Multiplayer Chat Clarifications + Remaining Hours
 
 ### Timestamp: 2026-02-27
