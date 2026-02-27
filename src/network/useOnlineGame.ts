@@ -16,6 +16,7 @@ import type {
   GuestMessage,
   ConnectionStatus,
   SerializedGameState,
+  ChatMessage,
 } from './types';
 import { PLAYER_COLORS } from '@/types/game.types';
 import { registerGameListing, updateListingPlayerCount } from './gameListing';
@@ -23,6 +24,15 @@ import { announceRoom, unannounceRoom, updateAnnouncedRoom } from './localDiscov
 
 /** Time to wait for host reconnection before triggering host migration (ms) */
 const HOST_MIGRATION_TIMEOUT = 10000;
+
+/** Session storage key for page-refresh reconnect */
+const SESSION_STORAGE_KEY = 'guild-life-online-session';
+interface StoredSession {
+  roomCode: string;
+  playerName: string;
+  slot: number;
+  timestamp: number;
+}
 
 // --- Main Hook ---
 
@@ -44,6 +54,24 @@ export function useOnlineGame() {
   const [spectatorCount, setSpectatorCount] = useState(0);
   const spectatorPeersRef = useRef(new Set<string>());
   const [isSpectator, setIsSpectator] = useState(false);
+
+  // Lobby chat messages (cleared on game start)
+  const [lobbyChatMessages, setLobbyChatMessages] = useState<ChatMessage[]>([]);
+
+  // Rejoin session (from sessionStorage after page refresh)
+  const [rejoinSession, setRejoinSession] = useState<StoredSession | null>(() => {
+    try {
+      const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
+      if (!stored) return null;
+      const session = JSON.parse(stored) as StoredSession;
+      // Expire after 30 minutes
+      if (Date.now() - session.timestamp > 30 * 60 * 1000) {
+        sessionStorage.removeItem(SESSION_STORAGE_KEY);
+        return null;
+      }
+      return session;
+    } catch { return null; }
+  });
 
   // Track if we're in online game mode
   const isOnlineRef = useRef(false);
@@ -221,7 +249,7 @@ export function useOnlineGame() {
     const unsubMessage = peerManager.onMessage((message: NetworkMessage, fromPeerId: string) => {
       if (isHost) {
         const msg = message as GuestMessage;
-        if (msg.type === 'join' || msg.type === 'ready' || msg.type === 'leave' || msg.type === 'reconnect' || msg.type === 'portrait-select' || msg.type === 'name-change' || msg.type === 'discovery-probe' || msg.type === 'spectate') {
+        if (msg.type === 'join' || msg.type === 'ready' || msg.type === 'leave' || msg.type === 'reconnect' || msg.type === 'portrait-select' || msg.type === 'name-change' || msg.type === 'discovery-probe' || msg.type === 'spectate' || msg.type === 'chat-message') {
           handleHostMessageRef.current?.(msg, fromPeerId);
         }
       } else {
@@ -229,7 +257,7 @@ export function useOnlineGame() {
         if (msg.type === 'lobby-update' || msg.type === 'game-start' ||
             msg.type === 'kicked' || msg.type === 'player-disconnected' ||
             msg.type === 'player-reconnected' || msg.type === 'host-migrated' ||
-            msg.type === 'spectator-accepted') {
+            msg.type === 'spectator-accepted' || msg.type === 'chat-message') {
           handleGuestMessageRef.current?.(msg);
         }
       }
@@ -435,6 +463,13 @@ export function useOnlineGame() {
         console.log(`[OnlineGame] Spectator joined: ${message.spectatorName} (${count} spectators)`);
         break;
       }
+
+      case 'chat-message': {
+        const chatMsg = (message as { type: 'chat-message'; message: ChatMessage }).message;
+        peerManager.broadcast({ type: 'chat-message', message: chatMsg });
+        setLobbyChatMessages(prev => [...prev, chatMsg].slice(-100));
+        break;
+      }
     }
   }, [roomCode, localPlayerName, settings, lobbyPlayers.length]);
 
@@ -468,6 +503,17 @@ export function useOnlineGame() {
 
         // Apply the full game state from host AFTER networkMode is set
         applyNetworkState(message.gameState);
+
+        // Save session for page-refresh recovery (guests only)
+        try {
+          const session: StoredSession = {
+            roomCode,
+            playerName: localPlayerName,
+            slot: mySlot,
+            timestamp: Date.now(),
+          };
+          sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+        } catch { /* sessionStorage not available */ }
         break;
       }
 
@@ -514,6 +560,12 @@ export function useOnlineGame() {
         });
         setSpectatorCount(message.spectatorCount);
         console.log(`[OnlineGame] Accepted as spectator (${message.spectatorCount} total)`);
+        break;
+      }
+
+      case 'chat-message': {
+        const chatMsg = (message as { type: 'chat-message'; message: ChatMessage }).message;
+        setLobbyChatMessages(prev => [...prev, chatMsg].slice(-100));
         break;
       }
     }
@@ -815,6 +867,8 @@ export function useOnlineGame() {
       peerManager.sendToHost({ type: 'leave' });
     }
     isOnlineRef.current = false;
+    // Clear stored session for page-refresh recovery
+    try { sessionStorage.removeItem(SESSION_STORAGE_KEY); } catch { /* ignore */ }
     // Clean up network state tracking (dismissed events, sync indices)
     resetNetworkState();
     // Brief delay to allow messages to flush before destroying
@@ -845,6 +899,56 @@ export function useOnlineGame() {
     };
   }, []);
 
+  // --- Lobby Chat ---
+  const sendLobbyChat = useCallback((text: string, senderName: string, senderColor: string) => {
+    const message: ChatMessage = { senderName, senderColor, text, timestamp: Date.now() };
+    if (isHost) {
+      setLobbyChatMessages(prev => [...prev, message].slice(-100));
+      peerManager.broadcast({ type: 'chat-message', message });
+    } else {
+      peerManager.sendToHost({ type: 'chat-message', message });
+    }
+  }, [isHost]);
+
+  // --- Clear Rejoin Session ---
+  const clearRejoinSession = useCallback(() => {
+    try { sessionStorage.removeItem(SESSION_STORAGE_KEY); } catch { /* ignore */ }
+    setRejoinSession(null);
+  }, []);
+
+  // --- Rejoin Game (page-refresh recovery) ---
+  const rejoinGame = useCallback(async (session: StoredSession) => {
+    try {
+      setError(null);
+      setLocalPlayerName(session.playerName);
+      await peerManager.joinRoom(session.roomCode);
+      setRoomCode(session.roomCode);
+      setIsHost(false);
+      isOnlineRef.current = true;
+
+      // Set up as guest immediately so useNetworkSync can receive state-sync
+      useGameStore.setState({
+        networkMode: 'guest' as const,
+        localPlayerId: `player-${session.slot}`,
+        roomCode: session.roomCode,
+      });
+
+      // Send reconnect (not join) to restore player slot
+      peerManager.setReconnectPlayerName(session.playerName);
+      peerManager.sendToHost({ type: 'reconnect', playerName: session.playerName });
+
+      // Clear the stored session
+      sessionStorage.removeItem(SESSION_STORAGE_KEY);
+      setRejoinSession(null);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to rejoin game';
+      setError(msg);
+      sessionStorage.removeItem(SESSION_STORAGE_KEY);
+      setRejoinSession(null);
+      throw err;
+    }
+  }, []);
+
   return {
     // State
     isHost,
@@ -872,5 +976,10 @@ export function useOnlineGame() {
     setLocalPlayerName,
     attemptReconnect,
     setPublicRoom,
+    lobbyChatMessages,
+    sendLobbyChat,
+    rejoinSession,
+    clearRejoinSession,
+    rejoinGame,
   };
 }

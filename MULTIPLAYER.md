@@ -55,9 +55,12 @@ Guest joins with room code
 | **Public room without PartyKit** | ✅ Working | Toggle always visible; P2P discovery automatic |
 | Browse public games (PartyKit) | ✅ Working | Live WebSocket subscription via `subscribeToGameListings` |
 | Browse public games (P2P) | ✅ Working | Manual scan via `searchPeerGames` |
-| Chat / emotes | 🚧 Not started | |
-| Reconnect / rejoin | 🚧 Not started | Guests who disconnect lose their session |
-| Spectator mode | 🚧 Not started | |
+| Chat (in-game) | ✅ Working | `ChatPanel.tsx` with emotes, floating bubbles, unread badges |
+| Chat (lobby) | ✅ Working | `LobbyChat` in `OnlineLobby.tsx` for host and guest lobbies |
+| Spectator mode | ✅ Working | Pure spectators + dead player auto-spectate; `SpectatorOverlay.tsx` |
+| Reconnect (auto) | ✅ Working | 30s window, auto-reconnect on disconnect, host migration |
+| Reconnect (page refresh) | ✅ Working | Session saved to `sessionStorage`; rejoin prompt in Online menu |
+| Reconnect UI (in-game) | ✅ Working | Connection-lost banner with retry in `GameBoardOverlays.tsx` |
 
 ---
 
@@ -156,10 +159,10 @@ game metadata — no explicit "register" step required.
 
 | # | Issue | Severity | Status |
 |---|-------|----------|--------|
-| M1 | Guests can't recover if host disconnects mid-game | High | Open |
+| M1 | Guests can't recover if host disconnects mid-game | Medium | Mitigated — host migration auto-elects new host |
 | M2 | All players must be present at game start (no late join) | Medium | Open |
 | M3 | PeerJS free signaling server has rate limits (~50 req/10s) | Low | Acceptable for now |
-| M4 | No reconnect token — refreshing page as guest loses session | High | Open |
+| M4 | No reconnect token — refreshing page as guest loses session | ~~High~~ | **FIXED** — sessionStorage saves session; rejoin prompt on Online menu |
 
 *(See `bugs.md` for the full bug list)*
 

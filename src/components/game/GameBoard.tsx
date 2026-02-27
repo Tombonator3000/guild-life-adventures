@@ -78,7 +78,7 @@ export function GameBoard() {
   } = useGameStore();
   const locationHexes = useGameStore(s => s.locationHexes);
   const { event: shadowfingersEvent, dismiss: dismissShadowfingers } = useShadowfingersModal();
-  const { isOnline, isGuest, networkMode, broadcastMovement, remoteAnimation, clearRemoteAnimation, latency, chatMessages, sendChatMessage } = useNetworkSync();
+  const { isOnline, isGuest, networkMode, broadcastMovement, remoteAnimation, clearRemoteAnimation, latency, chatMessages, sendChatMessage, connectionStatus, attemptReconnect } = useNetworkSync();
   const localPlayerId = useGameStore(s => s.localPlayerId);
   const roomCodeDisplay = useGameStore(s => s.roomCode);
 
@@ -550,6 +550,8 @@ export function GameBoard() {
         aiSpeedMultiplier={aiSpeedMultiplier}
         setAISpeedMultiplier={setAISpeedMultiplier}
         setSkipAITurn={setSkipAITurn}
+        connectionStatus={connectionStatus}
+        attemptReconnect={attemptReconnect}
       />
 
       {/* Save/Load Menu */}
@@ -569,12 +571,12 @@ export function GameBoard() {
       <UpdateBanner />
 
       {/* In-game chat (online multiplayer only) */}
-      {isOnline && currentPlayer && (
+      {isOnline && (
         <ChatPanel
           messages={chatMessages}
           onSend={sendChatMessage}
-          playerName={currentPlayer.name}
-          playerColor={currentPlayer.color}
+          playerName={isPureSpectator ? 'Spectator' : (localPlayer?.name || currentPlayer?.name || 'Player')}
+          playerColor={isPureSpectator ? '#9CA3AF' : (localPlayer?.color || currentPlayer?.color || '#888888')}
         />
       )}
 

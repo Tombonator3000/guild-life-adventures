@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useOnlineGame } from '@/network/useOnlineGame';
 import { isValidRoomCode } from '@/network/roomCodes';
@@ -6,9 +6,10 @@ import { PLAYER_COLORS, AI_DIFFICULTY_NAMES } from '@/types/game.types';
 import type { AIDifficulty } from '@/types/game.types';
 import {
   Globe, Users, Copy, Check, ArrowLeft, Play, Wifi, WifiOff,
-  Loader2, Bot, Brain, Zap, Crown, UserPlus, Pencil, Search, RefreshCw, Eye,
+  Loader2, Bot, Brain, Zap, Crown, UserPlus, Pencil, Search, RefreshCw, Eye, MessageCircle, Send,
 } from 'lucide-react';
 import { CharacterPortrait } from '@/components/game/CharacterPortrait';
+import type { ChatMessage } from '@/network/types';
 import { PortraitPicker } from '@/components/game/PortraitPicker';
 import gameBoard from '@/assets/game-board.jpeg';
 import { subscribeToGameListings, type GameListing } from '@/network/gameListing';
@@ -40,6 +41,11 @@ export function OnlineLobby() {
     setLocalPlayerName,
     setPublicRoom,
     attemptReconnect,
+    lobbyChatMessages,
+    sendLobbyChat,
+    rejoinSession,
+    clearRejoinSession,
+    rejoinGame,
   } = useOnlineGame();
 
   const [view, setView] = useState<LobbyView>('menu');
@@ -210,6 +216,40 @@ export function OnlineLobby() {
         {/* --- Main Menu --- */}
         {view === 'menu' && (
           <div className="w-full max-w-md space-y-4">
+            {/* Rejoin Prompt */}
+            {rejoinSession && (
+              <div className="parchment-panel p-4 border-2 border-primary/40">
+                <div className="flex items-center gap-2 mb-2">
+                  <RefreshCw className="w-5 h-5 text-primary" />
+                  <span className="font-display text-amber-900 font-semibold">Rejoin Game?</span>
+                </div>
+                <p className="text-xs text-amber-700 mb-3">
+                  You were in room <strong className="font-mono">{rejoinSession.roomCode}</strong> as <strong>{rejoinSession.playerName}</strong>.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      setConnecting(true);
+                      try { await rejoinGame(rejoinSession); }
+                      catch { /* error shown via hook */ }
+                      finally { setConnecting(false); }
+                    }}
+                    disabled={connecting}
+                    className="gold-button flex items-center gap-1.5 text-sm disabled:opacity-50"
+                  >
+                    {connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                    Rejoin
+                  </button>
+                  <button
+                    onClick={clearRejoinSession}
+                    className="px-3 py-1.5 wood-frame text-parchment font-display text-sm hover:brightness-110"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Name Input */}
             <div className="parchment-panel p-6">
               <label className="block font-display text-sm text-amber-900 mb-2">Your Name</label>
@@ -808,6 +848,14 @@ export function OnlineLobby() {
               )}
             </div>
 
+            {/* Lobby Chat */}
+            <LobbyChat
+              messages={lobbyChatMessages}
+              onSend={sendLobbyChat}
+              playerName={localPlayerName}
+              playerColor={myColor}
+            />
+
             {/* Action Buttons */}
             <div className="flex justify-center gap-4">
               <button
@@ -927,6 +975,14 @@ export function OnlineLobby() {
               </div>
             </div>
 
+            {/* Lobby Chat */}
+            <LobbyChat
+              messages={lobbyChatMessages}
+              onSend={sendLobbyChat}
+              playerName={localPlayerName}
+              playerColor={lobbyPlayers.find(p => p.name === localPlayerName)?.color || '#888888'}
+            />
+
             <div className="parchment-panel p-4 text-center">
               <Loader2 className="w-6 h-6 text-primary mx-auto mb-2 animate-spin" />
               <p className="font-display text-sm text-amber-900">
@@ -989,6 +1045,63 @@ function ConnectionIndicator({ status, onReconnect }: { status: string; onReconn
           {status === 'reconnecting' ? 'Reconnecting...' : 'Reconnect'}
         </button>
       )}
+    </div>
+  );
+}
+
+function LobbyChat({ messages, onSend, playerName, playerColor }: {
+  messages: ChatMessage[];
+  onSend: (text: string, senderName: string, senderColor: string) => void;
+  playerName: string;
+  playerColor: string;
+}) {
+  const [input, setInput] = useState('');
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages.length]);
+
+  const handleSend = () => {
+    if (!input.trim()) return;
+    onSend(input.trim(), playerName, playerColor);
+    setInput('');
+  };
+
+  return (
+    <div className="parchment-panel p-4">
+      <h3 className="font-display text-sm text-amber-900 mb-2 flex items-center gap-1.5">
+        <MessageCircle className="w-4 h-4" /> Lobby Chat
+      </h3>
+      <div className="bg-background/50 rounded p-2 mb-2 max-h-32 overflow-y-auto">
+        {messages.length === 0 ? (
+          <p className="text-xs text-amber-600 italic">No messages yet — say hello!</p>
+        ) : messages.map((msg, i) => (
+          <div key={i} className="text-xs mb-0.5">
+            <span className="font-semibold font-display" style={{ color: msg.senderColor }}>{msg.senderName}: </span>
+            <span className="text-amber-800">{msg.text}</span>
+          </div>
+        ))}
+        <div ref={bottomRef} />
+      </div>
+      <div className="flex gap-1.5">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
+          placeholder="Say something..."
+          maxLength={200}
+          className="flex-1 px-2 py-1.5 bg-input border border-border rounded text-xs text-amber-900 placeholder:text-amber-600/50 focus:outline-none focus:ring-1 focus:ring-primary"
+        />
+        <button
+          onClick={handleSend}
+          disabled={!input.trim()}
+          className="p-1.5 rounded text-amber-700 hover:text-amber-900 disabled:opacity-30 transition-colors"
+        >
+          <Send className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 }
