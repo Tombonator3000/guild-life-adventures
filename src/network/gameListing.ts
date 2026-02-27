@@ -1,107 +1,153 @@
-// Public game listing service using Firebase Realtime Database.
+// Public game listing service using PartyKit (replaces Firebase Realtime Database).
 // Hosts can register their room so anyone can browse and join without a code.
-// Listings are cleaned up automatically when hosts leave or start the game.
+// Requires VITE_PARTYKIT_HOST env var; falls back gracefully to no-op if not set.
+//
+// Server: party/gameListings.ts
+// Dev:    npx partykit dev  (sets host to localhost:1999)
+// Prod:   npx partykit deploy → set VITE_PARTYKIT_HOST=guild-life-adventures.<user>.partykit.dev
 
-import { ref, set, remove, onValue, off, serverTimestamp } from 'firebase/database';
-import { getFirebaseDb, isFirebaseConfigured } from '@/lib/firebase';
-import type { GoalSettings } from '@/types/game.types';
+import PartySocket from "partysocket";
+import { isPartykitConfigured, getPartykitHost } from "@/lib/partykit";
+import type { GoalSettings } from "@/types/game.types";
 
-/** A public game listing entry stored in Firebase */
+/** A public game listing entry */
 export interface GameListing {
   roomCode: string;
   hostName: string;
   playerCount: number;
   maxPlayers: number;
-  goals: Pick<GoalSettings, 'wealth' | 'happiness' | 'education' | 'career'>;
+  goals: Pick<GoalSettings, "wealth" | "happiness" | "education" | "career">;
   hasAI: boolean;
   createdAt: number;
 }
 
-const LISTINGS_PATH = 'guild-life/openGames';
-/** Listings older than this are considered stale and hidden from the browser */
-const MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes
+// Single global registry room — all hosts/guests connect to the same PartyKit room
+const REGISTRY_ROOM = "registry";
 
-function listingPath(roomCode: string) {
-  return `${LISTINGS_PATH}/${roomCode}`;
+// Module-level host socket (one active host at a time)
+let _hostSocket: PartySocket | null = null;
+
+function makeSocket(): PartySocket {
+  return new PartySocket({
+    host: getPartykitHost(),
+    room: REGISTRY_ROOM,
+  });
 }
 
 /**
  * Register a public game listing. Returns a cleanup function that removes it.
- * Safe to call even if Firebase is not configured (returns no-op).
+ * Safe to call when PartyKit is not configured (returns no-op).
  */
-export async function registerGameListing(listing: GameListing): Promise<() => Promise<void>> {
-  if (!isFirebaseConfigured()) return async () => {};
+export async function registerGameListing(
+  listing: Omit<GameListing, "createdAt">
+): Promise<() => Promise<void>> {
+  if (!isPartykitConfigured()) return async () => {};
+
+  // Close any previous host socket
+  if (_hostSocket) {
+    _hostSocket.close();
+    _hostSocket = null;
+  }
+
+  const socket = makeSocket();
+  _hostSocket = socket;
 
   try {
-    const db = getFirebaseDb();
-    const path = listingPath(listing.roomCode);
-    await set(ref(db, path), {
-      ...listing,
-      createdAt: serverTimestamp(),
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(
+        () => reject(new Error("PartyKit connection timeout")),
+        8000
+      );
+      socket.addEventListener("open", () => {
+        clearTimeout(timer);
+        socket.send(
+          JSON.stringify({ type: "register", listing })
+        );
+        resolve();
+      });
+      socket.addEventListener("error", () => {
+        clearTimeout(timer);
+        reject(new Error("PartyKit connection error"));
+      });
     });
-
-    const cleanup = async () => {
-      try {
-        await remove(ref(db, path));
-      } catch {
-        // Ignore cleanup errors (e.g. already removed)
-      }
-    };
-    return cleanup;
   } catch (err) {
-    console.warn('[GameListing] Failed to register:', err);
+    console.warn("[GameListing] Failed to register:", err);
+    socket.close();
+    _hostSocket = null;
     return async () => {};
   }
+
+  return async () => {
+    if (_hostSocket === socket) {
+      try {
+        socket.send(
+          JSON.stringify({ type: "unregister", roomCode: listing.roomCode })
+        );
+        // Brief delay to let the message flush before closing
+        await new Promise((r) => setTimeout(r, 150));
+      } catch {
+        // ignore
+      }
+      socket.close();
+      _hostSocket = null;
+    }
+  };
 }
 
 /**
- * Update player count in an existing listing (called when players join).
+ * Update player count in an existing listing (called when guests join).
  */
-export async function updateListingPlayerCount(roomCode: string, playerCount: number): Promise<void> {
-  if (!isFirebaseConfigured()) return;
+export async function updateListingPlayerCount(
+  roomCode: string,
+  playerCount: number
+): Promise<void> {
+  if (!_hostSocket) return;
   try {
-    const db = getFirebaseDb();
-    await set(ref(db, `${listingPath(roomCode)}/playerCount`), playerCount);
+    _hostSocket.send(
+      JSON.stringify({ type: "update", roomCode, playerCount })
+    );
   } catch {
-    // Non-critical update
+    // Non-critical
   }
 }
 
 /**
  * Subscribe to the live list of open games.
- * Filters out stale listings (> 5 minutes old).
+ * Calls callback immediately with current list, then on every update.
  * Returns an unsubscribe function.
  */
 export function subscribeToGameListings(
   callback: (games: GameListing[]) => void
 ): () => void {
-  if (!isFirebaseConfigured()) {
+  if (!isPartykitConfigured()) {
     callback([]);
     return () => {};
   }
 
-  try {
-    const db = getFirebaseDb();
-    const listingsRef = ref(db, LISTINGS_PATH);
+  let closed = false;
+  const socket = makeSocket();
 
-    const handler = (snapshot: import('firebase/database').DataSnapshot) => {
-      const raw = snapshot.val() as Record<string, GameListing & { createdAt: number }> | null;
-      if (!raw) {
-        callback([]);
-        return;
+  socket.addEventListener("message", (evt) => {
+    if (closed) return;
+    try {
+      const msg = JSON.parse(evt.data as string) as {
+        type: string;
+        games: GameListing[];
+      };
+      if (msg.type === "listings") {
+        callback(msg.games);
       }
-      const now = Date.now();
-      const games = Object.values(raw).filter(g =>
-        g && g.roomCode && (now - g.createdAt < MAX_AGE_MS || g.createdAt > now - 1000)
-      );
-      callback(games);
-    };
+    } catch {
+      // ignore malformed
+    }
+  });
 
-    onValue(listingsRef, handler);
-    return () => off(listingsRef, 'value', handler);
-  } catch (err) {
-    console.warn('[GameListing] Failed to subscribe:', err);
-    callback([]);
-    return () => {};
-  }
+  socket.addEventListener("error", () => {
+    if (!closed) callback([]);
+  });
+
+  return () => {
+    closed = true;
+    socket.close();
+  };
 }

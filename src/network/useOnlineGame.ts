@@ -702,7 +702,7 @@ export function useOnlineGame() {
     if (!isHost) return;
 
     if (makePublic && !isPublicRef.current) {
-      // Register the listing in Firebase
+      // Register the listing in PartyKit
       const cleanup = await registerGameListing({
         roomCode,
         hostName: localPlayerName,
