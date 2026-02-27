@@ -16,6 +16,7 @@ import type {
   GuestMessage,
   ConnectionStatus,
   SerializedGameState,
+  ChatMessage,
 } from './types';
 import { PLAYER_COLORS } from '@/types/game.types';
 import { registerGameListing, updateListingPlayerCount } from './gameListing';
