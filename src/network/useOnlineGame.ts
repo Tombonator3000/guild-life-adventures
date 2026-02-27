@@ -503,6 +503,17 @@ export function useOnlineGame() {
 
         // Apply the full game state from host AFTER networkMode is set
         applyNetworkState(message.gameState);
+
+        // Save session for page-refresh recovery (guests only)
+        try {
+          const session: StoredSession = {
+            roomCode,
+            playerName: localPlayerName,
+            slot: mySlot,
+            timestamp: Date.now(),
+          };
+          sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+        } catch { /* sessionStorage not available */ }
         break;
       }
 
