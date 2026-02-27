@@ -55,9 +55,12 @@ Guest joins with room code
 | **Public room without PartyKit** | ✅ Working | Toggle always visible; P2P discovery automatic |
 | Browse public games (PartyKit) | ✅ Working | Live WebSocket subscription via `subscribeToGameListings` |
 | Browse public games (P2P) | ✅ Working | Manual scan via `searchPeerGames` |
-| Chat / emotes | 🚧 Not started | |
-| Reconnect / rejoin | 🚧 Not started | Guests who disconnect lose their session |
-| Spectator mode | 🚧 Not started | |
+| Chat (in-game) | ✅ Working | `ChatPanel.tsx` with emotes, floating bubbles, unread badges |
+| Chat (lobby) | ✅ Working | `LobbyChat` in `OnlineLobby.tsx` for host and guest lobbies |
+| Spectator mode | ✅ Working | Pure spectators + dead player auto-spectate; `SpectatorOverlay.tsx` |
+| Reconnect (auto) | ✅ Working | 30s window, auto-reconnect on disconnect, host migration |
+| Reconnect (page refresh) | ✅ Working | Session saved to `sessionStorage`; rejoin prompt in Online menu |
+| Reconnect UI (in-game) | ✅ Working | Connection-lost banner with retry in `GameBoardOverlays.tsx` |
 
 ---
 
