@@ -550,6 +550,8 @@ export function GameBoard() {
         aiSpeedMultiplier={aiSpeedMultiplier}
         setAISpeedMultiplier={setAISpeedMultiplier}
         setSkipAITurn={setSkipAITurn}
+        connectionStatus={connectionStatus}
+        attemptReconnect={attemptReconnect}
       />
 
       {/* Save/Load Menu */}
