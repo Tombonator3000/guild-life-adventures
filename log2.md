@@ -5,6 +5,44 @@
 
 ---
 
+## 2026-02-27 — Options Menu + Multiplayer Chat Clarifications + Remaining Hours
+
+### Timestamp: 2026-02-27
+
+### Task 1: Opponent Visibility in OptionsMenu (full-screen modal)
+
+**Problem**: `showOpponentActions` toggle only existed in `RightSideTabs` → `OptionsTab` (sidebar).
+The full-screen Options modal (`OptionsMenu.tsx`, opened via Esc/Save menu) had no Opponent Visibility setting.
+
+**Fix**:
+- Added `EyeOff` to imports in `OptionsMenu.tsx`
+- Added `Opponent Visibility` as a `Switch` row in `GameplayTab` after the Hexes/Curses option (with a `Separator` above it)
+- Uses `Eye`/`EyeOff` icon depending on current state, same `showOpponentActions` option key
+
+**Files changed**: `src/components/game/OptionsMenu.tsx`
+
+### Task 2: Multiplayer Chat + Emojis — Where Is It?
+
+**Status: Already implemented** — `ChatPanel.tsx` (`src/components/game/ChatPanel.tsx`)
+- Fixed floating button at `bottom-4 right-4` (z-30), only rendered during online multiplayer
+- Collapsible: click the chat bubble button to expand/collapse
+- Full message list with player name colors, unread badge
+- `EmotePanel` bar built-in: quick-send emojis that also spawn floating `EmoteBubble` overlays on the board
+- 200 char limit, Enter to send, keypresses do NOT propagate to game shortcuts
+- No code changes needed — chat + emojis are fully functional at bottom-right
+
+### Task 3: Remaining Hours Auto-Use on End Turn
+
+**Status: Already implemented** — `applyRemainingTimeAtLocation` in `src/store/helpers/turnHelpers.ts`
+- Called automatically in `endTurn()` when `timeRemaining > 0`
+- **At job location**: calls `workShift(playerId, hoursLeft, 0)` → partial earnings + dependability
+- **At own home**: proportional happiness + health + relaxation bonuses
+- **Anywhere else**: generic rest (1 happiness per 4 hours, min 1)
+- No event screen added (would be too noisy for every turn); stat changes visible in ResourcePanel
+- No code changes needed — feature has been working since 2026-02-24
+
+---
+
 ## 2026-02-26 — Newspaper Scroll Design + Woodcut Illustrations
 
 ### Timestamp: 2026-02-26
