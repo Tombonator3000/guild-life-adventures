@@ -970,6 +970,14 @@ export function OnlineLobby() {
               </div>
             </div>
 
+            {/* Lobby Chat */}
+            <LobbyChat
+              messages={lobbyChatMessages}
+              onSend={sendLobbyChat}
+              playerName={localPlayerName}
+              playerColor={lobbyPlayers.find(p => p.name === localPlayerName)?.color || '#888888'}
+            />
+
             <div className="parchment-panel p-4 text-center">
               <Loader2 className="w-6 h-6 text-primary mx-auto mb-2 animate-spin" />
               <p className="font-display text-sm text-amber-900">
