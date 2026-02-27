@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useOnlineGame } from '@/network/useOnlineGame';
 import { isValidRoomCode } from '@/network/roomCodes';
