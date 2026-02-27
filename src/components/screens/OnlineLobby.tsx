@@ -211,6 +211,40 @@ export function OnlineLobby() {
         {/* --- Main Menu --- */}
         {view === 'menu' && (
           <div className="w-full max-w-md space-y-4">
+            {/* Rejoin Prompt */}
+            {rejoinSession && (
+              <div className="parchment-panel p-4 border-2 border-primary/40">
+                <div className="flex items-center gap-2 mb-2">
+                  <RefreshCw className="w-5 h-5 text-primary" />
+                  <span className="font-display text-amber-900 font-semibold">Rejoin Game?</span>
+                </div>
+                <p className="text-xs text-amber-700 mb-3">
+                  You were in room <strong className="font-mono">{rejoinSession.roomCode}</strong> as <strong>{rejoinSession.playerName}</strong>.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      setConnecting(true);
+                      try { await rejoinGame(rejoinSession); }
+                      catch { /* error shown via hook */ }
+                      finally { setConnecting(false); }
+                    }}
+                    disabled={connecting}
+                    className="gold-button flex items-center gap-1.5 text-sm disabled:opacity-50"
+                  >
+                    {connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                    Rejoin
+                  </button>
+                  <button
+                    onClick={clearRejoinSession}
+                    className="px-3 py-1.5 wood-frame text-parchment font-display text-sm hover:brightness-110"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Name Input */}
             <div className="parchment-panel p-6">
               <label className="block font-display text-sm text-amber-900 mb-2">Your Name</label>
