@@ -7279,3 +7279,37 @@ som ukonfigurert (`isPartykitConfigured()` returnerer false).
 ### Filer endret
 - `.github/workflows/deploy-github-pages.yml` — env-injeksjon + deploy-partykit jobb
 - `log2.md` — denne oppføringen
+
+---
+
+## 2026-02-27 — PartyKit CI/CD fix: PARTYKIT_LOGIN manglende
+
+### Timestamp: 2026-02-27
+
+### Bakgrunn
+PartyKit CI/CD-jobb i GitHub Actions (`deploy-partykit`) manglet `PARTYKIT_LOGIN` env-variabelen.
+PartyKit docs krever **begge** `PARTYKIT_LOGIN` (bruker/epost) og `PARTYKIT_TOKEN` (OAuth-token)
+for CI-deployment — med bare token vil deployet feile stille.
+
+### Endring
+`.github/workflows/deploy-github-pages.yml` — lagt til `PARTYKIT_LOGIN: ${{ secrets.PARTYKIT_LOGIN }}`
+i `env`-blokken til `deploy-partykit`-jobben.
+
+### Gjenstående manuelle steg for brukeren
+Bruk **GitHub Codespaces** (gratis nettleser-terminal) for å hente token uten lokal terminal:
+1. Gå til repo → Code → Codespaces → "Create codespace on main"
+2. I terminalen:
+   ```bash
+   npx partykit login          # OAuth via GitHub
+   npx partykit token generate # printer token — kopier det
+   npx partykit whoami         # viser innlogget epost
+   ```
+3. Legg til tre GitHub Secrets på Settings → Secrets → Actions:
+   - `PARTYKIT_LOGIN` = eposten fra `whoami`
+   - `PARTYKIT_TOKEN` = token fra forrige steg
+   - `VITE_PARTYKIT_HOST` = `guild-life-adventures.tombonator3000.partykit.dev`
+4. Kjør "Run workflow" i GitHub Actions → begge jobb (Pages + PartyKit) deployes
+
+### Filer endret
+- `.github/workflows/deploy-github-pages.yml` — PARTYKIT_LOGIN lagt til
+- `log2.md` — denne oppføringen
