@@ -6,9 +6,10 @@ import { PLAYER_COLORS, AI_DIFFICULTY_NAMES } from '@/types/game.types';
 import type { AIDifficulty } from '@/types/game.types';
 import {
   Globe, Users, Copy, Check, ArrowLeft, Play, Wifi, WifiOff,
-  Loader2, Bot, Brain, Zap, Crown, UserPlus, Pencil, Search, RefreshCw, Eye,
+  Loader2, Bot, Brain, Zap, Crown, UserPlus, Pencil, Search, RefreshCw, Eye, MessageCircle, Send,
 } from 'lucide-react';
 import { CharacterPortrait } from '@/components/game/CharacterPortrait';
+import type { ChatMessage } from '@/network/types';
 import { PortraitPicker } from '@/components/game/PortraitPicker';
 import gameBoard from '@/assets/game-board.jpeg';
 import { subscribeToGameListings, type GameListing } from '@/network/gameListing';
