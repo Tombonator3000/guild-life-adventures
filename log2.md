@@ -5,6 +5,36 @@
 
 ---
 
+## 2026-02-27 — Multiplayer: Reconnect, Lobby Chat, Spectator Fix, Connection UI
+
+### Timestamp: 2026-02-27
+
+### Summary
+Implemented page-refresh reconnect (sessionStorage), in-game connection-lost banner, lobby chat, and spectator chat identity fix.
+
+### Changes
+
+| File | Change |
+|------|--------|
+| `src/network/useOnlineGame.ts` | sessionStorage save/restore for page-refresh recovery; `rejoinGame()` function; lobby chat messages + `sendLobbyChat`; `clearRejoinSession` |
+| `src/network/useNetworkSync.ts` | Added `connectionStatus` state tracking peerManager; `attemptReconnect` callback; exposed in return |
+| `src/components/screens/OnlineLobby.tsx` | Rejoin prompt in menu view; `LobbyChat` component in host-lobby and guest-lobby; destructured new hook exports |
+| `src/components/game/GameBoardOverlays.tsx` | Connection-lost banner with "Reconnecting..." / "Retry" button; new props `connectionStatus`, `attemptReconnect` |
+| `src/components/game/GameBoard.tsx` | Pass connectionStatus/attemptReconnect to overlays; fix spectator ChatPanel sender (uses localPlayer name or 'Spectator') |
+| `MULTIPLAYER.md` | Updated feature status: chat, spectator, reconnect all ✅; M4 marked FIXED |
+
+### Details
+
+**Page-Refresh Reconnect**: Guest session (`{ roomCode, playerName, slot, timestamp }`) saved to `sessionStorage` on game-start. On next visit to Online menu, rejoin prompt appears. `rejoinGame()` creates new PeerJS connection, sends `reconnect` message to host, sets networkMode='guest'. Sessions expire after 30 minutes.
+
+**Connection-Lost Banner**: `GameBoardOverlays` shows a top banner when `connectionStatus` is 'reconnecting', 'error', or 'disconnected'. Shows spinning loader during reconnect, "Retry" button otherwise.
+
+**Lobby Chat**: `LobbyChat` component added to both host and guest lobby views. Chat messages routed through existing `chat-message` network message type (host rebroadcasts). Added to lobby message filter in `useOnlineGame`.
+
+**Spectator Chat Fix**: ChatPanel now uses `localPlayer?.name` for dead players and 'Spectator' for pure spectators instead of `currentPlayer.name` (which was whoever's turn it is).
+
+---
+
 ## 2026-02-27 — Firebase → PartyKit Migration (Room Listing)
 
 ### Timestamp: 2026-02-27
