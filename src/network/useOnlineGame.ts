@@ -715,7 +715,6 @@ export function useOnlineGame() {
           career: settings.goals.career,
         },
         hasAI: settings.includeAI,
-        createdAt: Date.now(),
       });
       publicCleanupRef.current = cleanup;
 
