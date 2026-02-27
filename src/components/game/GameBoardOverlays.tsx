@@ -1,8 +1,9 @@
 import type { Player } from '@/types/game.types';
 import type { AIDifficulty } from '@/types/game.types';
+import type { ConnectionStatus } from '@/network/types';
 import { TurnTransition } from './TurnTransition';
 import { CharacterPortrait } from './CharacterPortrait';
-import { Bot, Brain, SkipForward, FastForward, Play, Globe, Wifi } from 'lucide-react';
+import { Bot, Brain, SkipForward, FastForward, Play, Globe, Wifi, WifiOff, RefreshCw, Loader2 } from 'lucide-react';
 import { useGameOptions } from '@/hooks/useGameOptions';
 
 export function GameBoardOverlays({
