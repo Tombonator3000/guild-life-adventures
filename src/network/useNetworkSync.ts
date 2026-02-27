@@ -309,6 +309,9 @@ export function useNetworkSync() {
   useEffect(() => {
     if (networkMode === 'local') return;
 
+    // Track connection status for in-game reconnect UI
+    const unsubStatus = peerManager.onStatusChange(setConnectionStatus);
+
     // --- Set up the network action sender for guest mode ---
     if (networkMode === 'guest') {
       setNetworkActionSender((actionName: string, args: unknown[]) => {
