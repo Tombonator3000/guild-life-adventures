@@ -33,6 +33,8 @@ jobs:
 
       - name: Build for GitHub Pages
         run: bun run build:github
+        env:
+          VITE_PARTYKIT_HOST: ${{ secrets.VITE_PARTYKIT_HOST }}
 
       - name: Copy index.html as 404.html (SPA routing)
         run: cp dist/index.html dist/404.html
@@ -58,3 +60,16 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  deploy-partykit:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy PartyKit server to Cloudflare
+        run: npx partykit@latest deploy
+        env:
+          PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
+        continue-on-error: true

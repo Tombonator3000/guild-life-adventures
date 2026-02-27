@@ -7234,3 +7234,48 @@ Genererte 12 nye woodcut-illustrasjoner for personaliserte avisartikler og oppda
 ### Filer endret
 - `src/components/game/NewspaperModal.tsx` — 12 nye imports + utvidet `getArticleImage()` med keyword-matching for alle personaliserte artikkeltyper
 - `log2.md` — denne oppføringen
+
+---
+
+## 2026-02-27 — PartyKit Production Setup
+
+### Timestamp: 2026-02-27
+
+### Bakgrunn
+Firebase ble fjernet 2026-02-27 og erstattet av PartyKit for romlistevisning i multiplayer.
+Koden var komplett (`party/gameListings.ts`, `src/lib/partykit.ts`, `partykit.json`), men
+PartyKit-serveren hadde aldri blitt deployet til Cloudflare Workers, og GitHub Actions-workflowen
+kompilerte frontend **uten** `VITE_PARTYKIT_HOST` — så produksjonsbygget anså alltid PartyKit
+som ukonfigurert (`isPartykitConfigured()` returnerer false).
+
+### Hva som ble gjort
+
+1. **GitHub Actions workflow oppdatert** (`.github/workflows/deploy-github-pages.yml`):
+   - Lagt til `VITE_PARTYKIT_HOST: ${{ secrets.VITE_PARTYKIT_HOST }}` som `env` på build-steget
+     slik at produksjonsbygget får PartyKit-hosten bakt inn.
+   - Lagt til ny jobb `deploy-partykit` som kjører `npx partykit@latest deploy` på push til main,
+     med `PARTYKIT_TOKEN` som secret og `continue-on-error: true` (feil stille inntil token er lagt til).
+
+### Manuelle steg som gjenstår for brukeren
+
+1. **Opprett konto** på https://www.partykit.io (logg inn med GitHub)
+2. **Deploy PartyKit-server lokalt én gang** for å få username og URL:
+   ```bash
+   npx partykit login   # åpner nettleser for GitHub-auth
+   npx partykit deploy  # deployer til Cloudflare, printer URL
+   ```
+   Produksjons-URL: `guild-life-adventures.<ditt-brukernavn>.partykit.dev`
+3. **Legg til GitHub repository secrets** på:
+   `github.com/Tombonator3000/guild-life-adventures/settings/secrets/actions`
+   - `VITE_PARTYKIT_HOST` → `guild-life-adventures.<ditt-brukernavn>.partykit.dev`
+   - `PARTYKIT_TOKEN` → API-token fra https://www.partykit.io/account
+4. **Trigger nytt bygg** ved å pushe til main eller "Run workflow" i GitHub Actions
+
+### Verifisering
+- `curl https://guild-life-adventures.<username>.partykit.dev/party/registry` → 200 OK
+- Åpne DevTools på live-siden → Network → sjekk WebSocket til `wss://guild-life-adventures.<username>.partykit.dev/party/registry`
+- Host et offentlig spill → verifiser at det dukker opp i Browse Rooms
+
+### Filer endret
+- `.github/workflows/deploy-github-pages.yml` — env-injeksjon + deploy-partykit jobb
+- `log2.md` — denne oppføringen
