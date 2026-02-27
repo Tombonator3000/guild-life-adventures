@@ -257,7 +257,7 @@ export function useOnlineGame() {
         if (msg.type === 'lobby-update' || msg.type === 'game-start' ||
             msg.type === 'kicked' || msg.type === 'player-disconnected' ||
             msg.type === 'player-reconnected' || msg.type === 'host-migrated' ||
-            msg.type === 'spectator-accepted') {
+            msg.type === 'spectator-accepted' || msg.type === 'chat-message') {
           handleGuestMessageRef.current?.(msg);
         }
       }
