@@ -867,6 +867,8 @@ export function useOnlineGame() {
       peerManager.sendToHost({ type: 'leave' });
     }
     isOnlineRef.current = false;
+    // Clear stored session for page-refresh recovery
+    try { sessionStorage.removeItem(SESSION_STORAGE_KEY); } catch { /* ignore */ }
     // Clean up network state tracking (dismissed events, sync indices)
     resetNetworkState();
     // Brief delay to allow messages to flush before destroying
