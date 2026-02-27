@@ -551,6 +551,12 @@ export function useOnlineGame() {
         console.log(`[OnlineGame] Accepted as spectator (${message.spectatorCount} total)`);
         break;
       }
+
+      case 'chat-message': {
+        const chatMsg = (message as { type: 'chat-message'; message: ChatMessage }).message;
+        setLobbyChatMessages(prev => [...prev, chatMsg].slice(-100));
+        break;
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [localPlayerName, roomCode]);
