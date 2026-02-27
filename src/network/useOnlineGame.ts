@@ -249,7 +249,7 @@ export function useOnlineGame() {
     const unsubMessage = peerManager.onMessage((message: NetworkMessage, fromPeerId: string) => {
       if (isHost) {
         const msg = message as GuestMessage;
-        if (msg.type === 'join' || msg.type === 'ready' || msg.type === 'leave' || msg.type === 'reconnect' || msg.type === 'portrait-select' || msg.type === 'name-change' || msg.type === 'discovery-probe' || msg.type === 'spectate') {
+        if (msg.type === 'join' || msg.type === 'ready' || msg.type === 'leave' || msg.type === 'reconnect' || msg.type === 'portrait-select' || msg.type === 'name-change' || msg.type === 'discovery-probe' || msg.type === 'spectate' || msg.type === 'chat-message') {
           handleHostMessageRef.current?.(msg, fromPeerId);
         }
       } else {
