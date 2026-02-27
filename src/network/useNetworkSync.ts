@@ -160,6 +160,10 @@ export function useNetworkSync() {
   // In-game chat messages (online mode only, not persisted)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
+  // Connection status tracking for in-game reconnect UI
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connected');
+  const attemptReconnect = useCallback(() => { peerManager.attemptReconnect(); }, []);
+
   const sendChatMessage = useCallback((text: string, senderName: string, senderColor: string) => {
     if (networkMode === 'local') return;
     const message: ChatMessage = { senderName, senderColor, text, timestamp: Date.now() };
