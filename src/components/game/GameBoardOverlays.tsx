@@ -23,6 +23,8 @@ export function GameBoardOverlays({
   aiSpeedMultiplier,
   setAISpeedMultiplier,
   setSkipAITurn,
+  connectionStatus,
+  attemptReconnect,
 }: {
   isMobile: boolean;
   isWaitingForOtherPlayer: boolean;
@@ -40,6 +42,8 @@ export function GameBoardOverlays({
   aiSpeedMultiplier: number;
   setAISpeedMultiplier: (speed: number) => void;
   setSkipAITurn: (skip: boolean) => void;
+  connectionStatus: ConnectionStatus;
+  attemptReconnect: () => void;
 }) {
   const { options } = useGameOptions();
   const showActions = options.showOpponentActions;
