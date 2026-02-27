@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import {
   X, Settings, Gamepad2, Volume2, VolumeX, Monitor,
-  Gauge, RotateCcw, Cake, Skull, Zap, Eye, Layout, Bell, Timer, Sparkles, BookOpen, Speech, Globe, Frame, Flame,
+  Gauge, RotateCcw, Cake, Skull, Zap, Eye, EyeOff, Layout, Bell, Timer, Sparkles, BookOpen, Speech, Globe, Frame, Flame,
 } from 'lucide-react';
 import { UserManual } from '@/components/game/UserManual';
 import { Switch } from '@/components/ui/switch';
@@ -290,6 +290,22 @@ function GameplayTab({
           <Switch
             checked={options.enableHexesCurses}
             onCheckedChange={(v) => setOption('enableHexesCurses', v)}
+          />
+        }
+      />
+
+      <Separator />
+
+      <OptionRow
+        icon={options.showOpponentActions
+          ? <Eye className="w-4 h-4 text-blue-400" />
+          : <EyeOff className="w-4 h-4 text-muted-foreground" />}
+        label="Opponent Visibility"
+        description="Show what opponents are doing during their turn."
+        control={
+          <Switch
+            checked={options.showOpponentActions}
+            onCheckedChange={(v) => setOption('showOpponentActions', v)}
           />
         }
       />
