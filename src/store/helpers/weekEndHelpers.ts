@@ -349,14 +349,11 @@ function processEmployment(p: Player, crashResult: MarketCrashResult, msgs: stri
   }
 }
 
-/** Deplete food and degrade clothing */
-function processNeeds(p: Player, _isClothingDegradation: boolean, msgs: string[]): void {
-  // Check for Curse of Decay — doubles food/clothing degradation
-  const decayCurse = hasCurseEffect(p, 'food-clothing-decay');
-  const decayMultiplier = decayCurse ? decayCurse.magnitude : 1;
-
-  // Food depletion — uses FOOD_DEPLETION_PER_WEEK so players must buy food almost every round
-  // (unless they have a Preservation Box with stored fresh food as backup)
+/**
+ * Deplete weekly food and auto-replenish from Preservation Box fresh food supply.
+ * Starvation is handled separately at turn start (startTurnHelpers.ts).
+ */
+function processFoodDepletion(p: Player, decayMultiplier: number): void {
   const foodDrain = Math.round(FOOD_DEPLETION_PER_WEEK * decayMultiplier);
   p.foodLevel = Math.max(0, p.foodLevel - foodDrain);
 
@@ -365,54 +362,60 @@ function processNeeds(p: Player, _isClothingDegradation: boolean, msgs: string[]
     p.hasStoreBoughtFood = false;
   }
 
-  // Auto-replenish from Preservation Box fresh food supply.
-  // If the player has a working Preservation Box and stored fresh food, automatically consume
-  // units each week to keep the food meter topped up (1 unit = 1 week's worth of food drain).
+  // Auto-replenish from a working Preservation Box: consume 1 fresh food unit per week's deficit.
   const hasWorkingBox = p.appliances['preservation-box'] && !p.appliances['preservation-box'].isBroken;
   if (hasWorkingBox && p.freshFood > 0 && p.foodLevel < 100) {
-    const FOOD_PER_UNIT = FOOD_DEPLETION_PER_WEEK; // 35 per unit — replaces one week's drain
     const deficit = 100 - p.foodLevel;
-    const unitsNeeded = Math.ceil(deficit / FOOD_PER_UNIT);
+    const unitsNeeded = Math.ceil(deficit / FOOD_DEPLETION_PER_WEEK);
     const unitsConsumed = Math.min(unitsNeeded, p.freshFood);
     p.freshFood = Math.max(0, p.freshFood - unitsConsumed);
-    p.foodLevel = Math.min(100, p.foodLevel + unitsConsumed * FOOD_PER_UNIT);
+    p.foodLevel = Math.min(100, p.foodLevel + unitsConsumed * FOOD_DEPLETION_PER_WEEK);
   }
+}
 
-  // Starvation note: Jones only penalizes -20 hours at turn start (handled in startTurnHelpers).
-  // Week-end just depletes food — no additional health/happiness penalty here.
-
-  // Clothing degradation (weekly — Jones-style gradual wear)
-  // -3 condition per week. Clothes degrade through tiers: business → dress → casual → none
+/**
+ * Degrade clothing condition and emit warning messages for human players.
+ * Emits tier-drop, near-worn-out, job-requirement, or destroyed messages as appropriate.
+ */
+function processClothingDegradation(p: Player, decayMultiplier: number, msgs: string[]): void {
   const prevTier = getClothingTier(p.clothingCondition);
   const clothingDrain = Math.round(CLOTHING_DEGRADATION_PER_WEEK * decayMultiplier);
   p.clothingCondition = Math.max(0, p.clothingCondition - clothingDrain);
+
+  if (p.isAI) return;
+
   const newTier = getClothingTier(p.clothingCondition);
+  const clothingJob = p.currentJob && p.clothingCondition > 0 ? getJob(p.currentJob) : null;
+  const jobThreshold = clothingJob
+    ? (CLOTHING_THRESHOLDS[clothingJob.requiredClothing as keyof typeof CLOTHING_THRESHOLDS] ?? 0)
+    : 0;
+  const belowJobThreshold = !!clothingJob && p.clothingCondition < jobThreshold;
 
-  if (!p.isAI) {
-    // Pre-check: will the job-requirement message fire? If so, skip the generic tier/worn messages
-    // to avoid showing both at once.
-    const _clothingJob = p.currentJob && p.clothingCondition > 0 ? getJob(p.currentJob) : null;
-    const _jobThreshold = _clothingJob
-      ? (CLOTHING_THRESHOLDS[_clothingJob.requiredClothing as keyof typeof CLOTHING_THRESHOLDS] ?? 0)
-      : 0;
-    const belowJobThreshold = !!(_clothingJob && p.clothingCondition < _jobThreshold);
-
-    if (p.clothingCondition <= 0) {
-      msgs.push(`${p.name}'s clothing has been destroyed! Cannot work until you buy new clothes.`);
-    } else if (newTier !== prevTier && !belowJobThreshold) {
-      // Warn when dropping to a lower tier (only if not already showing job-requirement message)
-      const tierLabel = CLOTHING_TIER_LABELS[newTier];
-      msgs.push(`${p.name}'s clothing has worn down to ${tierLabel} quality. Better jobs may require an upgrade.`);
-    } else if (!belowJobThreshold && p.clothingCondition > 0 && p.clothingCondition <= CLOTHING_THRESHOLDS.casual) {
-      msgs.push(`${p.name}'s clothing is nearly worn out!`);
-    }
-
-    // Show job-requirement message once (merged — replaces both the tier-drop and a separate notice)
-    if (belowJobThreshold && _clothingJob) {
-      const requiredLabel = CLOTHING_TIER_LABELS[_clothingJob.requiredClothing as keyof typeof CLOTHING_TIER_LABELS] ?? _clothingJob.requiredClothing;
-      msgs.push(`${p.name}'s clothing is too worn for ${_clothingJob.name}! Requires ${requiredLabel} quality. You cannot work until you upgrade your clothes.`);
-    }
+  if (p.clothingCondition <= 0) {
+    msgs.push(`${p.name}'s clothing has been destroyed! Cannot work until you buy new clothes.`);
+  } else if (newTier !== prevTier && !belowJobThreshold) {
+    // Warn when dropping to a lower tier, but suppress if the job-requirement message will fire.
+    const tierLabel = CLOTHING_TIER_LABELS[newTier];
+    msgs.push(`${p.name}'s clothing has worn down to ${tierLabel} quality. Better jobs may require an upgrade.`);
+  } else if (!belowJobThreshold && p.clothingCondition <= CLOTHING_THRESHOLDS.casual) {
+    msgs.push(`${p.name}'s clothing is nearly worn out!`);
   }
+
+  // Job-requirement message replaces the generic tier-drop notice (merged to avoid duplication).
+  if (belowJobThreshold && clothingJob) {
+    const requiredLabel = CLOTHING_TIER_LABELS[clothingJob.requiredClothing as keyof typeof CLOTHING_TIER_LABELS] ?? clothingJob.requiredClothing;
+    msgs.push(`${p.name}'s clothing is too worn for ${clothingJob.name}! Requires ${requiredLabel} quality. You cannot work until you upgrade your clothes.`);
+  }
+}
+
+/** Deplete food, auto-replenish from fresh food supply, and degrade clothing. */
+function processNeeds(p: Player, _isClothingDegradation: boolean, msgs: string[]): void {
+  // Curse of Decay doubles both food and clothing degradation rates.
+  const decayCurse = hasCurseEffect(p, 'food-clothing-decay');
+  const decayMultiplier = decayCurse ? decayCurse.magnitude : 1;
+
+  processFoodDepletion(p, decayMultiplier);
+  processClothingDegradation(p, decayMultiplier, msgs);
 }
 
 /** Apply weather effects: happiness changes, food spoilage */
@@ -861,49 +864,70 @@ function processPlayerWeekEnd(p: Player, ctx: WeekEndContext, msgs: string[], ne
 // 3. Death Check Processing
 // ============================================================
 
-// H4 FIX: Unified death logic matching checkDeath in questHelpers.ts
-// Uses scaled resurrection cost, happiness penalty, and permadeath support
+/**
+ * Compute the scaled resurrection cost based on the player's total wealth.
+ * Formula kept in sync with checkDeath in questHelpers.ts.
+ * Wealthier players pay more, capped at RESURRECTION_MAX_COST.
+ */
+function calculateResurrectionCost(gold: number, savings: number): number {
+  const totalWealth = gold + savings;
+  const wealthAboveThreshold = Math.max(0, totalWealth - RESURRECTION_WEALTH_THRESHOLD);
+  return Math.min(
+    RESURRECTION_MAX_COST,
+    Math.max(RESURRECTION_BASE_COST, RESURRECTION_BASE_COST + Math.floor(wealthAboveThreshold * RESURRECTION_WEALTH_RATE)),
+  );
+}
+
+/** Handle a player who died a second time in the same week (already used their free resurrection). */
+function handleSecondDeath(p: Player, enablePermadeath: boolean, msgs: string[]): void {
+  if (enablePermadeath) {
+    p.isGameOver = true;
+    msgs.push(`${p.name} could not be saved a second time and has perished!`);
+  } else {
+    p.health = 20;
+    p.happiness = Math.max(0, p.happiness - RESURRECTION_HAPPINESS_PENALTY);
+    msgs.push(`${p.name} barely survived! -${RESURRECTION_HAPPINESS_PENALTY} happiness.`);
+  }
+}
+
+/**
+ * Attempt to resurrect a newly dead player.
+ * Deducts the scaled cost from savings if affordable; otherwise applies permadeath or minimal respawn.
+ */
+function attemptResurrection(p: Player, enablePermadeath: boolean, msgs: string[]): void {
+  const cost = calculateResurrectionCost(p.gold, p.savings);
+
+  if (p.savings >= cost) {
+    p.health = 50;
+    p.savings -= cost;
+    p.happiness = Math.max(0, p.happiness - RESURRECTION_HAPPINESS_PENALTY);
+    p.wasResurrectedThisWeek = true;
+    msgs.push(`${p.name} was revived by healers! ${cost}g from savings, -${RESURRECTION_HAPPINESS_PENALTY} happiness.`);
+  } else if (!enablePermadeath) {
+    // Non-permadeath: respawn with minimal HP (can't afford healers, but death isn't permanent)
+    p.health = 20;
+    p.happiness = Math.max(0, p.happiness - RESURRECTION_HAPPINESS_PENALTY);
+    msgs.push(`${p.name} barely survived the week! -${RESURRECTION_HAPPINESS_PENALTY} happiness.`);
+  } else {
+    p.isGameOver = true;
+    msgs.push(`${p.name} has perished!`);
+  }
+}
+
+// H4 FIX: Unified death logic matching checkDeath in questHelpers.ts.
+// Uses scaled resurrection cost, happiness penalty, and permadeath support.
 function processDeathChecks(players: Player[], msgs: string[]): void {
   const enablePermadeath = getGameOption('enablePermadeath');
 
   for (const p of players) {
     if (p.isGameOver || p.health > 0) continue;
 
-    // Skip resurrection if already resurrected this week (prevents double resurrection exploit)
     if (p.wasResurrectedThisWeek) {
-      if (enablePermadeath) {
-        p.isGameOver = true;
-        msgs.push(`${p.name} could not be saved a second time and has perished!`);
-      } else {
-        // Non-permadeath: respawn with minimal HP
-        p.health = 20;
-        p.happiness = Math.max(0, p.happiness - RESURRECTION_HAPPINESS_PENALTY);
-        msgs.push(`${p.name} barely survived! -${RESURRECTION_HAPPINESS_PENALTY} happiness.`);
-      }
-      continue;
-    }
-
-    // Scaled resurrection cost (same formula as checkDeath in questHelpers.ts)
-    const totalWealth = p.gold + p.savings;
-    const scaledCost = Math.min(
-      RESURRECTION_MAX_COST,
-      Math.max(RESURRECTION_BASE_COST, RESURRECTION_BASE_COST + Math.floor((Math.max(0, totalWealth - RESURRECTION_WEALTH_THRESHOLD)) * RESURRECTION_WEALTH_RATE)),
-    );
-
-    if (p.savings >= scaledCost) {
-      p.health = 50;
-      p.savings -= scaledCost;
-      p.happiness = Math.max(0, p.happiness - RESURRECTION_HAPPINESS_PENALTY);
-      p.wasResurrectedThisWeek = true;
-      msgs.push(`${p.name} was revived by healers! ${scaledCost}g from savings, -${RESURRECTION_HAPPINESS_PENALTY} happiness.`);
-    } else if (!enablePermadeath) {
-      // Non-permadeath: respawn with minimal HP
-      p.health = 20;
-      p.happiness = Math.max(0, p.happiness - RESURRECTION_HAPPINESS_PENALTY);
-      msgs.push(`${p.name} barely survived the week! -${RESURRECTION_HAPPINESS_PENALTY} happiness.`);
+      // Already resurrected once this week — second death is handled separately
+      // to prevent the double-resurrection exploit.
+      handleSecondDeath(p, enablePermadeath, msgs);
     } else {
-      p.isGameOver = true;
-      msgs.push(`${p.name} has perished!`);
+      attemptResurrection(p, enablePermadeath, msgs);
     }
   }
 }
