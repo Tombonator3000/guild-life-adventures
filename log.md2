@@ -170,3 +170,33 @@ User requested removal of the "Rest {X}h & End" button that appeared below the E
 
 ### Test Impact
 - No logic regressions expected — changes are additive (additional gates reduce event frequency)
+
+## 2026-02-28 14:15 — Refactor: weekEndHelpers.ts — processNeeds and processDeathChecks
+
+### Problem
+Two functions in `weekEndHelpers.ts` mixed multiple concerns, had poor variable names, and were hard to read and test in isolation:
+
+1. **`processNeeds`** (64 lines) combined food depletion and clothing degradation in a single body. The clothing section used underscore-prefixed variables (`_clothingJob`, `_jobThreshold`) as a signal that the naming was awkward. The `FOOD_PER_UNIT` constant was a needless alias for `FOOD_DEPLETION_PER_WEEK`.
+
+2. **`processDeathChecks`** embedded a 4-line resurrection cost formula inline, and the main loop had 3 levels of nested `if/else` that were hard to follow at a glance.
+
+### Changes
+
+**`src/store/helpers/weekEndHelpers.ts`**
+
+**processNeeds → processFoodDepletion + processClothingDegradation:**
+- Extracted `processFoodDepletion(p, decayMultiplier)` — food drain + Preservation Box auto-replenishment, no messages (food starvation handled at turn start)
+- Extracted `processClothingDegradation(p, decayMultiplier, msgs)` — clothing wear, tier-change messages, job-requirement warnings; AI players exit early with `if (p.isAI) return`
+- Renamed `_clothingJob`/`_jobThreshold` → `clothingJob`/`jobThreshold` (no underscore needed)
+- Removed redundant `p.clothingCondition > 0` guard in else-if (already excluded by prior `<= 0` branch)
+- `processNeeds` becomes a 5-line coordinator: compute decay multiplier, call two helpers
+
+**processDeathChecks → calculateResurrectionCost + handleSecondDeath + attemptResurrection:**
+- Extracted `calculateResurrectionCost(gold, savings): number` — pure function, easy to unit test; uses named `wealthAboveThreshold` variable instead of a one-liner Math.min/max chain
+- Extracted `handleSecondDeath(p, enablePermadeath, msgs)` — handles already-resurrected case (double-resurrection exploit guard)
+- Extracted `attemptResurrection(p, enablePermadeath, msgs)` — handles first-death: deduct from savings, minimal respawn, or permadeath
+- `processDeathChecks` loop body is now 2 lines (`handleSecondDeath` or `attemptResurrection`)
+
+### Test Impact
+- All 358 tests pass — identical behavior, no logic changes
+- `calculateResurrectionCost` is now a pure named function that can be unit-tested directly
