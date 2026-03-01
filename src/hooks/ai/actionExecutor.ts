@@ -590,12 +590,15 @@ function handleRepairAppliance(player: Player, action: AIAction, store: StoreAct
   if (!applianceId) return false;
   const appliance = player.appliances[applianceId];
   if (!appliance || !appliance.isBroken) return false;
+  let cost = 0;
   if (location === 'forge') {
-    store.forgeRepairAppliance(player.id, applianceId);
+    cost = store.forgeRepairAppliance(player.id, applianceId);
   } else {
-    store.repairAppliance(player.id, applianceId);
+    cost = store.repairAppliance(player.id, applianceId);
   }
-  store.spendTime(player.id, 1);
+  if (cost === 0) return false; // Repair failed (insufficient gold or not broken)
+  // Correct time cost: Forge = 3h, Enchanter = 2h (matches human UI)
+  store.spendTime(player.id, location === 'forge' ? 3 : 2);
   return true;
 }
 
