@@ -90,9 +90,10 @@ export function BountyBoardPanel({ player, week, onTakeBounty, onCompleteQuest, 
 
       {/* Active bounty completion UI */}
       {activeBounty && (() => {
-        const chainProgressForLOQ = player.activeQuest?.startsWith('nlchain:') ? player.nlChainProgress : player.questChainProgress;
-        const loqDone = allLocationObjectivesDone(player.activeQuest, player.questLocationProgress ?? [], chainProgressForLOQ);
-        const objectives = getQuestLocationObjectives(player.activeQuest, chainProgressForLOQ);
+        // Bounties are standalone quests — never chain or nlchain. chainProgress is irrelevant
+        // (getQuestLocationObjectives ignores it for 'bounty:' prefix). Pass empty object.
+        const loqDone = allLocationObjectivesDone(player.activeQuest, player.questLocationProgress ?? [], {});
+        const objectives = getQuestLocationObjectives(player.activeQuest, {});
         const progress = player.questLocationProgress ?? [];
         return (
         <>

@@ -162,6 +162,14 @@
 - [ ] Victory screen leaderboard for multi-player
 - [ ] Spectator mode for dead players
 - [x] AI stock market strategy (buy low, sell high) — **DONE** Smart stock market intelligence (actual prices, undervalued detection)
+- [ ] `activeCurses` type mismatch: `game.types.ts` defines it as required `ActiveCurse[]` but many components use optional chaining (`?.`). Save migration in `saveLoad.ts` handles old saves. Consider making type `ActiveCurse[] | undefined` for consistency, or verify migration always runs.
+- [ ] Missing `applianceBreakageEvent` in `GameState` type — `network/types.ts` uses `unknown` cast workaround. Should add field to `storeTypes.ts` / `game.types.ts`.
+- [ ] BUG-013 (known, complex): AI `failedActionsRef` doesn't persist failed actions across the skip-turn fast-execution path — could cause retry of same failing action after skip-turn ends. Low impact since skip-turn mode is rare.
+
+## Bug Hunt 2026-03-01 — Fixed
+- [x] BUG-015: Homeless happiness penalty not applied (`startTurnHelpers.ts`) — happiness deduction was declared in message but missing from `updatePlayerById` call
+- [x] BUG-016: AI appliance repair time wrong (1h → 2h enchanter / 3h forge) in `actionExecutor.ts`
+- [x] BUG-017: Dead code in `BountyBoardPanel.tsx` — unreachable nlchain check inside bounty block; now passes `{}` for chainProgress
 
 ## Completed (2026-02-05)
 

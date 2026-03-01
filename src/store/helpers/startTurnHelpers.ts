@@ -252,6 +252,7 @@ function processHomelessPenalty(
   updatePlayerById(set, playerId, (p) => ({
     health: Math.max(0, p.health - HOMELESS_HEALTH_PENALTY),
     timeRemaining: Math.max(0, p.timeRemaining - HOMELESS_TIME_PENALTY),
+    happiness: Math.max(0, p.happiness - HOMELESS_HAPPINESS_PENALTY),
   }));
   // Merged message: combines street sleeping + misery penalty into one line
   eventMessages.push(`${player.name} slept on the streets. -${HOMELESS_HEALTH_PENALTY} health, -${HOMELESS_TIME_PENALTY}h, -${HOMELESS_HAPPINESS_PENALTY} Happiness.`);
