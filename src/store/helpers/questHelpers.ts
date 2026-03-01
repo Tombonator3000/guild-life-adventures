@@ -248,9 +248,19 @@ export function createQuestActions(set: SetFn, get: GetFn) {
             ? { ...p, questLocationProgress: [...(p.questLocationProgress ?? []), objectiveId] }
             : p
         ),
-        eventMessage: `[quest-objective:${player.activeQuest}] ${objective.completionText}`,
-        phase: 'event' as const,
       }));
+
+      // BUG FIX (BUG-014-D): Only show event notification for human players.
+      // AI players silently complete LOQs — setting phase='event' during the AI step loop
+      // resets aiIsThinking in useAITurnHandler. After the AI's endTurn(), phase stays
+      // 'event' since endTurn() does not reset it, causing the next player's turn to start
+      // with a stale event panel visible and no way to auto-dismiss it → game appears frozen.
+      if (!player.isAI) {
+        set({
+          eventMessage: `[quest-objective:${player.activeQuest}] ${objective.completionText}`,
+          phase: 'event' as const,
+        });
+      }
     },
 
     completeQuest: (playerId: string) => {

@@ -5,6 +5,80 @@
 
 ---
 
+## 2026-03-01 — BUG-014-D: AI Freeze Fix — completeLocationObjective isAI Guard
+
+### Timestamp: 2026-03-01
+
+### Bug Report
+User reported: "Seraphina slutter ofte å bevege seg å slutter å virke i sin turn og man må restarte spillet" — Seraphina (AI player) often stops moving and stops working during her turn, requiring a game restart.
+
+### Root Cause Analysis (BUG-014-D)
+This is a continuation/regression of BUG-014 (previously fixed 2026-02-26 with three root causes A/B/C). The new root cause D was not addressed in the previous fix.
+
+**The chain of events causing the freeze:**
+
+1. Seraphina's AI step loop calls `handleCompleteLocationObjective` → `store.completeLocationObjective(playerId, objectiveId)`
+2. `completeLocationObjective` in `questHelpers.ts` (line 252) sets `phase = 'event'` **without any `isAI` guard**
+3. `useAITurnHandler` effect fires: `phase !== 'playing'` → resets `aiIsThinking = false`, `aiTurnStartedRef = false`, `lastAIPlayerIdRef = null`
+4. Seraphina's step loop continues running (stale-step guard only checks `currentPlayerIndex`, not `phase`)
+5. Step loop eventually calls `endTurn()` after time/actions exhausted
+6. `endTurn()` in `turnHelpers.ts` advances `currentPlayerIndex` WITHOUT resetting `phase` (no `phase` field in the non-week-end `set()` call)
+7. `phase` stays `'event'` for the next player's turn
+8. If next player is AI: `useAITurnHandler` won't start it (`phase !== 'playing'`), EventPanel shows with stale LOQ message, no auto-dismiss
+9. If next player is human: `useAutoEndTurn` won't trigger (`phase !== 'playing'` check in effect), human sees stale event panel
+
+**Why previous BUG-014 fixes didn't catch this:**
+- Fix A: `aiIsThinking` reset on phase change — present, but not enough (step loop still runs)
+- Fix B: `useAutoEndTurn` skips AI — present and correct, unrelated to this issue
+- Fix C: stale-step guard (startingPlayerIndex) — only checks `currentPlayerIndex`, not `phase`
+
+**Why other questHelpers phase setters are safe:**
+- `completeChainQuest` line 439: has `!completedPlayer.isAI` guard ✓
+- `makeNLChainChoice` line 608: has `!completedPlayer.isAI` guard ✓
+- `appendEventMessage` in playerHelpers.ts: has `!arrivalPlayer.isAI` guard ✓
+- `processEndOfTurnSpoilage` in turnHelpers.ts: has `!player.isAI` guard ✓
+- `startTurnHelpers.ts` line 456: has `!currentPlayer.isAI` guard ✓
+- `completeLocationObjective` line 252: **NO GUARD** ← THE BUG
+
+### Fix Applied
+
+**File**: `src/store/helpers/questHelpers.ts`
+**Function**: `completeLocationObjective`
+
+Split the single `set()` call into two: one for player state (unconditional), one for the event notification (guarded with `!player.isAI`). This mirrors the pattern used by `completeChainQuest` and `makeNLChainChoice`.
+
+Before:
+```typescript
+set((state) => ({
+  players: state.players.map(...),
+  eventMessage: `[quest-objective:${player.activeQuest}] ${objective.completionText}`,
+  phase: 'event' as const,
+}));
+```
+
+After:
+```typescript
+set((state) => ({
+  players: state.players.map(...),
+}));
+
+// BUG FIX (BUG-014-D): Only show event notification for human players.
+if (!player.isAI) {
+  set({
+    eventMessage: `[quest-objective:${player.activeQuest}] ${objective.completionText}`,
+    phase: 'event' as const,
+  });
+}
+```
+
+### Changes
+
+| File | Change |
+|------|--------|
+| `src/store/helpers/questHelpers.ts` | Added `isAI` guard to `completeLocationObjective` — AI players silently complete LOQs without setting `phase = 'event'` |
+
+---
+
 ## 2026-02-27 — Multiplayer: Reconnect, Lobby Chat, Spectator Fix, Connection UI
 
 ### Timestamp: 2026-02-27
