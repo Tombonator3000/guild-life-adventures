@@ -5,6 +5,63 @@
 
 ---
 
+## 2026-03-01 — Bug Hunt Session (5 parallel agents)
+
+### Timestamp: 2026-03-01T15:19–15:40 UTC
+
+### Overview
+Systematic bug hunt using 5 parallel agents covering store helpers, quest/AI, UI components, data files, and network/types. All 358 tests pass before and after fixes.
+
+### Bugs Found and Fixed (3)
+
+#### BUG-015: Homeless Happiness Penalty Not Applied
+- **File**: `src/store/helpers/startTurnHelpers.ts`
+- **Function**: `processHomelessPenalty`
+- **Severity**: Medium — game balance bug, misrepresented information
+- **Root Cause**: `HOMELESS_HAPPINESS_PENALTY = 3` was declared and included in the event message ("slept on the streets. -3 Happiness.") but the `updatePlayerById` call only applied `health` and `timeRemaining` penalties. The happiness deduction was silently skipped.
+- **Fix**: Added `happiness: Math.max(0, p.happiness - HOMELESS_HAPPINESS_PENALTY)` to the `updatePlayerById` call.
+- **Impact**: Homeless players now correctly lose 3 happiness per turn (as displayed), making homelessness appropriately more punishing.
+
+#### BUG-016: AI Appliance Repair Time Wrong (1h instead of 2h/3h)
+- **File**: `src/hooks/ai/actionExecutor.ts`
+- **Function**: `handleRepairAppliance`
+- **Severity**: Low — AI time accounting error
+- **Root Cause**: `store.spendTime(player.id, 1)` always spent 1 hour regardless of repair location. The human UI spends 2h at Enchanter (`EnchanterPanel.tsx: onSpendTime(2)`) and 3h at Forge (`FORGE_REPAIR_TIME = 3`).
+- **Fix**: Changed to `store.spendTime(player.id, location === 'forge' ? 3 : 2)`. Also added `if (cost === 0) return false` guard so failed repairs (insufficient gold) correctly return false instead of spending time anyway.
+
+#### BUG-017: BountyBoardPanel Unreachable nlchain Check (Dead Code)
+- **File**: `src/components/game/BountyBoardPanel.tsx`
+- **Severity**: Low — dead code / misleading logic
+- **Root Cause**: Inside the `activeBounty` block, code checked `player.activeQuest?.startsWith('nlchain:')`. But `activeBounty` is only truthy when `resolveActiveBounty()` returns non-null, which requires `player.activeQuest.startsWith('bounty:')`. So the nlchain check is logically unreachable. The `chainProgress` parameter is also ignored by `getQuestLocationObjectives` for bounty prefixes anyway.
+- **Fix**: Replaced dead `chainProgressForLOQ` computation with `{}` (empty object), matching the effective behavior while removing misleading code.
+
+### Documentation Fix
+- **CLAUDE.md**: Session storage key corrected from `guild-life-session` to `guild-life-online-session` (actual key in `useOnlineGame.ts` line 29).
+
+### Bugs Investigated but Not Fixed (logged to todo.md backlog)
+- `activeCurses` type mismatch: defined as required in `game.types.ts` but save migration initializes it and many components use optional chaining. Not a crash bug (migration handles it), but type definition is inconsistent. Logged to todo.
+- Missing `applianceBreakageEvent` in GameState type definition: network/types.ts uses `unknown` cast workaround. Low severity. Logged to todo.
+- BUG-013 (known): `failedActionsRef` doesn't persist across skip-turn fast-execution path. Existing known issue, not fixed (same rationale as before).
+
+### CLAUDE.md Rules Added
+- `processHomelessPenalty`: must include happiness penalty in `updatePlayerById` call
+- AI appliance repair time: Forge = 3h, Enchanter = 2h; check `cost === 0` return
+- `BountyBoardPanel.tsx`: pass `{}` for chainProgress in active bounty block
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/store/helpers/startTurnHelpers.ts` | BUG-015: Added missing happiness penalty to homeless penalty |
+| `src/hooks/ai/actionExecutor.ts` | BUG-016: Fixed repair time (1h → 2h/3h), added cost === 0 guard |
+| `src/components/game/BountyBoardPanel.tsx` | BUG-017: Removed unreachable nlchain check, use `{}` for chainProgress |
+| `CLAUDE.md` | Fixed session key doc, added 3 new rules |
+
+### Test Results
+- 358 tests, 18 files — all pass ✅
+
+---
+
 ## 2026-03-01 — BUG-014-D: AI Freeze Fix — completeLocationObjective isAI Guard
 
 ### Timestamp: 2026-03-01
