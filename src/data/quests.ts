@@ -518,7 +518,7 @@ export const QUESTS: Quest[] = [
     timeRequired: 10,
     healthRisk: 25,
     happinessReward: 5,
-    requiredEducation: { path: 'priest', level: 2 },
+    requiredEducation: { path: 'mage', level: 2 },
     locationObjectives: [
       {
         id: 'exorcism-enchanter',
@@ -869,7 +869,7 @@ const EXTRA_QUESTS: Quest[] = [
     timeRequired: 8,
     healthRisk: 10,
     happinessReward: 4,
-    requiredEducation: { path: 'priest', level: 1 },
+    requiredEducation: { path: 'mage', level: 1 },
     locationObjectives: [
       { id: 'haunted-academy', locationId: 'academy', actionText: 'Enter the Library', description: 'Investigate the haunted section of the Academy library after hours.', completionText: 'The library is silent. Then a book flies at your head. Then another. The ghost has strong opinions about your reading level.' },
       { id: 'haunted-graveyard', locationId: 'graveyard', actionText: 'Find the Ghost\'s Grave', description: 'Search the graveyard for the librarian\'s original resting place.', completionText: 'You find the grave of "Edwina Bookworth, Librarian Eternal." The headstone has a late fee warning. Even in death.' },

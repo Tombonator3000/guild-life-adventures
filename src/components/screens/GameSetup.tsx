@@ -15,6 +15,7 @@ export function GameSetup() {
   const [playerPortraits, setPlayerPortraits] = useState<(string | null)[]>([null]);
   const [aiOpponents, setAiOpponents] = useState<AIConfig[]>([]);
   const [enableTutorial, setEnableTutorial] = useState(true);
+  const [nameError, setNameError] = useState<string | null>(null);
   const [portraitPickerIndex, setPortraitPickerIndex] = useState<number | null>(null);
   const [portraitPickerType, setPortraitPickerType] = useState<'human' | 'ai'>('human');
   const [goals, setGoals] = useState({
@@ -46,6 +47,7 @@ export function GameSetup() {
     const newNames = [...playerNames];
     newNames[index] = name;
     setPlayerNames(newNames);
+    if (nameError) setNameError(null);
   };
 
   const updatePlayerPortrait = (index: number, portraitId: string | null) => {
@@ -100,6 +102,23 @@ export function GameSetup() {
   };
 
   const handleStart = () => {
+    // Validate player names
+    const trimmedNames = playerNames.map(n => n.trim());
+    if (trimmedNames.some(n => n.length === 0)) {
+      setNameError('All adventurers must have a name.');
+      return;
+    }
+    if (trimmedNames.some(n => n.length > 20)) {
+      setNameError('Names must be 20 characters or fewer.');
+      return;
+    }
+    const allNames = [...trimmedNames, ...aiOpponents.map(a => a.name.trim())];
+    if (new Set(allNames.map(n => n.toLowerCase())).size !== allNames.length) {
+      setNameError('All adventurers must have unique names.');
+      return;
+    }
+    setNameError(null);
+
     // Enter fullscreen when game begins
     try {
       if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
@@ -457,13 +476,18 @@ export function GameSetup() {
             >
               Back
             </button>
-            <button
-              onClick={handleStart}
-              className="gold-button flex items-center gap-2"
-            >
-              <Play className="w-5 h-5" />
-              Begin Adventure
-            </button>
+            <div className="flex flex-col items-end gap-1">
+              {nameError && (
+                <p className="text-red-600 text-sm font-body">{nameError}</p>
+              )}
+              <button
+                onClick={handleStart}
+                className="gold-button flex items-center gap-2"
+              >
+                <Play className="w-5 h-5" />
+                Begin Adventure
+              </button>
+            </div>
           </div>
         </div>
       </div>

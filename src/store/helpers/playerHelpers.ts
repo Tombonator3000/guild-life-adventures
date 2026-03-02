@@ -9,7 +9,12 @@ import {
 import { rollTravelEvent, formatTravelEvent } from '@/data/travelEvents';
 import { checkForEvent, pickEventMessage, pickEventDescription } from '@/data/events';
 
-/** Append an event message to the existing eventMessage, showing as a 'weekly' event phase (human players only) */
+/**
+ * Append an event message to the existing eventMessage, showing as a 'weekly' event phase.
+ * ⚠️ IMPORTANT: This sets phase='event' unconditionally. ALL call sites MUST check !player.isAI
+ * BEFORE calling this function. Do NOT add a guard inside — the guard must be at the call site.
+ * Failure to guard will cause BUG-014-D class AI freeze (phase='event' breaks useAITurnHandler).
+ */
 function appendEventMessage(get: GetFn, set: SetFn, message: string): void {
   const existing = get().eventMessage;
   set({
