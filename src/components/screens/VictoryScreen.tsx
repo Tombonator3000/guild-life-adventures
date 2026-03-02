@@ -5,11 +5,40 @@ import gameBoard from '@/assets/game-board.jpeg';
 import { VictoryEffects } from '@/components/game/VictoryEffects';
 import { getGameOption } from '@/data/gameOptions';
 import { PostGameStats } from './PostGameStats';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 export function VictoryScreen() {
   const { setPhase, resetForNewGame, winner, players, goalSettings, eventMessage, stockPrices } = useGameStore();
   const [showStats, setShowStats] = useState(false);
+
+  // Ranked leaderboard — must be a hook (useMemo) placed before any early returns per CLAUDE.md hook rule
+  const rankedPlayers = useMemo(() => {
+    const adventureGoal = goalSettings.adventure ?? 0;
+    const goalCount = adventureGoal > 0 ? 5 : 4;
+    return players
+      .map(p => {
+        const pStockValue = calculateStockValue(p.stocks, stockPrices);
+        const pWealth = goalSettings.wealth > 0
+          ? Math.min(1, Math.max(0, (p.gold + p.savings + p.investments + pStockValue - p.loanAmount) / goalSettings.wealth))
+          : 1;
+        const pHappiness = goalSettings.happiness > 0
+          ? Math.min(1, Math.max(0, p.happiness / goalSettings.happiness))
+          : 1;
+        const pEdu = goalSettings.education > 0
+          ? Math.min(1, Math.max(0, (p.completedDegrees.length * 9) / goalSettings.education))
+          : 1;
+        const pCareer = goalSettings.career > 0
+          ? Math.min(1, Math.max(0, p.dependability / goalSettings.career))
+          : 1;
+        const pAdventure = adventureGoal > 0
+          ? Math.min(1, Math.max(0, (p.completedQuests + p.dungeonFloorsCleared.length) / adventureGoal))
+          : 0;
+        const scoreSum = pWealth + pHappiness + pEdu + pCareer + (adventureGoal > 0 ? pAdventure : 0);
+        const score = Math.round((scoreSum / goalCount) * 100);
+        return { player: p, score };
+      })
+      .sort((a, b) => b.score - a.score);
+  }, [players, goalSettings, stockPrices]);
 
   const winningPlayer = players.find(p => p.id === winner);
 
@@ -162,6 +191,44 @@ export function VictoryScreen() {
             )}
           </div>
         </div>
+
+        {/* Leaderboard — only shown in multiplayer games */}
+        {players.length > 1 && (
+          <div className="parchment-panel p-6 mb-8 max-w-md w-full">
+            <h2 className="font-display text-xl text-center mb-4 text-card-foreground">
+              Final Standings
+            </h2>
+            <div className="space-y-2">
+              {rankedPlayers.map(({ player, score }, i) => (
+                <div
+                  key={player.id}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg ${
+                    player.id === winner
+                      ? 'bg-amber-500/20 border border-amber-500/40'
+                      : 'bg-black/5'
+                  }`}
+                >
+                  <span className="font-display text-base w-7 text-center text-muted-foreground flex-shrink-0">
+                    {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
+                  </span>
+                  <div
+                    className="w-3 h-3 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: player.color }}
+                  />
+                  <span className="font-display flex-1 text-card-foreground">
+                    {player.name}
+                    {player.id === winner && (
+                      <Crown className="inline w-4 h-4 ml-1 text-amber-500" />
+                    )}
+                  </span>
+                  <span className="font-display text-sm text-muted-foreground tabular-nums">
+                    {score}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Stats Toggle */}
         <button

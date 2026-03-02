@@ -107,6 +107,32 @@ All critical store logic checks passed (Agent D):
 
 ---
 
+## 2026-03-02 — Victory Screen Leaderboard (Backlog item)
+
+### Timestamp: 2026-03-02T11:09 UTC
+
+### Overview
+Added "Final Standings" leaderboard to `VictoryScreen.tsx` for multiplayer games. Shows all players ranked by average goal completion percentage (Wealth, Happiness, Education, Career, + Adventure if enabled). Winner highlighted with amber background and crown icon. Gold/silver/bronze medals for top 3.
+
+### What Changed
+
+**`src/components/screens/VictoryScreen.tsx`**
+- Added `useMemo` to React import
+- Added `rankedPlayers` useMemo computation **before the early return** (per CLAUDE.md hook ordering rule)
+- Score formula: `Math.round((wealthPct + happinessPct + eduPct + careerPct [+ adventurePct]) / goalCount × 100)` — each term clamped [0..1], guards against div-by-zero
+- Added "Final Standings" parchment panel between "Final Stats" and the stats toggle — only rendered when `players.length > 1`
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `src/components/screens/VictoryScreen.tsx` | Added leaderboard (+68 lines) |
+
+### Test Results
+- 358 tests, 18 files — all pass ✅
+- No VictoryScreen lint errors
+
+---
+
 ## 2026-03-01 — Bug Hunt Session (5 parallel agents)
 
 ### Timestamp: 2026-03-01T15:19–15:40 UTC

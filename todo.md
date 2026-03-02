@@ -163,7 +163,7 @@
 ### Low Priority
 - [ ] Forge job teaser without actual implementation
 - [x] Player name duplicate/length validation — **FIXED 2026-03-02**: `GameSetup.tsx` now validates names before game start: trims whitespace, rejects empty, enforces 20-char max, rejects duplicates (case-insensitive). Shows inline error message.
-- [ ] Victory screen leaderboard for multi-player
+- [x] Victory screen leaderboard for multi-player — **FIXED 2026-03-02**: "Final Standings" ranked panel added to VictoryScreen, shows for multiplayer (2+ players), ranked by average goal completion %
 - [ ] Spectator mode for dead players
 - [x] AI stock market strategy (buy low, sell high) — **DONE** Smart stock market intelligence (actual prices, undervalued detection)
 - [x] `activeCurses` type mismatch — **ALREADY CORRECT**: Type is `ActiveCurse[]` (required) in game.types.ts. Always initialized in `createPlayer()` and in save migration v3→v4. Optional chaining (`?.`) in UI is correct defensive practice as per CLAUDE.md convention. No change needed.
