@@ -603,10 +603,11 @@ const GAMBLE_TABLE: Record<number, { chance: number; payout: number; winHappines
 };
 
 function fenceTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, priceModifier, sellItem, modifyGold, modifyHappiness, spendTime } = ctx;
+  const { player, priceModifier, week, sellItem, modifyGold, modifyHappiness, spendTime } = ctx;
   const fenceProps = {
     player,
     priceModifier,
+    week,
     onSellItem: (itemId: string, price: number) => {
       sellItem(player.id, itemId, price);
     },

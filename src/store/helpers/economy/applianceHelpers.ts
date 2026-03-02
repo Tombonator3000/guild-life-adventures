@@ -1,5 +1,5 @@
-import type { ApplianceSource } from '@/types/game.types';
-import { getAppliance, calculateRepairCost } from '@/data/items';
+import type { ApplianceSource, PawnedAppliance } from '@/types/game.types';
+import { getAppliance, calculateRepairCost, getRedeemPrice } from '@/data/items';
 import type { SetFn, GetFn } from '../../storeTypes';
 
 export function createApplianceActions(set: SetFn, get: GetFn) {
@@ -91,23 +91,78 @@ export function createApplianceActions(set: SetFn, get: GetFn) {
       return repairCost;
     },
 
-    // Pawn an appliance
+    // Pawn an appliance — stores collateral record so player can redeem within 6 weeks
     pawnAppliance: (playerId: string, applianceId: string, pawnValue: number) => {
+      const week = get().week;
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
 
+          const applianceData = p.appliances[applianceId];
           const newAppliances = { ...p.appliances };
           delete newAppliances[applianceId];
+
+          const pawnRecord: PawnedAppliance = {
+            applianceId,
+            originalPrice: applianceData?.originalPrice ?? Math.round(pawnValue / 0.4), // back-calculate from pawn value
+            pawnedWeek: week,
+            expiresWeek: week + 6,
+          };
 
           return {
             ...p,
             gold: p.gold + pawnValue,
             appliances: newAppliances,
+            pawnedAppliances: [...(p.pawnedAppliances ?? []), pawnRecord],
             happiness: Math.max(0, p.happiness - 1), // -1 happiness for pawning
           };
         }),
       }));
+    },
+
+    // Redeem a previously pawned appliance (pay 50% of original price, must be within 6-week window)
+    redeemAppliance: (playerId: string, applianceId: string): boolean => {
+      const state = get();
+      const player = state.players.find(p => p.id === playerId);
+      if (!player) return false;
+
+      const pawned = (player.pawnedAppliances ?? []).find(pa => pa.applianceId === applianceId);
+      if (!pawned) return false;
+
+      // Check redemption window not expired
+      if (state.week > pawned.expiresWeek) return false;
+
+      const redeemCost = getRedeemPrice(pawned.originalPrice);
+      if (player.gold < redeemCost) return false;
+
+      const appliance = getAppliance(applianceId);
+      if (!appliance) return false;
+
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+
+          const newAppliances = { ...p.appliances };
+          newAppliances[applianceId] = {
+            itemId: applianceId,
+            originalPrice: pawned.originalPrice,
+            source: 'pawn' as ApplianceSource,
+            isBroken: false,
+            purchasedFirstTime: false,
+            repairedWeek: get().week,
+          };
+
+          return {
+            ...p,
+            gold: p.gold - redeemCost,
+            appliances: newAppliances,
+            pawnedAppliances: (p.pawnedAppliances ?? []).filter(pa => pa.applianceId !== applianceId),
+            happiness: Math.min(100, p.happiness + 1), // +1 happiness for recovering your item
+          };
+        }),
+      }));
+
+      return true;
     },
   };
 }
