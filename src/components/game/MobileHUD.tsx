@@ -28,7 +28,10 @@ export function MobileHUD({
   const trendIcon = economyTrend === 1 ? '\u2191' : economyTrend === -1 ? '\u2193' : '\u2194';
 
   return (
-    <div className="flex-shrink-0 flex items-center gap-1.5 px-1.5 py-1 bg-gradient-to-b from-wood-dark to-wood border-b-2 border-wood-light z-30">
+    <div
+      className="flex-shrink-0 flex items-center gap-1.5 px-1.5 py-1 bg-gradient-to-b from-wood-dark to-wood border-b-2 border-wood-light z-30"
+      style={{ borderLeft: `4px solid ${player.color}` }}
+    >
       {/* Left drawer button */}
       <button
         onClick={onOpenLeftDrawer}
@@ -67,13 +70,20 @@ export function MobileHUD({
       {/* Divider */}
       <div className="w-px h-4 bg-wood-light/50 flex-shrink-0" />
 
-      {/* Week + market */}
+      {/* Week + market + turn indicator */}
       <div className="flex-shrink-0 text-center leading-none">
         <div className="text-[9px] text-parchment/60 font-display">W{week}</div>
         <div className="text-[8px] text-parchment/50">
           {(priceModifier * 100).toFixed(0)}%{trendIcon}
         </div>
       </div>
+
+      {/* Player color dot — visible indicator of whose turn it is */}
+      <div
+        className="w-2.5 h-2.5 rounded-full flex-shrink-0 ring-1 ring-white/30"
+        style={{ background: player.color }}
+        title={`${player.name}'s turn`}
+      />
 
       {/* End Turn */}
       <button

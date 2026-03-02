@@ -7576,3 +7576,68 @@ Bruk **GitHub Codespaces** (gratis nettleser-terminal) for å hente token uten l
 ### Filer endret
 - `.github/workflows/deploy-github-pages.yml` — PARTYKIT_LOGIN lagt til
 - `log2.md` — denne oppføringen
+
+---
+
+## 2026-03-02 — Backlog Clear: Bug Fixes + UI Improvements
+
+### Timestamp: 2026-03-02
+
+### Bakgrunn
+Full backlog gjennomgang med parallelle agenter. Identifiserte hvilke backlog-items som allerede
+var implementert korrekt og hvilke som trengte faktiske kodefikser. 6 reelle endringer gjort,
+8 items bekreftet som allerede korrekte.
+
+### Hva som ble gjort
+
+**Faktiske kodefikser:**
+
+1. **appendEventMessage JSDoc** (`playerHelpers.ts`):
+   - Lagt til eksplisitt advarsel i JSDoc om BUG-014-D risiko og at alle call sites MÅ sjekke `!player.isAI`
+
+2. **Quest education fix D4** (`quests.ts`):
+   - `exorcism` og `haunted-library` quests krevde `priest` educaton path, men ingen priest-grader finnes
+   - Endret begge til `mage` path (arcane-studies/alchemy) som har eksisterende grader
+   - Exorcism: `priest level 2` → `mage level 2`
+   - Haunted Library: `priest level 1` → `mage level 1`
+
+3. **Keyboard shortcuts modal-guard** (`useGameBoardKeyboard.ts`):
+   - Lagt til `document.querySelector('[role="dialog"]')` sjekk i `handleKeyDown`
+   - Blokkerer E/T/M/F/B shortcuts når en Radix dialog er åpen
+   - Ctrl+Shift dev-shortcuts og Escape fungerer fortsatt
+
+4. **Spillernavn-validering** (`GameSetup.tsx`):
+   - `handleStart` trimmer nå navn og validerer: ikke tom, max 20 tegn, unike (case-insensitive)
+   - Feilmelding vises inline over "Begin Adventure"-knappen
+   - `updateName` nullstiller feil når bruker endrer navn
+
+5. **Døde spiller-tokens visuell distinksjon** (`PlayerToken.tsx`):
+   - `player.isGameOver = true` → token vises med `grayscale opacity-50`
+   - Skull (💀) badge i øvre høyre hjørne
+   - Hover title endres til `{navn} (fallen)`
+   - Curse-effekter undertrykkes for døde spillere
+
+6. **Mobile HUD farge-indikator** (`MobileHUD.tsx`):
+   - 4px venstre kant i spillerens farge (`borderLeft: 4px solid player.color`)
+   - Liten farget prikk (`w-2.5 h-2.5 rounded-full`) mellom markedsinfo og End Turn-knapp
+
+**Bekreftet allerede korrekte (ingen kodeendringer):**
+- D1: Starvation penalty — kun -20h ved tur-start, ingen week-end HP-straff
+- D2: Frost Chest + Arcane Tome — allerede kjøpbare via Enchanter
+- D3: Loan default limits — ingen extension-mekanisme finnes, kun fast 8-ukers grense
+- Price validation — alle buy-funksjoner validerer `gold >= cost`
+- AI rent prepayment — allerede implementert (prioritet 55/90)
+- AI appliance repair — fullt implementert i economicActions.ts + actionExecutor.ts
+- activeCurses type — korrekt typen, optional chaining i UI er riktig per CLAUDE.md
+- applianceBreakageEvent — korrekt i StoreState (ikke GameState), SerializedGameState håndterer nettverkstyping
+
+### Filer endret
+- `src/store/helpers/playerHelpers.ts` — JSDoc for appendEventMessage
+- `src/data/quests.ts` — priest→mage for exorcism og haunted-library
+- `src/hooks/useGameBoardKeyboard.ts` — dialog-sjekk guard
+- `src/components/screens/GameSetup.tsx` — spillernavn-validering
+- `src/components/game/PlayerToken.tsx` — grayscale + skull badge for døde spillere
+- `src/components/game/MobileHUD.tsx` — farge-kant + farge-prikk
+- `CLAUDE.md` — 3 nye konvensjoner dokumentert
+- `todo.md` — backlog-items markert som ferdig
+- `log2.md` — denne oppføringen

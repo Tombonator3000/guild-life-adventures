@@ -2,8 +2,7 @@
 
 ## Bug Backlog (from 2026-03-02 bug hunt)
 
-- [ ] **appendEventMessage internal guard** (playerHelpers.ts:13): Function sets `phase='event'` with no internal `!player.isAI` guard. Current call sites (lines 99, 127) are guarded externally. Low risk but fragile — if this function is called from new AI code paths without a guard it will cause BUG-014-D class freeze. Fix: add JSDoc comment or move the guard inside the function.
-  - Tracked since: 2026-03-02
+- [x] **appendEventMessage internal guard** (playerHelpers.ts:13): Added explicit JSDoc warning documenting the AI guard requirement and BUG-014-D risk. Call sites remain guarded externally as per convention. — **FIXED 2026-03-02**
 
 ## Completed (2026-02-13)
 
@@ -144,31 +143,31 @@
 ## Backlog (From Deep Audit)
 
 ### Critical/High Priority
-- [ ] Add price validation to all buy functions (buyItem, buyDurable, buyTicket)
-- [ ] Fix starvation penalties inconsistency (20hrs at turn-start vs 10hp at week-end)
-- [ ] Implement loan default limits (prevent infinite extensions)
-- [ ] Quest education requirements reference non-existent paths
-- [ ] Make Frost Chest and Arcane Tome actually purchasable
+- [x] Add price validation to all buy functions (buyItem, buyDurable, buyTicket) — **ALREADY IMPLEMENTED**: All buy functions validate `gold >= cost` before spending. No change needed.
+- [x] Fix starvation penalties inconsistency (20hrs at turn-start vs 10hp at week-end) — **ALREADY CORRECT**: Only -20h exists at turn start. No week-end HP penalty exists. Documentation was misleading. No code change needed.
+- [x] Implement loan default limits (prevent infinite extensions) — **NO EXTENSION MECHANISM EXISTS**: Fixed 8-week loan duration, no renewal system. If not repaid in 8 weeks, forced collection occurs. Documentation was outdated.
+- [x] Quest education requirements reference non-existent paths — **FIXED 2026-03-02**: `exorcism` and `haunted-library` quests required `priest` education (no degrees exist for priest path). Changed both to `mage` path which has valid degrees (arcane-studies, alchemy, etc.).
+- [x] Make Frost Chest and Arcane Tome actually purchasable — **ALREADY PURCHASABLE**: Both have `enchanterPrice > 0` and appear in Enchanter's shop via `getEnchanterAppliances()`. No code change needed.
 - [x] Reset network state on victory screen (soft lock bug) — **FIXED** resetNetworkState() on disconnect
 - [x] Fix event modal dismissal desync in online multiplayer — **FIXED** auto-clear on turn/week change
 
 ### Medium Priority
 - [x] AI: Add difficulty-based decision thresholds (currently only speed differs) — **DONE** Dynamic difficulty adjustment based on performance gap
-- [ ] AI: Add rent prepayment and appliance repair logic
+- [x] AI: Add rent prepayment and appliance repair logic — **ALREADY IMPLEMENTED**: AI has proactive (priority 55) and urgent (priority 90) rent payment. Appliance repair is fully implemented in `economicActions.ts` + `actionExecutor.ts` with priority 52-62. No change needed.
 - [x] AI: Add competition awareness (check other players' progress) — **DONE** Player strategy observer + counter-strategy weights
-- [ ] Mobile HUD: Add turn indicator and player color
-- [ ] Dead player tokens visual distinction
-- [ ] Fix keyboard shortcuts triggering inside modals
+- [x] Mobile HUD: Add turn indicator and player color — **FIXED 2026-03-02**: Added 4px left color border matching current player's color + colored dot before End Turn button.
+- [x] Dead player tokens visual distinction — **FIXED 2026-03-02**: Dead players (`isGameOver=true`) now show grayscale + 50% opacity + skull (💀) badge on their token.
+- [x] Fix keyboard shortcuts triggering inside modals — **FIXED 2026-03-02**: `useGameBoardKeyboard` now blocks non-modifier shortcuts (E/T/M/F/B) when any Radix dialog (`[role="dialog"]`) is open.
 - [x] Remove or implement housing tier 'modest' — **FIXED** Hidden from LandlordPanel (Jones 2-tier system)
 
 ### Low Priority
 - [ ] Forge job teaser without actual implementation
-- [ ] Player name duplicate/length validation
+- [x] Player name duplicate/length validation — **FIXED 2026-03-02**: `GameSetup.tsx` now validates names before game start: trims whitespace, rejects empty, enforces 20-char max, rejects duplicates (case-insensitive). Shows inline error message.
 - [ ] Victory screen leaderboard for multi-player
 - [ ] Spectator mode for dead players
 - [x] AI stock market strategy (buy low, sell high) — **DONE** Smart stock market intelligence (actual prices, undervalued detection)
-- [ ] `activeCurses` type mismatch: `game.types.ts` defines it as required `ActiveCurse[]` but many components use optional chaining (`?.`). Save migration in `saveLoad.ts` handles old saves. Consider making type `ActiveCurse[] | undefined` for consistency, or verify migration always runs.
-- [ ] Missing `applianceBreakageEvent` in `GameState` type — `network/types.ts` uses `unknown` cast workaround. Should add field to `storeTypes.ts` / `game.types.ts`.
+- [x] `activeCurses` type mismatch — **ALREADY CORRECT**: Type is `ActiveCurse[]` (required) in game.types.ts. Always initialized in `createPlayer()` and in save migration v3→v4. Optional chaining (`?.`) in UI is correct defensive practice as per CLAUDE.md convention. No change needed.
+- [x] Missing `applianceBreakageEvent` in `GameState` type — **ALREADY CORRECT**: Field is in `StoreState` (storeTypes.ts), not `GameState`. `network/types.ts` extends `GameState` to include it via `SerializedGameState`. The "unknown cast workaround" comment in todo was outdated — it's properly typed. No change needed.
 - [ ] BUG-013 (known, complex): AI `failedActionsRef` doesn't persist failed actions across the skip-turn fast-execution path — could cause retry of same failing action after skip-turn ends. Low impact since skip-turn mode is rare.
 
 ## Bug Hunt 2026-03-01 — Fixed

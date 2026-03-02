@@ -52,17 +52,19 @@ function TokenCurseEffect({ isToad }: { isToad: boolean }) {
 export function PlayerToken({ player, index, isCurrent }: PlayerTokenProps) {
   const hasCurse = Array.isArray(player.activeCurses) && player.activeCurses.length > 0;
   const isToad = player.activeCurses?.some(c => c.effectType === 'toad-transformation') ?? false;
+  const isDead = player.isGameOver;
 
   return (
     <div
       className={cn(
         'relative w-16 h-16 rounded-full shadow-lg transition-all duration-300',
-        isCurrent && 'animate-float ring-2 ring-gold ring-offset-1'
+        isCurrent && !isDead && 'animate-float ring-2 ring-gold ring-offset-1',
+        isDead && 'grayscale opacity-50'
       )}
       style={{
         zIndex: isCurrent ? 10 : index,
       }}
-      title={player.name}
+      title={isDead ? `${player.name} (fallen)` : player.name}
     >
       <CharacterPortrait
         portraitId={player.portraitId}
@@ -70,10 +72,18 @@ export function PlayerToken({ player, index, isCurrent }: PlayerTokenProps) {
         playerName={player.name}
         size={64}
         isAI={player.isAI}
-        hasCurse={hasCurse}
-        isToad={isToad}
+        hasCurse={hasCurse && !isDead}
+        isToad={isToad && !isDead}
       />
-      {hasCurse && <TokenCurseEffect isToad={isToad} />}
+      {isDead && (
+        <div
+          className="absolute -top-1 -right-1 z-10 rounded-full w-5 h-5 flex items-center justify-center leading-none select-none pointer-events-none"
+          style={{ fontSize: '10px', background: 'rgba(0,0,0,0.85)', border: '1px solid rgba(255,255,255,0.3)' }}
+        >
+          💀
+        </div>
+      )}
+      {hasCurse && !isDead && <TokenCurseEffect isToad={isToad} />}
     </div>
   );
 }

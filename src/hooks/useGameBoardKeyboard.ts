@@ -33,6 +33,10 @@ export function useGameBoardKeyboard({
 }) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Block game shortcuts when any Radix dialog/modal is open, except developer shortcuts (Ctrl+Shift)
+      const hasOpenDialog = !!document.querySelector('[role="dialog"]');
+      if (hasOpenDialog && !e.ctrlKey && !e.shiftKey && e.key !== 'Escape') return;
+
       if (e.ctrlKey && e.shiftKey && e.key === 'Z') {
         e.preventDefault();
         setShowZoneEditor(prev => !prev);
