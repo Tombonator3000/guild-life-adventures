@@ -1,5 +1,10 @@
 # Guild Life Adventures - Todo List
 
+## Bug Backlog (from 2026-03-02 bug hunt)
+
+- [ ] **appendEventMessage internal guard** (playerHelpers.ts:13): Function sets `phase='event'` with no internal `!player.isAI` guard. Current call sites (lines 99, 127) are guarded externally. Low risk but fragile — if this function is called from new AI code paths without a guard it will cause BUG-014-D class freeze. Fix: add JSDoc comment or move the guard inside the function.
+  - Tracked since: 2026-03-02
+
 ## Completed (2026-02-13)
 
 - [x] Clothing quality job check — Jobs refuse player when clothing degrades below required tier

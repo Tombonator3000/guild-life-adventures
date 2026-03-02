@@ -5,6 +5,108 @@
 
 ---
 
+## 2026-03-02 — Bug Hunt Session (4 parallel agents, UI/components focus)
+
+### Timestamp: 2026-03-02T09:49–10:02 UTC
+
+### Overview
+Bug hunt using 4 parallel agents covering: game components, screens, backlog items (type system), and store helpers. 358 tests pass before and after all fixes.
+
+### Agent Assignments
+- **Agent A**: `src/components/game/` — 97 files, all panel/tab components
+- **Agent B**: `src/components/screens/` — 6 files, screen-level components
+- **Agent C**: Backlog items — `activeCurses` type audit + `applianceBreakageEvent` GameState type
+- **Agent D**: `src/store/helpers/` + `src/data/` — game logic correctness checks
+
+### False Positives Identified (Agent Hallucinations)
+Three critical "hook ordering violations" reported by agents were FALSE POSITIVES — verified by reading the actual files:
+- `VictoryScreen.tsx`: hooks at lines 11-12, early return at line 20 ✓ (correct order)
+- `HexShopPanel.tsx`: hooks at lines 24-25, early return at line 27 ✓ (correct order)
+- `LocationPanel.tsx`: hooks at lines 22-25, early return at line 27 ✓ (correct order)
+- `makeNLChainChoice` phase='event': IS guarded with `!completedPlayer.isAI` at line 611 ✓ (already safe)
+
+### Bugs Found and Fixed (7)
+
+#### BUG-018: applianceBreakageEvent typed as `unknown` in SerializedGameState
+- **File**: `src/network/types.ts`
+- **Severity**: Low — type safety issue, no runtime risk
+- **Root Cause**: `applianceBreakageEvent` lives on `GameStore` (storeTypes.ts:95) but not on `GameState` (game.types.ts). `SerializedGameState extends GameState` used `applianceBreakageEvent?: unknown` as a workaround, losing type safety during network sync.
+- **Fix**: Replaced `unknown` with the full typed structure: `{ playerId: string; applianceId: string; repairCost: number; originalPrice?: number; fromCurse?: boolean; curserName?: string } | null`. Added a comment explaining why these extra fields exist.
+- **Impact**: Network sync of this event now type-safe. No runtime change.
+
+#### BUG-019: activeCurses field missing clarifying documentation
+- **File**: `src/types/game.types.ts`
+- **Severity**: Low — documentation gap causing confusion between required type and defensive `?.` usage in components
+- **Root Cause**: `activeCurses: ActiveCurse[]` is required in the type, but UI components defensively use optional chaining (`?.`) per CLAUDE.md rules. No comment explained WHY the field is safe to access without `?.` in store code.
+- **Fix**: Added inline comment clarifying that the field is always initialized in `createPlayer()` and save migration (v3→v4), making it safe in store logic but with defensive `?.` in UI for old-save resilience.
+
+#### BUG-020: completeBounty missing explicit `{}` for chainProgress
+- **File**: `src/store/helpers/questHelpers.ts` (line 659 in `completeBounty`)
+- **Severity**: Low — inconsistency with CLAUDE.md policy; no functional impact
+- **Root Cause**: `allLocationObjectivesDone(player.activeQuest, player.questLocationProgress ?? [])` called without explicit `{}` as third chainProgress parameter. Bounties are standalone (never chain/nlchain) so the missing param is equivalent to `{}`, but CLAUDE.md requires it to be explicit.
+- **Fix**: Added `{}` as third parameter with comment "Bounties are standalone (never chain/nlchain) — pass {} for chainProgress explicitly"
+
+#### BUG-021: completeQuest missing explicit `{}` for chainProgress
+- **File**: `src/store/helpers/questHelpers.ts` (line 293 in `completeQuest`, regular quest branch)
+- **Severity**: Low — same pattern as BUG-020
+- **Root Cause**: Regular quest branch of `completeQuest` called `allLocationObjectivesDone` without chainProgress. Regular quests have no chain context so `{}` is functionally equivalent to no arg, but inconsistent with the policy.
+- **Fix**: Added `{}` as third parameter with comment "Regular quests have no chain context — pass {} for chainProgress"
+
+#### BUG-022: activeCurses unsafe access in InfoTabs.tsx
+- **File**: `src/components/game/InfoTabs.tsx` (lines 458, 461, 464)
+- **Severity**: Medium — violates CLAUDE.md rule; safe in practice due to migration but dangerous for old saves loaded before migration runs
+- **Root Cause**: Three direct `.activeCurses.length` and `.activeCurses.map()` accesses without optional chaining.
+- **Fix**: Changed to `(player.activeCurses?.length ?? 0) > 0` and `player.activeCurses?.map(...)`
+
+#### BUG-023: activeCurses unsafe access in GraveyardHexPanel.tsx
+- **File**: `src/components/game/GraveyardHexPanel.tsx` (lines 61, 64, 115, 140)
+- **Severity**: Medium — same as BUG-022
+- **Root Cause**: Four direct `.activeCurses.length` and `.activeCurses.map()` accesses without optional chaining.
+- **Fix**: Changed to `(player.activeCurses?.length ?? 0)` with `?? 0` fallback pattern
+
+#### BUG-024: activeCurses unsafe access in PlayersTab.tsx and TurnOrderPanel.tsx
+- **File**: `src/components/game/tabs/PlayersTab.tsx` line 66, `src/components/game/TurnOrderPanel.tsx` line 80
+- **Severity**: Medium — same as BUG-022/023
+- **Root Cause**: `hasCurse={player.activeCurses.length > 0}` missing optional chaining
+- **Fix**: Changed both to `hasCurse={(player.activeCurses?.length ?? 0) > 0}`
+
+### Store Logic Verified Correct ✓
+All critical store logic checks passed (Agent D):
+- Employment check order: `processEmployment` runs BEFORE `resetWeeklyFlags` ✓
+- `applyDependabilityDecay` naked check order: `clothingCondition <= 0` checked first ✓
+- `processEndOfTurnSpoilage`: only clears `freshFood`, does NOT reduce `foodLevel` ✓
+- `buyFoodWithSpoilage`: does NOT set `foodBoughtWithoutPreservation` ✓
+- `limitWeekendMessages`: critical events prioritized, mundane suppressed ✓
+- `hadRandomEventThisTurn`: saved before `resetWeeklyFlags` ✓
+- Rare drop items: all have non-zero `basePrice` ✓
+- Zustand actions: none start with `use` ✓
+- `makeNLChainChoice`: phase='event' IS guarded with `!completedPlayer.isAI` ✓
+
+### Note: appendEventMessage Internal Guard
+`appendEventMessage` in `playerHelpers.ts` sets `phase='event'` without an internal guard. All 2 call sites are guarded with `!arrivalPlayer.isAI` checks (lines 99, 127). Safe in practice, but function itself could be called unsafely from future code. Added to todo.md as a low-priority hardening task.
+
+### CLAUDE.md Rules Added
+- `allLocationObjectivesDone` for regular quests (completeQuest) and bounties (completeBounty): always pass `{}` as explicit chainProgress
+- Extended activeCurses optional chaining rule: now confirmed in 4 more UI files (InfoTabs, GraveyardHexPanel, PlayersTab, TurnOrderPanel)
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/network/types.ts` | BUG-018: Typed `applianceBreakageEvent` properly, removed `unknown` |
+| `src/types/game.types.ts` | BUG-019: Added clarifying comment on `activeCurses` initialization |
+| `src/store/helpers/questHelpers.ts` | BUG-020/021: Added explicit `{}` chainProgress to bounty + regular quest LOQ checks |
+| `src/components/game/InfoTabs.tsx` | BUG-022: Added `?.` and `?? 0` to all activeCurses accesses |
+| `src/components/game/GraveyardHexPanel.tsx` | BUG-023: Added `?.` and `?? 0` to all activeCurses accesses |
+| `src/components/game/tabs/PlayersTab.tsx` | BUG-024: Added `?.` to activeCurses access |
+| `src/components/game/TurnOrderPanel.tsx` | BUG-024: Added `?.` to activeCurses access |
+| `CLAUDE.md` | Added 2 new rules |
+
+### Test Results
+- 358 tests, 18 files — all pass ✅
+
+---
+
 ## 2026-03-01 — Bug Hunt Session (5 parallel agents)
 
 ### Timestamp: 2026-03-01T15:19–15:40 UTC

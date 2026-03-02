@@ -290,7 +290,8 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       if (!quest) return;
 
       // LOQ: Block completion if not all location objectives are done
-      if (!allLocationObjectivesDone(player.activeQuest, player.questLocationProgress ?? [])) return;
+      // Regular quests have no chain context — pass {} for chainProgress
+      if (!allLocationObjectivesDone(player.activeQuest, player.questLocationProgress ?? [], {})) return;
 
       set((state) => ({
         players: state.players.map((p) => {
@@ -655,7 +656,8 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       if (!bounty) return;
 
       // LOQ: Block completion if not all location objectives are done
-      if (!allLocationObjectivesDone(player.activeQuest, player.questLocationProgress ?? [])) return;
+      // Bounties are standalone (never chain/nlchain) — pass {} for chainProgress explicitly
+      if (!allLocationObjectivesDone(player.activeQuest, player.questLocationProgress ?? [], {})) return;
 
       set((state) => ({
         players: state.players.map((p) => {

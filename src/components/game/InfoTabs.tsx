@@ -455,13 +455,13 @@ function StatsTab({ player }: StatsTabProps) {
       </div>
 
       {/* Hexes & Curses (only shown when feature enabled and has afflictions/scrolls) */}
-      {getGameOption('enableHexesCurses') && (player.activeCurses.length > 0 || player.hexScrolls.length > 0) && (
+      {getGameOption('enableHexesCurses') && ((player.activeCurses?.length ?? 0) > 0 || player.hexScrolls.length > 0) && (
         <div className="bg-parchment-dark/30 rounded-lg p-3 border border-wood-light/30">
           <h3 className="font-display text-sm font-bold text-destructive mb-2">Dark Magic</h3>
-          {player.activeCurses.length > 0 && (
+          {(player.activeCurses?.length ?? 0) > 0 && (
             <>
               <div className="text-xs text-wood/70 mb-1">Active Afflictions:</div>
-              {player.activeCurses.map((curse, i) => {
+              {player.activeCurses?.map((curse, i) => {
                 const hex = getHexById(curse.hexId);
                 return (
                   <div key={i} className="flex justify-between text-xs py-0.5">
