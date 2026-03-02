@@ -274,6 +274,8 @@ export interface Player {
   rentExtensionUsed: boolean;                 // True if player already begged this rent cycle (reset on payment)
   // Hexes & Curses system
   hexScrolls: HexScroll[];                    // Hex scrolls in inventory
+  // Always initialized to [] in createPlayer() and save migration (v3→v4). Safe to access without ?. in store helpers.
+  // UI components may use optional chaining as defensive practice for old-save compatibility.
   activeCurses: ActiveCurse[];                // Active personal curses afflicting this player
   hasProtectiveAmulet: boolean;               // Blocks next incoming hex/curse (consumed on use)
   hexCastCooldown: number;                    // Weeks until player can cast another hex (0 = ready)

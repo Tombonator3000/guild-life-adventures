@@ -73,9 +73,18 @@ export type NetworkMessage = HostMessage | GuestMessage;
 // --- Serialized State ---
 
 // GameState without functions — only data fields, plus extra sync fields
+// Note: shadowfingersEvent and applianceBreakageEvent live on GameStore (storeTypes.ts)
+// but not on GameState (game.types.ts). They are declared here for network sync typing.
 export interface SerializedGameState extends GameState {
   shadowfingersEvent?: unknown;
-  applianceBreakageEvent?: unknown;
+  applianceBreakageEvent?: {
+    playerId: string;
+    applianceId: string;
+    repairCost: number;
+    originalPrice?: number;
+    fromCurse?: boolean;
+    curserName?: string;
+  } | null;
 }
 
 // --- Connection Status ---

@@ -63,7 +63,7 @@ export function PlayersTab({ players, currentPlayerIndex, goalSettings }: Player
                 playerName={player.name}
                 size={16}
                 isAI={player.isAI}
-                hasCurse={player.activeCurses.length > 0}
+                hasCurse={(player.activeCurses?.length ?? 0) > 0}
               />
 
               {/* Name and status */}

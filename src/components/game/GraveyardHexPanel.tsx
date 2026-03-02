@@ -58,10 +58,10 @@ export function GraveyardHexPanel({ player, priceModifier }: GraveyardHexPanelPr
       </h4>
 
       {/* Active Curses Display */}
-      {player.activeCurses.length > 0 && (
+      {(player.activeCurses?.length ?? 0) > 0 && (
         <div className="bg-red-50 border border-red-300 rounded p-2">
           <h5 className="text-xs font-bold text-red-800 mb-1">Active Afflictions</h5>
-          {player.activeCurses.map((curse, i) => {
+          {player.activeCurses?.map((curse, i) => {
             const hex = getHexById(curse.hexId);
             return (
               <div key={i} className="text-xs text-red-700 flex justify-between">
@@ -112,7 +112,7 @@ export function GraveyardHexPanel({ player, priceModifier }: GraveyardHexPanelPr
             <br />
             <button
               onClick={handleReflection}
-              disabled={player.gold < reflectionCost || player.timeRemaining < 3 || player.activeCurses.length === 0}
+              disabled={player.gold < reflectionCost || player.timeRemaining < 3 || (player.activeCurses?.length ?? 0) === 0}
               className="bg-purple-800 hover:bg-purple-700 text-purple-100 text-xs py-0.5 px-2 rounded disabled:opacity-50 mt-0.5"
             >
               Reflect (3h)
@@ -137,7 +137,7 @@ export function GraveyardHexPanel({ player, priceModifier }: GraveyardHexPanelPr
             <br />
             <button
               onClick={handleCleanse}
-              disabled={player.gold < cleanseCost || player.timeRemaining < 3 || player.activeCurses.length === 0}
+              disabled={player.gold < cleanseCost || player.timeRemaining < 3 || (player.activeCurses?.length ?? 0) === 0}
               className="bg-purple-800 hover:bg-purple-700 text-purple-100 text-xs py-0.5 px-2 rounded disabled:opacity-50 mt-0.5"
             >
               Cleanse (3h)
