@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 import { useGameStore } from '@/store/gameStore';
 import { getHexById } from '@/data/hexes';
 import { useTranslation } from '@/i18n';
-import { calculateCombatStats, getDurabilityCondition, MAX_DURABILITY } from '@/data/items';
+import { calculateCombatStats, getDurabilityCondition, MAX_DURABILITY, getItem, ARMORY_ITEMS } from '@/data/items';
 import {
   DUNGEON_FLOORS,
   checkFloorRequirements,
@@ -344,6 +344,93 @@ function FloorCard({
   );
 }
 
+// ─── E4: Post-combat loot summary panel ─────────────────────────
+
+interface CombatResultPanelProps {
+  result: CombatRunResult;
+  floor: DungeonFloor;
+  onDismiss: () => void;
+}
+
+function CombatResultPanel({ result, floor, onDismiss }: CombatResultPanelProps) {
+  const outcomeLabel = result.success
+    ? result.isFirstClear ? 'Floor Cleared!' : 'Run Complete!'
+    : result.retreated ? 'Retreated' : 'Defeated!';
+
+  const wearMessage = formatEquipmentWear(result.durabilityLoss);
+
+  return (
+    <div className="space-y-3 bg-[#1a110a] rounded p-3">
+      <h4 className="font-display text-lg text-[#c9b888] flex items-center gap-2">
+        {result.success ? (
+          <CheckCircle className="w-5 h-5 text-green-500" />
+        ) : result.retreated ? (
+          <span className="text-xl">🏃</span>
+        ) : (
+          <Skull className="w-5 h-5 text-red-500" />
+        )}
+        {outcomeLabel}
+      </h4>
+
+      <div className="bg-[#2d1f0f] border border-[#8b7355] rounded p-3 space-y-1.5 text-sm font-mono">
+        <div className="text-[#a09080] italic mb-1">{floor.name}</div>
+
+        <div className="flex justify-between">
+          <span className="text-[#a09080]">Gold earned:</span>
+          <span className="text-[#c9a227]">+{result.goldEarned}g</span>
+        </div>
+
+        {result.totalDamage > 0 && (
+          <div className="flex justify-between">
+            <span className="text-[#a09080]">Damage taken:</span>
+            <span className="text-red-400">-{result.totalDamage} HP</span>
+          </div>
+        )}
+
+        {result.happinessChange !== 0 && (
+          <div className="flex justify-between">
+            <span className="text-[#a09080]">Happiness:</span>
+            <span className={result.happinessChange > 0 ? 'text-green-400' : 'text-red-400'}>
+              {result.happinessChange > 0 ? '+' : ''}{result.happinessChange}
+            </span>
+          </div>
+        )}
+
+        {wearMessage && (
+          <div className="text-amber-400 pt-1 border-t border-[#8b7355]/20">
+            {wearMessage}
+          </div>
+        )}
+
+        {result.isFirstClear && (
+          <div className="text-green-400 pt-1 border-t border-[#8b7355]/20">
+            ✓ First clear! +{floor.happinessOnClear} hap · +{floor.dependabilityOnClear} dep
+          </div>
+        )}
+
+        {result.rareDropName && (
+          <div className="text-amber-300 font-display pt-1 border-t border-[#8b7355]/20">
+            ✦ RARE DROP: {result.rareDropName}!
+          </div>
+        )}
+
+        {result.hexScrollDropId && (
+          <div className="text-purple-300 font-display">
+            📜 Dark Scroll dropped!
+          </div>
+        )}
+      </div>
+
+      <button
+        onClick={onDismiss}
+        className="w-full py-2 px-3 text-sm font-display rounded bg-gradient-to-r from-amber-800 to-amber-700 hover:from-amber-700 hover:to-amber-600 text-[#e0d4b8] border border-amber-600/50 transition-all"
+      >
+        Continue
+      </button>
+    </div>
+  );
+}
+
 // ─── Main component ──────────────────────────────────────────────
 
 export function CavePanel({
@@ -359,6 +446,8 @@ export function CavePanel({
   const [expandedFloor, setExpandedFloor] = useState<number | null>(null);
   const [activeFloor, setActiveFloor] = useState<DungeonFloor | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  // E4: post-combat result summary
+  const [combatResult, setCombatResult] = useState<{ result: CombatRunResult; floor: DungeonFloor } | null>(null);
 
   const combatStats = calculateCombatStats(
     player.equippedWeapon,
@@ -385,6 +474,26 @@ export function CavePanel({
   const attemptsRemaining = MAX_FLOOR_ATTEMPTS_PER_TURN - attemptsUsed;
 
   const dungeonRecords = player.dungeonRecords || {};
+
+  // ─── E3: Auto-equip best owned gear ─────────────────────────
+
+  const handleAutoEquip = () => {
+    const { equipItem } = useGameStore.getState();
+    const ownedOfSlot = (slot: 'weapon' | 'armor' | 'shield') =>
+      ARMORY_ITEMS.filter(i => i.equipSlot === slot && (player.durables[i.id] || 0) > 0);
+
+    const bestWeapon = ownedOfSlot('weapon').sort((a, b) => (b.equipStats?.attack ?? 0) - (a.equipStats?.attack ?? 0))[0];
+    const bestArmor = ownedOfSlot('armor').sort((a, b) => (b.equipStats?.defense ?? 0) - (a.equipStats?.defense ?? 0))[0];
+    const bestShield = ownedOfSlot('shield').sort((a, b) => (b.equipStats?.defense ?? 0) - (a.equipStats?.defense ?? 0))[0];
+
+    let equipped = 0;
+    if (bestWeapon) { equipItem(player.id, bestWeapon.id, 'weapon'); equipped++; }
+    if (bestArmor) { equipItem(player.id, bestArmor.id, 'armor'); equipped++; }
+    if (bestShield) { equipItem(player.id, bestShield.id, 'shield'); equipped++; }
+
+    if (equipped > 0) toast.success('Auto-equipped best available gear!');
+    else toast('No gear to equip — buy weapons and armor at the Armory first.');
+  };
 
   // ─── Enter floor — switch to combat view ───────────────────
 
@@ -454,10 +563,8 @@ export function CavePanel({
     // M31 FIX: Use proper store action instead of direct setState
     updatePlayerDungeonRecord(player.id, activeFloor.id, result.goldEarned, result.encountersCompleted);
 
-    // Outcome notification
-    showCombatOutcomeToast(result, activeFloor);
-
-    // Return to floor selection
+    // E4: Show detailed result panel instead of just a toast
+    setCombatResult({ result, floor: activeFloor });
     setActiveFloor(null);
   };
 
@@ -506,6 +613,18 @@ export function CavePanel({
     );
   }
 
+  // ─── E4: Post-combat result panel ──────────────────────────
+
+  if (combatResult) {
+    return (
+      <CombatResultPanel
+        result={combatResult.result}
+        floor={combatResult.floor}
+        onDismiss={() => setCombatResult(null)}
+      />
+    );
+  }
+
   // ─── Floor selection view ──────────────────────────────────
 
   return (
@@ -548,27 +667,60 @@ export function CavePanel({
         )}
       </div>
 
-      {/* Equipment summary */}
+      {/* Equipment summary — E1: show item names + stats, E3: auto-equip button */}
       <div className="bg-[#2d1f0f] border border-[#8b7355] rounded p-2 text-sm font-mono">
-        <div className="text-[#a09080] uppercase tracking-wide mb-1">
-          {t('panelArmory.equipped')}
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[#a09080] uppercase tracking-wide">
+            {t('panelArmory.equipped')}
+          </span>
+          {/* E3: Auto-Equip Best button */}
+          <button
+            onClick={handleAutoEquip}
+            className="text-xs text-amber-400 hover:text-amber-300 underline underline-offset-2"
+          >
+            Auto-Equip Best
+          </button>
         </div>
-        <div className="flex gap-3 text-[#e0d4b8]">
-          <span className="text-red-400">
-            ⚔ ATK: {combatStats.attack}
-          </span>
-          <span className="text-blue-400">
-            🛡 DEF: {combatStats.defense}
-          </span>
-          {combatStats.blockChance > 0 && (
-            <span className="text-yellow-400">
-              BLK: {Math.round(combatStats.blockChance * 100)}%
+
+        {/* E1: Item names with individual stat contributions */}
+        <div className="space-y-0.5">
+          <div className="text-red-400 flex items-center justify-between">
+            <span>
+              ⚔ {player.equippedWeapon
+                ? (getItem(player.equippedWeapon)?.name ?? player.equippedWeapon)
+                : <span className="text-[#8b7355]">No weapon</span>}
             </span>
+            {combatStats.attack > 0 && (
+              <span className="text-[#a09080] text-xs">ATK {combatStats.attack}</span>
+            )}
+          </div>
+          <div className="text-blue-400 flex items-center justify-between">
+            <span>
+              🛡 {player.equippedArmor
+                ? (getItem(player.equippedArmor)?.name ?? player.equippedArmor)
+                : <span className="text-[#8b7355]">No armor</span>}
+            </span>
+            {combatStats.defense > 0 && (
+              <span className="text-[#a09080] text-xs">DEF {combatStats.defense}</span>
+            )}
+          </div>
+          {(player.equippedShield || combatStats.blockChance > 0) && (
+            <div className="text-yellow-400 flex items-center justify-between">
+              <span>
+                🔰 {player.equippedShield
+                  ? (getItem(player.equippedShield)?.name ?? player.equippedShield)
+                  : <span className="text-[#8b7355]">No shield</span>}
+              </span>
+              {combatStats.blockChance > 0 && (
+                <span className="text-[#a09080] text-xs">BLK {Math.round(combatStats.blockChance * 100)}%</span>
+              )}
+            </div>
           )}
         </div>
+
         {/* Durability indicators */}
         {(player.equippedWeapon || player.equippedArmor || player.equippedShield) && (
-          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[#a09080]">
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[#a09080] text-xs">
             <DurabilityIndicator itemId={player.equippedWeapon} icon="⚔" durabilityMap={player.equipmentDurability} />
             <DurabilityIndicator itemId={player.equippedArmor} icon="🛡" durabilityMap={player.equipmentDurability} />
             <DurabilityIndicator itemId={player.equippedShield} icon="🔰" durabilityMap={player.equipmentDurability} />

@@ -7701,3 +7701,45 @@ var implementert korrekt og hvilke som trengte faktiske kodefikser. 6 reelle end
 - `CLAUDE.md` — 3 nye konvensjoner dokumentert
 - `todo.md` — backlog-items markert som ferdig
 - `log2.md` — denne oppføringen
+
+---
+
+## 2026-03-03 — Backlog: Equipment UX Improvements (E1/E3/E4)
+
+### Timestamp: 2026-03-03
+
+### Bakgrunn
+Full gjennomgang av backlog-items. Fant at B4 (Quest Failure Consequences), B5 (Guild Reputation), og Free actions at 0 hours allerede var korrekt implementert. Fokus ble på E1/E3/E4 i CavePanel.
+
+### Hva som ble oppdaget som allerede implementert
+- **B4** (Quest Failure Consequences): `questCooldownWeeksLeft`, -2 hap/-3 dep i `abandonQuest`, ukentlig nedtelling i weekEndHelpers.ts, cooldown-UI i QuestPanel — FERDIG
+- **B5** (Guild Reputation System): `guildReputation`, `REPUTATION_MILESTONES`, `getReputationGoldMultiplier` i quests.ts, reputasjons-UI i QuestPanel med progress bar — FERDIG
+- **Free actions at 0 hours**: buyItem/buyDurable/buyFood/depositGold krever IKKE timeRemaining; work/study blokkert via `timeRemaining < hours` — FERDIG
+
+### Hva som ble implementert
+
+**E1: Equipment Preview Before Combat** (`CavePanel.tsx`):
+- Equipment-seksjonen viser nå item-navn (via `getItem()`) for våpen/rustning/skjold
+- Individuelle stat-bidrag (ATK/DEF/BLK) vist ved siden av hvert item-navn
+- "No weapon/armor/shield" fallback-tekst i stedet for tomme slots
+
+**E3: Auto-Equip Best Gear** (`CavePanel.tsx`):
+- "Auto-Equip Best"-knapp øverst i equipment-seksjonen
+- Finner beste eide item per slot fra ARMORY_ITEMS + player.durables
+- Sorterer på ATK (weapon) eller DEF (armor/shield), kaller `equipItem` via useGameStore.getState()
+- Toast-feedback: "Auto-equipped best available gear!" eller "No gear to equip" om ingenting eies
+
+**E4: Post-Combat Loot Summary** (`CavePanel.tsx`):
+- Ny `CombatResultPanel`-komponent med strukturert resultat-visning
+- Erstatter enkel toast med detaljert panel: gold earned, damage taken, happiness, equipment wear, first clear bonus (+hap/+dep), rare drop, hex scroll drop
+- `combatResult` state i CavePanel, satt i handleCombatComplete i stedet for setActiveFloor(null) direkte
+- "Continue"-knapp fjerner panelet og returnerer til floor-listen
+
+### Filer endret
+- `src/components/game/CavePanel.tsx` — E1/E3/E4 improvements
+- `todo.md` — backlog-items markert som ferdig
+- `log2.md` — denne oppføringen
+
+### Test-resultater
+- 358 tester, 0 feil
+- `bun run build` — clean build
