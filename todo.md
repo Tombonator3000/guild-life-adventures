@@ -45,7 +45,7 @@
 - [x] ~~Newspaper player-specific event tracking~~ — Done: 15+ event types
 
 ### Complex
-- [ ] Free actions when time runs out (buy items at 0 hours, can't work/study)
+- [x] Free actions when time runs out (buy items at 0 hours, can't work/study) — already implemented: buy/bank/deposit actions don't require timeRemaining; work/study/relax already blocked at 0h
 - [x] ~~Full pawn shop collateral/redemption system with time windows~~ — Done 2026-03-02: PawnedAppliance tracking, redeemAppliance action, 6-week expiration, redemption UI in Magical Items tab, save migration v4→v5
 
 ## Completed (2026-02-11)
@@ -1161,16 +1161,16 @@ Full details with design specs in log.md "Game Improvement Proposals (Gameplay, 
 - [x] C1: Seasonal Festivals — Harvest Festival, Winter Solstice, Spring Tournament, Midsummer Fair (every 12 weeks) **DONE 2026-02-09**
 - [x] C6: Achievements / Trophy System — lifetime achievements persisted in localStorage **DONE 2026-02-09**
 - [ ] A3: Dungeon Companion System — hire companions before dungeon runs (Torchbearer, Mercenary, Healer, Treasure Hunter)
-- [ ] B4: Quest Failure Consequences — -2 happiness, -3 dependability, 2-week cooldown on failed quests
+- [x] B4: Quest Failure Consequences — -2 happiness, -3 dependability, 2-week cooldown on failed quests **DONE (already implemented)**
 
 ### Tier 3 — Nice to Have
-- [ ] B5: Guild Reputation System — quest completion tracking with milestone bonuses (+5/10/15/20% gold)
+- [x] B5: Guild Reputation System — quest completion tracking with milestone bonuses (+5/10/15/20% gold) **DONE (already implemented)**
 - [ ] C2: NPC Relationship / Favor System — location loyalty discounts (5-15%)
 - [ ] C3: Skill / Talent System — passive unlocks from gameplay actions (Haggler, Dungeon Veteran, etc.)
-- [ ] E1: Equipment Preview Before Combat — power comparison display
+- [x] E1: Equipment Preview Before Combat — item names + individual stat contributions in CavePanel **DONE 2026-03-03**
 - [ ] E2: Dungeon Run History — track last 5 runs per floor
-- [ ] E3: Auto-Equip Best Gear button in CavePanel
-- [ ] E4: Post-Combat Loot Summary breakdown
+- [x] E3: Auto-Equip Best Gear button in CavePanel **DONE 2026-03-03**
+- [x] E4: Post-Combat Loot Summary breakdown — detailed result panel after combat **DONE 2026-03-03**
 - [ ] E5: Dungeon Shortcuts — skip early floors after clearing later ones
 - [x] A4: Dungeon Leaderboard / Best Times — personal best tracking **DONE 2026-02-09**
 - [x] A5: Mini-Boss Encounters — 15% wandering boss on re-runs **DONE 2026-02-09**
