@@ -116,6 +116,10 @@ Junior Academy → Scholar Path → Loremaster / Commerce Degree
 - Keyboard shortcuts in `useGameBoardKeyboard.ts`: block all non-modifier game shortcuts (E/T/M/F/B) when any Radix dialog is open via `document.querySelector('[role="dialog"]')`. Ctrl+Shift dev shortcuts and Escape are still allowed. This prevents end-turn, tutorial toggle, etc. from firing while a modal is open.
 - Quest `requiredEducation` paths: valid EducationPath values are `'fighter' | 'mage' | 'priest' | 'business'`. However, NO `priest` degrees exist in `education.ts` — the priest path always stays at level 0. Use `'mage'` instead for quests requiring scholarly/spiritual knowledge. Confirmed quests `exorcism` and `haunted-library` fixed to use `mage` path (2026-03-02).
 - Player name validation in `GameSetup.tsx`: names are trimmed, must be non-empty, max 20 chars, and unique across all players (human + AI, case-insensitive). Error shown inline above the Begin Adventure button.
+- ESLint config (`eslint.config.js`): test file override disabling `@typescript-eslint/no-explicit-any` MUST be placed AFTER the main config block — flat config applies rules in order, last matching block wins. Pattern: `{ files: ["**/*.test.ts", "**/*.test.tsx", "src/test/**/*.ts"], rules: { "@typescript-eslint/no-explicit-any": "off" } }` at end of `tseslint.config(...)`.
+- Empty TypeScript interfaces in shadcn/ui: use `type Foo = Bar` instead of `interface Foo extends Bar {}` to avoid `@typescript-eslint/no-empty-object-type` error.
+- `getItemPrice(item, priceModifier)` only reads `item.basePrice`. Avoid passing a partial object cast as `any` — use `Math.round(basePrice * priceModifier)` directly when you only have the price field.
+- `completedDegrees.includes()` casts: `completedDegrees` is `DegreeId[]`. When iterating `Object.entries(DEGREES)`, the key is `string` → cast as `DegreeId`. When iterating `job.requiredDegrees` (already `DegreeId[]`), no cast needed. When using `plan.targetId` (`string | undefined`), cast as `DegreeId`.
 
 ## Testing
 

@@ -15,7 +15,7 @@
  * - Hard AI: 4-turn plans with smarter plan selection
  */
 
-import type { Player } from '@/types/game.types';
+import type { Player, DegreeId } from '@/types/game.types';
 import type { GoalProgress, DifficultySettings, CommitmentPlan, AIActionType } from './types';
 import { getStuckGoals } from './goalVelocityTracker';
 import { getRankedDegreesROI, getDegreeUnlockChain } from './strategy';
@@ -271,7 +271,7 @@ export function isCommitmentValid(
     case 'earn-degree':
       if (!plan.targetId) return false;
       // Complete if degree is now done
-      if (player.completedDegrees.includes(plan.targetId as any)) return false;
+      if (player.completedDegrees.includes(plan.targetId as DegreeId)) return false;
       return true;
 
     case 'save-housing':

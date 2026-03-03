@@ -6,7 +6,6 @@ import {
   JonesButton,
 } from './JonesStylePanel';
 import { getAvailableDegrees, DEGREES, getEffectiveSessionsRequired } from '@/data/education';
-import { getItemPrice } from '@/data/items';
 import { toast } from 'sonner';
 import { useMemo } from 'react';
 import { useTranslation } from '@/i18n';
@@ -65,7 +64,7 @@ export function AcademyPanel({
         <div>
           {availableDegrees.map(degree => {
             const progress = player.degreeProgress[degree.id as DegreeId] || 0;
-            const price = getItemPrice({ basePrice: degree.costPerSession } as any, priceModifier);
+            const price = Math.round(degree.costPerSession * priceModifier);
             const sessionsNeeded = getEffectiveSessionsRequired(degree.sessionsRequired, ownedDurables, ownedAppliances);
             const isComplete = progress >= sessionsNeeded;
             const canAfford = player.gold >= price && player.timeRemaining >= degree.hoursPerSession;

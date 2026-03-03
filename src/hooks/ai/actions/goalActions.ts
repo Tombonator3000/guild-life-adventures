@@ -11,6 +11,7 @@ import { getJob } from '@/data/jobs';
 import { DEGREES } from '@/data/education';
 import { FESTIVALS } from '@/data/festivals';
 import type { AIAction } from '../types';
+import type { DegreeId } from '@/types/game.types';
 import {
   getBestAvailableJob,
   getNextDegree,
@@ -469,7 +470,7 @@ function generateGraduationActions(ctx: ActionContext): AIAction[] {
 
   for (const [degreeId, degree] of Object.entries(DEGREES)) {
     const progress = ctx.player.degreeProgress[degreeId as keyof typeof ctx.player.degreeProgress] || 0;
-    if (progress >= degree.sessionsRequired && !ctx.player.completedDegrees.includes(degreeId as any)) {
+    if (progress >= degree.sessionsRequired && !ctx.player.completedDegrees.includes(degreeId as DegreeId)) {
       if (ctx.currentLocation === 'academy') {
         actions.push({
           type: 'graduate',

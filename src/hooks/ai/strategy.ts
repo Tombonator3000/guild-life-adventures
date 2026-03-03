@@ -699,7 +699,7 @@ export function getDegreeUnlockChain(targetJobId: string, player: Player): impor
   const queue = [...targetJob.requiredDegrees];
   while (queue.length > 0) {
     const degId = queue.shift()!;
-    if (player.completedDegrees.includes(degId as any)) continue;
+    if (player.completedDegrees.includes(degId)) continue;
     if (needed.has(degId)) continue;
 
     const deg = DEGREES[degId as keyof typeof DEGREES];
@@ -707,7 +707,7 @@ export function getDegreeUnlockChain(targetJobId: string, player: Player): impor
 
     needed.add(degId);
     for (const prereq of deg.prerequisites) {
-      if (!player.completedDegrees.includes(prereq as any) && !needed.has(prereq)) {
+      if (!player.completedDegrees.includes(prereq) && !needed.has(prereq)) {
         queue.push(prereq);
       }
     }

@@ -6,7 +6,7 @@
  * personality-based priority scaling, time-budget awareness, and weather/festival context.
  */
 
-import type { Player } from '@/types/game.types';
+import type { Player, LocationId } from '@/types/game.types';
 import { HOURS_PER_TURN } from '@/types/game.types';
 import { calculatePathDistance } from '@/data/locations';
 import { useGameStore } from '@/store/gameStore';
@@ -133,7 +133,7 @@ function applyTravelCostPenalty(
 
   for (const action of actions) {
     if (action.type === 'move' && action.location) {
-      const baseSteps = calculatePathDistance(currentLocation as any, action.location);
+      const baseSteps = calculatePathDistance(currentLocation as LocationId, action.location);
       const totalCost = baseSteps + baseSteps * weatherMoveExtra;
 
       // Penalty scales with distance and efficiency weight

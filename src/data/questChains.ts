@@ -721,7 +721,7 @@ export function canTakeNonLinearChainStep(
   education: Record<string, number>,
   dungeonFloorsCleared?: number[]
 ): { canTake: boolean; reason?: string } {
-  const rankIndex = GUILD_RANK_ORDER.indexOf(guildRank as any);
+  const rankIndex = GUILD_RANK_ORDER.indexOf(guildRank as GuildRank);
   const requiredIndex = GUILD_RANK_ORDER.indexOf(chain.requiredGuildRank);
   if (rankIndex < requiredIndex) {
     return { canTake: false, reason: `Requires ${chain.requiredGuildRank} rank` };
