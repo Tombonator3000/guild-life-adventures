@@ -5,6 +5,66 @@
 
 ---
 
+## 2026-03-03 — Backlog: Forge Job Teaser + Spectator Panel + Dungeon Run History
+
+### Timestamp: 2026-03-03T08:26 UTC
+
+### Overview
+Implemented 3 open backlog items from todo.md using parallel agent exploration, then direct implementation. 358 tests pass before and after all changes. Zero TypeScript errors, zero new lint errors.
+
+### Features Implemented
+
+#### 1. Forge Job Teaser (`src/components/game/locationTabs.tsx`)
+- Added a 4th **"Work"** tab to the Forge location (alongside Smithing / Repairs / Salvage)
+- Shows all 5 Forge jobs (Forge Laborer → Forge Manager) as preview cards
+- Each card shows: name, wage (g/hr), shift hours, job description
+- Requirement checks displayed inline with color coding: red when not met, normal when OK (clothing tier, degrees, experience, dependability)
+- Green bordered card + ✓ icon when player fully qualifies for a job; neutral border + ✗ otherwise
+- Footer note: "Apply for Forge positions at the Guild Hall" — this is a read-only informational teaser, no hiring logic
+- Imports added: `FORGE_JOBS`, `canWorkJob` from `@/data/jobs`; `DEGREES` from `@/data/education`; `CLOTHING_TIER_LABELS`, `CLOTHING_THRESHOLDS` from `@/data/items`; `CheckCircle2`, `XCircle` from lucide-react
+
+#### 2. Spectator Panel (`src/components/game/SpectatorPanel.tsx`, `GameBoard.tsx`)
+- Created new `SpectatorPanel` component for dead players watching the game
+- Shows "You have fallen / Spectating" header + current week info
+- All-player standings with goal progress bars (Wealth / Happiness / Education / Career / Adventure)
+- Same goal-completion math as VictoryScreen (pct of each goal goal met, averaged for score)
+- Dead players shown at 50% opacity with 💀 indicator; AI players marked with 🤖
+- Color-coded score badge per player in their player color
+- Instruction: "Click any location on the board to watch what's happening there"
+- Integrated in `GameBoard.tsx`: when `isSpectating && !selectedLocation`, renders `<SpectatorPanel>` instead of `<ResourcePanel>`
+- `stockPrices` added to `GameBoard` store selector (needed for wealth calculation)
+
+#### 3. Dungeon Run History — E2 (`game.types.ts`, `playerHelpers.ts`, `storeTypes.ts`, `CavePanel.tsx`)
+- Added `recentRuns?: Array<{week, gold, encounters, cleared}>` field to `dungeonRecords` type (optional for old-save compatibility)
+- `updatePlayerDungeonRecord` now accepts `week` (defaults to 0) and `cleared` (defaults to false) as optional params
+- Maintains **last 5 runs per floor** (newest first) in `recentRuns` array; older entries trimmed via `.slice(0, 5)`
+- `CavePanel.handleCombatComplete` passes current `week` and `result.success` (bossDefeated = cleared)
+- Leaderboard section now shows each floor's last 5 runs below aggregate stats: week number, gold earned, encounters completed, and ✓/✗ (cleared/retreated) indicator
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/game/locationTabs.tsx` | Added "Work" tab to forgeTabs() with job teaser |
+| `src/components/game/SpectatorPanel.tsx` | New component — spectator standings view |
+| `src/components/game/GameBoard.tsx` | Show SpectatorPanel when isSpectating && !selectedLocation |
+| `src/types/game.types.ts` | Added recentRuns field to dungeonRecords type |
+| `src/store/helpers/playerHelpers.ts` | updatePlayerDungeonRecord: added week + cleared + recentRuns tracking |
+| `src/store/storeTypes.ts` | Updated updatePlayerDungeonRecord signature (week?, cleared?) |
+| `src/components/game/CavePanel.tsx` | Pass week+cleared to updatePlayerDungeonRecord; show recentRuns in leaderboard |
+
+### Tests
+- 358/358 pass (unchanged — existing tests cover dungeon record updates)
+- TypeScript: 0 errors
+- Lint: 0 new errors (pre-existing errors in other files unchanged)
+
+### todo.md Updates
+- `[ ] Forge job teaser without actual implementation` → `[x]` DONE
+- `[ ] Spectator mode for dead players` → `[x]` DONE
+- `[ ] E2: Dungeon Run History` → `[x]` DONE
+
+---
+
 ## 2026-03-02 — Bug Hunt Session (4 parallel agents, UI/components focus)
 
 ### Timestamp: 2026-03-02T09:49–10:02 UTC

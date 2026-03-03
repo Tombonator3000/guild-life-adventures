@@ -561,7 +561,9 @@ export function CavePanel({
     }
 
     // M31 FIX: Use proper store action instead of direct setState
-    updatePlayerDungeonRecord(player.id, activeFloor.id, result.goldEarned, result.encountersCompleted);
+    // E2: pass week and cleared for run history tracking
+    const currentWeek = useGameStore.getState().week;
+    updatePlayerDungeonRecord(player.id, activeFloor.id, result.goldEarned, result.encountersCompleted, currentWeek, result.success);
 
     // E4: Show detailed result panel instead of just a toast
     setCombatResult({ result, floor: activeFloor });
@@ -788,23 +790,41 @@ export function CavePanel({
             <span className="text-xs text-amber-400 font-display">{t('panelCave.dungeonFloors')}</span>
           </button>
           {showLeaderboard && (
-            <div className="px-2 pb-2 space-y-1">
+            <div className="px-2 pb-2 space-y-2">
               {DUNGEON_FLOORS.map(floor => {
                 const record = dungeonRecords[floor.id];
                 if (!record) return null;
+                const recentRuns = record.recentRuns ?? [];
                 return (
-                  <div key={floor.id} className="flex items-center gap-2 text-xs font-mono">
-                    <span className="text-[#8b7355] w-5">F{floor.id}</span>
-                    <span className="text-[#e0d4b8] flex-1 truncate">{floor.name}</span>
-                    <span className="text-[#c9a227]" title="Best gold in single run">
-                      <Star className="w-3 h-3 inline" /> {record.bestGold}g
-                    </span>
-                    <span className="text-[#a09080]" title="Total runs">
-                      {record.runs}x
-                    </span>
-                    <span className="text-[#a09080]" title="Total gold earned">
-                      ({record.totalGold}g total)
-                    </span>
+                  <div key={floor.id}>
+                    <div className="flex items-center gap-2 text-xs font-mono">
+                      <span className="text-[#8b7355] w-5">F{floor.id}</span>
+                      <span className="text-[#e0d4b8] flex-1 truncate">{floor.name}</span>
+                      <span className="text-[#c9a227]" title="Best gold in single run">
+                        <Star className="w-3 h-3 inline" /> {record.bestGold}g
+                      </span>
+                      <span className="text-[#a09080]" title="Total runs">
+                        {record.runs}x
+                      </span>
+                      <span className="text-[#a09080]" title="Total gold earned">
+                        ({record.totalGold}g total)
+                      </span>
+                    </div>
+                    {/* E2: Show last 5 run history */}
+                    {recentRuns.length > 0 && (
+                      <div className="mt-0.5 ml-7 space-y-px">
+                        {recentRuns.map((run, i) => (
+                          <div key={i} className="flex items-center gap-1.5 text-[10px] font-mono text-[#6b5a42]">
+                            <span className={run.cleared ? 'text-green-500' : 'text-red-400'}>
+                              {run.cleared ? '✓' : '✗'}
+                            </span>
+                            <span>W{run.week}</span>
+                            <span className="text-[#c9a227]">{run.gold}g</span>
+                            <span>{run.encounters} enc</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}

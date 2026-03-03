@@ -269,7 +269,8 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
     },
 
     // M31 FIX: Proper store action for dungeon record updates (was direct setState in CavePanel)
-    updatePlayerDungeonRecord: (playerId: string, floorId: number, goldEarned: number, encountersCompleted: number) => {
+    // E2: Added week + cleared params to maintain recentRuns history (last 5 runs per floor)
+    updatePlayerDungeonRecord: (playerId: string, floorId: number, goldEarned: number, encountersCompleted: number, week = 0, cleared = false) => {
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
@@ -279,11 +280,14 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
           const bestEncounters = existing ? Math.min(existing.bestEncounters, encountersCompleted) : encountersCompleted;
           const runs = existing ? existing.runs + 1 : 1;
           const totalGold = existing ? existing.totalGold + goldEarned : goldEarned;
+          // E2: maintain last 5 runs (newest first)
+          const prevRecentRuns = existing?.recentRuns ?? [];
+          const recentRuns = [{ week, gold: goldEarned, encounters: encountersCompleted, cleared }, ...prevRecentRuns].slice(0, 5);
           return {
             ...p,
             dungeonRecords: {
               ...currentRecords,
-              [floorId]: { bestGold, bestEncounters, runs, totalGold },
+              [floorId]: { bestGold, bestEncounters, runs, totalGold, recentRuns },
             },
           };
         }),
