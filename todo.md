@@ -161,10 +161,10 @@
 - [x] Remove or implement housing tier 'modest' — **FIXED** Hidden from LandlordPanel (Jones 2-tier system)
 
 ### Low Priority
-- [ ] Forge job teaser without actual implementation
+- [x] Forge job teaser without actual implementation — **DONE 2026-03-03**: Added "Work" tab to Forge location showing all 5 Forge jobs with requirement checks and "Apply at Guild Hall" notice
 - [x] Player name duplicate/length validation — **FIXED 2026-03-02**: `GameSetup.tsx` now validates names before game start: trims whitespace, rejects empty, enforces 20-char max, rejects duplicates (case-insensitive). Shows inline error message.
 - [x] Victory screen leaderboard for multi-player — **FIXED 2026-03-02**: "Final Standings" ranked panel added to VictoryScreen, shows for multiplayer (2+ players), ranked by average goal completion %
-- [ ] Spectator mode for dead players
+- [x] Spectator mode for dead players — **DONE 2026-03-03**: SpectatorPanel shows all-player standings with goal progress bars; shown in center panel when isSpectating && no location selected
 - [x] AI stock market strategy (buy low, sell high) — **DONE** Smart stock market intelligence (actual prices, undervalued detection)
 - [x] `activeCurses` type mismatch — **ALREADY CORRECT**: Type is `ActiveCurse[]` (required) in game.types.ts. Always initialized in `createPlayer()` and in save migration v3→v4. Optional chaining (`?.`) in UI is correct defensive practice as per CLAUDE.md convention. No change needed.
 - [x] Missing `applianceBreakageEvent` in `GameState` type — **ALREADY CORRECT**: Field is in `StoreState` (storeTypes.ts), not `GameState`. `network/types.ts` extends `GameState` to include it via `SerializedGameState`. The "unknown cast workaround" comment in todo was outdated — it's properly typed. No change needed.
@@ -1168,7 +1168,7 @@ Full details with design specs in log.md "Game Improvement Proposals (Gameplay, 
 - [ ] C2: NPC Relationship / Favor System — location loyalty discounts (5-15%)
 - [ ] C3: Skill / Talent System — passive unlocks from gameplay actions (Haggler, Dungeon Veteran, etc.)
 - [x] E1: Equipment Preview Before Combat — item names + individual stat contributions in CavePanel **DONE 2026-03-03**
-- [ ] E2: Dungeon Run History — track last 5 runs per floor
+- [x] E2: Dungeon Run History — track last 5 runs per floor **DONE 2026-03-03**: recentRuns field added to dungeonRecords; shown in Cave leaderboard per floor
 - [x] E3: Auto-Equip Best Gear button in CavePanel **DONE 2026-03-03**
 - [x] E4: Post-Combat Loot Summary breakdown — detailed result panel after combat **DONE 2026-03-03**
 - [ ] E5: Dungeon Shortcuts — skip early floors after clearing later ones

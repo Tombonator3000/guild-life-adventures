@@ -6,12 +6,14 @@ import type { ReactNode } from 'react';
 import type { LocationId, Player } from '@/types/game.types';
 import type { LocationTab, WorkInfo } from './LocationShell';
 import type { GameStore } from '@/store/storeTypes';
-import { getJob } from '@/data/jobs';
+import { getJob, FORGE_JOBS, canWorkJob } from '@/data/jobs';
+import { DEGREES } from '@/data/education';
+import { CLOTHING_TIER_LABELS, CLOTHING_THRESHOLDS } from '@/data/items';
 import { getWeeklyQuests } from '@/data/quests';
 import { NEWSPAPER_COST, generateNewspaper } from '@/data/newspaper';
 import { playSFX } from '@/audio/sfxManager';
 import { toast } from 'sonner';
-import { Briefcase, TrendingUp } from 'lucide-react';
+import { Briefcase, TrendingUp, CheckCircle2, XCircle } from 'lucide-react';
 import { GuildHallPanel } from './GuildHallPanel';
 import { ForgePanel } from './ForgePanel';
 import { QuestPanel } from './QuestPanel';
@@ -287,10 +289,71 @@ function forgeTabs(ctx: LocationTabContext): LocationTab[] {
     forgeRepairEquipment,
     salvageEquipment,
   };
+  const forgeWorkContent = (
+    <div className="p-2 space-y-1.5">
+      <div className="flex items-center gap-1.5 mb-2">
+        <Briefcase className="w-4 h-4 text-amber-700" />
+        <span className="font-display text-sm font-bold text-[#3d2b1f]">Forge Employment</span>
+      </div>
+      <p className="text-xs text-[#6b5a42] mb-3">
+        Browse available positions at the Forge. To be hired, visit the <strong>Guild Hall</strong>.
+      </p>
+      {FORGE_JOBS.map(job => {
+        const qualified = canWorkJob(job, player.completedDegrees, player.clothingCondition, player.experience, player.dependability);
+        return (
+          <div
+            key={job.id}
+            className={`rounded border px-2.5 py-2 ${qualified ? 'border-green-700/50 bg-green-950/20' : 'border-[#8b7355]/30 bg-[#f5e9d0]/50'}`}
+          >
+            <div className="flex items-center justify-between gap-1 mb-0.5">
+              <span className="font-display text-xs font-bold text-[#3d2b1f]">{job.name}</span>
+              <div className="flex items-center gap-1">
+                {qualified
+                  ? <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                  : <XCircle className="w-3.5 h-3.5 text-red-500/70" />
+                }
+                <span className={`text-xs font-semibold ${qualified ? 'text-green-700' : 'text-[#8b7355]'}`}>
+                  {job.baseWage}g/hr · {job.hoursPerShift}h shift
+                </span>
+              </div>
+            </div>
+            <p className="text-xs text-[#6b5a42] mb-1 italic">{job.description}</p>
+            <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-[#8b7355]">
+              {job.requiredClothing !== 'none' && (
+                <span className={player.clothingCondition < (CLOTHING_THRESHOLDS[job.requiredClothing as keyof typeof CLOTHING_THRESHOLDS] ?? 0) ? 'text-red-500' : ''}>
+                  👔 {CLOTHING_TIER_LABELS[job.requiredClothing as keyof typeof CLOTHING_TIER_LABELS]}
+                </span>
+              )}
+              {job.requiredDegrees.length > 0 && (
+                <span className={!job.requiredDegrees.every(d => player.completedDegrees.includes(d as never)) ? 'text-red-500' : ''}>
+                  🎓 {job.requiredDegrees.map(d => DEGREES[d as keyof typeof DEGREES]?.name ?? d).join(', ')}
+                </span>
+              )}
+              {job.requiredExperience > 0 && (
+                <span className={player.experience < job.requiredExperience ? 'text-red-500' : ''}>
+                  ⚔️ Exp {job.requiredExperience}+
+                </span>
+              )}
+              {job.requiredDependability > 0 && (
+                <span className={player.dependability < job.requiredDependability ? 'text-red-500' : ''}>
+                  ⭐ Dep {job.requiredDependability}%+
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+      <p className="text-[10px] text-center text-[#8b7355] mt-2 pt-1 border-t border-[#8b7355]/20">
+        💼 Apply for Forge positions at the <strong>Guild Hall</strong>
+      </p>
+    </div>
+  );
+
   return [
     { id: 'smithing', label: 'Smithing', content: <ForgePanel {...forgeProps} section="smithing" /> },
     { id: 'repairs', label: 'Repairs', content: <ForgePanel {...forgeProps} section="repairs" /> },
     { id: 'salvage', label: 'Salvage', content: <ForgePanel {...forgeProps} section="salvage" /> },
+    { id: 'work', label: 'Work', content: forgeWorkContent },
   ];
 }
 
