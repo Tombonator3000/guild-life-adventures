@@ -107,6 +107,40 @@ All critical store logic checks passed (Agent D):
 
 ---
 
+## 2026-03-02 — Pawn Shop Redemption System
+
+### Timestamp: 2026-03-02T22:05 UTC
+
+### Overview
+Completed the pawn shop collateral/redemption system (todo.md backlog). Pawning already worked. The missing half — tracking pawned items and allowing buyback within 6 weeks — is now implemented.
+
+### Design
+- Pawn: sell appliance to Fence for 40% of originalPrice → stored in `pawnedAppliances[]`
+- Redeem: pay 50% within 6 weeks → appliance restored to inventory (+1 happiness)
+- Expire: at week-end, items where `newWeek > expiresWeek` are removed; human players get a message
+- Save migration v4→v5: old saves get `pawnedAppliances: []`
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/types/game.types.ts` | Added `PawnedAppliance` interface; added `pawnedAppliances` to Player |
+| `src/store/gameStore.ts` | Initialize `pawnedAppliances: []` in `createPlayer` |
+| `src/data/saveLoad.ts` | v4→v5 migration; `SAVE_VERSION = 5` |
+| `src/store/helpers/economy/applianceHelpers.ts` | Updated `pawnAppliance` to track; added `redeemAppliance` |
+| `src/store/storeTypes.ts` | Added `redeemAppliance` signature |
+| `src/store/helpers/weekEndHelpers.ts` | Added `processPawnExpiration`; imported `getAppliance` |
+| `src/components/game/PawnShopPanel.tsx` | Added redemption UI section, `week` prop, `RotateCcw` icon |
+| `src/components/game/locationTabs.tsx` | Pass `week` to PawnShopPanel |
+| `src/network/types.ts` | Added `redeemAppliance` to guest action whitelist |
+| `src/test/multiplayer.test.ts` | Added `redeemAppliance` to whitelist test |
+| `src/components/game/UserManual.tsx` | Fixed pawn shop description (6-week window) |
+
+### Test Results
+- 358 tests, 18 files — all pass ✅
+
+---
+
 ## 2026-03-02 — Victory Screen Leaderboard (Backlog item)
 
 ### Timestamp: 2026-03-02T11:09 UTC

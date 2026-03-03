@@ -193,6 +193,7 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'buyAppliance',
   'repairAppliance',
   'pawnAppliance',
+  'redeemAppliance',
   'equipItem',
   'unequipItem',
   'temperEquipment',

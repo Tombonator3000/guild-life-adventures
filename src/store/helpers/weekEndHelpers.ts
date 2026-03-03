@@ -23,7 +23,7 @@ import {
 import { checkWeeklyTheft, checkMarketCrash, pickEventMessage } from '@/data/events';
 import type { MarketCrashResult } from '@/data/events';
 import { getGameOption } from '@/data/gameOptions';
-import { getItem, CLOTHING_DEGRADATION_PER_WEEK, getClothingTier, CLOTHING_TIER_LABELS, CLOTHING_THRESHOLDS } from '@/data/items';
+import { getItem, getAppliance, CLOTHING_DEGRADATION_PER_WEEK, getClothingTier, CLOTHING_TIER_LABELS, CLOTHING_THRESHOLDS } from '@/data/items';
 import { getJob } from '@/data/jobs';
 import { updateStockPrices, calculateDividends, updatePriceHistory } from '@/data/stocks';
 import { selectWeekendActivity } from '@/data/weekends';
@@ -819,6 +819,23 @@ function updateRentTracking(p: Player): void {
   }
 }
 
+/** Expire pawned appliances whose 6-week redemption window has closed (newWeek > expiresWeek) */
+function processPawnExpiration(p: Player, newWeek: number, msgs: string[]): void {
+  if (!p.pawnedAppliances?.length) return;
+
+  const expired = p.pawnedAppliances.filter(pa => newWeek > pa.expiresWeek);
+  if (expired.length === 0) return;
+
+  p.pawnedAppliances = p.pawnedAppliances.filter(pa => newWeek <= pa.expiresWeek);
+
+  if (!p.isAI) {
+    const names = expired
+      .map(e => getAppliance(e.applianceId)?.name ?? e.applianceId)
+      .join(', ');
+    msgs.push(`The Fence has sold your unclaimed collateral: ${names}.`);
+  }
+}
+
 // ============================================================
 // Per-player pipeline: calls all processors in order
 // ============================================================
@@ -845,6 +862,7 @@ function processPlayerWeekEnd(p: Player, ctx: WeekEndContext, msgs: string[], ne
   processLeisure(p, ctx.newWeek, msgs);
   processAging(p, ctx.newWeek, msgs);
   updateRentTracking(p);
+  processPawnExpiration(p, ctx.newWeek, msgs);
 
   // Random event processors — 5% chance per week per player, max 1 total.
   // Skip if the player already had a random event during their turn this week.

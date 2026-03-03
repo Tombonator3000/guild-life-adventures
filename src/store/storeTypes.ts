@@ -89,6 +89,7 @@ export interface GameStore extends GameState {
   buyAppliance: (playerId: string, applianceId: string, price: number, source: ApplianceSource) => number;
   repairAppliance: (playerId: string, applianceId: string) => number;
   pawnAppliance: (playerId: string, applianceId: string, pawnValue: number) => void;
+  redeemAppliance: (playerId: string, applianceId: string) => boolean;
   prepayRent: (playerId: string, weeks: number, totalCost: number) => void;
   moveToHousing: (playerId: string, tier: HousingTier, cost: number, lockInRent: number) => void;
   begForMoreTime: (playerId: string) => { success: boolean; message: string };

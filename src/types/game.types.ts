@@ -147,6 +147,14 @@ export const APPLIANCE_BREAK_CHANCE: Record<ApplianceSource, number> = {
   pawn: 1 / 36,      // Pawn Shop - same as market
 };
 
+// Pawned appliance record — tracks items left as collateral at the Fence for later redemption
+export interface PawnedAppliance {
+  applianceId: string;   // Which appliance was pawned
+  originalPrice: number; // Original price stored at pawn time (for redeem cost calculation)
+  pawnedWeek: number;    // Game week when it was pawned
+  expiresWeek: number;   // Game week when redemption window closes (pawnedWeek + 6)
+}
+
 // Owned appliance with metadata
 export interface OwnedAppliance {
   itemId: string;
@@ -217,6 +225,8 @@ export interface Player {
   durables: DurableItems; // Durable items owned (stored at apartment)
   appliances: AppliancesInventory; // Appliances with detailed tracking
   applianceHistory: string[]; // List of appliance types ever owned (for happiness bonus tracking)
+  // Always initialized to [] in createPlayer() and save migration (v4→v5). Use optional chaining in UI for old-save safety.
+  pawnedAppliances: PawnedAppliance[]; // Appliances pawned at the Fence, redeemable for 6 weeks
   inventory: string[];
   isAI: boolean;
   aiDifficulty?: AIDifficulty; // Per-AI difficulty (only set for AI players)

@@ -46,7 +46,7 @@
 
 ### Complex
 - [ ] Free actions when time runs out (buy items at 0 hours, can't work/study)
-- [ ] Full pawn shop collateral/redemption system with time windows
+- [x] ~~Full pawn shop collateral/redemption system with time windows~~ — Done 2026-03-02: PawnedAppliance tracking, redeemAppliance action, 6-week expiration, redemption UI in Magical Items tab, save migration v4→v5
 
 ## Completed (2026-02-11)
 

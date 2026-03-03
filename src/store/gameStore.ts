@@ -125,6 +125,7 @@ const createPlayer = (
   durables: {}, // Durable items owned at apartment
   appliances: {}, // Appliances with detailed tracking
   applianceHistory: [], // Appliance types ever owned (for happiness bonus)
+  pawnedAppliances: [], // Appliances pawned at the Fence awaiting redemption
   inventory: [],
   isAI,
   activeQuest: null,

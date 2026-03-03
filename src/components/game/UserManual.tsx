@@ -685,9 +685,10 @@ function ItemsChapter() {
 
       <H2>The Fence (Pawn Shop)</H2>
       <P>
-        Strapped for cash? The Fence buys items at <strong>40%</strong> of their original
-        price and holds them as collateral. You can redeem them later for <strong>50%</strong> of
-        the original price. Unredeemed items become available for other players to buy.
+        Strapped for cash? The Fence buys appliances at <strong>40%</strong> of their original
+        price and holds them as collateral. Visit the Magical Items tab to redeem them for{' '}
+        <strong>50%</strong> of the original price within <strong>6 weeks</strong>. After that,
+        the Fence considers them sold.
       </P>
 
       <H2>Tickets & Entertainment (Shadow Market)</H2>

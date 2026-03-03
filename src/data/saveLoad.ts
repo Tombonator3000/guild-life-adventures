@@ -5,7 +5,7 @@
 
 import type { GameState } from '@/types/game.types';
 
-const SAVE_VERSION = 4;
+const SAVE_VERSION = 5;
 const STORAGE_PREFIX = 'guild-life-';
 const AUTO_SAVE_KEY = `${STORAGE_PREFIX}autosave`;
 const SAVE_SLOT_KEY = (slot: number) => `${STORAGE_PREFIX}save-${slot}`;
@@ -102,6 +102,16 @@ export function loadGame(slot: number = 0): SaveData | null {
         (saveData.gameState as Record<string, unknown>).locationHexes = [];
       }
       saveData.version = 4;
+    }
+
+    if (saveData.version < 5) {
+      // v4 → v5: Add pawn shop redemption tracking
+      if (saveData.gameState?.players) {
+        for (const p of saveData.gameState.players as unknown as Record<string, unknown>[]) {
+          if (p.pawnedAppliances === undefined) p.pawnedAppliances = [];
+        }
+      }
+      saveData.version = 5;
     }
 
     return saveData;
