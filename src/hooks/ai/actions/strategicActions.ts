@@ -8,7 +8,7 @@
  * Main function combines results via dispatch.
  */
 
-import type { HousingTier } from '@/types/game.types';
+import type { HousingTier, DegreeId } from '@/types/game.types';
 import { RENT_COSTS } from '@/types/game.types';
 import { getJob, ALL_JOBS } from '@/data/jobs';
 import { DEGREES } from '@/data/education';
@@ -136,7 +136,7 @@ function generateEducationPipelineActions(ctx: ActionContext): AIAction[] {
     .filter(j => j.baseWage > currentJob.baseWage * pipelineWageThreshold)
     .filter(j => {
       const reqDegrees = j.requiredDegrees || [];
-      const missingDegrees = reqDegrees.filter(d => !player.completedDegrees.includes(d as any));
+      const missingDegrees = reqDegrees.filter(d => !player.completedDegrees.includes(d as DegreeId));
       return missingDegrees.length === 1;
     })
     .sort((a, b) => b.baseWage - a.baseWage)[0];
@@ -144,7 +144,7 @@ function generateEducationPipelineActions(ctx: ActionContext): AIAction[] {
   if (!bestPotentialJob) return [];
 
   const reqDegrees = bestPotentialJob.requiredDegrees || [];
-  const missingDegree = reqDegrees.find(d => !player.completedDegrees.includes(d as any));
+  const missingDegree = reqDegrees.find(d => !player.completedDegrees.includes(d as DegreeId));
   if (!missingDegree) return [];
 
   const progressOnMissing = player.degreeProgress[missingDegree as keyof typeof player.degreeProgress] || 0;

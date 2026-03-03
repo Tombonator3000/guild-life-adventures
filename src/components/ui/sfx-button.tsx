@@ -48,6 +48,7 @@ SFXButton.displayName = 'SFXButton';
  * Hook to add SFX to any click handler.
  * Usage: onClick={withSFX(() => doSomething(), 'coin-gain')}
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function withSFX<T extends (...args: any[]) => any>(
   handler: T,
   sfxId: SFXId = 'button-click'

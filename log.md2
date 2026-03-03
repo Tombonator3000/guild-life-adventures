@@ -170,3 +170,55 @@ User requested removal of the "Rest {X}h & End" button that appeared below the E
 
 ### Test Impact
 - No logic regressions expected — changes are additive (additional gates reduce event frequency)
+
+## 2026-03-03 — Bug Hunt: ESLint Error Fixes (34 errors → 0 errors)
+
+### Problem
+`bun run lint` reported 34 errors across the codebase, causing lint to exit with code 1.
+
+### Root Causes
+1. **`no-empty-object-type`** in shadcn/ui components (`command.tsx`, `textarea.tsx`) — empty interfaces extending a type should be type aliases.
+2. **`no-explicit-any`** in production code — 9 files used `as any` casts where proper types exist.
+3. **Test files missing lint override** — `eslint.config.js` had no override to relax `no-explicit-any` in test files (common/acceptable pattern in tests).
+
+### Changes
+
+**`src/components/ui/command.tsx:24`**
+- `interface CommandDialogProps extends DialogProps {}` → `type CommandDialogProps = DialogProps;`
+
+**`src/components/ui/textarea.tsx:5`**
+- `interface TextareaProps extends ...` → `type TextareaProps = ...`
+
+**`src/components/ui/sfx-button.tsx:51`**
+- Added `// eslint-disable-next-line @typescript-eslint/no-explicit-any` — generic function wrapper requires `any` for type inference
+
+**`src/components/game/AcademyPanel.tsx:68`**
+- Removed `getItemPrice({ basePrice: ... } as any, ...)` — replaced with direct `Math.round(degree.costPerSession * priceModifier)` (getItemPrice only reads basePrice anyway). Removed unused `getItemPrice` import.
+
+**`src/hooks/ai/actionGenerator.ts:136`**
+- `calculatePathDistance(currentLocation as any, ...)` → `calculatePathDistance(currentLocation as LocationId, ...)`. Added `LocationId` to imports.
+
+**`src/hooks/ai/actions/strategicActions.ts:139,147`**
+- `player.completedDegrees.includes(d as any)` → `includes(d as DegreeId)`. Added `DegreeId` to imports.
+
+**`src/hooks/ai/actions/goalActions.ts:472`**
+- `player.completedDegrees.includes(degreeId as any)` → `includes(degreeId as DegreeId)`. Added `DegreeId` import.
+
+**`src/hooks/ai/commitmentPlan.ts:274`**
+- `player.completedDegrees.includes(plan.targetId as any)` → `includes(plan.targetId as DegreeId)`. Added `DegreeId` to imports.
+
+**`src/hooks/ai/strategy.ts:702,710`**
+- `player.completedDegrees.includes(degId as any)` and `includes(prereq as any)` → removed casts entirely (queue is already `DegreeId[]`, no cast needed).
+
+**`src/data/questChains.ts:724`**
+- `GUILD_RANK_ORDER.indexOf(guildRank as any)` → `indexOf(guildRank as GuildRank)` (GuildRank was already imported).
+
+**`eslint.config.js`**
+- Added test file override block (placed AFTER main config so it takes precedence):
+  ```js
+  { files: ["**/*.test.ts", "**/*.test.tsx", "src/test/**/*.ts"], rules: { "@typescript-eslint/no-explicit-any": "off" } }
+  ```
+
+### Result
+- 34 errors → 0 errors
+- 30 warnings remain (all pre-existing: fast-refresh in shadcn/ui, intentional exhaustive-deps omissions)
