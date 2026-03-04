@@ -104,7 +104,7 @@ export function NewspaperModal({ newspaper, onClose }: NewspaperModalProps) {
   return (
     <Dialog open={!!newspaper} onOpenChange={() => onClose()}>
       <DialogContent
-        className="border-0 bg-transparent shadow-none p-0 max-w-lg max-h-[90vh] overflow-hidden [&>button]:hidden"
+        className="border-0 bg-transparent shadow-none p-0 max-w-xl max-h-[92vh] overflow-hidden [&>button]:hidden"
         style={{ background: 'transparent' }}
       >
         {/* Scroll background container with unrolling animation */}
@@ -187,7 +187,7 @@ export function NewspaperModal({ newspaper, onClose }: NewspaperModalProps) {
                           src={getArticleImage(article)}
                           alt=""
                           className="w-full h-full object-cover"
-                          style={{ filter: 'sepia(0.35) contrast(1.1)' }}
+                          style={{ filter: 'sepia(0.35) contrast(1.1) opacity(0.35)' }}
                           draggable={false}
                         />
                         <div
