@@ -12,7 +12,7 @@
 - **Styling**: Tailwind CSS + shadcn/ui components
 - **Testing**: Vitest + Testing Library
 - **Package Manager**: Bun
-- **Multiplayer room listing**: PartyKit (`party/gameListings.ts`) — replaces Firebase (removed 2026-02-27)
+- **Multiplayer room listing**: MQTT over WebSocket via HiveMQ free public broker (`src/network/gameListing.ts`) — replaces PartyKit (removed 2026-03-04). No configuration required.
 
 ## Quick Commands
 
@@ -165,7 +165,7 @@ Tests are in `src/test/` directory.
 - AI job upgrade threshold: hard AI upgrades for any >10% wage improvement (`upgradeThreshold = 1.1`); medium/easy require 20% (`1.2`).
 - AI education pipeline (depth >= 2): medium AI now participates in the job-unlock pipeline (was hard-only). Hard AI uses 1.2x wage target threshold; medium uses 1.3x.
 - AI festival actions: all festival bonus priorities boosted by ~6-10 points since festivals are time-limited. Wage festivals also generate a travel action to job location (not just boosting work when already there).
-- Multiplayer room listing uses PartyKit (NOT Firebase — Firebase was removed 2026-02-27). Use `isPartykitConfigured()` from `src/lib/partykit.ts`, NOT `isFirebaseConfigured`. Room listing server is `party/gameListings.ts`. Do NOT re-add the `firebase` npm package. Deploy with `npx partykit deploy`; dev with `npx partykit dev` + `VITE_PARTYKIT_HOST=localhost:1999`.
+- Multiplayer room listing uses **MQTT over WebSocket** via the free HiveMQ public broker (`wss://broker.hivemq.com:8884/mqtt`). Implementation: `src/network/gameListing.ts`. Broker is zero-config — no account, no deploy, no env var needed. Retained MQTT messages give guests an instant full room list on subscribe. MQTT 5.0 `messageExpiryInterval: 300s` auto-expires stale rooms. Do NOT re-add PartyKit or Firebase for room listing. `src/lib/partykit.ts` still exists for reference but `isPartykitConfigured()` is no longer called in the listing flow.
 - Regular food (bread/cheese) is shelf-stable: `buyFoodWithSpoilage` must NOT set `foodBoughtWithoutPreservation: true`. Only `buyFreshFood` (fresh vegetables/meat) sets this flag for end-of-turn spoilage. Setting it on regular food causes starvation after purchase (end-of-turn 50% reduction + weekly drain = 0 food).
 - `applyDependabilityDecay` (weekEndHelpers.ts): must check `clothingCondition <= 0` (naked) BEFORE the clothing threshold check. Jobs with `requiredClothing: 'none'` have threshold=0, so `0 < 0` is false and naked players are not exempted — but `workShift` blocks them via `<= 0`. Keep both checks in sync.
 - `processEndOfTurnSpoilage` (turnHelpers.ts): only clears `freshFood = 0` when fresh food spoils. Do NOT reduce `foodLevel` — that was causing existing regular food to be halved when fresh food spoiled.
