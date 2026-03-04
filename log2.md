@@ -5,6 +5,35 @@
 
 ---
 
+## 2026-03-04T12:00Z — MQTT Room Browser (replaces PartyKit)
+
+### Overview
+Replaced the PartyKit-based public room listing with a lightweight MQTT-over-WebSocket implementation using the free HiveMQ public broker. No configuration, no account, no deployment required — works out of the box in any browser.
+
+### Motivation
+- PartyKit requires `VITE_PARTYKIT_HOST` env var + `npx partykit deploy` (not wanted)
+- Free PeerJS cloud (`0.peerjs.com`) does NOT expose `/peers` — P2P discovery never worked cross-network
+- True P2P discovery is impossible without a signaling meeting point; MQTT public broker fills this role with zero setup
+
+### Architecture
+- **Broker**: `wss://broker.hivemq.com:8884/mqtt` (free, no auth, MQTT 5.0 WebSocket over TLS)
+- **Topic**: `guild-life-adventures/rooms/{roomCode}` with **retained messages**
+  - Hosts publish retained message on room creation; subscribe gets all current rooms instantly
+  - MQTT 5.0 `messageExpiryInterval: 300s` auto-expires stale listings if host crashes
+  - Cleanup: hosts publish empty retained payload on disconnect to immediately remove listing
+- **Client-side TTL filter**: additionally filters listings older than 5 min as fallback
+
+### Files Changed
+- `src/network/gameListing.ts` — completely rewritten with MQTT (dropped PartyKit/PartySocket)
+- `src/components/screens/OnlineLobby.tsx` — removed `isPartykitConfigured()` gate; MQTT listing always active; removed PeerJS same-browser fallback UI (but kept PeerJS for actual game connections)
+- `vite.config.ts` — added `global: "globalThis"` define for mqtt.js browser bundle compatibility
+- `package.json` — added `mqtt@5.15.0`
+
+### API preserved
+`registerGameListing`, `updateListingPlayerCount`, `subscribeToGameListings` — identical signatures, drop-in replacement for callers in `useOnlineGame.ts`.
+
+---
+
 ## 2026-03-04 — AI Opponents Tuning (Thornwick, Morgath, Grimwald smarter on Master)
 
 ### Timestamp: 2026-03-04T UTC

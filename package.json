@@ -54,6 +54,7 @@
     "input-otp": "^1.4.2",
     "jszip": "^3.10.1",
     "lucide-react": "^0.462.0",
+    "mqtt": "^5.15.0",
     "next-themes": "^0.3.0",
     "partysocket": "^1.1.16",
     "peerjs": "^1.5.5",

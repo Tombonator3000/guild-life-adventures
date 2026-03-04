@@ -13,7 +13,6 @@ import type { ChatMessage } from '@/network/types';
 import { PortraitPicker } from '@/components/game/PortraitPicker';
 import gameBoard from '@/assets/game-board.jpeg';
 import { subscribeToGameListings, type GameListing } from '@/network/gameListing';
-import { isPartykitConfigured } from '@/lib/partykit';
 
 type LobbyView = 'menu' | 'creating' | 'joining' | 'host-lobby' | 'guest-lobby' | 'browse' | 'spectating';
 
@@ -57,27 +56,21 @@ export function OnlineLobby() {
   const [editingName, setEditingName] = useState(false);
   const [lobbyNameInput, setLobbyNameInput] = useState('');
 
-  // Browse Games state (PartyKit)
+  // Browse Games state (MQTT — always available, no configuration needed)
   const [gameListings, setGameListings] = useState<GameListing[]>([]);
   const [listingsLoading, setListingsLoading] = useState(false);
-  const partykitAvailable = isPartykitConfigured();
 
-  // Browse Games state (PeerJS fallback — used when PartyKit is not configured)
-  const [peerGames, setPeerGames] = useState<import('@/network/peerDiscovery').PeerDiscoveredGame[]>([]);
-  const [peerSearching, setPeerSearching] = useState(false);
-  const [peerSearchError, setPeerSearchError] = useState<string | null>(null);
-  const [peerSearched, setPeerSearched] = useState(false);
 
-  // Subscribe to game listings when in browse view
+  // Subscribe to game listings when in browse view (MQTT, always on)
   useEffect(() => {
-    if (view !== 'browse' || !partykitAvailable) return;
+    if (view !== 'browse') return;
     setListingsLoading(true);
     const unsub = subscribeToGameListings((games) => {
       setGameListings(games);
       setListingsLoading(false);
     });
     return unsub;
-  }, [view, partykitAvailable]);
+  }, [view]);
 
   // --- Actions ---
 
@@ -149,23 +142,6 @@ export function OnlineLobby() {
       // Error shown via useOnlineGame error state
     } finally {
       setConnecting(false);
-    }
-  };
-
-  const handlePeerSearch = async () => {
-    setPeerSearching(true);
-    setPeerSearchError(null);
-    setPeerGames([]);
-    setPeerSearched(false);
-    try {
-      const { searchPeerGames } = await import('@/network/peerDiscovery');
-      const games = await searchPeerGames();
-      setPeerGames(games);
-    } catch {
-      setPeerSearchError('Could not reach the PeerJS server. Check your connection.');
-    } finally {
-      setPeerSearching(false);
-      setPeerSearched(true);
     }
   };
 
@@ -296,7 +272,7 @@ export function OnlineLobby() {
               <div className="text-left">
                 <span className="font-display text-base text-amber-900 block">Search Online Games</span>
                 <span className="text-xs text-amber-700">
-                  {partykitAvailable ? 'Browse public rooms — no code needed' : 'Find games in this browser — or use a room code'}
+                  Browse public rooms — no code needed
                 </span>
               </div>
             </button>
@@ -404,113 +380,21 @@ export function OnlineLobby() {
             <div className="parchment-panel p-4 flex items-center justify-between">
               <h2 className="font-display text-xl text-amber-900 flex items-center gap-2">
                 <Search className="w-5 h-5" />
-                {partykitAvailable ? 'Public Games' : 'Local Games'}
+                Public Games
               </h2>
-              {partykitAvailable && (
-                <button
-                  onClick={() => {
-                    setListingsLoading(true);
-                    // Re-trigger by toggling off/on — unsub & resub handled by effect
-                  }}
-                  className="p-1.5 rounded hover:bg-amber-100 transition-colors"
-                  title="Refresh list"
-                >
-                  <RefreshCw className={`w-4 h-4 text-amber-700 ${listingsLoading ? 'animate-spin' : ''}`} />
-                </button>
-              )}
+              <button
+                onClick={() => {
+                  setListingsLoading(true);
+                  // Re-trigger by toggling off/on — unsub & resub handled by effect
+                }}
+                className="p-1.5 rounded hover:bg-amber-100 transition-colors"
+                title="Refresh list"
+              >
+                <RefreshCw className={`w-4 h-4 text-amber-700 ${listingsLoading ? 'animate-spin' : ''}`} />
+              </button>
             </div>
 
-            {!partykitAvailable ? (
-              <div className="space-y-3">
-              <div className="parchment-panel p-5 text-center">
-                  <Globe className="w-8 h-8 text-amber-600 mx-auto mb-2" />
-                  <p className="font-display text-sm text-amber-800 mb-1">
-                    Search for local games
-                  </p>
-                  <p className="text-xs text-amber-600 mb-3">
-                    Only finds games in other tabs on this browser.<br/>For cross-network play, share the room code directly.
-                  </p>
-                  <button
-                    onClick={handlePeerSearch}
-                    disabled={peerSearching}
-                    className="gold-button flex items-center gap-2 mx-auto disabled:opacity-50"
-                  >
-                    {peerSearching
-                      ? <Loader2 className="w-4 h-4 animate-spin" />
-                      : <Search className="w-4 h-4" />}
-                    {peerSearching ? 'Searching the realm...' : 'Search for Games'}
-                  </button>
-                  {!peerSearched && (
-                    <p className="text-xs text-amber-600 mt-2">
-                      Finds games in other browser tabs instantly. For cross-network play, share the room code directly.
-                    </p>
-                  )}
-                </div>
-
-                {peerSearchError && (
-                  <div className="parchment-panel p-3 text-center text-xs text-destructive">
-                    {peerSearchError}
-                  </div>
-                )}
-
-                {peerSearched && !peerSearching && peerGames.length === 0 && !peerSearchError && (
-                  <div className="parchment-panel p-6 text-center">
-                    <Users className="w-8 h-8 text-amber-400 mx-auto mb-2" />
-                    <p className="font-display text-amber-800 mb-1 text-sm">No public games found</p>
-                    <p className="text-xs text-amber-700">
-                      No rooms found in other tabs on this browser. For cross-network games, ask the host for a room code.
-                    </p>
-                  </div>
-                )}
-
-                {peerGames.length > 0 && (
-                  <div className="space-y-3">
-                    {peerGames.map(game => (
-                      <div key={game.roomCode} className="parchment-panel p-4 flex items-center justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-display text-amber-900 font-semibold truncate">{game.hostName}&apos;s Game</p>
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            <span className="text-xs bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
-                              <Users className="w-3 h-3 inline mr-0.5" />
-                              {game.playerCount}/{game.maxPlayers}
-                            </span>
-                            {game.hasAI && (
-                              <span className="text-xs bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
-                                <Bot className="w-3 h-3 inline mr-0.5" />AI
-                              </span>
-                            )}
-                            {game.isStarted && (
-                              <span className="text-xs bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded">
-                                In Progress
-                              </span>
-                            )}
-                            <span className="text-xs text-amber-600 font-mono">{game.roomCode}</span>
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                          <button
-                            onClick={() => handleJoinFromBrowse(game.roomCode)}
-                            disabled={connecting || game.playerCount >= game.maxPlayers || game.isStarted}
-                            className="gold-button text-sm px-4 py-1.5 whitespace-nowrap disabled:opacity-50"
-                          >
-                            {connecting ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Join'}
-                          </button>
-                          {game.isStarted && (
-                            <button
-                              onClick={() => handleSpectateFromBrowse(game.roomCode)}
-                              disabled={connecting}
-                              className="wood-frame text-parchment text-xs px-3 py-1 whitespace-nowrap flex items-center gap-1 justify-center hover:brightness-110 disabled:opacity-50"
-                            >
-                              <Eye className="w-3 h-3" /> Spectate
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : listingsLoading ? (
+            {listingsLoading ? (
               <div className="parchment-panel p-8 flex flex-col items-center gap-3">
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
                 <p className="font-display text-amber-700 text-sm">Searching the realm...</p>
@@ -638,14 +522,12 @@ export function OnlineLobby() {
                   />
                   <Search className="w-4 h-4 text-amber-700" />
                   <span className="font-display text-sm text-amber-900">
-                    {partykitAvailable ? 'List in public lobby browser' : 'Make discoverable (same browser only)'}
+                    List in public lobby browser
                   </span>
                 </label>
                 {isPublic && (
                   <p className="text-xs text-green-700 text-center mt-1">
-                    {partykitAvailable
-                      ? 'Others can find and join this room without a code'
-                      : 'Discoverable by other tabs on this browser. Share the room code for cross-network play.'}
+                    Others can find and join this room without a code
                   </p>
                 )}
               </div>

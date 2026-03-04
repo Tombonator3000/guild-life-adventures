@@ -1,13 +1,13 @@
-// Public game listing service using PartyKit (replaces Firebase Realtime Database).
-// Hosts can register their room so anyone can browse and join without a code.
-// Requires VITE_PARTYKIT_HOST env var; falls back gracefully to no-op if not set.
+// Public game listing using MQTT over WebSocket (HiveMQ free public broker).
+// No configuration or deployment required — works out of the box in any browser.
 //
-// Server: party/gameListings.ts
-// Dev:    npx partykit dev  (sets host to localhost:1999)
-// Prod:   npx partykit deploy → set VITE_PARTYKIT_HOST=guild-life-adventures.<user>.partykit.dev
+// Broker:  wss://broker.hivemq.com:8884/mqtt  (free, no account needed)
+// Topics:  guild-life-adventures/rooms/{roomCode}
+// Strategy: retained messages with 5-minute MQTT 5.0 auto-expiry.
+//   - Hosts publish their room info on connect; empty retained msg on disconnect.
+//   - Guests subscribe to the wildcard topic and get the full list immediately.
 
-import PartySocket from "partysocket";
-import { isPartykitConfigured, getPartykitHost } from "@/lib/partykit";
+import mqtt from "mqtt";
 import type { GoalSettings } from "@/types/game.types";
 
 /** A public game listing entry */
@@ -21,76 +21,87 @@ export interface GameListing {
   createdAt: number;
 }
 
-// Single global registry room — all hosts/guests connect to the same PartyKit room
-const REGISTRY_ROOM = "registry";
+const BROKER_URL = "wss://broker.hivemq.com:8884/mqtt";
+const TOPIC_PREFIX = "guild-life-adventures/rooms";
+const TTL_SECS = 300; // 5-minute auto-expiry via MQTT 5.0 messageExpiryInterval
 
-// Module-level host socket (one active host at a time)
-let _hostSocket: PartySocket | null = null;
+function makeClientId(): string {
+  return `gl-${Math.random().toString(36).slice(2, 10)}`;
+}
 
-function makeSocket(): PartySocket {
-  return new PartySocket({
-    host: getPartykitHost(),
-    room: REGISTRY_ROOM,
+// Module-level host client kept alive while room is public
+let _hostClient: mqtt.MqttClient | null = null;
+let _cachedListing: GameListing | null = null;
+
+function publishListing(client: mqtt.MqttClient, listing: GameListing): Promise<void> {
+  return new Promise((resolve, reject) => {
+    client.publish(
+      `${TOPIC_PREFIX}/${listing.roomCode}`,
+      JSON.stringify(listing),
+      { retain: true, qos: 1, properties: { messageExpiryInterval: TTL_SECS } },
+      (err) => (err ? reject(err) : resolve())
+    );
   });
 }
 
 /**
- * Register a public game listing. Returns a cleanup function that removes it.
- * Safe to call when PartyKit is not configured (returns no-op).
+ * Register a public game listing.
+ * Returns a cleanup function that removes it from the broker.
  */
 export async function registerGameListing(
   listing: Omit<GameListing, "createdAt">
 ): Promise<() => Promise<void>> {
-  if (!isPartykitConfigured()) return async () => {};
+  // Close any previous host client
+  _hostClient?.end(true);
+  _hostClient = null;
+  _cachedListing = null;
 
-  // Close any previous host socket
-  if (_hostSocket) {
-    _hostSocket.close();
-    _hostSocket = null;
-  }
-
-  const socket = makeSocket();
-  _hostSocket = socket;
+  const full: GameListing = { ...listing, createdAt: Date.now() };
+  const client = mqtt.connect(BROKER_URL, {
+    protocolVersion: 5,
+    clientId: makeClientId(),
+    clean: true,
+  });
 
   try {
     await new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(
-        () => reject(new Error("PartyKit connection timeout")),
-        8000
-      );
-      socket.addEventListener("open", () => {
+      const timer = setTimeout(() => reject(new Error("MQTT connection timeout")), 8000);
+      client.once("connect", () => {
         clearTimeout(timer);
-        socket.send(
-          JSON.stringify({ type: "register", listing })
-        );
-        resolve();
+        publishListing(client, full).then(resolve).catch(reject);
       });
-      socket.addEventListener("error", () => {
+      client.once("error", (err) => {
         clearTimeout(timer);
-        reject(new Error("PartyKit connection error"));
+        reject(err);
       });
     });
+    _hostClient = client;
+    _cachedListing = full;
   } catch (err) {
-    console.warn("[GameListing] Failed to register:", err);
-    socket.close();
-    _hostSocket = null;
+    console.warn("[GameListing] MQTT registration failed:", err);
+    client.end(true);
     return async () => {};
   }
 
+  const captured = client;
   return async () => {
-    if (_hostSocket === socket) {
-      try {
-        socket.send(
-          JSON.stringify({ type: "unregister", roomCode: listing.roomCode })
+    if (_hostClient !== captured) return;
+    // Clear the retained message by publishing an empty payload
+    try {
+      await new Promise<void>((resolve) => {
+        captured.publish(
+          `${TOPIC_PREFIX}/${listing.roomCode}`,
+          "",
+          { retain: true, qos: 1 },
+          () => resolve()
         );
-        // Brief delay to let the message flush before closing
-        await new Promise((r) => setTimeout(r, 150));
-      } catch {
-        // ignore
-      }
-      socket.close();
-      _hostSocket = null;
+      });
+    } catch {
+      // ignore — broker will auto-expire after TTL anyway
     }
+    captured.end(true);
+    _hostClient = null;
+    _cachedListing = null;
   };
 }
 
@@ -101,11 +112,10 @@ export async function updateListingPlayerCount(
   roomCode: string,
   playerCount: number
 ): Promise<void> {
-  if (!_hostSocket) return;
+  if (!_hostClient || !_cachedListing || _cachedListing.roomCode !== roomCode) return;
+  _cachedListing = { ..._cachedListing, playerCount, createdAt: Date.now() };
   try {
-    _hostSocket.send(
-      JSON.stringify({ type: "update", roomCode, playerCount })
-    );
+    await publishListing(_hostClient, _cachedListing);
   } catch {
     // Non-critical
   }
@@ -119,35 +129,55 @@ export async function updateListingPlayerCount(
 export function subscribeToGameListings(
   callback: (games: GameListing[]) => void
 ): () => void {
-  if (!isPartykitConfigured()) {
-    callback([]);
-    return () => {};
-  }
-
+  const map = new Map<string, GameListing>();
   let closed = false;
-  const socket = makeSocket();
 
-  socket.addEventListener("message", (evt) => {
-    if (closed) return;
-    try {
-      const msg = JSON.parse(evt.data as string) as {
-        type: string;
-        games: GameListing[];
-      };
-      if (msg.type === "listings") {
-        callback(msg.games);
-      }
-    } catch {
-      // ignore malformed
-    }
+  const client = mqtt.connect(BROKER_URL, {
+    protocolVersion: 5,
+    clientId: makeClientId(),
+    clean: true,
   });
 
-  socket.addEventListener("error", () => {
+  client.on("connect", () => {
+    if (!closed) client.subscribe(`${TOPIC_PREFIX}/+`, { qos: 1 });
+  });
+
+  client.on("message", (topic, payload) => {
+    if (closed) return;
+    const code = topic.split("/").pop() ?? "";
+    const raw = payload.toString();
+
+    if (!raw) {
+      // Empty payload = host explicitly removed the listing
+      map.delete(code);
+    } else {
+      try {
+        const data = JSON.parse(raw) as GameListing;
+        // Also filter client-side in case broker doesn't support MQTT 5 expiry
+        if (Date.now() - data.createdAt < TTL_SECS * 1000) {
+          map.set(code, data);
+        }
+      } catch {
+        // Malformed — ignore
+      }
+    }
+
+    callback([...map.values()].sort((a, b) => a.createdAt - b.createdAt));
+  });
+
+  client.on("error", () => {
     if (!closed) callback([]);
   });
 
+  // After 3 seconds, emit whatever we have (could be empty — no rooms open)
+  // so the UI doesn't stay in a "loading" state indefinitely.
+  const emptyTimer = setTimeout(() => {
+    if (!closed) callback([...map.values()].sort((a, b) => a.createdAt - b.createdAt));
+  }, 3000);
+
   return () => {
     closed = true;
-    socket.close();
+    clearTimeout(emptyTimer);
+    client.end(true);
   };
 }
