@@ -45,6 +45,29 @@ export function CharacterPortrait({
     setImageError(false);
   }, [portraitId]);
 
+  // Custom uploaded photo stored as a data URL (session-only, set via PortraitPicker upload)
+  if (portraitId?.startsWith('data:')) {
+    return (
+      <div
+        className={`${roundedClass} border-2 border-white/60 overflow-hidden relative ${className}`}
+        style={{
+          width: size,
+          height: actualHeight,
+          minWidth: size,
+          minHeight: actualHeight,
+        }}
+      >
+        <img
+          src={portraitId}
+          alt={playerName}
+          className="w-full h-full object-cover"
+          draggable={false}
+        />
+        {hasCurse && <CurseOverlay size={size} height={actualHeight} shape={shape} />}
+      </div>
+    );
+  }
+
   // Toad transformation: show toad.jpg instead of portrait (emoji fallback if image fails)
   if (isToad) {
     const toadSrc = `${import.meta.env.BASE_URL}npcs/toad.jpg`;
