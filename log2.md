@@ -5,6 +5,31 @@
 
 ---
 
+## 2026-03-04 — Portrait Discoverability + Custom Upload
+
+### Overview
+Two UX improvements to the portrait/avatar selection in the game setup screen:
+1. **Discoverable portrait button**: The portrait circle in GameSetup now has a pulsing golden halo (`animate-pulse-gold`) and a small "Tap to pick" label underneath so players understand it's interactive.
+2. **Custom photo upload**: Players can upload their own photo as a portrait. An "Upload" tile is added to the PortraitPicker modal (inside the existing grid). The image is resized to 200×200 (square-cropped, JPEG 85%) client-side via Canvas, then stored as a base64 data URL in React state (session-only — cleared on page refresh).
+
+### Design Decisions
+- **Session-only storage**: Custom portraits are kept in component state, not IndexedDB. Simpler, no quota concerns.
+- **data: URL detection in CharacterPortrait**: If `portraitId` starts with `data:`, it's rendered as `<img src={portraitId}>` directly, bypassing the portrait registry lookup. This check is placed *after* all hook calls (hooks-before-returns rule preserved).
+- **animate-pulse-gold reuse**: Tailwind already had this keyframe defined. No new CSS added.
+- **Grid tile**: Upload tile is the last item in the 4-column portrait grid. When a custom portrait is selected, the tile shows a preview of the uploaded photo with the same `ring-2 ring-primary` selection indicator as other portrait tiles.
+- **Multiplayer note**: Custom portrait data URLs are stored in `player.portraitId` which is part of synced game state. For large sessions, this adds ~15-30KB per custom portrait to state sync. Acceptable for now; revisit if multiplayer portrait sync becomes an issue.
+
+### Files Changed
+- `src/components/screens/GameSetup.tsx` — portrait button wrapped in `div`, pulsing halo + "Tap to pick" label added
+- `src/components/game/PortraitPicker.tsx` — `UploadPortraitTile` component added; `Upload` icon + `useRef` imported
+- `src/components/game/CharacterPortrait.tsx` — `data:` URL early-return path added (after hooks)
+
+### Tests
+- TypeScript: 0 errors
+- ESLint: skipped (env dependency issue, pre-existing)
+
+---
+
 ## 2026-03-04T12:00Z — MQTT Room Browser (replaces PartyKit)
 
 ### Overview

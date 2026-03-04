@@ -199,19 +199,24 @@ export function GameSetup() {
             <div className="space-y-3">
               {playerNames.map((name, index) => (
                 <div key={index} className="flex items-center gap-3">
-                  <button
-                    onClick={() => openPortraitPicker(index, 'human')}
-                    className="flex-shrink-0 rounded-full hover:ring-2 hover:ring-primary transition-all cursor-pointer"
-                    title="Choose portrait"
-                  >
-                    <CharacterPortrait
-                      portraitId={playerPortraits[index]}
-                      playerColor={PLAYER_COLORS[index].value}
-                      playerName={name}
-                      size={40}
-                      isAI={false}
-                    />
-                  </button>
+                  <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
+                    <button
+                      onClick={() => openPortraitPicker(index, 'human')}
+                      className="rounded-full animate-pulse-gold cursor-pointer focus:outline-none"
+                      title="Click to choose your portrait"
+                    >
+                      <CharacterPortrait
+                        portraitId={playerPortraits[index]}
+                        playerColor={PLAYER_COLORS[index].value}
+                        playerName={name}
+                        size={40}
+                        isAI={false}
+                      />
+                    </button>
+                    <span className="text-[9px] text-amber-600 font-display leading-tight select-none">
+                      Tap to pick
+                    </span>
+                  </div>
                   <input
                     type="text"
                     value={name}
