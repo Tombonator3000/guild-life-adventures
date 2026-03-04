@@ -5,6 +5,40 @@
 
 ---
 
+## 2026-03-04T14:00Z — Bug Fix: Career Goal % + Entry-Level Job Sharing
+
+### Bug 1: Career goal showed 100% at game start
+
+**Root cause**: `GoalProgress.tsx` used raw `player.dependability` (starting value: 50) without requiring employment. With a "Quick" preset setting `career: 50`, that gave 50/50 = 100% immediately. `evaluateGoals` in `questHelpers.ts` also had no job check, meaning career goal could be satisfied without ever being employed.
+
+**Fix**:
+- `GoalProgress.tsx` line 29: `const careerValue = player.currentJob ? player.dependability : 0;`
+- `questHelpers.ts` line 156: `const careerMet = !!player.currentJob && player.dependability >= goals.career;`
+- `SpectatorPanel.tsx` line 45: same pattern applied
+
+**Consistent with**: `TurnOrderPanel.tsx` and `PlayersTab.tsx` which already used `player.currentJob ? player.dependability : 0`.
+
+### Bug 2: Entry-level jobs (careerLevel 1–2) blocked competitors
+
+**Root cause**: `GuildHallPanel.tsx` `isTakenByOther` applied uniformly to all jobs. In Jones in the Fast Lane, the two lowest jobs at each employer are "open" positions — multiple people can hold them simultaneously.
+
+**Fix** (`GuildHallPanel.tsx`):
+```typescript
+const isTakenByOther = !!jobHolder && job.careerLevel > 2;
+```
+Jobs with `careerLevel <= 2` (e.g. Floor Sweeper, Errand Runner, Dishwasher, Tavern Cook) are now always available regardless of other players.
+
+### Files Changed
+- `src/components/game/GoalProgress.tsx`
+- `src/store/helpers/questHelpers.ts`
+- `src/components/game/SpectatorPanel.tsx`
+- `src/components/game/GuildHallPanel.tsx`
+- `CLAUDE.md` (updated rules)
+
+---
+
+---
+
 ## 2026-03-04 — Portrait Discoverability + Custom Upload
 
 ### Overview

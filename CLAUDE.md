@@ -61,7 +61,7 @@ src/
 - **Wealth**: Gold + bank deposits (100g = 1 point)
 - **Happiness**: Accumulated from purchases, education, activities
 - **Education**: Degrees earned (9 points per degree)
-- **Career**: Equals Dependability stat
+- **Career**: Equals Dependability stat — BUT only counts when employed (`player.currentJob` must be set). Career goal progress = 0 when unemployed. This applies to `GoalProgress.tsx`, `evaluateGoals` (questHelpers.ts), `SpectatorPanel.tsx`, `TurnOrderPanel.tsx`, and `PlayersTab.tsx`. Do NOT show raw `player.dependability` as career progress without a job check.
 
 ### Locations (14 total in ring layout)
 Noble Heights → General Store → Bank → Forge → Guild Hall → Cave → Academy → Enchanter → Armory → Rusty Tankard → Shadow Market → Fence → Slums → Landlord → (back to Noble Heights)
@@ -71,7 +71,7 @@ Noble Heights → General Store → Bank → Forge → Guild Hall → Cave → A
 - **Noble Heights**: Expensive, safe from robbery
 
 ### Jobs
-- Entry ($4-6/hr): Floor Sweeper, Porter
+- Entry ($4-6/hr): Floor Sweeper, Porter — `careerLevel 1–2` jobs are NOT blocked by other players (multiple players may share them). In `GuildHallPanel.tsx`, `isTakenByOther` is `!!jobHolder && job.careerLevel > 2`. Only careerLevel 3+ jobs are exclusive slots.
 - Mid ($10-14/hr): Market Vendor, Teacher
 - Top ($20-25/hr): Sage, Guild Treasurer, Master Artificer
 

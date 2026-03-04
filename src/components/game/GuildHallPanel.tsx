@@ -243,10 +243,11 @@ export function GuildHallPanel({
             const canGetRaise = isCurrentJob && marketWage > player.currentWage;
 
             // Check if another player already holds this job
+            // Entry-level jobs (careerLevel <= 2) can be shared — never blocked
             const jobHolder = allPlayers?.find(
               p => p.id !== player.id && !p.isGameOver && p.currentJob === job.id
             );
-            const isTakenByOther = !!jobHolder;
+            const isTakenByOther = !!jobHolder && job.careerLevel > 2;
 
             return (
               <div

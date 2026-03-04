@@ -42,7 +42,7 @@ export function SpectatorPanel({ players, goalSettings, week, stockPrices, isPur
       const pWealth = goalSettings.wealth > 0 ? Math.min(1, Math.max(0, totalWealth / goalSettings.wealth)) : 1;
       const pHappiness = goalSettings.happiness > 0 ? Math.min(1, Math.max(0, p.happiness / goalSettings.happiness)) : 1;
       const pEdu = goalSettings.education > 0 ? Math.min(1, Math.max(0, (p.completedDegrees.length * 9) / goalSettings.education)) : 1;
-      const pCareer = goalSettings.career > 0 ? Math.min(1, Math.max(0, p.dependability / goalSettings.career)) : 1;
+      const pCareer = goalSettings.career > 0 ? Math.min(1, Math.max(0, (p.currentJob ? p.dependability : 0) / goalSettings.career)) : 1;
       const pAdventure = adventureGoal > 0 ? Math.min(1, Math.max(0, (p.completedQuests + p.dungeonFloorsCleared.length) / adventureGoal)) : 0;
       const scoreSum = pWealth + pHappiness + pEdu + pCareer + (adventureGoal > 0 ? pAdventure : 0);
       const score = Math.round((scoreSum / goalCount) * 100);
