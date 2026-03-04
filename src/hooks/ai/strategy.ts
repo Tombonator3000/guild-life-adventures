@@ -88,9 +88,10 @@ export function getWeakestGoal(progress: GoalProgress): 'wealth' | 'happiness' |
     goals.push({ name: 'adventure', progress: progress.adventure.progress });
   }
 
-  // Sprint: if any goal is >= 80% but not yet complete, prioritize finishing it
+  // Sprint: if any goal is >= 72% but not yet complete, prioritize finishing it
+  // (was 80% — AI now sprints earlier, closing goals faster instead of spreading effort)
   const nearComplete = goals
-    .filter(g => g.progress >= 0.8 && g.progress < 1.0)
+    .filter(g => g.progress >= 0.72 && g.progress < 1.0)
     .sort((a, b) => b.progress - a.progress); // highest first (closest to done)
 
   if (nearComplete.length > 0) {
@@ -100,12 +101,13 @@ export function getWeakestGoal(progress: GoalProgress): 'wealth' | 'happiness' |
   // Otherwise focus on weakest goal
   goals.sort((a, b) => a.progress - b.progress);
 
-  // Education stepping stone: if career or wealth is weakest but we have few degrees,
-  // redirect to education (degrees unlock better jobs → faster career/wealth)
+  // Education stepping stone: if career or wealth is weakest but we have very few degrees,
+  // redirect to education only when education is truly underdeveloped (< 35%, was 50%)
+  // Prevents AI from abandoning career/wealth pushes for marginal education gains
   const weakest = goals[0];
-  if ((weakest.name === 'career' || weakest.name === 'wealth') 
-      && progress.education.progress < 0.5 
-      && progress.education.progress < weakest.progress + 0.2) {
+  if ((weakest.name === 'career' || weakest.name === 'wealth')
+      && progress.education.progress < 0.35   // was 0.5 — only redirect if truly behind
+      && progress.education.progress < weakest.progress + 0.15) { // was + 0.2
     return 'education';
   }
 
@@ -116,14 +118,18 @@ export function getWeakestGoal(progress: GoalProgress): 'wealth' | 'happiness' |
  * Calculate urgency of resource needs (0-1, higher = more urgent)
  */
 export function calculateResourceUrgency(player: Player): ResourceUrgency {
-  // Food urgency - critical below 25, concerning below 50
-  const food = player.foodLevel < 25 ? 1.0 : player.foodLevel < 50 ? 0.6 : 0.1;
+  // Food urgency - graduated tiers: critical <25, high <40, moderate <60, low otherwise
+  const food = player.foodLevel < 25 ? 1.0
+    : player.foodLevel < 40 ? 0.7   // was unhandled — now triggers earlier buying
+    : player.foodLevel < 60 ? 0.4   // was 0.6 at <50 — smoother curve
+    : 0.1;
 
-  // Rent urgency - critical at 3+ weeks overdue
+  // Rent urgency - graduated tiers (was: 0.1/0.5/1.0 only)
   let rent = 0;
   if (player.housing !== 'homeless') {
     if (player.weeksSinceRent >= 3) rent = 1.0;
-    else if (player.weeksSinceRent >= 2) rent = 0.5;
+    else if (player.weeksSinceRent >= 2) rent = 0.7; // was 0.5
+    else if (player.weeksSinceRent >= 1) rent = 0.35; // was unhandled
     else rent = 0.1;
   }
 
@@ -499,8 +505,9 @@ export function getBestChainQuest(player: Player, settings: DifficultySettings):
  */
 export function forecastCashFlow(player: Player, week: number, weeksAhead: number = 3): CashFlowForecast {
   // ─── Income estimation ─────────────────────────────────
-  // Estimate usable hours per turn (total 60h minus travel/overhead)
-  const USABLE_HOURS_PER_TURN = 40;
+  // Estimate usable hours per turn (total 60h minus travel, food runs, rent, emergencies)
+  // was 40 — too optimistic. Reality is ~28h of productive work per turn
+  const USABLE_HOURS_PER_TURN = 28;
   const job = player.currentJob ? getJob(player.currentJob) : null;
   const hourlyWage = player.currentWage ?? 0;
   const hoursPerShift = job?.hoursPerShift ?? 8;
@@ -551,7 +558,7 @@ export function forecastCashFlow(player: Player, week: number, weeksAhead: numbe
   }
 
   // ─── Derive actionable signals ──────────────────────────
-  const SHORTFALL_THRESHOLD = 50;
+  const SHORTFALL_THRESHOLD = 120; // was 50 — needs to cover food + clothing emergencies
   const shortfallRisk = projectedGold.some(g => g < SHORTFALL_THRESHOLD);
 
   // Safe banking: how much we can deposit without risking a shortfall

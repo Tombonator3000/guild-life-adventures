@@ -31,17 +31,17 @@ export const DIFFICULTY_SETTINGS: Record<AIDifficulty, DifficultySettings> = {
     decisionDelay: 800,
   },
   medium: {
-    aggressiveness: 0.6,
+    aggressiveness: 0.7,    // was 0.6 — more assertive goal-chasing
     planningDepth: 2,
-    mistakeChance: 0.08,
-    efficiencyWeight: 0.6,
+    mistakeChance: 0.05,    // was 0.08 — fewer dumb mistakes
+    efficiencyWeight: 0.7,  // was 0.6 — better time usage
     decisionDelay: 500,
   },
   hard: {
-    aggressiveness: 0.9,
+    aggressiveness: 0.95,   // was 0.9 — maximum goal pressure
     planningDepth: 3,
-    mistakeChance: 0.02,
-    efficiencyWeight: 0.9,
+    mistakeChance: 0.01,    // was 0.02 — near-perfect decisions
+    efficiencyWeight: 0.95, // was 0.9 — tight time optimization
     decisionDelay: 300,
   },
 };

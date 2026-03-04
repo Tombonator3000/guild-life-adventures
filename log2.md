@@ -5,6 +5,65 @@
 
 ---
 
+## 2026-03-04 — AI Opponents Tuning (Thornwick, Morgath, Grimwald smarter on Master)
+
+### Timestamp: 2026-03-04T UTC
+
+### Overview
+AI opponents (Thornwick, Grimwald, Morgath) were too easy to beat even on "master" (hard) difficulty. Root causes identified via 3 parallel agents analyzing all AI subsystem files. Fixed with targeted tuning — no architectural changes, only parameter and threshold corrections.
+
+### Problems Found (via agent analysis)
+
+1. **Action limit too low (15)** — AI ended turns with 20+ hours remaining; 15 actions is insufficient for complex turns (quest LOQs, multi-hop education/job switching)
+2. **Failed action key too narrow** — `actionKey()` ignored `floorId`, `questId`, `bountyId` → AI retried the same failed dungeon floor or quest every step, wasting the entire action budget
+3. **Resource urgency fired too late** — food urgency only kicked in at <25 food; rent had no intermediate tier; AI waited until crisis to act
+4. **Cash flow forecast 43% too optimistic** — `USABLE_HOURS_PER_TURN = 40` (reality: ~28h productive hours/turn) → AI took on debt/spending it couldn't sustain
+5. **Shortfall threshold too low** — 50g threshold means AI thought it was safe with barely enough for food; needed 120g
+6. **Education redirect too aggressive** — AI abandoned career/wealth pushes to chase education whenever education was < 50%; changed to < 35%
+7. **Goal sprint threshold too conservative** — AI only sprinted at 80% completion (getWeakestGoal) and 65% (actionGenerator); now 72% and 55% respectively
+8. **Hard/medium AI difficulty too soft** — mistakeChance, aggressiveness, efficiencyWeight all too permissive for "master" play
+9. **Travel cost penalty too weak** — distant moves only penalized by `totalCost * 0.9`; not strong enough to prevent wasteful 4+ step trips
+
+### Changes Made
+
+#### `src/hooks/ai/types.ts`
+- Medium AI: aggressiveness 0.6 → 0.7, mistakeChance 0.08 → 0.05, efficiencyWeight 0.6 → 0.7
+- Hard AI: aggressiveness 0.9 → 0.95, mistakeChance 0.02 → 0.01, efficiencyWeight 0.9 → 0.95
+
+#### `src/hooks/ai/strategy.ts`
+- `calculateResourceUrgency()` food: added 0.7 urgency tier at <40 food (was no tier between <50 → 0.6 and <25 → 1.0)
+- `calculateResourceUrgency()` rent: added 0.35 intermediate tier at 1 week overdue (was 0.1 → 0.5 → 1.0)
+- `getWeakestGoal()` sprint threshold: 80% → 72% (AI sprints earlier to close goals)
+- `getWeakestGoal()` education redirect: < 50% → < 35%, margin 0.2 → 0.15 (less aggressive education hijacking)
+- `forecastCashFlow()` USABLE_HOURS_PER_TURN: 40 → 28 (realistic estimate)
+- `forecastCashFlow()` SHORTFALL_THRESHOLD: 50 → 120 (proper emergency buffer)
+
+#### `src/hooks/ai/actionGenerator.ts`
+- `applySmartGoalSprint()` sprint threshold: 65% → 55% (hard AI starts boosting sprint actions earlier)
+- `applyTravelCostPenalty()` multiplier: 1.0 → 1.5 (stronger deterrent on distant moves)
+- `applyTravelCostPenalty()` extra penalty for 4+ steps: 0.5x → 1.0x totalCost
+
+#### `src/hooks/useGrimwaldAI.ts`
+- `actionsRemaining`: 15 → 25 (prevents premature turn end with time remaining)
+- `actionKey()`: now includes `floorId`, `questId`, `bountyId`, `ticketType` to prevent repeated failed action retries
+
+### Tests
+- AI tests: 73/73 pass (strategy.test.ts: 16/16, actionGenerator.test.ts + newSystems.test.ts: 57/57)
+- TypeScript: 0 errors
+- Lint: 0 new errors
+- Pre-existing failures unaffected (zustand env issue in rivalryActions.test.ts, window env in example.test.ts)
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/hooks/ai/types.ts` | Tuned medium/hard difficulty settings |
+| `src/hooks/ai/strategy.ts` | Food/rent urgency tiers, sprint threshold, education redirect, cash flow forecast |
+| `src/hooks/ai/actionGenerator.ts` | Sprint threshold 65%→55%, travel cost penalty stronger |
+| `src/hooks/useGrimwaldAI.ts` | Action limit 15→25, actionKey includes floorId/questId/bountyId |
+
+---
+
 ## 2026-03-03 — Backlog: Forge Job Teaser + Spectator Panel + Dungeon Run History
 
 ### Timestamp: 2026-03-03T08:26 UTC

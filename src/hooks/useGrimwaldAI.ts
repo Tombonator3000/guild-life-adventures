@@ -134,7 +134,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     // another player. The guard in step() aborts when the index no longer matches.
     const startingPlayerIndex = useGameStore.getState().currentPlayerIndex;
 
-    let actionsRemaining = 15; // Safety limit
+    let actionsRemaining = 25; // Safety limit (was 15 — too low, AI ended turns with 20+ hours left)
     let currentPlayer = player;
     let settings = baseSettings; // Set before step closure so it's always defined
 
@@ -250,7 +250,13 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
       );
 
       // Filter out actions that already failed this turn (prevent re-attempting)
-      const actionKey = (a: AIAction) => `${a.type}:${a.location || ''}:${a.details?.degreeId || a.details?.jobId || a.details?.itemId || ''}`;
+      // Include floorId, questId, bountyId in key — previously missing, causing dungeon/quest retries
+      const actionKey = (a: AIAction) => {
+        const detail = a.details?.degreeId || a.details?.jobId || a.details?.itemId
+          || a.details?.floorId || a.details?.questId || a.details?.bountyId
+          || a.details?.ticketType || '';
+        return `${a.type}:${a.location || ''}:${detail}`;
+      };
       const viableActions = actions.filter(a => a.type === 'end-turn' || !failedActionsRef.current.has(actionKey(a)));
 
       // Apply oscillation penalty: strongly discourage returning to already-visited locations
