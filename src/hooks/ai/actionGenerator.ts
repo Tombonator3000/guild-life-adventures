@@ -137,14 +137,13 @@ function applyTravelCostPenalty(
       const totalCost = baseSteps + baseSteps * weatherMoveExtra;
 
       // Penalty scales with distance and efficiency weight
-      // 1 step = -1 priority, 5 steps = -5 * eff priority
-      // Hard AI (eff=0.9): 5 steps = -4.5 penalty
-      const penalty = Math.round(totalCost * efficiencyWeight * 1.0);
+      // Hard AI (eff=0.95): 5 steps = -7.1 penalty (was -4.5)
+      const penalty = Math.round(totalCost * efficiencyWeight * 1.5); // was 1.0 — stronger deterrent
       action.priority -= penalty;
 
-      // Extra penalty for distant moves when late in turn
+      // Extra penalty for distant moves (4+ steps) — reinforces local batching
       if (totalCost >= 4) {
-        action.priority -= Math.round(totalCost * 0.5);
+        action.priority -= Math.round(totalCost * 1.0); // was 0.5
       }
     }
   }
@@ -191,17 +190,17 @@ function applySmartGoalSprint(
     career: ['work', 'apply-job'],
   };
 
-  // Find goals that are 65%+ complete (more aggressive sprint threshold for hard AI)
+  // Find goals that are 55%+ complete (lowered from 65% — harder AI starts sprinting earlier)
   const GOAL_KEYS = ['wealth', 'happiness', 'education', 'career'] as const;
   const sprintTargets = GOAL_KEYS
-    .filter(g => progress[g].progress >= 0.65 && progress[g].progress < 1.0)
+    .filter(g => progress[g].progress >= 0.55 && progress[g].progress < 1.0)
     .map(g => ({ goal: g, gap: progress[g].target - progress[g].current, progress: progress[g].progress }))
     .sort((a, b) => b.progress - a.progress);
 
   if (sprintTargets.length === 0) return;
 
   const topSprint = sprintTargets[0];
-  const sprintBoost = Math.round(15 + (topSprint.progress - 0.65) * 30); // 15-25 boost
+  const sprintBoost = Math.round(15 + (topSprint.progress - 0.55) * 33); // 15-28 boost (was 15-25)
   const boostActions = new Set(GOAL_SPRINT_ACTIONS[topSprint.goal]);
 
   for (const action of actions) {
