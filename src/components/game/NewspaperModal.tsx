@@ -187,7 +187,7 @@ export function NewspaperModal({ newspaper, onClose }: NewspaperModalProps) {
                           src={getArticleImage(article)}
                           alt=""
                           className="w-full h-full object-cover"
-                          style={{ filter: 'sepia(0.35) contrast(1.1)' }}
+                          style={{ filter: 'sepia(0.35) contrast(1.1) opacity(0.35)' }}
                           draggable={false}
                         />
                         <div
