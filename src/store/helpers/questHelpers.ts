@@ -153,7 +153,7 @@ function evaluateGoals(
   const wealthMet = totalWealth >= goals.wealth;
   const happinessMet = player.happiness >= goals.happiness;
   const educationMet = totalEducation >= goals.education;
-  const careerMet = player.dependability >= goals.career;
+  const careerMet = !!player.currentJob && player.dependability >= goals.career;
   const adventureMet = goals.adventure <= 0 || adventureValue >= goals.adventure;
 
   return {
