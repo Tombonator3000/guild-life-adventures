@@ -1,5 +1,20 @@
 # log.md2 — Development Log (Session 2)
 
+## 2026-03-05 14:00 — Gate Developer Tab Behind Secret Activation
+
+### What
+Developer tab and debug keyboard shortcuts (Ctrl+Shift+D/Z) are now hidden by default. Only accessible after clicking the Shield icon on the title screen 5 times within 2 seconds. Session-only — resets when the tab is closed.
+
+### Files Created
+- `src/hooks/useDevMode.ts` — Module-level dev mode flag with `useSyncExternalStore` hook for reactivity
+
+### Files Modified
+- `src/components/screens/TitleScreen.tsx` — Added 5-click Shield handler to activate dev mode
+- `src/components/game/RightSideTabs.tsx` — Filter out Developer tab when dev mode is off
+- `src/hooks/useGameBoardKeyboard.ts` — Gate Ctrl+Shift+D/Z behind `isDevMode()`
+
+---
+
 ## 2026-03-05 — Remove ElevenLabs SFX Generator
 
 ### What
