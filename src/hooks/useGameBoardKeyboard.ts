@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import type { Player } from '@/types/game.types';
 import { audioManager } from '@/audio/audioManager';
+import { isDevMode } from '@/hooks/useDevMode';
 
 export function useGameBoardKeyboard({
   setShowZoneEditor,
