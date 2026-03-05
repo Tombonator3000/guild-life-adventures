@@ -4,6 +4,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Prevent accidental text selection during gameplay */
+* {
+  user-select: none;
+}
+input, textarea, select, [contenteditable] {
+  user-select: text;
+}
+
 /* Guild Life - Medieval Fantasy Design System */
 
 @layer base {
