@@ -1,6 +1,7 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useRef, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { Sword, Shield, Scroll, Crown, Save, Trash2, Volume2, VolumeX, Download, Globe, Settings, Info, Share, Plus, X, BookOpen } from 'lucide-react';
+import { activateDevMode } from '@/hooks/useDevMode';
 import { hasAutoSave, getSaveSlots, formatSaveDate, deleteSave } from '@/data/saveLoad';
 import type { SaveSlotInfo } from '@/data/saveLoad';
 import { useAudioSettings } from '@/hooks/useMusic';
