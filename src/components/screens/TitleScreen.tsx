@@ -83,7 +83,7 @@ export function TitleScreen() {
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-4 mb-4">
             <Sword className="w-12 h-12 text-gold animate-float" style={{ animationDelay: '0s' }} />
-            <Shield className="w-16 h-16 text-primary animate-float" style={{ animationDelay: '0.5s' }} />
+            <Shield className="w-16 h-16 text-primary animate-float cursor-pointer select-none" style={{ animationDelay: '0.5s' }} onClick={handleDevClick} />
             <Scroll className="w-12 h-12 text-gold animate-float" style={{ animationDelay: '1s' }} />
           </div>
           <h1 className="font-display text-6xl md:text-8xl font-bold text-foreground mb-4 tracking-wider">
