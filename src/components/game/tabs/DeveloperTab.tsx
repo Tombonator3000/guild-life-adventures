@@ -89,17 +89,6 @@ export function DeveloperTab({
       <PlayerStateSection playerId={playerId} />
       <TeleportSection playerId={playerId} currentLocation={currentPlayer?.currentLocation} />
 
-      <OptionSection title="SFX Generator">
-        <a
-          href={`${import.meta.env.BASE_URL}admin/sfx`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={DEBUG_BTN}
-        >
-          Open SFX Generator
-        </a>
-      </OptionSection>
-
       <OptionSection title="Shortcuts">
         <div className="space-y-0.5 text-[8px] text-amber-800">
           <ShortcutRow keys="Ctrl+Shift+D" action="Debug Overlay" />

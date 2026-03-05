@@ -1,5 +1,28 @@
 # log.md2 — Development Log (Session 2)
 
+## 2026-03-05 — Remove ElevenLabs SFX Generator
+
+### What
+Removed the entire ElevenLabs SFX Generator admin tool from the project.
+
+### Files Deleted
+- `src/pages/SFXGenerator.tsx` — Admin page route component
+- `src/services/sfxGenerator.ts` — SFX generation service (called edge function)
+- `src/components/admin/SFXGeneratorPanel.tsx` — Generator UI panel
+- `supabase/functions/elevenlabs-sfx/index.ts` — Edge function for ElevenLabs API
+
+### Files Modified
+- `src/App.tsx` — Removed `/admin/sfx` route, `lazy`/`Suspense` imports
+- `supabase/config.toml` — Removed `[functions.elevenlabs-sfx]` section
+
+### Dependencies Removed
+- `jszip` — Was only used by SFX generator for ZIP download
+
+### Notes
+- The in-game SFX playback system (`sfxManager.ts`, `useSFX.ts`, `sfx-button.tsx`, `public/sfx/` MP3 files) is untouched — only the admin generation tool was removed.
+
+---
+
 ## 2026-02-26 09:30 — Refactor: Code clarity improvements in actionGenerator.ts and weekEndHelpers.ts
 
 ### Problem
