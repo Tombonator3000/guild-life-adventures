@@ -38,11 +38,11 @@ export function useGameBoardKeyboard({
       const hasOpenDialog = !!document.querySelector('[role="dialog"]');
       if (hasOpenDialog && !e.ctrlKey && !e.shiftKey && e.key !== 'Escape') return;
 
-      if (e.ctrlKey && e.shiftKey && e.key === 'Z') {
+      if (e.ctrlKey && e.shiftKey && e.key === 'Z' && isDevMode()) {
         e.preventDefault();
         setShowZoneEditor(prev => !prev);
       }
-      if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+      if (e.ctrlKey && e.shiftKey && e.key === 'D' && isDevMode()) {
         e.preventDefault();
         setShowDebugOverlay(prev => !prev);
       }
