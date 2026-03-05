@@ -10,6 +10,7 @@ import { OptionsTab } from './tabs/OptionsTab';
 import { DeveloperTab } from './tabs/DeveloperTab';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { useTranslation } from '@/i18n';
+import { useDevMode } from '@/hooks/useDevMode';
 import type { Player, GoalSettings } from '@/types/game.types';
 
 type TabId = 'players' | 'achievements' | 'options' | 'developer';
@@ -64,7 +65,8 @@ export function RightSideTabs({
   const [activeTab, setActiveTab] = useState<TabId>(initialTab ?? 'players');
   const { isFullscreen, toggleFullscreen } = useFullscreen();
   const { t } = useTranslation();
-  const TABS = getTabs(t);
+  const devMode = useDevMode();
+  const TABS = getTabs(t).filter(tab => tab.id !== 'developer' || devMode);
 
   return (
     <div className="h-full flex flex-col bg-parchment rounded-lg border-2 border-wood-dark/50 overflow-hidden">

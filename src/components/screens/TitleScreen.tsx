@@ -1,6 +1,7 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useRef, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { Sword, Shield, Scroll, Crown, Save, Trash2, Volume2, VolumeX, Download, Globe, Settings, Info, Share, Plus, X, BookOpen } from 'lucide-react';
+import { activateDevMode } from '@/hooks/useDevMode';
 import { hasAutoSave, getSaveSlots, formatSaveDate, deleteSave } from '@/data/saveLoad';
 import type { SaveSlotInfo } from '@/data/saveLoad';
 import { useAudioSettings } from '@/hooks/useMusic';
@@ -26,6 +27,19 @@ export function TitleScreen() {
   const [showCredits, setShowCredits] = useState(false);
   const [slots, setSlots] = useState<SaveSlotInfo[]>([]);
   const autoSaveExists = hasAutoSave();
+  const devClickCount = useRef(0);
+  const devClickTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  const handleDevClick = () => {
+    devClickCount.current++;
+    clearTimeout(devClickTimer.current);
+    if (devClickCount.current >= 5) {
+      activateDevMode();
+      devClickCount.current = 0;
+    } else {
+      devClickTimer.current = setTimeout(() => { devClickCount.current = 0; }, 2000);
+    }
+  };
   const { musicMuted, toggleMute } = useAudioSettings();
   const { canInstall, install, isIOS, showIOSGuide, dismissIOSGuide } = usePWAInstall();
   const { enterFullscreen } = useFullscreen();
@@ -69,7 +83,7 @@ export function TitleScreen() {
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-4 mb-4">
             <Sword className="w-12 h-12 text-gold animate-float" style={{ animationDelay: '0s' }} />
-            <Shield className="w-16 h-16 text-primary animate-float" style={{ animationDelay: '0.5s' }} />
+            <Shield className="w-16 h-16 text-primary animate-float cursor-pointer select-none" style={{ animationDelay: '0.5s' }} onClick={handleDevClick} />
             <Scroll className="w-12 h-12 text-gold animate-float" style={{ animationDelay: '1s' }} />
           </div>
           <h1 className="font-display text-6xl md:text-8xl font-bold text-foreground mb-4 tracking-wider">
