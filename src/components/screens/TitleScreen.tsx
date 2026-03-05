@@ -27,6 +27,19 @@ export function TitleScreen() {
   const [showCredits, setShowCredits] = useState(false);
   const [slots, setSlots] = useState<SaveSlotInfo[]>([]);
   const autoSaveExists = hasAutoSave();
+  const devClickCount = useRef(0);
+  const devClickTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  const handleDevClick = () => {
+    devClickCount.current++;
+    clearTimeout(devClickTimer.current);
+    if (devClickCount.current >= 5) {
+      activateDevMode();
+      devClickCount.current = 0;
+    } else {
+      devClickTimer.current = setTimeout(() => { devClickCount.current = 0; }, 2000);
+    }
+  };
   const { musicMuted, toggleMute } = useAudioSettings();
   const { canInstall, install, isIOS, showIOSGuide, dismissIOSGuide } = usePWAInstall();
   const { enterFullscreen } = useFullscreen();
