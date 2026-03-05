@@ -10,6 +10,7 @@ import { OptionsTab } from './tabs/OptionsTab';
 import { DeveloperTab } from './tabs/DeveloperTab';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { useTranslation } from '@/i18n';
+import { useDevMode } from '@/hooks/useDevMode';
 import type { Player, GoalSettings } from '@/types/game.types';
 
 type TabId = 'players' | 'achievements' | 'options' | 'developer';
