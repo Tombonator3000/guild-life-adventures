@@ -305,10 +305,96 @@ function generateHealthActions(ctx: ActionContext): AIAction[] {
   return actions;
 }
 
+// ─── Happiness floor actions ───────────────────────────────────
+
+/**
+ * Universal happiness floor: fires regardless of which goal is "weakest".
+ *
+ * Without this, wealth-focused AIs (Thornwick) let happiness decay to
+ * near-zero because personality weights scale happiness actions DOWN (0.7x)
+ * while work actions get scaled UP (1.5x), so even when happiness is the
+ * weakest goal, work always wins. This function generates high-priority
+ * happiness recovery actions that provide a meaningful floor for ALL AIs.
+ *
+ * Base priorities are set high enough that after personality social-weight
+ * scaling they still compete with secondary work actions:
+ *   - happiness < 10: priority 145 → after 0.7x = 101 (emergency)
+ *   - happiness < 20: priority 120 → after 0.7x = 84 (urgent)
+ *   - happiness < 35: priority  95 → after 0.7x = 66 (proactive)
+ */
+function generateHappinessFloorActions(ctx: ActionContext): AIAction[] {
+  const actions: AIAction[] = [];
+  const { player, urgency, currentLocation, moveCost, priceModifier } = ctx;
+
+  if (urgency.happiness < 0.5) return actions; // Happiness is fine
+
+  const isEmergency = urgency.happiness >= 1.0;   // happiness < 10
+  const isUrgent    = urgency.happiness >= 0.8;   // happiness < 20
+
+  const basePriority = isEmergency ? 145 : isUrgent ? 120 : 95;
+  const pm = priceModifier ?? 1;
+
+  // Option A: Buy happiness appliance at enchanter
+  if (player.gold > 250) {
+    const wantedAppliances = [
+      { id: 'cooking-fire',     cost: Math.round(276 * pm) },
+      { id: 'scrying-mirror',   cost: Math.round(525 * pm) },
+      { id: 'preservation-box', cost: Math.round(876 * pm) },
+    ];
+    for (const wanted of wantedAppliances) {
+      if (!player.appliances[wanted.id] && player.gold >= wanted.cost) {
+        if (currentLocation === 'enchanter') {
+          actions.push({
+            type: 'buy-appliance',
+            priority: basePriority,
+            description: `Buy ${wanted.id} (happiness floor — current: ${player.happiness})`,
+            details: { applianceId: wanted.id, cost: wanted.cost, source: 'enchanter' },
+          });
+        } else if (player.timeRemaining > moveCost('enchanter') + 2) {
+          actions.push({
+            type: 'move',
+            location: 'enchanter',
+            priority: basePriority - 5,
+            description: `Travel to enchanter for happiness appliance (floor: ${player.happiness})`,
+          });
+        }
+        break; // Only aim for one at a time
+      }
+    }
+  }
+
+  // Option B: Rest at home when no affordable appliance is available
+  if (player.housing !== 'homeless' && player.timeRemaining >= 3) {
+    const homeLocation = player.housing === 'noble' ? 'noble-heights' : 'slums';
+    const relaxHours = player.housing === 'noble' ? 3 : 8;
+    const restPriority = basePriority - 10; // Slightly less preferred than buying appliance
+    if (currentLocation === homeLocation && player.timeRemaining >= relaxHours) {
+      actions.push({
+        type: 'rest',
+        priority: restPriority,
+        description: `Rest at home to recover happiness (floor: ${player.happiness})`,
+        details: { hours: relaxHours, happinessGain: 3, relaxGain: 5 },
+      });
+    } else {
+      const homeMoveCost = moveCost(homeLocation as Parameters<typeof moveCost>[0]);
+      if (player.timeRemaining > homeMoveCost + relaxHours) {
+        actions.push({
+          type: 'move',
+          location: homeLocation as Parameters<typeof moveCost>[0],
+          priority: restPriority - 5,
+          description: `Travel home to recover happiness (floor: ${player.happiness})`,
+        });
+      }
+    }
+  }
+
+  return actions;
+}
+
 // ─── Main entry point ──────────────────────────────────────────
 
 /**
- * Generate actions for critical needs (food, rent, clothing, health).
+ * Generate actions for critical needs (food, rent, clothing, health, happiness floor).
  *
  * Each need is handled by a focused function. Results are combined
  * into a single action list for the priority-based action system.
@@ -319,5 +405,6 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
     ...generateRentActions(ctx),
     ...generateClothingActions(ctx),
     ...generateHealthActions(ctx),
+    ...generateHappinessFloorActions(ctx),
   ];
 }
