@@ -49,6 +49,8 @@ export function MobileHUD({
           playerName={player.name}
           size={16}
           isAI={player.isAI}
+          hasCurse={(player.activeCurses?.length ?? 0) > 0}
+          curses={player.activeCurses}
         />
         <span className="font-display text-[10px] text-parchment truncate max-w-[50px]">
           {player.name}

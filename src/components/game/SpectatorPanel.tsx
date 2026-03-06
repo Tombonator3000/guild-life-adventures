@@ -91,6 +91,8 @@ export function SpectatorPanel({ players, goalSettings, week, stockPrices, isPur
                 playerName={player.name}
                 size={22}
                 isAI={player.isAI}
+                hasCurse={(player.activeCurses?.length ?? 0) > 0}
+                curses={player.activeCurses}
               />
               <div className="flex-1 min-w-0">
                 <span className="font-display text-xs font-bold text-[#3d2b1f] truncate block">

@@ -47,18 +47,29 @@ export function SideInfoTabs({ player, goals, isCurrentPlayer, initialTab }: Sid
     <div className={`h-full flex flex-col bg-parchment rounded-lg border-2 overflow-hidden ${isCurrentPlayer ? 'border-accent' : 'border-wood-dark/50'}`}>
       {/* Player Portrait - Large, prominent display */}
       <div className="flex-shrink-0 flex flex-col items-center p-3 bg-parchment border-b-2 border-wood-light/50">
-        <div className="rounded-lg border-2 border-gold/50 overflow-hidden shadow-lg bg-wood/30 p-1">
-          <CharacterPortrait
-            portraitId={player.portraitId}
-            playerColor={player.color}
-            playerName={player.name}
-            size={180}
-            height={200}
-            shape="rect"
-            isAI={player.isAI}
-            className="shadow-md"
-          />
-        </div>
+        {(() => {
+          const hasCurse = (player.activeCurses?.length ?? 0) > 0;
+          return (
+            <div
+              className={`rounded-lg border-2 ${hasCurse ? 'border-purple-500' : 'border-gold/50'} overflow-hidden shadow-lg bg-wood/30 p-1`}
+              style={hasCurse ? { boxShadow: '0 0 0 1px rgba(147,51,234,0.35), 0 0 16px 5px rgba(147,51,234,0.5)' } : undefined}
+            >
+              <CharacterPortrait
+                portraitId={player.portraitId}
+                playerColor={player.color}
+                playerName={player.name}
+                size={180}
+                height={200}
+                shape="rect"
+                isAI={player.isAI}
+                hasCurse={hasCurse}
+                isToad={player.activeCurses?.some(c => c.effectType === 'toad-transformation') ?? false}
+                curses={player.activeCurses}
+                className="shadow-md"
+              />
+            </div>
+          );
+        })()}
         <div className="mt-1.5 text-center">
           <h3 className="font-display text-sm font-bold text-wood-dark">
             {player.name}

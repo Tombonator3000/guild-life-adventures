@@ -78,6 +78,7 @@ export function TurnOrderPanel({
                   size={16}
                   isAI={player.isAI}
                   hasCurse={(player.activeCurses?.length ?? 0) > 0}
+                  curses={player.activeCurses}
                 />
 
                 {/* Name and status */}

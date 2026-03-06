@@ -74,6 +74,7 @@ export function PlayerToken({ player, index, isCurrent }: PlayerTokenProps) {
         isAI={player.isAI}
         hasCurse={hasCurse && !isDead}
         isToad={isToad && !isDead}
+        curses={isDead ? undefined : player.activeCurses}
       />
       {isDead && (
         <div

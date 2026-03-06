@@ -24,6 +24,8 @@ export function ResourcePanel() {
             isAI={player.isAI}
             className="shadow-lg flex-shrink-0"
             hasCurse={(player.activeCurses?.length ?? 0) > 0}
+            isToad={player.activeCurses?.some(c => c.effectType === 'toad-transformation') ?? false}
+            curses={player.activeCurses}
           />
           <div>
             <h2 className="font-display text-lg font-bold text-card-foreground leading-tight">
