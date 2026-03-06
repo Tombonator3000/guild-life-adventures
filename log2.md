@@ -5,6 +5,47 @@
 
 ---
 
+## 2026-03-06T23:30Z — Refactor: `handleExploreDungeon` in actionExecutor.ts
+
+### Summary
+
+Refactored the most complex function in `actionExecutor.ts` for clarity while preserving identical behavior.
+
+### Target
+
+`handleExploreDungeon` — responsible for resolving an AI dungeon run. Complexity issues:
+- 5 lines of combat stats / edu bonuses / time cost computation were interleaved with guard checks, obscuring the validate → commit → resolve → apply pipeline
+- The `autoResolveFloor` call passed **9 positional arguments on a single 159-character line**, making it impossible to read which argument means what at a glance
+- The `equippedItems` object was built inline on the same line as the function call
+
+### Changes
+
+**New helper extracted above `applyDungeonResults`:**
+
+**`buildDungeonRunContext(player, floor)`**
+- Packages `calculateCombatStats` (5 args), `calculateEducationBonuses`, and `getEncounterTimeCost * ENCOUNTERS_PER_FLOOR` into a single named concept
+- Returns `{ combatStats, eduBonuses, timeCost }` — caller destructures what it needs
+- Uses `NonNullable<ReturnType<typeof getFloor>>` so TypeScript knows floor is non-null (caller already guards)
+
+**Inside `handleExploreDungeon`:**
+- Replaced the 3 inlined stat computations with `buildDungeonRunContext(player, floor)` — one line, clear intent
+- Split `autoResolveFloor` across 11 lines (one arg per line) — each arg now readable in context
+- Formatted `equippedItems` object vertically (3 properties, one per line)
+- Replaced `const { checkDeath } = useGameStore.getState(); checkDeath(...)` with the equivalent one-liner `useGameStore.getState().checkDeath(player.id)`
+- Added 4 section comments marking the pipeline phases: build context → guard → commit → resolve → apply
+
+### Files changed
+
+- `src/hooks/ai/actionExecutor.ts` — extracted `buildDungeonRunContext`, refactored `handleExploreDungeon`
+
+### Test results
+
+- Before: 356 pass, 2 fail (pre-existing `victory.test.ts` failures unrelated to this file)
+- After: 356 pass, 2 fail (same pre-existing failures — no regressions)
+- Lint: 0 errors, 31 pre-existing warnings (unchanged)
+
+---
+
 ## 2026-03-06T23:05Z — Refactor: `makeNLChainChoice` in questHelpers.ts
 
 ### Summary

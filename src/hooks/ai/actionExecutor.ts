@@ -480,6 +480,20 @@ function calculateDungeonGold(baseGold: number, bossDefeated: boolean): number {
   return Math.floor(baseGold * defeatMult * festivalMult);
 }
 
+/** Packages the player's combat and education stats for a given floor into a single context object. */
+function buildDungeonRunContext(player: Player, floor: NonNullable<ReturnType<typeof getFloor>>) {
+  const combatStats = calculateCombatStats(
+    player.equippedWeapon,
+    player.equippedArmor,
+    player.equippedShield,
+    player.temperedItems,
+    player.equipmentDurability,
+  );
+  const eduBonuses = calculateEducationBonuses(player.completedDegrees);
+  const timeCost = getEncounterTimeCost(floor, combatStats) * ENCOUNTERS_PER_FLOOR;
+  return { combatStats, eduBonuses, timeCost };
+}
+
 /** Apply all results from a dungeon run: gold, health, happiness, floor clear, rare drops, durability. */
 function applyDungeonResults(
   playerId: string,
@@ -518,28 +532,37 @@ function handleExploreDungeon(player: Player, action: AIAction, store: StoreActi
   const floor = getFloor(floorId);
   if (!floor) return false;
 
-  // Calculate time cost and validate
-  const combatStats = calculateCombatStats(
-    player.equippedWeapon, player.equippedArmor, player.equippedShield,
-    player.temperedItems, player.equipmentDurability,
-  );
-  const eduBonuses = calculateEducationBonuses(player.completedDegrees);
-  const timeCost = getEncounterTimeCost(floor, combatStats) * ENCOUNTERS_PER_FLOOR;
+  // Build the player's combat context and validate time budget
+  const { combatStats, eduBonuses, timeCost } = buildDungeonRunContext(player, floor);
   if (!canAttemptDungeon(player, timeCost)) return false;
 
-  // Execute dungeon run
+  // Commit to the run — spend time and record the attempt
   store.spendTime(player.id, timeCost);
   trackDungeonAttempt(player.id);
 
+  // Resolve the dungeon floor
   const isFirstClear = !player.dungeonFloorsCleared.includes(floorId);
   const lootMult = getLootMultiplier(floor, player.guildRank);
-  const equippedItems = { weapon: player.equippedWeapon, armor: player.equippedArmor, shield: player.equippedShield };
-  const result = autoResolveFloor(floor, combatStats, eduBonuses, player.health, isFirstClear, lootMult, player.dungeonFloorsCleared, equippedItems, player.maxHealth);
+  const equippedItems = {
+    weapon: player.equippedWeapon,
+    armor: player.equippedArmor,
+    shield: player.equippedShield,
+  };
+  const result = autoResolveFloor(
+    floor,
+    combatStats,
+    eduBonuses,
+    player.health,
+    isFirstClear,
+    lootMult,
+    player.dungeonFloorsCleared,
+    equippedItems,
+    player.maxHealth,
+  );
 
   // Apply results and check for death
   const actualGold = applyDungeonResults(player.id, floorId, floor, result, isFirstClear, store);
-  const { checkDeath } = useGameStore.getState();
-  checkDeath(player.id);
+  useGameStore.getState().checkDeath(player.id);
 
   console.log(`[Grimwald AI] Dungeon Floor ${floorId}: ${result.success ? 'CLEARED' : 'FAILED'}. ` +
     `+${actualGold}g, ${result.healthChange} HP. ${result.log.join(' | ')}`);
