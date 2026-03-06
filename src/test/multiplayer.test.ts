@@ -535,7 +535,7 @@ describe('Cross-Player Validation', () => {
       'modifyRelaxation', 'cureSickness', 'setHousing', 'payRent',
       'prepayRent', 'moveToHousing', 'setJob', 'workShift', 'requestRaise',
       'negotiateRaise', 'studySession', 'completeEducationLevel',
-      'studyDegree', 'completeDegree', 'depositToBank', 'withdrawFromBank',
+      'studyDegree', 'payFullTuition', 'completeDegree', 'depositToBank', 'withdrawFromBank',
       'invest', 'withdrawInvestment', 'buyItem', 'sellItem', 'buyDurable',
       'sellDurable', 'buyAppliance', 'repairAppliance', 'pawnAppliance', 'redeemAppliance',
       'equipItem', 'unequipItem', 'buyStock', 'sellStock', 'takeLoan',

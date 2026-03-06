@@ -126,6 +126,7 @@ const createPlayer = (
   appliances: {}, // Appliances with detailed tracking
   applianceHistory: [], // Appliance types ever owned (for happiness bonus)
   pawnedAppliances: [], // Appliances pawned at the Fence awaiting redemption
+  prepaidDegrees: {}, // Degrees with sessions pre-paid upfront (Jones-style full-course tuition)
   inventory: [],
   isAI,
   activeQuest: null,

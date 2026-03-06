@@ -53,6 +53,74 @@ Four UX improvements to game setup and the game board.
 
 ---
 
+## 2026-03-06T17:00Z — Features: Music variants, Jones-style tuition, 0-time location preview
+
+### Summary
+
+Three new features based on UX/faithfulness-to-original review.
+
+### 1. Music track variants (2-3 per location, random on visit)
+
+- `src/audio/musicConfig.ts`: `MusicTrack` now has optional `variants?: string[]` field.
+  Added placeholder variant filenames (e.g. `03guildhall_v2.mp3`) for all major location tracks.
+  New `pickTrackFile(track)` helper: picks randomly from `[file, ...variants]` pool each play.
+- `src/audio/audioManager.ts`: `play()` calls `pickTrackFile()` and passes a `fallbackUrl`
+  to `crossfadeTo()`. If a variant file 404s (placeholder not yet real), an `error` event
+  listener retries with the default track — music always plays regardless.
+
+Placeholders are in `/public/music/`. Drop real files with matching names when ready.
+
+### 2. Jones-style full-course tuition (pay all sessions upfront, attend free)
+
+- `src/types/game.types.ts`: Added `prepaidDegrees: Partial<Record<DegreeId, number>>`
+  to Player type. Tracks how many pre-paid sessions remain per degree.
+- `src/store/gameStore.ts`: Initializes `prepaidDegrees: {}` in `createPlayer`.
+- `src/store/helpers/workEducationHelpers.ts`:
+  - `studyDegree` now checks `prepaidDegrees[degreeId]` — if > 0, session costs 0g
+    (just time), and decrements the counter.
+  - New `payFullTuition(playerId, degreeId, totalCost, sessions)` action: deducts gold,
+    sets `prepaidDegrees[degreeId] = sessionsLeft`. Cannot double-prepay.
+- `src/store/storeTypes.ts`: Added `payFullTuition` to `GameStore` interface.
+- `src/network/types.ts`: Added `'payFullTuition'` to MULTIPLAYER_ACTIONS list.
+- `src/test/multiplayer.test.ts`: Added `'payFullTuition'` to expected actions list.
+- `src/data/saveLoad.ts`: Bumped `SAVE_VERSION` 5→6. Migration adds `prepaidDegrees: {}`
+  to all existing players.
+- `src/components/game/AcademyPanel.tsx`:
+  - Accepts new `payFullTuition` prop.
+  - "Enroll Full Course (N sessions, attend free)" button appears below the per-session
+    button when NOT already prepaid. Shows full remaining cost. Disabled if can't afford.
+  - Green "Tuition paid — N free sessions remaining" badge when degree is prepaid.
+  - Per-session button shows `0g` (free) when degree is prepaid.
+- `src/components/game/locationTabs.tsx`: Added `payFullTuition` to `LocationTabContext`
+  and passes it through to `AcademyPanel`.
+- `src/components/game/LocationPanel.tsx`: Added `payFullTuition: store.payFullTuition`
+  to location context.
+
+### 3. Location services preview with 0 time remaining
+
+- `src/components/game/LocationPanel.tsx`: Added `LOCATION_SERVICES` constant mapping
+  each `LocationId` to a brief string list of what the location offers.
+  When the player clicks a location they cannot reach (0 time, no partial travel possible),
+  the "What's here" list is shown below the disabled travel button.
+  Displayed only for locations that have a services entry (all 14 locations covered).
+
+### Files changed
+
+- `src/audio/musicConfig.ts` — MusicTrack variants + pickTrackFile helper
+- `src/audio/audioManager.ts` — variant selection + fallback-on-error
+- `src/types/game.types.ts` — prepaidDegrees field on Player
+- `src/store/gameStore.ts` — prepaidDegrees init
+- `src/store/storeTypes.ts` — payFullTuition in GameStore interface
+- `src/store/helpers/workEducationHelpers.ts` — studyDegree prepaid check + payFullTuition
+- `src/network/types.ts` — payFullTuition in multiplayer actions
+- `src/test/multiplayer.test.ts` — payFullTuition in expected list
+- `src/data/saveLoad.ts` — SAVE_VERSION 5→6, v6 migration
+- `src/components/game/AcademyPanel.tsx` — Enroll Full Course button + prepaid badge
+- `src/components/game/locationTabs.tsx` — payFullTuition in context
+- `src/components/game/LocationPanel.tsx` — payFullTuition + LOCATION_SERVICES preview
+
+---
+
 ## 2026-03-06T14:30Z — Fix: Infinite reload loop on startup (BUG-015)
 
 ### Root Cause

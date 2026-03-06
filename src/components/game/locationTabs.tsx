@@ -74,6 +74,7 @@ export interface LocationTabContext {
   spendTime: GameStore['spendTime'];
   workShift: GameStore['workShift'];
   studyDegree: GameStore['studyDegree'];
+  payFullTuition: GameStore['payFullTuition'];
   completeDegree: GameStore['completeDegree'];
   prepayRent: GameStore['prepayRent'];
   moveToHousing: GameStore['moveToHousing'];
@@ -358,7 +359,7 @@ function forgeTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function academyTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, priceModifier, studyDegree, completeDegree } = ctx;
+  const { player, priceModifier, studyDegree, payFullTuition, completeDegree } = ctx;
   return [{
     id: 'courses',
     label: 'Courses',
@@ -367,6 +368,7 @@ function academyTabs(ctx: LocationTabContext): LocationTab[] {
         player={player}
         priceModifier={priceModifier}
         studyDegree={studyDegree}
+        payFullTuition={payFullTuition}
         completeDegree={completeDegree}
       />
     ),
