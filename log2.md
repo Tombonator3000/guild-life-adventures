@@ -5,6 +5,54 @@
 
 ---
 
+## 2026-03-06T16:00Z — Feature: Dice randomize, bigger avatars, 6 players, player info modal
+
+### Summary
+
+Four UX improvements to game setup and the game board.
+
+### 1. Dice randomize name + avatar
+
+- Added `FANTASY_NAMES` array (30 classic-fantasy English/Celtic names) to `GameSetup.tsx`
+- Added `randomizePlayer(index)` function: picks unused portrait from `PLAYER_PORTRAITS` + random name
+- Added **Dice6** button under each player name input ("Randomize")
+- On first mount (`useEffect`), player 1 auto-randomizes their name and portrait
+- `Dice6` icon imported from lucide-react; `PLAYER_PORTRAITS` imported from `portraits.ts`
+
+### 2. Bigger portrait in setup list (40px → 64px)
+
+- `CharacterPortrait` size increased from 40 → 64 for both human players and AI opponents
+- AI difficulty row left-margin updated from `ml-[52px]` → `ml-[76px]` to match wider portrait
+
+### 3. Up to 6 players
+
+- `game.types.ts`: Added `Violet (#7C3AED)` and `Rose (#DB2777)` to `PLAYER_COLORS` (indices 4 and 5)
+- `GameSetup.tsx`: `MAX_TOTAL_PLAYERS` changed from 4 → 6
+- "X/4 total players" label now uses `MAX_TOTAL_PLAYERS` constant (shows "X/6")
+- `gameStore.ts` already uses `PLAYER_COLORS[index].value` — no changes needed there
+
+### 4. Click another player's token → show info modal
+
+- `PlayerToken.tsx`: Added optional `onClickPlayer?: (player: Player) => void` prop
+  - When provided and player is not the current player, renders as clickable with hover scale
+  - `e.stopPropagation()` prevents the click from also triggering the LocationZone move action
+- New component `PlayerInfoModal.tsx`: compact parchment-style card showing:
+  - 72px portrait, player name, AI badge if applicable
+  - Current job + base wage (or "Unemployed")
+  - Gold + savings
+  - Health/Food/Happiness bars with color-coded thresholds
+- `GameBoard.tsx`: added `viewingPlayer` state, passes `onClickPlayer={setViewingPlayer}` for non-current players, renders `<PlayerInfoModal>` when set
+
+### Files changed
+
+- `src/types/game.types.ts` — 2 new PLAYER_COLORS entries
+- `src/components/screens/GameSetup.tsx` — dice, bigger portraits, 6 players
+- `src/components/game/PlayerToken.tsx` — onClickPlayer prop + hover cursor
+- `src/components/game/PlayerInfoModal.tsx` — new component
+- `src/components/game/GameBoard.tsx` — viewingPlayer state + modal render
+
+---
+
 ## 2026-03-06T14:30Z — Fix: Infinite reload loop on startup (BUG-015)
 
 ### Root Cause

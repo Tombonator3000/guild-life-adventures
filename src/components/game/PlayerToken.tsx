@@ -1,3 +1,4 @@
+import type React from 'react';
 import type { Player } from '@/types/game.types';
 import { cn } from '@/lib/utils';
 import { CharacterPortrait } from './CharacterPortrait';
@@ -6,6 +7,7 @@ interface PlayerTokenProps {
   player: Player;
   index: number;
   isCurrent: boolean;
+  onClickPlayer?: (player: Player) => void;
 }
 
 function TokenCurseEffect({ isToad }: { isToad: boolean }) {
@@ -49,22 +51,31 @@ function TokenCurseEffect({ isToad }: { isToad: boolean }) {
   );
 }
 
-export function PlayerToken({ player, index, isCurrent }: PlayerTokenProps) {
+export function PlayerToken({ player, index, isCurrent, onClickPlayer }: PlayerTokenProps) {
   const hasCurse = Array.isArray(player.activeCurses) && player.activeCurses.length > 0;
   const isToad = player.activeCurses?.some(c => c.effectType === 'toad-transformation') ?? false;
   const isDead = player.isGameOver;
+
+  const handleClick = onClickPlayer
+    ? (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onClickPlayer(player);
+      }
+    : undefined;
 
   return (
     <div
       className={cn(
         'relative w-16 h-16 rounded-full shadow-lg transition-all duration-300',
         isCurrent && !isDead && 'animate-float ring-2 ring-gold ring-offset-1',
-        isDead && 'grayscale opacity-50'
+        isDead && 'grayscale opacity-50',
+        onClickPlayer && !isCurrent && 'cursor-pointer hover:scale-110'
       )}
       style={{
         zIndex: isCurrent ? 10 : index,
       }}
       title={isDead ? `${player.name} (fallen)` : player.name}
+      onClick={handleClick}
     >
       <CharacterPortrait
         portraitId={player.portraitId}

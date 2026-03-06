@@ -48,6 +48,9 @@ import { ContextualTips } from './ContextualTips';
 import { SpectatorOverlay } from './SpectatorOverlay';
 import { SpectatorPanel } from './SpectatorPanel';
 import { TopDropdownMenu } from './TopDropdownMenu';
+import { PlayerInfoModal } from './PlayerInfoModal';
+import type { Player } from '@/types/game.types';
+
 export function GameBoard() {
   const {
     players,
@@ -105,6 +108,7 @@ export function GameBoard() {
   const [showTurnTransition, setShowTurnTransition] = useState(false);
   const [lastHumanPlayerId, setLastHumanPlayerId] = useState<string | null>(null);
   const [fullboardMode, setFullboardMode] = useState(false);
+  const [viewingPlayer, setViewingPlayer] = useState<Player | null>(null);
   const isMobile = useIsMobile();
 
   // Privacy screen between turns in local multiplayer (2+ human players)
@@ -354,6 +358,7 @@ export function GameBoard() {
                       player={player}
                       index={index}
                       isCurrent={player.id === currentPlayer?.id}
+                      onClickPlayer={player.id !== currentPlayer?.id ? setViewingPlayer : undefined}
                     />
                   ))}
                 </LocationZone>
@@ -574,6 +579,14 @@ export function GameBoard() {
         <DeathModal
           event={deathEvent}
           onDismiss={dismissDeathEvent}
+        />
+      )}
+
+      {/* Player Info Modal — shown when clicking another player's token */}
+      {viewingPlayer && (
+        <PlayerInfoModal
+          player={viewingPlayer}
+          onClose={() => setViewingPlayer(null)}
         />
       )}
 

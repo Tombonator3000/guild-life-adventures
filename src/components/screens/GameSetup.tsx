@@ -1,13 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { PLAYER_COLORS, AI_DIFFICULTY_NAMES, AI_OPPONENTS, type AIDifficulty, type AIConfig } from '@/types/game.types';
-import { Plus, Minus, Bot, Play, Brain, Zap, Crown, Lightbulb, Trash2, Compass } from 'lucide-react';
+import { Plus, Minus, Bot, Play, Brain, Zap, Crown, Lightbulb, Trash2, Compass, Dice6 } from 'lucide-react';
 import { CharacterPortrait } from '@/components/game/CharacterPortrait';
 import { PortraitPicker } from '@/components/game/PortraitPicker';
-import { getDefaultAIPortrait } from '@/data/portraits';
+import { getDefaultAIPortrait, PLAYER_PORTRAITS } from '@/data/portraits';
 import gameBoard from '@/assets/game-board.jpeg';
 
-const MAX_TOTAL_PLAYERS = 4;
+const MAX_TOTAL_PLAYERS = 6;
+
+const FANTASY_NAMES = [
+  'Aldric', 'Brynn', 'Fenwick', 'Mira', 'Oswin', 'Tavish',
+  'Isolde', 'Cormac', 'Lyra', 'Wren', 'Gareth', 'Selja',
+  'Dorian', 'Elara', 'Theron', 'Vesper', 'Rowan', 'Sigrid',
+  'Edwyn', 'Maren', 'Calder', 'Nessa', 'Bram', 'Faye',
+  'Hadley', 'Orin', 'Petra', 'Silvain', 'Tilda', 'Varric',
+];
 
 export function GameSetup() {
   const { startNewGame, setPhase, setShowTutorial, setTutorialStep } = useGameStore();
@@ -28,6 +36,30 @@ export function GameSetup() {
 
   const totalPlayers = playerNames.length + aiOpponents.length;
   const canAddMore = totalPlayers < MAX_TOTAL_PLAYERS;
+
+  // Auto-randomize the first player's name and portrait on mount
+  useEffect(() => {
+    const randomName = FANTASY_NAMES[Math.floor(Math.random() * FANTASY_NAMES.length)];
+    const randomPortrait = PLAYER_PORTRAITS[Math.floor(Math.random() * PLAYER_PORTRAITS.length)];
+    setPlayerNames([randomName]);
+    setPlayerPortraits([randomPortrait.id]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const randomizePlayer = (index: number) => {
+    const usedPortraits = playerPortraits.filter((_, i) => i !== index);
+    const available = PLAYER_PORTRAITS.filter(p => !usedPortraits.includes(p.id));
+    const portrait = available.length > 0
+      ? available[Math.floor(Math.random() * available.length)]
+      : PLAYER_PORTRAITS[Math.floor(Math.random() * PLAYER_PORTRAITS.length)];
+    const randomName = FANTASY_NAMES[Math.floor(Math.random() * FANTASY_NAMES.length)];
+    const newNames = [...playerNames];
+    newNames[index] = randomName;
+    setPlayerNames(newNames);
+    const newPortraits = [...playerPortraits];
+    newPortraits[index] = portrait.id;
+    setPlayerPortraits(newPortraits);
+  };
 
   const addPlayer = () => {
     if (canAddMore) {
@@ -209,7 +241,7 @@ export function GameSetup() {
                         portraitId={playerPortraits[index]}
                         playerColor={PLAYER_COLORS[index].value}
                         playerName={name}
-                        size={40}
+                        size={64}
                         isAI={false}
                       />
                     </button>
@@ -217,13 +249,23 @@ export function GameSetup() {
                       Tap to pick
                     </span>
                   </div>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => updateName(index, e.target.value)}
-                    className="flex-1 px-4 py-2 bg-input border border-border rounded font-body text-amber-900 placeholder:text-amber-600/50 focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="Enter name..."
-                  />
+                  <div className="flex-1 flex flex-col gap-1.5">
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => updateName(index, e.target.value)}
+                      className="w-full px-4 py-2 bg-input border border-border rounded font-body text-amber-900 placeholder:text-amber-600/50 focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="Enter name..."
+                    />
+                    <button
+                      onClick={() => randomizePlayer(index)}
+                      className="flex items-center gap-1.5 px-3 py-1 rounded border border-amber-400/60 bg-amber-50/60 text-amber-700 text-xs font-display hover:bg-amber-100/80 hover:border-amber-500 transition-all"
+                      title="Randomize name and portrait"
+                    >
+                      <Dice6 className="w-3.5 h-3.5" />
+                      Randomize
+                    </button>
+                  </div>
                   <button
                     onClick={() => removePlayer(index)}
                     disabled={playerNames.length <= 1}
@@ -276,7 +318,7 @@ export function GameSetup() {
                             portraitId={ai.portraitId || getDefaultAIPortrait(index)}
                             playerColor={aiDef.color}
                             playerName={ai.name}
-                            size={40}
+                            size={64}
                             isAI={true}
                           />
                         </button>
@@ -296,7 +338,7 @@ export function GameSetup() {
                         </button>
                       </div>
                       {/* Per-AI Difficulty */}
-                      <div className="flex gap-1.5 ml-[52px]">
+                      <div className="flex gap-1.5 ml-[76px]">
                         {(['easy', 'medium', 'hard'] as AIDifficulty[]).map((diff) => (
                           <button
                             key={diff}
@@ -323,7 +365,7 @@ export function GameSetup() {
 
               {aiOpponents.length > 0 && (
                 <p className="text-xs text-amber-700/60 mt-2 ml-7">
-                  {totalPlayers}/4 total players. Each AI plays independently.
+                  {totalPlayers}/{MAX_TOTAL_PLAYERS} total players. Each AI plays independently.
                 </p>
               )}
             </div>
