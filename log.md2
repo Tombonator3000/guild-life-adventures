@@ -1,5 +1,22 @@
 # log.md2 — Development Log (Session 2)
 
+## 2026-03-06 — Cursed Portrait Glow Frame + Tooltip; Shadowfingers Modal Restyle
+
+### What
+1. **Cursed player portrait frame**: when a player has active curses, the CharacterPortrait border turns purple (`border-purple-500`) with an outer glowing box-shadow. A Radix Tooltip shows on hover listing each curse's name (via `getHexById`) and weeks remaining.
+2. **SideInfoTabs outer wrapper**: the outer gold frame also switches to purple + glow, since `overflow-hidden` would otherwise clip CharacterPortrait's own glow effect.
+3. **All call sites updated**: `SideInfoTabs`, `PlayerInfoPanel`, `MobileHUD`, `SpectatorPanel`, `SpectatorOverlay`, `TurnOrderPanel`, `ResourcePanel`, `PlayersTab`, `AnimatedPlayerToken`, `PlayerToken` — all now pass `curses={player.activeCurses}`.
+4. **ShadowfingersModal restyle**: replaced `DialogDescription` (low-contrast italic) with `font-display text-card-foreground` text. Newspaper headline uses parchment/scroll background matching the rest of the game. `gold-button` for Continue. Stolen items list also styled consistently.
+
+### Why
+- User reported portrait frame had no visual curse feedback visible from outside the component; overflow-hidden clipped the inner glow
+- Shadowfingers text was hard to read (low contrast `text-muted-foreground italic`)
+
+### Files
+- `src/components/game/CharacterPortrait.tsx` — curses prop, CurseTooltipWrapper, purple border + glow
+- `src/components/game/ShadowfingersModal.tsx` — EventPanel-style restyle
+- 10 other call sites — curses/hasCurse props propagated
+
 ## 2026-03-05 14:00 — Gate Developer Tab Behind Secret Activation
 
 ### What
