@@ -303,8 +303,8 @@ export function GameSetup() {
                             onClick={() => updateAIDifficulty(index, diff)}
                             className={`flex-1 px-2 py-1 rounded border text-xs transition-all ${
                               ai.difficulty === diff
-                                ? 'border-primary bg-primary/20 text-primary font-semibold'
-                                : 'border-border bg-background/50 text-muted-foreground hover:border-primary/50'
+                                ? 'border-primary bg-primary/30 text-amber-900 font-bold'
+                                : 'border-border bg-background/50 text-amber-900 hover:border-primary/50'
                             }`}
                           >
                             <div className="flex items-center justify-center gap-1">

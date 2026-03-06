@@ -7950,3 +7950,32 @@ Full gjennomgang av backlog-items. Fant at B4 (Quest Failure Consequences), B5 (
 ### Test-resultater
 - 358 tester, 0 feil
 - `bun run build` — clean build
+
+---
+
+## 2026-03-06T08:14Z — Bug Fixes: AI Difficulty Contrast + Food Spoilage
+
+### Bug 1: Low contrast AI difficulty selector in GameSetup
+
+**Symptom**: Unselected and selected AI difficulty buttons (Easy/Medium/Hard) were very hard to read — text nearly invisible against the button background.
+
+**Root cause**: Button styling used `text-muted-foreground` (HSL 30 25% 35%) for unselected and `text-primary` (HSL 40 70% 45%) for selected. These colors sit at ~35–45% lightness on a medium-tone button background (~52% effective lightness due to `bg-background/50` overlaid on parchment). The lightness difference was only 10–17%, far below WCAG AA standard.
+
+**Fix** (`src/components/screens/GameSetup.tsx` lines 304–308):
+- Unselected: `text-muted-foreground` → `text-amber-900` (very dark, high contrast)
+- Selected: `text-primary font-semibold` → `text-amber-900 font-bold bg-primary/30` (dark text + stronger background highlight for visual distinction)
+
+### Bug 2: Bread/cheese (regular food) triggering weekly sickness
+
+**Symptom**: Players who bought bread or cheese from the General Store got sick every week even without fresh food.
+
+**Root cause**: `buyFoodWithSpoilage` (for shelf-stable bread/cheese) incorrectly set `hasStoreBoughtFood: true`. This flag is checked by `processRegularFoodSpoilage` (startTurnHelpers.ts) at the start of every turn — causing a 55% sickness chance per week as long as the player had regular food and no Preservation Box.
+
+**Fix** (`src/store/helpers/economy/itemHelpers.ts`):
+- Removed `hasStoreBoughtFood: true` from the `buyFoodWithSpoilage` return object.
+- `hasStoreBoughtFood` is now only set by `buyFreshFood` (without preservation box), which is the only food type where weekly spoilage/sickness is intended.
+
+**Files Changed**:
+- `src/components/screens/GameSetup.tsx`
+- `src/store/helpers/economy/itemHelpers.ts`
+- `CLAUDE.md` (updated rules)
