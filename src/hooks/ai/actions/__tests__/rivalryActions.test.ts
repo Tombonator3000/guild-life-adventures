@@ -113,7 +113,7 @@ function makeContext(overrides: Partial<ActionContext> = {}): ActionContext {
       adventure: { current: 0, target: 0, progress: 1 },
       overall: 0,
     },
-    urgency: { food: 0.1, rent: 0.1, clothing: 0.1, health: 0.1, housing: 0.1 },
+    urgency: { food: 0.1, rent: 0.1, clothing: 0.1, health: 0.1, housing: 0.1, happiness: 0.1 },
     weakestGoal: 'wealth',
     rivals: [],
     weatherMoveCostMult: 1.0,

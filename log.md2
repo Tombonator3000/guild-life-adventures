@@ -277,3 +277,14 @@ User requested removal of the "Rest {X}h & End" button that appeared below the E
 ### Result
 - 34 errors → 0 errors
 - 30 warnings remain (all pre-existing: fast-refresh in shadcn/ui, intentional exhaustive-deps omissions)
+
+## 2026-03-06 10:31 — Fix build-blocking test error (app stuck on "Loading the realm...")
+
+### Problem
+App showed "Loading the realm..." indefinitely because a TypeScript build error in `rivalryActions.test.ts` prevented compilation. The `ResourceUrgency` type gained a `happiness` field but the test mock was not updated.
+
+### Fix
+Added `happiness: 0.1` to the mock `urgency` object in `rivalryActions.test.ts` line 116.
+
+### Root cause
+When `ResourceUrgency` was extended with `happiness` field, the test file was missed during the update.
