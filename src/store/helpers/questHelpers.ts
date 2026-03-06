@@ -128,6 +128,40 @@ function calculateQuestReward(
   return { finalGold, finalHappiness, healthLoss };
 }
 
+// ── NL chain choice helpers (pure functions — no side effects) ───────
+
+/**
+ * Resolves the next step index for a non-linear chain choice.
+ * Choices may use the sentinel value 'complete' to jump directly to chain end.
+ * Returns the resolved index and whether the chain is now complete.
+ */
+function resolveNLChainCompletion(
+  chainStepCount: number,
+  choiceNextStep: number | 'complete',
+): { nextStepIndex: number; isComplete: boolean } {
+  const nextStepIndex = choiceNextStep === 'complete' ? chainStepCount : choiceNextStep;
+  return { nextStepIndex, isComplete: nextStepIndex >= chainStepCount };
+}
+
+/**
+ * Builds the event message text shown after a non-linear chain choice.
+ * Returns null when the choice has no outcome text (silent completion).
+ */
+function buildNLChainChoiceMessage(
+  outcomeText: string | undefined,
+  chainName: string,
+  completionBonusGold: number,
+  completionBonusHappiness: number,
+  isComplete: boolean,
+): string | null {
+  if (!outcomeText) return null;
+  const prefix = isComplete ? `[quest-chain-complete] ${chainName} — COMPLETE\n\n` : '';
+  const suffix = isComplete
+    ? `\n\n+${completionBonusGold}g bonus | +${completionBonusHappiness} happiness | +3 reputation`
+    : '';
+  return `${prefix}${outcomeText}${suffix}`;
+}
+
 // ── Goal evaluation (pure function — no side effects) ───────────────
 
 interface GoalEvaluation {
@@ -570,26 +604,27 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       const choice = step.choices.find(c => c.id === choiceId);
       if (!choice) return;
 
-      const rewards = calculateChoiceRewards(step, choice);
+      // Pre-compute all rewards and completion state before updating store
+      const choiceRewards = calculateChoiceRewards(step, choice);
       const scaledReward = calculateQuestReward(
-        rewards.gold, rewards.happiness, rewards.healthRisk,
+        choiceRewards.gold, choiceRewards.happiness, choiceRewards.healthRisk,
         player.dungeonFloorsCleared, player.guildReputation,
       );
-
-      const nextStepIndex = choice.nextStepIndex === 'complete' ? chain.steps.length : choice.nextStepIndex;
-      const isComplete = nextStepIndex >= chain.steps.length;
+      const { nextStepIndex, isComplete } = resolveNLChainCompletion(chain.steps.length, choice.nextStepIndex);
       const bonusGold = isComplete ? chain.completionBonusGold : 0;
       const bonusHappiness = isComplete ? chain.completionBonusHappiness : 0;
+      const totalGold = scaledReward.finalGold + bonusGold;
+      const totalHappiness = scaledReward.finalHappiness + bonusHappiness;
 
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
           return {
             ...p,
-            gold: p.gold + scaledReward.finalGold + bonusGold,
+            gold: p.gold + totalGold,
             health: Math.max(0, p.health - scaledReward.healthLoss),
-            happiness: Math.min(100, p.happiness + scaledReward.finalHappiness + bonusHappiness),
-            timeRemaining: Math.max(0, p.timeRemaining - rewards.time),
+            happiness: Math.min(100, p.happiness + totalHappiness),
+            timeRemaining: Math.max(0, p.timeRemaining - choiceRewards.time),
             completedQuests: p.completedQuests + (isComplete ? 1 : 0),
             guildReputation: p.guildReputation + (isComplete ? 3 : 1),
             activeQuest: null,
@@ -600,21 +635,19 @@ export function createQuestActions(set: SetFn, get: GetFn) {
             gameStats: {
               ...p.gameStats,
               totalQuestsCompleted: (p.gameStats.totalQuestsCompleted || 0) + (isComplete ? 1 : 0),
-              totalGoldEarned: (p.gameStats.totalGoldEarned || 0) + scaledReward.finalGold + bonusGold,
+              totalGoldEarned: (p.gameStats.totalGoldEarned || 0) + totalGold,
             },
           };
         }),
       }));
 
-      // Show outcome text
-      if (choice.outcomeText) {
-        const completedPlayer = get().players.find(p => p.id === playerId);
-        if (completedPlayer && !completedPlayer.isAI) {
-          const prefix = isComplete ? `[quest-chain-complete] ${chain.name} — COMPLETE\n\n` : '';
-          const rewardLine = isComplete
-            ? `\n\n+${chain.completionBonusGold}g bonus | +${chain.completionBonusHappiness} happiness | +3 reputation`
-            : '';
-          const msg = `${prefix}${choice.outcomeText}${rewardLine}`;
+      // Show choice outcome and chain completion notice for human players only
+      const completedPlayer = get().players.find(p => p.id === playerId);
+      if (completedPlayer && !completedPlayer.isAI) {
+        const msg = buildNLChainChoiceMessage(
+          choice.outcomeText, chain.name, chain.completionBonusGold, chain.completionBonusHappiness, isComplete,
+        );
+        if (msg) {
           const existing = get().eventMessage;
           set({ eventMessage: existing ? existing + '\n' + msg : msg, eventSource: 'weekly', phase: 'event' });
         }
