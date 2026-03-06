@@ -535,6 +535,8 @@ export const PLAYER_COLORS = [
   { name: 'Azure', value: '#2563EB' },
   { name: 'Emerald', value: '#16A34A' },
   { name: 'Amber', value: '#D97706' },
+  { name: 'Violet', value: '#7C3AED' },
+  { name: 'Rose', value: '#DB2777' },
 ];
 
 export const AI_COLOR = { name: 'Pearl', value: '#E5E5E5' };
