@@ -5,6 +5,22 @@
 
 ---
 
+## 2026-03-06T13:00Z — Fix: Build-blocking test error (rivalryActions.test.ts)
+
+### Problem
+App showed "Loading the realm..." indefinitely because a TypeScript build error in `rivalryActions.test.ts` prevented compilation. The `ResourceUrgency` type gained a `happiness` field (added in the T12:00Z session) but the test mock was not updated.
+
+### Fix
+Added `happiness: 0.1` to the mock `urgency` object in `src/hooks/ai/actions/__tests__/rivalryActions.test.ts` line 116.
+
+### Root cause
+When `ResourceUrgency` was extended with the `happiness` field, the test file was missed during the update. TypeScript strict checking flagged the incomplete mock object, causing the build to fail before React could mount.
+
+### Files changed
+- `src/hooks/ai/actions/__tests__/rivalryActions.test.ts` — added `happiness: 0.1` to mock urgency object
+
+---
+
 ## 2026-03-06T12:00Z — UI Fix: "Your Scrolls" readability + AI: Universal happiness floor + Thornwick rebalance
 
 ### Analysis: Observations from 36-week gameplay screenshots (all AIs at master/hard difficulty)
