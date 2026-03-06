@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { getPortrait, type PortraitDefinition } from '@/data/portraits';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import type { ActiveCurse } from '@/data/hexes';
+import { getHexById } from '@/data/hexes';
 
 interface CharacterPortraitProps {
   portraitId: string | null;
@@ -17,6 +20,32 @@ interface CharacterPortraitProps {
   hasCurse?: boolean;
   /** Show frog transformation when player has toad-transformation curse */
   isToad?: boolean;
+  /** Active curses — enables hover tooltip with curse names and duration */
+  curses?: ActiveCurse[];
+}
+
+/** Tooltip wrapper that shows active curse details on hover */
+function CurseTooltipWrapper({ curses, children }: { curses: ActiveCurse[] | undefined; children: React.ReactElement }) {
+  if ((curses?.length ?? 0) === 0) return children;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs">
+        <p className="font-semibold text-xs mb-1">🔮 Active Curses</p>
+        {curses!.map((curse, i) => {
+          const hex = getHexById(curse.hexId);
+          return (
+            <div key={i} className="text-xs mt-0.5">
+              <span className="font-medium">{hex?.name ?? curse.effectType}</span>
+              <span className="text-muted-foreground ml-1">
+                — {curse.weeksRemaining} {curse.weeksRemaining === 1 ? 'week' : 'weeks'} left
+              </span>
+            </div>
+          );
+        })}
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 /**
@@ -34,6 +63,7 @@ export function CharacterPortrait({
   shape = 'circle',
   hasCurse = false,
   isToad = false,
+  curses,
 }: CharacterPortraitProps) {
   const [imageError, setImageError] = useState(false);
   const portrait = getPortrait(portraitId);
@@ -45,26 +75,29 @@ export function CharacterPortrait({
     setImageError(false);
   }, [portraitId]);
 
+  // Purple border + outer glow when cursed
+  const borderClass = hasCurse ? 'border-purple-500' : 'border-white/60';
+  const glowStyle: React.CSSProperties = hasCurse
+    ? { boxShadow: '0 0 0 1px rgba(147, 51, 234, 0.4), 0 0 14px 4px rgba(147, 51, 234, 0.55)' }
+    : {};
+
   // Custom uploaded photo stored as a data URL (session-only, set via PortraitPicker upload)
   if (portraitId?.startsWith('data:')) {
     return (
-      <div
-        className={`${roundedClass} border-2 border-white/60 overflow-hidden relative ${className}`}
-        style={{
-          width: size,
-          height: actualHeight,
-          minWidth: size,
-          minHeight: actualHeight,
-        }}
-      >
-        <img
-          src={portraitId}
-          alt={playerName}
-          className="w-full h-full object-cover"
-          draggable={false}
-        />
-        {hasCurse && <CurseOverlay size={size} height={actualHeight} shape={shape} />}
-      </div>
+      <CurseTooltipWrapper curses={curses}>
+        <div
+          className={`${roundedClass} border-2 ${borderClass} overflow-hidden relative ${className}`}
+          style={{ width: size, height: actualHeight, minWidth: size, minHeight: actualHeight, ...glowStyle }}
+        >
+          <img
+            src={portraitId}
+            alt={playerName}
+            className="w-full h-full object-cover"
+            draggable={false}
+          />
+          {hasCurse && <CurseOverlay size={size} height={actualHeight} shape={shape} />}
+        </div>
+      </CurseTooltipWrapper>
     );
   }
 
@@ -72,87 +105,96 @@ export function CharacterPortrait({
   if (isToad) {
     const toadSrc = `${import.meta.env.BASE_URL}npcs/toad.jpg`;
     return (
-      <div
-        className={`${roundedClass} border-2 border-purple-500/80 overflow-hidden relative ${className}`}
-        style={{
-          width: size,
-          height: actualHeight,
-          backgroundColor: '#166534',
-          minWidth: size,
-          minHeight: actualHeight,
-        }}
-      >
-        {!imageError ? (
-          <img
-            src={toadSrc}
-            alt="Toad (cursed)"
-            className="w-full h-full object-cover"
-            onError={() => setImageError(true)}
-            draggable={false}
-          />
-        ) : (
-          <span
-            className="flex items-center justify-center w-full h-full"
-            style={{ fontSize: size * 0.65, lineHeight: 1 }}
-            role="img"
-            aria-label="frog"
-          >🐸</span>
-        )}
-        <CurseOverlay size={size} height={actualHeight} shape={shape} />
-      </div>
+      <CurseTooltipWrapper curses={curses}>
+        <div
+          className={`${roundedClass} border-2 border-purple-500 overflow-hidden relative ${className}`}
+          style={{
+            width: size,
+            height: actualHeight,
+            backgroundColor: '#166534',
+            minWidth: size,
+            minHeight: actualHeight,
+            boxShadow: '0 0 0 1px rgba(147, 51, 234, 0.4), 0 0 14px 4px rgba(147, 51, 234, 0.55)',
+          }}
+        >
+          {!imageError ? (
+            <img
+              src={toadSrc}
+              alt="Toad (cursed)"
+              className="w-full h-full object-cover"
+              onError={() => setImageError(true)}
+              draggable={false}
+            />
+          ) : (
+            <span
+              className="flex items-center justify-center w-full h-full"
+              style={{ fontSize: size * 0.65, lineHeight: 1 }}
+              role="img"
+              aria-label="frog"
+            >🐸</span>
+          )}
+          <CurseOverlay size={size} height={actualHeight} shape={shape} />
+        </div>
+      </CurseTooltipWrapper>
     );
   }
 
   // If no portrait selected, show colored circle with initial
   if (!portrait) {
     return (
-      <div
-        className={`${roundedClass} border-2 border-white/60 flex items-center justify-center relative ${className}`}
-        style={{
-          width: size,
-          height: actualHeight,
-          backgroundColor: playerColor,
-          minWidth: size,
-          minHeight: actualHeight,
-        }}
-      >
-        <span
-          className="font-bold text-white drop-shadow-md"
-          style={{ fontSize: size * 0.4 }}
+      <CurseTooltipWrapper curses={curses}>
+        <div
+          className={`${roundedClass} border-2 ${borderClass} flex items-center justify-center relative ${className}`}
+          style={{
+            width: size,
+            height: actualHeight,
+            backgroundColor: playerColor,
+            minWidth: size,
+            minHeight: actualHeight,
+            ...glowStyle,
+          }}
         >
-          {isAI ? 'AI' : playerName.charAt(0).toUpperCase()}
-        </span>
-        {hasCurse && <CurseOverlay size={size} height={actualHeight} shape={shape} />}
-      </div>
+          <span
+            className="font-bold text-white drop-shadow-md"
+            style={{ fontSize: size * 0.4 }}
+          >
+            {isAI ? 'AI' : playerName.charAt(0).toUpperCase()}
+          </span>
+          {hasCurse && <CurseOverlay size={size} height={actualHeight} shape={shape} />}
+        </div>
+      </CurseTooltipWrapper>
     );
   }
 
   const imageSrc = `${import.meta.env.BASE_URL}${portrait.imagePath}`;
 
   return (
-    <div
-      className={`${roundedClass} border-2 border-white/60 overflow-hidden relative ${className}`}
-      style={{
-        width: size,
-        height: actualHeight,
-        minWidth: size,
-        minHeight: actualHeight,
-        backgroundColor: portrait.placeholderColors.bg,
-      }}
-    >
-      {!imageError ? (
-        <img
-          src={imageSrc}
-          alt={portrait.name}
-          className="w-full h-full object-cover"
-          onError={() => setImageError(true)}
-          draggable={false}
-        />
-      ) : (
-        <PlaceholderPortrait portrait={portrait} size={size} isAI={isAI} />
-      )}
-      {hasCurse && <CurseOverlay size={size} height={actualHeight} shape={shape} />}
-    </div>
+    <CurseTooltipWrapper curses={curses}>
+      <div
+        className={`${roundedClass} border-2 ${borderClass} overflow-hidden relative ${className}`}
+        style={{
+          width: size,
+          height: actualHeight,
+          minWidth: size,
+          minHeight: actualHeight,
+          backgroundColor: portrait.placeholderColors.bg,
+          ...glowStyle,
+        }}
+      >
+        {!imageError ? (
+          <img
+            src={imageSrc}
+            alt={portrait.name}
+            className="w-full h-full object-cover"
+            onError={() => setImageError(true)}
+            draggable={false}
+          />
+        ) : (
+          <PlaceholderPortrait portrait={portrait} size={size} isAI={isAI} />
+        )}
+        {hasCurse && <CurseOverlay size={size} height={actualHeight} shape={shape} />}
+      </div>
+    </CurseTooltipWrapper>
   );
 }
 
@@ -164,7 +206,7 @@ function CurseOverlay({ size, height, shape }: { size: number; height: number; s
         shape === 'circle' ? 'rounded-full' : 'rounded-lg'
       }`}
       style={{
-        boxShadow: '0 0 8px 3px rgba(147, 51, 234, 0.5), inset 0 0 6px 2px rgba(147, 51, 234, 0.3)',
+        boxShadow: 'inset 0 0 6px 2px rgba(147, 51, 234, 0.4)',
         border: '1px solid rgba(147, 51, 234, 0.4)',
       }}
     />

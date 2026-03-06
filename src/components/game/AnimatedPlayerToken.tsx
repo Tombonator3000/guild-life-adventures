@@ -123,6 +123,7 @@ export function AnimatedPlayerToken({
         isAI={player.isAI}
         hasCurse={hasCurse}
         isToad={isToad}
+        curses={player.activeCurses}
       />
       {hasCurse && (
         <>

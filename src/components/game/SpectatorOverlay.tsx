@@ -65,6 +65,8 @@ export function SpectatorOverlay({ player, currentTurnPlayer, isPureSpectator }:
               playerName={currentTurnPlayer.name}
               size={20}
               isAI={currentTurnPlayer.isAI}
+              hasCurse={(currentTurnPlayer.activeCurses?.length ?? 0) > 0}
+              curses={currentTurnPlayer.activeCurses}
             />
             <span className="text-xs text-amber-400 font-display">
               {currentTurnPlayer.name}'s turn

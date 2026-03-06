@@ -30,6 +30,9 @@ export function PlayerInfoPanel({ player, isCurrentPlayer }: PlayerInfoPanelProp
           playerName={player.name}
           size={32}
           isAI={player.isAI}
+          hasCurse={(player.activeCurses?.length ?? 0) > 0}
+          isToad={player.activeCurses?.some(c => c.effectType === 'toad-transformation') ?? false}
+          curses={player.activeCurses}
           className="shadow-md flex-shrink-0"
         />
         <div className="min-w-0 flex-1">

@@ -8,12 +8,7 @@ import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { useGameStore, type ShadowfingersEvent } from '@/store/gameStore';
 import type { StreetRobberyResult, ApartmentRobberyResult } from '@/data/shadowfingers';
 import { Skull } from 'lucide-react';
@@ -41,28 +36,29 @@ export function ShadowfingersModal({ event, onDismiss }: ShadowfingersModalProps
   const isStreetRobbery = event.type === 'street';
   const result = event.result;
 
-  // Get the headline and message based on robbery type
   const headline = result.headline;
   const message = result.message;
 
-  // Calculate effects text
+  // Effects summary text
   let effectsText = '';
   if (isStreetRobbery) {
     const streetResult = result as StreetRobberyResult;
-    effectsText = `Lost ${streetResult.goldStolen} gold, ${Math.abs(streetResult.happinessLoss)} happiness`;
+    effectsText = `Lost ${streetResult.goldStolen} gold · ${Math.abs(streetResult.happinessLoss)} happiness`;
   } else {
     const apartmentResult = result as ApartmentRobberyResult;
     const itemCount = apartmentResult.stolenItems.reduce((sum, item) => sum + item.quantity, 0);
-    effectsText = `Lost ${itemCount} item${itemCount !== 1 ? 's' : ''}, ${Math.abs(apartmentResult.happinessLoss)} happiness`;
+    effectsText = `Lost ${itemCount} item${itemCount !== 1 ? 's' : ''} · ${Math.abs(apartmentResult.happinessLoss)} happiness`;
   }
 
   return (
     <Dialog open={!!event} onOpenChange={() => onDismiss()}>
-      <DialogContent className="parchment-panel border-0 max-w-lg">
-        <DialogHeader className="text-center">
-          {/* Shadowfingers Image or Fallback */}
-          <div className="flex justify-center mb-4">
-            <div className="relative w-48 h-64 overflow-hidden rounded-lg border-4 border-amber-900 shadow-xl bg-gradient-to-b from-slate-700 to-slate-900">
+      <DialogContent className="parchment-panel border-0 max-w-md p-0 overflow-hidden">
+        <div className="h-full flex flex-col">
+          {/* Scrollable content */}
+          <div className="flex flex-col items-center p-6 overflow-y-auto">
+
+            {/* Shadowfingers portrait */}
+            <div className="relative w-44 h-56 overflow-hidden rounded-lg border-2 border-amber-800/60 shadow-xl mb-4 flex-shrink-0">
               {!imageError ? (
                 <img
                   src={SHADOWFINGERS_IMAGE_PATH}
@@ -71,65 +67,65 @@ export function ShadowfingersModal({ event, onDismiss }: ShadowfingersModalProps
                   onError={() => setImageError(true)}
                 />
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center">
-                  <Skull className="w-20 h-20 text-amber-200 mb-2" />
-                  <span className="text-amber-200/70 text-xs text-center px-2">
-                    Shadowfingers
-                  </span>
+                <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900">
+                  <Skull className="w-16 h-16 text-amber-200 mb-2" />
                 </div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-              <div className="absolute bottom-2 left-0 right-0 text-center">
-                <span className="font-display text-amber-200 text-sm font-bold drop-shadow-lg">
+              {/* Name badge at bottom of portrait */}
+              <div className="absolute inset-x-0 bottom-0 bg-black/60 py-1.5 text-center">
+                <span className="font-display text-amber-200 text-sm font-bold drop-shadow">
                   Shadowfingers
                 </span>
               </div>
             </div>
-          </div>
 
-          {/* Newspaper-style headline */}
-          <div className="bg-parchment-dark/30 border-2 border-wood-light p-3 mb-2 shadow-inner">
-            <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
-              The Guildholm Herald - SPECIAL EDITION
+            {/* Newspaper-style headline — parchment scroll style */}
+            <div className="w-full bg-parchment/80 border border-amber-800/40 rounded px-4 py-3 mb-3 text-center shadow-inner">
+              <p className="font-display text-[11px] uppercase tracking-widest text-amber-800/70 mb-1">
+                The Guildholm Herald — Special Edition
+              </p>
+              <h2 className="font-display text-xl text-card-foreground font-bold leading-snug">
+                {headline}
+              </h2>
             </div>
-            <DialogTitle className="font-display text-xl text-card-foreground leading-tight">
-              {headline}
-            </DialogTitle>
+
+            {/* Event description */}
+            <p className="font-display text-base text-card-foreground text-center leading-relaxed mb-4 px-1">
+              {message}
+            </p>
+
+            {/* Effects banner */}
+            <div className="wood-frame w-full px-6 py-3 text-center mb-4">
+              <span className="font-display text-base font-bold text-destructive">
+                {effectsText.toUpperCase()}
+              </span>
+            </div>
+
+            {/* Stolen items list for apartment robbery */}
+            {!isStreetRobbery && (event.result as ApartmentRobberyResult).stolenItems.length > 0 && (
+              <div className="w-full bg-parchment/60 border border-amber-800/30 rounded p-3 mb-4">
+                <p className="font-display text-sm font-semibold text-card-foreground mb-2">
+                  Stolen Items:
+                </p>
+                <ul className="space-y-0.5">
+                  {(event.result as ApartmentRobberyResult).stolenItems.map((item, idx) => (
+                    <li key={idx} className="flex justify-between font-display text-sm text-card-foreground">
+                      <span>{item.itemName}</span>
+                      <span className="text-card-foreground/60">×{item.quantity}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
-          <DialogDescription className="text-muted-foreground text-base italic">
-            {message}
-          </DialogDescription>
-        </DialogHeader>
-
-        {/* Effects display */}
-        <div className="wood-frame p-3 text-parchment text-center my-4">
-          <span className="font-display font-semibold text-destructive">{effectsText}</span>
+          {/* Fixed Continue button */}
+          <div className="flex-shrink-0 px-6 pb-6 flex justify-center">
+            <button onClick={onDismiss} className="gold-button text-lg px-12 py-3 min-w-[200px]">
+              Continue
+            </button>
+          </div>
         </div>
-
-        {/* Stolen items list for apartment robbery */}
-        {!isStreetRobbery && (event.result as ApartmentRobberyResult).stolenItems.length > 0 && (
-          <div className="bg-parchment-dark/20 border border-wood-light/50 rounded p-3 mb-4">
-            <div className="text-sm font-semibold text-card-foreground mb-2">Stolen Items:</div>
-            <ul className="text-sm text-card-foreground">
-              {(event.result as ApartmentRobberyResult).stolenItems.map((item, idx) => (
-                <li key={idx} className="flex justify-between">
-                  <span>{item.itemName}</span>
-                  <span className="text-muted-foreground">x{item.quantity}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <DialogFooter>
-          <Button
-            onClick={onDismiss}
-            className="w-full gold-button"
-          >
-            Continue
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
