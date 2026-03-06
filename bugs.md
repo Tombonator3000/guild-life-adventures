@@ -394,6 +394,47 @@ When any external code (Root Cause B, or future code) advances `currentPlayerInd
 
 ---
 
+## BUG-015: main.tsx Version Check Causes Infinite Reload Loop (2026-03-06, FIXED)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | Critical (game never loads after first visit) |
+| **Status** | FIXED (2026-03-06) |
+| **Symptom** | App stuck on "Loading the realm..." — page reloads continuously, React never mounts |
+
+### Root Cause
+
+`main.tsx` version check read `{ version }` from `version.json`, but the two formats are:
+- `public/version.json` (dev): `{ "version": "2026-03-06" }` — has `version` field ✓
+- `dist/version.json` (prod, from `versionJsonPlugin`): `{ "buildTime": "..." }` — **no `version` field**
+
+In production, `const { version } = await res.json()` destructures a non-existent field → `version = undefined`.
+
+**The loop:**
+1. First visit: `stored = null` → `stored && ...` = false → no reload, BUT stores `String(undefined) = "undefined"`
+2. Every subsequent visit: `stored = "undefined"`, `version = undefined`, `"undefined" !== undefined` (string ≠ undefined) → **RELOAD → LOOP FOREVER**
+
+The code had **no reload loop protection** (unlike `lazyWithRetry` which uses `guild-reload-count`).
+
+### Fix (2026-03-06)
+
+```typescript
+// Read both formats — dev uses 'version', prod uses 'buildTime'
+const data = await res.json() as { version?: string; buildTime?: string };
+const versionKey = data.version ?? data.buildTime;
+if (versionKey) {  // Only run comparison if a valid key exists (guards against undefined)
+  // ... reload logic with loop protection (max 2 reloads / 2 min)
+}
+```
+
+**Files**: `src/main.tsx`
+
+### Lesson
+
+When reading a JSON field that may not exist, always use optional (`?`) types and guard with `if (field)` before storing or comparing. Never pass `undefined` to `localStorage.setItem` — it stores the string `"undefined"` which causes false mismatches forever.
+
+---
+
 ## BUG-013: failedActionsRef Blocks Re-attempt After State Change (2026-02-23, KNOWN)
 
 | Field | Value |
