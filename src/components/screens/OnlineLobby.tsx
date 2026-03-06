@@ -955,13 +955,13 @@ function LobbyChat({ messages, onSend, playerName, playerColor }: {
       <h3 className="font-display text-sm text-amber-900 mb-2 flex items-center gap-1.5">
         <MessageCircle className="w-4 h-4" /> Lobby Chat
       </h3>
-      <div className="bg-background/50 rounded p-2 mb-2 max-h-32 overflow-y-auto">
+      <div className="bg-amber-50/90 rounded p-2 mb-2 max-h-32 overflow-y-auto border border-amber-200">
         {messages.length === 0 ? (
           <p className="text-xs text-amber-600 italic">No messages yet — say hello!</p>
         ) : messages.map((msg, i) => (
           <div key={i} className="text-xs mb-0.5">
-            <span className="font-semibold font-display" style={{ color: msg.senderColor }}>{msg.senderName}: </span>
-            <span className="text-amber-800">{msg.text}</span>
+            <span className="font-bold font-display" style={{ color: msg.senderColor }}>{msg.senderName}: </span>
+            <span className="text-amber-900">{msg.text}</span>
           </div>
         ))}
         <div ref={bottomRef} />
@@ -974,7 +974,7 @@ function LobbyChat({ messages, onSend, playerName, playerColor }: {
           onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
           placeholder="Say something..."
           maxLength={200}
-          className="flex-1 px-2 py-1.5 bg-input border border-border rounded text-xs text-amber-900 placeholder:text-amber-600/50 focus:outline-none focus:ring-1 focus:ring-primary"
+          className="flex-1 px-2 py-1.5 bg-amber-50 border border-amber-300 rounded text-xs text-amber-900 placeholder:text-amber-500 focus:outline-none focus:ring-1 focus:ring-primary"
         />
         <button
           onClick={handleSend}
