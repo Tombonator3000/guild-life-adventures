@@ -5,6 +5,40 @@
 
 ---
 
+## 2026-03-06T14:30Z — Fix: Infinite reload loop on startup (BUG-015)
+
+### Root Cause
+
+`main.tsx` version check read `{ version }` from `version.json`, but the two deployed formats differ:
+- `public/version.json` (dev): `{ "version": "2026-03-06" }` — `version` field present ✓
+- `dist/version.json` (prod, from `versionJsonPlugin`): `{ "buildTime": "2026-03-06T..." }` — **no `version` field**
+
+In production, `const { version } = await res.json()` gives `version = undefined`.
+
+**The loop:**
+1. First visit: `stored = null` → no reload, `localStorage.setItem('guild-life-version', undefined)` stores the STRING `"undefined"`
+2. Every subsequent visit: `stored = "undefined"`, `version = undefined`, `"undefined" !== undefined` (string ≠ undefined type) → **RELOAD → LOOP FOREVER**
+
+No reload loop protection existed in this code path.
+
+### Fix
+
+```typescript
+const data = await res.json() as { version?: string; buildTime?: string };
+const versionKey = data.version ?? data.buildTime;
+if (versionKey) {  // guard: only compare if a valid key exists
+  // reload loop protection: max 2 reloads / 2 min
+  // ...compare stored vs versionKey...
+}
+```
+
+### Files changed
+- `src/main.tsx` — read both `version` and `buildTime` fields; guard with `if (versionKey)`; add reload loop protection (max 2 in 2 min via sessionStorage counter)
+- `bugs.md` — added BUG-015 entry
+- `CLAUDE.md` — added rule about version.json format and undefined-storage hazard
+
+---
+
 ## 2026-03-06T13:00Z — Fix: Build-blocking test error (rivalryActions.test.ts)
 
 ### Problem

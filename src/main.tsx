@@ -28,15 +28,31 @@ async function mount() {
   // Version check — force a hard reload when a new build is deployed.
   // Fetches /version.json with a cache-busting timestamp so old browsers
   // always get the latest version string.
+  //
+  // IMPORTANT: version.json has two possible formats:
+  //   - public/version.json (dev): { "version": "2026-03-06" }
+  //   - dist/version.json (prod, built by versionJsonPlugin): { "buildTime": "..." }
+  // We read both fields and fall back to whichever is present.
+  // NEVER store or compare undefined — that creates an infinite reload loop:
+  //   stored = "undefined", version = undefined, "undefined" !== undefined → reload forever.
   try {
     const res = await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' });
     if (res.ok) {
-      const { version } = await res.json() as { version: string };
-      const stored = localStorage.getItem('guild-life-version');
-      localStorage.setItem('guild-life-version', version);
-      if (stored && stored !== version) {
-        location.reload();
-        return; // Don't mount — page is reloading
+      const data = await res.json() as { version?: string; buildTime?: string };
+      const versionKey = data.version ?? data.buildTime;
+      if (versionKey) {
+        // Reload loop protection: max 2 reloads in 2 minutes
+        const RELOAD_KEY = 'guild-version-reload-count';
+        const rd = JSON.parse(sessionStorage.getItem(RELOAD_KEY) || 'null') as { ts: number; count: number } | null;
+        const reloadCount = (rd && Date.now() - rd.ts < 120_000) ? (rd.count || 0) : 0;
+
+        const stored = localStorage.getItem('guild-life-version');
+        localStorage.setItem('guild-life-version', versionKey);
+        if (stored && stored !== versionKey && reloadCount < 2) {
+          sessionStorage.setItem(RELOAD_KEY, JSON.stringify({ ts: rd?.ts ?? Date.now(), count: reloadCount + 1 }));
+          location.reload();
+          return; // Don't mount — page is reloading
+        }
       }
     }
   } catch {
