@@ -34,7 +34,7 @@ export function EncounterIntro({
   return (
     <div className="space-y-3 animate-in fade-in duration-300">
       {/* Encounter counter */}
-      <div className="flex justify-between items-center text-xs text-[#8b7355]">
+      <div className="flex justify-between items-center text-xs text-[#c4a46a]">
         <span>
           Encounter {encounterIndex + 1} of {totalEncounters}
         </span>
@@ -93,7 +93,7 @@ export function EncounterIntro({
         </div>
 
         {/* Description */}
-        <p className="text-sm text-[#a09080] italic text-center mb-2">
+        <p className="text-sm text-[#c8b090] italic text-center mb-2">
           {encounter.flavorText}
         </p>
 

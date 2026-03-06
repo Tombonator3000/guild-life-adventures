@@ -334,7 +334,7 @@ function FloorCard({
 
           {/* Locked message */}
           {status === 'locked' && (
-            <div className="text-xs text-gray-500 text-center py-1">
+            <div className="text-xs text-gray-400 text-center py-1">
               Clear Floor {floor.requirements.previousFloorCleared} to unlock
             </div>
           )}
@@ -814,7 +814,7 @@ export function CavePanel({
                     {recentRuns.length > 0 && (
                       <div className="mt-0.5 ml-7 space-y-px">
                         {recentRuns.map((run, i) => (
-                          <div key={i} className="flex items-center gap-1.5 text-[10px] font-mono text-[#6b5a42]">
+                          <div key={i} className="flex items-center gap-1.5 text-[10px] font-mono text-[#8b7355]">
                             <span className={run.cleared ? 'text-green-500' : 'text-red-400'}>
                               {run.cleared ? '✓' : '✗'}
                             </span>
