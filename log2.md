@@ -5,6 +5,50 @@
 
 ---
 
+## 2026-03-06T23:05Z — Refactor: `makeNLChainChoice` in questHelpers.ts
+
+### Summary
+
+Refactored the most complex function in `questHelpers.ts` for clarity while preserving identical behavior.
+
+### Target
+
+`makeNLChainChoice` (previously 68 lines) — responsible for resolving player choices in non-linear quest chains. Complexity issues:
+- The `'complete'` sentinel value logic was buried in a one-liner inside the function body
+- Reward math was duplicated inline (`scaledReward.finalGold + bonusGold` appeared twice in the `set()` block)
+- Event message construction was nested 3 levels deep with conditional prefix/suffix logic
+- Variable names `rewards` / `scaledReward` were confusingly similar
+
+### Changes
+
+Two pure helper functions extracted above the `createQuestActions` factory:
+
+**`resolveNLChainCompletion(chainStepCount, choiceNextStep)`**
+- Makes the `'complete'` sentinel handling explicit and named
+- Returns `{ nextStepIndex, isComplete }` — caller no longer needs to know about the sentinel
+
+**`buildNLChainChoiceMessage(outcomeText, chainName, completionBonusGold, completionBonusHappiness, isComplete)`**
+- Separates message construction from state update logic
+- Returns `string | null` — null when no outcome text, so the caller just checks `if (msg)`
+
+Inside `makeNLChainChoice`:
+- Renamed `rewards` → `choiceRewards` to distinguish from `scaledReward`
+- Pre-computed `totalGold` and `totalHappiness` before the `set()` call (eliminates duplicate expressions)
+- Collapsed the `if (choice.outcomeText)` + nested `if (!player.isAI)` into a single flat `if` block
+- `set()` call now contains only flat property assignments — no inline math
+
+### Files changed
+
+- `src/store/helpers/questHelpers.ts` — extracted 2 helpers, simplified `makeNLChainChoice`
+
+### Test results
+
+- Before: 356 pass, 2 fail (pre-existing `victory.test.ts` failures unrelated to this file)
+- After: 356 pass, 2 fail (same pre-existing failures — no regressions)
+- Lint: 0 errors, 31 pre-existing warnings (unchanged)
+
+---
+
 ## 2026-03-06T16:00Z — Feature: Dice randomize, bigger avatars, 6 players, player info modal
 
 ### Summary
