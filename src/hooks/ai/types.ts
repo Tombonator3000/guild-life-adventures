@@ -117,6 +117,7 @@ export interface ResourceUrgency {
   clothing: number;
   health: number;
   housing: number; // Urgency to upgrade housing (for robbery protection)
+  happiness: number; // Urgency to raise happiness (0 = fine, 1 = critically low)
 }
 
 // ============================================
@@ -202,18 +203,18 @@ export const AI_PERSONALITIES: Record<AIPersonalityId, AIPersonality> = {
   thornwick: {
     id: 'thornwick',
     name: 'Thornwick',
-    description: 'The Merchant — maximizes gold, aggressive banking and stocks',
+    description: 'The Merchant — maximizes gold via education→high-wage pipeline, banks aggressively',
     weights: {
-      education: 0.8,    // Education mainly for job unlocks
+      education: 1.1,    // Needs degrees to unlock high-paying jobs (was 0.8 — too low, caused low wages)
       wealth: 1.5,       // +50% wealth priority
       combat: 0.9,       // Dungeons mainly for gold
-      social: 0.7,       // Less focus on happiness activities
+      social: 0.9,       // Don't fully neglect happiness (was 0.7 — caused happiness=6 endgame)
       caution: 0.9,      // Slightly less cautious
       rivalry: 1.3,      // Very competitive
       gambling: 1.5,     // High risk tolerance, loves stocks
     },
     preferredGoal: 'wealth',
-    goldBuffer: 0.2,          // Deposits aggressively, keeps less on hand
+    goldBuffer: 0.25,         // Slightly more cash on hand for appliance/investment spending (was 0.2)
     foodCaution: 0.9,         // Slightly later food buying
     dungeonRiskTolerance: 0.9, // Takes slightly more risk for gold
   },

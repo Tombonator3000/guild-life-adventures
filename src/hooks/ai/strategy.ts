@@ -148,7 +148,13 @@ export function calculateResourceUrgency(player: Player): ResourceUrgency {
   const hasValuables = Object.keys(player.durables).length > 0 || Object.keys(player.appliances).length > 0;
   const housing = player.housing === 'slums' && hasValuables && player.gold > 200 ? 0.5 : 0.1;
 
-  return { food, rent, clothing, health, housing };
+  // Happiness urgency — graduated tiers so all AIs maintain a floor regardless of personality
+  const happiness = player.happiness < 10 ? 1.0
+    : player.happiness < 20 ? 0.8
+    : player.happiness < 35 ? 0.5
+    : 0.1;
+
+  return { food, rent, clothing, health, housing, happiness };
 }
 
 /**

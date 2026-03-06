@@ -5,6 +5,59 @@
 
 ---
 
+## 2026-03-06T12:00Z — UI Fix: "Your Scrolls" readability + AI: Universal happiness floor + Thornwick rebalance
+
+### Analysis: Observations from 36-week gameplay screenshots (all AIs at master/hard difficulty)
+
+| Player | Wealth | Happiness | Education | Career | Shifts | Gold Earned |
+|--------|--------|-----------|-----------|--------|--------|-------------|
+| Grimwald (WINNER) | 18949g | 100 | 18 | 104 | 177 | 30509g |
+| Adventurer 1 (Human) | 4392g | 100 | 45 | 98 | 120 | 14685g |
+| Seraphina | 6154g | 100 | 63 | 131 | 144 | 14255g |
+| Thornwick | 6826g | **6** | 9 | 105 | 191 | 11015g |
+
+**Key finding — Thornwick's two root cause bugs:**
+
+1. **Happiness collapsed to 6/100**: `generateHappinessActions` only fires when `weakestGoal === 'happiness'`. But after `applyPersonalityWeights`, Thornwick's social weight (0.7) scales happiness actions DOWN to 44-47 while wealth weight (1.5) scales work actions UP to 120. Even when happiness IS weakest goal, work always wins → happiness never recovered.
+
+2. **Stuck at low-wage jobs**: Thornwick's old `education: 0.8` weight meant the AI skipped the education→high-wage pipeline. Result: 191 shifts at ~58g/shift vs Grimwald's 177 shifts at ~172g/shift (3× more earnings per shift). Thornwick worked MORE than Grimwald but earned FAR LESS.
+
+**Why Grimwald won**: Balanced approach led to better jobs via education, high wages compensated for fewer shifts. 30509g earned at 172g/shift vs Thornwick's 11015g at 58g/shift.
+
+### Fix 1: "Your Scrolls" header readability — `HexShopPanel.tsx:87`
+
+**Problem**: Header used `text-xs` (12px) with `style={{ color: accentColor }}`. For shadow-market variant, `accentColor = '#c084fc'` (light purple-400) on `bg-red-50` — very poor contrast. Enchanter variant was also tiny.
+
+**Fix**: Changed to `text-sm font-bold` with explicit dark colors:
+- Enchanter: `#4a1072` (very dark purple)
+- Shadow Market: `#7c3aed` (purple-700, sufficient contrast on red-50)
+Also increased `mb-1` → `mb-2` for visual breathing room.
+
+### Fix 2: Universal happiness floor — `criticalNeeds.ts`
+
+**New function `generateHappinessFloorActions`**: Fires whenever `urgency.happiness >= 0.5` (player.happiness < 35), regardless of which goal is "weakest". Uses escalating base priorities that compete even after personality weight scaling:
+- `happiness < 10`: base 145 → Thornwick after 0.7x = 101 (emergency, beats health)
+- `happiness < 20`: base 120 → Thornwick after 0.7x = 84 (urgent, competes with work)
+- `happiness < 35`: base 95 → Thornwick after 0.7x = 66 (proactive)
+
+Also added `happiness` field to `ResourceUrgency` interface and `calculateResourceUrgency`.
+
+### Fix 3: Thornwick personality weight rebalance — `types.ts` (AI_PERSONALITIES)
+
+| Weight | Before | After | Reason |
+|--------|--------|-------|--------|
+| `education` | 0.8 | **1.1** | Needs degrees for high-paying jobs — was self-defeating |
+| `social` | 0.7 | **0.9** | Don't sacrifice happiness to near-zero — universal floor helps too |
+| `goldBuffer` | 0.2 | **0.25** | Slightly more cash for appliance/investment spending |
+
+### Files changed
+- `src/components/game/HexShopPanel.tsx` — "Your Scrolls" text readability
+- `src/hooks/ai/types.ts` — `ResourceUrgency.happiness` field + Thornwick weights
+- `src/hooks/ai/strategy.ts` — `calculateResourceUrgency` adds happiness urgency
+- `src/hooks/ai/actions/criticalNeeds.ts` — `generateHappinessFloorActions` + wired into `generateCriticalActions`
+
+---
+
 ## 2026-03-06T10:00Z — Fix: Dungeon contrast + version-based cache busting
 
 ### Fix 1: Low contrast text in dungeon/cave panel

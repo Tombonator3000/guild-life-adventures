@@ -84,7 +84,7 @@ export function HexShopPanel({ player, players, priceModifier, availableHexes, s
       {/* Inventory: Owned Scrolls */}
       {ownedScrolls.length > 0 && (
         <div className={`${bgColor} border border-[#8b7355] rounded p-2`}>
-          <h4 className="font-display text-xs font-bold mb-1" style={{ color: accentColor }}>
+          <h4 className="font-display text-sm font-bold mb-2" style={{ color: variant === 'enchanter' ? '#4a1072' : '#7c3aed' }}>
             <Skull className="w-3 h-3 inline mr-1" />Your Scrolls
           </h4>
           <div className="space-y-1">
