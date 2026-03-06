@@ -120,7 +120,7 @@ export function EncounterResultView({
       )}
 
       {/* Time cost info */}
-      <div className="text-xs text-[#8b7355] flex items-center justify-center gap-1">
+      <div className="text-xs text-[#c4a46a] flex items-center justify-center gap-1">
         <Clock className="w-3 h-3" />
         {hasEnoughTime
           ? `Continuing costs ${encounterTimeCost}h`

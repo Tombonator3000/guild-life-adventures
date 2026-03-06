@@ -195,7 +195,7 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
           {floor.name}
         </h4>
         {runState.phase !== 'floor-summary' && (
-          <span className="text-xs text-[#8b7355]">
+          <span className="text-xs text-[#c4a46a]">
             Floor {floor.id}
           </span>
         )}
@@ -209,7 +209,7 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
         >
           <span>{runState.modifier.icon}</span>
           <span className="font-bold">{runState.modifier.name}</span>
-          <span className="text-[#a09080]">— {runState.modifier.description}</span>
+          <span className="text-[#c8b090]">— {runState.modifier.description}</span>
         </div>
       )}
 

@@ -5,6 +5,31 @@
 
 ---
 
+## 2026-03-06T10:00Z — Fix: Dungeon contrast + version-based cache busting
+
+### Fix 1: Low contrast text in dungeon/cave panel
+
+**Problem**: Several text elements in the dungeon/combat views were nearly invisible due to low contrast against dark backgrounds:
+- `text-[#8b7355]` (dark brownish amber) used for UI labels on `bg-[#1a1308]`/`bg-[#1a1a2e]` backgrounds
+- `text-[#a09080]` (muted gray-brown) for encounter flavor text
+- `text-gray-500` for locked floor message
+- `text-[#6b5a42]` (very dark brown) for dungeon run history — barely visible
+
+**Changes**:
+- `combat/HealthBar.tsx`: "Health" label `text-[#8b7355]` → `text-[#c4a46a]`
+- `combat/EncounterIntro.tsx`: encounter counter label `text-[#8b7355]` → `text-[#c4a46a]`; flavor text `text-[#a09080]` → `text-[#c8b090]`
+- `combat/EncounterResultView.tsx`: "Continuing costs Xh" `text-[#8b7355]` → `text-[#c4a46a]`
+- `CombatView.tsx`: "Floor X" label `text-[#8b7355]` → `text-[#c4a46a]`; modifier description `text-[#a09080]` → `text-[#c8b090]`
+- `CavePanel.tsx`: locked message `text-gray-500` → `text-gray-400`; run history `text-[#6b5a42]` → `text-[#8b7355]`
+
+### Fix 2: Version-based cache busting on app start
+
+**Problem**: Players with old cached versions continued to see already-fixed bugs.
+
+**Solution**: `main.tsx` now fetches `/version.json?t=Date.now()` (cache-busted) at startup. If the stored version in localStorage differs from the fetched version, the page hard-reloads before React mounts. `public/version.json` created with `{"version": "2026-03-06"}`. Update this file on each deployment to trigger a forced refresh for returning players.
+
+---
+
 ## 2026-03-04T14:00Z — Bug Fix: Career Goal % + Entry-Level Job Sharing
 
 ### Bug 1: Career goal showed 100% at game start

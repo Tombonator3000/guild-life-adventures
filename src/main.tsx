@@ -25,6 +25,24 @@ declare global {
 // can run, so errors are invisible. Dynamic import() converts them to
 // catchable rejected promises.
 async function mount() {
+  // Version check — force a hard reload when a new build is deployed.
+  // Fetches /version.json with a cache-busting timestamp so old browsers
+  // always get the latest version string.
+  try {
+    const res = await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' });
+    if (res.ok) {
+      const { version } = await res.json() as { version: string };
+      const stored = localStorage.getItem('guild-life-version');
+      localStorage.setItem('guild-life-version', version);
+      if (stored && stored !== version) {
+        location.reload();
+        return; // Don't mount — page is reloading
+      }
+    }
+  } catch {
+    // Version check failed — proceed normally
+  }
+
   try {
     const { default: App } = await import("./App.tsx");
     const root = document.getElementById("root");

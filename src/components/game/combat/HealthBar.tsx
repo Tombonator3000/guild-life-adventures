@@ -15,7 +15,7 @@ export function HealthBar({ currentHealth, maxHealth, showLabel = false, height 
   return (
     <div>
       {showLabel && (
-        <div className="flex justify-between text-xs text-[#8b7355] mb-1">
+        <div className="flex justify-between text-xs text-[#c4a46a] mb-1">
           <span>Health</span>
           <span className={currentHealth <= maxHealth * 0.3 ? 'text-red-400' : 'text-[#e0d4b8]'}>
             {currentHealth}/{maxHealth}
