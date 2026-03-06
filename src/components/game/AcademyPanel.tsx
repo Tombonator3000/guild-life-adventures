@@ -14,6 +14,7 @@ interface AcademyPanelProps {
   player: Player;
   priceModifier: number;
   studyDegree: (playerId: string, degreeId: DegreeId, cost: number, hours: number) => void;
+  payFullTuition: (playerId: string, degreeId: DegreeId, totalCost: number, sessions: number) => void;
   completeDegree: (playerId: string, degreeId: DegreeId) => void;
 }
 
@@ -21,6 +22,7 @@ export function AcademyPanel({
   player,
   priceModifier,
   studyDegree,
+  payFullTuition,
   completeDegree,
 }: AcademyPanelProps) {
   const { t } = useTranslation();
@@ -63,11 +65,19 @@ export function AcademyPanel({
       ) : (
         <div>
           {availableDegrees.map(degree => {
-            const progress = player.degreeProgress[degree.id as DegreeId] || 0;
+            const degId = degree.id as DegreeId;
+            const progress = player.degreeProgress[degId] || 0;
             const price = Math.round(degree.costPerSession * priceModifier);
             const sessionsNeeded = getEffectiveSessionsRequired(degree.sessionsRequired, ownedDurables, ownedAppliances);
             const isComplete = progress >= sessionsNeeded;
-            const canAfford = player.gold >= price && player.timeRemaining >= degree.hoursPerSession;
+            const sessionsLeft = sessionsNeeded - progress;
+            const fullCourseCost = Math.round(price * sessionsLeft);
+            const prepaidLeft = (player.prepaidDegrees ?? {})[degId] ?? 0;
+            const isPrepaid = prepaidLeft > 0;
+            // When prepaid, attending class costs no gold — just time
+            const sessionCost = isPrepaid ? 0 : price;
+            const canAfford = player.gold >= sessionCost && player.timeRemaining >= degree.hoursPerSession;
+            const canEnrollFull = !isPrepaid && sessionsLeft > 0 && player.gold >= fullCourseCost;
 
             return (
               <div key={degree.id} className="bg-[#e0d4b8] border border-[#8b7355] p-2 rounded mb-1">
@@ -80,25 +90,44 @@ export function AcademyPanel({
                     )}
                   </span>
                 </div>
+                {isPrepaid && (
+                  <div className="text-xs text-[#2a7a2a] font-semibold mb-1">
+                    Tuition paid — {prepaidLeft} free {prepaidLeft === 1 ? 'session' : 'sessions'} remaining
+                  </div>
+                )}
                 {isComplete ? (
                   <JonesButton
                     label={`${t('panelAcademy.graduate')} (+5 Hap, +5 Dep)`}
-                    onClick={() => completeDegree(player.id, degree.id as DegreeId)}
+                    onClick={() => completeDegree(player.id, degId)}
                     variant="primary"
                     className="w-full mt-1"
                   />
                 ) : (
-                  <JonesMenuItem
-                    label={`${t('panelAcademy.attend')} (${degree.hoursPerSession}h)`}
-                    price={price}
-                    disabled={!canAfford}
-                    darkText
-                    largeText
-                    onClick={() => {
-                      studyDegree(player.id, degree.id as DegreeId, price, degree.hoursPerSession);
-                      toast.success(t('panelAcademy.attendedClass', { name: t(`degrees.${degree.id}.name`) }));
-                    }}
-                  />
+                  <>
+                    <JonesMenuItem
+                      label={`${t('panelAcademy.attend')} (${degree.hoursPerSession}h)`}
+                      price={sessionCost}
+                      disabled={!canAfford}
+                      darkText
+                      largeText
+                      onClick={() => {
+                        studyDegree(player.id, degId, price, degree.hoursPerSession);
+                        toast.success(t('panelAcademy.attendedClass', { name: t(`degrees.${degree.id}.name`) }));
+                      }}
+                    />
+                    {!isPrepaid && (
+                      <JonesMenuItem
+                        label={`Enroll Full Course (${sessionsLeft} sessions, attend free)`}
+                        price={fullCourseCost}
+                        disabled={!canEnrollFull}
+                        darkText
+                        onClick={() => {
+                          payFullTuition(player.id, degId, fullCourseCost, sessionsLeft);
+                          toast.success(`Enrolled! Attend the remaining ${sessionsLeft} sessions for free.`);
+                        }}
+                      />
+                    )}
+                  </>
                 )}
               </div>
             );

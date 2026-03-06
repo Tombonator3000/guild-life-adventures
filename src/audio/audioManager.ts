@@ -4,7 +4,7 @@
 // (iOS ignores HTMLAudioElement.volume — GainNode is the only way to control volume).
 // Falls back to HTMLAudioElement.volume if AudioContext is unavailable.
 
-import { MUSIC_TRACKS, CROSSFADE_MS, DEFAULT_MUSIC_VOLUME } from './musicConfig';
+import { MUSIC_TRACKS, CROSSFADE_MS, DEFAULT_MUSIC_VOLUME, pickTrackFile } from './musicConfig';
 import { connectElement, resumeAudioContext } from './webAudioBridge';
 
 const SETTINGS_KEY = 'guild-life-audio-settings';
@@ -105,8 +105,11 @@ class AudioManager {
     const track = MUSIC_TRACKS[trackId];
     if (!track) return;
 
-    const url = `${import.meta.env.BASE_URL}music/${track.file}`;
-    this.crossfadeTo(url, trackId);
+    // Pick a random variant file (falls back to default if variant doesn't exist yet)
+    const file = pickTrackFile(track);
+    const url = `${import.meta.env.BASE_URL}music/${file}`;
+    const defaultUrl = `${import.meta.env.BASE_URL}music/${track.file}`;
+    this.crossfadeTo(url, trackId, file !== track.file ? defaultUrl : undefined);
   }
 
   /** Stop all music with a short fade out. */
@@ -245,7 +248,9 @@ class AudioManager {
     this.resumeCleanup = cleanup;
   }
 
-  private crossfadeTo(url: string, trackId: string) {
+  // fallbackUrl: used when a variant file may not exist yet — if the variant 404s,
+  // we retry with the default track file so music still plays.
+  private crossfadeTo(url: string, trackId: string, fallbackUrl?: string) {
     // Cancel any ongoing fade
     if (this.fadeInterval) {
       clearInterval(this.fadeInterval);
@@ -278,6 +283,20 @@ class AudioManager {
         console.warn(`[Music] Autoplay blocked for "${trackId}", will resume on user interaction`);
         this.registerResumeListener(newDeck, trackId);
       });
+    }
+
+    // If a variant file doesn't exist yet, fall back to the default track file
+    if (fallbackUrl) {
+      const onError = () => {
+        if (this.currentTrackId === trackId && newDeck.src.endsWith(url.split('/').pop()!)) {
+          console.info(`[Music] Variant not found, falling back to default for "${trackId}"`);
+          newDeck.src = fallbackUrl;
+          newDeck.currentTime = 0;
+          newDeck.play().catch(() => {});
+        }
+        newDeck.removeEventListener('error', onError);
+      };
+      newDeck.addEventListener('error', onError, { once: true });
     }
 
     // Crossfade

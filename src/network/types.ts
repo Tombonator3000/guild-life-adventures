@@ -179,6 +179,7 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'studySession',
   'completeEducationLevel',
   'studyDegree',
+  'payFullTuition',
   'completeDegree',
 
   // Economy & Shopping

@@ -324,17 +324,47 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id !== playerId) return p;
-          if (p.gold < cost) return p;
           if (p.timeRemaining < hours) return p;
+
+          // Jones-style: if this degree was prepaid, session is free
+          const prepaidLeft = (p.prepaidDegrees ?? {})[degreeId] ?? 0;
+          const sessionCost = prepaidLeft > 0 ? 0 : cost;
+          if (p.gold < sessionCost) return p;
 
           const newProgress = { ...p.degreeProgress };
           newProgress[degreeId] = (newProgress[degreeId] || 0) + 1;
 
+          const newPrepaid = { ...(p.prepaidDegrees ?? {}) };
+          if (prepaidLeft > 0) {
+            newPrepaid[degreeId] = prepaidLeft - 1;
+            if (newPrepaid[degreeId] === 0) delete newPrepaid[degreeId];
+          }
+
           return {
             ...p,
-            gold: p.gold - cost,
+            gold: p.gold - sessionCost,
             timeRemaining: Math.max(0, p.timeRemaining - hours),
             degreeProgress: newProgress,
+            prepaidDegrees: newPrepaid,
+          };
+        }),
+      }));
+    },
+
+    // Jones-style: pay for all remaining sessions upfront, attend classes for free (time only)
+    payFullTuition: (playerId: string, degreeId: DegreeId, totalCost: number, sessions: number) => {
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          if (p.gold < totalCost) return p;
+          if (sessions <= 0) return p;
+          // Don't allow double-prepay
+          if ((p.prepaidDegrees ?? {})[degreeId]) return p;
+
+          return {
+            ...p,
+            gold: p.gold - totalCost,
+            prepaidDegrees: { ...(p.prepaidDegrees ?? {}), [degreeId]: sessions },
           };
         }),
       }));

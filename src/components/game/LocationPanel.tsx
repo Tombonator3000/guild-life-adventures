@@ -14,6 +14,24 @@ import { getLocationTabs, getWorkInfo } from './locationTabs';
 import type { LocationTabContext } from './locationTabs';
 import { getQuestLocationObjectives } from '@/data/quests';
 
+// Brief services preview shown when a player can't reach this location this turn
+const LOCATION_SERVICES: Partial<Record<LocationId, string[]>> = {
+  'noble-heights':  ['Luxury housing (safe, expensive)', 'Relax & restore health'],
+  'landlord':       ['Pay rent', 'Upgrade / downgrade housing', 'Prepay multiple weeks'],
+  'slums':          ['Cheap housing (robbery risk)', 'Relax at home'],
+  'shadow-market':  ['Pawn items for quick gold', 'Lottery tickets', 'Buy a newspaper'],
+  'general-store':  ['Buy food (bread & cheese)', 'Buy supplies'],
+  'graveyard':      ['Pray for blessings', 'Mourn the fallen'],
+  'rusty-tankard':  ['Buy fresh food (tavern meals)', 'Drink & socialize (+happiness)', 'Cure sickness'],
+  'armory':         ['Buy clothing & uniforms', 'Buy weapons & armor', 'Temper equipment'],
+  'forge':          ['Smelt & craft items', 'Repair equipment (cheaper than Enchanter)'],
+  'guild-hall':     ['Browse & accept jobs', 'Take quests & bounties', 'Buy a Guild Pass'],
+  'cave':           ['Explore dungeon floors', 'Fight monsters for rare loot'],
+  'academy':        ['Enroll in degrees', 'Attend class sessions', 'Graduate for bonus stats'],
+  'enchanter':      ['Buy magical appliances', 'Enchant items', 'Repair appliances', 'Cast hexes'],
+  'bank':           ['Deposit / withdraw gold', 'Take loans', 'Invest in the market'],
+};
+
 interface LocationPanelProps {
   locationId: LocationId;
 }
@@ -83,6 +101,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     spendTime: store.spendTime,
     workShift: store.workShift,
     studyDegree: store.studyDegree,
+    payFullTuition: store.payFullTuition,
     completeDegree: store.completeDegree,
     prepayRent: store.prepayRent,
     moveToHousing: store.moveToHousing,
@@ -241,6 +260,20 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
                 <p className="text-destructive text-sm mt-2">No time remaining!</p>
               )}
             </div>
+            {/* Services preview — shown when player can't reach this location */}
+            {!canAffordMove && !canPartialTravel && LOCATION_SERVICES[locationId] && (
+              <div className="mt-4 border-t border-muted pt-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">What's here</p>
+                <ul className="space-y-1">
+                  {LOCATION_SERVICES[locationId]!.map(service => (
+                    <li key={service} className="flex items-start gap-1.5 text-sm text-card-foreground">
+                      <span className="text-primary mt-0.5 flex-shrink-0">•</span>
+                      {service}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </>
         )}
       </div>

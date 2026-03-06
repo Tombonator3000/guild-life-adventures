@@ -5,7 +5,7 @@
 
 import type { GameState } from '@/types/game.types';
 
-const SAVE_VERSION = 5;
+const SAVE_VERSION = 6;
 const STORAGE_PREFIX = 'guild-life-';
 const AUTO_SAVE_KEY = `${STORAGE_PREFIX}autosave`;
 const SAVE_SLOT_KEY = (slot: number) => `${STORAGE_PREFIX}save-${slot}`;
@@ -112,6 +112,16 @@ export function loadGame(slot: number = 0): SaveData | null {
         }
       }
       saveData.version = 5;
+    }
+
+    if (saveData.version < 6) {
+      // v5 → v6: Add Jones-style full-course tuition prepayment tracking
+      if (saveData.gameState?.players) {
+        for (const p of saveData.gameState.players as unknown as Record<string, unknown>[]) {
+          if (p.prepaidDegrees === undefined) p.prepaidDegrees = {};
+        }
+      }
+      saveData.version = 6;
     }
 
     return saveData;

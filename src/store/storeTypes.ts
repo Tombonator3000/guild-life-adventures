@@ -45,6 +45,7 @@ export interface GameStore extends GameState {
   studySession: (playerId: string, path: EducationPath, cost: number, hours: number) => void;
   completeEducationLevel: (playerId: string, path: EducationPath) => void;
   studyDegree: (playerId: string, degreeId: DegreeId, cost: number, hours: number) => void;
+  payFullTuition: (playerId: string, degreeId: DegreeId, totalCost: number, sessions: number) => void;
   completeDegree: (playerId: string, degreeId: DegreeId) => void;
   payRent: (playerId: string) => void;
   depositToBank: (playerId: string, amount: number) => void;

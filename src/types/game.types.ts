@@ -205,6 +205,8 @@ export interface Player {
   // New Jones-style degree system
   completedDegrees: DegreeId[]; // Array of completed degrees
   degreeProgress: Partial<Record<DegreeId, number>>; // Sessions completed per degree (0-10)
+  // Always initialized to {} in createPlayer() and save migration (v5→v6).
+  prepaidDegrees: Partial<Record<DegreeId, number>>; // Sessions already paid for (attend free until 0)
   maxDependability: number; // Max dependability (increases with graduation)
   maxExperience: number; // Max experience (increases with graduation)
   completedQuests: number;
