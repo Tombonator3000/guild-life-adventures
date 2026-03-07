@@ -21,15 +21,15 @@ export function TurnOrderPanel({
   return (
     <div className="h-full flex flex-col p-[4%] bg-card/95 rounded-lg border-2 border-wood-dark/50">
       {/* Turn Order Header */}
-      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-border">
-        <Users className="w-4 h-4 text-primary" />
-        <h3 className="font-display text-sm font-bold text-card-foreground">
+      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
+        <Users className="w-5 h-5 text-primary" />
+        <h3 className="font-display text-base font-bold text-card-foreground">
           Turn Order
         </h3>
       </div>
 
       {/* Player List */}
-      <div className="flex-1 space-y-1.5 overflow-y-auto">
+      <div className="flex-1 space-y-2 overflow-y-auto">
         {players.map((player, index) => {
           const isCurrentTurn = index === currentPlayerIndex;
           const isDead = player.health <= 0;
@@ -50,7 +50,7 @@ export function TurnOrderPanel({
           return (
             <div
               key={player.id}
-              className={`p-1.5 rounded transition-all ${
+              className={`p-2 rounded transition-all ${
                 isCurrentTurn
                   ? 'bg-primary/20 border border-primary'
                   : isDead
@@ -60,13 +60,13 @@ export function TurnOrderPanel({
             >
               <div className="flex items-center gap-2">
                 {/* Turn indicator */}
-                <div className="w-5 h-5 flex items-center justify-center">
+                <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
                   {isCurrentTurn ? (
-                    <Crown className="w-4 h-4 text-gold animate-pulse" />
+                    <Crown className="w-5 h-5 text-gold animate-pulse" />
                   ) : isDead ? (
-                    <Skull className="w-4 h-4 text-destructive" />
+                    <Skull className="w-5 h-5 text-destructive" />
                   ) : (
-                    <span className="text-xs text-muted-foreground font-bold">{index + 1}</span>
+                    <span className="text-sm text-muted-foreground font-bold">{index + 1}</span>
                   )}
                 </div>
 
@@ -75,7 +75,7 @@ export function TurnOrderPanel({
                   portraitId={player.portraitId}
                   playerColor={player.color}
                   playerName={player.name}
-                  size={16}
+                  size={28}
                   isAI={player.isAI}
                   hasCurse={(player.activeCurses?.length ?? 0) > 0}
                   curses={player.activeCurses}
@@ -84,15 +84,15 @@ export function TurnOrderPanel({
                 {/* Name and status */}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1">
-                    <span className={`text-xs font-display font-bold truncate ${isDead ? 'line-through' : ''}`}>
+                    <span className={`text-sm font-display font-bold truncate ${isDead ? 'line-through' : ''}`}>
                       {player.name}
                     </span>
                     {player.isAI && (
-                      <Bot className="w-3 h-3 text-muted-foreground" />
+                      <Bot className="w-3.5 h-3.5 text-muted-foreground" />
                     )}
                   </div>
                   {!isDead && (
-                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <span className="text-gold">{player.gold}g</span>
                       <span className="text-time">{player.timeRemaining}h</span>
                     </div>
@@ -101,29 +101,29 @@ export function TurnOrderPanel({
 
                 {/* Progress indicator */}
                 {!isDead && (
-                  <div className="w-8 h-8 relative">
-                    <svg className="w-8 h-8 -rotate-90" viewBox="0 0 32 32">
+                  <div className="w-10 h-10 relative flex-shrink-0">
+                    <svg className="w-10 h-10 -rotate-90" viewBox="0 0 40 40">
                       <circle
-                        cx="16"
-                        cy="16"
-                        r="12"
+                        cx="20"
+                        cy="20"
+                        r="15"
                         fill="none"
                         stroke="currentColor"
                         strokeWidth="3"
                         className="text-muted/30"
                       />
                       <circle
-                        cx="16"
-                        cy="16"
-                        r="12"
+                        cx="20"
+                        cy="20"
+                        r="15"
                         fill="none"
                         stroke="currentColor"
                         strokeWidth="3"
-                        strokeDasharray={`${overallProgress * 0.754} 100`}
+                        strokeDasharray={`${overallProgress * 0.942} 100`}
                         className="text-secondary"
                       />
                     </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold">
+                    <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold">
                       {Math.round(overallProgress)}%
                     </span>
                   </div>
@@ -135,30 +135,30 @@ export function TurnOrderPanel({
       </div>
 
       {/* Victory Goals Summary */}
-      <div className="mt-2 pt-2 border-t border-border space-y-1">
+      <div className="mt-3 pt-2 border-t border-border space-y-1.5">
         <h4 className="text-xs text-muted-foreground font-display flex items-center gap-1">
-          <Target className="w-3 h-3" /> Goals to Win
+          <Target className="w-4 h-4" /> Goals to Win
         </h4>
-        <div className="grid grid-cols-2 gap-1 text-[10px]">
+        <div className="grid grid-cols-2 gap-1.5 text-xs">
           <div className="flex items-center gap-1">
-            <Coins className="w-3 h-3 text-gold" />
+            <Coins className="w-4 h-4 text-gold" />
             <span>{goalSettings.wealth}g</span>
           </div>
           <div className="flex items-center gap-1">
-            <Smile className="w-3 h-3 text-happiness" />
+            <Smile className="w-4 h-4 text-happiness" />
             <span>{goalSettings.happiness}%</span>
           </div>
           <div className="flex items-center gap-1">
-            <GraduationCap className="w-3 h-3 text-primary" />
+            <GraduationCap className="w-4 h-4 text-primary" />
             <span>Lvl {goalSettings.education}</span>
           </div>
           <div className="flex items-center gap-1">
-            <TrendingUp className="w-3 h-3 text-secondary" />
+            <TrendingUp className="w-4 h-4 text-secondary" />
             <span>Dep {goalSettings.career}</span>
           </div>
           {(goalSettings.adventure ?? 0) > 0 && (
             <div className="flex items-center gap-1 col-span-2">
-              <Compass className="w-3 h-3 text-emerald-500" />
+              <Compass className="w-4 h-4 text-emerald-500" />
               <span>Adv {goalSettings.adventure}</span>
             </div>
           )}
@@ -167,7 +167,7 @@ export function TurnOrderPanel({
 
       {/* Game Tip */}
       <div className="mt-2 pt-2 border-t border-border">
-        <p className="text-[10px] text-muted-foreground text-center italic">
+        <p className="text-xs text-muted-foreground text-center italic">
           Click locations to travel directly
         </p>
       </div>

@@ -404,7 +404,7 @@ export function GameBoard() {
           {/* Center UI panel */}
           {/* Mobile: positioned via mobileOverrides when location selected or event, hidden otherwise */}
           {/* Desktop: always visible, positioned within the board frame */}
-          {(!isMobile || selectedLocation || (phase === 'event' && queuedEvent) || (applianceBreakageEvent?.fromCurse) || toadCurseEvent) && (
+          {(!isMobile || selectedLocation || (phase === 'event' && queuedEvent) || (applianceBreakageEvent?.fromCurse) || toadCurseEvent || shadowfingersEvent) && (
             <div
               className={`absolute overflow-hidden z-10 ${isMobile ? 'rounded-xl' : ''}`}
               style={{
@@ -429,6 +429,8 @@ export function GameBoard() {
                     curserName={applianceBreakageEvent.curserName}
                     onDismiss={dismissApplianceBreakageEvent}
                   />
+                ) : shadowfingersEvent ? (
+                  <ShadowfingersModal event={shadowfingersEvent} onDismiss={dismissShadowfingers} />
                 ) : phase === 'event' && queuedEvent ? (
                   <EventPanel event={queuedEvent} onDismiss={handleEventDismiss} />
                 ) : selectedLocation ? (
@@ -525,12 +527,6 @@ export function GameBoard() {
           </MobileDrawer>
         </>
       )}
-
-      {/* Shadowfingers Robbery Modal */}
-      <ShadowfingersModal
-        event={shadowfingersEvent}
-        onDismiss={dismissShadowfingers}
-      />
 
       {/* Zone Editor Modal */}
       {showZoneEditor && (
