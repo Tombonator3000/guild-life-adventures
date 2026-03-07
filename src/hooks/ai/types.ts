@@ -208,7 +208,7 @@ export const AI_PERSONALITIES: Record<AIPersonalityId, AIPersonality> = {
       education: 1.1,    // Needs degrees to unlock high-paying jobs (was 0.8 — too low, caused low wages)
       wealth: 1.5,       // +50% wealth priority
       combat: 0.9,       // Dungeons mainly for gold
-      social: 0.9,       // Don't fully neglect happiness (was 0.7 — caused happiness=6 endgame)
+      social: 1.1,       // Urgent happiness floor needs 120×1.1=132 > 120 (wealth work) to win (was 0.9 — happiness crashed to ~11)
       caution: 0.9,      // Slightly less cautious
       rivalry: 1.3,      // Very competitive
       gambling: 1.5,     // High risk tolerance, loves stocks
@@ -223,10 +223,10 @@ export const AI_PERSONALITIES: Record<AIPersonalityId, AIPersonality> = {
     name: 'Morgath',
     description: 'The Warrior — seeks combat, equipment, and adventure',
     weights: {
-      education: 0.7,    // Minimum education (combat training focus)
+      education: 0.9,    // Must earn at least Combat Training degree — hasCaveAccess = completedDegrees.length > 0, so 0.7 caused 0 dungeon floors (was 0.7 — fatal for dungeon AI)
       wealth: 0.9,       // Money is for equipment
       combat: 1.6,       // +60% dungeon/equipment priority
-      social: 0.6,       // Least interested in social activities
+      social: 0.8,       // Urgent happiness floor: 120×0.8=96 > 72 (work), prevents happiness crash (was 0.6 — happiness=7 endgame)
       caution: 0.7,      // Low caution, high risk
       rivalry: 1.2,      // Competitive but focused on own path
       gambling: 1.2,     // Moderate risk tolerance

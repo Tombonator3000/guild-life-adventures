@@ -12,8 +12,8 @@ import { Scroll, MapPin, Target, Flame, Skull } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Grid constants
-const GRID_COLS = 5;
-const GRID_ROWS = 6;
+const GRID_COLS = 4;
+const GRID_ROWS = 8;
 const SLOT_SIZE = 'w-11 h-11'; // Tailwind classes for slot size
 
 interface InventoryItem {
@@ -285,23 +285,23 @@ export function InventoryGrid({ player }: InventoryGridProps) {
       </div>
 
       {/* Combat Stats Summary */}
-      <div className="mt-2 bg-wood/80 rounded p-1.5 text-[9px]">
+      <div className="mt-2 bg-wood/80 rounded p-2 text-base">
         <div className="flex justify-between text-parchment">
-          <span>ATK</span>
+          <span className="font-semibold">ATK</span>
           <span className="font-bold text-gold">{combatStats.attack}</span>
         </div>
         <div className="flex justify-between text-parchment">
-          <span>DEF</span>
+          <span className="font-semibold">DEF</span>
           <span className="font-bold text-gold">{combatStats.defense}</span>
         </div>
         {combatStats.blockChance > 0 && (
           <div className="flex justify-between text-parchment">
-            <span>BLK</span>
+            <span className="font-semibold">BLK</span>
             <span className="font-bold text-gold">{Math.round(combatStats.blockChance * 100)}%</span>
           </div>
         )}
         {player.temperedItems.length > 0 && (
-          <div className="text-[8px] text-emerald-300 mt-0.5 text-center italic">
+          <div className="text-xs text-emerald-300 mt-0.5 text-center italic">
             Temper bonuses included
           </div>
         )}
