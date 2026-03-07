@@ -7,6 +7,7 @@ import { useState } from 'react';
 import {
   X, Settings, Gamepad2, Volume2, VolumeX, Monitor,
   Gauge, RotateCcw, Cake, Skull, Zap, Eye, EyeOff, Layout, Bell, Timer, Sparkles, BookOpen, Speech, Globe, Frame, Flame,
+  Play, FastForward, SkipForward,
 } from 'lucide-react';
 import { UserManual } from '@/components/game/UserManual';
 import { Switch } from '@/components/ui/switch';
@@ -22,6 +23,7 @@ import { getBuildVersion } from '@/components/game/UpdateBanner';
 import { useTranslation, LANGUAGE_OPTIONS } from '@/i18n';
 import type { Language } from '@/i18n';
 import type { GameOptions, BorderStyle, TextSize } from '@/data/gameOptions';
+import { useGameStore } from '@/store/gameStore';
 
 type Tab = 'gameplay' | 'audio' | 'display' | 'speed';
 
@@ -627,6 +629,12 @@ function DisplayTab({
   );
 }
 
+const AI_SPEED_OPTIONS = [
+  { speed: 1, icon: <Play className="w-3.5 h-3.5" />, label: '1x' },
+  { speed: 2, icon: <FastForward className="w-3.5 h-3.5" />, label: '2x' },
+  { speed: 4, icon: <SkipForward className="w-3.5 h-3.5" />, label: '4x' },
+] as const;
+
 function SpeedTab({
   options,
   setOption,
@@ -636,6 +644,9 @@ function SpeedTab({
   setOption: <K extends keyof GameOptions>(key: K, value: GameOptions[K]) => void;
   t: TFunc;
 }) {
+  const aiSpeedMultiplier = useGameStore((s) => s.aiSpeedMultiplier);
+  const setAISpeedMultiplier = useGameStore((s) => s.setAISpeedMultiplier);
+
   return (
     <div className="space-y-4">
       <SectionHeader title={t('optionsMenu.gameSpeed')} />
@@ -652,11 +663,28 @@ function SpeedTab({
         }
       />
 
-      <div className="p-3 rounded-lg bg-background/30 border border-border/50">
-        <p className="text-xs text-muted-foreground font-display">
-          {t('optionsMenu.aiSpeedNote')}
-        </p>
+      <Separator />
+      <SectionHeader title="AI Speed" />
+
+      <div className="flex gap-2">
+        {AI_SPEED_OPTIONS.map(({ speed, icon, label }) => (
+          <button
+            key={speed}
+            onClick={() => setAISpeedMultiplier(speed)}
+            className={`flex-1 flex flex-col items-center gap-1 py-2.5 rounded border font-display text-xs transition-all ${
+              aiSpeedMultiplier === speed
+                ? 'bg-primary/20 border-primary text-primary'
+                : 'bg-background/30 border-border/50 text-muted-foreground hover:bg-background/50 hover:text-foreground'
+            }`}
+          >
+            {icon}
+            <span>{label}</span>
+          </button>
+        ))}
       </div>
+      <p className="text-xs text-muted-foreground font-display">
+        Controls how fast the AI opponent takes their turn.
+      </p>
     </div>
   );
 }
