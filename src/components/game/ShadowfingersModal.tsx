@@ -1,14 +1,11 @@
-// Guild Life - Shadowfingers Robbery Modal Component
+// Guild Life - Shadowfingers Robbery Panel Component
 // Displays when Shadowfingers robs the player with the character image
+// Renders inline in the center panel (no Dialog overlay)
 //
 // NOTE: To display the Shadowfingers image, save the provided image to:
 // src/assets/shadowfingers.jpg
 
 import { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-} from '@/components/ui/dialog';
 import { useGameStore, type ShadowfingersEvent } from '@/store/gameStore';
 import type { StreetRobberyResult, ApartmentRobberyResult } from '@/data/shadowfingers';
 import { Skull } from 'lucide-react';
@@ -51,83 +48,79 @@ export function ShadowfingersModal({ event, onDismiss }: ShadowfingersModalProps
   }
 
   return (
-    <Dialog open={!!event} onOpenChange={() => onDismiss()}>
-      <DialogContent className="parchment-panel border-0 max-w-md p-0 overflow-hidden">
-        <div className="h-full flex flex-col">
-          {/* Scrollable content */}
-          <div className="flex flex-col items-center p-6 overflow-y-auto">
+    <div className="h-full w-full flex flex-col parchment-panel">
+      {/* Scrollable content */}
+      <div className="flex-1 flex flex-col items-center justify-center p-4 overflow-y-auto min-h-0">
 
-            {/* Shadowfingers portrait */}
-            <div className="relative w-44 h-56 overflow-hidden rounded-lg border-2 border-amber-800/60 shadow-xl mb-4 flex-shrink-0">
-              {!imageError ? (
-                <img
-                  src={SHADOWFINGERS_IMAGE_PATH}
-                  alt="Shadowfingers - The Notorious Thief"
-                  className="w-full h-full object-cover object-top"
-                  onError={() => setImageError(true)}
-                />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900">
-                  <Skull className="w-16 h-16 text-amber-200 mb-2" />
-                </div>
-              )}
-              {/* Name badge at bottom of portrait */}
-              <div className="absolute inset-x-0 bottom-0 bg-black/60 py-1.5 text-center">
-                <span className="font-display text-amber-200 text-sm font-bold drop-shadow">
-                  Shadowfingers
-                </span>
-              </div>
+        {/* Shadowfingers portrait */}
+        <div className="relative w-44 h-56 overflow-hidden rounded-lg border-2 border-amber-800/60 shadow-xl mb-4 flex-shrink-0">
+          {!imageError ? (
+            <img
+              src={SHADOWFINGERS_IMAGE_PATH}
+              alt="Shadowfingers - The Notorious Thief"
+              className="w-full h-full object-cover object-top"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900">
+              <Skull className="w-16 h-16 text-amber-200 mb-2" />
             </div>
-
-            {/* Newspaper-style headline — parchment scroll style */}
-            <div className="w-full bg-parchment/80 border border-amber-800/40 rounded px-4 py-3 mb-3 text-center shadow-inner">
-              <p className="font-display text-[11px] uppercase tracking-widest text-amber-800/70 mb-1">
-                The Guildholm Herald — Special Edition
-              </p>
-              <h2 className="font-display text-xl text-card-foreground font-bold leading-snug">
-                {headline}
-              </h2>
-            </div>
-
-            {/* Event description */}
-            <p className="font-display text-base text-card-foreground text-center leading-relaxed mb-4 px-1">
-              {message}
-            </p>
-
-            {/* Effects banner */}
-            <div className="wood-frame w-full px-6 py-3 text-center mb-4">
-              <span className="font-display text-base font-bold text-destructive">
-                {effectsText.toUpperCase()}
-              </span>
-            </div>
-
-            {/* Stolen items list for apartment robbery */}
-            {!isStreetRobbery && (event.result as ApartmentRobberyResult).stolenItems.length > 0 && (
-              <div className="w-full bg-parchment/60 border border-amber-800/30 rounded p-3 mb-4">
-                <p className="font-display text-sm font-semibold text-card-foreground mb-2">
-                  Stolen Items:
-                </p>
-                <ul className="space-y-0.5">
-                  {(event.result as ApartmentRobberyResult).stolenItems.map((item, idx) => (
-                    <li key={idx} className="flex justify-between font-display text-sm text-card-foreground">
-                      <span>{item.itemName}</span>
-                      <span className="text-card-foreground/60">×{item.quantity}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-
-          {/* Fixed Continue button */}
-          <div className="flex-shrink-0 px-6 pb-6 flex justify-center">
-            <button onClick={onDismiss} className="gold-button text-lg px-12 py-3 min-w-[200px]">
-              Continue
-            </button>
+          )}
+          {/* Name badge at bottom of portrait */}
+          <div className="absolute inset-x-0 bottom-0 bg-black/60 py-1.5 text-center">
+            <span className="font-display text-amber-200 text-sm font-bold drop-shadow">
+              Shadowfingers
+            </span>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        {/* Newspaper-style headline — parchment scroll style */}
+        <div className="w-full bg-parchment/80 border border-amber-800/40 rounded px-4 py-3 mb-3 text-center shadow-inner">
+          <p className="font-display text-[11px] uppercase tracking-widest text-amber-800/70 mb-1">
+            The Guildholm Herald — Special Edition
+          </p>
+          <h2 className="font-display text-xl text-card-foreground font-bold leading-snug">
+            {headline}
+          </h2>
+        </div>
+
+        {/* Event description */}
+        <p className="font-display text-base text-card-foreground text-center leading-relaxed mb-4 px-1">
+          {message}
+        </p>
+
+        {/* Effects banner — amber/gold on dark wood */}
+        <div className="wood-frame px-6 py-3 text-parchment text-center w-full max-w-3xl mb-4">
+          <span className="font-display text-lg font-semibold">
+            {effectsText.toUpperCase()}
+          </span>
+        </div>
+
+        {/* Stolen items list for apartment robbery */}
+        {!isStreetRobbery && (event.result as ApartmentRobberyResult).stolenItems.length > 0 && (
+          <div className="w-full bg-parchment/60 border border-amber-800/30 rounded p-3 mb-4">
+            <p className="font-display text-sm font-semibold text-card-foreground mb-2">
+              Stolen Items:
+            </p>
+            <ul className="space-y-0.5">
+              {(event.result as ApartmentRobberyResult).stolenItems.map((item, idx) => (
+                <li key={idx} className="flex justify-between font-display text-sm text-card-foreground">
+                  <span>{item.itemName}</span>
+                  <span className="text-card-foreground/60">×{item.quantity}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Fixed Continue button */}
+      <div className="flex-shrink-0 p-4 flex justify-center">
+        <button onClick={onDismiss} className="gold-button text-lg px-12 py-3 min-w-[200px]">
+          Continue
+        </button>
+      </div>
+    </div>
   );
 }
 
