@@ -131,6 +131,12 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
     setRunState((s) => retreatFromDungeon(s));
   }, []);
 
+  // ─── Skip healing (advance without drinking) ──────────
+
+  const handleSkipHealing = useCallback(() => {
+    setRunState((s) => advanceToNextEncounter(s));
+  }, []);
+
   // ─── Leave dungeon (no time remaining, keep all gold) ──
 
   const handleLeaveDungeon = useCallback(() => {
@@ -230,6 +236,7 @@ export function CombatView({ player, floor, onComplete, onCancel, onSpendTime, e
           maxHealth={player.maxHealth}
           canDisarm={eduBonuses.canDisarmTraps}
           onFight={handleFight}
+          onSkip={handleSkipHealing}
         />
       )}
 
