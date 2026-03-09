@@ -248,18 +248,29 @@ export function generateQuestDungeonActions(ctx: ActionContext): AIAction[] {
   const dungeonFloor = hasCaveAccess && dungeonAttemptsRemaining > 0 && player.health > 20
     ? getBestDungeonFloor(player, settings) : null;
   if (dungeonFloor !== null) {
+    const targetFloor = getFloor(dungeonFloor);
+    const combatStats = calculateCombatStats(player.equippedWeapon, player.equippedArmor, player.equippedShield, player.temperedItems, player.equipmentDurability);
+    const floorTime = targetFloor ? getFloorTimeCost(targetFloor, combatStats) : 6;
+
     if (currentLocation === 'cave') {
+      // Check that there's enough time to do the dungeon AND return home afterwards.
+      // Morgath (combat:1.6) would otherwise prefer dungeon (priority 93) over home return
+      // (92) late in the turn, then be stranded at Cave when time runs out.
+      const homeLocation = player.housing !== 'homeless'
+        ? (player.housing === 'noble' ? 'noble-heights' : 'slums') : null;
+      const homeCostAfter = homeLocation ? moveCost(homeLocation as Parameters<typeof moveCost>[0]) : 0;
+      const hasTimeForBoth = !homeLocation || player.timeRemaining > floorTime + homeCostAfter;
+
       actions.push({
         type: 'explore-dungeon',
-        priority: 58 + (weakestGoal === 'wealth' ? 10 : 0) + festivalDungeonBonus,
+        priority: hasTimeForBoth
+          ? 58 + (weakestGoal === 'wealth' ? 10 : 0) + festivalDungeonBonus
+          : 15, // Not enough time to get home after dungeon — let home-return action win
         description: `Explore dungeon floor ${dungeonFloor}`,
         details: { floorId: dungeonFloor },
       });
     } else {
       // Use actual floor time cost instead of hardcoded 6
-      const targetFloor = getFloor(dungeonFloor);
-      const combatStats = calculateCombatStats(player.equippedWeapon, player.equippedArmor, player.equippedShield, player.temperedItems, player.equipmentDurability);
-      const floorTime = targetFloor ? getFloorTimeCost(targetFloor, combatStats) : 6;
       if (player.timeRemaining > moveCost('cave') + floorTime) {
         actions.push({
           type: 'move',
