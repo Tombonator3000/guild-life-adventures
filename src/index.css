@@ -165,14 +165,14 @@ input, textarea, select, [contenteditable] {
     transition: all 0.2s ease;
   }
 
-  .gold-button:hover {
-    filter: brightness(1.1);
-    box-shadow: var(--shadow-glow-gold), 0 0 30px hsl(45 85% 55% / 0.4);
-    transform: translateY(-1px);
+  .gold-button:hover:not(:disabled) {
+    filter: brightness(1.15);
+    box-shadow: var(--shadow-glow-gold), 0 0 35px hsl(45 85% 55% / 0.5);
+    transform: translateY(-2px) scale(1.03);
   }
 
-  .gold-button:active {
-    transform: translateY(0);
+  .gold-button:active:not(:disabled) {
+    transform: translateY(0) scale(0.97);
     filter: brightness(0.95);
   }
 

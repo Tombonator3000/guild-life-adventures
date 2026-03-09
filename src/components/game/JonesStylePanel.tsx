@@ -109,7 +109,9 @@ export function JonesListItem({
     : darkText
       ? 'text-[#3d2a14]'
       : 'text-[#e0d4b8]';
-  const hoverBg = darkText ? 'hover:bg-[#d4c4a8]' : 'hover:bg-[#5c4a32]';
+  const hoverBg = darkText
+    ? 'hover:bg-[#d4c4a8] hover:scale-[1.01] hover:shadow-sm'
+    : 'hover:bg-[#5c4a32] hover:scale-[1.01] hover:shadow-sm';
 
   const content = (
     <div
@@ -129,7 +131,7 @@ export function JonesListItem({
       <button
         onClick={onClick}
         disabled={disabled}
-        className={`w-full text-left py-1 px-2 ${hoverBg} transition-colors rounded`}
+        className={`w-full text-left py-1 px-2 ${hoverBg} transition-all duration-200 rounded`}
       >
         {content}
       </button>
