@@ -94,7 +94,7 @@ export function GameSetup() {
   };
 
   const addAIOpponent = () => {
-    if (canAddMore) {
+    if (canAddMoreAI) {
       const aiIndex = aiOpponents.length;
       const defaultName = AI_OPPONENTS[aiIndex]?.name || `AI ${aiIndex + 1}`;
       setAiOpponents([...aiOpponents, { name: defaultName, difficulty: 'medium', portraitId: getDefaultAIPortrait(aiIndex) }]);

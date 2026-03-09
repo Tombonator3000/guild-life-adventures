@@ -279,8 +279,10 @@ export const useGameStore = create<GameStore>((set, get) => {
 
       // Support multiple AI opponents via aiConfigs, or single via legacy includeAI
       if (aiConfigs && aiConfigs.length > 0) {
-        aiConfigs.forEach((config, i) => {
-          const aiDef = AI_OPPONENTS[i] || AI_OPPONENTS[0];
+        // Cap at AI_OPPONENTS.length to prevent duplicate IDs
+        const cappedConfigs = aiConfigs.slice(0, AI_OPPONENTS.length);
+        cappedConfigs.forEach((config, i) => {
+          const aiDef = AI_OPPONENTS[i];
           players.push(createPlayer(
             aiDef.id,
             config.name || aiDef.name,
