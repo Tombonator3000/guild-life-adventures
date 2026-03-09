@@ -52,6 +52,7 @@ export const LOCATION_NPCS: Partial<Record<LocationId, LocationNPC>> = {
     title: 'Shopkeeper',
     portrait: '👨‍🌾',
     portraitImage: 'npcs/brynn.jpg',
+    portraitVideo: 'npcs/brynn.mp4',
     greeting: 'Fresh goods today! Well, fresh-ish. Freshness is a spectrum.',
     bgColor: '#3a2a1a',
     accentColor: '#8bc34a',
