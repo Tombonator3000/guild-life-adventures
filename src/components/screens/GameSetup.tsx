@@ -9,13 +9,15 @@ import gameBoard from '@/assets/game-board.jpeg';
 
 const MAX_TOTAL_PLAYERS = 6;
 
-const FANTASY_NAMES = [
-  'Aldric', 'Brynn', 'Fenwick', 'Mira', 'Oswin', 'Tavish',
-  'Isolde', 'Cormac', 'Lyra', 'Wren', 'Gareth', 'Selja',
-  'Dorian', 'Elara', 'Theron', 'Vesper', 'Rowan', 'Sigrid',
-  'Edwyn', 'Maren', 'Calder', 'Nessa', 'Bram', 'Faye',
-  'Hadley', 'Orin', 'Petra', 'Silvain', 'Tilda', 'Varric',
-];
+const MALE_NAMES = ['Aldric', 'Fenwick', 'Oswin', 'Tavish', 'Cormac', 'Gareth', 'Dorian', 'Theron', 'Rowan', 'Edwyn', 'Calder', 'Bram', 'Orin', 'Silvain', 'Varric'];
+const FEMALE_NAMES = ['Brynn', 'Mira', 'Isolde', 'Lyra', 'Wren', 'Selja', 'Elara', 'Vesper', 'Sigrid', 'Maren', 'Nessa', 'Faye', 'Petra', 'Tilda', 'Hadley'];
+const NEUTRAL_NAMES = ['Ash', 'Sage', 'Quinn', 'Robin', 'River', 'Scout'];
+
+function getNamePool(gender: 'male' | 'female' | 'neutral'): string[] {
+  if (gender === 'male') return MALE_NAMES;
+  if (gender === 'female') return FEMALE_NAMES;
+  return [...MALE_NAMES, ...FEMALE_NAMES, ...NEUTRAL_NAMES];
+}
 
 export function GameSetup() {
   const { startNewGame, setPhase, setShowTutorial, setTutorialStep } = useGameStore();
@@ -39,8 +41,9 @@ export function GameSetup() {
 
   // Auto-randomize the first player's name and portrait on mount
   useEffect(() => {
-    const randomName = FANTASY_NAMES[Math.floor(Math.random() * FANTASY_NAMES.length)];
     const randomPortrait = PLAYER_PORTRAITS[Math.floor(Math.random() * PLAYER_PORTRAITS.length)];
+    const namePool = getNamePool(randomPortrait.gender ?? 'neutral');
+    const randomName = namePool[Math.floor(Math.random() * namePool.length)];
     setPlayerNames([randomName]);
     setPlayerPortraits([randomPortrait.id]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -52,7 +55,8 @@ export function GameSetup() {
     const portrait = available.length > 0
       ? available[Math.floor(Math.random() * available.length)]
       : PLAYER_PORTRAITS[Math.floor(Math.random() * PLAYER_PORTRAITS.length)];
-    const randomName = FANTASY_NAMES[Math.floor(Math.random() * FANTASY_NAMES.length)];
+    const namePool = getNamePool(portrait.gender ?? 'neutral');
+    const randomName = namePool[Math.floor(Math.random() * namePool.length)];
     const newNames = [...playerNames];
     newNames[index] = randomName;
     setPlayerNames(newNames);
