@@ -151,30 +151,11 @@ export function TitleScreen() {
 
       {/* Removed SVG silhouette — AI panorama images now provide the city view */}
 
-      {/* Torch glow halos */}
-      <div
-        aria-hidden="true"
-        className="fixed pointer-events-none rounded-full"
-        style={{ width: 60, height: 60, background: 'radial-gradient(circle, rgba(200,140,30,0.35), transparent)', left: 'calc(43% - 30px)', bottom: 18, animation: 'ts-torch-pulse 2.1s ease-in-out infinite alternate' }}
-      />
-      <div
-        aria-hidden="true"
-        className="fixed pointer-events-none rounded-full"
-        style={{ width: 60, height: 60, background: 'radial-gradient(circle, rgba(200,140,30,0.35), transparent)', left: 'calc(57% - 30px)', bottom: 18, animation: 'ts-torch-pulse 2.7s ease-in-out infinite alternate' }}
-      />
-
-      {/* Fog mid */}
+      {/* Bottom fade for content grounding */}
       <div
         aria-hidden="true"
         className="fixed pointer-events-none"
-        style={{ bottom: '20%', left: '-10%', width: '120%', height: '20%', background: 'radial-gradient(ellipse 60% 100% at 50% 50%, rgba(180,130,60,0.04) 0%, transparent 70%)', animation: 'ts-fog-drift 12s ease-in-out infinite alternate' }}
-      />
-
-      {/* Fog base */}
-      <div
-        aria-hidden="true"
-        className="fixed pointer-events-none"
-        style={{ bottom: 0, left: '-20%', width: '140%', height: '35%', background: 'linear-gradient(180deg, transparent 0%, rgba(30,20,8,0.3) 30%, rgba(15,10,4,0.7) 70%, #060401 100%)' }}
+        style={{ bottom: 0, left: 0, width: '100%', height: '25%', background: 'linear-gradient(180deg, transparent 0%, rgba(6,4,1,0.5) 50%, rgba(6,4,1,0.85) 100%)' }}
       />
 
       {/* Embers */}
