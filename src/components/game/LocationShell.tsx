@@ -11,6 +11,7 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import type { LocationId } from '@/types/game.types';
 import { ItemPreviewProvider, ItemPreviewPanel } from './ItemPreview';
+import { LOCATION_BACKGROUNDS } from '@/assets/locations';
 
 export interface LocationTab {
   id: string;
