@@ -1,5 +1,6 @@
-// NPC Portrait component with image support and emoji fallback
-// Tries to load portraitImage (JPG/PNG), falls back to emoji portrait on error
+// NPC Portrait component with video, image, and emoji fallback
+// If portraitVideo is set, plays it looped and muted.
+// Falls back to portraitImage (JPG/PNG), then emoji on error.
 
 import { useState } from 'react';
 import type { LocationNPC } from '@/data/npcs';
@@ -16,9 +17,12 @@ const SIZES = {
 };
 
 export function NpcPortrait({ npc, size = 'normal' }: NpcPortraitProps) {
+  const [videoFailed, setVideoFailed] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
-  const showImage = npc.portraitImage && !imgFailed;
   const sizeClass = SIZES[size];
+
+  const showVideo = !!npc.portraitVideo && !videoFailed;
+  const showImage = !showVideo && !!npc.portraitImage && !imgFailed;
 
   return (
     <div
@@ -29,7 +33,17 @@ export function NpcPortrait({ npc, size = 'normal' }: NpcPortraitProps) {
         boxShadow: `inset 0 2px 8px rgba(0,0,0,0.4), 0 0 12px ${npc.accentColor}33`,
       }}
     >
-      {showImage ? (
+      {showVideo ? (
+        <video
+          src={`${import.meta.env.BASE_URL}${npc.portraitVideo}`}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-full object-cover"
+          onError={() => setVideoFailed(true)}
+        />
+      ) : showImage ? (
         <img
           src={`${import.meta.env.BASE_URL}${npc.portraitImage}`}
           alt={npc.name}
