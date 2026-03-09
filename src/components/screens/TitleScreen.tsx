@@ -221,17 +221,6 @@ export function TitleScreen() {
             }}>
               Guild Life
             </h1>
-            <p style={{
-              fontFamily: "'Cinzel Decorative', 'Cinzel', serif",
-              fontWeight: 400,
-              fontSize: 'clamp(1rem, 2.5vw, 1.6rem)',
-              color: '#c9922a',
-              opacity: 0.7,
-              letterSpacing: '0.06em',
-              marginTop: '0.15em',
-            }}>
-              Adventures
-            </p>
           </div>
 
           {/* Ornament divider */}
