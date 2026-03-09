@@ -5,6 +5,22 @@
 
 ---
 
+## 2026-03-09T16:00Z — Feature: TitleScreen dag/natt panorama + fjern "Adventures"
+
+### Summary
+
+Replaced SVG silhouette background with two AI-generated panorama images of Guildholm (day sunset + night moonlit) cycling via CSS crossfade animation (30s loop). Removed "Adventures" subtitle from title. Updated HTML `<title>` tag.
+
+### Changes
+
+- **src/assets/title-day.jpg** — AI-generated 1920×1080 sunset panorama of medieval fantasy city
+- **src/assets/title-night.jpg** — AI-generated 1920×1080 moonlit night version
+- **src/index.css** — Added `ts-daynight` and `ts-daynight-inv` keyframes for crossfade loop
+- **src/components/screens/TitleScreen.tsx** — Replaced gradient bg + SVG silhouette with dual `<img>` crossfade. Removed "Adventures" subtitle. Removed torch halos, fog layers (images provide atmosphere). Kept stars, embers, vignette overlays.
+- **index.html** — Title changed to "Guild Life — A Fantasy Life Simulator"
+
+---
+
 ## 2026-03-09T15:00Z — Feature: TitleScreen atmospheric redesign
 
 ### Summary
