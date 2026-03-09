@@ -33,6 +33,7 @@ src/
 │   └── ui/             # shadcn/ui components
 ├── data/               # Game data (jobs, items, quests, education, locations)
 ├── hooks/              # React hooks (useAI, use-toast)
+│   └── ai/handlers/    # AI action handler submodules (6 domain files)
 ├── store/              # Zustand store (gameStore.ts)
 ├── types/              # TypeScript types (game.types.ts)
 └── assets/             # Images (game-board.jpeg)
@@ -156,6 +157,7 @@ Tests are in `src/test/` directory.
 - NL chain LOQ resolution: When calling `getQuestLocationObjectives` or `allLocationObjectivesDone` for nlchain quests, pass `player.nlChainProgress` (NOT `player.questChainProgress`). `questChainProgress` is for linear chains only. Using the wrong progress map causes step 0 LOQs to show instead of the current step's LOQs. This applies to ALL call sites: QuestPanel, LocationPanel, HomePanel, GameBoard (map markers), BountyBoardPanel, questHelpers (store), and AI questDungeonActions. Pattern: `const chainProgressForLOQ = activeQuest?.startsWith('nlchain:') ? player.nlChainProgress : player.questChainProgress;`
 - Event title for quest objectives: Check `eventMessage?.includes('quest-objective')` (substring match), NOT `includes('[quest-objective]')`. The actual tag format is `[quest-objective:questId]` — the closing bracket comes after the quest ID, so `[quest-objective]` as an exact substring doesn't match.
 - AI education pipeline: `generateProactiveEducationActions` in strategicActions.ts fires REGARDLESS of weakest goal. `generateEducationPipelineActions` allows STARTING new degrees (not just finishing). `getWeakestGoal` redirects career/wealth to education ONLY when education progress < 35% (NOT 50% — too aggressive) AND margin < 0.15 (NOT 0.2). Commitment plan duration for degrees: medium=4, hard=6 turns. Cash flow gate: `costPerSession + 15` (not `* 3`). Work base priority: 55 (not 50), wage boost up to 25 for hard AI.
+- AI action handlers: `actionExecutor.ts` is the dispatcher; actual handler implementations live in `src/hooks/ai/handlers/` grouped by domain (resource, employment/education, housing/finance, equipment, quest/dungeon, hex). Add new handlers to the appropriate domain file and register in `ACTION_HANDLERS` map in `actionExecutor.ts`.
 - AI action limit: `actionsRemaining = 25` (NOT 15 — too low, AI ends turns with 20+ hours left). Located in `useGrimwaldAI.ts`.
 - AI failed action key: `actionKey()` in `useGrimwaldAI.ts` MUST include `floorId`, `questId`, `bountyId`, `ticketType` — not just `degreeId/jobId/itemId`. Missing fields cause AI to retry the same failed dungeon/quest action each step, wasting the entire action budget.
 - AI cash flow forecast: `USABLE_HOURS_PER_TURN = 28` (NOT 40 — too optimistic) and `SHORTFALL_THRESHOLD = 120` (NOT 50 — too low). In `strategy.ts forecastCashFlow()`.
