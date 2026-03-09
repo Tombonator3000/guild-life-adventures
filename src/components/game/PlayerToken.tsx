@@ -66,7 +66,7 @@ export function PlayerToken({ player, index, isCurrent, onClickPlayer }: PlayerT
   return (
     <div
       className={cn(
-        'relative w-16 h-16 rounded-full shadow-lg transition-all duration-300',
+        'relative w-16 h-16 rounded-full shadow-lg transition-all duration-300 animate-token-arrive',
         isCurrent && !isDead && 'animate-float ring-2 ring-gold ring-offset-1',
         isDead && 'grayscale opacity-50',
         onClickPlayer && !isCurrent && 'cursor-pointer hover:scale-110'

@@ -211,6 +211,7 @@ export interface Player {
   maxExperience: number; // Max experience (increases with graduation)
   completedQuests: number;
   clothingCondition: number;
+  backupOutfit: number | null;  // Stored secondary outfit condition (null = no backup outfit)
   weeksSinceRent: number;
   foodLevel: number; // 0-100, depletes each week
   foodBoughtWithoutPreservation: boolean; // True if food was bought this turn without a Preservation Box (spoilage checked at turn end)

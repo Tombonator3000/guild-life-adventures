@@ -112,6 +112,8 @@ export interface LocationTabContext {
   forgeRepairAppliance: GameStore['forgeRepairAppliance'];
   forgeRepairEquipment: GameStore['forgeRepairEquipment'];
   salvageEquipment: GameStore['salvageEquipment'];
+  storeBackupOutfit: GameStore['storeBackupOutfit'];
+  readBook: GameStore['readBook'];
   // Gameplay state for hex checking (passed reactively, not via getState)
   locationHexes: GameStore['locationHexes'];
   // Callbacks for newspaper modal (owned by LocationPanel)
@@ -359,20 +361,73 @@ function forgeTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function academyTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, priceModifier, studyDegree, payFullTuition, completeDegree } = ctx;
-  return [{
-    id: 'courses',
-    label: 'Courses',
-    content: (
-      <AcademyPanel
-        player={player}
-        priceModifier={priceModifier}
-        studyDegree={studyDegree}
-        payFullTuition={payFullTuition}
-        completeDegree={completeDegree}
-      />
-    ),
-  }];
+  const { player, priceModifier, studyDegree, payFullTuition, completeDegree, readBook } = ctx;
+
+  const BOOK_OPTIONS = [
+    { hours: 2, cost: 5, label: 'Browse Scrolls (2h, +3 hap)' },
+    { hours: 4, cost: 10, label: 'Read a Book (4h, +6 hap)' },
+    { hours: 6, cost: 15, label: 'Deep Study (6h, +9 hap)' },
+  ];
+
+  return [
+    {
+      id: 'courses',
+      label: 'Courses',
+      content: (
+        <AcademyPanel
+          player={player}
+          priceModifier={priceModifier}
+          studyDegree={studyDegree}
+          payFullTuition={payFullTuition}
+          completeDegree={completeDegree}
+        />
+      ),
+    },
+    {
+      id: 'library',
+      label: '📖 Library',
+      content: (
+        <div>
+          <div className="bg-[#e8dcc8] border border-[#8b7355] rounded p-2 mb-2">
+            <div className="font-display text-xs text-[#3d2a14] font-bold mb-1">Academy Library</div>
+            <div className="text-xs text-[#6b5a42] leading-snug">
+              Lose yourself in the stacks of ancient tomes and scrolls. Reading for pleasure costs a small library fee but restores happiness.
+            </div>
+          </div>
+          <div className="space-y-1">
+            {BOOK_OPTIONS.map(opt => {
+              const canAfford = player.gold >= opt.cost;
+              const hasTime = player.timeRemaining >= opt.hours;
+              return (
+                <div
+                  key={opt.hours}
+                  className={`flex items-center justify-between p-2 rounded border ${
+                    canAfford && hasTime
+                      ? 'bg-[#f0e8d0] border-[#8b7355] cursor-pointer hover:bg-[#e8dcc0]'
+                      : 'bg-[#d8d0c0] border-[#8b7355]/40 opacity-60 cursor-not-allowed'
+                  }`}
+                  onClick={() => {
+                    if (!canAfford || !hasTime) return;
+                    const ok = readBook(player.id, opt.hours, opt.cost);
+                    if (ok) {
+                      const hap = Math.round(opt.hours * 1.5);
+                      toast.success(`Spent ${opt.hours}h reading in the library (+${hap} happiness)`);
+                    }
+                  }}
+                >
+                  <span className="font-display text-xs text-[#3d2a14]">{opt.label}</span>
+                  <span className="font-mono text-xs text-[#6b5a42]">{opt.cost}g</span>
+                </div>
+              );
+            })}
+          </div>
+          {player.timeRemaining === 0 && (
+            <div className="text-xs text-amber-700 text-center mt-2 italic">No time remaining to read.</div>
+          )}
+        </div>
+      ),
+    },
+  ];
 }
 
 function bankTabs(ctx: LocationTabContext): LocationTab[] {
@@ -421,7 +476,7 @@ function generalStoreTabs(ctx: LocationTabContext): LocationTab[] {
 
 function armoryTabs(ctx: LocationTabContext): LocationTab[] {
   const { player, priceModifier, modifyGold, spendTime, modifyClothing, modifyHappiness,
-    buyDurable, equipItem, unequipItem } = ctx;
+    buyDurable, equipItem, unequipItem, storeBackupOutfit } = ctx;
   const armoryProps = {
     player,
     priceModifier,
@@ -432,6 +487,7 @@ function armoryTabs(ctx: LocationTabContext): LocationTab[] {
     buyDurable,
     equipItem,
     unequipItem,
+    storeBackupOutfit,
   };
   return [
     { id: 'clothing', label: 'Clothing', content: <ArmoryPanel {...armoryProps} section="clothing" /> },

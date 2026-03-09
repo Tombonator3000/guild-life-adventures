@@ -115,6 +115,19 @@ export function AcademyPanel({
                         toast.success(t('panelAcademy.attendedClass', { name: t(`degrees.${degree.id}.name`) }));
                       }}
                     />
+                    {/* Cram session: when not enough time for full session but some time remains */}
+                    {player.timeRemaining > 0 && player.timeRemaining < degree.hoursPerSession && player.gold >= sessionCost && (
+                      <JonesMenuItem
+                        label={`Cram Session (${player.timeRemaining}h, counts as 1 session)`}
+                        price={sessionCost}
+                        disabled={player.gold < sessionCost}
+                        darkText
+                        onClick={() => {
+                          studyDegree(player.id, degId, price, player.timeRemaining);
+                          toast.success(`Crammed in ${player.timeRemaining}h of studying!`);
+                        }}
+                      />
+                    )}
                     {!isPrepaid && (
                       <JonesMenuItem
                         label={`Enroll Full Course (${sessionsLeft} sessions, attend free)`}

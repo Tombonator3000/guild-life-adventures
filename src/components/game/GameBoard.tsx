@@ -39,6 +39,8 @@ import { usePlayerAnimation } from '@/hooks/usePlayerAnimation';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useGameBoardKeyboard } from '@/hooks/useGameBoardKeyboard';
 import { useLocationClick } from '@/hooks/useLocationClick';
+import { useKeyboardLocationNav } from '@/hooks/useKeyboardLocationNav';
+import { useGameOptions } from '@/hooks/useGameOptions';
 import { StoneBorderFrame } from './StoneBorderFrame';
 import { CurseAppliancePanel } from './CurseAppliancePanel';
 import { CurseToadPanel } from './CurseToadPanel';
@@ -221,6 +223,13 @@ export function GameBoard() {
     getAccumulatedSteps,
   });
 
+  // Keyboard location navigation (Tab/Arrow/Space/Enter)
+  const { options: gameOptions } = useGameOptions();
+  const { focusedLocationId } = useKeyboardLocationNav({
+    enabled: gameOptions.enableKeyboardNav && !aiIsThinking && phase === 'playing' && isLocalPlayerTurn,
+    onLocationClick: handleLocationClick,
+  });
+
   // Event queue: show one event at a time for gameplay events, but all at once for weekend summaries
   const [eventQueueIdx, setEventQueueIdx] = useState(0);
 
@@ -351,6 +360,7 @@ export function GameBoard() {
                   hexCasterName={activeHex?.casterName}
                   isQuestObjective={isQuestObjective}
                   isQuestObjectiveDone={isQuestObjectiveDone}
+                  isKeyboardFocused={focusedLocationId === location.id}
                 >
                   {playersHere.map((player, index) => (
                     <PlayerToken

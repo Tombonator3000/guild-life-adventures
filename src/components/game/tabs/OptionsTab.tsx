@@ -1,7 +1,7 @@
 // OptionsTab - Save/Load, audio controls, AI speed, border style, keyboard shortcuts
 // Uses AudioVolumeControl for deduplicated music/ambient/SFX sliders
 
-import { Save, Play, FastForward, SkipForward, Music, Sparkles, Bell, Frame, Eye, EyeOff } from 'lucide-react';
+import { Save, Play, FastForward, SkipForward, Music, Sparkles, Bell, Frame, Eye, EyeOff, Keyboard } from 'lucide-react';
 import { useAudioSettings } from '@/hooks/useMusic';
 import { useSFXSettings } from '@/hooks/useSFX';
 import { useAmbientSettings } from '@/hooks/useAmbient';
@@ -168,6 +168,29 @@ export function OptionsTab({
         </p>
       </OptionSection>
 
+      {/* Accessibility */}
+      <OptionSection title="Accessibility">
+        <button
+          onClick={() => setOption('enableKeyboardNav', !options.enableKeyboardNav)}
+          className={`w-full flex items-center justify-between gap-2 p-2 rounded border text-xs font-display transition-colors ${
+            options.enableKeyboardNav
+              ? 'bg-amber-200 border-amber-600 text-amber-900'
+              : 'bg-amber-100/30 border-amber-300/50 text-amber-700 hover:bg-amber-100'
+          }`}
+        >
+          <span className="flex items-center gap-1.5">
+            <Keyboard className="w-3.5 h-3.5" />
+            Keyboard board navigation
+          </span>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded ${options.enableKeyboardNav ? 'bg-amber-600 text-amber-50' : 'bg-amber-200 text-amber-700'}`}>
+            {options.enableKeyboardNav ? 'ON' : 'OFF'}
+          </span>
+        </button>
+        <p className="text-[9px] text-amber-700 mt-1">
+          Tab/Arrows to select location · Space/Enter to travel
+        </p>
+      </OptionSection>
+
       {/* Keyboard Shortcuts */}
       <OptionSection title="Shortcuts">
         <div className="space-y-0.5 text-[9px] text-amber-800">
@@ -176,6 +199,12 @@ export function OptionsTab({
           <ShortcutRow keys="T" action="Toggle Tutorial" />
           <ShortcutRow keys="Space" action="Skip AI Turn" />
           <ShortcutRow keys="M" action="Mute Music" />
+          {options.enableKeyboardNav && (
+            <>
+              <ShortcutRow keys="Tab/↑↓←→" action="Focus location" />
+              <ShortcutRow keys="Space/↵" action="Travel there" />
+            </>
+          )}
         </div>
       </OptionSection>
 

@@ -29,6 +29,9 @@ export interface GameOptions {
   // === Opponent Visibility ===
   showOpponentActions: boolean; // Show what AI/opponent is doing during their turn (menus, actions)
 
+  // === Accessibility ===
+  enableKeyboardNav: boolean;  // Tab through board locations, Space/Enter to travel
+
   // Note: Dark mode, music, and SFX have their own dedicated storage/managers.
   // They are surfaced in the OptionsMenu UI but managed by their own systems.
 }
@@ -53,6 +56,9 @@ const DEFAULT_OPTIONS: GameOptions = {
 
   // Opponent Visibility
   showOpponentActions: false,   // Off by default — opt-in transparency feature
+
+  // Accessibility
+  enableKeyboardNav: false,     // Off by default — opt-in keyboard navigation
 };
 
 let cachedOptions: GameOptions | null = null;

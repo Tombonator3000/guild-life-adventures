@@ -20,6 +20,7 @@ interface ArmoryPanelProps {
   buyDurable: (playerId: string, itemId: string, cost: number) => void;
   equipItem: (playerId: string, itemId: string, slot: EquipmentSlot) => void;
   unequipItem: (playerId: string, slot: EquipmentSlot) => void;
+  storeBackupOutfit?: (playerId: string, condition: number, cost: number) => boolean;
   section?: ArmorySection;
 }
 
@@ -33,6 +34,7 @@ export function ArmoryPanel({
   buyDurable,
   equipItem,
   unequipItem,
+  storeBackupOutfit,
   section,
 }: ArmoryPanelProps) {
   const { t } = useTranslation();
@@ -225,26 +227,39 @@ export function ArmoryPanel({
               const wouldUpgrade = clothingValue > player.clothingCondition;
               const itemTier = getClothingTier(clothingValue);
               const itemTierLabel = CLOTHING_TIER_LABELS[itemTier];
+              const canStoreAsBackup = storeBackupOutfit && canAfford && clothingValue > (player.backupOutfit ?? 0);
               return (
-                <JonesMenuItem
-                  key={item.id}
-                  label={`${t(`items.${item.id}.name`) || item.name} [${itemTierLabel}]`}
-                  price={price}
-                  disabled={!canAfford || !wouldUpgrade}
-                  darkText={darkText}
-                  largeText={largeText}
-                  previewData={itemToPreview(item)}
-                  onClick={() => {
-                    modifyGold(player.id, -price);
-                    modifyClothing(player.id, clothingValue);
-                    // Happiness bonus for dress/business clothing (Jones-style)
-                    if (item.happinessOnPurchase && item.happinessOnPurchase > 0) {
-                      modifyHappiness(player.id, item.happinessOnPurchase);
-                    }
-                    const newTier = getClothingTier(Math.max(player.clothingCondition, clothingValue));
-                    toast.success(`Purchased ${t(`items.${item.id}.name`) || item.name} — now ${CLOTHING_TIER_LABELS[newTier]} tier`);
-                  }}
-                />
+                <div key={item.id}>
+                  <JonesMenuItem
+                    label={`${t(`items.${item.id}.name`) || item.name} [${itemTierLabel}]`}
+                    price={price}
+                    disabled={!canAfford || !wouldUpgrade}
+                    darkText={darkText}
+                    largeText={largeText}
+                    previewData={itemToPreview(item)}
+                    onClick={() => {
+                      modifyGold(player.id, -price);
+                      modifyClothing(player.id, clothingValue);
+                      if (item.happinessOnPurchase && item.happinessOnPurchase > 0) {
+                        modifyHappiness(player.id, item.happinessOnPurchase);
+                      }
+                      const newTier = getClothingTier(Math.max(player.clothingCondition, clothingValue));
+                      toast.success(`Purchased ${t(`items.${item.id}.name`) || item.name} — now ${CLOTHING_TIER_LABELS[newTier]} tier`);
+                    }}
+                  />
+                  {canStoreAsBackup && (
+                    <JonesMenuItem
+                      label={`  ↳ Store as Backup Outfit [${itemTierLabel}]`}
+                      price={price}
+                      disabled={!canAfford}
+                      darkText={darkText}
+                      onClick={() => {
+                        const ok = storeBackupOutfit!(player.id, clothingValue, price);
+                        if (ok) toast.success(`Stored ${item.name} as backup outfit (${clothingValue}%)`);
+                      }}
+                    />
+                  )}
+                </div>
               );
             })}
           </div>

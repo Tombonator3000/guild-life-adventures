@@ -104,13 +104,16 @@ export function AnimatedPlayerToken({
       className={cn(
         'absolute w-20 h-20 rounded-full shadow-xl z-50 relative',
         isCurrent && !animationPath && 'ring-2 ring-yellow-400 ring-offset-1 animate-bounce',
-        animationPath && 'scale-110'
+        animationPath && 'animate-token-walk'
       )}
       style={{
         left: `${position.x}%`,
         top: `${position.y}%`,
-        transform: 'translate(-50%, -50%)',
-        transition: `left ${ANIMATION_STEP_MS}ms ease-in-out, top ${ANIMATION_STEP_MS}ms ease-in-out`,
+        // token-walk keyframes include the translate(-50%, -50%) so no static transform here during animation
+        transform: animationPath ? undefined : 'translate(-50%, -50%)',
+        transition: animationPath
+          ? `left ${ANIMATION_STEP_MS}ms linear, top ${ANIMATION_STEP_MS}ms linear`
+          : `left ${ANIMATION_STEP_MS}ms ease-in-out, top ${ANIMATION_STEP_MS}ms ease-in-out`,
         boxShadow: `0 4px 15px rgba(0,0,0,0.4), 0 0 ${isCurrent ? '20px' : '10px'} ${player.color}`,
       }}
       title={player.name}

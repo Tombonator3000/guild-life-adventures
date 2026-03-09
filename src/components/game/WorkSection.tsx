@@ -61,6 +61,11 @@ export function WorkSection({ player, locationName, workShift, variant }: WorkSe
   // Match actual workShift calculation: flat 15% bonus on earnings for all shifts
   const earnings = Math.floor(jobData.hoursPerShift * player.currentWage * 1.15);
 
+  // Short shift: when not enough time for a full shift but some time remains
+  const hasPartialTime = player.timeRemaining > 0 && player.timeRemaining < jobData.hoursPerShift;
+  const partialHours = player.timeRemaining;
+  const partialEarnings = Math.floor(partialHours * player.currentWage * 1.15);
+
   if (variant === 'jones') {
     return (
       <div className="mt-4 pt-3 border-t border-[#5a4a3a]">
@@ -82,8 +87,23 @@ export function WorkSection({ player, locationName, workShift, variant }: WorkSe
           variant="primary"
           className="w-full"
         />
+        {hasPartialTime && (
+          <JonesButton
+            label={`Short Shift ${partialHours}h (+${partialEarnings}g)`}
+            onClick={() => {
+              const worked = workShift(player.id, partialHours, player.currentWage);
+              if (worked) {
+                toast.success(`Worked a short ${partialHours}h shift!`);
+              } else {
+                toast.error('Unable to work.');
+              }
+            }}
+            variant="secondary"
+            className="w-full mt-1"
+          />
+        )}
         <div className="text-xs text-[#8b7355] px-2 mt-1">
-          {jobData.hoursPerShift} hours per shift
+          {jobData.hoursPerShift} hours per full shift
         </div>
       </div>
     );
@@ -112,6 +132,22 @@ export function WorkSection({ player, locationName, workShift, variant }: WorkSe
           }
         }}
       />
+      {hasPartialTime && (
+        <ActionButton
+          label={`Short Shift (+${partialEarnings}g)`}
+          cost={0}
+          time={partialHours}
+          disabled={false}
+          onClick={() => {
+            const worked = workShift(player.id, partialHours, player.currentWage);
+            if (worked) {
+              toast.success(`Worked a short ${partialHours}h shift!`);
+            } else {
+              toast.error('Unable to work.');
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
