@@ -4,6 +4,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide scrollbars but keep scroll functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Prevent accidental text selection during gameplay */
 * {
   user-select: none;

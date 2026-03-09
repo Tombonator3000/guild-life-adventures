@@ -226,7 +226,7 @@ export function LocationShell({
           )}
 
           {/* Tab content */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto scrollbar-hide">
             {wrapWithInteractionHandler(activeContent)}
           </div>
         </div>
