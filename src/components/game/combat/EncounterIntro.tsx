@@ -55,13 +55,13 @@ export function EncounterIntro({
       <div
         className={`rounded-lg p-4 border-2 ${
           isBoss
-            ? 'bg-gradient-to-b from-red-950/60 to-red-950/30 border-red-700/60'
+            ? 'bg-gradient-to-b from-red-950/90 to-red-950/75 border-red-700/60'
             : encounter.type === 'treasure'
-              ? 'bg-gradient-to-b from-amber-950/40 to-amber-950/20 border-amber-600/40'
+              ? 'bg-gradient-to-b from-amber-950/85 to-amber-950/70 border-amber-600/40'
               : encounter.type === 'healing'
-                ? 'bg-gradient-to-b from-cyan-950/40 to-cyan-950/20 border-cyan-600/40'
+                ? 'bg-gradient-to-b from-cyan-950/85 to-cyan-950/70 border-cyan-600/40'
                 : encounter.type === 'trap'
-                  ? 'bg-gradient-to-b from-orange-950/40 to-orange-950/20 border-orange-600/40'
+                  ? 'bg-gradient-to-b from-orange-950/85 to-orange-950/70 border-orange-600/40'
                   : 'bg-gradient-to-b from-[#2d1f0f] to-[#1a1308] border-[#8b7355]/60'
         }`}
       >
