@@ -27,28 +27,20 @@ const BORDER_IMAGES: Record<Exclude<BorderStyle, 'none'>, { left: string; right:
 export function StoneBorderFrame({ side, children }: StoneBorderFrameProps) {
   const { options } = useGameOptions();
   const borderStyle = options.borderStyle;
+  const isNone = borderStyle === 'none';
 
-  if (borderStyle === 'none') {
-    return (
-      <div className="w-full h-full bg-background/80">
-        {children}
-      </div>
-    );
-  }
-
-  const images = BORDER_IMAGES[borderStyle];
-  const bgImage = side === 'left' ? images.left : images.right;
+  const bgImage = !isNone ? (side === 'left' ? BORDER_IMAGES[borderStyle].left : BORDER_IMAGES[borderStyle].right) : undefined;
 
   return (
     <div
       className="relative w-full h-full"
-      style={{
+      style={bgImage ? {
         backgroundImage: `url(${bgImage})`,
         backgroundSize: '100% 100%',
         backgroundRepeat: 'no-repeat',
-      }}
+      } : undefined}
     >
-      <div className="absolute inset-0 p-[8%] pt-[4%] pb-[4%] overflow-hidden">
+      <div className={`absolute inset-0 overflow-hidden${isNone ? '' : ' p-[8%] pt-[4%] pb-[4%]'}`}>
         {children}
       </div>
     </div>
