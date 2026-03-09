@@ -5,6 +5,43 @@
 
 ---
 
+## 2026-03-09T15:00Z — Feature: TitleScreen atmospheric redesign
+
+### Summary
+
+Replaced the generic parchment-card layout with a dark, cinematic title screen inspired by standing at the gates of Guildholm at night. No external image assets required — atmosphere is built entirely from inline SVG, CSS keyframes, and React-generated particle arrays.
+
+### Design choices
+
+- **Background**: Layered radial/linear gradients (near-black with warm amber undertones) replace `game-board.jpeg`
+- **City silhouette**: Inline SVG of Guildholm skyline — castle, Guild Hall, Academy (with magic orb glow), Tavern (with chimney), far tower, Bank — all with glowing windows using `feGaussianBlur` filter. Gate arch with torches at centre.
+- **Stars**: 120 particles generated via `useMemo`, randomised size/position/duration/delay, animated with `ts-twinkle` CSS keyframe
+- **Embers**: 22 particles rising from the gate area, float upward + drift sideways via `ts-ember` keyframe using CSS custom property `--ts-fx` for per-particle X translation
+- **Torch glow halos**: Two pulsing radial gradient divs at gate torch positions (`ts-torch-pulse`)
+- **Fog**: Drifting radial gradient layer (`ts-fog-drift`) + opaque base fog below city
+- **Vignette**: Radial gradient darkening screen edges
+- **Title typography**: "Guild Life" in Cinzel Decorative 900 weight with gold gradient + drop-shadow. "Adventures" in lighter weight below. "Welcome to Guildholm" eyebrow in Cinzel small-caps style.
+- **Buttons**: Hexagonal `clip-path` for primary (gold filled) and secondary (gold outline). Tertiary row of 4 small bordered buttons.
+- **Dev mode trigger**: Invisible `opacity-0` button in title area — same 5-click-within-2s pattern, just visually removed.
+
+### Files changed
+
+- `index.html` — added `Cinzel+Decorative:wght@400;700;900` to Google Fonts link
+- `src/index.css` — added 6 `@keyframes` blocks: `ts-twinkle`, `ts-ember`, `ts-fog-drift`, `ts-torch-pulse`, `ts-panel-reveal`, `ts-primary-pulse`
+- `src/components/screens/TitleScreen.tsx` — full rewrite of JSX; all existing handlers/modals/hooks preserved unchanged
+
+### Preserved behaviours
+
+- All i18n `t()` calls intact
+- `autoSaveExists` → Continue Game button conditional rendering
+- `hasAutoSave`, load modal, delete slot, options, manual, credits, PWA install, iOS guide — all unchanged
+- Lazy-loaded `OptionsMenu`, `UserManual`, `CreditsScreen` — unchanged
+- Dev mode: Shield icon removed visually; invisible button at same position with identical logic
+
+---
+
+---
+
 ## 2026-03-09T14:00Z — Feature: Faded Location Background Images
 
 ### Summary
