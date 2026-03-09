@@ -5,6 +5,21 @@
 
 ---
 
+## 2026-03-09T17:00Z — Feature: 12 new player avatar portraits + category tabs
+
+### Summary
+
+Added 12 new AI-generated character portraits (Knight, Beggar, Brigand, Farmer, Alchemist, Barbarian, Jester, Summoner, Warlock, Astrologer, Gladiator, Assassin). Total player portraits: 23. Added category tab system to PortraitPicker (All / ⚔️ Warriors / 🔮 Mystics / 🗡️ Rogues / 🏠 Folk). Grid expanded to 5 columns with scroll area.
+
+### Changes
+
+- **public/portraits/*.jpg** — 12 new AI-generated 512×512 fantasy character portraits
+- **src/data/portraits.ts** — Added `PortraitGroup` type, `PORTRAIT_GROUPS` constant, `group` field on `PortraitDefinition`. Reorganized PLAYER_PORTRAITS into 4 groups: warriors (5), mystics (8), rogues (4), folk (6).
+- **src/components/game/PortraitPicker.tsx** — Added category tab bar with All/Warriors/Mystics/Rogues/Folk tabs. Grid now 5 columns with max-height scroll. Reduced portrait size to 56px for better density.
+- **CLAUDE.md** — Updated portrait count and documented category tab system.
+
+---
+
 ## 2026-03-09T16:00Z — Feature: TitleScreen dag/natt panorama + fjern "Adventures"
 
 ### Summary
