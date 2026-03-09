@@ -38,6 +38,7 @@ export function GameSetup() {
 
   const totalPlayers = playerNames.length + aiOpponents.length;
   const canAddMore = totalPlayers < MAX_TOTAL_PLAYERS;
+  const canAddMoreAI = canAddMore && aiOpponents.length < AI_OPPONENTS.length;
 
   // Auto-randomize the first player's name and portrait on mount
   useEffect(() => {
