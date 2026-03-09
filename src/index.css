@@ -304,3 +304,28 @@ input, textarea, select, [contenteditable] {
   50%, 90%  { opacity: 1; }
   100%      { opacity: 0; }
 }
+
+/* Title screen menu button hover glow */
+.ts-menu-btn {
+  transition: all 0.25s ease;
+}
+.ts-menu-btn:hover {
+  text-shadow: 0 0 12px rgba(212,179,60,0.7), 0 0 24px rgba(212,179,60,0.3);
+  filter: brightness(1.3);
+  transform: translateY(-1px);
+}
+.ts-menu-btn:active {
+  transform: translateY(0);
+  filter: brightness(1);
+}
+
+/* Title screen tertiary buttons hover */
+.ts-tertiary-btn {
+  transition: all 0.25s ease;
+}
+.ts-tertiary-btn:hover {
+  opacity: 0.9 !important;
+  text-shadow: 0 0 8px rgba(242,232,204,0.6);
+  border-color: rgba(242,232,204,0.3) !important;
+  filter: brightness(1.3);
+}
