@@ -118,11 +118,24 @@ export function LocationShell({
 
       {/* === CONTENT AREA === NPC portrait (left) + parchment content (right) */}
       <div
-        className="flex-1 flex gap-2 overflow-hidden p-2"
+        className="flex-1 flex gap-2 overflow-hidden p-2 relative"
         style={{
           background: 'linear-gradient(180deg, #f0e8d8 0%, #e8dcc8 100%)',
         }}
       >
+        {/* Faded location background image — behind all content */}
+        {LOCATION_BACKGROUNDS[locationId] && (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: `url(${LOCATION_BACKGROUNDS[locationId]})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              opacity: 0.13,
+              mixBlendMode: 'multiply',
+            }}
+          />
+        )}
         {/* NPC Portrait - Left side, hidden on mobile */}
         {!isMobile && (
           <div className={`flex-shrink-0 ${xlPortrait ? 'w-64' : largePortrait ? 'w-52' : 'w-44'} flex flex-col items-center relative`}>
