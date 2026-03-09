@@ -263,6 +263,34 @@ function generateSalaryNegotiationActions(ctx: ActionContext): AIAction[] {
   return [];
 }
 
+/** Seek housing at Landlord when currently homeless and can afford slums rent */
+function generateSeekHousingActions(ctx: ActionContext): AIAction[] {
+  const { player, currentLocation, moveCost } = ctx;
+  if (player.housing !== 'homeless') return [];
+
+  const slumsRent = RENT_COSTS['slums'];
+  // Need enough gold for rent deposit (2× first rent) plus some buffer
+  if (player.gold < slumsRent * 2) return [];
+
+  if (currentLocation === 'landlord') {
+    return [{
+      type: 'move-housing',
+      priority: 85,
+      description: 'Rent in Slums to get off the streets',
+      details: { tier: 'slums' as HousingTier, cost: slumsRent * 2, rent: slumsRent },
+    }];
+  }
+  if (player.timeRemaining > moveCost('landlord') + 2) {
+    return [{
+      type: 'move',
+      location: 'landlord',
+      priority: 80,
+      description: 'Travel to Landlord to find housing',
+    }];
+  }
+  return [];
+}
+
 /** Voluntary downgrade to homeless when completely broke and about to be evicted */
 function generateVoluntaryHomelessActions(ctx: ActionContext): AIAction[] {
   const { player, currentLocation, moveCost } = ctx;
@@ -416,6 +444,7 @@ const STRATEGY_GENERATORS: Array<(ctx: ActionContext) => AIAction[]> = [
   generateProactiveEducationActions,
   generateHousingUpgradeActions,
   generateHousingDowngradeActions,
+  generateSeekHousingActions,
   generateSalaryNegotiationActions,
   generateVoluntaryHomelessActions,
   generateWithdrawalActions,
