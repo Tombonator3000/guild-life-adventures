@@ -16,6 +16,7 @@ interface EncounterIntroProps {
   maxHealth: number;
   canDisarm: boolean;
   onFight: () => void;
+  onSkip?: () => void;
 }
 
 export function EncounterIntro({
@@ -26,6 +27,7 @@ export function EncounterIntro({
   maxHealth,
   canDisarm,
   onFight,
+  onSkip,
 }: EncounterIntroProps) {
   const icon = getEncounterIcon(encounter.type);
   const action = getEncounterAction(encounter, canDisarm);
@@ -93,7 +95,7 @@ export function EncounterIntro({
         </div>
 
         {/* Description */}
-        <p className="text-sm text-[#c8b090] italic text-center mb-2">
+        <p className={`text-sm italic text-center mb-2 ${encounter.type === 'healing' ? 'text-[#e8d8b8]' : 'text-[#c8b090]'}`}>
           {encounter.flavorText}
         </p>
 
@@ -162,6 +164,16 @@ export function EncounterIntro({
           {action}
         </span>
       </button>
+
+      {/* Skip option for healing springs */}
+      {encounter.type === 'healing' && onSkip && (
+        <button
+          className="w-full py-2 px-4 text-sm font-display rounded-lg transition-all bg-transparent hover:bg-[#2d1f0f]/60 text-[#a89070] hover:text-[#c8b090] border border-[#8b7355]/30 hover:border-[#8b7355]/60"
+          onClick={onSkip}
+        >
+          Leave Spring
+        </button>
+      )}
     </div>
   );
 }

@@ -391,6 +391,33 @@ function generateHappinessFloorActions(ctx: ActionContext): AIAction[] {
   return actions;
 }
 
+// ─── Home-seeking at end of turn ───────────────────────────────
+
+/**
+ * When the AI has very little time left (<= 10 hours), prioritize returning
+ * home so that end-of-turn rest bonuses (happiness, relaxation, sleep) apply
+ * at the home location rather than wherever the AI happens to be standing.
+ */
+function generateHomeReturnActions(ctx: ActionContext): AIAction[] {
+  const { player, currentLocation, moveCost } = ctx;
+
+  // Only applies when housing is not homeless and low on time
+  if (player.housing === 'homeless') return [];
+  const homeLocation = player.housing === 'noble' ? 'noble-heights' : 'slums';
+  if (currentLocation === homeLocation) return [];
+
+  // Only act when time is critically low (10 hours or fewer)
+  const homeMoveCost = moveCost(homeLocation as Parameters<typeof moveCost>[0]);
+  if (player.timeRemaining > 10 || player.timeRemaining < homeMoveCost) return [];
+
+  return [{
+    type: 'move',
+    location: homeLocation as Parameters<typeof moveCost>[0],
+    priority: 92,
+    description: `Return home (${homeLocation}) to rest before end of turn`,
+  }];
+}
+
 // ─── Main entry point ──────────────────────────────────────────
 
 /**
@@ -406,5 +433,6 @@ export function generateCriticalActions(ctx: ActionContext): AIAction[] {
     ...generateClothingActions(ctx),
     ...generateHealthActions(ctx),
     ...generateHappinessFloorActions(ctx),
+    ...generateHomeReturnActions(ctx),
   ];
 }

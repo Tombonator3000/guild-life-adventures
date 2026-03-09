@@ -17,6 +17,8 @@ export interface PortraitDefinition {
   imagePath: string;
   /** Category for filtering in the picker */
   category: 'human' | 'ai';
+  /** Gender for name pool selection (human portraits only) */
+  gender?: 'male' | 'female' | 'neutral';
   /** Placeholder colors for generated SVG when no image exists */
   placeholderColors: {
     bg: string;      // Background color
@@ -32,6 +34,7 @@ export const PLAYER_PORTRAITS: PortraitDefinition[] = [
     name: 'Warrior',
     imagePath: 'portraits/warrior.jpg',
     category: 'human',
+    gender: 'male',
     placeholderColors: { bg: '#8B4513', accent: '#CD853F', skin: '#DEB887' },
   },
   {
@@ -39,6 +42,7 @@ export const PLAYER_PORTRAITS: PortraitDefinition[] = [
     name: 'Mage',
     imagePath: 'portraits/mage.jpg',
     category: 'human',
+    gender: 'female',
     placeholderColors: { bg: '#4B0082', accent: '#9370DB', skin: '#F5DEB3' },
   },
   {
@@ -46,6 +50,7 @@ export const PLAYER_PORTRAITS: PortraitDefinition[] = [
     name: 'Rogue',
     imagePath: 'portraits/rogue.jpg',
     category: 'human',
+    gender: 'neutral',
     placeholderColors: { bg: '#2F4F4F', accent: '#708090', skin: '#D2B48C' },
   },
   {
@@ -53,6 +58,7 @@ export const PLAYER_PORTRAITS: PortraitDefinition[] = [
     name: 'Cleric',
     imagePath: 'portraits/cleric.jpg',
     category: 'human',
+    gender: 'female',
     placeholderColors: { bg: '#DAA520', accent: '#FFFACD', skin: '#FFDAB9' },
   },
   {
@@ -60,6 +66,7 @@ export const PLAYER_PORTRAITS: PortraitDefinition[] = [
     name: 'Ranger',
     imagePath: 'portraits/ranger.jpg',
     category: 'human',
+    gender: 'male',
     placeholderColors: { bg: '#228B22', accent: '#8FBC8F', skin: '#DEB887' },
   },
   {
@@ -67,6 +74,7 @@ export const PLAYER_PORTRAITS: PortraitDefinition[] = [
     name: 'Bard',
     imagePath: 'portraits/bard.jpg',
     category: 'human',
+    gender: 'male',
     placeholderColors: { bg: '#B22222', accent: '#FF6347', skin: '#FFE4C4' },
   },
   {
@@ -74,6 +82,7 @@ export const PLAYER_PORTRAITS: PortraitDefinition[] = [
     name: 'Paladin',
     imagePath: 'portraits/paladin.jpg',
     category: 'human',
+    gender: 'male',
     placeholderColors: { bg: '#4169E1', accent: '#C0C0C0', skin: '#FFDAB9' },
   },
   {
@@ -81,6 +90,7 @@ export const PLAYER_PORTRAITS: PortraitDefinition[] = [
     name: 'Merchant',
     imagePath: 'portraits/merchant.jpg',
     category: 'human',
+    gender: 'male',
     placeholderColors: { bg: '#8B6914', accent: '#FFD700', skin: '#F5DEB3' },
   },
   {
@@ -88,6 +98,7 @@ export const PLAYER_PORTRAITS: PortraitDefinition[] = [
     name: 'Druid',
     imagePath: 'portraits/druid.jpg',
     category: 'human',
+    gender: 'female',
     placeholderColors: { bg: '#1A5C2A', accent: '#66BB6A', skin: '#C8A882' },
   },
   {
@@ -95,6 +106,7 @@ export const PLAYER_PORTRAITS: PortraitDefinition[] = [
     name: 'Necromancer',
     imagePath: 'portraits/necromancer.jpg',
     category: 'human',
+    gender: 'female',
     placeholderColors: { bg: '#1A0A2E', accent: '#7B2FBE', skin: '#C4B5C0' },
   },
   {
@@ -102,6 +114,7 @@ export const PLAYER_PORTRAITS: PortraitDefinition[] = [
     name: 'Monk',
     imagePath: 'portraits/monk.jpg',
     category: 'human',
+    gender: 'male',
     placeholderColors: { bg: '#8B4500', accent: '#D4A06A', skin: '#E8C49A' },
   },
 ];
