@@ -38,6 +38,7 @@ export function GameSetup() {
 
   const totalPlayers = playerNames.length + aiOpponents.length;
   const canAddMore = totalPlayers < MAX_TOTAL_PLAYERS;
+  const canAddMoreAI = canAddMore && aiOpponents.length < AI_OPPONENTS.length;
 
   // Auto-randomize the first player's name and portrait on mount
   useEffect(() => {
@@ -93,7 +94,7 @@ export function GameSetup() {
   };
 
   const addAIOpponent = () => {
-    if (canAddMore) {
+    if (canAddMoreAI) {
       const aiIndex = aiOpponents.length;
       const defaultName = AI_OPPONENTS[aiIndex]?.name || `AI ${aiIndex + 1}`;
       setAiOpponents([...aiOpponents, { name: defaultName, difficulty: 'medium', portraitId: getDefaultAIPortrait(aiIndex) }]);
@@ -292,7 +293,7 @@ export function GameSetup() {
                 </div>
                 <button
                   onClick={addAIOpponent}
-                  disabled={!canAddMore}
+                  disabled={!canAddMoreAI}
                   className="p-2 wood-frame text-parchment hover:brightness-110 disabled:opacity-50 flex items-center gap-1"
                   title="Add AI opponent"
                 >
