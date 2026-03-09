@@ -1,6 +1,8 @@
 import { lazy, Suspense, useRef, useState, useMemo } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { Save, Trash2, Volume2, VolumeX, Download, Settings, Info, Share, Plus, X, BookOpen } from 'lucide-react';
+import titleDay from '@/assets/title-day.jpg';
+import titleNight from '@/assets/title-night.jpg';
 import { activateDevMode } from '@/hooks/useDevMode';
 import { hasAutoSave, getSaveSlots, formatSaveDate, deleteSave } from '@/data/saveLoad';
 import type { SaveSlotInfo } from '@/data/saveLoad';
@@ -111,16 +113,23 @@ export function TitleScreen() {
   return (
     <div className="relative min-h-screen-safe overflow-hidden">
 
-      {/* Deep layered dark background */}
-      <div
-        className="fixed inset-0"
-        style={{
-          background:
-            'radial-gradient(ellipse 80% 60% at 50% 110%, #2a1800 0%, transparent 60%),' +
-            'radial-gradient(ellipse 120% 80% at 50% -10%, #1a0f00 0%, transparent 50%),' +
-            'linear-gradient(180deg, #060401 0%, #0e0904 40%, #1a1008 70%, #0a0703 100%)',
-        }}
-      />
+      {/* Day/night cycling background images */}
+      <div className="fixed inset-0">
+        <img
+          src={titleDay}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ animation: 'ts-daynight 30s ease-in-out infinite' }}
+        />
+        <img
+          src={titleNight}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ animation: 'ts-daynight-inv 30s ease-in-out infinite' }}
+        />
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 70% at 50% 40%, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.6) 100%)' }} />
+      </div>
 
       {/* Stars */}
       <div className="fixed inset-0 pointer-events-none" aria-hidden="true">
@@ -140,120 +149,13 @@ export function TitleScreen() {
         ))}
       </div>
 
-      {/* City silhouette SVG */}
-      <div className="fixed bottom-0 left-0 right-0 pointer-events-none" style={{ height: '55%' }} aria-hidden="true">
-        <svg viewBox="0 0 1400 500" preserveAspectRatio="xMidYMax slice" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="ts-cityGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#1a1106" stopOpacity="0.9"/>
-              <stop offset="100%" stopColor="#0a0703" stopOpacity="1"/>
-            </linearGradient>
-            <linearGradient id="ts-winGlow" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#c9922a" stopOpacity="0.8"/>
-              <stop offset="100%" stopColor="#8a5e10" stopOpacity="0.3"/>
-            </linearGradient>
-            <filter id="ts-glow">
-              <feGaussianBlur stdDeviation="3" result="blur"/>
-              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-          {/* Far hills */}
-          <path d="M0,320 Q100,200 200,250 Q350,150 450,220 Q550,130 650,190 Q780,100 900,180 Q1020,130 1100,200 Q1200,150 1300,210 L1400,230 L1400,500 L0,500 Z" fill="#0d0904" opacity="0.8"/>
-          {/* Castle left */}
-          <rect x="30" y="220" width="90" height="280" fill="url(#ts-cityGrad)"/>
-          <rect x="20" y="200" width="16" height="90" fill="url(#ts-cityGrad)"/>
-          <rect x="84" y="200" width="16" height="90" fill="url(#ts-cityGrad)"/>
-          <polygon points="50,220 75,160 100,220" fill="url(#ts-cityGrad)"/>
-          <rect x="58" y="155" width="34" height="8" fill="url(#ts-cityGrad)"/>
-          <rect x="60" y="240" width="12" height="18" fill="url(#ts-winGlow)" filter="url(#ts-glow)" rx="2"/>
-          <rect x="80" y="240" width="12" height="18" fill="url(#ts-winGlow)" filter="url(#ts-glow)" rx="2"/>
-          <rect x="60" y="280" width="12" height="18" fill="url(#ts-winGlow)" filter="url(#ts-glow)" rx="2"/>
-          {/* Guild Hall */}
-          <rect x="200" y="270" width="140" height="230" fill="url(#ts-cityGrad)"/>
-          <polygon points="200,270 270,200 340,270" fill="url(#ts-cityGrad)"/>
-          <rect x="310" y="210" width="30" height="290" fill="url(#ts-cityGrad)"/>
-          <polygon points="310,210 325,165 340,210" fill="url(#ts-cityGrad)"/>
-          <rect x="316" y="162" width="18" height="5" fill="url(#ts-cityGrad)"/>
-          <rect x="225" y="295" width="20" height="28" fill="url(#ts-winGlow)" filter="url(#ts-glow)" rx="2" opacity="0.9"/>
-          <rect x="260" y="295" width="20" height="28" fill="url(#ts-winGlow)" filter="url(#ts-glow)" rx="2" opacity="0.7"/>
-          <rect x="315" y="230" width="16" height="22" fill="url(#ts-winGlow)" filter="url(#ts-glow)" rx="2"/>
-          {/* Academy */}
-          <rect x="460" y="240" width="200" height="260" fill="url(#ts-cityGrad)"/>
-          <rect x="460" y="200" width="28" height="100" fill="url(#ts-cityGrad)"/>
-          <polygon points="460,200 474,155 488,200" fill="url(#ts-cityGrad)"/>
-          <rect x="630" y="200" width="28" height="100" fill="url(#ts-cityGrad)"/>
-          <polygon points="630,200 644,155 658,200" fill="url(#ts-cityGrad)"/>
-          <rect x="548" y="190" width="24" height="110" fill="url(#ts-cityGrad)"/>
-          <polygon points="548,190 560,135 572,190" fill="url(#ts-cityGrad)"/>
-          <rect x="480" y="260" width="16" height="24" fill="url(#ts-winGlow)" filter="url(#ts-glow)" rx="8 8 0 0" opacity="0.8"/>
-          <rect x="510" y="260" width="16" height="24" fill="url(#ts-winGlow)" filter="url(#ts-glow)" rx="8 8 0 0" opacity="0.6"/>
-          <rect x="580" y="260" width="16" height="24" fill="url(#ts-winGlow)" filter="url(#ts-glow)" rx="8 8 0 0" opacity="0.7"/>
-          <rect x="610" y="260" width="16" height="24" fill="url(#ts-winGlow)" filter="url(#ts-glow)" rx="8 8 0 0" opacity="0.9"/>
-          <rect x="475" y="215" width="12" height="16" fill="url(#ts-winGlow)" filter="url(#ts-glow)" rx="6 6 0 0"/>
-          <rect x="641" y="215" width="12" height="16" fill="url(#ts-winGlow)" filter="url(#ts-glow)" rx="6 6 0 0"/>
-          {/* Academy magic orb */}
-          <circle cx="560" cy="132" r="8" fill="#8040ff" opacity="0.4" filter="url(#ts-glow)"/>
-          <circle cx="560" cy="132" r="3" fill="#c090ff" opacity="0.8"/>
-          {/* Tavern */}
-          <rect x="760" y="300" width="120" height="200" fill="url(#ts-cityGrad)"/>
-          <polygon points="760,300 820,255 880,300" fill="url(#ts-cityGrad)"/>
-          <rect x="800" y="240" width="14" height="55" fill="url(#ts-cityGrad)"/>
-          <rect x="840" y="255" width="10" height="42" fill="url(#ts-cityGrad)"/>
-          <rect x="775" y="315" width="22" height="32" fill="url(#ts-winGlow)" filter="url(#ts-glow)" rx="2" opacity="0.95"/>
-          <rect x="815" y="315" width="22" height="32" fill="url(#ts-winGlow)" filter="url(#ts-glow)" rx="2" opacity="0.85"/>
-          <rect x="855" y="315" width="18" height="24" fill="url(#ts-winGlow)" filter="url(#ts-glow)" rx="2" opacity="0.7"/>
-          {/* Far tower */}
-          <rect x="1000" y="250" width="60" height="250" fill="url(#ts-cityGrad)"/>
-          <polygon points="1000,250 1030,190 1060,250" fill="url(#ts-cityGrad)"/>
-          <rect x="1010" y="310" width="14" height="20" fill="url(#ts-winGlow)" filter="url(#ts-glow)" rx="2" opacity="0.6"/>
-          <rect x="1035" y="310" width="14" height="20" fill="url(#ts-winGlow)" filter="url(#ts-glow)" rx="2" opacity="0.8"/>
-          {/* Bank */}
-          <rect x="1150" y="280" width="130" height="220" fill="url(#ts-cityGrad)"/>
-          <rect x="1145" y="260" width="18" height="80" fill="url(#ts-cityGrad)"/>
-          <rect x="1267" y="260" width="18" height="80" fill="url(#ts-cityGrad)"/>
-          <polygon points="1148,260 1157,242 1166,260" fill="url(#ts-cityGrad)"/>
-          <polygon points="1269,260 1278,242 1287,260" fill="url(#ts-cityGrad)"/>
-          <rect x="1180" y="305" width="22" height="30" fill="url(#ts-winGlow)" filter="url(#ts-glow)" rx="2" opacity="0.5"/>
-          <rect x="1220" y="305" width="22" height="30" fill="url(#ts-winGlow)" filter="url(#ts-glow)" rx="2" opacity="0.7"/>
-          {/* Foreground wall */}
-          <path d="M0,440 L0,500 L1400,500 L1400,440 Q1200,420 1100,435 Q900,415 700,430 Q500,415 300,432 Q150,420 0,440 Z" fill="#060401"/>
-          {/* Gate arch */}
-          <rect x="610" y="415" width="180" height="85" fill="#060401"/>
-          <path d="M610,415 Q700,375 790,415" fill="#060401"/>
-          <rect x="612" y="417" width="4" height="83" fill="#0e0904"/>
-          <rect x="784" y="417" width="4" height="83" fill="#0e0904"/>
-          {/* Gate torches */}
-          <rect x="595" y="410" width="8" height="20" fill="#3a2510"/>
-          <ellipse cx="599" cy="408" rx="4" ry="6" fill="#c9922a" opacity="0.7" filter="url(#ts-glow)"/>
-          <rect x="800" y="410" width="8" height="20" fill="#3a2510"/>
-          <ellipse cx="804" cy="408" rx="4" ry="6" fill="#c9922a" opacity="0.7" filter="url(#ts-glow)"/>
-        </svg>
-      </div>
+      {/* Removed SVG silhouette — AI panorama images now provide the city view */}
 
-      {/* Torch glow halos */}
-      <div
-        aria-hidden="true"
-        className="fixed pointer-events-none rounded-full"
-        style={{ width: 60, height: 60, background: 'radial-gradient(circle, rgba(200,140,30,0.35), transparent)', left: 'calc(43% - 30px)', bottom: 18, animation: 'ts-torch-pulse 2.1s ease-in-out infinite alternate' }}
-      />
-      <div
-        aria-hidden="true"
-        className="fixed pointer-events-none rounded-full"
-        style={{ width: 60, height: 60, background: 'radial-gradient(circle, rgba(200,140,30,0.35), transparent)', left: 'calc(57% - 30px)', bottom: 18, animation: 'ts-torch-pulse 2.7s ease-in-out infinite alternate' }}
-      />
-
-      {/* Fog mid */}
+      {/* Bottom fade for content grounding */}
       <div
         aria-hidden="true"
         className="fixed pointer-events-none"
-        style={{ bottom: '20%', left: '-10%', width: '120%', height: '20%', background: 'radial-gradient(ellipse 60% 100% at 50% 50%, rgba(180,130,60,0.04) 0%, transparent 70%)', animation: 'ts-fog-drift 12s ease-in-out infinite alternate' }}
-      />
-
-      {/* Fog base */}
-      <div
-        aria-hidden="true"
-        className="fixed pointer-events-none"
-        style={{ bottom: 0, left: '-20%', width: '140%', height: '35%', background: 'linear-gradient(180deg, transparent 0%, rgba(30,20,8,0.3) 30%, rgba(15,10,4,0.7) 70%, #060401 100%)' }}
+        style={{ bottom: 0, left: 0, width: '100%', height: '25%', background: 'linear-gradient(180deg, transparent 0%, rgba(6,4,1,0.5) 50%, rgba(6,4,1,0.85) 100%)' }}
       />
 
       {/* Embers */}
@@ -319,17 +221,6 @@ export function TitleScreen() {
             }}>
               Guild Life
             </h1>
-            <p style={{
-              fontFamily: "'Cinzel Decorative', 'Cinzel', serif",
-              fontWeight: 400,
-              fontSize: 'clamp(1rem, 2.5vw, 1.6rem)',
-              color: '#c9922a',
-              opacity: 0.7,
-              letterSpacing: '0.06em',
-              marginTop: '0.15em',
-            }}>
-              Adventures
-            </p>
           </div>
 
           {/* Ornament divider */}
