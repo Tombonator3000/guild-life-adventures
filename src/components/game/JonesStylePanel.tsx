@@ -39,7 +39,9 @@ export function JonesMenuItem({
     : darkText
       ? 'text-[#3d2a14]'
       : 'text-[#e0d4b8]';
-  const hoverBg = darkText ? 'hover:bg-[#d4c4a8]' : 'hover:bg-[#5c4a32]';
+  const hoverBg = darkText
+    ? 'hover:bg-[#d4c4a8] hover:scale-[1.01] hover:shadow-sm'
+    : 'hover:bg-[#5c4a32] hover:scale-[1.01] hover:shadow-sm';
   const dotColor = darkText ? 'border-[#8b7355]' : 'border-[#8b7355]';
 
   const hoverHandlers = previewData ? {
