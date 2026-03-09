@@ -271,7 +271,7 @@ export function TitleScreen() {
           {autoSaveExists && (
             <button
               onClick={handleContinue}
-              className="w-full py-3 font-display font-semibold tracking-widest uppercase transition-all duration-200 hover:bg-amber-900/10 mb-2"
+            className="w-full py-3 font-display font-semibold tracking-widest uppercase transition-all duration-200 ts-menu-btn mb-2"
               style={{ ...HEX_SECONDARY, fontSize: '0.82rem' }}
             >
               {t('title.continueGame')}
@@ -281,7 +281,7 @@ export function TitleScreen() {
           {/* Online Multiplayer */}
           <button
             onClick={() => { enterFullscreen(); setPhase('online-lobby'); }}
-            className="w-full py-3 font-display font-semibold tracking-widest uppercase transition-all duration-200 hover:bg-amber-900/10 mb-5"
+            className="w-full py-3 font-display font-semibold tracking-widest uppercase transition-all duration-200 ts-menu-btn mb-5"
             style={{ ...HEX_SECONDARY, fontSize: '0.82rem' }}
           >
             {t('title.onlineMultiplayer')}
@@ -298,7 +298,7 @@ export function TitleScreen() {
               <button
                 key={label}
                 onClick={action}
-                className="flex-1 py-2 flex items-center justify-center gap-1 transition-opacity duration-200 hover:opacity-90"
+                className="flex-1 py-2 flex items-center justify-center gap-1 ts-tertiary-btn"
                 style={{
                   fontFamily: "'Cinzel', serif",
                   fontSize: '0.58rem',
