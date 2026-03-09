@@ -258,7 +258,7 @@ export function LocationShell({
           <button
             onClick={workInfo.onWork}
             disabled={!workInfo.canWork}
-            className="font-bold uppercase tracking-wider transition-colors shrink-0"
+            className={`font-bold uppercase tracking-wider transition-all duration-200 shrink-0 ${workInfo.canWork ? 'hover:brightness-[1.15] hover:scale-[1.03] hover:-translate-y-px hover:shadow-[0_0_14px_hsl(45_85%_55%/0.45)] active:scale-[0.97] active:translate-y-0 active:brightness-95' : ''}`}
             style={{
               background: workInfo.canWork
                 ? 'linear-gradient(180deg, #c9a227 0%, #a08520 100%)'
