@@ -5,6 +5,24 @@
 
 ---
 
+## 2026-03-09T14:00Z — Feature: Faded Location Background Images
+
+### Summary
+
+Added faded sketch-style background images to all 15 locations in LocationShell. Each location now has a unique background illustration (medieval sketch/watercolor on parchment) displayed at 13% opacity with `mix-blend-mode: multiply` behind all content (NPC portrait + tabs).
+
+### Changes
+
+- Generated 15 background images (800×600, sketch style) in `src/assets/locations/`
+- Created `src/assets/locations/index.ts` — maps `LocationId` → background image import
+- Updated `LocationShell.tsx` — added absolute-positioned background div with `opacity: 0.13`, `pointer-events-none`, `backgroundSize: cover`
+
+### Locations
+
+guild-hall, bank, general-store, armory, enchanter, shadow-market, academy, rusty-tankard, cave, forge, landlord, graveyard, fence, noble-heights, slums
+
+---
+
 ## 2026-03-09T12:00Z — Feature: Animated NPC portraits via MP4 video
 
 ### Summary
