@@ -21,7 +21,7 @@ export function ActionButton({ label, cost, time, reward, disabled, onClick, sfx
 
   const btnClass = darkText
     ? "w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] hover:shadow-md hover:scale-[1.02] hover:-translate-y-px active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:translate-y-0 text-sm"
-    : "w-full p-2 wood-frame text-parchment flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed text-sm";
+    : "w-full p-2 wood-frame text-parchment flex items-center justify-between hover:brightness-110 hover:scale-[1.02] hover:-translate-y-px active:scale-[0.97] active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:translate-y-0 text-sm";
 
   return (
     <button
