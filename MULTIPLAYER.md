@@ -14,20 +14,18 @@ There is no dedicated game server — the host's browser acts as the authority.
 |-----------|------|
 | `src/network/PeerManager.ts` | Core P2P connection manager, message bus |
 | `src/network/useOnlineGame.ts` | React hook — lobby state, host/guest logic |
-| `src/network/gameListing.ts` | PartyKit WebSocket for public game browser (replaced Firebase 2026-02-27) |
-| `party/gameListings.ts` | PartyKit server — room registry (deploy: `npx partykit deploy`) |
-| `src/lib/partykit.ts` | PartyKit config helpers (`isPartykitConfigured`, `getPartykitHost`) |
-| `src/network/peerDiscovery.ts` | PeerJS signaling server fallback for finding public games |
+| `src/network/gameListing.ts` | MQTT over WebSocket for public game browser (replaced PartyKit 2026-03-04) |
 | `src/network/networkState.ts` | Game state serialisation / deserialisation for sync |
 | `src/network/roomCodes.ts` | Room code ↔ PeerJS peer ID conversion |
 | `src/components/screens/OnlineLobby.tsx` | Full lobby UI (create, join, browse) |
+| `src/lib/partykit.ts` | Legacy PartyKit config helpers — no longer used in listing flow |
 
 ### Connection flow
 
 ```
 Host creates lobby
   → PeerManager opens peer with ID `guild-life-<roomCode>`
-  → Optional: registers in PartyKit public listing
+  → Optional: registers room in MQTT broker (retained message, 5-min TTL)
   → Broadcasts lobby-update to all guests
 
 Guest joins with room code
@@ -39,8 +37,9 @@ Guest joins with room code
 ### Discovery methods
 
 1. **Room code** — guest types 6-char code directly (always works)
-2. **PartyKit browser** — host marks room public; PartyKit WebSocket stores listing; guests subscribe live (`subscribeToGameListings`)
-3. **P2P discovery** — scans PeerJS signaling server for `guild-life-*` peers; probes each with `discovery-probe` handshake; no Firebase needed (`searchPeerGames` in `peerDiscovery.ts`)
+2. **MQTT browser** — host marks room public; `registerGameListing` publishes a retained MQTT message to HiveMQ free broker; guests subscribing to `guild-life-adventures/rooms/+` receive the full list instantly (`subscribeToGameListings`). No env var, no account, no deploy required.
+
+> **Note**: P2P discovery via PeerJS `/peers` endpoint was removed — the free cloud PeerJS server does not expose peer lists cross-network. MQTT fills this role instead.
 
 ---
 
@@ -51,10 +50,8 @@ Guest joins with room code
 | Host / guest lobby | ✅ Working | Up to 4 players |
 | Game state sync (host → guests) | ✅ Working | Full snapshot on start, delta on actions |
 | AI opponent (Grimwald) | ✅ Working | Runs on host only |
-| Public room via PartyKit | ✅ Working | Requires `VITE_PARTYKIT_HOST` env var; deploy: `npx partykit deploy` |
-| **Public room without PartyKit** | ✅ Working | Toggle always visible; P2P discovery automatic |
-| Browse public games (PartyKit) | ✅ Working | Live WebSocket subscription via `subscribeToGameListings` |
-| Browse public games (P2P) | ✅ Working | Manual scan via `searchPeerGames` |
+| Public room listing (MQTT) | ✅ Working | Zero-config — HiveMQ free broker, no env var needed |
+| Browse public games | ✅ Working | Live MQTT subscription via `subscribeToGameListings`; retained messages give instant full list |
 | Chat (in-game) | ✅ Working | `ChatPanel.tsx` with emotes, floating bubbles, unread badges |
 | Chat (lobby) | ✅ Working | `LobbyChat` in `OnlineLobby.tsx` for host and guest lobbies |
 | Spectator mode | ✅ Working | Pure spectators + dead player auto-spectate; `SpectatorOverlay.tsx` |
@@ -64,63 +61,54 @@ Guest joins with room code
 
 ---
 
-## 2026-02-27 — Firebase → PartyKit Migration (Room Listing)
+## 2026-03-04 — PartyKit → MQTT Migration (Room Listing)
 
 ### Why
 
-Firebase (900 KB bundle, 4 env vars, Google account required) was overkill for a small indie
-game with very few players. PartyKit offers a free tier via Cloudflare Workers, zero-config
-local dev (`npx partykit dev`), and a much simpler API.
+PartyKit required a `VITE_PARTYKIT_HOST` env var and `npx partykit deploy` step — adding operational overhead for every dev/prod environment. In addition, the previous P2P discovery fallback (scanning PeerJS `/peers`) never worked cross-network because the free PeerJS cloud server does not expose the peer list publicly.
+
+MQTT over WebSocket via the free HiveMQ public broker solves both problems: zero-config, zero-deploy, zero-account, and works from any browser.
 
 ### What Changed
 
 | File | Change |
 |------|--------|
-| `party/gameListings.ts` | **New** — PartyKit server: room registry with Durable Object storage |
-| `partykit.json` | **New** — PartyKit project config |
-| `src/lib/partykit.ts` | **New** — `isPartykitConfigured()` + `getPartykitHost()` helpers |
-| `src/network/gameListing.ts` | **Replaced** — PartySocket WebSocket instead of Firebase SDK |
-| `src/components/screens/OnlineLobby.tsx` | `isFirebaseConfigured` → `isPartykitConfigured` |
-| `src/lib/firebase.ts` | **Deleted** |
-| `.env.example` | Updated docs: `VITE_PARTYKIT_HOST` replaces `VITE_FIREBASE_*` |
-| `package.json` | `firebase` removed, `partysocket` + `partykit` (dev) added |
+| `src/network/gameListing.ts` | **Rewritten** — MQTT via `mqtt@5.15.0`; dropped PartyKit/PartySocket |
+| `src/components/screens/OnlineLobby.tsx` | Removed `isPartykitConfigured()` gate; MQTT listing always active; removed PeerJS same-browser fallback UI |
+| `vite.config.ts` | Added `global: "globalThis"` define for mqtt.js browser bundle compatibility |
+| `package.json` | Added `mqtt@5.15.0` |
+| `src/lib/partykit.ts` | **Kept for reference** — `isPartykitConfigured()` no longer called in listing flow |
+| `party/gameListings.ts` | **Kept for reference** — no longer deployed or used |
 
 ### How It Works
 
-One singleton PartyKit room (`registry`) acts as the room registry:
-- **Host** connects via `PartySocket`, sends `register` → server stores + broadcasts to all
-- **Guest** connects via `PartySocket`, receives current listing immediately on open, then live updates
-- Server auto-expires listings older than 5 minutes (stored in Durable Object storage)
-- `unregister` message sent on cleanup (host quits / game starts)
+- **Broker**: `wss://broker.hivemq.com:8884/mqtt` (free, no auth, MQTT 5.0 over WSS)
+- **Topics**: `guild-life-adventures/rooms/{roomCode}` — one retained message per room
+- **Host**: connects, publishes retained JSON listing; on quit, publishes empty payload to immediately remove it
+- **Guest**: subscribes to `guild-life-adventures/rooms/+` wildcard — broker delivers all retained messages instantly (full current list in one round-trip)
+- **TTL**: MQTT 5.0 `messageExpiryInterval: 300s` auto-expires stale rooms if host crashes; client-side 5-minute filter as fallback for brokers without MQTT 5 support
 
-### Setup (Production)
+### Setup
 
-```bash
-# 1. Login
-npx partykit login
+**No setup required.** `registerGameListing` and `subscribeToGameListings` connect directly to HiveMQ's public broker. No env vars, no deploy step, no account.
 
-# 2. Deploy (once)
-npx partykit deploy
-# → guild-life-adventures.<your-name>.partykit.dev
+### API (unchanged)
 
-# 3. Add to GitHub secrets as VITE_PARTYKIT_HOST
+Callers in `useOnlineGame.ts` use the same three functions — drop-in replacement:
+
+```ts
+registerGameListing(listing)       // host: publish retained msg, returns cleanup fn
+updateListingPlayerCount(code, n)  // host: update player count in retained msg
+subscribeToGameListings(callback)  // guest: live subscription, returns unsubscribe fn
 ```
 
-### Setup (Local Dev)
+### Migration history
 
-```bash
-# In one terminal:
-npx partykit dev
-
-# In .env.local:
-VITE_PARTYKIT_HOST=localhost:1999
-```
-
-### Fallback Behaviour
-
-Identical to before: if `VITE_PARTYKIT_HOST` is not set, `isPartykitConfigured()` returns
-`false`, all `gameListing.*` functions are no-ops, and the browse view shows the P2P local
-discovery scan instead.
+| Date | Change |
+|------|--------|
+| 2026-02-06 | Firebase Realtime Database (original) |
+| 2026-02-27 | Firebase → PartyKit (Cloudflare Workers + PartySocket) |
+| 2026-03-04 | PartyKit → MQTT / HiveMQ (current) |
 
 ---
 
@@ -129,29 +117,14 @@ discovery scan instead.
 ### Problem
 
 The "List in public lobby browser" toggle in the host lobby was wrapped in
-`{firebaseAvailable && (...)}`. If the Firebase env vars aren't set,
-`isFirebaseConfigured()` returns `false` and the toggle never renders — even
-though PeerJS-based game discovery works automatically without Firebase.
+`{firebaseAvailable && (...)}`. If the Firebase env vars weren't set,
+the toggle never rendered.
 
 ### Fix
 
 **`src/components/screens/OnlineLobby.tsx`**
-- Removed `{firebaseAvailable && ...}` guard around the toggle div
-- Toggle is now always visible for the host
-- Label text adapts: "List in public lobby browser" (Firebase) vs "Make room discoverable" (no Firebase)
-- Status text adapts: "Others can find and join this room without a code" vs "Others can find your room via P2P discovery"
-
-**No changes needed to `useOnlineGame.ts`** — `setPublicRoom` calls
-`registerGameListing`, which already returns a no-op when Firebase isn't
-configured (`gameListing.ts:33`). Setting `isPublic = true` still works,
-giving the host visual confirmation that discovery is active.
-
-### Why P2P discovery is "always on"
-
-Any host running PeerJS connects with a `guild-life-<roomCode>` peer ID.
-The PeerJS signaling server lists all connected peers publicly. `searchPeerGames`
-fetches that list, filters for `guild-life-` prefix, and probes each for
-game metadata — no explicit "register" step required.
+- Removed the Firebase guard — toggle is now always visible for the host
+- As of 2026-03-04 (MQTT migration), listing is truly zero-config and the toggle is always functional
 
 ---
 
@@ -195,8 +168,9 @@ Conversion utilities live in `src/network/roomCodes.ts`.
 
 ## Future Work
 
-- [ ] Reconnect/rejoin support (store session token in localStorage)
-- [ ] Host migration (promote a guest to host if host disconnects)
-- [ ] In-lobby chat
+- [x] Reconnect/rejoin support — sessionStorage session + rejoin prompt in Online menu ✅
+- [x] Host migration — automatic successor election on disconnect ✅
+- [x] In-lobby chat — `LobbyChat` component in `OnlineLobby.tsx` ✅
 - [ ] Game invites via shareable URL (`?join=XXXXXX`)
-- [ ] Optional: dedicated relay server to reduce PeerJS dependency
+- [ ] Late join support (guests joining after game start)
+- [ ] Optional: dedicated TURN/relay server to reduce PeerJS dependency for restrictive NATs

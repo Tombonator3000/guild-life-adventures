@@ -5,6 +5,29 @@
 
 ---
 
+## 2026-03-09T00:00Z — Docs: MULTIPLAYER.md oppdatert (PartyKit → MQTT)
+
+### Summary
+
+Oppdaterte `MULTIPLAYER.md` for å reflektere MQTT-migrasjonen som skjedde 2026-03-04. Filen refererte fortsatt til PartyKit som aktiv løsning.
+
+### Endringer
+
+- **System Overview-tabell**: `gameListing.ts`-raden oppdatert til å referere MQTT/HiveMQ. `party/gameListings.ts` og `partykit.json` fjernet fra aktiv komponent-liste (kun legacy).
+- **Connection flow**: "Optional: registers in PartyKit" → "registers in MQTT broker"
+- **Discovery methods**: Erstattet PartyKit- og P2P-discovery-punktene med MQTT-beskrivelse. Lagt til note om at P2P via PeerJS `/peers` ikke fungerer cross-network og ble fjernet.
+- **Feature Status-tabell**: "Public room via PartyKit" + "Browse public games (PartyKit/P2P)" → ett samlet "Public room listing (MQTT)"-rad
+- **Migrasjonsseksjon**: Erstattet den lange "2026-02-27 Firebase → PartyKit"-seksjonen med en korrekt "2026-03-04 PartyKit → MQTT"-seksjon som dokumenterer HiveMQ-oppsettet, retained messages, TTL-strategi og API-signaturer
+- **Public Lobby Toggle Fix**: Forkortet (Firebase-spesifikke detaljer fjernet)
+- **Future Work**: Markert reconnect, host migration og lobby chat som ferdige (✅). Oppdatert liste med reelle gjenværende items.
+
+### Files changed
+
+- `MULTIPLAYER.md`
+
+
+---
+
 ## 2026-03-06T23:30Z — Refactor: `handleExploreDungeon` in actionExecutor.ts
 
 ### Summary
