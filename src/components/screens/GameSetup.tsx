@@ -293,7 +293,7 @@ export function GameSetup() {
                 </div>
                 <button
                   onClick={addAIOpponent}
-                  disabled={!canAddMore}
+                  disabled={!canAddMoreAI}
                   className="p-2 wood-frame text-parchment hover:brightness-110 disabled:opacity-50 flex items-center gap-1"
                   title="Add AI opponent"
                 >
