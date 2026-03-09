@@ -5,6 +5,52 @@
 
 ---
 
+## 2026-03-09T19:00Z — Bugfix: Morgath (warrior AI) not returning home at end of turn
+
+### Symptom
+
+All AI opponents (Grimwald, Seraphina, Thornwick) would move to their home location (Slums or Noble Heights) when nearing the end of their turn, collecting rest bonuses. Morgath did not — she ended her turn at the Cave or wherever she happened to be, missing all rest bonuses.
+
+### Root Cause
+
+Three compounding factors, all converging when Morgath had ≤ 10 hours remaining at the Cave:
+
+**Factor 1 — Oscillation penalty hits home location.**
+All AIs start each turn at home. Home is immediately added to `visitedLocationsRef` (line 129 in `useGrimwaldAI.ts`). The oscillation guard applies a −20 priority penalty to any move that returns to an already-visited location. This reduces home-return effective priority: **92 − 20 = 72**.
+
+**Factor 2 — Morgath's combat weight lifts dungeon above home-return.**
+`explore-dungeon` base priority = 58. Morgath has `combat: 1.6` personality weight → after scaling: **58 × 1.6 = 92.8 ≈ 93**. This beats the penalized home-return priority of 72. Other AIs have combat ≤ 1.0 → dungeon ≤ 58 < 72 → they correctly go home.
+
+**Factor 3 — No budget check for post-dungeon travel.**
+Even if Morgath explored the dungeon (taking ~6 hours), she would have only ~4 hours left — insufficient to travel 7 steps from Cave to Slums — so she ended the turn at Cave anyway.
+
+### Fix (3 changes)
+
+**1. `src/hooks/useGrimwaldAI.ts`** — Exempt home location from oscillation penalty.
+Home return is *intended* end-of-turn behavior, not oscillation. Added `playerHome` variable and excluded it from the `−20` penalty in the `penalizedActions` map.
+
+**2. `src/hooks/ai/actions/questDungeonActions.ts`** — Don't start dungeon without enough time to also get home.
+When already at Cave, compute `floorTime + homeCostAfter`. If `timeRemaining` is insufficient for both, the dungeon action gets priority **15** (very low) instead of 58+, letting the home-return action win.
+
+**3. `src/hooks/ai/actions/criticalNeeds.ts`** — Raise home return priority 92 → 96 (belt-and-suspenders).
+Even without the oscillation penalty, the base home-return priority of 92 narrowly lost to Morgath's dungeon of 93. Raised to 96 ensures a comfortable margin in normal conditions.
+
+### Priority math after fix
+
+| Action | Before | After |
+|--------|--------|-------|
+| Home return (Morgath, no festival) | 92 − 20 = **72** | 96 (no penalty) = **96** |
+| Explore dungeon (Morgath, enough time) | 93 | 93 |
+| Explore dungeon (Morgath, NOT enough time for both) | 93 | **15** |
+
+### Files Changed
+
+- `src/hooks/useGrimwaldAI.ts` — oscillation penalty exemption for home location
+- `src/hooks/ai/actions/questDungeonActions.ts` — post-dungeon home-travel time budget check
+- `src/hooks/ai/actions/criticalNeeds.ts` — home return priority 92 → 96
+
+---
+
 ## 2026-03-09T18:00Z — Bugfix: Duplicate AI player ID when adding 5th AI opponent
 
 ### Root Cause

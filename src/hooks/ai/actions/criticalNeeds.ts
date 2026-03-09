@@ -413,7 +413,7 @@ function generateHomeReturnActions(ctx: ActionContext): AIAction[] {
   return [{
     type: 'move',
     location: homeLocation as Parameters<typeof moveCost>[0],
-    priority: 92,
+    priority: 96,
     description: `Return home (${homeLocation}) to rest before end of turn`,
   }];
 }

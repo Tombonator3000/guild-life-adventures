@@ -259,10 +259,15 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
       };
       const viableActions = actions.filter(a => a.type === 'end-turn' || !failedActionsRef.current.has(actionKey(a)));
 
-      // Apply oscillation penalty: strongly discourage returning to already-visited locations
+      // Apply oscillation penalty: strongly discourage returning to already-visited locations.
+      // Exception: never penalize the home location — returning home at end of turn is
+      // intentional behavior (generateHomeReturnActions), not oscillation.
       const OSCILLATION_PENALTY = 20;
+      const playerHome = currentPlayer.housing === 'noble' ? 'noble-heights'
+        : currentPlayer.housing === 'slums' ? 'slums' : null;
       const penalizedActions = viableActions.map(a =>
-        (a.type === 'move' && a.location && visitedLocationsRef.current.has(a.location))
+        (a.type === 'move' && a.location && visitedLocationsRef.current.has(a.location)
+          && a.location !== playerHome)
           ? { ...a, priority: a.priority - OSCILLATION_PENALTY }
           : a
       ).sort((a, b) => b.priority - a.priority);
