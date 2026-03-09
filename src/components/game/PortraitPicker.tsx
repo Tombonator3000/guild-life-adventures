@@ -1,5 +1,5 @@
-import { useRef } from 'react';
-import { PLAYER_PORTRAITS, type PortraitDefinition } from '@/data/portraits';
+import { useRef, useState } from 'react';
+import { PLAYER_PORTRAITS, PORTRAIT_GROUPS, type PortraitDefinition, type PortraitGroup } from '@/data/portraits';
 import { CharacterPortrait } from './CharacterPortrait';
 import { X, Upload } from 'lucide-react';
 
@@ -13,7 +13,7 @@ interface PortraitPickerProps {
 
 /**
  * Modal overlay for selecting a character portrait.
- * Shows all available portraits in a grid with the current selection highlighted.
+ * Shows portraits grouped by category tabs.
  */
 export function PortraitPicker({
   selectedPortraitId,
@@ -22,13 +22,19 @@ export function PortraitPicker({
   onSelect,
   onClose,
 }: PortraitPickerProps) {
+  const [activeGroup, setActiveGroup] = useState<PortraitGroup | 'all'>('all');
+
+  const filteredPortraits = activeGroup === 'all'
+    ? PLAYER_PORTRAITS
+    : PLAYER_PORTRAITS.filter(p => p.group === activeGroup);
+
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50"
       onClick={onClose}
     >
       <div
-        className="parchment-panel p-5 max-w-md w-full mx-4 relative"
+        className="parchment-panel p-5 max-w-lg w-full mx-4 relative"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -38,44 +44,82 @@ export function PortraitPicker({
           <X className="w-5 h-5" />
         </button>
 
-        <h3 className="font-display text-lg text-amber-900 mb-4">
+        <h3 className="font-display text-lg text-amber-900 mb-3">
           Choose Your Portrait
         </h3>
 
-        <div className="grid grid-cols-4 gap-3 mb-4">
-          {/* "No portrait" option — plain color circle */}
-          <PortraitOption
-            portrait={null}
-            isSelected={selectedPortraitId === null}
-            playerColor={playerColor}
-            playerName={playerName}
-            onSelect={() => onSelect(null)}
+        {/* Category tabs */}
+        <div className="flex flex-wrap gap-1 mb-3">
+          <TabButton
+            active={activeGroup === 'all'}
+            onClick={() => setActiveGroup('all')}
+            label="All"
           />
-
-          {/* All available portraits */}
-          {PLAYER_PORTRAITS.map((portrait) => (
-            <PortraitOption
-              key={portrait.id}
-              portrait={portrait}
-              isSelected={selectedPortraitId === portrait.id}
-              playerColor={playerColor}
-              playerName={playerName}
-              onSelect={() => onSelect(portrait.id)}
+          {PORTRAIT_GROUPS.map(g => (
+            <TabButton
+              key={g.key}
+              active={activeGroup === g.key}
+              onClick={() => setActiveGroup(g.key)}
+              label={g.label}
             />
           ))}
-
-          {/* Upload your own photo */}
-          <UploadPortraitTile
-            selectedPortraitId={selectedPortraitId}
-            onSelect={onSelect}
-          />
         </div>
 
-        <p className="text-xs text-amber-700/60 text-center">
+        {/* Portrait grid with scroll */}
+        <div className="max-h-[320px] overflow-y-auto pr-1">
+          <div className="grid grid-cols-5 gap-2">
+            {/* "No portrait" option — only in "All" tab */}
+            {activeGroup === 'all' && (
+              <PortraitOption
+                portrait={null}
+                isSelected={selectedPortraitId === null}
+                playerColor={playerColor}
+                playerName={playerName}
+                onSelect={() => onSelect(null)}
+              />
+            )}
+
+            {filteredPortraits.map((portrait) => (
+              <PortraitOption
+                key={portrait.id}
+                portrait={portrait}
+                isSelected={selectedPortraitId === portrait.id}
+                playerColor={playerColor}
+                playerName={playerName}
+                onSelect={() => onSelect(portrait.id)}
+              />
+            ))}
+
+            {/* Upload your own photo — only in "All" tab */}
+            {activeGroup === 'all' && (
+              <UploadPortraitTile
+                selectedPortraitId={selectedPortraitId}
+                onSelect={onSelect}
+              />
+            )}
+          </div>
+        </div>
+
+        <p className="text-xs text-amber-700/60 text-center mt-3">
           Click a portrait to select it, or upload your own photo.
         </p>
       </div>
     </div>
+  );
+}
+
+function TabButton({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-2.5 py-1 rounded-md text-xs font-display transition-all ${
+        active
+          ? 'bg-primary text-primary-foreground shadow-sm'
+          : 'bg-amber-100/60 text-amber-800 hover:bg-amber-200/80'
+      }`}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -95,7 +139,7 @@ function PortraitOption({
   return (
     <button
       onClick={onSelect}
-      className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
+      className={`flex flex-col items-center gap-1 p-1.5 rounded-lg transition-all ${
         isSelected
           ? 'bg-primary/20 ring-2 ring-primary'
           : 'hover:bg-amber-100/50'
@@ -105,10 +149,10 @@ function PortraitOption({
         portraitId={portrait?.id || null}
         playerColor={playerColor}
         playerName={playerName}
-        size={64}
+        size={56}
         isAI={false}
       />
-      <span className="text-xs text-amber-900 font-display truncate w-full text-center">
+      <span className="text-[10px] text-amber-900 font-display truncate w-full text-center">
         {portrait?.name || 'None'}
       </span>
     </button>
@@ -134,7 +178,6 @@ function UploadPortraitTile({
       const src = ev.target?.result as string;
       const img = new Image();
       img.onload = () => {
-        // Resize and square-crop to 200×200 for compact storage
         const canvas = document.createElement('canvas');
         const TARGET = 200;
         canvas.width = TARGET;
@@ -150,14 +193,13 @@ function UploadPortraitTile({
       img.src = src;
     };
     reader.readAsDataURL(file);
-    // Reset so the same file can be picked again if needed
     e.target.value = '';
   };
 
   return (
     <button
       onClick={() => inputRef.current?.click()}
-      className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
+      className={`flex flex-col items-center gap-1 p-1.5 rounded-lg transition-all ${
         isCustomSelected
           ? 'bg-primary/20 ring-2 ring-primary'
           : 'hover:bg-amber-100/50'
@@ -168,15 +210,15 @@ function UploadPortraitTile({
         <img
           src={selectedPortraitId!}
           alt="Custom portrait"
-          className="w-16 h-16 rounded-full object-cover"
+          className="w-14 h-14 rounded-full object-cover"
           draggable={false}
         />
       ) : (
-        <div className="w-16 h-16 rounded-full border-2 border-dashed border-amber-700/50 flex items-center justify-center bg-amber-50/50">
-          <Upload className="w-6 h-6 text-amber-700/60" />
+        <div className="w-14 h-14 rounded-full border-2 border-dashed border-amber-700/50 flex items-center justify-center bg-amber-50/50">
+          <Upload className="w-5 h-5 text-amber-700/60" />
         </div>
       )}
-      <span className="text-xs text-amber-900 font-display truncate w-full text-center">
+      <span className="text-[10px] text-amber-900 font-display truncate w-full text-center">
         Upload
       </span>
       <input
