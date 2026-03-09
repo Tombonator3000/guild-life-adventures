@@ -5,6 +5,20 @@
 
 ---
 
+## 2026-03-09T18:00Z — Bugfix: Duplicate AI player ID when adding 5th AI opponent
+
+### Root Cause
+
+`startNewGame` used `AI_OPPONENTS[i] || AI_OPPONENTS[0]` fallback — when `i >= 4` (only 4 AI defs exist), the 5th AI got Grimwald's ID (`ai-grimwald`), creating duplicate player IDs and state corruption.
+
+### Fix
+
+1. **GameSetup.tsx**: Added `canAddMoreAI = canAddMore && aiOpponents.length < AI_OPPONENTS.length` — caps AI add button at 4
+2. **gameStore.ts**: `aiConfigs.slice(0, AI_OPPONENTS.length)` — defense-in-depth cap, removed unsafe `|| AI_OPPONENTS[0]` fallback
+3. **GameSetup.tsx**: "Add AI" button now uses `disabled={!canAddMoreAI}` instead of `disabled={!canAddMore}`
+
+---
+
 ## 2026-03-09T17:00Z — Feature: 12 new player avatar portraits + category tabs
 
 ### Summary
