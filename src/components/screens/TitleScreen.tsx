@@ -113,16 +113,23 @@ export function TitleScreen() {
   return (
     <div className="relative min-h-screen-safe overflow-hidden">
 
-      {/* Deep layered dark background */}
-      <div
-        className="fixed inset-0"
-        style={{
-          background:
-            'radial-gradient(ellipse 80% 60% at 50% 110%, #2a1800 0%, transparent 60%),' +
-            'radial-gradient(ellipse 120% 80% at 50% -10%, #1a0f00 0%, transparent 50%),' +
-            'linear-gradient(180deg, #060401 0%, #0e0904 40%, #1a1008 70%, #0a0703 100%)',
-        }}
-      />
+      {/* Day/night cycling background images */}
+      <div className="fixed inset-0">
+        <img
+          src={titleDay}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ animation: 'ts-daynight 30s ease-in-out infinite' }}
+        />
+        <img
+          src={titleNight}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ animation: 'ts-daynight-inv 30s ease-in-out infinite' }}
+        />
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 70% at 50% 40%, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.6) 100%)' }} />
+      </div>
 
       {/* Stars */}
       <div className="fixed inset-0 pointer-events-none" aria-hidden="true">
