@@ -10,6 +10,9 @@
  * to the generated placeholder.
  */
 
+/** Display group for the portrait picker tabs */
+export type PortraitGroup = 'warriors' | 'mystics' | 'rogues' | 'folk';
+
 export interface PortraitDefinition {
   id: string;
   name: string;
@@ -17,6 +20,8 @@ export interface PortraitDefinition {
   imagePath: string;
   /** Category for filtering in the picker */
   category: 'human' | 'ai';
+  /** Display group for picker tabs (human portraits only) */
+  group?: PortraitGroup;
   /** Gender for name pool selection (human portraits only) */
   gender?: 'male' | 'female' | 'neutral';
   /** Placeholder colors for generated SVG when no image exists */
@@ -26,6 +31,13 @@ export interface PortraitDefinition {
     skin: string;    // Skin tone
   };
 }
+
+export const PORTRAIT_GROUPS: { key: PortraitGroup; label: string }[] = [
+  { key: 'warriors', label: '⚔️ Warriors' },
+  { key: 'mystics', label: '🔮 Mystics' },
+  { key: 'rogues', label: '🗡️ Rogues' },
+  { key: 'folk', label: '🏠 Folk' },
+];
 
 // Human-selectable portraits (shown in player setup)
 export const PLAYER_PORTRAITS: PortraitDefinition[] = [
