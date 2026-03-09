@@ -5,6 +5,28 @@
 
 ---
 
+## 2026-03-09T12:00Z — Feature: Animated NPC portraits via MP4 video
+
+### Summary
+
+NPC portraits in location panels (LocationShell left column) now support looping, muted video animations. If an NPC has a `portraitVideo` field pointing to an MP4 file, it plays instead of the static JPG. Shade (Shadow Market) is the first animated NPC (`shade.mp4`).
+
+### Changes
+
+- **`src/data/npcs.ts`**: Added optional `portraitVideo?: string` field to `LocationNPC` interface. Added `portraitVideo: 'npcs/shade.mp4'` to Shade's entry.
+- **`src/components/game/NpcPortrait.tsx`**: Added `videoFailed` state alongside existing `imgFailed`. Priority: video → image → emoji fallback. `<video>` element uses `autoPlay loop muted playsInline`. If video 404s/errors, falls back to JPG automatically.
+
+### How to add more animated NPCs
+
+Place a `.mp4` file in `public/npcs/` (e.g. `public/npcs/aldric.mp4`) and add `portraitVideo: 'npcs/aldric.mp4'` to the NPC entry in `src/data/npcs.ts`.
+
+### Files changed
+
+- `src/data/npcs.ts`
+- `src/components/game/NpcPortrait.tsx`
+
+---
+
 ## 2026-03-09T00:00Z — Docs: MULTIPLAYER.md oppdatert (PartyKit → MQTT)
 
 ### Summary

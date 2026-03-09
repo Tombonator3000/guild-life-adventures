@@ -9,6 +9,7 @@ export interface LocationNPC {
   title: string;
   portrait: string; // Emoji character for fallback portrait
   portraitImage?: string; // Path to JPG/PNG portrait image (relative to public/)
+  portraitVideo?: string; // Path to MP4 video (relative to public/) — plays looped/muted when set
   greeting: string;
   bgColor: string; // Background color for portrait frame
   accentColor: string; // Accent/border color
@@ -90,6 +91,7 @@ export const LOCATION_NPCS: Partial<Record<LocationId, LocationNPC>> = {
     title: 'Black Marketeer',
     portrait: '🦊',
     portraitImage: 'npcs/shade.jpg',
+    portraitVideo: 'npcs/shade.mp4',
     greeting: 'Psst... good deals. No questions asked. Especially not that one.',
     bgColor: '#1a1a2a',
     accentColor: '#78909c',
