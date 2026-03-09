@@ -1,5 +1,6 @@
 import type { WeatherState } from '@/data/weather';
 import { t } from '@/i18n';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 function getWeatherIcon(type: string): string {
   switch (type) {
@@ -41,10 +42,19 @@ export function GameBoardHeader({
         {weather && weather.type !== 'clear' && (
           <>
             <span className="text-muted-foreground">|</span>
-            <span className="font-display text-sm" title={weather.description}>
-              {getWeatherIcon(weather.type)} {weather.name}
-              <span className="text-xs text-muted-foreground ml-1">({weather.weeksRemaining}w)</span>
-            </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="font-display text-sm cursor-help select-none">
+                  {getWeatherIcon(weather.type)} {weather.name}
+                  <span className="text-xs text-muted-foreground ml-1">({weather.weeksRemaining}w)</span>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs text-left">
+                <p className="font-semibold mb-1">{weather.name}</p>
+                <p className="text-xs">{weather.description}</p>
+                <p className="text-xs text-muted-foreground mt-1">{weather.weeksRemaining} week{weather.weeksRemaining !== 1 ? 's' : ''} remaining</p>
+              </TooltipContent>
+            </Tooltip>
           </>
         )}
       </div>
