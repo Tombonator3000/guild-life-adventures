@@ -143,6 +143,18 @@ input, textarea, select, [contenteditable] {
     @apply bg-wood rounded-lg border-4 border-wood-light;
     background: var(--gradient-wood);
     box-shadow: var(--shadow-medieval), inset 0 1px 0 hsl(35 30% 45% / 0.3);
+    transition: all 0.2s ease;
+  }
+
+  .wood-frame:hover:not(:disabled) {
+    filter: brightness(1.15);
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: var(--shadow-medieval), 0 0 12px hsl(35 40% 40% / 0.4), inset 0 1px 0 hsl(35 30% 45% / 0.3);
+  }
+
+  .wood-frame:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+    filter: brightness(0.95);
   }
 
   .gold-button {
