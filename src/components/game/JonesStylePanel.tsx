@@ -75,7 +75,7 @@ export function JonesMenuItem({
       <button
         onClick={onClick}
         disabled={disabled}
-        className={`w-full text-left py-1 px-2 ${hoverBg} transition-colors rounded`}
+        className={`w-full text-left py-1 px-2 ${hoverBg} transition-all duration-200 rounded`}
         {...hoverHandlers}
       >
         {content}
