@@ -119,6 +119,8 @@ export function HomePanel({
   const housingData = HOUSING_DATA[player.housing];
   const isNoble = player.housing === 'noble';
   const isSlums = player.housing === 'slums';
+  // Player is at their own home location (not visiting the other home)
+  const isHome = (isNoble && locationId === 'noble-heights') || (isSlums && locationId === 'slums');
 
   // Get owned appliances
   const ownedAppliances = Object.keys(player.appliances).filter(
@@ -225,6 +227,55 @@ export function HomePanel({
         onSleep={handleSleep}
         onDone={onDone}
       />
+
+      {/* A/B Outfit system — show when player has or can store a backup outfit */}
+      {isHome && (
+        <div
+          className="shrink-0 px-3 py-1.5 flex items-center gap-2 flex-wrap"
+          style={{
+            background: isNoble ? 'rgba(74,53,104,0.6)' : 'rgba(45,34,24,0.6)',
+            borderTop: `1px solid ${isNoble ? '#6a4a8a' : '#5a4a3a'}`,
+            fontSize: 'clamp(0.45rem, 0.8vw, 0.65rem)',
+          }}
+        >
+          <span style={{ color: isNoble ? '#c8aae8' : '#b89a72', fontWeight: 'bold' }}>
+            Wardrobe:
+          </span>
+          <span style={{ color: isNoble ? '#e0c8f0' : '#d4c4a4' }}>
+            Active: {player.clothingCondition}%
+          </span>
+          {player.backupOutfit !== null ? (
+            <>
+              <span style={{ color: isNoble ? '#e0c8f0' : '#d4c4a4' }}>
+                Stored: {player.backupOutfit}%
+              </span>
+              <button
+                onClick={() => {
+                  const ok = store.swapOutfits(player.id);
+                  if (ok) toast.success('Outfit swapped!');
+                }}
+                className="font-bold uppercase tracking-wider transition-colors"
+                style={{
+                  background: 'linear-gradient(180deg, #7a5a3a 0%, #6a4a2a 100%)',
+                  color: '#f0e0c0',
+                  border: '1px solid #9a7a5a',
+                  borderRadius: '3px',
+                  padding: 'clamp(2px, 0.3vw, 4px) clamp(6px, 1vw, 12px)',
+                  fontSize: 'inherit',
+                  cursor: 'pointer',
+                }}
+                title="Swap active outfit with stored backup"
+              >
+                Swap Outfits
+              </button>
+            </>
+          ) : (
+            <span style={{ color: isNoble ? '#9a8aaa' : '#8a7a5a', fontStyle: 'italic' }}>
+              No backup — buy a second outfit at the Armory
+            </span>
+          )}
+        </div>
+      )}
 
       <ApplianceLegend
         ownedAppliances={ownedAppliances}

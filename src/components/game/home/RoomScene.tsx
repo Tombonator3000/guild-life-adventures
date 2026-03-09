@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAppliance } from '@/data/items';
+import { getAppliance, getItem } from '@/data/items';
 import { getCachedHomeItemImage } from '@/utils/homeItemImageCache';
 import type { HomeItemPositions } from '@/types/game.types';
 
@@ -28,6 +28,85 @@ const DURABLE_POSITIONS: Record<string, { left: string; bottom: string; icon: st
 };
 
 export { APPLIANCE_POSITIONS };
+
+/** Wrapper that reveals the tooltip (last child) on hover, always shows other children */
+function HoverableItem({
+  icon,
+  tooltip,
+  pos,
+  zIndex,
+  opacity,
+}: {
+  icon: React.ReactNode;
+  tooltip?: React.ReactNode;
+  pos: { left: string; bottom: string };
+  zIndex: number;
+  opacity?: number;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      className="absolute flex flex-col items-center cursor-help"
+      style={{
+        left: pos.left,
+        bottom: pos.bottom,
+        transform: 'translateX(-50%)',
+        zIndex,
+        opacity,
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {icon}
+      {hovered && tooltip}
+    </div>
+  );
+}
+
+/** Tooltip shown on hover/click over home items */
+function HomeItemTooltip({
+  name,
+  description,
+  effect,
+  isBroken,
+  bonusLabel,
+}: {
+  name: string;
+  description: string;
+  effect?: string;
+  isBroken?: boolean;
+  bonusLabel?: string;
+}) {
+  return (
+    <div
+      className="absolute z-50 pointer-events-none"
+      style={{
+        bottom: '110%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        minWidth: 160,
+        maxWidth: 220,
+      }}
+    >
+      <div
+        className="parchment-panel shadow-lg px-2 py-1.5"
+        style={{ fontSize: 'clamp(0.5rem, 0.85vw, 0.65rem)' }}
+      >
+        <div className="font-display font-bold text-amber-900 mb-0.5">{name}</div>
+        {isBroken && (
+          <div className="text-red-600 font-semibold mb-0.5">⚒ BROKEN — needs repair</div>
+        )}
+        <div className="text-amber-800 leading-snug mb-0.5">{description}</div>
+        {bonusLabel && (
+          <div className="text-green-700 font-semibold">{bonusLabel}</div>
+        )}
+        {effect && !bonusLabel && (
+          <div className="text-green-700 font-semibold">{effect}</div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 /** Resolves position: uses customPositions if provided, otherwise falls back to the hardcoded default string */
 function resolvePos(
@@ -151,20 +230,25 @@ export function RoomScene({
         if (!def) return null;
         const appliance = getAppliance(applianceId);
         const pos = resolvePos(applianceId, def.left, def.bottom, customPositions);
+        const bonusLabel = appliance?.givesPerTurnBonus
+          ? `+${appliance.perTurnBonusAmount ?? '?'} food/turn`
+          : appliance?.canGenerateIncome
+            ? '+15% income/turn'
+            : undefined;
         return (
-          <div
+          <HoverableItem
             key={applianceId}
-            className="absolute flex flex-col items-center"
-            style={{
-              left: pos.left,
-              bottom: pos.bottom,
-              transform: 'translateX(-50%)',
-              zIndex: 5,
-            }}
-            title={appliance?.name || def.label}
-          >
-            <ItemIcon itemId={applianceId} icon={def.icon} />
-          </div>
+            pos={pos}
+            zIndex={5}
+            icon={<ItemIcon itemId={applianceId} icon={def.icon} />}
+            tooltip={
+              <HomeItemTooltip
+                name={appliance?.name || def.label}
+                description={appliance?.description || ''}
+                bonusLabel={bonusLabel}
+              />
+            }
+          />
         );
       })}
 
@@ -175,23 +259,27 @@ export function RoomScene({
         const appliance = getAppliance(applianceId);
         const pos = resolvePos(applianceId, def.left, def.bottom, customPositions);
         return (
-          <div
+          <HoverableItem
             key={`broken-${applianceId}`}
-            className="absolute flex flex-col items-center"
-            style={{
-              left: pos.left,
-              bottom: pos.bottom,
-              transform: 'translateX(-50%)',
-              opacity: 0.5,
-              zIndex: 5,
-            }}
-            title={`${appliance?.name || def.label} (BROKEN)`}
-          >
-            <span style={{ fontSize: 'clamp(1rem, 2.5vw, 1.8rem)', filter: 'grayscale(0.8) drop-shadow(1px 1px 2px rgba(0,0,0,0.5))' }}>
-              {def.icon}
-            </span>
-            <span style={{ fontSize: 'clamp(0.5rem, 0.8vw, 0.7rem)', color: '#ff4444', fontWeight: 'bold' }}>{'\u2717'}</span>
-          </div>
+            pos={pos}
+            zIndex={5}
+            opacity={0.5}
+            icon={
+              <>
+                <span style={{ fontSize: 'clamp(1rem, 2.5vw, 1.8rem)', filter: 'grayscale(0.8) drop-shadow(1px 1px 2px rgba(0,0,0,0.5))' }}>
+                  {def.icon}
+                </span>
+                <span style={{ fontSize: 'clamp(0.5rem, 0.8vw, 0.7rem)', color: '#ff4444', fontWeight: 'bold' }}>{'\u2717'}</span>
+              </>
+            }
+            tooltip={
+              <HomeItemTooltip
+                name={appliance?.name || def.label}
+                description={appliance?.description || ''}
+                isBroken
+              />
+            }
+          />
         );
       })}
 
@@ -199,21 +287,27 @@ export function RoomScene({
       {ownedDurables.map(durableId => {
         const def = DURABLE_POSITIONS[durableId];
         if (!def) return null;
+        const itemData = getItem(durableId);
         const pos = resolvePos(durableId, def.left, def.bottom, customPositions);
+        const effectLabel = itemData?.effect
+          ? `+${itemData.effect.value} ${itemData.effect.type}`
+          : undefined;
         return (
-          <div
+          <HoverableItem
             key={durableId}
-            className="absolute"
-            style={{
-              left: pos.left,
-              bottom: pos.bottom,
-              transform: 'translateX(-50%)',
-              zIndex: 4,
-            }}
-            title={durableId}
-          >
-            <ItemIcon itemId={durableId} icon={def.icon} size="small" />
-          </div>
+            pos={pos}
+            zIndex={4}
+            icon={<ItemIcon itemId={durableId} icon={def.icon} size="small" />}
+            tooltip={
+              itemData ? (
+                <HomeItemTooltip
+                  name={itemData.name}
+                  description={itemData.description}
+                  effect={effectLabel}
+                />
+              ) : undefined
+            }
+          />
         );
       })}
 

@@ -139,6 +139,8 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     forgeRepairAppliance: store.forgeRepairAppliance,
     forgeRepairEquipment: store.forgeRepairEquipment,
     salvageEquipment: store.salvageEquipment,
+    storeBackupOutfit: store.storeBackupOutfit,
+    readBook: store.readBook,
     locationHexes: store.locationHexes,
     onBuyNewspaper: handleBuyNewspaper,
     onShowNewspaper: handleShowNewspaper,

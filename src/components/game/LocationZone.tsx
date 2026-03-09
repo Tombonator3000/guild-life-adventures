@@ -15,6 +15,8 @@ interface LocationZoneProps {
   isQuestObjective?: boolean;
   /** LOQ: This location's quest objective has been completed */
   isQuestObjectiveDone?: boolean;
+  /** Keyboard navigation: this location is currently keyboard-focused */
+  isKeyboardFocused?: boolean;
 }
 
 export function LocationZone({
@@ -28,6 +30,7 @@ export function LocationZone({
   hexCasterName,
   isQuestObjective = false,
   isQuestObjectiveDone = false,
+  isKeyboardFocused = false,
 }: LocationZoneProps) {
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
 
@@ -60,6 +63,26 @@ export function LocationZone({
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
+      {/* Keyboard focus ring */}
+      {isKeyboardFocused && (
+        <div
+          className="absolute inset-0 pointer-events-none z-20 rounded"
+          style={{
+            border: '2px solid rgba(251,191,36,0.9)',
+            boxShadow: '0 0 0 3px rgba(251,191,36,0.35), inset 0 0 8px rgba(251,191,36,0.2)',
+            borderRadius: 'inherit',
+          }}
+        >
+          {/* Tab indicator badge */}
+          <div
+            className="absolute -top-5 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-900 text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap shadow"
+            style={{ pointerEvents: 'none' }}
+          >
+            ↵ Travel
+          </div>
+        </div>
+      )}
+
       {/* Location name tooltip - follows cursor */}
       {mousePos && (
         <div 

@@ -416,5 +416,67 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
         checkAchievements({ completedDegrees: updatedPlayer.completedDegrees.length });
       }
     },
+
+    /** Swap the active outfit with the stored backup outfit (A/B system). */
+    swapOutfits: (playerId: string): boolean => {
+      let success = false;
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          if (p.backupOutfit === null) return p; // No backup to swap with
+          success = true;
+          return {
+            ...p,
+            clothingCondition: p.backupOutfit,
+            backupOutfit: p.clothingCondition,
+          };
+        }),
+      }));
+      return success;
+    },
+
+    /** Store a second outfit as backup (bought at Armory). Replaces any existing backup. */
+    storeBackupOutfit: (playerId: string, condition: number, cost: number): boolean => {
+      let success = false;
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          if (p.gold < cost) return p;
+          success = true;
+          return {
+            ...p,
+            gold: p.gold - cost,
+            backupOutfit: condition,
+            gameStats: { ...p.gameStats, totalGoldSpent: (p.gameStats.totalGoldSpent || 0) + cost },
+          };
+        }),
+      }));
+      return success;
+    },
+
+    /**
+     * Read books at the Academy for fun.
+     * Costs time + small gold (library fee), gives happiness.
+     */
+    readBook: (playerId: string, hours: number, cost: number): boolean => {
+      let success = false;
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          if (p.timeRemaining < hours) return p;
+          if (p.gold < cost) return p;
+          success = true;
+          const happinessGain = Math.round(hours * 1.5); // 1.5 hap per hour of reading
+          return {
+            ...p,
+            timeRemaining: Math.max(0, p.timeRemaining - hours),
+            gold: p.gold - cost,
+            happiness: Math.min(100, p.happiness + happinessGain),
+            gameStats: { ...p.gameStats, totalGoldSpent: (p.gameStats.totalGoldSpent || 0) + cost },
+          };
+        }),
+      }));
+      return success;
+    },
   };
 }

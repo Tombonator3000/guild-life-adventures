@@ -109,6 +109,7 @@ const createPlayer = (
   maxExperience: 100,
   completedQuests: 0,
   clothingCondition: 35, // Casual tier (Jones-style: starts with basic clothes, need to buy better for higher jobs)
+  backupOutfit: null, // No backup outfit by default
   weeksSinceRent: 0,
   foodLevel: 50,
   foodBoughtWithoutPreservation: false,

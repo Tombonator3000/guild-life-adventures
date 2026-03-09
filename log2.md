@@ -8439,3 +8439,83 @@ Full gjennomgang av backlog-items. Fant at B4 (Quest Failure Consequences), B5 (
 - `src/components/screens/GameSetup.tsx`
 - `src/store/helpers/economy/itemHelpers.ts`
 - `CLAUDE.md` (updated rules)
+
+---
+
+## 2026-03-09T12:42:52Z — Feature Sprint: Animations, Keyboard Nav, Half-Shifts, Home Info, A/B Outfits, Book Reading
+
+### Overview
+Implemented 6 game improvements across 19 files. All changes TypeScript-clean (tsc --noEmit passes).
+
+### Features Implemented
+
+#### 1. Keyboard Board Navigation (`enableKeyboardNav` option)
+**Files:** `src/hooks/useKeyboardLocationNav.ts` (NEW), `src/components/game/GameBoard.tsx`, `src/components/game/LocationZone.tsx`, `src/components/game/tabs/OptionsTab.tsx`, `src/data/gameOptions.ts`
+
+- Added `enableKeyboardNav: boolean` to `GameOptions` (default: `false`)
+- New hook `useKeyboardLocationNav` — Tab/Shift+Tab + Arrow keys cycle `BOARD_PATH`, Space/Enter fires `onLocationClick`
+- Guard: disabled when `document.querySelector('[role="dialog"]')` is truthy (matches existing dialog-guard pattern)
+- `LocationZone` gets `isKeyboardFocused?: boolean` prop → amber focus ring + "↵ Travel" badge
+- `GameBoard` integrates hook, gates on `enableKeyboardNav && !aiIsThinking && phase === 'playing' && isLocalPlayerTurn`
+- `OptionsTab` adds new "Accessibility" section with toggle button and shortcut documentation
+
+#### 2. Token Animations (CSS only)
+**Files:** `tailwind.config.ts`, `src/components/game/AnimatedPlayerToken.tsx`, `src/components/game/PlayerToken.tsx`
+
+- Added `token-arrive` keyframe: bounce-in from above with scale (0.4s cubic-bezier spring)
+- Added `token-walk` keyframe: wobble rotation during movement (0.3s infinite)
+- `AnimatedPlayerToken`: uses `animate-token-walk` during movement; keyframe includes `translate(-50%, -50%)` to avoid transform conflict with inline style
+- `PlayerToken`: adds `animate-token-arrive` always (fires on mount = when token appears at new location)
+
+#### 3. Half-Shift Work + Cram Study Sessions
+**Files:** `src/components/game/WorkSection.tsx`, `src/components/game/AcademyPanel.tsx`
+
+- **WorkSection**: detects `timeRemaining > 0 && timeRemaining < hoursPerShift` → shows "Short Shift Xh (+Yg)" button using partial hours at wage × 1.15. No store changes — `workShift` already accepts arbitrary hours.
+- **AcademyPanel**: detects `timeRemaining > 0 && timeRemaining < degree.hoursPerSession` → shows "Cram Session (Xh, counts as 1 session)" at full session cost. `studyDegree` already accepts partial hours.
+
+#### 4. Home Item Tooltips (Hover for Info)
+**Files:** `src/components/game/home/RoomScene.tsx`
+
+- Added `HoverableItem` component: wraps appliance/durable item icons with hover state tracking
+- Added `HomeItemTooltip` component: parchment-panel style tooltip showing item name, description, effect/bonus label, and broken status
+- Uses explicit `icon` + `tooltip` props (not children slicing — previous approach had render bugs)
+- Tooltip positioned `bottom: 110%` above the item, `pointer-events: none` to avoid hover interference
+
+#### 5. A/B Backup Outfit System
+**Files:** `src/types/game.types.ts`, `src/store/gameStore.ts`, `src/store/helpers/workEducationHelpers.ts`, `src/store/storeTypes.ts`, `src/components/game/ArmoryPanel.tsx`, `src/components/game/HomePanel.tsx`, `src/components/game/locationTabs.tsx`, `src/components/game/LocationPanel.tsx`
+
+- Added `backupOutfit: number | null` to `Player` interface (initialized to `null` in `createPlayer`)
+- Three new store actions:
+  - `swapOutfits(playerId)`: swaps `clothingCondition` ↔ `backupOutfit`
+  - `storeBackupOutfit(playerId, condition, cost)`: deducts gold, sets `backupOutfit = condition`
+  - `readBook(playerId, hours, cost)`: deducts time + gold, gives `Math.round(hours * 1.5)` happiness
+- `ArmoryPanel`: optional `storeBackupOutfit` prop; each clothing item shows "↳ Store as Backup Outfit" sub-option when eligible
+- `HomePanel`: wardrobe section shows "Active: X%" + "Stored: Y%" + "Swap Outfits" button when at home location
+
+#### 6. Academy Library (Read Books for Fun)
+**Files:** `src/components/game/locationTabs.tsx`, `src/store/helpers/workEducationHelpers.ts`, `src/store/storeTypes.ts`
+
+- Academy now has two tabs: "Courses" (existing) + "📖 Library"
+- Library offers 3 reading sessions: 2h/5g(+3 hap), 4h/10g(+6 hap), 6h/15g(+9 hap)
+- `readBook` action: `spendTime + modifyGold + modifyHappiness`
+- `LocationTabContext` extended with `storeBackupOutfit` and `readBook` fields
+
+### Key Decisions
+- Keyboard nav hook created separately from `useGameBoardKeyboard.ts` to avoid coupling with existing dev shortcuts
+- No new store actions for half-shifts/cram — existing actions already accept partial hours
+- A/B outfit = single `backupOutfit: number | null` field (condition value only, no item id needed)
+- Token walk animation keyframe includes translate to avoid CSS transform conflict with inline positioning
+- `HoverableItem` uses explicit props pattern (not `children` slicing) after initial implementation had render bugs
+
+### CLAUDE.md Updates
+Added 6 new convention entries:
+- Keyboard nav guard pattern
+- `token-walk` keyframe transform-conflict note
+- Half-shift detection pattern (WorkSection + AcademyPanel)
+- `HoverableItem` icon+tooltip props pattern
+- A/B outfit system (`backupOutfit: number | null`)
+- Academy Library tab pattern
+
+### Test Results
+- `bunx tsc --noEmit` — passed (no output)
+- Unit tests: vitest not installed in CI environment, skipped

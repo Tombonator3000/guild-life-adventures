@@ -139,6 +139,16 @@ export default {
           "0%":   { opacity: "0", transform: "scale(0.95)" },
           "100%": { opacity: "1", transform: "scale(1)" },
         },
+        "token-arrive": {
+          "0%":   { transform: "translateY(-12px) scale(0.7)", opacity: "0.3" },
+          "60%":  { transform: "translateY(4px) scale(1.12)", opacity: "1" },
+          "80%":  { transform: "translateY(-3px) scale(0.97)" },
+          "100%": { transform: "translateY(0) scale(1)", opacity: "1" },
+        },
+        "token-walk": {
+          "0%, 100%": { transform: "translate(-50%, -50%) rotate(-4deg) scale(1.08)" },
+          "50%":      { transform: "translate(-50%, -50%) rotate(4deg) scale(1.12)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -154,6 +164,8 @@ export default {
         "slide-up": "slide-up 0.25s ease-out",
         "slide-down": "slide-down 0.25s ease-out",
         "scale-in": "scale-in 0.2s ease-out",
+        "token-arrive": "token-arrive 0.4s cubic-bezier(0.34,1.56,0.64,1) both",
+        "token-walk": "token-walk 0.3s ease-in-out infinite",
       },
     },
   },
