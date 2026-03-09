@@ -231,7 +231,7 @@ export function RoomScene({
         const appliance = getAppliance(applianceId);
         const pos = resolvePos(applianceId, def.left, def.bottom, customPositions);
         const bonusLabel = appliance?.givesPerTurnBonus
-          ? `+${appliance.perTurnBonusAmount ?? '?'} food/turn`
+          ? '+3 food/turn'
           : appliance?.canGenerateIncome
             ? '+15% income/turn'
             : undefined;
