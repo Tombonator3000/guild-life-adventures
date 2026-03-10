@@ -136,7 +136,7 @@ export function SpectatorPanel({ players, goalSettings, week, stockPrices, isPur
               {goalSettings.career > 0 && (
                 <GoalBar
                   label="Career"
-                  value={`${player.dependability}%`}
+                  value={`${player.currentJob ? player.dependability : 0}%`}
                   pct={pCareer * 100}
                   icon={<Star className="w-3 h-3" />}
                 />
