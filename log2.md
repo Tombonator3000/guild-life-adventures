@@ -5,6 +5,41 @@
 
 ---
 
+## 2026-03-09T21:30Z — Refactor: Extract actionExecutor.ts handlers into domain submodules
+
+### Summary
+
+Refactored `src/hooks/ai/actionExecutor.ts` (729 lines, 40+ handler functions) into 6 focused domain submodules under `src/hooks/ai/handlers/`. The main file retains the `StoreActions` interface, handler map, and `executeAIAction` entry point. All handler implementations now live in domain-grouped files for better navigation and maintainability.
+
+### New Files
+
+| File | Handlers | Domain |
+|------|----------|--------|
+| `handlers/resourceHandlers.ts` | 5 | Food, clothing, tickets, lottery |
+| `handlers/employmentEducationHandlers.ts` | 5 | Work, job applications, raises, study, graduation |
+| `handlers/housingFinanceHandlers.ts` | 9 | Rent, housing, banking, loans, stocks |
+| `handlers/equipmentHandlers.ts` | 8 | Appliances, weapons, armor, repairs, pawn, amulet |
+| `handlers/questDungeonHandlers.ts` | 7 + 4 helpers | Quests, bounties, dungeon exploration |
+| `handlers/hexHandlers.ts` | 5 | Curses, hexes, dispel, dark rituals |
+| `handlers/index.ts` | — | Barrel re-export |
+
+### Kept in actionExecutor.ts
+
+- `StoreActions` interface (public API, imported by handlers)
+- `handleMove` (depends on network/animation bridges)
+- `handleRest`, `handleHeal`, `handleCureSickness` (trivial, store-only)
+- `handleEndTurn` (trivial)
+- `ACTION_HANDLERS` map and `executeAIAction` dispatcher
+
+### Verification
+
+- TypeScript: clean (0 errors)
+- Tests: 355 passed, 3 pre-existing failures (unchanged)
+- ESLint: clean
+- Public API unchanged (`executeAIAction` + `StoreActions` still exported from same path)
+
+---
+
 ## 2026-03-09T19:00Z — Bugfix: Morgath (warrior AI) not returning home at end of turn
 
 ### Symptom
