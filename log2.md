@@ -5,6 +5,52 @@
 
 ---
 
+## 2026-03-10T06:29Z — Bug Hunt: 4 bugs found and fixed
+
+### Summary
+
+Parallel agent bug hunt across game mechanics, quest helpers, work/education helpers, and UI components. 4 bugs confirmed and fixed. 358/358 tests pass after fixes (was 355/358 — 3 pre-existing failures now resolved).
+
+### Bugs Fixed
+
+#### BUG-HUNT-1: SpectatorPanel shows raw dependability as career progress when unemployed
+**File**: `src/components/game/SpectatorPanel.tsx:139`
+**Severity**: HIGH
+**Root cause**: `value={`${player.dependability}%`}` displayed raw stat without checking `player.currentJob`. The progress bar calculation at line 45 (`pCareer`) correctly used `(p.currentJob ? p.dependability : 0)`, but the text label showed the raw value — so an unemployed player would show e.g. "Career: 75%" on the bar label while the bar itself showed 0%. CLAUDE.md rule: "Do NOT show raw `player.dependability` as career progress without a job check."
+**Fix**: Changed to `value={`${player.currentJob ? player.dependability : 0}%`}`
+
+#### BUG-HUNT-2: badge.tsx empty interface triggers ESLint no-empty-object-type
+**File**: `src/components/ui/badge.tsx:23`
+**Severity**: MEDIUM (ESLint violation)
+**Root cause**: `export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {}` — empty interface extending other types. CLAUDE.md rule: "use `type Foo = Bar` instead of `interface Foo extends Bar {}` to avoid `@typescript-eslint/no-empty-object-type` error."
+**Fix**: Changed to `export type BadgeProps = React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof badgeVariants>;`
+
+#### BUG-HUNT-3: victory.test.ts tests M28 (old behavior) contradicting current career mechanic
+**File**: `src/test/victory.test.ts:83-126`
+**Severity**: HIGH (pre-existing test failure, wrong test)
+**Root cause**: Two tests ("M28: available even without job" and "M28 fix") tested the OLD behavior where career progress worked without a job. Current game design requires `currentJob` to be set — career = 0 when unemployed. Tests were stale, causing `checkVictory` to return `false` where tests expected `true`.
+**Fix**: Rewrote both tests to correctly reflect the current mechanic: career requires a job, career = 0 when unemployed.
+
+#### BUG-HUNT-4: actionGenerator.test.ts Morgath social weight stale (0.6 → 0.8)
+**File**: `src/hooks/ai/__tests__/actionGenerator.test.ts:163`
+**Severity**: MEDIUM (pre-existing test failure, stale assertion)
+**Root cause**: Morgath's `social` weight was raised from 0.6 to 0.8 (to prevent happiness crash — see CLAUDE.md AI social weight floor rule), but the test still expected `60 * 0.6 = 36`. Actual result was `60 * 0.8 = 48`.
+**Fix**: Updated test comment and expected value: `// social = 0.8 (raised from 0.6 to prevent happiness crash)` + `expect(actions[1].priority).toBe(48);`
+
+### Files Changed
+
+- `src/components/game/SpectatorPanel.tsx` — career value display fix
+- `src/components/ui/badge.tsx` — interface → type alias
+- `src/test/victory.test.ts` — updated career mechanic tests (M28 → current)
+- `src/hooks/ai/__tests__/actionGenerator.test.ts` — updated Morgath social weight assertion
+
+### Test Results
+
+- Before: 355 passed, 3 failed
+- After: **358 passed, 0 failed**
+
+---
+
 ## 2026-03-09T21:30Z — Refactor: Extract actionExecutor.ts handlers into domain submodules
 
 ### Summary

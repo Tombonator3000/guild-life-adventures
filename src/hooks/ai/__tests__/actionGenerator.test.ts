@@ -158,9 +158,9 @@ describe('personality weight application', () => {
       { type: 'rest', priority: 60, description: 'Rest' },
     ];
     applyPersonalityWeights(actions, AI_PERSONALITIES.morgath);
-    // combat = 1.6, social = 0.6
+    // combat = 1.6, social = 0.8 (raised from 0.6 to prevent happiness crash)
     expect(actions[0].priority).toBe(96);  // 60 * 1.6
-    expect(actions[1].priority).toBe(36);  // 60 * 0.6
+    expect(actions[1].priority).toBe(48);  // 60 * 0.8
   });
 
   it('grimwald leaves all priorities unchanged', () => {
