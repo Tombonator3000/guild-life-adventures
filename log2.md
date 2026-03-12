@@ -8660,3 +8660,199 @@ Added 6 new convention entries:
 ### Test Results
 - `bunx tsc --noEmit` — passed (no output)
 - Unit tests: vitest not installed in CI environment, skipped
+
+---
+
+## 2026-03-12T12:00Z — Claude Code Skills & MCP Server Survey
+
+### Summary
+
+Researched Claude Code built-in skills, slash commands, hook system, custom skills, and the MCP (Model Context Protocol) server ecosystem. Goal: identify tools that can improve our development workflow for Guild Life Adventures.
+
+### Research Scope
+
+- All built-in Claude Code slash commands and skills
+- Hook system capabilities (pre/post tool events)
+- Custom skill creation patterns
+- MCP server ecosystem (10,000+ servers in official registry)
+- Focus areas: code quality, testing, deployment, content generation, game dev
+
+---
+
+### FINDINGS — Claude Code Built-in Features
+
+#### Slash Commands We Should Use More
+
+| Command | What It Does | Relevance |
+|---------|-------------|-----------|
+| `/simplify` | Reviews changed files via 3 parallel agents for code reuse, quality, efficiency | ⭐⭐⭐⭐⭐ Run after every feature |
+| `/batch <instruction>` | Parallel changes across codebase (5-30 isolated worktree agents, each opens a PR) | ⭐⭐⭐⭐ Great for mass refactors (e.g., all AI handlers) |
+| `/diff` | Interactive diff viewer for uncommitted changes | ⭐⭐⭐⭐ Better than git diff for review |
+| `/security-review` | Analyze pending changes for security vulnerabilities | ⭐⭐⭐⭐ Multiplayer code needs this |
+| `/context` | Visualize context usage with optimization suggestions | ⭐⭐⭐ Helps manage long sessions |
+| `/compact [focus]` | Compact conversation with focus area | ⭐⭐⭐ Our sessions get long |
+| `/pr-comments` | Fetch GitHub PR comments | ⭐⭐⭐ Useful for collaboration |
+| `/loop [interval] <prompt>` | Repeat a prompt on interval | ⭐⭐ Monitor deploys, watch tests |
+| `/rewind` | Restore code to previous checkpoint | ⭐⭐ Safety net for risky changes |
+| `/stats` | Visualize daily usage and session history | ⭐ Nice to have |
+
+#### Hook System — Automations We Can Set Up
+
+| Hook Event | Use Case for Us |
+|------------|----------------|
+| `PostToolUse` (on Edit/Write) | Auto-run `bun run lint` after file changes |
+| `SessionStart` | Auto-read MEMORY.md + todo.md for context |
+| `PreToolUse` (on Bash) | Block destructive git commands (force push, reset --hard) |
+| `PostToolUseFailure` | Log failed test runs with context to bugs.md |
+
+#### Custom Skills We Should Create
+
+| Skill Name | Purpose | Priority |
+|------------|---------|----------|
+| `/test-game` | Run `bun run test` and report failures with context | Must-have |
+| `/bug-hunt` | Spawn parallel agents to search for bugs across game mechanics | Must-have |
+| `/ai-review` | Review AI opponent behavior for balance issues | Nice-to-have |
+| `/balance-check` | Audit economy values (wages, prices, xp rates) against ITEMS.md | Nice-to-have |
+| `/deploy-check` | Build + verify GitHub Pages deployment status | Nice-to-have |
+
+#### Custom Subagents We Should Create
+
+| Agent | Purpose | Location |
+|-------|---------|----------|
+| `bug-hunter` | Read-only agent that searches for bugs matching CLAUDE.md patterns | `.claude/agents/bug-hunter.md` |
+| `game-balance` | Analyzes economy data files for imbalances | `.claude/agents/game-balance.md` |
+
+---
+
+### FINDINGS — MCP Servers
+
+#### Tier 1: MUST-HAVE (set up first)
+
+| Server | What It Does | Why We Need It |
+|--------|-------------|----------------|
+| **GitHub MCP** | PR reviews, issue management, code search, branch ops | We use GitHub for everything — PRs, issues, Pages deploy |
+| **Playwright MCP** (Microsoft) | Browser automation, accessibility snapshots, UI testing | Test game UI interactions without manual clicking. 10-100x faster than screenshot-based testing |
+| **Vitest MCP** | AI-optimized test runner with structured output | We have 358 tests — better integration than raw `bun run test` |
+
+Setup commands:
+```bash
+claude mcp add --transport http github https://api.githubcopilot.com/mcp/
+claude mcp add --transport stdio playwright -- npx -y @playwright/mcp@latest
+claude mcp add --transport stdio vitest -- npx -y vitest-mcp
+```
+
+#### Tier 2: NICE-TO-HAVE (set up next)
+
+| Server | What It Does | Why Useful |
+|--------|-------------|------------|
+| **Sentry MCP** | Production error monitoring | Track live game bugs from players |
+| **Git MCP** (Anthropic reference) | Repo reading, blame, history | Better code archaeology than raw git commands |
+| **Sequential Thinking** | Complex multi-step reasoning | Useful for game AI design sessions |
+
+Setup commands:
+```bash
+claude mcp add --transport http sentry https://mcp.sentry.dev/mcp
+claude mcp add --transport stdio git -- npx -y @modelcontextprotocol/server-git
+claude mcp add --transport stdio sequential-thinking -- npx -y @modelcontextprotocol/server-sequential-thinking
+```
+
+#### Tier 3: SKIP (not worth it right now)
+
+| Server | Why Skip |
+|--------|----------|
+| **MCP Image Gen servers** | We already have Gemini integration via HomePanel dev mode |
+| **Game Dev MCP** (React Three Fiber) | Wrong tech — we're 2D, not 3D |
+| **Database MCP servers** | No database — we use Zustand + localStorage |
+| **Slack/Gmail MCP** | Solo/small team, not needed |
+| **Appium / AltTester** | Mobile/Unity game testing — not our stack |
+| **Memory MCP** | We already have MEMORY.md + CLAUDE.md — more reliable |
+
+---
+
+### FINDINGS — Configuration Approach
+
+Best practice: use `.mcp.json` in repo root for team-shared servers, `~/.claude.json` for personal/API-key servers.
+
+Recommended `.mcp.json` for the project:
+```json
+{
+  "mcpServers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    },
+    "vitest": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "vitest-mcp"]
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
+    }
+  }
+}
+```
+
+---
+
+### RECOMMENDATIONS SUMMARY
+
+#### Immediate Actions (do now)
+1. Start using `/simplify` after every feature implementation
+2. Start using `/security-review` before pushing multiplayer changes
+3. Set up GitHub MCP server for better PR/issue workflow
+
+#### Short-Term (this week)
+4. Create `/test-game` custom skill
+5. Set up Playwright MCP for UI testing
+6. Set up Vitest MCP for better test integration
+7. Create `PostToolUse` hook for auto-linting
+
+#### Medium-Term (backlog)
+8. Create `/bug-hunt` custom skill with parallel agents
+9. Set up Sentry MCP for production monitoring
+10. Create `/ai-review` and `/balance-check` custom skills
+11. Use `/batch` for next large refactor
+
+### Files Changed
+- `log2.md` — this entry
+
+### No code changes — research only.
+
+---
+
+## 2026-03-12T12:15Z — Implemented Claude Code Workflow Tools
+
+### Summary
+
+Created custom skills and documented built-in workflow commands in CLAUDE.md.
+
+### What Changed
+
+#### New Files
+- `.claude/skills/test-game/SKILL.md` — `/test-game [filter]` skill. Runs `bun run test`, analyzes failures against CLAUDE.md conventions, reports root cause + suggested fix. Uses sonnet model in forked context.
+- `.claude/skills/bug-hunt/SKILL.md` — `/bug-hunt [focus-area]` skill. Spawns 4 parallel Explore agents scanning: (1) store/game mechanics, (2) AI opponent logic, (3) UI components, (4) quest/dungeon logic. Each agent checks against documented CLAUDE.md bug patterns (BUG-014-D, career job check, food spoilage flags, etc.). Reports only — does not auto-fix. Uses opus model.
+
+#### Updated Files
+- `CLAUDE.md` — Added "Claude Code Workflow Tools" section documenting:
+  - Built-in commands: `/simplify`, `/security-review`, `/diff`, `/compact`, `/batch`
+  - Custom skills: `/test-game`, `/bug-hunt`
+
+### Skills Architecture
+
+```
+.claude/
+└── skills/
+    ├── test-game/
+    │   └── SKILL.md    # Test runner with failure analysis
+    └── bug-hunt/
+        └── SKILL.md    # Parallel 4-agent bug sweep
+```
+
+### Key Design Decisions
+- `/test-game` uses `context: fork` + `agent: general-purpose` so it runs in isolated context without polluting main conversation
+- `/bug-hunt` uses opus model for deeper reasoning on complex bug patterns
+- `/bug-hunt` reports only (no auto-fix) to keep human in the loop
+- Both skills reference CLAUDE.md conventions so they check against known bug patterns
