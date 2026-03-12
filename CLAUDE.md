@@ -23,6 +23,19 @@ bun run test      # Run tests
 bun run lint      # Run ESLint
 ```
 
+## Claude Code Workflow Tools
+
+### Built-in Commands (use these regularly)
+- `/simplify` — Run after every feature. Spawns 3 parallel agents to review changed code for reuse, quality, and efficiency. Accepts optional focus: `/simplify focus on performance`
+- `/security-review` — Run before pushing multiplayer or network changes. Analyzes pending changes for security vulnerabilities.
+- `/diff` — Interactive diff viewer for uncommitted changes. Better than `git diff` for reviewing work before committing.
+- `/compact [focus]` — Compact conversation when context gets long. Pass a focus area to preserve important context: `/compact focus on AI opponent logic`
+- `/batch <instruction>` — For large refactors across many files. Spawns 5-30 isolated worktree agents, each opens a PR.
+
+### Custom Skills (in `.claude/skills/`)
+- `/test-game [filter]` — Run test suite with structured failure analysis. Reports failing tests with root cause and suggested fix.
+- `/bug-hunt [focus-area]` — Parallel bug sweep across 4 domains (store logic, AI, UI, quests). Reports bugs without auto-fixing. Focus areas: "multiplayer", "AI", "quests", "economy", "UI".
+
 ## Project Structure
 
 ```

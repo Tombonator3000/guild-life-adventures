@@ -8820,3 +8820,39 @@ Recommended `.mcp.json` for the project:
 - `log2.md` — this entry
 
 ### No code changes — research only.
+
+---
+
+## 2026-03-12T12:15Z — Implemented Claude Code Workflow Tools
+
+### Summary
+
+Created custom skills and documented built-in workflow commands in CLAUDE.md.
+
+### What Changed
+
+#### New Files
+- `.claude/skills/test-game/SKILL.md` — `/test-game [filter]` skill. Runs `bun run test`, analyzes failures against CLAUDE.md conventions, reports root cause + suggested fix. Uses sonnet model in forked context.
+- `.claude/skills/bug-hunt/SKILL.md` — `/bug-hunt [focus-area]` skill. Spawns 4 parallel Explore agents scanning: (1) store/game mechanics, (2) AI opponent logic, (3) UI components, (4) quest/dungeon logic. Each agent checks against documented CLAUDE.md bug patterns (BUG-014-D, career job check, food spoilage flags, etc.). Reports only — does not auto-fix. Uses opus model.
+
+#### Updated Files
+- `CLAUDE.md` — Added "Claude Code Workflow Tools" section documenting:
+  - Built-in commands: `/simplify`, `/security-review`, `/diff`, `/compact`, `/batch`
+  - Custom skills: `/test-game`, `/bug-hunt`
+
+### Skills Architecture
+
+```
+.claude/
+└── skills/
+    ├── test-game/
+    │   └── SKILL.md    # Test runner with failure analysis
+    └── bug-hunt/
+        └── SKILL.md    # Parallel 4-agent bug sweep
+```
+
+### Key Design Decisions
+- `/test-game` uses `context: fork` + `agent: general-purpose` so it runs in isolated context without polluting main conversation
+- `/bug-hunt` uses opus model for deeper reasoning on complex bug patterns
+- `/bug-hunt` reports only (no auto-fix) to keep human in the loop
+- Both skills reference CLAUDE.md conventions so they check against known bug patterns
