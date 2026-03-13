@@ -131,7 +131,7 @@ export function LocationShell({
               backgroundImage: `url(${LOCATION_BACKGROUNDS[locationId]})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
-              opacity: 0.09,
+              opacity: 0.13,
               mixBlendMode: 'multiply',
             }}
           />
