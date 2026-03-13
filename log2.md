@@ -9,7 +9,7 @@
 
 ### Summary
 
-Replaced 13 location background images (all except slums + noble-heights) from sketch/watercolor style to realistic photo style. Opacity lowered from 0.13 to 0.09 to accommodate the higher contrast of photo images while maintaining text readability.
+Replaced 13 location background images (all except slums + noble-heights) from sketch/watercolor style to realistic photo style. Opacity set to 0.13 for photo-realistic images (later adjusted to 0.09, then back to 0.13 for visibility).
 
 ### Changes
 
@@ -28,14 +28,22 @@ Replaced 13 location background images (all except slums + noble-heights) from s
   - Landlord: office with desk, documents, and keys
   - Graveyard: moonlit cemetery with fog and crows
   - Fence: cluttered pawn shop with dim lighting
-- **src/components/game/LocationShell.tsx** — opacity changed from 0.13 to 0.09
+- **src/components/game/LocationShell.tsx** — opacity set to 0.13 for photo-realistic backgrounds
 - Slums and Noble Heights backgrounds unchanged (kept original sketch style)
 
-### Files changed
+---
 
-- 13 images renamed (archived with -old suffix)
-- 13 new images generated
-- `src/components/game/LocationShell.tsx` (line 134: opacity 0.13 → 0.09)
+## 2026-03-13T14:00Z — Opacity adjustment: 0.13 confirmed for photo backgrounds
+
+### Summary
+
+Verified that all 13 photo-realistic location backgrounds display at opacity 0.13 with `mix-blend-mode: multiply` for optimal visibility while preserving text readability on the parchment-colored content area.
+
+### Files unchanged (already correct)
+
+- `src/components/game/LocationShell.tsx` — line 134: opacity 0.13
+
+### Files changed
 
 ---
 
