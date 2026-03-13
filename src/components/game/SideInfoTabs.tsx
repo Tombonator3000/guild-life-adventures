@@ -44,7 +44,10 @@ export function SideInfoTabs({ player, goals, isCurrentPlayer, initialTab }: Sid
   const TABS = getTabs(t);
 
   return (
-    <div className={`h-full flex flex-col bg-parchment rounded-lg border-2 overflow-hidden ${isCurrentPlayer ? 'border-accent' : 'border-wood-dark/50'}`}>
+    <div
+      className={`h-full flex flex-col bg-parchment rounded-lg border-2 overflow-hidden ${(player.activeCurses?.length ?? 0) > 0 ? 'border-purple-500' : isCurrentPlayer ? 'border-accent' : 'border-wood-dark/50'}`}
+      style={(player.activeCurses?.length ?? 0) > 0 ? { boxShadow: '0 0 14px 4px rgba(147,51,234,0.55)' } : undefined}
+    >
       {/* Player Portrait - Large, prominent display */}
       <div className="flex-shrink-0 flex flex-col items-center p-3 bg-parchment border-b-2 border-wood-light/50">
         {(() => {

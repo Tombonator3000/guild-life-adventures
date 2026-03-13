@@ -96,7 +96,7 @@ export function AnimatedPlayerToken({
 
   if (!position) return null;
 
-  const hasCurse = Array.isArray(player.activeCurses) && player.activeCurses.length > 0;
+  const hasCurse = (player.activeCurses?.length ?? 0) > 0;
   const isToad = player.activeCurses?.some(c => c.effectType === 'toad-transformation') ?? false;
 
   return (

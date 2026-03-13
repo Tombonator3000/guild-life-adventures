@@ -52,7 +52,7 @@ function TokenCurseEffect({ isToad }: { isToad: boolean }) {
 }
 
 export function PlayerToken({ player, index, isCurrent, onClickPlayer }: PlayerTokenProps) {
-  const hasCurse = Array.isArray(player.activeCurses) && player.activeCurses.length > 0;
+  const hasCurse = (player.activeCurses?.length ?? 0) > 0;
   const isToad = player.activeCurses?.some(c => c.effectType === 'toad-transformation') ?? false;
   const isDead = player.isGameOver;
 

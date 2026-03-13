@@ -604,8 +604,8 @@ export function GameBoard() {
         <ChatPanel
           messages={chatMessages}
           onSend={sendChatMessage}
-          playerName={isPureSpectator ? 'Spectator' : (localPlayer?.name || currentPlayer?.name || 'Player')}
-          playerColor={isPureSpectator ? '#9CA3AF' : (localPlayer?.color || currentPlayer?.color || '#888888')}
+          playerName={isPureSpectator ? 'Spectator' : (localPlayer?.name || 'Player')}
+          playerColor={isPureSpectator ? '#9CA3AF' : (localPlayer?.color || '#888888')}
         />
       )}
 
