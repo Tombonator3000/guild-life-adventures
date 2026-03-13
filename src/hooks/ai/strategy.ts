@@ -45,8 +45,8 @@ export function calculateGoalProgress(
   const educationPoints = player.completedDegrees.length * 9;
   const educationProgress = goals.education > 0 ? Math.min(1, educationPoints / goals.education) : 1;
 
-  // BUG FIX: Career = dependability (Jones-style), shown even when unemployed (matches checkVictory)
-  const careerValue = player.dependability;
+  // Career = 0 when unemployed (matches evaluateGoals in questHelpers.ts)
+  const careerValue = player.currentJob ? player.dependability : 0;
   const careerProgress = goals.career > 0 ? Math.min(1, careerValue / goals.career) : 1;
 
   // Adventure = quests + dungeon floors (optional, 0 = disabled)

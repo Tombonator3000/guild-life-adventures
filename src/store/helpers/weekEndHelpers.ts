@@ -1064,7 +1064,7 @@ function resolveWeekEndOutcome(
     selectedLocation: null,
     eventMessage: uniqueMessages.length > 0 ? uniqueMessages.join('\n') : null,
     eventSource: uniqueMessages.length > 0 ? 'weekend' as const : null,
-    phase: uniqueMessages.length > 0 ? 'event' : 'playing',
+    phase: (uniqueMessages.length > 0 && !firstPlayer.isAI) ? 'event' : 'playing',
   });
 
   // Check for apartment robbery at start of first alive player's turn

@@ -96,7 +96,7 @@ describe('calculateGoalProgress', () => {
   });
 
   it('caps progress at 1.0', () => {
-    const player = makePlayer({ gold: 5000, happiness: 200, dependability: 100 });
+    const player = makePlayer({ gold: 5000, happiness: 200, dependability: 100, currentJob: 'floor-sweeper' });
     const result = calculateGoalProgress(player, GOALS);
     expect(result.wealth.progress).toBe(1);
     expect(result.happiness.progress).toBe(1);

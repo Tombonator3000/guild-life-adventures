@@ -128,6 +128,8 @@ export function GameBoardOverlays({
                 playerName={currentPlayer?.name || 'AI'}
                 size={isMobile ? 72 : 96}
                 isAI
+                hasCurse={(currentPlayer?.activeCurses?.length ?? 0) > 0}
+                curses={currentPlayer?.activeCurses}
               />
               <div className="absolute -bottom-1 -right-1 bg-amber-100 rounded-full p-1 border-2 border-amber-600">
                 <Brain className="w-4 h-4 text-amber-700 animate-spin" style={{ animationDuration: '3s' }} />

@@ -32,6 +32,8 @@ export function TurnTransition({ player, onReady }: TurnTransitionProps) {
             playerName={player.name}
             size={32}
             isAI={player.isAI}
+            hasCurse={(player.activeCurses?.length ?? 0) > 0}
+            curses={player.activeCurses}
           />
           <span className="font-display text-xl text-primary font-bold">
             {player.name}
