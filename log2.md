@@ -5,6 +5,40 @@
 
 ---
 
+## 2026-03-13T12:00Z — Location backgrounds: sketch → photo-realistic
+
+### Summary
+
+Replaced 13 location background images (all except slums + noble-heights) from sketch/watercolor style to realistic photo style. Opacity lowered from 0.13 to 0.09 to accommodate the higher contrast of photo images while maintaining text readability.
+
+### Changes
+
+- **src/assets/locations/bg-*-old.jpg** — 13 original sketch-style images renamed with `-old` suffix for archival
+- **src/assets/locations/bg-*.jpg** — 13 new AI-generated photo-realistic backgrounds:
+  - Guild Hall: grand stone hall with banners and fireplace
+  - Bank: gold vault with treasure chests and candlelight
+  - General Store: shelves with goods, barrels, dried herbs
+  - Armory: weapons and armor on stone walls
+  - Enchanter: glowing crystals, potions, arcane circle
+  - Shadow Market: dark underground bazaar with hooded figures
+  - Academy: grand library with stained glass
+  - Rusty Tankard: cozy tavern with fireplace and candles
+  - Cave: dark dungeon entrance with stalactites
+  - Forge: glowing furnace with anvil and sparks
+  - Landlord: office with desk, documents, and keys
+  - Graveyard: moonlit cemetery with fog and crows
+  - Fence: cluttered pawn shop with dim lighting
+- **src/components/game/LocationShell.tsx** — opacity changed from 0.13 to 0.09
+- Slums and Noble Heights backgrounds unchanged (kept original sketch style)
+
+### Files changed
+
+- 13 images renamed (archived with -old suffix)
+- 13 new images generated
+- `src/components/game/LocationShell.tsx` (line 134: opacity 0.13 → 0.09)
+
+---
+
 ## 2026-03-10T06:29Z — Bug Hunt: 4 bugs found and fixed
 
 ### Summary
