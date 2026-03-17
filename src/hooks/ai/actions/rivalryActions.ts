@@ -299,6 +299,45 @@ function generateDarkRitualActions({ ctx, threatIsClose }: RivalryContext): AIAc
   return [];
 }
 
+/** Strategic location targeting — race to key locations rival needs */
+function generateStrategicLocationBlocking({ ctx, biggestThreat, threatIsClose, rivalFocus }: RivalryContext): AIAction[] {
+  const { player, currentLocation, moveCost, settings } = ctx;
+  if (!threatIsClose || settings.planningDepth < 3) return []; // Hard AI only
+
+  const actions: AIAction[] = [];
+
+  // Identify rival's likely next target location based on their focus
+  const targetLocations: import('@/types/game.types').LocationId[] = [];
+  if (rivalFocus === 'education') targetLocations.push('academy');
+  if (rivalFocus === 'wealth') targetLocations.push('bank', 'guild-hall');
+  if (rivalFocus === 'career') targetLocations.push('guild-hall');
+
+  // If rival is near completion, block their key location by doing productive work there
+  for (const loc of targetLocations) {
+    if (currentLocation === loc) {
+      // Already here — boost priority of any productive action at this location
+      const productiveTypes = rivalFocus === 'education' ? ['study'] : ['work', 'deposit-bank'];
+      for (const t of productiveTypes) {
+        actions.push({
+          type: t as import('../types').AIActionType,
+          priority: 75,
+          description: `Block ${biggestThreat.name} at ${loc}`,
+          details: {},
+        });
+      }
+    } else if (player.timeRemaining > moveCost(loc) + 4) {
+      actions.push({
+        type: 'move',
+        location: loc,
+        priority: 58,
+        description: `Race to ${loc} to block ${biggestThreat.name}`,
+      });
+    }
+  }
+
+  return actions;
+}
+
 // ── Dispatch table ──────────────────────────────────────────────────
 
 const RIVALRY_GENERATORS: Array<(rc: RivalryContext) => AIAction[]> = [
@@ -310,6 +349,7 @@ const RIVALRY_GENERATORS: Array<(rc: RivalryContext) => AIAction[]> = [
   generateAmuletPurchase,
   generateDispelActions,
   generateDarkRitualActions,
+  generateStrategicLocationBlocking,
 ];
 
 // ── Main entry point ────────────────────────────────────────────────
