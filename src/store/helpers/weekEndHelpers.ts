@@ -1112,6 +1112,7 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
         weather,
         festival,
         stockPrices: state.stockPrices,
+        priceModifier: finalPriceModifier,
       };
 
       // --- Step 2: Process all players ---
