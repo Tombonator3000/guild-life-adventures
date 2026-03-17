@@ -522,17 +522,23 @@ function processHousing(p: Player, msgs: string[], newsEvents: PlayerNewsEventDa
   }
 }
 
-/** Process investments, savings interest, and stock dividends (deterministic — always runs) */
-function processFinances(p: Player, stockPrices: Record<string, number>, msgs: string[]): void {
-  // Investment returns (INVESTMENT_WEEKLY_RATE per week)
+/** Process investments, savings interest, and stock dividends (deterministic — always runs)
+ *  Dynamic interest: rates scale with priceModifier (boom = higher rates, recession = lower) */
+function processFinances(p: Player, stockPrices: Record<string, number>, msgs: string[], priceModifier: number = 1.0): void {
+  // Dynamic rate scaling: priceModifier 0.7–1.3 maps to 0.7x–1.3x rate multiplier
+  const rateMultiplier = priceModifier;
+
+  // Investment returns (base rate × priceModifier per week)
   if (p.investments > 0) {
-    const returns = Math.floor(p.investments * INVESTMENT_WEEKLY_RATE);
+    const effectiveRate = INVESTMENT_WEEKLY_BASE_RATE * rateMultiplier;
+    const returns = Math.floor(p.investments * effectiveRate);
     p.investments += returns;
   }
 
-  // Savings interest (SAVINGS_WEEKLY_RATE per week)
+  // Savings interest (base rate × priceModifier per week)
   if (p.savings > 0) {
-    const interest = Math.floor(p.savings * SAVINGS_WEEKLY_RATE);
+    const effectiveRate = SAVINGS_WEEKLY_BASE_RATE * rateMultiplier;
+    const interest = Math.floor(p.savings * effectiveRate);
     p.savings += interest;
   }
 
