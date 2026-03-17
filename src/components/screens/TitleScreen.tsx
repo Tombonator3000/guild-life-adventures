@@ -1,6 +1,6 @@
 import { lazy, Suspense, useRef, useState, useMemo } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { Save, Trash2, Volume2, VolumeX, Download, Settings, Info, Share, Plus, X, BookOpen } from 'lucide-react';
+import { Save, Trash2, Volume2, VolumeX, Download, Settings, Info, Share, Plus, X, BookOpen, ScrollText } from 'lucide-react';
 import titleDay from '@/assets/title-day.jpg';
 import titleNight from '@/assets/title-night.jpg';
 import { activateDevMode } from '@/hooks/useDevMode';
