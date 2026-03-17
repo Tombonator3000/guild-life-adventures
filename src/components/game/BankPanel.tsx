@@ -258,6 +258,9 @@ export function BankPanel({
     <div>
       <JonesInfoRow label={t('panelBank.cash')} value={`${player.gold}g`} darkText largeText />
       <JonesInfoRow label={t('panelBank.savings')} value={`${player.savings}g`} darkText largeText />
+      {player.savings > 0 && (
+        <JonesInfoRow label="Interest rate:" value={`${(0.1 * priceModifier).toFixed(2)}%/wk`} valueClass={priceModifier > 1 ? 'text-[#2a7a2a]' : 'text-[#8b6914]'} darkText largeText />
+      )}
       <JonesInfoRow label={t('stats.investments')} value={`${player.investments}g`} darkText largeText />
       {stockValue > 0 && <JonesInfoRow label="Stocks:" value={`${stockValue}g`} darkText largeText />}
       {weeklyDividends > 0 && <JonesInfoRow label="Dividends:" value={`+${weeklyDividends}g/wk`} valueClass="text-[#2a7a2a]" darkText largeText />}
