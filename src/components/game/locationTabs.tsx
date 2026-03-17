@@ -698,6 +698,28 @@ function shadowMarketTabs(ctx: LocationTabContext): LocationTab[] {
     });
   }
 
+  // Sabotage tab (Player Bounties) — always available when there are rivals
+  if (ctx.players.filter(p => !p.isGameOver && p.id !== player.id).length > 0) {
+    tabs.push({
+      id: 'sabotage',
+      label: 'Sabotage',
+      content: (
+        <SabotagePanel
+          player={player}
+          rivals={ctx.players.filter(p => !p.isGameOver && p.id !== player.id)}
+          priceModifier={priceModifier}
+          onSabotage={(targetId, option) => {
+            const store = (ctx as unknown as { sabotagePlayer?: GameStore['sabotagePlayer'] });
+            // Use the store directly since it's not on LocationTabContext
+            const { sabotagePlayer } = require('@/store/gameStore').useGameStore.getState();
+            sabotagePlayer(player.id, targetId, option.effect.type, option.effect.value, option.cost);
+          }}
+          spendTime={spendTime}
+        />
+      ),
+    });
+  }
+
   return tabs;
 }
 
