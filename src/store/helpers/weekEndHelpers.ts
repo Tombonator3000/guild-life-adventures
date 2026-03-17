@@ -78,12 +78,12 @@ const FORCED_SELL_RATE = 0.8;
 const LIQUIDATION_RATE = 0.3;
 
 // Finances
-/** Weekly return rate on investments (compound) */
-const INVESTMENT_WEEKLY_RATE = 0.005;
-/** Weekly interest rate on savings (compound) */
-const SAVINGS_WEEKLY_RATE = 0.001;
-/** Weekly interest rate charged on outstanding loans */
-const LOAN_INTEREST_RATE = 0.10;
+/** BASE weekly return rate on investments (compound) — scaled by priceModifier */
+const INVESTMENT_WEEKLY_BASE_RATE = 0.005;
+/** BASE weekly interest rate on savings (compound) — scaled by priceModifier */
+const SAVINGS_WEEKLY_BASE_RATE = 0.001;
+/** BASE weekly interest rate charged on outstanding loans — scaled by priceModifier */
+const LOAN_INTEREST_BASE_RATE = 0.10;
 /** Maximum loan balance after interest (prevents infinite growth) */
 const LOAN_INTEREST_CAP = 2000;
 
