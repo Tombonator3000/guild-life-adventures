@@ -13,6 +13,7 @@ import { useTranslation } from '@/i18n';
 
 interface BankPanelProps {
   player: Player;
+  priceModifier?: number;
   spendTime?: (playerId: string, hours: number) => void;
   depositToBank: (playerId: string, amount: number) => void;
   withdrawFromBank: (playerId: string, amount: number) => void;
