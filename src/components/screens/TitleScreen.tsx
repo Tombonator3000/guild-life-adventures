@@ -318,6 +318,27 @@ export function TitleScreen() {
             ))}
           </div>
 
+          {/* What's New button */}
+          <div className="flex justify-center w-full mt-3">
+            <button
+              onClick={() => setShowChangelog(true)}
+              className="flex items-center gap-1.5 ts-tertiary-btn py-1.5 px-4"
+              style={{
+                fontFamily: "'Cinzel', serif",
+                fontSize: '0.58rem',
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase' as const,
+                color: '#f2e8cc',
+                background: 'transparent',
+                border: '1px solid rgba(242,232,204,0.1)',
+                opacity: 0.55,
+              }}
+            >
+              <ScrollText className="w-3 h-3 shrink-0" />
+              <span>What's New</span>
+            </button>
+          </div>
+
           {/* Credit */}
           <p className="mt-6 text-center" style={{ fontFamily: "'Crimson Text', Georgia, serif", fontStyle: 'italic', fontSize: '0.72rem', color: '#f2e8cc', opacity: 0.25, letterSpacing: '0.08em' }}>
             {t('title.inspiredBy')}
