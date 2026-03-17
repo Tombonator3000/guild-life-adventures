@@ -33,6 +33,7 @@ import { CavePanel } from './CavePanel';
 import { GraveyardPanel } from './GraveyardPanel';
 import { HexShopPanel } from './HexShopPanel';
 import { GraveyardHexPanel } from './GraveyardHexPanel';
+import { SabotagePanel } from './SabotagePanel';
 import { getGameOption } from '@/data/gameOptions';
 import { getEnchanterHexStock, getShadowMarketHexStock, isLocationHexed, getHexById } from '@/data/hexes';
 import type { ActiveLocationHex } from '@/data/hexes';
