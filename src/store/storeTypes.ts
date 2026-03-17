@@ -163,6 +163,8 @@ export interface GameStore extends GameState {
   // Debug actions (developer panel)
   setDebugWeather: (type: string) => void;
   setDebugFestival: (festivalId: string | null) => void;
+  // Player Bounties / Sabotage
+  sabotagePlayer: (saboteurId: string, targetId: string, effectType: string, effectValue: number, cost: number) => void;
 }
 
 // Zustand set/get function types
