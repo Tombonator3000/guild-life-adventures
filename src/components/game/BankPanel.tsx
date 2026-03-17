@@ -55,6 +55,7 @@ type BankView = 'main' | 'broker' | 'loans';
 
 export function BankPanel({
   player,
+  priceModifier = 1.0,
   depositToBank,
   withdrawFromBank,
   buyStock,
