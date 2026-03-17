@@ -5,7 +5,20 @@
 
 ---
 
-## 2026-03-17T10:00Z — Gameplay improvements: 5 new features
+## 2026-03-17T12:00Z — Feature: Changelog / What's New screen
+
+### Summary
+
+Added a versioned changelog screen accessible from a "What's New" button on the title screen. Shows 9 versions (v0.1.0 through v0.9.0) with categorized entries (Features, Fixes, AI, Online, Visual). Each version is collapsible; latest is open by default. Uses parchment-panel styling and ScrollArea for overflow.
+
+### Changes
+
+- **src/components/screens/ChangelogScreen.tsx** — NEW: Versioned changelog with icon-coded entry types (Sparkles=feature, Bug=fix, Swords=AI, Globe=online, Palette=visual). Collapsible version blocks. Legend at top.
+- **src/components/screens/TitleScreen.tsx** — Added "What's New" button (ScrollText icon) in new row below tertiary buttons. Lazy-loads ChangelogScreen. Added `showChangelog` state.
+
+---
+
+
 
 ### Summary
 
