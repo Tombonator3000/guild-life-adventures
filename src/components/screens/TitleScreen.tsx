@@ -449,6 +449,17 @@ export function TitleScreen() {
         </Suspense>
       )}
 
+      {/* Changelog / What's New */}
+      {showChangelog && (
+        <Suspense fallback={null}>
+          <ChangelogScreen onClose={() => setShowChangelog(false)} />
+        </Suspense>
+      )}
+        <Suspense fallback={null}>
+          <CreditsScreen onClose={() => setShowCredits(false)} />
+        </Suspense>
+      )}
+
       {/* iOS PWA Install Guide */}
       {showIOSGuide && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
