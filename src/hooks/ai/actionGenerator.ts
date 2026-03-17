@@ -82,6 +82,47 @@ function applyPersonalityWeights(actions: AIAction[], personality: AIPersonality
 }
 
 /**
+ * Dynamic personality scaling: adjust gambling/risk weights based on relative wealth position.
+ * Behind = more aggressive/gambling. Ahead = more cautious/conservative.
+ * Only modifies a COPY of weights for this turn — doesn't mutate the personality definition.
+ */
+function getDynamicPersonality(personality: AIPersonality, player: Player, rivals: Player[]): AIPersonality {
+  if (rivals.length === 0) return personality;
+
+  const myWealth = player.gold + player.savings + player.investments;
+  const avgRivalWealth = rivals.reduce((sum, r) => sum + r.gold + r.savings + r.investments, 0) / rivals.length;
+
+  if (avgRivalWealth <= 0) return personality;
+
+  const wealthRatio = myWealth / Math.max(1, avgRivalWealth);
+
+  // Behind (ratio < 0.7): boost gambling +30%, rivalry +20%
+  // Ahead (ratio > 1.5): reduce gambling -30%, boost caution +20%
+  // Middle: no change
+  let gamblingMod = 1.0;
+  let rivalryMod = 1.0;
+  let cautionMod = 1.0;
+
+  if (wealthRatio < 0.7) {
+    gamblingMod = 1.3;
+    rivalryMod = 1.2;
+  } else if (wealthRatio > 1.5) {
+    gamblingMod = 0.7;
+    cautionMod = 1.2;
+  }
+
+  return {
+    ...personality,
+    weights: {
+      ...personality.weights,
+      gambling: personality.weights.gambling * gamblingMod,
+      rivalry: personality.weights.rivalry * rivalryMod,
+      caution: personality.weights.caution * cautionMod,
+    },
+  };
+}
+
+/**
  * Apply time-budget awareness: boost quick actions late in turn,
  * boost high-value actions early in turn.
  */
