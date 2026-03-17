@@ -682,12 +682,14 @@ function seizeDurables(p: Player, remaining: number, details: string[]): number 
   return recovered;
 }
 
-/** Process loan interest and forced repayment on default (Jones-style) */
-function processLoans(p: Player, msgs: string[], newsEvents: PlayerNewsEventData[], stockPrices: Record<string, number>): void {
+/** Process loan interest and forced repayment on default (Jones-style)
+ *  Dynamic interest: loan rate scales with priceModifier (boom = higher interest on loans) */
+function processLoans(p: Player, msgs: string[], newsEvents: PlayerNewsEventData[], stockPrices: Record<string, number>, priceModifier: number = 1.0): void {
   if (p.loanAmount <= 0) return;
 
-  // LOAN_INTEREST_RATE weekly interest, capped at LOAN_INTEREST_CAP
-  const interest = Math.ceil(p.loanAmount * LOAN_INTEREST_RATE);
+  // Dynamic loan interest: base rate × priceModifier (boom = more expensive loans)
+  const effectiveLoanRate = LOAN_INTEREST_BASE_RATE * priceModifier;
+  const interest = Math.ceil(p.loanAmount * effectiveLoanRate);
   p.loanAmount = Math.min(p.loanAmount + interest, LOAN_INTEREST_CAP);
   p.loanWeeksRemaining = Math.max(0, p.loanWeeksRemaining - 1);
 
