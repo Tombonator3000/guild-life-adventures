@@ -442,14 +442,14 @@ export function generateActions(
   const weakestGoal = getWeakestGoal(progress);
   const currentLocation = player.currentLocation;
 
-  // Get personality for this AI player (with dynamic wealth-based scaling)
-  const basePersonality = getAIPersonality(player.id);
-  const personality = getDynamicPersonality(basePersonality, player, rivals);
-
   // C4: Get rival players for competitive awareness
   const state = useGameStore.getState();
   const allPlayers = state.players;
   const rivals = allPlayers.filter(p => p.id !== player.id && !p.isGameOver);
+
+  // Get personality for this AI player (with dynamic wealth-based scaling)
+  const basePersonality = getAIPersonality(player.id);
+  const personality = getDynamicPersonality(basePersonality, player, rivals);
 
   // Weather and festival context
   // Weather uses movementCostExtra: additive hours per location step
