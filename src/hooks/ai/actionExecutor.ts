@@ -245,8 +245,28 @@ const ACTION_HANDLERS: Record<AIActionType, ActionHandler> = {
   'end-turn': handleEndTurn,
 };
 
+// ─── Trash Talk Cooldown Tracking ────────────────────────────────────────
+const lastTrashTalkTime: Record<string, number> = {};
+
+/** Map action types to trash talk triggers */
+const ACTION_TO_TRASH_TALK: Partial<Record<AIActionType, TrashTalkTrigger>> = {
+  'work': 'work-shift',
+  'buy-equipment': 'buy-equipment',
+  'explore-dungeon': 'dungeon-clear',
+  'complete-quest': 'quest-complete',
+  'study': 'study',
+  'graduate': 'graduate',
+  'deposit-bank': 'deposit-bank',
+  'buy-stock': 'buy-stock',
+  'cast-curse': 'cast-curse',
+  'take-quest': 'take-quest',
+  'apply-job': 'apply-job',
+  'move-housing': 'move-housing',
+};
+
 /**
  * Execute a single AI action by dispatching to the appropriate handler.
+ * On success, may trigger personality-based trash talk via banterStore.
  *
  * @returns true if the action succeeded, false otherwise
  */
@@ -254,7 +274,31 @@ export function executeAIAction(player: Player, action: AIAction, store: StoreAc
   const handler = ACTION_HANDLERS[action.type];
   if (!handler) return false;
   try {
-    return handler(player, action, store);
+    const success = handler(player, action, store);
+
+    // Trigger AI trash talk on successful actions
+    if (success) {
+      const trigger = ACTION_TO_TRASH_TALK[action.type];
+      if (trigger) {
+        const now = Date.now();
+        const lastTime = lastTrashTalkTime[player.id] || 0;
+        if (now - lastTime > TRASH_TALK_COOLDOWN) {
+          const personalityId = AI_ID_TO_PERSONALITY[player.id] || 'grimwald';
+          const line = getTrashTalkLine(personalityId, trigger);
+          if (line) {
+            lastTrashTalkTime[player.id] = now;
+            // Use player's current location as the banter source
+            useBanterStore.getState().setBanter(
+              { text: line.text, mood: line.mood },
+              player.currentLocation,
+              player.name,
+            );
+          }
+        }
+      }
+    }
+
+    return success;
   } catch (err) {
     console.error(`[AI] Action '${action.type}' failed for ${player.name}:`, err);
     return false;
