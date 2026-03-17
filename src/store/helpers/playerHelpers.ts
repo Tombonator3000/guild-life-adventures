@@ -293,5 +293,35 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
         }),
       }));
     },
+
+    /**
+     * Sabotage a rival player (Player Bounties feature).
+     * Effects: gold-theft, time-loss, clothing-damage.
+     * Cost is deducted from the saboteur.
+     */
+    sabotagePlayer: (saboteurId: string, targetId: string, effectType: string, effectValue: number, cost: number) => {
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id === saboteurId) {
+            return { ...p, gold: p.gold - cost };
+          }
+          if (p.id === targetId) {
+            switch (effectType) {
+              case 'gold-theft': {
+                const stolen = Math.min(effectValue, p.gold);
+                return { ...p, gold: p.gold - stolen };
+              }
+              case 'time-loss':
+                return { ...p, timeRemaining: Math.max(0, p.timeRemaining - effectValue) };
+              case 'clothing-damage':
+                return { ...p, clothingCondition: Math.max(0, p.clothingCondition - effectValue) };
+              default:
+                return p;
+            }
+          }
+          return p;
+        }),
+      }));
+    },
   };
 }

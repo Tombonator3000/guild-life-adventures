@@ -33,6 +33,7 @@ import { CavePanel } from './CavePanel';
 import { GraveyardPanel } from './GraveyardPanel';
 import { HexShopPanel } from './HexShopPanel';
 import { GraveyardHexPanel } from './GraveyardHexPanel';
+import { SabotagePanel } from './SabotagePanel';
 import { getGameOption } from '@/data/gameOptions';
 import { getEnchanterHexStock, getShadowMarketHexStock, isLocationHexed, getHexById } from '@/data/hexes';
 import type { ActiveLocationHex } from '@/data/hexes';
@@ -431,13 +432,14 @@ function academyTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function bankTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, depositToBank, withdrawFromBank, buyStock, sellStock, takeLoan, repayLoan, stockPrices, stockPriceHistory } = ctx;
+  const { player, priceModifier, depositToBank, withdrawFromBank, buyStock, sellStock, takeLoan, repayLoan, stockPrices, stockPriceHistory } = ctx;
   return [{
     id: 'banking',
     label: 'Services',
     content: (
       <BankPanel
         player={player}
+        priceModifier={priceModifier}
         depositToBank={depositToBank}
         withdrawFromBank={withdrawFromBank}
         buyStock={buyStock}
@@ -692,6 +694,28 @@ function shadowMarketTabs(ctx: LocationTabContext): LocationTab[] {
           availableHexes={shadowHexes}
           showDefense={false}
           variant="shadow-market"
+        />
+      ),
+    });
+  }
+
+  // Sabotage tab (Player Bounties) — always available when there are rivals
+  if (ctx.players.filter(p => !p.isGameOver && p.id !== player.id).length > 0) {
+    tabs.push({
+      id: 'sabotage',
+      label: 'Sabotage',
+      content: (
+        <SabotagePanel
+          player={player}
+          rivals={ctx.players.filter(p => !p.isGameOver && p.id !== player.id)}
+          priceModifier={priceModifier}
+          onSabotage={(targetId, option) => {
+            // Import store lazily to avoid circular deps — locationTabs already imports store types
+            import('@/store/gameStore').then(({ useGameStore }) => {
+              useGameStore.getState().sabotagePlayer(player.id, targetId, option.effect.type, option.effect.value, option.cost);
+            });
+          }}
+          spendTime={spendTime}
         />
       ),
     });

@@ -5,6 +5,34 @@
 
 ---
 
+## 2026-03-17T10:00Z — Gameplay improvements: 5 new features
+
+### Summary
+
+Implemented 5 gameplay improvements from the analysis session:
+
+1. **Dynamic Bank Interest** — Savings/investment rates and loan interest now scale with `priceModifier` (boom = higher rates, recession = lower). Visible in Bank UI with real-time rate display.
+2. **AI Trash Talk** — AI opponents trigger personality-specific banter bubbles (18% chance, 15s cooldown) after successful actions. Each of the 4 personalities (Grimwald/Seraphina/Thornwick/Morgath) has unique lines tied to their character.
+3. **AI Strategic Location Targeting** — Hard AI now actively races to block rivals at key locations (academy when rival focuses education, bank/guild-hall for wealth/career).
+4. **AI Dynamic Personality Scaling** — AI gambling/rivalry/caution weights adjust based on relative wealth position. Behind = more aggressive (+30% gambling), Ahead = more cautious (-30% gambling, +20% caution).
+5. **Player Bounties (Sabotage)** — New "Sabotage" tab at Shadow Market. Hire operatives against rivals: Pickpocket (steal 30g, 50g cost), Distraction (-6h time, 80g cost), Mudslinger (-25 clothing, 60g cost). Costs scale with market prices.
+
+### Files Changed
+
+- `src/store/helpers/weekEndHelpers.ts` — Dynamic interest rates: `SAVINGS_WEEKLY_BASE_RATE`, `INVESTMENT_WEEKLY_BASE_RATE`, `LOAN_INTEREST_BASE_RATE` × `priceModifier`. Added `priceModifier` to `WeekEndContext`.
+- `src/components/game/BankPanel.tsx` — Shows current dynamic rates (savings %, loan %) with color-coded market condition indicator.
+- `src/data/aiTrashTalk.ts` — NEW: 40+ personality-specific one-liners mapped to action triggers. Grimwald (balanced), Seraphina (scholarly), Thornwick (mercantile), Morgath (aggressive).
+- `src/hooks/ai/actionExecutor.ts` — Integrates trash talk system: maps action types to triggers, respects cooldown, fires via banterStore.
+- `src/hooks/ai/actions/rivalryActions.ts` — NEW: `generateStrategicLocationBlocking` sub-generator for hard AI.
+- `src/hooks/ai/actionGenerator.ts` — NEW: `getDynamicPersonality()` scales gambling/rivalry/caution weights based on wealth ratio vs rivals.
+- `src/components/game/SabotagePanel.tsx` — NEW: Sabotage UI with 3 options per rival.
+- `src/store/helpers/playerHelpers.ts` — NEW: `sabotagePlayer` store action (gold-theft, time-loss, clothing-damage).
+- `src/store/storeTypes.ts` — Added `sabotagePlayer` to `GameStore` interface.
+- `src/components/game/locationTabs.tsx` — Added SabotagePanel as new tab in Shadow Market.
+
+---
+
+
 ## 2026-03-13T12:00Z — Location backgrounds: sketch → photo-realistic
 
 ### Summary

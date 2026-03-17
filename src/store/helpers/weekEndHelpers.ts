@@ -78,12 +78,12 @@ const FORCED_SELL_RATE = 0.8;
 const LIQUIDATION_RATE = 0.3;
 
 // Finances
-/** Weekly return rate on investments (compound) */
-const INVESTMENT_WEEKLY_RATE = 0.005;
-/** Weekly interest rate on savings (compound) */
-const SAVINGS_WEEKLY_RATE = 0.001;
-/** Weekly interest rate charged on outstanding loans */
-const LOAN_INTEREST_RATE = 0.10;
+/** BASE weekly return rate on investments (compound) — scaled by priceModifier */
+const INVESTMENT_WEEKLY_BASE_RATE = 0.005;
+/** BASE weekly interest rate on savings (compound) — scaled by priceModifier */
+const SAVINGS_WEEKLY_BASE_RATE = 0.001;
+/** BASE weekly interest rate charged on outstanding loans — scaled by priceModifier */
+const LOAN_INTEREST_BASE_RATE = 0.10;
 /** Maximum loan balance after interest (prevents infinite growth) */
 const LOAN_INTEREST_CAP = 2000;
 
@@ -160,6 +160,8 @@ interface WeekEndContext {
   weather: WeatherState;
   festival: Festival | null;
   stockPrices: Record<string, number>;
+  /** Current price modifier for dynamic interest rates */
+  priceModifier: number;
 }
 
 // ============================================================
@@ -520,17 +522,23 @@ function processHousing(p: Player, msgs: string[], newsEvents: PlayerNewsEventDa
   }
 }
 
-/** Process investments, savings interest, and stock dividends (deterministic — always runs) */
-function processFinances(p: Player, stockPrices: Record<string, number>, msgs: string[]): void {
-  // Investment returns (INVESTMENT_WEEKLY_RATE per week)
+/** Process investments, savings interest, and stock dividends (deterministic — always runs)
+ *  Dynamic interest: rates scale with priceModifier (boom = higher rates, recession = lower) */
+function processFinances(p: Player, stockPrices: Record<string, number>, msgs: string[], priceModifier: number = 1.0): void {
+  // Dynamic rate scaling: priceModifier 0.7–1.3 maps to 0.7x–1.3x rate multiplier
+  const rateMultiplier = priceModifier;
+
+  // Investment returns (base rate × priceModifier per week)
   if (p.investments > 0) {
-    const returns = Math.floor(p.investments * INVESTMENT_WEEKLY_RATE);
+    const effectiveRate = INVESTMENT_WEEKLY_BASE_RATE * rateMultiplier;
+    const returns = Math.floor(p.investments * effectiveRate);
     p.investments += returns;
   }
 
-  // Savings interest (SAVINGS_WEEKLY_RATE per week)
+  // Savings interest (base rate × priceModifier per week)
   if (p.savings > 0) {
-    const interest = Math.floor(p.savings * SAVINGS_WEEKLY_RATE);
+    const effectiveRate = SAVINGS_WEEKLY_BASE_RATE * rateMultiplier;
+    const interest = Math.floor(p.savings * effectiveRate);
     p.savings += interest;
   }
 
@@ -674,12 +682,14 @@ function seizeDurables(p: Player, remaining: number, details: string[]): number 
   return recovered;
 }
 
-/** Process loan interest and forced repayment on default (Jones-style) */
-function processLoans(p: Player, msgs: string[], newsEvents: PlayerNewsEventData[], stockPrices: Record<string, number>): void {
+/** Process loan interest and forced repayment on default (Jones-style)
+ *  Dynamic interest: loan rate scales with priceModifier (boom = higher interest on loans) */
+function processLoans(p: Player, msgs: string[], newsEvents: PlayerNewsEventData[], stockPrices: Record<string, number>, priceModifier: number = 1.0): void {
   if (p.loanAmount <= 0) return;
 
-  // LOAN_INTEREST_RATE weekly interest, capped at LOAN_INTEREST_CAP
-  const interest = Math.ceil(p.loanAmount * LOAN_INTEREST_RATE);
+  // Dynamic loan interest: base rate × priceModifier (boom = more expensive loans)
+  const effectiveLoanRate = LOAN_INTEREST_BASE_RATE * priceModifier;
+  const interest = Math.ceil(p.loanAmount * effectiveLoanRate);
   p.loanAmount = Math.min(p.loanAmount + interest, LOAN_INTEREST_CAP);
   p.loanWeeksRemaining = Math.max(0, p.loanWeeksRemaining - 1);
 
@@ -856,9 +866,9 @@ function processPlayerWeekEnd(p: Player, ctx: WeekEndContext, msgs: string[], ne
   processWeatherOnPlayer(p, ctx.weather, msgs);
   processFestivalOnPlayer(p, ctx.festival);
   processHousing(p, msgs, newsEvents);
-  processFinances(p, ctx.stockPrices, msgs); // Interest/investments/dividends — always runs
+  processFinances(p, ctx.stockPrices, msgs, ctx.priceModifier); // Interest/investments/dividends — dynamic rates
   processOngoingSickness(p, msgs); // Ongoing drain — always runs if sick
-  processLoans(p, msgs, newsEvents, ctx.stockPrices);
+  processLoans(p, msgs, newsEvents, ctx.stockPrices, ctx.priceModifier); // Dynamic loan interest
   processLeisure(p, ctx.newWeek, msgs);
   processAging(p, ctx.newWeek, msgs);
   updateRentTracking(p);
@@ -1102,6 +1112,7 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
         weather,
         festival,
         stockPrices: state.stockPrices,
+        priceModifier: finalPriceModifier,
       };
 
       // --- Step 2: Process all players ---
