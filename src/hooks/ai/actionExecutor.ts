@@ -16,6 +16,9 @@ import { calculatePathDistance, getPath } from '@/data/locations';
 import { triggerAIAnimation } from '@/hooks/useAIAnimationBridge';
 import { peerManager } from '@/network/PeerManager';
 import { useGameStore } from '@/store/gameStore';
+import { useBanterStore } from '@/store/banterStore';
+import { getTrashTalkLine, TRASH_TALK_COOLDOWN, type TrashTalkTrigger } from '@/data/aiTrashTalk';
+import { AI_ID_TO_PERSONALITY } from './types';
 
 import type { AIAction, AIActionType } from './types';
 import {
