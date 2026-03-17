@@ -455,10 +455,6 @@ export function TitleScreen() {
           <ChangelogScreen onClose={() => setShowChangelog(false)} />
         </Suspense>
       )}
-        <Suspense fallback={null}>
-          <CreditsScreen onClose={() => setShowCredits(false)} />
-        </Suspense>
-      )}
 
       {/* iOS PWA Install Guide */}
       {showIOSGuide && (
