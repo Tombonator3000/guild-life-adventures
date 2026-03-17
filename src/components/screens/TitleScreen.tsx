@@ -1,6 +1,6 @@
 import { lazy, Suspense, useRef, useState, useMemo } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { Save, Trash2, Volume2, VolumeX, Download, Settings, Info, Share, Plus, X, BookOpen } from 'lucide-react';
+import { Save, Trash2, Volume2, VolumeX, Download, Settings, Info, Share, Plus, X, BookOpen, ScrollText } from 'lucide-react';
 import titleDay from '@/assets/title-day.jpg';
 import titleNight from '@/assets/title-night.jpg';
 import { activateDevMode } from '@/hooks/useDevMode';
@@ -19,6 +19,7 @@ import { useTranslation } from '@/i18n';
 const OptionsMenu = lazy(() => import('@/components/game/OptionsMenu').then(m => ({ default: m.OptionsMenu })));
 const UserManual = lazy(() => import('@/components/game/UserManual').then(m => ({ default: m.UserManual })));
 const CreditsScreen = lazy(() => import('@/components/screens/CreditsScreen').then(m => ({ default: m.CreditsScreen })));
+const ChangelogScreen = lazy(() => import('@/components/screens/ChangelogScreen').then(m => ({ default: m.ChangelogScreen })));
 
 interface StarDatum { left: string; top: string; size: string; duration: string; delay: string; }
 interface EmberDatum { left: string; bottom: string; duration: string; delay: string; opacity: string; tx: string; }
@@ -45,6 +46,7 @@ export function TitleScreen() {
   const [showOptions, setShowOptions] = useState(false);
   const [showManual, setShowManual] = useState(false);
   const [showCredits, setShowCredits] = useState(false);
+  const [showChangelog, setShowChangelog] = useState(false);
   const [slots, setSlots] = useState<SaveSlotInfo[]>([]);
   const devClickCount = useRef(0);
   const devClickTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -316,6 +318,27 @@ export function TitleScreen() {
             ))}
           </div>
 
+          {/* What's New button */}
+          <div className="flex justify-center w-full mt-3">
+            <button
+              onClick={() => setShowChangelog(true)}
+              className="flex items-center gap-1.5 ts-tertiary-btn py-1.5 px-4"
+              style={{
+                fontFamily: "'Cinzel', serif",
+                fontSize: '0.58rem',
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase' as const,
+                color: '#f2e8cc',
+                background: 'transparent',
+                border: '1px solid rgba(242,232,204,0.1)',
+                opacity: 0.55,
+              }}
+            >
+              <ScrollText className="w-3 h-3 shrink-0" />
+              <span>What's New</span>
+            </button>
+          </div>
+
           {/* Credit */}
           <p className="mt-6 text-center" style={{ fontFamily: "'Crimson Text', Georgia, serif", fontStyle: 'italic', fontSize: '0.72rem', color: '#f2e8cc', opacity: 0.25, letterSpacing: '0.08em' }}>
             {t('title.inspiredBy')}
@@ -423,6 +446,13 @@ export function TitleScreen() {
       {showCredits && (
         <Suspense fallback={null}>
           <CreditsScreen onClose={() => setShowCredits(false)} />
+        </Suspense>
+      )}
+
+      {/* Changelog / What's New */}
+      {showChangelog && (
+        <Suspense fallback={null}>
+          <ChangelogScreen onClose={() => setShowChangelog(false)} />
         </Suspense>
       )}
 
