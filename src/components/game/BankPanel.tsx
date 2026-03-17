@@ -167,11 +167,29 @@ export function BankPanel({
           <div className="font-display text-sm font-bold text-[#3d2a14]">{t('panelBank.loanSystem')}</div>
           <div className="text-xs text-[#6b5a42]">{t('panelBank.weeklyInterest')}</div>
         </div>
+        {/* Dynamic rate indicator */}
+        <div className="bg-[#d4c4a0] border border-[#8b7355] rounded px-2 py-1 mb-2">
+          <div className="flex justify-between text-xs">
+            <span className="text-[#6b5a42]">Current Loan Rate:</span>
+            <span className={`font-bold ${priceModifier > 1 ? 'text-[#8b4a4a]' : 'text-[#2a7a2a]'}`}>
+              {(10 * priceModifier).toFixed(1)}%/wk
+            </span>
+          </div>
+          <div className="flex justify-between text-xs">
+            <span className="text-[#6b5a42]">Savings Rate:</span>
+            <span className={`font-bold ${priceModifier > 1 ? 'text-[#2a7a2a]' : 'text-[#8b6914]'}`}>
+              {(0.1 * priceModifier).toFixed(2)}%/wk
+            </span>
+          </div>
+          <div className="text-xs text-[#8b6914] italic mt-0.5">
+            Rates follow market conditions
+          </div>
+        </div>
         {hasLoan ? (
           <>
             <JonesInfoRow label={t('panelBank.currentDebt')} value={`${player.loanAmount}g`} valueClass="text-red-600" darkText largeText />
             <JonesInfoRow label={t('panelBank.weeksRemaining')} value={`${player.loanWeeksRemaining}`} darkText largeText />
-            <JonesInfoRow label={t('panelBank.weeklyInterest')} value="10%" darkText largeText />
+            <JonesInfoRow label={t('panelBank.weeklyInterest')} value={`${(10 * priceModifier).toFixed(1)}%`} darkText largeText />
 
             <JonesSectionHeader title={t('panelBank.repayLoan').toUpperCase()} />
             {[50, 100, 250].map(amount => {
