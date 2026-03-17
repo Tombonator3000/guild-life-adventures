@@ -46,6 +46,7 @@ export function TitleScreen() {
   const [showOptions, setShowOptions] = useState(false);
   const [showManual, setShowManual] = useState(false);
   const [showCredits, setShowCredits] = useState(false);
+  const [showChangelog, setShowChangelog] = useState(false);
   const [slots, setSlots] = useState<SaveSlotInfo[]>([]);
   const devClickCount = useRef(0);
   const devClickTimer = useRef<ReturnType<typeof setTimeout>>();
