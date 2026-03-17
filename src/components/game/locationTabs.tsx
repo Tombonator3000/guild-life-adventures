@@ -710,10 +710,10 @@ function shadowMarketTabs(ctx: LocationTabContext): LocationTab[] {
           rivals={ctx.players.filter(p => !p.isGameOver && p.id !== player.id)}
           priceModifier={priceModifier}
           onSabotage={(targetId, option) => {
-            const store = (ctx as unknown as { sabotagePlayer?: GameStore['sabotagePlayer'] });
-            // Use the store directly since it's not on LocationTabContext
-            const { sabotagePlayer } = require('@/store/gameStore').useGameStore.getState();
-            sabotagePlayer(player.id, targetId, option.effect.type, option.effect.value, option.cost);
+            // Import store lazily to avoid circular deps — locationTabs already imports store types
+            import('@/store/gameStore').then(({ useGameStore }) => {
+              useGameStore.getState().sabotagePlayer(player.id, targetId, option.effect.type, option.effect.value, option.cost);
+            });
           }}
           spendTime={spendTime}
         />
