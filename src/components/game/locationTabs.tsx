@@ -431,13 +431,14 @@ function academyTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function bankTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, depositToBank, withdrawFromBank, buyStock, sellStock, takeLoan, repayLoan, stockPrices, stockPriceHistory } = ctx;
+  const { player, priceModifier, depositToBank, withdrawFromBank, buyStock, sellStock, takeLoan, repayLoan, stockPrices, stockPriceHistory } = ctx;
   return [{
     id: 'banking',
     label: 'Services',
     content: (
       <BankPanel
         player={player}
+        priceModifier={priceModifier}
         depositToBank={depositToBank}
         withdrawFromBank={withdrawFromBank}
         buyStock={buyStock}
