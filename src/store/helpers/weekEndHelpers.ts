@@ -866,9 +866,9 @@ function processPlayerWeekEnd(p: Player, ctx: WeekEndContext, msgs: string[], ne
   processWeatherOnPlayer(p, ctx.weather, msgs);
   processFestivalOnPlayer(p, ctx.festival);
   processHousing(p, msgs, newsEvents);
-  processFinances(p, ctx.stockPrices, msgs); // Interest/investments/dividends — always runs
+  processFinances(p, ctx.stockPrices, msgs, ctx.priceModifier); // Interest/investments/dividends — dynamic rates
   processOngoingSickness(p, msgs); // Ongoing drain — always runs if sick
-  processLoans(p, msgs, newsEvents, ctx.stockPrices);
+  processLoans(p, msgs, newsEvents, ctx.stockPrices, ctx.priceModifier); // Dynamic loan interest
   processLeisure(p, ctx.newWeek, msgs);
   processAging(p, ctx.newWeek, msgs);
   updateRentTracking(p);
