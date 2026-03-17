@@ -160,6 +160,8 @@ interface WeekEndContext {
   weather: WeatherState;
   festival: Festival | null;
   stockPrices: Record<string, number>;
+  /** Current price modifier for dynamic interest rates */
+  priceModifier: number;
 }
 
 // ============================================================
