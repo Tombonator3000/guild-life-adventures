@@ -19,6 +19,7 @@ import { useTranslation } from '@/i18n';
 const OptionsMenu = lazy(() => import('@/components/game/OptionsMenu').then(m => ({ default: m.OptionsMenu })));
 const UserManual = lazy(() => import('@/components/game/UserManual').then(m => ({ default: m.UserManual })));
 const CreditsScreen = lazy(() => import('@/components/screens/CreditsScreen').then(m => ({ default: m.CreditsScreen })));
+const ChangelogScreen = lazy(() => import('@/components/screens/ChangelogScreen').then(m => ({ default: m.ChangelogScreen })));
 
 interface StarDatum { left: string; top: string; size: string; duration: string; delay: string; }
 interface EmberDatum { left: string; bottom: string; duration: string; delay: string; opacity: string; tx: string; }
