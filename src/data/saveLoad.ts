@@ -5,7 +5,7 @@
 
 import type { GameState } from '@/types/game.types';
 
-const SAVE_VERSION = 6;
+const SAVE_VERSION = 7;
 const STORAGE_PREFIX = 'guild-life-';
 const AUTO_SAVE_KEY = `${STORAGE_PREFIX}autosave`;
 const SAVE_SLOT_KEY = (slot: number) => `${STORAGE_PREFIX}save-${slot}`;
