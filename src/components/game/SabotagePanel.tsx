@@ -47,8 +47,8 @@ const SABOTAGE_OPTIONS: SabotageOption[] = [
   },
   {
     id: 'mudslinger',
-    label: 'Send the Mudslinger',
-    description: 'Their clothes "accidentally" get ruined.',
+    label: 'Hire Shadowfingers: Mudslinger',
+    description: "Shadowfingers 'accidentally' ruins their clothes.",
     cost: 60,
     timeCost: 1,
     effect: { type: 'clothing-damage', value: 25 },
