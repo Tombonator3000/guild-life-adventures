@@ -31,8 +31,8 @@ export interface SabotageOption {
 const SABOTAGE_OPTIONS: SabotageOption[] = [
   {
     id: 'pickpocket',
-    label: 'Hire a Pickpocket',
-    description: 'A street urchin lifts some gold from their purse.',
+    label: 'Hire Shadowfingers: Pickpocket',
+    description: 'Shadowfingers lifts some gold from their purse.',
     cost: 50,
     timeCost: 1,
     effect: { type: 'gold-theft', value: 30 },
