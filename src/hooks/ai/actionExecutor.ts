@@ -127,6 +127,8 @@ export interface StoreActions {
   forgeRepairAppliance: (playerId: string, applianceId: string) => number;
   // Salary
   requestRaise: (playerId: string) => { success: boolean; newWage?: number; message: string };
+  // Reputation
+  purchaseReputationUnlock: (playerId: string, unlockId: string, cost: number, effectType: string, effectValue: number, timeCost: number) => void;
   endTurn: () => void;
 }
 
