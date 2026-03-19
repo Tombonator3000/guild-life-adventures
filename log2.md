@@ -5,6 +5,45 @@
 
 ---
 
+## 2026-03-19T11:00Z — Feature: Fame & Infamy Reputation System
+
+### Summary
+
+Full two-axis reputation system (Fame 0-100, Infamy 0-100) with gameplay effects:
+- **Fame triggers**: quest completion (+5), dungeon floor clear (+4), degree earned (+3), work shift (+0.5)
+- **Infamy triggers**: sabotage (+5), hex casting (+4), dark ritual (+6)
+- **Price effects**: Fame = discount at legit shops (up to 10%), Infamy = discount at shady shops (up to 12%)
+- **NPC greetings**: 25+ reputation-based greeting overrides across all locations
+- **Exclusive services**: 8 reputation-locked items at various locations (Hero's Feast, Shadow Contacts, etc.)
+- **Renown tab**: Auto-injected at locations with unlocks, shows fame/infamy bars + available services
+- **PlayersTab**: Shows dominant reputation (⭐ or 💀) when >= 20
+- **AI integration**: Passive reputation accumulation + purchaseReputationUnlock handler
+- **Save migration**: v6→v7 adds fame, infamy, purchasedReputationUnlocks
+
+### Files Changed
+
+- `src/data/reputation.ts` — NEW: Reputation data module (tiers, triggers, price multipliers, NPC greetings, exclusive unlocks)
+- `src/types/game.types.ts` — Added fame, infamy, purchasedReputationUnlocks to Player
+- `src/store/storeTypes.ts` — Added modifyReputation, purchaseReputationUnlock actions
+- `src/store/helpers/playerHelpers.ts` — Implemented reputation store actions + sabotage infamy
+- `src/store/gameStore.ts` — Added fame/infamy/purchasedReputationUnlocks to createPlayer
+- `src/data/saveLoad.ts` — Save version 7 migration
+- `src/components/game/ReputationPanel.tsx` — NEW: Reputation display + exclusive offers UI
+- `src/components/game/LocationShell.tsx` — Reputation-based NPC greeting overrides
+- `src/components/game/locationTabs.tsx` — Auto-inject Renown tab at locations with unlocks
+- `src/components/game/tabs/PlayersTab.tsx` — Show reputation indicator
+- `src/store/helpers/questHelpers.ts` — Quest completion fame
+- `src/store/helpers/workEducationHelpers.ts` — Work shift fame, degree fame
+- `src/store/helpers/economy/equipmentHelpers.ts` — Dungeon clear fame
+- `src/store/helpers/hexHelpers.ts` — Hex casting infamy, dark ritual infamy
+- `src/hooks/ai/types.ts` — Added buy-reputation-unlock action type
+- `src/hooks/ai/handlers/resourceHandlers.ts` — handleBuyReputationUnlock handler
+- `src/hooks/ai/handlers/index.ts` — Export new handler
+- `src/hooks/ai/actionExecutor.ts` — Register handler + StoreActions update
+- `src/hooks/useGrimwaldAI.ts` — Wire purchaseReputationUnlock to store actions
+
+---
+
 ## 2026-03-19T10:00Z — UX: SabotagePanel dropdown redesign
 
 ### Summary
