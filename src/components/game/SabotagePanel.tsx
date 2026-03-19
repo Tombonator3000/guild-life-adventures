@@ -39,8 +39,8 @@ const SABOTAGE_OPTIONS: SabotageOption[] = [
   },
   {
     id: 'distraction',
-    label: 'Arrange a Distraction',
-    description: 'Thugs waylay them, costing precious hours.',
+    label: 'Hire Shadowfingers: Distraction',
+    description: 'Shadowfingers waylays them, costing precious hours.',
     cost: 80,
     timeCost: 1,
     effect: { type: 'time-loss', value: 6 },
