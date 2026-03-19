@@ -5,6 +5,18 @@
 
 ---
 
+## 2026-03-19T10:00Z — UX: SabotagePanel dropdown redesign
+
+### Summary
+
+Redesigned SabotagePanel from repeated per-rival sections to a single dropdown target selector. Uses shadcn Select component with parchment styling. Player picks a rival from dropdown, then sees the 3 sabotage options + rival stats for that target only. Much cleaner UI, especially with 4 AI opponents.
+
+### Changes
+
+- **src/components/game/SabotagePanel.tsx** — Replaced map-over-rivals layout with `<Select>` dropdown. Added `useState` for selected rival. Shows option descriptions inline. Default-selects first alive rival.
+
+---
+
 ## 2026-03-17T12:00Z — Feature: Changelog / What's New screen
 
 ### Summary
