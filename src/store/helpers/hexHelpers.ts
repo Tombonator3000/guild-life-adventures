@@ -276,6 +276,7 @@ export function createHexActions(set: SetFn, get: GetFn) {
                 gold: p.gold - cost,
                 timeRemaining: Math.max(0, p.timeRemaining - 4),
                 hexScrolls: addHexScroll(p.hexScrolls, hex.id),
+                infamy: Math.min(100, (p.infamy ?? 0) + 6), // Dark ritual gives infamy
               }
             : p
         ),
