@@ -157,7 +157,7 @@ export function LocationShell({
               className="mt-1.5 text-[11px] italic text-center leading-tight px-1"
               style={{ color: '#8b7355' }}
             >
-              &ldquo;{npc.greeting}&rdquo;
+              &ldquo;{reputationGreeting ?? npc.greeting}&rdquo;
             </div>
             {/* Item Preview Panel - below NPC info */}
             <ItemPreviewPanel accentColor={npc.accentColor} />
