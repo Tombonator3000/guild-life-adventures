@@ -244,6 +244,7 @@ const ACTION_HANDLERS: Record<AIActionType, ActionHandler> = {
   'request-raise': handleRequestRaise,
   'dispel-hex': handleDispelHex,
   'dark-ritual': handleDarkRitual,
+  'buy-reputation-unlock': handleBuyReputationUnlock,
   'end-turn': handleEndTurn,
 };
 
