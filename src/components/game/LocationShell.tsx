@@ -3,7 +3,7 @@
 // Every location uses the same visual structure with location-specific frame colors
 // Footer bar shows work shift button when player has a job at this location
 
-import { useState, useEffect, type ReactNode, useCallback, isValidElement } from 'react';
+import { useState, useEffect, useMemo, type ReactNode, useCallback, isValidElement } from 'react';
 import type { LocationNPC } from '@/data/npcs';
 import { NpcPortrait } from './NpcPortrait';
 import { useBanter } from '@/hooks/useBanter';
@@ -12,6 +12,7 @@ import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import type { LocationId } from '@/types/game.types';
 import { ItemPreviewProvider, ItemPreviewPanel } from './ItemPreview';
 import { LOCATION_BACKGROUNDS } from '@/assets/locations';
+import { getReputationGreeting } from '@/data/reputation';
 
 export interface LocationTab {
   id: string;
