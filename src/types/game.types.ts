@@ -307,6 +307,8 @@ export interface Player {
   fame: number;                               // 0-100, earned from heroic actions (quests, dungeon, education)
   infamy: number;                             // 0-100, earned from shady actions (sabotage, hexes, dark rituals)
   purchasedReputationUnlocks: string[];       // IDs of one-time reputation-locked items purchased
+  // Shadowfingers protection (bought at Fence)
+  protectionWeeksLeft: number;                // Weeks of Shadowfingers protection remaining (0 = none)
   // Weekly stat snapshots for post-game dashboard
   weeklySnapshots: WeeklySnapshot[];          // One snapshot per week, recorded at week end
   // Cumulative game stats for post-game dashboard

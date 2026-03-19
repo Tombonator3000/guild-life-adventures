@@ -136,6 +136,14 @@ export function loadGame(slot: number = 0): SaveData | null {
       saveData.version = 7;
     }
 
+    // v7 → v8: Add protectionWeeksLeft
+    if (saveData.version < 8) {
+      for (const p of saveData.gameState.players as unknown as Record<string, unknown>[]) {
+        if (p.protectionWeeksLeft === undefined) p.protectionWeeksLeft = 0;
+      }
+      saveData.version = 8;
+    }
+
     return saveData;
   } catch (e) {
     console.error('[Save] Failed to load game:', e);
