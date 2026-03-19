@@ -28,6 +28,7 @@ import {
   handleBuyFreshFood,
   handleBuyTicket,
   handleBuyLotteryTicket,
+  handleBuyReputationUnlock,
   // Employment & Education
   handleWork,
   handleApplyJob,
