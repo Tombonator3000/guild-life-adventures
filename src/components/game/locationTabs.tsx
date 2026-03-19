@@ -39,6 +39,7 @@ import { getGameOption } from '@/data/gameOptions';
 import { getEnchanterHexStock, getShadowMarketHexStock, isLocationHexed, getHexById } from '@/data/hexes';
 import type { ActiveLocationHex } from '@/data/hexes';
 import { getReputationUnlocks, REPUTATION_UNLOCKS } from '@/data/reputation';
+import { isPlayerRuined } from '@/store/helpers/hexHelpers';
 
 
 // Map location ID to the job location name used in jobs.ts
