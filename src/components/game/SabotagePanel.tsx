@@ -133,7 +133,7 @@ export function SabotagePanel({ player, rivals, priceModifier, onSabotage, spend
                     onClick={() => {
                       onSabotage(selectedRival.id, { ...option, cost: adjustedCost });
                       spendTime(player.id, option.timeCost);
-                      toast.success(`Sabotage arranged against ${selectedRival.name}!`);
+                      toast.success(`Shadowfingers dispatched against ${selectedRival.name}!`);
                     }}
                   />
                   <div className="text-xs text-[#6b5a42] italic px-1 -mt-0.5 mb-1">
