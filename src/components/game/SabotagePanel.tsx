@@ -1,6 +1,6 @@
 /**
  * Player Bounties / Sabotage Panel
- * Available at the Shadow Market — pick a rival from a dropdown, then choose a dirty trick.
+ * Available at the Shadow Market — hire Shadowfingers to sabotage a rival.
  */
 
 import { useState } from 'react';
