@@ -6,16 +6,39 @@ import { getItem, canBeStolen } from './items';
 
 // Street Robbery Constants
 export const STREET_ROBBERY_MIN_WEEK = 4; // Robberies only happen on or after Week 4
-export const BANK_ROBBERY_CHANCE = 1 / 31; // ~3.2% chance when leaving bank
-export const SHADOW_MARKET_ROBBERY_CHANCE = 1 / 51; // ~1.95% chance when leaving shadow market
 export const STREET_ROBBERY_HAPPINESS_LOSS = -3;
+
+// Location-specific robbery chances (per departure)
+export const ROBBERY_CHANCES: Record<LocationId, number> = {
+  'bank': 1 / 31,            // ~3.2% — highest risk
+  'shadow-market': 1 / 51,   // ~1.95%
+  'fence': 1 / 41,           // ~2.4%
+  'slums': 1 / 61,           // ~1.6%
+  'rusty-tankard': 1 / 71,   // ~1.4%
+  'forge': 1 / 81,           // ~1.2%
+  // All other locations: 0 (safe)
+  'noble-heights': 0,
+  'landlord': 0,
+  'general-store': 0,
+  'guild-hall': 0,
+  'cave': 0,
+  'academy': 0,
+  'enchanter': 0,
+  'armory': 0,
+  'graveyard': 0,
+};
+
+// Locations that trigger street robbery when leaving
+export const STREET_ROBBERY_LOCATIONS: LocationId[] = Object.entries(ROBBERY_CHANCES)
+  .filter(([, chance]) => chance > 0)
+  .map(([id]) => id as LocationId);
 
 // Apartment Robbery Constants
 export const APARTMENT_ROBBERY_ITEM_CHANCE = 0.25; // 25% chance per item type
 export const APARTMENT_ROBBERY_HAPPINESS_LOSS = -4;
 
-// Locations that trigger street robbery when leaving
-export const STREET_ROBBERY_LOCATIONS: LocationId[] = ['bank', 'shadow-market'];
+// Homeless robbery multiplier - homeless players are easier targets
+export const HOMELESS_ROBBERY_MULTIPLIER = 3; // 3x more likely to be robbed on the street
 
 
 export interface StreetRobberyResult {
@@ -35,68 +58,68 @@ export interface ApartmentRobberyResult {
   message: string;
 }
 
-// Homeless robbery multiplier - homeless players are easier targets
-export const HOMELESS_ROBBERY_MULTIPLIER = 3; // 3x more likely to be robbed on the street
+/** Human-readable location name for robbery messages */
+function getLocationDisplayName(loc: LocationId): string {
+  const names: Partial<Record<LocationId, string>> = {
+    'bank': 'the Bank',
+    'shadow-market': "Black's Market",
+    'fence': 'the Fence',
+    'slums': 'the Slums',
+    'rusty-tankard': 'the Rusty Tankard',
+    'forge': 'the Forge',
+  };
+  return names[loc] ?? loc;
+}
 
 /**
  * Check if a street robbery should occur when player leaves a location
  *
  * Conditions:
  * - Week >= 4
- * - Player is leaving Bank or Shadow Market
+ * - Player is leaving a risk-zone location
  * - Player has cash (gold > 0)
  *
- * Chance depends on location:
- * - Bank: 1/31 (~3.2%)
- * - Shadow Market: 1/51 (~1.95%)
- *
- * Homeless players have 3x higher robbery chance
+ * Chance depends on location (bank highest, forge lowest).
+ * Protection money reduces chance by 80%.
+ * Homeless players have 3x higher robbery chance.
+ * Rich players (1000+ gold) attract more attention.
  */
 export function checkStreetRobbery(
   player: Player,
   fromLocation: LocationId,
   currentWeek: number
 ): StreetRobberyResult | null {
-  // Check week requirement
-  if (currentWeek < STREET_ROBBERY_MIN_WEEK) {
-    return null;
+  if (currentWeek < STREET_ROBBERY_MIN_WEEK) return null;
+
+  // Get base robbery chance for this location
+  const baseChance = ROBBERY_CHANCES[fromLocation] ?? 0;
+  if (baseChance <= 0) return null;
+
+  if (player.gold <= 0) return null;
+
+  let robberyChance = baseChance;
+
+  // Protection money reduces chance by 80%
+  if ((player.protectionWeeksLeft ?? 0) > 0) {
+    robberyChance *= 0.2;
   }
 
-  // Check if leaving a robbery-prone location
-  if (!STREET_ROBBERY_LOCATIONS.includes(fromLocation)) {
-    return null;
-  }
-
-  // Check if player has any cash
-  if (player.gold <= 0) {
-    return null;
-  }
-
-  // Determine robbery chance based on location
-  let robberyChance = fromLocation === 'bank'
-    ? BANK_ROBBERY_CHANCE
-    : SHADOW_MARKET_ROBBERY_CHANCE;
-
-  // Homeless players are easier targets - higher robbery chance
+  // Homeless players are easier targets
   if (player.housing === 'homeless') {
     robberyChance *= HOMELESS_ROBBERY_MULTIPLIER;
   }
 
-  // Rich players carrying 1000+ gold attract more attention from Shadowfingers
-  // 1.5x chance at 1000g, scaling up to 2.5x at 3000g+
+  // Rich players carrying 1000+ gold attract more attention
   if (player.gold >= 1000) {
     const richMultiplier = Math.min(2.5, 1.5 + (player.gold - 1000) / 2000);
     robberyChance *= richMultiplier;
   }
 
-  // Roll for robbery
-  if (Math.random() >= robberyChance) {
-    return null; // No robbery this time
-  }
+  if (Math.random() >= robberyChance) return null;
 
   // Robbery occurs!
-  const goldStolen = player.gold; // Street robbery takes ALL cash
-  const locationName = fromLocation === 'bank' ? 'the Bank' : "Black's Market";
+  const goldStolen = player.gold;
+  const locationName = getLocationDisplayName(fromLocation);
 
   return {
     occurred: true,
@@ -117,63 +140,41 @@ export function checkStreetRobbery(
  * - Player owns any durables
  *
  * Chance = 1 / (relaxation + 1)
- * - Relaxation 10: 1/11 = ~9% per turn
- * - Relaxation 50: 1/51 = ~1.95% per turn
- *
- * If robbery triggers:
- * - Each durable TYPE has 25% chance to be stolen (all items of that type)
- * - Encyclopedia, Dictionary, Atlas cannot be stolen
+ * Protection money reduces chance by 80%.
  */
 export function checkApartmentRobbery(player: Player): ApartmentRobberyResult | null {
-  // Only happens at slums housing
-  if (player.housing !== 'slums') {
-    return null;
-  }
+  if (player.housing !== 'slums') return null;
 
-  // Check if player owns any durables
   const durableCount = Object.values(player.durables).reduce((sum, qty) => sum + qty, 0);
-  if (durableCount === 0) {
-    return null;
-  }
+  if (durableCount === 0) return null;
 
-  // Calculate robbery chance based on relaxation
-  // Relaxation ranges from 10 to 50
   const relaxation = Math.max(10, Math.min(50, player.relaxation));
-  const robberyChance = 1 / (relaxation + 1);
+  let robberyChance = 1 / (relaxation + 1);
 
-  // Roll for robbery
-  if (Math.random() >= robberyChance) {
-    return null; // No robbery this time
+  // Protection money reduces chance by 80%
+  if ((player.protectionWeeksLeft ?? 0) > 0) {
+    robberyChance *= 0.2;
   }
 
-  // Robbery triggered! Check each durable type
+  if (Math.random() >= robberyChance) return null;
+
   const stolenItems: { itemId: string; itemName: string; quantity: number }[] = [];
 
   for (const [itemId, quantity] of Object.entries(player.durables)) {
     if (quantity <= 0) continue;
-
-    // Check if this item can be stolen
-    if (!canBeStolen(itemId)) {
-      continue; // Encyclopedia, Dictionary, Atlas cannot be stolen
-    }
-
-    // 25% chance for each item type to be stolen
+    if (!canBeStolen(itemId)) continue;
     if (Math.random() < APARTMENT_ROBBERY_ITEM_CHANCE) {
       const item = getItem(itemId);
       stolenItems.push({
         itemId,
         itemName: item?.name || itemId,
-        quantity, // All items of this type are stolen
+        quantity,
       });
     }
   }
 
-  // If no items were stolen despite triggering, no robbery message
-  if (stolenItems.length === 0) {
-    return null;
-  }
+  if (stolenItems.length === 0) return null;
 
-  // Format stolen items message
   const itemsList = stolenItems.map(i =>
     i.quantity > 1 ? `${i.quantity}x ${i.itemName}` : i.itemName
   ).join(', ');
@@ -208,4 +209,29 @@ export function getShadowfingersHeadlines(): string[] {
 export function getRandomShadowfingersHeadline(): string {
   const headlines = getShadowfingersHeadlines();
   return headlines[Math.floor(Math.random() * headlines.length)];
+}
+
+/**
+ * Get robbery vulnerability info for a player (used by Fence tip-off service)
+ */
+export function getRobberyVulnerability(player: Player): {
+  riskLevel: 'low' | 'medium' | 'high' | 'extreme';
+  factors: string[];
+} {
+  const factors: string[] = [];
+  let risk = 0;
+
+  if (player.housing === 'homeless') { factors.push('Homeless (3× street risk)'); risk += 3; }
+  if (player.housing === 'slums') { factors.push('Lives in Slums (apartment robbery risk)'); risk += 2; }
+  if (player.gold >= 1000) { factors.push(`Carrying ${player.gold}g (attracts Shadowfingers)`); risk += 2; }
+  else if (player.gold >= 500) { factors.push(`Carrying ${player.gold}g`); risk += 1; }
+  if ((player.protectionWeeksLeft ?? 0) > 0) { factors.push('Has protection (-80% risk)'); risk -= 3; }
+
+  const durableCount = Object.values(player.durables).reduce((sum, qty) => sum + qty, 0);
+  if (durableCount > 3) { factors.push(`${durableCount} items at home (burglary target)`); risk += 1; }
+
+  if (risk <= 0) return { riskLevel: 'low', factors };
+  if (risk <= 2) return { riskLevel: 'medium', factors };
+  if (risk <= 4) return { riskLevel: 'high', factors };
+  return { riskLevel: 'extreme', factors };
 }
