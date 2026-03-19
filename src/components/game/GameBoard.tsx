@@ -393,6 +393,15 @@ export function GameBoard() {
             </div>
           )}
 
+          {/* Shadowfingers token — appears when a robbery/sabotage event triggers */}
+          {shadowfingersEvent && currentPlayer && (
+            <div className="absolute inset-0 pointer-events-none z-45">
+              <ShadowfingersToken
+                targetLocation={currentPlayer.currentLocation}
+              />
+            </div>
+          )}
+
           {/* Graveyard crows animation */}
           <GraveyardCrows />
 
