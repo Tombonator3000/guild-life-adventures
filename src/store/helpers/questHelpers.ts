@@ -342,6 +342,7 @@ export function createQuestActions(set: SetFn, get: GetFn) {
             timeRemaining: Math.max(0, p.timeRemaining - quest.timeRequired),
             completedQuests: p.completedQuests + 1,
             guildReputation: p.guildReputation + 1,
+            fame: Math.min(100, (p.fame ?? 0) + 5), // Quest completion gives fame
             activeQuest: null,
             questLocationProgress: [],
             gameStats: {
