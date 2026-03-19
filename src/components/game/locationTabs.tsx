@@ -34,10 +34,11 @@ import { GraveyardPanel } from './GraveyardPanel';
 import { HexShopPanel } from './HexShopPanel';
 import { GraveyardHexPanel } from './GraveyardHexPanel';
 import { SabotagePanel } from './SabotagePanel';
+import { ReputationPanel } from './ReputationPanel';
 import { getGameOption } from '@/data/gameOptions';
 import { getEnchanterHexStock, getShadowMarketHexStock, isLocationHexed, getHexById } from '@/data/hexes';
 import type { ActiveLocationHex } from '@/data/hexes';
-import { isPlayerRuined } from '@/store/helpers/hexHelpers';
+import { getReputationUnlocks, REPUTATION_UNLOCKS } from '@/data/reputation';
 
 
 // Map location ID to the job location name used in jobs.ts
