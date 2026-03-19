@@ -303,6 +303,10 @@ export interface Player {
   workedThisTurn: boolean;                    // True if player worked at least one shift this turn (reset weekly)
   hadRandomEventThisTurn: boolean;            // True if player already had a random location event this turn (max 1 per turn)
   raiseAttemptedThisTurn: boolean;            // True if player already requested a raise this turn (reset on turn switch)
+  // Reputation system (Fame & Infamy)
+  fame: number;                               // 0-100, earned from heroic actions (quests, dungeon, education)
+  infamy: number;                             // 0-100, earned from shady actions (sabotage, hexes, dark rituals)
+  purchasedReputationUnlocks: string[];       // IDs of one-time reputation-locked items purchased
   // Weekly stat snapshots for post-game dashboard
   weeklySnapshots: WeeklySnapshot[];          // One snapshot per week, recorded at week end
   // Cumulative game stats for post-game dashboard
