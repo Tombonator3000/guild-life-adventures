@@ -188,6 +188,7 @@ const createPlayer = (
   fame: 0,
   infamy: 0,
   purchasedReputationUnlocks: [],
+  protectionWeeksLeft: 0,
   // Post-game dashboard tracking
   weeklySnapshots: [],
   gameStats: {

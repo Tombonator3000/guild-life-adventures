@@ -329,6 +329,24 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
     },
 
     /**
+     * Buy Shadowfingers protection at the Fence.
+     * Adds weeks to protectionWeeksLeft, deducts gold.
+     */
+    buyProtection: (playerId: string, weeks: number, cost: number) => {
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? {
+                ...p,
+                gold: p.gold - cost,
+                protectionWeeksLeft: (p.protectionWeeksLeft ?? 0) + weeks,
+              }
+            : p
+        ),
+      }));
+    },
+
+    /**
      * Modify a player's fame and/or infamy.
      * Values are clamped to 0–100.
      */

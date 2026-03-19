@@ -165,6 +165,7 @@ export interface GameStore extends GameState {
   setDebugFestival: (festivalId: string | null) => void;
   // Player Bounties / Sabotage
   sabotagePlayer: (saboteurId: string, targetId: string, effectType: string, effectValue: number, cost: number) => void;
+  buyProtection: (playerId: string, weeks: number, cost: number) => void;
   // Reputation system
   modifyReputation: (playerId: string, fame: number, infamy: number) => void;
   purchaseReputationUnlock: (playerId: string, unlockId: string, cost: number, effectType: string, effectValue: number, timeCost: number) => void;

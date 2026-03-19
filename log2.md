@@ -5,6 +5,37 @@
 
 ---
 
+## 2026-03-19T12:30Z — Feature: Shadowfingers NPC Overhaul + Fence Expansion
+
+### Summary
+Major overhaul of the robbery/sabotage system. Shadowfingers is now the thematic NPC for all dirty work.
+
+### Changes
+1. **Expanded robbery locations**: Bank (highest), Shadow Market, Fence, Slums, Rusty Tankard, Forge — each with unique robbery chance. Other locations are safe zones.
+2. **Shadowfingers animated token**: New `ShadowfingersToken.tsx` component renders on the game board during robbery events. Animates from a random board edge to the victim's location, then fades out.
+3. **Sabotage → Shadowfingers branding**: All SabotagePanel options now say "Hire Shadowfingers: ..." instead of generic operatives.
+4. **Fence: Protection & Tip-off tab**: New `FenceProtectionPanel.tsx` — buy protection money (3/6/10 weeks, reduces robbery by 80%) or tip-offs (see rival's robbery vulnerability risk level and factors).
+5. **Fence: Sabotage tab**: Sabotage (hire Shadowfingers) now also available at Fence, not just Shadow Market.
+6. **Player type**: Added `protectionWeeksLeft: number` field. Save version 8 (v7→v8 migration).
+7. **Weekly decay**: `resetWeeklyFlags` in weekEndHelpers decrements `protectionWeeksLeft`.
+8. **Store action**: `buyProtection(playerId, weeks, cost)` in playerHelpers.
+
+### Files Changed
+- `src/data/shadowfingers.ts` — Rewrote robbery chance system with per-location map, protection support, tip-off vulnerability function
+- `src/components/game/ShadowfingersToken.tsx` — NEW: Animated NPC token
+- `src/components/game/FenceProtectionPanel.tsx` — NEW: Protection money & tip-off UI
+- `src/components/game/SabotagePanel.tsx` — Updated narrative text to Shadowfingers
+- `src/components/game/locationTabs.tsx` — Added Protection + Shadowfingers tabs to Fence
+- `src/components/game/GameBoard.tsx` — Render ShadowfingersToken during robbery events
+- `src/types/game.types.ts` — Added `protectionWeeksLeft` to Player
+- `src/store/storeTypes.ts` — Added `buyProtection` action
+- `src/store/helpers/playerHelpers.ts` — Implemented `buyProtection` action
+- `src/store/helpers/weekEndHelpers.ts` — Protection weekly decay
+- `src/store/gameStore.ts` — Initialize `protectionWeeksLeft: 0` in createPlayer
+- `src/data/saveLoad.ts` — Save version 8, v7→v8 migration
+
+---
+
 ## 2026-03-19T11:00Z — Feature: Fame & Infamy Reputation System
 
 ### Summary

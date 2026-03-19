@@ -28,6 +28,7 @@ import { DebugOverlay } from './DebugOverlay';
 import { GraveyardCrows } from './GraveyardCrows';
 import gameBoard from '@/assets/game-board.jpeg';
 import { CursePanelOverlay } from './CursePanelOverlay';
+import { ShadowfingersToken } from './ShadowfingersToken';
 import type { LocationId } from '@/types/game.types';
 import { toast } from 'sonner';
 import { useNetworkSync } from '@/network/useNetworkSync';
@@ -389,6 +390,15 @@ export function GameBoard() {
                   onLocationReached={handleLocationReached}
                 />
               ))}
+            </div>
+          )}
+
+          {/* Shadowfingers token — appears when a robbery/sabotage event triggers */}
+          {shadowfingersEvent && currentPlayer && (
+            <div className="absolute inset-0 pointer-events-none z-45">
+              <ShadowfingersToken
+                targetLocation={currentPlayer.currentLocation}
+              />
             </div>
           )}
 

@@ -1,6 +1,6 @@
 /**
  * Player Bounties / Sabotage Panel
- * Available at the Shadow Market — pick a rival from a dropdown, then choose a dirty trick.
+ * Available at the Shadow Market — hire Shadowfingers to sabotage a rival.
  */
 
 import { useState } from 'react';
@@ -31,24 +31,24 @@ export interface SabotageOption {
 const SABOTAGE_OPTIONS: SabotageOption[] = [
   {
     id: 'pickpocket',
-    label: 'Hire a Pickpocket',
-    description: 'A street urchin lifts some gold from their purse.',
+    label: 'Hire Shadowfingers: Pickpocket',
+    description: 'Shadowfingers lifts some gold from their purse.',
     cost: 50,
     timeCost: 1,
     effect: { type: 'gold-theft', value: 30 },
   },
   {
     id: 'distraction',
-    label: 'Arrange a Distraction',
-    description: 'Thugs waylay them, costing precious hours.',
+    label: 'Hire Shadowfingers: Distraction',
+    description: 'Shadowfingers waylays them, costing precious hours.',
     cost: 80,
     timeCost: 1,
     effect: { type: 'time-loss', value: 6 },
   },
   {
     id: 'mudslinger',
-    label: 'Send the Mudslinger',
-    description: 'Their clothes "accidentally" get ruined.',
+    label: 'Hire Shadowfingers: Mudslinger',
+    description: "Shadowfingers 'accidentally' ruins their clothes.",
     cost: 60,
     timeCost: 1,
     effect: { type: 'clothing-damage', value: 25 },
@@ -83,7 +83,7 @@ export function SabotagePanel({ player, rivals, priceModifier, onSabotage, spend
     <div className="space-y-3">
       <div className="text-xs text-[#8b6914] px-2 flex items-center gap-1">
         <Skull className="w-3 h-3" />
-        Hire shady operatives to sabotage a rival. Results take effect at their next turn.
+        Hire Shadowfingers to sabotage a rival. Results take effect immediately.
       </div>
 
       {/* Target selector */}
@@ -133,7 +133,7 @@ export function SabotagePanel({ player, rivals, priceModifier, onSabotage, spend
                     onClick={() => {
                       onSabotage(selectedRival.id, { ...option, cost: adjustedCost });
                       spendTime(player.id, option.timeCost);
-                      toast.success(`Sabotage arranged against ${selectedRival.name}!`);
+                      toast.success(`Shadowfingers dispatched against ${selectedRival.name}!`);
                     }}
                   />
                   <div className="text-xs text-[#6b5a42] italic px-1 -mt-0.5 mb-1">

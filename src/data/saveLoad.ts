@@ -5,7 +5,7 @@
 
 import type { GameState } from '@/types/game.types';
 
-const SAVE_VERSION = 7;
+const SAVE_VERSION = 8;
 const STORAGE_PREFIX = 'guild-life-';
 const AUTO_SAVE_KEY = `${STORAGE_PREFIX}autosave`;
 const SAVE_SLOT_KEY = (slot: number) => `${STORAGE_PREFIX}save-${slot}`;
@@ -134,6 +134,14 @@ export function loadGame(slot: number = 0): SaveData | null {
         }
       }
       saveData.version = 7;
+    }
+
+    // v7 → v8: Add protectionWeeksLeft
+    if (saveData.version < 8) {
+      for (const p of saveData.gameState.players as unknown as Record<string, unknown>[]) {
+        if (p.protectionWeeksLeft === undefined) p.protectionWeeksLeft = 0;
+      }
+      saveData.version = 8;
     }
 
     return saveData;
