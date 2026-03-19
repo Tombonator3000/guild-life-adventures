@@ -64,3 +64,14 @@ export function handleBuyLotteryTicket(player: Player, action: AIAction, store: 
   store.spendTime(player.id, 1);
   return true;
 }
+
+export function handleBuyReputationUnlock(player: Player, action: AIAction, store: StoreActions): boolean {
+  const unlockId = action.details?.unlockId as string;
+  const cost = (action.details?.cost as number) || 0;
+  const effectType = (action.details?.effectType as string) || 'happiness';
+  const effectValue = (action.details?.effectValue as number) || 0;
+  const timeCost = (action.details?.timeCost as number) || 1;
+  if (!unlockId || player.gold < cost) return false;
+  store.purchaseReputationUnlock(player.id, unlockId, cost, effectType, effectValue, timeCost);
+  return true;
+}
