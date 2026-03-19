@@ -167,6 +167,7 @@ export function createWorkEducationActions(set: SetFn, get: GetFn) {
               shiftsWorkedSinceHire: (player.shiftsWorkedSinceHire || 0) + 1,
               totalShiftsWorked: (player.totalShiftsWorked || 0) + 1,
               workedThisTurn: true,
+              fame: Math.min(100, (player.fame ?? 0) + 0.5), // Work gives small fame
               rentDebt,
               loanAmount,
               loanWeeksRemaining: loanAmount <= 0 ? 0 : player.loanWeeksRemaining,

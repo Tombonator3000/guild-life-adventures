@@ -81,6 +81,13 @@ export function PlayersTab({ players, currentPlayerIndex, goalSettings }: Player
                   <div className="flex items-center gap-2 text-[10px] text-amber-800">
                     <span>{player.gold}g</span>
                     <span>{player.timeRemaining}h</span>
+                    {((player.fame ?? 0) >= 20 || (player.infamy ?? 0) >= 20) && (
+                      <span className={(player.fame ?? 0) >= (player.infamy ?? 0) ? 'text-amber-600' : 'text-purple-600'}>
+                        {(player.fame ?? 0) >= (player.infamy ?? 0)
+                          ? `⭐${player.fame ?? 0}`
+                          : `💀${player.infamy ?? 0}`}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
