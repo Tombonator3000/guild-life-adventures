@@ -134,6 +134,7 @@ export function createHexActions(set: SetFn, get: GetFn) {
           if (p.id === playerId) return {
             ...p,
             ...applyCasterCost(p, hex),
+            infamy: Math.min(100, (p.infamy ?? 0) + 4), // Hex casting gives infamy
             gameStats: { ...p.gameStats, hexesCast: (p.gameStats.hexesCast || 0) + 1 },
           };
           if (p.id === targetId) {
@@ -275,6 +276,7 @@ export function createHexActions(set: SetFn, get: GetFn) {
                 gold: p.gold - cost,
                 timeRemaining: Math.max(0, p.timeRemaining - 4),
                 hexScrolls: addHexScroll(p.hexScrolls, hex.id),
+                infamy: Math.min(100, (p.infamy ?? 0) + 6), // Dark ritual gives infamy
               }
             : p
         ),

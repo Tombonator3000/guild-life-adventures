@@ -5,7 +5,7 @@
 
 import type { GameState } from '@/types/game.types';
 
-const SAVE_VERSION = 6;
+const SAVE_VERSION = 7;
 const STORAGE_PREFIX = 'guild-life-';
 const AUTO_SAVE_KEY = `${STORAGE_PREFIX}autosave`;
 const SAVE_SLOT_KEY = (slot: number) => `${STORAGE_PREFIX}save-${slot}`;
@@ -122,6 +122,18 @@ export function loadGame(slot: number = 0): SaveData | null {
         }
       }
       saveData.version = 6;
+    }
+
+    if (saveData.version < 7) {
+      // v6 → v7: Add reputation system (Fame & Infamy)
+      if (saveData.gameState?.players) {
+        for (const p of saveData.gameState.players as unknown as Record<string, unknown>[]) {
+          if (p.fame === undefined) p.fame = 0;
+          if (p.infamy === undefined) p.infamy = 0;
+          if (p.purchasedReputationUnlocks === undefined) p.purchasedReputationUnlocks = [];
+        }
+      }
+      saveData.version = 7;
     }
 
     return saveData;

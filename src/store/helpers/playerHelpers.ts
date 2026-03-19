@@ -303,7 +303,11 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id === saboteurId) {
-            return { ...p, gold: p.gold - cost };
+            return {
+              ...p,
+              gold: p.gold - cost,
+              infamy: Math.min(100, (p.infamy ?? 0) + 5), // Sabotage gives infamy
+            };
           }
           if (p.id === targetId) {
             switch (effectType) {
@@ -320,6 +324,61 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
             }
           }
           return p;
+        }),
+      }));
+    },
+
+    /**
+     * Modify a player's fame and/or infamy.
+     * Values are clamped to 0–100.
+     */
+    modifyReputation: (playerId: string, fame: number, infamy: number) => {
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? {
+                ...p,
+                fame: Math.max(0, Math.min(100, (p.fame ?? 0) + fame)),
+                infamy: Math.max(0, Math.min(100, (p.infamy ?? 0) + infamy)),
+              }
+            : p
+        ),
+      }));
+    },
+
+    /**
+     * Purchase a reputation-locked exclusive item/service.
+     * Deducts gold, applies effect, records unlock ID to prevent re-purchase.
+     */
+    purchaseReputationUnlock: (playerId: string, unlockId: string, cost: number, effectType: string, effectValue: number, timeCost: number) => {
+      set((state) => ({
+        players: state.players.map((p) => {
+          if (p.id !== playerId) return p;
+          const updated = {
+            ...p,
+            gold: p.gold - cost,
+            timeRemaining: Math.max(0, p.timeRemaining - timeCost),
+            purchasedReputationUnlocks: [...(p.purchasedReputationUnlocks ?? []), unlockId],
+          };
+          // Apply effect
+          switch (effectType) {
+            case 'happiness':
+              updated.happiness = (updated.happiness ?? 0) + effectValue;
+              break;
+            case 'health':
+              updated.health = Math.min(updated.maxHealth, (updated.health ?? 0) + effectValue);
+              break;
+            case 'gold':
+              updated.gold += effectValue; // net gain after cost
+              break;
+            case 'clothing':
+              updated.clothingCondition = Math.min(100, (updated.clothingCondition ?? 0) + effectValue);
+              break;
+            case 'food':
+              updated.foodLevel = Math.min(100, (updated.foodLevel ?? 0) + effectValue);
+              break;
+          }
+          return updated;
         }),
       }));
     },

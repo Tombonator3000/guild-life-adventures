@@ -103,6 +103,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     repairAppliance: store.repairAppliance,
     forgeRepairAppliance: store.forgeRepairAppliance,
     requestRaise: store.requestRaise,
+    purchaseReputationUnlock: store.purchaseReputationUnlock,
     endTurn: store.endTurn,
   }), [store]);
 

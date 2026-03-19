@@ -184,6 +184,10 @@ const createPlayer = (
   workedThisTurn: false,
   hadRandomEventThisTurn: false,
   raiseAttemptedThisTurn: false,
+  // Reputation system
+  fame: 0,
+  infamy: 0,
+  purchasedReputationUnlocks: [],
   // Post-game dashboard tracking
   weeklySnapshots: [],
   gameStats: {

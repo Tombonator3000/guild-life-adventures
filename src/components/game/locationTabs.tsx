@@ -34,9 +34,11 @@ import { GraveyardPanel } from './GraveyardPanel';
 import { HexShopPanel } from './HexShopPanel';
 import { GraveyardHexPanel } from './GraveyardHexPanel';
 import { SabotagePanel } from './SabotagePanel';
+import { ReputationPanel } from './ReputationPanel';
 import { getGameOption } from '@/data/gameOptions';
 import { getEnchanterHexStock, getShadowMarketHexStock, isLocationHexed, getHexById } from '@/data/hexes';
 import type { ActiveLocationHex } from '@/data/hexes';
+import { getReputationUnlocks, REPUTATION_UNLOCKS } from '@/data/reputation';
 import { isPlayerRuined } from '@/store/helpers/hexHelpers';
 
 
@@ -914,5 +916,33 @@ export function getLocationTabs(locationId: LocationId, isHere: boolean, ctx: Lo
   }
 
   const factory = TAB_FACTORIES[locationId];
-  return factory ? factory(ctx) : defaultTabs();
+  const tabs = factory ? factory(ctx) : defaultTabs();
+
+  // Inject Reputation tab if this location has any reputation-locked services
+  const hasAnyUnlocks = REPUTATION_UNLOCKS.some(u => u.location === locationId);
+  if (hasAnyUnlocks) {
+    const player = ctx.player;
+    const fame = player.fame ?? 0;
+    const infamy = player.infamy ?? 0;
+    const available = getReputationUnlocks(locationId, fame, infamy, player.purchasedReputationUnlocks ?? []);
+    tabs.push({
+      id: 'reputation',
+      label: 'Renown',
+      badge: available.length > 0 ? `${available.length}` : undefined,
+      content: (
+        <ReputationPanel
+          player={player}
+          locationId={locationId}
+          priceModifier={ctx.priceModifier}
+          onPurchase={(unlockId, cost, effectType, effectValue, timeCost) => {
+            import('@/store/gameStore').then(({ useGameStore }) => {
+              useGameStore.getState().purchaseReputationUnlock(player.id, unlockId, cost, effectType, effectValue, timeCost);
+            });
+          }}
+        />
+      ),
+    });
+  }
+
+  return tabs;
 }

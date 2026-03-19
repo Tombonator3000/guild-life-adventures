@@ -11,6 +11,7 @@ export {
   handleBuyFreshFood,
   handleBuyTicket,
   handleBuyLotteryTicket,
+  handleBuyReputationUnlock,
 } from './resourceHandlers';
 
 export {

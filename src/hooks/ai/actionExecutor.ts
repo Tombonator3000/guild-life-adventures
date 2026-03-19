@@ -28,6 +28,7 @@ import {
   handleBuyFreshFood,
   handleBuyTicket,
   handleBuyLotteryTicket,
+  handleBuyReputationUnlock,
   // Employment & Education
   handleWork,
   handleApplyJob,
@@ -127,6 +128,8 @@ export interface StoreActions {
   forgeRepairAppliance: (playerId: string, applianceId: string) => number;
   // Salary
   requestRaise: (playerId: string) => { success: boolean; newWage?: number; message: string };
+  // Reputation
+  purchaseReputationUnlock: (playerId: string, unlockId: string, cost: number, effectType: string, effectValue: number, timeCost: number) => void;
   endTurn: () => void;
 }
 
@@ -242,6 +245,7 @@ const ACTION_HANDLERS: Record<AIActionType, ActionHandler> = {
   'request-raise': handleRequestRaise,
   'dispel-hex': handleDispelHex,
   'dark-ritual': handleDarkRitual,
+  'buy-reputation-unlock': handleBuyReputationUnlock,
   'end-turn': handleEndTurn,
 };
 

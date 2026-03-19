@@ -91,6 +91,7 @@ export type AIActionType =
   | 'request-raise'
   | 'dispel-hex'
   | 'dark-ritual'
+  | 'buy-reputation-unlock'
   | 'end-turn';
 
 export interface AIAction {
