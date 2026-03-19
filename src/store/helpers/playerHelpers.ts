@@ -324,7 +324,10 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
             }
           }
           return p;
-    }),
+        }),
+      }));
+    },
+
     /**
      * Buy Shadowfingers protection at the Fence.
      * Adds weeks to protectionWeeksLeft, deducts gold.
@@ -340,8 +343,6 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
               }
             : p
         ),
-      }));
-    },
       }));
     },
 
