@@ -776,11 +776,56 @@ function fenceTabs(ctx: LocationTabContext): LocationTab[] {
     },
     onSpendTime: (hours: number) => spendTime(player.id, hours),
   };
-  return [
+  const tabs: LocationTab[] = [
     { id: 'trade', label: 'Used Goods', content: <PawnShopPanel {...fenceProps} section="trade" /> },
     { id: 'magical', label: 'Magical Items', content: <PawnShopPanel {...fenceProps} section="magical" /> },
     { id: 'gambling', label: 'Gambling', content: <PawnShopPanel {...fenceProps} section="gambling" /> },
   ];
+
+  // Protection & Tip-off tab
+  const aliveRivals = ctx.players.filter(p => !p.isGameOver && p.id !== player.id);
+  tabs.push({
+    id: 'protection',
+    label: 'Protection',
+    content: (
+      <FenceProtectionPanel
+        player={player}
+        rivals={aliveRivals}
+        priceModifier={priceModifier}
+        onBuyProtection={(weeks, cost) => {
+          import('@/store/gameStore').then(({ useGameStore }) => {
+            useGameStore.getState().buyProtection(player.id, weeks, cost);
+          });
+        }}
+        onBuyTipOff={(cost) => {
+          modifyGold(player.id, -cost);
+        }}
+      />
+    ),
+  });
+
+  // Sabotage tab — hire Shadowfingers at the Fence too
+  if (aliveRivals.length > 0) {
+    tabs.push({
+      id: 'sabotage',
+      label: 'Shadowfingers',
+      content: (
+        <SabotagePanel
+          player={player}
+          rivals={aliveRivals}
+          priceModifier={priceModifier}
+          onSabotage={(targetId, option) => {
+            import('@/store/gameStore').then(({ useGameStore }) => {
+              useGameStore.getState().sabotagePlayer(player.id, targetId, option.effect.type, option.effect.value, option.cost);
+            });
+          }}
+          spendTime={spendTime}
+        />
+      ),
+    });
+  }
+
+  return tabs;
 }
 
 function graveyardTabs(ctx: LocationTabContext): LocationTab[] {
