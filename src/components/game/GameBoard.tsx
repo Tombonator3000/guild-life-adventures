@@ -28,6 +28,7 @@ import { DebugOverlay } from './DebugOverlay';
 import { GraveyardCrows } from './GraveyardCrows';
 import gameBoard from '@/assets/game-board.jpeg';
 import { CursePanelOverlay } from './CursePanelOverlay';
+import { ShadowfingersToken } from './ShadowfingersToken';
 import type { LocationId } from '@/types/game.types';
 import { toast } from 'sonner';
 import { useNetworkSync } from '@/network/useNetworkSync';
