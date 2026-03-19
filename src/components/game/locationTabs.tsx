@@ -34,6 +34,7 @@ import { GraveyardPanel } from './GraveyardPanel';
 import { HexShopPanel } from './HexShopPanel';
 import { GraveyardHexPanel } from './GraveyardHexPanel';
 import { SabotagePanel } from './SabotagePanel';
+import { FenceProtectionPanel } from './FenceProtectionPanel';
 import { ReputationPanel } from './ReputationPanel';
 import { getGameOption } from '@/data/gameOptions';
 import { getEnchanterHexStock, getShadowMarketHexStock, isLocationHexed, getHexById } from '@/data/hexes';
