@@ -124,6 +124,18 @@ export function loadGame(slot: number = 0): SaveData | null {
       saveData.version = 6;
     }
 
+    if (saveData.version < 7) {
+      // v6 → v7: Add reputation system (Fame & Infamy)
+      if (saveData.gameState?.players) {
+        for (const p of saveData.gameState.players as unknown as Record<string, unknown>[]) {
+          if (p.fame === undefined) p.fame = 0;
+          if (p.infamy === undefined) p.infamy = 0;
+          if (p.purchasedReputationUnlocks === undefined) p.purchasedReputationUnlocks = [];
+        }
+      }
+      saveData.version = 7;
+    }
+
     return saveData;
   } catch (e) {
     console.error('[Save] Failed to load game:', e);
