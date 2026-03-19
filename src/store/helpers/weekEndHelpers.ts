@@ -281,6 +281,10 @@ function resetWeeklyFlags(p: Player): void {
   if (p.questCooldownWeeksLeft > 0) {
     p.questCooldownWeeksLeft -= 1;
   }
+  // Decrement Shadowfingers protection
+  if ((p.protectionWeeksLeft ?? 0) > 0) {
+    p.protectionWeeksLeft = (p.protectionWeeksLeft ?? 0) - 1;
+  }
 }
 
 /** Apply dependability decay based on employment + work status */

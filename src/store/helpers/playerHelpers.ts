@@ -324,7 +324,24 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
             }
           }
           return p;
-        }),
+    }),
+    /**
+     * Buy Shadowfingers protection at the Fence.
+     * Adds weeks to protectionWeeksLeft, deducts gold.
+     */
+    buyProtection: (playerId: string, weeks: number, cost: number) => {
+      set((state) => ({
+        players: state.players.map((p) =>
+          p.id === playerId
+            ? {
+                ...p,
+                gold: p.gold - cost,
+                protectionWeeksLeft: (p.protectionWeeksLeft ?? 0) + weeks,
+              }
+            : p
+        ),
+      }));
+    },
       }));
     },
 
