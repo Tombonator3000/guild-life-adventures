@@ -77,6 +77,12 @@ export function LocationShell({
     return () => clearTimeout(timer);
   }, [locationId, tryTriggerBanter, currentPlayer, players]);
 
+  // Reputation-based NPC greeting override
+  const reputationGreeting = useMemo(() => {
+    if (!currentPlayer) return null;
+    return getReputationGreeting(locationId, currentPlayer.fame ?? 0, currentPlayer.infamy ?? 0);
+  }, [locationId, currentPlayer]);
+
   // If only one tab, skip the tab bar entirely
   const showTabBar = visibleTabs.length > 1;
 
