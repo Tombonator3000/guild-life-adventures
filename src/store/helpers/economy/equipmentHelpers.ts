@@ -60,6 +60,7 @@ export function createEquipmentActions(set: SetFn, get: GetFn) {
             ...p,
             dungeonFloorsCleared: [...p.dungeonFloorsCleared, floorId],
             dependability: Math.min(p.maxDependability, p.dependability + depBonus),
+            fame: Math.min(100, (p.fame ?? 0) + 4), // Dungeon clear gives fame
             gameStats: {
               ...p.gameStats,
               totalDungeonFloors: (p.gameStats.totalDungeonFloors || 0) + 1,

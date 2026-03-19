@@ -134,6 +134,7 @@ export function createHexActions(set: SetFn, get: GetFn) {
           if (p.id === playerId) return {
             ...p,
             ...applyCasterCost(p, hex),
+            infamy: Math.min(100, (p.infamy ?? 0) + 4), // Hex casting gives infamy
             gameStats: { ...p.gameStats, hexesCast: (p.gameStats.hexesCast || 0) + 1 },
           };
           if (p.id === targetId) {
