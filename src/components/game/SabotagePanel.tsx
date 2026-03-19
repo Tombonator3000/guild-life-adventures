@@ -83,7 +83,7 @@ export function SabotagePanel({ player, rivals, priceModifier, onSabotage, spend
     <div className="space-y-3">
       <div className="text-xs text-[#8b6914] px-2 flex items-center gap-1">
         <Skull className="w-3 h-3" />
-        Hire shady operatives to sabotage a rival. Results take effect at their next turn.
+        Hire Shadowfingers to sabotage a rival. Results take effect immediately.
       </div>
 
       {/* Target selector */}
