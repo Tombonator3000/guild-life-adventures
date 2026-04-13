@@ -300,6 +300,10 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
      * Cost is deducted from the saboteur.
      */
     sabotagePlayer: (saboteurId: string, targetId: string, effectType: string, effectValue: number, cost: number) => {
+      // Validate saboteur can afford the cost
+      const saboteur = get().players.find(p => p.id === saboteurId);
+      if (!saboteur || saboteur.gold < cost) return;
+
       set((state) => ({
         players: state.players.map((p) => {
           if (p.id === saboteurId) {
@@ -333,6 +337,10 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
      * Adds weeks to protectionWeeksLeft, deducts gold.
      */
     buyProtection: (playerId: string, weeks: number, cost: number) => {
+      // Validate player can afford protection
+      const player = get().players.find(p => p.id === playerId);
+      if (!player || player.gold < cost) return;
+
       set((state) => ({
         players: state.players.map((p) =>
           p.id === playerId
@@ -381,7 +389,7 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
           // Apply effect
           switch (effectType) {
             case 'happiness':
-              updated.happiness = (updated.happiness ?? 0) + effectValue;
+              updated.happiness = Math.min(100, (updated.happiness ?? 0) + effectValue);
               break;
             case 'health':
               updated.health = Math.min(updated.maxHealth, (updated.health ?? 0) + effectValue);
