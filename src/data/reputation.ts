@@ -211,7 +211,7 @@ export const REPUTATION_UNLOCKS: ReputationUnlock[] = [
   {
     id: 'hero-feast',
     name: 'Hero\'s Feast',
-    description: 'The guild throws a feast in your honor. +25 happiness, +50 food.',
+    description: 'The guild throws a feast in your honor. +25 happiness.',
     requirement: { type: 'fame', minimum: 40 },
     location: 'rusty-tankard',
     effect: { type: 'happiness', value: 25 },
