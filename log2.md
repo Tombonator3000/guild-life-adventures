@@ -100,6 +100,31 @@ Added a versioned changelog screen accessible from a "What's New" button on the 
 
 ---
 
+## 2026-04-13T13:35Z — Bug Hunt & Optimization Sweep
+
+### Summary
+Broad bug hunt + code optimization pass across entire codebase. 358 tests passing. 5 bugs fixed, 1 description corrected.
+
+### Bugs Found & Fixed
+
+1. **`purchaseReputationUnlock` happiness not capped** (playerHelpers.ts) — `updated.happiness` could exceed 100. Fixed: added `Math.min(100, ...)` cap.
+2. **`buyProtection` no gold validation** (playerHelpers.ts) — Store action didn't check `player.gold >= cost` before deducting. Multiplayer exploit vector. Fixed: added validation guard.
+3. **`sabotagePlayer` no gold validation** (playerHelpers.ts) — Same issue. Fixed: added validation guard.
+4. **Hero's Feast description mismatch** (reputation.ts) — Description said "+50 food" but effect only gives happiness (single-effect system). Fixed: corrected description to "+25 happiness" only.
+5. **`REPUTATION_TRIGGERS` dead code awareness** — Map is defined but values are hardcoded in store helpers. Verified all hardcoded values match the map. No code change needed but noted for future refactoring.
+
+### Files Changed
+- `src/store/helpers/playerHelpers.ts` — Gold validation guards on sabotagePlayer + buyProtection; happiness cap on purchaseReputationUnlock
+- `src/data/reputation.ts` — Fixed Hero's Feast description
+
+### Verified
+- All 358 tests pass
+- Career/dependability job checks correct across all 11 UI files
+- `appendEventMessage` AI guards correct at all call sites
+- `protectionWeeksLeft` uses optional chaining (`?? 0`) everywhere in UI
+- `activeCurses` uses `(?.length ?? 0) > 0` pattern correctly
+
+---
 
 
 ### Summary
