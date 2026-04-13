@@ -397,7 +397,11 @@ export function GameBoard() {
           {shadowfingersEvent && currentPlayer && (
             <div className="absolute inset-0 pointer-events-none z-45">
               <ShadowfingersToken
-                targetLocation={currentPlayer.currentLocation}
+                targetLocation={
+                  shadowfingersEvent.type === 'street' && 'fromLocation' in shadowfingersEvent.result
+                    ? shadowfingersEvent.result.fromLocation
+                    : currentPlayer.currentLocation
+                }
               />
             </div>
           )}
