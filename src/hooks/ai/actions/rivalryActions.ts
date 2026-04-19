@@ -338,6 +338,122 @@ function generateStrategicLocationBlocking({ ctx, biggestThreat, threatIsClose, 
   return actions;
 }
 
+/** Buy protection money at the Fence — when AI carries lots of gold or recently visits risk zones */
+function generateProtectionPurchase({ ctx }: RivalryContext): AIAction[] {
+  const { player, currentLocation, moveCost, priceModifier } = ctx;
+  const RISK_ZONES = ['bank', 'shadow-market', 'fence', 'slums', 'rusty-tankard', 'forge'] as const;
+  const inRiskZone = (RISK_ZONES as readonly string[]).includes(currentLocation);
+
+  const goldAtRisk = player.gold >= 200;
+  const hasProtection = (player.protectionWeeksLeft ?? 0) > 2;
+  if (!goldAtRisk || hasProtection) return [];
+
+  const packages = [
+    { weeks: 3, baseCost: 75 },
+    { weeks: 6, baseCost: 130 },
+    { weeks: 10, baseCost: 200 },
+  ];
+  let chosen = packages[0];
+  for (const p of packages) {
+    const cost = Math.round(p.baseCost * priceModifier);
+    if (player.gold >= cost * 2.5) chosen = p;
+  }
+  const cost = Math.round(chosen.baseCost * priceModifier);
+  if (player.gold < cost) return [];
+
+  let priority = 55;
+  if (player.gold >= 1000) priority += 15;
+  if (player.housing === 'slums') priority += 8;
+  if (inRiskZone) priority += 5;
+  priority = Math.round(priority * ctx.personality.weights.caution);
+
+  if (currentLocation === 'fence') {
+    return [{
+      type: 'buy-protection',
+      priority,
+      description: `Buy ${chosen.weeks}wk protection from Shadowfingers`,
+      details: { weeks: chosen.weeks, cost },
+    }];
+  }
+  if (player.gold >= 500 && player.timeRemaining > moveCost('fence') + 3) {
+    return [{
+      type: 'move',
+      location: 'fence',
+      priority: priority - 10,
+      description: 'Travel to Fence for protection',
+    }];
+  }
+  return [];
+}
+
+/** Hire Shadowfingers for sabotage at Fence (or Shadow Market) — Hard AI vs threatening rivals */
+function generateSabotageActions({ ctx, biggestThreat, threatIsClose }: RivalryContext): AIAction[] {
+  const { player, currentLocation, moveCost, settings, priceModifier } = ctx;
+  if (settings.planningDepth < 3 || !threatIsClose) return [];
+  if (ctx.personality.weights.rivalry < 1.0) return [];
+
+  const SABOTAGE_LOCATIONS = ['fence', 'shadow-market'] as const;
+  const atSabotageLoc = (SABOTAGE_LOCATIONS as readonly string[]).includes(currentLocation);
+
+  const options = [
+    { type: 'pickpocket', baseCost: 50, effectType: 'gold', effectValue: 30 },
+    { type: 'distraction', baseCost: 35, effectType: 'time', effectValue: 6 },
+    { type: 'mudslinger', baseCost: 40, effectType: 'clothing', effectValue: 25 },
+  ];
+
+  let chosen = options[0];
+  if (biggestThreat.gold >= 300) chosen = options[0];
+  else if (biggestThreat.timeRemaining > 30) chosen = options[1];
+  else chosen = options[2];
+
+  const cost = Math.round(chosen.baseCost * priceModifier);
+  if (player.gold < cost + 50) return [];
+
+  const priority = Math.round(50 * ctx.personality.weights.rivalry);
+
+  if (atSabotageLoc) {
+    return [{
+      type: 'sabotage-player',
+      priority,
+      description: `Hire Shadowfingers (${chosen.type}) on ${biggestThreat.name}`,
+      details: {
+        targetId: biggestThreat.id,
+        effectType: chosen.effectType,
+        effectValue: chosen.effectValue,
+        cost,
+      },
+    }];
+  }
+  if (player.timeRemaining > moveCost('fence') + 3) {
+    return [{
+      type: 'move',
+      location: 'fence',
+      priority: priority - 12,
+      description: `Travel to Fence to sabotage ${biggestThreat.name}`,
+    }];
+  }
+  return [];
+}
+
+/** Buy tip-off intel at Fence — Hard AI scouts rival vulnerability before sabotage */
+function generateTipOffPurchase({ ctx, biggestThreat, threatIsClose }: RivalryContext): AIAction[] {
+  const { player, currentLocation, settings, priceModifier } = ctx;
+  if (settings.planningDepth < 3 || !threatIsClose) return [];
+  if (currentLocation !== 'fence') return [];
+  if (ctx.personality.weights.rivalry < 1.0) return [];
+
+  const cost = Math.round(40 * priceModifier);
+  if (player.gold < cost + 100) return [];
+  if (biggestThreat.gold < 200) return [];
+
+  return [{
+    type: 'buy-tip-off',
+    priority: Math.round(40 * ctx.personality.weights.rivalry),
+    description: `Buy tip-off on ${biggestThreat.name}`,
+    details: { targetId: biggestThreat.id, cost },
+  }];
+}
+
 // ── Dispatch table ──────────────────────────────────────────────────
 
 const RIVALRY_GENERATORS: Array<(rc: RivalryContext) => AIAction[]> = [
@@ -350,6 +466,9 @@ const RIVALRY_GENERATORS: Array<(rc: RivalryContext) => AIAction[]> = [
   generateDispelActions,
   generateDarkRitualActions,
   generateStrategicLocationBlocking,
+  generateProtectionPurchase,
+  generateSabotageActions,
+  generateTipOffPurchase,
 ];
 
 // ── Main entry point ────────────────────────────────────────────────
