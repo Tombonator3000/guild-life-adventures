@@ -257,7 +257,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
       const actionKey = (a: AIAction) => {
         const detail = a.details?.degreeId || a.details?.jobId || a.details?.itemId
           || a.details?.floorId || a.details?.questId || a.details?.bountyId
-          || a.details?.ticketType || '';
+          || a.details?.ticketType || a.details?.targetId || '';
         return `${a.type}:${a.location || ''}:${detail}`;
       };
       const viableActions = actions.filter(a => a.type === 'end-turn' || !failedActionsRef.current.has(actionKey(a)));
