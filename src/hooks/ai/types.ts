@@ -92,6 +92,9 @@ export type AIActionType =
   | 'dispel-hex'
   | 'dark-ritual'
   | 'buy-reputation-unlock'
+  | 'buy-protection'
+  | 'buy-tip-off'
+  | 'sabotage-player'
   | 'end-turn';
 
 export interface AIAction {

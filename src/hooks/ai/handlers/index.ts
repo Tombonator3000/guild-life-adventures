@@ -62,3 +62,9 @@ export {
   handleDispelHex,
   handleDarkRitual,
 } from './hexHandlers';
+
+export {
+  handleBuyProtection,
+  handleBuyTipOff,
+  handleSabotagePlayer,
+} from './fenceHandlers';

@@ -68,6 +68,10 @@ import {
   handleBuyHexScroll,
   handleDispelHex,
   handleDarkRitual,
+  // Fence services
+  handleBuyProtection,
+  handleBuyTipOff,
+  handleSabotagePlayer,
 } from './handlers';
 
 /**
@@ -130,6 +134,9 @@ export interface StoreActions {
   requestRaise: (playerId: string) => { success: boolean; newWage?: number; message: string };
   // Reputation
   purchaseReputationUnlock: (playerId: string, unlockId: string, cost: number, effectType: string, effectValue: number, timeCost: number) => void;
+  // Fence services
+  buyProtection: (playerId: string, weeks: number, cost: number) => void;
+  sabotagePlayer: (saboteurId: string, targetId: string, effectType: string, effectValue: number, cost: number) => void;
   endTurn: () => void;
 }
 
@@ -246,6 +253,9 @@ const ACTION_HANDLERS: Record<AIActionType, ActionHandler> = {
   'dispel-hex': handleDispelHex,
   'dark-ritual': handleDarkRitual,
   'buy-reputation-unlock': handleBuyReputationUnlock,
+  'buy-protection': handleBuyProtection,
+  'buy-tip-off': handleBuyTipOff,
+  'sabotage-player': handleSabotagePlayer,
   'end-turn': handleEndTurn,
 };
 

@@ -9046,3 +9046,14 @@ Created custom skills and documented built-in workflow commands in CLAUDE.md.
 - `/bug-hunt` uses opus model for deeper reasoning on complex bug patterns
 - `/bug-hunt` reports only (no auto-fix) to keep human in the loop
 - Both skills reference CLAUDE.md conventions so they check against known bug patterns
+
+## 2026-04-19 17:15 — AI Fence-tjenester
+- La til 3 nye AI-handlinger: `buy-protection`, `buy-tip-off`, `sabotage-player`
+- Ny handler-fil: `src/hooks/ai/handlers/fenceHandlers.ts`
+- 3 nye generators i `rivalryActions.ts`:
+  - `generateProtectionPurchase`: Kjøper beskyttelse (3/6/10 uker) når gull >= 200 og ingen aktiv beskyttelse. Caution-vektet (Seraphina prioriterer høyt). Velger lengre pakker når rik.
+  - `generateSabotageActions`: Hard AI med rivalry >= 1.0 hyrer Shadowfingers ved Fence/Shadow Market mot truende rivaler. Velger sabotasje-type basert på rival-profil (gull → pickpocket, mye tid → distraction, ellers mudslinger).
+  - `generateTipOffPurchase`: Hard AI kjøper tip-off på rik rival (>=200g) ved Fence.
+- Oppdaterte StoreActions interface med `buyProtection` og `sabotagePlayer`
+- Inkluderte `targetId` i `actionKey()` for å unngå retry på samme mål
+- Alle 358 tester består
