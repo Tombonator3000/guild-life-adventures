@@ -132,7 +132,7 @@ function resolveActiveQuest(player: Player, week: number): {
     const chainId = player.activeQuest.replace('nlchain:', '');
     const chain = NON_LINEAR_QUEST_CHAINS.find(c => c.id === chainId);
     if (!chain) return null;
-    const stepIndex = player.nlChainProgress[chainId] ?? 0;
+    const stepIndex = player.nlChainProgress?.[chainId] ?? 0;
     const step = getCurrentNonLinearStep(chainId, stepIndex);
     if (!step) return null;
     return {
@@ -151,7 +151,7 @@ function resolveActiveQuest(player: Player, week: number): {
     const chainId = player.activeQuest.replace('chain:', '');
     const chain = QUEST_CHAINS.find(c => c.id === chainId);
     if (!chain) return null;
-    const stepsCompleted = player.questChainProgress[chainId] || 0;
+    const stepsCompleted = player.questChainProgress?.[chainId] ?? 0;
     const step = chain.steps[stepsCompleted];
     if (!step) return null;
     const isLastStep = stepsCompleted + 1 >= chain.steps.length;
