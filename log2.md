@@ -9057,3 +9057,24 @@ Created custom skills and documented built-in workflow commands in CLAUDE.md.
 - Oppdaterte StoreActions interface med `buyProtection` og `sabotagePlayer`
 - Inkluderte `targetId` i `actionKey()` for å unngå retry på samme mål
 - Alle 358 tester består
+
+## 2026-04-28T07:10Z — Bred bug-hunt + optimalisering
+
+### Funn (CRITICAL)
+- **Save migration manglet for nlchain-felter og backupOutfit**: `nlChainProgress`, `nlChainCompleted`, `pendingNLChainChoice`, `backupOutfit` ble lagt til etter v3 men hadde ingen migration-init i `saveLoad.ts`. Saver fra før disse feltene eksisterte ville krasje på `player.nlChainProgress[chainId]` i QuestPanel og store helpers (TypeError: cannot read property of undefined).
+
+### Endringer
+- `src/data/saveLoad.ts`: SAVE_VERSION 8 → 9. Ny v8→v9 migration-blokk som backfiller `nlChainProgress: {}`, `nlChainCompleted: []`, `pendingNLChainChoice: null`, `backupOutfit: null`.
+- `src/components/game/QuestPanel.tsx`: Defensiv optional chaining på 4 steder (`player.nlChainProgress?.[id]`, `player.questChainProgress?.[id]`, `(player.nlChainCompleted ?? []).includes`). Beskytter mot uvanlige tilstander selv om migration kjører.
+- `CLAUDE.md`: Ny regel som krever save migration når nye Player-felter introduseres.
+
+### Sweep-resultater (rene)
+- Alle `phase='event'` set-kall i store er korrekt guardet med `!isAI` eller riktig kontekst.
+- AI: `actionsRemaining=25`, `USABLE_HOURS_PER_TURN=28`, `SHORTFALL_THRESHOLD=120`, `actionKey()` inkluderer `targetId`/`floorId`/`questId` — alle korrekt per CLAUDE.md.
+- Gold-validering finnes i `sabotagePlayer`, `buyProtection`, `purchaseReputationUnlock`.
+- UI: `dependability` brukes som ren stat (riktig); career-progress nullstilles korrekt når `!currentJob` i `GoalProgress`, `TurnOrderPanel`, `PlayersTab`, `SpectatorPanel`.
+- Quest: `nlChainProgress` vs `questChainProgress` brukes konsistent overalt.
+- `backupOutfit` har `?? 0` i ArmoryPanel og `!== null`-sjekk i HomePanel.
+
+### Verifisering
+- 358/358 tester grønn etter alle endringer.
