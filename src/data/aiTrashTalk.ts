@@ -18,7 +18,10 @@ export type TrashTalkTrigger =
   | 'cast-curse'
   | 'take-quest'
   | 'apply-job'
-  | 'move-housing';
+  | 'move-housing'
+  | 'sabotage-player'
+  | 'buy-tip-off'
+  | 'buy-protection';
 
 interface TrashTalkLine {
   text: string;
@@ -51,6 +54,66 @@ const GRIMWALD_LINES: Partial<Record<TrashTalkTrigger, TrashTalkLine[]>> = {
   ],
   'apply-job': [
     { text: "I believe this position suits me perfectly.", mood: 'friendly' },
+  ],
+};
+
+// Sabotage / Fence-service lines per personality
+const GRIMWALD_FENCE: Partial<Record<TrashTalkTrigger, TrashTalkLine[]>> = {
+  'buy-protection': [
+    { text: "A guildsman pays his dues. Even to the shadows.", mood: 'grumpy' },
+    { text: "Better safe than robbed blind on the way home.", mood: 'friendly' },
+  ],
+  'sabotage-player': [
+    { text: "Sometimes honor takes a back seat to victory.", mood: 'grumpy' },
+    { text: "Shadowfingers owes me a favor. Time to collect.", mood: 'mysterious' },
+  ],
+  'buy-tip-off': [
+    { text: "Knowledge of one's rivals is half the battle.", mood: 'friendly' },
+  ],
+};
+
+const SERAPHINA_FENCE: Partial<Record<TrashTalkTrigger, TrashTalkLine[]>> = {
+  'buy-protection': [
+    { text: "A small price to keep my coin purse intact.", mood: 'friendly' },
+    { text: "Even scholars need protection from common thugs.", mood: 'mysterious' },
+  ],
+  'sabotage-player': [
+    { text: "Consider this a lesson in humility.", mood: 'mysterious' },
+    { text: "I would hex you myself, but Shadowfingers works cheaper.", mood: 'gossip' },
+  ],
+  'buy-tip-off': [
+    { text: "Information is the most valuable currency.", mood: 'mysterious' },
+  ],
+};
+
+const THORNWICK_FENCE: Partial<Record<TrashTalkTrigger, TrashTalkLine[]>> = {
+  'buy-protection': [
+    { text: "Insurance is the cornerstone of any sound portfolio.", mood: 'friendly' },
+    { text: "Risk management, my friends. Risk management.", mood: 'grumpy' },
+  ],
+  'sabotage-player': [
+    { text: "A modest investment in your misfortune.", mood: 'grumpy' },
+    { text: "Shadowfingers is remarkably affordable this season.", mood: 'friendly' },
+    { text: "Nothing personal. Just market correction.", mood: 'mysterious' },
+  ],
+  'buy-tip-off': [
+    { text: "Due diligence before any hostile action.", mood: 'friendly' },
+    { text: "Intel separates the wealthy from the bankrupt.", mood: 'grumpy' },
+  ],
+};
+
+const MORGATH_FENCE: Partial<Record<TrashTalkTrigger, TrashTalkLine[]>> = {
+  'buy-protection': [
+    { text: "Even a warrior watches his back in these streets.", mood: 'warning' },
+    { text: "My gold, my rules. Touch it and bleed.", mood: 'warning' },
+  ],
+  'sabotage-player': [
+    { text: "Shadowfingers strikes where my blade cannot reach.", mood: 'warning' },
+    { text: "Suffer, rival. Suffer well.", mood: 'warning' },
+    { text: "I would gut you myself, but the guild frowns on murder.", mood: 'grumpy' },
+  ],
+  'buy-tip-off': [
+    { text: "Know thy enemy. Then break them.", mood: 'warning' },
   ],
 };
 
@@ -128,6 +191,12 @@ const PERSONALITY_LINES: Record<AIPersonalityId, Partial<Record<TrashTalkTrigger
   thornwick: THORNWICK_LINES,
   morgath: MORGATH_LINES,
 };
+
+// Merge Fence-service lines after all *_LINES are declared
+Object.assign(GRIMWALD_LINES, GRIMWALD_FENCE);
+Object.assign(SERAPHINA_LINES, SERAPHINA_FENCE);
+Object.assign(THORNWICK_LINES, THORNWICK_FENCE);
+Object.assign(MORGATH_LINES, MORGATH_FENCE);
 
 /**
  * Get a random trash talk line for an AI personality and trigger.
