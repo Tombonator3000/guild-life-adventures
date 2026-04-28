@@ -71,7 +71,6 @@ const GRIMWALD_FENCE: Partial<Record<TrashTalkTrigger, TrashTalkLine[]>> = {
     { text: "Knowledge of one's rivals is half the battle.", mood: 'friendly' },
   ],
 };
-Object.assign(GRIMWALD_LINES, GRIMWALD_FENCE);
 
 const SERAPHINA_FENCE: Partial<Record<TrashTalkTrigger, TrashTalkLine[]>> = {
   'buy-protection': [
@@ -86,7 +85,6 @@ const SERAPHINA_FENCE: Partial<Record<TrashTalkTrigger, TrashTalkLine[]>> = {
     { text: "Information is the most valuable currency.", mood: 'mysterious' },
   ],
 };
-Object.assign(SERAPHINA_LINES, SERAPHINA_FENCE);
 
 const THORNWICK_FENCE: Partial<Record<TrashTalkTrigger, TrashTalkLine[]>> = {
   'buy-protection': [
@@ -103,7 +101,6 @@ const THORNWICK_FENCE: Partial<Record<TrashTalkTrigger, TrashTalkLine[]>> = {
     { text: "Intel separates the wealthy from the bankrupt.", mood: 'grumpy' },
   ],
 };
-Object.assign(THORNWICK_LINES, THORNWICK_FENCE);
 
 const MORGATH_FENCE: Partial<Record<TrashTalkTrigger, TrashTalkLine[]>> = {
   'buy-protection': [
@@ -119,7 +116,6 @@ const MORGATH_FENCE: Partial<Record<TrashTalkTrigger, TrashTalkLine[]>> = {
     { text: "Know thy enemy. Then break them.", mood: 'warning' },
   ],
 };
-Object.assign(MORGATH_LINES, MORGATH_FENCE);
 
 const SERAPHINA_LINES: Partial<Record<TrashTalkTrigger, TrashTalkLine[]>> = {
   'study': [
@@ -195,6 +191,12 @@ const PERSONALITY_LINES: Record<AIPersonalityId, Partial<Record<TrashTalkTrigger
   thornwick: THORNWICK_LINES,
   morgath: MORGATH_LINES,
 };
+
+// Merge Fence-service lines after all *_LINES are declared
+Object.assign(GRIMWALD_LINES, GRIMWALD_FENCE);
+Object.assign(SERAPHINA_LINES, SERAPHINA_FENCE);
+Object.assign(THORNWICK_LINES, THORNWICK_FENCE);
+Object.assign(MORGATH_LINES, MORGATH_FENCE);
 
 /**
  * Get a random trash talk line for an AI personality and trigger.
