@@ -5,7 +5,7 @@
 
 import type { GameState } from '@/types/game.types';
 
-const SAVE_VERSION = 8;
+const SAVE_VERSION = 9;
 const STORAGE_PREFIX = 'guild-life-';
 const AUTO_SAVE_KEY = `${STORAGE_PREFIX}autosave`;
 const SAVE_SLOT_KEY = (slot: number) => `${STORAGE_PREFIX}save-${slot}`;
@@ -142,6 +142,20 @@ export function loadGame(slot: number = 0): SaveData | null {
         if (p.protectionWeeksLeft === undefined) p.protectionWeeksLeft = 0;
       }
       saveData.version = 8;
+    }
+
+    // v8 → v9: Backfill non-linear quest chain + backup outfit fields that
+    // were added without migrations (would crash old saves on UI/store reads).
+    if (saveData.version < 9) {
+      if (saveData.gameState?.players) {
+        for (const p of saveData.gameState.players as unknown as Record<string, unknown>[]) {
+          if (p.nlChainProgress === undefined) p.nlChainProgress = {};
+          if (p.nlChainCompleted === undefined) p.nlChainCompleted = [];
+          if (p.pendingNLChainChoice === undefined) p.pendingNLChainChoice = null;
+          if (p.backupOutfit === undefined) p.backupOutfit = null;
+        }
+      }
+      saveData.version = 9;
     }
 
     return saveData;
