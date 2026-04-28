@@ -276,6 +276,9 @@ const ACTION_TO_TRASH_TALK: Partial<Record<AIActionType, TrashTalkTrigger>> = {
   'take-quest': 'take-quest',
   'apply-job': 'apply-job',
   'move-housing': 'move-housing',
+  'sabotage-player': 'sabotage-player',
+  'buy-tip-off': 'buy-tip-off',
+  'buy-protection': 'buy-protection',
 };
 
 /**
