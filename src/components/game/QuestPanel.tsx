@@ -322,7 +322,7 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
       <JonesSectionHeader title="QUEST CHAINS" />
       <div className="space-y-1">
         {QUEST_CHAINS.map(chain => {
-          const stepsCompleted = player.questChainProgress[chain.id] || 0;
+          const stepsCompleted = player.questChainProgress?.[chain.id] ?? 0;
           const isComplete = stepsCompleted >= chain.steps.length;
           const nextStep = isComplete ? null : chain.steps[stepsCompleted];
           const canStart = nextStep ? canTakeChainStep(chain, nextStep, player.guildRank, player.education, player.dungeonFloorsCleared) : { canTake: false };
@@ -388,8 +388,8 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
       <JonesSectionHeader title="BRANCHING QUESTS" />
       <div className="space-y-1">
         {NON_LINEAR_QUEST_CHAINS.map(chain => {
-          const stepIndex = player.nlChainProgress[chain.id] ?? 0;
-          const isComplete = player.nlChainCompleted.includes(chain.id);
+          const stepIndex = player.nlChainProgress?.[chain.id] ?? 0;
+          const isComplete = (player.nlChainCompleted ?? []).includes(chain.id);
           const step = isComplete ? null : getCurrentNonLinearStep(chain.id, stepIndex);
           const canStart = step ? canTakeNonLinearChainStep(chain, step, player.guildRank, player.education, player.dungeonFloorsCleared) : { canTake: false };
           const hasActiveQuest = !!player.activeQuest;
