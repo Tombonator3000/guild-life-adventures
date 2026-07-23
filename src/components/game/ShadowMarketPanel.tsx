@@ -23,28 +23,17 @@ export type ShadowMarketSection = 'goods' | 'lottery' | 'tickets' | 'appliances'
 interface ShadowMarketPanelProps {
   player: Player;
   priceModifier: number;
-  onSpendTime: (hours: number) => void;
-  onModifyGold: (amount: number) => void;
-  onModifyHappiness: (amount: number) => void;
-  onModifyFood: (amount: number) => void;
-  buyLotteryTicket: (playerId: string, cost: number) => void;
-  buyTicket: (playerId: string, ticketType: string, cost: number) => void;
   section?: ShadowMarketSection;
 }
 
 export function ShadowMarketPanel({
   player,
   priceModifier,
-  onSpendTime,
-  onModifyGold,
-  onModifyHappiness,
-  onModifyFood,
-  buyLotteryTicket,
-  buyTicket,
   section,
 }: ShadowMarketPanelProps) {
   const { t } = useTranslation();
-  const { buyAppliance, buyDurable } = useGameStore();
+  const buyAppliance = useGameStore(s => s.buyAppliance);
+  const purchaseVendorItem = useGameStore(s => s.purchaseVendorItem);
   const appliances = getMarketAppliances();
 
   const handleBuyAppliance = (applianceId: string, price: number) => {
@@ -58,34 +47,18 @@ export function ShadowMarketPanel({
     }
   };
 
-  const handleBuyItem = (item: typeof SHADOW_MARKET_ITEMS[0], price: number) => {
+  const handleBuyItem = (item: typeof SHADOW_MARKET_ITEMS[0]) => {
     const itemName = t(`items.${item.id}.name`) || item.name;
-
-    if (item.isLotteryTicket) {
-      buyLotteryTicket(player.id, price);
-      toast.success(t('panelStore.purchased', { name: itemName }) + ` (${player.lotteryTickets + 1} tickets for this week)`);
-      return;
+    const result = purchaseVendorItem(player.id, 'shadow-market', item.id);
+    if (!result) return;
+    if (result.success) {
+      const ticketNote = item.isLotteryTicket
+        ? ` (${player.lotteryTickets + 1} tickets for this week)`
+        : '';
+      toast.success(t('panelStore.purchased', { name: itemName }) + ticketNote);
+    } else {
+      toast.error(result.message);
     }
-
-    if (item.isTicket && item.ticketType) {
-      if (player.tickets.includes(item.ticketType)) {
-        toast.error('You already have this ticket!');
-        return;
-      }
-      buyTicket(player.id, item.ticketType, price);
-      toast.success(t('panelStore.purchased', { name: itemName }));
-      return;
-    }
-
-    onModifyGold(-price);
-
-    if (item.effect?.type === 'food') {
-      onModifyFood(item.effect.value);
-    }
-    if (item.effect?.type === 'happiness') {
-      onModifyHappiness(item.effect.value);
-    }
-    toast.success(t('panelStore.purchased', { name: itemName }));
   };
 
   // Separate items by type for better organization
@@ -110,7 +83,7 @@ export function ShadowMarketPanel({
             label={t(`items.${item.id}.name`) || item.name}
             price={price}
             disabled={!canAfford}
-            onClick={() => handleBuyItem(item, price)}
+            onClick={() => handleBuyItem(item)}
             darkText={darkText}
             largeText={largeText}
             previewData={itemToPreview(item)}
@@ -134,7 +107,7 @@ export function ShadowMarketPanel({
             label={t(`items.${item.id}.name`) || item.name}
             price={price}
             disabled={!canAfford}
-            onClick={() => handleBuyItem(item, price)}
+            onClick={() => handleBuyItem(item)}
             darkText={darkText}
             largeText={largeText}
             previewData={itemToPreview(item)}
@@ -160,7 +133,7 @@ export function ShadowMarketPanel({
             price={price}
             disabled={!canAfford || alreadyOwns}
             highlight={alreadyOwns}
-            onClick={() => handleBuyItem(item, price)}
+            onClick={() => handleBuyItem(item)}
             darkText={darkText}
             largeText={largeText}
             previewData={itemToPreview(item)}
@@ -189,8 +162,10 @@ export function ShadowMarketPanel({
             disabled={!canAfford || alreadyOwns}
             highlight={alreadyOwns}
             onClick={() => {
-              buyDurable(player.id, item.id, price);
-              toast.success(t('panelStore.purchased', { name: itemName }));
+              const result = purchaseVendorItem(player.id, 'shadow-market', item.id);
+              if (!result) return;
+              if (result.success) toast.success(t('panelStore.purchased', { name: itemName }));
+              else toast.error(result.message);
             }}
             darkText={darkText}
             largeText={largeText}

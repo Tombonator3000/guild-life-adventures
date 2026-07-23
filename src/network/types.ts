@@ -184,10 +184,8 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'takeLoan',
   'repayLoan',
 
-  'buyFreshFood',
-  'buyLotteryTicket',
-  'buyTicket',
-  'buyFoodWithSpoilage',
+  // Vendor intent only. Host resolves catalogue, price, discount and effect.
+  'purchaseVendorItem',
 
   'buyGuildPass',
   'takeQuest',

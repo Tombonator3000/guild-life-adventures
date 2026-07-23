@@ -552,7 +552,7 @@ describe('Cross-Player Validation', () => {
       'invest', 'withdrawInvestment', 'buyItem', 'sellItem', 'buyDurable',
       'sellDurable', 'buyAppliance', 'repairAppliance', 'pawnAppliance', 'redeemAppliance',
       'equipItem', 'unequipItem', 'buyStock', 'sellStock', 'takeLoan',
-      'repayLoan', 'buyFreshFood', 'buyLotteryTicket', 'buyTicket',
+      'repayLoan', 'purchaseVendorItem',
       'buyGuildPass', 'takeQuest', 'completeQuest', 'abandonQuest',
     ];
 
