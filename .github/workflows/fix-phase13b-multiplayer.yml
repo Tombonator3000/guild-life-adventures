@@ -1,0 +1,29 @@
+name: Fix phase 13B multiplayer test
+
+on:
+  push:
+    branches:
+      - agent/audit-phase13b-travel
+    paths:
+      - phase13b-multiplayer-fix-trigger.txt
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase13b-travel
+          fetch-depth: 1
+      - run: git fetch origin main --depth=1
+      - run: git checkout origin/main -- src/test/multiplayer.test.ts
+      - run: node scripts/fix-phase13b-multiplayer.mjs
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/test/multiplayer.test.ts
+          git commit -m "Restore and update multiplayer travel expectations"
+          git push origin HEAD:agent/audit-phase13b-travel
