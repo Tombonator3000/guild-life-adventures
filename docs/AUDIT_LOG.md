@@ -7,7 +7,7 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 | Nr. | Punkt | Status | Merknad |
 |---:|---|---|---|
 | 1 | Beskytte online spill mot sabotasje/misbruk | Ferdig hovedsakelig | Sabotasje, beskyttelse og tip-off er host-autoritative. |
-| 2 | Host-autoritativ multiplayer | Delvis ferdig | Aktør-ID, tur, rate limit og argumentgrenser valideres. Jobb, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig, hex-tjenester og finans bruker semantiske gjestehandlinger. De største klientprisede spillhandlingene er nå migrert. |
+| 2 | Host-autoritativ multiplayer | Delvis ferdig, protokoll låst | Aktør-ID, tur, allowlist, argumentform, reisepris og semantiske host-avslag valideres og er dekket av angrepstester. Rå legacy-handlinger må fortsatt migreres bort. |
 | 3 | Full save/load-gjenoppretting | Ferdig | Brett-hexer og ukentlige nyheter gjenopprettes. |
 | 4 | Save-migrering v10 | Ferdig | Normalisering og migreringstester er lagt til. |
 | 5 | Sikre reputation unlocks | Ferdig | Kjøp valideres atomisk på hosten. |
@@ -23,10 +23,10 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 
 ## Gjenstående prioritert rekkefølge
 
-1. **Test online sikkerhetsavvisninger på protokollnivå.** Feil spiller-ID, feil tur, feil vendor/service, ugyldig vare og manipulerte verdier skal avvises.
+1. **Migrer resterende rå gjestehandlinger.** Prioriter `modify*`, `spendTime`, `movePlayer`, `setJob` og `negotiateRaise`, slik at klienten ikke lenger sender belønning, effekt, lønn eller reisetid selv innenfor validerte grenser.
 2. **Begrens resterende store-abonnementer.** Start med `LocationPanel`, som fortsatt leser hele Zustand-storen.
 3. **Del opp GameBoard videre.** Flytt avledet tilstand og overlay-/layoutlogikk til mindre hooks/komponenter uten å endre funksjon.
-4. **Rydd døde kompatibilitetslag.** Fjern gamle callback-props og numeriske legacy-funksjoner først når AI og alle lokale kallere er migrert.
+4. **Rydd døde kompatibilitetslag.** Fjern gamle callback-props og numeriske legacy-funksjoner når alle lokale og AI-kallere er migrert.
 
 ## Fase 4 – 23. juli 2026
 
@@ -350,4 +350,50 @@ Endelig GitHub Actions-run `30049006317`:
 
 - En reell lokal spilløkt er nå dekket fra tittelskjerm til uke 2.
 - Save/load er verifisert gjennom brukergrensesnittet, ikke bare gjennom store-enhetstester.
-- PR #334 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
+- PR #334 ble squash-merget til `main` som commit `2f73636e08f702e770c4879520e81d3734831996`.
+
+## Fase 12 – 24. juli 2026
+
+### Mål
+
+- Teste den faktiske host-mottakerkjeden mot manipulerte gjestemeldinger.
+- Avvise feil tur, spoofet spiller-ID, disallowed actions, ugyldig vendor/service, ukjent vare og manipulerte numeriske verdier.
+- Sikre at et autoritativt store-avslag rapporteres som avslag til gjesten.
+
+### Utført
+
+- Opprettet arbeidsgren `agent/audit-phase12-protocol-security` og draft-PR #335 fra fase 11-merge `2f73636e08f702e770c4879520e81d3734831996`.
+- Flyttet turn-, allowlist-, actor- og argumentvalidering ut av `useNetworkSync` til rene funksjoner i `actionValidation.ts`.
+- `processGuestActionRequest` brukes nå både av host-hooken og regresjonstestene, slik at testene dekker samme beslutningskjede som produksjonskoden.
+- Lagt til eksplisitt validering av:
+  - negativ, desimal eller overdreven tidsbruk,
+  - ukjent destinasjon og manipulert reisepris,
+  - ugyldige vendor-, service- og mode-enums,
+  - ikke-canonical låneprodukt,
+  - desimaler og ugyldige finansbeløp,
+  - rå statsmutasjoner utenfor sikkerhetsgrensene.
+- Oppdaget og rettet en protokollfeil i `executeAction`: funksjonen rapporterte tidligere `true` når en store-handling returnerte `{ success: false }`, så lenge den ikke kastet exception.
+- `executeAction` propagerer nå både boolean `false` og `ActionResult.success` korrekt.
+- Ukjent vendor-vare og ukjent aksje-ID blir nå korrekt sendt tilbake som `Action failed` uten state-endring.
+- Lagt til åtte protokolltester som dekker feil tur, host/local-only actions, actor spoofing, negative timer, gratis/ukjent reise, ugyldige enums, manipulerte verdier, host-avslag og gyldig kontrollhandling.
+- Fjernet midlertidig patch-workflow og patchskript før merge.
+
+### Tester
+
+GitHub Actions-run `30049975906`:
+
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Full Vitest-pakke, inkludert åtte nye protokolltester: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright-runner og Chromium-installasjon: bestått.
+- Title/setup-smoke og komplett lokal spillflyt: bestått.
+
+### Resultat
+
+- En gjest kan ikke lenger få ekstra tid med negative timer, flytte gratis eller bruke en oppdiktet destinasjon/reisepris.
+- Feil spiller, feil tur, disallowed actions og ugyldige servicevalg stoppes før store-dispatch.
+- Semantiske host-avslag rapporteres korrekt til gjesten i stedet for som falsk suksess.
+- Rå legacy-handlinger er fortsatt gjestetillatt innenfor validerte grenser og står først på neste migreringsliste.
+- PR #335 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.

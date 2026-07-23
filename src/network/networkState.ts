@@ -204,7 +204,12 @@ export function executeAction(name: string, args: unknown[]): boolean {
     return false;
   }
   try {
-    (action as (...a: unknown[]) => unknown)(...args);
+    const result = (action as (...a: unknown[]) => unknown)(...args);
+    if (result === false) return false;
+    if (result && typeof result === 'object' && 'success' in result) {
+      const success = (result as { success?: unknown }).success;
+      if (typeof success === 'boolean') return success;
+    }
     return true;
   } catch (err) {
     console.error(`[Network] Action ${name} failed:`, err);

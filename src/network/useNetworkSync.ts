@@ -8,90 +8,9 @@ import { peerManager } from './PeerManager';
 import { useGameStore } from '@/store/gameStore';
 import { setNetworkActionSender, trackPendingAction, resolveAction } from './NetworkActionProxy';
 import { serializeGameState, applyNetworkState, executeAction } from './networkState';
-import { ALLOWED_GUEST_ACTIONS } from './types';
 import type { NetworkMessage, GuestMessage, HostMessage, ChatMessage, ConnectionStatus } from './types';
 import type { LocationId } from '@/types/game.types';
-import { validateGuestActor } from './actionValidation';
-
-/**
- * Server-side argument validation for dangerous guest actions.
- * Prevents a malicious guest from sending crafted messages to exploit raw
- * stat modifiers (modifyGold, modifyHealth, etc.) that are in the whitelist
- * because UI components call them directly.
- *
- * Returns an error string if invalid, or null if OK.
- */
-
-/** Validate that args[index] is a finite number within [min, max]. Returns error string or null. */
-function validateNumArg(args: unknown[], index: number, min: number, max: number, label: string): string | null {
-  const val = args[index];
-  if (typeof val !== 'number' || !isFinite(val)) return `Invalid ${label}`;
-  if (val < min || val > max) return `${label} out of range`;
-  return null;
-}
-
-/** Stat modifier validation rules: action name → { argIndex, maxAbsValue, label, oneSided? }
- *  For modifyGold, negative amounts (spending) are unlimited — only cap positive (oneSided). */
-const STAT_MODIFIER_RULES: Record<string, { argIndex: number; max: number; label: string; positiveOnly?: boolean }> = {
-  modifyGold:       { argIndex: 1, max: 500, label: 'Gold',       positiveOnly: true },
-  modifyHealth:     { argIndex: 1, max: 100, label: 'Health' },
-  modifyHappiness:  { argIndex: 1, max: 50,  label: 'Happiness' },
-  modifyFood:       { argIndex: 1, max: 100, label: 'Food' },
-  modifyClothing:   { argIndex: 1, max: 100, label: 'Clothing' },
-  modifyMaxHealth:  { argIndex: 1, max: 25,  label: 'MaxHealth' },
-  modifyRelaxation: { argIndex: 1, max: 20,  label: 'Relaxation' },
-};
-
-/** Cost validation rules: action name → { argIndex, min, max, label } */
-const COST_VALIDATION_RULES: Record<string, { argIndex: number; min: number; max: number; label: string }> = {
-  temperEquipment:        { argIndex: 3, min: 0, max: 1000, label: 'temper cost' },
-  salvageEquipment:       { argIndex: 3, min: 0, max: 2000, label: 'salvage value' },
-};
-
-function validateActionArgs(name: string, args: unknown[], store: ReturnType<typeof useGameStore.getState>): string | null {
-  // Stat modifier actions: validate amount is finite and within bounds
-  const statRule = STAT_MODIFIER_RULES[name];
-  if (statRule) {
-    const amount = args[statRule.argIndex];
-    if (typeof amount !== 'number' || !isFinite(amount)) return `Invalid amount`;
-    if (statRule.positiveOnly) {
-      if (amount > statRule.max) return `${statRule.label} amount too large`;
-    } else {
-      if (Math.abs(amount) > statRule.max) return `${statRule.label} amount too large`;
-    }
-    return null;
-  }
-
-  // Cost/value-based actions: validate finite number within [min, max]
-  const costRule = COST_VALIDATION_RULES[name];
-  if (costRule) {
-    return validateNumArg(args, costRule.argIndex, costRule.min, costRule.max, `Invalid ${costRule.label}`);
-  }
-
-  // Actions with custom validation logic
-  switch (name) {
-    case 'setJob': {
-      const wage = args[2];
-      if (typeof wage === 'number' && (wage < 0 || wage > 100 || !isFinite(wage))) return 'Invalid wage';
-      return null;
-    }
-    case 'workShift': {
-      const playerId = typeof args[0] === 'string' ? args[0] : null;
-      const player = playerId ? store.players.find(p => p.id === playerId) : null;
-      const hoursErr = validateNumArg(args, 1, 0, 60, 'hours');
-      if (hoursErr) return hoursErr;
-      const wageErr = validateNumArg(args, 2, 0, 100, 'wage');
-      if (wageErr) return wageErr;
-      const wage = args[2] as number;
-      if (player && player.currentWage > 0 && wage > player.currentWage * 1.5) {
-        return 'Wage exceeds player current wage';
-      }
-      return null;
-    }
-    default:
-      return null;
-  }
-}
+import { processGuestActionRequest } from './actionValidation';
 
 /** Turn timeout: auto-end turn after this many seconds of inactivity (0 = disabled) */
 const TURN_TIMEOUT_SECONDS = 120;
@@ -355,65 +274,28 @@ export function useNetworkSync() {
             return;
           }
 
-          if (!currentPlayer || currentPlayer.id !== senderPlayerId) {
-            peerManager.sendTo(fromPeerId, {
-              type: 'action-result',
-              requestId: msg.requestId,
-              success: false,
-              error: 'Not your turn',
-            });
-            return;
+          const result = processGuestActionRequest(
+            msg.name,
+            msg.args,
+            senderPlayerId,
+            currentPlayer?.id,
+            store,
+            executeAction,
+          );
+
+          if (!result.validated) {
+            console.warn(`[NetworkSync] Blocked guest action ${msg.name}: ${result.error}`);
+          } else {
+            // A fully validated request counts as activity even when the
+            // authoritative store action rejects it for gameplay reasons.
+            resetTurnTimeout();
           }
 
-          // Validate action is in the allowed whitelist
-          if (!ALLOWED_GUEST_ACTIONS.has(msg.name)) {
-            console.warn(`[NetworkSync] Blocked disallowed guest action: ${msg.name}`);
-            peerManager.sendTo(fromPeerId, {
-              type: 'action-result',
-              requestId: msg.requestId,
-              success: false,
-              error: 'Action not allowed',
-            });
-            return;
-          }
-
-          // Bind every actor-bearing action to the authenticated peer. This
-          // does not depend on a particular player-ID prefix.
-          const actorError = validateGuestActor(msg.name, msg.args, senderPlayerId);
-          if (actorError) {
-            console.warn(`[NetworkSync] Blocked actor mismatch: ${msg.name} from ${senderPlayerId}`);
-            peerManager.sendTo(fromPeerId, {
-              type: 'action-result',
-              requestId: msg.requestId,
-              success: false,
-              error: actorError,
-            });
-            return;
-          }
-
-          // Validate action arguments (prevents abuse of raw stat modifiers)
-          const argError = validateActionArgs(msg.name, msg.args, store);
-          if (argError) {
-            console.warn(`[NetworkSync] Blocked invalid action args: ${msg.name} — ${argError}`);
-            peerManager.sendTo(fromPeerId, {
-              type: 'action-result',
-              requestId: msg.requestId,
-              success: false,
-              error: argError,
-            });
-            return;
-          }
-
-          // Reset turn timeout on any valid action (player is not AFK)
-          resetTurnTimeout();
-
-          // Execute the validated action
-          const success = executeAction(msg.name, msg.args);
           peerManager.sendTo(fromPeerId, {
             type: 'action-result',
             requestId: msg.requestId,
-            success,
-            error: success ? undefined : 'Action failed',
+            success: result.success,
+            error: result.error,
           });
           // State broadcast is handled by the debounced store subscription (50ms)
           // No need for an immediate duplicate broadcast here
