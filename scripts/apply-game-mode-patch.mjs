@@ -1,3 +1,4 @@
+// One-time patcher; this update intentionally triggers the existing branch workflow.
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const path = 'src/components/screens/GameSetup.tsx';
