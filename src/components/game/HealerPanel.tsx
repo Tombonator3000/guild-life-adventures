@@ -21,11 +21,11 @@ const HEALING_OPTIONS = [
 ];
 
 export function HealerPanel({ player, priceModifier }: HealerPanelProps) {
-  const useHealerService = useGameStore(s => s.useHealerService);
+  const performHealerService = useGameStore(s => s.useHealerService);
 
   const runService = (serviceId: 'minor' | 'moderate' | 'full' | 'cure' | 'blessing') => {
     playSFX('heal');
-    const result = useHealerService(player.id, serviceId);
+    const result = performHealerService(player.id, serviceId);
     if (result?.success) toast.success(result.message);
     else if (result && !result.success) toast.error(result.message);
   };
