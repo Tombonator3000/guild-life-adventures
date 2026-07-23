@@ -14,7 +14,7 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 | 6 | Atomiske handlinger | Delvis ferdig | Healer, gravplass, gambling, avis, sabotasje og beskyttelse er atomiske. Jobb og utdanning er flyttet til host-resolvert intensjon; butikk-, økonomi-, bolig-, hex- og utstyrsverdier står igjen. |
 | 7 | Hook-avhengigheter | Ferdig for kjente funn | AI-start, auto-end-turn, tastatur og zone-editor er rettet. |
 | 8 | Playwright E2E | Delvis ferdig | Tittel- og setup-smoketester finnes. Full spillflyt, save/load og online avvisninger mangler. |
-| 9 | Zustand-selectors | Delvis ferdig | Root, GameBoard og Grimwald AI bruker selectors/useShallow. Inventaret fant ingen eksakte `useGameStore()`-kall, men `LocationPanel` bruker fortsatt hele store-objektet via `useGameStore()` og må migreres manuelt. |
+| 9 | Zustand-selectors | Delvis ferdig | Root, GameBoard og Grimwald AI bruker selectors/useShallow. `LocationPanel` bruker fortsatt hele store-objektet og må migreres manuelt. |
 | 10 | AI failed-action cache / utdanning | Ferdig | Cache-nøkkelen følger relevant spillerstatus og tillater retry etter tilstandsendring. |
 | 11 | Dokumentasjon | Ferdig grunnlag | README, arkitektur, testing, multiplayer-sikkerhet og denne revisjonsloggen er oppdatert. |
 | 12 | Én pakkehåndterer | Ferdig | Bun er eneste pakkehåndterer; package-lock er fjernet. |
@@ -60,19 +60,27 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 - Hosten slår nå opp jobblokasjon, klær, lønn, skiftlengde, Academy-lokasjon, degree-prerequisites, økonomisk prisfaktor, studietid, prepaid-status, progresjon og graduation-krav.
 - Fjernet `workShift`, `studySession`, `studyDegree` og `payFullTuition` fra gjestenes allowlist. De beholdes foreløpig internt for AI-/legacy-kompatibilitet.
 - Oppdatert `AcademyPanel`, `WorkSection`, `LocationPanel` og `locationTabs` til de semantiske handlingene.
-- Lagt til `src/test/employmentEducationServices.test.ts` med tester for canonical lønn/tid, feil lokasjon, Academy-pris, tuition, graduation og allowlist.
-- Midlertidige patch-jobber lagrer resultatet i `phase4-patch-result.txt`; siste patchstatus var `0`.
+- Lagt til `src/test/employmentEducationServices.test.ts` med seks tester for canonical lønn/tid, feil lokasjon, Academy-pris, tuition, graduation og allowlist.
+- Oppdatert to eldre multiplayer-tester som feilaktig krevde de numeriske legacy-handlingene i allowlisten.
+- Fjernet alle midlertidige workflow-, trigger-, patch- og valideringsfiler etter kontroll.
 
 ### Tester
 
-- Ordinær `Agent validation` ble opprettet som `action_required` uten jobb, som er en GitHub-godkjenningstilstand og ikke et testresultat.
-- Selvrapporterende validering er startet og skal lagre resultat og logger under `validation/phase4/`.
-- Endelig teststatus: pågår.
+Validering av kildekoden etter testrettelsen:
 
-### Gjenstår i fasen
+- Dependency install: bestått.
+- TypeScript (`tsc --noEmit`): bestått.
+- Målrettede jobb-/utdanningstester: bestått, 6 av 6.
+- Full Vitest-pakke: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright-runner og Chromium-installasjon: bestått.
+- Playwright-smoketester i Chromium: bestått.
 
-- Les og rette eventuelle TypeScript-/testfeil fra `validation/phase4/`.
-- Kjøre full enhetstestpakke, build, lint og Playwright.
-- Fjerne midlertidige workflow-, trigger-, patch- og resultatfiler.
-- Oppdatere denne loggen med endelig SHA og teststatus.
-- Markere PR #326 klar og merge først når kontrollene er grønne.
+Den første fulltesten avdekket to utdaterte forventninger i `src/test/multiplayer.test.ts`; disse ble oppdatert til den nye sikkerhetsmodellen før den grønne sluttkjøringen.
+
+### Resultat
+
+- Online-gjester kan ikke lenger velge egen arbeidslønn, skiftlengde, studiepris, studietid eller full tuition-verdi.
+- Lokalt spill og AI beholder eksisterende interne funksjoner, slik at migreringen ikke endrer AI-adferd i denne fasen.
+- Fase 4 er klar for merge. Neste fase starter med host-resolverte kjøp av mat, ferskvarer, lotteribilletter og andre butikkvarer.
