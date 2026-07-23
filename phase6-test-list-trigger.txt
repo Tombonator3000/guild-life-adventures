@@ -1,1 +1,1 @@
-Update the cross-player appliance action list.
+Run the appliance cross-player test update now that the workflow exists.
