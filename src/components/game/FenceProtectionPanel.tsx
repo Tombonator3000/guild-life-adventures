@@ -21,8 +21,8 @@ interface FenceProtectionPanelProps {
   player: Player;
   rivals: Player[];
   priceModifier: number;
-  onBuyProtection: (weeks: number, cost: number) => void;
-  onBuyTipOff: (cost: number) => void;
+  onBuyProtection: (weeks: number) => void;
+  onBuyTipOff: (targetId: string) => void;
 }
 
 const PROTECTION_OPTIONS = [
@@ -78,7 +78,7 @@ export function FenceProtectionPanel({ player, rivals, priceModifier, onBuyProte
                   darkText
                   largeText
                   onClick={() => {
-                    onBuyProtection(opt.weeks, cost);
+                    onBuyProtection(opt.weeks);
                     toast.success(`Bought ${opt.weeks} weeks of protection from Shadowfingers.`);
                   }}
                 />
@@ -122,7 +122,7 @@ export function FenceProtectionPanel({ player, rivals, priceModifier, onBuyProte
                   darkText
                   largeText
                   onClick={() => {
-                    onBuyTipOff(tipOffCost);
+                    onBuyTipOff(tipOffTarget);
                     setRevealedTipOff(tipOffTarget);
                     toast.success(`Received intel on ${selectedRival.name}.`);
                   }}
