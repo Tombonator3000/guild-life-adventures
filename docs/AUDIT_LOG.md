@@ -7,14 +7,14 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 | Nr. | Punkt | Status | Merknad |
 |---:|---|---|---|
 | 1 | Beskytte online spill mot sabotasje/misbruk | Ferdig hovedsakelig | Sabotasje, beskyttelse og tip-off er host-autoritative. |
-| 2 | Host-autoritativ multiplayer | Delvis ferdig | Aktør-ID, tur, rate limit og argumentgrenser valideres. Jobb, utdanning, vendor-kjøp og hele apparatlivsløpet bruker nå semantiske gjestehandlinger. Utstyr, bolig, hex og enkelte økonomihandlinger står igjen. |
+| 2 | Host-autoritativ multiplayer | Delvis ferdig | Aktør-ID, tur, rate limit og argumentgrenser valideres. Jobb, utdanning, vendor-kjøp, apparater og utstyrslivsløpet bruker semantiske gjestehandlinger. Inventory-salg, bolig, hex og enkelte økonomihandlinger står igjen. |
 | 3 | Full save/load-gjenoppretting | Ferdig | Brett-hexer og ukentlige nyheter gjenopprettes. |
 | 4 | Save-migrering v10 | Ferdig | Normalisering og migreringstester er lagt til. |
 | 5 | Sikre reputation unlocks | Ferdig | Kjøp valideres atomisk på hosten. |
-| 6 | Atomiske handlinger | Delvis ferdig | Healer, gravplass, gambling, avis, sabotasje, beskyttelse, jobb, utdanning, vendor-kjøp og apparater er host-resolverte. Utstyr, bolig/leie, hex/ritual og deler av bank/investering står igjen. |
+| 6 | Atomiske handlinger | Delvis ferdig | Healer, gravplass, gambling, avis, sabotasje, beskyttelse, jobb, utdanning, vendor-kjøp, apparater og utstyr er host-resolverte. Inventory-salg, bolig/leie, hex/ritual og deler av bank/investering står igjen. |
 | 7 | Hook-avhengigheter | Ferdig for kjente funn | AI-start, auto-end-turn, tastatur og zone-editor er rettet. |
 | 8 | Playwright E2E | Delvis ferdig | Tittel- og setup-smoketester finnes. Full spillflyt, save/load og online avvisninger mangler. |
-| 9 | Zustand-selectors | Delvis ferdig | Root, GameBoard og Grimwald AI bruker selectors/useShallow. `ShadowMarketPanel`, `EnchanterPanel` og `PawnShopPanel` bruker avgrensede selectors, men `LocationPanel` leser fortsatt hele store-objektet. |
+| 9 | Zustand-selectors | Delvis ferdig | Root, GameBoard og Grimwald AI bruker selectors/useShallow. Flere paneler er begrenset, men `LocationPanel` leser fortsatt hele store-objektet. |
 | 10 | AI failed-action cache / utdanning | Ferdig | Cache-nøkkelen følger relevant spillerstatus og tillater retry etter tilstandsendring. |
 | 11 | Dokumentasjon | Ferdig grunnlag | README, arkitektur, testing, multiplayer-sikkerhet, inventarrapport og denne revisjonsloggen er oppdatert. |
 | 12 | Én pakkehåndterer | Ferdig | Bun er eneste pakkehåndterer; package-lock er fjernet. |
@@ -23,7 +23,7 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 
 ## Gjenstående prioritert rekkefølge
 
-1. **Gjør våpen, rustning og durable items host-autoritative.** `buyItem`, `sellItem`, `buyDurable`, `sellDurable`, temperering, smiereparasjon og salvage sender fortsatt pris eller verdi fra klienten.
+1. **Gjør vanlig inventory-handel host-autoritativ.** `sellItem` hos Fence og eventuelle resterende `buyItem`-kall sender fortsatt pris eller verdi fra klienten.
 2. **Gjør bolig og leie host-autoritative.** Prepaid rent, flytting og enkelte boligkostnader skal beregnes av hosten.
 3. **Gjør hex- og ritualtjenester host-autoritative.** Scrollpris, amulett, rensing, ritual og refleksjon skal løses fra canonical data på hosten.
 4. **Gjør bank/investering og øvrige rå handlinger strengere.** Klientvalgte beløp må få tydelige grenser, eierskapskontroll og semantiske handlinger der beløpet ikke skal være fritt.
@@ -123,19 +123,52 @@ Endelig valideringsrun `29998119190`: dependency install, TypeScript, 398 av 398
 
 ### Mål
 
-- Gjøre våpen, rustning, skjold og øvrige durable items host-autoritative.
-- Flytte kjøpspris, salgspris, tempereringskostnad, reparasjonskostnad og salvage-verdi fra klienten til canonical data på hosten.
+- Gjøre våpen, rustning, skjold, klær og Fence-bruktvarer host-autoritative.
+- Flytte kjøpspris, tempereringskostnad, reparasjonskostnad, tidsbruk og salvage-verdi fra klienten til canonical data på hosten.
 - Beholde AI-/lokal kompatibilitet mens gjeste-allowlisten strammes inn.
 
 ### Utført
 
-- Opprettet arbeidsgren `agent/audit-phase6-equipment` fra merge-commit `f823af7e8f5e905a642e25379b4114d932173007`.
-- Fase 6A-merge-SHA er ført inn i loggen.
-
-### Pågår
-
-- Kartlegging av kataloger, equipment slots, durability, temper levels, repair costs, salvage values og alle UI-kallere.
+- Opprettet arbeidsgren `agent/audit-phase6-equipment` og draft-PR #329 fra merge-commit `f823af7e8f5e905a642e25379b4114d932173007`.
+- Lagt til `purchaseEquipmentItem(playerId, vendor, itemId, mode)` for:
+  - klær og backup-outfit hos Armory,
+  - våpen, rustning og skjold hos Armory,
+  - used sword, used shield, used clothing og used blanket hos Fence.
+- Lagt til `useEquipmentService(playerId, service, itemId)` for temperering, durability-reparasjon og salvage hos Forge.
+- Hosten slår opp og validerer:
+  - riktig katalog, vendor og fysisk lokasjon,
+  - gjeldende economy modifier og canonical pris,
+  - dungeon-floor-prerequisites,
+  - nok gull og nok tid,
+  - equipment slot, eierskap og duplicate ownership,
+  - clothing- og backup-outfit-forbedring,
+  - durability og reparasjonsbehov,
+  - tempereringsstatus, kostnad og tidsbruk,
+  - salvage-verdi, tidsbruk, unequip og cleanup av durability/tempered state.
+- Kjøp, temperering, reparasjon og salvage utføres atomisk med gull, tid, happiness, equipment state og statistikk i samme state-transaksjon.
+- Oppdatert `ArmoryPanel`, `ForgePanel`, `PawnShopPanel`, `LocationPanel` og `locationTabs`.
+- Fjernet `buyDurable`, `sellDurable`, `temperEquipment`, `forgeRepairEquipment` og `salvageEquipment` fra gjestenes allowlist. Legacy-funksjonene beholdes internt for AI og lokale kallere inntil de er migrert.
+- Fjernet døde Fence-callbacks for `onBuyUsedItem`, `onGamble` og `onSpendTime`, samt den gamle lokale gamblingtabellen. `PawnShopPanel` bruker nå de atomiske store-handlingene direkte.
+- Lagt til ni målrettede regresjonstester og oppdatert begge multiplayer-testlistene.
+- Kontrollrunden avdekket én foreldet multiplayer-forventning som fortsatt krevde at temperering og salvage var gjestetillatt. Testen ble oppdatert til den nye sikkerhetsmodellen; spillkoden ble ikke svekket.
+- Fjernet alle midlertidige workflows, triggere, patchskript og valideringslogger før merge.
 
 ### Tester
 
-- Ikke kjørt ennå i fase 6B.
+Endelig selvrapporterende fullvalidering:
+
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Målrettede utstyrstester: bestått, 9 av 9.
+- Full Vitest-pakke: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright-runner og Chromium-installasjon: bestått.
+- Playwright-smoketester i Chromium: bestått.
+
+### Resultat
+
+- Online-gjester kan ikke lenger diktere Armory-pris, Fence-bruktvarepris/-effekt, tempereringskostnad, reparasjonskostnad, service-tid eller salvage-verdi.
+- Utstyr kjøpt brukt får canonical durability og auto-equip bare når varen tilsier det.
+- Salvage rydder korrekt opp equipped slot, durability og tempered state når siste eksemplar forsvinner.
+- PR #329 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
