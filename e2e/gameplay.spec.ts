@@ -19,11 +19,12 @@ test('plays a turn, performs a bank action, saves, mutates, loads and ends the t
   await startSinglePlayerGame(page);
 
   await page.locator('[data-zone-id="bank"]').click();
-  await page.getByRole('button', { name: 'Travel to Bank' }).click();
+  const depositButton = page.getByRole('button', { name: /deposit 50/i });
+  await expect(depositButton).toBeVisible();
 
   const withdrawButton = page.getByRole('button', { name: /withdraw 50/i });
   await expect(withdrawButton).toHaveCount(0);
-  await page.getByRole('button', { name: /deposit 50/i }).click();
+  await depositButton.click();
   await expect(withdrawButton).toBeVisible();
 
   await page.keyboard.press('Escape');
