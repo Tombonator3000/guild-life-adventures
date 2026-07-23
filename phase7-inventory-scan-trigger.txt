@@ -1,1 +1,1 @@
-Scan all inventory action callers.
+Scan all inventory action callers now that the workflow exists.
