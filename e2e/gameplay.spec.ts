@@ -45,9 +45,11 @@ test('plays a turn, performs a bank action, saves, mutates, loads and ends the t
   const savedSlot = page.getByText('Save Slot 1', { exact: true }).locator('xpath=../..');
   await savedSlot.getByRole('button', { name: 'Load', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Game Menu' })).toBeHidden();
-  await expect(page.getByRole('button', { name: /withdraw 50/i })).toBeVisible();
 
-  await page.keyboard.press('e');
+  const financesSection = page.getByRole('heading', { name: 'Finances' }).locator('..');
+  await expect(financesSection.getByText('50g', { exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: 'End Turn', exact: true }).click();
   await expect(page.getByText(/Week\s+2/).first()).toBeVisible({ timeout: 15_000 });
 
   expect(pageErrors, `Unexpected page errors: ${pageErrors.join('\n')}`).toEqual([]);
