@@ -1,1 +1,1 @@
-Scan all housing and rent actions.
+Scan all housing and rent actions now that the workflow exists.
