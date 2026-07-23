@@ -584,7 +584,7 @@ describe('Cross-Player Validation', () => {
     // use playerId as args[0]. The deep scan in useNetworkSync checks
     // ALL argument positions, but this verifies the convention holds.
     const actionsWithPlayerIdArg = [
-      'movePlayer', 'spendTime', 'modifyGold', 'modifyHealth',
+      'travelPlayer', 'spendTime', 'modifyGold', 'modifyHealth',
       'modifyHappiness', 'modifyFood', 'modifyClothing', 'modifyMaxHealth',
       'modifyRelaxation', 'cureSickness', 'payHousingRent',
       'moveHousingAtLandlord', 'requestRentExtensionAtLandlord', 'requestRaise',

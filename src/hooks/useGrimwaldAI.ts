@@ -53,7 +53,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
   // Subscribe only to action references. The AI hook no longer rerenders for
   // every gold, time, movement or event mutation in the game store.
   const storeActions = useGameStore(useShallow((state): StoreActions => ({
-    movePlayer: state.movePlayer,
+    travelPlayer: state.travelPlayer,
     workShift: state.workShift,
     modifyGold: state.modifyGold,
     modifyHealth: state.modifyHealth,

@@ -12,7 +12,7 @@
  */
 
 import type { Player } from '@/types/game.types';
-import { calculatePathDistance, getPath } from '@/data/locations';
+import { getPath } from '@/data/locations';
 import { triggerAIAnimation } from '@/hooks/useAIAnimationBridge';
 import { peerManager } from '@/network/PeerManager';
 import { useGameStore } from '@/store/gameStore';
@@ -79,7 +79,7 @@ import {
  * This replaces passing 35+ individual function references.
  */
 export interface StoreActions {
-  movePlayer: (playerId: string, location: string, cost: number) => void;
+  travelPlayer: (playerId: string, route: import('@/types/game.types').LocationId[]) => { success: boolean; message: string } | void;
   workShift: (playerId: string, hours: number, wage: number) => boolean;
   modifyGold: (playerId: string, amount: number) => void;
   modifyHealth: (playerId: string, amount: number) => void;
@@ -144,21 +144,18 @@ type ActionHandler = (player: Player, action: AIAction, store: StoreActions) => 
 
 function handleMove(player: Player, action: AIAction, store: StoreActions): boolean {
   if (!action.location) return false;
-  const baseCost = calculatePathDistance(player.currentLocation, action.location);
-  // C4 FIX: Include weather movement cost (same formula as human movement)
   const state = useGameStore.getState();
-  const weather = state.weather;
   const path = getPath(player.currentLocation, action.location);
-  const weatherExtraCost = (baseCost > 0 && weather?.movementCostExtra)
-    ? baseCost * weather.movementCostExtra
-    : 0;
-  const cost = baseCost + weatherExtraCost;
+  const steps = Math.max(0, path.length - 1);
+  const weatherExtra = state.weather?.movementCostExtra ?? 0;
+  const cost = steps + Math.floor(steps * Math.max(0, weatherExtra));
   if (player.timeRemaining < cost) return false;
   const networkMode = state.networkMode;
   if (networkMode === 'host') {
     peerManager.broadcast({ type: 'movement-animation', playerId: player.id, path });
   }
-  store.movePlayer(player.id, action.location, cost);
+  const result = store.travelPlayer(player.id, path);
+  if (result && !result.success) return false;
   // Trigger visual path animation for AI token on the board
   triggerAIAnimation(player.id, path);
   return true;

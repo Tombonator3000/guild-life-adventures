@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getMovementCost } from '@/data/locations';
 import { useGameStore } from '@/store/gameStore';
 import { executeAction } from './networkState';
 import {
@@ -83,18 +82,16 @@ describe('guest action protocol security', () => {
     )).toBe('Missing player identity');
   });
 
-  it('rejects negative time, invented destinations and free travel', () => {
+  it('rejects negative time and malformed or legacy travel requests', () => {
     const state = useGameStore.getState();
     const alice = state.players[0];
 
     expect(validateGuestActionArgs('spendTime', [alice.id, -60], state)).toBe('hours out of range');
     expect(validateGuestActionArgs('spendTime', [alice.id, Number.NaN], state)).toBe('Invalid hours');
-    expect(validateGuestActionArgs('movePlayer', [alice.id, 'not-a-place', 1], state)).toBe('Invalid destination');
-    expect(validateGuestActionArgs('movePlayer', [alice.id, 'bank', -10], state)).toBe('movement cost out of range');
-    expect(validateGuestActionArgs('movePlayer', [alice.id, 'bank', 0], state)).toBe('Invalid movement cost');
-
-    const canonicalCost = getMovementCost(alice.currentLocation, 'bank');
-    expect(validateGuestActionArgs('movePlayer', [alice.id, 'bank', canonicalCost], state)).toBeNull();
+    expect(validateGuestActionRequest('movePlayer', [alice.id, 'bank', 0], alice.id, alice.id, state)).toBe('Action not allowed');
+    expect(validateGuestActionArgs('travelPlayer', [alice.id, 'bank'], state)).toBe('Invalid travel route');
+    expect(validateGuestActionArgs('travelPlayer', [alice.id, ['general-store']], state)).toBe('Travel route out of range');
+    expect(validateGuestActionArgs('travelPlayer', [alice.id, ['general-store', 'bank']], state)).toBeNull();
   });
 
   it('rejects invalid vendors, services, modes and manipulated numeric values', () => {

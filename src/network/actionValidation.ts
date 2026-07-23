@@ -1,5 +1,3 @@
-import { getLocation, getMovementCost, getPath } from '@/data/locations';
-import type { LocationId } from '@/types/game.types';
 import { ALLOWED_GUEST_ACTIONS } from './types';
 
 const ACTIONS_WITHOUT_ACTOR_ID = new Set([
@@ -9,7 +7,6 @@ const ACTIONS_WITHOUT_ACTOR_ID = new Set([
 type ValidationPlayer = {
   id: string;
   currentWage?: number;
-  currentLocation?: LocationId;
 };
 
 export type GuestActionValidationStore = {
@@ -90,7 +87,7 @@ const STAT_MODIFIER_RULES: Record<string, { argIndex: number; max: number; label
 export function validateGuestActionArgs(
   name: string,
   args: unknown[],
-  store: GuestActionValidationStore,
+  _store: GuestActionValidationStore,
 ): string | null {
   if (!Array.isArray(args)) return 'Invalid action arguments';
 
@@ -110,28 +107,13 @@ export function validateGuestActionArgs(
     case 'spendTime':
       return validateNumArg(args, 1, 0, 60, 'hours', true);
 
-    case 'movePlayer': {
-      const destinationError = validateStringArg(args, 1, 'destination');
-      if (destinationError) return destinationError;
-      const timeError = validateNumArg(args, 2, 0, 60, 'movement cost', true);
-      if (timeError) return timeError;
-
-      const destination = args[1] as LocationId;
-      if (!getLocation(destination)) return 'Invalid destination';
-
-      const playerId = args[0];
-      const player = typeof playerId === 'string'
-        ? store.players.find(candidate => candidate.id === playerId)
-        : undefined;
-      if (!player?.currentLocation || !getLocation(player.currentLocation)) return 'Player location unavailable';
-
-      const baseCost = getMovementCost(player.currentLocation, destination);
-      const weatherExtraPerStep = store.weather?.movementCostExtra ?? 0;
-      const weatherCost = weatherExtraPerStep > 0
-        ? baseCost + getPath(player.currentLocation, destination).length * weatherExtraPerStep
-        : baseCost;
-      const suppliedCost = args[2] as number;
-      if (suppliedCost !== baseCost && suppliedCost !== weatherCost) return 'Invalid movement cost';
+    case 'travelPlayer': {
+      const route = args[1];
+      if (!Array.isArray(route)) return 'Invalid travel route';
+      if (route.length < 2 || route.length > 61) return 'Travel route out of range';
+      if (!route.every(location => typeof location === 'string' && location.length > 0)) {
+        return 'Invalid travel route';
+      }
       return null;
     }
 
