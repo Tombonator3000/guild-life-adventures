@@ -164,7 +164,7 @@ export function validateGuestActionArgs(
     }
 
     case 'moveHousingAtLandlord':
-      return validateEnumArg(args, 1, ['homeless', 'slums', 'modest', 'comfortable', 'noble'], 'housing tier');
+      return validateEnumArg(args, 1, ['homeless', 'slums', 'noble'], 'housing tier');
 
     case 'transferBankFunds': {
       const directionError = validateEnumArg(args, 1, ['deposit', 'withdraw'], 'bank direction');
