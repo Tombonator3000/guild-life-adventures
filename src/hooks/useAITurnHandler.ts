@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useGrimwaldAI } from '@/hooks/useGrimwaldAI';
+import { useGameStore } from '@/store/gameStore';
 import type { Player, AIDifficulty } from '@/types/game.types';
 import { toast } from 'sonner';
 import { Bot } from 'lucide-react';
@@ -56,11 +57,11 @@ export function useAITurnHandler({ currentPlayer, phase, aiDifficulty }: UseAITu
         icon: React.createElement(Bot, { className: 'w-4 h-4' }),
       });
 
-      const playerAtScheduleTime = currentPlayer;
+      const scheduledPlayerId = currentPlayer.id;
       const timer = setTimeout(() => {
-        const liveState = useGameStoreSafe();
-        const livePlayer = liveState?.players[liveState.currentPlayerIndex];
-        if (livePlayer?.id !== playerAtScheduleTime.id || !livePlayer.isAI || liveState?.phase !== 'playing') {
+        const liveState = useGameStore.getState();
+        const livePlayer = liveState.players[liveState.currentPlayerIndex];
+        if (livePlayer?.id !== scheduledPlayerId || !livePlayer.isAI || liveState.phase !== 'playing') {
           aiTurnStartedRef.current = false;
           setAiIsThinking(false);
           return;
@@ -91,14 +92,4 @@ export function useAITurnHandler({ currentPlayer, phase, aiDifficulty }: UseAITu
   }, [currentPlayerId, currentPlayerIsAI]);
 
   return { aiIsThinking, currentAIAction };
-}
-
-/** Lazy store access avoids capturing a stale player in the delayed AI start. */
-function useGameStoreSafe() {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require('@/store/gameStore').useGameStore.getState();
-  } catch {
-    return null;
-  }
 }
