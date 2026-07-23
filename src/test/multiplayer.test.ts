@@ -134,7 +134,14 @@ describe('Action Categories', () => {
     expect(ALLOWED_GUEST_ACTIONS.has('studyDegree')).toBe(true);
     // Quest/Dungeon
     expect(ALLOWED_GUEST_ACTIONS.has('takeQuest')).toBe(true);
-    expect(ALLOWED_GUEST_ACTIONS.has('clearDungeonFloor')).toBe(true);
+    // clearDungeonFloor is host-internal — triggered by the combat resolver on
+    // the host after guest-initiated encounters resolve. Guests must not call
+    // it directly (would let a guest hand out arbitrary dungeon rewards).
+    expect(ALLOWED_GUEST_ACTIONS.has('clearDungeonFloor')).toBe(false);
+    // New atomic guest-callable services
+    expect(ALLOWED_GUEST_ACTIONS.has('sabotagePlayer')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('buyProtection')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('purchaseReputationUnlock')).toBe(true);
   });
 
   it('HOST_INTERNAL_ACTIONS blocks game-logic-only actions', () => {
