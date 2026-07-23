@@ -1,4 +1,4 @@
-name: Phase 6B unit diagnostics
+name: Phase 6B full validation
 
 on:
   push:
@@ -13,9 +13,9 @@ permissions:
   contents: write
 
 jobs:
-  diagnose:
+  validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with:
@@ -24,7 +24,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-      - name: Run full tests and publish output
+      - name: Run and publish full validation
         shell: bash
         run: |
           set +e
@@ -32,18 +32,50 @@ jobs:
           bun install --frozen-lockfile > validation/phase6b-install.txt 2>&1
           install_status=$?
           if [ "$install_status" -eq 0 ]; then
+            bunx tsc --noEmit > validation/phase6b-typescript.txt 2>&1
+            type_status=$?
             bunx vitest run src/test/equipmentServices.test.ts > validation/phase6b-equipment-tests.txt 2>&1
             targeted_status=$?
             bunx vitest run > validation/phase6b-full-tests.txt 2>&1
             full_status=$?
+            bun run build > validation/phase6b-build.txt 2>&1
+            build_status=$?
+            bun run lint > validation/phase6b-lint.txt 2>&1
+            lint_status=$?
+            bun add --dev --no-save @playwright/test > validation/phase6b-playwright-runner.txt 2>&1
+            runner_status=$?
+            if [ "$runner_status" -eq 0 ]; then
+              bunx playwright install --with-deps --only-shell chromium > validation/phase6b-chromium.txt 2>&1
+              chromium_status=$?
+            else
+              chromium_status=99
+            fi
+            if [ "$chromium_status" -eq 0 ]; then
+              bunx playwright test > validation/phase6b-playwright.txt 2>&1
+              playwright_status=$?
+            else
+              playwright_status=99
+            fi
           else
+            type_status=99
             targeted_status=99
             full_status=99
+            build_status=99
+            lint_status=99
+            runner_status=99
+            chromium_status=99
+            playwright_status=99
           fi
-          printf 'install=%s\ntargeted=%s\nfull=%s\n' "$install_status" "$targeted_status" "$full_status" > validation/phase6b-result.txt
+          printf 'install=%s\ntypescript=%s\ntargeted=%s\nfull=%s\nbuild=%s\nlint=%s\nrunner=%s\nchromium=%s\nplaywright=%s\n' \
+            "$install_status" "$type_status" "$targeted_status" "$full_status" "$build_status" "$lint_status" "$runner_status" "$chromium_status" "$playwright_status" \
+            > validation/phase6b-result.txt
+          overall=0
+          for status in "$install_status" "$type_status" "$targeted_status" "$full_status" "$build_status" "$lint_status" "$runner_status" "$chromium_status" "$playwright_status"; do
+            if [ "$status" -ne 0 ]; then overall=1; fi
+          done
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -f validation/phase6b-*.txt
-          git commit -m "Record phase 6B unit-test diagnostics" || true
+          git commit -m "Record phase 6B full validation" || true
           git push origin HEAD:agent/audit-phase6-equipment
-          exit "$full_status"
+          exit "$overall"
