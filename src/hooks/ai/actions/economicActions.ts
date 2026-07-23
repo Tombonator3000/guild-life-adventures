@@ -132,7 +132,7 @@ function generatePawningActions(ctx: ActionContext): AIAction[] {
 
   // Sell inventory items when broke
   if (player.gold < 20 && player.inventory.length > 0 && currentLocation === 'fence') {
-    actions.push({ type: 'sell-item', priority: 78, description: `Sell ${player.inventory[0]} at fence`, details: { itemId: player.inventory[0], price: 10 } });
+    actions.push({ type: 'sell-item', priority: 78, description: `Sell ${player.inventory[0]} at fence`, details: { itemId: player.inventory[0] } });
   }
 
   return actions;

@@ -117,7 +117,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     makeNLChainChoice: store.makeNLChainChoice,
     takeBounty: store.takeBounty,
     buyGuildPass: store.buyGuildPass,
-    sellItem: store.sellItem,
     setJob: store.setJob,
     requestRaise: store.requestRaise,
     negotiateRaise: store.negotiateRaise,

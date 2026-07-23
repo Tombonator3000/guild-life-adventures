@@ -171,4 +171,24 @@ Endelig selvrapporterende fullvalidering:
 - Online-gjester kan ikke lenger diktere Armory-pris, Fence-bruktvarepris/-effekt, tempereringskostnad, reparasjonskostnad, service-tid eller salvage-verdi.
 - Utstyr kjøpt brukt får canonical durability og auto-equip bare når varen tilsier det.
 - Salvage rydder korrekt opp equipped slot, durability og tempered state når siste eksemplar forsvinner.
-- PR #329 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
+- PR #329 ble squash-merget til `main` som commit `39d5935631e414b8643e446b9079c703c8fa5714`.
+
+## Fase 7 – 23. juli 2026
+
+### Mål
+
+- Gjøre vanlig inventory-salg hos Fence host-autoritativt.
+- Fjerne `buyItem` og `sellItem` fra gjestenes allowlist uten å ødelegge AI-salg eller quest-inventory.
+
+### Utført
+
+- Opprettet arbeidsgren `agent/audit-phase7-inventory` fra fase 6B-merge `39d5935631e414b8643e446b9079c703c8fa5714`.
+- Maskinell skanning fant ingen `buyItem`-kallere og bare to `sellItem`-kallere: Fence-UI-et og AI-handleren.
+
+### Pågår
+
+- Innføring av `sellInventoryItem(playerId, itemId)`, der hosten validerer Fence-lokasjon, inventory-eierskap og canonical salgspris.
+
+### Tester
+
+- Ikke kjørt ennå i fase 7.

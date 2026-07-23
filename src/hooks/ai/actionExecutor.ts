@@ -114,7 +114,7 @@ export interface StoreActions {
   buyFreshFood: (playerId: string, units: number, cost: number) => boolean;
   buyFoodWithSpoilage: (playerId: string, foodValue: number, cost: number) => boolean;
   buyTicket: (playerId: string, ticketType: string, cost: number) => void;
-  sellItem: (playerId: string, itemId: string, price: number) => void;
+  sellInventoryItem: (playerId: string, itemId: string) => { success: boolean; message: string } | void;
   pawnAppliance: (playerId: string, applianceId: string, pawnValue: number) => void;
   buyLotteryTicket: (playerId: string, cost: number) => void;
   temperEquipment: (playerId: string, itemId: string, slot: string, cost: number) => void;

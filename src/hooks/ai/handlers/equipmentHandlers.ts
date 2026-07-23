@@ -56,11 +56,9 @@ export function handleRepairEquipment(player: Player, action: AIAction, store: S
 
 export function handleSellItem(player: Player, action: AIAction, store: StoreActions): boolean {
   const itemId = action.details?.itemId as string;
-  const price = (action.details?.price as number) || 10;
   if (!itemId) return false;
-  store.sellItem(player.id, itemId, price);
-  store.spendTime(player.id, 1);
-  return true;
+  const result = store.sellInventoryItem(player.id, itemId);
+  return result?.success ?? false;
 }
 
 export function handlePawnAppliance(player: Player, action: AIAction, store: StoreActions): boolean {
