@@ -269,4 +269,24 @@ GitHub Actions-run `30003787680`:
 
 - Online-gjester og AI kan ikke lenger velge scrollpris, defense-pris, ritualpris, rensepris, refleksjonspris eller separat tidsbruk.
 - Hexcasting er fortsatt funksjonelt og bruker den eksisterende strengere host-valideringen.
-- PR #332 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
+- PR #332 ble squash-merget til `main` som commit `c0c23f013b82105f66cba6a3868ab966894a4ce7`.
+
+## Fase 10 – 23. juli 2026
+
+### Mål
+
+- Gjøre bankoverføringer, investeringer, aksjehandel og lån host-autoritative.
+- Skille frie, men strengt validerte brukerbeløp fra canonical priser og låneprodukter.
+
+### Utført
+
+- Opprettet arbeidsgren `agent/audit-phase10-finance` fra fase 9-merge `c0c23f013b82105f66cba6a3868ab966894a4ce7`.
+- Maskinell skanning kartla UI, store, AI, nettverksallowlist, protokollregler og eksisterende økonomitester.
+
+### Pågår
+
+- Innføring av fire semantiske finanshandlinger og migrering av Bank-panelet og AI.
+
+### Tester
+
+- Ikke kjørt ennå i fase 10.

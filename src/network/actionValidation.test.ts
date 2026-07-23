@@ -14,8 +14,8 @@ describe('validateGuestActor', () => {
   });
 
   it('rejects missing or non-string actor arguments', () => {
-    expect(validateGuestActor('buyStock', [], 'human-a')).toBe('Missing player identity');
-    expect(validateGuestActor('buyStock', [42, 'ore', 1], 'human-a'))
+    expect(validateGuestActor('tradeStock', [], 'human-a')).toBe('Missing player identity');
+    expect(validateGuestActor('tradeStock', [42, 'buy', 'ore', 1], 'human-a'))
       .toBe('Cannot act as another player');
   });
 

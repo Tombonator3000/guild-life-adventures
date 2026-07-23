@@ -158,10 +158,9 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'prepayDegree',
   'graduateDegree',
 
-  'depositToBank',
-  'withdrawFromBank',
-  'invest',
-  'withdrawInvestment',
+  // Finance intent only. Host validates Bank location, balances, products and live prices.
+  'transferBankFunds',
+  'manageInvestment',
   // Inventory sale intent only. Host resolves ownership, location and price.
   'sellInventoryItem',
   // Equipment intent only. Host resolves catalogue, price, durability and service values.
@@ -175,10 +174,8 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
 
   'applyDurabilityLoss',
 
-  'buyStock',
-  'sellStock',
-  'takeLoan',
-  'repayLoan',
+  'tradeStock',
+  'manageLoan',
 
   // Vendor intent only. Host resolves catalogue, price, discount and effect.
   'purchaseVendorItem',
