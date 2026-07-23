@@ -1,1 +1,1 @@
-Apply the host-authoritative hex service migration.
+Apply the host-authoritative hex service migration now that the workflow exists.
