@@ -490,6 +490,9 @@ export const useGameStore = create<GameStore>((set, get) => {
         weather: gs.weather || { ...CLEAR_WEATHER },
         activeFestival: gs.activeFestival || null,
         deathEvent: null,
+        // Restore gameplay-persistent state that was previously dropped on load
+        weeklyNewsEvents: gs.weeklyNewsEvents ?? [],
+        locationHexes: gs.locationHexes ?? [],
       });
       return true;
     },

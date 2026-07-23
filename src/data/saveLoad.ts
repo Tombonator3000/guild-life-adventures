@@ -5,7 +5,7 @@
 
 import type { GameState } from '@/types/game.types';
 
-const SAVE_VERSION = 9;
+const SAVE_VERSION = 10;
 const STORAGE_PREFIX = 'guild-life-';
 const AUTO_SAVE_KEY = `${STORAGE_PREFIX}autosave`;
 const SAVE_SLOT_KEY = (slot: number) => `${STORAGE_PREFIX}save-${slot}`;
@@ -158,11 +158,140 @@ export function loadGame(slot: number = 0): SaveData | null {
       saveData.version = 9;
     }
 
+    // v9 → v10: Comprehensive normalization pass — backfill EVERY known Player
+    // and GameState field with a safe default. Any post-v3 field added without
+    // its own migration would otherwise crash reads on old saves. Old fixtures
+    // load correctly; existing valid values are never overwritten.
+    if (saveData.version < 10) {
+      normalizeSaveInPlace(saveData.gameState as unknown as Record<string, unknown>);
+      saveData.version = 10;
+    }
+
     return saveData;
   } catch (e) {
     console.error('[Save] Failed to load game:', e);
     return null;
   }
+}
+
+// ─── Normalization helpers ─────────────────────────────────────────────
+
+const DEFAULT_GAME_STATS = {
+  totalGoldEarned: 0,
+  totalGoldSpent: 0,
+  totalQuestsCompleted: 0,
+  totalBountiesCompleted: 0,
+  totalDungeonRuns: 0,
+  totalDungeonFloors: 0,
+  totalShiftsWorked: 0,
+  totalHoursWorked: 0,
+  totalDegreesEarned: 0,
+  totalHealingReceived: 0,
+  totalDamageTaken: 0,
+  totalRentPaid: 0,
+  locationVisits: {},
+  mostVisitedLocation: '',
+  longestJobHeld: null,
+  hexesCast: 0,
+  hexesReceived: 0,
+  timesRobbed: 0,
+  deathCount: 0,
+};
+
+/** Set a default value ONLY when the current value is undefined. Never overwrites valid data. */
+function setDefault(obj: Record<string, unknown>, key: string, value: unknown) {
+  if (obj[key] === undefined) obj[key] = value;
+}
+
+/** Normalize a Player record — backfills every field createPlayer() sets. */
+export function normalizePlayer(p: Record<string, unknown>): void {
+  setDefault(p, 'portraitId', null);
+  setDefault(p, 'previousLocation', null);
+  setDefault(p, 'completedDegrees', []);
+  setDefault(p, 'degreeProgress', {});
+  setDefault(p, 'maxDependability', 100);
+  setDefault(p, 'maxExperience', 100);
+  setDefault(p, 'completedQuests', 0);
+  setDefault(p, 'backupOutfit', null);
+  setDefault(p, 'foodBoughtWithoutPreservation', false);
+  setDefault(p, 'hasStoreBoughtFood', false);
+  setDefault(p, 'shiftsWorkedSinceHire', 0);
+  setDefault(p, 'totalShiftsWorked', 0);
+  setDefault(p, 'relaxation', 30);
+  setDefault(p, 'durables', {});
+  setDefault(p, 'appliances', {});
+  setDefault(p, 'applianceHistory', []);
+  setDefault(p, 'pawnedAppliances', []);
+  setDefault(p, 'prepaidDegrees', {});
+  setDefault(p, 'inventory', []);
+  setDefault(p, 'activeQuest', null);
+  setDefault(p, 'hasGuildPass', false);
+  setDefault(p, 'hasNewspaper', false);
+  setDefault(p, 'isSick', false);
+  setDefault(p, 'rentDebt', 0);
+  setDefault(p, 'rentPrepaidWeeks', 0);
+  setDefault(p, 'lockedRent', 0);
+  setDefault(p, 'rentExtensionUsed', false);
+  setDefault(p, 'isGameOver', false);
+  setDefault(p, 'wasResurrectedThisWeek', false);
+  setDefault(p, 'equippedWeapon', null);
+  setDefault(p, 'equippedArmor', null);
+  setDefault(p, 'equippedShield', null);
+  setDefault(p, 'dungeonFloorsCleared', []);
+  setDefault(p, 'dungeonAttemptsThisTurn', 0);
+  setDefault(p, 'permanentGoldBonus', 0);
+  setDefault(p, 'dungeonRecords', {});
+  setDefault(p, 'stocks', {});
+  setDefault(p, 'loanAmount', 0);
+  setDefault(p, 'loanWeeksRemaining', 0);
+  setDefault(p, 'tickets', []);
+  setDefault(p, 'freshFood', 0);
+  setDefault(p, 'lotteryTickets', 0);
+  setDefault(p, 'temperedItems', []);
+  setDefault(p, 'equipmentDurability', {});
+  setDefault(p, 'questLocationProgress', []);
+  setDefault(p, 'questChainProgress', {});
+  setDefault(p, 'completedBountiesThisWeek', []);
+  setDefault(p, 'questCooldownWeeksLeft', 0);
+  setDefault(p, 'guildReputation', (p.completedQuests as number) || 0);
+  setDefault(p, 'nlChainProgress', {});
+  setDefault(p, 'nlChainCompleted', []);
+  setDefault(p, 'pendingNLChainChoice', null);
+  setDefault(p, 'hexScrolls', []);
+  setDefault(p, 'activeCurses', []);
+  setDefault(p, 'hasProtectiveAmulet', false);
+  setDefault(p, 'hexCastCooldown', 0);
+  setDefault(p, 'workedThisTurn', false);
+  setDefault(p, 'hadRandomEventThisTurn', false);
+  setDefault(p, 'raiseAttemptedThisTurn', false);
+  setDefault(p, 'fame', 0);
+  setDefault(p, 'infamy', 0);
+  setDefault(p, 'purchasedReputationUnlocks', []);
+  setDefault(p, 'protectionWeeksLeft', 0);
+  setDefault(p, 'weeklySnapshots', []);
+  // gameStats: shallow-merge to preserve valid existing stats
+  const stats = (p.gameStats as Record<string, unknown> | undefined) ?? {};
+  p.gameStats = { ...DEFAULT_GAME_STATS, ...stats };
+}
+
+/** Normalize GameState — backfills locationHexes / weeklyNewsEvents / etc. */
+export function normalizeSaveInPlace(gs: Record<string, unknown>): void {
+  if (!gs) return;
+  const players = gs.players as Record<string, unknown>[] | undefined;
+  if (Array.isArray(players)) {
+    for (const p of players) normalizePlayer(p);
+  }
+  setDefault(gs, 'locationHexes', []);
+  setDefault(gs, 'weeklyNewsEvents', []);
+  setDefault(gs, 'stockPriceHistory', {});
+  setDefault(gs, 'economyTrend', 0);
+  setDefault(gs, 'economyCycleWeeksLeft', 4);
+  setDefault(gs, 'activeFestival', null);
+  setDefault(gs, 'deathEvent', null);
+  setDefault(gs, 'shadowfingersEvent', null);
+  setDefault(gs, 'applianceBreakageEvent', null);
+  setDefault(gs, 'basePriceModifier', gs.priceModifier ?? 1);
+  // Transient UI fields intentionally left blank on load (cleared by loadFromSlot).
 }
 
 /**
