@@ -1,4 +1,4 @@
-name: Apply phase 6B multiplayer test fix
+name: Apply phase 6B test and Fence cleanup
 
 on:
   push:
@@ -22,12 +22,12 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-      - name: Apply test patch
+      - name: Apply cleanup patch
         run: node scripts/patch-phase6b-multiplayer-test.mjs
-      - name: Commit patch
+      - name: Commit cleanup
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/test/multiplayer.test.ts
-          git commit -m "Update equipment multiplayer expectations" || true
+          git add src/test/multiplayer.test.ts src/components/game/PawnShopPanel.tsx src/components/game/locationTabs.tsx
+          git commit -m "Remove legacy Fence callbacks" || true
           git push origin HEAD:agent/audit-phase6-equipment
