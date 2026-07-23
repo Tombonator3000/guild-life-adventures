@@ -76,10 +76,10 @@ export interface LocationTabContext {
   modifyMaxHealth: GameStore['modifyMaxHealth'];
   modifyRelaxation: GameStore['modifyRelaxation'];
   spendTime: GameStore['spendTime'];
-  workShift: GameStore['workShift'];
-  studyDegree: GameStore['studyDegree'];
-  payFullTuition: GameStore['payFullTuition'];
-  completeDegree: GameStore['completeDegree'];
+  performWorkShift: GameStore['performWorkShift'];
+  attendDegreeSession: GameStore['attendDegreeSession'];
+  prepayDegree: GameStore['prepayDegree'];
+  graduateDegree: GameStore['graduateDegree'];
   prepayRent: GameStore['prepayRent'];
   moveToHousing: GameStore['moveToHousing'];
   begForMoreTime: GameStore['begForMoreTime'];
@@ -128,7 +128,7 @@ export interface LocationTabContext {
 
 /** Build work info for the standardized footer bar */
 export function getWorkInfo(locationId: LocationId, ctx: LocationTabContext): WorkInfo | null {
-  const { player, workShift } = ctx;
+  const { player, performWorkShift } = ctx;
   const currentJobData = player.currentJob ? getJob(player.currentJob) : null;
   const jobLocationName = JOB_LOCATION_MAP[locationId];
   if (!currentJobData || !jobLocationName || currentJobData.location !== jobLocationName) return null;
@@ -140,12 +140,10 @@ export function getWorkInfo(locationId: LocationId, ctx: LocationTabContext): Wo
     earnings,
     canWork: player.timeRemaining >= currentJobData.hoursPerShift,
     onWork: () => {
-      const worked = workShift(player.id, currentJobData.hoursPerShift, player.currentWage);
-      if (worked) {
-        toast.success(`Worked a shift at ${currentJobData.name}!`);
-      } else {
-        toast.error('Unable to work — not enough time or improper attire.');
-      }
+      const result = performWorkShift(player.id, 'full');
+      if (!result) return;
+      if (result.success) toast.success(result.message);
+      else toast.error(result.message);
     },
   };
 }
@@ -365,7 +363,7 @@ function forgeTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function academyTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, priceModifier, studyDegree, payFullTuition, completeDegree, readBook } = ctx;
+  const { player, priceModifier, attendDegreeSession, prepayDegree, graduateDegree, readBook } = ctx;
 
   const BOOK_OPTIONS = [
     { hours: 2, cost: 5, label: 'Browse Scrolls (2h, +3 hap)' },
@@ -381,9 +379,9 @@ function academyTabs(ctx: LocationTabContext): LocationTab[] {
         <AcademyPanel
           player={player}
           priceModifier={priceModifier}
-          studyDegree={studyDegree}
-          payFullTuition={payFullTuition}
-          completeDegree={completeDegree}
+          attendDegreeSession={attendDegreeSession}
+          prepayDegree={prepayDegree}
+          graduateDegree={graduateDegree}
         />
       ),
     },

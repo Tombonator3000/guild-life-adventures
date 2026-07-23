@@ -12,11 +12,11 @@ import { toast } from 'sonner';
 interface WorkSectionProps {
   player: Player;
   locationName: string;
-  workShift: (playerId: string, hours: number, wage: number) => boolean;
+  performWorkShift: (playerId: string, mode: 'full' | 'remaining') => { success: boolean; message: string } | void;
   variant: 'jones' | 'wood-frame';
 }
 
-export function WorkSection({ player, locationName, workShift, variant }: WorkSectionProps) {
+export function WorkSection({ player, locationName, performWorkShift, variant }: WorkSectionProps) {
   const jobData = player.currentJob ? getJob(player.currentJob) : null;
   const canWork = jobData && jobData.location === locationName;
 
@@ -66,6 +66,13 @@ export function WorkSection({ player, locationName, workShift, variant }: WorkSe
   const partialHours = player.timeRemaining;
   const partialEarnings = Math.floor(partialHours * player.currentWage * 1.15);
 
+  const handleWork = (mode: 'full' | 'remaining') => {
+    const result = performWorkShift(player.id, mode);
+    if (!result) return;
+    if (result.success) toast.success(result.message);
+    else toast.error(result.message);
+  };
+
   if (variant === 'jones') {
     return (
       <div className="mt-4 pt-3 border-t border-[#5a4a3a]">
@@ -75,14 +82,7 @@ export function WorkSection({ player, locationName, workShift, variant }: WorkSe
         </div>
         <JonesButton
           label={`Work Shift (+${earnings}g)`}
-          onClick={() => {
-            const worked = workShift(player.id, jobData.hoursPerShift, player.currentWage);
-            if (worked) {
-              toast.success(`Worked a shift at ${jobData.name}!`);
-            } else {
-              toast.error('Unable to work — not enough time or improper attire.');
-            }
-          }}
+          onClick={() => handleWork('full')}
           disabled={player.timeRemaining < jobData.hoursPerShift}
           variant="primary"
           className="w-full"
@@ -90,14 +90,7 @@ export function WorkSection({ player, locationName, workShift, variant }: WorkSe
         {hasPartialTime && (
           <JonesButton
             label={`Short Shift ${partialHours}h (+${partialEarnings}g)`}
-            onClick={() => {
-              const worked = workShift(player.id, partialHours, player.currentWage);
-              if (worked) {
-                toast.success(`Worked a short ${partialHours}h shift!`);
-              } else {
-                toast.error('Unable to work.');
-              }
-            }}
+            onClick={() => handleWork('remaining')}
             variant="secondary"
             className="w-full mt-1"
           />
@@ -123,14 +116,7 @@ export function WorkSection({ player, locationName, workShift, variant }: WorkSe
         cost={0}
         time={jobData.hoursPerShift}
         disabled={player.timeRemaining < jobData.hoursPerShift}
-        onClick={() => {
-          const worked = workShift(player.id, jobData.hoursPerShift, player.currentWage);
-          if (worked) {
-            toast.success(`Worked a shift at ${jobData.name}!`);
-          } else {
-            toast.error('Unable to work — not enough time or improper attire.');
-          }
-        }}
+        onClick={() => handleWork('full')}
       />
       {hasPartialTime && (
         <ActionButton
@@ -138,14 +124,7 @@ export function WorkSection({ player, locationName, workShift, variant }: WorkSe
           cost={0}
           time={partialHours}
           disabled={false}
-          onClick={() => {
-            const worked = workShift(player.id, partialHours, player.currentWage);
-            if (worked) {
-              toast.success(`Worked a short ${partialHours}h shift!`);
-            } else {
-              toast.error('Unable to work.');
-            }
-          }}
+          onClick={() => handleWork('remaining')}
         />
       )}
     </div>

@@ -17,6 +17,7 @@ import { createPlayerActions } from './helpers/playerHelpers';
 import { createEconomyActions } from './helpers/economyHelpers';
 import { createTurnActions } from './helpers/turnHelpers';
 import { createWorkEducationActions } from './helpers/workEducationHelpers';
+import { createEmploymentEducationServiceActions } from './helpers/employmentEducationServiceHelpers';
 import { createQuestActions } from './helpers/questHelpers';
 import { createHexActions } from './helpers/hexHelpers';
 import { forwardIfGuest, setStoreAccessor } from '@/network/NetworkActionProxy';
@@ -219,6 +220,7 @@ export const useGameStore = create<GameStore>((set, get) => {
   const economyActions = createEconomyActions(set, get);
   const turnActions = createTurnActions(set, get);
   const workEducationActions = createWorkEducationActions(set, get);
+  const employmentEducationServiceActions = createEmploymentEducationServiceActions(set, get);
   const questActions = createQuestActions(set, get);
   const hexActions = createHexActions(set, get);
 
@@ -333,8 +335,11 @@ export const useGameStore = create<GameStore>((set, get) => {
     // Player actions (network-aware: guest actions forwarded to host)
     ...wrapWithNetworkGuard(playerActions),
 
-    // Work and education actions (network-aware)
+    // Legacy work and education actions (network-aware for host/internal compatibility)
     ...wrapWithNetworkGuard(workEducationActions),
+
+    // Canonical employment and education intent actions
+    ...wrapWithNetworkGuard(employmentEducationServiceActions),
 
     // Economy actions (network-aware)
     ...wrapWithNetworkGuard(economyActions),

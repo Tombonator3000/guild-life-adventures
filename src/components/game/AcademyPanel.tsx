@@ -13,17 +13,17 @@ import { useTranslation } from '@/i18n';
 interface AcademyPanelProps {
   player: Player;
   priceModifier: number;
-  studyDegree: (playerId: string, degreeId: DegreeId, cost: number, hours: number) => void;
-  payFullTuition: (playerId: string, degreeId: DegreeId, totalCost: number, sessions: number) => void;
-  completeDegree: (playerId: string, degreeId: DegreeId) => void;
+  attendDegreeSession: (playerId: string, degreeId: DegreeId, mode: 'standard' | 'cram') => { success: boolean; message: string } | void;
+  prepayDegree: (playerId: string, degreeId: DegreeId) => { success: boolean; message: string } | void;
+  graduateDegree: (playerId: string, degreeId: DegreeId) => { success: boolean; message: string } | void;
 }
 
 export function AcademyPanel({
   player,
   priceModifier,
-  studyDegree,
-  payFullTuition,
-  completeDegree,
+  attendDegreeSession,
+  prepayDegree,
+  graduateDegree,
 }: AcademyPanelProps) {
   const { t } = useTranslation();
   const availableDegrees = getAvailableDegrees(player.completedDegrees as DegreeId[]);
@@ -98,7 +98,12 @@ export function AcademyPanel({
                 {isComplete ? (
                   <JonesButton
                     label={`${t('panelAcademy.graduate')} (+5 Hap, +5 Dep)`}
-                    onClick={() => completeDegree(player.id, degId)}
+                    onClick={() => {
+                      const result = graduateDegree(player.id, degId);
+                      if (!result) return;
+                      if (result.success) toast.success(result.message);
+                      else toast.error(result.message);
+                    }}
                     variant="primary"
                     className="w-full mt-1"
                   />
@@ -111,8 +116,10 @@ export function AcademyPanel({
                       darkText
                       largeText
                       onClick={() => {
-                        studyDegree(player.id, degId, price, degree.hoursPerSession);
-                        toast.success(t('panelAcademy.attendedClass', { name: t(`degrees.${degree.id}.name`) }));
+                        const result = attendDegreeSession(player.id, degId, 'standard');
+                        if (!result) return;
+                         if (result.success) toast.success(result.message);
+                         else toast.error(result.message);
                       }}
                     />
                     {/* Cram session: when not enough time for full session but some time remains */}
@@ -123,8 +130,10 @@ export function AcademyPanel({
                         disabled={player.gold < sessionCost}
                         darkText
                         onClick={() => {
-                          studyDegree(player.id, degId, price, player.timeRemaining);
-                          toast.success(`Crammed in ${player.timeRemaining}h of studying!`);
+                          const result = attendDegreeSession(player.id, degId, 'cram');
+                          if (!result) return;
+                           if (result.success) toast.success(result.message);
+                           else toast.error(result.message);
                         }}
                       />
                     )}
@@ -135,8 +144,10 @@ export function AcademyPanel({
                         disabled={!canEnrollFull}
                         darkText
                         onClick={() => {
-                          payFullTuition(player.id, degId, fullCourseCost, sessionsLeft);
-                          toast.success(`Enrolled! Attend the remaining ${sessionsLeft} sessions for free.`);
+                          const result = prepayDegree(player.id, degId);
+                          if (!result) return;
+                           if (result.success) toast.success(result.message);
+                           else toast.error(result.message);
                         }}
                       />
                     )}
