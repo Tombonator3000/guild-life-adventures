@@ -1,1 +1,1 @@
-Finalize the phase 9 audit log and remove temporary files.
+Finalize the phase 9 audit log and remove temporary files now.
