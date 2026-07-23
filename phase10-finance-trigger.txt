@@ -1,1 +1,1 @@
-Apply the host-authoritative finance migration.
+Apply the host-authoritative finance migration now that the workflow exists.
