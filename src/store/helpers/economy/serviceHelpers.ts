@@ -1,5 +1,6 @@
 import type { GetFn, SetFn, ActionResult } from '../../storeTypes';
 import { NEWSPAPER_COST } from '@/data/newspaper';
+import { computePrice, getSabotageOption } from '@/data/sabotage';
 
 export type HealerServiceId = 'minor' | 'moderate' | 'full' | 'cure' | 'blessing';
 export type GraveyardServiceId = 'pray' | 'mourn' | 'blessing';
@@ -48,6 +49,49 @@ const adjustedPrice = (baseCost: number, modifier: number) =>
 
 export function createServiceActions(set: SetFn, get: GetFn) {
   return {
+    // This later economy action intentionally overrides the legacy player-helper
+    // implementation. It is the authoritative sabotage entry point.
+    sabotagePlayer: (saboteurId: string, targetId: string, optionId: string): ActionResult | void => {
+      const state = get();
+      const saboteur = state.players.find(p => p.id === saboteurId);
+      const target = state.players.find(p => p.id === targetId);
+      const option = getSabotageOption(optionId);
+      if (!saboteur || !target || !option) return { success: false, message: 'Invalid sabotage request' };
+      if (saboteur.currentLocation !== 'fence' && saboteur.currentLocation !== 'shadow-market') {
+        return { success: false, message: 'Sabotage is only available at the Fence or Shadow Market' };
+      }
+      if (target.id === saboteur.id || target.isGameOver) return { success: false, message: 'Invalid target' };
+      const cost = computePrice(option.baseCost, state.priceModifier);
+      if (saboteur.gold < cost) return { success: false, message: 'Not enough gold' };
+      if (saboteur.timeRemaining < option.timeCost) return { success: false, message: 'Not enough time' };
+
+      set(s => ({
+        players: s.players.map(p => {
+          if (p.id === saboteurId) {
+            return {
+              ...p,
+              gold: Math.max(0, p.gold - cost),
+              timeRemaining: Math.max(0, p.timeRemaining - option.timeCost),
+              infamy: Math.min(100, (p.infamy ?? 0) + 5),
+              gameStats: {
+                ...p.gameStats,
+                totalGoldSpent: (p.gameStats?.totalGoldSpent ?? 0) + cost,
+              },
+            };
+          }
+          if (p.id !== targetId) return p;
+          if (option.effect.type === 'gold-theft') {
+            return { ...p, gold: Math.max(0, p.gold - Math.min(option.effect.value, p.gold)) };
+          }
+          if (option.effect.type === 'time-loss') {
+            return { ...p, timeRemaining: Math.max(0, p.timeRemaining - option.effect.value) };
+          }
+          return { ...p, clothingCondition: Math.max(0, p.clothingCondition - option.effect.value) };
+        }),
+      }));
+      return { success: true, message: option.label };
+    },
+
     useHealerService: (playerId: string, serviceId: HealerServiceId): ActionResult | void => {
       const state = get();
       const player = state.players.find(p => p.id === playerId);
