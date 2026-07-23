@@ -1,0 +1,32 @@
+name: Apply phase 6 appliance lint rename
+
+on:
+  push:
+    branches:
+      - agent/audit-phase6-appliances
+    paths:
+      - phase6-lint-rename-trigger.txt
+      - .github/workflows/apply-phase6-lint-rename.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase6-appliances
+          fetch-depth: 1
+      - run: node scripts/rename-phase6-appliance-action.mjs
+      - name: Commit lint rename
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/game/EnchanterPanel.tsx src/components/game/PawnShopPanel.tsx src/components/game/ForgePanel.tsx src/components/game/locationTabs.tsx src/components/game/LocationPanel.tsx
+          git commit -m "Rename appliance action variables for hook lint"
+          git push origin HEAD:agent/audit-phase6-appliances
