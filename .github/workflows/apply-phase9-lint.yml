@@ -1,0 +1,31 @@
+name: Apply phase 9 lint fix
+
+on:
+  push:
+    branches:
+      - agent/audit-phase9-hex
+    paths:
+      - phase9-lint-trigger.txt
+      - .github/workflows/apply-phase9-lint.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase9-hex
+          fetch-depth: 1
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: node scripts/patch-phase9-lint.mjs
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/game/HexShopPanel.tsx src/components/game/GraveyardHexPanel.tsx
+          git commit -m "Rename local hex service actions for lint" || true
+          git push origin HEAD:agent/audit-phase9-hex
