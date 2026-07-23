@@ -29,7 +29,9 @@ const USED_ITEMS = [
 
 export function PawnShopPanel({ player, priceModifier, week, onSellItem, onBuyUsedItem, section }: PawnShopPanelProps) {
   const { t } = useTranslation();
-  const { pawnAppliance, redeemAppliance, buyAppliance, gambleAtFence } = useGameStore();
+  const purchaseAppliance = useGameStore(s => s.purchaseAppliance);
+  const applianceServiceAction = useGameStore(s => s.useApplianceService);
+  const gambleAtFence = useGameStore(s => s.gambleAtFence);
 
   const getSellPrice = (itemId: string): number => {
     const item = getItem(itemId);
@@ -114,8 +116,10 @@ export function PawnShopPanel({ player, priceModifier, week, onSellItem, onBuyUs
               <button
                 key={applianceId}
                 onClick={() => {
-                  pawnAppliance(player.id, applianceId, pawnValue);
-                  toast.success(t('panelFence.pawned', { name: t(`appliances.${applianceId}.name`) || appliance?.name, gold: pawnValue }));
+                  const result = applianceServiceAction(player.id, 'pawn', applianceId);
+                  if (!result) return;
+                  if (result.success) toast.success(result.message);
+                  else toast.error(result.message);
                 }}
                 className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
@@ -157,10 +161,10 @@ export function PawnShopPanel({ player, priceModifier, week, onSellItem, onBuyUs
               <button
                 key={pawned.applianceId}
                 onClick={() => {
-                  const ok = redeemAppliance(player.id, pawned.applianceId);
-                  if (ok) {
-                    toast.success(t('panelFence.redeemed', { name: t(`appliances.${pawned.applianceId}.name`) || appliance?.name, gold: redeemCost }));
-                  }
+                  const result = applianceServiceAction(player.id, 'redeem', pawned.applianceId);
+                  if (!result) return;
+                  if (result.success) toast.success(result.message);
+                  else toast.error(result.message);
                 }}
                 disabled={!canAfford}
                 className="w-full p-2 bg-[#e8dfc8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#ddd0b0] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
@@ -198,8 +202,10 @@ export function PawnShopPanel({ player, priceModifier, week, onSellItem, onBuyUs
             <button
               key={appliance.id}
               onClick={() => {
-                buyAppliance(player.id, appliance.id, salePrice, 'pawn');
-                toast.success(t('panelStore.purchased', { name: t(`appliances.${appliance.id}.name`) || appliance.name }));
+                const result = purchaseAppliance(player.id, 'fence', appliance.id);
+                if (!result) return;
+                if (result.success) toast.success(result.message);
+                else toast.error(result.message);
               }}
               disabled={player.gold < salePrice || alreadyOwns}
               className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
