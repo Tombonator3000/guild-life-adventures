@@ -1,1 +1,1 @@
-Run phase 4 TypeScript, targeted tests, full tests, build, lint and Playwright validation.
+Run phase 4 validation now that the self-reporting workflow exists.
