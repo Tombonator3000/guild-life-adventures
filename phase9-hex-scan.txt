@@ -1,51 +1,16 @@
 # Hex action names and callers
-src/hooks/useGrimwaldAI.ts:99:    buyProtectiveAmulet: state.buyProtectiveAmulet,
-src/hooks/useGrimwaldAI.ts:101:    dispelLocationHex: state.dispelLocationHex,
-src/hooks/useGrimwaldAI.ts:102:    performDarkRitual: state.performDarkRitual,
-src/hooks/ai/actions/rivalryActions.ts:194:        type: 'buy-hex-scroll',
-src/hooks/ai/actions/rivalryActions.ts:249:      type: 'dispel-hex',
-src/hooks/ai/actions/rivalryActions.ts:285:      type: 'dark-ritual',
-src/hooks/ai/handlers/hexHandlers.ts:4: * Handles: cast-curse, cast-location-hex, buy-hex-scroll,
-src/hooks/ai/handlers/hexHandlers.ts:5: *          dispel-hex, dark-ritual
-src/hooks/ai/handlers/hexHandlers.ts:41:  const result = store.dispelLocationHex(player.id, cost);
-src/hooks/ai/handlers/hexHandlers.ts:48:  const result = store.performDarkRitual(player.id, cost);
-src/hooks/ai/handlers/equipmentHandlers.ts:97:  store.buyProtectiveAmulet(player.id, cost);
-src/hooks/ai/actionExecutor.ts:126:  buyProtectiveAmulet: (playerId: string, cost: number) => void;
-src/hooks/ai/actionExecutor.ts:128:  dispelLocationHex: (playerId: string, cost: number) => { success: boolean; message: string };
-src/hooks/ai/actionExecutor.ts:129:  performDarkRitual: (playerId: string, cost: number) => { success: boolean; message: string; backfired?: boolean };
-src/hooks/ai/actionExecutor.ts:251:  'buy-hex-scroll': handleBuyHexScroll,
-src/hooks/ai/actionExecutor.ts:254:  'dispel-hex': handleDispelHex,
-src/hooks/ai/actionExecutor.ts:255:  'dark-ritual': handleDarkRitual,
-src/hooks/ai/types.ts:89:  | 'buy-hex-scroll'
-src/hooks/ai/types.ts:92:  | 'dispel-hex'
-src/hooks/ai/types.ts:93:  | 'dark-ritual'
-src/network/useNetworkSync.ts:49:  buyHexScroll:           { argIndex: 2, min: 1, max: 2000, label: 'hex scroll cost' },
-src/network/useNetworkSync.ts:50:  buyProtectiveAmulet:    { argIndex: 1, min: 1, max: 5000, label: 'cost' },
-src/network/useNetworkSync.ts:51:  cleanseCurse:           { argIndex: 1, min: 1, max: 5000, label: 'cost' },
-src/network/useNetworkSync.ts:52:  performDarkRitual:      { argIndex: 1, min: 1, max: 5000, label: 'cost' },
-src/network/useNetworkSync.ts:53:  dispelLocationHex:      { argIndex: 1, min: 1, max: 5000, label: 'cost' },
-src/network/useNetworkSync.ts:54:  attemptCurseReflection: { argIndex: 1, min: 1, max: 5000, label: 'cost' },
 src/network/types.ts:200:  'buyHexScroll',
 src/network/types.ts:203:  'buyProtectiveAmulet',
 src/network/types.ts:204:  'dispelLocationHex',
 src/network/types.ts:205:  'cleanseCurse',
 src/network/types.ts:206:  'performDarkRitual',
 src/network/types.ts:207:  'attemptCurseReflection',
-src/store/storeTypes.ts:126:  buyHexScroll: (playerId: string, hexId: string, cost: number) => void;
-src/store/storeTypes.ts:129:  buyProtectiveAmulet: (playerId: string, cost: number) => void;
-src/store/storeTypes.ts:130:  dispelLocationHex: (playerId: string, cost: number) => { success: boolean; message: string };
-src/store/storeTypes.ts:131:  cleanseCurse: (playerId: string, cost: number) => { success: boolean; message: string };
-src/store/storeTypes.ts:132:  performDarkRitual: (playerId: string, cost: number) => { success: boolean; message: string; backfired?: boolean };
-src/store/storeTypes.ts:133:  attemptCurseReflection: (playerId: string, cost: number) => { success: boolean; message: string };
-src/store/helpers/hexServiceHelpers.ts:185:      if (service === 'ritual') return get().performDarkRitual(playerId, cost);
-src/store/helpers/hexServiceHelpers.ts:186:      if (service === 'reflect') return get().attemptCurseReflection(playerId, cost);
-src/store/helpers/hexServiceHelpers.ts:187:      return get().cleanseCurse(playerId, cost);
-src/store/helpers/hexHelpers.ts:23:    buyHexScroll: (playerId: string, hexId: string, cost: number) => {
-src/store/helpers/hexHelpers.ts:159:    buyProtectiveAmulet: (playerId: string, cost: number) => {
-src/store/helpers/hexHelpers.ts:175:    dispelLocationHex: (playerId: string, cost: number): { success: boolean; message: string } => {
-src/store/helpers/hexHelpers.ts:201:    cleanseCurse: (playerId: string, cost: number): { success: boolean; message: string } => {
-src/store/helpers/hexHelpers.ts:228:    performDarkRitual: (playerId: string, cost: number): { success: boolean; message: string; backfired?: boolean } => {
-src/store/helpers/hexHelpers.ts:292:    attemptCurseReflection: (playerId: string, cost: number): { success: boolean; message: string } => {
+src/network/useNetworkSync.ts:49:  buyHexScroll:           { argIndex: 2, min: 1, max: 2000, label: 'hex scroll cost' },
+src/network/useNetworkSync.ts:50:  buyProtectiveAmulet:    { argIndex: 1, min: 1, max: 5000, label: 'cost' },
+src/network/useNetworkSync.ts:51:  cleanseCurse:           { argIndex: 1, min: 1, max: 5000, label: 'cost' },
+src/network/useNetworkSync.ts:52:  performDarkRitual:      { argIndex: 1, min: 1, max: 5000, label: 'cost' },
+src/network/useNetworkSync.ts:53:  dispelLocationHex:      { argIndex: 1, min: 1, max: 5000, label: 'cost' },
+src/network/useNetworkSync.ts:54:  attemptCurseReflection: { argIndex: 1, min: 1, max: 5000, label: 'cost' },
 src/test/hexServices.test.ts:174:    expect(ALLOWED_GUEST_ACTIONS.has('buyHexScroll')).toBe(false);
 src/test/hexServices.test.ts:175:    expect(ALLOWED_GUEST_ACTIONS.has('buyProtectiveAmulet')).toBe(false);
 src/test/hexServices.test.ts:176:    expect(ALLOWED_GUEST_ACTIONS.has('dispelLocationHex')).toBe(false);
@@ -84,16 +49,69 @@ src/components/game/HexShopPanel.tsx:67:    const result = store.dispelLocationH
 src/components/game/GraveyardHexPanel.tsx:26:    const result = store.performDarkRitual(player.id, ritualCost);
 src/components/game/GraveyardHexPanel.tsx:37:    const result = store.attemptCurseReflection(player.id, reflectionCost);
 src/components/game/GraveyardHexPanel.tsx:46:    const result = store.cleanseCurse(player.id, cleanseCost);
+src/store/helpers/hexHelpers.ts:23:    buyHexScroll: (playerId: string, hexId: string, cost: number) => {
+src/store/helpers/hexHelpers.ts:159:    buyProtectiveAmulet: (playerId: string, cost: number) => {
+src/store/helpers/hexHelpers.ts:175:    dispelLocationHex: (playerId: string, cost: number): { success: boolean; message: string } => {
+src/store/helpers/hexHelpers.ts:201:    cleanseCurse: (playerId: string, cost: number): { success: boolean; message: string } => {
+src/store/helpers/hexHelpers.ts:228:    performDarkRitual: (playerId: string, cost: number): { success: boolean; message: string; backfired?: boolean } => {
+src/store/helpers/hexHelpers.ts:292:    attemptCurseReflection: (playerId: string, cost: number): { success: boolean; message: string } => {
+src/store/helpers/hexServiceHelpers.ts:185:      if (service === 'ritual') return get().performDarkRitual(playerId, cost);
+src/store/helpers/hexServiceHelpers.ts:186:      if (service === 'reflect') return get().attemptCurseReflection(playerId, cost);
+src/store/helpers/hexServiceHelpers.ts:187:      return get().cleanseCurse(playerId, cost);
+src/store/storeTypes.ts:126:  buyHexScroll: (playerId: string, hexId: string, cost: number) => void;
+src/store/storeTypes.ts:129:  buyProtectiveAmulet: (playerId: string, cost: number) => void;
+src/store/storeTypes.ts:130:  dispelLocationHex: (playerId: string, cost: number) => { success: boolean; message: string };
+src/store/storeTypes.ts:131:  cleanseCurse: (playerId: string, cost: number) => { success: boolean; message: string };
+src/store/storeTypes.ts:132:  performDarkRitual: (playerId: string, cost: number) => { success: boolean; message: string; backfired?: boolean };
+src/store/storeTypes.ts:133:  attemptCurseReflection: (playerId: string, cost: number) => { success: boolean; message: string };
 src/data/reputation.ts:47:  | 'dark-ritual'
 src/data/reputation.ts:67:  'dark-ritual':          { fame: 0, infamy: 6 },
+src/hooks/useGrimwaldAI.ts:99:    buyProtectiveAmulet: state.buyProtectiveAmulet,
+src/hooks/useGrimwaldAI.ts:101:    dispelLocationHex: state.dispelLocationHex,
+src/hooks/useGrimwaldAI.ts:102:    performDarkRitual: state.performDarkRitual,
+src/hooks/ai/types.ts:89:  | 'buy-hex-scroll'
+src/hooks/ai/types.ts:92:  | 'dispel-hex'
+src/hooks/ai/types.ts:93:  | 'dark-ritual'
+src/hooks/ai/actions/rivalryActions.ts:194:        type: 'buy-hex-scroll',
+src/hooks/ai/actions/rivalryActions.ts:249:      type: 'dispel-hex',
+src/hooks/ai/actions/rivalryActions.ts:285:      type: 'dark-ritual',
+src/hooks/ai/actionExecutor.ts:126:  buyProtectiveAmulet: (playerId: string, cost: number) => void;
+src/hooks/ai/actionExecutor.ts:128:  dispelLocationHex: (playerId: string, cost: number) => { success: boolean; message: string };
+src/hooks/ai/actionExecutor.ts:129:  performDarkRitual: (playerId: string, cost: number) => { success: boolean; message: string; backfired?: boolean };
+src/hooks/ai/actionExecutor.ts:251:  'buy-hex-scroll': handleBuyHexScroll,
+src/hooks/ai/actionExecutor.ts:254:  'dispel-hex': handleDispelHex,
+src/hooks/ai/actionExecutor.ts:255:  'dark-ritual': handleDarkRitual,
+src/hooks/ai/handlers/hexHandlers.ts:4: * Handles: cast-curse, cast-location-hex, buy-hex-scroll,
+src/hooks/ai/handlers/hexHandlers.ts:5: *          dispel-hex, dark-ritual
+src/hooks/ai/handlers/hexHandlers.ts:41:  const result = store.dispelLocationHex(player.id, cost);
+src/hooks/ai/handlers/hexHandlers.ts:48:  const result = store.performDarkRitual(player.id, cost);
+src/hooks/ai/handlers/equipmentHandlers.ts:97:  store.buyProtectiveAmulet(player.id, cost);
 
 # Hex AI detail values
+src/hooks/ai/actions/criticalNeeds.ts:32:        details: { cost: Math.round(12 * pm), foodGain: 15 },
+src/hooks/ai/actions/criticalNeeds.ts:39:        details: { cost: Math.round(15 * pm), foodGain: 15 },
+src/hooks/ai/actions/criticalNeeds.ts:46:        details: { cost: Math.round(6 * pm), foodGain: 10 },
+src/hooks/ai/actions/criticalNeeds.ts:61:          details: { cost: Math.round(15 * pm), foodGain: 15 },
+src/hooks/ai/actions/criticalNeeds.ts:68:          details: { cost: Math.round(12 * pm), foodGain: 15 },
+src/hooks/ai/actions/criticalNeeds.ts:75:          details: { cost: Math.round(6 * pm), foodGain: 10 },
+src/hooks/ai/actions/criticalNeeds.ts:199:        details: { cost: Math.round(60 * pm), clothingGain: 60 },
+src/hooks/ai/actions/criticalNeeds.ts:254:        details: { cost: clothingCost, clothingGain: targetCondition },
+src/hooks/ai/actions/criticalNeeds.ts:288:        details: { cost: 30, healAmount: 25 },
+src/hooks/ai/actions/criticalNeeds.ts:349:            details: { applianceId: wanted.id, cost: wanted.cost, source: 'enchanter' },
 src/hooks/ai/actions/economicActions.ts:29:      details: { cost: 75 },
 src/hooks/ai/actions/economicActions.ts:274:        details: { applianceId: topBroken.id, cost: forgeRepairCost, location: 'forge' },
 src/hooks/ai/actions/economicActions.ts:290:        details: { applianceId: topBroken.id, cost: enchanterRepairCost, location: 'enchanter' },
 src/hooks/ai/actions/economicActions.ts:325:      actions.push({ type: 'buy-fresh-food', priority: 55, description: 'Stock up on fresh food', details: { cost: 25, units: 2 } });
 src/hooks/ai/actions/economicActions.ts:342:        actions.push({ type: 'buy-ticket', priority: ticketPriority, description: `Buy ${affordable.type} ticket${weakestGoal !== 'happiness' ? ' (opportunistic)' : ''}`, details: { ticketType: affordable.type, cost: affordable.cost } });
 src/hooks/ai/actions/economicActions.ts:350:      actions.push({ type: 'buy-lottery-ticket', priority: 25, description: 'Buy lottery ticket', details: { cost: 5 } });
+src/hooks/ai/actions/goalActions.ts:81:        details: { degreeId: nextDegree.id, cost: nextDegree.costPerSession, hours: nextDegree.hoursPerSession },
+src/hooks/ai/actions/goalActions.ts:180:            details: { applianceId: wanted.id, cost: wanted.cost, source: 'enchanter' },
+src/hooks/ai/actions/goalActions.ts:389:        details: { cost: Math.round(15 * priceModifier), foodGain: 15 },
+src/hooks/ai/actions/goalActions.ts:403:          details: { degreeId: nextDeg.id, cost: nextDeg.costPerSession, hours: nextDeg.hoursPerSession },
+src/hooks/ai/actions/goalActions.ts:533:          details: { degreeId: deg.id, cost: deg.costPerSession, hours: deg.hoursPerSession },
+src/hooks/ai/actions/questDungeonActions.ts:68:        details: { itemId: equipUpgrade.itemId, cost: equipUpgrade.cost, slot: equipUpgrade.slot },
+src/hooks/ai/actions/questDungeonActions.ts:94:          details: { itemId: bestToTemper.id, slot: bestToTemper.equipSlot, cost: temperCost },
+src/hooks/ai/actions/questDungeonActions.ts:121:            details: { itemId: damagedEquip.itemId, cost: repairCost },
 src/hooks/ai/actions/rivalryActions.ts:113:          details: { degreeId, cost: degree.costPerSession, hours: degree.hoursPerSession },
 src/hooks/ai/actions/rivalryActions.ts:153:        details: { hexId: hex.id, targetId: biggestThreat.id },
 src/hooks/ai/actions/rivalryActions.ts:161:        details: { hexId: hex.id },
@@ -105,27 +123,9 @@ src/hooks/ai/actions/rivalryActions.ts:285:      type: 'dark-ritual',
 src/hooks/ai/actions/rivalryActions.ts:288:      details: { cost: 100 },
 src/hooks/ai/actions/rivalryActions.ts:375:      details: { weeks: chosen.weeks, cost },
 src/hooks/ai/actions/rivalryActions.ts:453:    details: { targetId: biggestThreat.id, cost },
-src/hooks/ai/actions/goalActions.ts:81:        details: { degreeId: nextDegree.id, cost: nextDegree.costPerSession, hours: nextDegree.hoursPerSession },
-src/hooks/ai/actions/goalActions.ts:180:            details: { applianceId: wanted.id, cost: wanted.cost, source: 'enchanter' },
-src/hooks/ai/actions/goalActions.ts:389:        details: { cost: Math.round(15 * priceModifier), foodGain: 15 },
-src/hooks/ai/actions/goalActions.ts:403:          details: { degreeId: nextDeg.id, cost: nextDeg.costPerSession, hours: nextDeg.hoursPerSession },
-src/hooks/ai/actions/goalActions.ts:533:          details: { degreeId: deg.id, cost: deg.costPerSession, hours: deg.hoursPerSession },
 src/hooks/ai/actions/strategicActions.ts:160:      details: { degreeId: missingDegree, cost: degree?.costPerSession ?? 5, hours: degree?.hoursPerSession ?? 6 },
 src/hooks/ai/actions/strategicActions.ts:280:      details: { tier: 'slums' as HousingTier, cost: slumsRent * 2, rent: slumsRent },
 src/hooks/ai/actions/strategicActions.ts:425:      details: { degreeId: nextDegree.id, cost: nextDegree.costPerSession, hours: nextDegree.hoursPerSession },
-src/hooks/ai/actions/questDungeonActions.ts:68:        details: { itemId: equipUpgrade.itemId, cost: equipUpgrade.cost, slot: equipUpgrade.slot },
-src/hooks/ai/actions/questDungeonActions.ts:94:          details: { itemId: bestToTemper.id, slot: bestToTemper.equipSlot, cost: temperCost },
-src/hooks/ai/actions/questDungeonActions.ts:121:            details: { itemId: damagedEquip.itemId, cost: repairCost },
-src/hooks/ai/actions/criticalNeeds.ts:32:        details: { cost: Math.round(12 * pm), foodGain: 15 },
-src/hooks/ai/actions/criticalNeeds.ts:39:        details: { cost: Math.round(15 * pm), foodGain: 15 },
-src/hooks/ai/actions/criticalNeeds.ts:46:        details: { cost: Math.round(6 * pm), foodGain: 10 },
-src/hooks/ai/actions/criticalNeeds.ts:61:          details: { cost: Math.round(15 * pm), foodGain: 15 },
-src/hooks/ai/actions/criticalNeeds.ts:68:          details: { cost: Math.round(12 * pm), foodGain: 15 },
-src/hooks/ai/actions/criticalNeeds.ts:75:          details: { cost: Math.round(6 * pm), foodGain: 10 },
-src/hooks/ai/actions/criticalNeeds.ts:199:        details: { cost: Math.round(60 * pm), clothingGain: 60 },
-src/hooks/ai/actions/criticalNeeds.ts:254:        details: { cost: clothingCost, clothingGain: targetCondition },
-src/hooks/ai/actions/criticalNeeds.ts:288:        details: { cost: 30, healAmount: 25 },
-src/hooks/ai/actions/criticalNeeds.ts:349:            details: { applianceId: wanted.id, cost: wanted.cost, source: 'enchanter' },
 
 # Whole-store subscriptions in hex panels
 src/components/game/HexShopPanel.tsx:24:  const store = useGameStore();
