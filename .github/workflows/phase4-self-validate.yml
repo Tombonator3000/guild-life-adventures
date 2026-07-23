@@ -1,0 +1,94 @@
+name: Phase 4 self validation
+
+on:
+  push:
+    branches:
+      - agent/audit-phase4
+    paths:
+      - phase4-validation-trigger.txt
+      - .github/workflows/phase4-self-validate.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase4
+          fetch-depth: 1
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Validate and publish results
+        shell: bash
+        run: |
+          set +e
+          rm -rf validation/phase4
+          mkdir -p validation/phase4
+
+          bun install --frozen-lockfile > validation/phase4/install.log 2>&1
+          install_status=$?
+
+          if [ "$install_status" -eq 0 ]; then
+            bunx tsc --noEmit > validation/phase4/typescript.log 2>&1
+            type_status=$?
+            bunx vitest run src/test/employmentEducationServices.test.ts > validation/phase4/targeted-tests.log 2>&1
+            targeted_status=$?
+            bunx vitest run > validation/phase4/tests.log 2>&1
+            test_status=$?
+            bun run build > validation/phase4/build.log 2>&1
+            build_status=$?
+            bun run lint > validation/phase4/lint.log 2>&1
+            lint_status=$?
+            bun add --dev --no-save @playwright/test > validation/phase4/playwright-install.log 2>&1
+            runner_status=$?
+            if [ "$runner_status" -eq 0 ]; then
+              bunx playwright install --with-deps --only-shell chromium >> validation/phase4/playwright-install.log 2>&1
+              browser_status=$?
+            else
+              browser_status=99
+            fi
+            if [ "$runner_status" -eq 0 ] && [ "$browser_status" -eq 0 ]; then
+              bunx playwright test > validation/phase4/playwright.log 2>&1
+              playwright_status=$?
+            else
+              playwright_status=99
+            fi
+          else
+            type_status=99
+            targeted_status=99
+            test_status=99
+            build_status=99
+            lint_status=99
+            runner_status=99
+            browser_status=99
+            playwright_status=99
+          fi
+
+          cat > validation/phase4/result.txt <<EOF
+          validated_sha=$(git rev-parse HEAD)
+          install=$install_status
+          typescript=$type_status
+          targeted_tests=$targeted_status
+          tests=$test_status
+          build=$build_status
+          lint=$lint_status
+          playwright_runner=$runner_status
+          playwright_browser=$browser_status
+          playwright=$playwright_status
+          EOF
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add validation/phase4
+          git commit -m "Record phase 4 validation results" || true
+          git push origin HEAD:agent/audit-phase4
+
+          if [ "$install_status" -ne 0 ] || [ "$type_status" -ne 0 ] || [ "$targeted_status" -ne 0 ] || [ "$test_status" -ne 0 ] || [ "$build_status" -ne 0 ] || [ "$lint_status" -ne 0 ] || [ "$runner_status" -ne 0 ] || [ "$browser_status" -ne 0 ] || [ "$playwright_status" -ne 0 ]; then
+            exit 1
+          fi
