@@ -1,0 +1,80 @@
+name: Phase 7 full validation
+
+on:
+  push:
+    branches:
+      - agent/audit-phase7-inventory
+    paths:
+      - phase7-validation-trigger.txt
+      - .github/workflows/phase7-full-validation.yml
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase7-inventory
+          fetch-depth: 1
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Run and publish full validation
+        shell: bash
+        run: |
+          set +e
+          mkdir -p validation
+          bun install --frozen-lockfile > validation/phase7-install.txt 2>&1
+          install_status=$?
+          if [ "$install_status" -eq 0 ]; then
+            bunx tsc --noEmit > validation/phase7-typescript.txt 2>&1
+            type_status=$?
+            bunx vitest run src/test/inventoryTradeServices.test.ts > validation/phase7-targeted-tests.txt 2>&1
+            targeted_status=$?
+            bunx vitest run > validation/phase7-full-tests.txt 2>&1
+            full_status=$?
+            bun run build > validation/phase7-build.txt 2>&1
+            build_status=$?
+            bun run lint > validation/phase7-lint.txt 2>&1
+            lint_status=$?
+            bun add --dev --no-save @playwright/test > validation/phase7-runner.txt 2>&1
+            runner_status=$?
+            if [ "$runner_status" -eq 0 ]; then
+              bunx playwright install --with-deps --only-shell chromium > validation/phase7-chromium.txt 2>&1
+              chromium_status=$?
+            else
+              chromium_status=99
+            fi
+            if [ "$chromium_status" -eq 0 ]; then
+              bunx playwright test > validation/phase7-playwright.txt 2>&1
+              playwright_status=$?
+            else
+              playwright_status=99
+            fi
+          else
+            type_status=99
+            targeted_status=99
+            full_status=99
+            build_status=99
+            lint_status=99
+            runner_status=99
+            chromium_status=99
+            playwright_status=99
+          fi
+          printf 'install=%s\ntypescript=%s\ntargeted=%s\nfull=%s\nbuild=%s\nlint=%s\nrunner=%s\nchromium=%s\nplaywright=%s\n' \
+            "$install_status" "$type_status" "$targeted_status" "$full_status" "$build_status" "$lint_status" "$runner_status" "$chromium_status" "$playwright_status" \
+            > validation/phase7-result.txt
+          overall=0
+          for status in "$install_status" "$type_status" "$targeted_status" "$full_status" "$build_status" "$lint_status" "$runner_status" "$chromium_status" "$playwright_status"; do
+            if [ "$status" -ne 0 ]; then overall=1; fi
+          done
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f validation/phase7-*.txt
+          git commit -m "Record phase 7 full validation" || true
+          git push origin HEAD:agent/audit-phase7-inventory
+          exit "$overall"
