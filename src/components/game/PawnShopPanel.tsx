@@ -14,8 +14,6 @@ interface PawnShopPanelProps {
   priceModifier: number;
   week: number;
   onSellItem: (itemId: string, price: number) => void;
-  onGamble: (stake: number) => void;
-  onSpendTime: (hours: number) => void;
   section?: FenceSection;
 }
 
@@ -26,7 +24,7 @@ const USED_ITEMS = [
   { id: 'used-blanket', name: 'Patched Blanket', basePrice: 12, effect: { type: 'happiness' as const, value: 3 } },
 ];
 
-export function PawnShopPanel({ player, priceModifier, week, onSellItem, onBuyUsedItem, section }: PawnShopPanelProps) {
+export function PawnShopPanel({ player, priceModifier, week, onSellItem, section }: PawnShopPanelProps) {
   const { t } = useTranslation();
   const purchaseAppliance = useGameStore(s => s.purchaseAppliance);
   const applianceServiceAction = useGameStore(s => s.useApplianceService);
