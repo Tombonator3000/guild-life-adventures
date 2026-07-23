@@ -1,1 +1,0 @@
-Scan current raw guest action callers after phase 12.

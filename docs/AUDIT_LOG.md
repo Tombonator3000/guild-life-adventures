@@ -11,9 +11,9 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 | 3 | Full save/load-gjenoppretting | Ferdig | Brett-hexer og ukentlige nyheter gjenopprettes. |
 | 4 | Save-migrering v10 | Ferdig | Normalisering og migreringstester er lagt til. |
 | 5 | Sikre reputation unlocks | Ferdig | Kjøp valideres atomisk på hosten. |
-| 6 | Atomiske handlinger | Delvis ferdig | Healer, gravplass, gambling, avis, sabotasje, beskyttelse, jobb, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig, hex-/ritualtjenester og finans er host-resolverte. |
+| 6 | Atomiske handlinger | Delvis ferdig | Healer, gravplass, gambling, avis, sabotasje, beskyttelse, jobbtilbud, markedslønn, arbeid, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig, hex-/ritualtjenester og finans er host-resolverte. |
 | 7 | Hook-avhengigheter | Ferdig for kjente funn | AI-start, auto-end-turn, tastatur og zone-editor er rettet. |
-| 8 | Playwright E2E | Ferdig grunnflyt | Tittel, setup og en faktisk spillflyt med bankhandling, save/load og ukeovergang er dekket. Online protokollavvisninger gjenstår. |
+| 8 | Playwright E2E | Ferdig grunnflyt | Tittel, setup og en faktisk spillflyt med bankhandling, save/load og ukeovergang er dekket. Protokollavvisninger er dekket med enhetstester mot host-kjeden. |
 | 9 | Zustand-selectors | Delvis ferdig | Root, GameBoard og Grimwald AI bruker selectors/useShallow. Flere paneler er begrenset, men `LocationPanel` leser fortsatt hele store-objektet. |
 | 10 | AI failed-action cache / utdanning | Ferdig | Cache-nøkkelen følger relevant spillerstatus og tillater retry etter tilstandsendring. |
 | 11 | Dokumentasjon | Ferdig grunnlag | README, arkitektur, testing, multiplayer-sikkerhet, inventarrapport og denne revisjonsloggen er oppdatert. |
@@ -23,7 +23,7 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 
 ## Gjenstående prioritert rekkefølge
 
-1. **Migrer resterende rå gjestehandlinger.** Prioriter `modify*`, `spendTime`, `movePlayer`, `setJob` og `negotiateRaise`, slik at klienten ikke lenger sender belønning, effekt, lønn eller reisetid selv innenfor validerte grenser.
+1. **Migrer resterende rå gjestehandlinger.** Prioriter `modify*`, `spendTime` og `movePlayer`, slik at klienten ikke lenger sender belønning, effekt eller reisetid selv innenfor validerte grenser. `setJob` og `negotiateRaise` er ferdig migrert.
 2. **Begrens resterende store-abonnementer.** Start med `LocationPanel`, som fortsatt leser hele Zustand-storen.
 3. **Del opp GameBoard videre.** Flytt avledet tilstand og overlay-/layoutlogikk til mindre hooks/komponenter uten å endre funksjon.
 4. **Rydd døde kompatibilitetslag.** Fjern gamle callback-props og numeriske legacy-funksjoner når alle lokale og AI-kallere er migrert.
@@ -396,4 +396,43 @@ GitHub Actions-run `30049975906`:
 - Feil spiller, feil tur, disallowed actions og ugyldige servicevalg stoppes før store-dispatch.
 - Semantiske host-avslag rapporteres korrekt til gjesten i stedet for som falsk suksess.
 - Rå legacy-handlinger er fortsatt gjestetillatt innenfor validerte grenser og står først på neste migreringsliste.
-- PR #335 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
+- PR #335 ble squash-merget til `main` som commit `f62c2a2a9a123eb1feb205131b2bbb49c2f02167`.
+
+## Fase 13A – 24. juli 2026
+
+### Mål
+
+- Fjerne rå `setJob(playerId, jobId, wage)` og `negotiateRaise(playerId, wage)` fra gjestenes protokoll.
+- La hosten beregne jobbkrav, stillingseksklusivitet og ukens deterministiske markedslønn.
+
+### Utført
+
+- Opprettet arbeidsgren `agent/audit-phase13-raw-guest-actions` og draft-PR #336 fra fase 12-merge `f62c2a2a9a123eb1feb205131b2bbb49c2f02167`.
+- Kjørte en ny maskinell skanning av dagens rå UI-/AI-kallere etter fase 4–12.
+- Lagt til `acceptJobOffer(playerId, jobId)`, der hosten kontrollerer Guild Hall-lokasjon, gyldig jobb, utdanning, klær, erfaring, dependability og eksklusivitet for stillinger over karrierenivå 2.
+- Hosten beregner tilbudt lønn med den eksisterende deterministiske funksjonen basert på jobb, economy modifier og uke.
+- Lagt til `acceptMarketRaise(playerId)`, der hosten slår opp nåværende jobb og setter nøyaktig canonical markedslønn bare dersom den faktisk er høyere.
+- Guild Hall-panelet sender nå bare jobb-ID eller lønnsøkning-intensjon; klientberegnet lønn brukes kun til visning.
+- AI sender nå bare jobb-ID og bruker samme host-handling som menneskespilleren. Separat klientstyrt søknadstid er fjernet.
+- Fjernet `setJob` og `negotiateRaise` fra gjestenes allowlist. Legacy-funksjonene beholdes internt inntil alle kompatibilitetslag kan ryddes samlet.
+- Lagt til sju regresjonstester for canonical lønn, feil lokasjon, manglende kvalifikasjoner, opptatt høy stilling, delt entry-level-stilling, canonical market raise og allowlist.
+- Fjernet alle midlertidige skanne-, workflow-, trigger- og patchfiler før merge.
+
+### Tester
+
+GitHub Actions-run `30050832605`:
+
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Full Vitest-pakke, inkludert sju nye jobbtilbudstester: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright-runner og Chromium-installasjon: bestått.
+- Title/setup-smoke og komplett lokal spillflyt: bestått.
+
+### Resultat
+
+- En online-gjest eller AI kan ikke lenger velge egen startlønn eller markedslønnsøkning.
+- Hosten håndhever kvalifikasjoner og eksklusivitet selv om UI- eller AI-forhåndskontrollen manipuleres.
+- De neste rå høyrisikogruppene er `movePlayer`, `spendTime` og `modify*`.
+- PR #336 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
