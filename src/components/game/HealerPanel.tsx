@@ -9,9 +9,6 @@ import { toast } from 'sonner';
 interface HealerPanelProps {
   player: Player;
   priceModifier: number;
-  onHeal: (cost: number, healthGain: number, time: number) => void;
-  onCureSickness: (cost: number, time: number) => void;
-  onBlessHealth: (cost: number, time: number) => void;
 }
 
 const HEALING_OPTIONS = [
