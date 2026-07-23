@@ -11,6 +11,7 @@ import { serializeGameState, applyNetworkState, executeAction } from './networkS
 import { ALLOWED_GUEST_ACTIONS } from './types';
 import type { NetworkMessage, GuestMessage, HostMessage, ChatMessage, ConnectionStatus } from './types';
 import type { LocationId } from '@/types/game.types';
+import { validateGuestActor } from './actionValidation';
 
 /**
  * Server-side argument validation for dangerous guest actions.
@@ -382,23 +383,18 @@ export function useNetworkSync() {
             return;
           }
 
-          // Validate that the FIRST player-id argument (args[0]) matches the sender
-          // (prevents a guest from impersonating another player).
-          // BUG FIX: Actions like castPersonalCurse legitimately target OTHER players
-          // at args[2], so we only validate args[0] (the actor) matches the sender.
-          // Cross-player targeting actions are validated by the store logic itself.
-          if (Array.isArray(msg.args) && msg.args.length > 0) {
-            const actorId = msg.args[0];
-            if (typeof actorId === 'string' && actorId.startsWith('player-') && actorId !== senderPlayerId) {
-              console.warn(`[NetworkSync] Blocked impersonation: ${msg.name} from ${senderPlayerId} acting as ${actorId}`);
-              peerManager.sendTo(fromPeerId, {
-                type: 'action-result',
-                requestId: msg.requestId,
-                success: false,
-                error: 'Cannot act as another player',
-              });
-              return;
-            }
+          // Bind every actor-bearing action to the authenticated peer. This
+          // does not depend on a particular player-ID prefix.
+          const actorError = validateGuestActor(msg.name, msg.args, senderPlayerId);
+          if (actorError) {
+            console.warn(`[NetworkSync] Blocked actor mismatch: ${msg.name} from ${senderPlayerId}`);
+            peerManager.sendTo(fromPeerId, {
+              type: 'action-result',
+              requestId: msg.requestId,
+              success: false,
+              error: actorError,
+            });
+            return;
           }
 
           // Validate action arguments (prevents abuse of raw stat modifiers)

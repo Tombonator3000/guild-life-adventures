@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { LOCATIONS, getMovementCost, getPath } from '@/data/locations';
 import { getAppliance } from '@/data/items';
@@ -82,7 +83,34 @@ export function GameBoard() {
     dismissDeathEvent,
     weather,
     eventSource,
-  } = useGameStore();
+  } = useGameStore(useShallow(state => ({
+    players: state.players,
+    selectedLocation: state.selectedLocation,
+    selectLocation: state.selectLocation,
+    week: state.week,
+    priceModifier: state.priceModifier,
+    economyTrend: state.economyTrend,
+    dismissEvent: state.dismissEvent,
+    phase: state.phase,
+    currentPlayerIndex: state.currentPlayerIndex,
+    goalSettings: state.goalSettings,
+    endTurn: state.endTurn,
+    aiDifficulty: state.aiDifficulty,
+    aiSpeedMultiplier: state.aiSpeedMultiplier,
+    setAISpeedMultiplier: state.setAISpeedMultiplier,
+    skipAITurn: state.skipAITurn,
+    setSkipAITurn: state.setSkipAITurn,
+    showTutorial: state.showTutorial,
+    setShowTutorial: state.setShowTutorial,
+    applianceBreakageEvent: state.applianceBreakageEvent,
+    dismissApplianceBreakageEvent: state.dismissApplianceBreakageEvent,
+    toadCurseEvent: state.toadCurseEvent,
+    dismissToadCurseEvent: state.dismissToadCurseEvent,
+    deathEvent: state.deathEvent,
+    dismissDeathEvent: state.dismissDeathEvent,
+    weather: state.weather,
+    eventSource: state.eventSource,
+  })));
   const locationHexes = useGameStore(s => s.locationHexes);
   const stockPrices = useGameStore(s => s.stockPrices);
   const { event: shadowfingersEvent, dismiss: dismissShadowfingers } = useShadowfingersModal();

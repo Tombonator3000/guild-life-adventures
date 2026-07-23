@@ -496,7 +496,24 @@ export function useZoneEditorState({ onClose, onSave, onReset, initialCenterPane
       }
       return z;
     }));
-  }, [isDragging, selectedZone, dragMode, getPercentPosition, centerPanel, editorMode, draggingWaypoint, selectedEdge]);
+  }, [
+    centerPanel,
+    dragMode,
+    draggingWaypoint,
+    editorMode,
+    getBoardToCenterPanelPercent,
+    getBoardToMobileCenterPanelPercent,
+    getPercentPosition,
+    isDragging,
+    mobileCenterPanel,
+    selectedAnimationLayer,
+    selectedEdge,
+    selectedHomeItem,
+    selectedLayoutElement,
+    selectedMobileLayoutElement,
+    selectedMobileZone,
+    selectedZone,
+  ]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
