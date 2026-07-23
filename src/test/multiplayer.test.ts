@@ -128,10 +128,16 @@ describe('Action Categories', () => {
     // Economy
     expect(ALLOWED_GUEST_ACTIONS.has('depositToBank')).toBe(true);
     expect(ALLOWED_GUEST_ACTIONS.has('buyItem')).toBe(true);
-    // Work
-    expect(ALLOWED_GUEST_ACTIONS.has('workShift')).toBe(true);
-    // Education
-    expect(ALLOWED_GUEST_ACTIONS.has('studyDegree')).toBe(true);
+    // Host-authoritative work and education intent actions
+    expect(ALLOWED_GUEST_ACTIONS.has('performWorkShift')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('attendDegreeSession')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('prepayDegree')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('graduateDegree')).toBe(true);
+    // Numeric legacy actions remain internal and must not be guest-callable
+    expect(ALLOWED_GUEST_ACTIONS.has('workShift')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('studySession')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('studyDegree')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('payFullTuition')).toBe(false);
     // Quest/Dungeon
     expect(ALLOWED_GUEST_ACTIONS.has('takeQuest')).toBe(true);
     // clearDungeonFloor is host-internal — triggered by the combat resolver on
@@ -540,9 +546,9 @@ describe('Cross-Player Validation', () => {
       'movePlayer', 'spendTime', 'modifyGold', 'modifyHealth',
       'modifyHappiness', 'modifyFood', 'modifyClothing', 'modifyMaxHealth',
       'modifyRelaxation', 'cureSickness', 'setHousing', 'payRent',
-      'prepayRent', 'moveToHousing', 'setJob', 'workShift', 'requestRaise',
-      'negotiateRaise', 'studySession',
-      'studyDegree', 'payFullTuition', 'depositToBank', 'withdrawFromBank',
+      'prepayRent', 'moveToHousing', 'setJob', 'requestRaise',
+      'negotiateRaise', 'performWorkShift', 'attendDegreeSession',
+      'prepayDegree', 'graduateDegree', 'depositToBank', 'withdrawFromBank',
       'invest', 'withdrawInvestment', 'buyItem', 'sellItem', 'buyDurable',
       'sellDurable', 'buyAppliance', 'repairAppliance', 'pawnAppliance', 'redeemAppliance',
       'equipItem', 'unequipItem', 'buyStock', 'sellStock', 'takeLoan',

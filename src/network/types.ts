@@ -149,12 +149,15 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'begForMoreTime',
 
   'setJob',
-  'workShift',
   'requestRaise',
   'negotiateRaise',
-  'studySession',
-  'studyDegree',
-  'payFullTuition',
+
+  // Semantic employment/education actions. Host resolves wage, time,
+  // price, prerequisites, progress and graduation eligibility.
+  'performWorkShift',
+  'attendDegreeSession',
+  'prepayDegree',
+  'graduateDegree',
 
   'depositToBank',
   'withdrawFromBank',
