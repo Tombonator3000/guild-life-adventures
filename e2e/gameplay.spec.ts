@@ -1,6 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 
 async function startSinglePlayerGame(page: Page) {
+  // The flow validates deterministic UI/state transitions, not random-event odds.
+  // Keep all probability checks above their trigger thresholds before the app loads.
+  await page.addInitScript(() => {
+    Math.random = () => 0.99;
+  });
+
   await page.goto('/');
   await page.getByRole('button', { name: /new adventure/i }).click();
   await page.getByPlaceholder('Enter name...').fill('E2E Hero');
