@@ -7,6 +7,12 @@ on:
     paths:
       - phase6-test-trigger.txt
       - .github/workflows/phase6-targeted-tests.yml
+  pull_request:
+    branches:
+      - main
+    types:
+      - reopened
+      - synchronize
   workflow_dispatch:
 
 permissions:
