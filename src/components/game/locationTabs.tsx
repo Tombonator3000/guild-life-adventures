@@ -713,12 +713,13 @@ function shadowMarketTabs(ctx: LocationTabContext): LocationTab[] {
           rivals={ctx.players.filter(p => !p.isGameOver && p.id !== player.id)}
           priceModifier={priceModifier}
           onSabotage={(targetId, option) => {
-            // Import store lazily to avoid circular deps — locationTabs already imports store types
             import('@/store/gameStore').then(({ useGameStore }) => {
-              useGameStore.getState().sabotagePlayer(player.id, targetId, option.effect.type, option.effect.value, option.cost);
+              const result = useGameStore.getState().sabotagePlayer(player.id, targetId, option.id);
+              if (result && !result.success) {
+                import('sonner').then(({ toast }) => toast.error(result.message));
+              }
             });
           }}
-          spendTime={spendTime}
         />
       ),
     });
@@ -792,13 +793,21 @@ function fenceTabs(ctx: LocationTabContext): LocationTab[] {
         player={player}
         rivals={aliveRivals}
         priceModifier={priceModifier}
-        onBuyProtection={(weeks, cost) => {
+        onBuyProtection={(weeks) => {
           import('@/store/gameStore').then(({ useGameStore }) => {
-            useGameStore.getState().buyProtection(player.id, weeks, cost);
+            const result = useGameStore.getState().buyProtection(player.id, weeks);
+            if (result && !result.success) {
+              import('sonner').then(({ toast }) => toast.error(result.message));
+            }
           });
         }}
-        onBuyTipOff={(cost) => {
-          modifyGold(player.id, -cost);
+        onBuyTipOff={(targetId) => {
+          import('@/store/gameStore').then(({ useGameStore }) => {
+            const result = useGameStore.getState().buyTipOff(player.id, targetId);
+            if (result && !result.success) {
+              import('sonner').then(({ toast }) => toast.error(result.message));
+            }
+          });
         }}
       />
     ),
@@ -816,10 +825,12 @@ function fenceTabs(ctx: LocationTabContext): LocationTab[] {
           priceModifier={priceModifier}
           onSabotage={(targetId, option) => {
             import('@/store/gameStore').then(({ useGameStore }) => {
-              useGameStore.getState().sabotagePlayer(player.id, targetId, option.effect.type, option.effect.value, option.cost);
+              const result = useGameStore.getState().sabotagePlayer(player.id, targetId, option.id);
+              if (result && !result.success) {
+                import('sonner').then(({ toast }) => toast.error(result.message));
+              }
             });
           }}
-          spendTime={spendTime}
         />
       ),
     });
@@ -980,9 +991,12 @@ export function getLocationTabs(locationId: LocationId, isHere: boolean, ctx: Lo
           player={player}
           locationId={locationId}
           priceModifier={ctx.priceModifier}
-          onPurchase={(unlockId, cost, effectType, effectValue, timeCost) => {
+          onPurchase={(unlockId) => {
             import('@/store/gameStore').then(({ useGameStore }) => {
-              useGameStore.getState().purchaseReputationUnlock(player.id, unlockId, cost, effectType, effectValue, timeCost);
+              const result = useGameStore.getState().purchaseReputationUnlock(player.id, unlockId);
+              if (result && !result.success) {
+                import('sonner').then(({ toast }) => toast.error(result.message));
+              }
             });
           }}
         />

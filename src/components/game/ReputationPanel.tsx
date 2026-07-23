@@ -13,8 +13,8 @@ interface ReputationPanelProps {
   player: Player;
   locationId: string;
   priceModifier: number;
-  onPurchase: (unlockId: string, cost: number, effectType: string, effectValue: number, timeCost: number) => void;
-  spendTime?: (playerId: string, hours: number) => void;
+  /** Called with just the unlock id — store looks up canonical cost/effect. */
+  onPurchase: (unlockId: string) => void;
 }
 
 export function ReputationPanel({ player, locationId, priceModifier, onPurchase }: ReputationPanelProps) {
@@ -84,13 +84,7 @@ export function ReputationPanel({ player, locationId, priceModifier, onPurchase 
                     darkText
                     largeText
                     onClick={() => {
-                      onPurchase(
-                        unlock.id,
-                        adjustedCost,
-                        unlock.effect.type,
-                        unlock.effect.value,
-                        unlock.timeCost
-                      );
+                      onPurchase(unlock.id);
                       toast.success(`${unlock.name} acquired!`);
                     }}
                   />

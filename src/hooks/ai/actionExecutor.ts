@@ -132,11 +132,12 @@ export interface StoreActions {
   forgeRepairAppliance: (playerId: string, applianceId: string) => number;
   // Salary
   requestRaise: (playerId: string) => { success: boolean; newWage?: number; message: string };
-  // Reputation
-  purchaseReputationUnlock: (playerId: string, unlockId: string, cost: number, effectType: string, effectValue: number, timeCost: number) => void;
-  // Fence services
-  buyProtection: (playerId: string, weeks: number, cost: number) => void;
-  sabotagePlayer: (saboteurId: string, targetId: string, effectType: string, effectValue: number, cost: number) => void;
+  // Reputation (host-authoritative, atomic)
+  purchaseReputationUnlock: (playerId: string, unlockId: string) => { success: boolean; message: string } | void;
+  // Fence services (host-authoritative, atomic)
+  buyProtection: (playerId: string, weeks: number) => { success: boolean; message: string } | void;
+  buyTipOff: (playerId: string, targetId: string) => { success: boolean; message: string } | void;
+  sabotagePlayer: (saboteurId: string, targetId: string, optionId: string) => { success: boolean; message: string } | void;
   endTurn: () => void;
 }
 

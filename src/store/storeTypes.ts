@@ -163,12 +163,19 @@ export interface GameStore extends GameState {
   // Debug actions (developer panel)
   setDebugWeather: (type: string) => void;
   setDebugFestival: (festivalId: string | null) => void;
-  // Player Bounties / Sabotage
-  sabotagePlayer: (saboteurId: string, targetId: string, effectType: string, effectValue: number, cost: number) => void;
-  buyProtection: (playerId: string, weeks: number, cost: number) => void;
+  // Player Bounties / Sabotage — host-authoritative, atomic (validates + applies gold+time+effect)
+  sabotagePlayer: (saboteurId: string, targetId: string, optionId: string) => ActionResult | void;
+  buyProtection: (playerId: string, weeks: number) => ActionResult | void;
+  buyTipOff: (playerId: string, targetId: string) => ActionResult | void;
   // Reputation system
   modifyReputation: (playerId: string, fame: number, infamy: number) => void;
-  purchaseReputationUnlock: (playerId: string, unlockId: string, cost: number, effectType: string, effectValue: number, timeCost: number) => void;
+  purchaseReputationUnlock: (playerId: string, unlockId: string) => ActionResult | void;
+}
+
+/** Result returned by host-authoritative atomic actions. Guest calls return void (forwarded). */
+export interface ActionResult {
+  success: boolean;
+  message: string;
 }
 
 // Zustand set/get function types

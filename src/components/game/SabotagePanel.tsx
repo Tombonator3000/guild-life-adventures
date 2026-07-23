@@ -8,6 +8,8 @@ import type { Player } from '@/types/game.types';
 import { JonesMenuItem } from './JonesStylePanel';
 import { toast } from 'sonner';
 import { Skull, Target } from 'lucide-react';
+import { SABOTAGE_OPTIONS as CANON_SABOTAGE_OPTIONS, computePrice } from '@/data/sabotage';
+import type { SabotageOption as CanonSabotageOption } from '@/data/sabotage';
 import {
   Select,
   SelectContent,
@@ -16,54 +18,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-export interface SabotageOption {
-  id: string;
-  label: string;
-  description: string;
-  cost: number;
-  timeCost: number;
-  effect: {
-    type: 'time-loss' | 'gold-theft' | 'clothing-damage';
-    value: number;
-  };
-}
-
-const SABOTAGE_OPTIONS: SabotageOption[] = [
-  {
-    id: 'pickpocket',
-    label: 'Hire Shadowfingers: Pickpocket',
-    description: 'Shadowfingers lifts some gold from their purse.',
-    cost: 50,
-    timeCost: 1,
-    effect: { type: 'gold-theft', value: 30 },
-  },
-  {
-    id: 'distraction',
-    label: 'Hire Shadowfingers: Distraction',
-    description: 'Shadowfingers waylays them, costing precious hours.',
-    cost: 80,
-    timeCost: 1,
-    effect: { type: 'time-loss', value: 6 },
-  },
-  {
-    id: 'mudslinger',
-    label: 'Hire Shadowfingers: Mudslinger',
-    description: "Shadowfingers 'accidentally' ruins their clothes.",
-    cost: 60,
-    timeCost: 1,
-    effect: { type: 'clothing-damage', value: 25 },
-  },
-];
+/** Re-export the canonical option shape so external callers stay type-safe. */
+export type SabotageOption = CanonSabotageOption;
 
 interface SabotagePanelProps {
   player: Player;
   rivals: Player[];
   priceModifier: number;
   onSabotage: (targetId: string, option: SabotageOption) => void;
-  spendTime: (playerId: string, hours: number) => void;
 }
 
-export function SabotagePanel({ player, rivals, priceModifier, onSabotage, spendTime }: SabotagePanelProps) {
+export function SabotagePanel({ player, rivals, priceModifier, onSabotage }: SabotagePanelProps) {
   const aliveRivals = rivals.filter(r => !r.isGameOver && r.id !== player.id);
   const [selectedRivalId, setSelectedRivalId] = useState<string>(
     aliveRivals.length > 0 ? aliveRivals[0].id : ''
@@ -117,8 +82,8 @@ export function SabotagePanel({ player, rivals, priceModifier, onSabotage, spend
             Gold: {selectedRival.gold}g | Clothing: {selectedRival.clothingCondition}%
           </div>
           <div className="space-y-1">
-            {SABOTAGE_OPTIONS.map(option => {
-              const adjustedCost = Math.round(option.cost * priceModifier);
+            {CANON_SABOTAGE_OPTIONS.map(option => {
+              const adjustedCost = computePrice(option.baseCost, priceModifier);
               const canAfford = player.gold >= adjustedCost;
               const hasTime = player.timeRemaining >= option.timeCost;
 
@@ -131,8 +96,7 @@ export function SabotagePanel({ player, rivals, priceModifier, onSabotage, spend
                     darkText
                     largeText
                     onClick={() => {
-                      onSabotage(selectedRival.id, { ...option, cost: adjustedCost });
-                      spendTime(player.id, option.timeCost);
+                      onSabotage(selectedRival.id, option);
                       toast.success(`Shadowfingers dispatched against ${selectedRival.name}!`);
                     }}
                   />

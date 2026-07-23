@@ -105,6 +105,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     requestRaise: store.requestRaise,
     purchaseReputationUnlock: store.purchaseReputationUnlock,
     buyProtection: store.buyProtection,
+    buyTipOff: store.buyTipOff,
     sabotagePlayer: store.sabotagePlayer,
     endTurn: store.endTurn,
   }), [store]);

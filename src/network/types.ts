@@ -154,7 +154,11 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'spendTime',
   'endTurn',
 
-  // Player state changes
+  // Player state changes.
+  // NOTE: raw modify* actions are used by legitimate UI flows (gambling, weekend
+  // events, used-item effects). Positive amounts are strictly bounded by
+  // STAT_MODIFIER_RULES in useNetworkSync — guests cannot mint free stats. Do
+  // NOT remove them without first porting every UI caller to a semantic action.
   'modifyGold',
   'modifyHealth',
   'modifyHappiness',
@@ -177,10 +181,10 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'requestRaise',
   'negotiateRaise',
   'studySession',
-  'completeEducationLevel',
   'studyDegree',
   'payFullTuition',
-  'completeDegree',
+  // NOTE: completeEducationLevel / completeDegree are host-internal completion hooks
+  // triggered by studyDegree/studySession. Guests must not call them directly.
 
   // Economy & Shopping
   'depositToBank',
@@ -227,10 +231,10 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'completeBounty',
   'completeChainQuest',
   'abandonQuest',
-  'clearDungeonFloor',
-  'applyRareDrop',
   'incrementDungeonAttempts',
-  'updatePlayerDungeonRecord',
+  // NOTE: clearDungeonFloor / applyRareDrop / updatePlayerDungeonRecord are internal
+  // reward hooks fired by the combat resolver. Guests must not call them directly —
+  // they'd let a guest hand out arbitrary dungeon rewards.
 
   // Food with spoilage
   'buyFoodWithSpoilage',
@@ -244,5 +248,11 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'cleanseCurse',
   'performDarkRitual',
   'attemptCurseReflection',
-  // BUG FIX: Removed 'addHexScrollToPlayer' — internal-only action (dungeon drops), no cost validation
+  // BUG FIX: 'addHexScrollToPlayer' is internal-only (dungeon drops), no cost validation
+
+  // Rival services (Fence / Shadow Market) — atomic & validated in store
+  'sabotagePlayer',
+  'buyProtection',
+  'buyTipOff',
+  'purchaseReputationUnlock',
 ]);
