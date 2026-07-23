@@ -1,6 +1,0 @@
-[WebServer] $ vite --host "127.0.0.1" --port "4173"
-
-Running 2 tests using 1 worker
-··
-::notice title=🎭 Playwright Run Summary::  2 passed (8.2s)
-  2 passed (8.2s)

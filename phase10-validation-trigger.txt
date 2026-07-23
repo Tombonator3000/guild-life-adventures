@@ -1,1 +1,0 @@
-Run the complete phase 10 validation now that the workflow exists.

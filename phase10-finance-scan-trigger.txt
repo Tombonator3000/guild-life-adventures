@@ -1,1 +1,0 @@
-Scan all bank, stock, investment and loan actions now that the workflow exists.
