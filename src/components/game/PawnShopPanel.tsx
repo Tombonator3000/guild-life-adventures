@@ -20,7 +20,6 @@ interface PawnShopPanelProps {
   section?: FenceSection;
 }
 
-// Used items available at the pawn shop (discounted)
 const USED_ITEMS = [
   { id: 'used-sword', name: 'Used Sword', basePrice: 40, originalId: 'sword' },
   { id: 'used-clothes', name: 'Worn Clothes', basePrice: 30, effect: { type: 'clothing' as const, value: 50 } },
@@ -28,14 +27,19 @@ const USED_ITEMS = [
   { id: 'used-blanket', name: 'Patched Blanket', basePrice: 12, effect: { type: 'happiness' as const, value: 3 } },
 ];
 
-export function PawnShopPanel({ player, priceModifier, week, onSellItem, onBuyUsedItem, onGamble, onSpendTime, section }: PawnShopPanelProps) {
+export function PawnShopPanel({ player, priceModifier, week, onSellItem, onBuyUsedItem, section }: PawnShopPanelProps) {
   const { t } = useTranslation();
-  const { pawnAppliance, redeemAppliance, buyAppliance } = useGameStore();
-  // Calculate sell prices (50% of original value)
+  const { pawnAppliance, redeemAppliance, buyAppliance, gambleAtFence } = useGameStore();
+
   const getSellPrice = (itemId: string): number => {
     const item = getItem(itemId);
-    if (!item) return 5; // Minimum sell price
+    if (!item) return 5;
     return Math.max(5, Math.round(item.basePrice * 0.5 * priceModifier));
+  };
+
+  const runGamble = (stake: number) => {
+    const result = gambleAtFence(player.id, stake);
+    if (result && !result.success) toast.error(result.message);
   };
 
   const renderSellItems = () => (
@@ -73,7 +77,7 @@ export function PawnShopPanel({ player, priceModifier, week, onSellItem, onBuyUs
       </h4>
       <div className="space-y-2">
         {USED_ITEMS.map(item => {
-          const price = Math.round(item.basePrice * priceModifier * 0.8); // Extra discount at pawn shop
+          const price = Math.round(item.basePrice * priceModifier * 0.8);
           return (
             <button
               key={item.id}
@@ -222,7 +226,7 @@ export function PawnShopPanel({ player, priceModifier, week, onSellItem, onBuyUs
       </h4>
       <div className="space-y-2">
         <button
-          onClick={() => onGamble(10)}
+          onClick={() => runGamble(10)}
           disabled={player.gold < 10 || player.timeRemaining < 2}
           className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
@@ -237,7 +241,7 @@ export function PawnShopPanel({ player, priceModifier, week, onSellItem, onBuyUs
         </button>
 
         <button
-          onClick={() => onGamble(50)}
+          onClick={() => runGamble(50)}
           disabled={player.gold < 50 || player.timeRemaining < 2}
           className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
@@ -252,7 +256,7 @@ export function PawnShopPanel({ player, priceModifier, week, onSellItem, onBuyUs
         </button>
 
         <button
-          onClick={() => onGamble(100)}
+          onClick={() => runGamble(100)}
           disabled={player.gold < 100 || player.timeRemaining < 3}
           className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
@@ -269,34 +273,17 @@ export function PawnShopPanel({ player, priceModifier, week, onSellItem, onBuyUs
     </div>
   );
 
-  // Tabbed mode: render only the specified section
   if (section) {
     switch (section) {
       case 'trade':
-        return (
-          <div className="space-y-4">
-            {renderSellItems()}
-            {renderUsedGoods()}
-          </div>
-        );
+        return <div className="space-y-4">{renderSellItems()}{renderUsedGoods()}</div>;
       case 'magical':
-        return (
-          <div className="space-y-4">
-            {renderPawnAppliances()}
-            {renderRedeemAppliances()}
-            {renderBuyPawnedItems()}
-          </div>
-        );
+        return <div className="space-y-4">{renderPawnAppliances()}{renderRedeemAppliances()}{renderBuyPawnedItems()}</div>;
       case 'gambling':
-        return (
-          <div className="space-y-4">
-            {renderGambling()}
-          </div>
-        );
+        return <div className="space-y-4">{renderGambling()}</div>;
     }
   }
 
-  // Full mode (legacy): render all sections
   return (
     <div className="space-y-4">
       {renderSellItems()}
