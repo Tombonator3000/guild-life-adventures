@@ -2,19 +2,17 @@ import { readFileSync, writeFileSync } from 'node:fs';
 
 const path = 'src/hooks/ai/actions/criticalNeeds.ts';
 let source = readFileSync(path, 'utf8');
-source = source.replace(
+const functionStart = source.indexOf('function generateRentActions');
+if (functionStart === -1) throw new Error('generateRentActions not found');
+const functionEnd = source.indexOf('\n}\n\n// ─── Clothing actions', functionStart);
+if (functionEnd === -1) throw new Error('generateRentActions end not found');
+let block = source.slice(functionStart, functionEnd + 2);
+block = block.replace(
   `  const { player, urgency, currentLocation, moveCost } = ctx;`,
   `  const { player, urgency, currentLocation, moveCost, priceModifier } = ctx;`,
 );
-source = source.replace(
-  `player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing]`,
-  `player.lockedRent > 0 ? player.lockedRent : Math.round(RENT_COSTS[player.housing] * priceModifier)`,
-);
-source = source.replace(
-  `player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing]`,
-  `player.lockedRent > 0 ? player.lockedRent : Math.round(RENT_COSTS[player.housing] * priceModifier)`,
-);
-if (!source.includes('Math.round(RENT_COSTS[player.housing] * priceModifier)')) {
-  throw new Error('AI rent precheck was not updated');
+if (!block.includes('moveCost, priceModifier')) {
+  throw new Error('Rent action destructuring was not updated');
 }
+source = source.slice(0, functionStart) + block + source.slice(functionEnd + 2);
 writeFileSync(path, source);
