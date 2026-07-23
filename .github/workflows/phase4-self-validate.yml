@@ -85,7 +85,7 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add validation/phase4
+          git add -f validation/phase4
           git commit -m "Record phase 4 validation results" || true
           git push origin HEAD:agent/audit-phase4
 
