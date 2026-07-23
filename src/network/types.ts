@@ -154,10 +154,18 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'spendTime',
   'endTurn',
 
-  // Player state changes
-  // NOTE: raw modify* actions are NOT guest-callable — they let a malicious guest
-  // pick arbitrary positive values. Use semantic host-authoritative actions instead
-  // (buyItem/workShift/studyDegree/…) which look up canonical effect values.
+  // Player state changes.
+  // NOTE: raw modify* actions are used by legitimate UI flows (gambling, weekend
+  // events, used-item effects). Positive amounts are strictly bounded by
+  // STAT_MODIFIER_RULES in useNetworkSync — guests cannot mint free stats. Do
+  // NOT remove them without first porting every UI caller to a semantic action.
+  'modifyGold',
+  'modifyHealth',
+  'modifyHappiness',
+  'modifyFood',
+  'modifyClothing',
+  'modifyMaxHealth',
+  'modifyRelaxation',
   'cureSickness',
 
   // Housing
