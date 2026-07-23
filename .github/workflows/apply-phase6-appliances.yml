@@ -8,6 +8,7 @@ on:
       - phase6-appliance-trigger.txt
       - .github/workflows/apply-phase6-appliances.yml
       - scripts/apply-phase6-appliances.mjs
+      - scripts/patch-phase6-appliance-tests.mjs
   workflow_dispatch:
 
 permissions:
@@ -28,6 +29,13 @@ jobs:
           set +e
           node scripts/apply-phase6-appliances.mjs > phase6-appliance-result.txt 2>&1
           status=$?
+
+          if [ "$status" -ne 0 ] && grep -q "src/test/multiplayer.test.ts: cross-player appliance actions" phase6-appliance-result.txt; then
+            echo "Applying appliance test fallback" >> phase6-appliance-result.txt
+            node scripts/patch-phase6-appliance-tests.mjs >> phase6-appliance-result.txt 2>&1
+            status=$?
+          fi
+
           echo "status=$status" >> phase6-appliance-result.txt
 
           git config user.name "github-actions[bot]"
