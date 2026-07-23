@@ -186,9 +186,14 @@ describe('Action Categories', () => {
     expect(ALLOWED_GUEST_ACTIONS.has('pawnAppliance')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('redeemAppliance')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('forgeRepairAppliance')).toBe(false);
-    // Equipment migration is a separate phase.
-    expect(ALLOWED_GUEST_ACTIONS.has('temperEquipment')).toBe(true);
-    expect(ALLOWED_GUEST_ACTIONS.has('salvageEquipment')).toBe(true);
+    // Equipment intent is guest-callable; numeric legacy services are host-internal.
+    expect(ALLOWED_GUEST_ACTIONS.has('purchaseEquipmentItem')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('useEquipmentService')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('buyDurable')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('sellDurable')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('temperEquipment')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('forgeRepairEquipment')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('salvageEquipment')).toBe(false);
   });
 });
 
