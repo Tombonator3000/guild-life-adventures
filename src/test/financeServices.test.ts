@@ -107,7 +107,7 @@ describe('host-authoritative finance services', () => {
     let playerId = preparePlayer();
     expect(useGameStore.getState().manageLoan(playerId, 'borrow', 300)?.success).toBe(false);
     expect(useGameStore.getState().manageLoan(playerId, 'borrow', 500)?.success).toBe(true);
-    let player = useGameStore.getState().players[0];
+    const player = useGameStore.getState().players[0];
     expect(player.gold).toBe(5500);
     expect(player.loanAmount).toBe(500);
     expect(player.loanWeeksRemaining).toBe(8);
