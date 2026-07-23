@@ -1,0 +1,40 @@
+name: Phase 9 hex call scan
+
+on:
+  push:
+    branches:
+      - agent/audit-phase9-hex
+    paths:
+      - phase9-hex-scan-trigger.txt
+      - .github/workflows/phase9-hex-scan.yml
+
+permissions:
+  contents: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase9-hex
+          fetch-depth: 1
+      - name: Scan hex actions
+        shell: bash
+        run: |
+          set +e
+          {
+            echo '# Hex action names and callers'
+            grep -RIn --include='*.ts' --include='*.tsx' -E '\b(buyHexScroll|buyProtectiveAmulet|dispelLocationHex|cleanseCurse|performDarkRitual|attemptCurseReflection|buy-hex-scroll|dispel-hex|dark-ritual)\b' src || true
+            echo
+            echo '# Hex AI detail values'
+            grep -RIn --include='*.ts' --include='*.tsx' -E "type: '(buy-hex-scroll|dispel-hex|dark-ritual)'|details:.*(cost|hexId)" src/hooks/ai || true
+            echo
+            echo '# Whole-store subscriptions in hex panels'
+            grep -RIn --include='*.tsx' -E 'useGameStore\(\)' src/components/game/HexShopPanel.tsx src/components/game/GraveyardHexPanel.tsx || true
+          } > phase9-hex-scan.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f phase9-hex-scan.txt
+          git commit -m "Record phase 9 hex call scan" || true
+          git push origin HEAD:agent/audit-phase9-hex
