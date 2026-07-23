@@ -82,7 +82,6 @@ describe('save migration v10', () => {
     useGameStore.getState().startNewGame(['Tester'], false, goals);
     useGameStore.setState({
       locationHexes: [{
-        id: 'hex-test',
         hexId: 'sealed-gate',
         casterId: 'player-0',
         casterName: 'Tester',
