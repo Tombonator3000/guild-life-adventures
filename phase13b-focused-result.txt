@@ -1,0 +1,36 @@
+
+[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90m/home/runner/work/guild-life-adventures/guild-life-adventures[39m
+
+ [32m✓[39m src/test/travelService.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/network/protocolSecurity.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Suites 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/test/multiplayer.test.ts[2m [ src/test/multiplayer.test.ts ][22m
+[31m[1mError[22m: Failed to resolve import "@/network/roomCode" from "src/test/multiplayer.test.ts". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36m/home/runner/work/guild-life-adventures/guild-life-adventures/src/test/multiplayer.test.ts[39m:18:7
+[33m  2  |  import { useGameStore } from '@/store/gameStore';
+  3  |  import { ALLOWED_GUEST_ACTIONS, LOCAL_ONLY_ACTIONS, HOST_INTERNAL_ACTIONS, RATE_LIMIT_CONFIG, isValidMessage, serializeMessage, deserializeMessage } from '@/network/types';
+  4  |  import { generateRoomCode, isValidRoomCode, encodeInviteCode, decodeInviteCode } from '@/network/roomCode';
+     |                                                                                         ^
+  5  |  import { executeAction } from '@/network/networkState';
+  6  |  import { RateLimiter } from '@/network/RateLimiter';[39m
+[90m [2m❯[22m TransformPluginContext._formatError node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:[2m49258:41[22m[39m
+[90m [2m❯[22m TransformPluginContext.error node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:[2m49253:16[22m[39m
+[90m [2m❯[22m normalizeUrl node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:[2m64291:23[22m[39m
+[90m [2m❯[22m node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:[2m64423:39[22m[39m
+[90m [2m❯[22m TransformPluginContext.transform node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:[2m64350:7[22m[39m
+[90m [2m❯[22m PluginContainer.transform node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:[2m49099:18[22m[39m
+[90m [2m❯[22m loadAndTransform node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:[2m51977:27[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m2 passed[39m[22m[90m (3)[39m
+[2m      Tests [22m [1m[32m15 passed[39m[22m[90m (15)[39m
+[2m   Start at [22m 23:00:23
+[2m   Duration [22m 1.84s[2m (transform 558ms, setup 276ms, collect 1.25s, tests 20ms, environment 1.77s, prepare 822ms)[22m
+
+
+status=1
