@@ -1,1 +1,0 @@
-Run the phase 4 migration with the indentation-independent Academy fallback.
