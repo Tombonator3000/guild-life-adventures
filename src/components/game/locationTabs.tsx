@@ -460,7 +460,7 @@ function armoryTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function enchanterTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, players, priceModifier, modifyGold, modifyHealth, spendTime, cureSickness, modifyMaxHealth } = ctx;
+  const { player, players, priceModifier } = ctx;
   const hexesEnabled = getGameOption('enableHexesCurses');
   const enchanterHexes = hexesEnabled ? getEnchanterHexStock(player) : [];
   const tabs: LocationTab[] = [
@@ -471,21 +471,6 @@ function enchanterTabs(ctx: LocationTabContext): LocationTab[] {
         <HealerPanel
           player={player}
           priceModifier={priceModifier}
-          onHeal={(cost, healthGain, time) => {
-            modifyGold(player.id, -cost);
-            modifyHealth(player.id, healthGain);
-            spendTime(player.id, time);
-          }}
-          onCureSickness={(cost, time) => {
-            modifyGold(player.id, -cost);
-            spendTime(player.id, time);
-            cureSickness(player.id);
-          }}
-          onBlessHealth={(cost, time) => {
-            modifyGold(player.id, -cost);
-            modifyMaxHealth(player.id, 10);
-            spendTime(player.id, time);
-          }}
         />
       ),
     },

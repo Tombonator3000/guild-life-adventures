@@ -125,6 +125,8 @@ describe('Action Categories', () => {
     // Movement
     expect(ALLOWED_GUEST_ACTIONS.has('travelPlayer')).toBe(true);
     expect(ALLOWED_GUEST_ACTIONS.has('performHomeActivity')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('useHealerService')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('cureSickness')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('movePlayer')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('endTurn')).toBe(true);
     // Economy
@@ -588,7 +590,7 @@ describe('Cross-Player Validation', () => {
     const actionsWithPlayerIdArg = [
       'travelPlayer', 'performHomeActivity', 'spendTime', 'modifyGold', 'modifyHealth',
       'modifyHappiness', 'modifyFood', 'modifyClothing', 'modifyMaxHealth',
-      'modifyRelaxation', 'cureSickness', 'payHousingRent',
+      'modifyRelaxation', 'payHousingRent',
       'moveHousingAtLandlord', 'requestRentExtensionAtLandlord', 'requestRaise',
       'acceptJobOffer', 'acceptMarketRaise', 'performWorkShift', 'attendDegreeSession',
       'prepayDegree', 'graduateDegree', 'transferBankFunds', 'manageInvestment',
