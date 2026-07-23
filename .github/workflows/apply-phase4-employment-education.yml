@@ -1,0 +1,35 @@
+name: Apply phase 4 employment education patch
+
+on:
+  push:
+    branches:
+      - agent/audit-phase4
+    paths:
+      - phase4-employment-education-trigger.txt
+      - .github/workflows/apply-phase4-employment-education.yml
+      - scripts/apply-phase4-employment-education.mjs
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase4
+          fetch-depth: 1
+      - name: Apply source patches
+        run: node scripts/apply-phase4-employment-education.mjs
+      - name: Commit patched sources
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/store/storeTypes.ts src/store/gameStore.ts src/network/types.ts src/components/game/LocationPanel.tsx src/components/game/locationTabs.tsx src/components/game/WorkSection.tsx src/components/game/AcademyPanel.tsx
+          git diff --cached --quiet && exit 0
+          git commit -m "Migrate employment and education to semantic actions"
+          git push origin HEAD:agent/audit-phase4
