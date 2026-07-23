@@ -1,5 +1,5 @@
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
-import { getLocation, getMovementCost, getPath } from '@/data/locations';
+import { getLocation, getPath } from '@/data/locations';
 import type { LocationId } from '@/types/game.types';
 import { playSFX } from '@/audio/sfxManager';
 import { MapPin, Clock, ArrowRight, X, Swords } from 'lucide-react';
@@ -44,26 +44,33 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
 
   if (!location || !player) return null;
 
-  const moveCost = getMovementCost(player.currentLocation, locationId);
+  const travelPath = getPath(player.currentLocation, locationId);
+  const weatherExtra = store.weather?.movementCostExtra ?? 0;
+  const routeCost = (steps: number) => steps + Math.floor(steps * Math.max(0, weatherExtra));
+  const moveCost = routeCost(Math.max(0, travelPath.length - 1));
   const isHere = player.currentLocation === locationId;
-  const canAffordMove = player.timeRemaining >= moveCost;
-  const canPartialTravel = !canAffordMove && player.timeRemaining > 0 && !isHere;
+  let partialSteps = 0;
+  for (let steps = 1; steps < travelPath.length; steps += 1) {
+    if (routeCost(steps) <= player.timeRemaining) partialSteps = steps;
+  }
+  const canAffordMove = !isHere && player.timeRemaining >= moveCost;
+  const canPartialTravel = !canAffordMove && partialSteps > 0;
 
   const handleTravel = () => {
     if (isHere) return;
     if (canAffordMove) {
-      store.movePlayer(player.id, locationId, moveCost);
+      const result = store.travelPlayer(player.id, travelPath);
+      if (result && !result.success) toast.error(result.message);
     } else if (canPartialTravel) {
-      const fullPath = getPath(player.currentLocation, locationId);
-      const stepsCanTake = player.timeRemaining;
-      if (stepsCanTake > 0 && fullPath.length > 1) {
-        const partialPath = fullPath.slice(0, stepsCanTake + 1);
-        const partialDestination = partialPath[partialPath.length - 1];
-        store.movePlayer(player.id, partialDestination, player.timeRemaining);
-        toast.info('Not enough time to reach destination. Turn ended.');
-        store.selectLocation(null);
-        setTimeout(() => store.endTurn(), 300);
+      const partialPath = travelPath.slice(0, partialSteps + 1);
+      const result = store.travelPlayer(player.id, partialPath);
+      if (result && !result.success) {
+        toast.error(result.message);
+        return;
       }
+      toast.info('Not enough time to reach destination. Turn ended.');
+      store.selectLocation(null);
+      setTimeout(() => store.endTurn(), 300);
     }
   };
 

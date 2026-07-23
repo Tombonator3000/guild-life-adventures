@@ -7,11 +7,11 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 | Nr. | Punkt | Status | Merknad |
 |---:|---|---|---|
 | 1 | Beskytte online spill mot sabotasje/misbruk | Ferdig hovedsakelig | Sabotasje, beskyttelse og tip-off er host-autoritative. |
-| 2 | Host-autoritativ multiplayer | Delvis ferdig, protokoll låst | Aktør-ID, tur, allowlist, argumentform, reisepris og semantiske host-avslag valideres og er dekket av angrepstester. Rå legacy-handlinger må fortsatt migreres bort. |
+| 2 | Host-autoritativ multiplayer | Delvis ferdig, protokoll låst | Aktør-ID, tur, allowlist, argumentform, canonical rute og semantiske host-avslag valideres. Klienten kan ikke lenger sende reisepris. Rå stat-/tidshandlinger gjenstår. |
 | 3 | Full save/load-gjenoppretting | Ferdig | Brett-hexer og ukentlige nyheter gjenopprettes. |
 | 4 | Save-migrering v10 | Ferdig | Normalisering og migreringstester er lagt til. |
 | 5 | Sikre reputation unlocks | Ferdig | Kjøp valideres atomisk på hosten. |
-| 6 | Atomiske handlinger | Delvis ferdig | Healer, gravplass, gambling, avis, sabotasje, beskyttelse, jobbtilbud, markedslønn, arbeid, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig, hex-/ritualtjenester og finans er host-resolverte. |
+| 6 | Atomiske handlinger | Delvis ferdig | Reise, healer, gravplass, gambling, avis, sabotasje, beskyttelse, jobbtilbud, markedslønn, arbeid, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig, hex-/ritualtjenester og finans er host-resolverte. |
 | 7 | Hook-avhengigheter | Ferdig for kjente funn | AI-start, auto-end-turn, tastatur og zone-editor er rettet. |
 | 8 | Playwright E2E | Ferdig grunnflyt | Tittel, setup og en faktisk spillflyt med bankhandling, save/load og ukeovergang er dekket. Protokollavvisninger er dekket med enhetstester mot host-kjeden. |
 | 9 | Zustand-selectors | Delvis ferdig | Root, GameBoard og Grimwald AI bruker selectors/useShallow. Flere paneler er begrenset, men `LocationPanel` leser fortsatt hele store-objektet. |
@@ -23,7 +23,7 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 
 ## Gjenstående prioritert rekkefølge
 
-1. **Migrer resterende rå gjestehandlinger.** Prioriter `modify*`, `spendTime` og `movePlayer`, slik at klienten ikke lenger sender belønning, effekt eller reisetid selv innenfor validerte grenser. `setJob` og `negotiateRaise` er ferdig migrert.
+1. **Migrer resterende rå gjestehandlinger.** Prioriter `modify*` og `spendTime`, slik at klienten ikke lenger sender belønning, effekt eller tidsbruk selv innenfor validerte grenser. `setJob`, `negotiateRaise` og `movePlayer` er ferdig migrert.
 2. **Begrens resterende store-abonnementer.** Start med `LocationPanel`, som fortsatt leser hele Zustand-storen.
 3. **Del opp GameBoard videre.** Flytt avledet tilstand og overlay-/layoutlogikk til mindre hooks/komponenter uten å endre funksjon.
 4. **Rydd døde kompatibilitetslag.** Fjern gamle callback-props og numeriske legacy-funksjoner når alle lokale og AI-kallere er migrert.
@@ -434,5 +434,48 @@ GitHub Actions-run `30050832605`:
 
 - En online-gjest eller AI kan ikke lenger velge egen startlønn eller markedslønnsøkning.
 - Hosten håndhever kvalifikasjoner og eksklusivitet selv om UI- eller AI-forhåndskontrollen manipuleres.
-- De neste rå høyrisikogruppene er `movePlayer`, `spendTime` og `modify*`.
-- PR #336 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
+- De neste rå høyrisikogruppene er `spendTime` og `modify*`.
+- PR #336 ble squash-merget til `main` som commit `ae6e1300070ccd2ffa7a27860fefc9e203081172`.
+
+## Fase 13B – 24. juli 2026
+
+### Mål
+
+- Fjerne rå `movePlayer(playerId, destination, timeCost)` fra gjestenes protokoll.
+- Beholde vanlig, delvis og omdirigert kartanimasjon, men la hosten validere den faktiske ruten og beregne kostnaden.
+
+### Utført
+
+- Opprettet arbeidsgren `agent/audit-phase13b-travel` og draft-PR #337 fra fase 13A-merge `ae6e1300070ccd2ffa7a27860fefc9e203081172`.
+- Lagt til `travelPlayer(playerId, route)`, der hosten validerer at ruten starter ved spillerens autoritative posisjon, bare inneholder kjente brettlokasjoner og består av gyldige nabosteg.
+- Hosten beregner tidskostnaden fra faktisk antall rutesteg og gjeldende vær; klienten sender ikke lenger `timeCost`.
+- Ruter er begrenset til maksimalt én lokasjon per tilgjengelig turntime for å avvise urimelig store payloads.
+- Eksisterende interne `movePlayer` beholdes som én implementasjon av posisjonsendring, ran og reise-/lokasjonseventer, men er fjernet fra gjestenes allowlist.
+- `usePlayerAnimation` akkumulerer nå full faktisk rute ved omdirigering midt i animasjonen. Dette retter samtidig en fase-12-regresjon der en omdirigert rute kunne bli avvist fordi den var lengre enn korteste vei.
+- Direkte reise fra LocationPanel bruker samme route-intent og viser værjustert kostnad. Delvis reise velger bare så mange steg hostens værkostnad tillater.
+- AI bruker samme route-intent, men beholder bevegelsesbroadcast og visuell tokenanimasjon.
+- Oppdaterte protokoll- og multiplayer-forventningene: `travelPlayer` er tillatt, `movePlayer` er blokkert.
+- Lagt til sju rutetester for canonical kostnad, vær, feil start, ukjent/ikke-nabo-steg, omdirigert lang rute, for lite tid og allowlist.
+- En for bred mellomoppdatering av `multiplayer.test.ts` ble oppdaget av CI. Originalfilen ble gjenopprettet fra `main`, og bare de to nødvendige reiseforventningene ble påført.
+- Playwrights første sluttforsøk avdekket testflakiness: en tilfeldig Shadowfingers-hendelse kunne stjele alt gull på bankreisen og skjule banktjenestene. E2E-testen fryser nå sannsynlighetskast før appstart, slik at den tester bank/save/load-flyten deterministisk uten å slå av hendelser i produktkoden.
+- Fjernet alle midlertidige workflow-, trigger-, resultat- og patchfiler før merge.
+
+### Tester
+
+- Fokuspakke etter testrestaurering: 59 av 59 tester bestått (sju reise, åtte protokoll og 44 multiplayer).
+- Full sluttvalidering i GitHub Actions-run `30052162170`:
+  - Dependency install: bestått.
+  - TypeScript: bestått.
+  - Full Vitest-pakke: bestått.
+  - Produksjonsbuild: bestått.
+  - ESLint: bestått.
+  - Playwright-runner og Chromium-installasjon: bestått.
+  - Title/setup-smoke og komplett lokal spillflyt: bestått.
+- Ren PR-validering etter deterministic E2E-retting og artefaktrydding: GitHub Actions-run `30052428663`, alle steg bestått uten retry-artefakter.
+
+### Resultat
+
+- En online-gjest kan ikke lenger diktere reisetid eller teleportere med et manipulert prisargument.
+- Hosten priser den faktiske animerte ruten, inkludert gyldige omdirigeringer og vær.
+- Neste rå høyrisikogruppe er `spendTime` og de gjenværende `modify*`-handlingene.
+- PR #337 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.

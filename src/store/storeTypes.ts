@@ -25,6 +25,7 @@ export interface ShadowfingersEvent {
 export interface GameStore extends GameState {
   startNewGame: (playerNames: string[], includeAI: boolean, goals: GoalSettings, aiDifficulty?: AIDifficulty, aiConfigs?: AIConfig[], playerPortraits?: (string | null)[]) => void;
   movePlayer: (playerId: string, location: LocationId, timeCost: number) => void;
+  travelPlayer: (playerId: string, route: LocationId[]) => ActionResult | void;
   spendTime: (playerId: string, hours: number) => void;
   modifyGold: (playerId: string, amount: number) => void;
   modifyHealth: (playerId: string, amount: number) => void;

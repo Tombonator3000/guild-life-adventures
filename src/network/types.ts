@@ -127,7 +127,7 @@ export const HOST_INTERNAL_ACTIONS = new Set([
 ]);
 
 export const ALLOWED_GUEST_ACTIONS = new Set([
-  'movePlayer',
+  'travelPlayer',
   'spendTime',
   'endTurn',
 

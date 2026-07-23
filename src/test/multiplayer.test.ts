@@ -123,7 +123,8 @@ describe('Action Categories', () => {
 
   it('ALLOWED_GUEST_ACTIONS contains expected game actions', () => {
     // Movement
-    expect(ALLOWED_GUEST_ACTIONS.has('movePlayer')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('travelPlayer')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('movePlayer')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('endTurn')).toBe(true);
     // Economy
     expect(ALLOWED_GUEST_ACTIONS.has('transferBankFunds')).toBe(true);
@@ -584,7 +585,7 @@ describe('Cross-Player Validation', () => {
     // use playerId as args[0]. The deep scan in useNetworkSync checks
     // ALL argument positions, but this verifies the convention holds.
     const actionsWithPlayerIdArg = [
-      'movePlayer', 'spendTime', 'modifyGold', 'modifyHealth',
+      'travelPlayer', 'spendTime', 'modifyGold', 'modifyHealth',
       'modifyHappiness', 'modifyFood', 'modifyClothing', 'modifyMaxHealth',
       'modifyRelaxation', 'cureSickness', 'payHousingRent',
       'moveHousingAtLandlord', 'requestRentExtensionAtLandlord', 'requestRaise',
