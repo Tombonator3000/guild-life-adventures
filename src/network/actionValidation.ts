@@ -123,6 +123,9 @@ export function validateGuestActionArgs(
     case 'acceptMarketRaise':
       return null;
 
+    case 'performHomeActivity':
+      return validateEnumArg(args, 1, ['relax', 'sleep'], 'home activity');
+
     case 'setJob': {
       const wage = args[2];
       if (wage !== undefined && (typeof wage !== 'number' || !Number.isFinite(wage) || wage < 0 || wage > 100)) {

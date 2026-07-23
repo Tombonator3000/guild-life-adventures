@@ -15,10 +15,6 @@ import { Swords } from 'lucide-react';
 interface HomePanelProps {
   player: Player;
   locationId: LocationId;
-  spendTime: (playerId: string, hours: number) => void;
-  modifyHappiness: (playerId: string, amount: number) => void;
-  modifyHealth: (playerId: string, amount: number) => void;
-  modifyRelaxation: (playerId: string, amount: number) => void;
   onDone: () => void;
 }
 
@@ -32,10 +28,6 @@ function playerRentsHere(housing: string, locationId: LocationId): boolean {
 export function HomePanel({
   player,
   locationId,
-  spendTime,
-  modifyHappiness,
-  modifyHealth,
-  modifyRelaxation,
   onDone,
 }: HomePanelProps) {
   const { t } = useTranslation();
@@ -138,18 +130,15 @@ export function HomePanel({
   const canRelax = player.timeRemaining >= housingData.relaxationRate && housingData.relaxationRate > 0;
   const canSleep = player.timeRemaining >= 8;
 
-  const handleRelax = () => {
-    spendTime(player.id, housingData.relaxationRate);
-    modifyHappiness(player.id, 3);
-    modifyRelaxation(player.id, 5);
+  const runHomeActivity = (activity: 'relax' | 'sleep') => {
+    const result = store.performHomeActivity(player.id, activity);
+    if (!result) return;
+    if (result.success) toast.success(result.message);
+    else toast.error(result.message);
   };
 
-  const handleSleep = () => {
-    spendTime(player.id, 8);
-    modifyHappiness(player.id, 8);
-    modifyHealth(player.id, 10);
-    modifyRelaxation(player.id, 5);
-  };
+  const handleRelax = () => runHomeActivity('relax');
+  const handleSleep = () => runHomeActivity('sleep');
 
   // Wall and floor colors based on housing tier
   const wallColor = isNoble ? '#5c4a6d' : isSlums ? '#3d3224' : '#4a3d2e';

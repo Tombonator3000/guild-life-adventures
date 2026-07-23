@@ -145,10 +145,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
         <HomePanel
           player={player}
           locationId={locationId}
-          spendTime={store.spendTime}
-          modifyHappiness={store.modifyHappiness}
-          modifyHealth={store.modifyHealth}
-          modifyRelaxation={store.modifyRelaxation}
           onDone={() => store.selectLocation(null)}
         />
       </div>
