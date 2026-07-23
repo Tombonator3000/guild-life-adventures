@@ -1,85 +1,87 @@
 # Guild Life Adventures
 
-Et fantasy-livssimuleringsspill inspirert av det klassiske "Jones in the Fast Lane".
+Et turbasert fantasy-livssimuleringsspill inspirert av *Jones in the Fast Lane*. Spillerne konkurrerer om rikdom, lykke, utdanning, karriere og valgfrie eventyrmål i byen Guildholm.
 
-## Om spillet
+## Spillfunksjoner
 
-Guild Life Adventures er et turbasert strategispill hvor du navigerer livet som eventyrer i fantasy-byen Guildholm. Balanser arbeid, utdanning, quests og personlige behov mens du streber etter suksess.
-
-### Spillfunksjoner
-
-- **Quest System** - Ta pa deg oppdrag rangert fra E til S med okende belonninger
-- **Jobb & Karriere** - Sok jobber, jobb skift, be om lonnsforhoyelse
-- **Utdanning** - Fire veier: Fighter, Mage, Priest, Business
-- **Housing** - Fra hjemlos til Noble Heights
-- **AI-motstander** - Konkurrer mot Grimwald
-- **Dynamisk okonomi** - Prissvingninger, investeringer, bank
-
-### Lokasjoner i Guildholm
-
-| Lokasjon | Funksjon |
-|----------|----------|
-| Guild Hall | Jobber, quests, guild-rang |
-| Academy | Utdanning |
-| Bank | Sparing, investeringer |
-| General Store | Mat, klrer, avis |
-| The Fence | Kjop/salg brukte varer, gambling |
-| Healer's Sanctuary | Helbredelse |
-| Noble Heights | Luksusbolig |
-| The Slums | Rimelig bolig |
+- Lokal flerspiller med skjermbytte mellom spillerne.
+- Host-autoritativ online flerspiller med lobby, reconnect og chat.
+- Én eller flere AI-motstandere med individuell vanskelighetsgrad.
+- Arbeid, lønnsforhandlinger, utdanning og gradssystem.
+- Oppdrag, bounty-jakt, dungeon floors og quest chains.
+- Bolig, mat, klær, helse, avslapning og apparater.
+- Bank, investeringer, lån, aksjer og dynamiske priser.
+- Sabotasje, beskyttelse, tips, forbannelser og omdømme.
+- Versjonerte lagringer med migrering av eldre saves.
+- Installérbar PWA uten caching av spillkode.
 
 ## Kom i gang
 
+Prosjektet bruker **Bun** som eneste pakkehåndterer. `bun.lockb` er den autoritative lockfilen.
+
 ```bash
-# Installer avhengigheter
-npm install
+# Installer eksakte avhengigheter
+bun install --frozen-lockfile
 
 # Start utviklingsserver
-npm run dev
+bun run dev
 
-# Bygg for produksjon
-npm run build
+# Kjør TypeScript-kontroll
+bunx tsc --noEmit
 
-# Kjor tester
-npm test
+# Kjør tester
+bunx vitest run
+
+# Kjør lint
+bun run lint
+
+# Bygg produksjonsversjon
+bun run build
+
+# Bygg for GitHub Pages
+bun run build:github
 ```
 
 ## Teknologi
 
-- **React 18** - UI-bibliotek
-- **TypeScript** - Typesikkerhet
-- **Vite** - Byggverkty
-- **Zustand** - State management
-- **Tailwind CSS** - Styling
-- **shadcn/ui** - UI-komponenter
+- React 18 og TypeScript
+- Vite
+- Zustand 5
+- Tailwind CSS og shadcn/ui
+- Vitest og Testing Library
+- PeerJS/Partykit-baserte nettverkslag
+- vite-plugin-pwa
+
+## Arkitektur
+
+Spilltilstanden ligger i Zustand og er delt i domenehandlinger under `src/store/helpers/`. Komplekse kjøp og tjenester skal utføres atomisk: pris, tid, krav og effekt beregnes av én store-handling.
+
+Online gjester sender semantiske handlinger til hosten. Hosten validerer aktør, tur, lokasjon og kanoniske spilldata før tilstanden endres og synkroniseres tilbake.
+
+## Kvalitetskontroll
+
+Pull requests mot `main` kontrolleres med GitHub Actions:
+
+- TypeScript
+- Vitest-regresjonstester
+- produksjonsbuild
+- ESLint
+
+Produksjonsfeil skal få en regresjonstest. Lagringsendringer skal ha migrerings- og roundtrip-tester.
 
 ## Dokumentasjon
 
-- [agents.md](./agents.md) - AI-system og agentlogikk
-- [todo.md](./todo.md) - Prosjektoppgaver og backlog
-- [log.md](./log.md) - Utviklingslogg
-- [.lovable/plan.md](./.lovable/plan.md) - Implementasjonsplan
+- [Arkitektur](./docs/ARCHITECTURE.md)
+- [Online flerspiller og sikkerhet](./docs/MULTIPLAYER_SECURITY.md)
+- [Testing og validering](./docs/TESTING.md)
+- [AI-system](./agents.md)
+- [Prosjektoppgaver](./todo.md)
+- [Utviklingslogg](./log.md)
+- [Lovable-plan](./.lovable/plan.md)
 
-## Spillmekanikker
+## PWA-policy
 
-### Tid
-- 168 timer per uke
-- Handlinger koster tid
-- Uke slutter nar alle spillere har brukt opp tiden
-
-### Ressurser
-- **Gull** - Hovedvaluta
-- **Helse** - 0 = dod (kan gjenopplives)
-- **Lykke** - Paviker spillopplevelsen
-- **Mat** - Synker ukentlig, sult skader helse
-- **Klr** - Degraderes over tid
-
-### Mal
-Velg dine mal ved spillstart:
-- Rikdom (gull + sparing + investeringer)
-- Lykke (prosent)
-- Utdanning (antall nivaer)
-- Karriere (guild-rang)
+Spillet kan installeres som PWA. Service worker brukes for installasjon og oppdateringssignal, men cacher bevisst ingen JavaScript-, CSS- eller navigasjonsfiler. Nye deployer skal derfor hentes fra nettverket i stedet for å bruke gammel spillkode fra Cache Storage.
 
 ## Lisens
 

@@ -1,4 +1,5 @@
 import { lazy, Suspense, Component, type ReactNode } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { useGameOptions } from '@/hooks/useGameOptions';
 import { TitleScreen } from '@/components/screens/TitleScreen';
@@ -116,7 +117,12 @@ function ScreenLoader() {
 }
 
 const Index = () => {
-  const { phase, eventMessage, selectedLocation, weekendEvent } = useGameStore();
+  const { phase, eventMessage, selectedLocation, weekendEvent } = useGameStore(useShallow(state => ({
+    phase: state.phase,
+    eventMessage: state.eventMessage,
+    selectedLocation: state.selectedLocation,
+    weekendEvent: state.weekendEvent,
+  })));
   const currentPlayer = useCurrentPlayer();
   const { options } = useGameOptions();
 

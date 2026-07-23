@@ -9,6 +9,7 @@ import { NEWSPAPER_COST } from '@/data/newspaper';
 import { itemToPreview } from './ItemPreview';
 import { toast } from 'sonner';
 import { useTranslation } from '@/i18n';
+import { useGameStore } from '@/store/gameStore';
 
 interface GeneralStorePanelProps {
   player: Player;
@@ -26,16 +27,12 @@ interface GeneralStorePanelProps {
 export function GeneralStorePanel({
   player,
   priceModifier,
-  modifyGold,
-  spendTime,
-  modifyFood,
-  modifyHappiness,
-  onBuyNewspaper,
   buyFreshFood,
   buyFoodWithSpoilage,
   buyLotteryTicket,
 }: GeneralStorePanelProps) {
   const { t } = useTranslation();
+  const purchaseNewspaper = useGameStore(s => s.purchaseNewspaper);
   const newspaperPrice = Math.round(NEWSPAPER_COST * priceModifier);
   const lotteryPrice = Math.round(10 * priceModifier);
 
@@ -59,14 +56,15 @@ export function GeneralStorePanel({
             largeText
             previewData={itemToPreview(item)}
             onClick={() => {
-              buyFoodWithSpoilage(player.id, item.effect!.value, price);
-              toast.success(t('panelStore.purchased', { name: t(`items.${item.id}.name`) || item.name }));
+              const success = buyFoodWithSpoilage(player.id, item.effect!.value, price);
+              if (success) {
+                toast.success(t('panelStore.purchased', { name: t(`items.${item.id}.name`) || item.name }));
+              }
             }}
           />
         );
       })}
 
-      {/* Fresh Food Section */}
       <JonesSectionHeader title={t('panelStore.freshFood')} />
       {hasPreservationBox && (
         <JonesInfoRow label={t('panelStore.freshFoodStored')} value={`${player.freshFood}/${maxFreshFood}`} darkText largeText />
@@ -86,8 +84,10 @@ export function GeneralStorePanel({
             largeText
             previewData={itemToPreview(item)}
             onClick={() => {
-              buyFreshFood(player.id, units, price);
-              toast.success(t('panelStore.storedFreshFood', { units: Math.min(units, spaceLeft) }));
+              const success = buyFreshFood(player.id, units, price);
+              if (success) {
+                toast.success(t('panelStore.storedFreshFood', { units: Math.min(units, spaceLeft) }));
+              }
             }}
           />
         );
@@ -102,7 +102,7 @@ export function GeneralStorePanel({
       <JonesMenuItem
         label={t('panelStore.newspaper')}
         price={newspaperPrice}
-        disabled={player.gold < newspaperPrice}
+        disabled={player.gold < newspaperPrice || player.hasNewspaper}
         darkText
         largeText
         previewData={{
@@ -110,15 +110,19 @@ export function GeneralStorePanel({
           description: 'The latest news, job listings, and town gossip. Essential reading for the ambitious adventurer.',
           category: 'Information',
           tags: ['News'],
-          effect: 'View personalized weekly headlines',
+          effect: player.hasNewspaper ? 'Already purchased this week' : 'View personalized weekly headlines',
         }}
         onClick={() => {
-          onBuyNewspaper();
-          toast.success(t('panelStore.purchased', { name: t('panelStore.newspaper') }));
+          const result = purchaseNewspaper(player.id, 'general-store');
+          if (result?.success) {
+            toast.success(t('panelStore.purchased', { name: t('panelStore.newspaper') }));
+          } else if (result && !result.success) {
+            toast.error(result.message);
+          }
         }}
       />
       <JonesMenuItem
-        label={t(`items.lottery-ticket.name`) || "Fortune's Wheel Ticket"}
+        label={t('items.lottery-ticket.name') || "Fortune's Wheel Ticket"}
         price={lotteryPrice}
         disabled={player.gold < lotteryPrice}
         darkText
@@ -132,7 +136,7 @@ export function GeneralStorePanel({
         }}
         onClick={() => {
           buyLotteryTicket(player.id, lotteryPrice);
-          toast.success(t('panelStore.purchased', { name: t(`items.lottery-ticket.name`) }));
+          toast.success(t('panelStore.purchased', { name: t('items.lottery-ticket.name') }));
         }}
       />
       {player.lotteryTickets > 0 && (
