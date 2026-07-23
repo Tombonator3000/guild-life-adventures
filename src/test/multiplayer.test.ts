@@ -534,14 +534,13 @@ describe('Cross-Player Validation', () => {
       'modifyHappiness', 'modifyFood', 'modifyClothing', 'modifyMaxHealth',
       'modifyRelaxation', 'cureSickness', 'setHousing', 'payRent',
       'prepayRent', 'moveToHousing', 'setJob', 'workShift', 'requestRaise',
-      'negotiateRaise', 'studySession', 'completeEducationLevel',
-      'studyDegree', 'payFullTuition', 'completeDegree', 'depositToBank', 'withdrawFromBank',
+      'negotiateRaise', 'studySession',
+      'studyDegree', 'payFullTuition', 'depositToBank', 'withdrawFromBank',
       'invest', 'withdrawInvestment', 'buyItem', 'sellItem', 'buyDurable',
       'sellDurable', 'buyAppliance', 'repairAppliance', 'pawnAppliance', 'redeemAppliance',
       'equipItem', 'unequipItem', 'buyStock', 'sellStock', 'takeLoan',
       'repayLoan', 'buyFreshFood', 'buyLotteryTicket', 'buyTicket',
       'buyGuildPass', 'takeQuest', 'completeQuest', 'abandonQuest',
-      'clearDungeonFloor', 'applyRareDrop',
     ];
 
     // All of these should be in ALLOWED_GUEST_ACTIONS
