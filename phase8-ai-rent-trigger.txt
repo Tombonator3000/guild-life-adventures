@@ -1,1 +1,1 @@
-Align AI rent affordability checks with market pricing now.
+Apply the targeted generateRentActions priceModifier fix.
