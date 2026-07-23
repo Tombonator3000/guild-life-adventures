@@ -5,4 +5,4 @@ Resolved, downloaded and extracted [13]
 installed @playwright/test@1.61.1 with binaries:
  - playwright
 
-3 packages installed [1006.00ms]
+3 packages installed [793.00ms]
