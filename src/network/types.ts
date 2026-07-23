@@ -155,13 +155,9 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'endTurn',
 
   // Player state changes
-  'modifyGold',
-  'modifyHealth',
-  'modifyHappiness',
-  'modifyFood',
-  'modifyClothing',
-  'modifyMaxHealth',
-  'modifyRelaxation',
+  // NOTE: raw modify* actions are NOT guest-callable — they let a malicious guest
+  // pick arbitrary positive values. Use semantic host-authoritative actions instead
+  // (buyItem/workShift/studyDegree/…) which look up canonical effect values.
   'cureSickness',
 
   // Housing
@@ -177,10 +173,10 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'requestRaise',
   'negotiateRaise',
   'studySession',
-  'completeEducationLevel',
   'studyDegree',
   'payFullTuition',
-  'completeDegree',
+  // NOTE: completeEducationLevel / completeDegree are host-internal completion hooks
+  // triggered by studyDegree/studySession. Guests must not call them directly.
 
   // Economy & Shopping
   'depositToBank',
@@ -227,10 +223,10 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'completeBounty',
   'completeChainQuest',
   'abandonQuest',
-  'clearDungeonFloor',
-  'applyRareDrop',
   'incrementDungeonAttempts',
-  'updatePlayerDungeonRecord',
+  // NOTE: clearDungeonFloor / applyRareDrop / updatePlayerDungeonRecord are internal
+  // reward hooks fired by the combat resolver. Guests must not call them directly —
+  // they'd let a guest hand out arbitrary dungeon rewards.
 
   // Food with spoilage
   'buyFoodWithSpoilage',
@@ -244,5 +240,11 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'cleanseCurse',
   'performDarkRitual',
   'attemptCurseReflection',
-  // BUG FIX: Removed 'addHexScrollToPlayer' — internal-only action (dungeon drops), no cost validation
+  // BUG FIX: 'addHexScrollToPlayer' is internal-only (dungeon drops), no cost validation
+
+  // Rival services (Fence / Shadow Market) — atomic & validated in store
+  'sabotagePlayer',
+  'buyProtection',
+  'buyTipOff',
+  'purchaseReputationUnlock',
 ]);
