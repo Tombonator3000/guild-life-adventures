@@ -1,0 +1,152 @@
+# definitions and callers
+src/network/types.ts:145:  'setHousing',
+src/network/types.ts:146:  'payRent',
+src/network/types.ts:147:  'prepayRent',
+src/network/types.ts:148:  'moveToHousing',
+src/network/types.ts:149:  'begForMoreTime',
+src/test/multiplayer.test.ts:562:      'modifyRelaxation', 'cureSickness', 'setHousing', 'payRent',
+src/test/multiplayer.test.ts:563:      'prepayRent', 'moveToHousing', 'setJob', 'requestRaise',
+src/components/game/LandlordPanel.tsx:15:  prepayRent: (playerId: string, weeks: number, cost: number) => void;
+src/components/game/LandlordPanel.tsx:16:  moveToHousing: (playerId: string, tier: string, cost: number, lockedRent: number) => void;
+src/components/game/LandlordPanel.tsx:17:  begForMoreTime: (playerId: string) => { success: boolean; message: string };
+src/components/game/LandlordPanel.tsx:24:  prepayRent,
+src/components/game/LandlordPanel.tsx:25:  moveToHousing,
+src/components/game/LandlordPanel.tsx:26:  begForMoreTime,
+src/components/game/LandlordPanel.tsx:78:            <Coins className="w-4 h-4" /> {t('panelLandlord.payRent')}
+src/components/game/LandlordPanel.tsx:82:              label={`${t('panelLandlord.payRent')} 1 (${effectiveRent}g)`}
+src/components/game/LandlordPanel.tsx:89:                prepayRent(player.id, 1, effectiveRent);
+src/components/game/LandlordPanel.tsx:95:              label={`${t('panelLandlord.payRent')} 4 (${effectiveRent * 4}g)`}
+src/components/game/LandlordPanel.tsx:102:                prepayRent(player.id, 4, effectiveRent * 4);
+src/components/game/LandlordPanel.tsx:108:              label={`${t('panelLandlord.payRent')} 8 (${effectiveRent * 8}g)`}
+src/components/game/LandlordPanel.tsx:115:                prepayRent(player.id, 8, effectiveRent * 8);
+src/components/game/LandlordPanel.tsx:137:              const result = begForMoreTime(player.id);
+src/components/game/LandlordPanel.tsx:186:                  moveToHousing(player.id, tier, moveCost, tierMarketRent);
+src/components/game/locationTabs.tsx:83:  prepayRent: GameStore['prepayRent'];
+src/components/game/locationTabs.tsx:84:  moveToHousing: GameStore['moveToHousing'];
+src/components/game/locationTabs.tsx:85:  begForMoreTime: GameStore['begForMoreTime'];
+src/components/game/locationTabs.tsx:539:  const { player, priceModifier, spendTime, prepayRent, moveToHousing, begForMoreTime, week } = ctx;
+src/components/game/locationTabs.tsx:602:        prepayRent={prepayRent}
+src/components/game/locationTabs.tsx:603:        moveToHousing={moveToHousing}
+src/components/game/locationTabs.tsx:604:        begForMoreTime={begForMoreTime}
+src/components/game/LocationPanel.tsx:106:    prepayRent: store.prepayRent,
+src/components/game/LocationPanel.tsx:107:    moveToHousing: store.moveToHousing,
+src/components/game/LocationPanel.tsx:108:    begForMoreTime: store.begForMoreTime,
+src/store/helpers/playerHelpers.ts:229:    setHousing: (playerId: string, tier: HousingTier) => {
+src/store/helpers/economy/bankingHelpers.ts:7:    payRent: (playerId: string) => {
+src/store/helpers/economy/bankingHelpers.ts:81:    prepayRent: (playerId: string, weeks: number, totalCost: number) => {
+src/store/helpers/economy/bankingHelpers.ts:101:    begForMoreTime: (playerId: string): { success: boolean; message: string } => {
+src/store/helpers/economy/bankingHelpers.ts:150:    moveToHousing: (playerId: string, tier: HousingTier, cost: number, lockInRent: number) => {
+src/store/storeTypes.ts:36:  setHousing: (playerId: string, tier: HousingTier) => void;
+src/store/storeTypes.ts:55:  payRent: (playerId: string) => void;
+src/store/storeTypes.ts:96:  prepayRent: (playerId: string, weeks: number, totalCost: number) => void;
+src/store/storeTypes.ts:97:  moveToHousing: (playerId: string, tier: HousingTier, cost: number, lockInRent: number) => void;
+src/store/storeTypes.ts:98:  begForMoreTime: (playerId: string) => { success: boolean; message: string };
+src/i18n/types.ts:624:    payRent: string;
+src/i18n/en.ts:830:    payRent: 'Pay Rent',
+src/i18n/de.ts:833:    payRent: 'Miete zahlen',
+src/i18n/es.ts:833:    payRent: 'Pagar Alquiler',
+src/hooks/useGrimwaldAI.ts:68:    payRent: state.payRent,
+src/hooks/useGrimwaldAI.ts:72:    moveToHousing: state.moveToHousing,
+src/hooks/ai/actionExecutor.ts:94:  payRent: (playerId: string) => void;
+src/hooks/ai/actionExecutor.ts:98:  moveToHousing: (playerId: string, tier: string, cost: number, rent: number) => void;
+src/hooks/ai/handlers/housingFinanceHandlers.ts:21:  store.payRent(player.id);
+src/hooks/ai/handlers/housingFinanceHandlers.ts:32:  store.moveToHousing(player.id, tier, cost, rent);
+src/hooks/ai/handlers/housingFinanceHandlers.ts:40:  store.moveToHousing(player.id, tier, 0, RENT_COSTS[tier]);
+
+# housing files
+src/assets/locations/bg-landlord-old.jpg
+src/assets/locations/bg-landlord.jpg
+src/assets/newspaper/woodcut-rent.jpg
+src/components/game/LandlordPanel.tsx
+src/data/housing.ts
+src/hooks/ai/handlers/housingFinanceHandlers.ts
+
+# rent fields
+src/store/helpers/playerHelpers.ts:233:            ? { ...p, housing: tier, weeksSinceRent: 0 }
+src/store/helpers/weekEndHelpers.ts:476:  if (p.weeksSinceRent >= WEEKS_BEFORE_RENT_DEBT) {
+src/store/helpers/weekEndHelpers.ts:477:    const rentCost = p.lockedRent > 0 ? p.lockedRent : RENT_COSTS[p.housing];
+src/store/helpers/weekEndHelpers.ts:478:    p.rentDebt += Math.floor(rentCost * RENT_DEBT_ACCRUAL_RATE);
+src/store/helpers/weekEndHelpers.ts:482:  if (p.weeksSinceRent >= WEEKS_BEFORE_EVICTION) {
+src/store/helpers/weekEndHelpers.ts:495:    p.weeksSinceRent = 0;
+src/store/helpers/weekEndHelpers.ts:496:    p.rentDebt = 0;
+src/store/helpers/weekEndHelpers.ts:498:    p.rentPrepaidWeeks = 0;
+src/store/helpers/weekEndHelpers.ts:499:    p.lockedRent = 0;
+src/store/helpers/weekEndHelpers.ts:524:  } else if (p.weeksSinceRent >= WEEKS_BEFORE_RENT_DEBT && !p.isAI) {
+src/store/helpers/weekEndHelpers.ts:829:  if (p.rentPrepaidWeeks > 0) {
+src/store/helpers/weekEndHelpers.ts:830:    p.rentPrepaidWeeks -= 1;
+src/store/helpers/weekEndHelpers.ts:832:    p.weeksSinceRent += 1;
+src/store/helpers/questHelpers.ts:735:                weeksSinceRent: 0,
+src/store/helpers/questHelpers.ts:742:                rentPrepaidWeeks: 0,
+src/store/helpers/questHelpers.ts:743:                lockedRent: 0,
+src/store/helpers/workEducationHelpers.ts:102:  player: { weeksSinceRent: number; housing: string; rentDebt: number; loanAmount: number; loanWeeksRemaining: number },
+src/store/helpers/workEducationHelpers.ts:103:): { earnings: number; rentDebt: number; loanAmount: number } {
+src/store/helpers/workEducationHelpers.ts:105:  let rentDebt = player.rentDebt;
+src/store/helpers/workEducationHelpers.ts:109:  if (player.weeksSinceRent >= 4 && player.housing !== 'homeless') {
+src/store/helpers/workEducationHelpers.ts:111:    rentDebt = Math.max(0, rentDebt - garnishment);
+src/store/helpers/workEducationHelpers.ts:122:  return { earnings: result, rentDebt, loanAmount };
+src/store/helpers/workEducationHelpers.ts:153:        const { earnings, rentDebt, loanAmount } = applyGarnishments(baseEarnings, p);
+src/store/helpers/workEducationHelpers.ts:171:              rentDebt,
+src/store/helpers/economy/bankingHelpers.ts:12:          if (p.rentPrepaidWeeks > 0) {
+src/store/helpers/economy/bankingHelpers.ts:16:          const rentCost = p.lockedRent > 0 ? p.lockedRent : RENT_COSTS[p.housing];
+src/store/helpers/economy/bankingHelpers.ts:21:            weeksSinceRent: 0,
+src/store/helpers/economy/bankingHelpers.ts:23:            rentDebt: 0,
+src/store/helpers/economy/bankingHelpers.ts:24:            rentExtensionUsed: false,
+src/store/helpers/economy/bankingHelpers.ts:90:            rentPrepaidWeeks: p.rentPrepaidWeeks + weeks,
+src/store/helpers/economy/bankingHelpers.ts:91:            weeksSinceRent: 0,
+src/store/helpers/economy/bankingHelpers.ts:92:            rentExtensionUsed: false, // Reset beg-for-time on payment
+src/store/helpers/economy/bankingHelpers.ts:105:      if (player.rentExtensionUsed) return { success: false, message: 'You already begged this cycle. Tomas remembers.' };
+src/store/helpers/economy/bankingHelpers.ts:106:      if (player.weeksSinceRent < 2) return { success: false, message: 'You\'re not overdue enough to need begging.' };
+src/store/helpers/economy/bankingHelpers.ts:122:              weeksSinceRent: Math.max(0, p.weeksSinceRent - 1),
+src/store/helpers/economy/bankingHelpers.ts:123:              rentExtensionUsed: true,
+src/store/helpers/economy/bankingHelpers.ts:129:              rentExtensionUsed: true,
+src/store/helpers/economy/bankingHelpers.ts:160:            weeksSinceRent: 0,
+src/store/helpers/economy/bankingHelpers.ts:161:            rentPrepaidWeeks: 0,
+src/store/helpers/economy/bankingHelpers.ts:162:            lockedRent: lockInRent,
+src/store/gameStore.ts:114:  weeksSinceRent: 0,
+src/store/gameStore.ts:138:  rentDebt: 0,
+src/store/gameStore.ts:140:  rentPrepaidWeeks: 0,
+src/store/gameStore.ts:141:  lockedRent: 0,
+src/store/gameStore.ts:142:  rentExtensionUsed: false,
+src/hooks/ai/turnPlanner.ts:222:  if (player.weeksSinceRent >= 2 && player.housing !== 'homeless') {
+src/hooks/ai/failedActionCache.test.ts:28:    rentDebt: 0,
+src/hooks/ai/actions/criticalNeeds.ts:129:  const hasUrgentRent = player.weeksSinceRent >= 3;
+src/hooks/ai/actions/criticalNeeds.ts:133:  if (isRentWeek && player.housing !== 'homeless' && player.weeksSinceRent >= 1 && urgency.rent < 0.5) {
+src/hooks/ai/actions/criticalNeeds.ts:134:    const prepayRentCost = player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing];
+src/hooks/ai/actions/criticalNeeds.ts:159:    const rentCost = player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing];
+src/hooks/ai/actions/strategicActions.ts:179:  const hasUrgentRent = player.weeksSinceRent >= 3;
+src/hooks/ai/actions/strategicActions.ts:206:  const effectiveRent = player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing];
+src/hooks/ai/actions/strategicActions.ts:207:  if (player.housing === 'homeless' || player.gold >= effectiveRent || player.weeksSinceRent < 3) return [];
+src/hooks/ai/actions/strategicActions.ts:298:  if (player.gold >= 30 || player.savings >= 20 || player.weeksSinceRent < 3) return [];
+src/hooks/ai/actions/strategicActions.ts:381:  const rentCost = player.housing !== 'homeless' ? (player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing]) : 0;
+src/hooks/ai/actions/__tests__/rivalryActions.test.ts:38:    lockedRent: 0,
+src/hooks/ai/actions/__tests__/rivalryActions.test.ts:39:    weeksSinceRent: 0,
+src/hooks/ai/strategy.ts:130:    if (player.weeksSinceRent >= 3) rent = 1.0;
+src/hooks/ai/strategy.ts:131:    else if (player.weeksSinceRent >= 2) rent = 0.7; // was 0.5
+src/hooks/ai/strategy.ts:132:    else if (player.weeksSinceRent >= 1) rent = 0.35; // was unhandled
+src/hooks/ai/strategy.ts:535:    ? (player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing])
+src/hooks/ai/commitmentPlan.ts:32:    (player.weeksSinceRent >= 3 && player.housing !== 'homeless') ||
+src/hooks/ai/handlers/housingFinanceHandlers.ts:19:  const cost = player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing];
+src/hooks/ai/__tests__/newSystems.test.ts:59:    lockedRent: 0,
+src/hooks/ai/__tests__/newSystems.test.ts:60:    weeksSinceRent: 1,
+src/hooks/ai/__tests__/newSystems.test.ts:142:    const player = makePlayer({ gold: 200, housing: 'slums', lockedRent: 0 });
+src/hooks/ai/__tests__/strategy.test.ts:35:    lockedRent: 0,
+src/hooks/ai/__tests__/strategy.test.ts:36:    weeksSinceRent: 0,
+src/hooks/ai/__tests__/strategy.test.ts:180:    const player = makePlayer({ weeksSinceRent: 3, housing: 'slums' as any });
+src/hooks/ai/failedActionCache.ts:46:    rentDebt: player.rentDebt,
+src/components/game/BankPanel.tsx:190:            <JonesInfoRow label={t('panelBank.currentDebt')} value={`${player.loanAmount}g`} valueClass="text-red-600" darkText largeText />
+src/components/game/LandlordPanel.tsx:16:  moveToHousing: (playerId: string, tier: string, cost: number, lockedRent: number) => void;
+src/components/game/LandlordPanel.tsx:31:  const effectiveRent = player.lockedRent > 0 ? player.lockedRent : marketRent;
+src/components/game/LandlordPanel.tsx:44:            {player.lockedRent > 0 && (
+src/components/game/LandlordPanel.tsx:51:        {player.lockedRent > 0 && marketRent !== player.lockedRent && (
+src/components/game/LandlordPanel.tsx:54:            <span className={marketRent > player.lockedRent ? 'text-[#2a7a2a]' : 'text-destructive'}>
+src/components/game/LandlordPanel.tsx:61:          <span className="font-bold text-[#2a7a2a]">{player.rentPrepaidWeeks}</span>
+src/components/game/LandlordPanel.tsx:64:          <span>{t('panelLandlord.weeksOverdue', { n: player.weeksSinceRent })}:</span>
+src/components/game/LandlordPanel.tsx:65:          <span className={`font-bold ${player.weeksSinceRent >= 4 ? 'text-destructive' : 'text-[#8b6914]'}`}>
+src/components/game/LandlordPanel.tsx:66:            {player.weeksSinceRent}
+src/components/game/LandlordPanel.tsx:69:        {player.weeksSinceRent >= 4 && (
+src/components/game/LandlordPanel.tsx:125:      {player.housing !== 'homeless' && player.weeksSinceRent >= 2 && !player.rentExtensionUsed && (
+src/components/game/LandlordPanel.tsx:155:      {player.rentExtensionUsed && player.weeksSinceRent >= 2 && (
+src/components/game/ContextualTips.tsx:49:    condition: (p, w) => p.weeksSinceRent >= 3 && p.housing !== 'homeless' && !p.isAI,
+src/components/game/locationTabs.tsx:541:  const hasUrgentRent = player.weeksSinceRent >= 3;
+src/components/game/locationTabs.tsx:579:              {player.rentPrepaidWeeks > 0 && (
+src/components/game/locationTabs.tsx:584:                  You have {player.rentPrepaidWeeks} prepaid week{player.rentPrepaidWeeks !== 1 ? 's' : ''} remaining.
