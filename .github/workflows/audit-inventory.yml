@@ -1,0 +1,104 @@
+name: Generate audit inventory
+
+on:
+  push:
+    branches:
+      - agent/audit-phase4
+    paths:
+      - audit-inventory-trigger.txt
+      - .github/workflows/audit-inventory.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase4
+          fetch-depth: 1
+      - name: Generate source inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          report="docs/AUDIT_INVENTORY.md"
+          generated="$(date -u +'%Y-%m-%d %H:%M UTC')"
+
+          raw_pattern='modifyGold|modifyHealth|modifyHappiness|modifyFood|modifyClothing|modifyMaxHealth|modifyRelaxation'
+          priced_pattern='studySession|studyDegree|payFullTuition|buyItem|sellItem|buyDurable|sellDurable|buyAppliance|pawnAppliance|prepayRent|moveToHousing|workShift|negotiateRaise|invest|withdrawInvestment|buyFreshFood|buyFoodWithSpoilage|buyLotteryTicket|buyTicket|temperEquipment|salvageEquipment|buyHexScroll|buyProtectiveAmulet|dispelLocationHex|cleanseCurse|performDarkRitual|attemptCurseReflection'
+
+          {
+            echo '# Automatisk revisjonsinventar'
+            echo
+            echo "Generert: $generated"
+            echo
+            echo 'Denne rapporten er maskinelt generert fra hele kildekoden. Definisjoner i store-laget er tatt med separat; kall utenfor store-laget er viktigst for migrering.'
+            echo
+            echo '## Sammendrag'
+            echo
+            echo "- TypeScript/TSX-filer: $(find src -type f \( -name '*.ts' -o -name '*.tsx' \) | wc -l)"
+            echo "- GameBoard-linjer: $(wc -l < src/components/game/GameBoard.tsx)"
+            echo "- Rå modify-kall utenfor store: $(grep -RInE "\\.(${raw_pattern})\\(|\\b(${raw_pattern})\\(" src --include='*.ts' --include='*.tsx' --exclude-dir=store --exclude='*.test.ts' --exclude='*.test.tsx' | wc -l || true)"
+            echo "- Pris-/effektbærende kall utenfor store: $(grep -RInE "\\.(${priced_pattern})\\(|\\b(${priced_pattern})\\(" src --include='*.ts' --include='*.tsx' --exclude-dir=store --exclude='*.test.ts' --exclude='*.test.tsx' | wc -l || true)"
+            echo "- Hele-store useGameStore()-abonnementer: $(grep -RInE 'useGameStore\\(\\)' src --include='*.ts' --include='*.tsx' | wc -l || true)"
+            echo "- E2E-testfiler: $(find e2e -type f -name '*.spec.ts' 2>/dev/null | wc -l)"
+            echo
+            echo '## Rå statsmutasjoner utenfor store-laget'
+            echo
+            echo '```text'
+            grep -RInE "\\.(${raw_pattern})\\(|\\b(${raw_pattern})\\(" src --include='*.ts' --include='*.tsx' --exclude-dir=store --exclude='*.test.ts' --exclude='*.test.tsx' || true
+            echo '```'
+            echo
+            echo '## Handlinger der klienten kan sende pris, beløp, tid eller effekt'
+            echo
+            echo '```text'
+            grep -RInE "\\.(${priced_pattern})\\(|\\b(${priced_pattern})\\(" src --include='*.ts' --include='*.tsx' --exclude-dir=store --exclude='*.test.ts' --exclude='*.test.tsx' || true
+            echo '```'
+            echo
+            echo '## Hele-store Zustand-abonnementer'
+            echo
+            echo '```text'
+            grep -RInE 'useGameStore\\(\\)' src --include='*.ts' --include='*.tsx' || true
+            echo '```'
+            echo
+            echo '## Multiplayer-allowlist'
+            echo
+            echo '```text'
+            sed -n '/export const ALLOWED_GUEST_ACTIONS/,/^]);/p' src/network/types.ts
+            echo '```'
+            echo
+            echo '## Store-signaturer med klientleverte tallverdier'
+            echo
+            echo '```text'
+            grep -nE "(${priced_pattern}).*number" src/store/storeTypes.ts || true
+            echo '```'
+            echo
+            echo '## E2E-dekning'
+            echo
+            for f in $(find e2e -type f -name '*.spec.ts' 2>/dev/null | sort); do
+              echo "### $f"
+              echo '```text'
+              grep -nE "test\\(|test\\.describe|expect\\(" "$f" || true
+              echo '```'
+              echo
+            done
+            echo '## TODO/FIXME og eksplisitte kompatibilitetsmerknader'
+            echo
+            echo '```text'
+            grep -RInE 'TODO|FIXME|Legacy raw|compatib|temporary|workaround' src docs --include='*.ts' --include='*.tsx' --include='*.md' || true
+            echo '```'
+          } > "$report"
+
+      - name: Commit inventory report
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/AUDIT_INVENTORY.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Generate remaining audit inventory"
+          git push origin HEAD:agent/audit-phase4
