@@ -1,1 +1,0 @@
-Apply the host-authoritative inventory sale migration.
