@@ -17,12 +17,21 @@ export function useAITurnHandler({ currentPlayer, phase, aiDifficulty }: UseAITu
   const [currentAIAction, setCurrentAIAction] = useState<string>('');
   const aiTurnStartedRef = useRef(false);
   const lastAIPlayerIdRef = useRef<string | null>(null);
+  const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentPlayerId = currentPlayer?.id;
   const currentPlayerIsAI = currentPlayer?.isAI ?? false;
 
   const effectiveDifficulty = currentPlayer?.aiDifficulty ?? aiDifficulty;
   const { runAITurn, resetAdaptiveSystems } = useGrimwaldAI(effectiveDifficulty);
+  const runAITurnRef = useRef(runAITurn);
   const hasResetRef = useRef(false);
+
+  // useGrimwaldAI depends on live store state and may return a fresh callback after
+  // normal game updates. Keep the latest callback in a ref so those updates do not
+  // cancel an already scheduled AI turn.
+  useEffect(() => {
+    runAITurnRef.current = runAITurn;
+  }, [runAITurn]);
 
   useEffect(() => {
     if (phase === 'setup') {
@@ -34,62 +43,58 @@ export function useAITurnHandler({ currentPlayer, phase, aiDifficulty }: UseAITu
   }, [phase, resetAdaptiveSystems]);
 
   useEffect(() => {
-    if (!currentPlayer || phase !== 'playing') {
+    const clearStartTimer = () => {
+      if (startTimerRef.current) {
+        clearTimeout(startTimerRef.current);
+        startTimerRef.current = null;
+      }
+    };
+
+    if (!currentPlayerId || phase !== 'playing' || !currentPlayerIsAI) {
+      clearStartTimer();
       aiTurnStartedRef.current = false;
       lastAIPlayerIdRef.current = null;
       setAiIsThinking(false);
+      setCurrentAIAction('');
       return;
     }
 
-    if (currentPlayer.isAI && lastAIPlayerIdRef.current && lastAIPlayerIdRef.current !== currentPlayer.id) {
-      aiTurnStartedRef.current = false;
-      setAiIsThinking(false);
+    // The same AI player can cause many store updates while planning and acting.
+    // Do not restart or cancel its opening timer for those updates.
+    if (aiTurnStartedRef.current && lastAIPlayerIdRef.current === currentPlayerId) {
+      return;
     }
 
-    if (currentPlayer.isAI && !aiTurnStartedRef.current && !aiIsThinking) {
-      aiTurnStartedRef.current = true;
-      lastAIPlayerIdRef.current = currentPlayer.id;
-      setAiIsThinking(true);
-      setCurrentAIAction('');
+    clearStartTimer();
+    aiTurnStartedRef.current = true;
+    lastAIPlayerIdRef.current = currentPlayerId;
+    setAiIsThinking(true);
+    setCurrentAIAction('');
 
-      toast.info(`${currentPlayer.name} is planning...`, {
-        duration: 2000,
-        icon: React.createElement(Bot, { className: 'w-4 h-4' }),
-      });
+    const playerName = currentPlayer?.name ?? 'AI adventurer';
+    toast.info(`${playerName} is planning...`, {
+      duration: 2000,
+      icon: React.createElement(Bot, { className: 'w-4 h-4' }),
+    });
 
-      const scheduledPlayerId = currentPlayer.id;
-      const timer = setTimeout(() => {
-        const liveState = useGameStore.getState();
-        const livePlayer = liveState.players[liveState.currentPlayerIndex];
-        if (livePlayer?.id !== scheduledPlayerId || !livePlayer.isAI || liveState.phase !== 'playing') {
-          aiTurnStartedRef.current = false;
-          setAiIsThinking(false);
-          return;
-        }
-        runAITurn(livePlayer, desc => setCurrentAIAction(desc));
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
+    startTimerRef.current = setTimeout(() => {
+      startTimerRef.current = null;
+      const liveState = useGameStore.getState();
+      const livePlayer = liveState.players[liveState.currentPlayerIndex];
 
-    if (!currentPlayer.isAI) {
-      aiTurnStartedRef.current = false;
-      lastAIPlayerIdRef.current = null;
-      setAiIsThinking(false);
-      setCurrentAIAction('');
-    }
-  }, [currentPlayer, phase, aiIsThinking, runAITurn]);
+      if (livePlayer?.id !== currentPlayerId || !livePlayer.isAI || liveState.phase !== 'playing') {
+        aiTurnStartedRef.current = false;
+        setAiIsThinking(false);
+        return;
+      }
 
-  useEffect(() => {
-    if (!currentPlayerId) return;
-    if (!currentPlayerIsAI) {
-      setAiIsThinking(false);
-      aiTurnStartedRef.current = false;
-      lastAIPlayerIdRef.current = null;
-    } else if (lastAIPlayerIdRef.current && lastAIPlayerIdRef.current !== currentPlayerId) {
-      setAiIsThinking(false);
-      aiTurnStartedRef.current = false;
-    }
-  }, [currentPlayerId, currentPlayerIsAI]);
+      runAITurnRef.current(livePlayer, desc => setCurrentAIAction(desc));
+    }, 1000);
+
+    // This effect intentionally depends only on turn identity and phase. Local
+    // thinking-state updates and normal store mutations must not clear the timer.
+    return clearStartTimer;
+  }, [currentPlayerId, currentPlayerIsAI, phase, currentPlayer?.name]);
 
   return { aiIsThinking, currentAIAction };
 }
