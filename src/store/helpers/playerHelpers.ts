@@ -8,6 +8,14 @@ import {
 } from '@/data/shadowfingers';
 import { rollTravelEvent, formatTravelEvent } from '@/data/travelEvents';
 import { checkForEvent, pickEventMessage, pickEventDescription } from '@/data/events';
+import {
+  getSabotageOption,
+  getProtectionOption,
+  computePrice,
+  TIP_OFF_BASE_COST,
+  TIP_OFF_TIME_COST,
+} from '@/data/sabotage';
+import { REPUTATION_UNLOCKS } from '@/data/reputation';
 
 /**
  * Append an event message to the existing eventMessage, showing as a 'weekly' event phase.
@@ -296,33 +304,46 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
 
     /**
      * Sabotage a rival player (Player Bounties feature).
-     * Effects: gold-theft, time-loss, clothing-damage.
-     * Cost is deducted from the saboteur.
+     * Host-authoritative: looks up the canonical option by id, validates the actor,
+     * target, current price and time, then applies gold cost, time cost and effect
+     * in a single atomic state update. Returns success/error.
      */
-    sabotagePlayer: (saboteurId: string, targetId: string, effectType: string, effectValue: number, cost: number) => {
-      // Validate saboteur can afford the cost
-      const saboteur = get().players.find(p => p.id === saboteurId);
-      if (!saboteur || saboteur.gold < cost) return;
-
-      set((state) => ({
-        players: state.players.map((p) => {
+    sabotagePlayer: (saboteurId: string, targetId: string, optionId: string) => {
+      const state = get();
+      const saboteur = state.players.find(p => p.id === saboteurId);
+      const target = state.players.find(p => p.id === targetId);
+      const option = getSabotageOption(optionId);
+      if (!saboteur || !target || !option) {
+        return { success: false, message: 'Invalid sabotage request' };
+      }
+      if (target.isGameOver || target.id === saboteur.id) {
+        return { success: false, message: 'Invalid target' };
+      }
+      const cost = computePrice(option.baseCost, state.priceModifier);
+      if (saboteur.gold < cost) return { success: false, message: 'Not enough gold' };
+      if (saboteur.timeRemaining < option.timeCost) {
+        return { success: false, message: 'Not enough time' };
+      }
+      set((s) => ({
+        players: s.players.map((p) => {
           if (p.id === saboteurId) {
             return {
               ...p,
-              gold: p.gold - cost,
-              infamy: Math.min(100, (p.infamy ?? 0) + 5), // Sabotage gives infamy
+              gold: Math.max(0, p.gold - cost),
+              timeRemaining: Math.max(0, p.timeRemaining - option.timeCost),
+              infamy: Math.min(100, (p.infamy ?? 0) + 5),
             };
           }
           if (p.id === targetId) {
-            switch (effectType) {
+            switch (option.effect.type) {
               case 'gold-theft': {
-                const stolen = Math.min(effectValue, p.gold);
-                return { ...p, gold: p.gold - stolen };
+                const stolen = Math.min(option.effect.value, p.gold);
+                return { ...p, gold: Math.max(0, p.gold - stolen) };
               }
               case 'time-loss':
-                return { ...p, timeRemaining: Math.max(0, p.timeRemaining - effectValue) };
+                return { ...p, timeRemaining: Math.max(0, p.timeRemaining - option.effect.value) };
               case 'clothing-damage':
-                return { ...p, clothingCondition: Math.max(0, p.clothingCondition - effectValue) };
+                return { ...p, clothingCondition: Math.max(0, p.clothingCondition - option.effect.value) };
               default:
                 return p;
             }
@@ -330,28 +351,73 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
           return p;
         }),
       }));
+      return { success: true, message: option.label };
     },
 
     /**
      * Buy Shadowfingers protection at the Fence.
-     * Adds weeks to protectionWeeksLeft, deducts gold.
+     * Host-authoritative: canonical PROTECTION_OPTIONS lookup with atomic gold/time
+     * deduction and application. Player must be at the Fence.
      */
-    buyProtection: (playerId: string, weeks: number, cost: number) => {
-      // Validate player can afford protection
-      const player = get().players.find(p => p.id === playerId);
-      if (!player || player.gold < cost) return;
-
-      set((state) => ({
-        players: state.players.map((p) =>
+    buyProtection: (playerId: string, weeks: number) => {
+      const state = get();
+      const player = state.players.find(p => p.id === playerId);
+      const option = getProtectionOption(weeks);
+      if (!player || !option) return { success: false, message: 'Invalid request' };
+      if (player.currentLocation !== 'fence') {
+        return { success: false, message: 'Must be at the Fence' };
+      }
+      const cost = computePrice(option.baseCost, state.priceModifier);
+      const timeCost = 1;
+      if (player.gold < cost) return { success: false, message: 'Not enough gold' };
+      if (player.timeRemaining < timeCost) return { success: false, message: 'Not enough time' };
+      set((s) => ({
+        players: s.players.map((p) =>
           p.id === playerId
             ? {
                 ...p,
-                gold: p.gold - cost,
-                protectionWeeksLeft: (p.protectionWeeksLeft ?? 0) + weeks,
+                gold: Math.max(0, p.gold - cost),
+                timeRemaining: Math.max(0, p.timeRemaining - timeCost),
+                protectionWeeksLeft: (p.protectionWeeksLeft ?? 0) + option.weeks,
               }
             : p
         ),
       }));
+      return { success: true, message: `Protection bought (${option.weeks} weeks)` };
+    },
+
+    /**
+     * Buy a tip-off at the Fence (intel on a rival's robbery vulnerability).
+     * Host-authoritative atomic gold+time deduction.
+     */
+    buyTipOff: (playerId: string, targetId: string) => {
+      const state = get();
+      const player = state.players.find(p => p.id === playerId);
+      const target = state.players.find(p => p.id === targetId);
+      if (!player || !target) return { success: false, message: 'Invalid request' };
+      if (player.currentLocation !== 'fence') {
+        return { success: false, message: 'Must be at the Fence' };
+      }
+      if (target.isGameOver || target.id === player.id) {
+        return { success: false, message: 'Invalid target' };
+      }
+      const cost = computePrice(TIP_OFF_BASE_COST, state.priceModifier);
+      if (player.gold < cost) return { success: false, message: 'Not enough gold' };
+      if (player.timeRemaining < TIP_OFF_TIME_COST) {
+        return { success: false, message: 'Not enough time' };
+      }
+      set((s) => ({
+        players: s.players.map((p) =>
+          p.id === playerId
+            ? {
+                ...p,
+                gold: Math.max(0, p.gold - cost),
+                timeRemaining: Math.max(0, p.timeRemaining - TIP_OFF_TIME_COST),
+              }
+            : p
+        ),
+      }));
+      return { success: true, message: 'Tip-off purchased' };
     },
 
     /**
@@ -374,39 +440,65 @@ export function createPlayerActions(set: SetFn, get: GetFn) {
 
     /**
      * Purchase a reputation-locked exclusive item/service.
-     * Deducts gold, applies effect, records unlock ID to prevent re-purchase.
+     * Host-authoritative: looks up canonical unlock by id and validates every
+     * precondition (location, fame/infamy, not-already-purchased, gold, time)
+     * before applying gold cost, time cost, unlock record and effect atomically.
      */
-    purchaseReputationUnlock: (playerId: string, unlockId: string, cost: number, effectType: string, effectValue: number, timeCost: number) => {
-      set((state) => ({
-        players: state.players.map((p) => {
+    purchaseReputationUnlock: (playerId: string, unlockId: string) => {
+      const state = get();
+      const player = state.players.find(p => p.id === playerId);
+      const unlock = REPUTATION_UNLOCKS.find(u => u.id === unlockId);
+      if (!player || !unlock) return { success: false, message: 'Invalid unlock' };
+      if (player.currentLocation !== unlock.location) {
+        return { success: false, message: 'Not at the right location' };
+      }
+      const reputationValue = unlock.requirement.type === 'fame' ? (player.fame ?? 0) : (player.infamy ?? 0);
+      if (reputationValue < unlock.requirement.minimum) {
+        return { success: false, message: 'Reputation too low' };
+      }
+      if ((player.purchasedReputationUnlocks ?? []).includes(unlockId)) {
+        return { success: false, message: 'Already purchased' };
+      }
+      const cost = computePrice(unlock.cost, state.priceModifier);
+      if (player.gold < cost) return { success: false, message: 'Not enough gold' };
+      if (player.timeRemaining < unlock.timeCost) {
+        return { success: false, message: 'Not enough time' };
+      }
+      set((s) => ({
+        players: s.players.map((p) => {
           if (p.id !== playerId) return p;
+          const afterCost = Math.max(0, p.gold - cost);
           const updated = {
             ...p,
-            gold: p.gold - cost,
-            timeRemaining: Math.max(0, p.timeRemaining - timeCost),
+            gold: afterCost,
+            timeRemaining: Math.max(0, p.timeRemaining - unlock.timeCost),
             purchasedReputationUnlocks: [...(p.purchasedReputationUnlocks ?? []), unlockId],
           };
-          // Apply effect
-          switch (effectType) {
+          const val = unlock.effect.value;
+          switch (unlock.effect.type) {
             case 'happiness':
-              updated.happiness = Math.min(100, (updated.happiness ?? 0) + effectValue);
+              updated.happiness = Math.max(0, Math.min(100, updated.happiness + val));
               break;
             case 'health':
-              updated.health = Math.min(updated.maxHealth, (updated.health ?? 0) + effectValue);
+              updated.health = Math.max(0, Math.min(updated.maxHealth, updated.health + val));
               break;
             case 'gold':
-              updated.gold += effectValue; // net gain after cost
+              updated.gold = Math.max(0, updated.gold + val);
               break;
             case 'clothing':
-              updated.clothingCondition = Math.min(100, (updated.clothingCondition ?? 0) + effectValue);
+              updated.clothingCondition = Math.max(0, Math.min(100, updated.clothingCondition + val));
               break;
             case 'food':
-              updated.foodLevel = Math.min(100, (updated.foodLevel ?? 0) + effectValue);
+              updated.foodLevel = Math.max(0, Math.min(100, updated.foodLevel + val));
+              break;
+            case 'time':
+              updated.timeRemaining = Math.max(0, updated.timeRemaining + val);
               break;
           }
           return updated;
         }),
       }));
+      return { success: true, message: unlock.name };
     },
   };
 }
