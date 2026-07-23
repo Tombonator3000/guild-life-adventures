@@ -18,13 +18,13 @@ interface GraveyardPanelProps {
 
 export function GraveyardPanel({ player, priceModifier }: GraveyardPanelProps) {
   const { t } = useTranslation();
-  const useGraveyardService = useGameStore(s => s.useGraveyardService);
+  const performGraveyardService = useGameStore(s => s.useGraveyardService);
   const prayerCost = Math.round(10 * priceModifier);
   const meditationCost = Math.round(15 * priceModifier);
   const blessingCost = Math.round(200 * priceModifier);
 
   const runService = (serviceId: 'pray' | 'mourn' | 'blessing') => {
-    const result = useGraveyardService(player.id, serviceId);
+    const result = performGraveyardService(player.id, serviceId);
     if (result?.success) toast.success(result.message);
     else if (result && !result.success) toast.error(result.message);
   };
