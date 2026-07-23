@@ -1,0 +1,10 @@
+validated_sha=52bc024b8252f5cd8a3a5315615d913b55bce219
+install=0
+typescript=0
+targeted_tests=0
+tests=1
+build=0
+lint=0
+playwright_runner=0
+playwright_browser=0
+playwright=0
