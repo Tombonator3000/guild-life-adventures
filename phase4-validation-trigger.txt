@@ -1,0 +1,1 @@
+Run phase 4 TypeScript, targeted tests, full tests, build, lint and Playwright validation.
