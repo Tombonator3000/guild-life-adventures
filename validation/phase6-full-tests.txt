@@ -2,103 +2,34 @@
 [1m[46m RUN [49m[22m [36mv3.2.4 [39m[90m/home/runner/work/guild-life-adventures/guild-life-adventures[39m
 
  [32m✓[39m src/hooks/ai/__tests__/newSystems.test.ts [2m([22m[2m36 tests[22m[2m)[22m[32m 15[2mms[22m[39m
- [32m✓[39m src/test/freshFood.test.ts [2m([22m[2m29 tests[22m[2m)[22m[32m 56[2mms[22m[39m
- [31m❯[39m src/test/multiplayer.test.ts [2m([22m[2m44 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 76[2mms[22m[39m
-   [32m✓[39m Room Codes[2m > [22mgenerates a 6-character code[32m 5[2mms[22m[39m
-   [32m✓[39m Room Codes[2m > [22mgenerates codes from valid charset (no O, I, L)[32m 20[2mms[22m[39m
-   [32m✓[39m Room Codes[2m > [22mgenerates unique codes[32m 1[2mms[22m[39m
-   [32m✓[39m Room Codes[2m > [22mconverts room code to PeerJS ID[32m 0[2mms[22m[39m
-   [32m✓[39m Room Codes[2m > [22mextracts room code from PeerJS ID[32m 0[2mms[22m[39m
-   [32m✓[39m Room Codes[2m > [22mvalidates correct room codes[32m 0[2mms[22m[39m
-   [32m✓[39m Room Codes[2m > [22mrejects invalid room codes[32m 0[2mms[22m[39m
-   [32m✓[39m Action Categories[2m > [22mLOCAL_ONLY_ACTIONS are distinct from ALLOWED_GUEST_ACTIONS[32m 1[2mms[22m[39m
-   [32m✓[39m Action Categories[2m > [22mHOST_INTERNAL_ACTIONS are distinct from ALLOWED_GUEST_ACTIONS[32m 0[2mms[22m[39m
-   [32m✓[39m Action Categories[2m > [22mHOST_INTERNAL_ACTIONS are distinct from LOCAL_ONLY_ACTIONS[32m 0[2mms[22m[39m
-   [32m✓[39m Action Categories[2m > [22mALLOWED_GUEST_ACTIONS contains expected game actions[32m 0[2mms[22m[39m
-   [32m✓[39m Action Categories[2m > [22mHOST_INTERNAL_ACTIONS blocks game-logic-only actions[32m 0[2mms[22m[39m
-   [32m✓[39m Action Categories[2m > [22mLOCAL_ONLY_ACTIONS include UI-only actions[32m 0[2mms[22m[39m
-   [32m✓[39m Action Categories[2m > [22mLOCAL_ONLY_ACTIONS includes all dismiss actions[32m 0[2mms[22m[39m
-   [32m✓[39m Action Categories[2m > [22mLOCAL_ONLY_ACTIONS includes debug actions[32m 0[2mms[22m[39m
-   [32m✓[39m Action Categories[2m > [22mALLOWED_GUEST_ACTIONS uses semantic appliance actions[32m 0[2mms[22m[39m
-   [32m✓[39m shouldForwardAction[2m > [22mreturns false in local mode (all actions execute locally)[32m 1[2mms[22m[39m
-   [32m✓[39m shouldForwardAction[2m > [22mreturns false in host mode (all actions execute locally)[32m 0[2mms[22m[39m
-   [32m✓[39m shouldForwardAction[2m > [22mreturns false for LOCAL_ONLY_ACTIONS in guest mode[32m 0[2mms[22m[39m
-   [32m✓[39m shouldForwardAction[2m > [22mreturns true (block) for HOST_INTERNAL_ACTIONS in guest mode[32m 0[2mms[22m[39m
-   [32m✓[39m Network State Serialization[2m > [22mserializeGameState includes all gameplay fields[32m 1[2mms[22m[39m
-   [32m✓[39m Network State Serialization[2m > [22mserializeGameState preserves player data[32m 1[2mms[22m[39m
-   [32m✓[39m Network State Serialization[2m > [22mapplyNetworkState updates store[32m 1[2mms[22m[39m
-   [32m✓[39m Network State Serialization[2m > [22mapplyNetworkState skips dismissed events[32m 1[2mms[22m[39m
-   [32m✓[39m Network State Serialization[2m > [22mapplyNetworkState clears dismissed events on turn change[32m 1[2mms[22m[39m
-   [32m✓[39m Network State Serialization[2m > [22mclearDismissedEvents resets tracking[32m 0[2mms[22m[39m
-   [32m✓[39m Network State Serialization[2m > [22mapplyNetworkState syncs activeFestival[32m 0[2mms[22m[39m
-   [32m✓[39m Network State Serialization[2m > [22mresetNetworkState clears all tracking[32m 0[2mms[22m[39m
-   [32m✓[39m executeAction[2m > [22mreturns true for valid actions[32m 0[2mms[22m[39m
-   [32m✓[39m executeAction[2m > [22mreturns false for non-existent actions[32m 1[2mms[22m[39m
-   [32m✓[39m executeAction[2m > [22mreturns false for non-function properties[32m 0[2mms[22m[39m
-   [32m✓[39m Pending Action Tracking[2m > [22mtrackPendingAction and resolveAction work together[32m 0[2mms[22m[39m
-   [32m✓[39m Pending Action Tracking[2m > [22mclearPendingActions cleans up[32m 0[2mms[22m[39m
-   [32m✓[39m Network Guards in Store[2m > [22mstartNewGame blocked in guest mode[32m 0[2mms[22m[39m
-   [32m✓[39m Network Guards in Store[2m > [22msave/load blocked in online mode[32m 1[2mms[22m[39m
-   [32m✓[39m Network Guards in Store[2m > [22mdismiss actions mark events in guest mode[32m 7[2mms[22m[39m
-   [32m✓[39m Room Code Cryptographic Security[2m > [22mgenerates codes using crypto.getRandomValues[32m 0[2mms[22m[39m
-   [32m✓[39m Room Code Cryptographic Security[2m > [22mgenerates uniformly distributed codes (no modulo bias)[32m 5[2mms[22m[39m
-   [32m✓[39m Room Code Cryptographic Security[2m > [22mgenerates high-entropy codes (no obvious patterns)[32m 2[2mms[22m[39m
-[31m   [31m×[31m Cross-Player Validation[2m > [22mall ALLOWED_GUEST_ACTIONS with playerId have it at args[0][39m[32m 16[2mms[22m[39m
-[31m     → expected false to be true // Object.is equality[39m
-   [32m✓[39m Cross-Player Validation[2m > [22mendTurn has no playerId arg (special case)[32m 0[2mms[22m[39m
-   [32m✓[39m Action Argument Validation[2m > [22mraw stat modifiers are in the whitelist (required by UI components)[32m 1[2mms[22m[39m
-   [32m✓[39m Action Argument Validation[2m > [22mexecuteAction handles non-existent actions gracefully[32m 0[2mms[22m[39m
-   [32m✓[39m Action Argument Validation[2m > [22mHOST_INTERNAL_ACTIONS cannot be triggered via executeAction bypass[32m 0[2mms[22m[39m
- [32m✓[39m src/test/hexes.test.ts [2m([22m[2m34 tests[22m[2m)[22m[32m 28[2mms[22m[39m
- [32m✓[39m src/test/economy.test.ts [2m([22m[2m28 tests[22m[2m)[22m[32m 31[2mms[22m[39m
- [32m✓[39m src/test/gameActions.test.ts [2m([22m[2m26 tests[22m[2m)[22m[32m 25[2mms[22m[39m
- [32m✓[39m src/hooks/ai/__tests__/actionGenerator.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 11[2mms[22m[39m
- [32m✓[39m src/test/questLOQ.test.ts [2m([22m[2m26 tests[22m[2m)[22m[32m 11[2mms[22m[39m
- [32m✓[39m src/test/age.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 39[2mms[22m[39m
- [32m✓[39m src/hooks/ai/__tests__/strategy.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 10[2mms[22m[39m
- [32m✓[39m src/test/victory.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 20[2mms[22m[39m
- [32m✓[39m src/test/applianceServices.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 15[2mms[22m[39m
- [32m✓[39m src/hooks/ai/actions/__tests__/rivalryActions.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m src/test/education.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 17[2mms[22m[39m
- [32m✓[39m src/test/vendorServices.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 10[2mms[22m[39m
- [32m✓[39m src/data/__tests__/hexes.test.ts [2m([22m[2m20 tests[22m[2m)[22m[32m 14[2mms[22m[39m
- [32m✓[39m src/test/employmentEducationServices.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 14[2mms[22m[39m
- [32m✓[39m src/test/applianceBreakage.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 18[2mms[22m[39m
- [32m✓[39m src/test/work.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 22[2mms[22m[39m
- [32m✓[39m src/test/atomicServices.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 13[2mms[22m[39m
- [32m✓[39m src/test/curseOverlay.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m src/test/saveMigration.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/test/freshFood.test.ts [2m([22m[2m29 tests[22m[2m)[22m[32m 61[2mms[22m[39m
+ [32m✓[39m src/test/multiplayer.test.ts [2m([22m[2m44 tests[22m[2m)[22m[32m 73[2mms[22m[39m
+ [32m✓[39m src/test/hexes.test.ts [2m([22m[2m34 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m src/test/economy.test.ts [2m([22m[2m28 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m src/test/gameActions.test.ts [2m([22m[2m26 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m src/hooks/ai/__tests__/actionGenerator.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/test/questLOQ.test.ts [2m([22m[2m26 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/test/age.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 37[2mms[22m[39m
+ [32m✓[39m src/hooks/ai/__tests__/strategy.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/test/applianceServices.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m src/test/victory.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m src/hooks/ai/actions/__tests__/rivalryActions.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/test/education.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m src/test/vendorServices.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/data/__tests__/hexes.test.ts [2m([22m[2m20 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/test/applianceBreakage.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/test/employmentEducationServices.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/test/work.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m src/test/atomicServices.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/test/curseOverlay.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/test/saveMigration.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/hooks/ai/failedActionCache.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
  [32m✓[39m src/network/actionValidation.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m src/hooks/ai/failedActionCache.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m src/hooks/useAITurnHandler.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 38[2mms[22m[39m
+ [32m✓[39m src/hooks/useAITurnHandler.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 32[2mms[22m[39m
  [32m✓[39m src/test/example.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
 
-[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+[2m Test Files [22m [1m[32m26 passed[39m[22m[90m (26)[39m
+[2m      Tests [22m [1m[32m398 passed[39m[22m[90m (398)[39m
+[2m   Start at [22m 10:05:10
+[2m   Duration [22m 10.66s[2m (transform 1.17s, setup 2.42s, collect 4.62s, tests 533ms, environment 14.31s, prepare 3.55s)[22m
 
-[41m[1m FAIL [22m[49m src/test/multiplayer.test.ts[2m > [22mCross-Player Validation[2m > [22mall ALLOWED_GUEST_ACTIONS with playerId have it at args[0]
-[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
-
-[32m- Expected[39m
-[31m+ Received[39m
-
-[32m- true[39m
-[31m+ false[39m
-
-[36m [2m❯[22m src/test/multiplayer.test.ts:[2m568:49[22m[39m
-    [90m566| [39m    [90m// All of these should be in ALLOWED_GUEST_ACTIONS[39m
-    [90m567| [39m    [35mfor[39m ([35mconst[39m action [35mof[39m actionsWithPlayerIdArg) {
-    [90m568| [39m      [34mexpect[39m([33mALLOWED_GUEST_ACTIONS[39m[33m.[39m[34mhas[39m(action))[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
-    [90m   | [39m                                                [31m^[39m
-    [90m569| [39m    }
-    [90m570| [39m  })[33m;[39m
-
-[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
-
-
-[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m25 passed[39m[22m[90m (26)[39m
-[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m397 passed[39m[22m[90m (398)[39m
-[2m   Start at [22m 10:02:31
-[2m   Duration [22m 10.36s[2m (transform 1.21s, setup 2.24s, collect 4.54s, tests 523ms, environment 13.55s, prepare 3.30s)[22m
-
-
-::error file=/home/runner/work/guild-life-adventures/guild-life-adventures/src/test/multiplayer.test.ts,title=src/test/multiplayer.test.ts > Cross-Player Validation > all ALLOWED_GUEST_ACTIONS with playerId have it at args[0],line=568,column=49::AssertionError: expected false to be true // Object.is equality%0A%0A- Expected%0A+ Received%0A%0A- true%0A+ false%0A%0A ❯ src/test/multiplayer.test.ts:568:49%0A%0A
