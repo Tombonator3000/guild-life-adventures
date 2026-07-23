@@ -177,9 +177,10 @@ export function GameSetup() {
 
   // Preset game lengths (education in points: each degree = 9 pts)
   const presets = {
-    quick: { wealth: 2000, happiness: 75, education: 18, career: 50, adventure: 0 },     // 2 degrees
-    standard: { wealth: 5000, happiness: 100, education: 45, career: 75, adventure: 0 }, // 5 degrees
-    epic: { wealth: 10000, happiness: 100, education: 90, career: 100, adventure: 0 },   // 10 degrees
+    quick: { wealth: 2000, happiness: 75, education: 18, career: 50, adventure: 0 },
+    standard: { wealth: 5000, happiness: 100, education: 45, career: 75, adventure: 0 },
+    adventure: { wealth: 4000, happiness: 80, education: 27, career: 65, adventure: 12 },
+    epic: { wealth: 10000, happiness: 100, education: 90, career: 100, adventure: 20 },
   };
 
   // Estimate game duration based on goals
@@ -402,22 +403,29 @@ export function GameSetup() {
             </p>
 
             {/* Preset buttons */}
-            <div className="flex gap-2 mb-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
               <button
-                onClick={() => setGoals({ ...presets.quick, adventure: goals.adventure })}
+                onClick={() => setGoals(presets.quick)}
                 className="flex-1 p-2 wood-frame text-parchment text-sm font-display hover:brightness-110"
               >
                 Quick Game
               </button>
               <button
-                onClick={() => setGoals({ ...presets.standard, adventure: goals.adventure })}
+                onClick={() => setGoals(presets.standard)}
                 className="flex-1 p-2 wood-frame text-parchment text-sm font-display hover:brightness-110"
               >
                 Standard
               </button>
               <button
-                onClick={() => setGoals({ ...presets.epic, adventure: goals.adventure })}
-                className="flex-1 p-2 wood-frame text-parchment text-sm font-display hover:brightness-110"
+                onClick={() => setGoals(presets.adventure)}
+                className="p-2 wood-frame text-parchment text-sm font-display hover:brightness-110"
+                title="Quest-focused mode with an Adventure victory target"
+              >
+                Adventure
+              </button>
+              <button
+                onClick={() => setGoals(presets.epic)}
+                className="p-2 wood-frame text-parchment text-sm font-display hover:brightness-110"
               >
                 Epic Quest
               </button>
