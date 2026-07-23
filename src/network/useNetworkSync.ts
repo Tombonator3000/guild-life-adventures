@@ -3,6 +3,7 @@
 // Features: state sync, action proxying, movement animation, turn timeout, latency
 
 import { useEffect, useRef, useCallback, useState } from 'react';
+import { toast } from 'sonner';
 import { peerManager } from './PeerManager';
 import { useGameStore } from '@/store/gameStore';
 import { setNetworkActionSender, trackPendingAction, resolveAction } from './NetworkActionProxy';
@@ -457,6 +458,7 @@ export function useNetworkSync() {
           resolveAction(msg.requestId);
           if (!msg.success && msg.error !== 'Not your turn') {
             console.warn(`[NetworkSync] Action failed: ${msg.error}`);
+            toast.error(msg.error ?? 'Action rejected by host');
           }
         } else if (msg.type === 'movement-animation') {
           // Another player started moving - animate locally if it's not our own movement
