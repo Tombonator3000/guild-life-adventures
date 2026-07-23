@@ -14,7 +14,7 @@ interface GraveyardHexPanelProps {
 }
 
 export function GraveyardHexPanel({ player, priceModifier }: GraveyardHexPanelProps) {
-  const useGraveyardHexService = useGameStore(state => state.useGraveyardHexService);
+  const performGraveyardHexService = useGameStore(state => state.useGraveyardHexService);
 
   if (!getGameOption('enableHexesCurses')) return null;
 
@@ -23,7 +23,7 @@ export function GraveyardHexPanel({ player, priceModifier }: GraveyardHexPanelPr
   const cleanseCost = Math.round(300 * priceModifier);
 
   const runService = (service: 'ritual' | 'reflect' | 'cleanse') => {
-    const result = useGraveyardHexService(player.id, service);
+    const result = performGraveyardHexService(player.id, service);
     if (!result) return;
     if (result.success && !result.backfired) toast.success(result.message);
     else toast.error(result.message);

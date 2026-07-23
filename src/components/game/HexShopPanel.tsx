@@ -24,7 +24,7 @@ export function HexShopPanel({ player, players, priceModifier, availableHexes, s
   const purchaseHexScroll = useGameStore(state => state.purchaseHexScroll);
   const castLocationHex = useGameStore(state => state.castLocationHex);
   const castPersonalCurse = useGameStore(state => state.castPersonalCurse);
-  const useHexDefense = useGameStore(state => state.useHexDefense);
+  const performHexDefense = useGameStore(state => state.useHexDefense);
   const locationHexes = useGameStore(state => state.locationHexes);
 
   if (!getGameOption('enableHexesCurses')) return null;
@@ -62,14 +62,14 @@ export function HexShopPanel({ player, players, priceModifier, availableHexes, s
   };
 
   const handleBuyAmulet = () => {
-    const result = useHexDefense(player.id, 'amulet');
+    const result = performHexDefense(player.id, 'amulet');
     if (!result) return;
     if (result.success) toast.success(result.message);
     else toast.error(result.message);
   };
 
   const handleDispel = (targetLocation: Player['currentLocation']) => {
-    const result = useHexDefense(player.id, 'dispel', targetLocation);
+    const result = performHexDefense(player.id, 'dispel', targetLocation);
     if (!result) return;
     if (result.success) toast.success(result.message);
     else toast.error(result.message);
