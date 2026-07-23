@@ -457,6 +457,7 @@ GitHub Actions-run `30050832605`:
 - Oppdaterte protokoll- og multiplayer-forventningene: `travelPlayer` er tillatt, `movePlayer` er blokkert.
 - Lagt til sju rutetester for canonical kostnad, vær, feil start, ukjent/ikke-nabo-steg, omdirigert lang rute, for lite tid og allowlist.
 - En for bred mellomoppdatering av `multiplayer.test.ts` ble oppdaget av CI. Originalfilen ble gjenopprettet fra `main`, og bare de to nødvendige reiseforventningene ble påført.
+- Playwrights første sluttforsøk avdekket testflakiness: en tilfeldig Shadowfingers-hendelse kunne stjele alt gull på bankreisen og skjule banktjenestene. E2E-testen fryser nå sannsynlighetskast før appstart, slik at den tester bank/save/load-flyten deterministisk uten å slå av hendelser i produktkoden.
 - Fjernet alle midlertidige workflow-, trigger-, resultat- og patchfiler før merge.
 
 ### Tester
@@ -470,6 +471,7 @@ GitHub Actions-run `30050832605`:
   - ESLint: bestått.
   - Playwright-runner og Chromium-installasjon: bestått.
   - Title/setup-smoke og komplett lokal spillflyt: bestått.
+- Ren PR-validering etter deterministic E2E-retting og artefaktrydding: GitHub Actions-run `30052428663`, alle steg bestått uten retry-artefakter.
 
 ### Resultat
 
