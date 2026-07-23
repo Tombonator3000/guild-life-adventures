@@ -14,31 +14,28 @@ import { useGameStore } from '@/store/gameStore';
 interface GeneralStorePanelProps {
   player: Player;
   priceModifier: number;
-  modifyGold: (playerId: string, amount: number) => void;
-  spendTime: (playerId: string, hours: number) => void;
-  modifyFood: (playerId: string, amount: number) => void;
-  modifyHappiness: (playerId: string, amount: number) => void;
-  onBuyNewspaper: () => void;
-  buyFreshFood: (playerId: string, units: number, cost: number) => boolean;
-  buyFoodWithSpoilage: (playerId: string, foodValue: number, cost: number) => boolean;
-  buyLotteryTicket: (playerId: string, cost: number) => void;
 }
 
 export function GeneralStorePanel({
   player,
   priceModifier,
-  buyFreshFood,
-  buyFoodWithSpoilage,
-  buyLotteryTicket,
 }: GeneralStorePanelProps) {
   const { t } = useTranslation();
   const purchaseNewspaper = useGameStore(s => s.purchaseNewspaper);
+  const purchaseVendorItem = useGameStore(s => s.purchaseVendorItem);
   const newspaperPrice = Math.round(NEWSPAPER_COST * priceModifier);
   const lotteryPrice = Math.round(10 * priceModifier);
 
   const hasPreservationBox = player.appliances['preservation-box'] && !player.appliances['preservation-box'].isBroken;
   const hasFrostChest = player.appliances['frost-chest'] && !player.appliances['frost-chest'].isBroken;
-  const maxFreshFood = hasFrostChest ? 12 : hasPreservationBox ? 6 : 6;
+  const maxFreshFood = hasFrostChest ? 12 : 6;
+
+  const handlePurchase = (itemId: string, successMessage: string) => {
+    const result = purchaseVendorItem(player.id, 'general-store', itemId);
+    if (!result) return;
+    if (result.success) toast.success(successMessage);
+    else toast.error(result.message);
+  };
 
   return (
     <div>
@@ -46,21 +43,20 @@ export function GeneralStorePanel({
       {GENERAL_STORE_ITEMS.filter(item => item.effect?.type === 'food' && !item.isFreshFood).map(item => {
         const price = getItemPrice(item, priceModifier);
         const canAfford = player.gold >= price;
+        const itemName = t(`items.${item.id}.name`) || item.name;
         return (
           <JonesMenuItem
             key={item.id}
-            label={t(`items.${item.id}.name`) || item.name}
+            label={itemName}
             price={price}
             disabled={!canAfford}
             darkText
             largeText
             previewData={itemToPreview(item)}
-            onClick={() => {
-              const success = buyFoodWithSpoilage(player.id, item.effect!.value, price);
-              if (success) {
-                toast.success(t('panelStore.purchased', { name: t(`items.${item.id}.name`) || item.name }));
-              }
-            }}
+            onClick={() => handlePurchase(
+              item.id,
+              t('panelStore.purchased', { name: itemName }),
+            )}
           />
         );
       })}
@@ -73,22 +69,21 @@ export function GeneralStorePanel({
         const price = getItemPrice(item, priceModifier);
         const units = item.freshFoodUnits || 0;
         const spaceLeft = maxFreshFood - player.freshFood;
-        const canAfford = player.gold >= price && (hasPreservationBox ? spaceLeft > 0 : true);
+        const canAfford = player.gold >= price && spaceLeft > 0;
+        const itemName = t(`items.${item.id}.name`) || item.name;
         return (
           <JonesMenuItem
             key={item.id}
-            label={`${t(`items.${item.id}.name`) || item.name} (+${units})`}
+            label={`${itemName} (+${units})`}
             price={price}
             disabled={!canAfford}
             darkText
             largeText
             previewData={itemToPreview(item)}
-            onClick={() => {
-              const success = buyFreshFood(player.id, units, price);
-              if (success) {
-                toast.success(t('panelStore.storedFreshFood', { units: Math.min(units, spaceLeft) }));
-              }
-            }}
+            onClick={() => handlePurchase(
+              item.id,
+              t('panelStore.storedFreshFood', { units: Math.min(units, spaceLeft) }),
+            )}
           />
         );
       })}
@@ -134,10 +129,10 @@ export function GeneralStorePanel({
           tags: ['Lottery'],
           effect: 'Grand Prize: 5,000g',
         }}
-        onClick={() => {
-          buyLotteryTicket(player.id, lotteryPrice);
-          toast.success(t('panelStore.purchased', { name: t('items.lottery-ticket.name') }));
-        }}
+        onClick={() => handlePurchase(
+          'lottery-ticket',
+          t('panelStore.purchased', { name: t('items.lottery-ticket.name') }),
+        )}
       />
       {player.lotteryTickets > 0 && (
         <JonesInfoRow label={t('panelShadowMarket.lotteryTickets') + ':'} value={`${player.lotteryTickets}`} darkText largeText />
