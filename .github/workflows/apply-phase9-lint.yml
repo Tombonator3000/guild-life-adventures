@@ -1,4 +1,4 @@
-name: Apply phase 9 lint fix
+name: Finalize phase 9 through proven workflow
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 jobs:
-  patch:
+  finalize:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,10 +22,12 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-      - run: node scripts/patch-phase9-lint.mjs
-      - run: |
+      - name: Finalize source tree
+        run: node scripts/finalize-phase9.mjs
+      - name: Commit final source tree
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/components/game/HexShopPanel.tsx src/components/game/GraveyardHexPanel.tsx
-          git commit -m "Rename local hex service actions for lint" || true
+          git add -A
+          git commit -m "Finalize phase 9 hex audit" || true
           git push origin HEAD:agent/audit-phase9-hex
