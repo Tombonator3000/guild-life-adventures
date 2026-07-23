@@ -1,0 +1,38 @@
+name: Cleanup phase 6B temporary files
+
+on:
+  push:
+    branches:
+      - agent/audit-phase6-equipment
+    paths:
+      - phase6b-cleanup-trigger.txt
+      - .github/workflows/cleanup-phase6b.yml
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase6-equipment
+          fetch-depth: 1
+      - name: Remove temporary files
+        run: |
+          rm -f .github/workflows/apply-phase6-equipment.yml
+          rm -f .github/workflows/apply-phase6b-test-fix.yml
+          rm -f .github/workflows/phase6b-unit-diagnostics.yml
+          rm -f .github/workflows/cleanup-phase6b.yml
+          rm -f phase6-equipment-result.txt phase6-equipment-trigger.txt
+          rm -f phase6b-diagnostics-trigger.txt phase6b-test-fix-trigger.txt phase6b-cleanup-trigger.txt
+          rm -f scripts/apply-phase6-equipment.mjs scripts/patch-phase6b-multiplayer-test.mjs
+          rm -f validation/phase6b-*.txt
+      - name: Commit cleanup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Remove phase 6B temporary tooling" || true
+          git push origin HEAD:agent/audit-phase6-equipment
