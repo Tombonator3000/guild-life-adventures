@@ -3,8 +3,9 @@
  * Displayed as a tab in locations that have reputation unlocks.
  */
 
+import { useEffect, useRef, useState } from 'react';
 import type { Player } from '@/types/game.types';
-import { getReputationUnlocks, getReputationTier, getTierLabel, type ReputationUnlock } from '@/data/reputation';
+import { getReputationUnlocks, getReputationTier, getTierLabel } from '@/data/reputation';
 import { JonesMenuItem, JonesSectionHeader } from './JonesStylePanel';
 import { toast } from 'sonner';
 import { Star, Skull, Award, Lock } from 'lucide-react';
@@ -17,18 +18,34 @@ interface ReputationPanelProps {
   onPurchase: (unlockId: string) => void;
 }
 
+interface PendingPurchase {
+  unlockId: string;
+  unlockName: string;
+}
+
 export function ReputationPanel({ player, locationId, priceModifier, onPurchase }: ReputationPanelProps) {
   const fame = player.fame ?? 0;
   const infamy = player.infamy ?? 0;
   const fameTier = getReputationTier(fame);
   const infamyTier = getReputationTier(infamy);
-  const availableUnlocks = getReputationUnlocks(
-    locationId, fame, infamy, player.purchasedReputationUnlocks ?? []
-  );
+  const [pending, setPending] = useState<PendingPurchase | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const purchasedUnlocks = player.purchasedReputationUnlocks ?? [];
+  const availableUnlocks = getReputationUnlocks(locationId, fame, infamy, purchasedUnlocks);
+
+  useEffect(() => {
+    if (!pending || !purchasedUnlocks.includes(pending.unlockId)) return;
+    toast.success(`${pending.unlockName} acquired!`);
+    setPending(null);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+  }, [pending, purchasedUnlocks]);
+
+  useEffect(() => () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+  }, []);
 
   return (
     <div className="space-y-3">
-      {/* Reputation summary */}
       <div className="bg-[#e0d4b8] border border-[#8b7355] rounded p-2">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-1.5">
@@ -65,7 +82,6 @@ export function ReputationPanel({ player, locationId, priceModifier, onPurchase 
         </div>
       </div>
 
-      {/* Available reputation services */}
       {availableUnlocks.length > 0 ? (
         <div>
           <JonesSectionHeader title="Exclusive Services" />
@@ -74,18 +90,21 @@ export function ReputationPanel({ player, locationId, priceModifier, onPurchase 
               const adjustedCost = Math.round(unlock.cost * priceModifier);
               const canAfford = player.gold >= adjustedCost;
               const hasTime = player.timeRemaining >= unlock.timeCost;
+              const isPending = pending?.unlockId === unlock.id;
 
               return (
                 <div key={unlock.id}>
                   <JonesMenuItem
-                    label={`${unlock.name} (${unlock.timeCost}h)`}
+                    label={isPending ? 'Waiting for host…' : `${unlock.name} (${unlock.timeCost}h)`}
                     price={adjustedCost}
-                    disabled={!canAfford || !hasTime}
+                    disabled={!canAfford || !hasTime || !!pending}
                     darkText
                     largeText
                     onClick={() => {
+                      if (pending) return;
+                      setPending({ unlockId: unlock.id, unlockName: unlock.name });
                       onPurchase(unlock.id);
-                      toast.success(`${unlock.name} acquired!`);
+                      timeoutRef.current = setTimeout(() => setPending(null), 10000);
                     }}
                   />
                   <div className="flex items-center gap-1 text-xs text-[#6b5a42] italic px-1 -mt-0.5 mb-1">

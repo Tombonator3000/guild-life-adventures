@@ -3,12 +3,13 @@
  * Services: Protection Money (reduce robbery chance) and Tip-offs (see rival vulnerability).
  */
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Player } from '@/types/game.types';
 import { JonesMenuItem } from './JonesStylePanel';
 import { toast } from 'sonner';
 import { Shield, Eye } from 'lucide-react';
 import { getRobberyVulnerability } from '@/data/shadowfingers';
+import { PROTECTION_OPTIONS, TIP_OFF_BASE_COST, computePrice } from '@/data/sabotage';
 import {
   Select,
   SelectContent,
@@ -25,13 +26,9 @@ interface FenceProtectionPanelProps {
   onBuyTipOff: (targetId: string) => void;
 }
 
-const PROTECTION_OPTIONS = [
-  { weeks: 3, baseCost: 75, label: '3 Weeks' },
-  { weeks: 6, baseCost: 130, label: '6 Weeks' },
-  { weeks: 10, baseCost: 200, label: '10 Weeks' },
-];
-
-const TIP_OFF_BASE_COST = 40;
+type PendingService =
+  | { type: 'protection'; weeks: number; previousWeeks: number; previousGold: number; previousTime: number }
+  | { type: 'tipoff'; targetId: string; targetName: string; previousGold: number; previousTime: number };
 
 const RISK_COLORS: Record<string, string> = {
   low: 'text-green-700',
@@ -43,15 +40,44 @@ const RISK_COLORS: Record<string, string> = {
 export function FenceProtectionPanel({ player, rivals, priceModifier, onBuyProtection, onBuyTipOff }: FenceProtectionPanelProps) {
   const [tipOffTarget, setTipOffTarget] = useState<string>(rivals.length > 0 ? rivals[0].id : '');
   const [revealedTipOff, setRevealedTipOff] = useState<string | null>(null);
+  const [pending, setPending] = useState<PendingService | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const protectionActive = (player.protectionWeeksLeft ?? 0) > 0;
-  const tipOffCost = Math.round(TIP_OFF_BASE_COST * priceModifier);
-
+  const tipOffCost = computePrice(TIP_OFF_BASE_COST, priceModifier);
   const selectedRival = rivals.find(r => r.id === tipOffTarget);
+
+  useEffect(() => {
+    if (!pending) return;
+    if (pending.type === 'protection') {
+      if ((player.protectionWeeksLeft ?? 0) > pending.previousWeeks) {
+        toast.success(`Bought ${pending.weeks} weeks of protection from Shadowfingers.`);
+        setPending(null);
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      }
+      return;
+    }
+
+    const confirmed = player.gold < pending.previousGold || player.timeRemaining < pending.previousTime;
+    if (confirmed) {
+      setRevealedTipOff(pending.targetId);
+      toast.success(`Received intel on ${pending.targetName}.`);
+      setPending(null);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    }
+  }, [pending, player.gold, player.timeRemaining, player.protectionWeeksLeft]);
+
+  useEffect(() => () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+  }, []);
+
+  const startTimeout = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => setPending(null), 10000);
+  };
 
   return (
     <div className="space-y-4">
-      {/* Protection Money section */}
       <div>
         <div className="flex items-center gap-1.5 px-2 mb-1.5">
           <Shield className="w-3.5 h-3.5 text-[#8b6914]" />
@@ -67,19 +93,28 @@ export function FenceProtectionPanel({ player, rivals, priceModifier, onBuyProte
         )}
         <div className="space-y-1 px-1">
           {PROTECTION_OPTIONS.map(opt => {
-            const cost = Math.round(opt.baseCost * priceModifier);
+            const cost = computePrice(opt.baseCost, priceModifier);
             const canAfford = player.gold >= cost;
+            const isPending = pending?.type === 'protection' && pending.weeks === opt.weeks;
             return (
               <div key={opt.weeks}>
                 <JonesMenuItem
-                  label={`Protection — ${opt.label}`}
+                  label={isPending ? 'Waiting for host…' : `Protection — ${opt.label}`}
                   price={cost}
-                  disabled={!canAfford}
+                  disabled={!canAfford || player.timeRemaining < 1 || !!pending}
                   darkText
                   largeText
                   onClick={() => {
+                    if (pending) return;
+                    setPending({
+                      type: 'protection',
+                      weeks: opt.weeks,
+                      previousWeeks: player.protectionWeeksLeft ?? 0,
+                      previousGold: player.gold,
+                      previousTime: player.timeRemaining,
+                    });
                     onBuyProtection(opt.weeks);
-                    toast.success(`Bought ${opt.weeks} weeks of protection from Shadowfingers.`);
+                    startTimeout();
                   }}
                 />
               </div>
@@ -88,7 +123,6 @@ export function FenceProtectionPanel({ player, rivals, priceModifier, onBuyProte
         </div>
       </div>
 
-      {/* Tip-off section */}
       <div>
         <div className="flex items-center gap-1.5 px-2 mb-1.5">
           <Eye className="w-3.5 h-3.5 text-[#8b6914]" />
@@ -100,7 +134,11 @@ export function FenceProtectionPanel({ player, rivals, priceModifier, onBuyProte
 
         {rivals.length > 0 && (
           <div className="px-2 space-y-2">
-            <Select value={tipOffTarget} onValueChange={(v) => { setTipOffTarget(v); setRevealedTipOff(null); }}>
+            <Select
+              value={tipOffTarget}
+              disabled={!!pending}
+              onValueChange={(v) => { setTipOffTarget(v); setRevealedTipOff(null); }}
+            >
               <SelectTrigger className="bg-[#e8dcc4] border-[#8b7355] text-[#4a3520] font-display">
                 <SelectValue placeholder="Select rival..." />
               </SelectTrigger>
@@ -116,19 +154,26 @@ export function FenceProtectionPanel({ player, rivals, priceModifier, onBuyProte
             {selectedRival && (
               <>
                 <JonesMenuItem
-                  label="Buy Tip-off"
+                  label={pending?.type === 'tipoff' ? 'Waiting for host…' : 'Buy Tip-off'}
                   price={tipOffCost}
-                  disabled={player.gold < tipOffCost || revealedTipOff === tipOffTarget}
+                  disabled={player.gold < tipOffCost || player.timeRemaining < 1 || revealedTipOff === tipOffTarget || !!pending}
                   darkText
                   largeText
                   onClick={() => {
+                    if (pending) return;
+                    setPending({
+                      type: 'tipoff',
+                      targetId: tipOffTarget,
+                      targetName: selectedRival.name,
+                      previousGold: player.gold,
+                      previousTime: player.timeRemaining,
+                    });
                     onBuyTipOff(tipOffTarget);
-                    setRevealedTipOff(tipOffTarget);
-                    toast.success(`Received intel on ${selectedRival.name}.`);
+                    startTimeout();
                   }}
                 />
 
-                {revealedTipOff === tipOffTarget && selectedRival && (
+                {revealedTipOff === tipOffTarget && (
                   <div className="bg-[#e0d4b8] border border-[#8b7355] rounded p-2 space-y-1">
                     {(() => {
                       const vuln = getRobberyVulnerability(selectedRival);

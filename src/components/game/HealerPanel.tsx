@@ -3,6 +3,8 @@
 import { Heart, Sparkles, Shield } from 'lucide-react';
 import { playSFX } from '@/audio/sfxManager';
 import type { Player } from '@/types/game.types';
+import { useGameStore } from '@/store/gameStore';
+import { toast } from 'sonner';
 
 interface HealerPanelProps {
   player: Player;
@@ -13,12 +15,21 @@ interface HealerPanelProps {
 }
 
 const HEALING_OPTIONS = [
-  { id: 'minor', name: 'Minor Healing', baseCost: 25, healthGain: 25, time: 1 },
-  { id: 'moderate', name: 'Moderate Healing', baseCost: 50, healthGain: 50, time: 2 },
-  { id: 'full', name: 'Full Restoration', baseCost: 100, healthGain: 100, time: 4 },
+  { id: 'minor' as const, name: 'Minor Healing', baseCost: 25, healthGain: 25, time: 1 },
+  { id: 'moderate' as const, name: 'Moderate Healing', baseCost: 50, healthGain: 50, time: 2 },
+  { id: 'full' as const, name: 'Full Restoration', baseCost: 100, healthGain: 100, time: 4 },
 ];
 
-export function HealerPanel({ player, priceModifier, onHeal, onCureSickness, onBlessHealth }: HealerPanelProps) {
+export function HealerPanel({ player, priceModifier }: HealerPanelProps) {
+  const performHealerService = useGameStore(s => s.useHealerService);
+
+  const runService = (serviceId: 'minor' | 'moderate' | 'full' | 'cure' | 'blessing') => {
+    playSFX('heal');
+    const result = performHealerService(player.id, serviceId);
+    if (result?.success) toast.success(result.message);
+    else if (result && !result.success) toast.error(result.message);
+  };
+
   return (
     <div className="space-y-4">
       <div className="bg-[#e0d4b8] border border-[#8b7355] rounded p-3">
@@ -37,19 +48,19 @@ export function HealerPanel({ player, priceModifier, onHeal, onCureSickness, onB
       <h4 className="font-display text-sm text-[#6b5a42] flex items-center gap-2 mb-2">
         <Heart className="w-4 h-4" /> Healing Services
       </h4>
-      
+
       <div className="space-y-2">
         {HEALING_OPTIONS.map(option => {
           const cost = Math.round(option.baseCost * priceModifier);
           const effectiveHeal = Math.min(option.healthGain, player.maxHealth - player.health);
-          const isDisabled = player.gold < cost || 
-                            player.timeRemaining < option.time || 
+          const isDisabled = player.gold < cost ||
+                            player.timeRemaining < option.time ||
                             player.health >= player.maxHealth;
-          
+
           return (
             <button
               key={option.id}
-              onClick={() => { playSFX('heal'); onHeal(cost, option.healthGain, option.time); }}
+              onClick={() => runService(option.id)}
               disabled={isDisabled}
               className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
@@ -73,8 +84,8 @@ export function HealerPanel({ player, priceModifier, onHeal, onCureSickness, onB
 
       <div className="space-y-2">
         <button
-          onClick={() => { playSFX('heal'); onCureSickness(75, 2); }}
-          disabled={player.gold < 75 || player.timeRemaining < 2}
+          onClick={() => runService('cure')}
+          disabled={player.gold < 75 || player.timeRemaining < 2 || !player.isSick}
           className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
           <div className="flex items-center gap-2">
@@ -88,7 +99,7 @@ export function HealerPanel({ player, priceModifier, onHeal, onCureSickness, onB
         </button>
 
         <button
-          onClick={() => { playSFX('heal'); onBlessHealth(150, 4); }}
+          onClick={() => runService('blessing')}
           disabled={player.gold < 150 || player.timeRemaining < 4}
           className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >

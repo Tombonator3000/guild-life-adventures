@@ -5,6 +5,8 @@
 import { Heart, Sparkles, Cross, Skull } from 'lucide-react';
 import type { Player } from '@/types/game.types';
 import { useTranslation } from '@/i18n';
+import { useGameStore } from '@/store/gameStore';
+import { toast } from 'sonner';
 
 interface GraveyardPanelProps {
   player: Player;
@@ -14,15 +16,21 @@ interface GraveyardPanelProps {
   onBlessMaxHealth: (cost: number, maxHealthGain: number, time: number) => void;
 }
 
-export function GraveyardPanel({ player, priceModifier, onPray, onMourn, onBlessMaxHealth }: GraveyardPanelProps) {
+export function GraveyardPanel({ player, priceModifier }: GraveyardPanelProps) {
   const { t } = useTranslation();
+  const performGraveyardService = useGameStore(s => s.useGraveyardService);
   const prayerCost = Math.round(10 * priceModifier);
   const meditationCost = Math.round(15 * priceModifier);
   const blessingCost = Math.round(200 * priceModifier);
 
+  const runService = (serviceId: 'pray' | 'mourn' | 'blessing') => {
+    const result = performGraveyardService(player.id, serviceId);
+    if (result?.success) toast.success(result.message);
+    else if (result && !result.success) toast.error(result.message);
+  };
+
   return (
     <div className="space-y-4">
-      {/* Resurrection info box */}
       <div className="bg-[#e0d4b8] border border-[#8b7355] rounded p-3">
         <div className="flex items-center gap-2 text-[#3d2a14] mb-2">
           <Skull className="w-4 h-4 text-[#6b5a42]" />
@@ -39,7 +47,6 @@ export function GraveyardPanel({ player, priceModifier, onPray, onMourn, onBless
         )}
       </div>
 
-      {/* Health display */}
       <div className="bg-[#e0d4b8] border border-[#8b7355] rounded p-3">
         <div className="flex items-center justify-between text-[#3d2a14]">
           <span>{t('stats.health')}:</span>
@@ -53,14 +60,13 @@ export function GraveyardPanel({ player, priceModifier, onPray, onMourn, onBless
         </div>
       </div>
 
-      {/* Prayer - happiness boost */}
       <h4 className="font-display text-sm text-[#6b5a42] flex items-center gap-2">
         <Cross className="w-4 h-4" /> {t('locations.graveyard')}
       </h4>
 
       <div className="space-y-2">
         <button
-          onClick={() => onPray(prayerCost, 5, 2)}
+          onClick={() => runService('pray')}
           disabled={player.gold < prayerCost || player.timeRemaining < 2}
           className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
@@ -76,7 +82,7 @@ export function GraveyardPanel({ player, priceModifier, onPray, onMourn, onBless
         </button>
 
         <button
-          onClick={() => onMourn(meditationCost, 5, 3)}
+          onClick={() => runService('mourn')}
           disabled={player.gold < meditationCost || player.timeRemaining < 3}
           className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
@@ -92,7 +98,7 @@ export function GraveyardPanel({ player, priceModifier, onPray, onMourn, onBless
         </button>
 
         <button
-          onClick={() => onBlessMaxHealth(blessingCost, 5, 4)}
+          onClick={() => runService('blessing')}
           disabled={player.gold < blessingCost || player.timeRemaining < 4}
           className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >

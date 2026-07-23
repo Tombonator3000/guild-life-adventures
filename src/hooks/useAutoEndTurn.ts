@@ -15,38 +15,26 @@ export function useAutoEndTurn() {
     networkMode,
   } = useGameStore();
 
-  // Guard against double endTurn — tracks which playerIndex the scheduled endTurn is for
   const scheduledEndTurnRef = useRef<number | null>(null);
   const autoEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Check if player should auto-return to housing when time runs out
   const checkAutoReturn = useCallback(() => {
-    if (!currentPlayer) return;
-
-    // BUG FIX: AI players manage their own endTurn via runAITurn/step().
-    // If useAutoEndTurn also fires endTurn for AI (e.g. 500ms timeout fires before the
-    // AI's 800ms step), the turn advances twice — skipping another player and leaving
-    // stale AI step callbacks that fire endTurn again in the now-wrong turn.
+    if (!currentPlayer) return false;
     if (currentPlayer.isAI) return false;
 
-    // Guest mode: guest can forward endTurn to host when time runs out,
-    // but death/event handling is host-only (guest sees it via state sync).
     if (networkMode === 'guest') {
       if (currentPlayer.timeRemaining <= 0) {
-        // Guard: don't schedule a second endTurn for the same player
         if (scheduledEndTurnRef.current === currentPlayerIndex) return true;
         scheduledEndTurnRef.current = currentPlayerIndex;
-        // Only end turn if it's our turn (not someone else's)
         const localId = useGameStore.getState().localPlayerId;
         if (currentPlayer.id === localId) {
           if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
           autoEndTimerRef.current = setTimeout(() => {
             const store = useGameStore.getState();
-            // Triple-guard: same player index, same player ID, still no time
             if (store.currentPlayerIndex === currentPlayerIndex &&
                 store.players[store.currentPlayerIndex]?.id === localId &&
                 store.players[store.currentPlayerIndex]?.timeRemaining <= 0) {
-              endTurn(); // Forwarded to host via network proxy
+              store.endTurn();
             }
             scheduledEndTurnRef.current = null;
             autoEndTimerRef.current = null;
@@ -57,21 +45,18 @@ export function useAutoEndTurn() {
       return false;
     }
 
-    // Check for death first
     if (currentPlayer.health <= 0) {
       const isDead = checkDeath(currentPlayer.id);
       if (isDead) {
         setEventMessage(`${currentPlayer.name} has died! Game over for this player.`);
         setPhase('event');
-        // Move to next player's turn after death — guard against double fire
         if (scheduledEndTurnRef.current !== currentPlayerIndex) {
           scheduledEndTurnRef.current = currentPlayerIndex;
           if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
           autoEndTimerRef.current = setTimeout(() => {
-            // Only fire if still the same player's turn
-            const storeIdx = useGameStore.getState().currentPlayerIndex;
-            if (storeIdx === currentPlayerIndex) {
-              endTurn();
+            const store = useGameStore.getState();
+            if (store.currentPlayerIndex === currentPlayerIndex) {
+              store.endTurn();
             }
             scheduledEndTurnRef.current = null;
             autoEndTimerRef.current = null;
@@ -81,26 +66,22 @@ export function useAutoEndTurn() {
       }
     }
 
-    // Check if time has run out
     if (currentPlayer.timeRemaining <= 0) {
-      // Guard: don't schedule a second endTurn for the same player
       if (scheduledEndTurnRef.current === currentPlayerIndex) return true;
       scheduledEndTurnRef.current = currentPlayerIndex;
-
-      // Get player's home location based on housing
       const homeLocation: LocationId = currentPlayer.housing === 'noble' ? 'noble-heights' : 'slums';
 
-      // Only move if not already at home
       if (currentPlayer.currentLocation !== homeLocation) {
         toast.info(`${currentPlayer.name}'s time is up! Returning home...`);
       }
 
-      // End turn automatically — guarded with playerIndex check
       if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
       autoEndTimerRef.current = setTimeout(() => {
-        const storeIdx = useGameStore.getState().currentPlayerIndex;
-        if (storeIdx === currentPlayerIndex) {
-          endTurn();
+        const store = useGameStore.getState();
+        if (store.currentPlayerIndex === currentPlayerIndex &&
+            store.players[store.currentPlayerIndex]?.id === currentPlayer.id &&
+            store.players[store.currentPlayerIndex]?.timeRemaining <= 0) {
+          store.endTurn();
         }
         scheduledEndTurnRef.current = null;
         autoEndTimerRef.current = null;
@@ -109,9 +90,8 @@ export function useAutoEndTurn() {
     }
 
     return false;
-  }, [currentPlayer, checkDeath, setEventMessage, setPhase, endTurn, currentPlayerIndex, networkMode]);
+  }, [currentPlayer, checkDeath, setEventMessage, setPhase, currentPlayerIndex, networkMode]);
 
-  // Reset auto-end guard when player turn changes
   useEffect(() => {
     scheduledEndTurnRef.current = null;
     if (autoEndTimerRef.current) {
@@ -120,12 +100,13 @@ export function useAutoEndTurn() {
     }
   }, [currentPlayerIndex]);
 
-  // Monitor time and health changes
   useEffect(() => {
-    if (currentPlayer && phase === 'playing') {
-      checkAutoReturn();
-    }
-  }, [currentPlayer?.timeRemaining, currentPlayer?.health, phase, checkAutoReturn]);
+    if (phase === 'playing') checkAutoReturn();
+  }, [phase, checkAutoReturn]);
+
+  useEffect(() => () => {
+    if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
+  }, []);
 
   return { checkAutoReturn };
 }
