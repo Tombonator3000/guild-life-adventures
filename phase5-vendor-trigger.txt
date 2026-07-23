@@ -1,1 +1,1 @@
-Apply the host-authoritative vendor purchase migration.
+Run the phase 5 vendor migration now that the workflow exists.
