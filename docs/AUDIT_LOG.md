@@ -13,7 +13,7 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 | 5 | Sikre reputation unlocks | Ferdig | Kjøp valideres atomisk på hosten. |
 | 6 | Atomiske handlinger | Delvis ferdig | Healer, gravplass, gambling, avis, sabotasje, beskyttelse, jobb, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig, hex-/ritualtjenester og finans er host-resolverte. |
 | 7 | Hook-avhengigheter | Ferdig for kjente funn | AI-start, auto-end-turn, tastatur og zone-editor er rettet. |
-| 8 | Playwright E2E | Delvis ferdig | Tittel- og setup-smoketester finnes. Full spillflyt, save/load og online avvisninger mangler. |
+| 8 | Playwright E2E | Ferdig grunnflyt | Tittel, setup og en faktisk spillflyt med bankhandling, save/load og ukeovergang er dekket. Online protokollavvisninger gjenstår. |
 | 9 | Zustand-selectors | Delvis ferdig | Root, GameBoard og Grimwald AI bruker selectors/useShallow. Flere paneler er begrenset, men `LocationPanel` leser fortsatt hele store-objektet. |
 | 10 | AI failed-action cache / utdanning | Ferdig | Cache-nøkkelen følger relevant spillerstatus og tillater retry etter tilstandsendring. |
 | 11 | Dokumentasjon | Ferdig grunnlag | README, arkitektur, testing, multiplayer-sikkerhet, inventarrapport og denne revisjonsloggen er oppdatert. |
@@ -23,11 +23,10 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 
 ## Gjenstående prioritert rekkefølge
 
-1. **Utvid E2E-testene til faktisk spilling.** Opprett spill, start første tur, utfør handling, avslutt tur, save/load og verifiser at ingen runtime-feil oppstår.
-2. **Test online sikkerhetsavvisninger på protokollnivå.** Feil spiller-ID, feil tur, feil vendor/service, ugyldig vare og manipulerte verdier skal avvises.
-3. **Begrens resterende store-abonnementer.** Start med `LocationPanel`, som fortsatt leser hele Zustand-storen.
-4. **Del opp GameBoard videre.** Flytt avledet tilstand og overlay-/layoutlogikk til mindre hooks/komponenter uten å endre funksjon.
-5. **Rydd døde kompatibilitetslag.** Fjern gamle callback-props og numeriske legacy-funksjoner først når AI og alle lokale kallere er migrert.
+1. **Test online sikkerhetsavvisninger på protokollnivå.** Feil spiller-ID, feil tur, feil vendor/service, ugyldig vare og manipulerte verdier skal avvises.
+2. **Begrens resterende store-abonnementer.** Start med `LocationPanel`, som fortsatt leser hele Zustand-storen.
+3. **Del opp GameBoard videre.** Flytt avledet tilstand og overlay-/layoutlogikk til mindre hooks/komponenter uten å endre funksjon.
+4. **Rydd døde kompatibilitetslag.** Fjern gamle callback-props og numeriske legacy-funksjoner først når AI og alle lokale kallere er migrert.
 
 ## Fase 4 – 23. juli 2026
 
@@ -312,4 +311,43 @@ GitHub Actions-run `30005423775`:
 
 - Online-gjester og AI kan ikke lenger diktere saldooverføringer uten dekning, aksjepris, aksjegebyr, låneprodukt eller tilbakebetalingsbeløp utover faktisk gjeld/kontanter.
 - De store klientprisede økonomihandlingene fra den opprinnelige revisjonen er nå migrert.
-- PR #333 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
+- PR #333 ble squash-merget til `main` som commit `75d1b4f227df4ae694c0b83641be26d5238ea8dc`.
+
+## Fase 11 – 24. juli 2026
+
+### Mål
+
+- Utvide Playwright fra title/setup-smoke til en faktisk spillbar ende-til-ende-flyt.
+- Verifisere at bankhandling, manuell lagring, state-mutasjon, innlasting og ukeovergang fungerer uten runtime-feil.
+
+### Utført
+
+- Opprettet arbeidsgren `agent/audit-phase11-e2e` og draft-PR #334 fra fase 10-merge `75d1b4f227df4ae694c0b83641be26d5238ea8dc`.
+- Lagt til `e2e/gameplay.spec.ts`, som oppretter en énspiller gjennom den faktiske setup-UI-en, slår av tutorial og starter eventyret.
+- Testen reiser direkte til Bank via kartet, setter inn 50 gull gjennom den host-autoritative finanshandlingen og verifiserer at uttak blir tilgjengelig.
+- Testen lagrer eksplisitt til `Save Slot 1`, tar ut de 50 gullene for å mutere state, laster den manuelle lagringen og verifiserer at `Savings 50g` gjenopprettes.
+- Testen avslutter turen gjennom den synlige `End Turn`-knappen og verifiserer overgang til uke 2.
+- Testen samler `pageerror`-hendelser og feiler dersom nettleseren rapporterer en ukontrollert runtime-feil.
+- Første Chromium-runde avdekket utdaterte setup-selektorer (`Start Local Game`, spillerantallsknapp, gammelt navn-/tutorial-felt). Testen ble oppdatert til dagens `New Adventure`-flyt.
+- Andre Chromium-runde avdekket at kartklikk allerede utfører reisen direkte; den ikke-eksisterende mellomknappen `Travel to Bank` ble fjernet fra testen.
+- Tredje Chromium-runde bekreftet at save/load gjenopprettet 50 gull i savings, men at innlasting korrekt lukker lokasjonspanelet. Kontrollen ble flyttet fra en Bank-knapp til den persistente `Finances`-seksjonen.
+- Ingen midlertidige valideringslogger eller testartefakter er lagt til i repository-diffen.
+
+### Tester
+
+Endelig GitHub Actions-run `30049006317`:
+
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Full Vitest-pakke: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright-runner og Chromium-installasjon: bestått.
+- Eksisterende title/setup-smoketester: bestått.
+- Ny komplett spillflyt med bank, save/load og ukeovergang: bestått.
+
+### Resultat
+
+- En reell lokal spilløkt er nå dekket fra tittelskjerm til uke 2.
+- Save/load er verifisert gjennom brukergrensesnittet, ikke bare gjennom store-enhetstester.
+- PR #334 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
