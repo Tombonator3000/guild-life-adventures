@@ -1,0 +1,28 @@
+name: Apply phase 13 employment migration
+
+on:
+  push:
+    branches:
+      - agent/audit-phase13-raw-guest-actions
+    paths:
+      - .github/workflows/apply-phase13-employment.yml
+      - phase13-employment-trigger.txt
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase13-raw-guest-actions
+          fetch-depth: 1
+      - run: node scripts/apply-phase13-employment.mjs
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src
+          git commit -m "Migrate employment offers to host actions" || true
+          git push origin HEAD:agent/audit-phase13-raw-guest-actions
