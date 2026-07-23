@@ -32,9 +32,8 @@ interface GuildHallPanelProps {
   allPlayers?: Player[];
   priceModifier: number;
   week: number;
-  onHireJob: (jobId: string, wage: number) => void;
-  onNegotiateRaise: (newWage: number) => void;
-  onSpendTime: (hours: number) => void;
+  onHireJob: (jobId: string) => void;
+  onAcceptMarketRaise: () => void;
 }
 
 export function GuildHallPanel({
@@ -43,8 +42,7 @@ export function GuildHallPanel({
   priceModifier,
   week,
   onHireJob,
-  onNegotiateRaise,
-  onSpendTime,
+  onAcceptMarketRaise,
 }: GuildHallPanelProps) {
   const { t } = useTranslation();
   const [selectedEmployer, setSelectedEmployer] = useState<Employer | null>(null);
@@ -106,9 +104,9 @@ export function GuildHallPanel({
     if (applicationResult && applicationResult.result.success && applicationResult.offeredWage) {
       playSFX('success');
       if (applicationResult.isRaise) {
-        onNegotiateRaise(applicationResult.offeredWage);
+        onAcceptMarketRaise();
       } else {
-        onHireJob(applicationResult.job.id, applicationResult.offeredWage);
+        onHireJob(applicationResult.job.id);
       }
       setApplicationResult(null);
       setSelectedEmployer(null);

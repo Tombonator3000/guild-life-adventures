@@ -135,6 +135,12 @@ export function validateGuestActionArgs(
       return null;
     }
 
+    case 'acceptJobOffer':
+      return validateStringArg(args, 1, 'job');
+
+    case 'acceptMarketRaise':
+      return null;
+
     case 'setJob': {
       const wage = args[2];
       if (wage !== undefined && (typeof wage !== 'number' || !Number.isFinite(wage) || wage < 0 || wage > 100)) {

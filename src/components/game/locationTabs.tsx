@@ -89,9 +89,9 @@ export interface LocationTabContext {
   makeNLChainChoice: GameStore['makeNLChainChoice'];
   takeBounty: GameStore['takeBounty'];
   buyGuildPass: GameStore['buyGuildPass'];
-  setJob: GameStore['setJob'];
+  acceptJobOffer: GameStore['acceptJobOffer'];
+  acceptMarketRaise: GameStore['acceptMarketRaise'];
   requestRaise: GameStore['requestRaise'];
-  negotiateRaise: GameStore['negotiateRaise'];
   equipItem: GameStore['equipItem'];
   unequipItem: GameStore['unequipItem'];
   clearDungeonFloor: GameStore['clearDungeonFloor'];
@@ -134,7 +134,7 @@ export function getWorkInfo(locationId: LocationId, ctx: LocationTabContext): Wo
 // ── Location tab factories ─────────────────────────────────────────
 
 function guildHallTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, players, priceModifier, week, setJob, negotiateRaise, spendTime,
+  const { player, players, priceModifier, week, acceptJobOffer, acceptMarketRaise,
     takeQuest, completeQuest, abandonQuest, takeChainQuest, takeNonLinearChain, makeNLChainChoice, takeBounty, buyGuildPass, requestRaise } = ctx;
   const currentJobData = player.currentJob ? getJob(player.currentJob) : null;
   const availableQuests = getWeeklyQuests(player.guildRank, week);
@@ -153,16 +153,18 @@ function guildHallTabs(ctx: LocationTabContext): LocationTab[] {
           allPlayers={players}
           priceModifier={priceModifier}
           week={week}
-          onHireJob={(jobId, wage) => {
-            setJob(player.id, jobId, wage);
-            const job = getJob(jobId);
-            toast.success(`You are now employed as ${job?.name}!`);
+          onHireJob={(jobId) => {
+            const result = acceptJobOffer(player.id, jobId);
+            if (!result) return;
+            if (result.success) toast.success(result.message);
+            else toast.error(result.message);
           }}
-          onNegotiateRaise={(newWage) => {
-            negotiateRaise(player.id, newWage);
-            toast.success(`Salary increased to ${newWage}g/hour!`);
+          onAcceptMarketRaise={() => {
+            const result = acceptMarketRaise(player.id);
+            if (!result) return;
+            if (result.success) toast.success(result.message);
+            else toast.error(result.message);
           }}
-          onSpendTime={(hours) => spendTime(player.id, hours)}
         />
       ),
     },

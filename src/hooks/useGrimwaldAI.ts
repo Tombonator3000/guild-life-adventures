@@ -64,7 +64,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     spendTime: state.spendTime,
     studyDegree: state.studyDegree,
     completeDegree: state.completeDegree,
-    setJob: state.setJob,
+    acceptJobOffer: state.acceptJobOffer,
     payHousingRent: state.payHousingRent,
     transferBankFunds: state.transferBankFunds,
     buyAppliance: state.buyAppliance,

@@ -147,9 +147,9 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'moveHousingAtLandlord',
   'requestRentExtensionAtLandlord',
 
-  'setJob',
   'requestRaise',
-  'negotiateRaise',
+  'acceptJobOffer',
+  'acceptMarketRaise',
 
   // Semantic employment/education actions. Host resolves wage, time,
   // price, prerequisites, progress and graduation eligibility.
