@@ -17,7 +17,7 @@ import type { ActionContext } from './actionContext';
 
 function generateFoodActions(ctx: ActionContext): AIAction[] {
   const actions: AIAction[] = [];
-  const { player, urgency, currentLocation, moveCost } = ctx;
+  const { player, urgency, currentLocation, moveCost, priceModifier } = ctx;
   const pm = ctx.priceModifier;
 
   // HARD AI: Proactive food — buy when already at a food location and not fully stocked
@@ -131,7 +131,7 @@ function generateRentActions(ctx: ActionContext): AIAction[] {
 
   // Proactive rent prepayment — pay on rent week even if not urgently behind
   if (isRentWeek && player.housing !== 'homeless' && player.weeksSinceRent >= 1 && urgency.rent < 0.5) {
-    const prepayRentCost = player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing];
+    const prepayRentCost = player.lockedRent > 0 ? player.lockedRent : Math.round(RENT_COSTS[player.housing] * priceModifier);
     if (player.gold >= prepayRentCost) {
       if (currentLocation === 'landlord') {
         actions.push({
@@ -155,7 +155,7 @@ function generateRentActions(ctx: ActionContext): AIAction[] {
 
   // Urgent rent — prevent eviction
   if (urgency.rent >= 0.5 && player.housing !== 'homeless' && isLandlordOpen) {
-    const rentCost = player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing];
+    const rentCost = player.lockedRent > 0 ? player.lockedRent : Math.round(RENT_COSTS[player.housing] * priceModifier);
     if (player.gold >= rentCost) {
       if (currentLocation === 'landlord') {
         actions.push({
