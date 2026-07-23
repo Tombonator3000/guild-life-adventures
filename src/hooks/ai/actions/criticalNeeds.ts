@@ -123,7 +123,7 @@ function generateFoodActions(ctx: ActionContext): AIAction[] {
 
 function generateRentActions(ctx: ActionContext): AIAction[] {
   const actions: AIAction[] = [];
-  const { player, urgency, currentLocation, moveCost } = ctx;
+  const { player, urgency, currentLocation, moveCost, priceModifier } = ctx;
 
   const isRentWeek = (ctx.week + 1) % 4 === 0;
   const hasUrgentRent = player.weeksSinceRent >= 3;
