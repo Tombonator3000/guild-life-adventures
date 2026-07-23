@@ -150,6 +150,7 @@ export interface GameStore extends GameState {
   useGraveyardService: (playerId: string, serviceId: 'pray' | 'mourn' | 'blessing') => ActionResult | void;
   gambleAtFence: (playerId: string, stake: number) => ActionResult | void;
   purchaseNewspaper: (playerId: string, vendor: 'general-store' | 'shadow-market') => ActionResult | void;
+  purchaseVendorItem: (playerId: string, vendor: 'general-store' | 'shadow-market', itemId: string) => ActionResult | void;
 }
 
 export interface ActionResult {

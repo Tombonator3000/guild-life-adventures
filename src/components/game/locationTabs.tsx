@@ -107,10 +107,7 @@ export interface LocationTabContext {
   sellStock: GameStore['sellStock'];
   takeLoan: GameStore['takeLoan'];
   repayLoan: GameStore['repayLoan'];
-  buyFreshFood: GameStore['buyFreshFood'];
-  buyFoodWithSpoilage: GameStore['buyFoodWithSpoilage'];
-  buyLotteryTicket: GameStore['buyLotteryTicket'];
-  buyTicket: GameStore['buyTicket'];
+  purchaseVendorItem: GameStore['purchaseVendorItem'];
   cureSickness: GameStore['cureSickness'];
   temperEquipment: GameStore['temperEquipment'];
   forgeRepairAppliance: GameStore['forgeRepairAppliance'];
@@ -455,8 +452,7 @@ function bankTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function generalStoreTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, priceModifier, modifyGold, spendTime, modifyFood, modifyHappiness,
-    onBuyNewspaper, buyFreshFood, buyFoodWithSpoilage, buyLotteryTicket } = ctx;
+  const { player, priceModifier } = ctx;
   return [{
     id: 'shop',
     label: 'Shop',
@@ -464,14 +460,6 @@ function generalStoreTabs(ctx: LocationTabContext): LocationTab[] {
       <GeneralStorePanel
         player={player}
         priceModifier={priceModifier}
-        modifyGold={modifyGold}
-        spendTime={spendTime}
-        modifyFood={modifyFood}
-        modifyHappiness={modifyHappiness}
-        onBuyNewspaper={onBuyNewspaper}
-        buyFreshFood={buyFreshFood}
-        buyFoodWithSpoilage={buyFoodWithSpoilage}
-        buyLotteryTicket={buyLotteryTicket}
       />
     ),
   }];
@@ -637,18 +625,12 @@ function landlordTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function shadowMarketTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, players, priceModifier, spendTime, modifyGold, modifyHappiness, modifyFood,
-    buyLotteryTicket, buyTicket, economyTrend, week, weeklyNewsEvents, onShowNewspaper } = ctx;
+  const { player, players, priceModifier, modifyGold,
+    economyTrend, week, weeklyNewsEvents, onShowNewspaper } = ctx;
   const shadowNewspaperPrice = Math.round(NEWSPAPER_COST * priceModifier * 0.5);
   const shadowMarketProps = {
     player,
     priceModifier,
-    onSpendTime: (hours: number) => spendTime(player.id, hours),
-    onModifyGold: (amount: number) => modifyGold(player.id, amount),
-    onModifyHappiness: (amount: number) => modifyHappiness(player.id, amount),
-    onModifyFood: (amount: number) => modifyFood(player.id, amount),
-    buyLotteryTicket,
-    buyTicket,
   };
 
   const hexesEnabled = getGameOption('enableHexesCurses');
