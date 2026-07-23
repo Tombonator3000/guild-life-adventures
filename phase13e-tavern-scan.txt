@@ -1,0 +1,97 @@
+# TAVERN ITEMS
+src/data/items.ts:558:export const TAVERN_ITEMS: Item[] = [
+src/data/items.ts:650:  ...TAVERN_ITEMS,
+
+# PLAYER CREATION
+src/types/game.types.ts:208:  // Always initialized to {} in createPlayer() and save migration (v5→v6).
+src/types/game.types.ts:217:  foodBoughtWithoutPreservation: boolean; // True if food was bought this turn without a Preservation Box (spoilage checked at turn end)
+src/types/game.types.ts:231:  // Always initialized to [] in createPlayer() and save migration (v4→v5). Use optional chaining in UI for old-save safety.
+src/types/game.types.ts:297:  // Always initialized to [] in createPlayer() and save migration (v3→v4). Safe to access without ?. in store helpers.
+src/types/game.types.ts:305:  raiseAttemptedThisTurn: boolean;            // True if player already requested a raise this turn (reset on turn switch)
+src/store/helpers/turnHelpers.ts:53:      p.id === playerId ? { ...p, foodBoughtWithoutPreservation: false } : p
+src/store/helpers/turnHelpers.ts:269:              return { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: homeLocation, dungeonAttemptsThisTurn: 0, hadRandomEventThisTurn: false, workedThisTurn: false, raiseAttemptedThisTurn: false };
+src/store/helpers/economy/itemHelpers.ts:118:              foodBoughtWithoutPreservation: true,
+src/store/helpers/economy/vendorHelpers.ts:124:                foodBoughtWithoutPreservation: true,
+src/store/helpers/playerHelpers.ts:35:export function createPlayerActions(set: SetFn, get: GetFn) {
+src/store/helpers/weekEndHelpers.ts:1074:        ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: firstPlayerHome, dungeonAttemptsThisTurn: 0, hadRandomEventThisTurn: false, workedThisTurn: false, raiseAttemptedThisTurn: false }
+src/store/helpers/workEducationHelpers.ts:224:              ? { ...p, currentWage: newWage, raiseAttemptedThisTurn: true }
+src/store/helpers/workEducationHelpers.ts:235:              ? { ...p, dependability: Math.max(0, p.dependability - 3), raiseAttemptedThisTurn: true }
+src/store/gameStore.ts:16:import { createPlayerActions } from './helpers/playerHelpers';
+src/store/gameStore.ts:75:const createPlayer = (
+src/store/gameStore.ts:120:  foodBoughtWithoutPreservation: false,
+src/store/gameStore.ts:191:  raiseAttemptedThisTurn: false,
+src/store/gameStore.ts:223:  const playerActions = createPlayerActions(set, get);
+src/store/gameStore.ts:286:        createPlayer(
+src/store/gameStore.ts:302:          players.push(createPlayer(
+src/store/gameStore.ts:313:        players.push(createPlayer('ai-grimwald', 'Grimwald', AI_COLOR.value, true, aiDifficulty, 'ai-grimwald'));
+src/test/freshFood.test.ts:458:        p.id === playerId ? { ...p, foodBoughtWithoutPreservation: true, freshFood: 3 } : p
+src/test/freshFood.test.ts:486:        p.id === playerId ? { ...p, foodBoughtWithoutPreservation: true } : p
+src/test/freshFood.test.ts:503:        p.id === playerId ? { ...p, foodBoughtWithoutPreservation: true } : p
+src/data/saveLoad.ts:206:/** Normalize a Player record — backfills every field createPlayer() sets. */
+
+# TURN RESET
+src/store/helpers/turnHelpers.ts:269:              return { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: homeLocation, dungeonAttemptsThisTurn: 0, hadRandomEventThisTurn: false, workedThisTurn: false, raiseAttemptedThisTurn: false };
+src/store/helpers/playerHelpers.ts:106:                hadRandomEventThisTurn: true,
+src/store/helpers/playerHelpers.ts:134:                hadRandomEventThisTurn: true,
+src/store/helpers/playerHelpers.ts:271:                dungeonAttemptsThisTurn: (p.dungeonAttemptsThisTurn || 0) + 1,
+src/store/helpers/weekEndHelpers.ts:275:  p.dungeonAttemptsThisTurn = 0;
+src/store/helpers/weekEndHelpers.ts:279:  p.hadRandomEventThisTurn = false;
+src/store/helpers/weekEndHelpers.ts:280:  p.raiseAttemptedThisTurn = false;
+src/store/helpers/weekEndHelpers.ts:1074:        ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: firstPlayerHome, dungeonAttemptsThisTurn: 0, hadRandomEventThisTurn: false, workedThisTurn: false, raiseAttemptedThisTurn: false }
+src/store/helpers/workEducationHelpers.ts:224:              ? { ...p, currentWage: newWage, raiseAttemptedThisTurn: true }
+src/store/helpers/workEducationHelpers.ts:235:              ? { ...p, dependability: Math.max(0, p.dependability - 3), raiseAttemptedThisTurn: true }
+src/store/gameStore.ts:155:  dungeonAttemptsThisTurn: 0,
+src/store/gameStore.ts:190:  hadRandomEventThisTurn: false,
+src/store/gameStore.ts:191:  raiseAttemptedThisTurn: false,
+
+# SAVE MIGRATION
+src/data/saveLoad.ts:64:    // Version migration
+src/data/saveLoad.ts:111:          if (p.pawnedAppliances === undefined) p.pawnedAppliances = [];
+src/data/saveLoad.ts:121:          if (p.prepaidDegrees === undefined) p.prepaidDegrees = {};
+src/data/saveLoad.ts:148:    // were added without migrations (would crash old saves on UI/store reads).
+src/data/saveLoad.ts:163:    // its own migration would otherwise crash reads on old saves. Old fixtures
+src/data/saveLoad.ts:224:  setDefault(p, 'pawnedAppliances', []);
+src/data/saveLoad.ts:225:  setDefault(p, 'prepaidDegrees', {});
+src/store/helpers/economy/applianceHelpers.ts:116:            pawnedAppliances: [...(p.pawnedAppliances ?? []), pawnRecord],
+src/store/helpers/economy/applianceHelpers.ts:129:      const pawned = (player.pawnedAppliances ?? []).find(pa => pa.applianceId === applianceId);
+src/store/helpers/economy/applianceHelpers.ts:159:            pawnedAppliances: (p.pawnedAppliances ?? []).filter(pa => pa.applianceId !== applianceId),
+src/store/helpers/economy/applianceServiceHelpers.ts:156:              pawnedAppliances: [...(candidate.pawnedAppliances ?? []), pawnRecord],
+src/store/helpers/economy/applianceServiceHelpers.ts:171:        const pawned = (player.pawnedAppliances ?? []).find(record => record.applianceId === applianceId);
+src/store/helpers/economy/applianceServiceHelpers.ts:192:            pawnedAppliances: (candidate.pawnedAppliances ?? [])
+src/store/helpers/weekEndHelpers.ts:838:  if (!p.pawnedAppliances?.length) return;
+src/store/helpers/weekEndHelpers.ts:840:  const expired = p.pawnedAppliances.filter(pa => newWeek > pa.expiresWeek);
+src/store/helpers/weekEndHelpers.ts:843:  p.pawnedAppliances = p.pawnedAppliances.filter(pa => newWeek <= pa.expiresWeek);
+src/store/helpers/employmentEducationServiceHelpers.ts:139:      const prepaidLeft = (player.prepaidDegrees ?? {})[degreeId] ?? 0;
+src/store/helpers/employmentEducationServiceHelpers.ts:177:      if ((player.prepaidDegrees ?? {})[degreeId]) {
+src/store/helpers/employmentEducationServiceHelpers.ts:191:      if ((updated?.prepaidDegrees ?? {})[degreeId] !== sessionsLeft) {
+src/store/helpers/workEducationHelpers.ts:331:          const prepaidLeft = (p.prepaidDegrees ?? {})[degreeId] ?? 0;
+src/store/helpers/workEducationHelpers.ts:338:          const newPrepaid = { ...(p.prepaidDegrees ?? {}) };
+src/store/helpers/workEducationHelpers.ts:349:            prepaidDegrees: newPrepaid,
+src/store/helpers/workEducationHelpers.ts:363:          if ((p.prepaidDegrees ?? {})[degreeId]) return p;
+src/store/helpers/workEducationHelpers.ts:368:            prepaidDegrees: { ...(p.prepaidDegrees ?? {}), [degreeId]: sessions },
+src/store/gameStore.ts:134:  pawnedAppliances: [], // Appliances pawned at the Fence awaiting redemption
+src/store/gameStore.ts:135:  prepaidDegrees: {}, // Degrees with sessions pre-paid upfront (Jones-style full-course tuition)
+src/store/gameStore.ts:483:      const migratedPlayers = gs.players.map((p: Player) =>
+src/store/gameStore.ts:489:        players: migratedPlayers,
+
+# TAVERN CALLERS
+src/components/game/locationTabs.tsx:26:import { TavernPanel } from './TavernPanel';
+src/components/game/locationTabs.tsx:72:  modifyHappiness: GameStore['modifyHappiness'];
+src/components/game/locationTabs.tsx:73:  modifyHealth: GameStore['modifyHealth'];
+src/components/game/locationTabs.tsx:74:  modifyFood: GameStore['modifyFood'];
+src/components/game/locationTabs.tsx:109:  setEventMessage: GameStore['setEventMessage'];
+src/components/game/locationTabs.tsx:251:  const { player, priceModifier, modifyGold, spendTime, modifyFood, modifyHappiness, modifyHealth, setEventMessage } = ctx;
+src/components/game/locationTabs.tsx:256:      <TavernPanel
+src/components/game/locationTabs.tsx:261:        modifyFood={modifyFood}
+src/components/game/locationTabs.tsx:262:        modifyHappiness={modifyHappiness}
+src/components/game/locationTabs.tsx:263:        modifyHealth={modifyHealth}
+src/components/game/locationTabs.tsx:264:        setEventMessage={setEventMessage}
+src/components/game/locationTabs.tsx:732:  const { player, priceModifier, modifyGold, modifyHappiness, modifyRelaxation, modifyMaxHealth, spendTime } = ctx;
+src/components/game/locationTabs.tsx:743:          modifyHappiness(player.id, happinessGain);
+src/components/game/locationTabs.tsx:778:  const { player, spendTime, modifyGold, modifyHealth, modifyHappiness, clearDungeonFloor, applyRareDrop } = ctx;
+src/components/game/locationTabs.tsx:787:        modifyHealth={modifyHealth}
+src/components/game/locationTabs.tsx:788:        modifyHappiness={modifyHappiness}
+src/components/game/LocationPanel.tsx:102:    modifyHappiness: store.modifyHappiness,
+src/components/game/LocationPanel.tsx:103:    modifyHealth: store.modifyHealth,
+src/components/game/LocationPanel.tsx:104:    modifyFood: store.modifyFood,
+src/components/game/LocationPanel.tsx:137:    setEventMessage: store.setEventMessage,
