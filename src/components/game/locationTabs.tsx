@@ -94,7 +94,6 @@ export interface LocationTabContext {
   makeNLChainChoice: GameStore['makeNLChainChoice'];
   takeBounty: GameStore['takeBounty'];
   buyGuildPass: GameStore['buyGuildPass'];
-  sellItem: GameStore['sellItem'];
   setJob: GameStore['setJob'];
   requestRaise: GameStore['requestRaise'];
   negotiateRaise: GameStore['negotiateRaise'];
@@ -693,14 +692,11 @@ function shadowMarketTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function fenceTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, priceModifier, week, sellItem } = ctx;
+  const { player, priceModifier, week } = ctx;
   const fenceProps = {
     player,
     priceModifier,
     week,
-    onSellItem: (itemId: string, price: number) => {
-      sellItem(player.id, itemId, price);
-    },
   };
   const tabs: LocationTab[] = [
     { id: 'trade', label: 'Used Goods', content: <PawnShopPanel {...fenceProps} section="trade" /> },

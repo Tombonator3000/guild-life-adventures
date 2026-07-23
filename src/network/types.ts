@@ -163,8 +163,8 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'withdrawFromBank',
   'invest',
   'withdrawInvestment',
-  'buyItem',
-  'sellItem',
+  // Inventory sale intent only. Host resolves ownership, location and price.
+  'sellInventoryItem',
   // Equipment intent only. Host resolves catalogue, price, durability and service values.
   'purchaseEquipmentItem',
   'useEquipmentService',

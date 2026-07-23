@@ -127,7 +127,9 @@ describe('Action Categories', () => {
     expect(ALLOWED_GUEST_ACTIONS.has('endTurn')).toBe(true);
     // Economy
     expect(ALLOWED_GUEST_ACTIONS.has('depositToBank')).toBe(true);
-    expect(ALLOWED_GUEST_ACTIONS.has('buyItem')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('sellInventoryItem')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('buyItem')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('sellItem')).toBe(false);
     // Host-authoritative work and education intent actions
     expect(ALLOWED_GUEST_ACTIONS.has('performWorkShift')).toBe(true);
     expect(ALLOWED_GUEST_ACTIONS.has('attendDegreeSession')).toBe(true);
@@ -561,7 +563,7 @@ describe('Cross-Player Validation', () => {
       'prepayRent', 'moveToHousing', 'setJob', 'requestRaise',
       'negotiateRaise', 'performWorkShift', 'attendDegreeSession',
       'prepayDegree', 'graduateDegree', 'depositToBank', 'withdrawFromBank',
-      'invest', 'withdrawInvestment', 'buyItem', 'sellItem',
+      'invest', 'withdrawInvestment', 'sellInventoryItem',
       'purchaseEquipmentItem', 'useEquipmentService', 'purchaseAppliance', 'useApplianceService',
       'equipItem', 'unequipItem', 'buyStock', 'sellStock', 'takeLoan',
       'repayLoan', 'purchaseVendorItem',
