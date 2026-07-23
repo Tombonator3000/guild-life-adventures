@@ -1,1 +1,1 @@
-Apply the phase 6B host-authoritative equipment migration.
+Run the phase 6B equipment migration now that the workflow exists.
