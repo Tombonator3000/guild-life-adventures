@@ -57,6 +57,8 @@ export interface GameStore extends GameState {
   withdrawFromBank: (playerId: string, amount: number) => void;
   invest: (playerId: string, amount: number) => void;
   withdrawInvestment: (playerId: string, amount: number) => void;
+  transferBankFunds: (playerId: string, direction: 'deposit' | 'withdraw', amount: number) => ActionResult | void;
+  manageInvestment: (playerId: string, service: 'invest' | 'withdraw', amount: number) => ActionResult | void;
   buyItem: (playerId: string, itemId: string, cost: number) => void;
   buyDurable: (playerId: string, itemId: string, cost: number) => void;
   sellItem: (playerId: string, itemId: string, price: number) => void;
@@ -114,6 +116,8 @@ export interface GameStore extends GameState {
   sellStock: (playerId: string, stockId: string, shares: number) => void;
   takeLoan: (playerId: string, amount: number) => void;
   repayLoan: (playerId: string, amount: number) => void;
+  tradeStock: (playerId: string, side: 'buy' | 'sell', stockId: string, shares: number) => ActionResult | void;
+  manageLoan: (playerId: string, service: 'borrow' | 'repay', amount: number | 'all') => ActionResult | void;
   buyFreshFood: (playerId: string, units: number, cost: number) => boolean;
   buyFoodWithSpoilage: (playerId: string, foodValue: number, cost: number) => boolean;
   buyLotteryTicket: (playerId: string, cost: number) => void;

@@ -64,6 +64,8 @@ function generateLoanActions(ctx: ActionContext): AIAction[] {
     }
 
     if (shouldBorrow) {
+      const loanProducts = [100, 250, 500, 1000];
+      loanAmount = loanProducts.find(product => product >= loanAmount) ?? 1000;
       if (currentLocation === 'bank') {
         actions.push({ type: 'take-loan', priority: 72, description: `Take loan of ${loanAmount}g from bank`, details: { amount: loanAmount } });
       } else if (player.timeRemaining > moveCost('bank') + 2) {
@@ -156,7 +158,7 @@ function generateStockActions(ctx: ActionContext): AIAction[] {
         type: 'buy-stock',
         priority: 40,
         description: `Invest in ${bestStock.id} (${bestStock.shares} shares @ ${bestStock.price}g)`,
-        details: { stockId: bestStock.id, shares: bestStock.shares, price: bestStock.price },
+        details: { stockId: bestStock.id, shares: bestStock.shares },
       });
     }
   }

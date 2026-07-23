@@ -39,46 +39,44 @@ export function handleDowngradeHousing(player: Player, action: AIAction, store: 
 export function handleDepositBank(player: Player, action: AIAction, store: StoreActions): boolean {
   const amount = (action.details?.amount as number) || 100;
   if (player.gold < amount) return false;
-  store.depositToBank(player.id, amount);
-  return true;
+  const result = store.transferBankFunds(player.id, 'deposit', amount);
+  return result?.success ?? false;
 }
 
 export function handleWithdrawBank(player: Player, action: AIAction, store: StoreActions): boolean {
   const amount = (action.details?.amount as number) || 100;
   if (player.savings < amount) return false;
-  store.withdrawFromBank(player.id, Math.min(amount, player.savings));
-  return true;
+  const result = store.transferBankFunds(player.id, 'withdraw', Math.min(amount, player.savings));
+  return result?.success ?? false;
 }
 
 export function handleTakeLoan(player: Player, action: AIAction, store: StoreActions): boolean {
   const amount = (action.details?.amount as number) || 200;
   if (player.loanAmount > 0) return false;
   if ((player.totalShiftsWorked || 0) < LOAN_MIN_SHIFTS_REQUIRED) return false; // Job history
-  store.takeLoan(player.id, amount);
-  return true;
+  const result = store.manageLoan(player.id, 'borrow', amount);
+  return result?.success ?? false;
 }
 
 export function handleRepayLoan(player: Player, action: AIAction, store: StoreActions): boolean {
   const amount = (action.details?.amount as number) || player.loanAmount;
   if (player.loanAmount <= 0 || player.gold < amount) return false;
-  store.repayLoan(player.id, amount);
-  return true;
+  const result = store.manageLoan(player.id, 'repay', amount);
+  return result?.success ?? false;
 }
 
 export function handleBuyStock(player: Player, action: AIAction, store: StoreActions): boolean {
   const stockId = action.details?.stockId as string;
   const shares = (action.details?.shares as number) || 5;
-  const price = (action.details?.price as number) || 50;
-  const cost = shares * price;
-  if (!stockId || player.gold < cost) return false;
-  store.buyStock(player.id, stockId, shares);
-  return true;
+  if (!stockId) return false;
+  const result = store.tradeStock(player.id, 'buy', stockId, shares);
+  return result?.success ?? false;
 }
 
 export function handleSellStock(player: Player, action: AIAction, store: StoreActions): boolean {
   const stockId = action.details?.stockId as string;
   const shares = (action.details?.shares as number) || 5;
   if (!stockId || !player.stocks[stockId] || player.stocks[stockId] < shares) return false;
-  store.sellStock(player.id, stockId, shares);
-  return true;
+  const result = store.tradeStock(player.id, 'sell', stockId, shares);
+  return result?.success ?? false;
 }

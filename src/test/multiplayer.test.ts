@@ -126,7 +126,10 @@ describe('Action Categories', () => {
     expect(ALLOWED_GUEST_ACTIONS.has('movePlayer')).toBe(true);
     expect(ALLOWED_GUEST_ACTIONS.has('endTurn')).toBe(true);
     // Economy
-    expect(ALLOWED_GUEST_ACTIONS.has('depositToBank')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('transferBankFunds')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('manageInvestment')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('tradeStock')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('manageLoan')).toBe(true);
     expect(ALLOWED_GUEST_ACTIONS.has('sellInventoryItem')).toBe(true);
     expect(ALLOWED_GUEST_ACTIONS.has('buyItem')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('sellItem')).toBe(false);
@@ -147,6 +150,9 @@ describe('Action Categories', () => {
     expect(ALLOWED_GUEST_ACTIONS.has('prepayRent')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('moveToHousing')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('begForMoreTime')).toBe(false);
+    for (const legacy of ['depositToBank', 'withdrawFromBank', 'invest', 'withdrawInvestment', 'buyStock', 'sellStock', 'takeLoan', 'repayLoan']) {
+      expect(ALLOWED_GUEST_ACTIONS.has(legacy)).toBe(false);
+    }
     // Host-authoritative work and education intent actions
     expect(ALLOWED_GUEST_ACTIONS.has('performWorkShift')).toBe(true);
     expect(ALLOWED_GUEST_ACTIONS.has('attendDegreeSession')).toBe(true);
@@ -579,11 +585,11 @@ describe('Cross-Player Validation', () => {
       'modifyRelaxation', 'cureSickness', 'payHousingRent',
       'moveHousingAtLandlord', 'requestRentExtensionAtLandlord', 'setJob', 'requestRaise',
       'negotiateRaise', 'performWorkShift', 'attendDegreeSession',
-      'prepayDegree', 'graduateDegree', 'depositToBank', 'withdrawFromBank',
-      'invest', 'withdrawInvestment', 'sellInventoryItem',
+      'prepayDegree', 'graduateDegree', 'transferBankFunds', 'manageInvestment',
+      'sellInventoryItem',
       'purchaseEquipmentItem', 'useEquipmentService', 'purchaseAppliance', 'useApplianceService',
-      'equipItem', 'unequipItem', 'buyStock', 'sellStock', 'takeLoan',
-      'repayLoan', 'purchaseVendorItem', 'purchaseHexScroll', 'useHexDefense',
+      'equipItem', 'unequipItem', 'tradeStock', 'manageLoan',
+      'purchaseVendorItem', 'purchaseHexScroll', 'useHexDefense',
       'useGraveyardHexService', 'castLocationHex', 'castPersonalCurse',
       'buyGuildPass', 'takeQuest', 'completeQuest', 'abandonQuest',
     ];

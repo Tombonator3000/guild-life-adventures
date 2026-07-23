@@ -92,8 +92,7 @@ export interface StoreActions {
   completeDegree: (playerId: string, degreeId: string) => void;
   setJob: (playerId: string, jobId: string, wage: number) => void;
   payHousingRent: (playerId: string, weeks: 1 | 4 | 8) => { success: boolean; message: string } | void;
-  depositToBank: (playerId: string, amount: number) => void;
-  withdrawFromBank: (playerId: string, amount: number) => void;
+  transferBankFunds: (playerId: string, direction: 'deposit' | 'withdraw', amount: number) => { success: boolean; message: string } | void;
   buyAppliance: (playerId: string, applianceId: string, cost: number, source: string) => void;
   moveHousingAtLandlord: (playerId: string, tier: import('@/types/game.types').HousingTier) => { success: boolean; message: string } | void;
   buyDurable: (playerId: string, itemId: string, cost: number) => void;
@@ -107,10 +106,8 @@ export interface StoreActions {
   clearDungeonFloor: (playerId: string, floorId: number) => void;
   applyRareDrop: (playerId: string, dropId: string) => void;
   cureSickness: (playerId: string) => void;
-  takeLoan: (playerId: string, amount: number) => void;
-  repayLoan: (playerId: string, amount: number) => void;
-  buyStock: (playerId: string, stockId: string, shares: number) => void;
-  sellStock: (playerId: string, stockId: string, shares: number) => void;
+  manageLoan: (playerId: string, service: 'borrow' | 'repay', amount: number | 'all') => { success: boolean; message: string } | void;
+  tradeStock: (playerId: string, side: 'buy' | 'sell', stockId: string, shares: number) => { success: boolean; message: string } | void;
   buyFreshFood: (playerId: string, units: number, cost: number) => boolean;
   buyFoodWithSpoilage: (playerId: string, foodValue: number, cost: number) => boolean;
   buyTicket: (playerId: string, ticketType: string, cost: number) => void;

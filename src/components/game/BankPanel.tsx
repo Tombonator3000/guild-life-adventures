@@ -10,17 +10,11 @@ import {
 } from './JonesStylePanel';
 import { toast } from 'sonner';
 import { useTranslation } from '@/i18n';
+import { useGameStore } from '@/store/gameStore';
 
 interface BankPanelProps {
   player: Player;
   priceModifier?: number;
-  spendTime?: (playerId: string, hours: number) => void;
-  depositToBank: (playerId: string, amount: number) => void;
-  withdrawFromBank: (playerId: string, amount: number) => void;
-  buyStock: (playerId: string, stockId: string, shares: number) => void;
-  sellStock: (playerId: string, stockId: string, shares: number) => void;
-  takeLoan: (playerId: string, amount: number) => void;
-  repayLoan: (playerId: string, amount: number) => void;
   stockPrices: Record<string, number>;
   stockPriceHistory?: Record<string, number[]>;
 }
@@ -56,17 +50,21 @@ type BankView = 'main' | 'broker' | 'loans';
 export function BankPanel({
   player,
   priceModifier = 1.0,
-  depositToBank,
-  withdrawFromBank,
-  buyStock,
-  sellStock,
-  takeLoan,
-  repayLoan,
   stockPrices,
   stockPriceHistory,
 }: BankPanelProps) {
   const { t } = useTranslation();
+  const transferFunds = useGameStore(state => state.transferBankFunds);
+  const investmentAction = useGameStore(state => state.manageInvestment);
+  const stockTradeAction = useGameStore(state => state.tradeStock);
+  const loanAction = useGameStore(state => state.manageLoan);
   const [view, setView] = useState<BankView>('main');
+
+  const report = (result: { success: boolean; message: string } | void) => {
+    if (!result) return;
+    if (result.success) toast.success(result.message);
+    else toast.error(result.message);
+  };
 
   const stockValue = calculateStockValue(player.stocks, stockPrices);
   const weeklyDividends = calculateDividends(player.stocks, stockPrices);
@@ -123,8 +121,7 @@ export function BankPanel({
                 <div className="flex gap-1">
                   <button
                     onClick={() => {
-                      buyStock(player.id, stock.id, 1);
-                      toast.success(t('panelBank.boughtShare', { name: t(`stocks.${stock.id}.name`) || stock.name }));
+                      report(stockTradeAction(player.id, 'buy', stock.id, 1));
                     }}
                     disabled={!canBuy}
                     className="text-xs px-2 py-0.5 bg-[#2a5c3a] text-white rounded disabled:opacity-40"
@@ -133,8 +130,7 @@ export function BankPanel({
                   </button>
                   <button
                     onClick={() => {
-                      sellStock(player.id, stock.id, 1);
-                      toast.success(t('panelBank.soldShare', { name: t(`stocks.${stock.id}.name`) || stock.name }));
+                      report(stockTradeAction(player.id, 'sell', stock.id, 1));
                     }}
                     disabled={!canSell}
                     className="text-xs px-2 py-0.5 bg-[#8b4a4a] text-white rounded disabled:opacity-40"
@@ -202,8 +198,7 @@ export function BankPanel({
                   darkText
                   largeText
                   onClick={() => {
-                    repayLoan(player.id, actual);
-                    toast.success(t('panelBank.loanRepaid', { amount: actual }));
+                    report(loanAction(player.id, 'repay', actual));
                   }}
                 />
               );
@@ -214,8 +209,7 @@ export function BankPanel({
               darkText
               largeText
               onClick={() => {
-                repayLoan(player.id, player.loanAmount);
-                toast.success(t('panelBank.loanRepaid', { amount: player.loanAmount }));
+                report(loanAction(player.id, 'repay', 'all'));
               }}
             />
           </>
@@ -233,8 +227,7 @@ export function BankPanel({
                 darkText
                 largeText
                 onClick={() => {
-                  takeLoan(player.id, amount);
-                  toast.success(t('panelBank.loanTaken', { amount }));
+                  report(loanAction(player.id, 'borrow', amount));
                 }}
               />
             ))}
@@ -275,8 +268,7 @@ export function BankPanel({
         darkText
         largeText
         onClick={() => {
-          depositToBank(player.id, 50);
-          toast.success(t('panelBank.deposited', { amount: 50 }));
+          report(transferFunds(player.id, 'deposit', 50));
         }}
       />
       <JonesMenuItem
@@ -285,11 +277,26 @@ export function BankPanel({
         darkText
         largeText
         onClick={() => {
-          withdrawFromBank(player.id, 50);
-          toast.success(t('panelBank.withdrawn', { amount: 50 }));
+          report(transferFunds(player.id, 'withdraw', 50));
         }}
       />
-      <JonesSectionHeader title={t('panelBank.loans')} />
+      <JonesSectionHeader title="Investments" />
+      <JonesMenuItem
+        label="Invest 50 gold"
+        price={50}
+        disabled={player.gold < 50}
+        darkText
+        largeText
+        onClick={() => report(investmentAction(player.id, 'invest', 50))}
+      />
+      <JonesMenuItem
+        label="Withdraw 50 invested gold (10% fee)"
+        disabled={player.investments < 50}
+        darkText
+        largeText
+        onClick={() => report(investmentAction(player.id, 'withdraw', 50))}
+      />
+            <JonesSectionHeader title={t('panelBank.loans')} />
       <JonesMenuItem
         label={t('panelBank.theBroker')}
         darkText

@@ -80,8 +80,6 @@ export interface LocationTabContext {
   attendDegreeSession: GameStore['attendDegreeSession'];
   prepayDegree: GameStore['prepayDegree'];
   graduateDegree: GameStore['graduateDegree'];
-  depositToBank: GameStore['depositToBank'];
-  withdrawFromBank: GameStore['withdrawFromBank'];
   takeQuest: GameStore['takeQuest'];
   completeQuest: GameStore['completeQuest'];
   abandonQuest: GameStore['abandonQuest'];
@@ -98,10 +96,6 @@ export interface LocationTabContext {
   unequipItem: GameStore['unequipItem'];
   clearDungeonFloor: GameStore['clearDungeonFloor'];
   applyRareDrop: GameStore['applyRareDrop'];
-  buyStock: GameStore['buyStock'];
-  sellStock: GameStore['sellStock'];
-  takeLoan: GameStore['takeLoan'];
-  repayLoan: GameStore['repayLoan'];
   purchaseVendorItem: GameStore['purchaseVendorItem'];
   cureSickness: GameStore['cureSickness'];
   equipmentServiceAction: GameStore['useEquipmentService'];
@@ -418,7 +412,7 @@ function academyTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function bankTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, priceModifier, depositToBank, withdrawFromBank, buyStock, sellStock, takeLoan, repayLoan, stockPrices, stockPriceHistory } = ctx;
+  const { player, priceModifier, stockPrices, stockPriceHistory } = ctx;
   return [{
     id: 'banking',
     label: 'Services',
@@ -426,12 +420,6 @@ function bankTabs(ctx: LocationTabContext): LocationTab[] {
       <BankPanel
         player={player}
         priceModifier={priceModifier}
-        depositToBank={depositToBank}
-        withdrawFromBank={withdrawFromBank}
-        buyStock={buyStock}
-        sellStock={sellStock}
-        takeLoan={takeLoan}
-        repayLoan={repayLoan}
         stockPrices={stockPrices}
         stockPriceHistory={stockPriceHistory}
       />

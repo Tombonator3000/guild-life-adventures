@@ -7,11 +7,11 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 | Nr. | Punkt | Status | Merknad |
 |---:|---|---|---|
 | 1 | Beskytte online spill mot sabotasje/misbruk | Ferdig hovedsakelig | Sabotasje, beskyttelse og tip-off er host-autoritative. |
-| 2 | Host-autoritativ multiplayer | Delvis ferdig | Aktør-ID, tur, rate limit og argumentgrenser valideres. Jobb, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig og hex-tjenester bruker semantiske gjestehandlinger. Enkelte bank-/økonomihandlinger står igjen. |
+| 2 | Host-autoritativ multiplayer | Delvis ferdig | Aktør-ID, tur, rate limit og argumentgrenser valideres. Jobb, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig, hex-tjenester og finans bruker semantiske gjestehandlinger. De største klientprisede spillhandlingene er nå migrert. |
 | 3 | Full save/load-gjenoppretting | Ferdig | Brett-hexer og ukentlige nyheter gjenopprettes. |
 | 4 | Save-migrering v10 | Ferdig | Normalisering og migreringstester er lagt til. |
 | 5 | Sikre reputation unlocks | Ferdig | Kjøp valideres atomisk på hosten. |
-| 6 | Atomiske handlinger | Delvis ferdig | Healer, gravplass, gambling, avis, sabotasje, beskyttelse, jobb, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig og hex-/ritualtjenester er host-resolverte. Deler av bank/investering står igjen. |
+| 6 | Atomiske handlinger | Delvis ferdig | Healer, gravplass, gambling, avis, sabotasje, beskyttelse, jobb, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig, hex-/ritualtjenester og finans er host-resolverte. |
 | 7 | Hook-avhengigheter | Ferdig for kjente funn | AI-start, auto-end-turn, tastatur og zone-editor er rettet. |
 | 8 | Playwright E2E | Delvis ferdig | Tittel- og setup-smoketester finnes. Full spillflyt, save/load og online avvisninger mangler. |
 | 9 | Zustand-selectors | Delvis ferdig | Root, GameBoard og Grimwald AI bruker selectors/useShallow. Flere paneler er begrenset, men `LocationPanel` leser fortsatt hele store-objektet. |
@@ -23,12 +23,11 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 
 ## Gjenstående prioritert rekkefølge
 
-1. **Gjør bank/investering og øvrige rå handlinger strengere.** Klientvalgte beløp må få tydelige grenser, eierskapskontroll og semantiske handlinger der beløpet ikke skal være fritt.
-2. **Utvid E2E-testene til faktisk spilling.** Opprett spill, start første tur, utfør handling, avslutt tur, save/load og verifiser at ingen runtime-feil oppstår.
-3. **Test online sikkerhetsavvisninger på protokollnivå.** Feil spiller-ID, feil tur, feil vendor/service, ugyldig vare og manipulerte verdier skal avvises.
-4. **Begrens resterende store-abonnementer.** Start med `LocationPanel`, som fortsatt leser hele Zustand-storen.
-5. **Del opp GameBoard videre.** Flytt avledet tilstand og overlay-/layoutlogikk til mindre hooks/komponenter uten å endre funksjon.
-6. **Rydd døde kompatibilitetslag.** Fjern gamle callback-props og numeriske legacy-funksjoner først når AI og alle lokale kallere er migrert.
+1. **Utvid E2E-testene til faktisk spilling.** Opprett spill, start første tur, utfør handling, avslutt tur, save/load og verifiser at ingen runtime-feil oppstår.
+2. **Test online sikkerhetsavvisninger på protokollnivå.** Feil spiller-ID, feil tur, feil vendor/service, ugyldig vare og manipulerte verdier skal avvises.
+3. **Begrens resterende store-abonnementer.** Start med `LocationPanel`, som fortsatt leser hele Zustand-storen.
+4. **Del opp GameBoard videre.** Flytt avledet tilstand og overlay-/layoutlogikk til mindre hooks/komponenter uten å endre funksjon.
+5. **Rydd døde kompatibilitetslag.** Fjern gamle callback-props og numeriske legacy-funksjoner først når AI og alle lokale kallere er migrert.
 
 ## Fase 4 – 23. juli 2026
 
@@ -269,4 +268,48 @@ GitHub Actions-run `30003787680`:
 
 - Online-gjester og AI kan ikke lenger velge scrollpris, defense-pris, ritualpris, rensepris, refleksjonspris eller separat tidsbruk.
 - Hexcasting er fortsatt funksjonelt og bruker den eksisterende strengere host-valideringen.
-- PR #332 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
+- PR #332 ble squash-merget til `main` som commit `c0c23f013b82105f66cba6a3868ab966894a4ce7`.
+
+## Fase 10 – 23. juli 2026
+
+### Mål
+
+- Gjøre bankoverføringer, investeringer, aksjehandel og lån host-autoritative.
+- Skille frie, men strengt validerte brukerbeløp fra canonical priser og låneprodukter.
+
+### Utført
+
+- Opprettet arbeidsgren `agent/audit-phase10-finance` og draft-PR #333 fra fase 9-merge `c0c23f013b82105f66cba6a3868ab966894a4ce7`.
+- Maskinell skanning kartla Bank-UI, store-laget, AI-handlerne, nettverksallowlist, protokollregler og eksisterende økonomitester.
+- Lagt til `transferBankFunds(playerId, direction, amount)` for eksakte innskudd og uttak.
+- Lagt til `manageInvestment(playerId, service, amount)` med canonical 10 % early-withdrawal penalty.
+- Lagt til `tradeStock(playerId, side, stockId, shares)` med live host-pris, gyldig aksje-ID, heltallsantall, eierskap og canonical Crown Bond-salgsgebyr.
+- Lagt til `manageLoan(playerId, service, amount)` med bankens fire canonical låneprodukter 100/250/500/1000 gull, jobbhistorikk, ett lån av gangen og eksakt tilbakebetaling.
+- Alle finanshandlingene krever fysisk Bank-lokasjon og avviser desimaler, negative tall, overdrafts, ugyldige produkter og beløp over sikker grense i stedet for å clampes stille.
+- Oppdatert `BankPanel` fra seks action-props til fire avgrensede Zustand-selectors og resultatbaserte toast-meldinger.
+- Gjorde den eksisterende investment-mekanikken synlig i Bank-panelet med invester/uttak-knapper; avkastnings- og straffereglene ble ikke endret.
+- Oppdatert `locationTabs` og `LocationPanel` ved å fjerne åtte legacy finansprops.
+- Oppdatert AI til de semantiske handlingene. AI sender ikke lenger aksjepris, og forecast-lån rundes opp til nærmeste gyldige låneprodukt.
+- Fjernet `depositToBank`, `withdrawFromBank`, `invest`, `withdrawInvestment`, `buyStock`, `sellStock`, `takeLoan` og `repayLoan` fra gjestenes allowlist.
+- Lagt til ni målrettede finansregresjonstester og oppdatert multiplayer-/actor-validation-testene.
+- Første lint-runde fant én `prefer-const`-feil i den nye testfilen. Den ble rettet uten endring av spillkode.
+- Fjernet alle midlertidige workflows, triggere, skanneresultater, patchskript og valideringslogger før merge.
+
+### Tester
+
+GitHub Actions-run `30005423775`:
+
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Målrettede finanstester: bestått, 9 av 9.
+- Full Vitest-pakke: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright-runner og Chromium-installasjon: bestått.
+- Playwright-smoketester i Chromium: bestått.
+
+### Resultat
+
+- Online-gjester og AI kan ikke lenger diktere saldooverføringer uten dekning, aksjepris, aksjegebyr, låneprodukt eller tilbakebetalingsbeløp utover faktisk gjeld/kontanter.
+- De store klientprisede økonomihandlingene fra den opprinnelige revisjonen er nå migrert.
+- PR #333 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
