@@ -1,1 +1,1 @@
-Run the phase 6 appliance migration now that the workflow exists.
+Run the phase 6 appliance migration with the multiplayer test fallback.
