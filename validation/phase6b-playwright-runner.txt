@@ -1,0 +1,8 @@
+bun add v1.3.14 (0d9b296a)
+Resolving dependencies
+Resolved, downloaded and extracted [13]
+
+installed @playwright/test@1.61.1 with binaries:
+ - playwright
+
+3 packages installed [1216.00ms]
