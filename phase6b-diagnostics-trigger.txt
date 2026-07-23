@@ -1,1 +1,1 @@
-Run phase 6B unit-test diagnostics.
+Run phase 6B unit-test diagnostics now that the workflow exists.
