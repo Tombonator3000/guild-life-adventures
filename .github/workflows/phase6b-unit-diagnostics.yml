@@ -1,0 +1,49 @@
+name: Phase 6B unit diagnostics
+
+on:
+  push:
+    branches:
+      - agent/audit-phase6-equipment
+    paths:
+      - phase6b-diagnostics-trigger.txt
+      - .github/workflows/phase6b-unit-diagnostics.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase6-equipment
+          fetch-depth: 1
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Run full tests and publish output
+        shell: bash
+        run: |
+          set +e
+          mkdir -p validation
+          bun install --frozen-lockfile > validation/phase6b-install.txt 2>&1
+          install_status=$?
+          if [ "$install_status" -eq 0 ]; then
+            bunx vitest run src/test/equipmentServices.test.ts > validation/phase6b-equipment-tests.txt 2>&1
+            targeted_status=$?
+            bunx vitest run > validation/phase6b-full-tests.txt 2>&1
+            full_status=$?
+          else
+            targeted_status=99
+            full_status=99
+          fi
+          printf 'install=%s\ntargeted=%s\nfull=%s\n' "$install_status" "$targeted_status" "$full_status" > validation/phase6b-result.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f validation/phase6b-*.txt
+          git commit -m "Record phase 6B unit-test diagnostics" || true
+          git push origin HEAD:agent/audit-phase6-equipment
+          exit "$full_status"
