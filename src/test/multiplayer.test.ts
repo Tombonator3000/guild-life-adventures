@@ -557,7 +557,7 @@ describe('Cross-Player Validation', () => {
       'negotiateRaise', 'performWorkShift', 'attendDegreeSession',
       'prepayDegree', 'graduateDegree', 'depositToBank', 'withdrawFromBank',
       'invest', 'withdrawInvestment', 'buyItem', 'sellItem', 'buyDurable',
-      'sellDurable', 'buyAppliance', 'repairAppliance', 'pawnAppliance', 'redeemAppliance',
+      'sellDurable', 'purchaseAppliance', 'useApplianceService',
       'equipItem', 'unequipItem', 'buyStock', 'sellStock', 'takeLoan',
       'repayLoan', 'purchaseVendorItem',
       'buyGuildPass', 'takeQuest', 'completeQuest', 'abandonQuest',
