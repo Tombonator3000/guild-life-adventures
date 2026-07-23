@@ -99,46 +99,43 @@ Valideringsrun `29996459512`: TypeScript, full Vitest, build, ESLint og Playwrig
 
 - Opprettet arbeidsgren `agent/audit-phase6-appliances` og draft-PR #328.
 - Lagt til `purchaseAppliance(playerId, vendor, applianceId)` for Enchanter, Shadow Market og Fence.
-- Lagt til `useApplianceService(playerId, service, applianceId)` for:
-  - reparasjon hos Enchanter,
-  - reparasjon hos Forge,
-  - pant hos Fence,
-  - innløsning hos Fence.
-- Hosten slår nå opp og validerer:
-  - riktig vendor og lokasjon,
-  - canonical enchanter-/market-/pawn-pris,
-  - appliance source og breakage-kategori,
-  - duplicate ownership, også når apparatet er ødelagt,
-  - Frost Chest-prerequisite,
-  - førstegangskjøp og happiness,
-  - repair cost og service-tid,
-  - pawn value, pawn record og seks ukers innløsningsfrist,
-  - redeem cost og eierskap.
+- Lagt til `useApplianceService(playerId, service, applianceId)` for reparasjon hos Enchanter/Forge og pant/innløsning hos Fence.
+- Hosten validerer vendor, canonical pris, source, duplicate ownership, Frost Chest-prerequisite, first-purchase happiness, repair cost/tid, pawn value, pawn record, utløpsfrist og redeem cost.
 - Kjøp, reparasjon, pant og innløsning utføres atomisk med gull, tid, happiness og statistikk i samme state-transaksjon.
 - Fence-kjøp trekker nå den ene timen som UI-et allerede viste; tidligere ble tiden vist, men ikke trukket.
-- Oppdatert `EnchanterPanel`, `ShadowMarketPanel`, `PawnShopPanel`, `ForgePanel`, `LocationPanel` og `locationTabs`.
+- Oppdatert Enchanter-, Shadow Market-, Pawn Shop-, Forge- og Location-panelene.
 - Fjernet `buyAppliance`, `repairAppliance`, `pawnAppliance`, `redeemAppliance` og `forgeRepairAppliance` fra gjestenes allowlist.
-- Lagt til åtte apparat-regresjonstester.
-- Oppdatert begge multiplayer-testlistene til de nye semantiske apparathandlingene.
-- Rettet lokale variabelnavn til `applianceServiceAction` slik at store-handlingen ikke mistolkes som en React-hook av ESLint.
+- Lagt til åtte apparat-regresjonstester og oppdatert begge multiplayer-testlistene.
+- Rettet lokale variabelnavn slik at store-handlingen ikke mistolkes som en React-hook av ESLint.
 - Fjernet alle midlertidige workflows, triggere, patchskript og diagnostikkfiler før merge.
 
 ### Tester
 
-Endelig valideringsrun `29998119190`:
-
-- Dependency install: bestått.
-- TypeScript: bestått.
-- Full Vitest-pakke: bestått, 398 av 398 tester.
-- Produksjonsbuild: bestått.
-- ESLint: bestått.
-- Playwright-runner og Chromium-installasjon: bestått.
-- Playwright-smoketester i Chromium: bestått.
-
-Kontrollrundene avdekket først én utdatert cross-player-liste og deretter fire ESLint-feil fordi handlingsnavnet begynte med `use`. Begge ble rettet uten å endre spillreglene.
+Endelig valideringsrun `29998119190`: dependency install, TypeScript, 398 av 398 Vitest-tester, build, ESLint og Playwright Chromium bestått.
 
 ### Resultat
 
 - Online-gjester kan ikke lenger velge apparatpris, vendor source, reparasjonspris, reparasjonstid, pantverdi eller innløsningskostnad.
 - Ødelagte apparater kan ikke lenger erstattes som et nytt kjøp; spilleren må bruke reparasjonstjenesten.
-- Neste fase er våpen, rustning og øvrige durable items, inkludert temperering, smiereparasjon og salvage.
+- PR #328 ble squash-merget til `main` som commit `f823af7e8f5e905a642e25379b4114d932173007`.
+
+## Fase 6B – 23. juli 2026
+
+### Mål
+
+- Gjøre våpen, rustning, skjold og øvrige durable items host-autoritative.
+- Flytte kjøpspris, salgspris, tempereringskostnad, reparasjonskostnad og salvage-verdi fra klienten til canonical data på hosten.
+- Beholde AI-/lokal kompatibilitet mens gjeste-allowlisten strammes inn.
+
+### Utført
+
+- Opprettet arbeidsgren `agent/audit-phase6-equipment` fra merge-commit `f823af7e8f5e905a642e25379b4114d932173007`.
+- Fase 6A-merge-SHA er ført inn i loggen.
+
+### Pågår
+
+- Kartlegging av kataloger, equipment slots, durability, temper levels, repair costs, salvage values og alle UI-kallere.
+
+### Tester
+
+- Ikke kjørt ennå i fase 6B.
