@@ -1,0 +1,33 @@
+name: Apply phase 8 housing migration
+
+on:
+  push:
+    branches:
+      - agent/audit-phase8-housing
+    paths:
+      - phase8-housing-trigger.txt
+      - .github/workflows/apply-phase8-housing.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase8-housing
+          fetch-depth: 1
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Apply migration
+        run: node scripts/apply-phase8-housing.mjs
+      - name: Commit migration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src docs
+          git commit -m "Migrate housing services to host intent" || true
+          git push origin HEAD:agent/audit-phase8-housing
