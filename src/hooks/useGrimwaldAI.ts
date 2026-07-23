@@ -12,7 +12,8 @@
  * - Dynamic difficulty auto-adjustment based on performance gap
  */
 
-import { useCallback, useRef, useMemo } from 'react';
+import { useCallback, useRef } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useGameStore } from '@/store/gameStore';
 import type { Player } from '@/types/game.types';
 
@@ -26,6 +27,7 @@ import { observeHumanPlayers, resetObservations } from '@/hooks/ai/playerObserve
 import { recordPerformance, calculateAdjustment, applyAdjustment, resetPerformanceHistory } from '@/hooks/ai/difficultyAdjuster';
 import { recordAIGoalProgress, resetVelocityData } from '@/hooks/ai/goalVelocityTracker';
 import { generateCommitmentPlan, isCommitmentValid } from '@/hooks/ai/commitmentPlan';
+import { getAIFailedActionKey } from '@/hooks/ai/failedActionCache';
 
 // Re-export types for backwards compatibility
 export type { AIDifficulty, AIAction, GoalProgress, ResourceUrgency } from '@/hooks/ai/types';
@@ -45,70 +47,68 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
   // Commitment plan: persists across turns for 2-4 turn strategic focus
   const commitmentPlanRef = useRef<CommitmentPlan | null>(null);
 
-  const store = useGameStore();
-  const { goalSettings, endTurn } = store;
+  const goalSettings = useGameStore(state => state.goalSettings);
+  const endTurn = useGameStore(state => state.endTurn);
 
-  // Bundle all store actions into a single StoreActions object.
-  // This replaces destructuring 35+ individual store functions.
-  const storeActions: StoreActions = useMemo(() => ({
-    movePlayer: store.movePlayer,
-    workShift: store.workShift,
-    modifyGold: store.modifyGold,
-    modifyHealth: store.modifyHealth,
-    modifyFood: store.modifyFood,
-    modifyHappiness: store.modifyHappiness,
-    modifyClothing: store.modifyClothing,
-    modifyRelaxation: store.modifyRelaxation,
-    spendTime: store.spendTime,
-    studyDegree: store.studyDegree,
-    completeDegree: store.completeDegree,
-    setJob: store.setJob,
-    payRent: store.payRent,
-    depositToBank: store.depositToBank,
-    withdrawFromBank: store.withdrawFromBank,
-    buyAppliance: store.buyAppliance,
-    moveToHousing: store.moveToHousing,
-    buyDurable: store.buyDurable,
-    equipItem: store.equipItem,
-    buyGuildPass: store.buyGuildPass,
-    takeQuest: store.takeQuest,
-    takeChainQuest: store.takeChainQuest,
-    takeBounty: store.takeBounty,
-    completeQuest: store.completeQuest,
-    completeLocationObjective: store.completeLocationObjective,
-    clearDungeonFloor: store.clearDungeonFloor,
-    applyRareDrop: store.applyRareDrop,
-    cureSickness: store.cureSickness,
-    takeLoan: store.takeLoan,
-    repayLoan: store.repayLoan,
-    buyStock: store.buyStock,
-    sellStock: store.sellStock,
-    buyFreshFood: store.buyFreshFood,
-    buyFoodWithSpoilage: store.buyFoodWithSpoilage,
-    buyTicket: store.buyTicket,
-    sellItem: store.sellItem,
-    pawnAppliance: store.pawnAppliance,
-    buyLotteryTicket: store.buyLotteryTicket,
-    temperEquipment: store.temperEquipment,
-    forgeRepairEquipment: store.forgeRepairEquipment,
-    applyDurabilityLoss: store.applyDurabilityLoss,
-    // BUG FIX: Include hex/curse store actions (were missing, causing TypeError crashes)
-    castLocationHex: store.castLocationHex,
-    castPersonalCurse: store.castPersonalCurse,
-    buyProtectiveAmulet: store.buyProtectiveAmulet,
-    addHexScrollToPlayer: store.addHexScrollToPlayer,
-    // GAP actions: dispel, dark ritual, appliance repair, salary negotiation
-    dispelLocationHex: store.dispelLocationHex,
-    performDarkRitual: store.performDarkRitual,
-    repairAppliance: store.repairAppliance,
-    forgeRepairAppliance: store.forgeRepairAppliance,
-    requestRaise: store.requestRaise,
-    purchaseReputationUnlock: store.purchaseReputationUnlock,
-    buyProtection: store.buyProtection,
-    buyTipOff: store.buyTipOff,
-    sabotagePlayer: store.sabotagePlayer,
-    endTurn: store.endTurn,
-  }), [store]);
+  // Subscribe only to action references. The AI hook no longer rerenders for
+  // every gold, time, movement or event mutation in the game store.
+  const storeActions = useGameStore(useShallow((state): StoreActions => ({
+    movePlayer: state.movePlayer,
+    workShift: state.workShift,
+    modifyGold: state.modifyGold,
+    modifyHealth: state.modifyHealth,
+    modifyFood: state.modifyFood,
+    modifyHappiness: state.modifyHappiness,
+    modifyClothing: state.modifyClothing,
+    modifyRelaxation: state.modifyRelaxation,
+    spendTime: state.spendTime,
+    studyDegree: state.studyDegree,
+    completeDegree: state.completeDegree,
+    setJob: state.setJob,
+    payRent: state.payRent,
+    depositToBank: state.depositToBank,
+    withdrawFromBank: state.withdrawFromBank,
+    buyAppliance: state.buyAppliance,
+    moveToHousing: state.moveToHousing,
+    buyDurable: state.buyDurable,
+    equipItem: state.equipItem,
+    buyGuildPass: state.buyGuildPass,
+    takeQuest: state.takeQuest,
+    takeChainQuest: state.takeChainQuest,
+    takeBounty: state.takeBounty,
+    completeQuest: state.completeQuest,
+    completeLocationObjective: state.completeLocationObjective,
+    clearDungeonFloor: state.clearDungeonFloor,
+    applyRareDrop: state.applyRareDrop,
+    cureSickness: state.cureSickness,
+    takeLoan: state.takeLoan,
+    repayLoan: state.repayLoan,
+    buyStock: state.buyStock,
+    sellStock: state.sellStock,
+    buyFreshFood: state.buyFreshFood,
+    buyFoodWithSpoilage: state.buyFoodWithSpoilage,
+    buyTicket: state.buyTicket,
+    sellItem: state.sellItem,
+    pawnAppliance: state.pawnAppliance,
+    buyLotteryTicket: state.buyLotteryTicket,
+    temperEquipment: state.temperEquipment,
+    forgeRepairEquipment: state.forgeRepairEquipment,
+    applyDurabilityLoss: state.applyDurabilityLoss,
+    castLocationHex: state.castLocationHex,
+    castPersonalCurse: state.castPersonalCurse,
+    buyProtectiveAmulet: state.buyProtectiveAmulet,
+    addHexScrollToPlayer: state.addHexScrollToPlayer,
+    dispelLocationHex: state.dispelLocationHex,
+    performDarkRitual: state.performDarkRitual,
+    repairAppliance: state.repairAppliance,
+    forgeRepairAppliance: state.forgeRepairAppliance,
+    requestRaise: state.requestRaise,
+    purchaseReputationUnlock: state.purchaseReputationUnlock,
+    buyProtection: state.buyProtection,
+    buyTipOff: state.buyTipOff,
+    sabotagePlayer: state.sabotagePlayer,
+    endTurn: state.endTurn,
+  })));
 
   /**
    * Execute a single AI action — delegates to the handler map in actionExecutor.ts
@@ -253,15 +253,12 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         commitmentPlanRef.current,
       );
 
-      // Filter out actions that already failed this turn (prevent re-attempting)
-      // Include floorId, questId, bountyId in key — previously missing, causing dungeon/quest retries
-      const actionKey = (a: AIAction) => {
-        const detail = a.details?.degreeId || a.details?.jobId || a.details?.itemId
-          || a.details?.floorId || a.details?.questId || a.details?.bountyId
-          || a.details?.ticketType || a.details?.targetId || '';
-        return `${a.type}:${a.location || ''}:${detail}`;
-      };
-      const viableActions = actions.filter(a => a.type === 'end-turn' || !failedActionsRef.current.has(actionKey(a)));
+      // Suppress only the exact action + prerequisite state that failed. If the
+      // AI moves, earns money or progresses education, a fresh key permits retry.
+      const viableActions = actions.filter(a =>
+        a.type === 'end-turn'
+        || !failedActionsRef.current.has(getAIFailedActionKey(a, currentPlayer))
+      );
 
       // Apply oscillation penalty: strongly discourage returning to already-visited locations.
       // Exception: never penalize the home location — returning home at end of turn is
@@ -292,7 +289,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
 
       if (!success) {
         // Track failed action to avoid re-attempting this turn
-        failedActionsRef.current.add(actionKey(bestAction));
+        failedActionsRef.current.add(getAIFailedActionKey(bestAction, currentPlayer));
         console.log(`[Grimwald AI] Action failed: ${bestAction.description}`);
       } else if (bestAction.type === 'move' && bestAction.location) {
         // Track visited location to prevent oscillation back to this spot
