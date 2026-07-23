@@ -1,1 +1,0 @@
-Remove dead healer callbacks and block direct cureSickness for guests.

@@ -23,7 +23,7 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 
 ## Gjenstående prioritert rekkefølge
 
-1. **Migrer resterende rå gjestehandlinger.** Prioriter tavern/healer, dungeon og øvrige `modify*`/`spendTime`-flyter. Hjem/hvile, `setJob`, `negotiateRaise` og `movePlayer` er ferdig migrert.
+1. **Migrer resterende rå gjestehandlinger.** Prioriter Tavern, dungeon og øvrige `modify*`/`spendTime`-flyter. Healer, hjem/hvile, `setJob`, `negotiateRaise` og `movePlayer` er ferdig migrert.
 2. **Begrens resterende store-abonnementer.** Start med `LocationPanel`, som fortsatt leser hele Zustand-storen.
 3. **Del opp GameBoard videre.** Flytt avledet tilstand og overlay-/layoutlogikk til mindre hooks/komponenter uten å endre funksjon.
 4. **Rydd døde kompatibilitetslag.** Fjern gamle callback-props og numeriske legacy-funksjoner når alle lokale og AI-kallere er migrert.
@@ -519,4 +519,41 @@ GitHub Actions-run `30052983382`:
 - En online-gjest kan ikke lenger velge egen hviletid eller separate home-recovery-effekter.
 - Hjemmeaktivitetene er atomiske og bruker samme authoritative state for bolig, lokasjon, tid og caps.
 - Neste rå gjestedomene er tavern/healer og dungeon.
-- PR #338 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
+- PR #338 ble squash-merget til `main` som commit `b7f492f674bcc1e92bcda3fb443e40e4cd3f2b69`.
+
+## Fase 13D – 24. juli 2026
+
+### Mål
+
+- Fullføre Healer-migreringen ved å fjerne døde rå gold/time/health-callbacker fra UI-kjeden.
+- Blokkere direkte gjestekall til `cureSickness` og bruke den eksisterende canonical `useHealerService`-handlingen som eneste nettverksinngang.
+
+### Utført
+
+- Opprettet arbeidsgren `agent/audit-phase13d-tavern-healer` og draft-PR #339 fra fase 13C-merge `b7f492f674bcc1e92bcda3fb443e40e4cd3f2b69`.
+- Bekreftet at store-laget allerede hadde en korrekt host-autoritativ `useHealerService(playerId, serviceId)` med canonical pris, tid, lokasjon, sickness-, health- og max-health-regler.
+- Oppdaget at HealerPanel allerede kalte canonical service direkte, men fortsatt deklarerte gamle callback-props, mens LocationTabs fortsatt sendte separate `modifyGold`, `modifyHealth`, `spendTime`, `cureSickness` og `modifyMaxHealth`-callbacks.
+- Fjernet alle døde healer-callbacker fra HealerPanel og LocationTabs. Pris- og effektberegninger i panelet brukes nå kun til visning og disabled-state.
+- Fjernet `cureSickness` fra gjestenes allowlist. Legacy-funksjonen beholdes internt for eldre AI-/lokalkallere inntil de migreres i en egen fase.
+- Oppdatert multiplayer-forventningene slik at `useHealerService` er tillatt og direkte `cureSickness` er blokkert.
+- Lagt til seks regresjonstester for economy-justert healing, faste cure/blessing-priser, feil lokasjon, unødvendig behandling, manglende gull/tid og protokoll-/allowlist-regler.
+- Fjernet alle midlertidige workflow-, trigger- og patchfiler før merge.
+
+### Tester
+
+GitHub Actions-run `30053545732`:
+
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Full Vitest-pakke, inkludert seks nye healer-tester: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright-runner og Chromium-installasjon: bestått.
+- Title/setup-smoke og deterministisk komplett lokal spillflyt: bestått.
+
+### Resultat
+
+- En online-gjest kan ikke lenger kurere sykdom direkte eller kombinere klientvalgt pris, tid og helseeffekt.
+- Healer-UI og host bruker nå én canonical serviceinngang.
+- Neste rå gjestedomene er Tavern og dungeon.
+- PR #339 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
