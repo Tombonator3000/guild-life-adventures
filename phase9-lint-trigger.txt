@@ -1,0 +1,1 @@
+Rename local hex service actions to avoid React hook lint rules.
