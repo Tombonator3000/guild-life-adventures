@@ -3,7 +3,7 @@ name: Agent validation
 on:
   push:
     branches:
-      - agent/complete-priority-fixes
+      - 'agent/**'
   pull_request:
     branches:
       - main
