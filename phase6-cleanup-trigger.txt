@@ -1,1 +1,1 @@
-Remove temporary phase 6 workflows, scripts, triggers and diagnostics.
+Run the phase 6 cleanup now that the workflow exists.
