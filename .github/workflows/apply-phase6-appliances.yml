@@ -1,0 +1,41 @@
+name: Apply phase 6 appliance patch
+
+on:
+  push:
+    branches:
+      - agent/audit-phase6-appliances
+    paths:
+      - phase6-appliance-trigger.txt
+      - .github/workflows/apply-phase6-appliances.yml
+      - scripts/apply-phase6-appliances.mjs
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase6-appliances
+          fetch-depth: 1
+      - name: Apply appliance migration and publish result
+        shell: bash
+        run: |
+          set +e
+          node scripts/apply-phase6-appliances.mjs > phase6-appliance-result.txt 2>&1
+          status=$?
+          echo "status=$status" >> phase6-appliance-result.txt
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add phase6-appliance-result.txt
+          if [ "$status" -eq 0 ]; then
+            git add src/store/helpers/economyHelpers.ts src/store/storeTypes.ts src/network/types.ts src/components/game/ShadowMarketPanel.tsx src/components/game/PawnShopPanel.tsx src/components/game/ForgePanel.tsx src/components/game/locationTabs.tsx src/components/game/LocationPanel.tsx src/test/multiplayer.test.ts
+          fi
+          git commit -m "Record phase 6 appliance migration result" || true
+          git push origin HEAD:agent/audit-phase6-appliances
+          exit "$status"
