@@ -1,0 +1,28 @@
+name: Apply phase 13B travel migration
+
+on:
+  push:
+    branches:
+      - agent/audit-phase13b-travel
+    paths:
+      - .github/workflows/apply-phase13b-travel.yml
+      - phase13b-travel-trigger.txt
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase13b-travel
+          fetch-depth: 1
+      - run: node scripts/apply-phase13b-travel.mjs
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src
+          git commit -m "Migrate travel to host-priced routes" || true
+          git push origin HEAD:agent/audit-phase13b-travel
