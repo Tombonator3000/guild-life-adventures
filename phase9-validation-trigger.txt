@@ -1,1 +1,1 @@
-Run the complete phase 9 validation now that the workflow exists.
+Run the complete phase 9 validation after the local action rename fix.
