@@ -1,1 +1,1 @@
-Apply the phase 6 host-authoritative appliance migration.
+Run the phase 6 appliance migration now that the workflow exists.
