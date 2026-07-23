@@ -130,6 +130,7 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'travelPlayer',
   'spendTime',
   'endTurn',
+  'performHomeActivity',
 
   // Legacy raw mutations still used by older UI flows. Keep bounded by
   // STAT_MODIFIER_RULES until each remaining caller is migrated.

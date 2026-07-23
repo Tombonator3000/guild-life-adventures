@@ -11,7 +11,7 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 | 3 | Full save/load-gjenoppretting | Ferdig | Brett-hexer og ukentlige nyheter gjenopprettes. |
 | 4 | Save-migrering v10 | Ferdig | Normalisering og migreringstester er lagt til. |
 | 5 | Sikre reputation unlocks | Ferdig | Kjøp valideres atomisk på hosten. |
-| 6 | Atomiske handlinger | Delvis ferdig | Reise, healer, gravplass, gambling, avis, sabotasje, beskyttelse, jobbtilbud, markedslønn, arbeid, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig, hex-/ritualtjenester og finans er host-resolverte. |
+| 6 | Atomiske handlinger | Delvis ferdig | Reise, hjem/hvile, healer, gravplass, gambling, avis, sabotasje, beskyttelse, jobbtilbud, markedslønn, arbeid, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig, hex-/ritualtjenester og finans er host-resolverte. |
 | 7 | Hook-avhengigheter | Ferdig for kjente funn | AI-start, auto-end-turn, tastatur og zone-editor er rettet. |
 | 8 | Playwright E2E | Ferdig grunnflyt | Tittel, setup og en faktisk spillflyt med bankhandling, save/load og ukeovergang er dekket. Protokollavvisninger er dekket med enhetstester mot host-kjeden. |
 | 9 | Zustand-selectors | Delvis ferdig | Root, GameBoard og Grimwald AI bruker selectors/useShallow. Flere paneler er begrenset, men `LocationPanel` leser fortsatt hele store-objektet. |
@@ -23,7 +23,7 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 
 ## Gjenstående prioritert rekkefølge
 
-1. **Migrer resterende rå gjestehandlinger.** Prioriter `modify*` og `spendTime`, slik at klienten ikke lenger sender belønning, effekt eller tidsbruk selv innenfor validerte grenser. `setJob`, `negotiateRaise` og `movePlayer` er ferdig migrert.
+1. **Migrer resterende rå gjestehandlinger.** Prioriter tavern/healer, dungeon og øvrige `modify*`/`spendTime`-flyter. Hjem/hvile, `setJob`, `negotiateRaise` og `movePlayer` er ferdig migrert.
 2. **Begrens resterende store-abonnementer.** Start med `LocationPanel`, som fortsatt leser hele Zustand-storen.
 3. **Del opp GameBoard videre.** Flytt avledet tilstand og overlay-/layoutlogikk til mindre hooks/komponenter uten å endre funksjon.
 4. **Rydd døde kompatibilitetslag.** Fjern gamle callback-props og numeriske legacy-funksjoner når alle lokale og AI-kallere er migrert.
@@ -478,4 +478,45 @@ GitHub Actions-run `30050832605`:
 - En online-gjest kan ikke lenger diktere reisetid eller teleportere med et manipulert prisargument.
 - Hosten priser den faktiske animerte ruten, inkludert gyldige omdirigeringer og vær.
 - Neste rå høyrisikogruppe er `spendTime` og de gjenværende `modify*`-handlingene.
-- PR #337 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
+- PR #337 ble squash-merget til `main` som commit `3469429ae20787c23cec04ff463831a094ebc662`.
+
+## Fase 13C – 24. juli 2026
+
+### Mål
+
+- Fjerne separate `spendTime`, `modifyHappiness`, `modifyHealth` og `modifyRelaxation`-kall fra den gjestestyrte Home-UI-en.
+- Beholde eksisterende boligforskjeller og recovery-balanse, men bruke én atomisk host-handling.
+
+### Utført
+
+- Opprettet arbeidsgren `agent/audit-phase13c-raw-effects` og draft-PR #338 fra fase 13B-merge `3469429ae20787c23cec04ff463831a094ebc662`.
+- Kjørte en ny maskinell skanning av alle gjenværende `spendTime`, `modify*` og `cureSickness`-kallere etter fase 13B.
+- Skanningen grupperte de gjenværende rå flytene i hjem, tavern/healer, dungeon og enkelte interne AI-/developerbaner.
+- Lagt til `performHomeActivity(playerId, activity)`, der gjesten bare sender `relax` eller `sleep`.
+- Hosten kontrollerer at spilleren faktisk leier boligen og står ved riktig hjemmelokasjon.
+- Slums-relax bruker canonical 8 timer; Noble Heights-relax bruker canonical 3 timer. Sleep bruker 8 timer.
+- Hosten anvender alle tids-, happiness-, health- og relaxation-effekter i én state-oppdatering med eksisterende caps.
+- HomePanel mottar ikke lenger rå tid-/stat-callbacks fra LocationPanel.
+- Lagt til eksplisitt protokollvalidering av aktivitetstypen og registrert `performHomeActivity` i gjestenes allowlist.
+- Lagt til seks regresjonstester for Slums/Noble-tid, capped sleep-recovery, feil hjem, homeless/for lite tid og protokoll-enum.
+- Interne AI-reservebaner ble ikke endret i denne delfasen for å unngå en samtidig balanseendring; de står fortsatt på migreringslisten.
+- Fjernet alle midlertidige skanne-, workflow-, trigger- og patchfiler før merge.
+
+### Tester
+
+GitHub Actions-run `30052983382`:
+
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Full Vitest-pakke, inkludert seks nye hjemmetester: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright-runner og Chromium-installasjon: bestått.
+- Title/setup-smoke og deterministisk komplett lokal spillflyt: bestått.
+
+### Resultat
+
+- En online-gjest kan ikke lenger velge egen hviletid eller separate home-recovery-effekter.
+- Hjemmeaktivitetene er atomiske og bruker samme authoritative state for bolig, lokasjon, tid og caps.
+- Neste rå gjestedomene er tavern/healer og dungeon.
+- PR #338 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.

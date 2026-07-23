@@ -20,6 +20,7 @@ import { createWorkEducationActions } from './helpers/workEducationHelpers';
 import { createEmploymentEducationServiceActions } from './helpers/employmentEducationServiceHelpers';
 import { createEmploymentOfferActions } from './helpers/employmentOfferHelpers';
 import { createTravelServiceActions } from './helpers/travelServiceHelpers';
+import { createHomeActivityActions } from './helpers/homeActivityHelpers';
 import { createQuestActions } from './helpers/questHelpers';
 import { createHexActions } from './helpers/hexHelpers';
 import { createHexServiceActions } from './helpers/hexServiceHelpers';
@@ -226,6 +227,7 @@ export const useGameStore = create<GameStore>((set, get) => {
   const employmentEducationServiceActions = createEmploymentEducationServiceActions(set, get);
   const employmentOfferActions = createEmploymentOfferActions(set, get);
   const travelServiceActions = createTravelServiceActions(set, get);
+  const homeActivityActions = createHomeActivityActions(set, get);
   const questActions = createQuestActions(set, get);
   const hexActions = createHexActions(set, get);
   const hexServiceActions = createHexServiceActions(set, get);
@@ -343,6 +345,9 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     // Canonical route intent. Host validates route adjacency and computes time.
     ...wrapWithNetworkGuard(travelServiceActions),
+
+    // Canonical home recovery. Host resolves location, duration and effects.
+    ...wrapWithNetworkGuard(homeActivityActions),
 
     // Legacy work and education actions (network-aware for host/internal compatibility)
     ...wrapWithNetworkGuard(workEducationActions),
