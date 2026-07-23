@@ -1,1 +1,1 @@
-Run targeted appliance diagnostics now that the workflow exists.
+Run full phase 6 unit diagnostics with persisted output.
