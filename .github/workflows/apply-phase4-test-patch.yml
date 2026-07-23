@@ -1,0 +1,34 @@
+name: Apply phase 4 multiplayer test patch
+
+on:
+  push:
+    branches:
+      - agent/audit-phase4
+    paths:
+      - phase4-test-patch-trigger.txt
+      - .github/workflows/apply-phase4-test-patch.yml
+      - scripts/patch-phase4-multiplayer-tests.mjs
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase4
+          fetch-depth: 1
+      - name: Patch multiplayer tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/patch-phase4-multiplayer-tests.mjs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/test/multiplayer.test.ts
+          git commit -m "Update multiplayer tests for semantic actions"
+          git push origin HEAD:agent/audit-phase4
