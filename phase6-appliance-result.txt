@@ -1,23 +1,15 @@
 Patched src/store/helpers/economyHelpers.ts
 Patched src/store/storeTypes.ts
-Patched src/network/types.ts
-Patched src/components/game/ShadowMarketPanel.tsx
-Patched src/components/game/PawnShopPanel.tsx
-Patched src/components/game/ForgePanel.tsx
-Patched src/components/game/locationTabs.tsx
-Patched src/components/game/LocationPanel.tsx
 file:///home/runner/work/guild-life-adventures/guild-life-adventures/scripts/apply-phase6-appliances.mjs:7
     if (next === source) throw new Error(`Patch target not found in ${path}: ${label}`);
                                ^
 
-Error: Patch target not found in src/test/multiplayer.test.ts: cross-player appliance actions
+Error: Patch target not found in src/network/types.ts: remove appliance legacy allowlist
     at patch (file:///home/runner/work/guild-life-adventures/guild-life-adventures/scripts/apply-phase6-appliances.mjs:7:32)
-    at file:///home/runner/work/guild-life-adventures/guild-life-adventures/scripts/apply-phase6-appliances.mjs:175:1
+    at file:///home/runner/work/guild-life-adventures/guild-life-adventures/scripts/apply-phase6-appliances.mjs:33:1
     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
 
 Node.js v22.23.1
-Applying appliance test fallback
-Patched src/test/multiplayer.test.ts
-status=0
+status=1
