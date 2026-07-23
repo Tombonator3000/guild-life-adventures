@@ -1,1 +1,0 @@
-Run the phase 6 appliance migration with the multiplayer test fallback.
