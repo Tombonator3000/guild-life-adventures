@@ -41,31 +41,40 @@ replaceOnce(
 );
 
 replaceOnce(
-  'standard class action',
-  `studyDegree(player.id, degId, price, degree.hoursPerSession);
-                         toast.success(t('panelAcademy.attendedClass', { name: t(\`degrees.\${degree.id}.name\`) }));`,
-  `const result = attendDegreeSession(player.id, degId, 'standard');
-                         if (!result) return;
+  'standard class call',
+  `studyDegree(player.id, degId, price, degree.hoursPerSession);`,
+  `const result = attendDegreeSession(player.id, degId, 'standard');`,
+);
+replaceOnce(
+  'standard class result',
+  `toast.success(t('panelAcademy.attendedClass', { name: t(\`degrees.\${degree.id}.name\`) }));`,
+  `if (!result) return;
                          if (result.success) toast.success(result.message);
                          else toast.error(result.message);`,
 );
 
 replaceOnce(
-  'cram class action',
-  `studyDegree(player.id, degId, price, player.timeRemaining);
-                           toast.success(\`Crammed in \${player.timeRemaining}h of studying!\`);`,
-  `const result = attendDegreeSession(player.id, degId, 'cram');
-                           if (!result) return;
+  'cram class call',
+  `studyDegree(player.id, degId, price, player.timeRemaining);`,
+  `const result = attendDegreeSession(player.id, degId, 'cram');`,
+);
+replaceOnce(
+  'cram class result',
+  `toast.success(\`Crammed in \${player.timeRemaining}h of studying!\`);`,
+  `if (!result) return;
                            if (result.success) toast.success(result.message);
                            else toast.error(result.message);`,
 );
 
 replaceOnce(
-  'prepay action',
-  `payFullTuition(player.id, degId, fullCourseCost, sessionsLeft);
-                           toast.success(\`Enrolled! Attend the remaining \${sessionsLeft} sessions for free.\`);`,
-  `const result = prepayDegree(player.id, degId);
-                           if (!result) return;
+  'prepay call',
+  `payFullTuition(player.id, degId, fullCourseCost, sessionsLeft);`,
+  `const result = prepayDegree(player.id, degId);`,
+);
+replaceOnce(
+  'prepay result',
+  `toast.success(\`Enrolled! Attend the remaining \${sessionsLeft} sessions for free.\`);`,
+  `if (!result) return;
                            if (result.success) toast.success(result.message);
                            else toast.error(result.message);`,
 );
