@@ -2,15 +2,13 @@
 
 import type { GameState, GoalSettings, AIDifficulty, LocationId } from '@/types/game.types';
 
-// --- Lobby Types ---
-
 export interface LobbyPlayer {
   peerId: string;
   name: string;
   color: string;
   isReady: boolean;
-  slot: number; // Player slot index (0-3)
-  portraitId?: string | null; // Character portrait selection
+  slot: number;
+  portraitId?: string | null;
 }
 
 export interface LobbyState {
@@ -26,9 +24,6 @@ export interface OnlineGameSettings {
   aiDifficulty: AIDifficulty;
 }
 
-// --- Network Messages ---
-
-// Chat message — sent by both host and guests, routed through host
 export interface ChatMessage {
   senderName: string;
   senderColor: string;
@@ -36,7 +31,6 @@ export interface ChatMessage {
   timestamp: number;
 }
 
-// Host → Guest messages
 export type HostMessage =
   | { type: 'lobby-update'; lobby: LobbyState }
   | { type: 'game-start'; gameState: SerializedGameState; lobby: LobbyState }
@@ -53,7 +47,6 @@ export type HostMessage =
   | { type: 'discovery-info'; hostName: string; playerCount: number; maxPlayers: number; hasAI: boolean; isStarted: boolean }
   | { type: 'spectator-accepted'; spectatorCount: number };
 
-// Guest → Host messages
 export type GuestMessage =
   | { type: 'join'; playerName: string }
   | { type: 'reconnect'; playerName: string }
@@ -70,11 +63,6 @@ export type GuestMessage =
 
 export type NetworkMessage = HostMessage | GuestMessage;
 
-// --- Serialized State ---
-
-// GameState without functions — only data fields, plus extra sync fields
-// Note: shadowfingersEvent and applianceBreakageEvent live on GameStore (storeTypes.ts)
-// but not on GameState (game.types.ts). They are declared here for network sync typing.
 export interface SerializedGameState extends GameState {
   shadowfingersEvent?: unknown;
   applianceBreakageEvent?: {
@@ -87,8 +75,6 @@ export interface SerializedGameState extends GameState {
   } | null;
 }
 
-// --- Connection Status ---
-
 export type ConnectionStatus =
   | 'disconnected'
   | 'connecting'
@@ -100,10 +86,8 @@ export interface PeerConnectionInfo {
   peerId: string;
   playerName: string;
   status: ConnectionStatus;
-  latency: number; // ms
+  latency: number;
 }
-
-// --- Network Store State ---
 
 export interface NetworkState {
   networkMode: 'local' | 'host' | 'guest';
@@ -113,7 +97,6 @@ export interface NetworkState {
   connectedPeers: PeerConnectionInfo[];
 }
 
-// Actions that should NOT be forwarded to host (local UI only)
 export const LOCAL_ONLY_ACTIONS = new Set([
   'selectLocation',
   'dismissEvent',
@@ -133,8 +116,6 @@ export const LOCAL_ONLY_ACTIONS = new Set([
   'setDebugFestival',
 ]);
 
-// Actions that are host-internal (triggered by game logic, not by player UI).
-// These are BLOCKED on guests — not forwarded, not executed locally.
 export const HOST_INTERNAL_ACTIONS = new Set([
   'startTurn',
   'processWeekEnd',
@@ -145,20 +126,13 @@ export const HOST_INTERNAL_ACTIONS = new Set([
   'startNewGame',
 ]);
 
-// Explicit whitelist of actions a guest may send to the host.
-// Any action NOT in this set will be rejected by the host's action handler.
-// This prevents guests from calling internal/dangerous actions by name.
 export const ALLOWED_GUEST_ACTIONS = new Set([
-  // Movement & turn flow
   'movePlayer',
   'spendTime',
   'endTurn',
 
-  // Player state changes.
-  // NOTE: raw modify* actions are used by legitimate UI flows (gambling, weekend
-  // events, used-item effects). Positive amounts are strictly bounded by
-  // STAT_MODIFIER_RULES in useNetworkSync — guests cannot mint free stats. Do
-  // NOT remove them without first porting every UI caller to a semantic action.
+  // Legacy raw mutations still used by older UI flows. Keep bounded by
+  // STAT_MODIFIER_RULES until each remaining caller is migrated.
   'modifyGold',
   'modifyHealth',
   'modifyHappiness',
@@ -168,14 +142,12 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'modifyRelaxation',
   'cureSickness',
 
-  // Housing
   'setHousing',
   'payRent',
   'prepayRent',
   'moveToHousing',
   'begForMoreTime',
 
-  // Work & Education
   'setJob',
   'workShift',
   'requestRaise',
@@ -183,10 +155,7 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'studySession',
   'studyDegree',
   'payFullTuition',
-  // NOTE: completeEducationLevel / completeDegree are host-internal completion hooks
-  // triggered by studyDegree/studySession. Guests must not call them directly.
 
-  // Economy & Shopping
   'depositToBank',
   'withdrawFromBank',
   'invest',
@@ -207,18 +176,16 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'salvageEquipment',
   'applyDurabilityLoss',
 
-  // Stocks & Loans
   'buyStock',
   'sellStock',
   'takeLoan',
   'repayLoan',
 
-  // Food & Items
   'buyFreshFood',
   'buyLotteryTicket',
   'buyTicket',
+  'buyFoodWithSpoilage',
 
-  // Quests & Dungeon
   'buyGuildPass',
   'takeQuest',
   'takeChainQuest',
@@ -232,14 +199,7 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'completeChainQuest',
   'abandonQuest',
   'incrementDungeonAttempts',
-  // NOTE: clearDungeonFloor / applyRareDrop / updatePlayerDungeonRecord are internal
-  // reward hooks fired by the combat resolver. Guests must not call them directly —
-  // they'd let a guest hand out arbitrary dungeon rewards.
 
-  // Food with spoilage
-  'buyFoodWithSpoilage',
-
-  // Hexes & Curses
   'buyHexScroll',
   'castLocationHex',
   'castPersonalCurse',
@@ -248,11 +208,15 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'cleanseCurse',
   'performDarkRitual',
   'attemptCurseReflection',
-  // BUG FIX: 'addHexScrollToPlayer' is internal-only (dungeon drops), no cost validation
 
-  // Rival services (Fence / Shadow Market) — atomic & validated in store
   'sabotagePlayer',
   'buyProtection',
   'buyTipOff',
   'purchaseReputationUnlock',
+
+  // Canonical, atomic services. The host looks up price, time and effect.
+  'useHealerService',
+  'useGraveyardService',
+  'gambleAtFence',
+  'purchaseNewspaper',
 ]);
