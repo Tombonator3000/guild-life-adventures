@@ -1,9 +1,0 @@
-install=0
-typescript=0
-targeted=0
-full=0
-build=0
-lint=0
-runner=0
-chromium=0
-playwright=0
