@@ -1,1 +1,1 @@
-Run phase 4 validation now that the self-reporting workflow exists.
+Rerun phase 4 validation and force-add the diagnostic logs.
