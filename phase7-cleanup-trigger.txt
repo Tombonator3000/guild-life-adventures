@@ -1,1 +1,1 @@
-Finalize the phase 7 audit log and remove temporary files.
+Finalize the phase 7 audit log and remove temporary files now.
