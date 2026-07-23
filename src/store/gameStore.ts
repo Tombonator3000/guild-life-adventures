@@ -18,6 +18,7 @@ import { createEconomyActions } from './helpers/economyHelpers';
 import { createTurnActions } from './helpers/turnHelpers';
 import { createWorkEducationActions } from './helpers/workEducationHelpers';
 import { createEmploymentEducationServiceActions } from './helpers/employmentEducationServiceHelpers';
+import { createEmploymentOfferActions } from './helpers/employmentOfferHelpers';
 import { createQuestActions } from './helpers/questHelpers';
 import { createHexActions } from './helpers/hexHelpers';
 import { createHexServiceActions } from './helpers/hexServiceHelpers';
@@ -222,6 +223,7 @@ export const useGameStore = create<GameStore>((set, get) => {
   const turnActions = createTurnActions(set, get);
   const workEducationActions = createWorkEducationActions(set, get);
   const employmentEducationServiceActions = createEmploymentEducationServiceActions(set, get);
+  const employmentOfferActions = createEmploymentOfferActions(set, get);
   const questActions = createQuestActions(set, get);
   const hexActions = createHexActions(set, get);
   const hexServiceActions = createHexServiceActions(set, get);
@@ -340,8 +342,9 @@ export const useGameStore = create<GameStore>((set, get) => {
     // Legacy work and education actions (network-aware for host/internal compatibility)
     ...wrapWithNetworkGuard(workEducationActions),
 
-    // Canonical employment and education intent actions
+    // Canonical employment, wage and education intent actions
     ...wrapWithNetworkGuard(employmentEducationServiceActions),
+    ...wrapWithNetworkGuard(employmentOfferActions),
 
     // Economy actions (network-aware)
     ...wrapWithNetworkGuard(economyActions),

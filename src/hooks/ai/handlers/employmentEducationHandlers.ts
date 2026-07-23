@@ -5,10 +5,9 @@
  */
 
 import type { Player, DegreeId } from '@/types/game.types';
-import { getJob, canWorkJob, calculateOfferedWage } from '@/data/jobs';
+import { getJob, canWorkJob } from '@/data/jobs';
 import { DEGREES } from '@/data/education';
 import { CLOTHING_THRESHOLDS } from '@/data/items';
-import { useGameStore } from '@/store/gameStore';
 
 import type { AIAction } from '../types';
 import type { StoreActions } from '../actionExecutor';
@@ -40,11 +39,8 @@ export function handleApplyJob(player: Player, action: AIAction, store: StoreAct
   if (!canWorkJob(job, player.completedDegrees, player.clothingCondition, player.experience, player.dependability)) {
     return false;
   }
-  const { priceModifier, week } = useGameStore.getState();
-  const offer = calculateOfferedWage(job, priceModifier, week);
-  store.setJob(player.id, jobId, offer.offeredWage);
-  store.spendTime(player.id, 1);
-  return true;
+  const result = store.acceptJobOffer(player.id, jobId);
+  return result?.success ?? false;
 }
 
 export function handleRequestRaise(player: Player, _action: AIAction, store: StoreActions): boolean {

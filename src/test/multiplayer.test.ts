@@ -145,6 +145,10 @@ describe('Action Categories', () => {
     expect(ALLOWED_GUEST_ACTIONS.has('cleanseCurse')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('performDarkRitual')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('attemptCurseReflection')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('acceptJobOffer')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('acceptMarketRaise')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('setJob')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('negotiateRaise')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('setHousing')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('payRent')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('prepayRent')).toBe(false);
@@ -583,8 +587,8 @@ describe('Cross-Player Validation', () => {
       'movePlayer', 'spendTime', 'modifyGold', 'modifyHealth',
       'modifyHappiness', 'modifyFood', 'modifyClothing', 'modifyMaxHealth',
       'modifyRelaxation', 'cureSickness', 'payHousingRent',
-      'moveHousingAtLandlord', 'requestRentExtensionAtLandlord', 'setJob', 'requestRaise',
-      'negotiateRaise', 'performWorkShift', 'attendDegreeSession',
+      'moveHousingAtLandlord', 'requestRentExtensionAtLandlord', 'requestRaise',
+      'acceptJobOffer', 'acceptMarketRaise', 'performWorkShift', 'attendDegreeSession',
       'prepayDegree', 'graduateDegree', 'transferBankFunds', 'manageInvestment',
       'sellInventoryItem',
       'purchaseEquipmentItem', 'useEquipmentService', 'purchaseAppliance', 'useApplianceService',

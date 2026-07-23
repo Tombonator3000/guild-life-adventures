@@ -90,7 +90,7 @@ export interface StoreActions {
   spendTime: (playerId: string, hours: number) => void;
   studyDegree: (playerId: string, degreeId: string, cost: number, hours: number) => void;
   completeDegree: (playerId: string, degreeId: string) => void;
-  setJob: (playerId: string, jobId: string, wage: number) => void;
+  acceptJobOffer: (playerId: string, jobId: string) => { success: boolean; message: string } | void;
   payHousingRent: (playerId: string, weeks: 1 | 4 | 8) => { success: boolean; message: string } | void;
   transferBankFunds: (playerId: string, direction: 'deposit' | 'withdraw', amount: number) => { success: boolean; message: string } | void;
   buyAppliance: (playerId: string, applianceId: string, cost: number, source: string) => void;
