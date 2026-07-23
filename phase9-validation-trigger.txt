@@ -1,1 +1,1 @@
-Run the complete phase 9 validation.
+Run the complete phase 9 validation now that the workflow exists.
