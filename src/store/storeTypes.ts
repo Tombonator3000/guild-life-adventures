@@ -132,6 +132,9 @@ export interface GameStore extends GameState {
   performDarkRitual: (playerId: string, cost: number) => { success: boolean; message: string; backfired?: boolean };
   attemptCurseReflection: (playerId: string, cost: number) => { success: boolean; message: string };
   addHexScrollToPlayer: (playerId: string, hexId: string) => void;
+  purchaseHexScroll: (playerId: string, vendor: 'enchanter' | 'shadow-market', hexId: string) => ActionResult | void;
+  useHexDefense: (playerId: string, service: 'amulet' | 'dispel', targetLocation?: LocationId) => ActionResult | void;
+  useGraveyardHexService: (playerId: string, service: 'ritual' | 'reflect' | 'cleanse') => (ActionResult & { backfired?: boolean }) | void;
   dismissWeekendEvent: () => void;
   saveToSlot: (slot: number, slotName?: string) => boolean;
   loadFromSlot: (slot: number) => boolean;

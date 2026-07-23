@@ -133,6 +133,15 @@ describe('Action Categories', () => {
     expect(ALLOWED_GUEST_ACTIONS.has('payHousingRent')).toBe(true);
     expect(ALLOWED_GUEST_ACTIONS.has('moveHousingAtLandlord')).toBe(true);
     expect(ALLOWED_GUEST_ACTIONS.has('requestRentExtensionAtLandlord')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('purchaseHexScroll')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('useHexDefense')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('useGraveyardHexService')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('buyHexScroll')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('buyProtectiveAmulet')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('dispelLocationHex')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('cleanseCurse')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('performDarkRitual')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('attemptCurseReflection')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('setHousing')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('payRent')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('prepayRent')).toBe(false);
@@ -574,7 +583,8 @@ describe('Cross-Player Validation', () => {
       'invest', 'withdrawInvestment', 'sellInventoryItem',
       'purchaseEquipmentItem', 'useEquipmentService', 'purchaseAppliance', 'useApplianceService',
       'equipItem', 'unequipItem', 'buyStock', 'sellStock', 'takeLoan',
-      'repayLoan', 'purchaseVendorItem',
+      'repayLoan', 'purchaseVendorItem', 'purchaseHexScroll', 'useHexDefense',
+      'useGraveyardHexService', 'castLocationHex', 'castPersonalCurse',
       'buyGuildPass', 'takeQuest', 'completeQuest', 'abandonQuest',
     ];
 

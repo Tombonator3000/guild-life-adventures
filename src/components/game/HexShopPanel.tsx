@@ -9,6 +9,7 @@ import type { Player } from '@/types/game.types';
 import { Flame, Shield, Target, MapPin, Skull } from 'lucide-react';
 import { toast } from 'sonner';
 import { playSFX } from '@/audio/sfxManager';
+import type { ReactNode } from 'react';
 
 interface HexShopPanelProps {
   player: Player;
@@ -230,7 +231,7 @@ function HexSaleSection({
   onBuy,
 }: {
   title: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   hexes: HexDefinition[];
   accentColor: string;
   priceModifier: number;

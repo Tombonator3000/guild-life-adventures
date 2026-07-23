@@ -46,12 +46,6 @@ const STAT_MODIFIER_RULES: Record<string, { argIndex: number; max: number; label
 const COST_VALIDATION_RULES: Record<string, { argIndex: number; min: number; max: number; label: string }> = {
   temperEquipment:        { argIndex: 3, min: 0, max: 1000, label: 'temper cost' },
   salvageEquipment:       { argIndex: 3, min: 0, max: 2000, label: 'salvage value' },
-  buyHexScroll:           { argIndex: 2, min: 1, max: 2000, label: 'hex scroll cost' },
-  buyProtectiveAmulet:    { argIndex: 1, min: 1, max: 5000, label: 'cost' },
-  cleanseCurse:           { argIndex: 1, min: 1, max: 5000, label: 'cost' },
-  performDarkRitual:      { argIndex: 1, min: 1, max: 5000, label: 'cost' },
-  dispelLocationHex:      { argIndex: 1, min: 1, max: 5000, label: 'cost' },
-  attemptCurseReflection: { argIndex: 1, min: 1, max: 5000, label: 'cost' },
 };
 
 function validateActionArgs(name: string, args: unknown[], store: ReturnType<typeof useGameStore.getState>): string | null {

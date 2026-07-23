@@ -123,10 +123,9 @@ export interface StoreActions {
   // Hexes & Curses
   castLocationHex: (playerId: string, hexId: string) => { success: boolean; message: string };
   castPersonalCurse: (playerId: string, hexId: string, targetId: string) => { success: boolean; message: string };
-  buyProtectiveAmulet: (playerId: string, cost: number) => void;
-  addHexScrollToPlayer: (playerId: string, hexId: string) => void;
-  dispelLocationHex: (playerId: string, cost: number) => { success: boolean; message: string };
-  performDarkRitual: (playerId: string, cost: number) => { success: boolean; message: string; backfired?: boolean };
+  purchaseHexScroll: (playerId: string, vendor: 'enchanter' | 'shadow-market', hexId: string) => { success: boolean; message: string } | void;
+  useHexDefense: (playerId: string, service: 'amulet' | 'dispel', targetLocation?: import('@/types/game.types').LocationId) => { success: boolean; message: string } | void;
+  useGraveyardHexService: (playerId: string, service: 'ritual' | 'reflect' | 'cleanse') => { success: boolean; message: string; backfired?: boolean } | void;
   // Appliance repair
   repairAppliance: (playerId: string, applianceId: string) => number;
   forgeRepairAppliance: (playerId: string, applianceId: string) => number;

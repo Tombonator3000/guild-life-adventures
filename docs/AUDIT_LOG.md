@@ -225,4 +225,24 @@ GitHub Actions-run `30002093672`:
 
 - Online-gjester og AI kan ikke lenger velge leiepris, totalbeløp, locked rent, flyttekostnad eller service-tid.
 - AI-downgrade bruker nå samme canonical flyttekostnad som menneskespilleren i stedet for gratis flytting.
-- PR #331 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
+- PR #331 ble squash-merget til `main` som commit `efc766a56213552e580ada737c5d64bdbb7b760b`.
+
+## Fase 9 – 23. juli 2026
+
+### Mål
+
+- Gjøre scrollkjøp, hex-forsvar og Graveyard dark-magic-tjenester host-autoritative.
+- Beholde den eksisterende host-validerte casting-logikken.
+
+### Utført
+
+- Opprettet arbeidsgren `agent/audit-phase9-hex` fra fase 8-merge `efc766a56213552e580ada737c5d64bdbb7b760b`.
+- Maskinell skanning kartla alle klientprisede hex-kall, AI-kostfelt og whole-store-abonnementer.
+
+### Pågår
+
+- Innføring av semantiske shop-, defense- og Graveyard-tjenester og migrering av UI/AI.
+
+### Tester
+
+- Ikke kjørt ennå i fase 9.
