@@ -1,1 +1,1 @@
-Rename local appliance action variables to avoid React hook lint rules.
+Run the appliance action variable rename now that the workflow exists.
