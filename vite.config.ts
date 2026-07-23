@@ -82,7 +82,6 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && lovableTaggerPlugin,
     VitePWA({
-      selfDestroying: true,
       registerType: 'prompt',
       includeAssets: [
         "favicon.ico",
@@ -150,6 +149,9 @@ export default defineConfig(({ mode }) => ({
           },
         ],
       },
+      // Deliberate PWA policy: keep an active service worker so the game is
+      // installable, but cache no application assets. Deploys therefore always
+      // load current JS/CSS instead of serving stale game code from Cache Storage.
       workbox: {
         globPatterns: [],
         globIgnores: ["**/*"],
@@ -157,6 +159,7 @@ export default defineConfig(({ mode }) => ({
         skipWaiting: false,
         clientsClaim: false,
         runtimeCaching: [],
+        cleanupOutdatedCaches: true,
       },
     }),
     versionJsonPlugin(),
