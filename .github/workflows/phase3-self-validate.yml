@@ -7,6 +7,12 @@ on:
     paths:
       - validation-trigger.txt
       - .github/workflows/phase3-self-validate.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - validation-trigger.txt
+      - .github/workflows/phase3-self-validate.yml
 
 permissions:
   contents: write
