@@ -18,4 +18,6 @@ Error: Patch target not found in src/test/multiplayer.test.ts: cross-player appl
     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
 
 Node.js v22.23.1
-status=1
+Applying appliance test fallback
+Patched src/test/multiplayer.test.ts
+status=0

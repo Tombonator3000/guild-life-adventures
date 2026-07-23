@@ -151,6 +151,8 @@ export interface GameStore extends GameState {
   gambleAtFence: (playerId: string, stake: number) => ActionResult | void;
   purchaseNewspaper: (playerId: string, vendor: 'general-store' | 'shadow-market') => ActionResult | void;
   purchaseVendorItem: (playerId: string, vendor: 'general-store' | 'shadow-market', itemId: string) => ActionResult | void;
+  purchaseAppliance: (playerId: string, vendor: 'enchanter' | 'shadow-market' | 'fence', applianceId: string) => ActionResult | void;
+  useApplianceService: (playerId: string, service: 'repair-enchanter' | 'repair-forge' | 'pawn' | 'redeem', applianceId: string) => ActionResult | void;
 }
 
 export interface ActionResult {

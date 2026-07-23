@@ -178,9 +178,16 @@ describe('Action Categories', () => {
     expect(LOCAL_ONLY_ACTIONS.has('setDebugFestival')).toBe(true);
   });
 
-  it('ALLOWED_GUEST_ACTIONS includes equipment actions', () => {
+  it('ALLOWED_GUEST_ACTIONS uses semantic appliance actions', () => {
+    expect(ALLOWED_GUEST_ACTIONS.has('purchaseAppliance')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('useApplianceService')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('buyAppliance')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('repairAppliance')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('pawnAppliance')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('redeemAppliance')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('forgeRepairAppliance')).toBe(false);
+    // Equipment migration is a separate phase.
     expect(ALLOWED_GUEST_ACTIONS.has('temperEquipment')).toBe(true);
-    expect(ALLOWED_GUEST_ACTIONS.has('forgeRepairAppliance')).toBe(true);
     expect(ALLOWED_GUEST_ACTIONS.has('salvageEquipment')).toBe(true);
   });
 });

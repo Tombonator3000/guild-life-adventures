@@ -32,19 +32,15 @@ export function ShadowMarketPanel({
   section,
 }: ShadowMarketPanelProps) {
   const { t } = useTranslation();
-  const buyAppliance = useGameStore(s => s.buyAppliance);
+  const purchaseAppliance = useGameStore(s => s.purchaseAppliance);
   const purchaseVendorItem = useGameStore(s => s.purchaseVendorItem);
   const appliances = getMarketAppliances();
 
-  const handleBuyAppliance = (applianceId: string, price: number) => {
-    const happinessGain = buyAppliance(player.id, applianceId, price, 'market');
-    const appliance = getAppliance(applianceId);
-    const applianceName = t(`appliances.${applianceId}.name`) || appliance?.name;
-    if (happinessGain > 0) {
-      toast.success(t('panelStore.purchased', { name: applianceName }) + ` +${happinessGain} Happiness`);
-    } else {
-      toast.success(t('panelStore.purchased', { name: applianceName }));
-    }
+  const handleBuyAppliance = (applianceId: string) => {
+    const result = purchaseAppliance(player.id, 'shadow-market', applianceId);
+    if (!result) return;
+    if (result.success) toast.success(result.message);
+    else toast.error(result.message);
   };
 
   const handleBuyItem = (item: typeof SHADOW_MARKET_ITEMS[0]) => {
@@ -199,7 +195,7 @@ export function ShadowMarketPanel({
             price={price}
             disabled={!canAfford || alreadyOwns}
             highlight={alreadyOwns}
-            onClick={() => handleBuyAppliance(appliance.id, price)}
+            onClick={() => handleBuyAppliance(appliance.id)}
             darkText={darkText}
             largeText={largeText}
             previewData={applianceToPreview(appliance, 'market')}
