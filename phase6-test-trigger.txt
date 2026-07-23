@@ -1,1 +1,1 @@
-Run targeted appliance diagnostics.
+Run targeted appliance diagnostics now that the workflow exists.
