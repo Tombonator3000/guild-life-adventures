@@ -130,6 +130,14 @@ describe('Action Categories', () => {
     expect(ALLOWED_GUEST_ACTIONS.has('sellInventoryItem')).toBe(true);
     expect(ALLOWED_GUEST_ACTIONS.has('buyItem')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('sellItem')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('payHousingRent')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('moveHousingAtLandlord')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('requestRentExtensionAtLandlord')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('setHousing')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('payRent')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('prepayRent')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('moveToHousing')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('begForMoreTime')).toBe(false);
     // Host-authoritative work and education intent actions
     expect(ALLOWED_GUEST_ACTIONS.has('performWorkShift')).toBe(true);
     expect(ALLOWED_GUEST_ACTIONS.has('attendDegreeSession')).toBe(true);
@@ -559,8 +567,8 @@ describe('Cross-Player Validation', () => {
     const actionsWithPlayerIdArg = [
       'movePlayer', 'spendTime', 'modifyGold', 'modifyHealth',
       'modifyHappiness', 'modifyFood', 'modifyClothing', 'modifyMaxHealth',
-      'modifyRelaxation', 'cureSickness', 'setHousing', 'payRent',
-      'prepayRent', 'moveToHousing', 'setJob', 'requestRaise',
+      'modifyRelaxation', 'cureSickness', 'payHousingRent',
+      'moveHousingAtLandlord', 'requestRentExtensionAtLandlord', 'setJob', 'requestRaise',
       'negotiateRaise', 'performWorkShift', 'attendDegreeSession',
       'prepayDegree', 'graduateDegree', 'depositToBank', 'withdrawFromBank',
       'invest', 'withdrawInvestment', 'sellInventoryItem',

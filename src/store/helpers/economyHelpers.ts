@@ -2,6 +2,7 @@ import type { SetFn, GetFn } from '../storeTypes';
 import { createBankingActions } from './economy/bankingHelpers';
 import { createItemActions } from './economy/itemHelpers';
 import { createInventoryTradeActions } from './economy/inventoryTradeHelpers';
+import { createHousingServiceActions } from './economy/housingServiceHelpers';
 import { createApplianceActions } from './economy/applianceHelpers';
 import { createApplianceServiceActions } from './economy/applianceServiceHelpers';
 import { createEquipmentActions } from './economy/equipmentHelpers';
@@ -15,6 +16,7 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
     ...createBankingActions(set, get),
     ...createItemActions(set, get),
     ...createInventoryTradeActions(set, get),
+    ...createHousingServiceActions(set, get),
     ...createApplianceActions(set, get),
     ...createApplianceServiceActions(set, get),
     ...createEquipmentActions(set, get),

@@ -96,6 +96,9 @@ export interface GameStore extends GameState {
   prepayRent: (playerId: string, weeks: number, totalCost: number) => void;
   moveToHousing: (playerId: string, tier: HousingTier, cost: number, lockInRent: number) => void;
   begForMoreTime: (playerId: string) => { success: boolean; message: string };
+  payHousingRent: (playerId: string, weeks: 1 | 4 | 8) => ActionResult | void;
+  moveHousingAtLandlord: (playerId: string, tier: HousingTier) => ActionResult | void;
+  requestRentExtensionAtLandlord: (playerId: string) => ActionResult | void;
   applianceBreakageEvent: { playerId: string; applianceId: string; repairCost: number; originalPrice?: number; fromCurse?: boolean; curserName?: string } | null;
   dismissApplianceBreakageEvent: () => void;
   toadCurseEvent: { hoursLost: number; curserName?: string } | null;

@@ -185,7 +185,7 @@ function generateHousingUpgradeActions(ctx: ActionContext): AIAction[] {
       type: 'move-housing',
       priority: 55,
       description: 'Upgrade to Noble Heights',
-      details: { tier: 'noble' as HousingTier, cost: Math.round(RENT_COSTS.noble * ctx.priceModifier) * 2, rent: Math.round(RENT_COSTS.noble * ctx.priceModifier) },
+      details: { tier: 'noble' as HousingTier },
     }];
   }
   if (player.timeRemaining > moveCost('landlord') + 2) {

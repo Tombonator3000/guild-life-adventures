@@ -7,25 +7,18 @@ import { toast } from 'sonner';
 import { playSFX } from '@/audio/sfxManager';
 import { useTranslation } from '@/i18n';
 import { useBanterStore } from '@/store/banterStore';
+import { useGameStore } from '@/store/gameStore';
 
 interface LandlordPanelProps {
   player: Player;
   priceModifier: number;
-  spendTime: (playerId: string, hours: number) => void;
-  prepayRent: (playerId: string, weeks: number, cost: number) => void;
-  moveToHousing: (playerId: string, tier: string, cost: number, lockedRent: number) => void;
-  begForMoreTime: (playerId: string) => { success: boolean; message: string };
 }
 
-export function LandlordPanel({
-  player,
-  priceModifier,
-  spendTime,
-  prepayRent,
-  moveToHousing,
-  begForMoreTime,
-}: LandlordPanelProps) {
+export function LandlordPanel({ player, priceModifier }: LandlordPanelProps) {
   const { t } = useTranslation();
+  const payHousingRent = useGameStore(state => state.payHousingRent);
+  const moveHousingAtLandlord = useGameStore(state => state.moveHousingAtLandlord);
+  const requestRentExtensionAtLandlord = useGameStore(state => state.requestRentExtensionAtLandlord);
   const baseRent = RENT_COSTS[player.housing];
   const marketRent = Math.round(baseRent * priceModifier);
   const effectiveRent = player.lockedRent > 0 ? player.lockedRent : marketRent;
@@ -86,9 +79,10 @@ export function LandlordPanel({
               darkText
               sfx="rent-paid"
               onClick={() => {
-                prepayRent(player.id, 1, effectiveRent);
-                spendTime(player.id, 1);
-                toast.success(t('panelLandlord.rentPaid'));
+                const result = payHousingRent(player.id, 1);
+                if (!result) return;
+                if (result.success) toast.success(result.message);
+                else toast.error(result.message);
               }}
             />
             <ActionButton
@@ -99,9 +93,10 @@ export function LandlordPanel({
               darkText
               sfx="rent-paid"
               onClick={() => {
-                prepayRent(player.id, 4, effectiveRent * 4);
-                spendTime(player.id, 1);
-                toast.success(t('panelLandlord.rentPaid'));
+                const result = payHousingRent(player.id, 4);
+                if (!result) return;
+                if (result.success) toast.success(result.message);
+                else toast.error(result.message);
               }}
             />
             <ActionButton
@@ -112,9 +107,10 @@ export function LandlordPanel({
               darkText
               sfx="rent-paid"
               onClick={() => {
-                prepayRent(player.id, 8, effectiveRent * 8);
-                spendTime(player.id, 1);
-                toast.success(t('panelLandlord.rentPaid'));
+                const result = payHousingRent(player.id, 8);
+                if (!result) return;
+                if (result.success) toast.success(result.message);
+                else toast.error(result.message);
               }}
             />
           </div>
@@ -134,8 +130,8 @@ export function LandlordPanel({
             disabled={player.timeRemaining < 1}
             darkText
             onClick={() => {
-              const result = begForMoreTime(player.id);
-              spendTime(player.id, 1);
+              const result = requestRentExtensionAtLandlord(player.id);
+              if (!result) return;
               if (result.success) {
                 playSFX('rent-paid');
               }
@@ -183,9 +179,10 @@ export function LandlordPanel({
               <button
                 onClick={() => {
                   playSFX('door-open');
-                  moveToHousing(player.id, tier, moveCost, tierMarketRent);
-                  spendTime(player.id, 4);
-                  toast.success(t('panelLandlord.rentPaid'));
+                  const result = moveHousingAtLandlord(player.id, tier);
+                  if (!result) return;
+                  if (result.success) toast.success(result.message);
+                  else toast.error(result.message);
                 }}
                 disabled={player.gold < moveCost || player.timeRemaining < 4}
                 className="w-full gold-button text-xs py-1 disabled:opacity-50"

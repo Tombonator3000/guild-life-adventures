@@ -91,11 +91,11 @@ export interface StoreActions {
   studyDegree: (playerId: string, degreeId: string, cost: number, hours: number) => void;
   completeDegree: (playerId: string, degreeId: string) => void;
   setJob: (playerId: string, jobId: string, wage: number) => void;
-  payRent: (playerId: string) => void;
+  payHousingRent: (playerId: string, weeks: 1 | 4 | 8) => { success: boolean; message: string } | void;
   depositToBank: (playerId: string, amount: number) => void;
   withdrawFromBank: (playerId: string, amount: number) => void;
   buyAppliance: (playerId: string, applianceId: string, cost: number, source: string) => void;
-  moveToHousing: (playerId: string, tier: string, cost: number, rent: number) => void;
+  moveHousingAtLandlord: (playerId: string, tier: import('@/types/game.types').HousingTier) => { success: boolean; message: string } | void;
   buyDurable: (playerId: string, itemId: string, cost: number) => void;
   equipItem: (playerId: string, itemId: string, slot: string) => void;
   buyGuildPass: (playerId: string) => void;

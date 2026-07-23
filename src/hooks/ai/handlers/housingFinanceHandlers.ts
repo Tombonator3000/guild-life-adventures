@@ -7,39 +7,31 @@
  */
 
 import type { Player, HousingTier } from '@/types/game.types';
-import { RENT_COSTS, LOAN_MIN_SHIFTS_REQUIRED } from '@/types/game.types';
+import { LOAN_MIN_SHIFTS_REQUIRED } from '@/types/game.types';
 
 import type { AIAction } from '../types';
 import type { StoreActions } from '../actionExecutor';
 
 // ─── Housing & Rent ─────────────────────────────────────────────────────
 
-export function handlePayRent(player: Player, action: AIAction, store: StoreActions): boolean {
+export function handlePayRent(player: Player, _action: AIAction, store: StoreActions): boolean {
   if (player.housing === 'homeless') return false;
-  const cost = player.lockedRent > 0 ? player.lockedRent : RENT_COSTS[player.housing];
-  if (player.gold < cost) return false;
-  store.payRent(player.id);
-  store.spendTime(player.id, 1);
-  return true;
+  const result = store.payHousingRent(player.id, 1);
+  return result?.success ?? false;
 }
 
 export function handleMoveHousing(player: Player, action: AIAction, store: StoreActions): boolean {
   const tier = action.details?.tier as HousingTier;
-  const cost = (action.details?.cost as number) || 200;
-  // BUG FIX: Check for 4 hours (same as human) instead of 1
-  if (!tier || player.gold < cost || player.timeRemaining < 4) return false;
-  const rent = (action.details?.rent as number) || RENT_COSTS[tier];
-  store.moveToHousing(player.id, tier, cost, rent);
-  store.spendTime(player.id, 4); // BUG FIX: Was 1, should be 4 (matches human)
-  return true;
+  if (!tier) return false;
+  const result = store.moveHousingAtLandlord(player.id, tier);
+  return result?.success ?? false;
 }
 
 export function handleDowngradeHousing(player: Player, action: AIAction, store: StoreActions): boolean {
   const tier = action.details?.tier as HousingTier;
   if (!tier) return false;
-  store.moveToHousing(player.id, tier, 0, RENT_COSTS[tier]);
-  store.spendTime(player.id, 4); // BUG FIX: Was 1, should be 4 (matches human)
-  return true;
+  const result = store.moveHousingAtLandlord(player.id, tier);
+  return result?.success ?? false;
 }
 
 // ─── Banking & Finance ──────────────────────────────────────────────────
