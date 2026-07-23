@@ -1,1 +1,0 @@
-Scan all hex service callers and AI detail fields now that the workflow exists.

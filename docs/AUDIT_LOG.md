@@ -7,11 +7,11 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 | Nr. | Punkt | Status | Merknad |
 |---:|---|---|---|
 | 1 | Beskytte online spill mot sabotasje/misbruk | Ferdig hovedsakelig | Sabotasje, beskyttelse og tip-off er host-autoritative. |
-| 2 | Host-autoritativ multiplayer | Delvis ferdig | Aktør-ID, tur, rate limit og argumentgrenser valideres. Jobb, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr og bolig bruker semantiske gjestehandlinger. Hex og enkelte økonomihandlinger står igjen. |
+| 2 | Host-autoritativ multiplayer | Delvis ferdig | Aktør-ID, tur, rate limit og argumentgrenser valideres. Jobb, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig og hex-tjenester bruker semantiske gjestehandlinger. Enkelte bank-/økonomihandlinger står igjen. |
 | 3 | Full save/load-gjenoppretting | Ferdig | Brett-hexer og ukentlige nyheter gjenopprettes. |
 | 4 | Save-migrering v10 | Ferdig | Normalisering og migreringstester er lagt til. |
 | 5 | Sikre reputation unlocks | Ferdig | Kjøp valideres atomisk på hosten. |
-| 6 | Atomiske handlinger | Delvis ferdig | Healer, gravplass, gambling, avis, sabotasje, beskyttelse, jobb, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr og bolig er host-resolverte. Hex/ritual og deler av bank/investering står igjen. |
+| 6 | Atomiske handlinger | Delvis ferdig | Healer, gravplass, gambling, avis, sabotasje, beskyttelse, jobb, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig og hex-/ritualtjenester er host-resolverte. Deler av bank/investering står igjen. |
 | 7 | Hook-avhengigheter | Ferdig for kjente funn | AI-start, auto-end-turn, tastatur og zone-editor er rettet. |
 | 8 | Playwright E2E | Delvis ferdig | Tittel- og setup-smoketester finnes. Full spillflyt, save/load og online avvisninger mangler. |
 | 9 | Zustand-selectors | Delvis ferdig | Root, GameBoard og Grimwald AI bruker selectors/useShallow. Flere paneler er begrenset, men `LocationPanel` leser fortsatt hele store-objektet. |
@@ -23,13 +23,12 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 
 ## Gjenstående prioritert rekkefølge
 
-1. **Gjør hex- og ritualtjenester host-autoritative.** Scrollpris, amulett, rensing, ritual og refleksjon skal løses fra canonical data på hosten.
-2. **Gjør bank/investering og øvrige rå handlinger strengere.** Klientvalgte beløp må få tydelige grenser, eierskapskontroll og semantiske handlinger der beløpet ikke skal være fritt.
-3. **Utvid E2E-testene til faktisk spilling.** Opprett spill, start første tur, utfør handling, avslutt tur, save/load og verifiser at ingen runtime-feil oppstår.
-4. **Test online sikkerhetsavvisninger på protokollnivå.** Feil spiller-ID, feil tur, feil vendor/service, ugyldig vare og manipulerte verdier skal avvises.
-5. **Begrens resterende store-abonnementer.** Start med `LocationPanel`, som fortsatt leser hele Zustand-storen.
-6. **Del opp GameBoard videre.** Flytt avledet tilstand og overlay-/layoutlogikk til mindre hooks/komponenter uten å endre funksjon.
-7. **Rydd døde kompatibilitetslag.** Fjern gamle callback-props og numeriske legacy-funksjoner først når AI og alle lokale kallere er migrert.
+1. **Gjør bank/investering og øvrige rå handlinger strengere.** Klientvalgte beløp må få tydelige grenser, eierskapskontroll og semantiske handlinger der beløpet ikke skal være fritt.
+2. **Utvid E2E-testene til faktisk spilling.** Opprett spill, start første tur, utfør handling, avslutt tur, save/load og verifiser at ingen runtime-feil oppstår.
+3. **Test online sikkerhetsavvisninger på protokollnivå.** Feil spiller-ID, feil tur, feil vendor/service, ugyldig vare og manipulerte verdier skal avvises.
+4. **Begrens resterende store-abonnementer.** Start med `LocationPanel`, som fortsatt leser hele Zustand-storen.
+5. **Del opp GameBoard videre.** Flytt avledet tilstand og overlay-/layoutlogikk til mindre hooks/komponenter uten å endre funksjon.
+6. **Rydd døde kompatibilitetslag.** Fjern gamle callback-props og numeriske legacy-funksjoner først når AI og alle lokale kallere er migrert.
 
 ## Fase 4 – 23. juli 2026
 
@@ -236,13 +235,38 @@ GitHub Actions-run `30002093672`:
 
 ### Utført
 
-- Opprettet arbeidsgren `agent/audit-phase9-hex` fra fase 8-merge `efc766a56213552e580ada737c5d64bdbb7b760b`.
-- Maskinell skanning kartla alle klientprisede hex-kall, AI-kostfelt og whole-store-abonnementer.
-
-### Pågår
-
-- Innføring av semantiske shop-, defense- og Graveyard-tjenester og migrering av UI/AI.
+- Opprettet arbeidsgren `agent/audit-phase9-hex` og draft-PR #332 fra fase 8-merge `efc766a56213552e580ada737c5d64bdbb7b760b`.
+- Maskinell skanning kartla klientprisede hex-kall, AI-kostfelt, numeriske protokollregler og whole-store-abonnementer.
+- Lagt til `purchaseHexScroll(playerId, vendor, hexId)` med canonical Enchanter-stock eller ukentlig Shadow Market-rotasjon.
+- Lagt til `useHexDefense(playerId, service, targetLocation?)` for Protective Amulet og målrettet Dispel.
+- Lagt til `useGraveyardHexService(playerId, service)` for Dark Ritual, Curse Reflection og Purification.
+- Hosten validerer feature toggle, fysisk vendor/lokasjon, gjeldende stock, floor-prerequisites, canonical pris, gull, tid, amulet-eierskap, aktiv curse og valgt hostile location hex.
+- Scrollkjøp, amulett og dispel oppdaterer gull, tid, inventory/hex-state og statistikk atomisk.
+- Eksisterende `castLocationHex` og `castPersonalCurse` ble beholdt fordi de allerede validerer scroll-eierskap, mål, lokasjon, tid, cooldown og amulet på hosten.
+- Rettet en funksjonell selvmotsigelse: Dispel Scroll ble solgt hos Enchanter, men krevde tidligere at spilleren sto på den hexede lokasjonen. Spilleren velger nå en faktisk hostile location hex hos Enchanter, og hosten fjerner kun den valgte hexen.
+- Oppdatert `HexShopPanel` og `GraveyardHexPanel` til avgrensede Zustand-selectors.
+- Oppdatert AI til å sende bare vendor + hex-ID, target location eller service; prisfelt og separate gull-/tidsmutasjoner er fjernet.
+- AI reiser nå til Enchanter for remote dispel i stedet for å reise til den blokkerte lokasjonen.
+- Fjernet `buyHexScroll`, `buyProtectiveAmulet`, `dispelLocationHex`, `cleanseCurse`, `performDarkRitual` og `attemptCurseReflection` fra gjestenes allowlist og fjernet de gamle numeriske protokollreglene.
+- Lagt til ni målrettede hex-regresjonstester og oppdatert multiplayer-testene.
+- ESLint-runden avdekket at lokale store-action-navn med `use` ble tolket som React-hooks. Lokale aliaser ble endret uten å endre API-et.
+- Fjernet alle midlertidige workflows, triggere, skanneresultater, patchskript og valideringslogger før merge.
 
 ### Tester
 
-- Ikke kjørt ennå i fase 9.
+GitHub Actions-run `30003787680`:
+
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Målrettede hex-tester: bestått, 9 av 9.
+- Full Vitest-pakke: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright-runner og Chromium-installasjon: bestått.
+- Playwright-smoketester i Chromium: bestått.
+
+### Resultat
+
+- Online-gjester og AI kan ikke lenger velge scrollpris, defense-pris, ritualpris, rensepris, refleksjonspris eller separat tidsbruk.
+- Hexcasting er fortsatt funksjonelt og bruker den eksisterende strengere host-valideringen.
+- PR #332 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
