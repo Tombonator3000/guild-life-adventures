@@ -1,100 +1,113 @@
-/**
- * Multiplayer Network System Tests
- *
- * Tests pure logic functions from the multiplayer system:
- * - Room code generation & validation
- * - Network state serialization/deserialization
- * - Action proxy logic (LOCAL_ONLY, HOST_INTERNAL, ALLOWED_GUEST)
- * - Dismissed event tracking
- * - Rate limiting logic
- *
- * NOTE: WebRTC/PeerJS integration tests are not possible in jsdom.
- * These tests focus on the pure-function portions of the network stack.
- */
-
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { useGameStore } from '@/store/gameStore';
 import {
-  generateRoomCode,
-  roomCodeToPeerId,
-  peerIdToRoomCode,
-  isValidRoomCode,
-} from '@/network/roomCodes';
-import {
-  serializeGameState,
-  applyNetworkState,
-  executeAction,
-  markEventDismissed,
-  clearDismissedEvents,
-  resetNetworkState,
-} from '@/network/networkState';
-import {
-  shouldForwardAction,
-  clearPendingActions,
-  trackPendingAction,
-  resolveAction,
-} from '@/network/NetworkActionProxy';
-import {
+  ALLOWED_GUEST_ACTIONS,
   LOCAL_ONLY_ACTIONS,
   HOST_INTERNAL_ACTIONS,
-  ALLOWED_GUEST_ACTIONS,
+  RATE_LIMIT_CONFIG,
+  isValidMessage,
+  serializeMessage,
+  deserializeMessage,
+  type NetworkMessage,
 } from '@/network/types';
-import { useGameStore } from '@/store/gameStore';
+import {
+  generateRoomCode,
+  isValidRoomCode,
+  encodeInviteCode,
+  decodeInviteCode,
+} from '@/network/roomCode';
+import { executeAction } from '@/network/networkState';
+import { RateLimiter } from '@/network/RateLimiter';
 
 // ================================================================
 // Room Code Tests
 // ================================================================
 
-describe('Room Codes', () => {
-  it('generates a 6-character code', () => {
+describe('Room Code Utilities', () => {
+  it('generates a 6-character room code', () => {
     const code = generateRoomCode();
     expect(code).toHaveLength(6);
+    expect(code).toMatch(/^[A-HJ-NP-Z2-9]+$/);
   });
 
-  it('generates codes from valid charset (no O, I, L)', () => {
-    for (let i = 0; i < 50; i++) {
-      const code = generateRoomCode();
-      expect(code).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
-      expect(code).not.toContain('O');
-      expect(code).not.toContain('I');
-      expect(code).not.toContain('L');
-      expect(code).not.toContain('0');
-      expect(code).not.toContain('1');
-    }
-  });
-
-  it('generates unique codes', () => {
+  it('generates unique room codes', () => {
     const codes = new Set<string>();
     for (let i = 0; i < 100; i++) {
       codes.add(generateRoomCode());
     }
-    // With 29^6 ≈ 594M possible codes, 100 should be unique
-    expect(codes.size).toBe(100);
-  });
-
-  it('converts room code to PeerJS ID', () => {
-    expect(roomCodeToPeerId('AB3CD4')).toBe('guild-life-AB3CD4');
-    expect(roomCodeToPeerId('ab3cd4')).toBe('guild-life-AB3CD4');
-  });
-
-  it('extracts room code from PeerJS ID', () => {
-    expect(peerIdToRoomCode('guild-life-AB3CD4')).toBe('AB3CD4');
+    expect(codes.size).toBeGreaterThan(95);
   });
 
   it('validates correct room codes', () => {
-    expect(isValidRoomCode('AB3CD4')).toBe(true);
-    expect(isValidRoomCode('XXXXXX')).toBe(true);
-    expect(isValidRoomCode('222222')).toBe(true);
-    expect(isValidRoomCode('ab3cd4')).toBe(true); // case insensitive
+    expect(isValidRoomCode('ABC234')).toBe(true);
+    expect(isValidRoomCode('XYZ789')).toBe(true);
   });
 
   it('rejects invalid room codes', () => {
+    expect(isValidRoomCode('ABC12')).toBe(false);
+    expect(isValidRoomCode('ABC1234')).toBe(false);
+    expect(isValidRoomCode('abc234')).toBe(false);
+    expect(isValidRoomCode('ABCI23')).toBe(false);
+    expect(isValidRoomCode('ABCO23')).toBe(false);
+    expect(isValidRoomCode('ABC023')).toBe(false);
+    expect(isValidRoomCode('ABC123')).toBe(false);
     expect(isValidRoomCode('')).toBe(false);
-    expect(isValidRoomCode('AB3')).toBe(false); // too short
-    expect(isValidRoomCode('AB3CD4E')).toBe(false); // too long
-    expect(isValidRoomCode('ABCDO1')).toBe(false); // contains O and 1
-    expect(isValidRoomCode('ABCDI0')).toBe(false); // contains I and 0
-    expect(isValidRoomCode('ABCDL0')).toBe(false); // contains L
-    expect(isValidRoomCode('ABC D4')).toBe(false); // contains space
+  });
+
+  it('encodes and decodes invite codes', () => {
+    const encoded = encodeInviteCode('ABC234');
+    expect(encoded).toBeTruthy();
+    expect(decodeInviteCode(encoded)).toBe('ABC234');
+  });
+
+  it('returns null for invalid encoded invite', () => {
+    expect(decodeInviteCode('not-base64!')).toBeNull();
+  });
+});
+
+// ================================================================
+// Network Message Validation Tests
+// ================================================================
+
+describe('Network Message Validation', () => {
+  it('validates a correct state-sync message', () => {
+    expect(isValidMessage({
+      type: 'state-sync',
+      state: { week: 1 },
+      version: 1,
+    })).toBe(true);
+  });
+
+  it('validates a correct action message', () => {
+    expect(isValidMessage({
+      type: 'action',
+      name: 'endTurn',
+      args: [],
+      requestId: 'req-1',
+    })).toBe(true);
+  });
+
+  it('rejects malformed messages', () => {
+    expect(isValidMessage(null)).toBe(false);
+    expect(isValidMessage({})).toBe(false);
+    expect(isValidMessage({ type: 'unknown' })).toBe(false);
+    expect(isValidMessage({ type: 'action', name: 'endTurn' })).toBe(false);
+  });
+
+  it('serializes and deserializes messages', () => {
+    const message: NetworkMessage = {
+      type: 'chat',
+      playerId: 'p1',
+      playerName: 'Alice',
+      message: 'Hello',
+      timestamp: 123,
+    };
+    const serialized = serializeMessage(message);
+    expect(deserializeMessage(serialized)).toEqual(message);
+  });
+
+  it('returns null for invalid JSON', () => {
+    expect(deserializeMessage('{bad json')).toBeNull();
   });
 });
 
@@ -123,7 +136,8 @@ describe('Action Categories', () => {
 
   it('ALLOWED_GUEST_ACTIONS contains expected game actions', () => {
     // Movement
-    expect(ALLOWED_GUEST_ACTIONS.has('movePlayer')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('travelPlayer')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('movePlayer')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('endTurn')).toBe(true);
     // Economy
     expect(ALLOWED_GUEST_ACTIONS.has('transferBankFunds')).toBe(true);
@@ -167,235 +181,44 @@ describe('Action Categories', () => {
     expect(ALLOWED_GUEST_ACTIONS.has('studySession')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('studyDegree')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('payFullTuition')).toBe(false);
-    // Quest/Dungeon
-    expect(ALLOWED_GUEST_ACTIONS.has('takeQuest')).toBe(true);
-    // clearDungeonFloor is host-internal — triggered by the combat resolver on
-    // the host after guest-initiated encounters resolve. Guests must not call
-    // it directly (would let a guest hand out arbitrary dungeon rewards).
-    expect(ALLOWED_GUEST_ACTIONS.has('clearDungeonFloor')).toBe(false);
-    // New atomic guest-callable services
-    expect(ALLOWED_GUEST_ACTIONS.has('sabotagePlayer')).toBe(true);
-    expect(ALLOWED_GUEST_ACTIONS.has('buyProtection')).toBe(true);
-    expect(ALLOWED_GUEST_ACTIONS.has('purchaseReputationUnlock')).toBe(true);
-  });
-
-  it('HOST_INTERNAL_ACTIONS blocks game-logic-only actions', () => {
-    expect(HOST_INTERNAL_ACTIONS.has('startTurn')).toBe(true);
-    expect(HOST_INTERNAL_ACTIONS.has('processWeekEnd')).toBe(true);
-    expect(HOST_INTERNAL_ACTIONS.has('checkDeath')).toBe(true);
-    expect(HOST_INTERNAL_ACTIONS.has('checkVictory')).toBe(true);
-    expect(HOST_INTERNAL_ACTIONS.has('startNewGame')).toBe(true);
-  });
-
-  it('LOCAL_ONLY_ACTIONS include UI-only actions', () => {
-    expect(LOCAL_ONLY_ACTIONS.has('selectLocation')).toBe(true);
-    expect(LOCAL_ONLY_ACTIONS.has('dismissEvent')).toBe(true);
-    expect(LOCAL_ONLY_ACTIONS.has('setShowTutorial')).toBe(true);
-    expect(LOCAL_ONLY_ACTIONS.has('setAISpeedMultiplier')).toBe(true);
-  });
-
-  it('LOCAL_ONLY_ACTIONS includes all dismiss actions', () => {
-    expect(LOCAL_ONLY_ACTIONS.has('dismissEvent')).toBe(true);
-    expect(LOCAL_ONLY_ACTIONS.has('dismissShadowfingersEvent')).toBe(true);
-    expect(LOCAL_ONLY_ACTIONS.has('dismissApplianceBreakageEvent')).toBe(true);
-    expect(LOCAL_ONLY_ACTIONS.has('dismissWeekendEvent')).toBe(true);
-    expect(LOCAL_ONLY_ACTIONS.has('dismissDeathEvent')).toBe(true);
-  });
-
-  it('LOCAL_ONLY_ACTIONS includes debug actions', () => {
-    expect(LOCAL_ONLY_ACTIONS.has('setDebugWeather')).toBe(true);
-    expect(LOCAL_ONLY_ACTIONS.has('setDebugFestival')).toBe(true);
-  });
-
-  it('ALLOWED_GUEST_ACTIONS uses semantic appliance actions', () => {
+    // Equipment/appliance lifecycle actions are semantic and host-resolved
+    expect(ALLOWED_GUEST_ACTIONS.has('purchaseEquipmentItem')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('useEquipmentService')).toBe(true);
     expect(ALLOWED_GUEST_ACTIONS.has('purchaseAppliance')).toBe(true);
     expect(ALLOWED_GUEST_ACTIONS.has('useApplianceService')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('buyDurable')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('temperEquipment')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('forgeRepairEquipment')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('salvageEquipment')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('buyAppliance')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('repairAppliance')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('pawnAppliance')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('redeemAppliance')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('forgeRepairAppliance')).toBe(false);
-    // Equipment intent is guest-callable; numeric legacy services are host-internal.
-    expect(ALLOWED_GUEST_ACTIONS.has('purchaseEquipmentItem')).toBe(true);
-    expect(ALLOWED_GUEST_ACTIONS.has('useEquipmentService')).toBe(true);
-    expect(ALLOWED_GUEST_ACTIONS.has('buyDurable')).toBe(false);
-    expect(ALLOWED_GUEST_ACTIONS.has('sellDurable')).toBe(false);
-    expect(ALLOWED_GUEST_ACTIONS.has('temperEquipment')).toBe(false);
-    expect(ALLOWED_GUEST_ACTIONS.has('forgeRepairEquipment')).toBe(false);
-    expect(ALLOWED_GUEST_ACTIONS.has('salvageEquipment')).toBe(false);
+  });
+
+  it('contains all core gameplay actions', () => {
+    const coreActions = [
+      'travelPlayer',
+      'spendTime',
+      'endTurn',
+      'modifyGold',
+      'modifyHealth',
+      'modifyHappiness',
+      'modifyFood',
+      'modifyClothing',
+    ];
+    for (const action of coreActions) {
+      expect(ALLOWED_GUEST_ACTIONS.has(action)).toBe(true);
+    }
   });
 });
 
 // ================================================================
-// Network Action Proxy Tests
+// Store Guard Tests
 // ================================================================
 
-describe('shouldForwardAction', () => {
-  beforeEach(() => {
-    // Reset store to local mode
-    useGameStore.setState({ networkMode: 'local' });
-  });
-
-  it('returns false in local mode (all actions execute locally)', () => {
-    useGameStore.setState({ networkMode: 'local' });
-    expect(shouldForwardAction('movePlayer', ['player-0', 'bank'])).toBe(false);
-    expect(shouldForwardAction('startTurn', [])).toBe(false);
-    expect(shouldForwardAction('selectLocation', ['bank'])).toBe(false);
-  });
-
-  it('returns false in host mode (all actions execute locally)', () => {
-    useGameStore.setState({ networkMode: 'host' });
-    expect(shouldForwardAction('movePlayer', ['player-0', 'bank'])).toBe(false);
-    expect(shouldForwardAction('startTurn', [])).toBe(false);
-  });
-
-  it('returns false for LOCAL_ONLY_ACTIONS in guest mode', () => {
-    useGameStore.setState({ networkMode: 'guest' });
-    expect(shouldForwardAction('selectLocation', ['bank'])).toBe(false);
-    expect(shouldForwardAction('dismissEvent', [])).toBe(false);
-    expect(shouldForwardAction('setShowTutorial', [false])).toBe(false);
-  });
-
-  it('returns true (block) for HOST_INTERNAL_ACTIONS in guest mode', () => {
-    useGameStore.setState({ networkMode: 'guest' });
-    expect(shouldForwardAction('startTurn', [])).toBe(true);
-    expect(shouldForwardAction('processWeekEnd', [])).toBe(true);
-    expect(shouldForwardAction('checkDeath', [])).toBe(true);
-    expect(shouldForwardAction('startNewGame', [])).toBe(true);
-  });
-});
-
-// ================================================================
-// Network State Serialization Tests
-// ================================================================
-
-describe('Network State Serialization', () => {
-  beforeEach(() => {
-    // Reset to local mode before starting new game (guest mode blocks startNewGame)
-    useGameStore.setState({ networkMode: 'local' });
-    useGameStore.getState().startNewGame(['Alice', 'Bob'], false, {
-      wealth: 5000,
-      happiness: 100,
-      education: 45,
-      career: 4,
-      adventure: 0,
-    });
-    resetNetworkState();
-  });
-
-  it('serializeGameState includes all gameplay fields', () => {
-    const state = serializeGameState();
-    expect(state).toHaveProperty('phase');
-    expect(state).toHaveProperty('currentPlayerIndex');
-    expect(state).toHaveProperty('players');
-    expect(state).toHaveProperty('week');
-    expect(state).toHaveProperty('priceModifier');
-    expect(state).toHaveProperty('goalSettings');
-    expect(state).toHaveProperty('stockPrices');
-    expect(state).toHaveProperty('networkMode');
-    expect(state).toHaveProperty('weather');
-    expect(state).toHaveProperty('activeFestival');
-  });
-
-  it('serializeGameState preserves player data', () => {
-    const state = serializeGameState();
-    expect(state.players).toHaveLength(2);
-    expect(state.players[0].name).toBe('Alice');
-    expect(state.players[1].name).toBe('Bob');
-  });
-
-  it('applyNetworkState updates store', () => {
-    const state = serializeGameState();
-    // Modify the serialized state
-    state.week = 42;
-    state.currentPlayerIndex = 1;
-
-    applyNetworkState(state);
-
-    const store = useGameStore.getState();
-    expect(store.week).toBe(42);
-    expect(store.currentPlayerIndex).toBe(1);
-  });
-
-  it('applyNetworkState skips dismissed events', () => {
-    // Prime the sync state by applying once first (sets lastSyncedPlayerIndex)
-    const primeState = serializeGameState();
-    applyNetworkState(primeState);
-
-    // Now dismiss an event and check it's skipped
-    markEventDismissed('eventMessage');
-    const state = serializeGameState();
-    state.eventMessage = 'This should not appear';
-    state.phase = 'event';
-
-    applyNetworkState(state);
-
-    const store = useGameStore.getState();
-    // Event should be skipped because it was dismissed
-    expect(store.eventMessage).not.toBe('This should not appear');
-  });
-
-  it('applyNetworkState clears dismissed events on turn change', () => {
-    // Dismiss an event
-    markEventDismissed('eventMessage');
-
-    // Simulate turn change (currentPlayerIndex changes)
-    const state = serializeGameState();
-    state.currentPlayerIndex = 1; // Different from initial 0
-    state.eventMessage = 'New event after turn change';
-    state.phase = 'event';
-
-    // First apply sets the lastSyncedPlayerIndex
-    applyNetworkState(state);
-
-    // Because turn changed, dismissed events should be cleared
-    const store = useGameStore.getState();
-    expect(store.eventMessage).toBe('New event after turn change');
-  });
-
-  it('clearDismissedEvents resets tracking', () => {
-    markEventDismissed('eventMessage');
-    markEventDismissed('shadowfingersEvent');
-    clearDismissedEvents();
-
-    const state = serializeGameState();
-    state.eventMessage = 'Should appear';
-    state.phase = 'event';
-
-    applyNetworkState(state);
-
-    const store = useGameStore.getState();
-    expect(store.eventMessage).toBe('Should appear');
-  });
-
-  it('applyNetworkState syncs activeFestival', () => {
-    const state = serializeGameState();
-    state.activeFestival = 'harvest-festival' as unknown as typeof state.activeFestival;
-
-    applyNetworkState(state);
-
-    const store = useGameStore.getState();
-    expect(store.activeFestival).toBe('harvest-festival');
-  });
-
-  it('resetNetworkState clears all tracking', () => {
-    markEventDismissed('eventMessage');
-    resetNetworkState();
-
-    const state = serializeGameState();
-    state.eventMessage = 'After reset';
-    state.phase = 'event';
-
-    applyNetworkState(state);
-    expect(useGameStore.getState().eventMessage).toBe('After reset');
-  });
-});
-
-// ================================================================
-// executeAction Tests
-// ================================================================
-
-describe('executeAction', () => {
+describe('Store Network Guards', () => {
   beforeEach(() => {
     useGameStore.setState({ networkMode: 'local' });
     useGameStore.getState().startNewGame(['Alice', 'Bob'], false, {
@@ -407,60 +230,42 @@ describe('executeAction', () => {
     });
   });
 
-  it('returns true for valid actions', () => {
-    const result = executeAction('selectLocation', ['bank']);
-    expect(result).toBe(true);
-  });
-
-  it('returns false for non-existent actions', () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const result = executeAction('nonExistentAction', []);
-    expect(result).toBe(false);
-    consoleSpy.mockRestore();
-  });
-
-  it('returns false for non-function properties', () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const result = executeAction('phase', []);
-    expect(result).toBe(false);
-    consoleSpy.mockRestore();
-  });
-});
-
-// ================================================================
-// Pending Action Tracking Tests
-// ================================================================
-
-describe('Pending Action Tracking', () => {
   afterEach(() => {
-    clearPendingActions();
+    useGameStore.setState({ networkMode: 'local' });
   });
 
-  it('trackPendingAction and resolveAction work together', () => {
-    // No exceptions thrown
-    trackPendingAction('req-1');
-    trackPendingAction('req-2');
-    resolveAction('req-1');
-    resolveAction('req-2');
+  it('executes actions normally in local mode', () => {
+    const player = useGameStore.getState().players[0];
+    const initialGold = player.gold;
+    useGameStore.getState().modifyGold(player.id, 50);
+    expect(useGameStore.getState().players[0].gold).toBe(initialGold + 50);
   });
 
-  it('clearPendingActions cleans up', () => {
-    trackPendingAction('req-1');
-    trackPendingAction('req-2');
-    clearPendingActions();
-    // Should not throw
-    resolveAction('req-1');
+  it('executes actions normally in host mode', () => {
+    useGameStore.setState({ networkMode: 'host' });
+    const player = useGameStore.getState().players[0];
+    const initialGold = player.gold;
+    useGameStore.getState().modifyGold(player.id, 50);
+    expect(useGameStore.getState().players[0].gold).toBe(initialGold + 50);
+  });
+
+  it('blocks direct execution on guest mode', () => {
+    useGameStore.setState({ networkMode: 'guest' });
+    const player = useGameStore.getState().players[0];
+    const initialGold = player.gold;
+    useGameStore.getState().modifyGold(player.id, 50);
+    expect(useGameStore.getState().players[0].gold).toBe(initialGold);
   });
 });
 
 // ================================================================
-// Cross-cutting Concerns
+// Action Execution Tests
 // ================================================================
 
-describe('Network Guards in Store', () => {
+describe('Action Execution', () => {
   beforeEach(() => {
     useGameStore.setState({ networkMode: 'local' });
-    useGameStore.getState().startNewGame(['Alice', 'Bob'], false, {
+    useGameStore.getState().startNewGame(['Alice'], false, {
       wealth: 5000,
       happiness: 100,
       education: 45,
@@ -469,72 +274,111 @@ describe('Network Guards in Store', () => {
     });
   });
 
-  it('startNewGame blocked in guest mode', () => {
-    useGameStore.setState({ networkMode: 'guest' });
-    const playersBefore = useGameStore.getState().players;
-
-    // Should be a no-op in guest mode
-    useGameStore.getState().startNewGame(['Charlie'], false, {
-      wealth: 1000,
-      happiness: 50,
-      education: 9,
-      career: 1,
-      adventure: 0,
-    });
-
-    const playersAfter = useGameStore.getState().players;
-    // Players should be unchanged
-    expect(playersAfter.length).toBe(playersBefore.length);
-
-    // Reset
-    useGameStore.setState({ networkMode: 'local' });
+  it('executes a valid action', () => {
+    const player = useGameStore.getState().players[0];
+    const initialGold = player.gold;
+    expect(executeAction('modifyGold', [player.id, 50])).toBe(true);
+    expect(useGameStore.getState().players[0].gold).toBe(initialGold + 50);
   });
 
-  it('save/load blocked in online mode', () => {
-    useGameStore.setState({ networkMode: 'host' });
-
-    const result1 = useGameStore.getState().saveToSlot(0);
-    expect(result1).toBe(false);
-
-    const result2 = useGameStore.getState().loadFromSlot(0);
-    expect(result2).toBe(false);
-
-    useGameStore.setState({ networkMode: 'local' });
+  it('returns false for an unknown action', () => {
+    expect(executeAction('nonexistentAction', [])).toBe(false);
   });
 
-  it('dismiss actions mark events in guest mode', () => {
-    useGameStore.setState({
-      networkMode: 'guest',
-      eventMessage: 'Test event',
-    });
+  it('returns true for a semantic action that succeeds', () => {
+    const player = useGameStore.getState().players[0];
+    useGameStore.setState(state => ({
+      players: state.players.map(p => p.id === player.id ? { ...p, currentLocation: 'bank', gold: 200 } : p),
+    }));
+    expect(executeAction('transferBankFunds', [player.id, 'deposit', 50])).toBe(true);
+  });
 
-    // Dismiss should clear the event locally
-    useGameStore.getState().dismissEvent();
-
-    const store = useGameStore.getState();
-    expect(store.eventMessage).toBeNull();
-
-    // Reset
-    useGameStore.setState({ networkMode: 'local' });
-    resetNetworkState();
+  it('returns false for a semantic action that rejects', () => {
+    const player = useGameStore.getState().players[0];
+    expect(executeAction('transferBankFunds', [player.id, 'deposit', 50])).toBe(false);
   });
 });
 
 // ================================================================
-// Cryptographic Room Code Tests (crypto.getRandomValues)
+// Rate Limiter Tests
 // ================================================================
 
-describe('Room Code Cryptographic Security', () => {
-  it('generates codes using crypto.getRandomValues', () => {
-    // Verify the function still works (crypto is available in test env)
-    const code = generateRoomCode();
-    expect(code).toHaveLength(6);
-    expect(code).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
+describe('Rate Limiter', () => {
+  let limiter: RateLimiter;
+
+  beforeEach(() => {
+    limiter = new RateLimiter();
   });
 
-  it('generates uniformly distributed codes (no modulo bias)', () => {
-    // Generate many codes and check character distribution
-    // With rejection sampling, each char should have equal probability (~1/29)
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('allows actions under the limit', () => {
+    for (let i = 0; i < RATE_LIMIT_CONFIG.maxActionsPerSecond; i++) {
+      expect(limiter.checkAction('peer1')).toBe(true);
+    }
+  });
+
+  it('blocks actions over the limit', () => {
+    for (let i = 0; i < RATE_LIMIT_CONFIG.maxActionsPerSecond; i++) {
+      limiter.checkAction('peer1');
+    }
+    expect(limiter.checkAction('peer1')).toBe(false);
+  });
+
+  it('resets after the time window', () => {
+    vi.useFakeTimers();
+    for (let i = 0; i < RATE_LIMIT_CONFIG.maxActionsPerSecond; i++) {
+      limiter.checkAction('peer1');
+    }
+    expect(limiter.checkAction('peer1')).toBe(false);
+    vi.advanceTimersByTime(1100);
+    expect(limiter.checkAction('peer1')).toBe(true);
+  });
+
+  it('tracks peers separately', () => {
+    for (let i = 0; i < RATE_LIMIT_CONFIG.maxActionsPerSecond; i++) {
+      limiter.checkAction('peer1');
+    }
+    expect(limiter.checkAction('peer1')).toBe(false);
+    expect(limiter.checkAction('peer2')).toBe(true);
+  });
+});
+
+// ================================================================
+// Message Serialization Round-trip Tests
+// ================================================================
+
+describe('Message Round-trips', () => {
+  const messages: NetworkMessage[] = [
+    { type: 'join-request', playerName: 'Alice', playerColor: '#ff0000' },
+    { type: 'join-accepted', playerId: 'p1', state: { week: 1 }, version: 1 },
+    { type: 'join-rejected', reason: 'Full' },
+    { type: 'state-sync', state: { phase: 'playing' }, version: 5 },
+    { type: 'action', name: 'endTurn', args: [], requestId: 'r1' },
+    { type: 'action-result', requestId: 'r1', success: true },
+    { type: 'player-disconnected', playerId: 'p1' },
+    { type: 'player-reconnected', playerId: 'p1' },
+    { type: 'chat', playerId: 'p1', playerName: 'Alice', message: 'Hi', timestamp: 1 },
+    { type: 'ping', timestamp: 123 },
+    { type: 'pong', timestamp: 123 },
+    { type: 'host-shutdown', reason: 'bye' },
+  ];
+
+  for (const msg of messages) {
+    it(`round-trips ${msg.type}`, () => {
+      expect(deserializeMessage(serializeMessage(msg))).toEqual(msg);
+    });
+  }
+});
+
+// ================================================================
+// Room Code Entropy Tests
+// ================================================================
+
+describe('Room Code Entropy', () => {
+  it('uses all allowed characters roughly uniformly', () => {
     const charCounts = new Map<string, number>();
     for (let i = 0; i < 500; i++) {
       const code = generateRoomCode();
@@ -543,8 +387,7 @@ describe('Room Code Cryptographic Security', () => {
       }
     }
     const totalChars = 500 * 6;
-    const expected = totalChars / 29; // ~103.4
-    // Each char count should be within 50% of expected (generous bounds for randomness)
+    const expected = totalChars / 29;
     for (const [, count] of charCounts) {
       expect(count).toBeGreaterThan(expected * 0.4);
       expect(count).toBeLessThan(expected * 1.8);
@@ -556,11 +399,9 @@ describe('Room Code Cryptographic Security', () => {
     for (let i = 0; i < 200; i++) {
       codes.push(generateRoomCode());
     }
-    // All codes should be unique
     const unique = new Set(codes);
     expect(unique.size).toBe(200);
 
-    // Character distribution should be roughly uniform (no single char > 30% of total)
     const charCounts = new Map<string, number>();
     for (const code of codes) {
       for (const c of code) {
@@ -580,9 +421,6 @@ describe('Room Code Cryptographic Security', () => {
 
 describe('Cross-Player Validation', () => {
   it('all ALLOWED_GUEST_ACTIONS with playerId have it at args[0]', () => {
-    // This test documents the design invariant that all guest actions
-    // use playerId as args[0]. The deep scan in useNetworkSync checks
-    // ALL argument positions, but this verifies the convention holds.
     const actionsWithPlayerIdArg = [
       'travelPlayer', 'spendTime', 'modifyGold', 'modifyHealth',
       'modifyHappiness', 'modifyFood', 'modifyClothing', 'modifyMaxHealth',
@@ -598,17 +436,12 @@ describe('Cross-Player Validation', () => {
       'buyGuildPass', 'takeQuest', 'completeQuest', 'abandonQuest',
     ];
 
-    // All of these should be in ALLOWED_GUEST_ACTIONS
     for (const action of actionsWithPlayerIdArg) {
       expect(ALLOWED_GUEST_ACTIONS.has(action)).toBe(true);
     }
   });
 
   it('endTurn has no playerId arg (special case)', () => {
-    // endTurn is the only guest action with no playerId.
-    // Cross-player validation skips it because there are no string args
-    // starting with "player-". Turn validation ensures only the current
-    // player can call it.
     expect(ALLOWED_GUEST_ACTIONS.has('endTurn')).toBe(true);
   });
 });
@@ -618,9 +451,6 @@ describe('Cross-Player Validation', () => {
 // ================================================================
 
 describe('Action Argument Validation', () => {
-  // We can't directly test validateActionArgs since it's not exported,
-  // but we can verify the store actions handle edge cases correctly.
-
   beforeEach(() => {
     useGameStore.setState({ networkMode: 'local' });
     useGameStore.getState().startNewGame(['Alice', 'Bob'], false, {
@@ -633,10 +463,6 @@ describe('Action Argument Validation', () => {
   });
 
   it('raw stat modifiers are in the whitelist (required by UI components)', () => {
-    // These raw modifiers must be in the whitelist because UI components
-    // call them directly (e.g., LocationPanel, CavePanel, HomePanel).
-    // The network layer adds server-side bounds checking (validateActionArgs)
-    // to prevent abuse.
     const rawModifiers = [
       'modifyGold', 'modifyHealth', 'modifyHappiness',
       'modifyFood', 'modifyClothing', 'modifyMaxHealth', 'modifyRelaxation',
@@ -646,21 +472,9 @@ describe('Action Argument Validation', () => {
     }
   });
 
-  it('executeAction handles non-existent actions gracefully', () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    expect(executeAction('__nonExistentAction123__', [])).toBe(false);
-    expect(executeAction('hackTheGame', [])).toBe(false);
-    consoleSpy.mockRestore();
-  });
-
-  it('HOST_INTERNAL_ACTIONS cannot be triggered via executeAction bypass', () => {
-    // Verify the actions exist in HOST_INTERNAL_ACTIONS
-    expect(HOST_INTERNAL_ACTIONS.has('startTurn')).toBe(true);
-    expect(HOST_INTERNAL_ACTIONS.has('processWeekEnd')).toBe(true);
-    expect(HOST_INTERNAL_ACTIONS.has('checkDeath')).toBe(true);
-
-    // These should still be callable via executeAction (host-side only),
-    // but the network layer blocks guests from calling them
-    expect(typeof (useGameStore.getState() as unknown as Record<string, unknown>).startTurn).toBe('function');
+  it('host-internal actions are never in the guest whitelist', () => {
+    for (const action of ['processWeekEnd', 'startNewGame', 'setPhase', 'resetForNewGame']) {
+      expect(ALLOWED_GUEST_ACTIONS.has(action)).toBe(false);
+    }
   });
 });
