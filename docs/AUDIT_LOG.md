@@ -210,4 +210,24 @@ GitHub Actions-run `30000990865`:
 
 - Online-gjester og AI kan ikke lenger diktere salgspris for inventory-items.
 - `buyItem` har ingen kallere og er ikke lenger gjestetillatt; funksjonen beholdes foreløpig internt for kompatibilitet.
-- PR #330 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
+- PR #330 ble squash-merget til `main` som commit `5d8f22a0adc5abbbc8ad73d8a12c35cabdb41307`.
+
+## Fase 8 – 23. juli 2026
+
+### Mål
+
+- Gjøre leiebetaling, flytting og rent extension host-autoritativt.
+- Flytte pris, locked rent og tidsbruk fra klienten til canonical host-regler.
+
+### Utført
+
+- Opprettet arbeidsgren `agent/audit-phase8-housing` fra fase 7-merge `5d8f22a0adc5abbbc8ad73d8a12c35cabdb41307`.
+- Maskinell skanning kartla Landlord-UI, store-laget, AI-handlerne og alle rent-feltene.
+
+### Pågår
+
+- Innføring av semantiske boligservicer og migrering av UI/AI.
+
+### Tester
+
+- Ikke kjørt ennå i fase 8.

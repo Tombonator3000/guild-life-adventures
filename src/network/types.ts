@@ -142,11 +142,10 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'modifyRelaxation',
   'cureSickness',
 
-  'setHousing',
-  'payRent',
-  'prepayRent',
-  'moveToHousing',
-  'begForMoreTime',
+  // Housing intent only. Host resolves office access, canonical price and time.
+  'payHousingRent',
+  'moveHousingAtLandlord',
+  'requestRentExtensionAtLandlord',
 
   'setJob',
   'requestRaise',

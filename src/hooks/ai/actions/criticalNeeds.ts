@@ -138,7 +138,6 @@ function generateRentActions(ctx: ActionContext): AIAction[] {
           type: 'pay-rent',
           priority: 55,
           description: 'Prepay rent to stay ahead',
-          details: { cost: prepayRentCost },
         });
       } else {
         const movementCost = moveCost('landlord');
@@ -163,7 +162,6 @@ function generateRentActions(ctx: ActionContext): AIAction[] {
           type: 'pay-rent',
           priority: 90,
           description: 'Pay rent to avoid eviction',
-          details: { cost: rentCost },
         });
       } else {
         const movementCost = moveCost('landlord');

@@ -80,9 +80,6 @@ export interface LocationTabContext {
   attendDegreeSession: GameStore['attendDegreeSession'];
   prepayDegree: GameStore['prepayDegree'];
   graduateDegree: GameStore['graduateDegree'];
-  prepayRent: GameStore['prepayRent'];
-  moveToHousing: GameStore['moveToHousing'];
-  begForMoreTime: GameStore['begForMoreTime'];
   depositToBank: GameStore['depositToBank'];
   withdrawFromBank: GameStore['withdrawFromBank'];
   takeQuest: GameStore['takeQuest'];
@@ -536,7 +533,7 @@ function enchanterTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function landlordTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, priceModifier, spendTime, prepayRent, moveToHousing, begForMoreTime, week } = ctx;
+  const { player, priceModifier, week } = ctx;
   const isRentWeek = (week + 1) % 4 === 0;
   const hasUrgentRent = player.weeksSinceRent >= 3;
   const isLandlordOpen = isRentWeek || hasUrgentRent;
@@ -598,10 +595,6 @@ function landlordTabs(ctx: LocationTabContext): LocationTab[] {
       <LandlordPanel
         player={player}
         priceModifier={priceModifier}
-        spendTime={spendTime}
-        prepayRent={prepayRent}
-        moveToHousing={moveToHousing}
-        begForMoreTime={begForMoreTime}
       />
     ),
   }];
