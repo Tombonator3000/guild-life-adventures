@@ -1,0 +1,195 @@
+# Definitions and callers
+src/network/types.ts:161:  'depositToBank',
+src/network/types.ts:162:  'withdrawFromBank',
+src/network/types.ts:163:  'invest',
+src/network/types.ts:164:  'withdrawInvestment',
+src/network/types.ts:178:  'buyStock',
+src/network/types.ts:179:  'sellStock',
+src/network/types.ts:180:  'takeLoan',
+src/network/types.ts:181:  'repayLoan',
+src/network/actionValidation.test.ts:17:    expect(validateGuestActor('buyStock', [], 'human-a')).toBe('Missing player identity');
+src/network/actionValidation.test.ts:18:    expect(validateGuestActor('buyStock', [42, 'ore', 1], 'human-a'))
+src/test/economy.test.ts:23:describe('Banking - depositToBank', () => {
+src/test/economy.test.ts:27:    useGameStore.getState().depositToBank(playerId, 50);
+src/test/economy.test.ts:34:    useGameStore.getState().depositToBank(playerId, 200); // Only has 100
+src/test/economy.test.ts:41:    useGameStore.getState().depositToBank(playerId, -50);
+src/test/economy.test.ts:48:    useGameStore.getState().depositToBank(playerId, 0);
+src/test/economy.test.ts:55:    useGameStore.getState().depositToBank(playerId, NaN);
+src/test/economy.test.ts:58:    useGameStore.getState().depositToBank(playerId, Infinity);
+src/test/economy.test.ts:63:describe('Banking - withdrawFromBank', () => {
+src/test/economy.test.ts:66:    useGameStore.getState().depositToBank(playerId, 80); // gold=20, savings=80
+src/test/economy.test.ts:70:    useGameStore.getState().withdrawFromBank(playerId, 30);
+src/test/economy.test.ts:77:    useGameStore.getState().withdrawFromBank(playerId, 200); // Only has 80
+src/test/economy.test.ts:84:    useGameStore.getState().withdrawFromBank(playerId, -50);
+src/test/economy.test.ts:91:describe('Banking - invest', () => {
+src/test/economy.test.ts:95:    useGameStore.getState().invest(playerId, 40);
+src/test/economy.test.ts:102:    useGameStore.getState().invest(playerId, 999);
+src/test/economy.test.ts:109:    useGameStore.getState().invest(playerId, -10);
+src/test/economy.test.ts:116:describe('Loans - takeLoan', () => {
+src/test/economy.test.ts:123:    useGameStore.getState().takeLoan(playerId, 500);
+src/test/economy.test.ts:131:    useGameStore.getState().takeLoan(playerId, 500);
+src/test/economy.test.ts:132:    useGameStore.getState().takeLoan(playerId, 300);
+src/test/economy.test.ts:139:    useGameStore.getState().takeLoan(playerId, 1001);
+src/test/economy.test.ts:146:    useGameStore.getState().takeLoan(playerId, 0);
+src/test/economy.test.ts:149:    useGameStore.getState().takeLoan(playerId, -100);
+src/test/economy.test.ts:154:describe('Loans - repayLoan', () => {
+src/test/economy.test.ts:158:    useGameStore.getState().takeLoan(playerId, 500); // gold=600, loan=500
+src/test/economy.test.ts:162:    useGameStore.getState().repayLoan(playerId, 200);
+src/test/economy.test.ts:170:    useGameStore.getState().repayLoan(playerId, 500);
+src/test/economy.test.ts:184:    useGameStore.getState().repayLoan(playerId, 9999);
+src/test/economy.test.ts:191:    useGameStore.getState().repayLoan(playerId, -100);
+src/test/economy.test.ts:198:    useGameStore.getState().repayLoan(playerId, 500); // Pay off
+src/test/economy.test.ts:199:    useGameStore.getState().repayLoan(playerId, 100); // Should no-op
+src/test/economy.test.ts:204:describe('Stocks - buyStock', () => {
+src/test/economy.test.ts:213:    useGameStore.getState().buyStock(playerId, 'crystal-mine', 3);
+src/test/economy.test.ts:225:    useGameStore.getState().buyStock(playerId, 'crystal-mine', 1); // Costs 100
+src/test/economy.test.ts:231:    useGameStore.getState().buyStock(playerId, 'crystal-mine', 0);
+src/test/economy.test.ts:234:    useGameStore.getState().buyStock(playerId, 'crystal-mine', -5);
+src/test/economy.test.ts:239:    useGameStore.getState().buyStock(playerId, 'nonexistent', 1);
+src/test/economy.test.ts:244:describe('Stocks - sellStock', () => {
+src/test/economy.test.ts:248:    useGameStore.getState().buyStock(playerId, 'crystal-mine', 5); // Buy 5 at 100 each
+src/test/economy.test.ts:253:    useGameStore.getState().sellStock(playerId, 'crystal-mine', 2);
+src/test/economy.test.ts:260:    useGameStore.getState().sellStock(playerId, 'crystal-mine', 99);
+src/test/economy.test.ts:266:    useGameStore.getState().buyStock(playerId, 'crown-bonds', 1); // 100 each
+src/test/economy.test.ts:268:    useGameStore.getState().sellStock(playerId, 'crown-bonds', 1);
+src/test/economy.test.ts:275:    useGameStore.getState().sellStock(playerId, 'crystal-mine', -1);
+src/test/gameActions.test.ts:124:    useGameStore.getState().depositToBank(playerId, 100); // savings=100
+src/test/multiplayer.test.ts:129:    expect(ALLOWED_GUEST_ACTIONS.has('depositToBank')).toBe(true);
+src/test/multiplayer.test.ts:582:      'prepayDegree', 'graduateDegree', 'depositToBank', 'withdrawFromBank',
+src/test/multiplayer.test.ts:583:      'invest', 'withdrawInvestment', 'sellInventoryItem',
+src/test/multiplayer.test.ts:585:      'equipItem', 'unequipItem', 'buyStock', 'sellStock', 'takeLoan',
+src/test/multiplayer.test.ts:586:      'repayLoan', 'purchaseVendorItem', 'purchaseHexScroll', 'useHexDefense',
+src/test/victory.test.ts:53:    useGameStore.getState().depositToBank(playerId, 50); // gold=50, savings=50
+src/test/victory.test.ts:54:    useGameStore.getState().invest(playerId, 50); // gold=0, investments=50
+src/test/victory.test.ts:139:    useGameStore.getState().takeLoan(playerId, 200); // gold = 500, loan = 200, net = 300
+src/components/game/BankPanel.tsx:18:  depositToBank: (playerId: string, amount: number) => void;
+src/components/game/BankPanel.tsx:19:  withdrawFromBank: (playerId: string, amount: number) => void;
+src/components/game/BankPanel.tsx:20:  buyStock: (playerId: string, stockId: string, shares: number) => void;
+src/components/game/BankPanel.tsx:21:  sellStock: (playerId: string, stockId: string, shares: number) => void;
+src/components/game/BankPanel.tsx:22:  takeLoan: (playerId: string, amount: number) => void;
+src/components/game/BankPanel.tsx:23:  repayLoan: (playerId: string, amount: number) => void;
+src/components/game/BankPanel.tsx:59:  depositToBank,
+src/components/game/BankPanel.tsx:60:  withdrawFromBank,
+src/components/game/BankPanel.tsx:61:  buyStock,
+src/components/game/BankPanel.tsx:62:  sellStock,
+src/components/game/BankPanel.tsx:63:  takeLoan,
+src/components/game/BankPanel.tsx:64:  repayLoan,
+src/components/game/BankPanel.tsx:126:                      buyStock(player.id, stock.id, 1);
+src/components/game/BankPanel.tsx:136:                      sellStock(player.id, stock.id, 1);
+src/components/game/BankPanel.tsx:194:            <JonesSectionHeader title={t('panelBank.repayLoan').toUpperCase()} />
+src/components/game/BankPanel.tsx:200:                  label={`${t('panelBank.repayLoan')} ${actual}g`}
+src/components/game/BankPanel.tsx:205:                    repayLoan(player.id, actual);
+src/components/game/BankPanel.tsx:217:                repayLoan(player.id, player.loanAmount);
+src/components/game/BankPanel.tsx:227:            <JonesSectionHeader title={t('panelBank.takeLoan').toUpperCase()} />
+src/components/game/BankPanel.tsx:231:                label={`${t('panelBank.takeLoan')} ${amount}g`}
+src/components/game/BankPanel.tsx:236:                  takeLoan(player.id, amount);
+src/components/game/BankPanel.tsx:278:          depositToBank(player.id, 50);
+src/components/game/BankPanel.tsx:288:          withdrawFromBank(player.id, 50);
+src/components/game/locationTabs.tsx:83:  depositToBank: GameStore['depositToBank'];
+src/components/game/locationTabs.tsx:84:  withdrawFromBank: GameStore['withdrawFromBank'];
+src/components/game/locationTabs.tsx:101:  buyStock: GameStore['buyStock'];
+src/components/game/locationTabs.tsx:102:  sellStock: GameStore['sellStock'];
+src/components/game/locationTabs.tsx:103:  takeLoan: GameStore['takeLoan'];
+src/components/game/locationTabs.tsx:104:  repayLoan: GameStore['repayLoan'];
+src/components/game/locationTabs.tsx:421:  const { player, priceModifier, depositToBank, withdrawFromBank, buyStock, sellStock, takeLoan, repayLoan, stockPrices, stockPriceHistory } = ctx;
+src/components/game/locationTabs.tsx:429:        depositToBank={depositToBank}
+src/components/game/locationTabs.tsx:430:        withdrawFromBank={withdrawFromBank}
+src/components/game/locationTabs.tsx:431:        buyStock={buyStock}
+src/components/game/locationTabs.tsx:432:        sellStock={sellStock}
+src/components/game/locationTabs.tsx:433:        takeLoan={takeLoan}
+src/components/game/locationTabs.tsx:434:        repayLoan={repayLoan}
+src/components/game/LocationPanel.tsx:106:    depositToBank: store.depositToBank,
+src/components/game/LocationPanel.tsx:107:    withdrawFromBank: store.withdrawFromBank,
+src/components/game/LocationPanel.tsx:124:    buyStock: store.buyStock,
+src/components/game/LocationPanel.tsx:125:    sellStock: store.sellStock,
+src/components/game/LocationPanel.tsx:126:    takeLoan: store.takeLoan,
+src/components/game/LocationPanel.tsx:127:    repayLoan: store.repayLoan,
+src/components/game/UserManual.tsx:254:        keep your home, invest in education for better jobs, and gear up before
+src/components/game/UserManual.tsx:968:          ['Vault Seal', 'Bank', 'Drop only', '1 week', 'Opponents cannot bank/invest'],
+src/components/game/UserManual.tsx:1130:          ['Wealth', 'Gold + Savings + Investments', 'Work, invest, explore dungeon, sell items'],
+src/store/helpers/economy/bankingHelpers.ts:30:    depositToBank: (playerId: string, amount: number) => {
+src/store/helpers/economy/bankingHelpers.ts:42:    withdrawFromBank: (playerId: string, amount: number) => {
+src/store/helpers/economy/bankingHelpers.ts:54:    invest: (playerId: string, amount: number) => {
+src/store/helpers/economy/bankingHelpers.ts:66:    withdrawInvestment: (playerId: string, amount: number) => {
+src/store/helpers/economy/stockLoanHelpers.ts:9:    buyStock: (playerId: string, stockId: string, shares: number) => {
+src/store/helpers/economy/stockLoanHelpers.ts:31:    sellStock: (playerId: string, stockId: string, shares: number) => {
+src/store/helpers/economy/stockLoanHelpers.ts:59:    takeLoan: (playerId: string, amount: number) => {
+src/store/helpers/economy/stockLoanHelpers.ts:78:    repayLoan: (playerId: string, amount: number) => {
+src/store/storeTypes.ts:56:  depositToBank: (playerId: string, amount: number) => void;
+src/store/storeTypes.ts:57:  withdrawFromBank: (playerId: string, amount: number) => void;
+src/store/storeTypes.ts:58:  invest: (playerId: string, amount: number) => void;
+src/store/storeTypes.ts:59:  withdrawInvestment: (playerId: string, amount: number) => void;
+src/store/storeTypes.ts:113:  buyStock: (playerId: string, stockId: string, shares: number) => void;
+src/store/storeTypes.ts:114:  sellStock: (playerId: string, stockId: string, shares: number) => void;
+src/store/storeTypes.ts:115:  takeLoan: (playerId: string, amount: number) => void;
+src/store/storeTypes.ts:116:  repayLoan: (playerId: string, amount: number) => void;
+src/i18n/types.ts:432:    takeLoan: string;
+src/i18n/types.ts:433:    repayLoan: string;
+src/i18n/en.ts:649:    takeLoan: 'Take Loan',
+src/i18n/en.ts:650:    repayLoan: 'Repay Loan',
+src/i18n/de.ts:652:    takeLoan: 'Kredit aufnehmen',
+src/i18n/de.ts:653:    repayLoan: 'Kredit tilgen',
+src/i18n/es.ts:652:    takeLoan: 'Pedir Préstamo',
+src/i18n/es.ts:653:    repayLoan: 'Pagar Préstamo',
+src/data/questChains.ts:654:          { id: 'mp-1-invest', label: 'Invest Heavily', description: 'Go all in. Fortune favours the bold. And occasionally the foolish.', nextStepIndex: 1, goldModifier: 0.5, happinessModifier: 1.0, healthRiskModifier: 0.5, timeModifier: 1.0, outcomeText: 'You invest a significant portion of your savings. The merchant grins. Your stomach churns. One of you is right.' },
+src/data/questChains.ts:655:          { id: 'mp-1-cautious', label: 'Invest Cautiously', description: 'Small stake, small risk. Smart money. Boring money.', nextStepIndex: 1, goldModifier: 1.0, happinessModifier: 1.0, healthRiskModifier: 0.3, timeModifier: 1.0, outcomeText: 'You invest modestly. The merchant looks slightly disappointed. Your future self will be slightly grateful.' },
+src/data/locations.ts:409:    actions: ['deposit', 'withdraw', 'invest', 'loan'],
+src/hooks/useGrimwaldAI.ts:69:    depositToBank: state.depositToBank,
+src/hooks/useGrimwaldAI.ts:70:    withdrawFromBank: state.withdrawFromBank,
+src/hooks/useGrimwaldAI.ts:84:    takeLoan: state.takeLoan,
+src/hooks/useGrimwaldAI.ts:85:    repayLoan: state.repayLoan,
+src/hooks/useGrimwaldAI.ts:86:    buyStock: state.buyStock,
+src/hooks/useGrimwaldAI.ts:87:    sellStock: state.sellStock,
+src/hooks/ai/actionExecutor.ts:95:  depositToBank: (playerId: string, amount: number) => void;
+src/hooks/ai/actionExecutor.ts:96:  withdrawFromBank: (playerId: string, amount: number) => void;
+src/hooks/ai/actionExecutor.ts:110:  takeLoan: (playerId: string, amount: number) => void;
+src/hooks/ai/actionExecutor.ts:111:  repayLoan: (playerId: string, amount: number) => void;
+src/hooks/ai/actionExecutor.ts:112:  buyStock: (playerId: string, stockId: string, shares: number) => void;
+src/hooks/ai/actionExecutor.ts:113:  sellStock: (playerId: string, stockId: string, shares: number) => void;
+src/hooks/ai/handlers/housingFinanceHandlers.ts:42:  store.depositToBank(player.id, amount);
+src/hooks/ai/handlers/housingFinanceHandlers.ts:49:  store.withdrawFromBank(player.id, Math.min(amount, player.savings));
+src/hooks/ai/handlers/housingFinanceHandlers.ts:57:  store.takeLoan(player.id, amount);
+src/hooks/ai/handlers/housingFinanceHandlers.ts:64:  store.repayLoan(player.id, amount);
+src/hooks/ai/handlers/housingFinanceHandlers.ts:74:  store.buyStock(player.id, stockId, shares);
+src/hooks/ai/handlers/housingFinanceHandlers.ts:82:  store.sellStock(player.id, stockId, shares);
+
+# Finance-related files
+src/assets/events/bank-robbery.jpg
+src/assets/locations/bg-bank-old.jpg
+src/assets/locations/bg-bank.jpg
+src/assets/newspaper/woodcut-loan-repaid.jpg
+src/assets/newspaper/woodcut-loan.jpg
+src/assets/quests/curse-investigation.jpg
+src/assets/quests/dragon-investigation.jpg
+src/assets/quests/tg-1-investigate.jpg
+src/components/game/BankPanel.tsx
+src/data/stocks.ts
+src/hooks/ai/handlers/housingFinanceHandlers.ts
+src/store/helpers/economy/bankingHelpers.ts
+src/store/helpers/economy/stockLoanHelpers.ts
+
+# Numeric protocol rules
+src/network/types.ts:161:  'depositToBank',
+src/network/types.ts:162:  'withdrawFromBank',
+src/network/types.ts:163:  'invest',
+src/network/types.ts:164:  'withdrawInvestment',
+src/network/types.ts:178:  'buyStock',
+src/network/types.ts:179:  'sellStock',
+src/network/types.ts:180:  'takeLoan',
+src/network/types.ts:181:  'repayLoan',
+src/network/actionValidation.test.ts:17:    expect(validateGuestActor('buyStock', [], 'human-a')).toBe('Missing player identity');
+src/network/actionValidation.test.ts:18:    expect(validateGuestActor('buyStock', [42, 'ore', 1], 'human-a'))
+
+# AI finance action details
+src/hooks/ai/actions/economicActions.ts:68:        actions.push({ type: 'take-loan', priority: 72, description: `Take loan of ${loanAmount}g from bank`, details: { amount: loanAmount } });
+src/hooks/ai/actions/economicActions.ts:83:      actions.push({ type: 'repay-loan', priority: repayPriority, description: `Repay loan of ${player.loanAmount}g${urgencyNote}`, details: { amount: player.loanAmount } });
+src/hooks/ai/actions/economicActions.ts:94:        actions.push({ type: 'repay-loan', priority: 70, description: `Partial loan repayment of ${partialAmount}g to reduce garnishment`, details: { amount: partialAmount } });
+src/hooks/ai/actions/economicActions.ts:156:        type: 'buy-stock',
+src/hooks/ai/actions/economicActions.ts:159:        details: { stockId: bestStock.id, shares: bestStock.shares, price: bestStock.price },
+src/hooks/ai/actions/economicActions.ts:181:          type: 'sell-stock',
+src/hooks/ai/actions/economicActions.ts:184:          details: { stockId, shares: sellShares },
+src/hooks/ai/actions/goalActions.ts:146:        details: { amount: depositAmount },
+src/hooks/ai/actions/rivalryActions.ts:133:    details: { amount: depositAmount },
+src/hooks/ai/actions/strategicActions.ts:329:      details: { amount: Math.min(100, player.savings) },
+src/hooks/ai/actions/strategicActions.ts:362:      details: { amount: depositAmount },
+src/hooks/ai/actions/strategicActions.ts:392:    details: { amount: withdrawAmount },
