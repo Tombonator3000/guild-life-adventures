@@ -18,7 +18,7 @@ export function EnchanterPanel({ player, priceModifier }: EnchanterPanelProps) {
   const { t } = useTranslation();
   const { setPreview } = useItemPreview();
   const purchaseAppliance = useGameStore(s => s.purchaseAppliance);
-  const useApplianceService = useGameStore(s => s.useApplianceService);
+  const applianceServiceAction = useGameStore(s => s.useApplianceService);
   const appliances = getEnchanterAppliances();
 
   const brokenAppliances = Object.entries(player.appliances)
@@ -34,7 +34,7 @@ export function EnchanterPanel({ player, priceModifier }: EnchanterPanelProps) {
   };
 
   const handleRepair = (applianceId: string) => {
-    const result = useApplianceService(player.id, 'repair-enchanter', applianceId);
+    const result = applianceServiceAction(player.id, 'repair-enchanter', applianceId);
     if (!result) return;
     if (result.success) toast.success(result.message);
     else toast.error(result.message);

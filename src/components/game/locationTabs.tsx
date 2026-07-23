@@ -110,7 +110,7 @@ export interface LocationTabContext {
   purchaseVendorItem: GameStore['purchaseVendorItem'];
   cureSickness: GameStore['cureSickness'];
   temperEquipment: GameStore['temperEquipment'];
-  useApplianceService: GameStore['useApplianceService'];
+  applianceServiceAction: GameStore['useApplianceService'];
   forgeRepairEquipment: GameStore['forgeRepairEquipment'];
   salvageEquipment: GameStore['salvageEquipment'];
   storeBackupOutfit: GameStore['storeBackupOutfit'];
@@ -280,14 +280,14 @@ function tavernTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function forgeTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, priceModifier, spendTime, modifyHappiness, temperEquipment, useApplianceService, forgeRepairEquipment, salvageEquipment } = ctx;
+  const { player, priceModifier, spendTime, modifyHappiness, temperEquipment, applianceServiceAction, forgeRepairEquipment, salvageEquipment } = ctx;
   const forgeProps = {
     player,
     priceModifier,
     spendTime: (id: string, hours: number) => spendTime(id, hours),
     modifyHappiness: (id: string, amount: number) => modifyHappiness(id, amount),
     temperEquipment,
-    useApplianceService,
+    applianceServiceAction,
     forgeRepairEquipment,
     salvageEquipment,
   };

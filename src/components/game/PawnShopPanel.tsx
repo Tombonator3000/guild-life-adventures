@@ -30,7 +30,7 @@ const USED_ITEMS = [
 export function PawnShopPanel({ player, priceModifier, week, onSellItem, onBuyUsedItem, section }: PawnShopPanelProps) {
   const { t } = useTranslation();
   const purchaseAppliance = useGameStore(s => s.purchaseAppliance);
-  const useApplianceService = useGameStore(s => s.useApplianceService);
+  const applianceServiceAction = useGameStore(s => s.useApplianceService);
   const gambleAtFence = useGameStore(s => s.gambleAtFence);
 
   const getSellPrice = (itemId: string): number => {
@@ -116,7 +116,7 @@ export function PawnShopPanel({ player, priceModifier, week, onSellItem, onBuyUs
               <button
                 key={applianceId}
                 onClick={() => {
-                  const result = useApplianceService(player.id, 'pawn', applianceId);
+                  const result = applianceServiceAction(player.id, 'pawn', applianceId);
                   if (!result) return;
                   if (result.success) toast.success(result.message);
                   else toast.error(result.message);
@@ -161,7 +161,7 @@ export function PawnShopPanel({ player, priceModifier, week, onSellItem, onBuyUs
               <button
                 key={pawned.applianceId}
                 onClick={() => {
-                  const result = useApplianceService(player.id, 'redeem', pawned.applianceId);
+                  const result = applianceServiceAction(player.id, 'redeem', pawned.applianceId);
                   if (!result) return;
                   if (result.success) toast.success(result.message);
                   else toast.error(result.message);

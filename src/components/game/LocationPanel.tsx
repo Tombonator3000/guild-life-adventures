@@ -133,7 +133,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     purchaseVendorItem: store.purchaseVendorItem,
     cureSickness: store.cureSickness,
     temperEquipment: store.temperEquipment,
-    useApplianceService: store.useApplianceService,
+    applianceServiceAction: store.useApplianceService,
     forgeRepairEquipment: store.forgeRepairEquipment,
     salvageEquipment: store.salvageEquipment,
     storeBackupOutfit: store.storeBackupOutfit,

@@ -28,7 +28,7 @@ interface ForgePanelProps {
   spendTime: (playerId: string, hours: number) => void;
   modifyHappiness: (playerId: string, amount: number) => void;
   temperEquipment: (playerId: string, itemId: string, slot: EquipmentSlot, cost: number) => void;
-  useApplianceService: (playerId: string, service: 'repair-forge', applianceId: string) => { success: boolean; message: string } | void;
+  applianceServiceAction: (playerId: string, service: 'repair-forge', applianceId: string) => { success: boolean; message: string } | void;
   forgeRepairEquipment: (playerId: string, itemId: string, cost: number) => void;
   salvageEquipment: (playerId: string, itemId: string, slot: EquipmentSlot, value: number) => void;
   section: ForgeSection;
@@ -40,7 +40,7 @@ export function ForgePanel({
   spendTime,
   modifyHappiness,
   temperEquipment,
-  useApplianceService,
+  applianceServiceAction,
   forgeRepairEquipment,
   salvageEquipment,
   section,
@@ -49,7 +49,7 @@ export function ForgePanel({
     case 'smithing':
       return <SmithingSection player={player} priceModifier={priceModifier} spendTime={spendTime} modifyHappiness={modifyHappiness} temperEquipment={temperEquipment} />;
     case 'repairs':
-      return <RepairsSection player={player} spendTime={spendTime} useApplianceService={useApplianceService} forgeRepairEquipment={forgeRepairEquipment} />;
+      return <RepairsSection player={player} spendTime={spendTime} applianceServiceAction={applianceServiceAction} forgeRepairEquipment={forgeRepairEquipment} />;
     case 'salvage':
       return <SalvageSection player={player} priceModifier={priceModifier} spendTime={spendTime} salvageEquipment={salvageEquipment} />;
   }
@@ -200,12 +200,12 @@ const DURABILITY_COLORS: Record<string, string> = {
 function RepairsSection({
   player,
   spendTime,
-  useApplianceService,
+  applianceServiceAction,
   forgeRepairEquipment,
 }: {
   player: Player;
   spendTime: (playerId: string, hours: number) => void;
-  useApplianceService: (playerId: string, service: 'repair-forge', applianceId: string) => { success: boolean; message: string } | void;
+  applianceServiceAction: (playerId: string, service: 'repair-forge', applianceId: string) => { success: boolean; message: string } | void;
   forgeRepairEquipment: (playerId: string, itemId: string, cost: number) => void;
 }) {
   const { t } = useTranslation();
@@ -323,7 +323,7 @@ function RepairsSection({
             <div key={applianceId} className="py-1 px-1">
               <button
                 onClick={() => {
-                  const result = useApplianceService(player.id, 'repair-forge', applianceId);
+                  const result = applianceServiceAction(player.id, 'repair-forge', applianceId);
                   if (!result) return;
                   if (result.success) toast.success(result.message);
                   else toast.error(result.message);
