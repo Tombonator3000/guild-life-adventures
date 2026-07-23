@@ -20,6 +20,7 @@ import { createWorkEducationActions } from './helpers/workEducationHelpers';
 import { createEmploymentEducationServiceActions } from './helpers/employmentEducationServiceHelpers';
 import { createQuestActions } from './helpers/questHelpers';
 import { createHexActions } from './helpers/hexHelpers';
+import { createHexServiceActions } from './helpers/hexServiceHelpers';
 import { forwardIfGuest, setStoreAccessor } from '@/network/NetworkActionProxy';
 import { markEventDismissed, setNetworkStateStoreAccessor } from '@/network/networkState';
 import { getDefaultAIPortrait } from '@/data/portraits';
@@ -223,6 +224,7 @@ export const useGameStore = create<GameStore>((set, get) => {
   const employmentEducationServiceActions = createEmploymentEducationServiceActions(set, get);
   const questActions = createQuestActions(set, get);
   const hexActions = createHexActions(set, get);
+  const hexServiceActions = createHexServiceActions(set, get);
 
   return {
     // Initial state
@@ -346,6 +348,9 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     // Hex & Curse actions (network-aware)
     ...wrapWithNetworkGuard(hexActions),
+
+    // Canonical hex shop, defense and Graveyard intent actions
+    ...wrapWithNetworkGuard(hexServiceActions),
 
     // Quest and game status actions (network-aware)
     ...wrapWithNetworkGuard(questActions),

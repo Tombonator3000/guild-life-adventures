@@ -197,14 +197,13 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'abandonQuest',
   'incrementDungeonAttempts',
 
-  'buyHexScroll',
+  // Hex intent only. Host resolves stock, price, target location and service effects.
+  'purchaseHexScroll',
+  'useHexDefense',
+  'useGraveyardHexService',
+  // Casting already validates scroll ownership, target, location, time and cooldown on the host.
   'castLocationHex',
   'castPersonalCurse',
-  'buyProtectiveAmulet',
-  'dispelLocationHex',
-  'cleanseCurse',
-  'performDarkRitual',
-  'attemptCurseReflection',
 
   'sabotagePlayer',
   'buyProtection',

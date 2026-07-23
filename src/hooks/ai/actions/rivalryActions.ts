@@ -194,7 +194,7 @@ function generateHexScrollPurchase({ ctx, biggestThreat, threatIsClose }: Rivalr
         type: 'buy-hex-scroll',
         priority: 60 + morgathBoost,
         description: `Buy ${hex.name} scroll`,
-        details: { hexId: hex.id, cost },
+        details: { hexId: hex.id },
       });
     }
   }
@@ -216,8 +216,10 @@ function generateHexScrollPurchase({ ctx, biggestThreat, threatIsClose }: Rivalr
 
 /** Buy Protective Amulet — defense against rival hexes */
 function generateAmuletPurchase({ ctx, threatIsClose }: RivalryContext): AIAction[] {
-  const { player, currentLocation } = ctx;
-  if (!getGameOption('enableHexesCurses') || player.hasProtectiveAmulet || player.gold <= 500 || !threatIsClose) return [];
+  const { player, currentLocation, priceModifier } = ctx;
+  const amulet = DEFENSE_ITEMS.find(item => item.id === 'protective-amulet');
+  const amuletCost = Math.round((amulet?.basePrice ?? 400) * priceModifier);
+  if (!getGameOption('enableHexesCurses') || player.hasProtectiveAmulet || player.gold < amuletCost || !threatIsClose) return [];
   if (currentLocation !== 'enchanter') return [];
 
   return [{
@@ -230,42 +232,37 @@ function generateAmuletPurchase({ ctx, threatIsClose }: RivalryContext): AIActio
 
 /** Dispel hexed locations — clear enemy hexes from key locations */
 function generateDispelActions({ ctx }: RivalryContext): AIAction[] {
-  const { player, currentLocation } = ctx;
+  const { player, currentLocation, moveCost } = ctx;
   if (!getGameOption('enableHexesCurses')) return [];
 
   const locationHexes = useGameStore.getState().locationHexes || [];
-  const hexedLocationsForMe = locationHexes.filter(
-    h => h.casterId !== player.id && h.weeksRemaining > 0
-  );
-  if (hexedLocationsForMe.length === 0) return [];
+  const hostileHexes = locationHexes.filter(hex => hex.casterId !== player.id && hex.weeksRemaining > 0);
+  if (hostileHexes.length === 0) return [];
 
-  const dispelItem = DEFENSE_ITEMS.find(d => d.id === 'dispel-scroll');
-  const dispelCost = dispelItem ? Math.round(dispelItem.basePrice * ctx.priceModifier) : 250;
+  const dispelItem = DEFENSE_ITEMS.find(item => item.id === 'dispel-scroll');
+  const dispelCost = Math.round((dispelItem?.basePrice ?? 250) * ctx.priceModifier);
+  if (player.gold < dispelCost) return [];
 
-  // Dispel at current location
-  const currentHex = hexedLocationsForMe.find(h => h.targetLocation === currentLocation);
-  if (currentHex && player.gold >= dispelCost) {
+  const currentJob = player.currentJob ? getJob(player.currentJob) : null;
+  const jobLocation = currentJob ? getJobLocation(currentJob) : null;
+  const importantLocations = ['academy', 'guild-hall', jobLocation].filter(Boolean) as string[];
+  const targetHex = hostileHexes.find(hex => importantLocations.includes(hex.targetLocation)) ?? hostileHexes[0];
+
+  if (currentLocation === 'enchanter') {
     return [{
       type: 'dispel-hex',
       priority: 70,
-      description: `Dispel hex on ${currentLocation}`,
-      details: { cost: dispelCost, location: currentLocation },
+      description: `Dispel hex on ${targetHex.targetLocation}`,
+      details: { location: targetHex.targetLocation },
     }];
   }
 
-  // Travel to dispel important hexed location
-  const currentJobDef = player.currentJob ? getJob(player.currentJob) : null;
-  const jobLocation = currentJobDef ? getJobLocation(currentJobDef) : null;
-  const importantLocations = ['academy', 'guild-hall', jobLocation].filter(Boolean) as string[];
-  const hexedImportant = hexedLocationsForMe.find(h =>
-    importantLocations.includes(h.targetLocation)
-  );
-  if (hexedImportant && player.gold >= dispelCost + 50 && player.timeRemaining > 5) {
+  if (player.timeRemaining > moveCost('enchanter') + 1) {
     return [{
       type: 'move',
-      location: hexedImportant.targetLocation as import('@/types/game.types').LocationId,
+      location: 'enchanter',
       priority: 58,
-      description: `Travel to dispel hex on ${hexedImportant.targetLocation}`,
+      description: `Travel to Enchanter to dispel hex on ${targetHex.targetLocation}`,
     }];
   }
 
@@ -278,14 +275,15 @@ function generateDarkRitualActions({ ctx, threatIsClose }: RivalryContext): AIAc
   if (!getGameOption('enableHexesCurses') || settings.planningDepth < 3 || !threatIsClose) return [];
 
   const personalityAggro = ctx.personality.weights.gambling;
-  if (personalityAggro < 1.0 || player.gold < 100 || player.hexScrolls.length >= 2) return [];
+  const ritualCost = Math.round(200 * ctx.priceModifier);
+  if (personalityAggro < 1.0 || player.gold < ritualCost || player.hexScrolls.length >= 2) return [];
 
   if (currentLocation === 'graveyard') {
     return [{
       type: 'dark-ritual',
       priority: 50,
       description: 'Perform dark ritual for hex scroll',
-      details: { cost: 100 },
+      details: {},
     }];
   }
   if (player.timeRemaining > moveCost('graveyard') + 4) {

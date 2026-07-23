@@ -91,9 +91,6 @@ export function handleRepairAppliance(player: Player, action: AIAction, store: S
 /** Buy a protective amulet from the Enchanter. */
 export function handleBuyAmulet(player: Player, _action: AIAction, store: StoreActions): boolean {
   if (player.hasProtectiveAmulet) return false;
-  const state = useGameStore.getState();
-  const cost = Math.round(400 * state.priceModifier);
-  if (player.gold < cost) return false;
-  store.buyProtectiveAmulet(player.id, cost);
-  return true;
+  const result = store.useHexDefense(player.id, 'amulet');
+  return result?.success ?? false;
 }

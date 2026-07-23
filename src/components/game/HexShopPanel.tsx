@@ -8,35 +8,41 @@ import type { HexDefinition } from '@/data/hexes';
 import type { Player } from '@/types/game.types';
 import { Flame, Shield, Target, MapPin, Skull } from 'lucide-react';
 import { toast } from 'sonner';
-import { useState } from 'react';
 import { playSFX } from '@/audio/sfxManager';
+import type { ReactNode } from 'react';
 
 interface HexShopPanelProps {
   player: Player;
   players: Player[];
   priceModifier: number;
   availableHexes: HexDefinition[];
-  showDefense?: boolean;  // Show Protective Amulet / Dispel Scroll
+  showDefense?: boolean;
   variant: 'enchanter' | 'shadow-market';
 }
 
 export function HexShopPanel({ player, players, priceModifier, availableHexes, showDefense, variant }: HexShopPanelProps) {
-  const store = useGameStore();
-  const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
+  const purchaseHexScroll = useGameStore(state => state.purchaseHexScroll);
+  const castLocationHex = useGameStore(state => state.castLocationHex);
+  const castPersonalCurse = useGameStore(state => state.castPersonalCurse);
+  const performHexDefense = useGameStore(state => state.useHexDefense);
+  const locationHexes = useGameStore(state => state.locationHexes);
 
   if (!getGameOption('enableHexesCurses')) return null;
 
-  const rivals = players.filter(p => p.id !== player.id && !p.isGameOver);
+  const rivals = players.filter(candidate => candidate.id !== player.id && !candidate.isGameOver);
   const ownedScrolls = player.hexScrolls;
+  const hostileLocationHexes = locationHexes.filter(hex =>
+    hex.casterId !== player.id && hex.weeksRemaining > 0);
 
   const handleBuyScroll = (hex: HexDefinition) => {
-    const price = getHexPrice(hex, priceModifier);
-    store.buyHexScroll(player.id, hex.id, price);
-    toast.success(`Acquired ${hex.name} scroll!`);
+    const result = purchaseHexScroll(player.id, variant, hex.id);
+    if (!result) return;
+    if (result.success) toast.success(result.message);
+    else toast.error(result.message);
   };
 
   const handleCastLocationHex = (hexId: string) => {
-    const result = store.castLocationHex(player.id, hexId);
+    const result = castLocationHex(player.id, hexId);
     if (result.success) {
       playSFX('curse-cast');
       toast.success(result.message);
@@ -46,42 +52,40 @@ export function HexShopPanel({ player, players, priceModifier, availableHexes, s
   };
 
   const handleCastCurse = (hexId: string, targetId: string) => {
-    const result = store.castPersonalCurse(player.id, hexId, targetId);
+    const result = castPersonalCurse(player.id, hexId, targetId);
     if (result.success) {
       playSFX('curse-cast');
       toast.success(result.message);
     } else {
       toast.error(result.message);
     }
-    setSelectedTarget(null);
   };
 
   const handleBuyAmulet = () => {
-    const price = Math.round(DEFENSE_ITEMS[0].basePrice * priceModifier);
-    store.buyProtectiveAmulet(player.id, price);
-    toast.success('Protective Amulet acquired! It will block the next hex cast on you.');
+    const result = performHexDefense(player.id, 'amulet');
+    if (!result) return;
+    if (result.success) toast.success(result.message);
+    else toast.error(result.message);
   };
 
-  const handleDispel = () => {
-    const price = Math.round(DEFENSE_ITEMS[1].basePrice * priceModifier);
-    const result = store.dispelLocationHex(player.id, price);
-    if (result.success) {
-      toast.success(result.message);
-    } else {
-      toast.error(result.message);
-    }
+  const handleDispel = (targetLocation: Player['currentLocation']) => {
+    const result = performHexDefense(player.id, 'dispel', targetLocation);
+    if (!result) return;
+    if (result.success) toast.success(result.message);
+    else toast.error(result.message);
   };
 
-  const locationHexes = availableHexes.filter(h => h.category === 'location');
-  const personalCurses = availableHexes.filter(h => h.category === 'personal');
-  const sabotageHexes = availableHexes.filter(h => h.category === 'sabotage');
+  const locationHexesForSale = availableHexes.filter(hex => hex.category === 'location');
+  const personalCurses = availableHexes.filter(hex => hex.category === 'personal');
+  const sabotageHexes = availableHexes.filter(hex => hex.category === 'sabotage');
 
   const accentColor = variant === 'enchanter' ? '#6b21a8' : '#c084fc';
   const bgColor = variant === 'enchanter' ? 'bg-purple-50' : 'bg-red-50';
+  const amuletPrice = Math.round((DEFENSE_ITEMS.find(item => item.id === 'protective-amulet')?.basePrice ?? 400) * priceModifier);
+  const dispelPrice = Math.round((DEFENSE_ITEMS.find(item => item.id === 'dispel-scroll')?.basePrice ?? 250) * priceModifier);
 
   return (
     <div className="space-y-3">
-      {/* Inventory: Owned Scrolls */}
       {ownedScrolls.length > 0 && (
         <div className={`${bgColor} border border-[#8b7355] rounded p-2`}>
           <h4 className="font-display text-sm font-bold mb-2" style={{ color: variant === 'enchanter' ? '#4a1072' : '#7c3aed' }}>
@@ -108,14 +112,14 @@ export function HexShopPanel({ player, players, priceModifier, availableHexes, s
                       <select
                         className="text-xs border rounded px-1 py-0.5 bg-white"
                         value=""
-                        onChange={(e) => {
-                          if (e.target.value) handleCastCurse(hex.id, e.target.value);
+                        onChange={(event) => {
+                          if (event.target.value) handleCastCurse(hex.id, event.target.value);
                         }}
                         disabled={player.timeRemaining < hex.castTime || rivals.length === 0}
                       >
                         <option value="">Cast on... ({hex.castTime}h)</option>
-                        {rivals.map(r => (
-                          <option key={r.id} value={r.id}>{r.name}</option>
+                        {rivals.map(rival => (
+                          <option key={rival.id} value={rival.id}>{rival.name}</option>
                         ))}
                       </select>
                     )}
@@ -127,65 +131,40 @@ export function HexShopPanel({ player, players, priceModifier, availableHexes, s
         </div>
       )}
 
-      {/* Location Hexes */}
-      {locationHexes.length > 0 && (
-        <div>
-          <h4 className="font-display text-xs font-bold mb-1 flex items-center gap-1" style={{ color: accentColor }}>
-            <MapPin className="w-3 h-3" /> Location Hexes
-          </h4>
-          <div className="space-y-1.5">
-            {locationHexes.map(hex => {
-              const price = getHexPrice(hex, priceModifier);
-              return (
-                <HexScrollItem key={hex.id} hex={hex} price={price} player={player} onBuy={() => handleBuyScroll(hex)} />
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <HexSaleSection
+        title="Location Hexes"
+        icon={<MapPin className="w-3 h-3" />}
+        hexes={locationHexesForSale}
+        accentColor={accentColor}
+        priceModifier={priceModifier}
+        player={player}
+        onBuy={handleBuyScroll}
+      />
+      <HexSaleSection
+        title="Personal Curses"
+        icon={<Target className="w-3 h-3" />}
+        hexes={personalCurses}
+        accentColor={accentColor}
+        priceModifier={priceModifier}
+        player={player}
+        onBuy={handleBuyScroll}
+      />
+      <HexSaleSection
+        title="Sabotage Scrolls"
+        icon={<Flame className="w-3 h-3" />}
+        hexes={sabotageHexes}
+        accentColor={accentColor}
+        priceModifier={priceModifier}
+        player={player}
+        onBuy={handleBuyScroll}
+      />
 
-      {/* Personal Curses */}
-      {personalCurses.length > 0 && (
-        <div>
-          <h4 className="font-display text-xs font-bold mb-1 flex items-center gap-1" style={{ color: accentColor }}>
-            <Target className="w-3 h-3" /> Personal Curses
-          </h4>
-          <div className="space-y-1.5">
-            {personalCurses.map(hex => {
-              const price = getHexPrice(hex, priceModifier);
-              return (
-                <HexScrollItem key={hex.id} hex={hex} price={price} player={player} onBuy={() => handleBuyScroll(hex)} />
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Sabotage */}
-      {sabotageHexes.length > 0 && (
-        <div>
-          <h4 className="font-display text-xs font-bold mb-1 flex items-center gap-1" style={{ color: accentColor }}>
-            <Flame className="w-3 h-3" /> Sabotage Scrolls
-          </h4>
-          <div className="space-y-1.5">
-            {sabotageHexes.map(hex => {
-              const price = getHexPrice(hex, priceModifier);
-              return (
-                <HexScrollItem key={hex.id} hex={hex} price={price} player={player} onBuy={() => handleBuyScroll(hex)} />
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Defense Items */}
       {showDefense && (
         <div>
           <h4 className="font-display text-xs font-bold mb-1 flex items-center gap-1" style={{ color: '#166534' }}>
             <Shield className="w-3 h-3" /> Protection
           </h4>
           <div className="space-y-1.5">
-            {/* Protective Amulet */}
             <div className="bg-[#e0d4b8] border border-[#8b7355] rounded p-2">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
@@ -193,11 +172,11 @@ export function HexShopPanel({ player, players, priceModifier, availableHexes, s
                   <p className="text-xs text-[#6b5a42]">Blocks the next hex cast on you (consumed).</p>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs font-bold text-[#8b6914]">{Math.round(400 * priceModifier)}g</span>
+                  <span className="text-xs font-bold text-[#8b6914]">{amuletPrice}g</span>
                   <br />
                   <button
                     onClick={handleBuyAmulet}
-                    disabled={player.gold < Math.round(400 * priceModifier) || player.hasProtectiveAmulet}
+                    disabled={player.gold < amuletPrice || player.hasProtectiveAmulet}
                     className="gold-button text-xs py-0.5 px-1.5 disabled:opacity-50 mt-0.5"
                   >
                     {player.hasProtectiveAmulet ? 'Active' : 'Buy'}
@@ -205,25 +184,35 @@ export function HexShopPanel({ player, players, priceModifier, availableHexes, s
                 </div>
               </div>
             </div>
-            {/* Dispel Scroll */}
+
             <div className="bg-[#e0d4b8] border border-[#8b7355] rounded p-2">
-              <div className="flex justify-between items-start">
+              <div className="flex justify-between items-start mb-1">
                 <div className="flex-1">
                   <span className="font-display text-xs font-bold text-[#3d2a14]">Dispel Scroll</span>
-                  <p className="text-xs text-[#6b5a42]">Remove a location hex (must be at the hexed location).</p>
+                  <p className="text-xs text-[#6b5a42]">Remove one hostile location hex from afar through the Enchanter.</p>
                 </div>
-                <div className="text-right">
-                  <span className="text-xs font-bold text-[#8b6914]">{Math.round(250 * priceModifier)}g</span>
-                  <br />
-                  <button
-                    onClick={handleDispel}
-                    disabled={player.gold < Math.round(250 * priceModifier)}
-                    className="gold-button text-xs py-0.5 px-1.5 disabled:opacity-50 mt-0.5"
-                  >
-                    Use (1h)
-                  </button>
-                </div>
+                <span className="text-xs font-bold text-[#8b6914]">{dispelPrice}g · 1h</span>
               </div>
+              {hostileLocationHexes.length === 0 ? (
+                <p className="text-xs text-[#6b5a42] italic">No hostile location hexes are active.</p>
+              ) : (
+                <div className="space-y-1">
+                  {hostileLocationHexes.map(activeHex => {
+                    const definition = getHexById(activeHex.hexId);
+                    return (
+                      <button
+                        key={`${activeHex.casterId}-${activeHex.hexId}-${activeHex.targetLocation}`}
+                        onClick={() => handleDispel(activeHex.targetLocation)}
+                        disabled={player.gold < dispelPrice || player.timeRemaining < 1}
+                        className="w-full gold-button text-xs py-1 px-2 disabled:opacity-50 flex justify-between"
+                      >
+                        <span>{definition?.name ?? activeHex.hexId}</span>
+                        <span>{activeHex.targetLocation}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -232,8 +221,46 @@ export function HexShopPanel({ player, players, priceModifier, availableHexes, s
   );
 }
 
+function HexSaleSection({
+  title,
+  icon,
+  hexes,
+  accentColor,
+  priceModifier,
+  player,
+  onBuy,
+}: {
+  title: string;
+  icon: ReactNode;
+  hexes: HexDefinition[];
+  accentColor: string;
+  priceModifier: number;
+  player: Player;
+  onBuy: (hex: HexDefinition) => void;
+}) {
+  if (hexes.length === 0) return null;
+  return (
+    <div>
+      <h4 className="font-display text-xs font-bold mb-1 flex items-center gap-1" style={{ color: accentColor }}>
+        {icon} {title}
+      </h4>
+      <div className="space-y-1.5">
+        {hexes.map(hex => (
+          <HexScrollItem
+            key={hex.id}
+            hex={hex}
+            price={getHexPrice(hex, priceModifier)}
+            player={player}
+            onBuy={() => onBuy(hex)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function HexScrollItem({ hex, price, player, onBuy }: { hex: HexDefinition; price: number; player: Player; onBuy: () => void }) {
-  const alreadyHas = player.hexScrolls.some(s => s.hexId === hex.id);
+  const alreadyHas = player.hexScrolls.some(scroll => scroll.hexId === hex.id);
   return (
     <div className="bg-[#e0d4b8] border border-[#8b7355] rounded p-2">
       <div className="flex justify-between items-start">

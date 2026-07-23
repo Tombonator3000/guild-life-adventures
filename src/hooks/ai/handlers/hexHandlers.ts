@@ -27,24 +27,19 @@ export function handleCastLocationHex(player: Player, action: AIAction, store: S
 
 export function handleBuyHexScroll(player: Player, action: AIAction, store: StoreActions): boolean {
   const hexId = action.details?.hexId as string;
-  const cost = (action.details?.cost as number) || 0;
-  if (!hexId || player.gold < cost || cost <= 0) return false;
-  store.modifyGold(player.id, -cost);
-  store.addHexScrollToPlayer(player.id, hexId);
-  store.spendTime(player.id, 1);
-  return true;
+  if (!hexId || (player.currentLocation !== 'enchanter' && player.currentLocation !== 'shadow-market')) return false;
+  const result = store.purchaseHexScroll(player.id, player.currentLocation, hexId);
+  return result?.success ?? false;
 }
 
 export function handleDispelHex(player: Player, action: AIAction, store: StoreActions): boolean {
-  const cost = (action.details?.cost as number) || 250;
-  if (player.gold < cost) return false;
-  const result = store.dispelLocationHex(player.id, cost);
-  return result.success;
+  const targetLocation = action.details?.location as import('@/types/game.types').LocationId;
+  if (!targetLocation) return false;
+  const result = store.useHexDefense(player.id, 'dispel', targetLocation);
+  return result?.success ?? false;
 }
 
-export function handleDarkRitual(player: Player, action: AIAction, store: StoreActions): boolean {
-  const cost = (action.details?.cost as number) || 100;
-  if (player.gold < cost) return false;
-  const result = store.performDarkRitual(player.id, cost);
-  return result.success;
+export function handleDarkRitual(player: Player, _action: AIAction, store: StoreActions): boolean {
+  const result = store.useGraveyardHexService(player.id, 'ritual');
+  return result?.success ?? false;
 }
