@@ -34,7 +34,18 @@ export function useGameBoardKeyboard({
 }) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Block game shortcuts when any Radix dialog/modal is open, except developer shortcuts (Ctrl+Shift)
+      const target = e.target as HTMLElement | null;
+      const isTyping = target?.isContentEditable
+        || target?.tagName === 'INPUT'
+        || target?.tagName === 'TEXTAREA'
+        || target?.tagName === 'SELECT';
+
+      // Do not trigger gameplay shortcuts while the player is typing. Escape is
+      // still allowed so dialogs and menus can be closed normally.
+      if (isTyping && e.key !== 'Escape') return;
+
+      // Block game shortcuts when any Radix dialog/modal is open, except
+      // developer shortcuts (Ctrl+Shift) and Escape.
       const hasOpenDialog = !!document.querySelector('[role="dialog"]');
       if (hasOpenDialog && !e.ctrlKey && !e.shiftKey && e.key !== 'Escape') return;
 
@@ -90,5 +101,19 @@ export function useGameBoardKeyboard({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [aiIsThinking, setSkipAITurn, showGameMenu, currentPlayer, phase, endTurn, showTutorial, setShowTutorial, isLocalPlayerTurn, setFullboardMode]);
+  }, [
+    aiIsThinking,
+    currentPlayer,
+    endTurn,
+    isLocalPlayerTurn,
+    phase,
+    setFullboardMode,
+    setShowDebugOverlay,
+    setShowGameMenu,
+    setShowTutorial,
+    setShowZoneEditor,
+    setSkipAITurn,
+    showGameMenu,
+    showTutorial,
+  ]);
 }
