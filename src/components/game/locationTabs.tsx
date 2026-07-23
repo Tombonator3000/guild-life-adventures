@@ -98,7 +98,6 @@ export interface LocationTabContext {
   setJob: GameStore['setJob'];
   requestRaise: GameStore['requestRaise'];
   negotiateRaise: GameStore['negotiateRaise'];
-  buyDurable: GameStore['buyDurable'];
   equipItem: GameStore['equipItem'];
   unequipItem: GameStore['unequipItem'];
   clearDungeonFloor: GameStore['clearDungeonFloor'];
@@ -109,11 +108,8 @@ export interface LocationTabContext {
   repayLoan: GameStore['repayLoan'];
   purchaseVendorItem: GameStore['purchaseVendorItem'];
   cureSickness: GameStore['cureSickness'];
-  temperEquipment: GameStore['temperEquipment'];
+  equipmentServiceAction: GameStore['useEquipmentService'];
   applianceServiceAction: GameStore['useApplianceService'];
-  forgeRepairEquipment: GameStore['forgeRepairEquipment'];
-  salvageEquipment: GameStore['salvageEquipment'];
-  storeBackupOutfit: GameStore['storeBackupOutfit'];
   readBook: GameStore['readBook'];
   // Gameplay state for hex checking (passed reactively, not via getState)
   locationHexes: GameStore['locationHexes'];
@@ -280,16 +276,12 @@ function tavernTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function forgeTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, priceModifier, spendTime, modifyHappiness, temperEquipment, applianceServiceAction, forgeRepairEquipment, salvageEquipment } = ctx;
+  const { player, priceModifier, equipmentServiceAction, applianceServiceAction } = ctx;
   const forgeProps = {
     player,
     priceModifier,
-    spendTime: (id: string, hours: number) => spendTime(id, hours),
-    modifyHappiness: (id: string, amount: number) => modifyHappiness(id, amount),
-    temperEquipment,
+    equipmentServiceAction,
     applianceServiceAction,
-    forgeRepairEquipment,
-    salvageEquipment,
   };
   const forgeWorkContent = (
     <div className="p-2 space-y-1.5">
@@ -466,19 +458,12 @@ function generalStoreTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function armoryTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, priceModifier, modifyGold, spendTime, modifyClothing, modifyHappiness,
-    buyDurable, equipItem, unequipItem, storeBackupOutfit } = ctx;
+  const { player, priceModifier, equipItem, unequipItem } = ctx;
   const armoryProps = {
     player,
     priceModifier,
-    modifyGold,
-    spendTime,
-    modifyClothing,
-    modifyHappiness,
-    buyDurable,
     equipItem,
     unequipItem,
-    storeBackupOutfit,
   };
   return [
     { id: 'clothing', label: 'Clothing', content: <ArmoryPanel {...armoryProps} section="clothing" /> },
@@ -707,31 +692,8 @@ function shadowMarketTabs(ctx: LocationTabContext): LocationTab[] {
   return tabs;
 }
 
-// Used item effect handlers by item ID
-const USED_ITEM_EFFECTS: Record<string, (ctx: LocationTabContext) => void> = {
-  'used-clothes': (ctx) => ctx.modifyClothing(ctx.player.id, 50),
-  'used-blanket': (ctx) => ctx.modifyHappiness(ctx.player.id, 3),
-  'used-sword': (ctx) => {
-    ctx.buyDurable(ctx.player.id, 'sword', 0);
-    ctx.equipItem(ctx.player.id, 'sword', 'weapon');
-    toast.success('Equipped Used Sword!');
-  },
-  'used-shield': (ctx) => {
-    ctx.buyDurable(ctx.player.id, 'shield', 0);
-    ctx.equipItem(ctx.player.id, 'shield', 'shield');
-    toast.success('Equipped Dented Shield!');
-  },
-};
-
-// Gambling odds/payouts by stake amount
-const GAMBLE_TABLE: Record<number, { chance: number; payout: number; winHappiness: number; loseHappiness: number; time: number }> = {
-  10:  { chance: 0.4, payout: 25,  winHappiness: 5,  loseHappiness: -3,  time: 2 },
-  50:  { chance: 0.3, payout: 150, winHappiness: 15, loseHappiness: -10, time: 2 },
-  100: { chance: 0.2, payout: 400, winHappiness: 25, loseHappiness: -20, time: 3 },
-};
-
 function fenceTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, priceModifier, week, sellItem, modifyGold, modifyHappiness, spendTime } = ctx;
+  const { player, priceModifier, week, sellItem } = ctx;
   const fenceProps = {
     player,
     priceModifier,
@@ -739,22 +701,6 @@ function fenceTabs(ctx: LocationTabContext): LocationTab[] {
     onSellItem: (itemId: string, price: number) => {
       sellItem(player.id, itemId, price);
     },
-    onBuyUsedItem: (itemId: string, price: number) => {
-      modifyGold(player.id, -price);
-      USED_ITEM_EFFECTS[itemId]?.(ctx);
-    },
-    onGamble: (stake: number) => {
-      const odds = GAMBLE_TABLE[stake] ?? GAMBLE_TABLE[10];
-      modifyGold(player.id, -stake);
-      spendTime(player.id, odds.time);
-      if (Math.random() < odds.chance) {
-        modifyGold(player.id, odds.payout);
-        modifyHappiness(player.id, odds.winHappiness);
-      } else {
-        modifyHappiness(player.id, odds.loseHappiness);
-      }
-    },
-    onSpendTime: (hours: number) => spendTime(player.id, hours),
   };
   const tabs: LocationTab[] = [
     { id: 'trade', label: 'Used Goods', content: <PawnShopPanel {...fenceProps} section="trade" /> },

@@ -153,6 +153,8 @@ export interface GameStore extends GameState {
   purchaseVendorItem: (playerId: string, vendor: 'general-store' | 'shadow-market', itemId: string) => ActionResult | void;
   purchaseAppliance: (playerId: string, vendor: 'enchanter' | 'shadow-market' | 'fence', applianceId: string) => ActionResult | void;
   useApplianceService: (playerId: string, service: 'repair-enchanter' | 'repair-forge' | 'pawn' | 'redeem', applianceId: string) => ActionResult | void;
+  purchaseEquipmentItem: (playerId: string, vendor: 'armory' | 'fence-used', itemId: string, mode?: 'primary' | 'backup') => ActionResult | void;
+  useEquipmentService: (playerId: string, service: 'temper' | 'repair' | 'salvage', itemId: string) => ActionResult | void;
 }
 
 export interface ActionResult {

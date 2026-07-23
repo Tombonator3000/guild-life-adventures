@@ -14,9 +14,6 @@ interface PawnShopPanelProps {
   priceModifier: number;
   week: number;
   onSellItem: (itemId: string, price: number) => void;
-  onBuyUsedItem: (itemId: string, price: number) => void;
-  onGamble: (stake: number) => void;
-  onSpendTime: (hours: number) => void;
   section?: FenceSection;
 }
 
@@ -27,11 +24,12 @@ const USED_ITEMS = [
   { id: 'used-blanket', name: 'Patched Blanket', basePrice: 12, effect: { type: 'happiness' as const, value: 3 } },
 ];
 
-export function PawnShopPanel({ player, priceModifier, week, onSellItem, onBuyUsedItem, section }: PawnShopPanelProps) {
+export function PawnShopPanel({ player, priceModifier, week, onSellItem, section }: PawnShopPanelProps) {
   const { t } = useTranslation();
   const purchaseAppliance = useGameStore(s => s.purchaseAppliance);
   const applianceServiceAction = useGameStore(s => s.useApplianceService);
   const gambleAtFence = useGameStore(s => s.gambleAtFence);
+  const purchaseEquipmentItem = useGameStore(s => s.purchaseEquipmentItem);
 
   const getSellPrice = (itemId: string): number => {
     const item = getItem(itemId);
@@ -83,7 +81,12 @@ export function PawnShopPanel({ player, priceModifier, week, onSellItem, onBuyUs
           return (
             <button
               key={item.id}
-              onClick={() => onBuyUsedItem(item.id, price)}
+              onClick={() => {
+                const result = purchaseEquipmentItem(player.id, 'fence-used', item.id, 'primary');
+                if (!result) return;
+                if (result.success) toast.success(result.message);
+                else toast.error(result.message);
+              }}
               disabled={player.gold < price}
               className="w-full p-2 bg-[#e0d4b8] border border-[#8b7355] rounded flex items-center justify-between hover:bg-[#d4c4a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >

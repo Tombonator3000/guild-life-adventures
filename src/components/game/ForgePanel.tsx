@@ -1,4 +1,4 @@
-import type { Player, EquipmentSlot } from '@/types/game.types';
+import type { Player } from '@/types/game.types';
 import { Hammer, Wrench, Recycle } from 'lucide-react';
 import { useTranslation } from '@/i18n';
 import {
@@ -25,33 +25,25 @@ export type ForgeSection = 'smithing' | 'repairs' | 'salvage';
 interface ForgePanelProps {
   player: Player;
   priceModifier: number;
-  spendTime: (playerId: string, hours: number) => void;
-  modifyHappiness: (playerId: string, amount: number) => void;
-  temperEquipment: (playerId: string, itemId: string, slot: EquipmentSlot, cost: number) => void;
+  equipmentServiceAction: (playerId: string, service: 'temper' | 'repair' | 'salvage', itemId: string) => { success: boolean; message: string } | void;
   applianceServiceAction: (playerId: string, service: 'repair-forge', applianceId: string) => { success: boolean; message: string } | void;
-  forgeRepairEquipment: (playerId: string, itemId: string, cost: number) => void;
-  salvageEquipment: (playerId: string, itemId: string, slot: EquipmentSlot, value: number) => void;
   section: ForgeSection;
 }
 
 export function ForgePanel({
   player,
   priceModifier,
-  spendTime,
-  modifyHappiness,
-  temperEquipment,
+  equipmentServiceAction,
   applianceServiceAction,
-  forgeRepairEquipment,
-  salvageEquipment,
   section,
 }: ForgePanelProps) {
   switch (section) {
     case 'smithing':
-      return <SmithingSection player={player} priceModifier={priceModifier} spendTime={spendTime} modifyHappiness={modifyHappiness} temperEquipment={temperEquipment} />;
+      return <SmithingSection player={player} priceModifier={priceModifier} equipmentServiceAction={equipmentServiceAction} />;
     case 'repairs':
-      return <RepairsSection player={player} spendTime={spendTime} applianceServiceAction={applianceServiceAction} forgeRepairEquipment={forgeRepairEquipment} />;
+      return <RepairsSection player={player} equipmentServiceAction={equipmentServiceAction} applianceServiceAction={applianceServiceAction} />;
     case 'salvage':
-      return <SalvageSection player={player} priceModifier={priceModifier} spendTime={spendTime} salvageEquipment={salvageEquipment} />;
+      return <SalvageSection player={player} priceModifier={priceModifier} equipmentServiceAction={equipmentServiceAction} />;
   }
 }
 
@@ -60,15 +52,11 @@ export function ForgePanel({
 function SmithingSection({
   player,
   priceModifier,
-  spendTime,
-  modifyHappiness,
-  temperEquipment,
+  equipmentServiceAction,
 }: {
   player: Player;
   priceModifier: number;
-  spendTime: (playerId: string, hours: number) => void;
-  modifyHappiness: (playerId: string, amount: number) => void;
-  temperEquipment: (playerId: string, itemId: string, slot: EquipmentSlot, cost: number) => void;
+  equipmentServiceAction: (playerId: string, service: 'temper', itemId: string) => { success: boolean; message: string } | void;
 }) {
   const { t } = useTranslation();
   // Get combat stats including temper bonuses
@@ -153,10 +141,10 @@ function SmithingSection({
               ) : (
                 <button
                   onClick={() => {
-                    temperEquipment(player.id, item.id, slot, cost);
-                    spendTime(player.id, time);
-                    modifyHappiness(player.id, 2);
-                    toast.success(t('panelForge.tempered', { name: t(`items.${item.id}.name`) || item.name, bonus: bonusLabel }));
+                    const result = equipmentServiceAction(player.id, 'temper', item.id);
+                    if (!result) return;
+                    if (result.success) toast.success(result.message);
+                    else toast.error(result.message);
                   }}
                   disabled={!canAfford}
                   className="w-full text-left py-1.5 px-2 rounded transition-colors hover:bg-[#d4c4a8] disabled:opacity-40 disabled:cursor-not-allowed"
@@ -199,14 +187,12 @@ const DURABILITY_COLORS: Record<string, string> = {
 
 function RepairsSection({
   player,
-  spendTime,
+  equipmentServiceAction,
   applianceServiceAction,
-  forgeRepairEquipment,
 }: {
   player: Player;
-  spendTime: (playerId: string, hours: number) => void;
+  equipmentServiceAction: (playerId: string, service: 'repair', itemId: string) => { success: boolean; message: string } | void;
   applianceServiceAction: (playerId: string, service: 'repair-forge', applianceId: string) => { success: boolean; message: string } | void;
-  forgeRepairEquipment: (playerId: string, itemId: string, cost: number) => void;
 }) {
   const { t } = useTranslation();
   const FORGE_REPAIR_TIME = 3;
@@ -255,9 +241,10 @@ function RepairsSection({
             <div key={item.id} className="py-1 px-1">
               <button
                 onClick={() => {
-                  forgeRepairEquipment(player.id, item.id, cost);
-                  spendTime(player.id, EQUIPMENT_REPAIR_TIME);
-                  toast.success(`Repaired ${t(`items.${item.id}.name`) || item.name} to full durability!`);
+                  const result = equipmentServiceAction(player.id, 'repair', item.id);
+                  if (!result) return;
+                  if (result.success) toast.success(result.message);
+                  else toast.error(result.message);
                 }}
                 disabled={!canAfford}
                 className="w-full text-left py-1.5 px-2 rounded transition-colors hover:bg-[#d4c4a8] disabled:opacity-40 disabled:cursor-not-allowed"
@@ -377,13 +364,11 @@ function RepairsSection({
 function SalvageSection({
   player,
   priceModifier,
-  spendTime,
-  salvageEquipment,
+  equipmentServiceAction,
 }: {
   player: Player;
   priceModifier: number;
-  spendTime: (playerId: string, hours: number) => void;
-  salvageEquipment: (playerId: string, itemId: string, slot: EquipmentSlot, value: number) => void;
+  equipmentServiceAction: (playerId: string, service: 'salvage', itemId: string) => { success: boolean; message: string } | void;
 }) {
   const { t } = useTranslation();
   const SALVAGE_TIME = 1;
@@ -423,9 +408,10 @@ function SalvageSection({
             <div key={item.id} className="py-1 px-1">
               <button
                 onClick={() => {
-                  salvageEquipment(player.id, item.id, slot, salvageValue);
-                  spendTime(player.id, SALVAGE_TIME);
-                  toast.success(t('panelForge.salvaged', { name: t(`items.${item.id}.name`) || item.name, gold: salvageValue }));
+                  const result = equipmentServiceAction(player.id, 'salvage', item.id);
+                  if (!result) return;
+                  if (result.success) toast.success(result.message);
+                  else toast.error(result.message);
                 }}
                 disabled={!canAfford}
                 className="w-full text-left py-1.5 px-2 rounded transition-colors hover:bg-[#d4c4a8] disabled:opacity-40 disabled:cursor-not-allowed"

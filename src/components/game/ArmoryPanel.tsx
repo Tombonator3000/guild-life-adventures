@@ -7,38 +7,35 @@ import { ARMORY_ITEMS, getItemPrice, calculateCombatStats, getItem, getClothingT
 import { itemToPreview, useItemPreview } from './ItemPreview';
 import { toast } from 'sonner';
 import { useTranslation } from '@/i18n';
+import { useGameStore } from '@/store/gameStore';
 
 export type ArmorySection = 'clothing' | 'weapons' | 'armor' | 'shields';
 
 interface ArmoryPanelProps {
   player: Player;
   priceModifier: number;
-  modifyGold: (playerId: string, amount: number) => void;
-  spendTime: (playerId: string, hours: number) => void;
-  modifyClothing: (playerId: string, amount: number) => void;
-  modifyHappiness: (playerId: string, amount: number) => void;
-  buyDurable: (playerId: string, itemId: string, cost: number) => void;
   equipItem: (playerId: string, itemId: string, slot: EquipmentSlot) => void;
   unequipItem: (playerId: string, slot: EquipmentSlot) => void;
-  storeBackupOutfit?: (playerId: string, condition: number, cost: number) => boolean;
   section?: ArmorySection;
 }
 
 export function ArmoryPanel({
   player,
   priceModifier,
-  modifyGold,
-  spendTime,
-  modifyClothing,
-  modifyHappiness,
-  buyDurable,
   equipItem,
   unequipItem,
-  storeBackupOutfit,
   section,
 }: ArmoryPanelProps) {
   const { t } = useTranslation();
   const { setPreview } = useItemPreview();
+  const purchaseEquipmentItem = useGameStore(s => s.purchaseEquipmentItem);
+
+  const handlePurchase = (itemId: string, mode: 'primary' | 'backup' = 'primary') => {
+    const result = purchaseEquipmentItem(player.id, 'armory', itemId, mode);
+    if (!result) return;
+    if (result.success) toast.success(result.message);
+    else toast.error(result.message);
+  };
   const combatStats = calculateCombatStats(
     player.equippedWeapon,
     player.equippedArmor,
@@ -160,14 +157,7 @@ export function ArmoryPanel({
                 darkText={darkText}
                 largeText={largeText}
                 previewData={previewData}
-                onClick={() => {
-                  modifyGold(player.id, -price);
-                  buyDurable(player.id, item.id, 0); // Gold already deducted
-                  if (item.effect?.type === 'happiness') {
-                    modifyHappiness(player.id, item.effect.value);
-                  }
-                  toast.success(t('panelArmory.purchased', { name: t(`items.${item.id}.name`) || item.name }));
-                }}
+                onClick={() => handlePurchase(item.id)}
               />
             )}
           </div>
@@ -227,7 +217,7 @@ export function ArmoryPanel({
               const wouldUpgrade = clothingValue > player.clothingCondition;
               const itemTier = getClothingTier(clothingValue);
               const itemTierLabel = CLOTHING_TIER_LABELS[itemTier];
-              const canStoreAsBackup = storeBackupOutfit && canAfford && clothingValue > (player.backupOutfit ?? 0);
+              const canStoreAsBackup = canAfford && clothingValue > (player.backupOutfit ?? 0);
               return (
                 <div key={item.id}>
                   <JonesMenuItem
@@ -237,15 +227,7 @@ export function ArmoryPanel({
                     darkText={darkText}
                     largeText={largeText}
                     previewData={itemToPreview(item)}
-                    onClick={() => {
-                      modifyGold(player.id, -price);
-                      modifyClothing(player.id, clothingValue);
-                      if (item.happinessOnPurchase && item.happinessOnPurchase > 0) {
-                        modifyHappiness(player.id, item.happinessOnPurchase);
-                      }
-                      const newTier = getClothingTier(Math.max(player.clothingCondition, clothingValue));
-                      toast.success(`Purchased ${t(`items.${item.id}.name`) || item.name} — now ${CLOTHING_TIER_LABELS[newTier]} tier`);
-                    }}
+                    onClick={() => handlePurchase(item.id, 'primary')}
                   />
                   {canStoreAsBackup && (
                     <JonesMenuItem
@@ -253,10 +235,7 @@ export function ArmoryPanel({
                       price={price}
                       disabled={!canAfford}
                       darkText={darkText}
-                      onClick={() => {
-                        const ok = storeBackupOutfit!(player.id, clothingValue, price);
-                        if (ok) toast.success(`Stored ${item.name} as backup outfit (${clothingValue}%)`);
-                      }}
+                      onClick={() => handlePurchase(item.id, 'backup')}
                     />
                   )}
                 </div>
@@ -319,15 +298,7 @@ export function ArmoryPanel({
             darkText
             largeText
             previewData={itemToPreview(item)}
-            onClick={() => {
-              modifyGold(player.id, -price);
-              modifyClothing(player.id, clothingValue);
-              if (item.happinessOnPurchase && item.happinessOnPurchase > 0) {
-                modifyHappiness(player.id, item.happinessOnPurchase);
-              }
-              const newTier = getClothingTier(Math.max(player.clothingCondition, clothingValue));
-              toast.success(`Purchased ${t(`items.${item.id}.name`) || item.name} — now ${CLOTHING_TIER_LABELS[newTier]} tier`);
-            }}
+            onClick={() => handlePurchase(item.id, 'primary')}
           />
         );
       })}

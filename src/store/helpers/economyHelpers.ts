@@ -4,6 +4,7 @@ import { createItemActions } from './economy/itemHelpers';
 import { createApplianceActions } from './economy/applianceHelpers';
 import { createApplianceServiceActions } from './economy/applianceServiceHelpers';
 import { createEquipmentActions } from './economy/equipmentHelpers';
+import { createEquipmentServiceActions } from './economy/equipmentServiceHelpers';
 import { createStockLoanActions } from './economy/stockLoanHelpers';
 import { createServiceActions } from './economy/serviceHelpers';
 import { createVendorActions } from './economy/vendorHelpers';
@@ -15,6 +16,7 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
     ...createApplianceActions(set, get),
     ...createApplianceServiceActions(set, get),
     ...createEquipmentActions(set, get),
+    ...createEquipmentServiceActions(set, get),
     ...createStockLoanActions(set, get),
     ...createServiceActions(set, get),
     ...createVendorActions(set, get),

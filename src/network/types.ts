@@ -165,16 +165,15 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'withdrawInvestment',
   'buyItem',
   'sellItem',
-  'buyDurable',
-  'sellDurable',
+  // Equipment intent only. Host resolves catalogue, price, durability and service values.
+  'purchaseEquipmentItem',
+  'useEquipmentService',
   // Appliance intent only. Host resolves vendor, price, source and service cost.
   'purchaseAppliance',
   'useApplianceService',
   'equipItem',
   'unequipItem',
-  'temperEquipment',
-  'forgeRepairEquipment',
-  'salvageEquipment',
+
   'applyDurabilityLoss',
 
   'buyStock',
