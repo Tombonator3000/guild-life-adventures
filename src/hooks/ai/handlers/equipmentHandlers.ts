@@ -64,10 +64,14 @@ export function handleRepairEquipment(player: Player, action: AIAction, _store: 
   return result?.success ?? false;
 }
 
-export function handleSellItem(player: Player, action: AIAction, store: StoreActions): boolean {
+export function handleSellItem(player: Player, action: AIAction, _store: StoreActions): boolean {
   const itemId = action.details?.itemId as string;
   if (!itemId) return false;
-  const result = store.sellInventoryItem(player.id, itemId);
+
+  // Use the authoritative store directly. The AI selector previously exposed
+  // legacy `sellItem` while this handler expected `sellInventoryItem`, making
+  // the action fail at runtime despite the canonical service existing.
+  const result = useGameStore.getState().sellInventoryItem(player.id, itemId);
   return result?.success ?? false;
 }
 
