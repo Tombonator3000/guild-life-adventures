@@ -8,10 +8,14 @@ export interface ConnectionIndicatorPresentation {
   showLatency: boolean;
 }
 
-function getLatencyClass(latency: number) {
-  if (latency > 200) return 'text-red-600';
-  if (latency > 100) return 'text-yellow-600';
-  return 'text-green-700';
+function getConnectedClasses(latency: number) {
+  if (latency > 200) {
+    return { iconClass: 'text-red-500', latencyClass: 'text-red-600' };
+  }
+  if (latency > 100) {
+    return { iconClass: 'text-yellow-500', latencyClass: 'text-yellow-600' };
+  }
+  return { iconClass: 'text-green-600', latencyClass: 'text-green-700' };
 }
 
 export function deriveConnectionIndicator(
@@ -19,12 +23,11 @@ export function deriveConnectionIndicator(
   latency: number,
 ): ConnectionIndicatorPresentation {
   if (connectionStatus === 'connected') {
-    const latencyClass = getLatencyClass(latency);
+    const classes = getConnectedClasses(latency);
     return {
       label: 'Online',
       icon: 'wifi',
-      iconClass: latencyClass.replace('-600', '-500').replace('-700', '-600'),
-      latencyClass,
+      ...classes,
       showLatency: latency > 0,
     };
   }
