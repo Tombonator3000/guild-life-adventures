@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import type { LocationId, Player } from '@/types/game.types';
 import type { LocationTab, WorkInfo } from './LocationShell';
 import type { GameStore } from '@/store/storeTypes';
+import { useGameStore } from '@/store/gameStore';
 import { getJob, FORGE_JOBS, canWorkJob } from '@/data/jobs';
 import { DEGREES } from '@/data/education';
 import { CLOTHING_TIER_LABELS, CLOTHING_THRESHOLDS } from '@/data/items';
@@ -570,7 +571,7 @@ function landlordTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function shadowMarketTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, players, priceModifier, modifyGold,
+  const { player, players, priceModifier,
     economyTrend, week, weeklyNewsEvents, onShowNewspaper } = ctx;
   const shadowNewspaperPrice = Math.round(NEWSPAPER_COST * priceModifier * 0.5);
   const shadowMarketProps = {
@@ -594,7 +595,11 @@ function shadowMarketTabs(ctx: LocationTabContext): LocationTab[] {
             disabled={player.gold < shadowNewspaperPrice}
             onClick={() => {
               playSFX('item-buy');
-              modifyGold(player.id, -shadowNewspaperPrice);
+              const result = useGameStore.getState().purchaseNewspaper(player.id, 'shadow-market');
+              if (result && !result.success) {
+                toast.error(result.message);
+                return;
+              }
               const newspaper = generateNewspaper(week, priceModifier, economyTrend, weeklyNewsEvents);
               onShowNewspaper(newspaper);
             }}
@@ -723,32 +728,12 @@ function fenceTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function graveyardTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, priceModifier, modifyGold, modifyHappiness, modifyRelaxation, modifyMaxHealth, spendTime } = ctx;
+  const { player, priceModifier } = ctx;
   const hexesEnabled = getGameOption('enableHexesCurses');
   const tabs: LocationTab[] = [{
     id: 'cemetery',
     label: 'Cemetery',
-    content: (
-      <GraveyardPanel
-        player={player}
-        priceModifier={priceModifier}
-        onPray={(cost, happinessGain, time) => {
-          modifyGold(player.id, -cost);
-          modifyHappiness(player.id, happinessGain);
-          spendTime(player.id, time);
-        }}
-        onMourn={(cost, relaxationGain, time) => {
-          modifyGold(player.id, -cost);
-          modifyRelaxation(player.id, relaxationGain);
-          spendTime(player.id, time);
-        }}
-        onBlessMaxHealth={(cost, maxHealthGain, time) => {
-          modifyGold(player.id, -cost);
-          modifyMaxHealth(player.id, maxHealthGain);
-          spendTime(player.id, time);
-        }}
-      />
-    ),
+    content: <GraveyardPanel player={player} priceModifier={priceModifier} />,
   }];
 
   // Dark Magic tab (only when hexes enabled)

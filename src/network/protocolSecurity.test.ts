@@ -82,12 +82,12 @@ describe('guest action protocol security', () => {
     )).toBe('Missing player identity');
   });
 
-  it('rejects negative time and malformed or legacy travel requests', () => {
+  it('rejects raw time mutations and malformed or legacy travel requests', () => {
     const state = useGameStore.getState();
     const alice = state.players[0];
 
-    expect(validateGuestActionArgs('spendTime', [alice.id, -60], state)).toBe('hours out of range');
-    expect(validateGuestActionArgs('spendTime', [alice.id, Number.NaN], state)).toBe('Invalid hours');
+    expect(validateGuestActionRequest('spendTime', [alice.id, 1], alice.id, alice.id, state)).toBe('Action not allowed');
+    expect(validateGuestActionRequest('spendTime', [alice.id, -60], alice.id, alice.id, state)).toBe('Action not allowed');
     expect(validateGuestActionRequest('movePlayer', [alice.id, 'bank', 0], alice.id, alice.id, state)).toBe('Action not allowed');
     expect(validateGuestActionArgs('travelPlayer', [alice.id, 'bank'], state)).toBe('Invalid travel route');
     expect(validateGuestActionArgs('travelPlayer', [alice.id, ['general-store']], state)).toBe('Travel route out of range');
@@ -128,8 +128,8 @@ describe('guest action protocol security', () => {
       [alice.id, 'borrow', 300],
       state,
     )).toBe('Invalid loan product');
-    expect(validateGuestActionArgs('modifyGold', [alice.id, 501], state)).toBe('Gold amount too large');
-    expect(validateGuestActionArgs('modifyHealth', [alice.id, Infinity], state)).toBe('Invalid amount');
+    expect(validateGuestActionRequest('modifyGold', [alice.id, 1], alice.id, alice.id, state)).toBe('Action not allowed');
+    expect(validateGuestActionRequest('modifyHealth', [alice.id, -1], alice.id, alice.id, state)).toBe('Action not allowed');
   });
 
   it('propagates an authoritative semantic rejection instead of reporting success', () => {

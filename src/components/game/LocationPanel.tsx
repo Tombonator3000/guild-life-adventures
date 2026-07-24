@@ -79,7 +79,11 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     // M32 FIX: Check gold before purchasing
     if (player.gold < price) return;
     playSFX('item-buy');
-    store.modifyGold(player.id, -price);
+    const result = store.purchaseNewspaper(player.id, 'general-store');
+    if (result && !result.success) {
+      toast.error(result.message);
+      return;
+    }
     const newspaper = generateNewspaper(store.week, store.priceModifier, store.economyTrend, store.weeklyNewsEvents);
     setCurrentNewspaper(newspaper);
   };

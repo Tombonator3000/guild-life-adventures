@@ -100,6 +100,31 @@ function applySnapshotDurability(
 
 export function createDungeonServiceActions(set: SetFn, get: GetFn) {
   return {
+    performCaveRest: (playerId: string): DungeonActionResult => {
+      const state = get();
+      const player = state.players.find(candidate => candidate.id === playerId);
+      if (!player) return fail('Player not found.');
+      if (player.currentLocation !== 'cave') return fail('Rest is only available inside the Cave.');
+      if (state.dungeonRuns[playerId]) return fail('Finish the active dungeon run before resting.');
+      if (player.timeRemaining < 8) return fail('Not enough time to rest.');
+      if (player.health >= player.maxHealth) return fail('Health is already full.');
+
+      const healed = Math.min(15, player.maxHealth - player.health);
+      set(current => ({
+        players: current.players.map(candidate => candidate.id !== playerId ? candidate : {
+          ...candidate,
+          timeRemaining: candidate.timeRemaining - 8,
+          health: Math.min(candidate.maxHealth, candidate.health + healed),
+          happiness: Math.min(100, candidate.happiness + 1),
+          gameStats: {
+            ...candidate.gameStats,
+            totalHealingReceived: (candidate.gameStats.totalHealingReceived ?? 0) + healed,
+          },
+        }),
+      }));
+      return { success: true, message: `You rested and recovered ${healed} health.` };
+    },
+
     beginDungeonRun: (playerId: string, floorId: number): DungeonActionResult => {
       const state = get();
       const player = state.players.find(candidate => candidate.id === playerId);
