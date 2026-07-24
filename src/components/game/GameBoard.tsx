@@ -27,7 +27,6 @@ export function GameBoard() {
   const {
     players,
     selectedLocation,
-    selectLocation,
     week,
     priceModifier,
     economyTrend,
@@ -39,7 +38,6 @@ export function GameBoard() {
     aiDifficulty,
     aiSpeedMultiplier,
     setAISpeedMultiplier,
-    skipAITurn,
     setSkipAITurn,
     showTutorial,
     setShowTutorial,
@@ -54,7 +52,6 @@ export function GameBoard() {
   } = useGameStore(useShallow(state => ({
     players: state.players,
     selectedLocation: state.selectedLocation,
-    selectLocation: state.selectLocation,
     week: state.week,
     priceModifier: state.priceModifier,
     economyTrend: state.economyTrend,
@@ -66,7 +63,6 @@ export function GameBoard() {
     aiDifficulty: state.aiDifficulty,
     aiSpeedMultiplier: state.aiSpeedMultiplier,
     setAISpeedMultiplier: state.setAISpeedMultiplier,
-    skipAITurn: state.skipAITurn,
     setSkipAITurn: state.setSkipAITurn,
     showTutorial: state.showTutorial,
     setShowTutorial: state.setShowTutorial,
@@ -142,7 +138,6 @@ export function GameBoard() {
   } = useZoneConfiguration();
 
   const activeCenterPanel = isMobile ? mobileOverrides.centerPanel : centerPanel;
-  const activeLayout = isMobile ? mobileOverrides.layout : layout;
 
   const { aiIsThinking, currentAIAction } = useAITurnHandler({
     currentPlayer: networkMode !== 'guest' ? currentPlayer : undefined,

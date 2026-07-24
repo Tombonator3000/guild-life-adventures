@@ -140,8 +140,16 @@ describe('GameBoard component boundaries', () => {
     expect(gameBoardSource).toContain('onToggleFullboard: () => setFullboardMode(true)');
   });
 
+  it('does not subscribe to dead GameBoard state or keep unused layout aliases', () => {
+    expect(gameBoardSource).not.toContain('selectLocation: state.selectLocation');
+    expect(gameBoardSource).not.toContain('skipAITurn: state.skipAITurn');
+    expect(gameBoardSource).not.toContain('const activeLayout =');
+    expect(gameBoardSource).toContain('setSkipAITurn: state.setSkipAITurn');
+    expect(gameBoardSource).toContain('initialLayout: layout');
+  });
+
   it('keeps extracted components within focused size limits', () => {
-    expect(gameBoardSource.split('\n').length).toBeLessThan(490);
+    expect(gameBoardSource.split('\n').length).toBeLessThan(470);
     expect(auxiliarySource.split('\n').length).toBeLessThan(80);
     expect(canvasSource.split('\n').length).toBeLessThan(210);
     expect(centerSource.split('\n').length).toBeLessThan(100);
