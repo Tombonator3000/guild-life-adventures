@@ -93,6 +93,27 @@ export function createEmploymentEducationServiceActions(_set: SetFn, get: GetFn)
         : { success: false, message: 'The work shift could not be completed.' };
     },
 
+    attemptWorkplaceRaise: (playerId: string): ActionResult => {
+      const state = get();
+      const player = state.players.find(candidate => candidate.id === playerId);
+      if (!player || !player.currentJob) {
+        return { success: false, message: 'You do not currently have a job.' };
+      }
+
+      const job = getJob(player.currentJob);
+      if (!job) return { success: false, message: 'Current job could not be found.' };
+      if (JOB_LOCATION_NAMES[player.currentLocation] !== job.location) {
+        return { success: false, message: `Visit ${job.location} before requesting a raise.` };
+      }
+      if (player.timeRemaining < 1) return { success: false, message: 'Not enough time to request a raise.' };
+
+      // Preserve the existing AI balance: every completed workplace attempt costs one hour,
+      // whether management approves or denies it. Preconditions rejected above cost nothing.
+      const result = get().requestRaise(playerId);
+      get().spendTime(playerId, 1);
+      return result;
+    },
+
     attendDegreeSession: (
       playerId: string,
       degreeId: DegreeId,

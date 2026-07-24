@@ -279,13 +279,14 @@ function generateHealthActions(ctx: ActionContext): AIAction[] {
   const rawAgeThreshold = (agingOn && (player.age ?? 18) >= 40) ? 65 : 50;
   const ageHealthThreshold = Math.min(rawAgeThreshold, Math.floor(player.maxHealth * 0.8));
 
-  if (player.health < ageHealthThreshold && player.gold >= 30) {
+  const minorHealingCost = Math.max(1, Math.round(25 * ctx.priceModifier));
+  if (player.health < ageHealthThreshold && player.gold >= minorHealingCost) {
     if (currentLocation === 'enchanter') {
       actions.push({
         type: 'heal',
         priority: 80,
         description: 'Visit healer to recover health',
-        details: { cost: 30, healAmount: 25 },
+        details: { serviceId: 'minor', canonicalCost: minorHealingCost },
       });
     } else {
       const moveToHealer = moveCost('enchanter');
