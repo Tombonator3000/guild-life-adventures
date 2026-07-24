@@ -167,6 +167,15 @@ export class PeerManager {
     this.messageHandlers.forEach(h => h(message, fromPeerId));
   }
 
+  /** Close active DataConnections without treating their close events as new network drops. */
+  private closeConnectionsSilently() {
+    const activeConnections = Array.from(this.connections.values());
+    this.connections.clear();
+    activeConnections.forEach((conn) => {
+      try { conn.close(); } catch { /* ignore */ }
+    });
+  }
+
   // --- PeerJS Config ---
 
   private getPeerConfig() {
@@ -357,11 +366,11 @@ export class PeerManager {
     if (this._isHost || !this.peer || !this._roomCode) return false;
     const hostPeerId = roomCodeToPeerId(this._roomCode);
 
-    // Clean up old connection
+    // Remove the old connection before closing it so its close handler cannot recurse.
     const oldConn = this.connections.get(hostPeerId);
     if (oldConn) {
-      try { oldConn.close(); } catch { /* ignore */ }
       this.connections.delete(hostPeerId);
+      try { oldConn.close(); } catch { /* ignore */ }
     }
 
     this.setStatus('reconnecting');
@@ -493,9 +502,17 @@ export class PeerManager {
         // Notify game about temporary disconnect (for UI)
         this.disconnectHandlers.forEach(h => h(peerId));
       } else {
-        // Guest: host connection lost
+        // Guest: host connection lost, reconnect immediately instead of waiting for heartbeat timeout.
+        if (this.guestHeartbeatTimeout) {
+          clearTimeout(this.guestHeartbeatTimeout);
+          this.guestHeartbeatTimeout = null;
+        }
+        this.setStatus('reconnecting');
         this.disconnectHandlers.forEach(h => h(peerId));
         console.log(`[PeerManager] Host connection lost: ${peerId}`);
+        if (!this.attemptReconnect()) {
+          this.setStatus('error');
+        }
       }
     });
 
@@ -656,11 +673,8 @@ export class PeerManager {
 
     this._isHost = true;
 
-    // Clear old host connection (it's dead)
-    this.connections.forEach((conn) => {
-      try { conn.close(); } catch { /* ignore */ }
-    });
-    this.connections.clear();
+    // Clear old host connection (it's dead) without triggering guest reconnect.
+    this.closeConnectionsSilently();
     this.lastPongReceived.clear();
     this._peerLatency.clear();
 
@@ -693,11 +707,8 @@ export class PeerManager {
     if (this._isHost) return Promise.reject(new Error('Cannot connect: already host'));
     if (!this.peer) return Promise.reject(new Error('No peer instance'));
 
-    // Close old host connection
-    this.connections.forEach((conn) => {
-      try { conn.close(); } catch { /* ignore */ }
-    });
-    this.connections.clear();
+    // Close old host connection without reconnecting to the old host.
+    this.closeConnectionsSilently();
 
     // Stop old heartbeat
     this.heartbeatIntervals.forEach((id) => clearInterval(id));
@@ -737,9 +748,8 @@ export class PeerManager {
     this.reconnectingPeers.clear();
     this.peerNames.clear();
 
-    // Close connections
-    this.connections.forEach((conn) => conn.close());
-    this.connections.clear();
+    // Close connections without starting a reconnect during teardown.
+    this.closeConnectionsSilently();
 
     // Destroy PeerJS instance
     this.peer?.destroy();
