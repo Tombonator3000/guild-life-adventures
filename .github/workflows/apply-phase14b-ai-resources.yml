@@ -1,0 +1,29 @@
+name: Apply phase 14B AI resource catalogues
+
+on:
+  push:
+    branches:
+      - agent/audit-phase14b-ai-resources
+    paths:
+      - phase14b-apply-trigger.txt
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase14b-ai-resources
+          fetch-depth: 1
+      - name: Apply resource catalogue migration
+        run: node scripts/apply-phase14b-ai-resources.mjs
+      - name: Commit migration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Route AI resource purchases through canonical catalogues"
+          git push origin HEAD:agent/audit-phase14b-ai-resources
