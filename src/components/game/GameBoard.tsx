@@ -1,11 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
-import { getAppliance } from '@/data/items';
 import { MOVEMENT_PATHS } from '@/data/locations';
 import { GameBoardHeader } from './GameBoardHeader';
 import type { Player } from '@/types/game.types';
-import { toast } from 'sonner';
 import { useNetworkSync } from '@/network/useNetworkSync';
 import { useZoneConfiguration } from '@/hooks/useZoneConfiguration';
 import { useAITurnHandler } from '@/hooks/useAITurnHandler';
@@ -17,6 +15,7 @@ import { useLocationClick } from '@/hooks/useLocationClick';
 import { useGameBoardEventQueue } from '@/hooks/useGameBoardEventQueue';
 import { useGameBoardTurnTransition } from '@/hooks/useGameBoardTurnTransition';
 import { useGameBoardAnimationSync } from '@/hooks/useGameBoardAnimationSync';
+import { useApplianceBreakageNotification } from '@/hooks/useApplianceBreakageNotification';
 import { useKeyboardLocationNav } from '@/hooks/useKeyboardLocationNav';
 import { useGameOptions } from '@/hooks/useGameOptions';
 import { GameBoardAuxiliaryLayer } from './GameBoardAuxiliaryLayer';
@@ -110,6 +109,10 @@ export function GameBoard() {
     phase,
     isOnline,
   });
+  useApplianceBreakageNotification({
+    event: applianceBreakageEvent,
+    dismissEvent: dismissApplianceBreakageEvent,
+  });
 
   const [showZoneEditor, setShowZoneEditor] = useState(false);
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
@@ -176,18 +179,6 @@ export function GameBoard() {
     isLocalPlayerTurn,
     setFullboardMode,
   });
-
-  useEffect(() => {
-    if (applianceBreakageEvent && !applianceBreakageEvent.fromCurse) {
-      const appliance = getAppliance(applianceBreakageEvent.applianceId);
-      const name = appliance?.name || applianceBreakageEvent.applianceId;
-      toast.warning(
-        `Your ${name} broke! Repair cost: ~${applianceBreakageEvent.repairCost}g (Forge is cheaper).`,
-        { duration: 6000 },
-      );
-      dismissApplianceBreakageEvent();
-    }
-  }, [applianceBreakageEvent, dismissApplianceBreakageEvent]);
 
   const { handleLocationClick, currentEvent } = useLocationClick({
     animatingPlayer,
