@@ -2,17 +2,12 @@ import { useState, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { getAppliance } from '@/data/items';
-import { ResourcePanel } from './ResourcePanel';
-import { LocationPanel } from './LocationPanel';
-import { EventPanel } from './EventPanel';
-import { ShadowfingersModal, useShadowfingersModal } from './ShadowfingersModal';
 import { MOVEMENT_PATHS } from '@/data/locations';
 import { SideInfoTabs } from './SideInfoTabs';
 import { RightSideTabs } from './RightSideTabs';
 import { MobileHUD } from './MobileHUD';
 import { MobileDrawer } from './MobileDrawer';
 import { GameBoardHeader } from './GameBoardHeader';
-import { CursePanelOverlay } from './CursePanelOverlay';
 import type { Player } from '@/types/game.types';
 import { toast } from 'sonner';
 import { useNetworkSync } from '@/network/useNetworkSync';
@@ -26,12 +21,11 @@ import { useLocationClick } from '@/hooks/useLocationClick';
 import { useKeyboardLocationNav } from '@/hooks/useKeyboardLocationNav';
 import { useGameOptions } from '@/hooks/useGameOptions';
 import { StoneBorderFrame } from './StoneBorderFrame';
-import { CurseAppliancePanel } from './CurseAppliancePanel';
-import { CurseToadPanel } from './CurseToadPanel';
 import { registerAIAnimateCallback } from '@/hooks/useAIAnimationBridge';
-import { SpectatorPanel } from './SpectatorPanel';
 import { GameBoardAuxiliaryLayer } from './GameBoardAuxiliaryLayer';
 import { GameBoardCanvas } from './GameBoardCanvas';
+import { GameBoardCenterPanel } from './GameBoardCenterPanel';
+import { useShadowfingersModal } from './ShadowfingersModal';
 
 export function GameBoard() {
   const {
@@ -325,58 +319,38 @@ export function GameBoard() {
           onAnimationComplete={handleAnimationComplete}
           onLocationReached={handleLocationReached}
         >
-          {(!isMobile
-            || selectedLocation
-            || (phase === 'event' && queuedEvent)
-            || applianceBreakageEvent?.fromCurse
-            || toadCurseEvent
-            || shadowfingersEvent) && (
-            <div
-              className={`absolute overflow-hidden z-10 ${isMobile ? 'rounded-xl' : ''}`}
-              style={{
-                top: `${activeCenterPanel.top}%`,
-                left: `${activeCenterPanel.left}%`,
-                width: `${activeCenterPanel.width}%`,
-                height: `${activeCenterPanel.height}%`,
-              }}
-            >
-              <div className={`w-full h-full overflow-hidden flex flex-col bg-card/95 relative ${isMobile ? 'rounded-xl' : 'rounded-t-lg'} animate-scale-in`}>
-                {isCursed && !applianceBreakageEvent?.fromCurse && !toadCurseEvent && (
-                  <CursePanelOverlay isMobile={isMobile} />
-                )}
-                {toadCurseEvent ? (
-                  <CurseToadPanel
-                    hoursLost={toadCurseEvent.hoursLost}
-                    curserName={toadCurseEvent.curserName}
-                    onDismiss={dismissToadCurseEvent}
-                  />
-                ) : applianceBreakageEvent?.fromCurse ? (
-                  <CurseAppliancePanel
-                    applianceId={applianceBreakageEvent.applianceId}
-                    originalPrice={applianceBreakageEvent.originalPrice ?? applianceBreakageEvent.repairCost * 2}
-                    curserName={applianceBreakageEvent.curserName}
-                    onDismiss={dismissApplianceBreakageEvent}
-                  />
-                ) : shadowfingersEvent ? (
-                  <ShadowfingersModal event={shadowfingersEvent} onDismiss={dismissShadowfingers} />
-                ) : phase === 'event' && queuedEvent ? (
-                  <EventPanel event={queuedEvent} onDismiss={handleEventDismiss} />
-                ) : selectedLocation ? (
-                  <LocationPanel locationId={selectedLocation} />
-                ) : isSpectating ? (
-                  <SpectatorPanel
-                    players={players}
-                    goalSettings={goalSettings}
-                    week={week}
-                    stockPrices={stockPrices}
-                    isPureSpectator={isPureSpectator}
-                  />
-                ) : (
-                  <ResourcePanel />
-                )}
-              </div>
-            </div>
-          )}
+          <GameBoardCenterPanel
+            isMobile={isMobile}
+            centerPanel={activeCenterPanel}
+            isCursed={isCursed}
+            toadProps={toadCurseEvent ? {
+              hoursLost: toadCurseEvent.hoursLost,
+              curserName: toadCurseEvent.curserName,
+              onDismiss: dismissToadCurseEvent,
+            } : null}
+            applianceProps={applianceBreakageEvent?.fromCurse ? {
+              applianceId: applianceBreakageEvent.applianceId,
+              originalPrice: applianceBreakageEvent.originalPrice ?? applianceBreakageEvent.repairCost * 2,
+              curserName: applianceBreakageEvent.curserName,
+              onDismiss: dismissApplianceBreakageEvent,
+            } : null}
+            shadowfingersProps={shadowfingersEvent ? {
+              event: shadowfingersEvent,
+              onDismiss: dismissShadowfingers,
+            } : null}
+            eventProps={phase === 'event' && queuedEvent ? {
+              event: queuedEvent,
+              onDismiss: handleEventDismiss,
+            } : null}
+            locationProps={selectedLocation ? { locationId: selectedLocation } : null}
+            spectatorProps={isSpectating ? {
+              players,
+              goalSettings,
+              week,
+              stockPrices,
+              isPureSpectator,
+            } : null}
+          />
 
           {!isMobile && !fullboardMode && (
             <GameBoardHeader
