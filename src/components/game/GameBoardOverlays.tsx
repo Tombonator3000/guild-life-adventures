@@ -89,7 +89,7 @@ export function GameBoardOverlays({
               {connectionIndicator.label} {roomCodeDisplay ? `(${roomCodeDisplay})` : ''}
               {isGuest && connectionIndicator.showLatency && (
                 <span className={`ml-1 ${connectionIndicator.latencyClass}`}>
-                  {latency}ms
+                  {' '}{latency}ms
                 </span>
               )}
             </span>
