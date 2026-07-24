@@ -1,0 +1,118 @@
+name: Finalize phase 13F dungeon audit
+
+on:
+  push:
+    branches:
+      - agent/audit-phase13f-dungeon
+    paths:
+      - phase13f-finalize-trigger.txt
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase13f-dungeon
+          fetch-depth: 1
+      - name: Update tests, audit log and remove temporary files
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          # Document the playerId-at-arg0 invariant for the new semantic actions.
+          multiplayer = Path('src/test/multiplayer.test.ts')
+          multiplayer_text = multiplayer.read_text(encoding='utf-8')
+          old = "      'purchaseVendorItem', 'purchaseTavernItem', 'purchaseHexScroll', 'useHexDefense',"
+          new = "      'purchaseVendorItem', 'purchaseTavernItem',\n      'beginDungeonRun', 'resolveDungeonEncounter', 'advanceDungeonRun', 'finalizeDungeonRun',\n      'purchaseHexScroll', 'useHexDefense',"
+          if old not in multiplayer_text:
+              raise SystemExit('Multiplayer action invariant marker not found')
+          multiplayer.write_text(multiplayer_text.replace(old, new), encoding='utf-8')
+
+          path = Path('docs/AUDIT_LOG.md')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace(
+              '| 2 | Host-autoritativ multiplayer | Delvis ferdig, protokoll låst | Aktør-ID, tur, allowlist, argumentform, canonical rute og semantiske host-avslag valideres. Reise, jobb, hjem, healer og Tavern bruker semantiske handlinger. Rå stat-/tidshandlinger gjenstår. |',
+              '| 2 | Host-autoritativ multiplayer | Delvis ferdig, protokoll låst | Aktør-ID, tur, allowlist, argumentform og semantiske host-avslag valideres. Reise, jobb, hjem, healer, Tavern og interaktiv dungeon bruker host-eide handlinger/state-maskiner. Rå stat-/tidshandlinger gjenstår. |',
+          )
+          text = text.replace(
+              '| 6 | Atomiske handlinger | Delvis ferdig | Reise, hjem/hvile, healer, Tavern, gravplass, gambling, avis, sabotasje, beskyttelse, jobbtilbud, markedslønn, arbeid, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig, hex-/ritualtjenester og finans er host-resolverte. |',
+              '| 6 | Atomiske handlinger | Delvis ferdig | Reise, hjem/hvile, healer, Tavern, interaktiv dungeon, gravplass, gambling, avis, sabotasje, beskyttelse, jobbtilbud, markedslønn, arbeid, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig, hex-/ritualtjenester og finans er host-resolverte. |',
+          )
+          text = text.replace(
+              '1. **Migrer resterende rå gjestehandlinger.** Prioriter dungeon og øvrige `modify*`/`spendTime`-flyter, deretter interne AI-reservebaner. Tavern, healer, hjem/hvile, `setJob`, `negotiateRaise` og `movePlayer` er ferdig migrert.',
+              '1. **Migrer resterende rå gjestehandlinger.** Prioriter øvrige LocationPanel-/quest-/serviceflyter som fortsatt bruker `modify*`/`spendTime`, deretter interne AI-reservebaner. Interaktiv dungeon, Tavern, healer, hjem/hvile, jobb og reise er ferdig migrert.',
+          )
+          text = text.replace(
+              '- PR #340 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.',
+              '- PR #340 ble squash-merget til `main` som commit `4732b2f0636c9fda47a0fa1c7102ddfe8603ee7b`.',
+          )
+
+          phase = '''
+
+          ## Fase 13F – 24. juli 2026
+
+          ### Mål
+
+          - Fjerne klientstyrt dungeon-tid, skade, gull, humør, durability, floor clear og drops fra den interaktive kampflyten.
+          - Beholde encounter-for-encounter-UI-et, men flytte hele kampens state-maskin og tilfeldighetskast til hosten.
+
+          ### Utført
+
+          - Opprettet arbeidsgren `agent/audit-phase13f-dungeon` og draft-PR #341 fra fase 13E-merge `4732b2f0636c9fda47a0fa1c7102ddfe8603ee7b`.
+          - Kartleggingen avdekket at `CombatView` tidligere genererte encounters, modifier, block, potion, rare drop og hex drop med klientens `Math.random()`, mens `CavePanel` etterpå sendte separate gull-, helse-, humør-, durability- og progresjonskall.
+          - Lagt til en serialiserbar `DungeonRunSession` og fire semantiske handlinger: `beginDungeonRun`, `resolveDungeonEncounter`, `advanceDungeonRun` og `finalizeDungeonRun`.
+          - Hosten validerer Cave-lokasjon, floor-ID, degree-/equipmentkrav, attempt-grense, helse og canonical encounter-tid før en run opprettes.
+          - Encounterliste, modifier, kampstats, education bonuses og utstyr-ID-er snapshots på hosten ved start.
+          - Hosten ruller og anvender all encounter-skade/healing, block, potion, loot og drops. Klienten sender bare valg som fight, continue, skip healing, retreat, leave og finish.
+          - Gold, happiness, dungeon record, first clear, dependability/fame, rare drop, hex scroll og durability settlement bruker bare host-sessionen.
+          - Durability påføres utstyret som var snapshot ved run-start. Et testet mid-run gear-swap kan derfor ikke flytte slitasjen til et annet våpen.
+          - Aktive dungeon-sessions synkroniseres til gjester gjennom vanlig state-sync, slik at panelet kan lukkes og åpnes uten å miste eller regenerere kampen.
+          - End turn og manuell save blokkeres mens en session er aktiv. Sessions er transiente og gjenopprettes ikke fra save-filer.
+          - `CombatView` er nå en ren presentasjon av hostens run-state og inneholder ingen lokal kampresolver eller lokal randomness.
+          - Fjernet rå `incrementDungeonAttempts` og `applyDurabilityLoss` fra gjestenes allowlist og fjernet alle rå dungeon-callbacker fra CavePanel/LocationTabs.
+          - AI-ens auto-resolve er allerede en host/lokal intern bane og var ikke en gjesteangrepsflate; den beholdes foreløpig, men står på listen for senere samling med samme service-lag.
+          - Lagt til sju regresjonstester for canonical inngangstid/attempt, avviste innganger, host-resolved encounter, continue-tid, prematur settlement/end-turn-flukt, gear-swap-sikker settlement og protokoll/state-sync.
+          - Fjernet alle midlertidige workflow-, trigger- og patchfiler før merge.
+
+          ### Tester
+
+          GitHub Actions-run `30074836980`:
+
+          - Dependency install: bestått.
+          - TypeScript: bestått.
+          - Full Vitest-pakke, inkludert sju nye dungeon-sessiontester: bestått.
+          - Produksjonsbuild: bestått.
+          - ESLint: bestått.
+          - Playwright-runner og Chromium-installasjon: bestått.
+          - Title/setup-smoke og deterministisk komplett lokal spillflyt: bestått.
+
+          ### Resultat
+
+          - En online-gjest kan ikke lenger generere sitt eget dungeon-resultat eller sende ønsket tid, skade, loot, durability eller drops.
+          - Interaktiv dungeon er en host-eid, synkronisert state-maskin med canonical settlement.
+          - Neste sikkerhetsarbeid er å migrere de gjenværende generelle `modify*`/`spendTime`-flytene og deretter samle interne AI-reservebaner.
+          - PR #341 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
+          '''
+          phase = '\n'.join(line[10:] if line.startswith('          ') else line for line in phase.splitlines())
+          if '## Fase 13F – 24. juli 2026' not in text:
+              text = text.rstrip() + phase + '\n'
+          path.write_text(text, encoding='utf-8')
+          PY
+
+          rm -f \
+            .github/workflows/apply-phase13f-dungeon.yml \
+            .github/workflows/finalize-phase13f-dungeon.yml \
+            scripts/apply-phase13f-dungeon.mjs \
+            phase13f-apply-trigger.txt \
+            phase13f-finalize-trigger.txt
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Finalize phase 13F dungeon audit"
+          git push origin HEAD:agent/audit-phase13f-dungeon
