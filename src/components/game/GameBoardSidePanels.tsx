@@ -7,14 +7,32 @@ import { StoneBorderFrame } from './StoneBorderFrame';
 
 type OptionalProps<T extends ElementType> = ComponentProps<T> | null;
 type DrawerStateProps = Pick<ComponentProps<typeof MobileDrawer>, 'isOpen' | 'onClose'>;
+type RightSideProps = ComponentProps<typeof RightSideTabs>;
+type SharedRightSideProps = Pick<
+  RightSideProps,
+  | 'players'
+  | 'currentPlayerIndex'
+  | 'goalSettings'
+  | 'showDebugOverlay'
+  | 'aiIsThinking'
+  | 'aiSpeedMultiplier'
+  | 'onSetAISpeed'
+  | 'onSkipAITurn'
+>;
+type RightSideActions = Pick<
+  RightSideProps,
+  'onOpenSaveMenu' | 'onToggleDebugOverlay' | 'onToggleZoneEditor'
+>;
+type DesktopRightSideActions = RightSideActions & Pick<RightSideProps, 'onToggleFullboard'>;
 
 interface GameBoardSidePanelsProps {
   isMobile: boolean;
   fullboardMode: boolean;
   mobileHUDProps: OptionalProps<typeof MobileHUD>;
   sideInfoProps: OptionalProps<typeof SideInfoTabs>;
-  desktopRightProps: ComponentProps<typeof RightSideTabs>;
-  mobileRightProps: ComponentProps<typeof RightSideTabs>;
+  sharedRightSideProps: SharedRightSideProps;
+  desktopRightActions: DesktopRightSideActions;
+  mobileRightActions: RightSideActions;
   leftDrawerProps: DrawerStateProps;
   rightDrawerProps: DrawerStateProps;
   children: ReactNode;
@@ -28,8 +46,9 @@ export function GameBoardSidePanels({
   fullboardMode,
   mobileHUDProps,
   sideInfoProps,
-  desktopRightProps,
-  mobileRightProps,
+  sharedRightSideProps,
+  desktopRightActions,
+  mobileRightActions,
   leftDrawerProps,
   rightDrawerProps,
   children,
@@ -63,7 +82,7 @@ export function GameBoardSidePanels({
           style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
         >
           <StoneBorderFrame side="right">
-            <RightSideTabs {...desktopRightProps} />
+            <RightSideTabs {...sharedRightSideProps} {...desktopRightActions} />
           </StoneBorderFrame>
         </div>
       )}
@@ -82,7 +101,7 @@ export function GameBoardSidePanels({
             side="right"
             title="Players & Options"
           >
-            <RightSideTabs {...mobileRightProps} />
+            <RightSideTabs {...sharedRightSideProps} {...mobileRightActions} />
           </MobileDrawer>
         </>
       )}
