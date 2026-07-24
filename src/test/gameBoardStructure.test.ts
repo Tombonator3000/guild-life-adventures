@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 const readSource = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
 const gameBoardSource = readSource('src/components/game/GameBoard.tsx');
 const auxiliarySource = readSource('src/components/game/GameBoardAuxiliaryLayer.tsx');
+const canvasSource = readSource('src/components/game/GameBoardCanvas.tsx');
 
 const extractedComponents = [
   'ZoneEditor',
@@ -17,6 +18,18 @@ const extractedComponents = [
   'ContextualTips',
   'SpectatorOverlay',
   'TopDropdownMenu',
+];
+
+const canvasComponents = [
+  'LocationZone',
+  'PlayerToken',
+  'AnimatedPlayerToken',
+  'ShadowfingersToken',
+  'GraveyardCrows',
+  'FestivalOverlay',
+  'WeatherOverlay',
+  'DebugOverlay',
+  'BanterBubble',
 ];
 
 describe('GameBoard component boundaries', () => {
@@ -36,8 +49,27 @@ describe('GameBoard component boundaries', () => {
     expect(auxiliarySource).toContain('OptionalComponentProps<typeof TopDropdownMenu>');
   });
 
-  it('keeps the main board component below its previous monolithic size', () => {
-    expect(gameBoardSource.split('\n').length).toBeLessThan(700);
+  it('delegates board rendering and visual overlays to GameBoardCanvas', () => {
+    expect(gameBoardSource).toContain("import { GameBoardCanvas } from './GameBoardCanvas';");
+    expect(gameBoardSource).toContain('<GameBoardCanvas');
+    expect(gameBoardSource).not.toContain('LOCATIONS.map');
+    expect(gameBoardSource).not.toContain('BoardBanterOverlay');
+    for (const component of canvasComponents) {
+      expect(gameBoardSource).not.toMatch(new RegExp(`import \\{?\\s*${component}\\s*\\}? from`));
+      expect(canvasSource).toContain(component);
+    }
+  });
+
+  it('keeps event and location panel priority in GameBoard children', () => {
+    expect(gameBoardSource).toContain("phase === 'event' && queuedEvent");
+    expect(gameBoardSource).toContain('<LocationPanel locationId={selectedLocation} />');
+    expect(gameBoardSource).toContain('<ResourcePanel />');
+    expect(canvasSource).toContain('{children}');
+  });
+
+  it('keeps extracted components within focused size limits', () => {
+    expect(gameBoardSource.split('\n').length).toBeLessThan(560);
     expect(auxiliarySource.split('\n').length).toBeLessThan(80);
+    expect(canvasSource.split('\n').length).toBeLessThan(210);
   });
 });
