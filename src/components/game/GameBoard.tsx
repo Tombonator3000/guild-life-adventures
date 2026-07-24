@@ -10,27 +10,22 @@ import { ResourcePanel } from './ResourcePanel';
 import { LocationPanel } from './LocationPanel';
 import { EventPanel } from './EventPanel';
 import { ShadowfingersModal, useShadowfingersModal } from './ShadowfingersModal';
-import { DeathModal } from './DeathModal';
-import { ZoneEditor } from './ZoneEditor';
 import { MOVEMENT_PATHS } from '@/data/locations';
 import { SideInfoTabs } from './SideInfoTabs';
 import { RightSideTabs } from './RightSideTabs';
-import { SaveLoadMenu } from './SaveLoadMenu';
 import { MobileHUD } from './MobileHUD';
 import { MobileDrawer } from './MobileDrawer';
 import { WeatherOverlay } from './WeatherOverlay';
 import { FestivalOverlay } from './FestivalOverlay';
 import { BanterBubble } from './BanterBubble';
 import { useBanterStore } from '@/store/banterStore';
-import { UpdateBanner } from './UpdateBanner';
 import { GameBoardHeader } from './GameBoardHeader';
-import { GameBoardOverlays } from './GameBoardOverlays';
 import { DebugOverlay } from './DebugOverlay';
 import { GraveyardCrows } from './GraveyardCrows';
 import gameBoard from '@/assets/game-board.jpeg';
 import { CursePanelOverlay } from './CursePanelOverlay';
 import { ShadowfingersToken } from './ShadowfingersToken';
-import type { LocationId } from '@/types/game.types';
+import type { LocationId, Player } from '@/types/game.types';
 import { toast } from 'sonner';
 import { useNetworkSync } from '@/network/useNetworkSync';
 import { useZoneConfiguration } from '@/hooks/useZoneConfiguration';
@@ -47,13 +42,8 @@ import { StoneBorderFrame } from './StoneBorderFrame';
 import { CurseAppliancePanel } from './CurseAppliancePanel';
 import { CurseToadPanel } from './CurseToadPanel';
 import { registerAIAnimateCallback } from '@/hooks/useAIAnimationBridge';
-import { ChatPanel } from './ChatPanel';
-import { ContextualTips } from './ContextualTips';
-import { SpectatorOverlay } from './SpectatorOverlay';
 import { SpectatorPanel } from './SpectatorPanel';
-import { TopDropdownMenu } from './TopDropdownMenu';
-import { PlayerInfoModal } from './PlayerInfoModal';
-import type { Player } from '@/types/game.types';
+import { GameBoardAuxiliaryLayer } from './GameBoardAuxiliaryLayer';
 
 export function GameBoard() {
   const {
@@ -111,25 +101,33 @@ export function GameBoard() {
     weather: state.weather,
     eventSource: state.eventSource,
   })));
-  const locationHexes = useGameStore(s => s.locationHexes);
-  const stockPrices = useGameStore(s => s.stockPrices);
+  const locationHexes = useGameStore(state => state.locationHexes);
+  const stockPrices = useGameStore(state => state.stockPrices);
   const { event: shadowfingersEvent, dismiss: dismissShadowfingers } = useShadowfingersModal();
-  const { isOnline, isGuest, networkMode, broadcastMovement, remoteAnimation, clearRemoteAnimation, latency, chatMessages, sendChatMessage, connectionStatus, attemptReconnect } = useNetworkSync();
-  const localPlayerId = useGameStore(s => s.localPlayerId);
-  const roomCodeDisplay = useGameStore(s => s.roomCode);
-
-  // Get current player
+  const {
+    isOnline,
+    isGuest,
+    networkMode,
+    broadcastMovement,
+    remoteAnimation,
+    clearRemoteAnimation,
+    latency,
+    chatMessages,
+    sendChatMessage,
+    connectionStatus,
+    attemptReconnect,
+  } = useNetworkSync();
+  const localPlayerId = useGameStore(state => state.localPlayerId);
+  const roomCodeDisplay = useGameStore(state => state.roomCode);
   const currentPlayer = useCurrentPlayer();
 
-  // Online mode: is it this client's turn?
-  const isLocalPlayerTurn = !isOnline || (currentPlayer?.id === localPlayerId);
+  const isLocalPlayerTurn = !isOnline || currentPlayer?.id === localPlayerId;
   const isWaitingForOtherPlayer = isOnline && !isLocalPlayerTurn && !currentPlayer?.isAI;
   const isCursed = (currentPlayer?.activeCurses?.length ?? 0) > 0;
-
-  // Spectator mode: local player is dead OR joined as pure spectator (no localPlayerId)
-  const localPlayer = isOnline ? players.find(p => p.id === localPlayerId) : currentPlayer;
+  const localPlayer = isOnline ? players.find(player => player.id === localPlayerId) : currentPlayer;
   const isPureSpectator = isOnline && !localPlayerId;
-  const isSpectating = isPureSpectator || !!(localPlayer?.isGameOver && phase === 'playing' && players.some(p => !p.isGameOver));
+  const isSpectating = isPureSpectator
+    || !!(localPlayer?.isGameOver && phase === 'playing' && players.some(player => !player.isGameOver));
 
   const [showZoneEditor, setShowZoneEditor] = useState(false);
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
@@ -142,21 +140,17 @@ export function GameBoard() {
   const [viewingPlayer, setViewingPlayer] = useState<Player | null>(null);
   const isMobile = useIsMobile();
 
-  // Privacy screen between turns in local multiplayer (2+ human players)
-  const humanPlayers = players.filter(p => !p.isAI && !p.isGameOver);
+  const humanPlayers = players.filter(player => !player.isAI && !player.isGameOver);
   const isMultiHuman = !isOnline && humanPlayers.length >= 2;
 
   useEffect(() => {
     if (!currentPlayer || !isMultiHuman || currentPlayer.isAI) return;
-
-    // Show transition when switching from one human player to another
     if (lastHumanPlayerId && lastHumanPlayerId !== currentPlayer.id && phase === 'playing') {
       setShowTurnTransition(true);
     }
     setLastHumanPlayerId(currentPlayer.id);
   }, [currentPlayer?.id, phase]);
 
-  // Extracted hooks
   const {
     customZones,
     centerPanel,
@@ -169,14 +163,12 @@ export function GameBoard() {
     getLocationWithCustomPosition,
   } = useZoneConfiguration();
 
-  // Pick the right center panel and layout based on mobile vs desktop
   const activeCenterPanel = isMobile ? mobileOverrides.centerPanel : centerPanel;
   const activeLayout = isMobile ? mobileOverrides.layout : layout;
 
-  // AI turns only run on host/local — guests receive AI state via sync
   const { aiIsThinking, currentAIAction } = useAITurnHandler({
     currentPlayer: networkMode !== 'guest' ? currentPlayer : undefined,
-    phase: networkMode !== 'guest' ? phase : 'title', // prevent AI trigger on guest
+    phase: networkMode !== 'guest' ? phase : 'title',
     aiDifficulty,
   });
 
@@ -195,7 +187,6 @@ export function GameBoard() {
     startRemoteAnimation,
   } = usePlayerAnimation();
 
-  // Keyboard shortcuts
   useGameBoardKeyboard({
     setShowZoneEditor,
     setShowDebugOverlay,
@@ -212,28 +203,23 @@ export function GameBoard() {
     setFullboardMode,
   });
 
-  // Show appliance/equipment breakage notification
-  // Curse breakage: shown as center panel (CurseAppliancePanel) — NOT auto-dismissed here
-  // Regular breakage: toast warning, auto-dismissed
   useEffect(() => {
     if (applianceBreakageEvent && !applianceBreakageEvent.fromCurse) {
       const appliance = getAppliance(applianceBreakageEvent.applianceId);
       const name = appliance?.name || applianceBreakageEvent.applianceId;
       toast.warning(
         `Your ${name} broke! Repair cost: ~${applianceBreakageEvent.repairCost}g (Forge is cheaper).`,
-        { duration: 6000 }
+        { duration: 6000 },
       );
       dismissApplianceBreakageEvent();
     }
   }, [applianceBreakageEvent, dismissApplianceBreakageEvent]);
 
-  // Register AI animation callback so actionExecutor can trigger board path animations
   useEffect(() => {
     registerAIAnimateCallback(startRemoteAnimation);
     return () => registerAIAnimateCallback(null);
   }, [startRemoteAnimation]);
 
-  // Remote movement animation: when another player moves in online mode, animate their token
   useEffect(() => {
     if (remoteAnimation && !animatingPlayer) {
       startRemoteAnimation(remoteAnimation.playerId, remoteAnimation.path);
@@ -252,23 +238,18 @@ export function GameBoard() {
     getAccumulatedSteps,
   });
 
-  // Keyboard location navigation (Tab/Arrow/Space/Enter)
   const { options: gameOptions } = useGameOptions();
   const { focusedLocationId } = useKeyboardLocationNav({
     enabled: gameOptions.enableKeyboardNav && !aiIsThinking && phase === 'playing' && isLocalPlayerTurn,
     onLocationClick: handleLocationClick,
   });
 
-  // Event queue: show one event at a time for gameplay events, but all at once for weekend summaries
   const [eventQueueIdx, setEventQueueIdx] = useState(0);
 
-  // Reset queue index whenever a new event batch arrives
   useEffect(() => {
     setEventQueueIdx(0);
   }, [currentEvent?.id]);
 
-  // Weekend events: show all messages on one screen (no pagination).
-  // Non-weekend events: paginate one line per "continue" click.
   const isWeekendEvent = eventSource === 'weekend';
   const eventLines = (!isWeekendEvent && currentEvent?.description.split('\n').filter(Boolean)) || [];
   const totalEventCount = isWeekendEvent ? 1 : eventLines.length;
@@ -285,24 +266,22 @@ export function GameBoard() {
       }
     : null;
 
-  // Advance through the event queue, or fully dismiss when all events shown.
-  // Weekend events always dismiss immediately (single screen).
   const handleEventDismiss = () => {
     if (!isWeekendEvent && eventQueueIdx < totalEventCount - 1) {
-      setEventQueueIdx(idx => idx + 1);
+      setEventQueueIdx(index => index + 1);
     } else {
       setEventQueueIdx(0);
       dismissEvent();
     }
   };
 
-  const SIDE_PANEL_WIDTH_PERCENT = 12;
+  const sidePanelWidthPercent = 12;
 
   return (
-    <div className={`w-screen h-screen-safe overflow-hidden bg-background flex safe-area-all ${isMobile ? 'flex-col' : 'flex-row'}`}
+    <div
+      className={`w-screen h-screen-safe overflow-hidden bg-background flex safe-area-all ${isMobile ? 'flex-col' : 'flex-row'}`}
       style={!isMobile && fullboardMode ? { paddingTop: '2rem' } : undefined}
     >
-      {/* Mobile HUD - compact top bar (mobile only) */}
       {isMobile && currentPlayer && (
         <MobileHUD
           player={currentPlayer}
@@ -317,65 +296,61 @@ export function GameBoard() {
         />
       )}
 
-      {/* Left Side Panel - desktop only, hidden in fullboard mode */}
       {!isMobile && !fullboardMode && (
         <div
           className="relative z-30 flex flex-col flex-shrink-0 h-full"
-          style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
+          style={{ width: `${sidePanelWidthPercent}%` }}
         >
           <StoneBorderFrame side="left">
             {currentPlayer && (
-              <SideInfoTabs
-                player={currentPlayer}
-                goals={goalSettings}
-                isCurrentPlayer={true}
-              />
+              <SideInfoTabs player={currentPlayer} goals={goalSettings} isCurrentPlayer />
             )}
           </StoneBorderFrame>
         </div>
       )}
 
-      {/* Board area - fills all available space (no aspect ratio lock) */}
-      {/* Image stretches via backgroundSize 100% 100%, zones use percentage positioning */}
       <div className="flex-1 flex items-center justify-center min-w-0 min-h-0">
-        <div
-          className="relative w-full h-full"
-        >
-          {/* Game board background - 100% 100% ensures image fills container exactly */}
-          {/* so percentage-based overlays (zones, center panel) align with the image */}
+        <div className="relative w-full h-full">
           <div
             className="absolute inset-0 bg-no-repeat"
             style={{ backgroundImage: `url(${gameBoard})`, backgroundSize: '100% 100%' }}
           />
 
-          {/* Location zones overlay */}
           <div className="absolute inset-0">
-            {LOCATIONS.map((baseLocation) => {
+            {LOCATIONS.map(baseLocation => {
               const location = getLocationWithCustomPosition(baseLocation.id, isMobile) || baseLocation;
               const playersHere = players.filter(
-                p => p.currentLocation === location.id && p.id !== animatingPlayer
+                player => player.currentLocation === location.id && player.id !== animatingPlayer,
               );
               const baseMoveCost = currentPlayer
                 ? getMovementCost(currentPlayer.currentLocation, location.id)
                 : 0;
-              // Weather adds extra hours per step of movement
-              const weatherExtra = (baseMoveCost > 0 && weather?.movementCostExtra && currentPlayer)
-                ? getPath(currentPlayer.currentLocation as LocationId, location.id as LocationId).length * weather.movementCostExtra
+              const weatherExtra = baseMoveCost > 0 && weather?.movementCostExtra && currentPlayer
+                ? getPath(
+                    currentPlayer.currentLocation as LocationId,
+                    location.id as LocationId,
+                  ).length * weather.movementCostExtra
                 : 0;
               const moveCost = baseMoveCost + weatherExtra;
               const isCurrentLocation = currentPlayer?.currentLocation === location.id;
-
               const activeHex = locationHexes?.find(
-                h => h.targetLocation === location.id && h.weeksRemaining > 0
+                hex => hex.targetLocation === location.id && hex.weeksRemaining > 0,
               );
-
-              // LOQ: Quest objective markers
-              const chainProgressForLOQ = currentPlayer?.activeQuest?.startsWith('nlchain:') ? currentPlayer?.nlChainProgress : currentPlayer?.questChainProgress;
-              const questObjectives = getQuestLocationObjectives(currentPlayer?.activeQuest ?? null, chainProgressForLOQ);
+              const chainProgressForLOQ = currentPlayer?.activeQuest?.startsWith('nlchain:')
+                ? currentPlayer?.nlChainProgress
+                : currentPlayer?.questChainProgress;
+              const questObjectives = getQuestLocationObjectives(
+                currentPlayer?.activeQuest ?? null,
+                chainProgressForLOQ,
+              );
               const questProgress = currentPlayer?.questLocationProgress ?? [];
-              const objForLocation = questObjectives.find(o => o.locationId === location.id);
-              const isQuestObjective = !!objForLocation && !questProgress.includes(objForLocation.id);
-              const isQuestObjectiveDone = !!objForLocation && questProgress.includes(objForLocation.id);
+              const objectiveForLocation = questObjectives.find(
+                objective => objective.locationId === location.id,
+              );
+              const isQuestObjective = !!objectiveForLocation
+                && !questProgress.includes(objectiveForLocation.id);
+              const isQuestObjectiveDone = !!objectiveForLocation
+                && questProgress.includes(objectiveForLocation.id);
 
               return (
                 <LocationZone
@@ -405,14 +380,13 @@ export function GameBoard() {
             })}
           </div>
 
-          {/* Animated player token layer (above location zones) */}
           {animatingPlayer && animationPath && (
             <div className="absolute inset-0 pointer-events-none z-40">
-              {players.filter(p => p.id === animatingPlayer).map((player) => (
+              {players.filter(player => player.id === animatingPlayer).map(player => (
                 <AnimatedPlayerToken
                   key={`${player.id}-${pathVersion}`}
                   player={player}
-                  isCurrent={true}
+                  isCurrent
                   animationPath={animationPath}
                   onAnimationComplete={handleAnimationComplete}
                   onLocationReached={handleLocationReached}
@@ -421,7 +395,6 @@ export function GameBoard() {
             </div>
           )}
 
-          {/* Shadowfingers token — appears when a robbery/sabotage event triggers */}
           {shadowfingersEvent && currentPlayer && (
             <div className="absolute inset-0 pointer-events-none z-45">
               <ShadowfingersToken
@@ -434,29 +407,18 @@ export function GameBoard() {
             </div>
           )}
 
-          {/* Graveyard crows animation */}
           <GraveyardCrows />
-
-          {/* Festival visual overlay (z-34, below weather) */}
-          <FestivalOverlay activeFestival={useGameStore(s => s.activeFestival)} />
-
-          {/* Weather particle overlay */}
+          <FestivalOverlay activeFestival={useGameStore(state => state.activeFestival)} />
           <WeatherOverlay particle={weather?.particle ?? null} weatherType={weather?.type} />
-
-          {/* Debug overlay - shows zone boundaries and movement paths */}
-          <DebugOverlay
-            customZones={customZones}
-            centerPanel={centerPanel}
-            visible={showDebugOverlay}
-          />
-
-          {/* Banter speech bubble - large overlay above center panel */}
+          <DebugOverlay customZones={customZones} centerPanel={centerPanel} visible={showDebugOverlay} />
           <BoardBanterOverlay centerPanel={activeCenterPanel} isMobile={isMobile} />
 
-          {/* Center UI panel */}
-          {/* Mobile: positioned via mobileOverrides when location selected or event, hidden otherwise */}
-          {/* Desktop: always visible, positioned within the board frame */}
-          {(!isMobile || selectedLocation || (phase === 'event' && queuedEvent) || (applianceBreakageEvent?.fromCurse) || toadCurseEvent || shadowfingersEvent) && (
+          {(!isMobile
+            || selectedLocation
+            || (phase === 'event' && queuedEvent)
+            || applianceBreakageEvent?.fromCurse
+            || toadCurseEvent
+            || shadowfingersEvent) && (
             <div
               className={`absolute overflow-hidden z-10 ${isMobile ? 'rounded-xl' : ''}`}
               style={{
@@ -467,7 +429,9 @@ export function GameBoard() {
               }}
             >
               <div className={`w-full h-full overflow-hidden flex flex-col bg-card/95 relative ${isMobile ? 'rounded-xl' : 'rounded-t-lg'} animate-scale-in`}>
-                {isCursed && !applianceBreakageEvent?.fromCurse && !toadCurseEvent && <CursePanelOverlay isMobile={isMobile} />}
+                {isCursed && !applianceBreakageEvent?.fromCurse && !toadCurseEvent && (
+                  <CursePanelOverlay isMobile={isMobile} />
+                )}
                 {toadCurseEvent ? (
                   <CurseToadPanel
                     hoursLost={toadCurseEvent.hoursLost}
@@ -502,7 +466,6 @@ export function GameBoard() {
             </div>
           )}
 
-          {/* Week and price indicator (desktop only, hidden in fullboard mode) */}
           {!isMobile && !fullboardMode && (
             <GameBoardHeader
               week={week}
@@ -511,15 +474,13 @@ export function GameBoard() {
               weather={weather}
             />
           )}
-
         </div>
       </div>
 
-      {/* Right Side Panel - desktop only, hidden in fullboard mode */}
       {!isMobile && !fullboardMode && (
         <div
           className="relative z-30 flex flex-col flex-shrink-0 h-full"
-          style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
+          style={{ width: `${sidePanelWidthPercent}%` }}
         >
           <StoneBorderFrame side="right">
             <RightSideTabs
@@ -527,7 +488,7 @@ export function GameBoard() {
               currentPlayerIndex={currentPlayerIndex}
               goalSettings={goalSettings}
               onOpenSaveMenu={() => setShowGameMenu(true)}
-              onToggleDebugOverlay={() => setShowDebugOverlay(prev => !prev)}
+              onToggleDebugOverlay={() => setShowDebugOverlay(previous => !previous)}
               onToggleZoneEditor={() => setShowZoneEditor(true)}
               showDebugOverlay={showDebugOverlay}
               aiIsThinking={aiIsThinking}
@@ -540,7 +501,6 @@ export function GameBoard() {
         </div>
       )}
 
-      {/* Mobile Drawers */}
       {isMobile && (
         <>
           <MobileDrawer
@@ -550,11 +510,7 @@ export function GameBoard() {
             title="Stats & Inventory"
           >
             {currentPlayer && (
-              <SideInfoTabs
-                player={currentPlayer}
-                goals={goalSettings}
-                isCurrentPlayer={true}
-              />
+              <SideInfoTabs player={currentPlayer} goals={goalSettings} isCurrentPlayer />
             )}
           </MobileDrawer>
           <MobileDrawer
@@ -567,9 +523,15 @@ export function GameBoard() {
               players={players}
               currentPlayerIndex={currentPlayerIndex}
               goalSettings={goalSettings}
-              onOpenSaveMenu={() => { setShowRightDrawer(false); setShowGameMenu(true); }}
-              onToggleDebugOverlay={() => setShowDebugOverlay(prev => !prev)}
-              onToggleZoneEditor={() => { setShowRightDrawer(false); setShowZoneEditor(true); }}
+              onOpenSaveMenu={() => {
+                setShowRightDrawer(false);
+                setShowGameMenu(true);
+              }}
+              onToggleDebugOverlay={() => setShowDebugOverlay(previous => !previous)}
+              onToggleZoneEditor={() => {
+                setShowRightDrawer(false);
+                setShowZoneEditor(true);
+              }}
               showDebugOverlay={showDebugOverlay}
               aiIsThinking={aiIsThinking}
               aiSpeedMultiplier={aiSpeedMultiplier}
@@ -580,124 +542,95 @@ export function GameBoard() {
         </>
       )}
 
-      {/* Zone Editor Modal */}
-      {showZoneEditor && (
-        <ZoneEditor
-          onClose={() => setShowZoneEditor(false)}
-          onSave={handleSaveZones}
-          onReset={handleResetZones}
-          initialCenterPanel={centerPanel}
-          initialZones={customZones}
-          initialPaths={{ ...MOVEMENT_PATHS }}
-          initialLayout={layout}
-          initialAnimationLayers={animationLayers}
-          initialMobileOverrides={mobileOverrides}
-          initialHomeItemPositions={savedHomeItemPositions}
-        />
-      )}
-
-      <GameBoardOverlays
-        isMobile={isMobile}
-        isWaitingForOtherPlayer={isWaitingForOtherPlayer}
-        phase={phase}
-        currentPlayer={currentPlayer}
-        isOnline={isOnline}
-        latency={latency}
-        roomCodeDisplay={roomCodeDisplay}
-        isGuest={isGuest}
-        showTurnTransition={showTurnTransition}
-        onTurnTransitionReady={() => setShowTurnTransition(false)}
-        aiIsThinking={aiIsThinking}
-        currentAIAction={currentAIAction}
-        aiDifficulty={aiDifficulty}
-        aiSpeedMultiplier={aiSpeedMultiplier}
-        setAISpeedMultiplier={setAISpeedMultiplier}
-        setSkipAITurn={setSkipAITurn}
-        connectionStatus={connectionStatus}
-        attemptReconnect={attemptReconnect}
+      <GameBoardAuxiliaryLayer
+        zoneEditorProps={showZoneEditor ? {
+          onClose: () => setShowZoneEditor(false),
+          onSave: handleSaveZones,
+          onReset: handleResetZones,
+          initialCenterPanel: centerPanel,
+          initialZones: customZones,
+          initialPaths: { ...MOVEMENT_PATHS },
+          initialLayout: layout,
+          initialAnimationLayers: animationLayers,
+          initialMobileOverrides: mobileOverrides,
+          initialHomeItemPositions: savedHomeItemPositions,
+        } : null}
+        overlayProps={{
+          isMobile,
+          isWaitingForOtherPlayer,
+          phase,
+          currentPlayer,
+          isOnline,
+          latency,
+          roomCodeDisplay,
+          isGuest,
+          showTurnTransition,
+          onTurnTransitionReady: () => setShowTurnTransition(false),
+          aiIsThinking,
+          currentAIAction,
+          aiDifficulty,
+          aiSpeedMultiplier,
+          setAISpeedMultiplier,
+          setSkipAITurn,
+          connectionStatus,
+          attemptReconnect,
+        }}
+        saveMenuOpen={showGameMenu}
+        onCloseSaveMenu={() => setShowGameMenu(false)}
+        deathModalProps={deathEvent ? {
+          event: deathEvent,
+          onDismiss: dismissDeathEvent,
+        } : null}
+        playerInfoProps={viewingPlayer ? {
+          player: viewingPlayer,
+          onClose: () => setViewingPlayer(null),
+        } : null}
+        chatProps={isOnline ? {
+          messages: chatMessages,
+          onSend: sendChatMessage,
+          playerName: isPureSpectator ? 'Spectator' : (localPlayer?.name || 'Player'),
+          playerColor: isPureSpectator ? '#9CA3AF' : (localPlayer?.color || '#888888'),
+        } : null}
+        showContextualTips={phase === 'playing'}
+        spectatorOverlayProps={isSpectating ? {
+          player: localPlayer,
+          currentTurnPlayer: currentPlayer,
+          isPureSpectator,
+        } : null}
+        topDropdownProps={!isMobile && fullboardMode && currentPlayer ? {
+          player: currentPlayer,
+          goals: goalSettings,
+          players,
+          currentPlayerIndex,
+          onOpenSaveMenu: () => setShowGameMenu(true),
+          onToggleDebugOverlay: () => setShowDebugOverlay(previous => !previous),
+          onToggleZoneEditor: () => setShowZoneEditor(true),
+          showDebugOverlay,
+          aiIsThinking,
+          aiSpeedMultiplier,
+          onSetAISpeed: setAISpeedMultiplier,
+          onSkipAITurn: () => setSkipAITurn(true),
+          week,
+          priceModifier,
+          economyTrend,
+          weather,
+          onEndTurn: endTurn,
+          endTurnDisabled: !isLocalPlayerTurn || aiIsThinking || !!currentPlayer.isAI,
+          onExitFullboard: () => setFullboardMode(false),
+        } : null}
       />
-
-      {/* Save/Load Menu */}
-      {showGameMenu && (
-        <SaveLoadMenu onClose={() => setShowGameMenu(false)} />
-      )}
-
-      {/* Death Modal */}
-      {deathEvent && (
-        <DeathModal
-          event={deathEvent}
-          onDismiss={dismissDeathEvent}
-        />
-      )}
-
-      {/* Player Info Modal — shown when clicking another player's token */}
-      {viewingPlayer && (
-        <PlayerInfoModal
-          player={viewingPlayer}
-          onClose={() => setViewingPlayer(null)}
-        />
-      )}
-
-      {/* PWA Update Notification */}
-      <UpdateBanner />
-
-      {/* In-game chat (online multiplayer only) */}
-      {isOnline && (
-        <ChatPanel
-          messages={chatMessages}
-          onSend={sendChatMessage}
-          playerName={isPureSpectator ? 'Spectator' : (localPlayer?.name || 'Player')}
-          playerColor={isPureSpectator ? '#9CA3AF' : (localPlayer?.color || '#888888')}
-        />
-      )}
-
-      {/* Contextual tips for new players */}
-      {phase === 'playing' && <ContextualTips />}
-
-      {/* Spectator overlay for dead players or pure spectators */}
-      {isSpectating && (
-        <SpectatorOverlay
-          player={localPlayer}
-          currentTurnPlayer={currentPlayer}
-          isPureSpectator={isPureSpectator}
-        />
-      )}
-
-      {/* Top dropdown menu — only shown in fullboard mode (desktop) */}
-      {!isMobile && fullboardMode && currentPlayer && (
-        <TopDropdownMenu
-          player={currentPlayer}
-          goals={goalSettings}
-          players={players}
-          currentPlayerIndex={currentPlayerIndex}
-          onOpenSaveMenu={() => setShowGameMenu(true)}
-          onToggleDebugOverlay={() => setShowDebugOverlay(prev => !prev)}
-          onToggleZoneEditor={() => setShowZoneEditor(true)}
-          showDebugOverlay={showDebugOverlay}
-          aiIsThinking={aiIsThinking}
-          aiSpeedMultiplier={aiSpeedMultiplier}
-          onSetAISpeed={setAISpeedMultiplier}
-          onSkipAITurn={() => setSkipAITurn(true)}
-          week={week}
-          priceModifier={priceModifier}
-          economyTrend={economyTrend}
-          weather={weather}
-          onEndTurn={endTurn}
-          endTurnDisabled={!isLocalPlayerTurn || aiIsThinking || !!(currentPlayer?.isAI)}
-          onExitFullboard={() => setFullboardMode(false)}
-        />
-      )}
     </div>
   );
 }
 
-// Banter overlay — positioned above the center panel on the board
-function BoardBanterOverlay({ centerPanel, isMobile }: {
+function BoardBanterOverlay({
+  centerPanel,
+  isMobile,
+}: {
   centerPanel: { top: number; left: number; width: number; height: number };
   isMobile: boolean;
 }) {
   const { activeBanter, npcName, clearBanter } = useBanterStore();
-
   if (!activeBanter || !npcName) return null;
 
   return (
@@ -717,11 +650,7 @@ function BoardBanterOverlay({ centerPanel, isMobile }: {
         paddingLeft: '2%',
       }}
     >
-      <BanterBubble
-        banter={activeBanter}
-        npcName={npcName}
-        onDismiss={clearBanter}
-      />
+      <BanterBubble banter={activeBanter} npcName={npcName} onDismiss={clearBanter} />
     </div>
   );
 }
