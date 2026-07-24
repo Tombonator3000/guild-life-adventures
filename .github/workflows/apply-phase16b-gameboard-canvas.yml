@@ -1,0 +1,29 @@
+name: Apply phase 16B GameBoard canvas
+
+on:
+  push:
+    branches:
+      - agent/audit-phase16b-gameboard-canvas
+    paths:
+      - phase16b-apply-trigger.txt
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase16b-gameboard-canvas
+          fetch-depth: 1
+      - name: Apply GameBoard canvas extraction
+        run: node scripts/apply-phase16b-gameboard-canvas.mjs
+      - name: Commit extraction
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Extract GameBoard canvas layer"
+          git push origin HEAD:agent/audit-phase16b-gameboard-canvas
