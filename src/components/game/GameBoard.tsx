@@ -236,24 +236,23 @@ export function GameBoard() {
         goals: goalSettings,
         isCurrentPlayer: true,
       } : null}
-      desktopRightProps={{
+      sharedRightSideProps={{
         players,
         currentPlayerIndex,
         goalSettings,
-        onOpenSaveMenu: () => setShowGameMenu(true),
-        onToggleDebugOverlay: () => setShowDebugOverlay(previous => !previous),
-        onToggleZoneEditor: () => setShowZoneEditor(true),
         showDebugOverlay,
         aiIsThinking,
         aiSpeedMultiplier,
         onSetAISpeed: setAISpeedMultiplier,
         onSkipAITurn: () => setSkipAITurn(true),
+      }}
+      desktopRightActions={{
+        onOpenSaveMenu: () => setShowGameMenu(true),
+        onToggleDebugOverlay: () => setShowDebugOverlay(previous => !previous),
+        onToggleZoneEditor: () => setShowZoneEditor(true),
         onToggleFullboard: () => setFullboardMode(true),
       }}
-      mobileRightProps={{
-        players,
-        currentPlayerIndex,
-        goalSettings,
+      mobileRightActions={{
         onOpenSaveMenu: () => {
           setShowRightDrawer(false);
           setShowGameMenu(true);
@@ -263,11 +262,6 @@ export function GameBoard() {
           setShowRightDrawer(false);
           setShowZoneEditor(true);
         },
-        showDebugOverlay,
-        aiIsThinking,
-        aiSpeedMultiplier,
-        onSetAISpeed: setAISpeedMultiplier,
-        onSkipAITurn: () => setSkipAITurn(true),
       }}
       leftDrawerProps={{
         isOpen: showLeftDrawer,

@@ -76,6 +76,9 @@ describe('GameBoard component boundaries', () => {
     expect(sidePanelsSource).toContain("import type { ComponentProps, ElementType, ReactNode } from 'react';");
     expect(sidePanelsSource).toContain('type OptionalProps<T extends ElementType> = ComponentProps<T> | null;');
     expect(sidePanelsSource).toContain("Pick<ComponentProps<typeof MobileDrawer>, 'isOpen' | 'onClose'>");
+    expect(sidePanelsSource).toContain('type RightSideProps = ComponentProps<typeof RightSideTabs>;');
+    expect(sidePanelsSource).toContain('type SharedRightSideProps = Pick<');
+    expect(sidePanelsSource).toContain('type RightSideActions = Pick<');
   });
 
   it('delegates board rendering and visual overlays to GameBoardCanvas', () => {
@@ -143,6 +146,17 @@ describe('GameBoard component boundaries', () => {
     expect(gameBoardSource).toContain('setShowRightDrawer(false);\n          setShowGameMenu(true);');
     expect(gameBoardSource).toContain('setShowRightDrawer(false);\n          setShowZoneEditor(true);');
     expect(gameBoardSource).toContain('onToggleFullboard: () => setFullboardMode(true)');
+  });
+
+  it('shares stable RightSideTabs data while keeping desktop and mobile actions separate', () => {
+    expect(gameBoardSource).toContain('sharedRightSideProps={{');
+    expect(gameBoardSource).toContain('desktopRightActions={{');
+    expect(gameBoardSource).toContain('mobileRightActions={{');
+    expect(gameBoardSource).not.toContain('desktopRightProps={{');
+    expect(gameBoardSource).not.toContain('mobileRightProps={{');
+    expect(sidePanelsSource).toContain('<RightSideTabs {...sharedRightSideProps} {...desktopRightActions} />');
+    expect(sidePanelsSource).toContain('<RightSideTabs {...sharedRightSideProps} {...mobileRightActions} />');
+    expect(sidePanelsSource).toContain("type DesktopRightSideActions = RightSideActions & Pick<RightSideProps, 'onToggleFullboard'>;");
   });
 
   it('does not subscribe to dead GameBoard state or keep unused layout aliases', () => {
@@ -213,11 +227,11 @@ describe('GameBoard component boundaries', () => {
   });
 
   it('keeps extracted components within focused size limits', () => {
-    expect(gameBoardSource.split('\n').length).toBeLessThan(435);
+    expect(gameBoardSource.split('\n').length).toBeLessThan(425);
     expect(auxiliarySource.split('\n').length).toBeLessThan(80);
     expect(canvasSource.split('\n').length).toBeLessThan(210);
     expect(centerSource.split('\n').length).toBeLessThan(100);
-    expect(sidePanelsSource.split('\n').length).toBeLessThan(100);
+    expect(sidePanelsSource.split('\n').length).toBeLessThan(125);
     expect(eventQueueSource.split('\n').length).toBeLessThan(60);
     expect(turnTransitionSource.split('\n').length).toBeLessThan(55);
     expect(animationSyncSource.split('\n').length).toBeLessThan(45);
