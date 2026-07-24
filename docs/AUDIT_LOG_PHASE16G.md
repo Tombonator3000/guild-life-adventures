@@ -30,15 +30,15 @@ Arbeidsgren `agent/audit-phase16g-hotseat-transition` ble opprettet fra fase 16F
 
 ## Tester
 
-Valideres i GitHub Actions med:
+GitHub Actions-run `30103978078`:
 
-- Dependency install.
-- TypeScript.
-- Full Vitest-pakke, inkludert fem nye hotseat-tester og GameBoard-strukturinvariantene.
-- Produksjonsbuild.
-- ESLint.
-- Playwright-runner og Chromium.
-- Title/setup-smoke og deterministisk komplett lokal spillflyt med kartreise, bank, save/load og ukeovergang.
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Full Vitest-pakke, inkludert fem nye hotseat-tester og GameBoard-strukturinvariantene: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright-runner og Chromium-installasjon: bestått.
+- Title/setup-smoke og deterministisk komplett lokal spillflyt med kartreise, bank, save/load og ukeovergang: bestått.
 
 ## Resultat
 
