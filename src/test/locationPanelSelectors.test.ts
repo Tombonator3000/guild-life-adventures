@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 const source = readFileSync(
-  new URL('../components/game/LocationPanel.tsx', import.meta.url),
+  resolve(process.cwd(), 'src/components/game/LocationPanel.tsx'),
   'utf8',
 );
 
