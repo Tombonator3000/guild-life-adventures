@@ -11,6 +11,7 @@ const sidePanelsSource = readSource('src/components/game/GameBoardSidePanels.tsx
 const eventQueueSource = readSource('src/hooks/useGameBoardEventQueue.ts');
 const turnTransitionSource = readSource('src/hooks/useGameBoardTurnTransition.ts');
 const animationSyncSource = readSource('src/hooks/useGameBoardAnimationSync.ts');
+const applianceNotificationSource = readSource('src/hooks/useApplianceBreakageNotification.ts');
 
 const extractedComponents = [
   'ZoneEditor',
@@ -184,8 +185,21 @@ describe('GameBoard component boundaries', () => {
     expect(animationSyncSource).toContain('clearRemoteAnimation();');
   });
 
+  it('delegates regular appliance breakage notifications to a focused hook', () => {
+    expect(gameBoardSource).toContain("import { useApplianceBreakageNotification } from '@/hooks/useApplianceBreakageNotification';");
+    expect(gameBoardSource).toContain('useApplianceBreakageNotification({');
+    expect(gameBoardSource).toContain("import { useState } from 'react';");
+    expect(gameBoardSource).not.toContain('getAppliance');
+    expect(gameBoardSource).not.toContain('toast.warning');
+    expect(gameBoardSource).not.toContain('useEffect');
+    expect(applianceNotificationSource).toContain('if (!event || event.fromCurse) return;');
+    expect(applianceNotificationSource).toContain('const appliance = getAppliance(event.applianceId);');
+    expect(applianceNotificationSource).toContain('toast.warning(');
+    expect(applianceNotificationSource).toContain('dismissEvent();');
+  });
+
   it('keeps extracted components within focused size limits', () => {
-    expect(gameBoardSource.split('\n').length).toBeLessThan(430);
+    expect(gameBoardSource.split('\n').length).toBeLessThan(420);
     expect(auxiliarySource.split('\n').length).toBeLessThan(80);
     expect(canvasSource.split('\n').length).toBeLessThan(210);
     expect(centerSource.split('\n').length).toBeLessThan(100);
@@ -193,5 +207,6 @@ describe('GameBoard component boundaries', () => {
     expect(eventQueueSource.split('\n').length).toBeLessThan(60);
     expect(turnTransitionSource.split('\n').length).toBeLessThan(55);
     expect(animationSyncSource.split('\n').length).toBeLessThan(45);
+    expect(applianceNotificationSource.split('\n').length).toBeLessThan(40);
   });
 });
