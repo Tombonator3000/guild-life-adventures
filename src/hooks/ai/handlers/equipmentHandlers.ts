@@ -8,6 +8,7 @@
 
 import type { Player } from '@/types/game.types';
 import { getItem } from '@/data/items';
+import { useGameStore } from '@/store/gameStore';
 
 import type { AIAction } from '../types';
 import type { StoreActions } from '../actionExecutor';
@@ -25,7 +26,7 @@ export function handleBuyAppliance(player: Player, action: AIAction, store: Stor
         : null;
   if (!vendor) return false;
 
-  const result = store.purchaseAppliance(player.id, vendor, applianceId);
+  const result = useGameStore.getState().purchaseAppliance(player.id, vendor, applianceId);
   if (!result?.success) return false;
 
   // Fence purchases already include their canonical one-hour service time.
@@ -41,7 +42,7 @@ export function handleBuyEquipment(player: Player, action: AIAction, store: Stor
   const item = getItem(itemId);
   if (!item) return false;
 
-  const result = store.purchaseEquipmentItem(player.id, 'armory', itemId, 'primary');
+  const result = useGameStore.getState().purchaseEquipmentItem(player.id, 'armory', itemId, 'primary');
   if (!result?.success) return false;
 
   if (item.equipSlot) store.equipItem(player.id, itemId, item.equipSlot);
@@ -49,17 +50,17 @@ export function handleBuyEquipment(player: Player, action: AIAction, store: Stor
   return true;
 }
 
-export function handleTemperEquipment(player: Player, action: AIAction, store: StoreActions): boolean {
+export function handleTemperEquipment(player: Player, action: AIAction, _store: StoreActions): boolean {
   const itemId = action.details?.itemId as string;
   if (!itemId || player.currentLocation !== 'forge') return false;
-  const result = store.useEquipmentService(player.id, 'temper', itemId);
+  const result = useGameStore.getState().useEquipmentService(player.id, 'temper', itemId);
   return result?.success ?? false;
 }
 
-export function handleRepairEquipment(player: Player, action: AIAction, store: StoreActions): boolean {
+export function handleRepairEquipment(player: Player, action: AIAction, _store: StoreActions): boolean {
   const itemId = action.details?.itemId as string;
   if (!itemId || player.currentLocation !== 'forge') return false;
-  const result = store.useEquipmentService(player.id, 'repair', itemId);
+  const result = useGameStore.getState().useEquipmentService(player.id, 'repair', itemId);
   return result?.success ?? false;
 }
 
@@ -70,14 +71,14 @@ export function handleSellItem(player: Player, action: AIAction, store: StoreAct
   return result?.success ?? false;
 }
 
-export function handlePawnAppliance(player: Player, action: AIAction, store: StoreActions): boolean {
+export function handlePawnAppliance(player: Player, action: AIAction, _store: StoreActions): boolean {
   const applianceId = action.details?.applianceId as string;
   if (!applianceId || player.currentLocation !== 'fence') return false;
-  const result = store.useApplianceService(player.id, 'pawn', applianceId);
+  const result = useGameStore.getState().useApplianceService(player.id, 'pawn', applianceId);
   return result?.success ?? false;
 }
 
-export function handleRepairAppliance(player: Player, action: AIAction, store: StoreActions): boolean {
+export function handleRepairAppliance(player: Player, action: AIAction, _store: StoreActions): boolean {
   const applianceId = action.details?.applianceId as string;
   if (!applianceId) return false;
 
@@ -88,7 +89,7 @@ export function handleRepairAppliance(player: Player, action: AIAction, store: S
       : null;
   if (!service) return false;
 
-  const result = store.useApplianceService(player.id, service, applianceId);
+  const result = useGameStore.getState().useApplianceService(player.id, service, applianceId);
   return result?.success ?? false;
 }
 
