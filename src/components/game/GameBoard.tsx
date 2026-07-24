@@ -1,10 +1,8 @@
-import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { MOVEMENT_PATHS } from '@/data/locations';
 import { deriveGameBoardAudienceState } from '@/lib/deriveGameBoardAudienceState';
 import { GameBoardHeader } from './GameBoardHeader';
-import type { Player } from '@/types/game.types';
 import { useNetworkSync } from '@/network/useNetworkSync';
 import { useZoneConfiguration } from '@/hooks/useZoneConfiguration';
 import { useAITurnHandler } from '@/hooks/useAITurnHandler';
@@ -17,6 +15,7 @@ import { useGameBoardEventQueue } from '@/hooks/useGameBoardEventQueue';
 import { useGameBoardTurnTransition } from '@/hooks/useGameBoardTurnTransition';
 import { useGameBoardAnimationSync } from '@/hooks/useGameBoardAnimationSync';
 import { useApplianceBreakageNotification } from '@/hooks/useApplianceBreakageNotification';
+import { useGameBoardUiState } from '@/hooks/useGameBoardUiState';
 import { useKeyboardLocationNav } from '@/hooks/useKeyboardLocationNav';
 import { useGameOptions } from '@/hooks/useGameOptions';
 import { GameBoardAuxiliaryLayer } from './GameBoardAuxiliaryLayer';
@@ -122,13 +121,34 @@ export function GameBoard() {
     dismissEvent: dismissApplianceBreakageEvent,
   });
 
-  const [showZoneEditor, setShowZoneEditor] = useState(false);
-  const [showDebugOverlay, setShowDebugOverlay] = useState(false);
-  const [showGameMenu, setShowGameMenu] = useState(false);
-  const [showLeftDrawer, setShowLeftDrawer] = useState(false);
-  const [showRightDrawer, setShowRightDrawer] = useState(false);
-  const [fullboardMode, setFullboardMode] = useState(false);
-  const [viewingPlayer, setViewingPlayer] = useState<Player | null>(null);
+  const {
+    showZoneEditor,
+    setShowZoneEditor,
+    openZoneEditor,
+    closeZoneEditor,
+    openMobileZoneEditor,
+    showDebugOverlay,
+    setShowDebugOverlay,
+    toggleDebugOverlay,
+    showGameMenu,
+    setShowGameMenu,
+    openGameMenu,
+    closeGameMenu,
+    openMobileGameMenu,
+    showLeftDrawer,
+    openLeftDrawer,
+    closeLeftDrawer,
+    showRightDrawer,
+    openRightDrawer,
+    closeRightDrawer,
+    fullboardMode,
+    setFullboardMode,
+    enterFullboard,
+    exitFullboard,
+    viewingPlayer,
+    setViewingPlayer,
+    closePlayerInfo,
+  } = useGameBoardUiState();
   const isMobile = useIsMobile();
 
   const {
@@ -226,9 +246,9 @@ export function GameBoard() {
         priceModifier,
         economyTrend,
         onEndTurn: endTurn,
-        onOpenLeftDrawer: () => setShowLeftDrawer(true),
-        onOpenRightDrawer: () => setShowRightDrawer(true),
-        onOpenMenu: () => setShowGameMenu(true),
+        onOpenLeftDrawer: openLeftDrawer,
+        onOpenRightDrawer: openRightDrawer,
+        onOpenMenu: openGameMenu,
         disabled: !isLocalPlayerTurn || aiIsThinking || currentPlayer.isAI,
       } : null}
       sideInfoProps={currentPlayer ? {
@@ -247,34 +267,28 @@ export function GameBoard() {
         onSkipAITurn: () => setSkipAITurn(true),
       }}
       desktopRightActions={{
-        onOpenSaveMenu: () => setShowGameMenu(true),
-        onToggleDebugOverlay: () => setShowDebugOverlay(previous => !previous),
-        onToggleZoneEditor: () => setShowZoneEditor(true),
-        onToggleFullboard: () => setFullboardMode(true),
+        onOpenSaveMenu: openGameMenu,
+        onToggleDebugOverlay: toggleDebugOverlay,
+        onToggleZoneEditor: openZoneEditor,
+        onToggleFullboard: enterFullboard,
       }}
       mobileRightActions={{
-        onOpenSaveMenu: () => {
-          setShowRightDrawer(false);
-          setShowGameMenu(true);
-        },
-        onToggleDebugOverlay: () => setShowDebugOverlay(previous => !previous),
-        onToggleZoneEditor: () => {
-          setShowRightDrawer(false);
-          setShowZoneEditor(true);
-        },
+        onOpenSaveMenu: openMobileGameMenu,
+        onToggleDebugOverlay: toggleDebugOverlay,
+        onToggleZoneEditor: openMobileZoneEditor,
       }}
       leftDrawerProps={{
         isOpen: showLeftDrawer,
-        onClose: () => setShowLeftDrawer(false),
+        onClose: closeLeftDrawer,
       }}
       rightDrawerProps={{
         isOpen: showRightDrawer,
-        onClose: () => setShowRightDrawer(false),
+        onClose: closeRightDrawer,
       }}
       auxiliaryContent={(
         <GameBoardAuxiliaryLayer
           zoneEditorProps={showZoneEditor ? {
-            onClose: () => setShowZoneEditor(false),
+            onClose: closeZoneEditor,
             onSave: handleSaveZones,
             onReset: handleResetZones,
             initialCenterPanel: centerPanel,
@@ -306,14 +320,14 @@ export function GameBoard() {
             attemptReconnect,
           }}
           saveMenuOpen={showGameMenu}
-          onCloseSaveMenu={() => setShowGameMenu(false)}
+          onCloseSaveMenu={closeGameMenu}
           deathModalProps={deathEvent ? {
             event: deathEvent,
             onDismiss: dismissDeathEvent,
           } : null}
           playerInfoProps={viewingPlayer ? {
             player: viewingPlayer,
-            onClose: () => setViewingPlayer(null),
+            onClose: closePlayerInfo,
           } : null}
           chatProps={isOnline ? {
             messages: chatMessages,
@@ -332,9 +346,9 @@ export function GameBoard() {
             goals: goalSettings,
             players,
             currentPlayerIndex,
-            onOpenSaveMenu: () => setShowGameMenu(true),
-            onToggleDebugOverlay: () => setShowDebugOverlay(previous => !previous),
-            onToggleZoneEditor: () => setShowZoneEditor(true),
+            onOpenSaveMenu: openGameMenu,
+            onToggleDebugOverlay: toggleDebugOverlay,
+            onToggleZoneEditor: openZoneEditor,
             showDebugOverlay,
             aiIsThinking,
             aiSpeedMultiplier,
@@ -346,7 +360,7 @@ export function GameBoard() {
             weather,
             onEndTurn: endTurn,
             endTurnDisabled: !isLocalPlayerTurn || aiIsThinking || !!currentPlayer.isAI,
-            onExitFullboard: () => setFullboardMode(false),
+            onExitFullboard: exitFullboard,
           } : null}
         />
       )}
