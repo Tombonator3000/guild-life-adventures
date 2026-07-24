@@ -1,1 +1,0 @@
-Locate player creation, save migration and turn reset hooks for the Tavern counter.
