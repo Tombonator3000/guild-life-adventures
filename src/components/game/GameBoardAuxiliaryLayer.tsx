@@ -1,4 +1,4 @@
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ElementType } from 'react';
 import { ZoneEditor } from './ZoneEditor';
 import { GameBoardOverlays } from './GameBoardOverlays';
 import { SaveLoadMenu } from './SaveLoadMenu';
@@ -10,7 +10,7 @@ import { ContextualTips } from './ContextualTips';
 import { SpectatorOverlay } from './SpectatorOverlay';
 import { TopDropdownMenu } from './TopDropdownMenu';
 
-type OptionalComponentProps<T> = ComponentProps<T> | null;
+type OptionalComponentProps<T extends ElementType> = ComponentProps<T> | null;
 
 interface GameBoardAuxiliaryLayerProps {
   zoneEditorProps: OptionalComponentProps<typeof ZoneEditor>;
