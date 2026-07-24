@@ -1,10 +1,6 @@
 # Remaining raw action callers after phase 13F
 
 ## spendTime
-src/components/game/CavePanel.tsx:806:spendTime(player.id, 8);
-src/components/game/locationTabs.tsx:738:spendTime(player.id, time);
-src/components/game/locationTabs.tsx:743:spendTime(player.id, time);
-src/components/game/locationTabs.tsx:748:spendTime(player.id, time);
 src/components/game/tabs/DeveloperTab.tsx:228:<button onClick={() => spendTime(playerId, -20)} className={SMALL_BTN}>+20 Hours</button>
 src/hooks/ai/actionExecutor.ts:169:store.spendTime(player.id, hours);
 src/hooks/ai/actionExecutor.ts:181:store.spendTime(player.id, 2);
@@ -29,11 +25,6 @@ src/hooks/ai/handlers/resourceHandlers.ts:56:store.spendTime(player.id, 1);
 src/hooks/ai/handlers/resourceHandlers.ts:64:store.spendTime(player.id, 1);
 
 ## modifyGold
-src/components/game/LocationPanel.tsx:82:store.modifyGold(player.id, -price);
-src/components/game/locationTabs.tsx:597:modifyGold(player.id, -shadowNewspaperPrice);
-src/components/game/locationTabs.tsx:736:modifyGold(player.id, -cost);
-src/components/game/locationTabs.tsx:741:modifyGold(player.id, -cost);
-src/components/game/locationTabs.tsx:746:modifyGold(player.id, -cost);
 src/components/game/tabs/DeveloperTab.tsx:139:modifyGold(playerId, 10000);
 src/components/game/tabs/DeveloperTab.tsx:213:<button onClick={() => modifyGold(playerId, 500)} className={SMALL_BTN}>+500g</button>
 src/components/game/tabs/DeveloperTab.tsx:214:<button onClick={() => modifyGold(playerId, -500)} className={SMALL_BTN}>-500g</button>
@@ -47,7 +38,6 @@ src/hooks/ai/handlers/resourceHandlers.ts:24:store.modifyGold(player.id, -cost);
 src/hooks/ai/handlers/resourceHandlers.ts:36:store.modifyGold(player.id, -cost);
 
 ## modifyHealth
-src/components/game/CavePanel.tsx:811:modifyHealth(player.id, healAmount);
 src/components/game/tabs/DeveloperTab.tsx:218:<button onClick={() => modifyHealth(playerId, 50)} className={SMALL_BTN}>+50 HP</button>
 src/components/game/tabs/DeveloperTab.tsx:219:<button onClick={() => modifyHealth(playerId, -50)} className={SMALL_BTN}>-50 HP</button>
 src/components/game/tabs/DeveloperTab.tsx:220:<button onClick={() => modifyHealth(playerId, 100)} className={SMALL_BTN}>Full HP</button>
@@ -56,8 +46,6 @@ src/hooks/ai/actionExecutor.ts:180:store.modifyHealth(player.id, healAmount);
 src/hooks/ai/handlers/questDungeonHandlers.ts:128:if (result.healthChange !== 0) store.modifyHealth(playerId, result.healthChange);
 
 ## modifyHappiness
-src/components/game/CavePanel.tsx:812:modifyHappiness(player.id, 1);
-src/components/game/locationTabs.tsx:737:modifyHappiness(player.id, happinessGain);
 src/components/game/tabs/DeveloperTab.tsx:140:modifyHappiness(playerId, 1000);
 src/components/game/tabs/DeveloperTab.tsx:223:<button onClick={() => modifyHappiness(playerId, 50)} className={SMALL_BTN}>+50 Hap</button>
 src/hooks/ai/actionExecutor.ts:170:store.modifyHappiness(player.id, happinessGain);
@@ -74,30 +62,18 @@ src/components/game/tabs/DeveloperTab.tsx:225:<button onClick={() => modifyCloth
 src/hooks/ai/handlers/resourceHandlers.ts:37:store.modifyClothing(player.id, clothingGain);
 
 ## modifyMaxHealth
-src/components/game/locationTabs.tsx:747:modifyMaxHealth(player.id, maxHealthGain);
 src/components/game/tabs/DeveloperTab.tsx:343:<button onClick={() => modifyMaxHealth(playerId, 20)} className={DEBUG_BTN}>
 
 ## modifyRelaxation
-src/components/game/locationTabs.tsx:742:modifyRelaxation(player.id, relaxationGain);
 src/components/game/tabs/DeveloperTab.tsx:229:<button onClick={() => modifyRelaxation(playerId, 20)} className={SMALL_BTN}>+20 Relax</button>
 src/hooks/ai/actionExecutor.ts:171:store.modifyRelaxation(player.id, relaxGain);
 
 # Remaining raw actions in guest allowlist
 export const ALLOWED_GUEST_ACTIONS = new Set([
   'travelPlayer',
-  'spendTime',
   'endTurn',
   'performHomeActivity',
-
-  // Legacy raw mutations still used by older UI flows. Keep bounded by
-  // STAT_MODIFIER_RULES until each remaining caller is migrated.
-  'modifyGold',
-  'modifyHealth',
-  'modifyHappiness',
-  'modifyFood',
-  'modifyClothing',
-  'modifyMaxHealth',
-  'modifyRelaxation',
+  'performCaveRest',
 
   // Housing intent only. Host resolves office access, canonical price and time.
   'payHousingRent',
