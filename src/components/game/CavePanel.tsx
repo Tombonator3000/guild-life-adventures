@@ -803,16 +803,13 @@ export function CavePanel({ player }: CavePanelProps) {
             player.health >= player.maxHealth
           }
           onClick={() => {
-            spendTime(player.id, 8);
-            const healAmount = Math.min(
-              15,
-              player.maxHealth - player.health,
-            );
-            modifyHealth(player.id, healAmount);
-            modifyHappiness(player.id, 1);
-            toast.success(
-              `You rested and recovered ${healAmount} health.`,
-            );
+            const result = useGameStore.getState().performCaveRest(player.id);
+            if (result && !result.success) {
+              toast.error(result.message);
+              return;
+            }
+            const healAmount = Math.min(15, player.maxHealth - player.health);
+            toast.success(result?.message ?? `You rested and recovered ${healAmount} health.`);
           }}
         />
       </div>

@@ -11,9 +11,6 @@ import { toast } from 'sonner';
 interface GraveyardPanelProps {
   player: Player;
   priceModifier: number;
-  onPray: (cost: number, happinessGain: number, time: number) => void;
-  onMourn: (cost: number, relaxationGain: number, time: number) => void;
-  onBlessMaxHealth: (cost: number, maxHealthGain: number, time: number) => void;
 }
 
 export function GraveyardPanel({ player, priceModifier }: GraveyardPanelProps) {

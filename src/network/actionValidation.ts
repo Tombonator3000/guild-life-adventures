@@ -69,16 +69,6 @@ function validateEnumArg(
   return null;
 }
 
-const STAT_MODIFIER_RULES: Record<string, { argIndex: number; max: number; label: string; positiveOnly?: boolean }> = {
-  modifyGold:       { argIndex: 1, max: 500, label: 'Gold', positiveOnly: true },
-  modifyHealth:     { argIndex: 1, max: 100, label: 'Health' },
-  modifyHappiness:  { argIndex: 1, max: 50, label: 'Happiness' },
-  modifyFood:       { argIndex: 1, max: 100, label: 'Food' },
-  modifyClothing:   { argIndex: 1, max: 100, label: 'Clothing' },
-  modifyMaxHealth:  { argIndex: 1, max: 25, label: 'MaxHealth' },
-  modifyRelaxation: { argIndex: 1, max: 20, label: 'Relaxation' },
-};
-
 /**
  * Validate protocol-level argument shape before dispatching to the store.
  * Semantic store actions still perform the authoritative catalogue, location,
@@ -91,22 +81,7 @@ export function validateGuestActionArgs(
 ): string | null {
   if (!Array.isArray(args)) return 'Invalid action arguments';
 
-  const statRule = STAT_MODIFIER_RULES[name];
-  if (statRule) {
-    const amount = args[statRule.argIndex];
-    if (typeof amount !== 'number' || !Number.isFinite(amount)) return 'Invalid amount';
-    if (statRule.positiveOnly) {
-      if (amount > statRule.max) return `${statRule.label} amount too large`;
-    } else if (Math.abs(amount) > statRule.max) {
-      return `${statRule.label} amount too large`;
-    }
-    return null;
-  }
-
   switch (name) {
-    case 'spendTime':
-      return validateNumArg(args, 1, 0, 60, 'hours', true);
-
     case 'travelPlayer': {
       const route = args[1];
       if (!Array.isArray(route)) return 'Invalid travel route';
@@ -125,6 +100,9 @@ export function validateGuestActionArgs(
 
     case 'performHomeActivity':
       return validateEnumArg(args, 1, ['relax', 'sleep'], 'home activity');
+
+    case 'performCaveRest':
+      return args.length === 1 ? null : 'Invalid Cave rest arguments';
 
     case 'setJob': {
       const wage = args[2];

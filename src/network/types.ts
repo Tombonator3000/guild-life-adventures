@@ -130,19 +130,9 @@ export const HOST_INTERNAL_ACTIONS = new Set([
 
 export const ALLOWED_GUEST_ACTIONS = new Set([
   'travelPlayer',
-  'spendTime',
   'endTurn',
   'performHomeActivity',
-
-  // Legacy raw mutations still used by older UI flows. Keep bounded by
-  // STAT_MODIFIER_RULES until each remaining caller is migrated.
-  'modifyGold',
-  'modifyHealth',
-  'modifyHappiness',
-  'modifyFood',
-  'modifyClothing',
-  'modifyMaxHealth',
-  'modifyRelaxation',
+  'performCaveRest',
 
   // Housing intent only. Host resolves office access, canonical price and time.
   'payHousingRent',
