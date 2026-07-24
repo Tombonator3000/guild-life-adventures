@@ -68,7 +68,7 @@ describe('GameBoard component boundaries', () => {
     expect(auxiliarySource).toContain('ComponentProps<typeof GameBoardOverlays>');
     expect(centerSource).toContain("import type { ComponentProps, ElementType } from 'react';");
     expect(centerSource).toContain('type OptionalProps<T extends ElementType> = ComponentProps<T> | null;');
-    expect(sidePanelsSource).toContain("import type { ComponentProps, ElementType } from 'react';");
+    expect(sidePanelsSource).toContain("import type { ComponentProps, ElementType, ReactNode } from 'react';");
     expect(sidePanelsSource).toContain('type OptionalProps<T extends ElementType> = ComponentProps<T> | null;');
     expect(sidePanelsSource).toContain("Pick<ComponentProps<typeof MobileDrawer>, 'isOpen' | 'onClose'>");
   });
@@ -113,20 +113,30 @@ describe('GameBoard component boundaries', () => {
   it('delegates desktop and mobile side panel rendering to GameBoardSidePanels', () => {
     expect(gameBoardSource).toContain("import { GameBoardSidePanels } from './GameBoardSidePanels';");
     expect(gameBoardSource).toContain('<GameBoardSidePanels');
+    expect(gameBoardSource).not.toContain('w-screen h-screen-safe');
+    expect(sidePanelsSource).toContain('w-screen h-screen-safe');
     for (const component of sidePanelComponents) {
       expect(gameBoardSource).not.toMatch(new RegExp(`import \\{?\\s*${component}\\s*\\}? from`));
       expect(sidePanelsSource).toContain(component);
     }
   });
 
-  it('preserves responsive side panel visibility and mobile close-before-open flows', () => {
-    expect(sidePanelsSource).toContain('isMobile && mobileHUDProps');
+  it('preserves responsive DOM order and mobile close-before-open flows', () => {
+    const order = [
+      'isMobile && mobileHUDProps',
+      '<StoneBorderFrame side="left">',
+      '{children}',
+      '<StoneBorderFrame side="right">',
+      '{isMobile && (',
+      '{auxiliaryContent}',
+    ].map(token => sidePanelsSource.indexOf(token));
+    expect(order.every(index => index >= 0)).toBe(true);
+    expect(order).toEqual([...order].sort((a, b) => a - b));
     expect(sidePanelsSource.match(/!isMobile && !fullboardMode/g)).toHaveLength(2);
-    expect(sidePanelsSource).toContain('order-last');
     expect(sidePanelsSource).toContain('side="left"');
     expect(sidePanelsSource).toContain('side="right"');
-    expect(gameBoardSource).toContain('setShowRightDrawer(false);\n            setShowGameMenu(true);');
-    expect(gameBoardSource).toContain('setShowRightDrawer(false);\n            setShowZoneEditor(true);');
+    expect(gameBoardSource).toContain('setShowRightDrawer(false);\n          setShowGameMenu(true);');
+    expect(gameBoardSource).toContain('setShowRightDrawer(false);\n          setShowZoneEditor(true);');
     expect(gameBoardSource).toContain('onToggleFullboard: () => setFullboardMode(true)');
   });
 
