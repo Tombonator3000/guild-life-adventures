@@ -94,6 +94,10 @@ export class PeerManager {
   private _reconnectPlayerName: string | null = null;
   /** Guest-side heartbeat timeout timer */
   private guestHeartbeatTimeout: ReturnType<typeof setTimeout> | null = null;
+  /** Only one guest reconnect attempt may create connections at a time. */
+  private reconnectAttemptInProgress = false;
+  /** Monotonic id invalidates callbacks from cancelled reconnect attempts. */
+  private reconnectAttemptId = 0;
 
   get isHost(): boolean { return this._isHost; }
   get roomCode(): string { return this._roomCode; }
@@ -176,6 +180,28 @@ export class PeerManager {
     });
   }
 
+  private beginReconnectAttempt(): number | null {
+    if (this.reconnectAttemptInProgress) return null;
+    this.reconnectAttemptInProgress = true;
+    this.reconnectAttemptId += 1;
+    return this.reconnectAttemptId;
+  }
+
+  private isReconnectAttemptActive(attemptId: number) {
+    return this.reconnectAttemptInProgress && this.reconnectAttemptId === attemptId;
+  }
+
+  private finishReconnectAttempt(attemptId: number) {
+    if (this.isReconnectAttemptActive(attemptId)) {
+      this.reconnectAttemptInProgress = false;
+    }
+  }
+
+  private cancelReconnectAttempt() {
+    this.reconnectAttemptId += 1;
+    this.reconnectAttemptInProgress = false;
+  }
+
   // --- PeerJS Config ---
 
   private getPeerConfig() {
@@ -188,6 +214,7 @@ export class PeerManager {
   // --- Host: Create Room ---
 
   async createRoom(): Promise<string> {
+    this.cancelReconnectAttempt();
     this._isHost = true;
     this._roomCode = generateRoomCode();
     const peerId = roomCodeToPeerId(this._roomCode);
@@ -254,6 +281,7 @@ export class PeerManager {
   // --- Guest: Join Room ---
 
   async joinRoom(roomCode: string): Promise<void> {
+    this.cancelReconnectAttempt();
     this._isHost = false;
     this._roomCode = roomCode.toUpperCase();
     const hostPeerId = roomCodeToPeerId(this._roomCode);
@@ -317,6 +345,7 @@ export class PeerManager {
     hostPeerId: string,
     resolve?: () => void,
     reject?: (err: Error) => void,
+    shouldAccept: () => boolean = () => true,
   ): void {
     if (!this.peer) {
       reject?.(new Error('No peer instance'));
@@ -332,6 +361,11 @@ export class PeerManager {
 
     conn.on('open', () => {
       if (settled) return;
+      if (!shouldAccept()) {
+        settled = true;
+        try { conn.close(); } catch { /* ignore */ }
+        return;
+      }
       settled = true;
       this.connections.set(hostPeerId, conn);
       this.setupConnectionHandlers(conn, hostPeerId);
@@ -344,6 +378,7 @@ export class PeerManager {
     conn.on('error', (err) => {
       if (settled) return;
       settled = true;
+      if (!shouldAccept()) return;
       console.error('[PeerManager] Connection error:', err);
       this.setStatus('error');
       reject?.(err);
@@ -355,6 +390,7 @@ export class PeerManager {
         settled = true;
         // Clean up the dangling DataConnection
         try { conn.close(); } catch { /* ignore */ }
+        if (!shouldAccept()) return;
         this.setStatus('error');
         reject?.(new Error('Connection timeout — the room was not found or the host is unreachable.'));
       }
@@ -364,7 +400,13 @@ export class PeerManager {
   /** Guest: attempt to reconnect to host after connection drop */
   attemptReconnect(): boolean {
     if (this._isHost || !this.peer || !this._roomCode) return false;
+    if (this.reconnectAttemptInProgress) return true;
+
+    const attemptId = this.beginReconnectAttempt();
+    if (attemptId === null) return true;
+
     const hostPeerId = roomCodeToPeerId(this._roomCode);
+    const isActive = () => this.isReconnectAttemptActive(attemptId);
 
     // Remove the old connection before closing it so its close handler cannot recurse.
     const oldConn = this.connections.get(hostPeerId);
@@ -377,11 +419,16 @@ export class PeerManager {
     console.log('[PeerManager] Attempting reconnection to host...');
 
     const doReconnect = () => {
+      if (!isActive()) return;
       this.connectToHost(hostPeerId, () => {
+        if (!isActive()) return;
+        this.finishReconnectAttempt(attemptId);
         // After reconnecting, send a reconnect message so host re-syncs state
         const storedName = this._reconnectPlayerName ?? 'Unknown';
         this.sendToHost({ type: 'reconnect', playerName: storedName });
-      });
+      }, () => {
+        this.finishReconnectAttempt(attemptId);
+      }, isActive);
     };
 
     // If signaling server connection was lost, reconnect that first
@@ -393,17 +440,19 @@ export class PeerManager {
         if (signalingResolved) return;
         signalingResolved = true;
         this.peer?.off('open', onOpen);
+        if (!isActive()) return;
         doReconnect();
       };
       this.peer.on('open', onOpen);
       // Timeout: if signaling server doesn't reconnect in 15 seconds, give up
       setTimeout(() => {
-        if (!signalingResolved) {
-          signalingResolved = true;
-          this.peer?.off('open', onOpen);
-          this.setStatus('error');
-          console.error('[PeerManager] Signaling server reconnection timed out');
-        }
+        if (signalingResolved) return;
+        signalingResolved = true;
+        this.peer?.off('open', onOpen);
+        if (!isActive()) return;
+        this.finishReconnectAttempt(attemptId);
+        this.setStatus('error');
+        console.error('[PeerManager] Signaling server reconnection timed out');
       }, 15000);
     } else {
       doReconnect();
@@ -671,6 +720,7 @@ export class PeerManager {
     if (this._isHost) return false;
     if (!this.peer) return false;
 
+    this.cancelReconnectAttempt();
     this._isHost = true;
 
     // Clear old host connection (it's dead) without triggering guest reconnect.
@@ -707,6 +757,8 @@ export class PeerManager {
     if (this._isHost) return Promise.reject(new Error('Cannot connect: already host'));
     if (!this.peer) return Promise.reject(new Error('No peer instance'));
 
+    this.cancelReconnectAttempt();
+
     // Close old host connection without reconnecting to the old host.
     this.closeConnectionsSilently();
 
@@ -732,6 +784,8 @@ export class PeerManager {
   // --- Cleanup ---
 
   destroy() {
+    this.cancelReconnectAttempt();
+
     // Stop heartbeat
     this.heartbeatIntervals.forEach((id) => clearInterval(id));
     this.heartbeatIntervals.clear();

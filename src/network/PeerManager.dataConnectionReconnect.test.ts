@@ -159,4 +159,54 @@ describe('PeerManager data connection reconnection', () => {
     expect(peer.createdConnections).toHaveLength(2);
     manager.destroy();
   });
+
+  it('coalesces repeated retry triggers while a replacement connection is pending', async () => {
+    const { manager, peer } = await createConnectedGuest();
+
+    expect(manager.attemptReconnect()).toBe(true);
+    expect(manager.attemptReconnect()).toBe(true);
+    expect(manager.attemptReconnect()).toBe(true);
+
+    expect(manager.status).toBe('reconnecting');
+    expect(peer.createdConnections).toHaveLength(2);
+
+    peer.createdConnections[1].emit('open');
+    expect(manager.status).toBe('connected');
+    expect(peer.createdConnections).toHaveLength(2);
+    manager.destroy();
+  });
+
+  it('releases the reconnect guard after a failed replacement so Retry can start again', async () => {
+    const { manager, peer } = await createConnectedGuest();
+
+    expect(manager.attemptReconnect()).toBe(true);
+    const failedReplacement = peer.createdConnections[1];
+    failedReplacement.emit('error', new Error('replacement failed'));
+
+    expect(manager.status).toBe('error');
+    expect(manager.attemptReconnect()).toBe(true);
+    expect(peer.createdConnections).toHaveLength(3);
+
+    peer.createdConnections[2].emit('open');
+    expect(manager.status).toBe('connected');
+    manager.destroy();
+  });
+
+  it('coalesces Retry while PeerJS signaling reconnection is still pending', async () => {
+    const { manager, peer } = await createConnectedGuest();
+    peer.disconnected = true;
+
+    expect(manager.attemptReconnect()).toBe(true);
+    expect(manager.attemptReconnect()).toBe(true);
+
+    expect(peer.reconnect).toHaveBeenCalledTimes(1);
+    expect(peer.createdConnections).toHaveLength(1);
+
+    peer.emit('open', peer.id);
+    expect(peer.createdConnections).toHaveLength(2);
+
+    peer.createdConnections[1].emit('open');
+    expect(manager.status).toBe('connected');
+    manager.destroy();
+  });
 });
