@@ -15,51 +15,28 @@ import { getLocationTabs, getWorkInfo } from './locationTabs';
 import type { LocationTabContext } from './locationTabs';
 import { getQuestLocationObjectives } from '@/data/quests';
 
-// Brief services preview shown when a player can't reach this location this turn
 const LOCATION_SERVICES: Partial<Record<LocationId, string[]>> = {
-  'noble-heights':  ['Luxury housing (safe, expensive)', 'Relax & restore health'],
-  'landlord':       ['Pay rent', 'Upgrade / downgrade housing', 'Prepay multiple weeks'],
-  'slums':          ['Cheap housing (robbery risk)', 'Relax at home'],
-  'shadow-market':  ['Pawn items for quick gold', 'Lottery tickets', 'Buy a newspaper'],
-  'general-store':  ['Buy food (bread & cheese)', 'Buy supplies'],
-  'graveyard':      ['Pray for blessings', 'Mourn the fallen'],
-  'rusty-tankard':  ['Buy fresh food (tavern meals)', 'Drink & socialize (+happiness)', 'Cure sickness'],
-  'armory':         ['Buy clothing & uniforms', 'Buy weapons & armor', 'Temper equipment'],
-  'forge':          ['Smelt & craft items', 'Repair equipment (cheaper than Enchanter)'],
-  'guild-hall':     ['Browse & accept jobs', 'Take quests & bounties', 'Buy a Guild Pass'],
-  'cave':           ['Explore dungeon floors', 'Fight monsters for rare loot'],
-  'academy':        ['Enroll in degrees', 'Attend class sessions', 'Graduate for bonus stats'],
-  'enchanter':      ['Buy magical appliances', 'Enchant items', 'Repair appliances', 'Cast hexes'],
-  'bank':           ['Deposit / withdraw gold', 'Take loans', 'Invest in the market'],
+  'noble-heights': ['Luxury housing (safe, expensive)', 'Relax & restore health'],
+  landlord: ['Pay rent', 'Upgrade / downgrade housing', 'Prepay multiple weeks'],
+  slums: ['Cheap housing (robbery risk)', 'Relax at home'],
+  'shadow-market': ['Pawn items for quick gold', 'Lottery tickets', 'Buy a newspaper'],
+  'general-store': ['Buy food (bread & cheese)', 'Buy supplies'],
+  graveyard: ['Pray for blessings', 'Mourn the fallen'],
+  'rusty-tankard': ['Buy fresh food (tavern meals)', 'Drink & socialize (+happiness)', 'Cure sickness'],
+  armory: ['Buy clothing & uniforms', 'Buy weapons & armor', 'Temper equipment'],
+  forge: ['Smelt & craft items', 'Repair equipment (cheaper than Enchanter)'],
+  'guild-hall': ['Browse & accept jobs', 'Take quests & bounties', 'Buy a Guild Pass'],
+  cave: ['Explore dungeon floors', 'Fight monsters for rare loot'],
+  academy: ['Enroll in degrees', 'Attend class sessions', 'Graduate for bonus stats'],
+  enchanter: ['Buy magical appliances', 'Enchant items', 'Repair appliances', 'Cast hexes'],
+  bank: ['Deposit / withdraw gold', 'Take loans', 'Invest in the market'],
 };
 
 interface LocationPanelProps {
   locationId: LocationId;
 }
 
-type DeadLocationTabContextField =
-  | 'modifyGold'
-  | 'modifyHappiness'
-  | 'modifyHealth'
-  | 'modifyFood'
-  | 'modifyClothing'
-  | 'modifyMaxHealth'
-  | 'modifyRelaxation'
-  | 'spendTime'
-  | 'completeLocationObjective'
-  | 'clearDungeonFloor'
-  | 'applyRareDrop'
-  | 'purchaseVendorItem'
-  | 'cureSickness'
-  | 'onBuyNewspaper'
-  | 'setEventMessage';
-
-type ActiveLocationTabContext = Omit<LocationTabContext, DeadLocationTabContextField>;
-
 export function LocationPanel({ locationId }: LocationPanelProps) {
-  // Subscribe only to values and action references used by this panel. The
-  // previous whole-store subscription rerendered every open location for
-  // unrelated tutorial, network, overlay and AI state changes.
   const store = useGameStore(useShallow(state => ({
     weather: state.weather,
     players: state.players,
@@ -135,10 +112,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     setCurrentNewspaper(newspaper);
   };
 
-  // Build only the context fields actually read by the tab factories. The
-  // exported legacy interface still lists old callbacks; source invariants
-  // verify those names are declarations only until that large file is split.
-  const ctx: ActiveLocationTabContext = {
+  const ctx: LocationTabContext = {
     player,
     players: store.players,
     priceModifier: store.priceModifier,
@@ -171,11 +145,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     onShowNewspaper: handleShowNewspaper,
   };
 
-  // Runtime tab factories only read ActiveLocationTabContext. The temporary
-  // boundary cast can be removed when locationTabs.tsx is split by domain.
-  const locationTabContext = ctx as LocationTabContext;
-
-  // Home locations get a full-panel visual room display (special case)
   const isHomeLocation = locationId === 'noble-heights' || locationId === 'slums';
   if (isHomeLocation && isHere) {
     return (
@@ -190,21 +159,20 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
   }
 
   const npc = LOCATION_NPCS[locationId];
-  const tabs = getLocationTabs(locationId, isHere, locationTabContext);
-  const workInfo = isHere ? getWorkInfo(locationId, locationTabContext) : null;
+  const tabs = getLocationTabs(locationId, isHere, ctx);
+  const workInfo = isHere ? getWorkInfo(locationId, ctx) : null;
 
-  // Auto-select the active quest/bounty tab at Guild Hall
   const defaultTab = locationId === 'guild-hall' && player.activeQuest
     ? (player.activeQuest.startsWith('bounty:') ? 'bounties' : 'quests')
     : undefined;
 
-  // LOQ: Check if current location has a pending quest objective
-  // Use nlChainProgress for nlchain quests, questChainProgress for linear chains
-  const chainProgressForLOQ = player.activeQuest?.startsWith('nlchain:') ? player.nlChainProgress : player.questChainProgress;
+  const chainProgressForLOQ = player.activeQuest?.startsWith('nlchain:')
+    ? player.nlChainProgress
+    : player.questChainProgress;
   const questObjectives = getQuestLocationObjectives(player.activeQuest, chainProgressForLOQ);
   const questProgress = player.questLocationProgress ?? [];
   const pendingObjectiveHere = isHere
-    ? questObjectives.find(o => o.locationId === locationId && !questProgress.includes(o.id))
+    ? questObjectives.find(objective => objective.locationId === locationId && !questProgress.includes(objective.id))
     : null;
 
   const handleCompleteObjective = () => {
@@ -216,7 +184,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
   return (
     <>
       <div className={`h-full flex flex-col overflow-hidden ${isHere ? '' : 'parchment-panel p-3'}`}>
-        {/* LOQ: Quest objective banner — shown when at an objective location */}
         {pendingObjectiveHere && (
           <div className="flex-shrink-0 bg-amber-900/80 border border-amber-400/70 px-3 py-2 flex items-center gap-2 z-20">
             <Swords className="w-4 h-4 text-amber-300 flex-shrink-0" />
@@ -232,7 +199,7 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             </button>
           </div>
         )}
-        {/* When at location: full LocationShell with header/footer */}
+
         {isHere && npc && tabs ? (
           <LocationShell
             key={locationId}
@@ -249,7 +216,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
             {tabs[0]?.content}
           </div>
         ) : (
-          /* Travel view - not at location */
           <>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1.5 min-w-0">
@@ -276,17 +242,22 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
                 disabled={!canAffordMove && !canPartialTravel}
                 className="gold-button flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {canAffordMove ? `Travel to ${location.name}` : canPartialTravel ? `Head toward ${location.name}` : `Travel to ${location.name}`}
+                {canAffordMove
+                  ? `Travel to ${location.name}`
+                  : canPartialTravel
+                    ? `Head toward ${location.name}`
+                    : `Travel to ${location.name}`}
                 <ArrowRight className="w-5 h-5" />
               </button>
               {!canAffordMove && canPartialTravel && (
-                <p className="text-amber-500 text-sm mt-2">Not enough time to arrive — will walk as far as possible and end turn.</p>
+                <p className="text-amber-500 text-sm mt-2">
+                  Not enough time to arrive — will walk as far as possible and end turn.
+                </p>
               )}
               {!canAffordMove && !canPartialTravel && (
                 <p className="text-destructive text-sm mt-2">No time remaining!</p>
               )}
             </div>
-            {/* Services preview — shown when player can't reach this location */}
             {!canAffordMove && !canPartialTravel && LOCATION_SERVICES[locationId] && (
               <div className="mt-4 border-t border-muted pt-3">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">What's here</p>
