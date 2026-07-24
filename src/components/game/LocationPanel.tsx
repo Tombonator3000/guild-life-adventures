@@ -1,4 +1,5 @@
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
+import { useShallow } from 'zustand/react/shallow';
 import { getLocation, getPath } from '@/data/locations';
 import type { LocationId } from '@/types/game.types';
 import { playSFX } from '@/audio/sfxManager';
@@ -37,7 +38,58 @@ interface LocationPanelProps {
 }
 
 export function LocationPanel({ locationId }: LocationPanelProps) {
-  const store = useGameStore();
+  // Subscribe only to values and action references used by this panel. The
+  // previous whole-store subscription rerendered every open location for
+  // unrelated tutorial, network, overlay and AI state changes.
+  const store = useGameStore(useShallow(state => ({
+    weather: state.weather,
+    players: state.players,
+    priceModifier: state.priceModifier,
+    economyTrend: state.economyTrend,
+    week: state.week,
+    weeklyNewsEvents: state.weeklyNewsEvents,
+    stockPrices: state.stockPrices,
+    stockPriceHistory: state.stockPriceHistory,
+    locationHexes: state.locationHexes,
+    travelPlayer: state.travelPlayer,
+    selectLocation: state.selectLocation,
+    endTurn: state.endTurn,
+    purchaseNewspaper: state.purchaseNewspaper,
+    modifyGold: state.modifyGold,
+    modifyHappiness: state.modifyHappiness,
+    modifyHealth: state.modifyHealth,
+    modifyFood: state.modifyFood,
+    modifyClothing: state.modifyClothing,
+    modifyMaxHealth: state.modifyMaxHealth,
+    modifyRelaxation: state.modifyRelaxation,
+    spendTime: state.spendTime,
+    performWorkShift: state.performWorkShift,
+    attendDegreeSession: state.attendDegreeSession,
+    prepayDegree: state.prepayDegree,
+    graduateDegree: state.graduateDegree,
+    takeQuest: state.takeQuest,
+    completeQuest: state.completeQuest,
+    abandonQuest: state.abandonQuest,
+    completeLocationObjective: state.completeLocationObjective,
+    takeChainQuest: state.takeChainQuest,
+    takeNonLinearChain: state.takeNonLinearChain,
+    makeNLChainChoice: state.makeNLChainChoice,
+    takeBounty: state.takeBounty,
+    buyGuildPass: state.buyGuildPass,
+    acceptJobOffer: state.acceptJobOffer,
+    acceptMarketRaise: state.acceptMarketRaise,
+    requestRaise: state.requestRaise,
+    equipItem: state.equipItem,
+    unequipItem: state.unequipItem,
+    clearDungeonFloor: state.clearDungeonFloor,
+    applyRareDrop: state.applyRareDrop,
+    purchaseVendorItem: state.purchaseVendorItem,
+    cureSickness: state.cureSickness,
+    useEquipmentService: state.useEquipmentService,
+    useApplianceService: state.useApplianceService,
+    readBook: state.readBook,
+    setEventMessage: state.setEventMessage,
+  })));
   const player = useCurrentPlayer();
   const location = getLocation(locationId);
   const [currentNewspaper, setCurrentNewspaper] = useState<ReturnType<typeof generateNewspaper> | null>(null);
