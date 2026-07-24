@@ -2,6 +2,7 @@ import { lazy, Suspense, Component, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { useGameOptions } from '@/hooks/useGameOptions';
+import { useSecurePageRejoin } from '@/network/useSecurePageRejoin';
 import { TitleScreen } from '@/components/screens/TitleScreen';
 
 /**
@@ -125,6 +126,7 @@ const Index = () => {
   })));
   const currentPlayer = useCurrentPlayer();
   const { options } = useGameOptions();
+  useSecurePageRejoin();
 
   // TitleScreen is eagerly loaded — always renders immediately.
   // All other screens are lazy-loaded inside Suspense.

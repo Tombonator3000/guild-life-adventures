@@ -36,6 +36,7 @@ export type HostMessage =
   | { type: 'lobby-update'; lobby: LobbyState }
   | { type: 'game-start'; gameState: SerializedGameState; lobby: LobbyState }
   | { type: 'state-sync'; gameState: SerializedGameState }
+  | { type: 'reconnect-credential'; roomCode: string; playerId: string; playerName: string; reconnectToken: string; timestamp: number }
   | { type: 'action-result'; requestId: string; success: boolean; error?: string }
   | { type: 'player-disconnected'; playerName: string; temporary?: boolean }
   | { type: 'player-reconnected'; playerName: string }
@@ -50,7 +51,8 @@ export type HostMessage =
 
 export type GuestMessage =
   | { type: 'join'; playerName: string }
-  | { type: 'reconnect'; playerName: string }
+  | { type: 'reconnect'; playerName: string; playerId?: string; reconnectToken?: string }
+  | { type: 'reconnect-credential-request'; playerId: string }
   | { type: 'ready'; isReady: boolean }
   | { type: 'action'; requestId: string; name: string; args: unknown[] }
   | { type: 'ping'; timestamp: number }
