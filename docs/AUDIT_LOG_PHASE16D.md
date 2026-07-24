@@ -10,18 +10,19 @@ Arbeidsgren `agent/audit-phase16d-gameboard-side-panels` ble opprettet fra fase 
 
 - Fortsette oppdelingen av `GameBoard` uten å flytte lokal state, nettverksstate eller callback-eierskap ut av hovedkomponenten.
 - Trekke desktop-sidepaneler, mobil-HUD og mobile drawers inn i én fokusert presentasjonskomponent.
-- Beholde samme responsive synlighet, fullboard-oppførsel og mobilflyt for meny og Zone Editor.
+- Beholde samme responsive synlighet, fullboard-oppførsel, DOM-rekkefølge og mobilflyt for meny og Zone Editor.
 
 ## Utført
 
 - Opprettet `GameBoardSidePanels.tsx`.
 - Flyttet rendering av `SideInfoTabs`, `RightSideTabs`, `MobileHUD`, `MobileDrawer` og `StoneBorderFrame` ut av `GameBoard`.
-- Beholdt desktop-bredden på 12 prosent og høyre sidepanel etter brettet via eksplisitt flex-rekkefølge.
+- Flyttet den responsive root-rammen og den fleksible brettkolonnen til samme layoutkomponent.
+- Beholdt desktop-bredden på 12 prosent og den opprinnelige DOM-rekkefølgen: mobil-HUD, venstre panel, brett, høyre panel, mobile drawers og auxiliary UI.
 - Beholdt mobil-HUD før brettet og venstre/høyre drawers med samme titler og innhold.
 - `GameBoard` eier fortsatt drawer-state, meny-state, debug/zone-editor-state, AI-speed, skip-turn og fullboard-state.
 - Mobilcallbackene lukker fortsatt høyre drawer før Save-meny eller Zone Editor åpnes.
-- Bruker `ComponentProps`, `ElementType` og `Pick` fra de eksisterende komponentene i stedet for parallelle prop-modeller.
-- Utvidet strukturtestene med eksplisitt sidepanel-delegering, native prop-typer, responsive invarianter, mobil callback-rekkefølge og størrelsesgrenser.
+- Bruker `ComponentProps`, `ElementType`, `ReactNode` og `Pick` fra React og de eksisterende komponentene i stedet for parallelle prop-modeller.
+- Utvidet strukturtestene med eksplisitt sidepanel-delegering, native prop-typer, responsive invarianter, DOM-rekkefølge, mobil callback-rekkefølge og størrelsesgrenser.
 - Ingen spillregler, eventkø, kartmotor, nettverksprotokoll eller lagringsflyt ble endret.
 
 ## Tester
@@ -38,6 +39,6 @@ Valideres i GitHub Actions med:
 
 ## Resultat
 
-- `GameBoard` har ikke lenger direkte import- eller renderansvar for fem sidepanelkomponenter.
-- Desktop- og mobilpresentasjonen er samlet i en komponent under 100 linjer.
-- Neste fase bør vurdere om header/frame-layout eller den store state-/hook-koordineringen kan trekkes ut uten å skjule eierskapet til spillflyten.
+- `GameBoard` har ikke lenger direkte import-, render- eller rammeansvar for fem sidepanelkomponenter.
+- Desktop- og mobilpresentasjonen er samlet i en komponent under 100 linjer uten CSS-basert omorganisering av tastaturrekkefølgen.
+- Neste fase bør vurdere om header-presentasjonen eller den store state-/hook-koordineringen kan trekkes ut uten å skjule eierskapet til spillflyten.
