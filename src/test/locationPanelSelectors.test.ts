@@ -2,22 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const source = readFileSync(
-  resolve(process.cwd(), 'src/components/game/LocationPanel.tsx'),
-  'utf8',
+const readSource = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
+const panelSource = readSource('src/components/game/LocationPanel.tsx');
+const tabsSource = readSource('src/components/game/locationTabs.tsx');
+const contextSource = readSource('src/components/game/locationTabContext.ts');
+const coreSource = readSource('src/components/game/locationTabFactories/coreTabs.tsx');
+const marketSource = readSource('src/components/game/locationTabFactories/marketAdventureTabs.tsx');
+const selectorSource = panelSource.slice(
+  panelSource.indexOf('useGameStore(useShallow(state => ({'),
+  panelSource.indexOf('})));') + 5,
 );
-const tabsSource = readFileSync(
-  resolve(process.cwd(), 'src/components/game/locationTabs.tsx'),
-  'utf8',
-);
-const selectorSource = source.slice(
-  source.indexOf('useGameStore(useShallow(state => ({'),
-  source.indexOf('})));') + 5,
-);
-const tabImplementation = tabsSource.replace(
-  /export interface LocationTabContext \{[\s\S]*?\n\}/,
-  '',
-);
+const tabImplementation = `${tabsSource}\n${contextSource}\n${coreSource}\n${marketSource}`;
 
 const removedContextFields = [
   'modifyGold',
@@ -56,9 +51,9 @@ const removedSelectorActions = [
 
 describe('LocationPanel store subscriptions', () => {
   it('uses a shallow explicit selector instead of subscribing to the whole store', () => {
-    expect(source).toContain("import { useShallow } from 'zustand/react/shallow';");
-    expect(source).toContain('useGameStore(useShallow(state => ({');
-    expect(source).not.toMatch(/const\s+store\s*=\s*useGameStore\(\s*\)\s*;/);
+    expect(panelSource).toContain("import { useShallow } from 'zustand/react/shallow';");
+    expect(panelSource).toContain('useGameStore(useShallow(state => ({');
+    expect(panelSource).not.toMatch(/const\s+store\s*=\s*useGameStore\(\s*\)\s*;/);
   });
 
   it('selects the state needed for travel, economy, tabs and hex display', () => {
@@ -98,16 +93,26 @@ describe('LocationPanel store subscriptions', () => {
     }
   });
 
-  it('does not pass the obsolete context fields to the tab factories', () => {
-    expect(source).toContain('type ActiveLocationTabContext = Omit<LocationTabContext, DeadLocationTabContextField>;');
-    for (const field of removedContextFields) {
-      expect(source).not.toContain(`${field}: store.${field}`);
-    }
+  it('uses the real narrow context type without an Omit boundary cast', () => {
+    expect(panelSource).toContain('const ctx: LocationTabContext = {');
+    expect(panelSource).not.toContain('DeadLocationTabContextField');
+    expect(panelSource).not.toContain('ActiveLocationTabContext');
+    expect(panelSource).not.toContain('as LocationTabContext');
   });
 
-  it('confirms the removed context fields are not read by tab implementations', () => {
+  it('keeps obsolete context fields out of every split tab module', () => {
     for (const field of removedContextFields) {
       expect(tabImplementation).not.toMatch(new RegExp(`\\b${field}\\b`));
     }
+  });
+
+  it('keeps the orchestrator small and delegates factories by domain', () => {
+    expect(tabsSource.split('\n').length).toBeLessThan(190);
+    expect(tabsSource).toContain("import { CORE_TAB_FACTORIES } from './locationTabFactories/coreTabs';");
+    expect(tabsSource).toContain("import { MARKET_ADVENTURE_TAB_FACTORIES } from './locationTabFactories/marketAdventureTabs';");
+    expect(coreSource).toContain("'guild-hall': guildHallTabs");
+    expect(coreSource).toContain('academy: academyTabs');
+    expect(marketSource).toContain("'shadow-market': shadowMarketTabs");
+    expect(marketSource).toContain('cave: caveTabs');
   });
 });
