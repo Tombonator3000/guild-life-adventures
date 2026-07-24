@@ -24,19 +24,20 @@ Arbeidsgren `agent/audit-phase16m-connection-indicator` ble opprettet fra fase 1
 - La til `role="alert"` på connection-lost-banneret.
 - Opprettet fem rene tester for statusmodellen, inkludert latency-tersklene.
 - Opprettet fire komponenttester som verifiserer connected, connecting, reconnecting, disconnected og error i den faktiske overlay-renderingen.
+- Første komponenttestrunde avdekket at CSS-margin ga visuell avstand, men ikke et faktisk tekstmellomrom mellom romkode og latency. Dette ble rettet slik at skjermleserteksten nå blir `Online (ROOM) 42ms` i stedet for `Online (ROOM)42ms`.
 - Ingen nettverksprotokoll, reconnect-handling, latency-beregning eller romkode ble endret.
 
 ## Tester
 
-Valideres i GitHub Actions med:
+GitHub Actions-run `30112228429`:
 
-- Dependency install.
-- TypeScript.
-- Full Vitest-pakke, inkludert nye status- og overlay-tester.
-- Produksjonsbuild.
-- ESLint.
-- Playwright-runner og Chromium.
-- Title/setup-smoke og deterministisk komplett lokal spillflyt med kartreise, bank, save/load og ukeovergang.
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Full Vitest-pakke, inkludert nye status- og overlay-tester: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright-runner og Chromium-installasjon: bestått.
+- Title/setup-smoke og deterministisk komplett lokal spillflyt med kartreise, bank, save/load og ukeovergang: bestått.
 
 ## Resultat
 
