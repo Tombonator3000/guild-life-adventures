@@ -39,11 +39,22 @@ Den tidligere lobby-rejoinen identifiserte spilleren med navn og lagret slot. De
 
 ## Tester
 
+GitHub Actions-run `30117030585`:
+
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Full Vitest-pakke, inkludert secure-rejoin-, credential-, gameplay- og integrasjonstestene: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright-runner og Chromium-installasjon: bestått.
+- Title/setup-smoke og deterministisk komplett lokal spillflyt med kartreise, bank, save/load og ukeovergang: bestått.
+
+Nye testområder:
+
 - Fem hook-tester for global page-rejoin: umiddelbar sending, venting på connected, credential-oppdatering, autoritativ state-sync, begrenset retry og manglende credential.
 - Fem credential-tester for tokenformat, samme-rom-remount, rombytte, sikker rebind, feil credential og sessionStorage-expiry.
 - Fire gameplay-reconnect-tester, inkludert ny PeerJS-ID og revokering av gammel ID.
 - Utvidede integrasjonstester for global montering, listener-before-bootstrap, meldingskontrakter og bruk av sikker resolver i alle gameplay-paths.
-- Full eksisterende test-, build-, lint- og nettleserflyt kjøres i GitHub Actions.
 
 ## Avgrensning
 
