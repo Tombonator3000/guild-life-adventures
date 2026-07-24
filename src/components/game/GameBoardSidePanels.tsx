@@ -1,4 +1,4 @@
-import type { ComponentProps, ElementType } from 'react';
+import type { ComponentProps, ElementType, ReactNode } from 'react';
 import { SideInfoTabs } from './SideInfoTabs';
 import { RightSideTabs } from './RightSideTabs';
 import { MobileHUD } from './MobileHUD';
@@ -17,6 +17,8 @@ interface GameBoardSidePanelsProps {
   mobileRightProps: ComponentProps<typeof RightSideTabs>;
   leftDrawerProps: DrawerStateProps;
   rightDrawerProps: DrawerStateProps;
+  children: ReactNode;
+  auxiliaryContent: ReactNode;
 }
 
 const SIDE_PANEL_WIDTH_PERCENT = 12;
@@ -30,9 +32,14 @@ export function GameBoardSidePanels({
   mobileRightProps,
   leftDrawerProps,
   rightDrawerProps,
+  children,
+  auxiliaryContent,
 }: GameBoardSidePanelsProps) {
   return (
-    <>
+    <div
+      className={`w-screen h-screen-safe overflow-hidden bg-background flex safe-area-all ${isMobile ? 'flex-col' : 'flex-row'}`}
+      style={!isMobile && fullboardMode ? { paddingTop: '2rem' } : undefined}
+    >
       {isMobile && mobileHUDProps && <MobileHUD {...mobileHUDProps} />}
 
       {!isMobile && !fullboardMode && (
@@ -46,9 +53,13 @@ export function GameBoardSidePanels({
         </div>
       )}
 
+      <div className="flex-1 flex items-center justify-center min-w-0 min-h-0">
+        {children}
+      </div>
+
       {!isMobile && !fullboardMode && (
         <div
-          className="relative z-30 flex flex-col flex-shrink-0 h-full order-last"
+          className="relative z-30 flex flex-col flex-shrink-0 h-full"
           style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
         >
           <StoneBorderFrame side="right">
@@ -75,6 +86,8 @@ export function GameBoardSidePanels({
           </MobileDrawer>
         </>
       )}
-    </>
+
+      {auxiliaryContent}
+    </div>
   );
 }
