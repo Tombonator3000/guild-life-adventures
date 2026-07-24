@@ -637,17 +637,15 @@ describe('Action Argument Validation', () => {
     });
   });
 
-  it('raw stat modifiers are in the whitelist (required by UI components)', () => {
-    // These raw modifiers must be in the whitelist because UI components
-    // call them directly (e.g., LocationPanel, CavePanel, HomePanel).
-    // The network layer adds server-side bounds checking (validateActionArgs)
-    // to prevent abuse.
-    const rawModifiers = [
-      'modifyGold', 'modifyHealth', 'modifyHappiness',
+  it('raw time and stat mutations are blocked from online guests', () => {
+    // Human UI flows use semantic host-authoritative actions. These low-level
+    // mutations remain available only to local/host internals such as AI and dev tools.
+    const rawActions = [
+      'spendTime', 'modifyGold', 'modifyHealth', 'modifyHappiness',
       'modifyFood', 'modifyClothing', 'modifyMaxHealth', 'modifyRelaxation',
     ];
-    for (const action of rawModifiers) {
-      expect(ALLOWED_GUEST_ACTIONS.has(action)).toBe(true);
+    for (const action of rawActions) {
+      expect(ALLOWED_GUEST_ACTIONS.has(action)).toBe(false);
     }
   });
 
