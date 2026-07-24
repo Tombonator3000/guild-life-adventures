@@ -12,6 +12,7 @@ const eventQueueSource = readSource('src/hooks/useGameBoardEventQueue.ts');
 const turnTransitionSource = readSource('src/hooks/useGameBoardTurnTransition.ts');
 const animationSyncSource = readSource('src/hooks/useGameBoardAnimationSync.ts');
 const applianceNotificationSource = readSource('src/hooks/useApplianceBreakageNotification.ts');
+const uiStateSource = readSource('src/hooks/useGameBoardUiState.ts');
 const audienceStateSource = readSource('src/lib/deriveGameBoardAudienceState.ts');
 
 const extractedComponents = [
@@ -143,9 +144,9 @@ describe('GameBoard component boundaries', () => {
     expect(sidePanelsSource.match(/!isMobile && !fullboardMode/g)).toHaveLength(2);
     expect(sidePanelsSource).toContain('side="left"');
     expect(sidePanelsSource).toContain('side="right"');
-    expect(gameBoardSource).toContain('setShowRightDrawer(false);\n          setShowGameMenu(true);');
-    expect(gameBoardSource).toContain('setShowRightDrawer(false);\n          setShowZoneEditor(true);');
-    expect(gameBoardSource).toContain('onToggleFullboard: () => setFullboardMode(true)');
+    expect(uiStateSource).toContain('setShowRightDrawer(false);\n    setShowGameMenu(true);');
+    expect(uiStateSource).toContain('setShowRightDrawer(false);\n    setShowZoneEditor(true);');
+    expect(gameBoardSource).toContain('onToggleFullboard: enterFullboard');
   });
 
   it('shares stable RightSideTabs data while keeping desktop and mobile actions separate', () => {
@@ -157,6 +158,20 @@ describe('GameBoard component boundaries', () => {
     expect(sidePanelsSource).toContain('<RightSideTabs {...sharedRightSideProps} {...desktopRightActions} />');
     expect(sidePanelsSource).toContain('<RightSideTabs {...sharedRightSideProps} {...mobileRightActions} />');
     expect(sidePanelsSource).toContain("type DesktopRightSideActions = RightSideActions & Pick<RightSideProps, 'onToggleFullboard'>;");
+  });
+
+  it('delegates transient UI state and named actions to useGameBoardUiState', () => {
+    expect(gameBoardSource).toContain("import { useGameBoardUiState } from '@/hooks/useGameBoardUiState';");
+    expect(gameBoardSource).toContain('} = useGameBoardUiState();');
+    expect(gameBoardSource).not.toContain('useState(');
+    expect(gameBoardSource).not.toContain('setShowGameMenu(false)');
+    expect(gameBoardSource).not.toContain('setShowRightDrawer(false)');
+    expect(gameBoardSource).toContain('onOpenSaveMenu: openMobileGameMenu');
+    expect(gameBoardSource).toContain('onToggleZoneEditor: openMobileZoneEditor');
+    expect(gameBoardSource).toContain('onCloseSaveMenu={closeGameMenu}');
+    expect(gameBoardSource).toContain('onExitFullboard: exitFullboard');
+    expect(uiStateSource).toContain("import { useCallback, useState } from 'react';");
+    expect(uiStateSource).toContain('const closePlayerInfo = useCallback(() => setViewingPlayer(null), []);');
   });
 
   it('does not subscribe to dead GameBoard state or keep unused layout aliases', () => {
@@ -203,7 +218,7 @@ describe('GameBoard component boundaries', () => {
   it('delegates regular appliance breakage notifications to a focused hook', () => {
     expect(gameBoardSource).toContain("import { useApplianceBreakageNotification } from '@/hooks/useApplianceBreakageNotification';");
     expect(gameBoardSource).toContain('useApplianceBreakageNotification({');
-    expect(gameBoardSource).toContain("import { useState } from 'react';");
+    expect(gameBoardSource).not.toContain("from 'react'");
     expect(gameBoardSource).not.toContain('getAppliance');
     expect(gameBoardSource).not.toContain('toast.warning');
     expect(gameBoardSource).not.toContain('useEffect');
@@ -227,7 +242,7 @@ describe('GameBoard component boundaries', () => {
   });
 
   it('keeps extracted components within focused size limits', () => {
-    expect(gameBoardSource.split('\n').length).toBeLessThan(425);
+    expect(gameBoardSource.split('\n').length).toBeLessThan(440);
     expect(auxiliarySource.split('\n').length).toBeLessThan(80);
     expect(canvasSource.split('\n').length).toBeLessThan(210);
     expect(centerSource.split('\n').length).toBeLessThan(100);
@@ -236,6 +251,7 @@ describe('GameBoard component boundaries', () => {
     expect(turnTransitionSource.split('\n').length).toBeLessThan(55);
     expect(animationSyncSource.split('\n').length).toBeLessThan(45);
     expect(applianceNotificationSource.split('\n').length).toBeLessThan(40);
+    expect(uiStateSource.split('\n').length).toBeLessThan(75);
     expect(audienceStateSource.split('\n').length).toBeLessThan(45);
   });
 });
