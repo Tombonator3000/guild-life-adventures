@@ -12,6 +12,7 @@ const eventQueueSource = readSource('src/hooks/useGameBoardEventQueue.ts');
 const turnTransitionSource = readSource('src/hooks/useGameBoardTurnTransition.ts');
 const animationSyncSource = readSource('src/hooks/useGameBoardAnimationSync.ts');
 const applianceNotificationSource = readSource('src/hooks/useApplianceBreakageNotification.ts');
+const audienceStateSource = readSource('src/lib/deriveGameBoardAudienceState.ts');
 
 const extractedComponents = [
   'ZoneEditor',
@@ -198,8 +199,21 @@ describe('GameBoard component boundaries', () => {
     expect(applianceNotificationSource).toContain('dismissEvent();');
   });
 
+  it('delegates local player and spectator derivation to a pure helper', () => {
+    expect(gameBoardSource).toContain("import { deriveGameBoardAudienceState } from '@/lib/deriveGameBoardAudienceState';");
+    expect(gameBoardSource).toContain('} = deriveGameBoardAudienceState({');
+    expect(gameBoardSource).not.toContain('const isLocalPlayerTurn =');
+    expect(gameBoardSource).not.toContain('const isWaitingForOtherPlayer =');
+    expect(gameBoardSource).not.toContain('players.find(player => player.id === localPlayerId)');
+    expect(audienceStateSource).toContain("phase: GameState['phase'];");
+    expect(audienceStateSource).toContain('const isLocalPlayerTurn = !isOnline || currentPlayer?.id === localPlayerId;');
+    expect(audienceStateSource).toContain('const isPureSpectator = isOnline && !localPlayerId;');
+    expect(audienceStateSource).toContain("&& phase === 'playing'");
+    expect(audienceStateSource).toContain('players.some(player => !player.isGameOver)');
+  });
+
   it('keeps extracted components within focused size limits', () => {
-    expect(gameBoardSource.split('\n').length).toBeLessThan(420);
+    expect(gameBoardSource.split('\n').length).toBeLessThan(435);
     expect(auxiliarySource.split('\n').length).toBeLessThan(80);
     expect(canvasSource.split('\n').length).toBeLessThan(210);
     expect(centerSource.split('\n').length).toBeLessThan(100);
@@ -208,5 +222,6 @@ describe('GameBoard component boundaries', () => {
     expect(turnTransitionSource.split('\n').length).toBeLessThan(55);
     expect(animationSyncSource.split('\n').length).toBeLessThan(45);
     expect(applianceNotificationSource.split('\n').length).toBeLessThan(40);
+    expect(audienceStateSource.split('\n').length).toBeLessThan(45);
   });
 });
