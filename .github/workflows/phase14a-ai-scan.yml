@@ -1,0 +1,59 @@
+name: Scan phase 14A AI service callers
+
+on:
+  push:
+    branches:
+      - agent/audit-phase14a-ai-services
+    paths:
+      - phase14a-scan-trigger.txt
+
+permissions:
+  contents: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase14a-ai-services
+          fetch-depth: 1
+      - name: Scan relevant AI and store callers
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          patterns = [
+              r"type:\s*['\"](?:rest|heal|cure-sickness|work|study|graduate|request-raise)['\"]",
+              r"\brequestRaise\s*\(",
+              r"\bperformHomeActivity\s*\(",
+              r"\buseHealerService\s*\(",
+              r"\bperformWorkShift\s*\(",
+              r"\battendDegreeSession\s*\(",
+              r"\bgraduateDegree\s*\(",
+              r"\bworkShift\s*\(",
+              r"\bstudyDegree\s*\(",
+              r"\bcompleteDegree\s*\(",
+              r"\bcureSickness\s*\(",
+          ]
+          compiled = [re.compile(p) for p in patterns]
+          lines = ['# Phase 14A AI caller scan', '']
+          for path in sorted(Path('src').rglob('*.ts')) + sorted(Path('src').rglob('*.tsx')):
+              source = path.read_text(encoding='utf-8')
+              matches = []
+              for number, line in enumerate(source.splitlines(), 1):
+                  if any(pattern.search(line) for pattern in compiled):
+                      matches.append(f'{path}:{number}:{line.strip()}')
+              if matches:
+                  lines.extend(matches)
+          Path('phase14a-ai-scan.txt').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+          PY
+      - name: Commit scan
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add phase14a-ai-scan.txt
+          git commit -m "Record phase 14A AI service caller scan"
+          git push origin HEAD:agent/audit-phase14a-ai-services
