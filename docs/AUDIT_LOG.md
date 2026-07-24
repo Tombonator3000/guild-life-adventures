@@ -7,11 +7,11 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 | Nr. | Punkt | Status | Merknad |
 |---:|---|---|---|
 | 1 | Beskytte online spill mot sabotasje/misbruk | Ferdig hovedsakelig | Sabotasje, beskyttelse og tip-off er host-autoritative. |
-| 2 | Host-autoritativ multiplayer | Delvis ferdig, protokoll låst | Aktør-ID, tur, allowlist, argumentform, canonical rute og semantiske host-avslag valideres. Reise, jobb, hjem, healer og Tavern bruker semantiske handlinger. Rå stat-/tidshandlinger gjenstår. |
+| 2 | Host-autoritativ multiplayer | Delvis ferdig, protokoll låst | Aktør-ID, tur, allowlist, argumentform og semantiske host-avslag valideres. Reise, jobb, hjem, healer, Tavern og interaktiv dungeon bruker host-eide handlinger/state-maskiner. Rå stat-/tidshandlinger gjenstår. |
 | 3 | Full save/load-gjenoppretting | Ferdig | Brett-hexer og ukentlige nyheter gjenopprettes. |
 | 4 | Save-migrering v10 | Ferdig | Normalisering og migreringstester er lagt til. |
 | 5 | Sikre reputation unlocks | Ferdig | Kjøp valideres atomisk på hosten. |
-| 6 | Atomiske handlinger | Delvis ferdig | Reise, hjem/hvile, healer, Tavern, gravplass, gambling, avis, sabotasje, beskyttelse, jobbtilbud, markedslønn, arbeid, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig, hex-/ritualtjenester og finans er host-resolverte. |
+| 6 | Atomiske handlinger | Delvis ferdig | Reise, hjem/hvile, healer, Tavern, interaktiv dungeon, gravplass, gambling, avis, sabotasje, beskyttelse, jobbtilbud, markedslønn, arbeid, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig, hex-/ritualtjenester og finans er host-resolverte. |
 | 7 | Hook-avhengigheter | Ferdig for kjente funn | AI-start, auto-end-turn, tastatur og zone-editor er rettet. |
 | 8 | Playwright E2E | Ferdig grunnflyt | Tittel, setup og en faktisk spillflyt med bankhandling, save/load og ukeovergang er dekket. Protokollavvisninger er dekket med enhetstester mot host-kjeden. |
 | 9 | Zustand-selectors | Delvis ferdig | Root, GameBoard og Grimwald AI bruker selectors/useShallow. Flere paneler er begrenset, men `LocationPanel` leser fortsatt hele store-objektet. |
@@ -23,7 +23,7 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 
 ## Gjenstående prioritert rekkefølge
 
-1. **Migrer resterende rå gjestehandlinger.** Prioriter dungeon og øvrige `modify*`/`spendTime`-flyter, deretter interne AI-reservebaner. Tavern, healer, hjem/hvile, `setJob`, `negotiateRaise` og `movePlayer` er ferdig migrert.
+1. **Migrer resterende rå gjestehandlinger.** Prioriter øvrige LocationPanel-/quest-/serviceflyter som fortsatt bruker `modify*`/`spendTime`, deretter interne AI-reservebaner. Interaktiv dungeon, Tavern, healer, hjem/hvile, jobb og reise er ferdig migrert.
 2. **Begrens resterende store-abonnementer.** Start med `LocationPanel`, som fortsatt leser hele Zustand-storen.
 3. **Del opp GameBoard videre.** Flytt avledet tilstand og overlay-/layoutlogikk til mindre hooks/komponenter uten å endre funksjon.
 4. **Rydd døde kompatibilitetslag.** Fjern gamle callback-props og numeriske legacy-funksjoner når alle lokale og AI-kallere er migrert.
@@ -596,4 +596,48 @@ GitHub Actions-run `30073493988`:
 - En online-gjest kan ikke lenger diktere Tavern-pris eller separate mat-, humør- og helseeffekter.
 - Brawl-risikoen er host-eid, lagringskompatibel og kan ikke omgås ved å åpne panelet på nytt.
 - Neste rå gjestedomene er dungeon og øvrige `modify*`/`spendTime`-flyter.
-- PR #340 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
+- PR #340 ble squash-merget til `main` som commit `4732b2f0636c9fda47a0fa1c7102ddfe8603ee7b`.
+
+## Fase 13F – 24. juli 2026
+
+### Mål
+
+- Fjerne klientstyrt dungeon-tid, skade, gull, humør, durability, floor clear og drops fra den interaktive kampflyten.
+- Beholde encounter-for-encounter-UI-et, men flytte hele kampens state-maskin og tilfeldighetskast til hosten.
+
+### Utført
+
+- Opprettet arbeidsgren `agent/audit-phase13f-dungeon` og draft-PR #341 fra fase 13E-merge `4732b2f0636c9fda47a0fa1c7102ddfe8603ee7b`.
+- Kartleggingen avdekket at `CombatView` tidligere genererte encounters, modifier, block, potion, rare drop og hex drop med klientens `Math.random()`, mens `CavePanel` etterpå sendte separate gull-, helse-, humør-, durability- og progresjonskall.
+- Lagt til en serialiserbar `DungeonRunSession` og fire semantiske handlinger: `beginDungeonRun`, `resolveDungeonEncounter`, `advanceDungeonRun` og `finalizeDungeonRun`.
+- Hosten validerer Cave-lokasjon, floor-ID, degree-/equipmentkrav, attempt-grense, helse og canonical encounter-tid før en run opprettes.
+- Encounterliste, modifier, kampstats, education bonuses og utstyr-ID-er snapshots på hosten ved start.
+- Hosten ruller og anvender all encounter-skade/healing, block, potion, loot og drops. Klienten sender bare valg som fight, continue, skip healing, retreat, leave og finish.
+- Gold, happiness, dungeon record, first clear, dependability/fame, rare drop, hex scroll og durability settlement bruker bare host-sessionen.
+- Durability påføres utstyret som var snapshot ved run-start. Et testet mid-run gear-swap kan derfor ikke flytte slitasjen til et annet våpen.
+- Aktive dungeon-sessions synkroniseres til gjester gjennom vanlig state-sync, slik at panelet kan lukkes og åpnes uten å miste eller regenerere kampen.
+- End turn og manuell save blokkeres mens en session er aktiv. Sessions er transiente og gjenopprettes ikke fra save-filer.
+- `CombatView` er nå en ren presentasjon av hostens run-state og inneholder ingen lokal kampresolver eller lokal randomness.
+- Fjernet rå `incrementDungeonAttempts` og `applyDurabilityLoss` fra gjestenes allowlist og fjernet alle rå dungeon-callbacker fra CavePanel/LocationTabs.
+- AI-ens auto-resolve er allerede en host/lokal intern bane og var ikke en gjesteangrepsflate; den beholdes foreløpig, men står på listen for senere samling med samme service-lag.
+- Lagt til sju regresjonstester for canonical inngangstid/attempt, avviste innganger, host-resolved encounter, continue-tid, prematur settlement/end-turn-flukt, gear-swap-sikker settlement og protokoll/state-sync.
+- Fjernet alle midlertidige workflow-, trigger- og patchfiler før merge.
+
+### Tester
+
+GitHub Actions-run `30074836980`:
+
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Full Vitest-pakke, inkludert sju nye dungeon-sessiontester: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright-runner og Chromium-installasjon: bestått.
+- Title/setup-smoke og deterministisk komplett lokal spillflyt: bestått.
+
+### Resultat
+
+- En online-gjest kan ikke lenger generere sitt eget dungeon-resultat eller sende ønsket tid, skade, loot, durability eller drops.
+- Interaktiv dungeon er en host-eid, synkronisert state-maskin med canonical settlement.
+- Neste sikkerhetsarbeid er å migrere de gjenværende generelle `modify*`/`spendTime`-flytene og deretter samle interne AI-reservebaner.
+- PR #341 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
