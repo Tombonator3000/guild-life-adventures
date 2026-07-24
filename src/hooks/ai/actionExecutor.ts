@@ -80,7 +80,12 @@ import {
  */
 export interface StoreActions {
   travelPlayer: (playerId: string, route: import('@/types/game.types').LocationId[]) => { success: boolean; message: string } | void;
-  workShift: (playerId: string, hours: number, wage: number) => boolean;
+  performWorkShift: (playerId: string, mode: 'full' | 'remaining') => { success: boolean; message: string } | void;
+  attemptWorkplaceRaise: (playerId: string) => { success: boolean; message: string } | void;
+  performHomeActivity: (playerId: string, activity: 'relax' | 'sleep') => { success: boolean; message: string } | void;
+  useHealerService: (playerId: string, serviceId: 'minor' | 'moderate' | 'full' | 'cure' | 'blessing') => { success: boolean; message: string } | void;
+  attendDegreeSession: (playerId: string, degreeId: import('@/types/game.types').DegreeId, mode: 'standard' | 'cram') => { success: boolean; message: string } | void;
+  graduateDegree: (playerId: string, degreeId: import('@/types/game.types').DegreeId) => { success: boolean; message: string } | void;
   modifyGold: (playerId: string, amount: number) => void;
   modifyHealth: (playerId: string, amount: number) => void;
   modifyFood: (playerId: string, amount: number) => void;
@@ -88,8 +93,6 @@ export interface StoreActions {
   modifyClothing: (playerId: string, amount: number) => void;
   modifyRelaxation: (playerId: string, amount: number) => void;
   spendTime: (playerId: string, hours: number) => void;
-  studyDegree: (playerId: string, degreeId: string, cost: number, hours: number) => void;
-  completeDegree: (playerId: string, degreeId: string) => void;
   acceptJobOffer: (playerId: string, jobId: string) => { success: boolean; message: string } | void;
   payHousingRent: (playerId: string, weeks: 1 | 4 | 8) => { success: boolean; message: string } | void;
   transferBankFunds: (playerId: string, direction: 'deposit' | 'withdraw', amount: number) => { success: boolean; message: string } | void;
@@ -105,7 +108,6 @@ export interface StoreActions {
   completeLocationObjective: (playerId: string, objectiveId: string) => void;
   clearDungeonFloor: (playerId: string, floorId: number) => void;
   applyRareDrop: (playerId: string, dropId: string) => void;
-  cureSickness: (playerId: string) => void;
   manageLoan: (playerId: string, service: 'borrow' | 'repay', amount: number | 'all') => { success: boolean; message: string } | void;
   tradeStock: (playerId: string, side: 'buy' | 'sell', stockId: string, shares: number) => { success: boolean; message: string } | void;
   buyFreshFood: (playerId: string, units: number, cost: number) => boolean;
@@ -127,7 +129,6 @@ export interface StoreActions {
   repairAppliance: (playerId: string, applianceId: string) => number;
   forgeRepairAppliance: (playerId: string, applianceId: string) => number;
   // Salary
-  requestRaise: (playerId: string) => { success: boolean; newWage?: number; message: string };
   // Reputation (host-authoritative, atomic)
   purchaseReputationUnlock: (playerId: string, unlockId: string) => { success: boolean; message: string } | void;
   // Fence services (host-authoritative, atomic)
@@ -161,34 +162,19 @@ function handleMove(player: Player, action: AIAction, store: StoreActions): bool
   return true;
 }
 
-function handleRest(player: Player, action: AIAction, store: StoreActions): boolean {
-  const hours = (action.details?.hours as number) || 4;
-  const happinessGain = (action.details?.happinessGain as number) || 5;
-  const relaxGain = (action.details?.relaxGain as number) || 3;
-  if (player.timeRemaining < hours) return false;
-  store.spendTime(player.id, hours);
-  store.modifyHappiness(player.id, happinessGain);
-  store.modifyRelaxation(player.id, relaxGain);
-  return true;
+function handleRest(player: Player, _action: AIAction, store: StoreActions): boolean {
+  const result = store.performHomeActivity(player.id, 'relax');
+  return result?.success ?? false;
 }
 
-function handleHeal(player: Player, action: AIAction, store: StoreActions): boolean {
-  const cost = (action.details?.cost as number) || 30;
-  const healAmount = (action.details?.healAmount as number) || 25;
-  if (player.gold < cost) return false;
-  store.modifyGold(player.id, -cost);
-  store.modifyHealth(player.id, healAmount);
-  store.spendTime(player.id, 2);
-  return true;
+function handleHeal(player: Player, _action: AIAction, store: StoreActions): boolean {
+  const result = store.useHealerService(player.id, 'minor');
+  return result?.success ?? false;
 }
 
-function handleCureSickness(player: Player, action: AIAction, store: StoreActions): boolean {
-  const cost = (action.details?.cost as number) || 75;
-  if (!player.isSick || player.gold < cost || player.timeRemaining < 2) return false;
-  store.modifyGold(player.id, -cost);
-  store.spendTime(player.id, 2);
-  store.cureSickness(player.id);
-  return true;
+function handleCureSickness(player: Player, _action: AIAction, store: StoreActions): boolean {
+  const result = store.useHealerService(player.id, 'cure');
+  return result?.success ?? false;
 }
 
 function handleEndTurn(_player: Player, _action: AIAction, store: StoreActions): boolean {

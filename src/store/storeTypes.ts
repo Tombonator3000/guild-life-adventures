@@ -49,6 +49,7 @@ export interface GameStore extends GameState {
   payFullTuition: (playerId: string, degreeId: DegreeId, totalCost: number, sessions: number) => void;
   completeDegree: (playerId: string, degreeId: DegreeId) => void;
   performWorkShift: (playerId: string, mode: 'full' | 'remaining') => ActionResult | void;
+  attemptWorkplaceRaise: (playerId: string) => ActionResult | void;
   attendDegreeSession: (playerId: string, degreeId: DegreeId, mode: 'standard' | 'cram') => ActionResult | void;
   prepayDegree: (playerId: string, degreeId: DegreeId) => ActionResult | void;
   graduateDegree: (playerId: string, degreeId: DegreeId) => ActionResult | void;
