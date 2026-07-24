@@ -1,6 +1,6 @@
-import type { Player } from '@/types/game.types';
-import type { AIDifficulty } from '@/types/game.types';
+import type { Player, AIDifficulty } from '@/types/game.types';
 import type { ConnectionStatus } from '@/network/types';
+import { deriveConnectionIndicator } from '@/lib/deriveConnectionIndicator';
 import { TurnTransition } from './TurnTransition';
 import { CharacterPortrait } from './CharacterPortrait';
 import { Bot, Brain, SkipForward, FastForward, Play, Globe, Wifi, WifiOff, RefreshCw, Loader2 } from 'lucide-react';
@@ -47,6 +47,7 @@ export function GameBoardOverlays({
 }) {
   const { options } = useGameOptions();
   const showActions = options.showOpponentActions;
+  const connectionIndicator = deriveConnectionIndicator(connectionStatus, latency);
 
   return (
     <>
@@ -67,15 +68,27 @@ export function GameBoardOverlays({
         </div>
       )}
 
-      {/* Online: Connection indicator with latency */}
+      {/* Online: Connection indicator with status-aware latency */}
       {isOnline && (
         <div className={`fixed ${isMobile ? 'bottom-1 right-1' : 'bottom-4 right-4'} z-40`}>
-          <div className={`parchment-panel ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'} flex items-center gap-2 text-xs`}>
-            <Wifi className={`w-3 h-3 ${latency > 200 ? 'text-red-500' : latency > 100 ? 'text-yellow-500' : 'text-green-600'}`} />
+          <div
+            className={`parchment-panel ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'} flex items-center gap-2 text-xs`}
+            role="status"
+            aria-live="polite"
+          >
+            {connectionIndicator.icon === 'wifi' && (
+              <Wifi className={`w-3 h-3 ${connectionIndicator.iconClass}`} />
+            )}
+            {connectionIndicator.icon === 'loading' && (
+              <Loader2 className={`w-3 h-3 animate-spin ${connectionIndicator.iconClass}`} />
+            )}
+            {connectionIndicator.icon === 'offline' && (
+              <WifiOff className={`w-3 h-3 ${connectionIndicator.iconClass}`} />
+            )}
             <span className="text-amber-800 font-display">
-              Online {roomCodeDisplay ? `(${roomCodeDisplay})` : ''}
-              {isGuest && latency > 0 && (
-                <span className={`ml-1 ${latency > 200 ? 'text-red-600' : latency > 100 ? 'text-yellow-600' : 'text-green-700'}`}>
+              {connectionIndicator.label} {roomCodeDisplay ? `(${roomCodeDisplay})` : ''}
+              {isGuest && connectionIndicator.showLatency && (
+                <span className={`ml-1 ${connectionIndicator.latencyClass}`}>
                   {latency}ms
                 </span>
               )}
@@ -87,7 +100,10 @@ export function GameBoardOverlays({
       {/* Connection Lost Banner (in-game reconnect UI) */}
       {isOnline && connectionStatus !== 'connected' && connectionStatus !== 'connecting' && (
         <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pointer-events-none">
-          <div className={`parchment-panel ${isMobile ? 'px-3 py-2 mt-1' : 'px-6 py-3 mt-2'} flex items-center gap-3 shadow-lg animate-slide-up pointer-events-auto`}>
+          <div
+            className={`parchment-panel ${isMobile ? 'px-3 py-2 mt-1' : 'px-6 py-3 mt-2'} flex items-center gap-3 shadow-lg animate-slide-up pointer-events-auto`}
+            role="alert"
+          >
             <WifiOff className="w-5 h-5 text-destructive" />
             <span className={`font-display text-card-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
               {connectionStatus === 'reconnecting' ? 'Reconnecting...' : 'Connection Lost'}
