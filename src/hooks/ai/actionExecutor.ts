@@ -84,13 +84,12 @@ export interface StoreActions {
   attemptWorkplaceRaise: (playerId: string) => { success: boolean; message: string } | void;
   performHomeActivity: (playerId: string, activity: 'relax' | 'sleep') => { success: boolean; message: string } | void;
   useHealerService: (playerId: string, serviceId: 'minor' | 'moderate' | 'full' | 'cure' | 'blessing') => { success: boolean; message: string } | void;
+  purchaseAIResourceItem: (playerId: string, vendor: 'general-store' | 'shadow-market' | 'rusty-tankard' | 'armory', itemId: string) => { success: boolean; message: string } | void;
   attendDegreeSession: (playerId: string, degreeId: import('@/types/game.types').DegreeId, mode: 'standard' | 'cram') => { success: boolean; message: string } | void;
   graduateDegree: (playerId: string, degreeId: import('@/types/game.types').DegreeId) => { success: boolean; message: string } | void;
   modifyGold: (playerId: string, amount: number) => void;
   modifyHealth: (playerId: string, amount: number) => void;
-  modifyFood: (playerId: string, amount: number) => void;
   modifyHappiness: (playerId: string, amount: number) => void;
-  modifyClothing: (playerId: string, amount: number) => void;
   modifyRelaxation: (playerId: string, amount: number) => void;
   spendTime: (playerId: string, hours: number) => void;
   acceptJobOffer: (playerId: string, jobId: string) => { success: boolean; message: string } | void;
@@ -110,12 +109,8 @@ export interface StoreActions {
   applyRareDrop: (playerId: string, dropId: string) => void;
   manageLoan: (playerId: string, service: 'borrow' | 'repay', amount: number | 'all') => { success: boolean; message: string } | void;
   tradeStock: (playerId: string, side: 'buy' | 'sell', stockId: string, shares: number) => { success: boolean; message: string } | void;
-  buyFreshFood: (playerId: string, units: number, cost: number) => boolean;
-  buyFoodWithSpoilage: (playerId: string, foodValue: number, cost: number) => boolean;
-  buyTicket: (playerId: string, ticketType: string, cost: number) => void;
   sellInventoryItem: (playerId: string, itemId: string) => { success: boolean; message: string } | void;
   pawnAppliance: (playerId: string, applianceId: string, pawnValue: number) => void;
-  buyLotteryTicket: (playerId: string, cost: number) => void;
   temperEquipment: (playerId: string, itemId: string, slot: string, cost: number) => void;
   forgeRepairEquipment: (playerId: string, itemId: string, cost: number) => void;
   applyDurabilityLoss: (playerId: string, durabilityLoss: import('@/data/combatResolver').EquipmentDurabilityLoss) => void;

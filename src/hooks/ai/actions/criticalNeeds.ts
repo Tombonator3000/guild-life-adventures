@@ -29,21 +29,21 @@ function generateFoodActions(ctx: ActionContext): AIAction[] {
         type: 'buy-food',
         priority: 52,
         description: 'Stock up on food while at tavern (proactive)',
-        details: { cost: Math.round(12 * pm), foodGain: 15 },
+        details: { vendor: 'rusty-tankard', itemId: 'stew', cost: Math.round(12 * pm), foodGain: 15 },
       });
     } else if (currentLocation === 'general-store' && hasBox) {
       actions.push({
         type: 'buy-food',
         priority: 50,
         description: 'Stock up on food while at store (proactive)',
-        details: { cost: Math.round(15 * pm), foodGain: 15 },
+        details: { vendor: 'general-store', itemId: 'cheese', cost: Math.round(15 * pm), foodGain: 15 },
       });
     } else if (currentLocation === 'shadow-market') {
       actions.push({
         type: 'buy-food',
         priority: 48,
         description: 'Grab cheap food while at market (proactive)',
-        details: { cost: Math.round(6 * pm), foodGain: 10 },
+        details: { vendor: 'shadow-market', itemId: 'mystery-meat', cost: Math.round(6 * pm), foodGain: 10 },
       });
     }
   }
@@ -188,7 +188,7 @@ function generateClothingActions(ctx: ActionContext): AIAction[] {
   const pm = ctx.priceModifier;
 
   // HARD AI: Proactive clothing when at a clothing store
-  if (ctx.settings.planningDepth >= 3 && (currentLocation === 'armory' || currentLocation === 'general-store')) {
+  if (ctx.settings.planningDepth >= 3 && currentLocation === 'armory') {
     const condition = player.clothingCondition;
     const degradeBuffer = CLOTHING_DEGRADATION_PER_WEEK * 2; // 2 weeks of degradation
     if (condition > 0 && condition < 40 + degradeBuffer && condition >= 15 && player.gold >= Math.round(60 * pm)) {
@@ -246,7 +246,7 @@ function generateClothingActions(ctx: ActionContext): AIAction[] {
   const clothingPriority = isNaked ? 95 : 75;
 
   if (needsClothing && player.gold >= clothingCost) {
-    if (currentLocation === 'armory' || currentLocation === 'general-store') {
+    if (currentLocation === 'armory') {
       actions.push({
         type: 'buy-clothing',
         priority: clothingPriority,
@@ -254,11 +254,11 @@ function generateClothingActions(ctx: ActionContext): AIAction[] {
         details: { cost: clothingCost, clothingGain: targetCondition },
       });
     } else {
-      const movementCost = Math.min(moveCost('armory'), moveCost('general-store'));
+      const movementCost = moveCost('armory');
       if (player.timeRemaining > movementCost + 2) {
         actions.push({
           type: 'move',
-          location: moveCost('armory') < moveCost('general-store') ? 'armory' : 'general-store',
+          location: 'armory',
           priority: isNaked ? 90 : 70,
           description: isNaked ? 'Travel urgently to buy clothing' : `Travel to buy ${tierDesc} clothing`,
         });

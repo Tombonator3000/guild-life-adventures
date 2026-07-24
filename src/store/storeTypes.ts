@@ -57,6 +57,7 @@ export interface GameStore extends GameState {
   acceptMarketRaise: (playerId: string) => ActionResult | void;
   performHomeActivity: (playerId: string, activity: 'relax' | 'sleep') => ActionResult | void;
   purchaseTavernItem: (playerId: string, itemId: string) => ActionResult | void;
+  purchaseAIResourceItem: (playerId: string, vendor: 'general-store' | 'shadow-market' | 'rusty-tankard' | 'armory', itemId: string) => ActionResult | void;
   performCaveRest: (playerId: string) => DungeonActionResult | void;
   beginDungeonRun: (playerId: string, floorId: number) => DungeonActionResult | void;
   resolveDungeonEncounter: (playerId: string) => DungeonActionResult | void;
