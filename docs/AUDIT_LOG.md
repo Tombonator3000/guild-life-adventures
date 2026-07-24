@@ -7,11 +7,11 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 | Nr. | Punkt | Status | Merknad |
 |---:|---|---|---|
 | 1 | Beskytte online spill mot sabotasje/misbruk | Ferdig hovedsakelig | Sabotasje, beskyttelse og tip-off er host-autoritative. |
-| 2 | Host-autoritativ multiplayer | Delvis ferdig, protokoll låst | Aktør-ID, tur, allowlist, argumentform og semantiske host-avslag valideres. Reise, jobb, hjem, healer, Tavern og interaktiv dungeon bruker host-eide handlinger/state-maskiner. Rå stat-/tidshandlinger gjenstår. |
+| 2 | Host-autoritativ multiplayer | Ferdig for menneske-UI og gjesteprotokoll | Aktør-ID, tur, allowlist, argumentform og host-avslag valideres. Rå `spendTime`/`modify*` er fjernet fra gjesteprotokollen; menneske-UI bruker semantiske host-handlinger. |
 | 3 | Full save/load-gjenoppretting | Ferdig | Brett-hexer og ukentlige nyheter gjenopprettes. |
 | 4 | Save-migrering v10 | Ferdig | Normalisering og migreringstester er lagt til. |
 | 5 | Sikre reputation unlocks | Ferdig | Kjøp valideres atomisk på hosten. |
-| 6 | Atomiske handlinger | Delvis ferdig | Reise, hjem/hvile, healer, Tavern, interaktiv dungeon, gravplass, gambling, avis, sabotasje, beskyttelse, jobbtilbud, markedslønn, arbeid, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig, hex-/ritualtjenester og finans er host-resolverte. |
+| 6 | Atomiske handlinger | Ferdig for menneske-UI | Reise, hjem/hvile, Cave-rest, healer, Tavern, dungeon, gravplass, gambling, avis, jobb, utdanning, vendor-/inventory-/equipment-/appliance-/housing-/hex-/finance-flyter er host-resolverte. Interne AI-/developer-kompatibilitetslag gjenstår. |
 | 7 | Hook-avhengigheter | Ferdig for kjente funn | AI-start, auto-end-turn, tastatur og zone-editor er rettet. |
 | 8 | Playwright E2E | Ferdig grunnflyt | Tittel, setup og en faktisk spillflyt med bankhandling, save/load og ukeovergang er dekket. Protokollavvisninger er dekket med enhetstester mot host-kjeden. |
 | 9 | Zustand-selectors | Delvis ferdig | Root, GameBoard og Grimwald AI bruker selectors/useShallow. Flere paneler er begrenset, men `LocationPanel` leser fortsatt hele store-objektet. |
@@ -23,10 +23,10 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 
 ## Gjenstående prioritert rekkefølge
 
-1. **Migrer resterende rå gjestehandlinger.** Prioriter øvrige LocationPanel-/quest-/serviceflyter som fortsatt bruker `modify*`/`spendTime`, deretter interne AI-reservebaner. Interaktiv dungeon, Tavern, healer, hjem/hvile, jobb og reise er ferdig migrert.
+1. **Samle interne AI-reservebaner.** Flytt resterende AI-kall fra rå `modify*`/`spendTime` til de samme semantiske servicehandlingene som menneske-UI bruker. Dette er nå kodekonsolidering, ikke en gjesteangrepsflate.
 2. **Begrens resterende store-abonnementer.** Start med `LocationPanel`, som fortsatt leser hele Zustand-storen.
 3. **Del opp GameBoard videre.** Flytt avledet tilstand og overlay-/layoutlogikk til mindre hooks/komponenter uten å endre funksjon.
-4. **Rydd døde kompatibilitetslag.** Fjern gamle callback-props og numeriske legacy-funksjoner når alle lokale og AI-kallere er migrert.
+4. **Rydd døde kompatibilitetslag.** Fjern rå numeriske legacy-funksjoner når AI- og Developer-kallere er migrert eller eksplisitt isolert.
 
 ## Fase 4 – 23. juli 2026
 
@@ -640,4 +640,48 @@ GitHub Actions-run `30074836980`:
 - En online-gjest kan ikke lenger generere sitt eget dungeon-resultat eller sende ønsket tid, skade, loot, durability eller drops.
 - Interaktiv dungeon er en host-eid, synkronisert state-maskin med canonical settlement.
 - Neste sikkerhetsarbeid er å migrere de gjenværende generelle `modify*`/`spendTime`-flytene og deretter samle interne AI-reservebaner.
-- PR #341 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
+- PR #341 ble squash-merget til `main` som commit `5b19ae43a58bd308744535a9e201ed6f39b39171`.
+
+## Fase 13G – 24. juli 2026
+
+### Mål
+
+- Fjerne hele den rå `spendTime`/`modify*`-gruppen fra online-gjestenes protokoll.
+- Migrere de siste menneskestyrte UI-kallerne til semantiske host-handlinger uten å endre eksisterende spillbalanse.
+
+### Utført
+
+- Opprettet arbeidsgren `agent/audit-phase13g-remaining-raw` og draft-PR #342 fra fase 13F-merge `5b19ae43a58bd308744535a9e201ed6f39b39171`.
+- Den første maskinelle skanningen ga feilaktig null funn fordi runneren manglet `rg` og kommandoen var beskyttet av `|| true`. Skanneren ble omskrevet i ren Python og kjørt på nytt før noen konklusjon ble trukket.
+- Den korrigerte skanningen fant tre gjenværende menneske-UI-domener: Cave-rest, avis ved General Store/Shadow Market og døde Graveyard-callbacker.
+- Oppdaget samtidig en skjult kodefeil etter dungeon-migreringen: CavePanels Rest-knapp refererte til frie `spendTime`, `modifyHealth` og `modifyHappiness`-navn som ikke lenger var props. Bundleren aksepterte dem som globale identifikatorer, men knappen ville feilet ved bruk.
+- Lagt til `performCaveRest(playerId)`. Hosten validerer Cave-lokasjon, ingen aktiv dungeon-session, minst åtte timer og manglende helse, og anvender canonical åtte timer, inntil 15 healing og +1 happiness atomisk.
+- Begge avis-knappene bruker nå eksisterende `purchaseNewspaper(playerId, vendor)`, slik at hosten beregner pris, lokasjon og eierskap. Klienten genererer bare visningsinnholdet etter vellykket kjøp.
+- Fjernet døde `onPray`, `onMourn` og `onBlessMaxHealth`-props fra GraveyardPanel/LocationTabs. Panelet brukte allerede canonical `useGraveyardService` direkte.
+- Fjernet `spendTime`, `modifyGold`, `modifyHealth`, `modifyHappiness`, `modifyFood`, `modifyClothing`, `modifyMaxHealth` og `modifyRelaxation` fra `ALLOWED_GUEST_ACTIONS`.
+- Fjernet de foreldede numeriske `STAT_MODIFIER_RULES` og rå `spendTime`-valideringen. Direkte rå kall avvises nå ved allowlist-porten som `Action not allowed`.
+- Oppdaterte protokoll- og multiplayer-testene slik at den nye invarianten er eksplisitt: rå tid-/statshandlinger er aldri gjestetillatt.
+- Lagt til fem Cave-rest-/protokolltester for canonical effekter, health cap, avviste tilstander, aktiv dungeon-session og blokkering av samtlige rå handlinger.
+- Sluttskanningen bekrefter at ingen vanlig menneske-UI-kode bruker rå `modify*`/`spendTime`. Gjenværende kall finnes bare i DeveloperTab og interne AI-handlerbaner, som ikke er gjestetillatt.
+- En gammel multiplayer-test krevde fortsatt at rå statshandlinger skulle stå i whitelisten. Diagnosen viste én feil og 489 beståtte tester; testen ble erstattet med den motsatte sikkerhetsinvarianten uten å redusere øvrig testdekning.
+- Fjernet alle midlertidige skanne-, diagnose-, workflow-, trigger-, resultat- og patchfiler før merge.
+
+### Tester
+
+GitHub Actions-run `30076482644`:
+
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Full Vitest-pakke, inkludert fem nye Cave-rest-/protokolltester: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright-runner og Chromium-installasjon: bestått.
+- Title/setup-smoke og deterministisk komplett lokal spillflyt: bestått.
+
+### Resultat
+
+- Online-gjester har ikke lenger noen generell inngang for å sende egen tidsbruk, gullendring, skade, healing, mat, clothing, max-health, happiness eller relaxation.
+- Alle menneskestyrte handlinger som påvirker disse verdiene går gjennom navngitte host-services med canonical regler.
+- Den gjenværende rå koden er isolert til lokale Developer-verktøy og interne AI-reservebaner.
+- Neste fase er å samle AI-reservebanene på de samme semantiske servicehandlingene og deretter begrense `LocationPanel` sitt Zustand-abonnement.
+- PR #342 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
