@@ -1,0 +1,62 @@
+name: Fix phase 13G raw action expectation
+
+on:
+  push:
+    branches:
+      - agent/audit-phase13g-remaining-raw
+    paths:
+      - phase13g-fix-test-trigger.txt
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase13g-remaining-raw
+          fetch-depth: 1
+      - name: Replace stale whitelist expectation
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/test/multiplayer.test.ts')
+          text = path.read_text(encoding='utf-8')
+          old = '''  it('raw stat modifiers are in the whitelist (required by UI components)', () => {
+    // These raw modifiers must be in the whitelist because UI components
+    // call them directly (e.g., LocationPanel, CavePanel, HomePanel).
+    // The network layer adds server-side bounds checking (validateActionArgs)
+    // to prevent abuse.
+    const rawModifiers = [
+      'modifyGold', 'modifyHealth', 'modifyHappiness',
+      'modifyFood', 'modifyClothing', 'modifyMaxHealth', 'modifyRelaxation',
+    ];
+    for (const action of rawModifiers) {
+      expect(ALLOWED_GUEST_ACTIONS.has(action)).toBe(true);
+    }
+  });'''
+          new = '''  it('raw time and stat mutations are blocked from online guests', () => {
+    // Human UI flows now use semantic host-authoritative actions. These low-level
+    // mutations remain available only to local/host internals such as AI and dev tools.
+    const rawActions = [
+      'spendTime', 'modifyGold', 'modifyHealth', 'modifyHappiness',
+      'modifyFood', 'modifyClothing', 'modifyMaxHealth', 'modifyRelaxation',
+    ];
+    for (const action of rawActions) {
+      expect(ALLOWED_GUEST_ACTIONS.has(action)).toBe(false);
+    }
+  });'''
+          if old not in text:
+              raise SystemExit('Stale raw-action test block not found')
+          path.write_text(text.replace(old, new), encoding='utf-8')
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/test/multiplayer.test.ts
+          git commit -m "Assert raw guest mutations are blocked"
+          git push origin HEAD:agent/audit-phase13g-remaining-raw
