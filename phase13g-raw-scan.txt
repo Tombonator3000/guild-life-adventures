@@ -1,0 +1,111 @@
+# Remaining raw action callers after phase 13F
+
+## spendTime
+
+## modifyGold
+
+## modifyHealth
+
+## modifyHappiness
+
+## modifyFood
+
+## modifyClothing
+
+## modifyMaxHealth
+
+## modifyRelaxation
+
+# Remaining raw actions in guest allowlist
+export const ALLOWED_GUEST_ACTIONS = new Set([
+  'travelPlayer',
+  'spendTime',
+  'endTurn',
+  'performHomeActivity',
+
+  // Legacy raw mutations still used by older UI flows. Keep bounded by
+  // STAT_MODIFIER_RULES until each remaining caller is migrated.
+  'modifyGold',
+  'modifyHealth',
+  'modifyHappiness',
+  'modifyFood',
+  'modifyClothing',
+  'modifyMaxHealth',
+  'modifyRelaxation',
+
+  // Housing intent only. Host resolves office access, canonical price and time.
+  'payHousingRent',
+  'moveHousingAtLandlord',
+  'requestRentExtensionAtLandlord',
+
+  'requestRaise',
+  'acceptJobOffer',
+  'acceptMarketRaise',
+
+  // Semantic employment/education actions. Host resolves wage, time,
+  // price, prerequisites, progress and graduation eligibility.
+  'performWorkShift',
+  'attendDegreeSession',
+  'prepayDegree',
+  'graduateDegree',
+
+  // Finance intent only. Host validates Bank location, balances, products and live prices.
+  'transferBankFunds',
+  'manageInvestment',
+  // Inventory sale intent only. Host resolves ownership, location and price.
+  'sellInventoryItem',
+  // Equipment intent only. Host resolves catalogue, price, durability and service values.
+  'purchaseEquipmentItem',
+  'useEquipmentService',
+  // Appliance intent only. Host resolves vendor, price, source and service cost.
+  'purchaseAppliance',
+  'useApplianceService',
+  'equipItem',
+  'unequipItem',
+
+
+  'tradeStock',
+  'manageLoan',
+
+  // Vendor intent only. Host resolves catalogue, price, discount and effect.
+  'purchaseVendorItem',
+  'purchaseTavernItem',
+
+  // Interactive dungeon intent only. Host owns encounters, time, damage and settlement.
+  'beginDungeonRun',
+  'resolveDungeonEncounter',
+  'advanceDungeonRun',
+  'finalizeDungeonRun',
+
+  'buyGuildPass',
+  'takeQuest',
+  'takeChainQuest',
+  'takeNonLinearChain',
+  'completeNonLinearChainStep',
+  'makeNLChainChoice',
+  'takeBounty',
+  'completeQuest',
+  'completeLocationObjective',
+  'completeBounty',
+  'completeChainQuest',
+  'abandonQuest',
+
+  // Hex intent only. Host resolves stock, price, target location and service effects.
+  'purchaseHexScroll',
+  'useHexDefense',
+  'useGraveyardHexService',
+  // Casting already validates scroll ownership, target, location, time and cooldown on the host.
+  'castLocationHex',
+  'castPersonalCurse',
+
+  'sabotagePlayer',
+  'buyProtection',
+  'buyTipOff',
+  'purchaseReputationUnlock',
+
+  // Canonical, atomic services. The host looks up price, time and effect.
+  'useHealerService',
+  'useGraveyardService',
+  'gambleAtFence',
+  'purchaseNewspaper',
+]);
