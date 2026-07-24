@@ -1,57 +1,66 @@
 /**
  * AI Action Handlers — Equipment, Items & Appliances
  *
- * Handles: buy-appliance, buy-equipment, temper-equipment, repair-equipment,
- *          sell-item, pawn-appliance, repair-appliance
+ * Decision generators may estimate costs for prioritisation, but execution sends
+ * only semantic intent. Canonical store services resolve vendor, price, time,
+ * durability, salvage/pawn value and item effects.
  */
 
-import type { Player, EquipmentSlot } from '@/types/game.types';
-import { useGameStore } from '@/store/gameStore';
+import type { Player } from '@/types/game.types';
+import { getItem } from '@/data/items';
 
 import type { AIAction } from '../types';
 import type { StoreActions } from '../actionExecutor';
 
 export function handleBuyAppliance(player: Player, action: AIAction, store: StoreActions): boolean {
   const applianceId = action.details?.applianceId as string;
-  const cost = (action.details?.cost as number) || 300;
-  if (!applianceId || player.gold < cost) return false;
-  const source = (action.details?.source as string) || 'enchanter';
-  store.buyAppliance(player.id, applianceId, cost, source);
-  store.spendTime(player.id, 1);
+  if (!applianceId || player.timeRemaining < 1) return false;
+
+  const vendor = player.currentLocation === 'enchanter'
+    ? 'enchanter'
+    : player.currentLocation === 'shadow-market'
+      ? 'shadow-market'
+      : player.currentLocation === 'fence'
+        ? 'fence'
+        : null;
+  if (!vendor) return false;
+
+  const result = store.purchaseAppliance(player.id, vendor, applianceId);
+  if (!result?.success) return false;
+
+  // Fence purchases already include their canonical one-hour service time.
+  // Preserve the historical AI shopping hour for Enchanter/Shadow Market buys.
+  if (vendor !== 'fence') store.spendTime(player.id, 1);
   return true;
 }
 
 export function handleBuyEquipment(player: Player, action: AIAction, store: StoreActions): boolean {
   const itemId = action.details?.itemId as string;
-  const cost = (action.details?.cost as number) || 0;
-  const slot = (action.details?.slot as string) || 'weapon';
-  if (!itemId || player.gold < cost) return false;
-  store.buyDurable(player.id, itemId, cost);
-  store.equipItem(player.id, itemId, slot as EquipmentSlot);
+  if (!itemId || player.timeRemaining < 1 || player.currentLocation !== 'armory') return false;
+
+  const item = getItem(itemId);
+  if (!item) return false;
+
+  const result = store.purchaseEquipmentItem(player.id, 'armory', itemId, 'primary');
+  if (!result?.success) return false;
+
+  if (item.equipSlot) store.equipItem(player.id, itemId, item.equipSlot);
   store.spendTime(player.id, 1);
   return true;
 }
 
 export function handleTemperEquipment(player: Player, action: AIAction, store: StoreActions): boolean {
   const itemId = action.details?.itemId as string;
-  const cost = (action.details?.cost as number) || 0;
-  const slot = (action.details?.slot as string) || 'weapon';
-  if (!itemId || player.gold < cost) return false;
-  if (player.temperedItems.includes(itemId)) return false;
-  store.temperEquipment(player.id, itemId, slot as EquipmentSlot, cost);
-  const temperTime = slot === 'shield' ? 2 : 3;
-  store.spendTime(player.id, temperTime);
-  store.modifyHappiness(player.id, 2);
-  return true;
+  if (!itemId || player.currentLocation !== 'forge') return false;
+  const result = store.useEquipmentService(player.id, 'temper', itemId);
+  return result?.success ?? false;
 }
 
 export function handleRepairEquipment(player: Player, action: AIAction, store: StoreActions): boolean {
   const itemId = action.details?.itemId as string;
-  const cost = (action.details?.cost as number) || 0;
-  if (!itemId || player.gold < cost) return false;
-  store.forgeRepairEquipment(player.id, itemId, cost);
-  store.spendTime(player.id, 2); // EQUIPMENT_REPAIR_TIME
-  return true;
+  if (!itemId || player.currentLocation !== 'forge') return false;
+  const result = store.useEquipmentService(player.id, 'repair', itemId);
+  return result?.success ?? false;
 }
 
 export function handleSellItem(player: Player, action: AIAction, store: StoreActions): boolean {
@@ -63,29 +72,24 @@ export function handleSellItem(player: Player, action: AIAction, store: StoreAct
 
 export function handlePawnAppliance(player: Player, action: AIAction, store: StoreActions): boolean {
   const applianceId = action.details?.applianceId as string;
-  const pawnValue = (action.details?.pawnValue as number) || 50;
-  if (!applianceId || !player.appliances[applianceId]) return false;
-  store.pawnAppliance(player.id, applianceId, pawnValue);
-  store.spendTime(player.id, 1);
-  return true;
+  if (!applianceId || player.currentLocation !== 'fence') return false;
+  const result = store.useApplianceService(player.id, 'pawn', applianceId);
+  return result?.success ?? false;
 }
 
 export function handleRepairAppliance(player: Player, action: AIAction, store: StoreActions): boolean {
   const applianceId = action.details?.applianceId as string;
-  const location = action.details?.location as string;
   if (!applianceId) return false;
-  const appliance = player.appliances[applianceId];
-  if (!appliance || !appliance.isBroken) return false;
-  let cost = 0;
-  if (location === 'forge') {
-    cost = store.forgeRepairAppliance(player.id, applianceId);
-  } else {
-    cost = store.repairAppliance(player.id, applianceId);
-  }
-  if (cost === 0) return false; // Repair failed (insufficient gold or not broken)
-  // Correct time cost: Forge = 3h, Enchanter = 2h (matches human UI)
-  store.spendTime(player.id, location === 'forge' ? 3 : 2);
-  return true;
+
+  const service = player.currentLocation === 'forge'
+    ? 'repair-forge'
+    : player.currentLocation === 'enchanter'
+      ? 'repair-enchanter'
+      : null;
+  if (!service) return false;
+
+  const result = store.useApplianceService(player.id, service, applianceId);
+  return result?.success ?? false;
 }
 
 /** Buy a protective amulet from the Enchanter. */
