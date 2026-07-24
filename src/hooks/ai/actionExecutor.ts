@@ -128,7 +128,6 @@ export interface StoreActions {
   // Appliance repair
   repairAppliance: (playerId: string, applianceId: string) => number;
   forgeRepairAppliance: (playerId: string, applianceId: string) => number;
-  // Salary
   // Reputation (host-authoritative, atomic)
   purchaseReputationUnlock: (playerId: string, unlockId: string) => { success: boolean; message: string } | void;
   // Fence services (host-authoritative, atomic)

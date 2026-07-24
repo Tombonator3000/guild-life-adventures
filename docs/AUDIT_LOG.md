@@ -23,7 +23,7 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 
 ## Gjenstående prioritert rekkefølge
 
-1. **Samle interne AI-reservebaner.** Flytt resterende AI-kall fra rå `modify*`/`spendTime` til de samme semantiske servicehandlingene som menneske-UI bruker. Dette er nå kodekonsolidering, ikke en gjesteangrepsflate.
+1. **Fortsett AI-konsolideringen.** Ressurs-, utstyrs-, appliance- og dungeon-auto-resolve-handlerne bruker fortsatt enkelte rå/legacy-funksjoner. Rest, healer, sykdom, arbeid, lønnsforsøk og utdanning er ferdig migrert.
 2. **Begrens resterende store-abonnementer.** Start med `LocationPanel`, som fortsatt leser hele Zustand-storen.
 3. **Del opp GameBoard videre.** Flytt avledet tilstand og overlay-/layoutlogikk til mindre hooks/komponenter uten å endre funksjon.
 4. **Rydd døde kompatibilitetslag.** Fjern rå numeriske legacy-funksjoner når AI- og Developer-kallere er migrert eller eksplisitt isolert.
@@ -684,4 +684,49 @@ GitHub Actions-run `30076482644`:
 - Alle menneskestyrte handlinger som påvirker disse verdiene går gjennom navngitte host-services med canonical regler.
 - Den gjenværende rå koden er isolert til lokale Developer-verktøy og interne AI-reservebaner.
 - Neste fase er å samle AI-reservebanene på de samme semantiske servicehandlingene og deretter begrense `LocationPanel` sitt Zustand-abonnement.
-- PR #342 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
+- PR #342 ble squash-merget til `main` som commit `817eee595ced0cec11c612fedf238d20c5083158`.
+
+## Fase 14A – 24. juli 2026
+
+### Mål
+
+- Samle AI-ens kjernehandlinger på de samme canonical servicehandlingene som menneske-UI bruker.
+- Beholde AI-ens beslutningslogikk og prioriteringer, men fjerne duplisert pris-, tids-, lønns- og effektlogikk fra utførelseslaget.
+
+### Utført
+
+- Opprettet arbeidsgren `agent/audit-phase14a-ai-services` og draft-PR #343 fra fase 13G-merge `817eee595ced0cec11c612fedf238d20c5083158`.
+- Kjørte en Python-basert kallerskanning for `rest`, `heal`, `cure-sickness`, `work`, `study`, `graduate` og `request-raise`, inkludert generatorer, handlers, UI, store og tester.
+- Migrerte AI-rest til `performHomeActivity(playerId, 'relax')`. AI-sendt `hours`, `happinessGain` og `relaxGain` påvirker ikke lenger state.
+- Migrerte healing og sykdomskur til `useHealerService(playerId, 'minor' | 'cure')`.
+- Justerte helse-generatorens forhåndskontroll fra hardkodet 30g til canonical Minor Healing-pris `round(25 * priceModifier)`.
+- Dette fjerner en gammel AI-spesialregel på 30g/2t. AI bruker nå samme Minor Healing som spilleren: 25g før economy-modifier, én time og 25 HP.
+- Migrerte arbeid til `performWorkShift(playerId, 'full')`, slik at host-staten bestemmer jobb, lokasjon, skiftlengde og gjeldende lønn selv om AI-details manipuleres.
+- Migrerte studier til `attendDegreeSession(playerId, degreeId, 'standard')`, slik at Academy-lokasjon, pris, timer, prerequisites, prepaid tuition og progresjon løses canonical.
+- Migrerte graduation til `graduateDegree(playerId, degreeId)`.
+- Lønnskartleggingen fant at den eksisterende `requestRaise` også brukes i menneske-UI uten tidskostnad, mens AI historisk betalte én time. For å bevare denne balanseforskjellen ble `attemptWorkplaceRaise(playerId)` lagt til som intern semantisk AI-wrapper.
+- `attemptWorkplaceRaise` validerer faktisk arbeidssted og minst én time, kjører eksisterende raise-regler og trekker én time etter et gyldig forsøk, også ved avslag. Feil arbeidssted eller manglende tid koster ingenting.
+- Fjernet `workShift`, `studyDegree`, `completeDegree`, `cureSickness` og `requestRaise` fra AI-ens `StoreActions`/Zustand-selector og erstattet dem med de canonical referansene.
+- AI-generatorenes handlingstyper, prioriteter, ruteforslag og failed-action-logikk ble ikke endret.
+- Lagt til åtte integrasjonstester mot den virkelige storen. Testene sender bevisst falske `cost`, `hours`, `wage`, `healAmount`, `happinessGain` og `relaxGain` og bekrefter at hostens katalog/state vinner.
+- Ressurs-, utstyrs-, appliance- og dungeon-auto-resolve-handlerne ble bevisst holdt utenfor denne delfasen fordi de krever egne katalog- og kampvalg.
+- Fjernet alle midlertidige skanne-, workflow-, trigger- og patchfiler før merge.
+
+### Tester
+
+GitHub Actions-run `30077964760`:
+
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Full Vitest-pakke, inkludert åtte nye AI-serviceintegrasjonstester: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright-runner og Chromium-installasjon: bestått.
+- Title/setup-smoke og deterministisk komplett lokal spillflyt: bestått.
+
+### Resultat
+
+- AI kan ikke lenger bruke egne numeriske effektdata for rest, healer, sykdom, arbeid eller utdanning.
+- Kjernehandlingene følger samme canonical regler som menneskespillere, og AI-ens eksisterende lønnsforsøk beholder sin tidligere tidskostnad.
+- Neste AI-delfase er ressurs- og katalogkjøp, deretter equipment/appliance og dungeon auto-resolve.
+- PR #343 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
