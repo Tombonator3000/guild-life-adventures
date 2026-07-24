@@ -1,4 +1,4 @@
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ElementType } from 'react';
 import { CurseAppliancePanel } from './CurseAppliancePanel';
 import { CursePanelOverlay } from './CursePanelOverlay';
 import { CurseToadPanel } from './CurseToadPanel';
@@ -9,7 +9,7 @@ import { ShadowfingersModal } from './ShadowfingersModal';
 import { SpectatorPanel } from './SpectatorPanel';
 
 type CenterPanel = { top: number; left: number; width: number; height: number };
-type OptionalProps<T extends (...args: never[]) => unknown> = ComponentProps<T> | null;
+type OptionalProps<T extends ElementType> = ComponentProps<T> | null;
 
 interface GameBoardCenterPanelProps {
   isMobile: boolean;
