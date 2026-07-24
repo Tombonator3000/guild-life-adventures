@@ -1,1 +1,1 @@
-apply AI resource catalogue migration
+finalize AI resource catalogue migration
