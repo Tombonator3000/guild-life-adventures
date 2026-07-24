@@ -14,6 +14,7 @@ import { usePlayerAnimation } from '@/hooks/usePlayerAnimation';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useGameBoardKeyboard } from '@/hooks/useGameBoardKeyboard';
 import { useLocationClick } from '@/hooks/useLocationClick';
+import { useGameBoardEventQueue } from '@/hooks/useGameBoardEventQueue';
 import { useKeyboardLocationNav } from '@/hooks/useKeyboardLocationNav';
 import { useGameOptions } from '@/hooks/useGameOptions';
 import { registerAIAnimateCallback } from '@/hooks/useAIAnimationBridge';
@@ -210,43 +211,17 @@ export function GameBoard() {
     getCurrentIntermediateLocation,
     getAccumulatedSteps,
   });
+  const { queuedEvent, handleEventDismiss } = useGameBoardEventQueue({
+    currentEvent,
+    eventSource,
+    dismissEvent,
+  });
 
   const { options: gameOptions } = useGameOptions();
   const { focusedLocationId } = useKeyboardLocationNav({
     enabled: gameOptions.enableKeyboardNav && !aiIsThinking && phase === 'playing' && isLocalPlayerTurn,
     onLocationClick: handleLocationClick,
   });
-
-  const [eventQueueIdx, setEventQueueIdx] = useState(0);
-
-  useEffect(() => {
-    setEventQueueIdx(0);
-  }, [currentEvent?.id]);
-
-  const isWeekendEvent = eventSource === 'weekend';
-  const eventLines = (!isWeekendEvent && currentEvent?.description.split('\n').filter(Boolean)) || [];
-  const totalEventCount = isWeekendEvent ? 1 : eventLines.length;
-  const currentEventLine = isWeekendEvent
-    ? (currentEvent?.description ?? '')
-    : (eventLines[eventQueueIdx] ?? eventLines[0] ?? '');
-  const queuedEvent: typeof currentEvent = currentEvent
-    ? {
-        ...currentEvent,
-        title: totalEventCount > 1
-          ? `${currentEvent.title} (${eventQueueIdx + 1}/${totalEventCount})`
-          : currentEvent.title,
-        description: currentEventLine,
-      }
-    : null;
-
-  const handleEventDismiss = () => {
-    if (!isWeekendEvent && eventQueueIdx < totalEventCount - 1) {
-      setEventQueueIdx(index => index + 1);
-    } else {
-      setEventQueueIdx(0);
-      dismissEvent();
-    }
-  };
 
   const shadowfingersTargetLocation = shadowfingersEvent && currentPlayer
     ? shadowfingersEvent.type === 'street' && 'fromLocation' in shadowfingersEvent.result

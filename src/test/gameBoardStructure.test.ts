@@ -8,6 +8,7 @@ const auxiliarySource = readSource('src/components/game/GameBoardAuxiliaryLayer.
 const canvasSource = readSource('src/components/game/GameBoardCanvas.tsx');
 const centerSource = readSource('src/components/game/GameBoardCenterPanel.tsx');
 const sidePanelsSource = readSource('src/components/game/GameBoardSidePanels.tsx');
+const eventQueueSource = readSource('src/hooks/useGameBoardEventQueue.ts');
 
 const extractedComponents = [
   'ZoneEditor',
@@ -148,11 +149,23 @@ describe('GameBoard component boundaries', () => {
     expect(gameBoardSource).toContain('initialLayout: layout');
   });
 
+  it('delegates queued event coordination to useGameBoardEventQueue', () => {
+    expect(gameBoardSource).toContain("import { useGameBoardEventQueue } from '@/hooks/useGameBoardEventQueue';");
+    expect(gameBoardSource).toContain('const { queuedEvent, handleEventDismiss } = useGameBoardEventQueue({');
+    expect(gameBoardSource).not.toContain('const [eventQueueIdx');
+    expect(gameBoardSource).not.toContain('const eventLines =');
+    expect(gameBoardSource).not.toContain('const totalEventCount =');
+    expect(eventQueueSource).toContain("const isWeekendEvent = eventSource === 'weekend';");
+    expect(eventQueueSource).toContain('setEventQueueIdx(index => index + 1);');
+    expect(eventQueueSource).toContain('dismissEvent();');
+  });
+
   it('keeps extracted components within focused size limits', () => {
-    expect(gameBoardSource.split('\n').length).toBeLessThan(470);
+    expect(gameBoardSource.split('\n').length).toBeLessThan(450);
     expect(auxiliarySource.split('\n').length).toBeLessThan(80);
     expect(canvasSource.split('\n').length).toBeLessThan(210);
     expect(centerSource.split('\n').length).toBeLessThan(100);
     expect(sidePanelsSource.split('\n').length).toBeLessThan(100);
+    expect(eventQueueSource.split('\n').length).toBeLessThan(60);
   });
 });
