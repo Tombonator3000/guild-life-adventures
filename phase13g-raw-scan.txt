@@ -1,20 +1,86 @@
 # Remaining raw action callers after phase 13F
 
 ## spendTime
+src/components/game/CavePanel.tsx:806:spendTime(player.id, 8);
+src/components/game/locationTabs.tsx:738:spendTime(player.id, time);
+src/components/game/locationTabs.tsx:743:spendTime(player.id, time);
+src/components/game/locationTabs.tsx:748:spendTime(player.id, time);
+src/components/game/tabs/DeveloperTab.tsx:228:<button onClick={() => spendTime(playerId, -20)} className={SMALL_BTN}>+20 Hours</button>
+src/hooks/ai/actionExecutor.ts:169:store.spendTime(player.id, hours);
+src/hooks/ai/actionExecutor.ts:181:store.spendTime(player.id, 2);
+src/hooks/ai/actionExecutor.ts:189:store.spendTime(player.id, 2);
+src/hooks/ai/handlers/employmentEducationHandlers.ts:49:store.spendTime(player.id, 1);
+src/hooks/ai/handlers/equipmentHandlers.ts:20:store.spendTime(player.id, 1);
+src/hooks/ai/handlers/equipmentHandlers.ts:31:store.spendTime(player.id, 1);
+src/hooks/ai/handlers/equipmentHandlers.ts:43:store.spendTime(player.id, temperTime);
+src/hooks/ai/handlers/equipmentHandlers.ts:53:store.spendTime(player.id, 2); // EQUIPMENT_REPAIR_TIME
+src/hooks/ai/handlers/equipmentHandlers.ts:69:store.spendTime(player.id, 1);
+src/hooks/ai/handlers/equipmentHandlers.ts:87:store.spendTime(player.id, location === 'forge' ? 3 : 2);
+src/hooks/ai/handlers/questDungeonHandlers.ts:24:store.spendTime(player.id, 1);
+src/hooks/ai/handlers/questDungeonHandlers.ts:33:store.spendTime(player.id, 1);
+src/hooks/ai/handlers/questDungeonHandlers.ts:42:store.spendTime(player.id, 1);
+src/hooks/ai/handlers/questDungeonHandlers.ts:51:store.spendTime(player.id, 1);
+src/hooks/ai/handlers/questDungeonHandlers.ts:159:store.spendTime(player.id, timeCost);
+src/hooks/ai/handlers/resourceHandlers.ts:19:store.spendTime(player.id, 1);
+src/hooks/ai/handlers/resourceHandlers.ts:26:store.spendTime(player.id, 1);
+src/hooks/ai/handlers/resourceHandlers.ts:38:store.spendTime(player.id, 1);
+src/hooks/ai/handlers/resourceHandlers.ts:47:store.spendTime(player.id, 1);
+src/hooks/ai/handlers/resourceHandlers.ts:56:store.spendTime(player.id, 1);
+src/hooks/ai/handlers/resourceHandlers.ts:64:store.spendTime(player.id, 1);
 
 ## modifyGold
+src/components/game/LocationPanel.tsx:82:store.modifyGold(player.id, -price);
+src/components/game/locationTabs.tsx:597:modifyGold(player.id, -shadowNewspaperPrice);
+src/components/game/locationTabs.tsx:736:modifyGold(player.id, -cost);
+src/components/game/locationTabs.tsx:741:modifyGold(player.id, -cost);
+src/components/game/locationTabs.tsx:746:modifyGold(player.id, -cost);
+src/components/game/tabs/DeveloperTab.tsx:139:modifyGold(playerId, 10000);
+src/components/game/tabs/DeveloperTab.tsx:213:<button onClick={() => modifyGold(playerId, 500)} className={SMALL_BTN}>+500g</button>
+src/components/game/tabs/DeveloperTab.tsx:214:<button onClick={() => modifyGold(playerId, -500)} className={SMALL_BTN}>-500g</button>
+src/components/game/tabs/DeveloperTab.tsx:215:<button onClick={() => modifyGold(playerId, 5000)} className={SMALL_BTN}>+5000g</button>
+src/components/game/tabs/DeveloperTab.tsx:260:modifyGold(playerId, -50);
+src/components/game/tabs/DeveloperTab.tsx:282:modifyGold(playerId, -100);
+src/hooks/ai/actionExecutor.ts:179:store.modifyGold(player.id, -cost);
+src/hooks/ai/actionExecutor.ts:188:store.modifyGold(player.id, -cost);
+src/hooks/ai/handlers/questDungeonHandlers.ts:127:if (actualGold > 0) store.modifyGold(playerId, actualGold);
+src/hooks/ai/handlers/resourceHandlers.ts:24:store.modifyGold(player.id, -cost);
+src/hooks/ai/handlers/resourceHandlers.ts:36:store.modifyGold(player.id, -cost);
 
 ## modifyHealth
+src/components/game/CavePanel.tsx:811:modifyHealth(player.id, healAmount);
+src/components/game/tabs/DeveloperTab.tsx:218:<button onClick={() => modifyHealth(playerId, 50)} className={SMALL_BTN}>+50 HP</button>
+src/components/game/tabs/DeveloperTab.tsx:219:<button onClick={() => modifyHealth(playerId, -50)} className={SMALL_BTN}>-50 HP</button>
+src/components/game/tabs/DeveloperTab.tsx:220:<button onClick={() => modifyHealth(playerId, 100)} className={SMALL_BTN}>Full HP</button>
+src/components/game/tabs/DeveloperTab.tsx:279:modifyHealth(playerId, -30);
+src/hooks/ai/actionExecutor.ts:180:store.modifyHealth(player.id, healAmount);
+src/hooks/ai/handlers/questDungeonHandlers.ts:128:if (result.healthChange !== 0) store.modifyHealth(playerId, result.healthChange);
 
 ## modifyHappiness
+src/components/game/CavePanel.tsx:812:modifyHappiness(player.id, 1);
+src/components/game/locationTabs.tsx:737:modifyHappiness(player.id, happinessGain);
+src/components/game/tabs/DeveloperTab.tsx:140:modifyHappiness(playerId, 1000);
+src/components/game/tabs/DeveloperTab.tsx:223:<button onClick={() => modifyHappiness(playerId, 50)} className={SMALL_BTN}>+50 Hap</button>
+src/hooks/ai/actionExecutor.ts:170:store.modifyHappiness(player.id, happinessGain);
+src/hooks/ai/handlers/equipmentHandlers.ts:44:store.modifyHappiness(player.id, 2);
+src/hooks/ai/handlers/questDungeonHandlers.ts:132:store.modifyHappiness(playerId, floor.happinessOnClear);
+src/hooks/ai/handlers/questDungeonHandlers.ts:134:store.modifyHappiness(playerId, -2);
 
 ## modifyFood
+src/components/game/tabs/DeveloperTab.tsx:224:<button onClick={() => modifyFood(playerId, 50)} className={SMALL_BTN}>+50 Food</button>
+src/hooks/ai/handlers/resourceHandlers.ts:25:store.modifyFood(player.id, foodGain);
 
 ## modifyClothing
+src/components/game/tabs/DeveloperTab.tsx:225:<button onClick={() => modifyClothing(playerId, 50)} className={SMALL_BTN}>+50 Cloth</button>
+src/hooks/ai/handlers/resourceHandlers.ts:37:store.modifyClothing(player.id, clothingGain);
 
 ## modifyMaxHealth
+src/components/game/locationTabs.tsx:747:modifyMaxHealth(player.id, maxHealthGain);
+src/components/game/tabs/DeveloperTab.tsx:343:<button onClick={() => modifyMaxHealth(playerId, 20)} className={DEBUG_BTN}>
 
 ## modifyRelaxation
+src/components/game/locationTabs.tsx:742:modifyRelaxation(player.id, relaxationGain);
+src/components/game/tabs/DeveloperTab.tsx:229:<button onClick={() => modifyRelaxation(playerId, 20)} className={SMALL_BTN}>+20 Relax</button>
+src/hooks/ai/actionExecutor.ts:171:store.modifyRelaxation(player.id, relaxGain);
 
 # Remaining raw actions in guest allowlist
 export const ALLOWED_GUEST_ACTIONS = new Set([
