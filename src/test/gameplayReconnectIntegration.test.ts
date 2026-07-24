@@ -33,6 +33,15 @@ describe('gameplay reconnect integration', () => {
     expect(networkSyncSource).toContain('storeLocalReconnectCredential(msg);');
   });
 
+  it('registers the message listener before credential bootstrap is scheduled', () => {
+    const listenerIndex = networkSyncSource.indexOf('const unsubMessage = peerManager.onMessage');
+    const bootstrapIndex = networkSyncSource.indexOf('queueMicrotask(() => {');
+
+    expect(listenerIndex).toBeGreaterThanOrEqual(0);
+    expect(bootstrapIndex).toBeGreaterThan(listenerIndex);
+    expect(networkSyncSource).toContain('Bootstrap only after the listener above is registered');
+  });
+
   it('uses a stored token automatically after a page-refresh rejoin', () => {
     expect(networkSyncSource).toContain('const credential = getLocalReconnectCredential(roomCode);');
     expect(networkSyncSource).toContain('playerId: credential.playerId,');
