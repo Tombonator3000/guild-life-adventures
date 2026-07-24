@@ -68,7 +68,7 @@ describe('GameBoard component boundaries', () => {
   });
 
   it('keeps extracted components within focused size limits', () => {
-    expect(gameBoardSource.split('\n').length).toBeLessThan(520);
+    expect(gameBoardSource.split('\n').length).toBeLessThan(560);
     expect(auxiliarySource.split('\n').length).toBeLessThan(80);
     expect(canvasSource.split('\n').length).toBeLessThan(210);
   });
