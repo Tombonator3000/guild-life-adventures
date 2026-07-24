@@ -11,6 +11,7 @@ import { serializeGameState, applyNetworkState, executeAction } from './networkS
 import type { NetworkMessage, GuestMessage, HostMessage, ChatMessage, ConnectionStatus } from './types';
 import type { LocationId } from '@/types/game.types';
 import { processGuestActionRequest } from './actionValidation';
+import { handleGameplayReconnect } from './gameplayReconnect';
 
 /** Turn timeout: auto-end turn after this many seconds of inactivity (0 = disabled) */
 const TURN_TIMEOUT_SECONDS = 120;
@@ -245,7 +246,24 @@ export function useNetworkSync() {
     const unsubMessage = peerManager.onMessage((message: NetworkMessage, fromPeerId: string) => {
       if (networkMode === 'host') {
         const msg = message as GuestMessage;
-        if (msg.type === 'action') {
+        if (msg.type === 'reconnect') {
+          const reconnectResult = handleGameplayReconnect({
+            registry: peerManager,
+            fromPeerId,
+            claimedPlayerName: msg.playerName,
+            gameState: serializeGameState(),
+            disconnectedPeerIds: disconnectedPeersRef.current,
+          });
+
+          if (!reconnectResult.accepted) {
+            console.warn(`[NetworkSync] Reconnect rejected for unknown peer: ${fromPeerId}`);
+            return;
+          }
+
+          clearRateLimit(fromPeerId);
+          resetTurnTimeout();
+          console.log(`[NetworkSync] Gameplay peer reconnected: ${reconnectResult.playerName} (${reconnectResult.playerId})`);
+        } else if (msg.type === 'action') {
           // Validate: identify the sender and check if it's their turn
           const store = useGameStore.getState();
           const currentPlayer = store.players[store.currentPlayerIndex];
