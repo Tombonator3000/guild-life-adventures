@@ -27,15 +27,15 @@ Resultatet var at status først ble satt til `reconnecting` ved `disconnected`, 
 
 ## Tester
 
-Valideres i GitHub Actions med:
+GitHub Actions-run `30113057563`:
 
-- Dependency install.
-- TypeScript.
-- Full Vitest-pakke, inkludert de nye signaling-reconnect-testene.
-- Produksjonsbuild.
-- ESLint.
-- Playwright-runner og Chromium.
-- Title/setup-smoke og deterministisk komplett lokal spillflyt med kartreise, bank, save/load og ukeovergang.
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Full Vitest-pakke, inkludert de nye signaling-reconnect-testene: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright-runner og Chromium-installasjon: bestått.
+- Title/setup-smoke og deterministisk komplett lokal spillflyt med kartreise, bank, save/load og ukeovergang: bestått.
 
 ## Resultat
 
