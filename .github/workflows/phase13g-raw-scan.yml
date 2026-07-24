@@ -1,4 +1,4 @@
-name: Scan remaining raw guest callers
+name: Finalize phase 13G raw guest action audit
 
 on:
   push:
@@ -11,46 +11,107 @@ permissions:
   contents: write
 
 jobs:
-  scan:
+  finalize:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: agent/audit-phase13g-remaining-raw
           fetch-depth: 1
-      - name: Scan UI and AI callers
+      - name: Update audit log and remove temporary files
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
-          import re
 
-          actions = [
-              'spendTime', 'modifyGold', 'modifyHealth', 'modifyHappiness',
-              'modifyFood', 'modifyClothing', 'modifyMaxHealth', 'modifyRelaxation',
-          ]
-          roots = [Path('src/components'), Path('src/hooks')]
-          lines = ['# Remaining raw action callers after phase 13F', '']
-          for action in actions:
-              lines.append(f'## {action}')
-              pattern = re.compile(rf'\b{re.escape(action)}\s*\(')
-              for root in roots:
-                  for path in sorted(list(root.rglob('*.ts')) + list(root.rglob('*.tsx'))):
-                      for number, line in enumerate(path.read_text(encoding='utf-8').splitlines(), 1):
-                          if pattern.search(line):
-                              lines.append(f'{path}:{number}:{line.strip()}')
-              lines.append('')
+          path = Path('docs/AUDIT_LOG.md')
+          text = path.read_text(encoding='utf-8')
 
-          network = Path('src/network/types.ts').read_text(encoding='utf-8')
-          start = network.index('export const ALLOWED_GUEST_ACTIONS')
-          end = network.index(']);', start) + 3
-          lines.extend(['# Remaining raw actions in guest allowlist', network[start:end]])
-          Path('phase13g-raw-scan.txt').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+          text = text.replace(
+              '| 2 | Host-autoritativ multiplayer | Delvis ferdig, protokoll låst | Aktør-ID, tur, allowlist, argumentform og semantiske host-avslag valideres. Reise, jobb, hjem, healer, Tavern og interaktiv dungeon bruker host-eide handlinger/state-maskiner. Rå stat-/tidshandlinger gjenstår. |',
+              '| 2 | Host-autoritativ multiplayer | Ferdig for menneske-UI og gjesteprotokoll | Aktør-ID, tur, allowlist, argumentform og host-avslag valideres. Rå `spendTime`/`modify*` er fjernet fra gjesteprotokollen; menneske-UI bruker semantiske host-handlinger. |',
+          )
+          text = text.replace(
+              '| 6 | Atomiske handlinger | Delvis ferdig | Reise, hjem/hvile, healer, Tavern, interaktiv dungeon, gravplass, gambling, avis, sabotasje, beskyttelse, jobbtilbud, markedslønn, arbeid, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig, hex-/ritualtjenester og finans er host-resolverte. |',
+              '| 6 | Atomiske handlinger | Ferdig for menneske-UI | Reise, hjem/hvile, Cave-rest, healer, Tavern, dungeon, gravplass, gambling, avis, jobb, utdanning, vendor-/inventory-/equipment-/appliance-/housing-/hex-/finance-flyter er host-resolverte. Interne AI-/developer-kompatibilitetslag gjenstår. |',
+          )
+          text = text.replace(
+              '1. **Migrer resterende rå gjestehandlinger.** Prioriter øvrige LocationPanel-/quest-/serviceflyter som fortsatt bruker `modify*`/`spendTime`, deretter interne AI-reservebaner. Interaktiv dungeon, Tavern, healer, hjem/hvile, jobb og reise er ferdig migrert.\n2. **Begrens resterende store-abonnementer.** Start med `LocationPanel`, som fortsatt leser hele Zustand-storen.\n3. **Del opp GameBoard videre.** Flytt avledet tilstand og overlay-/layoutlogikk til mindre hooks/komponenter uten å endre funksjon.\n4. **Rydd døde kompatibilitetslag.** Fjern gamle callback-props og numeriske legacy-funksjoner når alle lokale og AI-kallere er migrert.',
+              '1. **Samle interne AI-reservebaner.** Flytt resterende AI-kall fra rå `modify*`/`spendTime` til de samme semantiske servicehandlingene som menneske-UI bruker. Dette er nå kodekonsolidering, ikke en gjesteangrepsflate.\n2. **Begrens resterende store-abonnementer.** Start med `LocationPanel`, som fortsatt leser hele Zustand-storen.\n3. **Del opp GameBoard videre.** Flytt avledet tilstand og overlay-/layoutlogikk til mindre hooks/komponenter uten å endre funksjon.\n4. **Rydd døde kompatibilitetslag.** Fjern rå numeriske legacy-funksjoner når AI- og Developer-kallere er migrert eller eksplisitt isolert.',
+          )
+          text = text.replace(
+              '- PR #341 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.',
+              '- PR #341 ble squash-merget til `main` som commit `5b19ae43a58bd308744535a9e201ed6f39b39171`.',
+          )
+
+          phase = '''
+
+          ## Fase 13G – 24. juli 2026
+
+          ### Mål
+
+          - Fjerne hele den rå `spendTime`/`modify*`-gruppen fra online-gjestenes protokoll.
+          - Migrere de siste menneskestyrte UI-kallerne til semantiske host-handlinger uten å endre eksisterende spillbalanse.
+
+          ### Utført
+
+          - Opprettet arbeidsgren `agent/audit-phase13g-remaining-raw` og draft-PR #342 fra fase 13F-merge `5b19ae43a58bd308744535a9e201ed6f39b39171`.
+          - Den første maskinelle skanningen ga feilaktig null funn fordi runneren manglet `rg` og kommandoen var beskyttet av `|| true`. Skanneren ble omskrevet i ren Python og kjørt på nytt før noen konklusjon ble trukket.
+          - Den korrigerte skanningen fant tre gjenværende menneske-UI-domener: Cave-rest, avis ved General Store/Shadow Market og døde Graveyard-callbacker.
+          - Oppdaget samtidig en skjult kodefeil etter dungeon-migreringen: CavePanels Rest-knapp refererte til frie `spendTime`, `modifyHealth` og `modifyHappiness`-navn som ikke lenger var props. Bundleren aksepterte dem som globale identifikatorer, men knappen ville feilet ved bruk.
+          - Lagt til `performCaveRest(playerId)`. Hosten validerer Cave-lokasjon, ingen aktiv dungeon-session, minst åtte timer og manglende helse, og anvender canonical åtte timer, inntil 15 healing og +1 happiness atomisk.
+          - Begge avis-knappene bruker nå eksisterende `purchaseNewspaper(playerId, vendor)`, slik at hosten beregner pris, lokasjon og eierskap. Klienten genererer bare visningsinnholdet etter vellykket kjøp.
+          - Fjernet døde `onPray`, `onMourn` og `onBlessMaxHealth`-props fra GraveyardPanel/LocationTabs. Panelet brukte allerede canonical `useGraveyardService` direkte.
+          - Fjernet `spendTime`, `modifyGold`, `modifyHealth`, `modifyHappiness`, `modifyFood`, `modifyClothing`, `modifyMaxHealth` og `modifyRelaxation` fra `ALLOWED_GUEST_ACTIONS`.
+          - Fjernet de foreldede numeriske `STAT_MODIFIER_RULES` og rå `spendTime`-valideringen. Direkte rå kall avvises nå ved allowlist-porten som `Action not allowed`.
+          - Oppdaterte protokoll- og multiplayer-testene slik at den nye invarianten er eksplisitt: rå tid-/statshandlinger er aldri gjestetillatt.
+          - Lagt til fem Cave-rest-/protokolltester for canonical effekter, health cap, avviste tilstander, aktiv dungeon-session og blokkering av samtlige rå handlinger.
+          - Sluttskanningen bekrefter at ingen vanlig menneske-UI-kode bruker rå `modify*`/`spendTime`. Gjenværende kall finnes bare i DeveloperTab og interne AI-handlerbaner, som ikke er gjestetillatt.
+          - En gammel multiplayer-test krevde fortsatt at rå statshandlinger skulle stå i whitelisten. Diagnosen viste én feil og 489 beståtte tester; testen ble erstattet med den motsatte sikkerhetsinvarianten uten å redusere øvrig testdekning.
+          - Fjernet alle midlertidige skanne-, diagnose-, workflow-, trigger-, resultat- og patchfiler før merge.
+
+          ### Tester
+
+          GitHub Actions-run `30076482644`:
+
+          - Dependency install: bestått.
+          - TypeScript: bestått.
+          - Full Vitest-pakke, inkludert fem nye Cave-rest-/protokolltester: bestått.
+          - Produksjonsbuild: bestått.
+          - ESLint: bestått.
+          - Playwright-runner og Chromium-installasjon: bestått.
+          - Title/setup-smoke og deterministisk komplett lokal spillflyt: bestått.
+
+          ### Resultat
+
+          - Online-gjester har ikke lenger noen generell inngang for å sende egen tidsbruk, gullendring, skade, healing, mat, clothing, max-health, happiness eller relaxation.
+          - Alle menneskestyrte handlinger som påvirker disse verdiene går gjennom navngitte host-services med canonical regler.
+          - Den gjenværende rå koden er isolert til lokale Developer-verktøy og interne AI-reservebaner.
+          - Neste fase er å samle AI-reservebanene på de samme semantiske servicehandlingene og deretter begrense `LocationPanel` sitt Zustand-abonnement.
+          - PR #342 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
+          '''
+          phase = '\n'.join(line[10:] if line.startswith('          ') else line for line in phase.splitlines())
+          if '## Fase 13G – 24. juli 2026' not in text:
+              text = text.rstrip() + phase + '\n'
+
+          path.write_text(text, encoding='utf-8')
           PY
-      - name: Commit scan
-        run: |
+
+          rm -f \
+            .github/workflows/apply-phase13g-raw-removal.yml \
+            .github/workflows/phase13g-fix-test.yml \
+            .github/workflows/phase13g-raw-scan.yml \
+            .github/workflows/phase13g-test-diagnose.yml \
+            scripts/apply-phase13g-raw-removal.mjs \
+            phase13g-apply-trigger.txt \
+            phase13g-diagnose-trigger.txt \
+            phase13g-fix-test-trigger.txt \
+            phase13g-raw-scan.txt \
+            phase13g-scan-trigger.txt \
+            phase13g-test-output.txt
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add phase13g-raw-scan.txt
-          git commit -m "Refresh remaining raw guest action scan"
+          git add -A
+          git commit -m "Finalize phase 13G raw guest action audit"
           git push origin HEAD:agent/audit-phase13g-remaining-raw
