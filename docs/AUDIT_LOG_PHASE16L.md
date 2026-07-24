@@ -28,15 +28,15 @@ Arbeidsgren `agent/audit-phase16l-ui-state` ble opprettet fra fase 16K-merge `0c
 
 ## Tester
 
-Valideres i GitHub Actions med:
+GitHub Actions-run `30111580291`:
 
-- Dependency install.
-- TypeScript.
-- Full Vitest-pakke, inkludert fem nye UI-state-tester og GameBoard-strukturinvariantene.
-- Produksjonsbuild.
-- ESLint.
-- Playwright-runner og Chromium.
-- Title/setup-smoke og deterministisk komplett lokal spillflyt med kartreise, bank, save/load og ukeovergang.
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Full Vitest-pakke, inkludert fem nye UI-state-tester og GameBoard-strukturinvariantene: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright-runner og Chromium-installasjon: bestått.
+- Title/setup-smoke og deterministisk komplett lokal spillflyt med kartreise, bank, save/load og ukeovergang: bestått.
 
 ## Resultat
 
