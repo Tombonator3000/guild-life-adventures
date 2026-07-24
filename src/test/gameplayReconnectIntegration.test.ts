@@ -2,14 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const networkSyncSource = readFileSync(
-  resolve(process.cwd(), 'src/network/useNetworkSync.ts'),
-  'utf8',
-);
-const networkTypesSource = readFileSync(
-  resolve(process.cwd(), 'src/network/types.ts'),
-  'utf8',
-);
+const readSource = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
+const networkSyncSource = readSource('src/network/useNetworkSync.ts');
+const networkTypesSource = readSource('src/network/types.ts');
+const indexSource = readSource('src/pages/Index.tsx');
 
 describe('gameplay reconnect integration', () => {
   it('routes reconnect messages through the guarded gameplay resync helper', () => {
@@ -33,13 +29,19 @@ describe('gameplay reconnect integration', () => {
     expect(networkSyncSource).toContain('storeLocalReconnectCredential(msg);');
   });
 
-  it('registers the message listener before credential bootstrap is scheduled', () => {
+  it('registers the gameplay message listener before credential bootstrap is scheduled', () => {
     const listenerIndex = networkSyncSource.indexOf('const unsubMessage = peerManager.onMessage');
     const bootstrapIndex = networkSyncSource.indexOf('queueMicrotask(() => {');
 
     expect(listenerIndex).toBeGreaterThanOrEqual(0);
     expect(bootstrapIndex).toBeGreaterThan(listenerIndex);
     expect(networkSyncSource).toContain('Bootstrap only after the listener above is registered');
+  });
+
+  it('mounts the secure rejoin bridge above the lazy lobby and game screens', () => {
+    expect(indexSource).toContain("import { useSecurePageRejoin } from '@/network/useSecurePageRejoin';");
+    expect(indexSource).toContain('useSecurePageRejoin();');
+    expect(indexSource.indexOf('useSecurePageRejoin();')).toBeLessThan(indexSource.indexOf("if (phase === 'title')"));
   });
 
   it('uses a stored token automatically after a page-refresh rejoin', () => {
