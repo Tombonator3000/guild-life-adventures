@@ -1,1 +1,1 @@
-capture failing Vitest output
+apply stale test correction and verify Vitest
