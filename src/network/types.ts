@@ -1,6 +1,7 @@
 // Network types for online multiplayer
 
 import type { GameState, GoalSettings, AIDifficulty, LocationId } from '@/types/game.types';
+import type { DungeonRunSession } from '@/store/dungeonTypes';
 
 export interface LobbyPlayer {
   peerId: string;
@@ -64,6 +65,7 @@ export type GuestMessage =
 export type NetworkMessage = HostMessage | GuestMessage;
 
 export interface SerializedGameState extends GameState {
+  dungeonRuns?: Record<string, DungeonRunSession>;
   shadowfingersEvent?: unknown;
   applianceBreakageEvent?: {
     playerId: string;
@@ -172,7 +174,6 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'equipItem',
   'unequipItem',
 
-  'applyDurabilityLoss',
 
   'tradeStock',
   'manageLoan',
@@ -180,6 +181,12 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   // Vendor intent only. Host resolves catalogue, price, discount and effect.
   'purchaseVendorItem',
   'purchaseTavernItem',
+
+  // Interactive dungeon intent only. Host owns encounters, time, damage and settlement.
+  'beginDungeonRun',
+  'resolveDungeonEncounter',
+  'advanceDungeonRun',
+  'finalizeDungeonRun',
 
   'buyGuildPass',
   'takeQuest',
@@ -193,7 +200,6 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'completeBounty',
   'completeChainQuest',
   'abandonQuest',
-  'incrementDungeonAttempts',
 
   // Hex intent only. Host resolves stock, price, target location and service effects.
   'purchaseHexScroll',

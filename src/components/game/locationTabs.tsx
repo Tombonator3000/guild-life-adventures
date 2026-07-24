@@ -769,21 +769,10 @@ function graveyardTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function caveTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, spendTime, modifyGold, modifyHealth, modifyHappiness, clearDungeonFloor, applyRareDrop } = ctx;
   return [{
     id: 'dungeon',
     label: 'Dungeon',
-    content: (
-      <CavePanel
-        player={player}
-        spendTime={spendTime}
-        modifyGold={modifyGold}
-        modifyHealth={modifyHealth}
-        modifyHappiness={modifyHappiness}
-        clearDungeonFloor={clearDungeonFloor}
-        applyRareDrop={applyRareDrop}
-      />
-    ),
+    content: <CavePanel player={ctx.player} />,
   }];
 }
 

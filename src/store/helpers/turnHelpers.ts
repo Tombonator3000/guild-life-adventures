@@ -198,9 +198,10 @@ export function createTurnActions(set: SetFn, get: GetFn) {
   return {
     endTurn: () => {
       const state = get();
+      const turningPlayer = state.players[state.currentPlayerIndex];
+      if (turningPlayer && state.dungeonRuns[turningPlayer.id]) return;
 
       // --- Auto-use remaining time based on current location ---
-      const turningPlayer = state.players[state.currentPlayerIndex];
       if (turningPlayer && !turningPlayer.isGameOver && turningPlayer.timeRemaining > 0) {
         applyRemainingTimeAtLocation(set, get, turningPlayer.id);
       }

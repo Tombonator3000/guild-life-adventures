@@ -21,6 +21,7 @@ import { createEmploymentEducationServiceActions } from './helpers/employmentEdu
 import { createEmploymentOfferActions } from './helpers/employmentOfferHelpers';
 import { createTravelServiceActions } from './helpers/travelServiceHelpers';
 import { createHomeActivityActions } from './helpers/homeActivityHelpers';
+import { createDungeonServiceActions } from './helpers/dungeonServiceHelpers';
 import { createQuestActions } from './helpers/questHelpers';
 import { createHexActions } from './helpers/hexHelpers';
 import { createHexServiceActions } from './helpers/hexServiceHelpers';
@@ -229,6 +230,7 @@ export const useGameStore = create<GameStore>((set, get) => {
   const employmentOfferActions = createEmploymentOfferActions(set, get);
   const travelServiceActions = createTravelServiceActions(set, get);
   const homeActivityActions = createHomeActivityActions(set, get);
+  const dungeonServiceActions = createDungeonServiceActions(set, get);
   const questActions = createQuestActions(set, get);
   const hexActions = createHexActions(set, get);
   const hexServiceActions = createHexServiceActions(set, get);
@@ -278,6 +280,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     roomCode: null as string | null,
     weeklyNewsEvents: [],
     locationHexes: [],
+    dungeonRuns: {},
 
     // Game setup (not network-wrapped — guarded explicitly)
     startNewGame: (playerNames, includeAI, goals, aiDifficulty = 'medium', aiConfigs, playerPortraits) => {
@@ -338,6 +341,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         activeFestival: null,
         deathEvent: null,
         locationHexes: [],
+        dungeonRuns: {},
       });
     },
 
@@ -349,6 +353,9 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     // Canonical home recovery. Host resolves location, duration and effects.
     ...wrapWithNetworkGuard(homeActivityActions),
+
+    // Host-owned interactive dungeon state machine and settlement.
+    ...wrapWithNetworkGuard(dungeonServiceActions),
 
     // Legacy work and education actions (network-aware for host/internal compatibility)
     ...wrapWithNetworkGuard(workEducationActions),
@@ -401,6 +408,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         weather: { ...CLEAR_WEATHER },
         activeFestival: null,
         locationHexes: [],
+        dungeonRuns: {},
         stockPrices: getInitialStockPrices(),
     stockPriceHistory: getInitialPriceHistory(),
         priceModifier: 1.0,
@@ -458,6 +466,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       // Block manual saves during online games
       if (get().networkMode !== 'local') return false;
       const state = get();
+      if (Object.keys(state.dungeonRuns).length > 0) return false;
       return saveGame(state, slot, slotName);
     },
     loadFromSlot: (slot: number) => {
@@ -517,6 +526,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         // Restore gameplay-persistent state that was previously dropped on load
         weeklyNewsEvents: gs.weeklyNewsEvents ?? [],
         locationHexes: gs.locationHexes ?? [],
+        dungeonRuns: {}, // Active combat is transient and never resumed from a save.
       });
       return true;
     },

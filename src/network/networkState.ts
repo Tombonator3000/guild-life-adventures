@@ -92,6 +92,7 @@ export function serializeGameState(): SerializedGameState {
     // Gameplay state that must be visible to all players
     weeklyNewsEvents: s.weeklyNewsEvents,
     locationHexes: s.locationHexes,
+    dungeonRuns: s.dungeonRuns,
     // Excluded: selectedLocation, showTutorial, tutorialStep,
     //   aiSpeedMultiplier, skipAITurn — these are local UI preferences
   } as SerializedGameState;
@@ -150,6 +151,7 @@ export function applyNetworkState(state: SerializedGameState) {
     activeFestival: state.activeFestival ?? null,
     weeklyNewsEvents: state.weeklyNewsEvents ?? [],
     locationHexes: state.locationHexes ?? [],
+    dungeonRuns: state.dungeonRuns ?? {},
   };
 
   // eventMessage is special: it also controls phase and eventSource

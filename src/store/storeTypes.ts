@@ -16,6 +16,7 @@ import type {
   EquipmentSlot,
 } from '@/types/game.types';
 import type { StreetRobberyResult, ApartmentRobberyResult } from '@/data/shadowfingers';
+import type { DungeonActionResult, DungeonAdvanceAction, DungeonRunSession } from './dungeonTypes';
 
 export interface ShadowfingersEvent {
   type: 'street' | 'apartment';
@@ -24,6 +25,7 @@ export interface ShadowfingersEvent {
 
 export interface GameStore extends GameState {
   startNewGame: (playerNames: string[], includeAI: boolean, goals: GoalSettings, aiDifficulty?: AIDifficulty, aiConfigs?: AIConfig[], playerPortraits?: (string | null)[]) => void;
+  dungeonRuns: Record<string, DungeonRunSession>;
   movePlayer: (playerId: string, location: LocationId, timeCost: number) => void;
   travelPlayer: (playerId: string, route: LocationId[]) => ActionResult | void;
   spendTime: (playerId: string, hours: number) => void;
@@ -54,6 +56,10 @@ export interface GameStore extends GameState {
   acceptMarketRaise: (playerId: string) => ActionResult | void;
   performHomeActivity: (playerId: string, activity: 'relax' | 'sleep') => ActionResult | void;
   purchaseTavernItem: (playerId: string, itemId: string) => ActionResult | void;
+  beginDungeonRun: (playerId: string, floorId: number) => DungeonActionResult | void;
+  resolveDungeonEncounter: (playerId: string) => DungeonActionResult | void;
+  advanceDungeonRun: (playerId: string, action: DungeonAdvanceAction) => DungeonActionResult | void;
+  finalizeDungeonRun: (playerId: string) => DungeonActionResult | void;
   swapOutfits: (playerId: string) => boolean;
   storeBackupOutfit: (playerId: string, condition: number, cost: number) => boolean;
   readBook: (playerId: string, hours: number, cost: number) => boolean;
