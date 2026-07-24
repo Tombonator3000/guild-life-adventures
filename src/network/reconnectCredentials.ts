@@ -37,11 +37,18 @@ export interface RebindResult {
 const hostCredentials = new Map<string, HostReconnectCredential>();
 const peerOverrides = new Map<string, string>();
 const revokedPeerIds = new Set<string>();
+let activeHostRoomCode: string | null = null;
 
 function createReconnectToken() {
   const bytes = new Uint8Array(24);
   crypto.getRandomValues(bytes);
   return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+export function prepareHostReconnectRoom(roomCode: string) {
+  if (activeHostRoomCode === roomCode) return;
+  clearHostReconnectCredentials();
+  activeHostRoomCode = roomCode;
 }
 
 export function issueHostReconnectCredential({
@@ -50,6 +57,7 @@ export function issueHostReconnectCredential({
   playerName,
   peerId,
 }: IssueHostCredentialOptions): LocalReconnectCredential {
+  prepareHostReconnectRoom(roomCode);
   const existing = hostCredentials.get(playerId);
   const reconnectToken = existing?.roomCode === roomCode
     ? existing.reconnectToken
@@ -82,6 +90,10 @@ export function validateAndRebindHostCredential({
   reconnectToken,
   newPeerId,
 }: ValidateHostCredentialOptions): RebindResult {
+  if (activeHostRoomCode !== roomCode) {
+    return { accepted: false, oldPeerId: null, playerId: null, playerName: null };
+  }
+
   const credential = hostCredentials.get(playerId);
   if (
     !credential
@@ -126,6 +138,7 @@ export function clearHostReconnectCredentials() {
   hostCredentials.clear();
   peerOverrides.clear();
   revokedPeerIds.clear();
+  activeHostRoomCode = null;
 }
 
 export function storeLocalReconnectCredential(credential: LocalReconnectCredential) {
