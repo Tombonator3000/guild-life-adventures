@@ -5,6 +5,7 @@ import {
   getHostPlayerName,
   getLocalReconnectCredential,
   issueHostReconnectCredential,
+  prepareHostReconnectRoom,
   resolveHostPlayerId,
   storeLocalReconnectCredential,
   validateAndRebindHostCredential,
@@ -28,6 +29,31 @@ describe('reconnect credentials', () => {
     expect(credential.reconnectToken).toMatch(/^[a-f0-9]{48}$/);
     expect(resolveHostPlayerId('peer-old', () => null)).toBe('player-1');
     expect(getHostPlayerName('player-1')).toBe('Trusted Player');
+  });
+
+  it('preserves tokens across same-room remounts but clears them for a new room', () => {
+    const credential = issueHostReconnectCredential({
+      roomCode: 'ROOM',
+      playerId: 'player-1',
+      playerName: 'Trusted Player',
+      peerId: 'peer-old',
+    });
+
+    prepareHostReconnectRoom('ROOM');
+    expect(validateAndRebindHostCredential({
+      roomCode: 'ROOM',
+      playerId: 'player-1',
+      reconnectToken: credential.reconnectToken,
+      newPeerId: 'peer-new',
+    }).accepted).toBe(true);
+
+    prepareHostReconnectRoom('OTHER');
+    expect(validateAndRebindHostCredential({
+      roomCode: 'ROOM',
+      playerId: 'player-1',
+      reconnectToken: credential.reconnectToken,
+      newPeerId: 'peer-third',
+    }).accepted).toBe(false);
   });
 
   it('rebinds a valid credential to a new peer and revokes the old peer', () => {
