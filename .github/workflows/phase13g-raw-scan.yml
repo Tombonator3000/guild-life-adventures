@@ -21,21 +21,36 @@ jobs:
       - name: Scan UI and AI callers
         shell: bash
         run: |
-          {
-            echo '# Remaining raw action callers after phase 13F'
-            echo
-            for action in spendTime modifyGold modifyHealth modifyHappiness modifyFood modifyClothing modifyMaxHealth modifyRelaxation; do
-              echo "## $action"
-              rg -n --glob 'src/**/*.{ts,tsx}' --glob '!src/store/**' --glob '!src/test/**' --glob '!src/network/**' "\\b${action}\\s*\\(" || true
-              echo
-            done
-            echo '# Remaining raw actions in guest allowlist'
-            sed -n '/export const ALLOWED_GUEST_ACTIONS/,/]);/p' src/network/types.ts
-          } > phase13g-raw-scan.txt
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          actions = [
+              'spendTime', 'modifyGold', 'modifyHealth', 'modifyHappiness',
+              'modifyFood', 'modifyClothing', 'modifyMaxHealth', 'modifyRelaxation',
+          ]
+          roots = [Path('src/components'), Path('src/hooks')]
+          lines = ['# Remaining raw action callers after phase 13F', '']
+          for action in actions:
+              lines.append(f'## {action}')
+              pattern = re.compile(rf'\b{re.escape(action)}\s*\(')
+              for root in roots:
+                  for path in sorted(list(root.rglob('*.ts')) + list(root.rglob('*.tsx'))):
+                      for number, line in enumerate(path.read_text(encoding='utf-8').splitlines(), 1):
+                          if pattern.search(line):
+                              lines.append(f'{path}:{number}:{line.strip()}')
+              lines.append('')
+
+          network = Path('src/network/types.ts').read_text(encoding='utf-8')
+          start = network.index('export const ALLOWED_GUEST_ACTIONS')
+          end = network.index(']);', start) + 3
+          lines.extend(['# Remaining raw actions in guest allowlist', network[start:end]])
+          Path('phase13g-raw-scan.txt').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+          PY
       - name: Commit scan
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add phase13g-raw-scan.txt
-          git commit -m "Record remaining raw guest action scan"
+          git commit -m "Refresh remaining raw guest action scan"
           git push origin HEAD:agent/audit-phase13g-remaining-raw
