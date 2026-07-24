@@ -7,6 +7,7 @@ const gameBoardSource = readSource('src/components/game/GameBoard.tsx');
 const auxiliarySource = readSource('src/components/game/GameBoardAuxiliaryLayer.tsx');
 const canvasSource = readSource('src/components/game/GameBoardCanvas.tsx');
 const centerSource = readSource('src/components/game/GameBoardCenterPanel.tsx');
+const sidePanelsSource = readSource('src/components/game/GameBoardSidePanels.tsx');
 
 const extractedComponents = [
   'ZoneEditor',
@@ -44,6 +45,14 @@ const centerComponents = [
   'ResourcePanel',
 ];
 
+const sidePanelComponents = [
+  'SideInfoTabs',
+  'RightSideTabs',
+  'MobileHUD',
+  'MobileDrawer',
+  'StoneBorderFrame',
+];
+
 describe('GameBoard component boundaries', () => {
   it('delegates root-level auxiliary UI to GameBoardAuxiliaryLayer', () => {
     expect(gameBoardSource).toContain("import { GameBoardAuxiliaryLayer } from './GameBoardAuxiliaryLayer';");
@@ -59,6 +68,9 @@ describe('GameBoard component boundaries', () => {
     expect(auxiliarySource).toContain('ComponentProps<typeof GameBoardOverlays>');
     expect(centerSource).toContain("import type { ComponentProps, ElementType } from 'react';");
     expect(centerSource).toContain('type OptionalProps<T extends ElementType> = ComponentProps<T> | null;');
+    expect(sidePanelsSource).toContain("import type { ComponentProps, ElementType } from 'react';");
+    expect(sidePanelsSource).toContain('type OptionalProps<T extends ElementType> = ComponentProps<T> | null;');
+    expect(sidePanelsSource).toContain("Pick<ComponentProps<typeof MobileDrawer>, 'isOpen' | 'onClose'>");
   });
 
   it('delegates board rendering and visual overlays to GameBoardCanvas', () => {
@@ -98,10 +110,31 @@ describe('GameBoard component boundaries', () => {
     expect(centerSource).toContain('isCursed && !applianceProps && !toadProps');
   });
 
+  it('delegates desktop and mobile side panel rendering to GameBoardSidePanels', () => {
+    expect(gameBoardSource).toContain("import { GameBoardSidePanels } from './GameBoardSidePanels';");
+    expect(gameBoardSource).toContain('<GameBoardSidePanels');
+    for (const component of sidePanelComponents) {
+      expect(gameBoardSource).not.toMatch(new RegExp(`import \\{?\\s*${component}\\s*\\}? from`));
+      expect(sidePanelsSource).toContain(component);
+    }
+  });
+
+  it('preserves responsive side panel visibility and mobile close-before-open flows', () => {
+    expect(sidePanelsSource).toContain('isMobile && mobileHUDProps');
+    expect(sidePanelsSource.match(/!isMobile && !fullboardMode/g)).toHaveLength(2);
+    expect(sidePanelsSource).toContain('order-last');
+    expect(sidePanelsSource).toContain('side="left"');
+    expect(sidePanelsSource).toContain('side="right"');
+    expect(gameBoardSource).toContain('setShowRightDrawer(false);\n            setShowGameMenu(true);');
+    expect(gameBoardSource).toContain('setShowRightDrawer(false);\n            setShowZoneEditor(true);');
+    expect(gameBoardSource).toContain('onToggleFullboard: () => setFullboardMode(true)');
+  });
+
   it('keeps extracted components within focused size limits', () => {
-    expect(gameBoardSource.split('\n').length).toBeLessThan(520);
+    expect(gameBoardSource.split('\n').length).toBeLessThan(490);
     expect(auxiliarySource.split('\n').length).toBeLessThan(80);
     expect(canvasSource.split('\n').length).toBeLessThan(210);
     expect(centerSource.split('\n').length).toBeLessThan(100);
+    expect(sidePanelsSource.split('\n').length).toBeLessThan(100);
   });
 });
