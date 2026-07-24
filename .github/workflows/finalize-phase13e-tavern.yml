@@ -1,0 +1,110 @@
+name: Finalize phase 13E Tavern audit
+
+on:
+  push:
+    branches:
+      - agent/audit-phase13e-tavern
+    paths:
+      - phase13e-finalize-trigger.txt
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase13e-tavern
+          fetch-depth: 1
+      - name: Update audit log and remove temporary files
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('docs/AUDIT_LOG.md')
+          text = path.read_text(encoding='utf-8')
+
+          text = text.replace(
+              '| 2 | Host-autoritativ multiplayer | Delvis ferdig, protokoll låst | Aktør-ID, tur, allowlist, argumentform, canonical rute og semantiske host-avslag valideres. Klienten kan ikke lenger sende reisepris. Rå stat-/tidshandlinger gjenstår. |',
+              '| 2 | Host-autoritativ multiplayer | Delvis ferdig, protokoll låst | Aktør-ID, tur, allowlist, argumentform, canonical rute og semantiske host-avslag valideres. Reise, jobb, hjem, healer og Tavern bruker semantiske handlinger. Rå stat-/tidshandlinger gjenstår. |',
+          )
+          text = text.replace(
+              '| 6 | Atomiske handlinger | Delvis ferdig | Reise, hjem/hvile, healer, gravplass, gambling, avis, sabotasje, beskyttelse, jobbtilbud, markedslønn, arbeid, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig, hex-/ritualtjenester og finans er host-resolverte. |',
+              '| 6 | Atomiske handlinger | Delvis ferdig | Reise, hjem/hvile, healer, Tavern, gravplass, gambling, avis, sabotasje, beskyttelse, jobbtilbud, markedslønn, arbeid, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig, hex-/ritualtjenester og finans er host-resolverte. |',
+          )
+          text = text.replace(
+              '1. **Migrer resterende rå gjestehandlinger.** Prioriter Tavern, dungeon og øvrige `modify*`/`spendTime`-flyter. Healer, hjem/hvile, `setJob`, `negotiateRaise` og `movePlayer` er ferdig migrert.',
+              '1. **Migrer resterende rå gjestehandlinger.** Prioriter dungeon og øvrige `modify*`/`spendTime`-flyter, deretter interne AI-reservebaner. Tavern, healer, hjem/hvile, `setJob`, `negotiateRaise` og `movePlayer` er ferdig migrert.',
+          )
+          text = text.replace(
+              '- PR #339 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.',
+              '- PR #339 ble squash-merget til `main` som commit `cb2a518034e9581b7b96d4cda2ec038878a87c74`.',
+          )
+
+          phase = '''
+
+          ## Fase 13E – 24. juli 2026
+
+          ### Mål
+
+          - Fjerne separate klientstyrte gull-, mat-, humør- og helsekall fra Tavern.
+          - Flytte øl-/slagsmålstelleren fra lokal React-state til hostens Player-state, slik at risikoen ikke kan nullstilles ved å lukke panelet.
+
+          ### Utført
+
+          - Opprettet arbeidsgren `agent/audit-phase13e-tavern` og draft-PR #340 fra fase 13D-merge `cb2a518034e9581b7b96d4cda2ec038878a87c74`.
+          - Lagt til `purchaseTavernItem(playerId, itemId)`, der gjesten bare sender vare-ID.
+          - Hosten validerer Rusty Tankard-lokasjon, canonical Tavern-katalog, gjeldende economy-pris og tilgjengelig gull.
+          - Hosten anvender mat- eller happiness-effekten med eksisterende caps og registrerer gold spent atomisk.
+          - Flyttet øltelleren fra TavernPanels lokale `useState` til `Player.tavernAlesDrunkThisTurn`.
+          - Lagt til feltet ved spilleropprettelse, save-normalisering og turn-/ukereset, slik at gamle lagringer backfilles og risikoen nullstilles på riktig tidspunkt.
+          - Etter sjette øl ruller hosten 35 % brawl-sjanse, 5–15 skade og canonical eventmelding. Klienten kan ikke velge skade eller nullstille telleren ved panelbytte.
+          - TavernPanel sender ikke lenger `modifyGold`, `modifyFood`, `modifyHappiness`, `modifyHealth`, `spendTime` eller `setEventMessage`-callbacker.
+          - Registrert `purchaseTavernItem` i gjestenes allowlist og lagt til eksplisitt strengvalidering av vare-ID.
+          - Lagt til seks regresjonstester for canonical pris/food cap, avviste kjøp, persistent ølteller, tvunget brawl, turn-reset, save-backfill og protokollvalidering.
+          - Fjernet alle midlertidige skanne-, workflow-, trigger- og patchfiler før merge.
+
+          ### Tester
+
+          GitHub Actions-run `30073493988`:
+
+          - Dependency install: bestått.
+          - TypeScript: bestått.
+          - Full Vitest-pakke, inkludert seks nye Tavern-tester: bestått.
+          - Produksjonsbuild: bestått.
+          - ESLint: bestått.
+          - Playwright-runner og Chromium-installasjon: bestått.
+          - Title/setup-smoke og deterministisk komplett lokal spillflyt: bestått.
+
+          ### Resultat
+
+          - En online-gjest kan ikke lenger diktere Tavern-pris eller separate mat-, humør- og helseeffekter.
+          - Brawl-risikoen er host-eid, lagringskompatibel og kan ikke omgås ved å åpne panelet på nytt.
+          - Neste rå gjestedomene er dungeon og øvrige `modify*`/`spendTime`-flyter.
+          - PR #340 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
+          '''
+          phase = '\n'.join(line[10:] if line.startswith('          ') else line for line in phase.splitlines())
+          if '## Fase 13E – 24. juli 2026' not in text:
+              text = text.rstrip() + phase + '\n'
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+          rm -f \
+            .github/workflows/apply-phase13e-tavern.yml \
+            .github/workflows/phase13e-tavern-scan.yml \
+            .github/workflows/finalize-phase13e-tavern.yml \
+            scripts/apply-phase13e-tavern.mjs \
+            phase13e-apply-trigger.txt \
+            phase13e-scan-trigger.txt \
+            phase13e-tavern-scan.txt \
+            phase13e-finalize-trigger.txt
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Finalize phase 13E Tavern audit"
+          git push origin HEAD:agent/audit-phase13e-tavern
