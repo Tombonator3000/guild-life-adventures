@@ -323,8 +323,8 @@ export function generateEconomicActions(ctx: ActionContext): AIAction[] {
   // AI-5: Fresh food management
   const hasPreservationBox = player.appliances['preservation-box'] && !player.appliances['preservation-box'].isBroken;
   if (hasPreservationBox && player.freshFood < 3 && player.gold >= 25) {
-    if (currentLocation === 'general-store' || currentLocation === 'shadow-market') {
-      actions.push({ type: 'buy-fresh-food', priority: 55, description: 'Stock up on fresh food', details: { cost: 25, units: 2 } });
+    if (currentLocation === 'general-store') {
+      actions.push({ type: 'buy-fresh-food', priority: 55, description: 'Stock up on fresh food', details: { vendor: 'general-store', itemId: 'fresh-vegetables', cost: Math.round(12 * ctx.priceModifier), units: 2 } });
     }
   }
 
@@ -333,15 +333,15 @@ export function generateEconomicActions(ctx: ActionContext): AIAction[] {
   if (player.tickets.length === 0 && player.gold > 150) {
     if (currentLocation === 'shadow-market') {
       const ticketOptions = [
-        { type: 'bard-concert', cost: 40 },
-        { type: 'theatre', cost: 30 },
+        { type: 'bard-concert', cost: 50 },
+        { type: 'theatre', cost: 40 },
         { type: 'jousting', cost: 25 },
       ];
       const affordable = ticketOptions.find(t => player.gold >= t.cost);
       if (affordable) {
         // High priority when happiness is weak, low-priority opportunistic purchase otherwise
         const ticketPriority = weakestGoal === 'happiness' ? 48 : 30;
-        actions.push({ type: 'buy-ticket', priority: ticketPriority, description: `Buy ${affordable.type} ticket${weakestGoal !== 'happiness' ? ' (opportunistic)' : ''}`, details: { ticketType: affordable.type, cost: affordable.cost } });
+        actions.push({ type: 'buy-ticket', priority: ticketPriority, description: `Buy ${affordable.type} ticket${weakestGoal !== 'happiness' ? ' (opportunistic)' : ''}`, details: { vendor: 'shadow-market', itemId: `${affordable.type}-ticket`, ticketType: affordable.type, cost: affordable.cost } });
       }
     }
   }
@@ -349,7 +349,7 @@ export function generateEconomicActions(ctx: ActionContext): AIAction[] {
   // AI-8: Lottery tickets
   if (player.gold > 100 && player.lotteryTickets === 0 && week > 3) {
     if (currentLocation === 'shadow-market' || currentLocation === 'general-store') {
-      actions.push({ type: 'buy-lottery-ticket', priority: 25, description: 'Buy lottery ticket', details: { cost: 5 } });
+      actions.push({ type: 'buy-lottery-ticket', priority: 25, description: 'Buy lottery ticket', details: { vendor: currentLocation, itemId: 'lottery-ticket', cost: 10 } });
     }
   }
 

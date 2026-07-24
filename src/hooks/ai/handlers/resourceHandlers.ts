@@ -1,68 +1,77 @@
 /**
  * AI Action Handlers — Resource Purchases
  *
- * Handles: buy-food, buy-clothing, buy-fresh-food, buy-ticket, buy-lottery-ticket
+ * The generator chooses a catalogue item. The host-owned wrapper resolves
+ * canonical price/effect and preserves the historical one-hour AI shopping cost.
  */
 
 import type { Player } from '@/types/game.types';
 import type { AIAction } from '../types';
 import type { StoreActions } from '../actionExecutor';
 
+function runPurchase(
+  player: Player,
+  action: AIAction,
+  store: StoreActions,
+  fallbackVendor: 'general-store' | 'shadow-market' | 'rusty-tankard' | 'armory',
+  fallbackItemId: string,
+): boolean {
+  const vendor = (action.details?.vendor as typeof fallbackVendor | undefined) ?? fallbackVendor;
+  const itemId = (action.details?.itemId as string | undefined) ?? fallbackItemId;
+  const result = store.purchaseAIResourceItem(player.id, vendor, itemId);
+  return result?.success ?? false;
+}
+
 export function handleBuyFood(player: Player, action: AIAction, store: StoreActions): boolean {
-  const cost = (action.details?.cost as number) || 15;
-  const foodGain = (action.details?.foodGain as number) || 25;
-  if (player.gold < cost) return false;
-
-  // General Store food uses spoilage mechanic (spoilage checked at turn end without Preservation Box)
   if (player.currentLocation === 'general-store') {
-    store.buyFoodWithSpoilage(player.id, foodGain, cost);
-    store.spendTime(player.id, 1);
-    return true;
+    return runPurchase(player, action, store, 'general-store', 'cheese');
   }
-
-  // Tavern/Shadow Market: always safe
-  store.modifyGold(player.id, -cost);
-  store.modifyFood(player.id, foodGain);
-  store.spendTime(player.id, 1);
-  return true;
+  if (player.currentLocation === 'rusty-tankard') {
+    return runPurchase(player, action, store, 'rusty-tankard', 'stew');
+  }
+  if (player.currentLocation === 'shadow-market') {
+    return runPurchase(player, action, store, 'shadow-market', 'mystery-meat');
+  }
+  return false;
 }
 
 export function handleBuyClothing(player: Player, action: AIAction, store: StoreActions): boolean {
-  const cost = (action.details?.cost as number) || 12;
-  // clothingGain is now the target condition level (SET-based, not additive)
-  const clothingGain = (action.details?.clothingGain as number) || 35;
-  if (player.gold < cost) return false;
-  if (clothingGain <= player.clothingCondition) return false; // Already at or above this level
-  store.modifyGold(player.id, -cost);
-  store.modifyClothing(player.id, clothingGain);
-  store.spendTime(player.id, 1);
-  return true;
+  if (player.currentLocation !== 'armory') return false;
+  const target = Number(action.details?.clothingGain ?? 35);
+  const itemId = target >= 90
+    ? 'noble-attire'
+    : target >= 60
+      ? 'fine-clothes'
+      : target >= 45
+        ? 'common-tunic'
+        : 'peasant-garb';
+  return runPurchase(player, action, store, 'armory', itemId);
 }
 
 export function handleBuyFreshFood(player: Player, action: AIAction, store: StoreActions): boolean {
-  const cost = (action.details?.cost as number) || 25;
-  const units = (action.details?.units as number) || 2;
-  if (player.gold < cost) return false;
-  store.buyFreshFood(player.id, units, cost);
-  store.spendTime(player.id, 1);
-  return true;
+  if (player.currentLocation !== 'general-store') return false;
+  const units = Number(action.details?.units ?? 2);
+  const itemId = units >= 6 ? 'fresh-provisions' : units >= 3 ? 'fresh-meat' : 'fresh-vegetables';
+  return runPurchase(player, action, store, 'general-store', itemId);
 }
 
 export function handleBuyTicket(player: Player, action: AIAction, store: StoreActions): boolean {
-  const ticketType = action.details?.ticketType as string;
-  const cost = (action.details?.cost as number) || 30;
-  if (!ticketType || player.gold < cost) return false;
-  store.buyTicket(player.id, ticketType, cost);
-  store.spendTime(player.id, 1);
-  return true;
+  if (player.currentLocation !== 'shadow-market') return false;
+  const ticketType = action.details?.ticketType as string | undefined;
+  const itemId = ticketType === 'bard-concert'
+    ? 'bard-concert-ticket'
+    : ticketType === 'theatre'
+      ? 'theatre-ticket'
+      : ticketType === 'jousting'
+        ? 'jousting-ticket'
+        : '';
+  if (!itemId) return false;
+  return runPurchase(player, action, store, 'shadow-market', itemId);
 }
 
 export function handleBuyLotteryTicket(player: Player, action: AIAction, store: StoreActions): boolean {
-  const cost = (action.details?.cost as number) || 5;
-  if (player.gold < cost) return false;
-  store.buyLotteryTicket(player.id, cost);
-  store.spendTime(player.id, 1);
-  return true;
+  if (player.currentLocation !== 'general-store' && player.currentLocation !== 'shadow-market') return false;
+  return runPurchase(player, action, store, player.currentLocation, 'lottery-ticket');
 }
 
 export function handleBuyReputationUnlock(player: Player, action: AIAction, store: StoreActions): boolean {

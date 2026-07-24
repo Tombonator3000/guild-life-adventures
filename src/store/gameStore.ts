@@ -22,6 +22,7 @@ import { createEmploymentOfferActions } from './helpers/employmentOfferHelpers';
 import { createTravelServiceActions } from './helpers/travelServiceHelpers';
 import { createHomeActivityActions } from './helpers/homeActivityHelpers';
 import { createDungeonServiceActions } from './helpers/dungeonServiceHelpers';
+import { createAIResourceServiceActions } from './helpers/aiResourceServiceHelpers';
 import { createQuestActions } from './helpers/questHelpers';
 import { createHexActions } from './helpers/hexHelpers';
 import { createHexServiceActions } from './helpers/hexServiceHelpers';
@@ -231,6 +232,7 @@ export const useGameStore = create<GameStore>((set, get) => {
   const travelServiceActions = createTravelServiceActions(set, get);
   const homeActivityActions = createHomeActivityActions(set, get);
   const dungeonServiceActions = createDungeonServiceActions(set, get);
+  const aiResourceServiceActions = createAIResourceServiceActions(set, get);
   const questActions = createQuestActions(set, get);
   const hexActions = createHexActions(set, get);
   const hexServiceActions = createHexServiceActions(set, get);
@@ -356,6 +358,9 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     // Host-owned interactive dungeon state machine and settlement.
     ...wrapWithNetworkGuard(dungeonServiceActions),
+
+    // Internal AI shopping wrapper over canonical vendor services.
+    ...wrapWithNetworkGuard(aiResourceServiceActions),
 
     // Legacy work and education actions (network-aware for host/internal compatibility)
     ...wrapWithNetworkGuard(workEducationActions),
