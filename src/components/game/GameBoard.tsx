@@ -16,9 +16,9 @@ import { useGameBoardKeyboard } from '@/hooks/useGameBoardKeyboard';
 import { useLocationClick } from '@/hooks/useLocationClick';
 import { useGameBoardEventQueue } from '@/hooks/useGameBoardEventQueue';
 import { useGameBoardTurnTransition } from '@/hooks/useGameBoardTurnTransition';
+import { useGameBoardAnimationSync } from '@/hooks/useGameBoardAnimationSync';
 import { useKeyboardLocationNav } from '@/hooks/useKeyboardLocationNav';
 import { useGameOptions } from '@/hooks/useGameOptions';
-import { registerAIAnimateCallback } from '@/hooks/useAIAnimationBridge';
 import { GameBoardAuxiliaryLayer } from './GameBoardAuxiliaryLayer';
 import { GameBoardCanvas } from './GameBoardCanvas';
 import { GameBoardCenterPanel } from './GameBoardCenterPanel';
@@ -154,6 +154,12 @@ export function GameBoard() {
     redirectAnimation,
     startRemoteAnimation,
   } = usePlayerAnimation();
+  useGameBoardAnimationSync({
+    animatingPlayer,
+    remoteAnimation,
+    startRemoteAnimation,
+    clearRemoteAnimation,
+  });
 
   useGameBoardKeyboard({
     setShowZoneEditor,
@@ -182,18 +188,6 @@ export function GameBoard() {
       dismissApplianceBreakageEvent();
     }
   }, [applianceBreakageEvent, dismissApplianceBreakageEvent]);
-
-  useEffect(() => {
-    registerAIAnimateCallback(startRemoteAnimation);
-    return () => registerAIAnimateCallback(null);
-  }, [startRemoteAnimation]);
-
-  useEffect(() => {
-    if (remoteAnimation && !animatingPlayer) {
-      startRemoteAnimation(remoteAnimation.playerId, remoteAnimation.path);
-      clearRemoteAnimation();
-    }
-  }, [remoteAnimation, animatingPlayer, startRemoteAnimation, clearRemoteAnimation]);
 
   const { handleLocationClick, currentEvent } = useLocationClick({
     animatingPlayer,
