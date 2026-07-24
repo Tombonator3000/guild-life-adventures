@@ -3,10 +3,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { getAppliance } from '@/data/items';
 import { MOVEMENT_PATHS } from '@/data/locations';
-import { SideInfoTabs } from './SideInfoTabs';
-import { RightSideTabs } from './RightSideTabs';
-import { MobileHUD } from './MobileHUD';
-import { MobileDrawer } from './MobileDrawer';
 import { GameBoardHeader } from './GameBoardHeader';
 import type { Player } from '@/types/game.types';
 import { toast } from 'sonner';
@@ -20,11 +16,11 @@ import { useGameBoardKeyboard } from '@/hooks/useGameBoardKeyboard';
 import { useLocationClick } from '@/hooks/useLocationClick';
 import { useKeyboardLocationNav } from '@/hooks/useKeyboardLocationNav';
 import { useGameOptions } from '@/hooks/useGameOptions';
-import { StoneBorderFrame } from './StoneBorderFrame';
 import { registerAIAnimateCallback } from '@/hooks/useAIAnimationBridge';
 import { GameBoardAuxiliaryLayer } from './GameBoardAuxiliaryLayer';
 import { GameBoardCanvas } from './GameBoardCanvas';
 import { GameBoardCenterPanel } from './GameBoardCenterPanel';
+import { GameBoardSidePanels } from './GameBoardSidePanels';
 import { useShadowfingersModal } from './ShadowfingersModal';
 
 export function GameBoard() {
@@ -257,7 +253,6 @@ export function GameBoard() {
     }
   };
 
-  const sidePanelWidthPercent = 12;
   const shadowfingersTargetLocation = shadowfingersEvent && currentPlayer
     ? shadowfingersEvent.type === 'street' && 'fromLocation' in shadowfingersEvent.result
       ? shadowfingersEvent.result.fromLocation
@@ -265,246 +260,210 @@ export function GameBoard() {
     : null;
 
   return (
-    <div
-      className={`w-screen h-screen-safe overflow-hidden bg-background flex safe-area-all ${isMobile ? 'flex-col' : 'flex-row'}`}
-      style={!isMobile && fullboardMode ? { paddingTop: '2rem' } : undefined}
-    >
-      {isMobile && currentPlayer && (
-        <MobileHUD
-          player={currentPlayer}
-          week={week}
-          priceModifier={priceModifier}
-          economyTrend={economyTrend}
-          onEndTurn={endTurn}
-          onOpenLeftDrawer={() => setShowLeftDrawer(true)}
-          onOpenRightDrawer={() => setShowRightDrawer(true)}
-          onOpenMenu={() => setShowGameMenu(true)}
-          disabled={!isLocalPlayerTurn || aiIsThinking || currentPlayer.isAI}
+    <GameBoardSidePanels
+      isMobile={isMobile}
+      fullboardMode={fullboardMode}
+      mobileHUDProps={currentPlayer ? {
+        player: currentPlayer,
+        week,
+        priceModifier,
+        economyTrend,
+        onEndTurn: endTurn,
+        onOpenLeftDrawer: () => setShowLeftDrawer(true),
+        onOpenRightDrawer: () => setShowRightDrawer(true),
+        onOpenMenu: () => setShowGameMenu(true),
+        disabled: !isLocalPlayerTurn || aiIsThinking || currentPlayer.isAI,
+      } : null}
+      sideInfoProps={currentPlayer ? {
+        player: currentPlayer,
+        goals: goalSettings,
+        isCurrentPlayer: true,
+      } : null}
+      desktopRightProps={{
+        players,
+        currentPlayerIndex,
+        goalSettings,
+        onOpenSaveMenu: () => setShowGameMenu(true),
+        onToggleDebugOverlay: () => setShowDebugOverlay(previous => !previous),
+        onToggleZoneEditor: () => setShowZoneEditor(true),
+        showDebugOverlay,
+        aiIsThinking,
+        aiSpeedMultiplier,
+        onSetAISpeed: setAISpeedMultiplier,
+        onSkipAITurn: () => setSkipAITurn(true),
+        onToggleFullboard: () => setFullboardMode(true),
+      }}
+      mobileRightProps={{
+        players,
+        currentPlayerIndex,
+        goalSettings,
+        onOpenSaveMenu: () => {
+          setShowRightDrawer(false);
+          setShowGameMenu(true);
+        },
+        onToggleDebugOverlay: () => setShowDebugOverlay(previous => !previous),
+        onToggleZoneEditor: () => {
+          setShowRightDrawer(false);
+          setShowZoneEditor(true);
+        },
+        showDebugOverlay,
+        aiIsThinking,
+        aiSpeedMultiplier,
+        onSetAISpeed: setAISpeedMultiplier,
+        onSkipAITurn: () => setSkipAITurn(true),
+      }}
+      leftDrawerProps={{
+        isOpen: showLeftDrawer,
+        onClose: () => setShowLeftDrawer(false),
+      }}
+      rightDrawerProps={{
+        isOpen: showRightDrawer,
+        onClose: () => setShowRightDrawer(false),
+      }}
+      auxiliaryContent={(
+        <GameBoardAuxiliaryLayer
+          zoneEditorProps={showZoneEditor ? {
+            onClose: () => setShowZoneEditor(false),
+            onSave: handleSaveZones,
+            onReset: handleResetZones,
+            initialCenterPanel: centerPanel,
+            initialZones: customZones,
+            initialPaths: { ...MOVEMENT_PATHS },
+            initialLayout: layout,
+            initialAnimationLayers: animationLayers,
+            initialMobileOverrides: mobileOverrides,
+            initialHomeItemPositions: savedHomeItemPositions,
+          } : null}
+          overlayProps={{
+            isMobile,
+            isWaitingForOtherPlayer,
+            phase,
+            currentPlayer,
+            isOnline,
+            latency,
+            roomCodeDisplay,
+            isGuest,
+            showTurnTransition,
+            onTurnTransitionReady: () => setShowTurnTransition(false),
+            aiIsThinking,
+            currentAIAction,
+            aiDifficulty,
+            aiSpeedMultiplier,
+            setAISpeedMultiplier,
+            setSkipAITurn,
+            connectionStatus,
+            attemptReconnect,
+          }}
+          saveMenuOpen={showGameMenu}
+          onCloseSaveMenu={() => setShowGameMenu(false)}
+          deathModalProps={deathEvent ? {
+            event: deathEvent,
+            onDismiss: dismissDeathEvent,
+          } : null}
+          playerInfoProps={viewingPlayer ? {
+            player: viewingPlayer,
+            onClose: () => setViewingPlayer(null),
+          } : null}
+          chatProps={isOnline ? {
+            messages: chatMessages,
+            onSend: sendChatMessage,
+            playerName: isPureSpectator ? 'Spectator' : (localPlayer?.name || 'Player'),
+            playerColor: isPureSpectator ? '#9CA3AF' : (localPlayer?.color || '#888888'),
+          } : null}
+          showContextualTips={phase === 'playing'}
+          spectatorOverlayProps={isSpectating ? {
+            player: localPlayer,
+            currentTurnPlayer: currentPlayer,
+            isPureSpectator,
+          } : null}
+          topDropdownProps={!isMobile && fullboardMode && currentPlayer ? {
+            player: currentPlayer,
+            goals: goalSettings,
+            players,
+            currentPlayerIndex,
+            onOpenSaveMenu: () => setShowGameMenu(true),
+            onToggleDebugOverlay: () => setShowDebugOverlay(previous => !previous),
+            onToggleZoneEditor: () => setShowZoneEditor(true),
+            showDebugOverlay,
+            aiIsThinking,
+            aiSpeedMultiplier,
+            onSetAISpeed: setAISpeedMultiplier,
+            onSkipAITurn: () => setSkipAITurn(true),
+            week,
+            priceModifier,
+            economyTrend,
+            weather,
+            onEndTurn: endTurn,
+            endTurnDisabled: !isLocalPlayerTurn || aiIsThinking || !!currentPlayer.isAI,
+            onExitFullboard: () => setFullboardMode(false),
+          } : null}
         />
       )}
-
-      {!isMobile && !fullboardMode && (
-        <div
-          className="relative z-30 flex flex-col flex-shrink-0 h-full"
-          style={{ width: `${sidePanelWidthPercent}%` }}
-        >
-          <StoneBorderFrame side="left">
-            {currentPlayer && (
-              <SideInfoTabs player={currentPlayer} goals={goalSettings} isCurrentPlayer />
-            )}
-          </StoneBorderFrame>
-        </div>
-      )}
-
-      <div className="flex-1 flex items-center justify-center min-w-0 min-h-0">
-        <GameBoardCanvas
-          players={players}
-          currentPlayer={currentPlayer}
-          selectedLocation={selectedLocation}
-          locationHexes={locationHexes}
-          weather={weather}
+    >
+      <GameBoardCanvas
+        players={players}
+        currentPlayer={currentPlayer}
+        selectedLocation={selectedLocation}
+        locationHexes={locationHexes}
+        weather={weather}
+        isMobile={isMobile}
+        centerPanel={activeCenterPanel}
+        customZones={customZones}
+        debugCenterPanel={centerPanel}
+        showDebugOverlay={showDebugOverlay}
+        focusedLocationId={focusedLocationId}
+        animatingPlayer={animatingPlayer}
+        animationPath={animationPath}
+        pathVersion={pathVersion}
+        shadowfingersTargetLocation={shadowfingersTargetLocation}
+        getLocationWithCustomPosition={getLocationWithCustomPosition}
+        onLocationClick={handleLocationClick}
+        onViewPlayer={setViewingPlayer}
+        onAnimationComplete={handleAnimationComplete}
+        onLocationReached={handleLocationReached}
+      >
+        <GameBoardCenterPanel
           isMobile={isMobile}
           centerPanel={activeCenterPanel}
-          customZones={customZones}
-          debugCenterPanel={centerPanel}
-          showDebugOverlay={showDebugOverlay}
-          focusedLocationId={focusedLocationId}
-          animatingPlayer={animatingPlayer}
-          animationPath={animationPath}
-          pathVersion={pathVersion}
-          shadowfingersTargetLocation={shadowfingersTargetLocation}
-          getLocationWithCustomPosition={getLocationWithCustomPosition}
-          onLocationClick={handleLocationClick}
-          onViewPlayer={setViewingPlayer}
-          onAnimationComplete={handleAnimationComplete}
-          onLocationReached={handleLocationReached}
-        >
-          <GameBoardCenterPanel
-            isMobile={isMobile}
-            centerPanel={activeCenterPanel}
-            isCursed={isCursed}
-            toadProps={toadCurseEvent ? {
-              hoursLost: toadCurseEvent.hoursLost,
-              curserName: toadCurseEvent.curserName,
-              onDismiss: dismissToadCurseEvent,
-            } : null}
-            applianceProps={applianceBreakageEvent?.fromCurse ? {
-              applianceId: applianceBreakageEvent.applianceId,
-              originalPrice: applianceBreakageEvent.originalPrice ?? applianceBreakageEvent.repairCost * 2,
-              curserName: applianceBreakageEvent.curserName,
-              onDismiss: dismissApplianceBreakageEvent,
-            } : null}
-            shadowfingersProps={shadowfingersEvent ? {
-              event: shadowfingersEvent,
-              onDismiss: dismissShadowfingers,
-            } : null}
-            eventProps={phase === 'event' && queuedEvent ? {
-              event: queuedEvent,
-              onDismiss: handleEventDismiss,
-            } : null}
-            locationProps={selectedLocation ? { locationId: selectedLocation } : null}
-            spectatorProps={isSpectating ? {
-              players,
-              goalSettings,
-              week,
-              stockPrices,
-              isPureSpectator,
-            } : null}
+          isCursed={isCursed}
+          toadProps={toadCurseEvent ? {
+            hoursLost: toadCurseEvent.hoursLost,
+            curserName: toadCurseEvent.curserName,
+            onDismiss: dismissToadCurseEvent,
+          } : null}
+          applianceProps={applianceBreakageEvent?.fromCurse ? {
+            applianceId: applianceBreakageEvent.applianceId,
+            originalPrice: applianceBreakageEvent.originalPrice ?? applianceBreakageEvent.repairCost * 2,
+            curserName: applianceBreakageEvent.curserName,
+            onDismiss: dismissApplianceBreakageEvent,
+          } : null}
+          shadowfingersProps={shadowfingersEvent ? {
+            event: shadowfingersEvent,
+            onDismiss: dismissShadowfingers,
+          } : null}
+          eventProps={phase === 'event' && queuedEvent ? {
+            event: queuedEvent,
+            onDismiss: handleEventDismiss,
+          } : null}
+          locationProps={selectedLocation ? { locationId: selectedLocation } : null}
+          spectatorProps={isSpectating ? {
+            players,
+            goalSettings,
+            week,
+            stockPrices,
+            isPureSpectator,
+          } : null}
+        />
+
+        {!isMobile && !fullboardMode && (
+          <GameBoardHeader
+            week={week}
+            priceModifier={priceModifier}
+            economyTrend={economyTrend}
+            weather={weather}
           />
-
-          {!isMobile && !fullboardMode && (
-            <GameBoardHeader
-              week={week}
-              priceModifier={priceModifier}
-              economyTrend={economyTrend}
-              weather={weather}
-            />
-          )}
-        </GameBoardCanvas>
-      </div>
-
-      {!isMobile && !fullboardMode && (
-        <div
-          className="relative z-30 flex flex-col flex-shrink-0 h-full"
-          style={{ width: `${sidePanelWidthPercent}%` }}
-        >
-          <StoneBorderFrame side="right">
-            <RightSideTabs
-              players={players}
-              currentPlayerIndex={currentPlayerIndex}
-              goalSettings={goalSettings}
-              onOpenSaveMenu={() => setShowGameMenu(true)}
-              onToggleDebugOverlay={() => setShowDebugOverlay(previous => !previous)}
-              onToggleZoneEditor={() => setShowZoneEditor(true)}
-              showDebugOverlay={showDebugOverlay}
-              aiIsThinking={aiIsThinking}
-              aiSpeedMultiplier={aiSpeedMultiplier}
-              onSetAISpeed={setAISpeedMultiplier}
-              onSkipAITurn={() => setSkipAITurn(true)}
-              onToggleFullboard={() => setFullboardMode(true)}
-            />
-          </StoneBorderFrame>
-        </div>
-      )}
-
-      {isMobile && (
-        <>
-          <MobileDrawer
-            isOpen={showLeftDrawer}
-            onClose={() => setShowLeftDrawer(false)}
-            side="left"
-            title="Stats & Inventory"
-          >
-            {currentPlayer && (
-              <SideInfoTabs player={currentPlayer} goals={goalSettings} isCurrentPlayer />
-            )}
-          </MobileDrawer>
-          <MobileDrawer
-            isOpen={showRightDrawer}
-            onClose={() => setShowRightDrawer(false)}
-            side="right"
-            title="Players & Options"
-          >
-            <RightSideTabs
-              players={players}
-              currentPlayerIndex={currentPlayerIndex}
-              goalSettings={goalSettings}
-              onOpenSaveMenu={() => {
-                setShowRightDrawer(false);
-                setShowGameMenu(true);
-              }}
-              onToggleDebugOverlay={() => setShowDebugOverlay(previous => !previous)}
-              onToggleZoneEditor={() => {
-                setShowRightDrawer(false);
-                setShowZoneEditor(true);
-              }}
-              showDebugOverlay={showDebugOverlay}
-              aiIsThinking={aiIsThinking}
-              aiSpeedMultiplier={aiSpeedMultiplier}
-              onSetAISpeed={setAISpeedMultiplier}
-              onSkipAITurn={() => setSkipAITurn(true)}
-            />
-          </MobileDrawer>
-        </>
-      )}
-
-      <GameBoardAuxiliaryLayer
-        zoneEditorProps={showZoneEditor ? {
-          onClose: () => setShowZoneEditor(false),
-          onSave: handleSaveZones,
-          onReset: handleResetZones,
-          initialCenterPanel: centerPanel,
-          initialZones: customZones,
-          initialPaths: { ...MOVEMENT_PATHS },
-          initialLayout: layout,
-          initialAnimationLayers: animationLayers,
-          initialMobileOverrides: mobileOverrides,
-          initialHomeItemPositions: savedHomeItemPositions,
-        } : null}
-        overlayProps={{
-          isMobile,
-          isWaitingForOtherPlayer,
-          phase,
-          currentPlayer,
-          isOnline,
-          latency,
-          roomCodeDisplay,
-          isGuest,
-          showTurnTransition,
-          onTurnTransitionReady: () => setShowTurnTransition(false),
-          aiIsThinking,
-          currentAIAction,
-          aiDifficulty,
-          aiSpeedMultiplier,
-          setAISpeedMultiplier,
-          setSkipAITurn,
-          connectionStatus,
-          attemptReconnect,
-        }}
-        saveMenuOpen={showGameMenu}
-        onCloseSaveMenu={() => setShowGameMenu(false)}
-        deathModalProps={deathEvent ? {
-          event: deathEvent,
-          onDismiss: dismissDeathEvent,
-        } : null}
-        playerInfoProps={viewingPlayer ? {
-          player: viewingPlayer,
-          onClose: () => setViewingPlayer(null),
-        } : null}
-        chatProps={isOnline ? {
-          messages: chatMessages,
-          onSend: sendChatMessage,
-          playerName: isPureSpectator ? 'Spectator' : (localPlayer?.name || 'Player'),
-          playerColor: isPureSpectator ? '#9CA3AF' : (localPlayer?.color || '#888888'),
-        } : null}
-        showContextualTips={phase === 'playing'}
-        spectatorOverlayProps={isSpectating ? {
-          player: localPlayer,
-          currentTurnPlayer: currentPlayer,
-          isPureSpectator,
-        } : null}
-        topDropdownProps={!isMobile && fullboardMode && currentPlayer ? {
-          player: currentPlayer,
-          goals: goalSettings,
-          players,
-          currentPlayerIndex,
-          onOpenSaveMenu: () => setShowGameMenu(true),
-          onToggleDebugOverlay: () => setShowDebugOverlay(previous => !previous),
-          onToggleZoneEditor: () => setShowZoneEditor(true),
-          showDebugOverlay,
-          aiIsThinking,
-          aiSpeedMultiplier,
-          onSetAISpeed: setAISpeedMultiplier,
-          onSkipAITurn: () => setSkipAITurn(true),
-          week,
-          priceModifier,
-          economyTrend,
-          weather,
-          onEndTurn: endTurn,
-          endTurnDisabled: !isLocalPlayerTurn || aiIsThinking || !!currentPlayer.isAI,
-          onExitFullboard: () => setFullboardMode(false),
-        } : null}
-      />
-    </div>
+        )}
+      </GameBoardCanvas>
+    </GameBoardSidePanels>
   );
 }
