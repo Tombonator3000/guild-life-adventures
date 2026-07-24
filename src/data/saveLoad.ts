@@ -264,6 +264,7 @@ export function normalizePlayer(p: Record<string, unknown>): void {
   setDefault(p, 'workedThisTurn', false);
   setDefault(p, 'hadRandomEventThisTurn', false);
   setDefault(p, 'raiseAttemptedThisTurn', false);
+  setDefault(p, 'tavernAlesDrunkThisTurn', 0);
   setDefault(p, 'fame', 0);
   setDefault(p, 'infamy', 0);
   setDefault(p, 'purchasedReputationUnlocks', []);

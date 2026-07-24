@@ -179,6 +179,7 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
 
   // Vendor intent only. Host resolves catalogue, price, discount and effect.
   'purchaseVendorItem',
+  'purchaseTavernItem',
 
   'buyGuildPass',
   'takeQuest',

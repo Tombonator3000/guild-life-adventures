@@ -7,11 +7,11 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 | Nr. | Punkt | Status | Merknad |
 |---:|---|---|---|
 | 1 | Beskytte online spill mot sabotasje/misbruk | Ferdig hovedsakelig | Sabotasje, beskyttelse og tip-off er host-autoritative. |
-| 2 | Host-autoritativ multiplayer | Delvis ferdig, protokoll låst | Aktør-ID, tur, allowlist, argumentform, canonical rute og semantiske host-avslag valideres. Klienten kan ikke lenger sende reisepris. Rå stat-/tidshandlinger gjenstår. |
+| 2 | Host-autoritativ multiplayer | Delvis ferdig, protokoll låst | Aktør-ID, tur, allowlist, argumentform, canonical rute og semantiske host-avslag valideres. Reise, jobb, hjem, healer og Tavern bruker semantiske handlinger. Rå stat-/tidshandlinger gjenstår. |
 | 3 | Full save/load-gjenoppretting | Ferdig | Brett-hexer og ukentlige nyheter gjenopprettes. |
 | 4 | Save-migrering v10 | Ferdig | Normalisering og migreringstester er lagt til. |
 | 5 | Sikre reputation unlocks | Ferdig | Kjøp valideres atomisk på hosten. |
-| 6 | Atomiske handlinger | Delvis ferdig | Reise, hjem/hvile, healer, gravplass, gambling, avis, sabotasje, beskyttelse, jobbtilbud, markedslønn, arbeid, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig, hex-/ritualtjenester og finans er host-resolverte. |
+| 6 | Atomiske handlinger | Delvis ferdig | Reise, hjem/hvile, healer, Tavern, gravplass, gambling, avis, sabotasje, beskyttelse, jobbtilbud, markedslønn, arbeid, utdanning, vendor-kjøp, inventory-salg, apparater, utstyr, bolig, hex-/ritualtjenester og finans er host-resolverte. |
 | 7 | Hook-avhengigheter | Ferdig for kjente funn | AI-start, auto-end-turn, tastatur og zone-editor er rettet. |
 | 8 | Playwright E2E | Ferdig grunnflyt | Tittel, setup og en faktisk spillflyt med bankhandling, save/load og ukeovergang er dekket. Protokollavvisninger er dekket med enhetstester mot host-kjeden. |
 | 9 | Zustand-selectors | Delvis ferdig | Root, GameBoard og Grimwald AI bruker selectors/useShallow. Flere paneler er begrenset, men `LocationPanel` leser fortsatt hele store-objektet. |
@@ -23,7 +23,7 @@ Denne filen er den permanente loggen for feilretting, sikkerhetsarbeid, testdekn
 
 ## Gjenstående prioritert rekkefølge
 
-1. **Migrer resterende rå gjestehandlinger.** Prioriter Tavern, dungeon og øvrige `modify*`/`spendTime`-flyter. Healer, hjem/hvile, `setJob`, `negotiateRaise` og `movePlayer` er ferdig migrert.
+1. **Migrer resterende rå gjestehandlinger.** Prioriter dungeon og øvrige `modify*`/`spendTime`-flyter, deretter interne AI-reservebaner. Tavern, healer, hjem/hvile, `setJob`, `negotiateRaise` og `movePlayer` er ferdig migrert.
 2. **Begrens resterende store-abonnementer.** Start med `LocationPanel`, som fortsatt leser hele Zustand-storen.
 3. **Del opp GameBoard videre.** Flytt avledet tilstand og overlay-/layoutlogikk til mindre hooks/komponenter uten å endre funksjon.
 4. **Rydd døde kompatibilitetslag.** Fjern gamle callback-props og numeriske legacy-funksjoner når alle lokale og AI-kallere er migrert.
@@ -556,4 +556,44 @@ GitHub Actions-run `30053545732`:
 - En online-gjest kan ikke lenger kurere sykdom direkte eller kombinere klientvalgt pris, tid og helseeffekt.
 - Healer-UI og host bruker nå én canonical serviceinngang.
 - Neste rå gjestedomene er Tavern og dungeon.
-- PR #339 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.
+- PR #339 ble squash-merget til `main` som commit `cb2a518034e9581b7b96d4cda2ec038878a87c74`.
+
+## Fase 13E – 24. juli 2026
+
+### Mål
+
+- Fjerne separate klientstyrte gull-, mat-, humør- og helsekall fra Tavern.
+- Flytte øl-/slagsmålstelleren fra lokal React-state til hostens Player-state, slik at risikoen ikke kan nullstilles ved å lukke panelet.
+
+### Utført
+
+- Opprettet arbeidsgren `agent/audit-phase13e-tavern` og draft-PR #340 fra fase 13D-merge `cb2a518034e9581b7b96d4cda2ec038878a87c74`.
+- Lagt til `purchaseTavernItem(playerId, itemId)`, der gjesten bare sender vare-ID.
+- Hosten validerer Rusty Tankard-lokasjon, canonical Tavern-katalog, gjeldende economy-pris og tilgjengelig gull.
+- Hosten anvender mat- eller happiness-effekten med eksisterende caps og registrerer gold spent atomisk.
+- Flyttet øltelleren fra TavernPanels lokale `useState` til `Player.tavernAlesDrunkThisTurn`.
+- Lagt til feltet ved spilleropprettelse, save-normalisering og turn-/ukereset, slik at gamle lagringer backfilles og risikoen nullstilles på riktig tidspunkt.
+- Etter sjette øl ruller hosten 35 % brawl-sjanse, 5–15 skade og canonical eventmelding. Klienten kan ikke velge skade eller nullstille telleren ved panelbytte.
+- TavernPanel sender ikke lenger `modifyGold`, `modifyFood`, `modifyHappiness`, `modifyHealth`, `spendTime` eller `setEventMessage`-callbacker.
+- Registrert `purchaseTavernItem` i gjestenes allowlist og lagt til eksplisitt strengvalidering av vare-ID.
+- Lagt til seks regresjonstester for canonical pris/food cap, avviste kjøp, persistent ølteller, tvunget brawl, turn-reset, save-backfill og protokollvalidering.
+- Fjernet alle midlertidige skanne-, workflow-, trigger- og patchfiler før merge.
+
+### Tester
+
+GitHub Actions-run `30073493988`:
+
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Full Vitest-pakke, inkludert seks nye Tavern-tester: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright-runner og Chromium-installasjon: bestått.
+- Title/setup-smoke og deterministisk komplett lokal spillflyt: bestått.
+
+### Resultat
+
+- En online-gjest kan ikke lenger diktere Tavern-pris eller separate mat-, humør- og helseeffekter.
+- Brawl-risikoen er host-eid, lagringskompatibel og kan ikke omgås ved å åpne panelet på nytt.
+- Neste rå gjestedomene er dungeon og øvrige `modify*`/`spendTime`-flyter.
+- PR #340 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.

@@ -11,6 +11,7 @@ import { createEquipmentServiceActions } from './economy/equipmentServiceHelpers
 import { createStockLoanActions } from './economy/stockLoanHelpers';
 import { createServiceActions } from './economy/serviceHelpers';
 import { createVendorActions } from './economy/vendorHelpers';
+import { createTavernServiceActions } from './economy/tavernServiceHelpers';
 
 export function createEconomyActions(set: SetFn, get: GetFn) {
   return {
@@ -26,5 +27,6 @@ export function createEconomyActions(set: SetFn, get: GetFn) {
     ...createStockLoanActions(set, get),
     ...createServiceActions(set, get),
     ...createVendorActions(set, get),
+    ...createTavernServiceActions(set, get),
   };
 }

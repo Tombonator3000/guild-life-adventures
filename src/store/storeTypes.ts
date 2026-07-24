@@ -53,6 +53,7 @@ export interface GameStore extends GameState {
   acceptJobOffer: (playerId: string, jobId: string) => ActionResult | void;
   acceptMarketRaise: (playerId: string) => ActionResult | void;
   performHomeActivity: (playerId: string, activity: 'relax' | 'sleep') => ActionResult | void;
+  purchaseTavernItem: (playerId: string, itemId: string) => ActionResult | void;
   swapOutfits: (playerId: string) => boolean;
   storeBackupOutfit: (playerId: string, condition: number, cost: number) => boolean;
   readBook: (playerId: string, hours: number, cost: number) => boolean;
