@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { MOVEMENT_PATHS } from '@/data/locations';
+import { deriveGameBoardAudienceState } from '@/lib/deriveGameBoardAudienceState';
 import { GameBoardHeader } from './GameBoardHeader';
 import type { Player } from '@/types/game.types';
 import { useNetworkSync } from '@/network/useNetworkSync';
@@ -96,13 +97,20 @@ export function GameBoard() {
   const roomCodeDisplay = useGameStore(state => state.roomCode);
   const currentPlayer = useCurrentPlayer();
 
-  const isLocalPlayerTurn = !isOnline || currentPlayer?.id === localPlayerId;
-  const isWaitingForOtherPlayer = isOnline && !isLocalPlayerTurn && !currentPlayer?.isAI;
+  const {
+    isLocalPlayerTurn,
+    isWaitingForOtherPlayer,
+    localPlayer,
+    isPureSpectator,
+    isSpectating,
+  } = deriveGameBoardAudienceState({
+    players,
+    currentPlayer,
+    localPlayerId,
+    isOnline,
+    phase,
+  });
   const isCursed = (currentPlayer?.activeCurses?.length ?? 0) > 0;
-  const localPlayer = isOnline ? players.find(player => player.id === localPlayerId) : currentPlayer;
-  const isPureSpectator = isOnline && !localPlayerId;
-  const isSpectating = isPureSpectator
-    || !!(localPlayer?.isGameOver && phase === 'playing' && players.some(player => !player.isGameOver));
   const { showTurnTransition, dismissTurnTransition } = useGameBoardTurnTransition({
     players,
     currentPlayer,
