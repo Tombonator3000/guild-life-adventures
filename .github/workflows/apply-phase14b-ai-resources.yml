@@ -1,0 +1,47 @@
+name: Finalize phase 14B AI resources
+
+on:
+  push:
+    branches:
+      - agent/audit-phase14b-ai-resources
+    paths:
+      - phase14b-apply-trigger.txt
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase14b-ai-resources
+          fetch-depth: 1
+      - name: Update permanent audit log and clean helpers
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('docs/AUDIT_LOG.md')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace(
+              '1. **Fortsett AI-konsolideringen.** Ressurs-, utstyrs-, appliance- og dungeon-auto-resolve-handlerne bruker fortsatt enkelte rå/legacy-funksjoner. Rest, healer, sykdom, arbeid, lønnsforsøk og utdanning er ferdig migrert.',
+              '1. **Fortsett AI-konsolideringen.** Utstyrs-, appliance- og dungeon-auto-resolve-handlerne bruker fortsatt enkelte rå/legacy-funksjoner. Rest, healer, sykdom, arbeid, lønnsforsøk, utdanning og ressurskjøp er ferdig migrert.'
+          )
+          text = text.replace(
+              '- PR #343 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.',
+              '- PR #343 ble squash-merget til `main` som commit `bb8ee72b0ff8363674ff2b50dc479779e7e33983`.'
+          )
+          text += '''\n\n## Fase 14B – 24. juli 2026\n\n### Mål\n\n- Flytte AI-kjøp av mat, klær, ferskmat, billetter og lotteri fra numeriske legacy-kall til de samme canonical katalogtjenestene som menneske-UI bruker.\n- Beholde AI-ens eksisterende shoppingkostnad på én time uten å la beslutningsdata styre pris eller effekt.\n\n### Utført\n\n- Opprettet arbeidsgren `agent/audit-phase14b-ai-resources` og draft-PR #344 fra fase 14A-merge `bb8ee72b0ff8363674ff2b50dc479779e7e33983`.\n- Lagt til intern `purchaseAIResourceItem`, som delegerer til canonical General Store-, Shadow Market-, Tavern- og Armory-services og trekker én time bare etter et vellykket kjøp.\n- Migrert AI-handlerne for mat, klær, ferskmat, helgebilletter og lotteri. Handlerne sender nå vare-ID og utsalgssted, ikke pris eller effekt.\n- General Store-mat bruker canonical spoilage-regler; Tavern- og Shadow Market-mat bruker sine faktiske kataloger og rabatter.\n- Klær kjøpes nå bare ved Armory. Kartleggingen avdekket at AI tidligere kunne forsøke klær ved General Store, selv om varen ikke lå i den katalogen.\n- Ferskmat kjøpes nå bare ved General Store. Kartleggingen avdekket at AI tidligere kunne forsøke ferskmat ved Shadow Market uten en tilsvarende katalogvare.\n- Lotteribilletter beholder eksisterende særregel og kan kjøpes ved både General Store og Shadow Market gjennom canonical vendor-service.\n- Fjernet de gamle AI-selector-referansene til `modifyFood`, `modifyClothing`, `buyFreshFood`, `buyFoodWithSpoilage`, `buyTicket` og `buyLotteryTicket`.\n- Lagt til sju integrasjonstester som sender manipulerte pris-/effektdata og bekrefter canonical katalogpris, rabatt, effekt, lagring, shoppingtid og atomisk avvisning.\n- Fjernet alle midlertidige workflow-, trigger- og patchfiler før merge.\n\n### Tester\n\nGitHub Actions-run `30078819942`:\n\n- Dependency install: bestått.\n- TypeScript: bestått.\n- Full Vitest-pakke, inkludert sju nye AI-ressursintegrasjonstester: bestått.\n- Produksjonsbuild: bestått.\n- ESLint: bestått.\n- Playwright-runner og Chromium-installasjon: bestått.\n- Title/setup-smoke og deterministisk komplett lokal spillflyt: bestått.\n\n### Resultat\n\n- AI kan ikke lenger bestemme egne priser eller effekter ved ressurskjøp.\n- Ressurskjøp følger de samme katalogene og økonomireglene som menneskespillere, mens den historiske AI-shoppingtiden er bevart.\n- Neste AI-delfase er equipment/appliance, deretter dungeon auto-resolve.\n- PR #344 er klar for squash-merge. Merge-SHA føres inn ved starten av neste fase.\n'''
+          path.write_text(text, encoding='utf-8')
+          PY
+          rm -f scripts/apply-phase14b-ai-resources.mjs phase14b-apply-trigger.txt .github/workflows/apply-phase14b-ai-resources.yml
+      - name: Commit final phase 14B state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Finalize phase 14B audit log and cleanup"
+          git push origin HEAD:agent/audit-phase14b-ai-resources
