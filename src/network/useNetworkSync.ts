@@ -40,51 +40,29 @@ function isRateLimited(peerId: string): boolean {
     timestamps = [];
     peerActionTimestamps.set(peerId, timestamps);
   }
-  // Remove timestamps outside the window
   const cutoff = now - RATE_LIMIT_WINDOW;
   while (timestamps.length > 0 && timestamps[0] < cutoff) {
     timestamps.shift();
   }
-  if (timestamps.length >= GUEST_ACTION_RATE_LIMIT) {
-    return true;
-  }
+  if (timestamps.length >= GUEST_ACTION_RATE_LIMIT) return true;
   timestamps.push(now);
   return false;
 }
 
-/** Clear rate limit tracking for a peer (on disconnect) */
 export function clearRateLimit(peerId: string) {
   peerActionTimestamps.delete(peerId);
 }
 
-/** Clear all rate limit tracking */
 export function clearAllRateLimits() {
   peerActionTimestamps.clear();
 }
 
-/**
- * Hook for network synchronization during gameplay.
- *
- * For HOST: subscribes to store changes and broadcasts to all guests.
- *           Validates guest actions (turn check via peerId -> playerId mapping).
- *           Enforces turn timeout for AFK players.
- * For GUEST: receives state updates and sets up action forwarding.
- * For LOCAL: no-op.
- */
 export function useNetworkSync() {
   const networkMode = useGameStore(s => s.networkMode);
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Remote movement animation state
   const [remoteAnimation, setRemoteAnimation] = useState<{ playerId: string; path: LocationId[] } | null>(null);
-
-  // Latency display (guest only, in ms)
   const [latency, setLatency] = useState(0);
-
-  // In-game chat messages (online mode only, not persisted)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-
-  // Connection status tracking for in-game reconnect UI
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connected');
   const attemptReconnect = useCallback(() => { peerManager.attemptReconnect(); }, []);
 
@@ -99,7 +77,6 @@ export function useNetworkSync() {
     }
   }, [networkMode]);
 
-  // Turn timeout tracking (host only)
   const turnTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clearRemoteAnimation = useCallback(() => setRemoteAnimation(null), []);
 
@@ -134,8 +111,7 @@ export function useNetworkSync() {
     turnTimeoutRef.current = setTimeout(() => {
       const store = useGameStore.getState();
       const currentPlayer = store.players[store.currentPlayerIndex];
-      if (!currentPlayer || currentPlayer.isAI) return;
-      if (store.phase !== 'playing') return;
+      if (!currentPlayer || currentPlayer.isAI || store.phase !== 'playing') return;
       if (store.localPlayerId === currentPlayer.id) return;
       console.log(`[NetworkSync] Turn timeout for player: ${currentPlayer.name}`);
       peerManager.broadcast({ type: 'turn-timeout', playerId: currentPlayer.id });
@@ -152,8 +128,7 @@ export function useNetworkSync() {
     if (networkMode !== 'host') return;
     const store = useGameStore.getState();
     const currentPlayer = store.players[store.currentPlayerIndex];
-    if (!currentPlayer || currentPlayer.isAI) return;
-    if (store.phase !== 'playing') return;
+    if (!currentPlayer || currentPlayer.isAI || store.phase !== 'playing') return;
     if (store.localPlayerId === currentPlayer.id) return;
 
     const currentPlayerId = currentPlayer.id;
@@ -213,21 +188,14 @@ export function useNetworkSync() {
       const store = useGameStore.getState();
       const roomCode = store.roomCode;
       const playerId = resolveGameplayPlayerId(peerId);
-      if (!roomCode || !playerId || (expectedPlayerId && expectedPlayerId !== playerId)) {
-        return false;
-      }
+      if (!roomCode || !playerId || (expectedPlayerId && expectedPlayerId !== playerId)) return false;
 
       const playerName = getHostPlayerName(playerId)
         ?? peerManager.getPeerName(peerId)
         ?? store.players.find(player => player.id === playerId)?.name;
       if (!playerName) return false;
 
-      const credential = issueHostReconnectCredential({
-        roomCode,
-        playerId,
-        playerName,
-        peerId,
-      });
+      const credential = issueHostReconnectCredential({ roomCode, playerId, playerName, peerId });
       peerManager.sendTo(peerId, { type: 'reconnect-credential', ...credential });
       return true;
     };
@@ -238,31 +206,9 @@ export function useNetworkSync() {
         trackPendingAction(requestId);
         peerManager.sendToHost({ type: 'action', requestId, name: actionName, args });
       });
-
-      const store = useGameStore.getState();
-      const roomCode = store.roomCode;
-      const localPlayerId = store.localPlayerId;
-      if (roomCode && localPlayerId) {
-        const credential = getLocalReconnectCredential(roomCode);
-        if (credential && credential.playerId === localPlayerId) {
-          peerManager.sendToHost({
-            type: 'reconnect',
-            playerName: credential.playerName,
-            playerId: credential.playerId,
-            reconnectToken: credential.reconnectToken,
-          });
-        } else {
-          peerManager.sendToHost({ type: 'reconnect-credential-request', playerId: localPlayerId });
-        }
-      }
     }
 
-    if (networkMode === 'host') {
-      clearHostReconnectCredentials();
-      peerManager.connectedPeerIds.forEach(peerId => {
-        sendReconnectCredential(peerId);
-      });
-    }
+    if (networkMode === 'host') clearHostReconnectCredentials();
 
     const unsubMessage = peerManager.onMessage((message: NetworkMessage, fromPeerId: string) => {
       if (networkMode === 'host') {
@@ -384,6 +330,32 @@ export function useNetworkSync() {
         } else if (msg.type === 'chat-message') {
           setChatMessages(prev => [...prev, msg.message].slice(-100));
         }
+      }
+    });
+
+    // Bootstrap only after the listener above is registered, avoiding transition races.
+    queueMicrotask(() => {
+      const store = useGameStore.getState();
+      if (networkMode === 'guest' && store.networkMode === 'guest') {
+        const roomCode = store.roomCode;
+        const localPlayerId = store.localPlayerId;
+        if (roomCode && localPlayerId) {
+          const credential = getLocalReconnectCredential(roomCode);
+          if (credential && credential.playerId === localPlayerId) {
+            peerManager.sendToHost({
+              type: 'reconnect',
+              playerName: credential.playerName,
+              playerId: credential.playerId,
+              reconnectToken: credential.reconnectToken,
+            });
+          } else {
+            peerManager.sendToHost({ type: 'reconnect-credential-request', playerId: localPlayerId });
+          }
+        }
+      } else if (networkMode === 'host' && store.networkMode === 'host') {
+        peerManager.connectedPeerIds.forEach(peerId => {
+          sendReconnectCredential(peerId);
+        });
       }
     });
 
