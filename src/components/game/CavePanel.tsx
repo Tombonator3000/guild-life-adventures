@@ -17,7 +17,6 @@ import {
 import { ActionButton } from './ActionButton';
 import { toast } from 'sonner';
 import { useGameStore } from '@/store/gameStore';
-import { getHexById } from '@/data/hexes';
 import { useTranslation } from '@/i18n';
 import { calculateCombatStats, getDurabilityCondition, MAX_DURABILITY, getItem, ARMORY_ITEMS } from '@/data/items';
 import {
@@ -37,12 +36,6 @@ import type { EquipmentDurabilityLoss } from '@/data/combatResolver';
 
 interface CavePanelProps {
   player: Player;
-  spendTime: (playerId: string, hours: number) => void;
-  modifyGold: (playerId: string, amount: number) => void;
-  modifyHealth: (playerId: string, amount: number) => void;
-  modifyHappiness: (playerId: string, amount: number) => void;
-  clearDungeonFloor: (playerId: string, floorId: number) => void;
-  applyRareDrop: (playerId: string, dropId: string) => void;
 }
 
 // ─── Degree ID to display name ───────────────────────────────────
@@ -433,21 +426,16 @@ function CombatResultPanel({ result, floor, onDismiss }: CombatResultPanelProps)
 
 // ─── Main component ──────────────────────────────────────────────
 
-export function CavePanel({
-  player,
-  spendTime,
-  modifyGold,
-  modifyHealth,
-  modifyHappiness,
-  clearDungeonFloor,
-  applyRareDrop,
-}: CavePanelProps) {
+export function CavePanel({ player }: CavePanelProps) {
   const { t } = useTranslation();
   const [expandedFloor, setExpandedFloor] = useState<number | null>(null);
   const [activeFloor, setActiveFloor] = useState<DungeonFloor | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   // E4: post-combat result summary
   const [combatResult, setCombatResult] = useState<{ result: CombatRunResult; floor: DungeonFloor } | null>(null);
+  const activeSession = useGameStore(state => state.dungeonRuns[player.id]);
+  const sessionFloor = activeSession ? DUNGEON_FLOORS.find(floor => floor.id === activeSession.floorId) ?? null : null;
+  const currentFloor = activeFloor ?? sessionFloor;
 
   const combatStats = calculateCombatStats(
     player.equippedWeapon,
@@ -502,71 +490,28 @@ export function CavePanel({
       toast.error('You are too fatigued for another dungeon run this week.');
       return;
     }
-    // Only charge for the first encounter's time on entry (rest charged per encounter)
-    const encounterTime = getEncounterTimeCost(floor, combatStats);
-    spendTime(player.id, encounterTime);
-    // M31 FIX: Use proper store action instead of direct setState
-    const { incrementDungeonAttempts } = useGameStore.getState();
-    incrementDungeonAttempts(player.id);
     setActiveFloor(floor);
+    const result = useGameStore.getState().beginDungeonRun(player.id, floor.id);
+    if (result && !result.success) {
+      setActiveFloor(null);
+      toast.error(result.message);
+    }
   };
 
-  // ─── Per-encounter health application (immediate damage) ──
-
-  const handleEncounterHealthDelta = (delta: number): boolean => {
-    if (delta !== 0) modifyHealth(player.id, delta);
-    // Check for death immediately after each encounter
-    const { checkDeath } = useGameStore.getState();
-    return checkDeath(player.id);
-  };
-
-  // ─── Combat complete — apply results ───────────────────────
+  // ─── Combat complete — the host has already settled all effects ──
 
   const handleCombatComplete = (result: CombatRunResult) => {
-    if (!activeFloor) return;
-    const { applyDurabilityLoss, checkDeath, updatePlayerDungeonRecord } = useGameStore.getState();
-
-    // Gold
-    if (result.goldEarned > 0) modifyGold(player.id, result.goldEarned);
-
-    // Equipment durability
-    applyDurabilityLoss(player.id, result.durabilityLoss);
+    const floor = currentFloor;
+    if (!floor) return;
     const wearMessage = formatEquipmentWear(result.durabilityLoss);
     if (wearMessage) toast(wearMessage, { duration: 3000 });
-
-    // Health was applied per-encounter; do a final death check in case something was missed
-    checkDeath(player.id);
-
-    // Happiness
-    if (result.happinessChange !== 0) modifyHappiness(player.id, result.happinessChange);
-
-    // First-clear reward
-    if (result.isFirstClear) clearDungeonFloor(player.id, activeFloor.id);
-
-    // Rare drop
     if (result.rareDropName) {
-      applyRareDrop(player.id, activeFloor.rareDrop.id);
-      toast.success(`RARE DROP: ${result.rareDropName}! ${activeFloor.rareDrop.description}`, { duration: 6000 });
+      toast.success(`RARE DROP: ${result.rareDropName}! ${floor.rareDrop.description}`, { duration: 6000 });
     }
-
-    // Hex scroll drop (if hexes enabled and boss dropped one)
     if (result.hexScrollDropId) {
-      const { addHexScrollToPlayer } = useGameStore.getState();
-      addHexScrollToPlayer(player.id, result.hexScrollDropId);
-      const hexDef = getHexById(result.hexScrollDropId);
-      toast.success(
-        `DARK SCROLL: ${hexDef?.name || 'Unknown Hex'}! A forbidden scroll materializes from the darkness.`,
-        { duration: 6000 },
-      );
+      toast.success('DARK SCROLL: A forbidden scroll materializes from the darkness.', { duration: 6000 });
     }
-
-    // M31 FIX: Use proper store action instead of direct setState
-    // E2: pass week and cleared for run history tracking
-    const currentWeek = useGameStore.getState().week;
-    updatePlayerDungeonRecord(player.id, activeFloor.id, result.goldEarned, result.encountersCompleted, currentWeek, result.success);
-
-    // E4: Show detailed result panel instead of just a toast
-    setCombatResult({ result, floor: activeFloor });
+    setCombatResult({ result, floor });
     setActiveFloor(null);
   };
 
@@ -601,16 +546,13 @@ export function CavePanel({
 
   // ─── If in combat, show combat view ────────────────────────
 
-  if (activeFloor) {
+  if (currentFloor) {
     return (
       <CombatView
         player={player}
-        floor={activeFloor}
+        floor={currentFloor}
         onComplete={handleCombatComplete}
         onCancel={() => setActiveFloor(null)}
-        onSpendTime={(hours: number) => spendTime(player.id, hours)}
-        encounterTimeCost={getEncounterTimeCost(activeFloor, combatStats)}
-        onEncounterHealthDelta={handleEncounterHealthDelta}
       />
     );
   }

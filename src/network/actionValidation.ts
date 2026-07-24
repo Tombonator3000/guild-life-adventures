@@ -195,6 +195,16 @@ export function validateGuestActionArgs(
     case 'purchaseTavernItem':
       return validateStringArg(args, 1, 'tavern item');
 
+    case 'beginDungeonRun':
+      return validateNumArg(args, 1, 1, 6, 'dungeon floor', true);
+
+    case 'resolveDungeonEncounter':
+    case 'finalizeDungeonRun':
+      return args.length === 1 ? null : 'Invalid dungeon arguments';
+
+    case 'advanceDungeonRun':
+      return validateEnumArg(args, 1, ['continue', 'skip-healing', 'retreat', 'leave'], 'dungeon action');
+
     case 'purchaseAppliance': {
       const vendorError = validateEnumArg(args, 1, ['enchanter', 'shadow-market', 'fence'], 'vendor');
       return vendorError ?? validateStringArg(args, 2, 'appliance');

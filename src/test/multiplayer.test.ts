@@ -598,7 +598,9 @@ describe('Cross-Player Validation', () => {
       'sellInventoryItem',
       'purchaseEquipmentItem', 'useEquipmentService', 'purchaseAppliance', 'useApplianceService',
       'equipItem', 'unequipItem', 'tradeStock', 'manageLoan',
-      'purchaseVendorItem', 'purchaseTavernItem', 'purchaseHexScroll', 'useHexDefense',
+      'purchaseVendorItem', 'purchaseTavernItem',
+      'beginDungeonRun', 'resolveDungeonEncounter', 'advanceDungeonRun', 'finalizeDungeonRun',
+      'purchaseHexScroll', 'useHexDefense',
       'useGraveyardHexService', 'castLocationHex', 'castPersonalCurse',
       'buyGuildPass', 'takeQuest', 'completeQuest', 'abandonQuest',
     ];
