@@ -10,7 +10,7 @@ import { LOCATION_NPCS } from '@/data/npcs';
 import { useState } from 'react';
 import { NewspaperModal } from './NewspaperModal';
 import { toast } from 'sonner';
-import { NEWSPAPER_COST, generateNewspaper } from '@/data/newspaper';
+import { generateNewspaper } from '@/data/newspaper';
 import { getLocationTabs, getWorkInfo } from './locationTabs';
 import type { LocationTabContext } from './locationTabs';
 import { getQuestLocationObjectives } from '@/data/quests';
@@ -37,6 +37,25 @@ interface LocationPanelProps {
   locationId: LocationId;
 }
 
+type DeadLocationTabContextField =
+  | 'modifyGold'
+  | 'modifyHappiness'
+  | 'modifyHealth'
+  | 'modifyFood'
+  | 'modifyClothing'
+  | 'modifyMaxHealth'
+  | 'modifyRelaxation'
+  | 'spendTime'
+  | 'completeLocationObjective'
+  | 'clearDungeonFloor'
+  | 'applyRareDrop'
+  | 'purchaseVendorItem'
+  | 'cureSickness'
+  | 'onBuyNewspaper'
+  | 'setEventMessage';
+
+type ActiveLocationTabContext = Omit<LocationTabContext, DeadLocationTabContextField>;
+
 export function LocationPanel({ locationId }: LocationPanelProps) {
   // Subscribe only to values and action references used by this panel. The
   // previous whole-store subscription rerendered every open location for
@@ -54,15 +73,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     travelPlayer: state.travelPlayer,
     selectLocation: state.selectLocation,
     endTurn: state.endTurn,
-    purchaseNewspaper: state.purchaseNewspaper,
-    modifyGold: state.modifyGold,
-    modifyHappiness: state.modifyHappiness,
-    modifyHealth: state.modifyHealth,
-    modifyFood: state.modifyFood,
-    modifyClothing: state.modifyClothing,
-    modifyMaxHealth: state.modifyMaxHealth,
-    modifyRelaxation: state.modifyRelaxation,
-    spendTime: state.spendTime,
     performWorkShift: state.performWorkShift,
     attendDegreeSession: state.attendDegreeSession,
     prepayDegree: state.prepayDegree,
@@ -81,14 +91,9 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     requestRaise: state.requestRaise,
     equipItem: state.equipItem,
     unequipItem: state.unequipItem,
-    clearDungeonFloor: state.clearDungeonFloor,
-    applyRareDrop: state.applyRareDrop,
-    purchaseVendorItem: state.purchaseVendorItem,
-    cureSickness: state.cureSickness,
     useEquipmentService: state.useEquipmentService,
     useApplianceService: state.useApplianceService,
     readBook: state.readBook,
-    setEventMessage: state.setEventMessage,
   })));
   const player = useCurrentPlayer();
   const location = getLocation(locationId);
@@ -126,26 +131,14 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     }
   };
 
-  const handleBuyNewspaper = () => {
-    const price = Math.round(NEWSPAPER_COST * store.priceModifier);
-    // M32 FIX: Check gold before purchasing
-    if (player.gold < price) return;
-    playSFX('item-buy');
-    const result = store.purchaseNewspaper(player.id, 'general-store');
-    if (result && !result.success) {
-      toast.error(result.message);
-      return;
-    }
-    const newspaper = generateNewspaper(store.week, store.priceModifier, store.economyTrend, store.weeklyNewsEvents);
-    setCurrentNewspaper(newspaper);
-  };
-
   const handleShowNewspaper = (newspaper: ReturnType<typeof generateNewspaper>) => {
     setCurrentNewspaper(newspaper);
   };
 
-  // Build context for location tab factories
-  const ctx: LocationTabContext = {
+  // Build only the context fields actually read by the tab factories. The
+  // exported legacy interface still lists old callbacks; source invariants
+  // verify those names are declarations only until that large file is split.
+  const ctx: ActiveLocationTabContext = {
     player,
     players: store.players,
     priceModifier: store.priceModifier,
@@ -154,14 +147,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     weeklyNewsEvents: store.weeklyNewsEvents,
     stockPrices: store.stockPrices,
     stockPriceHistory: store.stockPriceHistory || {},
-    modifyGold: store.modifyGold,
-    modifyHappiness: store.modifyHappiness,
-    modifyHealth: store.modifyHealth,
-    modifyFood: store.modifyFood,
-    modifyClothing: store.modifyClothing,
-    modifyMaxHealth: store.modifyMaxHealth,
-    modifyRelaxation: store.modifyRelaxation,
-    spendTime: store.spendTime,
     performWorkShift: store.performWorkShift,
     attendDegreeSession: store.attendDegreeSession,
     prepayDegree: store.prepayDegree,
@@ -169,7 +154,6 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     takeQuest: store.takeQuest,
     completeQuest: store.completeQuest,
     abandonQuest: store.abandonQuest,
-    completeLocationObjective: store.completeLocationObjective,
     takeChainQuest: store.takeChainQuest,
     takeNonLinearChain: store.takeNonLinearChain,
     makeNLChainChoice: store.makeNLChainChoice,
@@ -180,18 +164,16 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
     requestRaise: store.requestRaise,
     equipItem: store.equipItem,
     unequipItem: store.unequipItem,
-    clearDungeonFloor: store.clearDungeonFloor,
-    applyRareDrop: store.applyRareDrop,
-    purchaseVendorItem: store.purchaseVendorItem,
-    cureSickness: store.cureSickness,
     equipmentServiceAction: store.useEquipmentService,
     applianceServiceAction: store.useApplianceService,
     readBook: store.readBook,
     locationHexes: store.locationHexes,
-    onBuyNewspaper: handleBuyNewspaper,
     onShowNewspaper: handleShowNewspaper,
-    setEventMessage: store.setEventMessage,
   };
+
+  // Runtime tab factories only read ActiveLocationTabContext. The temporary
+  // boundary cast can be removed when locationTabs.tsx is split by domain.
+  const locationTabContext = ctx as LocationTabContext;
 
   // Home locations get a full-panel visual room display (special case)
   const isHomeLocation = locationId === 'noble-heights' || locationId === 'slums';
@@ -208,8 +190,8 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
   }
 
   const npc = LOCATION_NPCS[locationId];
-  const tabs = getLocationTabs(locationId, isHere, ctx);
-  const workInfo = isHere ? getWorkInfo(locationId, ctx) : null;
+  const tabs = getLocationTabs(locationId, isHere, locationTabContext);
+  const workInfo = isHere ? getWorkInfo(locationId, locationTabContext) : null;
 
   // Auto-select the active quest/bounty tab at Guild Hall
   const defaultTab = locationId === 'guild-hall' && player.activeQuest
