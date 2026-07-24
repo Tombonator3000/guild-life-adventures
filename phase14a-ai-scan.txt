@@ -1,0 +1,96 @@
+# Phase 14A AI caller scan
+
+src/data/dungeon/floors.ts:109:effect: { type: 'heal', value: 20 },
+src/data/dungeon/types.ts:132:| { type: 'heal'; value: number }
+src/hooks/ai/__tests__/actionGenerator.test.ts:146:{ type: 'study', priority: 50, description: 'Study' },
+src/hooks/ai/__tests__/actionGenerator.test.ts:147:{ type: 'work', priority: 50, description: 'Work' },
+src/hooks/ai/__tests__/actionGenerator.test.ts:158:{ type: 'rest', priority: 60, description: 'Rest' },
+src/hooks/ai/__tests__/actionGenerator.test.ts:168:{ type: 'study', priority: 50, description: 'Study' },
+src/hooks/ai/__tests__/actionGenerator.test.ts:169:{ type: 'work', priority: 50, description: 'Work' },
+src/hooks/ai/__tests__/actionGenerator.test.ts:214:{ type: 'study', priority: 50, description: 'Study' },
+src/hooks/ai/__tests__/actionGenerator.test.ts:223:{ type: 'work', priority: 50, description: 'Work' },
+src/hooks/ai/__tests__/actionGenerator.test.ts:233:{ type: 'work', priority: 50, description: 'Work' },
+src/hooks/ai/__tests__/actionGenerator.test.ts:234:{ type: 'study', priority: 50, description: 'Study' },
+src/hooks/ai/actionExecutor.ts:190:store.cureSickness(player.id);
+src/hooks/ai/actions/criticalNeeds.ts:285:type: 'heal',
+src/hooks/ai/actions/criticalNeeds.ts:371:type: 'rest',
+src/hooks/ai/actions/economicActions.ts:26:type: 'cure-sickness',
+src/hooks/ai/actions/goalActions.ts:53:type: 'graduate',
+src/hooks/ai/actions/goalActions.ts:78:type: 'study',
+src/hooks/ai/actions/goalActions.ts:111:type: 'work',
+src/hooks/ai/actions/goalActions.ts:203:type: 'rest',
+src/hooks/ai/actions/goalActions.ts:257:type: 'work',
+src/hooks/ai/actions/goalActions.ts:400:type: 'study',
+src/hooks/ai/actions/goalActions.ts:423:type: 'work',
+src/hooks/ai/actions/goalActions.ts:476:type: 'graduate',
+src/hooks/ai/actions/goalActions.ts:530:type: 'study',
+src/hooks/ai/actions/goalActions.ts:545:type: 'work',
+src/hooks/ai/actions/goalActions.ts:562:type: 'work',
+src/hooks/ai/actions/rivalryActions.ts:110:type: 'study',
+src/hooks/ai/actions/strategicActions.ts:98:type: 'work',
+src/hooks/ai/actions/strategicActions.ts:157:type: 'study',
+src/hooks/ai/actions/strategicActions.ts:243:type: 'request-raise',
+src/hooks/ai/actions/strategicActions.ts:422:type: 'study',
+src/hooks/ai/handlers/employmentEducationHandlers.ts:30:store.workShift(player.id, hours, wage);
+src/hooks/ai/handlers/employmentEducationHandlers.ts:48:const result = store.requestRaise(player.id);
+src/hooks/ai/handlers/employmentEducationHandlers.ts:60:store.studyDegree(player.id, degreeId, cost, hours);
+src/hooks/ai/handlers/employmentEducationHandlers.ts:70:store.completeDegree(player.id, degreeId);
+src/store/helpers/employmentEducationServiceHelpers.ts:90:const worked = get().workShift(playerId, hours, player.currentWage);
+src/store/helpers/employmentEducationServiceHelpers.ts:144:get().studyDegree(playerId, degreeId, canonicalPrice, hours);
+src/store/helpers/employmentEducationServiceHelpers.ts:220:get().completeDegree(playerId, degreeId);
+src/store/helpers/turnHelpers.ts:149:const worked = get().workShift(playerId, hours, 0);
+src/test/age.test.ts:242:useGameStore.getState().workShift(playerId, 8, 5);
+src/test/age.test.ts:254:useGameStore.getState().workShift(playerId, 8, 5);
+src/test/age.test.ts:266:useGameStore.getState().workShift(playerId, 4, 5);
+src/test/atomicServices.test.ts:21:const result = useGameStore.getState().useHealerService(before.id, 'minor');
+src/test/atomicServices.test.ts:42:const result = useGameStore.getState().useHealerService(playerId, 'minor');
+src/test/education.test.ts:66:useGameStore.getState().studyDegree(playerId, 'trade-guild', 5, 6);
+src/test/education.test.ts:75:useGameStore.getState().studyDegree(playerId, 'trade-guild', 5, 6);
+src/test/education.test.ts:85:useGameStore.getState().completeDegree(playerId, 'trade-guild');
+src/test/education.test.ts:91:useGameStore.getState().studyDegree(playerId, 'trade-guild', 5, 6);
+src/test/education.test.ts:94:useGameStore.getState().completeDegree(playerId, 'trade-guild');
+src/test/education.test.ts:100:useGameStore.getState().completeDegree(playerId, 'trade-guild');
+src/test/education.test.ts:112:useGameStore.getState().completeDegree(playerId, 'trade-guild');
+src/test/education.test.ts:113:useGameStore.getState().completeDegree(playerId, 'junior-academy');
+src/test/employmentEducationServices.test.ts:38:const result = useGameStore.getState().performWorkShift(playerId, 'full');
+src/test/employmentEducationServices.test.ts:61:const result = useGameStore.getState().performWorkShift(playerId, 'full');
+src/test/employmentEducationServices.test.ts:81:const result = useGameStore.getState().attendDegreeSession(playerId, 'trade-guild', 'standard');
+src/test/employmentEducationServices.test.ts:120:const result = useGameStore.getState().graduateDegree(playerId, 'trade-guild');
+src/test/healerServices.test.ts:42:const result = useGameStore.getState().useHealerService(player.id, 'minor');
+src/test/healerServices.test.ts:56:expect(useGameStore.getState().useHealerService(playerId, 'cure')?.success).toBe(true);
+src/test/healerServices.test.ts:62:expect(useGameStore.getState().useHealerService(playerId, 'blessing')?.success).toBe(true);
+src/test/healerServices.test.ts:72:expect(useGameStore.getState().useHealerService(playerId, 'minor')?.success).toBe(false);
+src/test/healerServices.test.ts:80:expect(useGameStore.getState().useHealerService(healthyId, 'minor')?.success).toBe(false);
+src/test/healerServices.test.ts:81:expect(useGameStore.getState().useHealerService(healthyId, 'cure')?.success).toBe(false);
+src/test/healerServices.test.ts:87:expect(useGameStore.getState().useHealerService(poorId, 'minor')?.success).toBe(false);
+src/test/healerServices.test.ts:90:expect(useGameStore.getState().useHealerService(rushedId, 'minor')?.success).toBe(false);
+src/test/homeActivities.test.ts:42:const result = useGameStore.getState().performHomeActivity(player.id, 'relax');
+src/test/homeActivities.test.ts:58:expect(useGameStore.getState().performHomeActivity(playerId, 'relax')?.success).toBe(true);
+src/test/homeActivities.test.ts:70:expect(useGameStore.getState().performHomeActivity(playerId, 'sleep')?.success).toBe(true);
+src/test/homeActivities.test.ts:81:expect(useGameStore.getState().performHomeActivity(playerId, 'relax')?.success).toBe(false);
+src/test/homeActivities.test.ts:89:expect(useGameStore.getState().performHomeActivity(homelessId, 'sleep')?.success).toBe(false);
+src/test/homeActivities.test.ts:92:expect(useGameStore.getState().performHomeActivity(tiredId, 'sleep')?.success).toBe(false);
+src/test/victory.test.ts:76:useGameStore.getState().completeDegree(playerId, 'trade-guild');
+src/test/victory.test.ts:77:useGameStore.getState().completeDegree(playerId, 'junior-academy');
+src/test/work.test.ts:16:useGameStore.getState().workShift(playerId, 6, 10);
+src/test/work.test.ts:24:useGameStore.getState().workShift(playerId, 6, 10);
+src/test/work.test.ts:31:useGameStore.getState().workShift(playerId, 4, 10);
+src/test/work.test.ts:38:useGameStore.getState().workShift(playerId, 8, 10);
+src/test/work.test.ts:46:useGameStore.getState().workShift(playerId, 6, 999); // wage param should be ignored
+src/test/work.test.ts:55:useGameStore.getState().workShift(playerId, 6, 10);
+src/test/work.test.ts:60:useGameStore.getState().workShift(playerId, 6, 10);
+src/test/work.test.ts:68:useGameStore.getState().workShift(playerId, 6, 10);
+src/test/work.test.ts:75:useGameStore.getState().workShift(playerId, 6, 10);
+src/test/work.test.ts:82:useGameStore.getState().workShift(playerId, 6, 10);
+src/test/work.test.ts:92:useGameStore.getState().workShift(playerId, 6, 10);
+src/test/work.test.ts:104:useGameStore.getState().workShift(playerId, 6, 10);
+src/test/work.test.ts:113:useGameStore.getState().workShift(playerId, 6, 10);
+src/test/work.test.ts:115:useGameStore.getState().workShift(playerId, 6, 10);
+src/components/game/AcademyPanel.tsx:102:const result = graduateDegree(player.id, degId);
+src/components/game/AcademyPanel.tsx:119:const result = attendDegreeSession(player.id, degId, 'standard');
+src/components/game/AcademyPanel.tsx:133:const result = attendDegreeSession(player.id, degId, 'cram');
+src/components/game/HomePanel.tsx:134:const result = store.performHomeActivity(player.id, activity);
+src/components/game/WorkSection.tsx:70:const result = performWorkShift(player.id, mode);
+src/components/game/locationTabs.tsx:127:const result = performWorkShift(player.id, 'full');
+src/components/game/locationTabs.tsx:232:const result = requestRaise(player.id);
+src/components/game/tabs/DeveloperTab.tsx:340:<button onClick={() => cureSickness(playerId)} className={DEBUG_BTN}>
