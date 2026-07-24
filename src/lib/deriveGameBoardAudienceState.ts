@@ -1,11 +1,11 @@
-import type { Player } from '@/types/game.types';
+import type { GameState, Player } from '@/types/game.types';
 
 interface DeriveGameBoardAudienceStateOptions {
   players: readonly Player[];
   currentPlayer: Player | null | undefined;
   localPlayerId: string | null;
   isOnline: boolean;
-  phase: string;
+  phase: GameState['phase'];
 }
 
 export function deriveGameBoardAudienceState({
