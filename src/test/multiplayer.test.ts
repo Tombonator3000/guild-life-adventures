@@ -126,6 +126,7 @@ describe('Action Categories', () => {
     expect(ALLOWED_GUEST_ACTIONS.has('travelPlayer')).toBe(true);
     expect(ALLOWED_GUEST_ACTIONS.has('performHomeActivity')).toBe(true);
     expect(ALLOWED_GUEST_ACTIONS.has('useHealerService')).toBe(true);
+    expect(ALLOWED_GUEST_ACTIONS.has('purchaseTavernItem')).toBe(true);
     expect(ALLOWED_GUEST_ACTIONS.has('cureSickness')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('movePlayer')).toBe(false);
     expect(ALLOWED_GUEST_ACTIONS.has('endTurn')).toBe(true);
@@ -597,7 +598,7 @@ describe('Cross-Player Validation', () => {
       'sellInventoryItem',
       'purchaseEquipmentItem', 'useEquipmentService', 'purchaseAppliance', 'useApplianceService',
       'equipItem', 'unequipItem', 'tradeStock', 'manageLoan',
-      'purchaseVendorItem', 'purchaseHexScroll', 'useHexDefense',
+      'purchaseVendorItem', 'purchaseTavernItem', 'purchaseHexScroll', 'useHexDefense',
       'useGraveyardHexService', 'castLocationHex', 'castPersonalCurse',
       'buyGuildPass', 'takeQuest', 'completeQuest', 'abandonQuest',
     ];

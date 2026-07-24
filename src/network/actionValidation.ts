@@ -192,6 +192,9 @@ export function validateGuestActionArgs(
       return vendorError ?? validateStringArg(args, 2, 'item');
     }
 
+    case 'purchaseTavernItem':
+      return validateStringArg(args, 1, 'tavern item');
+
     case 'purchaseAppliance': {
       const vendorError = validateEnumArg(args, 1, ['enchanter', 'shadow-market', 'fence'], 'vendor');
       return vendorError ?? validateStringArg(args, 2, 'appliance');

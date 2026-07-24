@@ -266,7 +266,7 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           currentPlayerIndex: nextIndex,
           players: freshState.players.map((p, index) => {
             if (index === nextIndex) {
-              return { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: homeLocation, dungeonAttemptsThisTurn: 0, hadRandomEventThisTurn: false, workedThisTurn: false, raiseAttemptedThisTurn: false };
+              return { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: homeLocation, dungeonAttemptsThisTurn: 0, hadRandomEventThisTurn: false, workedThisTurn: false, raiseAttemptedThisTurn: false, tavernAlesDrunkThisTurn: 0 };
             }
             if (endingHomeLocation && index === endingPlayerIdx) {
               return { ...p, currentLocation: endingHomeLocation };

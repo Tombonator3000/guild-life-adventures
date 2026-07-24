@@ -248,7 +248,7 @@ function guildHallTabs(ctx: LocationTabContext): LocationTab[] {
 }
 
 function tavernTabs(ctx: LocationTabContext): LocationTab[] {
-  const { player, priceModifier, modifyGold, spendTime, modifyFood, modifyHappiness, modifyHealth, setEventMessage } = ctx;
+  const { player, priceModifier } = ctx;
   return [{
     id: 'menu',
     label: 'Menu',
@@ -256,12 +256,6 @@ function tavernTabs(ctx: LocationTabContext): LocationTab[] {
       <TavernPanel
         player={player}
         priceModifier={priceModifier}
-        modifyGold={modifyGold}
-        spendTime={spendTime}
-        modifyFood={modifyFood}
-        modifyHappiness={modifyHappiness}
-        modifyHealth={modifyHealth}
-        setEventMessage={setEventMessage}
       />
     ),
   }];

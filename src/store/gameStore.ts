@@ -189,6 +189,7 @@ const createPlayer = (
   workedThisTurn: false,
   hadRandomEventThisTurn: false,
   raiseAttemptedThisTurn: false,
+  tavernAlesDrunkThisTurn: 0,
   // Reputation system
   fame: 0,
   infamy: 0,

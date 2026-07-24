@@ -278,6 +278,7 @@ function resetWeeklyFlags(p: Player): void {
   p.workedThisTurn = false;
   p.hadRandomEventThisTurn = false;
   p.raiseAttemptedThisTurn = false;
+  p.tavernAlesDrunkThisTurn = 0;
   if (p.questCooldownWeeksLeft > 0) {
     p.questCooldownWeeksLeft -= 1;
   }

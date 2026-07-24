@@ -303,6 +303,7 @@ export interface Player {
   workedThisTurn: boolean;                    // True if player worked at least one shift this turn (reset weekly)
   hadRandomEventThisTurn: boolean;            // True if player already had a random location event this turn (max 1 per turn)
   raiseAttemptedThisTurn: boolean;            // True if player already requested a raise this turn (reset on turn switch)
+  tavernAlesDrunkThisTurn: number;               // Host-owned ale counter for Tavern brawl risk (reset on turn switch)
   // Reputation system (Fame & Infamy)
   fame: number;                               // 0-100, earned from heroic actions (quests, dungeon, education)
   infamy: number;                             // 0-100, earned from shady actions (sabotage, hexes, dark rituals)
