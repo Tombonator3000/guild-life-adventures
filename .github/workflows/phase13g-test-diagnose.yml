@@ -1,0 +1,36 @@
+name: Diagnose phase 13G tests
+
+on:
+  push:
+    branches:
+      - agent/audit-phase13g-remaining-raw
+    paths:
+      - phase13g-diagnose-trigger.txt
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/audit-phase13g-remaining-raw
+          fetch-depth: 1
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Capture Vitest output
+        shell: bash
+        run: |
+          set +e
+          bunx vitest run --reporter=dot > phase13g-test-output.txt 2>&1
+          echo "exit_code=$?" >> phase13g-test-output.txt
+          exit 0
+      - name: Commit diagnostic output
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add phase13g-test-output.txt
+          git commit -m "Capture phase 13G test failure"
+          git push origin HEAD:agent/audit-phase13g-remaining-raw
