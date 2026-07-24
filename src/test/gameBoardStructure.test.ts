@@ -10,6 +10,7 @@ const centerSource = readSource('src/components/game/GameBoardCenterPanel.tsx');
 const sidePanelsSource = readSource('src/components/game/GameBoardSidePanels.tsx');
 const eventQueueSource = readSource('src/hooks/useGameBoardEventQueue.ts');
 const turnTransitionSource = readSource('src/hooks/useGameBoardTurnTransition.ts');
+const animationSyncSource = readSource('src/hooks/useGameBoardAnimationSync.ts');
 
 const extractedComponents = [
   'ZoneEditor',
@@ -172,13 +173,25 @@ describe('GameBoard component boundaries', () => {
     expect(turnTransitionSource).toContain('const isMultiHuman = !isOnline && activeHumanPlayers.length >= 2;');
   });
 
+  it('delegates AI and remote animation effects to useGameBoardAnimationSync', () => {
+    expect(gameBoardSource).toContain("import { useGameBoardAnimationSync } from '@/hooks/useGameBoardAnimationSync';");
+    expect(gameBoardSource).toContain('useGameBoardAnimationSync({');
+    expect(gameBoardSource).not.toContain('registerAIAnimateCallback');
+    expect(gameBoardSource).not.toContain('if (remoteAnimation && !animatingPlayer)');
+    expect(animationSyncSource).toContain('registerAIAnimateCallback(startRemoteAnimation);');
+    expect(animationSyncSource).toContain('return () => registerAIAnimateCallback(null);');
+    expect(animationSyncSource).toContain('if (!remoteAnimation || animatingPlayer) return;');
+    expect(animationSyncSource).toContain('clearRemoteAnimation();');
+  });
+
   it('keeps extracted components within focused size limits', () => {
-    expect(gameBoardSource.split('\n').length).toBeLessThan(440);
+    expect(gameBoardSource.split('\n').length).toBeLessThan(430);
     expect(auxiliarySource.split('\n').length).toBeLessThan(80);
     expect(canvasSource.split('\n').length).toBeLessThan(210);
     expect(centerSource.split('\n').length).toBeLessThan(100);
     expect(sidePanelsSource.split('\n').length).toBeLessThan(100);
     expect(eventQueueSource.split('\n').length).toBeLessThan(60);
     expect(turnTransitionSource.split('\n').length).toBeLessThan(55);
+    expect(animationSyncSource.split('\n').length).toBeLessThan(45);
   });
 });
