@@ -32,15 +32,15 @@ Denne fasen løser vanlig reconnect der PeerJS-identiteten fortsatt er den samme
 
 ## Tester
 
-Valideres i GitHub Actions med:
+GitHub Actions-run `30115179257`:
 
-- Dependency install.
-- TypeScript.
-- Full Vitest-pakke, inkludert nye reconnect-helper- og integrasjonstester.
-- Produksjonsbuild.
-- ESLint.
-- Playwright-runner og Chromium.
-- Title/setup-smoke og deterministisk komplett lokal spillflyt med kartreise, bank, save/load og ukeovergang.
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Full Vitest-pakke, inkludert nye reconnect-helper- og integrasjonstester: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright-runner og Chromium-installasjon: bestått.
+- Title/setup-smoke og deterministisk komplett lokal spillflyt med kartreise, bank, save/load og ukeovergang: bestått.
 
 ## Resultat
 
