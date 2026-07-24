@@ -1,11 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
-import { LOCATIONS, getMovementCost, getPath } from '@/data/locations';
 import { getAppliance } from '@/data/items';
-import { LocationZone } from './LocationZone';
-import { PlayerToken } from './PlayerToken';
-import { AnimatedPlayerToken } from './AnimatedPlayerToken';
 import { ResourcePanel } from './ResourcePanel';
 import { LocationPanel } from './LocationPanel';
 import { EventPanel } from './EventPanel';
@@ -15,21 +11,12 @@ import { SideInfoTabs } from './SideInfoTabs';
 import { RightSideTabs } from './RightSideTabs';
 import { MobileHUD } from './MobileHUD';
 import { MobileDrawer } from './MobileDrawer';
-import { WeatherOverlay } from './WeatherOverlay';
-import { FestivalOverlay } from './FestivalOverlay';
-import { BanterBubble } from './BanterBubble';
-import { useBanterStore } from '@/store/banterStore';
 import { GameBoardHeader } from './GameBoardHeader';
-import { DebugOverlay } from './DebugOverlay';
-import { GraveyardCrows } from './GraveyardCrows';
-import gameBoard from '@/assets/game-board.jpeg';
 import { CursePanelOverlay } from './CursePanelOverlay';
-import { ShadowfingersToken } from './ShadowfingersToken';
-import type { LocationId, Player } from '@/types/game.types';
+import type { Player } from '@/types/game.types';
 import { toast } from 'sonner';
 import { useNetworkSync } from '@/network/useNetworkSync';
 import { useZoneConfiguration } from '@/hooks/useZoneConfiguration';
-import { getQuestLocationObjectives } from '@/data/quests';
 import { useAITurnHandler } from '@/hooks/useAITurnHandler';
 import { useAutoEndTurn } from '@/hooks/useAutoEndTurn';
 import { usePlayerAnimation } from '@/hooks/usePlayerAnimation';
@@ -44,6 +31,7 @@ import { CurseToadPanel } from './CurseToadPanel';
 import { registerAIAnimateCallback } from '@/hooks/useAIAnimationBridge';
 import { SpectatorPanel } from './SpectatorPanel';
 import { GameBoardAuxiliaryLayer } from './GameBoardAuxiliaryLayer';
+import { GameBoardCanvas } from './GameBoardCanvas';
 
 export function GameBoard() {
   const {
@@ -276,6 +264,11 @@ export function GameBoard() {
   };
 
   const sidePanelWidthPercent = 12;
+  const shadowfingersTargetLocation = shadowfingersEvent && currentPlayer
+    ? shadowfingersEvent.type === 'street' && 'fromLocation' in shadowfingersEvent.result
+      ? shadowfingersEvent.result.fromLocation
+      : currentPlayer.currentLocation
+    : null;
 
   return (
     <div
@@ -310,109 +303,28 @@ export function GameBoard() {
       )}
 
       <div className="flex-1 flex items-center justify-center min-w-0 min-h-0">
-        <div className="relative w-full h-full">
-          <div
-            className="absolute inset-0 bg-no-repeat"
-            style={{ backgroundImage: `url(${gameBoard})`, backgroundSize: '100% 100%' }}
-          />
-
-          <div className="absolute inset-0">
-            {LOCATIONS.map(baseLocation => {
-              const location = getLocationWithCustomPosition(baseLocation.id, isMobile) || baseLocation;
-              const playersHere = players.filter(
-                player => player.currentLocation === location.id && player.id !== animatingPlayer,
-              );
-              const baseMoveCost = currentPlayer
-                ? getMovementCost(currentPlayer.currentLocation, location.id)
-                : 0;
-              const weatherExtra = baseMoveCost > 0 && weather?.movementCostExtra && currentPlayer
-                ? getPath(
-                    currentPlayer.currentLocation as LocationId,
-                    location.id as LocationId,
-                  ).length * weather.movementCostExtra
-                : 0;
-              const moveCost = baseMoveCost + weatherExtra;
-              const isCurrentLocation = currentPlayer?.currentLocation === location.id;
-              const activeHex = locationHexes?.find(
-                hex => hex.targetLocation === location.id && hex.weeksRemaining > 0,
-              );
-              const chainProgressForLOQ = currentPlayer?.activeQuest?.startsWith('nlchain:')
-                ? currentPlayer?.nlChainProgress
-                : currentPlayer?.questChainProgress;
-              const questObjectives = getQuestLocationObjectives(
-                currentPlayer?.activeQuest ?? null,
-                chainProgressForLOQ,
-              );
-              const questProgress = currentPlayer?.questLocationProgress ?? [];
-              const objectiveForLocation = questObjectives.find(
-                objective => objective.locationId === location.id,
-              );
-              const isQuestObjective = !!objectiveForLocation
-                && !questProgress.includes(objectiveForLocation.id);
-              const isQuestObjectiveDone = !!objectiveForLocation
-                && questProgress.includes(objectiveForLocation.id);
-
-              return (
-                <LocationZone
-                  key={location.id}
-                  location={location}
-                  isSelected={selectedLocation === location.id}
-                  isCurrentLocation={isCurrentLocation && !animatingPlayer}
-                  moveCost={moveCost}
-                  onClick={() => handleLocationClick(location.id)}
-                  isHexed={!!activeHex}
-                  hexCasterName={activeHex?.casterName}
-                  isQuestObjective={isQuestObjective}
-                  isQuestObjectiveDone={isQuestObjectiveDone}
-                  isKeyboardFocused={focusedLocationId === location.id}
-                >
-                  {playersHere.map((player, index) => (
-                    <PlayerToken
-                      key={player.id}
-                      player={player}
-                      index={index}
-                      isCurrent={player.id === currentPlayer?.id}
-                      onClickPlayer={player.id !== currentPlayer?.id ? setViewingPlayer : undefined}
-                    />
-                  ))}
-                </LocationZone>
-              );
-            })}
-          </div>
-
-          {animatingPlayer && animationPath && (
-            <div className="absolute inset-0 pointer-events-none z-40">
-              {players.filter(player => player.id === animatingPlayer).map(player => (
-                <AnimatedPlayerToken
-                  key={`${player.id}-${pathVersion}`}
-                  player={player}
-                  isCurrent
-                  animationPath={animationPath}
-                  onAnimationComplete={handleAnimationComplete}
-                  onLocationReached={handleLocationReached}
-                />
-              ))}
-            </div>
-          )}
-
-          {shadowfingersEvent && currentPlayer && (
-            <div className="absolute inset-0 pointer-events-none z-45">
-              <ShadowfingersToken
-                targetLocation={
-                  shadowfingersEvent.type === 'street' && 'fromLocation' in shadowfingersEvent.result
-                    ? shadowfingersEvent.result.fromLocation
-                    : currentPlayer.currentLocation
-                }
-              />
-            </div>
-          )}
-
-          <GraveyardCrows />
-          <FestivalOverlay activeFestival={useGameStore(state => state.activeFestival)} />
-          <WeatherOverlay particle={weather?.particle ?? null} weatherType={weather?.type} />
-          <DebugOverlay customZones={customZones} centerPanel={centerPanel} visible={showDebugOverlay} />
-          <BoardBanterOverlay centerPanel={activeCenterPanel} isMobile={isMobile} />
-
+        <GameBoardCanvas
+          players={players}
+          currentPlayer={currentPlayer}
+          selectedLocation={selectedLocation}
+          locationHexes={locationHexes}
+          weather={weather}
+          isMobile={isMobile}
+          centerPanel={activeCenterPanel}
+          customZones={customZones}
+          debugCenterPanel={centerPanel}
+          showDebugOverlay={showDebugOverlay}
+          focusedLocationId={focusedLocationId}
+          animatingPlayer={animatingPlayer}
+          animationPath={animationPath}
+          pathVersion={pathVersion}
+          shadowfingersTargetLocation={shadowfingersTargetLocation}
+          getLocationWithCustomPosition={getLocationWithCustomPosition}
+          onLocationClick={handleLocationClick}
+          onViewPlayer={setViewingPlayer}
+          onAnimationComplete={handleAnimationComplete}
+          onLocationReached={handleLocationReached}
+        >
           {(!isMobile
             || selectedLocation
             || (phase === 'event' && queuedEvent)
@@ -474,7 +386,7 @@ export function GameBoard() {
               weather={weather}
             />
           )}
-        </div>
+        </GameBoardCanvas>
       </div>
 
       {!isMobile && !fullboardMode && (
@@ -619,38 +531,6 @@ export function GameBoard() {
           onExitFullboard: () => setFullboardMode(false),
         } : null}
       />
-    </div>
-  );
-}
-
-function BoardBanterOverlay({
-  centerPanel,
-  isMobile,
-}: {
-  centerPanel: { top: number; left: number; width: number; height: number };
-  isMobile: boolean;
-}) {
-  const { activeBanter, npcName, clearBanter } = useBanterStore();
-  if (!activeBanter || !npcName) return null;
-
-  return (
-    <div
-      className="absolute z-20 pointer-events-none flex items-end justify-start"
-      style={isMobile ? {
-        bottom: '33%',
-        left: '5%',
-        width: '90%',
-        height: 'auto',
-        paddingBottom: '8px',
-      } : {
-        top: `${Math.max(centerPanel.top - 18, 1)}%`,
-        left: `${centerPanel.left}%`,
-        width: `${centerPanel.width}%`,
-        height: `${Math.min(18, centerPanel.top)}%`,
-        paddingLeft: '2%',
-      }}
-    >
-      <BanterBubble banter={activeBanter} npcName={npcName} onDismiss={clearBanter} />
     </div>
   );
 }
