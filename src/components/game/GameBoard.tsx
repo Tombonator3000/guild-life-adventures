@@ -15,6 +15,7 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { useGameBoardKeyboard } from '@/hooks/useGameBoardKeyboard';
 import { useLocationClick } from '@/hooks/useLocationClick';
 import { useGameBoardEventQueue } from '@/hooks/useGameBoardEventQueue';
+import { useGameBoardTurnTransition } from '@/hooks/useGameBoardTurnTransition';
 import { useKeyboardLocationNav } from '@/hooks/useKeyboardLocationNav';
 import { useGameOptions } from '@/hooks/useGameOptions';
 import { registerAIAnimateCallback } from '@/hooks/useAIAnimationBridge';
@@ -103,28 +104,21 @@ export function GameBoard() {
   const isPureSpectator = isOnline && !localPlayerId;
   const isSpectating = isPureSpectator
     || !!(localPlayer?.isGameOver && phase === 'playing' && players.some(player => !player.isGameOver));
+  const { showTurnTransition, dismissTurnTransition } = useGameBoardTurnTransition({
+    players,
+    currentPlayer,
+    phase,
+    isOnline,
+  });
 
   const [showZoneEditor, setShowZoneEditor] = useState(false);
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
   const [showGameMenu, setShowGameMenu] = useState(false);
   const [showLeftDrawer, setShowLeftDrawer] = useState(false);
   const [showRightDrawer, setShowRightDrawer] = useState(false);
-  const [showTurnTransition, setShowTurnTransition] = useState(false);
-  const [lastHumanPlayerId, setLastHumanPlayerId] = useState<string | null>(null);
   const [fullboardMode, setFullboardMode] = useState(false);
   const [viewingPlayer, setViewingPlayer] = useState<Player | null>(null);
   const isMobile = useIsMobile();
-
-  const humanPlayers = players.filter(player => !player.isAI && !player.isGameOver);
-  const isMultiHuman = !isOnline && humanPlayers.length >= 2;
-
-  useEffect(() => {
-    if (!currentPlayer || !isMultiHuman || currentPlayer.isAI) return;
-    if (lastHumanPlayerId && lastHumanPlayerId !== currentPlayer.id && phase === 'playing') {
-      setShowTurnTransition(true);
-    }
-    setLastHumanPlayerId(currentPlayer.id);
-  }, [currentPlayer?.id, phase]);
 
   const {
     customZones,
@@ -314,7 +308,7 @@ export function GameBoard() {
             roomCodeDisplay,
             isGuest,
             showTurnTransition,
-            onTurnTransitionReady: () => setShowTurnTransition(false),
+            onTurnTransitionReady: dismissTurnTransition,
             aiIsThinking,
             currentAIAction,
             aiDifficulty,

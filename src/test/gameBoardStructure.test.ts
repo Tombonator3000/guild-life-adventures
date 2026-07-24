@@ -9,6 +9,7 @@ const canvasSource = readSource('src/components/game/GameBoardCanvas.tsx');
 const centerSource = readSource('src/components/game/GameBoardCenterPanel.tsx');
 const sidePanelsSource = readSource('src/components/game/GameBoardSidePanels.tsx');
 const eventQueueSource = readSource('src/hooks/useGameBoardEventQueue.ts');
+const turnTransitionSource = readSource('src/hooks/useGameBoardTurnTransition.ts');
 
 const extractedComponents = [
   'ZoneEditor',
@@ -160,12 +161,24 @@ describe('GameBoard component boundaries', () => {
     expect(eventQueueSource).toContain('dismissEvent();');
   });
 
+  it('delegates hotseat transition tracking to useGameBoardTurnTransition', () => {
+    expect(gameBoardSource).toContain("import { useGameBoardTurnTransition } from '@/hooks/useGameBoardTurnTransition';");
+    expect(gameBoardSource).toContain('const { showTurnTransition, dismissTurnTransition } = useGameBoardTurnTransition({');
+    expect(gameBoardSource).toContain('onTurnTransitionReady: dismissTurnTransition');
+    expect(gameBoardSource).not.toContain('lastHumanPlayerId');
+    expect(gameBoardSource).not.toContain('const humanPlayers =');
+    expect(gameBoardSource).not.toContain('const isMultiHuman =');
+    expect(turnTransitionSource).toContain('const lastHumanPlayerId = useRef<string | null>(null);');
+    expect(turnTransitionSource).toContain('const isMultiHuman = !isOnline && activeHumanPlayers.length >= 2;');
+  });
+
   it('keeps extracted components within focused size limits', () => {
-    expect(gameBoardSource.split('\n').length).toBeLessThan(450);
+    expect(gameBoardSource.split('\n').length).toBeLessThan(440);
     expect(auxiliarySource.split('\n').length).toBeLessThan(80);
     expect(canvasSource.split('\n').length).toBeLessThan(210);
     expect(centerSource.split('\n').length).toBeLessThan(100);
     expect(sidePanelsSource.split('\n').length).toBeLessThan(100);
     expect(eventQueueSource.split('\n').length).toBeLessThan(60);
+    expect(turnTransitionSource.split('\n').length).toBeLessThan(55);
   });
 });
