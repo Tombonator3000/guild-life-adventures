@@ -28,15 +28,15 @@ Et gjesteforsøk på reconnect kan utløses fra flere steder nesten samtidig: Da
 
 ## Tester
 
-Valideres i GitHub Actions med:
+GitHub Actions-run `30114301661`:
 
-- Dependency install.
-- TypeScript.
-- Full Vitest-pakke, inkludert fem DataConnection-reconnect-tester og signaling-testene fra fase 16N.
-- Produksjonsbuild.
-- ESLint.
-- Playwright-runner og Chromium.
-- Title/setup-smoke og deterministisk komplett lokal spillflyt med kartreise, bank, save/load og ukeovergang.
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Full Vitest-pakke, inkludert fem DataConnection-reconnect-tester og signaling-testene fra fase 16N: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright-runner og Chromium-installasjon: bestått.
+- Title/setup-smoke og deterministisk komplett lokal spillflyt med kartreise, bank, save/load og ukeovergang: bestått.
 
 ## Resultat
 
