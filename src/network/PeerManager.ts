@@ -190,7 +190,12 @@ export class PeerManager {
       this.peer = new Peer(peerId, this.getPeerConfig());
 
       this.peer.on('open', () => {
-        if (settled) return;
+        if (settled) {
+          this.setStatus('connected');
+          this.startHeartbeatCheck();
+          console.log(`[PeerManager] Host signaling reconnected: ${this._roomCode}`);
+          return;
+        }
         settled = true;
         this.setStatus('connected');
         this.startHeartbeatCheck();
@@ -251,7 +256,15 @@ export class PeerManager {
       this.peer = new Peer(this.getPeerConfig());
 
       this.peer.on('open', () => {
-        if (settled) return;
+        if (settled) {
+          const hostConnection = this.connections.get(hostPeerId);
+          if (hostConnection?.open) {
+            this.setStatus('connected');
+            this.startHeartbeat(hostPeerId);
+            console.log(`[PeerManager] Guest signaling reconnected: ${this._roomCode}`);
+          }
+          return;
+        }
         this.connectToHost(hostPeerId, () => {
           if (settled) return;
           settled = true;
