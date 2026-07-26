@@ -4,10 +4,10 @@ import { MOVEMENT_PATHS } from '@/data/locations';
 import { deriveGameBoardAudienceState } from '@/lib/deriveGameBoardAudienceState';
 import { GameBoardHeader } from './GameBoardHeader';
 import { useNetworkSync } from '@/network/useNetworkSync';
-import { leaveActiveOnlineGame } from '@/network/leaveActiveOnlineGame';
 import { useZoneConfiguration } from '@/hooks/useZoneConfiguration';
 import { useAITurnHandler } from '@/hooks/useAITurnHandler';
 import { useAutoEndTurn } from '@/hooks/useAutoEndTurn';
+import { useDeathSpectatorFlow } from '@/hooks/useDeathSpectatorFlow';
 import { usePlayerAnimation } from '@/hooks/usePlayerAnimation';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useGameBoardKeyboard } from '@/hooks/useGameBoardKeyboard';
@@ -112,35 +112,21 @@ export function GameBoard() {
     isOnline,
     phase,
   });
-
-  // In online games each client should only receive the dramatic death choice
-  // for its own eliminated player. The authoritative host can still keep the
-  // event in shared state without blocking everyone else's UI.
-  const visibleDeathEvent = deathEvent && (
-    !isOnline || deathEvent.playerId === localPlayerId
-  ) ? deathEvent : null;
-  const canSpectateAfterDeath = !!visibleDeathEvent?.isPermadeath
-    && players.some(player => !player.isGameOver);
-  const deathLeaveLabel = isOnline
-    ? networkMode === 'host' ? 'Leave & Close Room' : 'Leave Game'
-    : 'End Game';
-
-  const handleSpectateAfterDeath = () => {
-    dismissDeathEvent();
-  };
-
-  const handleLeaveAfterDeath = () => {
-    if (isOnline) {
-      leaveActiveOnlineGame(
-        networkMode === 'host'
-          ? 'Host left the room after being eliminated'
-          : 'Player left after being eliminated',
-      );
-      return;
-    }
-    resetForNewGame();
-  };
-
+  const {
+    visibleDeathEvent,
+    canSpectateAfterDeath,
+    deathLeaveLabel,
+    onSpectate,
+    onLeave,
+  } = useDeathSpectatorFlow({
+    deathEvent,
+    players,
+    isOnline,
+    networkMode,
+    localPlayerId,
+    dismissDeathEvent,
+    resetForNewGame,
+  });
   const isCursed = (currentPlayer?.activeCurses?.length ?? 0) > 0;
   const { showTurnTransition, dismissTurnTransition } = useGameBoardTurnTransition({
     players,
@@ -356,8 +342,8 @@ export function GameBoard() {
           deathModalProps={visibleDeathEvent ? {
             event: visibleDeathEvent,
             onDismiss: dismissDeathEvent,
-            onSpectate: handleSpectateAfterDeath,
-            onLeave: handleLeaveAfterDeath,
+            onSpectate,
+            onLeave,
             canSpectate: canSpectateAfterDeath,
             leaveLabel: deathLeaveLabel,
           } : null}
