@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { subscribeActionResult } from '@/network/NetworkActionProxy';
 
 interface FenceProtectionPanelProps {
   player: Player;
@@ -70,6 +71,29 @@ export function FenceProtectionPanel({ player, rivals, priceModifier, onBuyProte
   useEffect(() => () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
   }, []);
+
+  // Unlock the panel immediately when the host rejects the pending request
+  // instead of waiting for the 10s fallback timeout.
+  useEffect(() => {
+    if (!pending) return;
+    const unsub = subscribeActionResult(event => {
+      if (event.success) return;
+      if (pending.type === 'protection' && event.actionName === 'buyProtection') {
+        const [, weeks] = event.args as [string, number];
+        if (weeks === pending.weeks) {
+          setPending(null);
+          if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        }
+      } else if (pending.type === 'tipoff' && event.actionName === 'buyTipOff') {
+        const [, targetId] = event.args as [string, string];
+        if (targetId === pending.targetId) {
+          setPending(null);
+          if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        }
+      }
+    });
+    return unsub;
+  }, [pending]);
 
   const startTimeout = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
