@@ -116,7 +116,9 @@ function markdown(report) {
   ];
 
   for (const file of report.files) {
-    const status = file.invalid ? `INVALID${file.error ? `: ${file.error.replaceAll('|', '/')}` : ''}` : file.silent ? 'SILENT' : 'audible';
+    const status = file.invalid
+      ? `INVALID${file.error ? `: ${file.error.replaceAll('|', '/')}` : ''}`
+      : file.silent ? 'SILENT' : 'audible';
     lines.push(`| \`${file.path}\` | ${file.durationSeconds ?? 'n/a'}s | ${file.meanVolumeDb ?? '-inf'} | ${file.maxVolumeDb ?? '-inf'} | ${status} |`);
   }
 
@@ -129,9 +131,10 @@ function markdown(report) {
   return `${lines.join('\n')}\n`;
 }
 
-const args = new Map();
-for (let index = 2; index < process.argv.length; index += 2) {
-  args.set(process.argv[index], process.argv[index + 1]);
+function argumentValue(flag, fallback) {
+  const index = process.argv.indexOf(flag);
+  if (index < 0 || !process.argv[index + 1] || process.argv[index + 1].startsWith('--')) return fallback;
+  return process.argv[index + 1];
 }
 
 const files = AUDIO_ROOTS.flatMap(walk).sort().map(inspect);
@@ -149,14 +152,19 @@ const report = {
   files,
 };
 
-const jsonPath = args.get('--json') ?? 'audio-audit.json';
-const markdownPath = args.get('--markdown') ?? 'audio-audit.md';
+const jsonPath = argumentValue('--json', 'audio-audit.json');
+const markdownPath = argumentValue('--markdown', 'audio-audit.md');
 for (const path of [jsonPath, markdownPath]) mkdirSync(dirname(resolve(ROOT, path)), { recursive: true });
 writeFileSync(resolve(ROOT, jsonPath), `${JSON.stringify(report, null, 2)}\n`);
 writeFileSync(resolve(ROOT, markdownPath), markdown(report));
 
 console.log(markdown(report));
 
-if (process.argv.includes('--fail-on-silent') && (report.summary.silent > 0 || report.summary.invalid > 0)) {
+const failedSignalAudit = report.summary.silent > 0 || report.summary.invalid > 0;
+const failedDuplicateAudit = report.summary.duplicateGroups > 0;
+if (
+  (process.argv.includes('--fail-on-silent') && failedSignalAudit)
+  || (process.argv.includes('--fail-on-duplicates') && failedDuplicateAudit)
+) {
   process.exitCode = 1;
 }
