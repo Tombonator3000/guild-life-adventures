@@ -1,0 +1,39 @@
+name: Phase 16X Test Diagnostics
+
+on:
+  push:
+    branches:
+      - agent/phase16x-broker-newspaper
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Run tests with complete output
+        id: tests
+        shell: bash
+        run: |
+          set +e
+          bun test --reporter=verbose > phase16x-test-output.txt 2>&1
+          status=$?
+          cat phase16x-test-output.txt
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Upload complete test output
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase16x-test-output
+          path: phase16x-test-output.txt
+          if-no-files-found: error
+      - name: Preserve test result
+        if: steps.tests.outputs.status != '0'
+        run: exit 1
