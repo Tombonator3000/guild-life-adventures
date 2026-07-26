@@ -163,12 +163,12 @@ async function handleLeaderboardMessage(
 
 export default {
   async onConnect(connection: Party.Connection, room: Party.Room) {
+    // Public room-browser clients expect the current listings immediately.
+    // Leaderboard clients ignore this message and issue an explicit leaderboard-get,
+    // which guarantees that their requested result limit is respected.
     const listings = await getListings(room);
     const listingMessage: ListingOutgoingMessage = { type: "listings", games: listings };
     connection.send(JSON.stringify(listingMessage));
-
-    const scores = await getWorldScores(room);
-    sendWorldScores(connection, scores.slice(0, DEFAULT_WORLD_SCORE_LIMIT));
   },
 
   async onMessage(message: string, connection: Party.Connection, room: Party.Room) {
