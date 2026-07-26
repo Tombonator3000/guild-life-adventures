@@ -12,8 +12,7 @@ Date: 26 July 2026
 
 - The Broker is now the only current investment entry point.
 - Removed the generic Investments balance and deposit/withdraw controls from BankPanel.
-- Removed `manageInvestment` from online guest permissions.
-- Kept the compatibility action, but it rejects new generic investments and directs players to The Broker without mutating balances.
+- Kept `manageInvestment` as a recognized online compatibility request for older clients, but the authoritative host action always rejects it, performs no mutation, and directs players to The Broker.
 - A gameplay migration hook moves any legacy Investments balance 1:1 into Savings as soon as loaded gameplay state appears. No old 10% withdrawal fee is charged.
 - Preserved the four current securities, price model, economy influence, crashes, and Crown Bonds' 3% selling fee.
 - Added Buy 1, Buy 5, Buy Max, Sell 1, and Sell All controls.
@@ -32,7 +31,7 @@ Date: 26 July 2026
 Focused tests cover:
 
 - legacy balance migration without a fee;
-- retired investment action and online permission removal;
+- retired investment action and protocol-safe online compatibility;
 - bulk share trading and Crown Bond selling fee;
 - combined fractional dividends, carried credit, exact payout/remainder, and empty portfolios;
 - newspaper purchase/open, free reread, and online state-sync opening.

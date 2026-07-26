@@ -34,7 +34,7 @@ describe('GeneralStorePanel newspaper flow', () => {
     expect(useGameStore.getState().players[0].hasNewspaper).toBe(true);
     expect(useGameStore.getState().players[0].gold).toBeLessThan(beforeGold);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]);
     await waitFor(() => expect(screen.queryByText('Week 1 Edition')).not.toBeInTheDocument());
     expect(screen.getByRole('button', { name: /Read The Guildholm Herald/i })).toBeInTheDocument();
   });

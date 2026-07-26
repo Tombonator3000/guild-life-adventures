@@ -114,7 +114,7 @@ describe('host-authoritative finance services', () => {
 
   it('allows Broker actions but blocks retired and legacy investment actions for guests', () => {
     expect(ALLOWED_GUEST_ACTIONS.has('transferBankFunds')).toBe(true);
-    expect(ALLOWED_GUEST_ACTIONS.has('manageInvestment')).toBe(false);
+    expect(ALLOWED_GUEST_ACTIONS.has('manageInvestment')).toBe(true);
     expect(ALLOWED_GUEST_ACTIONS.has('tradeStock')).toBe(true);
     expect(ALLOWED_GUEST_ACTIONS.has('manageLoan')).toBe(true);
     for (const legacy of ['depositToBank', 'withdrawFromBank', 'invest', 'withdrawInvestment', 'buyStock', 'sellStock', 'takeLoan', 'repayLoan']) {
