@@ -10,14 +10,14 @@ Et turbasert fantasy-livssimuleringsspill inspirert av *Jones in the Fast Lane*.
 - Arbeid, lønnsforhandlinger, utdanning og gradssystem.
 - Oppdrag, bounty-jakt, dungeon floors og quest chains.
 - Bolig, mat, klær, helse, avslapning og apparater.
-- Bank, investeringer, lån, aksjer og dynamiske priser.
+- Bank, sparing, lån, Broker-aksjer og dynamiske priser.
 - Sabotasje, beskyttelse, tips, forbannelser og omdømme.
 - Versjonerte lagringer med migrering av eldre saves.
 - Installérbar PWA uten caching av spillkode.
 
 ## Kom i gang
 
-Prosjektet bruker **Bun** som eneste pakkehåndterer. `bun.lockb` er den autoritative lockfilen.
+Prosjektet bruker **Bun 1.3.14** som eneste runtime og pakkehåndterer. Den tekstbaserte `bun.lock` er den eneste autoritative lockfilen.
 
 ```bash
 # Installer eksakte avhengigheter
@@ -27,16 +27,23 @@ bun install --frozen-lockfile
 bun run dev
 
 # Kjør TypeScript-kontroll
-bunx tsc --noEmit
+bun run check:types
 
-# Kjør tester
-bunx vitest run
+# Kjør enhetstester
+bun run test
+
+# Kjør Playwright-testene
+bunx playwright install --only-shell chromium
+bun run test:e2e
 
 # Kjør lint
 bun run lint
 
 # Bygg produksjonsversjon
 bun run build
+
+# Kjør den lokale hovedvalideringen
+bun run validate
 
 # Bygg for GitHub Pages
 bun run build:github
@@ -48,8 +55,8 @@ bun run build:github
 - Vite
 - Zustand 5
 - Tailwind CSS og shadcn/ui
-- Vitest og Testing Library
-- PeerJS/Partykit-baserte nettverkslag
+- Vitest, Testing Library og Playwright
+- PeerJS/PartyKit-baserte nettverkslag
 - vite-plugin-pwa
 
 ## Arkitektur
@@ -60,12 +67,16 @@ Online gjester sender semantiske handlinger til hosten. Hosten validerer aktør,
 
 ## Kvalitetskontroll
 
-Pull requests mot `main` kontrolleres med GitHub Actions:
+Pull requests mot `main` og alle `agent/**`-grener kontrolleres med den gjenbrukbare workflowen `Agent validation`:
 
+- låsefil- og Bun-versjonskontroll
 - TypeScript
 - Vitest-regresjonstester
 - produksjonsbuild
 - ESLint
+- Playwright-smoketester i Chromium
+
+Produksjonsdeploy til GitHub Pages kaller den samme valideringsworkflowen og kan ikke bygge eller publisere før den er grønn. En konfigurert PartyKit-server må også deployes uten feil før klienten publiseres. Etter Pages-deploy kontrolleres både den publiserte HTML-siden og `version.json`.
 
 Produksjonsfeil skal få en regresjonstest. Lagringsendringer skal ha migrerings- og roundtrip-tester.
 
