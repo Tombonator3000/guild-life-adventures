@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "vite_react_shadcn_ts",
+      "name": "guild-life-adventures",
       "dependencies": {
         "@hookform/resolvers": "^3.10.0",
         "@jridgewell/set-array": "^1.2.1",
