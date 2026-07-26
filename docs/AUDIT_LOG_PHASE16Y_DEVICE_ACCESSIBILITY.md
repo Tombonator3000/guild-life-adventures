@@ -17,7 +17,8 @@ This tranche expands browser-integrated validation without using public multipla
    - checks that the document does not create horizontal page overflow.
 2. 820 × 1180 iPad-sized touch viewport.
    - verifies the tablet/mobile HUD,
-   - rotates to 1180 × 820,
+   - leaves browser fullscreen through the supported `F` shortcut when necessary,
+   - rotates to 1180 × 820 only after the Fullscreen API confirms normal window state,
    - verifies the desktop side-panel layout replaces the mobile drawer controls,
    - performs a real Bank interaction after the responsive transition,
    - checks both orientations for page overflow.
@@ -30,6 +31,12 @@ This tranche expands browser-integrated validation without using public multipla
    - opens the real Game Menu,
    - confirms End Turn and tutorial shortcuts cannot mutate gameplay while the modal is open.
 
+## Browser findings during validation
+
+The first tablet run exposed that beginning a game may enter real browser fullscreen. Playwright cannot rotate a fullscreen browser window.
+
+The next run established that the desktop `Exit Fullscreen` button is not mounted in the mobile HUD. The correct mobile path is the game's existing `F` shortcut. The final test therefore uses that supported control and waits for `document.fullscreenElement` to clear before changing the viewport. No forced click or direct state mutation is used.
+
 ## Diagnostics and failure evidence
 
 All Playwright specs now use a shared automatic fixture that attaches:
@@ -38,7 +45,23 @@ All Playwright specs now use a shared automatic fixture that attaches:
 - uncaught page errors,
 - failed browser requests.
 
-Playwright retains screenshot, trace and video when a test fails. GitHub Actions already uploads the complete `test-results` directory on browser-test failure.
+Playwright retains screenshot, trace and video when a test fails. GitHub Actions uploads the complete `test-results` directory on browser-test failure. The fullscreen failures were diagnosed from those retained artifacts before the final fix.
+
+## Final validation
+
+GitHub Actions run `30218931154` passed on commit `6b3b36ea`:
+
+- pinned Bun 1.3.14 and single-lockfile policy,
+- frozen dependency install,
+- TypeScript,
+- full Vitest suite,
+- production build,
+- ESLint,
+- FFmpeg audio integrity,
+- existing desktop Playwright journeys,
+- narrow mobile touch journey,
+- iPad portrait-to-landscape journey,
+- keyboard navigation and modal shortcut coverage.
 
 ## Deliberate boundaries
 
