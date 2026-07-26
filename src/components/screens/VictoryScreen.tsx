@@ -1,52 +1,47 @@
+import { useMemo, useState } from 'react';
+import { BarChart3, Crown, Scroll, Star, Trophy } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
-import { calculateStockValue } from '@/data/stocks';
-import { Crown, Trophy, Scroll, Coins, Heart, GraduationCap, Star, Check, X, Compass, BarChart3 } from 'lucide-react';
 import gameBoard from '@/assets/game-board.jpeg';
 import { VictoryEffects } from '@/components/game/VictoryEffects';
 import { getGameOption } from '@/data/gameOptions';
+import { buildPostGameResults, detectGoalProfile } from '@/lib/postGameResults';
 import { PostGameStats } from './PostGameStats';
-import { useState, useMemo } from 'react';
+import { VictoryGoalMatrix } from './VictoryGoalMatrix';
+import { PerformanceStandings } from './PerformanceStandings';
+import { HighScorePanel } from './HighScorePanel';
 
 export function VictoryScreen() {
-  const { setPhase, resetForNewGame, winner, players, goalSettings, eventMessage, stockPrices } = useGameStore();
+  const {
+    setPhase,
+    resetForNewGame,
+    winner,
+    players,
+    goalSettings,
+    eventMessage,
+    stockPrices,
+    week,
+    networkMode,
+    localPlayerId,
+  } = useGameStore();
   const [showStats, setShowStats] = useState(false);
 
-  // Ranked leaderboard — must be a hook (useMemo) placed before any early returns per CLAUDE.md hook rule
-  const rankedPlayers = useMemo(() => {
-    const adventureGoal = goalSettings.adventure ?? 0;
-    const goalCount = adventureGoal > 0 ? 5 : 4;
-    return players
-      .map(p => {
-        const pStockValue = calculateStockValue(p.stocks, stockPrices);
-        const pWealth = goalSettings.wealth > 0
-          ? Math.min(1, Math.max(0, (p.gold + p.savings + p.investments + pStockValue - p.loanAmount) / goalSettings.wealth))
-          : 1;
-        const pHappiness = goalSettings.happiness > 0
-          ? Math.min(1, Math.max(0, p.happiness / goalSettings.happiness))
-          : 1;
-        const pEdu = goalSettings.education > 0
-          ? Math.min(1, Math.max(0, (p.completedDegrees.length * 9) / goalSettings.education))
-          : 1;
-        const pCareer = goalSettings.career > 0
-          ? Math.min(1, Math.max(0, (p.currentJob ? p.dependability : 0) / goalSettings.career))
-          : 1;
-        const pAdventure = adventureGoal > 0
-          ? Math.min(1, Math.max(0, (p.completedQuests + p.dungeonFloorsCleared.length) / adventureGoal))
-          : 0;
-        const scoreSum = pWealth + pHappiness + pEdu + pCareer + (adventureGoal > 0 ? pAdventure : 0);
-        const score = Math.round((scoreSum / goalCount) * 100);
-        return { player: p, score };
-      })
-      .sort((a, b) => b.score - a.score);
-  }, [players, goalSettings, stockPrices]);
+  const results = useMemo(
+    () => buildPostGameResults(players, goalSettings, stockPrices, week, winner),
+    [goalSettings, players, stockPrices, week, winner],
+  );
+  const winningResult = results.find(result => result.player.id === winner) ?? null;
+  const performanceWinner = useMemo(
+    () => [...results].sort((a, b) => (
+      b.performanceScore - a.performanceScore
+      || b.goalProgress - a.goalProgress
+    ))[0] ?? null,
+    [results],
+  );
+  const goalProfile = useMemo(() => detectGoalProfile(goalSettings), [goalSettings]);
+  const isLastStanding = eventMessage?.includes('last one standing') ?? false;
 
-  const winningPlayer = players.find(p => p.id === winner);
-
-  // Check if this is a "last standing" victory or actual goals victory
-  const isLastStanding = eventMessage?.includes('last one standing');
-
-  // Handle case where all players perished
-  if (!winningPlayer) {
+  // Handle the rare case where every player perished and no winner exists.
+  if (!winningResult) {
     return (
       <div className="relative min-h-screen-safe overflow-x-hidden overflow-y-auto">
         <div
@@ -77,38 +72,16 @@ export function VictoryScreen() {
     );
   }
 
-  // Calculate player stats for display (matches checkVictory formula)
-  const stockValue = calculateStockValue(winningPlayer.stocks, stockPrices);
-  const totalWealth = winningPlayer.gold + winningPlayer.savings + winningPlayer.investments + stockValue - winningPlayer.loanAmount;
-  // Use completedDegrees for education (Jones-style: 9 points per degree)
-  const totalEducation = winningPlayer.completedDegrees.length * 9;
-
-  // Check which goals are actually met
-  const wealthMet = totalWealth >= goalSettings.wealth;
-  const happinessMet = winningPlayer.happiness >= goalSettings.happiness;
-  const educationMet = totalEducation >= goalSettings.education;
-  // Career = 0 when unemployed (matches evaluateGoals in questHelpers.ts)
-  const careerValue = winningPlayer.currentJob ? winningPlayer.dependability : 0;
-  const careerMet = careerValue >= goalSettings.career;
-  const adventureEnabled = (goalSettings.adventure ?? 0) > 0;
-  const adventureValue = winningPlayer.completedQuests + winningPlayer.dungeonFloorsCleared.length;
-  const adventureMet = !adventureEnabled || adventureValue >= goalSettings.adventure;
-  const allGoalsMet = wealthMet && happinessMet && educationMet && careerMet && adventureMet;
-
   return (
     <div className="relative min-h-screen-safe overflow-x-hidden overflow-y-auto">
-      {/* Confetti & Fireworks */}
       <VictoryEffects />
-      {/* Background with overlay */}
       <div
         className="fixed inset-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${gameBoard})` }}
       />
       <div className="fixed inset-0 bg-gradient-to-b from-amber-900/70 via-amber-800/60 to-background/90" />
 
-      {/* Content */}
-      <div className="relative z-10 min-h-screen-safe flex flex-col items-center justify-center px-4">
-        {/* Victory Banner */}
+      <div className="relative z-10 min-h-screen-safe flex flex-col items-center justify-center px-4 py-8">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-4 mb-6">
             <Star className="w-10 h-10 text-gold animate-float" style={{ animationDelay: '0s' }} />
@@ -124,130 +97,75 @@ export function VictoryScreen() {
 
           <div
             className="inline-block px-6 py-2 rounded-full mb-4"
-            style={{ backgroundColor: winningPlayer.color + '40', borderColor: winningPlayer.color, borderWidth: 2 }}
+            style={{
+              backgroundColor: `${winningResult.player.color}40`,
+              borderColor: winningResult.player.color,
+              borderWidth: 2,
+            }}
           >
             <p className="font-display text-2xl md:text-3xl text-foreground">
-              {winningPlayer.name}
+              {winningResult.player.name}
             </p>
           </div>
 
           <p className="font-display text-lg text-muted-foreground">
             {isLastStanding
               ? 'is the last one standing!'
-              : allGoalsMet
-                ? 'has achieved all victory goals!'
+              : winningResult.allGoalsMet
+                ? 'won the victory-goal race!'
                 : 'wins the game!'}
           </p>
+          {performanceWinner && performanceWinner.player.id !== winner && (
+            <p className="font-display text-sm text-purple-200 mt-2">
+              Overall MVP: {performanceWinner.player.name} with {performanceWinner.performanceScore.toLocaleString()} points
+            </p>
+          )}
           {getGameOption('enableAging') && (
             <p className="font-display text-sm text-muted-foreground/70 mt-1">
-              Age {winningPlayer.age ?? 18} at time of victory
+              Age {winningResult.player.age ?? 18} at time of victory
             </p>
           )}
         </div>
 
-        {/* Stats Display */}
-        <div className="parchment-panel p-6 mb-8 max-w-md w-full">
-          <h2 className="font-display text-xl text-center mb-4 text-card-foreground">
-            Final Stats
-          </h2>
+        <VictoryGoalMatrix results={results} winnerId={winner} />
 
-          <div className="grid grid-cols-2 gap-4">
-            <StatItem
-              icon={<Coins className="w-5 h-5 text-amber-500" />}
-              label="Wealth"
-              value={`${totalWealth}g`}
-              goal={`Goal: ${goalSettings.wealth}g`}
-              isMet={wealthMet}
-            />
-            <StatItem
-              icon={<Heart className="w-5 h-5 text-red-500" />}
-              label="Happiness"
-              value={winningPlayer.happiness.toString()}
-              goal={`Goal: ${goalSettings.happiness}`}
-              isMet={happinessMet}
-            />
-            <StatItem
-              icon={<GraduationCap className="w-5 h-5 text-blue-500" />}
-              label="Education"
-              value={totalEducation.toString()}
-              goal={`Goal: ${goalSettings.education}`}
-              isMet={educationMet}
-            />
-            <StatItem
-              icon={<Crown className="w-5 h-5 text-purple-500" />}
-              label="Career"
-              value={`${careerValue} dep`}
-              goal={`Goal: ${goalSettings.career}+`}
-              isMet={careerMet}
-            />
-            {adventureEnabled && (
-              <StatItem
-                icon={<Compass className="w-5 h-5 text-emerald-500" />}
-                label="Adventure"
-                value={`${adventureValue} pts`}
-                goal={`Goal: ${goalSettings.adventure}`}
-                isMet={adventureMet}
-              />
-            )}
-          </div>
-        </div>
+        <PerformanceStandings
+          results={results}
+          winnerId={winner}
+          performanceWinnerId={performanceWinner?.player.id ?? null}
+          isLastStanding={isLastStanding}
+        />
 
-        {/* Leaderboard — only shown in multiplayer games */}
-        {players.length > 1 && (
-          <div className="parchment-panel p-6 mb-8 max-w-md w-full">
-            <h2 className="font-display text-xl text-center mb-4 text-card-foreground">
-              Final Standings
-            </h2>
-            <div className="space-y-2">
-              {rankedPlayers.map(({ player, score }, i) => (
-                <div
-                  key={player.id}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg ${
-                    player.id === winner
-                      ? 'bg-amber-500/20 border border-amber-500/40'
-                      : 'bg-black/5'
-                  }`}
-                >
-                  <span className="font-display text-base w-7 text-center text-muted-foreground flex-shrink-0">
-                    {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
-                  </span>
-                  <div
-                    className="w-3 h-3 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: player.color }}
-                  />
-                  <span className="font-display flex-1 text-card-foreground">
-                    {player.name}
-                    {player.id === winner && (
-                      <Crown className="inline w-4 h-4 ml-1 text-amber-500" />
-                    )}
-                  </span>
-                  <span className="font-display text-sm text-muted-foreground tabular-nums">
-                    {score}%
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Stats Toggle */}
         <button
-          onClick={() => setShowStats(!showStats)}
+          onClick={() => setShowStats(previous => !previous)}
           className="flex items-center gap-2 px-6 py-2 mb-4 bg-[#e0d4b8] border border-[#8b7355] rounded-lg font-display text-sm text-[#3d2a14] hover:bg-[#d4c8a8] transition-colors"
         >
           <BarChart3 className="w-4 h-4" />
           {showStats ? 'Hide Statistics' : 'Show Game Statistics'}
         </button>
 
-        {/* Post-Game Stats Dashboard */}
         {showStats && (
           <div className="parchment-panel p-6 mb-8 max-w-2xl w-full">
-            <PostGameStats players={players} winnerId={winner} />
+            <PostGameStats
+              players={players}
+              winnerId={winner}
+              stockPrices={stockPrices}
+              week={week}
+            />
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="flex gap-4">
+        <HighScorePanel
+          results={results}
+          winnerId={winner}
+          performanceWinnerId={performanceWinner?.player.id ?? null}
+          week={week}
+          networkMode={networkMode}
+          localPlayerId={localPlayerId}
+          goalProfile={goalProfile}
+        />
+
+        <div className="flex flex-wrap justify-center gap-4 pb-16">
           <button
             onClick={() => resetForNewGame()}
             className="gold-button text-lg px-8 py-3"
@@ -262,41 +180,10 @@ export function VictoryScreen() {
           </button>
         </div>
 
-        {/* Footer */}
-        <p className="absolute bottom-8 text-muted-foreground/60 text-sm font-display">
+        <p className="absolute bottom-4 text-muted-foreground/60 text-sm font-display">
           Guild Life Adventures
         </p>
       </div>
-    </div>
-  );
-}
-
-function StatItem({
-  icon,
-  label,
-  value,
-  goal,
-  isMet
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  goal: string;
-  isMet: boolean;
-}) {
-  return (
-    <div className={`flex items-center gap-3 p-2 rounded-lg ${isMet ? 'bg-green-500/20' : 'bg-red-500/10'}`}>
-      {icon}
-      <div className="flex-1">
-        <p className="font-display text-sm text-muted-foreground">{label}</p>
-        <p className="font-display text-lg text-card-foreground">{value}</p>
-        <p className="font-display text-xs text-muted-foreground/70">{goal}</p>
-      </div>
-      {isMet ? (
-        <Check className="w-5 h-5 text-green-500" />
-      ) : (
-        <X className="w-5 h-5 text-red-400" />
-      )}
     </div>
   );
 }
