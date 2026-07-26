@@ -127,17 +127,22 @@ describe('PartyKit world leaderboard server', () => {
     expect(lastWorldMessage(connection.messages)?.error).toBe('rate-limited');
   });
 
-  it('sends the stored board when a leaderboard client connects', async () => {
+  it('sends the requested number of stored scores after leaderboard-get', async () => {
     const room = createRoom();
     const connection = createConnection();
     room.values.set('world-high-scores-v1', [
-      { ...submission('stored'), id: 'server-id', submittedAt: 10 },
+      { ...submission('first', { score: 8000 }), id: 'first-id', submittedAt: 10 },
+      { ...submission('second', { score: 7000 }), id: 'second-id', submittedAt: 20 },
     ] satisfies WorldScoreEntry[]);
 
-    await server.onConnect(connection as never, room as never);
+    await server.onMessage(
+      JSON.stringify({ type: 'leaderboard-get', limit: 1 }),
+      connection as never,
+      room as never,
+    );
 
     const message = lastWorldMessage(connection.messages);
     expect(message?.scores).toHaveLength(1);
-    expect(message?.scores[0].submissionId).toBe('stored');
+    expect(message?.scores[0].submissionId).toBe('first');
   });
 });
