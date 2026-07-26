@@ -20,7 +20,7 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -81,6 +81,22 @@ jobs:
           name: lint-output
           path: lint-output.txt
           if-no-files-found: error
+
+      - name: Install audio analysis tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes ffmpeg
+
+      - name: Audio asset integrity
+        run: node scripts/audit-audio.mjs --json audio-audit/audio-audit.json --markdown audio-audit/audio-audit.md --fail-on-silent --fail-on-duplicates
+
+      - name: Upload audio audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audio-audit
+          path: audio-audit
+          if-no-files-found: ignore
 
       - name: Install Chromium headless shell
         run: bunx playwright install --with-deps --only-shell chromium
