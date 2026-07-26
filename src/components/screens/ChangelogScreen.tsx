@@ -31,7 +31,7 @@ const CHANGELOG: Version[] = [
   highlights: [
     improve('Measured every packaged MP3 with FFprobe and FFmpeg instead of assuming that a file extension meant usable audio'),
     fix('Removed 21 invalid files that were identical placeholder payloads across unrelated ambient and sound-effect names'),
-    fix('Removed the duplicate Study MP3 and now uses its distinct procedural study sound'),
+    fix('Removed the duplicate Study MP3; Study now uses its distinct procedural sound'),
     improve('Effects without verified files are now intentionally synth-first and no longer request broken or missing MP3 URLs'),
     improve('Five locations use the verified town-street ambient fallback until dedicated audited loops are available'),
     fix('Removed nonexistent music variant references and the missing curse-cast file request'),
