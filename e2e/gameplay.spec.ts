@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './test';
 
 async function startSinglePlayerGame(page: Page, options: { tutorial?: boolean } = {}) {
   // The flow validates deterministic UI/state transitions, not random-event odds.
