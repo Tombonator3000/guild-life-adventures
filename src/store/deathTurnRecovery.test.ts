@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useGameStore } from './gameStore';
 
 const goals = {
@@ -11,8 +11,13 @@ const goals = {
 
 describe('death turn recovery', () => {
   beforeEach(() => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.99);
     useGameStore.setState({ networkMode: 'local', localPlayerId: null, roomCode: null });
     useGameStore.getState().resetForNewGame();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('ends a solo permadeath game when no player survives', () => {
