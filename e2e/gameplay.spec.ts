@@ -57,7 +57,7 @@ test('completes the guided first turn through real game actions', async ({ page 
   await depositButton.click();
   await expect(page.getByText('6. Review the Turn and End It')).toBeVisible();
 
-  await page.getByRole('button', { name: 'End Turn', exact: true }).click();
+  await page.keyboard.press('e');
   await expect(page.getByText(/Week\s+2/).first()).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText(/Guided first turn/i)).toHaveCount(0);
 
