@@ -23,7 +23,7 @@ describe('Phase 16Y release safety policy', () => {
     expect(existsSync(resolve(root, 'bun.lockb'))).toBe(false);
     expect(packageJson.name).toBe('guild-life-adventures');
     expect(bunWorkspaceName).toBe(packageJson.name);
-    expect(packageJson.version).toBe('0.10.3');
+    expect(packageJson.version).toBe('0.11.0');
     expect(packageJson.packageManager).toBe('bun@1.3.14');
     expect(packageJson.devDependencies['@playwright/test']).toBe('1.61.1');
     expect(readme).toContain('`bun.lock` er den eneste autoritative lockfilen');
