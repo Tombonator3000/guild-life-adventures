@@ -31,8 +31,11 @@ Playwright og FFmpeg-kontrollen kjøres separat fordi nettleser- og medieverktø
 - **Komponent- og hooktester:** regresjoner som AI-starttimer, pending-state og brukerinteraksjon.
 - **Nettverkstester:** aktørbinding, argumentvalidering og avvisning av forsøk på å handle som en annen spiller.
 - **Audio integrity:** FFprobe/FFmpeg kontrollerer dekoding, varighet og signalnivå; SHA-256 avdekker eksakte dubletter.
-- **E2E-smoke:** tittelskjermen laster, nytt spill kan åpnes, og spilloppsettet vises uten runtime-feil.
+- **E2E-spillflyt:** nytt spill, guidet første tur, bankhandling, save/load og ukeovergang kjøres mot den virkelige nettleserappen.
+- **E2E-enheter og tilgjengelighet:** smal mobil, iPad-størrelse med touch, responsiv rotasjon, tastaturnavigasjon og blokkering av spillsnarveier i modal.
 - **Release-smoke:** publisert GitHub Pages-side og `version.json` må kunne hentes etter deploy.
+
+Alle Playwright-tester bruker et felles diagnostikk-fixture. Konsollmeldinger, sidefeil og feilede nettverkskall legges ved testresultatet. Ved feil beholdes også skjermbilde, trace og video i `test-results`.
 
 ## Regresjonsregel
 
@@ -56,11 +59,15 @@ Valideringen kontrollerer:
 - produksjonsbuild,
 - ESLint,
 - ugyldige, lydløse og eksakt dupliserte MP3-filer,
-- Playwright-smoketester i Chromium.
+- Playwright-spillflyt i Chromium,
+- touch-layout på smal mobil og iPad-størrelse,
+- tastaturnavigasjon og modal-snarveier.
 
 Audio audit-rapporten lastes opp som både JSON og Markdown i Actions. Terskelen for stillhet er maksimalt signal på `-70 dB` eller lavere.
 
 `Deploy to GitHub Pages` kan ikke bygge før valideringen er grønn. Dersom PartyKit er konfigurert, må serverdeployen også lykkes før Pages-klienten bygges. Manglende PartyKit-secrets gir en tydelig notice og kontrollert skip; delvis konfigurasjon eller faktisk deployfeil stopper releasen.
+
+Et feilet Playwright-løp laster opp hele `test-results`, inkludert konsollvedlegg, skjermbilder, trace og video. Dette gjør at responsive og interaksjonsfeil kan undersøkes uten å gjenskape dem lokalt først.
 
 Etter publisering kjøres en HTTP-smoketest mot både hovedsiden og `version.json`.
 
