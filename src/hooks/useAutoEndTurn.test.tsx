@@ -37,6 +37,7 @@ function prepareDeadMiddlePlayer(networkMode: 'local' | 'guest') {
 describe('useAutoEndTurn permadeath recovery', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0.99);
     useGameStore.setState({ networkMode: 'local', localPlayerId: null, roomCode: null });
     useGameStore.getState().resetForNewGame();
   });
@@ -45,6 +46,7 @@ describe('useAutoEndTurn permadeath recovery', () => {
     cleanup();
     vi.runOnlyPendingTimers();
     vi.useRealTimers();
+    vi.restoreAllMocks();
     useGameStore.setState({ networkMode: 'local', localPlayerId: null, roomCode: null });
     useGameStore.getState().resetForNewGame();
   });
