@@ -39,7 +39,14 @@ export function PawnShopPanel({ player, priceModifier, week, section }: PawnShop
 
   const runGamble = (stake: number) => {
     const result = gambleAtFence(player.id, stake);
-    if (result && !result.success) toast.error(result.message);
+    if (!result) return;
+    if (!result.success) {
+      toast.error(result.message);
+      return;
+    }
+    // Winners get a celebratory toast, losers a plain one. No blocking event.
+    if (result.message?.startsWith('You won')) toast.success(result.message);
+    else toast(result.message);
   };
 
   const renderSellItems = () => (
