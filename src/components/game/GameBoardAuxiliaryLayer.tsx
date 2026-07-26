@@ -28,11 +28,6 @@ interface GameBoardAuxiliaryLayerProps {
   topDropdownProps: OptionalComponentProps<typeof TopDropdownMenu>;
 }
 
-/**
- * Root-level overlays and auxiliary UI that do not participate in board-map
- * rendering. Grouping their native component props keeps GameBoard focused on
- * state orchestration and the board itself without inventing parallel types.
- */
 export function GameBoardAuxiliaryLayer({
   zoneEditorProps,
   overlayProps,
@@ -56,14 +51,8 @@ export function GameBoardAuxiliaryLayer({
       {showTutorial && (
         <div className="guided-tutorial-host">
           <style>{`
-            .guided-tutorial-host [aria-live="polite"] {
-              top: 0.75rem !important;
-              bottom: auto !important;
-              pointer-events: none;
-            }
-            .guided-tutorial-host [aria-live="polite"] button {
-              pointer-events: auto;
-            }
+            .guided-tutorial-host [aria-live="polite"] { top: .75rem !important; bottom: auto !important; pointer-events: none; }
+            .guided-tutorial-host [aria-live="polite"] button { pointer-events: auto; }
           `}</style>
           <TutorialOverlay onClose={() => setShowTutorial(false)} />
         </div>
