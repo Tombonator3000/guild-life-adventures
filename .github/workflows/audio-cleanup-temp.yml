@@ -1,0 +1,57 @@
+name: Temporary audio placeholder cleanup
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  remove-placeholders:
+    if: github.head_ref == 'agent/phase-16y-audio-cleanup'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase-16y-audio-cleanup
+      - name: Remove invalid and duplicate placeholder MP3 files
+        shell: bash
+        run: |
+          rm -f \
+            public/ambient/academy-ambient.mp3 \
+            public/ambient/enchanter-ambient.mp3 \
+            public/ambient/fence-ambient.mp3 \
+            public/ambient/market-ambient.mp3 \
+            public/ambient/noble-ambient.mp3 \
+            public/sfx/button-hover.mp3 \
+            public/sfx/coin-gain.mp3 \
+            public/sfx/coin-spend.mp3 \
+            public/sfx/damage-taken.mp3 \
+            public/sfx/defeat.mp3 \
+            public/sfx/door-open.mp3 \
+            public/sfx/festival.mp3 \
+            public/sfx/footstep.mp3 \
+            public/sfx/gold-button-click.mp3 \
+            public/sfx/heal.mp3 \
+            public/sfx/item-equip.mp3 \
+            public/sfx/quest-accept.mp3 \
+            public/sfx/success.mp3 \
+            public/sfx/sword-hit.mp3 \
+            public/sfx/turn-start.mp3 \
+            public/sfx/work-complete.mp3 \
+            public/sfx/study.mp3
+      - name: Commit measured cleanup
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "Measured placeholder files are already removed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/ambient public/sfx
+          git commit -m "Remove invalid and duplicate audio placeholders"
+          git push origin HEAD:agent/phase-16y-audio-cleanup
