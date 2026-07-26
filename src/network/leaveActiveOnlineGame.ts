@@ -19,6 +19,11 @@ export function leaveActiveOnlineGame(reason = 'Player left the game'): void {
     peerManager.sendToHost({ type: 'leave' });
   }
 
+  cleanupActiveOnlineGame();
+}
+
+/** Return a gameplay client to the title without sending another network message. */
+export function cleanupActiveOnlineGame(): void {
   try {
     sessionStorage.removeItem(SESSION_STORAGE_KEY);
   } catch {

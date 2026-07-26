@@ -358,6 +358,24 @@ describe('Network State Serialization', () => {
     expect(store.eventMessage).toBe('New event after turn change');
   });
 
+  it('preserves a dismissed death event across turns until the host replaces it', () => {
+    const deathEvent = { playerId: 'p1', isPermadeath: true, message: 'Alice fell' };
+    useGameStore.setState({ deathEvent } as never);
+    markEventDismissed('deathEvent');
+    useGameStore.setState({ deathEvent: null });
+
+    const nextTurn = serializeGameState();
+    nextTurn.currentPlayerIndex = 1;
+    (nextTurn as unknown as Record<string, unknown>).deathEvent = deathEvent;
+    applyNetworkState(nextTurn);
+    expect(useGameStore.getState().deathEvent).toBeNull();
+
+    const replacement = { ...deathEvent, playerId: 'p2', message: 'Bob fell' };
+    (nextTurn as unknown as Record<string, unknown>).deathEvent = replacement;
+    applyNetworkState(nextTurn);
+    expect(useGameStore.getState().deathEvent).toEqual(replacement);
+  });
+
   it('clearDismissedEvents resets tracking', () => {
     markEventDismissed('eventMessage');
     markEventDismissed('shadowfingersEvent');

@@ -27,15 +27,25 @@ export function setNetworkStateStoreAccessor(accessor: StoreAccessor) {
 
 /** Track which event IDs the guest has locally dismissed (prevents re-show on sync) */
 const dismissedEvents = new Set<string>();
+/** The death choice survives turn changes until the host clears or replaces it. */
+let dismissedDeathEventFingerprint: string | null = null;
+
+function eventFingerprint(value: unknown): string {
+  return JSON.stringify(value) ?? String(value);
+}
 
 /** Mark an event as dismissed locally (guest-side) */
 export function markEventDismissed(eventKey: string) {
   dismissedEvents.add(eventKey);
+  if (eventKey === 'deathEvent') {
+    dismissedDeathEventFingerprint = eventFingerprint(storeAccessor?.getState().deathEvent);
+  }
 }
 
 /** Clear dismissed events (e.g., on new turn) */
 export function clearDismissedEvents() {
   dismissedEvents.clear();
+  dismissedDeathEventFingerprint = null;
 }
 
 /** Track the last known currentPlayerIndex to clear dismissed events on turn change */
@@ -46,6 +56,7 @@ let lastSyncedWeek = -1;
 /** Reset all network state tracking (call on game end / new game / disconnect) */
 export function resetNetworkState() {
   dismissedEvents.clear();
+  dismissedDeathEventFingerprint = null;
   lastSyncedPlayerIndex = -1;
   lastSyncedWeek = -1;
 }
@@ -117,7 +128,8 @@ const SYNCABLE_EVENT_FIELDS: Array<{
  * Apply state from host to local Zustand store (guest only).
  * Preserves local UI state (selectedLocation, tutorial, AI speed).
  * Skips event fields that the guest has locally dismissed (prevents modal flicker).
- * Auto-clears dismissed events on turn change and new week to prevent stale state.
+ * Auto-clears transient dismissed events on turn change and new week. A dismissed
+ * death event remains local until the host clears or replaces that exact event.
  */
 export function applyNetworkState(state: SerializedGameState) {
   if (!storeAccessor) {
@@ -127,7 +139,9 @@ export function applyNetworkState(state: SerializedGameState) {
 
   // Clear dismissed events on turn change or new week (prevents persistence bugs)
   if (state.currentPlayerIndex !== lastSyncedPlayerIndex || state.week !== lastSyncedWeek) {
+    const preserveDeathDismissal = dismissedEvents.has('deathEvent');
     dismissedEvents.clear();
+    if (preserveDeathDismissal) dismissedEvents.add('deathEvent');
     lastSyncedPlayerIndex = state.currentPlayerIndex;
     lastSyncedWeek = state.week ?? -1;
   }
@@ -179,11 +193,21 @@ export function applyNetworkState(state: SerializedGameState) {
   // - Dismissed and host still has value → skip (guest already dismissed)
   for (const { key, read } of SYNCABLE_EVENT_FIELDS) {
     const value = read(state);
+    if (
+      key === 'deathEvent'
+      && dismissedEvents.has(key)
+      && value != null
+      && eventFingerprint(value) !== dismissedDeathEventFingerprint
+    ) {
+      dismissedEvents.delete(key);
+      dismissedDeathEventFingerprint = null;
+    }
     if (!dismissedEvents.has(key)) {
       update[key] = value;
     } else if (value == null) {
       update[key] = null;
       dismissedEvents.delete(key);
+      if (key === 'deathEvent') dismissedDeathEventFingerprint = null;
     }
   }
 
