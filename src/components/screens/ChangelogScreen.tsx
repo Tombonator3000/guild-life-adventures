@@ -25,6 +25,19 @@ const visual = (text: string): ChangelogEntry => ({ icon: <Palette className={`$
 
 const CHANGELOG: Version[] = [
   {
+    version: 'v0.10.2',
+    date: 'July 26, 2026',
+    title: 'Phase 16Y: AI Failure Recovery',
+    highlights: [
+      ai('AI failure memory now tracks the complete requested action and the relevant player state instead of a permanent turn-wide blacklist'),
+      fix('Actions rejected for insufficient gold, wrong location, missing education or equipment can be tried again after those prerequisites change'),
+      fix('Identical rejected actions remain blocked while the relevant state is unchanged, preventing repeated failure loops'),
+      ai('Normal AI turns and Skip AI Turn now use the same dependency-aware failure cache'),
+      fix('The AI no longer falls back to a known rejected action when no viable alternative remains'),
+      improve('Failure records are isolated per AI player and include structured reason and attempt data for easier diagnosis'),
+    ],
+  },
+  {
     version: 'v0.10.1',
     date: 'July 26, 2026',
     title: 'Phase 16Y: Rules Truth Pass',
