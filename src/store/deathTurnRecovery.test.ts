@@ -11,6 +11,7 @@ const goals = {
 
 describe('death turn recovery', () => {
   beforeEach(() => {
+    useGameStore.setState({ networkMode: 'local', localPlayerId: null, roomCode: null });
     useGameStore.getState().resetForNewGame();
   });
 
