@@ -9,6 +9,7 @@ import {
 } from '@/data/highScores';
 import type { GameState } from '@/types/game.types';
 import type { PlayerPostGameResult } from '@/lib/postGameResults';
+import { WorldRankingPanel } from './WorldRankingPanel';
 
 interface HighScorePanelProps {
   results: PlayerPostGameResult[];
@@ -61,7 +62,9 @@ export function HighScorePanel({
     ?? null;
   const [displayName, setDisplayName] = useState(initialResult?.player.name ?? '');
   const [scores, setScores] = useState<HighScoreEntry[]>(() => loadLocalHighScores());
-  const [savedPlayerIds, setSavedPlayerIds] = useState<Set<string>>(() => new Set());
+  const [savedEntriesByPlayer, setSavedEntriesByPlayer] = useState<Map<string, HighScoreEntry>>(
+    () => new Map(),
+  );
 
   const handlePlayerChange = (playerId: string) => {
     setSelectedPlayerId(playerId);
@@ -70,7 +73,7 @@ export function HighScorePanel({
   };
 
   const handleSave = () => {
-    if (!selectedResult || !displayName.trim() || savedPlayerIds.has(selectedResult.player.id)) return;
+    if (!selectedResult || !displayName.trim() || savedEntriesByPlayer.has(selectedResult.player.id)) return;
 
     const entry: HighScoreEntry = {
       id: createScoreId(selectedResult.player.id),
@@ -85,15 +88,23 @@ export function HighScorePanel({
       createdAt: Date.now(),
     };
     setScores(saveLocalHighScore(entry));
-    setSavedPlayerIds(previous => new Set(previous).add(selectedResult.player.id));
+    setSavedEntriesByPlayer(previous => {
+      const next = new Map(previous);
+      next.set(selectedResult.player.id, entry);
+      return next;
+    });
   };
 
   const handleClear = () => {
     clearLocalHighScores();
     setScores([]);
+    setSavedEntriesByPlayer(new Map());
   };
 
-  const alreadySaved = selectedResult ? savedPlayerIds.has(selectedResult.player.id) : false;
+  const savedEntry = selectedResult
+    ? savedEntriesByPlayer.get(selectedResult.player.id) ?? null
+    : null;
+  const alreadySaved = savedEntry !== null;
 
   return (
     <div className="parchment-panel p-6 mb-8 max-w-2xl w-full">
@@ -103,7 +114,7 @@ export function HighScorePanel({
             <Medal className="w-5 h-5 text-amber-600" /> Local Hall of Fame
           </h2>
           <p className="text-xs text-muted-foreground mt-1">
-            Performance score is separate from the victory race. Scores stay on this device.
+            Performance score is separate from the victory race. Local scores stay on this device.
           </p>
         </div>
         {scores.length > 0 && (
@@ -156,7 +167,7 @@ export function HighScorePanel({
               className="gold-button px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <Save className="w-4 h-4" />
-              {alreadySaved ? 'Saved' : 'Save Score'}
+              {alreadySaved ? 'Saved Locally' : 'Save Score'}
             </button>
           </div>
 
@@ -215,6 +226,8 @@ export function HighScorePanel({
           No local scores yet. Finish a game and claim the first place.
         </p>
       )}
+
+      <WorldRankingPanel savedEntry={savedEntry} goalProfile={goalProfile} />
     </div>
   );
 }
