@@ -23,7 +23,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          bun test --reporter=verbose > phase16x-test-output.txt 2>&1
+          bun test > phase16x-test-output.txt 2>&1
           status=$?
           cat phase16x-test-output.txt
           echo "status=$status" >> "$GITHUB_OUTPUT"
