@@ -2,15 +2,25 @@
 
 ## Lokal kontroll
 
-Prosjektet bruker Bun som eneste pakkehåndterer.
+Prosjektet bruker Bun 1.3.14 som eneste runtime og pakkehåndterer. `bun.lock` er den eneste autoritative lockfilen.
 
 ```bash
 bun install --frozen-lockfile
-bunx tsc --noEmit
-bunx vitest run
+bun run check:types
+bun run test
 bun run build
 bun run lint
+bunx playwright install --only-shell chromium
+bun run test:e2e
 ```
+
+Den samlede lokale hovedkontrollen kan kjøres med:
+
+```bash
+bun run validate
+```
+
+Playwright kjøres separat fordi nettleserbinæren må installeres på maskinen eller CI-runneren.
 
 ## Testnivåer
 
@@ -18,6 +28,7 @@ bun run lint
 - **Komponent- og hooktester:** regresjoner som AI-starttimer, pending-state og brukerinteraksjon.
 - **Nettverkstester:** aktørbinding, argumentvalidering og avvisning av forsøk på å handle som en annen spiller.
 - **E2E-smoke:** tittelskjermen laster, nytt spill kan åpnes, og spilloppsettet vises uten runtime-feil.
+- **Release-smoke:** publisert GitHub Pages-side og `version.json` må kunne hentes etter deploy.
 
 ## Regresjonsregel
 
@@ -27,7 +38,22 @@ AI-handlinger som feiler caches med både handlingens identitet og spillerens re
 
 ## GitHub Actions
 
-Workflowen `Agent validation` kjøres for alle `agent/**`-grener og pull requests mot `main`. Den skal være grønn før merge og kontrollerer TypeScript, enhetstester, produksjonsbuild, ESLint og Playwright-smoketester i Chromium.
+Workflowen `Agent validation` kjøres for alle `agent/**`-grener og pull requests mot `main`. Den kan også kalles som en gjenbrukbar workflow og brukes derfor som første jobb i produksjonsdeployen.
+
+Valideringen kontrollerer:
+
+- eksakt Bun-versjon,
+- at bare `bun.lock` finnes,
+- frozen dependency install,
+- TypeScript,
+- enhetstester,
+- produksjonsbuild,
+- ESLint,
+- Playwright-smoketester i Chromium.
+
+`Deploy to GitHub Pages` kan ikke bygge før valideringen er grønn. Dersom PartyKit er konfigurert, må serverdeployen også lykkes før Pages-klienten bygges. Manglende PartyKit-secrets gir en tydelig notice og kontrollert skip; delvis konfigurasjon eller faktisk deployfeil stopper releasen.
+
+Etter publisering kjøres en HTTP-smoketest mot både hovedsiden og `version.json`.
 
 ## Nye lagringsfelt
 
