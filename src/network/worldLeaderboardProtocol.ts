@@ -73,6 +73,22 @@ export function sanitizeWorldScoreSubmission(value: unknown): WorldScoreSubmissi
   };
 }
 
+export function sanitizeWorldScoreEntry(value: unknown): WorldScoreEntry | null {
+  const submission = sanitizeWorldScoreSubmission(value);
+  if (!submission || !value || typeof value !== 'object') return null;
+  const candidate = value as Partial<WorldScoreEntry>;
+  const id = sanitizeText(candidate.id, 80);
+  const submittedAt = Number(candidate.submittedAt);
+  if (!id || !Number.isFinite(submittedAt) || submittedAt <= 0) return null;
+  return { ...submission, id, submittedAt };
+}
+
+export function sanitizeWorldScoreEntries(values: unknown[]): WorldScoreEntry[] {
+  return values
+    .map(sanitizeWorldScoreEntry)
+    .filter((entry): entry is WorldScoreEntry => entry !== null);
+}
+
 export function sortWorldScores(scores: WorldScoreEntry[]): WorldScoreEntry[] {
   return [...scores].sort((a, b) => (
     b.score - a.score
