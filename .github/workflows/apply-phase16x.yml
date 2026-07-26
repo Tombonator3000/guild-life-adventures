@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/phase16x-broker-newspaper
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
