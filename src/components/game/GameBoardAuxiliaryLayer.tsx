@@ -9,6 +9,7 @@ import { ChatPanel } from './ChatPanel';
 import { ContextualTips } from './ContextualTips';
 import { SpectatorOverlay } from './SpectatorOverlay';
 import { TopDropdownMenu } from './TopDropdownMenu';
+import { useLegacyFinanceMigration } from '@/hooks/useLegacyFinanceMigration';
 
 type OptionalComponentProps<T extends ElementType> = ComponentProps<T> | null;
 
@@ -42,6 +43,8 @@ export function GameBoardAuxiliaryLayer({
   spectatorOverlayProps,
   topDropdownProps,
 }: GameBoardAuxiliaryLayerProps) {
+  useLegacyFinanceMigration();
+
   return (
     <>
       {zoneEditorProps && <ZoneEditor {...zoneEditorProps} />}

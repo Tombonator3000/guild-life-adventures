@@ -9,7 +9,7 @@ export type LoanService = 'borrow' | 'repay';
 
 export const LOAN_PRODUCTS = [100, 250, 500, 1000] as const;
 const MAX_TRANSFER_AMOUNT = 1_000_000;
-const MAX_STOCK_SHARES = 1_000;
+const MAX_STOCK_SHARES = 100_000;
 
 function validatePositiveInteger(value: number, maximum: number, label: string): ActionResult | null {
   if (!Number.isSafeInteger(value) || value <= 0 || value > maximum) {
@@ -65,41 +65,13 @@ export function createFinanceServiceActions(set: SetFn, get: GetFn) {
     },
 
     manageInvestment: (
-      playerId: string,
-      service: InvestmentService,
-      amount: number,
-    ): ActionResult | void => {
-      const amountError = validatePositiveInteger(amount, MAX_TRANSFER_AMOUNT, 'Investment amount');
-      if (amountError) return amountError;
-      const state = get();
-      const visit = validateBankVisit(state, playerId);
-      if ('error' in visit) return visit.error;
-      const { player } = visit;
-
-      if (service === 'invest') {
-        if (player.gold < amount) return { success: false, message: `You only have ${player.gold}g available to invest.` };
-        set(current => ({
-          players: current.players.map(candidate => candidate.id === playerId
-            ? { ...candidate, gold: candidate.gold - amount, investments: candidate.investments + amount }
-            : candidate),
-        }));
-        return { success: true, message: `Invested ${amount}g.` };
-      }
-
-      if (service === 'withdraw') {
-        if (player.investments < amount) return { success: false, message: `You only have ${player.investments}g invested.` };
-        const penalty = Math.floor(amount * 0.10);
-        const proceeds = amount - penalty;
-        set(current => ({
-          players: current.players.map(candidate => candidate.id === playerId
-            ? { ...candidate, gold: candidate.gold + proceeds, investments: candidate.investments - amount }
-            : candidate),
-        }));
-        return { success: true, message: `Withdrew ${amount}g from investments (${penalty}g early-withdrawal penalty).` };
-      }
-
-      return { success: false, message: 'Unknown investment service.' };
-    },
+      _playerId: string,
+      _service: InvestmentService,
+      _amount: number,
+    ): ActionResult => ({
+      success: false,
+      message: 'The generic Investments account has been retired. Use The Broker to buy shares or Crown Bonds.',
+    }),
 
     tradeStock: (
       playerId: string,
