@@ -34,7 +34,12 @@ async function expectNoPageOverflow(page: Page) {
 }
 
 test.describe('narrow mobile touch viewport', () => {
-  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  test.use({
+    viewport: { width: 390, height: 844 },
+    screen: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true,
+  });
 
   test('keeps the live board and mobile controls usable without page overflow', async ({ page }) => {
     await startSinglePlayerGame(page);
@@ -52,10 +57,20 @@ test.describe('narrow mobile touch viewport', () => {
 });
 
 test.describe('iPad-sized touch viewport', () => {
-  test.use({ viewport: { width: 820, height: 1180 }, hasTouch: true, isMobile: true });
+  test.use({
+    viewport: { width: 820, height: 1180 },
+    screen: { width: 820, height: 1180 },
+    hasTouch: true,
+    isMobile: true,
+  });
 
   test('switches cleanly between tablet portrait and desktop-style landscape', async ({ page }) => {
     await startSinglePlayerGame(page);
+
+    const exitFullscreen = page.getByRole('button', { name: 'Exit Fullscreen (F)' });
+    if (await exitFullscreen.isVisible()) {
+      await exitFullscreen.click();
+    }
 
     await expect(page.getByTitle('Stats & Inventory')).toBeVisible();
     await expect(page.getByRole('button', { name: 'End Turn', exact: true })).toBeVisible();
