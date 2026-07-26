@@ -99,34 +99,10 @@ export function GameBoard() {
   const roomCodeDisplay = useGameStore(state => state.roomCode);
   const currentPlayer = useCurrentPlayer();
 
-  const {
-    isLocalPlayerTurn,
-    isWaitingForOtherPlayer,
-    localPlayer,
-    isPureSpectator,
-    isSpectating,
-  } = deriveGameBoardAudienceState({
-    players,
-    currentPlayer,
-    localPlayerId,
-    isOnline,
-    phase,
-  });
-  const {
-    visibleDeathEvent,
-    canSpectateAfterDeath,
-    deathLeaveLabel,
-    onSpectate,
-    onLeave,
-  } = useDeathSpectatorFlow({
-    deathEvent,
-    players,
-    isOnline,
-    networkMode,
-    localPlayerId,
-    dismissDeathEvent,
-    resetForNewGame,
-  });
+  const { isLocalPlayerTurn, isWaitingForOtherPlayer, localPlayer, isPureSpectator, isSpectating } =
+    deriveGameBoardAudienceState({ players, currentPlayer, localPlayerId, isOnline, phase });
+  const { visibleDeathEvent, canSpectateAfterDeath, deathLeaveLabel, onSpectate, onLeave } =
+    useDeathSpectatorFlow({ deathEvent, players, isOnline, networkMode, localPlayerId, dismissDeathEvent, resetForNewGame });
   const isCursed = (currentPlayer?.activeCurses?.length ?? 0) > 0;
   const { showTurnTransition, dismissTurnTransition } = useGameBoardTurnTransition({
     players,
