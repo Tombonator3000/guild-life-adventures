@@ -59,6 +59,11 @@ function worldMessages(messages: string[]): WorldLeaderboardOutgoingMessage[] {
     ));
 }
 
+function lastWorldMessage(messages: string[]): WorldLeaderboardOutgoingMessage | undefined {
+  const parsed = worldMessages(messages);
+  return parsed[parsed.length - 1];
+}
+
 describe('PartyKit world leaderboard server', () => {
   it('stores, broadcasts and acknowledges a valid score', async () => {
     const room = createRoom();
@@ -75,7 +80,7 @@ describe('PartyKit world leaderboard server', () => {
     expect(stored).toHaveLength(1);
     expect(stored[0]).toMatchObject(entry);
     expect(room.broadcast).toHaveBeenCalledTimes(1);
-    expect(worldMessages(connection.messages).at(-1)?.acceptedSubmissionId).toBe('valid-1');
+    expect(lastWorldMessage(connection.messages)?.acceptedSubmissionId).toBe('valid-1');
   });
 
   it('treats repeated submission ids as an idempotent retry', async () => {
@@ -88,7 +93,7 @@ describe('PartyKit world leaderboard server', () => {
 
     const stored = room.values.get('world-high-scores-v1') as WorldScoreEntry[];
     expect(stored).toHaveLength(1);
-    expect(worldMessages(connection.messages).at(-1)?.acceptedSubmissionId).toBe('same-id');
+    expect(lastWorldMessage(connection.messages)?.acceptedSubmissionId).toBe('same-id');
   });
 
   it('rejects an impossible score without storing it', async () => {
@@ -102,7 +107,7 @@ describe('PartyKit world leaderboard server', () => {
     );
 
     expect(room.values.has('world-high-scores-v1')).toBe(false);
-    expect(worldMessages(connection.messages).at(-1)?.error).toBe('invalid-submission');
+    expect(lastWorldMessage(connection.messages)?.error).toBe('invalid-submission');
   });
 
   it('rate-limits the sixth new score from one connection', async () => {
@@ -119,7 +124,7 @@ describe('PartyKit world leaderboard server', () => {
 
     const stored = room.values.get('world-high-scores-v1') as WorldScoreEntry[];
     expect(stored).toHaveLength(5);
-    expect(worldMessages(connection.messages).at(-1)?.error).toBe('rate-limited');
+    expect(lastWorldMessage(connection.messages)?.error).toBe('rate-limited');
   });
 
   it('sends the stored board when a leaderboard client connects', async () => {
@@ -131,7 +136,7 @@ describe('PartyKit world leaderboard server', () => {
 
     await server.onConnect(connection as never, room as never);
 
-    const message = worldMessages(connection.messages).at(-1);
+    const message = lastWorldMessage(connection.messages);
     expect(message?.scores).toHaveLength(1);
     expect(message?.scores[0].submissionId).toBe('stored');
   });
