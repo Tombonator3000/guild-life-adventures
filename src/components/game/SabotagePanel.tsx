@@ -55,21 +55,20 @@ export function SabotagePanel({ player, rivals, priceModifier, onSabotage }: Sab
     }
   }, [pending, player.gold, player.timeRemaining]);
 
-  // Clear the pending lock immediately if the host rejects this exact sabotage
-  // request. Prevents the panel from staying disabled for the full 10s fallback
-  // timeout when we already know the action failed.
+  // Clear the pending lock immediately if the host rejects this exact player's
+  // sabotage request. Matching the actor prevents another local subscription
+  // from consuming a result that belongs to a different player.
   useEffect(() => {
     if (!pending) return;
     const unsub = subscribeActionResult(event => {
-      if (event.actionName !== 'sabotagePlayer') return;
-      const [, targetId, optionId] = event.args as [string, string, string];
-      if (targetId !== pending.targetId || optionId !== pending.optionId) return;
-      if (event.success) return;
+      if (event.success || event.actionName !== 'sabotagePlayer') return;
+      const [actorId, targetId, optionId] = event.args as [string, string, string];
+      if (actorId !== player.id || targetId !== pending.targetId || optionId !== pending.optionId) return;
       setPending(null);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     });
     return unsub;
-  }, [pending]);
+  }, [pending, player.id]);
 
   useEffect(() => () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
