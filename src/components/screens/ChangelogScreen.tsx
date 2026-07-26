@@ -244,7 +244,7 @@ export function ChangelogScreen({ onClose }: { onClose: () => void }) {
           <span className="flex items-center gap-1"><Bug className="w-2.5 h-2.5 text-red-400" /> Fix</span>
           <span className="flex items-center gap-1"><Swords className="w-2.5 h-2.5 text-purple-400" /> AI</span>
           <span className="flex items-center gap-1"><Globe className="w-2.5 h-2.5 text-green-400" /> Online</span>
-          <span className="flex items-center gap-1"><Palette className="wr-2.5 h-2.5 text-pink-400" /> Visual</span>
+          <span className="flex items-center gap-1"><Palette className="w-2.5 h-2.5 text-pink-400" /> Visual</span>
         </div>
 
         <ScrollArea className="pr-2" style={{ height: 'calc(85vh - 160px)' }}>
