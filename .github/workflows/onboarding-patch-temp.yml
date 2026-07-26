@@ -1,6 +1,9 @@
 name: Temporary guided onboarding integration
 
 on:
+  push:
+    branches:
+      - agent/phase-16y-interactive-onboarding
   pull_request:
     branches:
       - main
@@ -10,7 +13,7 @@ permissions:
 
 jobs:
   patch-onboarding:
-    if: github.head_ref == 'agent/phase-16y-interactive-onboarding'
+    if: github.event_name == 'push' || github.head_ref == 'agent/phase-16y-interactive-onboarding'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -63,9 +66,11 @@ jobs:
               return rect.width > 0 && rect.height > 0 && matcher.test(button.textContent ?? '');
             }) ?? null;
           }'''
-          if old not in content:
+          if old in content:
+              content = content.replace(old, new, 1)
+          elif 'const fallbackMatchers: Record<string, RegExp>' not in content:
               raise SystemExit('Tutorial target resolver marker not found')
-          tutorial.write_text(content.replace(old, new, 1))
+          tutorial.write_text(content)
 
           shell = Path('src/components/game/LocationShell.tsx')
           content = shell.read_text()
@@ -74,9 +79,11 @@ jobs:
           new = '''          <button
             data-tutorial-target="work-shift"
             onClick={workInfo.onWork}'''
-          if old not in content:
-              raise SystemExit('Work button marker not found')
-          shell.write_text(content.replace(old, new, 1))
+          if 'data-tutorial-target="work-shift"' not in content:
+              if old not in content:
+                  raise SystemExit('Work button marker not found')
+              content = content.replace(old, new, 1)
+          shell.write_text(content)
 
           options = Path('src/components/game/OptionsMenu.tsx')
           content = options.read_text()
