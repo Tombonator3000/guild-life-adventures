@@ -15,13 +15,16 @@ jobs:
   audit-audio:
     if: github.event_name == 'push' || github.head_ref == 'agent/phase-16y-audio-cleanup'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           lfs: true
-      - name: Verify audio tools
+      - name: Install audio analysis tools
         run: |
+          sudo apt-get update
+          sudo apt-get install --yes ffmpeg
+          set -o pipefail
           ffmpeg -version | head -n 1
           ffprobe -version | head -n 1
       - name: Measure all packaged MP3 files
