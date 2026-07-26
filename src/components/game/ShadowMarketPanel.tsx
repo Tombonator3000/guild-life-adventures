@@ -3,7 +3,8 @@
 // Also sells lottery tickets (Fortune's Wheel) and weekend event tickets
 
 import { useGameStore } from '@/store/gameStore';
-import { getMarketAppliances, getAppliance, SHADOW_MARKET_ITEMS, ACADEMY_ITEMS, getItemPrice } from '@/data/items';
+import { getMarketAppliances, SHADOW_MARKET_ITEMS, ACADEMY_ITEMS, getItemPrice } from '@/data/items';
+import { PLAYER_RULE_TEXT, PLAYER_RULE_VALUES } from '@/data/playerFacingRules';
 import { itemToPreview, applianceToPreview } from './ItemPreview';
 import { AlertTriangle, BookOpen } from 'lucide-react';
 import type { Player } from '@/types/game.types';
@@ -26,11 +27,7 @@ interface ShadowMarketPanelProps {
   section?: ShadowMarketSection;
 }
 
-export function ShadowMarketPanel({
-  player,
-  priceModifier,
-  section,
-}: ShadowMarketPanelProps) {
+export function ShadowMarketPanel({ player, priceModifier, section }: ShadowMarketPanelProps) {
   const { t } = useTranslation();
   const purchaseAppliance = useGameStore(s => s.purchaseAppliance);
   const purchaseVendorItem = useGameStore(s => s.purchaseVendorItem);
@@ -48,37 +45,30 @@ export function ShadowMarketPanel({
     const result = purchaseVendorItem(player.id, 'shadow-market', item.id);
     if (!result) return;
     if (result.success) {
-      const ticketNote = item.isLotteryTicket
-        ? ` (${player.lotteryTickets + 1} tickets for this week)`
-        : '';
+      const ticketNote = item.isLotteryTicket ? ` (${player.lotteryTickets + 1} tickets for this week)` : '';
       toast.success(t('panelStore.purchased', { name: itemName }) + ticketNote);
     } else {
       toast.error(result.message);
     }
   };
 
-  // Separate items by type for better organization
   const regularItems = SHADOW_MARKET_ITEMS.filter(i => !i.isLotteryTicket && !i.isTicket);
   const lotteryItems = SHADOW_MARKET_ITEMS.filter(i => i.isLotteryTicket);
   const ticketItems = SHADOW_MARKET_ITEMS.filter(i => i.isTicket);
-
-  // In tabbed mode, use dark text on light parchment background
   const darkText = !!section;
   const largeText = !!section;
-
   const footerNote = null;
 
   const renderGoods = () => (
     <>
       {regularItems.map(item => {
         const price = Math.round(getItemPrice(item, priceModifier * 0.7));
-        const canAfford = player.gold >= price;
         return (
           <JonesMenuItem
             key={item.id}
             label={t(`items.${item.id}.name`) || item.name}
             price={price}
-            disabled={!canAfford}
+            disabled={player.gold < price}
             onClick={() => handleBuyItem(item)}
             darkText={darkText}
             largeText={largeText}
@@ -96,22 +86,26 @@ export function ShadowMarketPanel({
       )}
       {lotteryItems.map(item => {
         const price = Math.round(getItemPrice(item, priceModifier * 0.7));
-        const canAfford = player.gold >= price;
+        const basePreview = itemToPreview(item);
         return (
           <JonesMenuItem
             key={item.id}
             label={t(`items.${item.id}.name`) || item.name}
             price={price}
-            disabled={!canAfford}
+            disabled={player.gold < price}
             onClick={() => handleBuyItem(item)}
             darkText={darkText}
             largeText={largeText}
-            previewData={itemToPreview(item)}
+            previewData={{
+              ...basePreview,
+              description: PLAYER_RULE_TEXT.lottery,
+              effect: `Grand prize: ${PLAYER_RULE_VALUES.lotteryGrandPrize}g`,
+            }}
           />
         );
       })}
       <div className={`text-xs ${darkText ? 'text-[#6b5a42]' : 'text-[#8b7355]'} px-2 mb-1`}>
-        Drawing at week end. Grand prize: 5,000g!
+        Drawing at week end. Grand prize: {PLAYER_RULE_VALUES.lotteryGrandPrize}g.
       </div>
     </>
   );
@@ -120,14 +114,13 @@ export function ShadowMarketPanel({
     <>
       {ticketItems.map(item => {
         const price = Math.round(getItemPrice(item, priceModifier * 0.7));
-        const canAfford = player.gold >= price;
         const alreadyOwns = item.ticketType ? player.tickets.includes(item.ticketType) : false;
         return (
           <JonesMenuItem
             key={item.id}
             label={t(`items.${item.id}.name`) || item.name}
             price={price}
-            disabled={!canAfford || alreadyOwns}
+            disabled={player.gold < price || alreadyOwns}
             highlight={alreadyOwns}
             onClick={() => handleBuyItem(item)}
             darkText={darkText}
@@ -148,14 +141,13 @@ export function ShadowMarketPanel({
       {ACADEMY_ITEMS.map(item => {
         const price = Math.round(getItemPrice(item, priceModifier * 0.85));
         const alreadyOwns = !!player.durables[item.id];
-        const canAfford = player.gold >= price;
         const itemName = t(`items.${item.id}.name`) || item.name;
         return (
           <JonesMenuItem
             key={item.id}
             label={itemName}
             price={price}
-            disabled={!canAfford || alreadyOwns}
+            disabled={player.gold < price || alreadyOwns}
             highlight={alreadyOwns}
             onClick={() => {
               const result = purchaseVendorItem(player.id, 'shadow-market', item.id);
@@ -181,19 +173,16 @@ export function ShadowMarketPanel({
       {appliances.map(appliance => {
         const price = Math.round((appliance.marketPrice || 0) * priceModifier);
         const alreadyOwns = !!player.appliances[appliance.id];
-        const canAfford = player.gold >= price;
         const isFirstPurchase = !player.applianceHistory.includes(appliance.id);
         const applianceName = t(`appliances.${appliance.id}.name`) || appliance.name;
-        const happinessNote = isFirstPurchase && appliance.happinessMarket > 0
-          ? ` (+${appliance.happinessMarket} Hap)`
-          : '';
+        const happinessNote = isFirstPurchase && appliance.happinessMarket > 0 ? ` (+${appliance.happinessMarket} Hap)` : '';
 
         return (
           <JonesMenuItem
             key={appliance.id}
             label={`${applianceName}${happinessNote}`}
             price={price}
-            disabled={!canAfford || alreadyOwns}
+            disabled={player.gold < price || alreadyOwns}
             highlight={alreadyOwns}
             onClick={() => handleBuyAppliance(appliance.id)}
             darkText={darkText}
@@ -205,39 +194,28 @@ export function ShadowMarketPanel({
     </>
   );
 
-  // Tabbed mode: render only the specified section
   if (section) {
     switch (section) {
-      case 'goods':
-        return <div>{renderGoods()}{footerNote}</div>;
-      case 'lottery':
-        return <div>{renderLottery()}{footerNote}</div>;
-      case 'tickets':
-        return <div>{renderTickets()}{footerNote}</div>;
-      case 'appliances':
-        return <div>{renderAppliances()}{footerNote}</div>;
-      case 'scholar':
-        return <div>{renderScholarItems()}{footerNote}</div>;
+      case 'goods': return <div>{renderGoods()}{footerNote}</div>;
+      case 'lottery': return <div>{renderLottery()}{footerNote}</div>;
+      case 'tickets': return <div>{renderTickets()}{footerNote}</div>;
+      case 'appliances': return <div>{renderAppliances()}{footerNote}</div>;
+      case 'scholar': return <div>{renderScholarItems()}{footerNote}</div>;
     }
   }
 
-  // Full mode (legacy): render all sections
   return (
     <JonesPanel>
       <JonesPanelHeader title={t('locations.shadowMarket')} subtitle="Discount Goods" />
       <JonesPanelContent>
         <JonesSectionHeader title={t('panelShadowMarket.blackMarketGoods')} />
         {renderGoods()}
-
         <JonesSectionHeader title={t('panelShadowMarket.lotteryTickets')} />
         {renderLottery()}
-
         <JonesSectionHeader title={t('panelShadowMarket.weekendTickets')} />
         {renderTickets()}
-
         <JonesSectionHeader title={t('panelShadowMarket.scholarlyTexts')} />
         {renderScholarItems()}
-
         <JonesSectionHeader title={t('panelEnchanter.appliances')} />
         {renderAppliances()}
         {footerNote}

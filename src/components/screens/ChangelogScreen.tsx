@@ -25,6 +25,20 @@ const visual = (text: string): ChangelogEntry => ({ icon: <Palette className={`$
 
 const CHANGELOG: Version[] = [
   {
+    version: 'v0.10.1',
+    date: 'July 26, 2026',
+    title: 'Phase 16Y: Rules Truth Pass',
+    highlights: [
+      improve('Rebuilt the tutorial and Adventurer’s Manual around the current executable game rules'),
+      improve('Added shared player-facing rule data so important explanations no longer drift independently from the engine'),
+      fix('Corrected starvation, healer, food storage, movement, rent, Career, Education and Adventure explanations'),
+      fix('Removed the retired generic Investments account from active setup and statistics text; The Broker is now explained as the only active investment system'),
+      fix('Corrected Fortune’s Wheel from the obsolete 5,000g claim to the actual 500g grand prize'),
+      fix('Clarified that The Guildholm Herald is bought at the General Store and can be reread free for the rest of the week'),
+      improve('Added regression tests that detect future rule-text drift across tutorial, manual, setup, newspaper, movement and lottery surfaces'),
+    ],
+  },
+  {
     version: 'v0.10.0',
     date: 'July 26, 2026',
     title: 'Final Results, Hall of Fame & Permadeath Recovery',
@@ -194,10 +208,7 @@ function VersionBlock({ version, initialOpen }: { version: Version; initialOpen:
 
   return (
     <div className="border border-border/30 rounded overflow-hidden">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/30"
-      >
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/30">
         {open ? <ChevronDown className="w-4 h-4 text-primary shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2 flex-wrap">
@@ -209,8 +220,8 @@ function VersionBlock({ version, initialOpen }: { version: Version; initialOpen:
       </button>
       {open && (
         <div className="px-4 pb-3 space-y-1.5 border-t border-border/20 pt-2">
-          {version.highlights.map((entry, i) => (
-            <div key={i} className="flex items-start gap-2">
+          {version.highlights.map((entry, index) => (
+            <div key={`${version.version}-${index}`} className="flex items-start gap-2">
               {entry.icon}
               <span className="text-xs text-card-foreground/80 leading-relaxed">{entry.text}</span>
             </div>
@@ -226,19 +237,13 @@ export function ChangelogScreen({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div className="relative parchment-panel p-5 w-full max-w-lg mx-4" style={{ maxHeight: '85vh' }}>
-        <button
-          onClick={onClose}
-          className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-card-foreground z-10"
-        >
+        <button onClick={onClose} className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-card-foreground z-10" aria-label="Close changelog">
           <X className="w-5 h-5" />
         </button>
 
         <h2 className="font-display text-xl text-card-foreground text-center mb-1">What's New</h2>
-        <p className="text-xs text-muted-foreground text-center mb-4 font-display italic">
-          Development changelog & version history
-        </p>
+        <p className="text-xs text-muted-foreground text-center mb-4 font-display italic">Development changelog & version history</p>
 
-        {/* Legend */}
         <div className="flex flex-wrap gap-x-3 gap-y-1 justify-center mb-4 text-[0.6rem] text-muted-foreground">
           <span className="flex items-center gap-1"><Sparkles className="w-2.5 h-2.5 text-amber-400" /> Feature</span>
           <span className="flex items-center gap-1"><Bug className="w-2.5 h-2.5 text-red-400" /> Fix</span>
@@ -249,8 +254,8 @@ export function ChangelogScreen({ onClose }: { onClose: () => void }) {
 
         <ScrollArea className="pr-2" style={{ height: 'calc(85vh - 160px)' }}>
           <div className="space-y-2">
-            {CHANGELOG.map((v, i) => (
-              <VersionBlock key={v.version} version={v} initialOpen={i === 0} />
+            {CHANGELOG.map((version, index) => (
+              <VersionBlock key={version.version} version={version} initialOpen={index === 0} />
             ))}
           </div>
         </ScrollArea>
