@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-async function startSinglePlayerGame(page: Page) {
+async function startSinglePlayerGame(page: Page, options: { tutorial?: boolean } = {}) {
   // The flow validates deterministic UI/state transitions, not random-event odds.
   // Keep all probability checks above their trigger thresholds before the app loads.
   await page.addInitScript(() => {
@@ -12,11 +12,57 @@ async function startSinglePlayerGame(page: Page) {
   await page.getByPlaceholder('Enter name...').fill('E2E Hero');
 
   const tutorial = page.getByRole('checkbox', { name: /show tutorial/i });
-  if (await tutorial.isChecked()) await tutorial.uncheck();
+  if (options.tutorial) {
+    if (!(await tutorial.isChecked())) await tutorial.check();
+  } else if (await tutorial.isChecked()) {
+    await tutorial.uncheck();
+  }
 
   await page.getByRole('button', { name: 'Begin Adventure' }).click();
   await expect(page.locator('[data-zone-id="bank"]')).toBeVisible();
 }
+
+test('completes the guided first turn through real game actions', async ({ page }) => {
+  const pageErrors: string[] = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+
+  await startSinglePlayerGame(page, { tutorial: true });
+
+  await expect(page.getByText('Your First Turn — Learn by Doing')).toBeVisible();
+  await page.getByRole('button', { name: /start guided turn/i }).click();
+  await expect(page.getByText('1. Travel to the Guild Hall')).toBeVisible();
+
+  await page.locator('[data-zone-id="guild-hall"]').click();
+  await expect(page.getByText('2. Get an Entry-Level Job')).toBeVisible({ timeout: 10_000 });
+
+  await page.getByRole('button', { name: 'Guild Hall', exact: true }).click();
+  await expect(page.getByText('Floor Sweeper', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Apply', exact: true }).first().click();
+  await expect(page.getByText('HIRED!', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Accept Job', exact: true }).click();
+
+  await expect(page.getByText('3. Work One Full Shift')).toBeVisible();
+  await page.getByRole('button', { name: /work shift/i }).click();
+  await expect(page.getByText('4. Buy Food for the Week')).toBeVisible();
+
+  await page.locator('[data-zone-id="general-store"]').click();
+  const breadButton = page.getByRole('button', { name: /loaf of bread/i });
+  await expect(breadButton).toBeVisible({ timeout: 10_000 });
+  await breadButton.click();
+  await expect(page.getByText('5. Protect Some Gold at the Bank')).toBeVisible();
+
+  await page.locator('[data-zone-id="bank"]').click();
+  const depositButton = page.getByRole('button', { name: /deposit 50/i });
+  await expect(depositButton).toBeVisible({ timeout: 10_000 });
+  await depositButton.click();
+  await expect(page.getByText('6. Review the Turn and End It')).toBeVisible();
+
+  await page.getByRole('button', { name: 'End Turn', exact: true }).click();
+  await expect(page.getByText(/Week\s+2/).first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/Guided first turn/i)).toHaveCount(0);
+
+  expect(pageErrors, `Unexpected page errors: ${pageErrors.join('\n')}`).toEqual([]);
+});
 
 test('plays a turn, performs a bank action, saves, mutates, loads and ends the turn', async ({ page }) => {
   const pageErrors: string[] = [];
