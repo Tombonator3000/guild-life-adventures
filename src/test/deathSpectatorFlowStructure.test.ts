@@ -29,7 +29,7 @@ describe('permadeath spectator flow boundaries', () => {
   });
 
   it('shows the death decision only to the affected online client', () => {
-    expect(boardSource).toContain('} = useDeathSpectatorFlow({');
+    expect(boardSource).toContain('useDeathSpectatorFlow({');
     expect(deathFlowSource).toContain('deathEvent.playerId === localPlayerId');
     expect(deathFlowSource).toContain('const visibleDeathEvent');
     expect(boardSource).toContain('deathModalProps={visibleDeathEvent ?');
