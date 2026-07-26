@@ -34,7 +34,7 @@ describe('Phase 16Y rules truth', () => {
     expect(startTurn).toContain('timeRemaining: Math.max(0, p.timeRemaining - 10)');
     expect(startTurn).toContain('happiness: Math.max(0, p.happiness - 4)');
     expect(PLAYER_RULE_TEXT.starvation).toContain('does not apply a guaranteed direct Health penalty');
-    expect(PLAYER_RULE_TEXT.starvation).not.toMatch(/guaranteed.*Health|lose 10 Health/i);
+    expect(PLAYER_RULE_TEXT.starvation).not.toMatch(/lose 10 Health|lose 10 HP|-10 Health/i);
   });
 
   it('uses the current financial components and subtracts debt', () => {
@@ -72,8 +72,8 @@ describe('Phase 16Y rules truth', () => {
 
   it('matches shortest-route and partial-travel movement behavior', () => {
     const movementSource = source('src/hooks/useLocationClick.ts');
-    expect(movementSource).toContain('calculatePath');
-    expect(movementSource).toContain('getPartialPath');
+    expect(movementSource).toContain('getPath');
+    expect(movementSource).toContain('calculatePartialTravel');
     expect(PLAYER_RULE_TEXT.movement).toContain('shortest route');
     expect(PLAYER_RULE_TEXT.movement).toContain('travel as far as your remaining time allows');
     expect(PLAYER_RULE_TEXT.movement).not.toMatch(/choose clockwise|choose counter-clockwise/i);
