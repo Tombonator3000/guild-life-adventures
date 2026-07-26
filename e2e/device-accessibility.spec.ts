@@ -33,6 +33,17 @@ async function expectNoPageOverflow(page: Page) {
   ).toBeLessThanOrEqual(measurements.viewport + 1);
 }
 
+async function leaveBrowserFullscreen(page: Page) {
+  const fullscreenActive = await page.evaluate(() => document.fullscreenElement !== null);
+  if (!fullscreenActive) return;
+
+  await page.getByRole('button', { name: 'Exit Fullscreen (F)' }).click();
+  await expect.poll(
+    () => page.evaluate(() => document.fullscreenElement === null),
+    { message: 'Browser should finish leaving fullscreen before viewport rotation' },
+  ).toBe(true);
+}
+
 test.describe('narrow mobile touch viewport', () => {
   test.use({
     viewport: { width: 390, height: 844 },
@@ -66,11 +77,7 @@ test.describe('iPad-sized touch viewport', () => {
 
   test('switches cleanly between tablet portrait and desktop-style landscape', async ({ page }) => {
     await startSinglePlayerGame(page);
-
-    const exitFullscreen = page.getByRole('button', { name: 'Exit Fullscreen (F)' });
-    if (await exitFullscreen.isVisible()) {
-      await exitFullscreen.click();
-    }
+    await leaveBrowserFullscreen(page);
 
     await expect(page.getByTitle('Stats & Inventory')).toBeVisible();
     await expect(page.getByRole('button', { name: 'End Turn', exact: true })).toBeVisible();
