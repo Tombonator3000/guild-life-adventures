@@ -9,7 +9,9 @@ import { ChatPanel } from './ChatPanel';
 import { ContextualTips } from './ContextualTips';
 import { SpectatorOverlay } from './SpectatorOverlay';
 import { TopDropdownMenu } from './TopDropdownMenu';
+import { TutorialOverlay } from './TutorialOverlay';
 import { useLegacyFinanceMigration } from '@/hooks/useLegacyFinanceMigration';
+import { useGameStore } from '@/store/gameStore';
 
 type OptionalComponentProps<T extends ElementType> = ComponentProps<T> | null;
 
@@ -44,11 +46,14 @@ export function GameBoardAuxiliaryLayer({
   topDropdownProps,
 }: GameBoardAuxiliaryLayerProps) {
   useLegacyFinanceMigration();
+  const showTutorial = useGameStore(state => state.showTutorial);
+  const setShowTutorial = useGameStore(state => state.setShowTutorial);
 
   return (
     <>
       {zoneEditorProps && <ZoneEditor {...zoneEditorProps} />}
       <GameBoardOverlays {...overlayProps} />
+      {showTutorial && <TutorialOverlay onClose={() => setShowTutorial(false)} />}
       {saveMenuOpen && <SaveLoadMenu onClose={onCloseSaveMenu} />}
       {deathModalProps && <DeathModal {...deathModalProps} />}
       {playerInfoProps && <PlayerInfoModal {...playerInfoProps} />}
