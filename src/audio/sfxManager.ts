@@ -1,6 +1,6 @@
 // SFXManager — singleton that handles sound effects for UI interactions.
-// Uses a pool of HTMLAudioElement instances to allow overlapping sounds.
-// Falls back to Web Audio API synthesized sounds when MP3 files are not available.
+// Uses packaged MP3 files only when they have passed the audio asset audit.
+// Effects without a verified file are intentionally synthesized with Web Audio.
 // Routes audio through Web Audio API GainNodes for iOS/iPadOS volume control
 // (iOS ignores HTMLAudioElement.volume — GainNode is the only way to control volume).
 
@@ -14,61 +14,83 @@ export interface SFXSettings {
   sfxMuted: boolean;
 }
 
-// Sound effect definitions — paths relative to /sfx/
+interface FileSFXDefinition {
+  source: 'file';
+  file: string;
+  volume: number;
+}
+
+interface SynthSFXDefinition {
+  source: 'synth';
+  volume: number;
+}
+
+type SFXDefinition = FileSFXDefinition | SynthSFXDefinition;
+
+const fileSFX = (file: string, volume: number): FileSFXDefinition => ({ source: 'file', file, volume });
+const synthSFX = (volume: number): SynthSFXDefinition => ({ source: 'synth', volume });
+
+/**
+ * Sound-effect definitions.
+ *
+ * `file` means the packaged MP3 is verified and Web Audio synth is a runtime
+ * fallback. `synth` means procedural audio is the intended primary source; the
+ * browser never requests a nonexistent or known-invalid MP3 first.
+ */
 export const SFX_LIBRARY = {
   // UI Sounds
-  'button-click': { file: 'button-click.mp3', volume: 0.6 },
-  'button-hover': { file: 'button-hover.mp3', volume: 0.3 },
-  'gold-button-click': { file: 'gold-button-click.mp3', volume: 0.7 },
-  'menu-open': { file: 'menu-open.mp3', volume: 0.5 },
-  'menu-close': { file: 'menu-close.mp3', volume: 0.4 },
+  'button-click': fileSFX('button-click.mp3', 0.6),
+  'button-hover': synthSFX(0.3),
+  'gold-button-click': synthSFX(0.7),
+  'menu-open': fileSFX('menu-open.mp3', 0.5),
+  'menu-close': fileSFX('menu-close.mp3', 0.4),
 
   // Game Actions
-  'coin-gain': { file: 'coin-gain.mp3', volume: 0.6 },
-  'coin-spend': { file: 'coin-spend.mp3', volume: 0.5 },
-  'item-buy': { file: 'item-buy.mp3', volume: 0.6 },
-  'item-equip': { file: 'item-equip.mp3', volume: 0.5 },
-  'success': { file: 'success.mp3', volume: 0.6 },
-  'error': { file: 'error.mp3', volume: 0.5 },
+  'coin-gain': synthSFX(0.6),
+  'coin-spend': synthSFX(0.5),
+  'item-buy': fileSFX('item-buy.mp3', 0.6),
+  'item-equip': synthSFX(0.5),
+  'success': synthSFX(0.6),
+  'error': fileSFX('error.mp3', 0.5),
 
   // Movement & Locations
-  'footstep': { file: 'footstep.mp3', volume: 0.4 },
-  'door-open': { file: 'door-open.mp3', volume: 0.5 },
+  'footstep': synthSFX(0.4),
+  'door-open': synthSFX(0.5),
 
   // Work & Education
-  'work-complete': { file: 'work-complete.mp3', volume: 0.5 },
-  'study': { file: 'study.mp3', volume: 0.4 },
-  'graduation': { file: 'graduation.mp3', volume: 0.7 },
+  'work-complete': synthSFX(0.5),
+  'study': synthSFX(0.4),
+  'graduation': fileSFX('graduation.mp3', 0.7),
 
   // Combat & Dungeon
-  'sword-hit': { file: 'sword-hit.mp3', volume: 0.6 },
-  'damage-taken': { file: 'damage-taken.mp3', volume: 0.5 },
-  'victory-fanfare': { file: 'victory-fanfare.mp3', volume: 0.7 },
-  'defeat': { file: 'defeat.mp3', volume: 0.5 },
+  'sword-hit': synthSFX(0.6),
+  'damage-taken': synthSFX(0.5),
+  'victory-fanfare': fileSFX('victory-fanfare.mp3', 0.7),
+  'defeat': synthSFX(0.5),
 
   // Events
-  'notification': { file: 'notification.mp3', volume: 0.5 },
-  'turn-start': { file: 'turn-start.mp3', volume: 0.4 },
-  'week-end': { file: 'week-end.mp3', volume: 0.5 },
+  'notification': fileSFX('notification.mp3', 0.5),
+  'turn-start': synthSFX(0.4),
+  'week-end': fileSFX('week-end.mp3', 0.5),
 
-  // --- New game event sounds ---
-  'robbery': { file: 'robbery.mp3', volume: 0.6 },
-  'heal': { file: 'heal.mp3', volume: 0.5 },
-  'quest-accept': { file: 'quest-accept.mp3', volume: 0.5 },
-  'quest-complete': { file: 'quest-complete.mp3', volume: 0.6 },
-  'level-up': { file: 'level-up.mp3', volume: 0.7 },
-  'appliance-break': { file: 'appliance-break.mp3', volume: 0.5 },
-  'dice-roll': { file: 'dice-roll.mp3', volume: 0.4 },
-  'death': { file: 'death.mp3', volume: 0.6 },
-  'resurrection': { file: 'resurrection.mp3', volume: 0.6 },
-  'rent-paid': { file: 'rent-paid.mp3', volume: 0.4 },
-  'weather-thunder': { file: 'weather-thunder.mp3', volume: 0.5 },
-  'festival': { file: 'festival.mp3', volume: 0.5 },
-  'travel-event': { file: 'travel-event.mp3', volume: 0.5 },
+  // Game event sounds
+  'robbery': fileSFX('robbery.mp3', 0.6),
+  'heal': synthSFX(0.5),
+  'quest-accept': synthSFX(0.5),
+  'quest-complete': fileSFX('quest-complete.mp3', 0.6),
+  'level-up': fileSFX('level-up.mp3', 0.7),
+  'appliance-break': fileSFX('appliance-break.mp3', 0.5),
+  'dice-roll': fileSFX('dice-roll.mp3', 0.4),
+  'death': fileSFX('death.mp3', 0.6),
+  'resurrection': fileSFX('resurrection.mp3', 0.6),
+  'rent-paid': fileSFX('rent-paid.mp3', 0.4),
+  'weather-thunder': fileSFX('weather-thunder.mp3', 0.5),
+  'festival': synthSFX(0.5),
+  'travel-event': fileSFX('travel-event.mp3', 0.5),
 
   // Dark magic
-  'curse-cast': { file: 'curse-cast.mp3', volume: 0.65 },
-} as const;
+  'curse-cast': synthSFX(0.65),
+} as const satisfies Record<string, SFXDefinition>;
 
 export type SFXId = keyof typeof SFX_LIBRARY;
 
@@ -96,94 +118,71 @@ class SFXManager {
   private settings: SFXSettings;
   private cachedSettings: SFXSettings;
   private listeners: Array<() => void> = [];
-  // Pool of audio elements for overlapping sounds
   private audioPool: HTMLAudioElement[] = [];
-  // Web Audio API gain nodes for iOS volume control (one per pool element)
-  // Nullable: connectElement returns null when AudioContext is unavailable
   private gainNodes: (GainNode | null)[] = [];
   private poolIndex = 0;
   private readonly POOL_SIZE = 8;
-  // Track which MP3 files failed to load so we use synth fallback directly
-  private failedFiles = new Set<string>();
+  private failedFiles = new Set<SFXId>();
 
   constructor() {
     this.settings = loadSettings();
     this.cachedSettings = { ...this.settings };
 
-    // Pre-create audio pool with Web Audio gain nodes.
-    // Wrapped in try-catch: if Audio() or connectElement() fails in a restricted
-    // environment, SFX will gracefully degrade to synth-only (no crash).
     try {
       for (let i = 0; i < this.POOL_SIZE; i++) {
         const audio = new Audio();
         audio.preload = 'auto';
         this.audioPool.push(audio);
-        // Route through Web Audio API GainNode for iOS volume control
         this.gainNodes.push(connectElement(audio));
       }
-    } catch (e) {
-      console.warn('[SFX] Audio pool creation failed — synth fallback only:', e);
+    } catch (error) {
+      console.warn('[SFX] Audio pool creation failed — synth effects remain available:', error);
     }
   }
 
-  // --- Public API ---
-
-  /** Play a sound effect by ID. Tries MP3 first, falls back to synth. */
+  /** Play a sound effect by ID using its declared primary source. */
   play(sfxId: SFXId) {
     if (this.settings.sfxMuted) return;
 
     const sfx = SFX_LIBRARY[sfxId];
-    if (!sfx) return;
-
     const effectiveVolume = sfx.volume * this.settings.sfxVolume;
 
-    // If this MP3 previously failed to load, or audio pool wasn't created, go straight to synth
+    if (sfx.source === 'synth') {
+      playSynthSFX(sfxId, effectiveVolume);
+      return;
+    }
+
     if (this.failedFiles.has(sfxId) || this.audioPool.length === 0) {
       playSynthSFX(sfxId, effectiveVolume);
       return;
     }
 
     const url = `${import.meta.env.BASE_URL}sfx/${sfx.file}`;
-
-    // Get next audio element from pool (round-robin)
-    const idx = this.poolIndex;
-    const audio = this.audioPool[idx];
-    const gain = this.gainNodes[idx];
+    const index = this.poolIndex;
+    const audio = this.audioPool[index];
+    const gain = this.gainNodes[index];
     this.poolIndex = (this.poolIndex + 1) % this.POOL_SIZE;
 
-    // Stop any current playback on this element
     audio.pause();
     audio.currentTime = 0;
     audio.src = url;
-    // Volume controlled via GainNode (element.volume stays at 1 for iOS compatibility)
-    // Falls back to element.volume when GainNode is null (AudioContext unavailable)
-    if (gain) {
-      gain.gain.value = effectiveVolume;
-    } else {
-      audio.volume = effectiveVolume;
-    }
+    if (gain) gain.gain.value = effectiveVolume;
+    else audio.volume = effectiveVolume;
 
-    // Resume AudioContext (iOS requires user gesture)
     resumeAudioContext();
 
-    // Play (handle autoplay restrictions silently)
     const playPromise = audio.play();
     if (playPromise) {
-      playPromise.catch((err) => {
-        // Only mark as permanently failed for actual load errors, not autoplay blocks
-        if (err?.name === 'NotAllowedError') {
-          // Autoplay blocked by browser — use synth this time but don't mark as failed
-          // so next user-initiated play will retry the MP3
+      playPromise.catch((error) => {
+        if (error?.name === 'NotAllowedError') {
           playSynthSFX(sfxId, effectiveVolume);
         } else {
-          // Real load error — mark as failed, use synth from now on
           this.failedFiles.add(sfxId);
           playSynthSFX(sfxId, effectiveVolume);
         }
       });
     }
 
-    // Also catch load errors for missing files
     const errorHandler = () => {
       this.failedFiles.add(sfxId);
       playSynthSFX(sfxId, effectiveVolume);
@@ -192,52 +191,43 @@ class SFXManager {
     audio.addEventListener('error', errorHandler, { once: true });
   }
 
-  /** Get current settings - returns cached immutable object for React compatibility. */
   getSettings(): SFXSettings {
     return this.cachedSettings;
   }
 
-  /** Set SFX volume (0-1). */
   setVolume(volume: number) {
     this.settings.sfxVolume = Math.max(0, Math.min(1, volume));
     saveSettings(this.settings);
     this.notify();
   }
 
-  /** Toggle mute. */
   toggleMute() {
     this.settings.sfxMuted = !this.settings.sfxMuted;
     saveSettings(this.settings);
     this.notify();
   }
 
-  /** Set muted state directly. */
   setMuted(muted: boolean) {
     this.settings.sfxMuted = muted;
     saveSettings(this.settings);
     this.notify();
   }
 
-  /** Subscribe to settings changes. Returns an unsubscribe function. */
   subscribe(listener: () => void): () => void {
     this.listeners.push(listener);
     return () => {
-      this.listeners = this.listeners.filter(l => l !== listener);
+      this.listeners = this.listeners.filter(listenerEntry => listenerEntry !== listener);
     };
   }
 
-  // --- Internal ---
-
   private notify() {
     this.cachedSettings = { ...this.settings };
-    this.listeners.forEach(l => l());
+    this.listeners.forEach(listener => listener());
   }
 }
 
-// Singleton instance
 export const sfxManager = new SFXManager();
 
-// Convenience function for playing sounds
 export function playSFX(sfxId: SFXId) {
   sfxManager.play(sfxId);
 }

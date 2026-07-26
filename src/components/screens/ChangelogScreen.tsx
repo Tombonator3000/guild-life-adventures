@@ -25,6 +25,20 @@ const visual = (text: string): ChangelogEntry => ({ icon: <Palette className={`$
 
 const CHANGELOG: Version[] = [
   {
+  version: 'v0.10.3',
+  date: 'July 26, 2026',
+  title: 'Phase 16Y: Audited Audio Integrity',
+  highlights: [
+    improve('Measured every packaged MP3 with FFprobe and FFmpeg instead of assuming that a file extension meant usable audio'),
+    fix('Removed 21 invalid files that were identical placeholder payloads across unrelated ambient and sound-effect names'),
+    fix('Removed the duplicate Study MP3; Study now uses its distinct procedural sound'),
+    improve('Effects without verified files are now intentionally synth-first and no longer request broken or missing MP3 URLs'),
+    improve('Five locations use the verified town-street ambient fallback until dedicated audited loops are available'),
+    fix('Removed nonexistent music variant references and the missing curse-cast file request'),
+    improve('CI now rejects invalid, silent or exact duplicate packaged MP3 files and publishes an audio audit report'),
+  ],
+},
+  {
     version: 'v0.10.2',
     date: 'July 26, 2026',
     title: 'Phase 16Y: AI Failure Recovery',
