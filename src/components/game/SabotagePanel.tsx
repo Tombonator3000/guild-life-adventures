@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { subscribeActionResult } from '@/network/NetworkActionProxy';
 
 /** Re-export the canonical option shape so external callers stay type-safe. */
 export type SabotageOption = CanonSabotageOption;
@@ -53,6 +54,22 @@ export function SabotagePanel({ player, rivals, priceModifier, onSabotage }: Sab
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     }
   }, [pending, player.gold, player.timeRemaining]);
+
+  // Clear the pending lock immediately if the host rejects this exact sabotage
+  // request. Prevents the panel from staying disabled for the full 10s fallback
+  // timeout when we already know the action failed.
+  useEffect(() => {
+    if (!pending) return;
+    const unsub = subscribeActionResult(event => {
+      if (event.actionName !== 'sabotagePlayer') return;
+      const [, targetId, optionId] = event.args as [string, string, string];
+      if (targetId !== pending.targetId || optionId !== pending.optionId) return;
+      if (event.success) return;
+      setPending(null);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    });
+    return unsub;
+  }, [pending]);
 
   useEffect(() => () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
