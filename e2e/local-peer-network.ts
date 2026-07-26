@@ -189,6 +189,9 @@ globalThis.__guildE2EPeerControl = {
   peerIds() {
     return [...localPeers].map(peer => peer.id);
   },
+  connectionCount() {
+    return [...localPeers].reduce((total, peer) => total + peer.connections.size, 0);
+  },
 };
 
 export default LocalPeer;
