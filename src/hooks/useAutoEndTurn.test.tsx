@@ -17,6 +17,7 @@ function HookHarness() {
 }
 
 function prepareDeadMiddlePlayer(networkMode: 'local' | 'guest') {
+  useGameStore.setState({ networkMode: 'local', localPlayerId: null, roomCode: null });
   useGameStore.getState().startNewGame(['Alive Host', 'Fallen Guest'], true, goals);
   useGameStore.setState(state => ({
     phase: 'event',
@@ -36,6 +37,7 @@ function prepareDeadMiddlePlayer(networkMode: 'local' | 'guest') {
 describe('useAutoEndTurn permadeath recovery', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    useGameStore.setState({ networkMode: 'local', localPlayerId: null, roomCode: null });
     useGameStore.getState().resetForNewGame();
   });
 
@@ -43,6 +45,7 @@ describe('useAutoEndTurn permadeath recovery', () => {
     cleanup();
     vi.runOnlyPendingTimers();
     vi.useRealTimers();
+    useGameStore.setState({ networkMode: 'local', localPlayerId: null, roomCode: null });
     useGameStore.getState().resetForNewGame();
   });
 
