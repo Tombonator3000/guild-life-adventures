@@ -7,9 +7,9 @@ export interface Stock {
   name: string;
   description: string;
   basePrice: number;
-  volatility: number; // 0-1, how much price can swing per week
-  dividendRate: number; // Weekly dividend rate (e.g. 0.005 = 0.5% per week paid on share value)
-  isTBill: boolean;   // T-Bills have fixed price, 3% sell fee
+  volatility: number;
+  dividendRate: number;
+  isTBill: boolean;
 }
 
 export const STOCKS: Stock[] = [
@@ -19,7 +19,7 @@ export const STOCKS: Stock[] = [
     description: 'Volatile mining operation. High risk, high reward. Low dividend.',
     basePrice: 100,
     volatility: 0.35,
-    dividendRate: 0.002, // 0.2% weekly (growth stock — value comes from price swings)
+    dividendRate: 0.002,
     isTBill: false,
   },
   {
@@ -28,7 +28,7 @@ export const STOCKS: Stock[] = [
     description: 'Moderate risk potion manufacturing. Balanced dividend.',
     basePrice: 150,
     volatility: 0.20,
-    dividendRate: 0.005, // 0.5% weekly (balanced)
+    dividendRate: 0.005,
     isTBill: false,
   },
   {
@@ -37,7 +37,7 @@ export const STOCKS: Stock[] = [
     description: 'Stable enchanting business. Reliable dividends.',
     basePrice: 200,
     volatility: 0.10,
-    dividendRate: 0.008, // 0.8% weekly (income stock)
+    dividendRate: 0.008,
     isTBill: false,
   },
   {
@@ -46,34 +46,27 @@ export const STOCKS: Stock[] = [
     description: 'Royal treasury bonds. Fixed price, 1% weekly yield. 3% fee to sell.',
     basePrice: 100,
     volatility: 0,
-    dividendRate: 0.01, // 1% weekly (safe yield)
+    dividendRate: 0.01,
     isTBill: true,
   },
 ];
 
-// Max weeks of price history to retain per stock
 export const MAX_PRICE_HISTORY = 8;
+const DIVIDEND_CREDIT_KEY = '__dividend-credit-microgold';
+const MICRO_GOLD = 1_000_000;
 
-// Get initial stock prices
 export function getInitialStockPrices(): Record<string, number> {
   const prices: Record<string, number> = {};
-  for (const stock of STOCKS) {
-    prices[stock.id] = stock.basePrice;
-  }
+  for (const stock of STOCKS) prices[stock.id] = stock.basePrice;
   return prices;
 }
 
-// Get initial empty price history
 export function getInitialPriceHistory(): Record<string, number[]> {
   const history: Record<string, number[]> = {};
-  for (const stock of STOCKS) {
-    history[stock.id] = [stock.basePrice];
-  }
+  for (const stock of STOCKS) history[stock.id] = [stock.basePrice];
   return history;
 }
 
-// Update stock prices for a new week (called in processWeekEnd)
-// economyTrend: -1 (recession), 0 (stable), 1 (boom) — influences price direction
 export function updateStockPrices(
   currentPrices: Record<string, number>,
   isCrash: boolean = false,
@@ -83,42 +76,27 @@ export function updateStockPrices(
 
   for (const stock of STOCKS) {
     if (stock.isTBill) {
-      // T-Bills never change price
       newPrices[stock.id] = stock.basePrice;
       continue;
     }
 
     const currentPrice = currentPrices[stock.id] || stock.basePrice;
-
     if (isCrash) {
-      // Market crash severity tiers (based on how deep into recession)
       const severity = Math.random();
       let crashFactor: number;
-      if (severity < 0.5) {
-        // Minor crash (50% chance): lose 15-25%
-        crashFactor = 0.75 + Math.random() * 0.10;
-      } else if (severity < 0.85) {
-        // Moderate crash (35% chance): lose 30-50%
-        crashFactor = 0.50 + Math.random() * 0.20;
-      } else {
-        // Major crash (15% chance): lose 50-70%
-        crashFactor = 0.30 + Math.random() * 0.20;
-      }
-      // Stable stocks lose less (multiply crash factor toward 1.0 by stability)
-      const stability = 1 - stock.volatility; // 0.65 for crystal mine, 0.90 for enchanting
+      if (severity < 0.5) crashFactor = 0.75 + Math.random() * 0.10;
+      else if (severity < 0.85) crashFactor = 0.50 + Math.random() * 0.20;
+      else crashFactor = 0.30 + Math.random() * 0.20;
+      const stability = 1 - stock.volatility;
       crashFactor = crashFactor + (1 - crashFactor) * stability * 0.3;
       newPrices[stock.id] = Math.max(10, Math.round(currentPrice * crashFactor));
     } else {
-      // Symmetric random walk: -volatility to +volatility
       const randomChange = (Math.random() - 0.5) * 2 * stock.volatility;
-      // Economy trend bias: boom adds +3%, recession adds -3%
       const trendBias = economyTrend * 0.03;
-      // Mean reversion: gentle pull toward base price (prevents runaway prices)
       const deviation = (currentPrice - stock.basePrice) / stock.basePrice;
-      const meanReversion = -deviation * 0.05; // 5% pull toward base each week
+      const meanReversion = -deviation * 0.05;
       const change = randomChange + trendBias + meanReversion;
       const newPrice = Math.round(currentPrice * (1 + change));
-      // Floor at 10g, cap at 8x base price (more generous cap)
       newPrices[stock.id] = Math.max(10, Math.min(stock.basePrice * 8, newPrice));
     }
   }
@@ -126,25 +104,64 @@ export function updateStockPrices(
   return newPrices;
 }
 
-// Calculate weekly dividends for a player's stock portfolio
-// Returns total gold earned from dividends this week
+/** Exact fractional dividend earned by real securities during one week. */
+export function calculateDividendAccrual(
+  stocks: Record<string, number>,
+  prices: Record<string, number>,
+): number {
+  let accrual = 0;
+  for (const stock of STOCKS) {
+    const shares = stocks[stock.id] ?? 0;
+    if (!Number.isFinite(shares) || shares <= 0) continue;
+    const price = prices[stock.id] || stock.basePrice;
+    accrual += shares * price * stock.dividendRate;
+  }
+  return accrual;
+}
+
+/** Stored fractional dividend credit, hidden inside the serialized portfolio. */
+export function getStoredDividendCredit(stocks: Record<string, number>): number {
+  const storedMicroGold = stocks[DIVIDEND_CREDIT_KEY] ?? 0;
+  if (!Number.isFinite(storedMicroGold) || storedMicroGold >= 0) return 0;
+  return Math.abs(storedMicroGold) / MICRO_GOLD;
+}
+
+export interface DividendSettlement {
+  accrual: number;
+  payment: number;
+  credit: number;
+}
+
+export function previewDividendSettlement(
+  stocks: Record<string, number>,
+  prices: Record<string, number>,
+): DividendSettlement {
+  const accrual = calculateDividendAccrual(stocks, prices);
+  const totalMicroGold = Math.max(0, Math.round((getStoredDividendCredit(stocks) + accrual) * MICRO_GOLD));
+  const payment = Math.floor(totalMicroGold / MICRO_GOLD);
+  const credit = (totalMicroGold % MICRO_GOLD) / MICRO_GOLD;
+  return { accrual, payment, credit };
+}
+
+/**
+ * Settle weekly dividends using whole gold while preserving any fractional
+ * remainder. The reserve is stored as a negative internal portfolio entry so
+ * it survives save/load and network sync while being ignored by trade/value
+ * calculations and debt seizure (which only considers positive share counts).
+ */
 export function calculateDividends(
   stocks: Record<string, number>,
   prices: Record<string, number>,
 ): number {
-  let totalDividends = 0;
-  for (const [stockId, shares] of Object.entries(stocks)) {
-    if (shares <= 0) continue;
-    const stock = STOCKS.find(s => s.id === stockId);
-    if (!stock) continue;
-    const price = prices[stockId] || stock.basePrice;
-    // Dividend = shares * price * weekly rate (paid in gold)
-    totalDividends += Math.floor(shares * price * stock.dividendRate);
+  const settlement = previewDividendSettlement(stocks, prices);
+  if (settlement.credit > 0) {
+    stocks[DIVIDEND_CREDIT_KEY] = -Math.round(settlement.credit * MICRO_GOLD);
+  } else {
+    delete stocks[DIVIDEND_CREDIT_KEY];
   }
-  return totalDividends;
+  return settlement.payment;
 }
 
-// Update price history with current week's prices
 export function updatePriceHistory(
   history: Record<string, number[]>,
   currentPrices: Record<string, number>,
@@ -153,38 +170,30 @@ export function updatePriceHistory(
   for (const stock of STOCKS) {
     const prev = history[stock.id] || [];
     const price = currentPrices[stock.id] || stock.basePrice;
-    // Keep last MAX_PRICE_HISTORY entries + new one
-    const updated = [...prev, price];
-    newHistory[stock.id] = updated.slice(-MAX_PRICE_HISTORY);
+    newHistory[stock.id] = [...prev, price].slice(-MAX_PRICE_HISTORY);
   }
   return newHistory;
 }
 
-// Calculate total stock portfolio value
 export function calculateStockValue(
   stocks: Record<string, number>,
   prices: Record<string, number>,
 ): number {
   let total = 0;
-  for (const [stockId, shares] of Object.entries(stocks)) {
-    const price = prices[stockId] || 0;
-    total += shares * price;
+  for (const stock of STOCKS) {
+    const shares = stocks[stock.id] ?? 0;
+    if (shares > 0) total += shares * (prices[stock.id] || stock.basePrice);
   }
   return total;
 }
 
-// Calculate sell price (T-Bills have 3% fee)
 export function getSellPrice(stockId: string, shares: number, currentPrice: number): number {
-  const stock = STOCKS.find(s => s.id === stockId);
+  const stock = STOCKS.find(candidate => candidate.id === stockId);
   if (!stock) return 0;
-
   const grossValue = shares * currentPrice;
-  if (stock.isTBill) {
-    return Math.floor(grossValue * 0.97); // 3% sell fee
-  }
-  return grossValue;
+  return stock.isTBill ? Math.floor(grossValue * 0.97) : grossValue;
 }
 
 export function getStock(id: string): Stock | undefined {
-  return STOCKS.find(s => s.id === id);
+  return STOCKS.find(stock => stock.id === id);
 }

@@ -39,6 +39,10 @@ const CHANGELOG: Version[] = [
       fix('Eliminated players can no longer move around or perform actions'),
       multi('Dead online players now choose between Spectate Game and leaving; the host automatically continues remaining human or AI turns'),
       fix('Solo games now end correctly when no player survives'),
+      feat('The Broker is now the single investment system, with Buy 1/5/Max, Sell 1/All, position values and exact dividend information'),
+      improve('Legacy Investments balances migrate safely into Savings with no withdrawal penalty'),
+      fix('Fractional stock dividends now carry forward instead of disappearing when a weekly payout is below 1g'),
+      fix('The Guildholm Herald can be opened after purchase and read again throughout the week'),
       improve("Updated What's New so recent gameplay, ranking and multiplayer fixes are no longer hidden behind the March changelog"),
     ],
   },
@@ -240,7 +244,7 @@ export function ChangelogScreen({ onClose }: { onClose: () => void }) {
           <span className="flex items-center gap-1"><Bug className="w-2.5 h-2.5 text-red-400" /> Fix</span>
           <span className="flex items-center gap-1"><Swords className="w-2.5 h-2.5 text-purple-400" /> AI</span>
           <span className="flex items-center gap-1"><Globe className="w-2.5 h-2.5 text-green-400" /> Online</span>
-          <span className="flex items-center gap-1"><Palette className="w-2.5 h-2.5 text-pink-400" /> Visual</span>
+          <span className="flex items-center gap-1"><Palette className="wr-2.5 h-2.5 text-pink-400" /> Visual</span>
         </div>
 
         <ScrollArea className="pr-2" style={{ height: 'calc(85vh - 160px)' }}>
