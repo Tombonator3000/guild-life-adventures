@@ -11,9 +11,8 @@ const packageJson = JSON.parse(read('package.json')) as {
   scripts: Record<string, string>;
   devDependencies: Record<string, string>;
 };
-const bunLock = JSON.parse(read('bun.lock')) as {
-  workspaces?: Record<string, { name?: string }>;
-};
+const bunLock = read('bun.lock');
+const bunWorkspaceName = bunLock.match(/"workspaces"\s*:\s*\{\s*""\s*:\s*\{\s*"name"\s*:\s*"([^"]+)"/s)?.[1];
 const validationWorkflow = read('.github/workflows/agent-validate.yml');
 const deployWorkflow = read('.github/workflows/deploy-github-pages.yml');
 const readme = read('README.md');
@@ -23,7 +22,7 @@ describe('Phase 16Y release safety policy', () => {
     expect(existsSync(resolve(root, 'bun.lock'))).toBe(true);
     expect(existsSync(resolve(root, 'bun.lockb'))).toBe(false);
     expect(packageJson.name).toBe('guild-life-adventures');
-    expect(bunLock.workspaces?.['']?.name).toBe(packageJson.name);
+    expect(bunWorkspaceName).toBe(packageJson.name);
     expect(packageJson.version).toBe('0.10.2');
     expect(packageJson.packageManager).toBe('bun@1.3.14');
     expect(packageJson.devDependencies['@playwright/test']).toBe('1.61.1');
