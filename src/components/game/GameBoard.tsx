@@ -4,6 +4,7 @@ import { MOVEMENT_PATHS } from '@/data/locations';
 import { deriveGameBoardAudienceState } from '@/lib/deriveGameBoardAudienceState';
 import { GameBoardHeader } from './GameBoardHeader';
 import { useNetworkSync } from '@/network/useNetworkSync';
+import { leaveActiveOnlineGame } from '@/network/leaveActiveOnlineGame';
 import { useZoneConfiguration } from '@/hooks/useZoneConfiguration';
 import { useAITurnHandler } from '@/hooks/useAITurnHandler';
 import { useAutoEndTurn } from '@/hooks/useAutoEndTurn';
@@ -48,6 +49,7 @@ export function GameBoard() {
     dismissToadCurseEvent,
     deathEvent,
     dismissDeathEvent,
+    resetForNewGame,
     weather,
     eventSource,
   } = useGameStore(useShallow(state => ({
@@ -73,6 +75,7 @@ export function GameBoard() {
     dismissToadCurseEvent: state.dismissToadCurseEvent,
     deathEvent: state.deathEvent,
     dismissDeathEvent: state.dismissDeathEvent,
+    resetForNewGame: state.resetForNewGame,
     weather: state.weather,
     eventSource: state.eventSource,
   })));
@@ -109,6 +112,35 @@ export function GameBoard() {
     isOnline,
     phase,
   });
+
+  // In online games each client should only receive the dramatic death choice
+  // for its own eliminated player. The authoritative host can still keep the
+  // event in shared state without blocking everyone else's UI.
+  const visibleDeathEvent = deathEvent && (
+    !isOnline || deathEvent.playerId === localPlayerId
+  ) ? deathEvent : null;
+  const canSpectateAfterDeath = !!visibleDeathEvent?.isPermadeath
+    && players.some(player => !player.isGameOver);
+  const deathLeaveLabel = isOnline
+    ? networkMode === 'host' ? 'Leave & Close Room' : 'Leave Game'
+    : 'End Game';
+
+  const handleSpectateAfterDeath = () => {
+    dismissDeathEvent();
+  };
+
+  const handleLeaveAfterDeath = () => {
+    if (isOnline) {
+      leaveActiveOnlineGame(
+        networkMode === 'host'
+          ? 'Host left the room after being eliminated'
+          : 'Player left after being eliminated',
+      );
+      return;
+    }
+    resetForNewGame();
+  };
+
   const isCursed = (currentPlayer?.activeCurses?.length ?? 0) > 0;
   const { showTurnTransition, dismissTurnTransition } = useGameBoardTurnTransition({
     players,
@@ -321,9 +353,13 @@ export function GameBoard() {
           }}
           saveMenuOpen={showGameMenu}
           onCloseSaveMenu={closeGameMenu}
-          deathModalProps={deathEvent ? {
-            event: deathEvent,
+          deathModalProps={visibleDeathEvent ? {
+            event: visibleDeathEvent,
             onDismiss: dismissDeathEvent,
+            onSpectate: handleSpectateAfterDeath,
+            onLeave: handleLeaveAfterDeath,
+            canSpectate: canSpectateAfterDeath,
+            leaveLabel: deathLeaveLabel,
           } : null}
           playerInfoProps={viewingPlayer ? {
             player: viewingPlayer,
