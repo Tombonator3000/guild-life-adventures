@@ -111,7 +111,10 @@ describe('atomic host-authoritative services', () => {
     expect(player.gold).toBe(115);
     expect(player.timeRemaining).toBe(8);
     expect(player.happiness).toBe(55);
-    expect(useGameStore.getState().phase).toBe('event');
+    // Gambling must NOT open a blocking event panel; the UI shows a toast instead.
+    expect(useGameStore.getState().phase).toBe('playing');
+    expect(useGameStore.getState().eventMessage).toBeNull();
+    expect(result?.message).toMatch(/You won 25g at the Fence/);
 
     vi.restoreAllMocks();
   });
