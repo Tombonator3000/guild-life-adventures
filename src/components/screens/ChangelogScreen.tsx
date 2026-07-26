@@ -25,6 +25,24 @@ const visual = (text: string): ChangelogEntry => ({ icon: <Palette className={`$
 
 const CHANGELOG: Version[] = [
   {
+    version: 'v0.10.0',
+    date: 'July 26, 2026',
+    title: 'Final Results, Hall of Fame & Permadeath Recovery',
+    highlights: [
+      feat('Redesigned final-results screen with the actual victory goals, live end-state values and pass/fail markers for every player'),
+      feat('Victory Race Winner and Overall MVP are now separate awards, so winning the goal race does not hide the strongest total performance'),
+      feat('Local Hall of Fame with custom player names and persistent scores stored on the current device'),
+      multi('Optional Community World Ranking with voluntary submission, validation, rate limiting and clear unverified-score labelling'),
+      feat('Hall of Fame button added directly to the title screen, with local and world tabs plus goal-profile filtering'),
+      fix('Goal completion starts at 0% instead of showing pre-filled progress before the player has achieved anything'),
+      fix('Permadeath no longer leaves the eliminated player holding the active turn and freezing the match'),
+      fix('Eliminated players can no longer move around or perform actions'),
+      multi('Dead online players now choose between Spectate Game and leaving; the host automatically continues remaining human or AI turns'),
+      fix('Solo games now end correctly when no player survives'),
+      improve("Updated What's New so recent gameplay, ranking and multiplayer fixes are no longer hidden behind the March changelog"),
+    ],
+  },
+  {
     version: 'v0.9.0',
     date: 'March 17, 2026',
     title: 'Sabotage & Dynamic Economy',
