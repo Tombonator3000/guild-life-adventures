@@ -21,10 +21,13 @@ export type WorldLeaderboardIncomingMessage =
   | { type: 'leaderboard-get'; limit?: number }
   | { type: 'leaderboard-submit'; entry: WorldScoreSubmission };
 
+export type WorldLeaderboardError = 'invalid-submission' | 'rate-limited';
+
 export type WorldLeaderboardOutgoingMessage = {
   type: 'world-leaderboard';
   scores: WorldScoreEntry[];
   acceptedSubmissionId?: string;
+  error?: WorldLeaderboardError;
 };
 
 const VALID_MODES = new Set<HighScoreMode>(['solo', 'local-multiplayer', 'online']);
