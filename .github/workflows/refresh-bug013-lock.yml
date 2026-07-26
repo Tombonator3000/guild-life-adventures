@@ -24,14 +24,22 @@ jobs:
         with:
           bun-version: 1.3.14
       - name: Align workspace metadata
+        shell: bash
         run: |
-          node --input-type=module <<'NODE'
-          import { readFileSync, writeFileSync } from 'node:fs';
-          const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
-          const bunLock = JSON.parse(readFileSync('bun.lock', 'utf8'));
-          bunLock.workspaces[''].name = packageJson.name;
-          writeFileSync('bun.lock', `${JSON.stringify(bunLock, null, 2)}\n`);
-          NODE
+          python3 <<'PY'
+          from pathlib import Path
+          import json
+
+          package_name = json.loads(Path('package.json').read_text())['name']
+          path = Path('bun.lock')
+          content = path.read_text()
+          old = '"name": "vite_react_shadcn_ts"'
+          new = f'"name": "{package_name}"'
+          if old in content:
+              path.write_text(content.replace(old, new, 1))
+          elif new not in content:
+              raise SystemExit('Could not find expected Bun workspace name')
+          PY
       - name: Verify dependency graph
         run: bun install --frozen-lockfile
       - name: Commit lockfile metadata
