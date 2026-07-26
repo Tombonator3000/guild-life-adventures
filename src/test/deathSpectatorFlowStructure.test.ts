@@ -9,6 +9,7 @@ const boardSource = readSource('src/components/game/GameBoard.tsx');
 const deathModalSource = readSource('src/components/game/DeathModal.tsx');
 const turnSource = readSource('src/store/helpers/turnHelpers.ts');
 const leaveSource = readSource('src/network/leaveActiveOnlineGame.ts');
+const syncSource = readSource('src/network/useNetworkSync.ts');
 
 describe('permadeath spectator flow boundaries', () => {
   it('treats an already eliminated current player as an automatic turn recovery case', () => {
@@ -53,5 +54,11 @@ describe('permadeath spectator flow boundaries', () => {
     expect(leaveSource).toContain('resetNetworkState()');
     expect(leaveSource).toContain('peerManager.destroy()');
     expect(leaveSource).toContain("networkMode: 'local'");
+  });
+
+  it('returns guests to the title when the host closes during gameplay', () => {
+    expect(syncSource).toContain("msg.type === 'kicked'");
+    expect(syncSource).toContain('cleanupActiveOnlineGame()');
+    expect(leaveSource).toContain('export function cleanupActiveOnlineGame');
   });
 });

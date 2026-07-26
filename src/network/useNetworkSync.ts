@@ -12,6 +12,7 @@ import type { NetworkMessage, GuestMessage, HostMessage, ChatMessage, Connection
 import type { LocationId } from '@/types/game.types';
 import { processGuestActionRequest } from './actionValidation';
 import { handleGameplayReconnect } from './gameplayReconnect';
+import { cleanupActiveOnlineGame } from './leaveActiveOnlineGame';
 import {
   clearHostReconnectCredentials,
   getHostPlayerName,
@@ -308,6 +309,9 @@ export function useNetworkSync() {
         const msg = message as HostMessage;
         if (msg.type === 'state-sync') {
           applyNetworkState(msg.gameState);
+        } else if (msg.type === 'kicked') {
+          console.log(`[NetworkSync] Host closed the active room: ${msg.reason}`);
+          cleanupActiveOnlineGame();
         } else if (msg.type === 'reconnect-credential') {
           storeLocalReconnectCredential(msg);
         } else if (msg.type === 'action-result') {
