@@ -26,7 +26,21 @@ jobs:
       - name: TypeScript
         run: bunx tsc --noEmit
       - name: Unit tests
-        run: bunx vitest run
+        id: unit_tests
+        shell: bash
+        run: |
+          set +e
+          bunx vitest run 2>&1 | tee vitest-output.txt
+          status=${PIPESTATUS[0]}
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit "$status"
+      - name: Upload unit test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-output
+          path: vitest-output.txt
+          if-no-files-found: error
       - name: Production build
         run: bun run build
       - name: ESLint
