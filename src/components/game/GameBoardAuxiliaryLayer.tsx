@@ -53,7 +53,21 @@ export function GameBoardAuxiliaryLayer({
     <>
       {zoneEditorProps && <ZoneEditor {...zoneEditorProps} />}
       <GameBoardOverlays {...overlayProps} />
-      {showTutorial && <TutorialOverlay onClose={() => setShowTutorial(false)} />}
+      {showTutorial && (
+        <div className="guided-tutorial-host">
+          <style>{`
+            .guided-tutorial-host [aria-live="polite"] {
+              top: 0.75rem !important;
+              bottom: auto !important;
+              pointer-events: none;
+            }
+            .guided-tutorial-host [aria-live="polite"] button {
+              pointer-events: auto;
+            }
+          `}</style>
+          <TutorialOverlay onClose={() => setShowTutorial(false)} />
+        </div>
+      )}
       {saveMenuOpen && <SaveLoadMenu onClose={onCloseSaveMenu} />}
       {deathModalProps && <DeathModal {...deathModalProps} />}
       {playerInfoProps && <PlayerInfoModal {...playerInfoProps} />}
