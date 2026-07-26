@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  sanitizeWorldScoreEntries,
   sanitizeWorldScoreSubmission,
   sortWorldScores,
   type WorldScoreEntry,
@@ -50,6 +51,21 @@ describe('world leaderboard protocol', () => {
 
     expect(sanitized?.displayName).toBe('12345678901234567890');
     expect(sanitized?.goalProfile).toBe('abcdefghijklmnopqrstuvwx');
+  });
+
+  it('drops corrupt rows returned from remote storage', () => {
+    const valid: WorldScoreEntry = {
+      ...validSubmission,
+      id: 'entry-1',
+      submittedAt: 100,
+    };
+
+    expect(sanitizeWorldScoreEntries([
+      valid,
+      { ...valid, id: '', submittedAt: 100 },
+      { ...valid, id: 'bad-time', submittedAt: 0 },
+      { ...valid, id: 'bad-score', score: 50000 },
+    ])).toEqual([valid]);
   });
 
   it('sorts by score, then fewer weeks, then earlier submission', () => {
