@@ -24,4 +24,12 @@ Seierskravene er ikke endret. Bare prosentvisningen er rettet.
 
 ## Validering
 
-GitHub Actions skal kjøre TypeScript, hele Vitest-pakken, produksjonsbuild, ESLint og komplett Playwright-spillflyt før merge.
+GitHub Actions-run `30199199934`:
+
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Full Vitest-pakke, inkludert de nye goal-progress-testene: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright og Chromium: bestått.
+- Komplett deterministisk lokal spillflyt: bestått.
