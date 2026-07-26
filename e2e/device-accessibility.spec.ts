@@ -37,7 +37,9 @@ async function leaveBrowserFullscreen(page: Page) {
   const fullscreenActive = await page.evaluate(() => document.fullscreenElement !== null);
   if (!fullscreenActive) return;
 
-  await page.getByRole('button', { name: 'Exit Fullscreen (F)' }).click();
+  // Mobile layouts do not expose the desktop fullscreen button. Use the
+  // game's supported F shortcut, then wait for the asynchronous browser API.
+  await page.keyboard.press('f');
   await expect.poll(
     () => page.evaluate(() => document.fullscreenElement === null),
     { message: 'Browser should finish leaving fullscreen before viewport rotation' },
