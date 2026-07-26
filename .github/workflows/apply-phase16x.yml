@@ -26,7 +26,10 @@ jobs:
       - name: Collect generated files
         run: |
           mkdir -p phase16x-generated
-          git diff --name-only --diff-filter=ACM | while read file; do
+          {
+            git diff --name-only --diff-filter=ACM
+            git ls-files --others --exclude-standard
+          } | sort -u | while read file; do
             mkdir -p "phase16x-generated/$(dirname "$file")"
             cp "$file" "phase16x-generated/$file"
           done
