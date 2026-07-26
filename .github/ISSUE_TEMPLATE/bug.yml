@@ -1,0 +1,55 @@
+name: Bug report
+description: Report a reproducible defect in Guild Life Adventures
+title: "BUG: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe observable behavior. Do not use this form for broad feature requests.
+  - type: textarea
+    id: symptom
+    attributes:
+      label: Symptom
+      description: What did the player see, and what should have happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Start a game with...
+        2. Travel to...
+        3. Perform...
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser/device, solo/local/online, and deployed URL or commit when known.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Error text, screenshots, save details or console/network information. Remove secrets.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Include the regression test that should fail before the fix and pass afterward.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety checks
+      options:
+        - label: I have checked for an existing issue describing the same defect.
+          required: true
+        - label: This report contains no passwords, tokens or private room credentials.
+          required: true

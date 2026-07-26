@@ -1,0 +1,62 @@
+name: Improvement
+description: Propose a focused improvement to an existing Guild Life system
+title: "IMPROVEMENT: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Player or maintenance problem
+      description: Describe the current limitation before proposing a solution.
+    validations:
+      required: true
+  - type: textarea
+    id: current-system
+    attributes:
+      label: Existing system checked
+      description: Identify the current code/data/UI that already addresses this area so the proposal does not duplicate it.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Required outcome
+      description: State the smallest complete result that solves the problem.
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Suggested priority
+      options:
+        - P0 — correctness or release blocker
+        - P1 — clarity, onboarding or validation
+        - P2 — measured depth or replayability
+        - P3 — future/platform expansion
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ] Observable result
+        - [ ] Tests or validation
+        - [ ] Documentation/log updated
+    validations:
+      required: true
+  - type: textarea
+    id: non-goals
+    attributes:
+      label: Non-goals
+      description: Clarify adjacent systems that should not be expanded in this change.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I checked the active Phase tracker and existing issues first.
+          required: true
+        - label: This proposal improves an existing system before adding unrelated content.
+          required: true

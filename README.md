@@ -80,13 +80,19 @@ Produksjonsdeploy til GitHub Pages kaller den samme valideringsworkflowen og kan
 
 Produksjonsfeil skal få en regresjonstest. Lagringsendringer skal ha migrerings- og roundtrip-tester.
 
+## Aktiv utvikling
+
+GitHub Issues er kilden til sannhet for uferdig arbeid. Fase 16Y følges i [issue #390](https://github.com/Tombonator3000/guild-life-adventures/issues/390). `todo.md` er bare en kort inngangsside; fullført historikk ligger i auditlogger, bugkatalog, utviklingslogg og Git history.
+
 ## Dokumentasjon
 
+- [Aktiv arbeidsliste](./todo.md)
+- [Prosjektstyring og definition of done](./docs/PROJECT_MANAGEMENT.md)
 - [Arkitektur](./docs/ARCHITECTURE.md)
 - [Online flerspiller og sikkerhet](./docs/MULTIPLAYER_SECURITY.md)
 - [Testing og validering](./docs/TESTING.md)
 - [AI-system](./agents.md)
-- [Prosjektoppgaver](./todo.md)
+- [Bugkatalog](./bugs.md)
 - [Utviklingslogg](./log.md)
 - [Lovable-plan](./.lovable/plan.md)
 
