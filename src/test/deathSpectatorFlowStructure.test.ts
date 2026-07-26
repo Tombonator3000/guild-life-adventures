@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 const readSource = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
 const autoEndSource = readSource('src/hooks/useAutoEndTurn.ts');
 const audienceSource = readSource('src/lib/deriveGameBoardAudienceState.ts');
+const deathFlowSource = readSource('src/hooks/useDeathSpectatorFlow.ts');
 const boardSource = readSource('src/components/game/GameBoard.tsx');
 const deathModalSource = readSource('src/components/game/DeathModal.tsx');
 const turnSource = readSource('src/store/helpers/turnHelpers.ts');
@@ -28,8 +29,9 @@ describe('permadeath spectator flow boundaries', () => {
   });
 
   it('shows the death decision only to the affected online client', () => {
-    expect(boardSource).toContain('deathEvent.playerId === localPlayerId');
-    expect(boardSource).toContain('const visibleDeathEvent');
+    expect(boardSource).toContain('} = useDeathSpectatorFlow({');
+    expect(deathFlowSource).toContain('deathEvent.playerId === localPlayerId');
+    expect(deathFlowSource).toContain('const visibleDeathEvent');
     expect(boardSource).toContain('deathModalProps={visibleDeathEvent ?');
   });
 
@@ -48,7 +50,7 @@ describe('permadeath spectator flow boundaries', () => {
   });
 
   it('performs real online cleanup when the eliminated player leaves', () => {
-    expect(boardSource).toContain('leaveActiveOnlineGame(');
+    expect(deathFlowSource).toContain('leaveActiveOnlineGame(');
     expect(leaveSource).toContain("peerManager.sendToHost({ type: 'leave' })");
     expect(leaveSource).toContain('peerManager.broadcast');
     expect(leaveSource).toContain('resetNetworkState()');
