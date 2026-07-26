@@ -1,0 +1,34 @@
+name: Temporary audio audit
+
+on:
+  push:
+    branches:
+      - agent/phase-16y-audio-cleanup
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  audit-audio:
+    if: github.event_name == 'push' || github.head_ref == 'agent/phase-16y-audio-cleanup'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: Verify audio tools
+        run: |
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
+      - name: Measure all packaged MP3 files
+        run: node scripts/audit-audio.mjs --json audio-audit/audio-audit.json --markdown audio-audit/audio-audit.md
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: audio-audit
+          path: audio-audit
+          if-no-files-found: error
