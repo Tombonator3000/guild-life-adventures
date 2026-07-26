@@ -7,6 +7,7 @@
 
 import type * as Party from "partykit/server";
 import {
+  sanitizeWorldScoreEntries,
   sanitizeWorldScoreSubmission,
   sortWorldScores,
   type WorldLeaderboardIncomingMessage,
@@ -63,8 +64,10 @@ async function saveAndBroadcastListings(
 }
 
 async function getWorldScores(room: Party.Room): Promise<WorldScoreEntry[]> {
-  const stored = await room.storage.get<WorldScoreEntry[]>(WORLD_SCORE_STORAGE_KEY);
-  return stored ? sortWorldScores(stored).slice(0, MAX_WORLD_SCORES) : [];
+  const stored = await room.storage.get<unknown[]>(WORLD_SCORE_STORAGE_KEY);
+  return stored
+    ? sortWorldScores(sanitizeWorldScoreEntries(stored)).slice(0, MAX_WORLD_SCORES)
+    : [];
 }
 
 function clampLeaderboardLimit(limit: unknown): number {
