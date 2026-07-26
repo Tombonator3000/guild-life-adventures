@@ -8,6 +8,7 @@ import {
 import { GENERAL_STORE_ITEMS, getItemPrice } from '@/data/items';
 import { NEWSPAPER_COST, generateNewspaper } from '@/data/newspaper';
 import type { Newspaper } from '@/data/newspaper';
+import { PLAYER_RULE_TEXT, PLAYER_RULE_VALUES } from '@/data/playerFacingRules';
 import { itemToPreview } from './ItemPreview';
 import { NewspaperModal } from './NewspaperModal';
 import { toast } from 'sonner';
@@ -62,7 +63,7 @@ export function GeneralStorePanel({ player, priceModifier }: GeneralStorePanelPr
 
   const hasPreservationBox = player.appliances['preservation-box'] && !player.appliances['preservation-box'].isBroken;
   const hasFrostChest = player.appliances['frost-chest'] && !player.appliances['frost-chest'].isBroken;
-  const maxFreshFood = hasFrostChest ? 12 : 6;
+  const maxFreshFood = hasFrostChest ? PLAYER_RULE_VALUES.frostChestCapacity : PLAYER_RULE_VALUES.freshFoodCapacity;
 
   const handlePurchase = (itemId: string, successMessage: string) => {
     const result = purchaseVendorItem(player.id, 'general-store', itemId);
@@ -100,7 +101,7 @@ export function GeneralStorePanel({ player, priceModifier }: GeneralStorePanelPr
           const itemName = t(`items.${item.id}.name`) || item.name;
           return <JonesMenuItem key={item.id} label={`${itemName} (+${units})`} price={price} disabled={player.gold < price || spaceLeft <= 0} darkText largeText previewData={itemToPreview(item)} onClick={() => handlePurchase(item.id, t('panelStore.storedFreshFood', { units: Math.min(units, spaceLeft) }))} />;
         })}
-        {hasPreservationBox && <div className="text-xs text-[#6b5a42] px-2 mb-1">{t('panelStore.preservationRequired')}</div>}
+        {!hasPreservationBox && <div className="text-xs text-[#6b5a42] px-2 mb-1">Fresh food requires a working Preservation Box.</div>}
 
         <JonesSectionHeader title={t('panelStore.durables')} />
         <JonesMenuItem
@@ -111,10 +112,10 @@ export function GeneralStorePanel({ player, priceModifier }: GeneralStorePanelPr
           largeText
           previewData={{
             name: 'The Guildholm Herald',
-            description: 'The latest news, job listings, town gossip and personalized stories from the current week.',
+            description: PLAYER_RULE_TEXT.newspaper,
             category: 'Information',
             tags: ['News'],
-            effect: player.hasNewspaper ? 'Read again at no additional cost' : 'Purchase and open this week\'s personalized edition',
+            effect: player.hasNewspaper ? 'Read again at no additional cost' : 'Purchase and open this week’s personalized edition',
           }}
           onClick={handleNewspaper}
         />
@@ -124,7 +125,13 @@ export function GeneralStorePanel({ player, priceModifier }: GeneralStorePanelPr
           disabled={player.gold < lotteryPrice}
           darkText
           largeText
-          previewData={{ name: "Fortune's Wheel Ticket", description: 'Weekly lottery drawing. More tickets = better odds! Grand prize: 5,000g.', category: 'Lottery', tags: ['Lottery'], effect: 'Grand Prize: 5,000g' }}
+          previewData={{
+            name: "Fortune's Wheel Ticket",
+            description: PLAYER_RULE_TEXT.lottery,
+            category: 'Lottery',
+            tags: ['Lottery'],
+            effect: `Grand prize: ${PLAYER_RULE_VALUES.lotteryGrandPrize}g`,
+          }}
           onClick={() => handlePurchase('lottery-ticket', t('panelStore.purchased', { name: t('items.lottery-ticket.name') }))}
         />
         {player.lotteryTickets > 0 && <JonesInfoRow label={t('panelShadowMarket.lotteryTickets') + ':'} value={`${player.lotteryTickets}`} darkText largeText />}
