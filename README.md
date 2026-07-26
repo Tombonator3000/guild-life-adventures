@@ -45,6 +45,9 @@ bun run build
 # Kjør den lokale hovedvalideringen
 bun run validate
 
+# Mål MP3-integritet (krever FFmpeg/FFprobe)
+node scripts/audit-audio.mjs --fail-on-silent --fail-on-duplicates
+
 # Bygg for GitHub Pages
 bun run build:github
 ```
@@ -57,6 +60,7 @@ bun run build:github
 - Tailwind CSS og shadcn/ui
 - Vitest, Testing Library og Playwright
 - PeerJS/PartyKit-baserte nettverkslag
+- Web Audio API og verifiserte MP3-filer
 - vite-plugin-pwa
 
 ## Arkitektur
@@ -74,6 +78,7 @@ Pull requests mot `main` og alle `agent/**`-grener kontrolleres med den gjenbruk
 - Vitest-regresjonstester
 - produksjonsbuild
 - ESLint
+- FFmpeg-kontroll av ugyldige, lydløse og eksakt dupliserte MP3-filer
 - Playwright-smoketester i Chromium
 
 Produksjonsdeploy til GitHub Pages kaller den samme valideringsworkflowen og kan ikke bygge eller publisere før den er grønn. En konfigurert PartyKit-server må også deployes uten feil før klienten publiseres. Etter Pages-deploy kontrolleres både den publiserte HTML-siden og `version.json`.
@@ -91,6 +96,7 @@ GitHub Issues er kilden til sannhet for uferdig arbeid. Fase 16Y følges i [issu
 - [Arkitektur](./docs/ARCHITECTURE.md)
 - [Online flerspiller og sikkerhet](./docs/MULTIPLAYER_SECURITY.md)
 - [Testing og validering](./docs/TESTING.md)
+- [Audio inventory og proveniensstatus](./docs/AUDIO_INVENTORY.md)
 - [AI-system](./agents.md)
 - [Bugkatalog](./bugs.md)
 - [Utviklingslogg](./log.md)
