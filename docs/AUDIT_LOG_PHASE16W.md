@@ -26,6 +26,18 @@ Sabotage-, protection- og tip-off-panelene brukte lokal `pending`-state. Når ho
 
 ## Tester
 
+GitHub Actions-run `30205981553`:
+
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Full Vitest-pakke: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright og Chromium: bestått.
+- Komplett deterministisk lokal spillflyt: bestått.
+
+Fokuserte tester:
+
 - Nettverksresultat-test for requestmetadata, avslag, success og ukjent request-ID.
 - Store-test som bekrefter at et gyldig Fence-bet lar spillet stå i `playing` med `eventMessage === null`.
 - Tre komponenttester som faktisk klikker tjenesten, bekrefter `Waiting for host…`, simulerer host-avslag og bekrefter umiddelbar opplåsing for:
