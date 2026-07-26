@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: agent/phase-16y-audio-cleanup
-      - name: Remove invalid and duplicate placeholder MP3 files
+      - name: Remove measured placeholders and add changelog entry
         shell: bash
         run: |
           rm -f \
@@ -43,15 +43,42 @@ jobs:
             public/sfx/turn-start.mp3 \
             public/sfx/work-complete.mp3 \
             public/sfx/study.mp3
+
+          python3 <<'PY'
+          from pathlib import Path
+
+          path = Path('src/components/screens/ChangelogScreen.tsx')
+          content = path.read_text()
+          if "version: 'v0.10.3'" not in content:
+              marker = "const CHANGELOG: Version[] = [\n"
+              block = """  {
+            version: 'v0.10.3',
+            date: 'July 26, 2026',
+            title: 'Phase 16Y: Audited Audio Integrity',
+            highlights: [
+              improve('Measured every packaged MP3 with FFprobe and FFmpeg instead of assuming that a file extension meant usable audio'),
+              fix('Removed 21 invalid files that were identical placeholder payloads across unrelated ambient and sound-effect names'),
+              fix('Removed the duplicate Study MP3 and now uses its distinct procedural study sound'),
+              improve('Effects without verified files are now intentionally synth-first and no longer request broken or missing MP3 URLs'),
+              improve('Five locations use the verified town-street ambient fallback until dedicated audited loops are available'),
+              fix('Removed nonexistent music variant references and the missing curse-cast file request'),
+              improve('CI now rejects invalid, silent or exact duplicate packaged MP3 files and publishes an audio audit report'),
+            ],
+          },
+          """
+              if marker not in content:
+                  raise SystemExit('Changelog marker not found')
+              path.write_text(content.replace(marker, marker + block, 1))
+          PY
       - name: Commit measured cleanup
         shell: bash
         run: |
           if git diff --quiet; then
-            echo "Measured placeholder files are already removed."
+            echo "Measured audio cleanup is already complete."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/ambient public/sfx
-          git commit -m "Remove invalid and duplicate audio placeholders"
+          git add public/ambient public/sfx src/components/screens/ChangelogScreen.tsx
+          git commit -m "Complete audited audio cleanup"
           git push origin HEAD:agent/phase-16y-audio-cleanup
