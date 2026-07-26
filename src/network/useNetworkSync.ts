@@ -204,7 +204,7 @@ export function useNetworkSync() {
     if (networkMode === 'guest') {
       setNetworkActionSender((actionName: string, args: unknown[]) => {
         const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-        trackPendingAction(requestId);
+        trackPendingAction(requestId, actionName, args);
         peerManager.sendToHost({ type: 'action', requestId, name: actionName, args });
       });
     }
@@ -315,7 +315,7 @@ export function useNetworkSync() {
         } else if (msg.type === 'reconnect-credential') {
           storeLocalReconnectCredential(msg);
         } else if (msg.type === 'action-result') {
-          resolveAction(msg.requestId);
+          resolveAction(msg.requestId, msg.success, msg.error);
           if (!msg.success && msg.error !== 'Not your turn') {
             console.warn(`[NetworkSync] Action failed: ${msg.error}`);
             toast.error(msg.error ?? 'Action rejected by host');
