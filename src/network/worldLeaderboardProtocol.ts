@@ -12,7 +12,7 @@ export interface WorldScoreSubmission {
   wasOverallMvp: boolean;
 }
 
-export interface WorldScoreEntry extends Omit<WorldScoreSubmission, 'submissionId'> {
+export interface WorldScoreEntry extends WorldScoreSubmission {
   id: string;
   submittedAt: number;
 }
