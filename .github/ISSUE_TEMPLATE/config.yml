@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Phase 16Y tracker
+    url: https://github.com/Tombonator3000/guild-life-adventures/issues/390
+    about: Check current priorities and existing work before opening a new issue.
