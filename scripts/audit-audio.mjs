@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 const ROOT = process.cwd();
 const AUDIO_ROOTS = ['public/sfx', 'public/ambient', 'public/music'];
 const SILENCE_THRESHOLD_DB = -70;
+const COMMAND_BUFFER_BYTES = 64 * 1024 * 1024;
 
 function walk(directory) {
   const absolute = resolve(ROOT, directory);
@@ -17,9 +18,10 @@ function walk(directory) {
 }
 
 function command(name, args) {
-  const result = spawnSync(name, args, { encoding: 'utf8' });
-  if (result.error) throw result.error;
-  return result;
+  return spawnSync(name, args, {
+    encoding: 'utf8',
+    maxBuffer: COMMAND_BUFFER_BYTES,
+  });
 }
 
 function parseVolume(value) {
@@ -33,36 +35,56 @@ function inspect(file) {
   const bytes = statSync(file).size;
   const sha256 = createHash('sha256').update(readFileSync(file)).digest('hex');
 
-  const probe = command('ffprobe', [
-    '-v', 'error',
-    '-show_entries', 'format=duration',
-    '-of', 'default=noprint_wrappers=1:nokey=1',
-    file,
-  ]);
-  const durationSeconds = Number.parseFloat(probe.stdout.trim());
+  try {
+    const probe = command('ffprobe', [
+      '-v', 'error',
+      '-show_entries', 'format=duration',
+      '-of', 'default=noprint_wrappers=1:nokey=1',
+      file,
+    ]);
+    const durationSeconds = Number.parseFloat(probe.stdout?.trim() ?? '');
 
-  const volume = command('ffmpeg', [
-    '-nostdin', '-hide_banner', '-i', file,
-    '-af', 'volumedetect', '-f', 'null', '-',
-  ]);
-  const output = `${volume.stdout}\n${volume.stderr}`;
-  const meanVolumeDb = parseVolume(output.match(/mean_volume:\s*(-?\d+(?:\.\d+)?|-inf)\s*dB/)?.[1]);
-  const maxVolumeDb = parseVolume(output.match(/max_volume:\s*(-?\d+(?:\.\d+)?|-inf)\s*dB/)?.[1]);
+    const volume = command('ffmpeg', [
+      '-nostdin', '-hide_banner', '-nostats', '-i', file,
+      '-af', 'volumedetect', '-f', 'null', '-',
+    ]);
+    const output = `${volume.stdout ?? ''}\n${volume.stderr ?? ''}`;
+    const meanVolumeDb = parseVolume(output.match(/mean_volume:\s*(-?\d+(?:\.\d+)?|-inf)\s*dB/)?.[1]);
+    const maxVolumeDb = parseVolume(output.match(/max_volume:\s*(-?\d+(?:\.\d+)?|-inf)\s*dB/)?.[1]);
+    const processError = probe.error?.message ?? volume.error?.message ?? null;
+    const invalid = Boolean(processError)
+      || probe.status !== 0
+      || volume.status !== 0
+      || !Number.isFinite(durationSeconds)
+      || durationSeconds <= 0;
+    const silent = !invalid && (!Number.isFinite(maxVolumeDb) || maxVolumeDb <= SILENCE_THRESHOLD_DB);
 
-  const invalid = probe.status !== 0 || volume.status !== 0 || !Number.isFinite(durationSeconds) || durationSeconds <= 0;
-  const silent = !invalid && (!Number.isFinite(maxVolumeDb) || maxVolumeDb <= SILENCE_THRESHOLD_DB);
-
-  return {
-    path: relativePath,
-    category: relativePath.split('/')[1],
-    bytes,
-    sha256,
-    durationSeconds: Number.isFinite(durationSeconds) ? Number(durationSeconds.toFixed(3)) : null,
-    meanVolumeDb: Number.isFinite(meanVolumeDb) ? meanVolumeDb : null,
-    maxVolumeDb: Number.isFinite(maxVolumeDb) ? maxVolumeDb : null,
-    invalid,
-    silent,
-  };
+    return {
+      path: relativePath,
+      category: relativePath.split('/')[1],
+      bytes,
+      sha256,
+      durationSeconds: Number.isFinite(durationSeconds) ? Number(durationSeconds.toFixed(3)) : null,
+      meanVolumeDb: Number.isFinite(meanVolumeDb) ? meanVolumeDb : null,
+      maxVolumeDb: Number.isFinite(maxVolumeDb) ? maxVolumeDb : null,
+      invalid,
+      silent,
+      error: processError,
+    };
+  } catch (error) {
+    return {
+      path: relativePath,
+      category: relativePath.split('/')[1],
+      bytes,
+      sha256,
+      durationSeconds: null,
+      meanVolumeDb: null,
+      maxVolumeDb: null,
+      invalid: true,
+      silent: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
 }
 
 function findDuplicates(files) {
@@ -94,7 +116,7 @@ function markdown(report) {
   ];
 
   for (const file of report.files) {
-    const status = file.invalid ? 'INVALID' : file.silent ? 'SILENT' : 'audible';
+    const status = file.invalid ? `INVALID${file.error ? `: ${file.error.replaceAll('|', '/')}` : ''}` : file.silent ? 'SILENT' : 'audible';
     lines.push(`| \`${file.path}\` | ${file.durationSeconds ?? 'n/a'}s | ${file.meanVolumeDb ?? '-inf'} | ${file.maxVolumeDb ?? '-inf'} | ${status} |`);
   }
 
