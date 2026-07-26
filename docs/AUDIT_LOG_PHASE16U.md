@@ -26,12 +26,18 @@ Dato: 26. juli 2026
 
 ## Tester
 
-- Protokolltester for validering, tekstgrenser, korrupte rader og sortering.
-- Klientkonfigurasjonstester for PartyKit-host og fallback.
-- Faktiske PartyKit-handler-tester for lagring, broadcast, idempotens, ugyldig score, rate limiting og initial henting.
-- Komponenttester som beviser at score ikke sendes automatisk, men bare etter eksplisitt knappetrykk.
-- Strukturtester som låser frivillighet, unverified-merking, servergrenser og graceful fallback.
-- Full GitHub Actions-validering kjøres før merge.
+GitHub Actions-run `30200840578`:
+
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Full Vitest-pakke, inkludert protokoll-, klient-, server-, komponent- og strukturtestene: bestått.
+- PartyKit-handlerne ble faktisk importert og kjørt mot simulert persistent storage: bestått.
+- Ugyldig score, duplikat-ID, sjette innsending og eksplisitt limit-henting: bestått.
+- Komponenten laster ranking uten automatisk opplasting og sender først etter knappetrykk: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått.
+- Playwright og Chromium: bestått.
+- Komplett deterministisk lokal spillflyt med world-ranking-fallback: bestått.
 
 ## Driftsstatus
 
