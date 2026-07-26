@@ -141,4 +141,4 @@ The repository does not record source or asset-specific licensing for the remain
 - [x] Ambient gaps use an explicit verified fallback.
 - [x] Inventory and provenance status documented.
 - [x] Permanent automated signal and duplicate gate added.
-- [ ] Final TypeScript, Vitest, build, lint, audio audit and Playwright validation green.
+- [x] Final TypeScript, Vitest, build, lint, audio audit and Playwright validation green.
