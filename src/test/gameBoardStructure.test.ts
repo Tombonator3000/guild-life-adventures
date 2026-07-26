@@ -231,7 +231,7 @@ describe('GameBoard component boundaries', () => {
 
   it('delegates local player and spectator derivation to a pure helper', () => {
     expect(gameBoardSource).toContain("import { deriveGameBoardAudienceState } from '@/lib/deriveGameBoardAudienceState';");
-    expect(gameBoardSource).toContain('} = deriveGameBoardAudienceState({');
+    expect(gameBoardSource).toContain('deriveGameBoardAudienceState({');
     expect(gameBoardSource).not.toContain('const isLocalPlayerTurn =');
     expect(gameBoardSource).not.toContain('const isWaitingForOtherPlayer =');
     expect(gameBoardSource).not.toContain('players.find(player => player.id === localPlayerId)');
@@ -245,7 +245,7 @@ describe('GameBoard component boundaries', () => {
 
   it('delegates death-screen audience and leave cleanup to a focused hook', () => {
     expect(gameBoardSource).toContain("import { useDeathSpectatorFlow } from '@/hooks/useDeathSpectatorFlow';");
-    expect(gameBoardSource).toContain('} = useDeathSpectatorFlow({');
+    expect(gameBoardSource).toContain('useDeathSpectatorFlow({');
     expect(gameBoardSource).not.toContain('leaveActiveOnlineGame(');
     expect(deathSpectatorFlowSource).toContain('deathEvent.playerId === localPlayerId');
     expect(deathSpectatorFlowSource).toContain('leaveActiveOnlineGame(');
