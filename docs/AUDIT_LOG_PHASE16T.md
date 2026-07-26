@@ -27,10 +27,15 @@ Den gamle sluttskjermen viste bare vinnerens mål, rangerte spillerne etter en e
 
 ## Tester
 
-- Fem rene tester for live mål, manglende mål, preset og prestasjonsscore.
-- Fem tester for lokal highscore-lagring, sortering, sanitering og duplikater.
-- Strukturtester som låser live-data, målmatrise, separate utmerkelser og Hall of Fame.
-- Full GitHub Actions-validering kjøres før merge.
+GitHub Actions-run `30200085165`:
+
+- Dependency install: bestått.
+- TypeScript: bestått.
+- Full Vitest-pakke, inkludert resultat-, highscore- og strukturtestene: bestått.
+- Produksjonsbuild: bestått.
+- ESLint: bestått etter at navnesaniteringen ble endret fra kontrolltegn-regex til tegnkodefiltrering.
+- Playwright og Chromium: bestått.
+- Komplett deterministisk lokal spillflyt: bestått.
 
 ## Neste fase
 
