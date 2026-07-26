@@ -41,11 +41,15 @@ type ListingOutgoingMessage = { type: "listings"; games: GameListing[] };
 const LISTING_STORAGE_KEY = "listings";
 const LISTING_MAX_AGE_MS = 5 * 60 * 1000;
 const WORLD_SCORE_STORAGE_KEY = "world-high-scores-v1";
+const WORLD_SCORE_RATE_LIMIT_STORAGE_KEY = "world-score-rate-limits-v1";
 const MAX_WORLD_SCORES = 100;
 const DEFAULT_WORLD_SCORE_LIMIT = 25;
 const MAX_SUBMISSIONS_PER_HOUR = 5;
 const SUBMISSION_WINDOW_MS = 60 * 60 * 1000;
-const submissionTimes = new WeakMap<object, number[]>();
+const UNKNOWN_CLIENT_RATE_LIMIT_KEY = "unknown-client";
+
+type LeaderboardConnectionState = { rateLimitKey: string };
+type SubmissionTimesByClient = Record<string, number[]>;
 
 async function getListings(room: Party.Room): Promise<GameListing[]> {
   const stored = await room.storage.get<GameListing[]>(LISTING_STORAGE_KEY);
@@ -82,16 +86,41 @@ function createWorldScoreId(): string {
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-function canSubmitScore(connection: Party.Connection): boolean {
+async function createRateLimitKey(request: Party.Request): Promise<string> {
+  const forwardedFor = request.headers.get("cf-connecting-ip")
+    ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  if (!forwardedFor) return UNKNOWN_CLIENT_RATE_LIMIT_KEY;
+
+  const bytes = new TextEncoder().encode(forwardedFor);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function canSubmitScore(
+  connection: Party.Connection<LeaderboardConnectionState>,
+  room: Party.Room,
+): Promise<boolean> {
   const now = Date.now();
-  const recent = (submissionTimes.get(connection) ?? [])
-    .filter(timestamp => now - timestamp < SUBMISSION_WINDOW_MS);
+  const rateLimitKey = connection.state?.rateLimitKey ?? UNKNOWN_CLIENT_RATE_LIMIT_KEY;
+  const submissionTimes = await room.storage.get<SubmissionTimesByClient>(
+    WORLD_SCORE_RATE_LIMIT_STORAGE_KEY,
+  ) ?? {};
+  for (const [clientKey, timestamps] of Object.entries(submissionTimes)) {
+    const activeTimestamps = timestamps.filter(
+      timestamp => now - timestamp < SUBMISSION_WINDOW_MS,
+    );
+    if (activeTimestamps.length > 0) submissionTimes[clientKey] = activeTimestamps;
+    else delete submissionTimes[clientKey];
+  }
+  const recent = submissionTimes[rateLimitKey] ?? [];
   if (recent.length >= MAX_SUBMISSIONS_PER_HOUR) {
-    submissionTimes.set(connection, recent);
+    submissionTimes[rateLimitKey] = recent;
+    await room.storage.put(WORLD_SCORE_RATE_LIMIT_STORAGE_KEY, submissionTimes);
     return false;
   }
   recent.push(now);
-  submissionTimes.set(connection, recent);
+  submissionTimes[rateLimitKey] = recent;
+  await room.storage.put(WORLD_SCORE_RATE_LIMIT_STORAGE_KEY, submissionTimes);
   return true;
 }
 
@@ -136,7 +165,7 @@ async function handleLeaderboardMessage(
     return;
   }
 
-  if (!canSubmitScore(connection)) {
+  if (!await canSubmitScore(connection, room)) {
     sendWorldScores(connection, scores.slice(0, DEFAULT_WORLD_SCORE_LIMIT), {
       error: "rate-limited",
     });
@@ -162,7 +191,12 @@ async function handleLeaderboardMessage(
 }
 
 export default {
-  async onConnect(connection: Party.Connection, room: Party.Room) {
+  async onConnect(
+    connection: Party.Connection<LeaderboardConnectionState>,
+    room: Party.Room,
+    context: Party.ConnectionContext,
+  ) {
+    connection.setState({ rateLimitKey: await createRateLimitKey(context.request) });
     // Public room-browser clients expect the current listings immediately.
     // Leaderboard clients ignore this message and issue an explicit leaderboard-get,
     // which guarantees that their requested result limit is respected.

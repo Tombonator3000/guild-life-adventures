@@ -24,10 +24,15 @@ function createRoom() {
   };
 }
 
-function createConnection() {
+function createConnection(rateLimitKey?: string) {
   const messages: string[] = [];
   return {
     messages,
+    state: rateLimitKey ? { rateLimitKey } : null,
+    setState(state: { rateLimitKey: string }) {
+      this.state = state;
+      return state;
+    },
     send: vi.fn((message: string) => {
       messages.push(message);
     }),
@@ -125,6 +130,30 @@ describe('PartyKit world leaderboard server', () => {
     const stored = room.values.get('world-high-scores-v1') as WorldScoreEntry[];
     expect(stored).toHaveLength(5);
     expect(lastWorldMessage(connection.messages)?.error).toBe('rate-limited');
+  });
+
+  it('persists a client rate limit across replacement connections', async () => {
+    const room = createRoom();
+
+    for (let index = 0; index < 5; index++) {
+      const connection = createConnection('same-client');
+      await server.onMessage(
+        JSON.stringify({ type: 'leaderboard-submit', entry: submission(`reconnect-${index}`) }),
+        connection as never,
+        room as never,
+      );
+    }
+
+    const replacementConnection = createConnection('same-client');
+    await server.onMessage(
+      JSON.stringify({ type: 'leaderboard-submit', entry: submission('reconnect-blocked') }),
+      replacementConnection as never,
+      room as never,
+    );
+
+    const stored = room.values.get('world-high-scores-v1') as WorldScoreEntry[];
+    expect(stored).toHaveLength(5);
+    expect(lastWorldMessage(replacementConnection.messages)?.error).toBe('rate-limited');
   });
 
   it('sends the requested number of stored scores after leaderboard-get', async () => {
