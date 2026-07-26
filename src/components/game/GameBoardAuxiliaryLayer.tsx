@@ -9,7 +9,9 @@ import { ChatPanel } from './ChatPanel';
 import { ContextualTips } from './ContextualTips';
 import { SpectatorOverlay } from './SpectatorOverlay';
 import { TopDropdownMenu } from './TopDropdownMenu';
+import { TutorialOverlay } from './TutorialOverlay';
 import { useLegacyFinanceMigration } from '@/hooks/useLegacyFinanceMigration';
+import { useGameStore } from '@/store/gameStore';
 
 type OptionalComponentProps<T extends ElementType> = ComponentProps<T> | null;
 
@@ -26,11 +28,6 @@ interface GameBoardAuxiliaryLayerProps {
   topDropdownProps: OptionalComponentProps<typeof TopDropdownMenu>;
 }
 
-/**
- * Root-level overlays and auxiliary UI that do not participate in board-map
- * rendering. Grouping their native component props keeps GameBoard focused on
- * state orchestration and the board itself without inventing parallel types.
- */
 export function GameBoardAuxiliaryLayer({
   zoneEditorProps,
   overlayProps,
@@ -44,11 +41,22 @@ export function GameBoardAuxiliaryLayer({
   topDropdownProps,
 }: GameBoardAuxiliaryLayerProps) {
   useLegacyFinanceMigration();
+  const showTutorial = useGameStore(state => state.showTutorial);
+  const setShowTutorial = useGameStore(state => state.setShowTutorial);
 
   return (
     <>
       {zoneEditorProps && <ZoneEditor {...zoneEditorProps} />}
       <GameBoardOverlays {...overlayProps} />
+      {showTutorial && (
+        <div className="guided-tutorial-host">
+          <style>{`
+            .guided-tutorial-host [aria-live="polite"] { top: .75rem !important; bottom: auto !important; pointer-events: none; }
+            .guided-tutorial-host [aria-live="polite"] button { pointer-events: auto; }
+          `}</style>
+          <TutorialOverlay onClose={() => setShowTutorial(false)} />
+        </div>
+      )}
       {saveMenuOpen && <SaveLoadMenu onClose={onCloseSaveMenu} />}
       {deathModalProps && <DeathModal {...deathModalProps} />}
       {playerInfoProps && <PlayerInfoModal {...playerInfoProps} />}

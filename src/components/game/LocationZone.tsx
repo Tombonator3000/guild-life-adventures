@@ -49,6 +49,7 @@ export function LocationZone({
   return (
     <div
       data-zone-id={location.id}
+      data-tutorial-target={`location-${location.id}`}
       className={cn(
         'location-zone group',
         isSelected && 'active'
@@ -73,7 +74,6 @@ export function LocationZone({
             borderRadius: 'inherit',
           }}
         >
-          {/* Tab indicator badge */}
           <div
             className="absolute -top-5 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-900 text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap shadow"
             style={{ pointerEvents: 'none' }}
@@ -83,7 +83,6 @@ export function LocationZone({
         </div>
       )}
 
-      {/* Location name tooltip - follows cursor */}
       {mousePos && (
         <div 
           className="absolute pointer-events-none z-50"
@@ -104,12 +103,10 @@ export function LocationZone({
         </div>
       )}
 
-      {/* LOQ: Quest objective overlay — golden pulse for pending, green checkmark for done */}
       {(isQuestObjective || isQuestObjectiveDone) && (
         <div className="absolute inset-0 pointer-events-none z-10 rounded overflow-hidden">
           {isQuestObjective && !isQuestObjectiveDone && (
             <>
-              {/* Pulsing golden glow */}
               <div
                 className="absolute inset-0 animate-quest-pulse"
                 style={{
@@ -119,13 +116,11 @@ export function LocationZone({
                   borderRadius: 'inherit',
                 }}
               />
-              {/* ⚔ quest icon top-right */}
               <div className="absolute top-0.5 right-0.5 text-xs select-none pointer-events-none" title="Quest objective">⚔</div>
             </>
           )}
           {isQuestObjectiveDone && (
             <>
-              {/* Soft green done overlay */}
               <div
                 className="absolute inset-0"
                 style={{
@@ -134,17 +129,14 @@ export function LocationZone({
                   borderRadius: 'inherit',
                 }}
               />
-              {/* ✓ done icon top-right */}
               <div className="absolute top-0.5 right-0.5 text-xs select-none pointer-events-none text-green-400" title="Objective complete">✓</div>
             </>
           )}
         </div>
       )}
 
-      {/* Hex overlay — purpur glød + partikler */}
       {isHexed && (
         <div className="absolute inset-0 pointer-events-none z-10 rounded overflow-hidden">
-          {/* Purpur semi-transparent glød */}
           <div
             className="absolute inset-0 animate-curse-pulse"
             style={{
@@ -154,9 +146,7 @@ export function LocationZone({
               borderRadius: 'inherit',
             }}
           />
-          {/* 🔮 ikon øverst til høyre */}
           <div className="absolute top-0.5 right-0.5 text-xs select-none pointer-events-none">🔮</div>
-          {/* 4 partikler langs bunnen */}
           {[0, 0.5, 1.0, 1.5].map((delay, i) => (
             <span
               key={i}
@@ -173,11 +163,9 @@ export function LocationZone({
         </div>
       )}
 
-      {/* Player tokens container */}
       <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
         {children}
       </div>
-
     </div>
   );
 }
