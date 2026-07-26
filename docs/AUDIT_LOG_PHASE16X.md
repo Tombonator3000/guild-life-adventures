@@ -36,4 +36,16 @@ Focused tests cover:
 - combined fractional dividends, carried credit, exact payout/remainder, and empty portfolios;
 - newspaper purchase/open, free reread, and online state-sync opening.
 
-The normal pull-request workflow must pass TypeScript, the complete Vitest suite, production build, ESLint, Chromium, and the deterministic complete game flow before merge.
+## Validation
+
+GitHub Actions run `30210903935` completed successfully:
+
+- dependency install: passed;
+- TypeScript: passed;
+- full Vitest suite: 685 tests passed;
+- production build: passed;
+- ESLint: passed;
+- Playwright/Chromium setup: passed;
+- deterministic browser smoke and complete local gameplay flow: passed.
+
+A final locked validation run on this documentation commit is required before merge.
