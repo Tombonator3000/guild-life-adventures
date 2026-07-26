@@ -27,8 +27,9 @@ jobs:
       - name: Measure all packaged MP3 files
         run: node scripts/audit-audio.mjs --json audio-audit/audio-audit.json --markdown audio-audit/audio-audit.md
       - name: Upload audit report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: audio-audit
           path: audio-audit
-          if-no-files-found: error
+          if-no-files-found: ignore
