@@ -7,6 +7,7 @@ import { useNetworkSync } from '@/network/useNetworkSync';
 import { useZoneConfiguration } from '@/hooks/useZoneConfiguration';
 import { useAITurnHandler } from '@/hooks/useAITurnHandler';
 import { useAutoEndTurn } from '@/hooks/useAutoEndTurn';
+import { useDeathSpectatorFlow } from '@/hooks/useDeathSpectatorFlow';
 import { usePlayerAnimation } from '@/hooks/usePlayerAnimation';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useGameBoardKeyboard } from '@/hooks/useGameBoardKeyboard';
@@ -48,6 +49,7 @@ export function GameBoard() {
     dismissToadCurseEvent,
     deathEvent,
     dismissDeathEvent,
+    resetForNewGame,
     weather,
     eventSource,
   } = useGameStore(useShallow(state => ({
@@ -73,6 +75,7 @@ export function GameBoard() {
     dismissToadCurseEvent: state.dismissToadCurseEvent,
     deathEvent: state.deathEvent,
     dismissDeathEvent: state.dismissDeathEvent,
+    resetForNewGame: state.resetForNewGame,
     weather: state.weather,
     eventSource: state.eventSource,
   })));
@@ -96,19 +99,10 @@ export function GameBoard() {
   const roomCodeDisplay = useGameStore(state => state.roomCode);
   const currentPlayer = useCurrentPlayer();
 
-  const {
-    isLocalPlayerTurn,
-    isWaitingForOtherPlayer,
-    localPlayer,
-    isPureSpectator,
-    isSpectating,
-  } = deriveGameBoardAudienceState({
-    players,
-    currentPlayer,
-    localPlayerId,
-    isOnline,
-    phase,
-  });
+  const { isLocalPlayerTurn, isWaitingForOtherPlayer, localPlayer, isPureSpectator, isSpectating } =
+    deriveGameBoardAudienceState({ players, currentPlayer, localPlayerId, isOnline, phase });
+  const { visibleDeathEvent, canSpectateAfterDeath, deathLeaveLabel, onSpectate, onLeave } =
+    useDeathSpectatorFlow({ deathEvent, players, isOnline, networkMode, localPlayerId, dismissDeathEvent, resetForNewGame });
   const isCursed = (currentPlayer?.activeCurses?.length ?? 0) > 0;
   const { showTurnTransition, dismissTurnTransition } = useGameBoardTurnTransition({
     players,
@@ -321,9 +315,13 @@ export function GameBoard() {
           }}
           saveMenuOpen={showGameMenu}
           onCloseSaveMenu={closeGameMenu}
-          deathModalProps={deathEvent ? {
-            event: deathEvent,
+          deathModalProps={visibleDeathEvent ? {
+            event: visibleDeathEvent,
             onDismiss: dismissDeathEvent,
+            onSpectate,
+            onLeave,
+            canSpectate: canSpectateAfterDeath,
+            leaveLabel: deathLeaveLabel,
           } : null}
           playerInfoProps={viewingPlayer ? {
             player: viewingPlayer,

@@ -1,9 +1,9 @@
 // Death Modal — shown when a player's health reaches 0
 // Permadeath OFF: player respawns at Graveyard with 20 HP
-// Permadeath ON: player is permanently eliminated
+// Permadeath ON: player is permanently eliminated and chooses whether to spectate
 
 import { useState, useEffect } from 'react';
-import { Skull, Heart, MapPin } from 'lucide-react';
+import { Eye, Heart, LogOut, MapPin, Skull } from 'lucide-react';
 import { playSFX } from '@/audio/sfxManager';
 import { useTranslation } from '@/i18n';
 import type { DeathEvent } from '@/types/game.types';
@@ -11,9 +11,20 @@ import type { DeathEvent } from '@/types/game.types';
 interface DeathModalProps {
   event: DeathEvent;
   onDismiss: () => void;
+  onSpectate?: () => void;
+  onLeave?: () => void;
+  canSpectate?: boolean;
+  leaveLabel?: string;
 }
 
-export function DeathModal({ event, onDismiss }: DeathModalProps) {
+export function DeathModal({
+  event,
+  onDismiss,
+  onSpectate,
+  onLeave,
+  canSpectate = false,
+  leaveLabel = 'Leave Game',
+}: DeathModalProps) {
   const [showContent, setShowContent] = useState(false);
   const { t } = useTranslation();
 
@@ -23,6 +34,8 @@ export function DeathModal({ event, onDismiss }: DeathModalProps) {
     const timer = setTimeout(() => setShowContent(true), 300);
     return () => clearTimeout(timer);
   }, []);
+
+  const isFinalDeath = event.isPermadeath && !event.wasResurrected;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
@@ -82,21 +95,50 @@ export function DeathModal({ event, onDismiss }: DeathModalProps) {
           </div>
         )}
 
-        {event.isPermadeath && !event.wasResurrected && (
-          <div className="flex items-center gap-3 mb-6 text-red-400/90">
+        {isFinalDeath && (
+          <div className="flex items-center gap-3 mb-4 text-red-400/90">
             <Skull className="w-5 h-5" />
             <span className="font-display text-sm">{t('death.permadeathEnabled')}</span>
             <Skull className="w-5 h-5" />
           </div>
         )}
 
-        {/* Dismiss button */}
-        <button
-          onClick={onDismiss}
-          className="gold-button text-lg px-10 py-3"
-        >
-          {event.isPermadeath && !event.wasResurrected ? t('death.acceptFate') : t('death.riseAgain')}
-        </button>
+        {isFinalDeath && canSpectate && (
+          <p className="text-sm text-amber-200/75 mb-5 max-w-sm">
+            Your turn is over permanently. The remaining players will continue automatically.
+            You may stay and watch, or leave the game.
+          </p>
+        )}
+
+        {/* Death outcome actions */}
+        {isFinalDeath && canSpectate ? (
+          <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+            <button
+              type="button"
+              onClick={onSpectate ?? onDismiss}
+              className="gold-button flex-1 text-base px-6 py-3 inline-flex items-center justify-center gap-2"
+            >
+              <Eye className="w-5 h-5" />
+              Spectate Game
+            </button>
+            <button
+              type="button"
+              onClick={onLeave ?? onDismiss}
+              className="flex-1 px-6 py-3 rounded-lg border border-red-500/60 bg-red-950/70 text-red-200 font-display hover:bg-red-900/80 transition-colors inline-flex items-center justify-center gap-2"
+            >
+              <LogOut className="w-5 h-5" />
+              {leaveLabel}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="gold-button text-lg px-10 py-3"
+          >
+            {isFinalDeath ? 'View Game Over' : t('death.riseAgain')}
+          </button>
+        )}
       </div>
     </div>
   );

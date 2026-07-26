@@ -223,11 +223,11 @@ export function createTurnActions(set: SetFn, get: GetFn) {
       // C1 FIX: Re-read state after checkVictory, which may have mutated state
       const postVictoryState = get();
 
-      // Check if only one player remains alive - they win (multiplayer only)
-      // In single-player, the player must achieve all goals to win — never trigger here
+      // No survivors always ends the game, including single-player permadeath.
+      // Last-player-standing victory only applies to multiplayer games.
       const alivePlayers = postVictoryState.players.filter(p => !p.isGameOver);
       const isMultiplayer = postVictoryState.players.length > 1;
-      if (isMultiplayer && alivePlayers.length <= 1) {
+      if (alivePlayers.length === 0 || (isMultiplayer && alivePlayers.length === 1)) {
         try { deleteSave(0); } catch { /* ignore */ }
         if (alivePlayers.length === 1) {
           set({
@@ -237,6 +237,7 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           });
         } else {
           set({
+            winner: null,
             phase: 'victory',
             eventMessage: 'All players have perished. Game Over!',
           });
@@ -265,6 +266,9 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         const endingHomeLocation: LocationId | null = endingPlayerForHome ? getHomeLocation(endingPlayerForHome.housing) : null;
         set({
           currentPlayerIndex: nextIndex,
+          phase: 'playing',
+          eventMessage: null,
+          eventSource: null,
           players: freshState.players.map((p, index) => {
             if (index === nextIndex) {
               return { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: homeLocation, dungeonAttemptsThisTurn: 0, hadRandomEventThisTurn: false, workedThisTurn: false, raiseAttemptedThisTurn: false, tavernAlesDrunkThisTurn: 0 };

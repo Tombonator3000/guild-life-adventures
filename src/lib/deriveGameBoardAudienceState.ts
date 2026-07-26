@@ -15,8 +15,12 @@ export function deriveGameBoardAudienceState({
   isOnline,
   phase,
 }: DeriveGameBoardAudienceStateOptions) {
-  const isLocalPlayerTurn = !isOnline || currentPlayer?.id === localPlayerId;
-  const isWaitingForOtherPlayer = isOnline && !isLocalPlayerTurn && !currentPlayer?.isAI;
+  const currentPlayerCanAct = !!currentPlayer && !currentPlayer.isGameOver;
+  const isLocalPlayerTurn = currentPlayerCanAct && (!isOnline || currentPlayer.id === localPlayerId);
+  const isWaitingForOtherPlayer = isOnline
+    && currentPlayerCanAct
+    && !isLocalPlayerTurn
+    && !currentPlayer.isAI;
   const localPlayer = isOnline
     ? players.find(player => player.id === localPlayerId)
     : currentPlayer;

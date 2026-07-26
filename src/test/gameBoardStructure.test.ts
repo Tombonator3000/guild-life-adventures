@@ -12,6 +12,7 @@ const eventQueueSource = readSource('src/hooks/useGameBoardEventQueue.ts');
 const turnTransitionSource = readSource('src/hooks/useGameBoardTurnTransition.ts');
 const animationSyncSource = readSource('src/hooks/useGameBoardAnimationSync.ts');
 const applianceNotificationSource = readSource('src/hooks/useApplianceBreakageNotification.ts');
+const deathSpectatorFlowSource = readSource('src/hooks/useDeathSpectatorFlow.ts');
 const uiStateSource = readSource('src/hooks/useGameBoardUiState.ts');
 const audienceStateSource = readSource('src/lib/deriveGameBoardAudienceState.ts');
 
@@ -230,15 +231,25 @@ describe('GameBoard component boundaries', () => {
 
   it('delegates local player and spectator derivation to a pure helper', () => {
     expect(gameBoardSource).toContain("import { deriveGameBoardAudienceState } from '@/lib/deriveGameBoardAudienceState';");
-    expect(gameBoardSource).toContain('} = deriveGameBoardAudienceState({');
+    expect(gameBoardSource).toContain('deriveGameBoardAudienceState({');
     expect(gameBoardSource).not.toContain('const isLocalPlayerTurn =');
     expect(gameBoardSource).not.toContain('const isWaitingForOtherPlayer =');
     expect(gameBoardSource).not.toContain('players.find(player => player.id === localPlayerId)');
     expect(audienceStateSource).toContain("phase: GameState['phase'];");
-    expect(audienceStateSource).toContain('const isLocalPlayerTurn = !isOnline || currentPlayer?.id === localPlayerId;');
+    expect(audienceStateSource).toContain('const currentPlayerCanAct = !!currentPlayer && !currentPlayer.isGameOver;');
+    expect(audienceStateSource).toContain('const isLocalPlayerTurn = currentPlayerCanAct && (');
     expect(audienceStateSource).toContain('const isPureSpectator = isOnline && !localPlayerId;');
     expect(audienceStateSource).toContain("&& phase === 'playing'");
     expect(audienceStateSource).toContain('players.some(player => !player.isGameOver)');
+  });
+
+  it('delegates death-screen audience and leave cleanup to a focused hook', () => {
+    expect(gameBoardSource).toContain("import { useDeathSpectatorFlow } from '@/hooks/useDeathSpectatorFlow';");
+    expect(gameBoardSource).toContain('useDeathSpectatorFlow({');
+    expect(gameBoardSource).not.toContain('leaveActiveOnlineGame(');
+    expect(deathSpectatorFlowSource).toContain('deathEvent.playerId === localPlayerId');
+    expect(deathSpectatorFlowSource).toContain('leaveActiveOnlineGame(');
+    expect(deathSpectatorFlowSource).toContain("networkMode === 'host'");
   });
 
   it('keeps extracted components within focused size limits', () => {
@@ -251,6 +262,7 @@ describe('GameBoard component boundaries', () => {
     expect(turnTransitionSource.split('\n').length).toBeLessThan(55);
     expect(animationSyncSource.split('\n').length).toBeLessThan(45);
     expect(applianceNotificationSource.split('\n').length).toBeLessThan(40);
+    expect(deathSpectatorFlowSource.split('\n').length).toBeLessThan(75);
     expect(uiStateSource.split('\n').length).toBeLessThan(75);
     expect(audienceStateSource.split('\n').length).toBeLessThan(45);
   });

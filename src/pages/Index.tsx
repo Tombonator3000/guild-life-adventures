@@ -4,6 +4,7 @@ import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { useGameOptions } from '@/hooks/useGameOptions';
 import { useSecurePageRejoin } from '@/network/useSecurePageRejoin';
 import { TitleScreen } from '@/components/screens/TitleScreen';
+import { TitleHighScoreLauncher } from '@/components/screens/TitleHighScoreLauncher';
 
 /**
  * Retry wrapper for React.lazy() dynamic imports.
@@ -134,6 +135,7 @@ const Index = () => {
     return (
       <div data-text-size={options.textSize}>
         <TitleScreen />
+        <TitleHighScoreLauncher />
         {/* Audio controller lazy-loaded separately — if audio modules fail,
             the game still starts. SilentErrorBoundary swallows load errors. */}
         <SilentErrorBoundary>

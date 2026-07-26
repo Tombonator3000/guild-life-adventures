@@ -43,6 +43,23 @@ describe('deriveGameBoardAudienceState', () => {
     expect(result.localPlayer).toBe(localPlayer);
   });
 
+  it('never lets an eliminated current player act or move', () => {
+    const eliminatedLocal = createPlayer('local-player', { isGameOver: true });
+    const survivor = createPlayer('survivor');
+
+    const result = deriveGameBoardAudienceState({
+      players: [eliminatedLocal, survivor],
+      currentPlayer: eliminatedLocal,
+      localPlayerId: eliminatedLocal.id,
+      isOnline: true,
+      phase: 'playing',
+    });
+
+    expect(result.isLocalPlayerTurn).toBe(false);
+    expect(result.isWaitingForOtherPlayer).toBe(false);
+    expect(result.isSpectating).toBe(true);
+  });
+
   it('waits for another online human but not for an AI turn', () => {
     const localPlayer = createPlayer('local-player');
     const remoteHuman = createPlayer('remote-human');

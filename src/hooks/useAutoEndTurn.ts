@@ -9,8 +9,6 @@ export function useAutoEndTurn() {
     phase,
     currentPlayerIndex,
     checkDeath,
-    setEventMessage,
-    setPhase,
     endTurn,
     networkMode,
   } = useGameStore();
@@ -18,8 +16,58 @@ export function useAutoEndTurn() {
   const scheduledEndTurnRef = useRef<number | null>(null);
   const autoEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const scheduleEndTurn = useCallback((playerIndex: number, delay: number) => {
+    if (scheduledEndTurnRef.current === playerIndex) return;
+    scheduledEndTurnRef.current = playerIndex;
+    if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
+
+    autoEndTimerRef.current = setTimeout(() => {
+      const store = useGameStore.getState();
+      const livePlayer = store.players[store.currentPlayerIndex];
+      if (store.currentPlayerIndex === playerIndex && livePlayer?.isGameOver) {
+        // A death-causing event must not leave the board in `event` phase, because
+        // AI turns only begin in `playing`. Preserve deathEvent for the dead
+        // player's choice modal, but clear the old action/event that caused death.
+        useGameStore.setState({
+          phase: 'playing',
+          eventMessage: null,
+          eventSource: null,
+          selectedLocation: null,
+        });
+        store.endTurn();
+      }
+      scheduledEndTurnRef.current = null;
+      autoEndTimerRef.current = null;
+    }, delay);
+  }, []);
+
   const checkAutoReturn = useCallback(() => {
     if (!currentPlayer) return false;
+
+    // Permadeath may already have been resolved by the action that dealt the
+    // final damage. The old code called checkDeath() again, which returned false
+    // for an already-eliminated player and left that dead player holding the turn.
+    if (currentPlayer.isGameOver) {
+      // Guests never advance authoritative turns. The host sees the same dead
+      // current player and performs the recovery, then syncs the new turn.
+      if (networkMode !== 'guest') {
+        scheduleEndTurn(currentPlayerIndex, 100);
+      }
+      return true;
+    }
+
+    // AI players normally manage their own time, but health can reach zero at
+    // the end of an AI action. Resolve death before returning to the AI handler.
+    if (currentPlayer.health <= 0) {
+      if (networkMode === 'guest') return true;
+      checkDeath(currentPlayer.id);
+      const resolvedPlayer = useGameStore.getState().players[currentPlayerIndex];
+      if (resolvedPlayer?.isGameOver) {
+        scheduleEndTurn(currentPlayerIndex, 100);
+      }
+      return true;
+    }
+
     if (currentPlayer.isAI) return false;
 
     if (networkMode === 'guest') {
@@ -43,27 +91,6 @@ export function useAutoEndTurn() {
         return true;
       }
       return false;
-    }
-
-    if (currentPlayer.health <= 0) {
-      const isDead = checkDeath(currentPlayer.id);
-      if (isDead) {
-        setEventMessage(`${currentPlayer.name} has died! Game over for this player.`);
-        setPhase('event');
-        if (scheduledEndTurnRef.current !== currentPlayerIndex) {
-          scheduledEndTurnRef.current = currentPlayerIndex;
-          if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
-          autoEndTimerRef.current = setTimeout(() => {
-            const store = useGameStore.getState();
-            if (store.currentPlayerIndex === currentPlayerIndex) {
-              store.endTurn();
-            }
-            scheduledEndTurnRef.current = null;
-            autoEndTimerRef.current = null;
-          }, 100);
-        }
-        return true;
-      }
     }
 
     if (currentPlayer.timeRemaining <= 0) {
@@ -90,7 +117,7 @@ export function useAutoEndTurn() {
     }
 
     return false;
-  }, [currentPlayer, checkDeath, setEventMessage, setPhase, currentPlayerIndex, networkMode]);
+  }, [currentPlayer, checkDeath, currentPlayerIndex, networkMode, scheduleEndTurn]);
 
   useEffect(() => {
     scheduledEndTurnRef.current = null;
@@ -101,8 +128,10 @@ export function useAutoEndTurn() {
   }, [currentPlayerIndex]);
 
   useEffect(() => {
-    if (phase === 'playing') checkAutoReturn();
-  }, [phase, checkAutoReturn]);
+    if (phase === 'playing' || (phase === 'event' && currentPlayer?.isGameOver)) {
+      checkAutoReturn();
+    }
+  }, [phase, currentPlayer?.isGameOver, checkAutoReturn]);
 
   useEffect(() => () => {
     if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
