@@ -3,6 +3,8 @@
 
 import { Crown, Skull, Bot } from 'lucide-react';
 import { CharacterPortrait } from '../CharacterPortrait';
+import { useGameStore } from '@/store/gameStore';
+import { calculateGoalProgress } from '@/lib/calculateGoalProgress';
 import type { Player, GoalSettings } from '@/types/game.types';
 
 interface PlayersTabProps {
@@ -11,27 +13,15 @@ interface PlayersTabProps {
   goalSettings: GoalSettings;
 }
 
-function calculateOverallProgress(player: Player, goalSettings: GoalSettings): number {
-  const wealthProgress = Math.min(100, ((player.gold + player.savings + player.investments) / goalSettings.wealth) * 100);
-  const happinessProgress = Math.min(100, (player.happiness / goalSettings.happiness) * 100);
-  const educationTotal = player.completedDegrees.length * 9;
-  const educationProgress = Math.min(100, (educationTotal / goalSettings.education) * 100);
-  const careerValue = player.currentJob ? player.dependability : 0;
-  const careerProgress = Math.min(100, (careerValue / goalSettings.career) * 100);
-  const adventureEnabled = (goalSettings.adventure ?? 0) > 0;
-  const adventureValue = player.completedQuests + player.dungeonFloorsCleared.length;
-  const adventureProgress = adventureEnabled ? Math.min(100, (adventureValue / goalSettings.adventure) * 100) : 0;
-  const goalCount = adventureEnabled ? 5 : 4;
-  return (wealthProgress + happinessProgress + educationProgress + careerProgress + (adventureEnabled ? adventureProgress : 0)) / goalCount;
-}
-
 export function PlayersTab({ players, currentPlayerIndex, goalSettings }: PlayersTabProps) {
+  const stockPrices = useGameStore(state => state.stockPrices);
+
   return (
     <div className="space-y-1.5">
       {players.map((player, index) => {
         const isCurrentTurn = index === currentPlayerIndex;
         const isDead = player.health <= 0;
-        const overallProgress = calculateOverallProgress(player, goalSettings);
+        const overallProgress = calculateGoalProgress(player, goalSettings, stockPrices).overall;
 
         return (
           <div
@@ -94,8 +84,8 @@ export function PlayersTab({ players, currentPlayerIndex, goalSettings }: Player
 
               {/* Progress indicator */}
               {!isDead && (
-                <div className="w-8 h-8 relative">
-                  <svg className="w-8 h-8 -rotate-90" viewBox="0 0 32 32">
+                <div className="w-8 h-8 relative" title={`${Math.round(overallProgress)}% goal progress`}>
+                  <svg className="w-8 h-8 -rotate-90" viewBox="0 0 32 32" aria-hidden="true">
                     <circle
                       cx="16"
                       cy="16"
