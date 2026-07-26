@@ -185,11 +185,6 @@ export function createServiceActions(set: SetFn, get: GetFn) {
             totalGoldEarned: (p.gameStats?.totalGoldEarned ?? 0) + (won ? odds.payout : 0),
           },
         }),
-        ...(player.isAI ? {} : {
-          eventMessage: message,
-          eventSource: 'weekly' as const,
-          phase: 'event' as const,
-        }),
       }));
       return { success: true, message };
     },

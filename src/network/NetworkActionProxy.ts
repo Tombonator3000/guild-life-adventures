@@ -15,6 +15,41 @@ import { LOCAL_ONLY_ACTIONS, HOST_INTERNAL_ACTIONS } from './types';
 
 type ActionSender = (actionName: string, args: unknown[]) => void;
 
+/**
+ * Event published to subscribers when a guest action either receives an
+ * `action-result` response from the host or exceeds the response timeout.
+ * Panels use this to clear a local "pending" lock immediately on rejection
+ * instead of waiting up to 10s for a resource-change heuristic.
+ */
+export interface NetworkActionResultEvent {
+  requestId: string;
+  actionName: string;
+  args: unknown[];
+  success: boolean;
+  error?: string;
+  /** True when the fallback timeout fired without a host response. */
+  timedOut: boolean;
+}
+
+type ActionResultListener = (event: NetworkActionResultEvent) => void;
+const actionResultListeners = new Set<ActionResultListener>();
+
+/** Subscribe to guest action-result notifications. Returns an unsubscribe fn. */
+export function subscribeActionResult(listener: ActionResultListener): () => void {
+  actionResultListeners.add(listener);
+  return () => actionResultListeners.delete(listener);
+}
+
+function emitActionResult(event: NetworkActionResultEvent) {
+  for (const listener of actionResultListeners) {
+    try {
+      listener(event);
+    } catch (err) {
+      console.error('[NetworkProxy] action-result listener threw', err);
+    }
+  }
+}
+
 /** Store accessor — set by gameStore.ts after store creation to break circular dep */
 type StoreAccessor = () => { networkMode: string };
 let storeAccessor: StoreAccessor | null = null;
@@ -27,8 +62,13 @@ export function setStoreAccessor(accessor: StoreAccessor) {
 // Global reference to the network action sender (set by useOnlineGame hook)
 let networkActionSender: ActionSender | null = null;
 
-/** Track pending actions to detect timeouts (requestId -> timestamp) */
-const pendingActions = new Map<string, number>();
+/** Track pending actions to detect timeouts and match action-result responses. */
+interface PendingAction {
+  timestamp: number;
+  actionName: string;
+  args: unknown[];
+}
+const pendingActions = new Map<string, PendingAction>();
 /** Timeout for guest action responses (ms) */
 const ACTION_RESPONSE_TIMEOUT = 10000;
 /** Interval for checking timed-out actions */
@@ -39,10 +79,18 @@ function startActionTimeoutChecker() {
   if (actionTimeoutChecker) return;
   actionTimeoutChecker = setInterval(() => {
     const now = Date.now();
-    for (const [requestId, timestamp] of pendingActions) {
-      if (now - timestamp > ACTION_RESPONSE_TIMEOUT) {
+    for (const [requestId, pending] of pendingActions) {
+      if (now - pending.timestamp > ACTION_RESPONSE_TIMEOUT) {
         console.warn(`[NetworkProxy] Action timed out (no response from host): ${requestId}`);
         pendingActions.delete(requestId);
+        emitActionResult({
+          requestId,
+          actionName: pending.actionName,
+          args: pending.args,
+          success: false,
+          error: 'Host did not respond',
+          timedOut: true,
+        });
       }
     }
     // Stop checker when no more pending actions
@@ -53,15 +101,28 @@ function startActionTimeoutChecker() {
   }, 2000);
 }
 
-/** Track a sent action for timeout detection */
-export function trackPendingAction(requestId: string) {
-  pendingActions.set(requestId, Date.now());
+/** Track a sent action for timeout detection and action-result matching */
+export function trackPendingAction(requestId: string, actionName = '', args: unknown[] = []) {
+  pendingActions.set(requestId, { timestamp: Date.now(), actionName, args });
   startActionTimeoutChecker();
 }
 
-/** Mark an action as resolved (response received) */
-export function resolveAction(requestId: string) {
+/**
+ * Mark an action as resolved (response received). Emits a
+ * `NetworkActionResultEvent` so subscribers can react to the host's decision.
+ */
+export function resolveAction(requestId: string, success = true, error?: string) {
+  const pending = pendingActions.get(requestId);
   pendingActions.delete(requestId);
+  if (!pending) return;
+  emitActionResult({
+    requestId,
+    actionName: pending.actionName,
+    args: pending.args,
+    success,
+    error,
+    timedOut: false,
+  });
 }
 
 /** Clear all pending actions (on disconnect/cleanup) */
