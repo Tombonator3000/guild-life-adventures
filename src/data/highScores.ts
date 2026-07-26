@@ -17,7 +17,14 @@ const STORAGE_KEY = 'guild-life-high-scores-v1';
 const MAX_STORED_SCORES = 50;
 
 export function sanitizeHighScoreName(name: string): string {
-  return name.replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, 20);
+  return [...name]
+    .filter(character => {
+      const code = character.charCodeAt(0);
+      return code >= 32 && code !== 127;
+    })
+    .join('')
+    .trim()
+    .slice(0, 20);
 }
 
 function isHighScoreEntry(value: unknown): value is HighScoreEntry {
