@@ -6,7 +6,7 @@ async function prepareOnlinePage(page: Page, channelName: string) {
   await installLocalPeerNetwork(page, channelName);
   await page.addInitScript(() => {
     Math.random = () => 0.99;
-    localStorage.setItem('guild-life-options', JSON.stringify({ showTutorial: false }));
+    localStorage.setItem('guild-life-guided-tutorial-completed', 'true');
   });
   await page.goto('/');
 }
@@ -17,7 +17,7 @@ async function openOnlineLobby(page: Page, playerName: string) {
 }
 
 async function createHostedRoom(page: Page): Promise<string> {
-  await page.getByRole('button', { name: 'Create Room', exact: true }).click();
+  await page.getByRole('button', { name: /^Create Room/i }).click();
   await page.getByRole('button', { name: 'Create Room', exact: true }).click();
 
   const roomPanel = page.getByText('Room Code', { exact: true }).locator('..');
@@ -28,7 +28,7 @@ async function createHostedRoom(page: Page): Promise<string> {
 }
 
 async function joinHostedRoom(page: Page, roomCode: string) {
-  await page.getByRole('button', { name: 'Join Room', exact: true }).click();
+  await page.getByRole('button', { name: /^Join Room/i }).click();
   await page.getByPlaceholder('Enter code').fill(roomCode);
   await page.getByRole('button', { name: 'Join', exact: true }).click();
   await expect(page.getByText('Waiting for host to start the game...')).toBeVisible();
