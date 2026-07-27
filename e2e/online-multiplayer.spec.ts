@@ -53,6 +53,35 @@ async function peerIds(page: Page): Promise<string[]> {
   });
 }
 
+async function holdGuestAction(page: Page, actionName: string) {
+  await page.evaluate((name) => {
+    const control = (globalThis as typeof globalThis & {
+      __guildE2EPeerControl?: { holdAction(actionName: string): void };
+    }).__guildE2EPeerControl;
+    control?.holdAction(name);
+  }, actionName);
+}
+
+async function releaseGuestAction(page: Page, actionName: string, actorIdOverride?: string) {
+  await page.evaluate(({ name, actorId }) => {
+    const control = (globalThis as typeof globalThis & {
+      __guildE2EPeerControl?: {
+        releaseHeldActions(actionName?: string, actorIdOverride?: string): void;
+      };
+    }).__guildE2EPeerControl;
+    control?.releaseHeldActions(name, actorId);
+  }, { name: actionName, actorId: actorIdOverride });
+}
+
+async function heldGuestActionCount(page: Page, actionName: string): Promise<number> {
+  return page.evaluate((name) => {
+    const control = (globalThis as typeof globalThis & {
+      __guildE2EPeerControl?: { heldActionCount(actionName?: string): number };
+    }).__guildE2EPeerControl;
+    return control?.heldActionCount(name) ?? 0;
+  }, actionName);
+}
+
 async function storedReconnectToken(page: Page): Promise<string | null> {
   return page.evaluate(() => {
     const raw = sessionStorage.getItem('guild-life-reconnect-credential');
@@ -183,6 +212,76 @@ test('guest securely rejoins the same player after a page refresh with a new pee
 
     const guestFinances = guest.getByRole('heading', { name: 'Finances' }).locator('..');
     await expect(guestFinances.getByText('50g', { exact: true })).toBeVisible({ timeout: 15_000 });
+    expect(pageErrors, `Unexpected page errors:\n${pageErrors.join('\n')}`).toEqual([]);
+  } finally {
+    await guest.close();
+  }
+});
+
+test('rejected sabotage and Fence actions unlock immediately instead of waiting ten seconds', async ({ page, context }) => {
+  const channelName = `guild-life-rejection-e2e-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const guest = await context.newPage();
+  const pageErrors = collectPageErrors(page, guest);
+
+  try {
+    await Promise.all([
+      prepareOnlinePage(page, channelName),
+      prepareOnlinePage(guest, channelName),
+    ]);
+
+    await openOnlineLobby(page, 'Reject Host');
+    const roomCode = await createHostedRoom(page);
+    await openOnlineLobby(guest, 'Reject Guest');
+    await joinHostedRoom(guest, roomCode);
+
+    await expect(page.getByText('Reject Guest', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: /Start Game \(2 players\)/ }).click();
+    await expect(guest.locator('[data-zone-id="shadow-market"]')).toBeVisible();
+
+    await page.keyboard.press('e');
+    await expect(guest.getByText("Reject Guest's Turn", { exact: true })).toBeVisible({ timeout: 15_000 });
+
+    await guest.locator('[data-zone-id="shadow-market"]').click();
+    await guest.getByRole('button', { name: 'Sabotage', exact: true }).click();
+    const sabotage = guest.getByRole('button', { name: /Hire Shadowfingers: Pickpocket/i });
+    await expect(sabotage).toBeVisible({ timeout: 10_000 });
+    await expect(sabotage).toBeEnabled();
+
+    await holdGuestAction(guest, 'sabotagePlayer');
+    await sabotage.click();
+    const sabotageWaiting = guest.getByText('Waiting for host…', { exact: true });
+    await expect(sabotageWaiting).toBeVisible();
+    await expect.poll(() => heldGuestActionCount(guest, 'sabotagePlayer')).toBe(1);
+    await releaseGuestAction(guest, 'sabotagePlayer', 'player-0');
+    await expect(sabotageWaiting).toBeHidden({ timeout: 2_000 });
+    await expect(guest.getByRole('button', { name: /Hire Shadowfingers: Pickpocket/i })).toBeEnabled();
+
+    await guest.locator('[data-zone-id="fence"]').click();
+    await guest.getByRole('button', { name: 'Protection', exact: true }).click();
+    const protection = guest.getByRole('button', { name: /Protection — 3 Weeks/i });
+    await expect(protection).toBeVisible({ timeout: 10_000 });
+    await expect(protection).toBeEnabled();
+
+    await holdGuestAction(guest, 'buyProtection');
+    await protection.click();
+    const protectionWaiting = guest.getByText('Waiting for host…', { exact: true });
+    await expect(protectionWaiting).toBeVisible();
+    await expect.poll(() => heldGuestActionCount(guest, 'buyProtection')).toBe(1);
+    await releaseGuestAction(guest, 'buyProtection', 'player-0');
+    await expect(protectionWaiting).toBeHidden({ timeout: 2_000 });
+    await expect(guest.getByRole('button', { name: /Protection — 3 Weeks/i })).toBeEnabled();
+
+    const tipOff = guest.getByRole('button', { name: /Buy Tip-off/i });
+    await expect(tipOff).toBeEnabled();
+    await holdGuestAction(guest, 'buyTipOff');
+    await tipOff.click();
+    const tipOffWaiting = guest.getByText('Waiting for host…', { exact: true });
+    await expect(tipOffWaiting).toBeVisible();
+    await expect.poll(() => heldGuestActionCount(guest, 'buyTipOff')).toBe(1);
+    await releaseGuestAction(guest, 'buyTipOff', 'player-0');
+    await expect(tipOffWaiting).toBeHidden({ timeout: 2_000 });
+    await expect(guest.getByRole('button', { name: /Buy Tip-off/i })).toBeEnabled();
+
     expect(pageErrors, `Unexpected page errors:\n${pageErrors.join('\n')}`).toEqual([]);
   } finally {
     await guest.close();
