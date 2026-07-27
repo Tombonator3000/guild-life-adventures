@@ -44,12 +44,39 @@ async function connectionCount(page: Page): Promise<number> {
   });
 }
 
+async function peerIds(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const control = (globalThis as typeof globalThis & {
+      __guildE2EPeerControl?: { peerIds(): string[] };
+    }).__guildE2EPeerControl;
+    return control?.peerIds() ?? [];
+  });
+}
+
+async function storedReconnectToken(page: Page): Promise<string | null> {
+  return page.evaluate(() => {
+    const raw = sessionStorage.getItem('guild-life-reconnect-credential');
+    if (!raw) return null;
+    try {
+      const credential = JSON.parse(raw) as { reconnectToken?: unknown };
+      return typeof credential.reconnectToken === 'string' ? credential.reconnectToken : null;
+    } catch {
+      return null;
+    }
+  });
+}
+
+function collectPageErrors(host: Page, guest: Page): string[] {
+  const pageErrors: string[] = [];
+  host.on('pageerror', error => pageErrors.push(`host: ${error.message}`));
+  guest.on('pageerror', error => pageErrors.push(`guest: ${error.message}`));
+  return pageErrors;
+}
+
 test('host and guest can start, synchronize an action, reconnect, and keep playing', async ({ page, context }) => {
   const channelName = `guild-life-e2e-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const guest = await context.newPage();
-  const pageErrors: string[] = [];
-  page.on('pageerror', error => pageErrors.push(`host: ${error.message}`));
-  guest.on('pageerror', error => pageErrors.push(`guest: ${error.message}`));
+  const pageErrors = collectPageErrors(page, guest);
 
   try {
     await Promise.all([
@@ -99,6 +126,63 @@ test('host and guest can start, synchronize an action, reconnect, and keep playi
     await withdraw.click();
     await expect(guestFinances.getByText('0g', { exact: true })).toBeVisible({ timeout: 15_000 });
 
+    expect(pageErrors, `Unexpected page errors:\n${pageErrors.join('\n')}`).toEqual([]);
+  } finally {
+    await guest.close();
+  }
+});
+
+test('guest securely rejoins the same player after a page refresh with a new peer identity', async ({ page, context }) => {
+  const channelName = `guild-life-refresh-e2e-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const guest = await context.newPage();
+  const pageErrors = collectPageErrors(page, guest);
+
+  try {
+    await Promise.all([
+      prepareOnlinePage(page, channelName),
+      prepareOnlinePage(guest, channelName),
+    ]);
+
+    await openOnlineLobby(page, 'Refresh Host');
+    const roomCode = await createHostedRoom(page);
+
+    await openOnlineLobby(guest, 'Refresh Guest');
+    await joinHostedRoom(guest, roomCode);
+
+    await expect(page.getByText('Refresh Guest', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: /Start Game \(2 players\)/ }).click();
+    await expect(page.locator('[data-zone-id="bank"]')).toBeVisible();
+    await expect(guest.locator('[data-zone-id="bank"]')).toBeVisible();
+
+    await expect.poll(() => storedReconnectToken(guest), { timeout: 15_000 }).toMatch(/^[a-f0-9]{48}$/);
+    const [oldPeerId] = await peerIds(guest);
+    expect(oldPeerId).toMatch(/^e2e-guest-/);
+
+    await guest.reload();
+    await expect(guest.getByRole('button', { name: /online multiplayer/i })).toBeVisible();
+    await guest.getByRole('button', { name: /online multiplayer/i }).click();
+
+    await expect(guest.getByText('Rejoin Game?', { exact: true })).toBeVisible();
+    await expect(guest.getByText(new RegExp(roomCode))).toBeVisible();
+    await expect(guest.getByText('Refresh Guest', { exact: true })).toBeVisible();
+    await guest.getByRole('button', { name: 'Rejoin', exact: true }).click();
+
+    await expect(guest.locator('[data-zone-id="bank"]')).toBeVisible({ timeout: 15_000 });
+    await expect.poll(() => peerIds(guest), { timeout: 15_000 }).toHaveLength(1);
+    const [newPeerId] = await peerIds(guest);
+    expect(newPeerId).toMatch(/^e2e-guest-/);
+    expect(newPeerId).not.toBe(oldPeerId);
+
+    await page.keyboard.press('e');
+    await expect(guest.getByText("Refresh Guest's Turn", { exact: true })).toBeVisible({ timeout: 15_000 });
+
+    await guest.locator('[data-zone-id="bank"]').click();
+    const deposit = guest.getByRole('button', { name: /deposit 50/i });
+    await expect(deposit).toBeVisible({ timeout: 10_000 });
+    await deposit.click();
+
+    const guestFinances = guest.getByRole('heading', { name: 'Finances' }).locator('..');
+    await expect(guestFinances.getByText('50g', { exact: true })).toBeVisible({ timeout: 15_000 });
     expect(pageErrors, `Unexpected page errors:\n${pageErrors.join('\n')}`).toEqual([]);
   } finally {
     await guest.close();
