@@ -7,13 +7,14 @@ import { toast } from 'sonner';
 import { OptionsMenu } from '@/components/game/OptionsMenu';
 import { UserManual } from '@/components/game/UserManual';
 import { useTranslation } from '@/i18n';
+import { leaveActiveOnlineGame } from '@/network/leaveActiveOnlineGame';
 
 interface SaveLoadMenuProps {
   onClose: () => void;
 }
 
 export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
-  const { saveToSlot, loadFromSlot, setPhase } = useGameStore();
+  const { saveToSlot, loadFromSlot, setPhase, networkMode } = useGameStore();
   const { t } = useTranslation();
   const [mode, setMode] = useState<'save' | 'load'>('save');
   const [showOptions, setShowOptions] = useState(false);
@@ -50,11 +51,22 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
   };
 
   const handleQuitToTitle = () => {
-    // Auto-save before quitting
+    if (networkMode !== 'local') {
+      leaveActiveOnlineGame(networkMode === 'host' ? 'Host closed the room' : 'Player left the game');
+      return;
+    }
+
+    // Auto-save before quitting a local game.
     saveToSlot(0);
     setPhase('title');
     onClose();
   };
+
+  const quitLabel = networkMode === 'host'
+    ? 'Close Online Room'
+    : networkMode === 'guest'
+      ? 'Leave Online Game'
+      : t('saveLoad.saveReturn');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -171,7 +183,7 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
             onClick={handleQuitToTitle}
             className="w-full p-2.5 rounded border border-border bg-background/50 text-wood hover:text-wood-dark hover:border-foreground/30 font-display text-sm font-semibold flex items-center justify-center gap-2"
           >
-            <Home className="w-4 h-4" /> {t('saveLoad.saveReturn')}
+            <Home className="w-4 h-4" /> {quitLabel}
           </button>
         </div>
 
