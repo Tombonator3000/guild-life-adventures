@@ -211,7 +211,7 @@ globalThis.__guildE2EPeerControl = {
   holdAction(actionName) {
     heldActionNames.add(actionName);
   },
-  releaseHeldActions(actionName) {
+  releaseHeldActions(actionName, actorIdOverride) {
     if (actionName) heldActionNames.delete(actionName);
     else heldActionNames.clear();
 
@@ -219,7 +219,19 @@ globalThis.__guildE2EPeerControl = {
     for (const held of heldActionMessages) {
       const heldName = held.message?.data?.name;
       if (!actionName || heldName === actionName) {
-        if (!held.peer.destroyed) held.peer.channel.postMessage(held.message);
+        if (!held.peer.destroyed) {
+          const originalArgs = Array.isArray(held.message?.data?.args) ? held.message.data.args : [];
+          const message = actorIdOverride === undefined
+            ? held.message
+            : {
+                ...held.message,
+                data: {
+                  ...held.message.data,
+                  args: [actorIdOverride, ...originalArgs.slice(1)],
+                },
+              };
+          held.peer.channel.postMessage(message);
+        }
       } else {
         remaining.push(held);
       }
