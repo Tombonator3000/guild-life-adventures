@@ -62,13 +62,15 @@ async function holdGuestAction(page: Page, actionName: string) {
   }, actionName);
 }
 
-async function releaseGuestAction(page: Page, actionName: string) {
-  await page.evaluate((name) => {
+async function releaseGuestAction(page: Page, actionName: string, actorIdOverride?: string) {
+  await page.evaluate(({ name, actorId }) => {
     const control = (globalThis as typeof globalThis & {
-      __guildE2EPeerControl?: { releaseHeldActions(actionName?: string): void };
+      __guildE2EPeerControl?: {
+        releaseHeldActions(actionName?: string, actorIdOverride?: string): void;
+      };
     }).__guildE2EPeerControl;
-    control?.releaseHeldActions(name);
-  }, actionName);
+    control?.releaseHeldActions(name, actorId);
+  }, { name: actionName, actorId: actorIdOverride });
 }
 
 async function heldGuestActionCount(page: Page, actionName: string): Promise<number> {
@@ -250,14 +252,8 @@ test('rejected sabotage and Fence actions unlock immediately instead of waiting 
     const sabotageWaiting = guest.getByText('Waiting for host…', { exact: true });
     await expect(sabotageWaiting).toBeVisible();
     await expect.poll(() => heldGuestActionCount(guest, 'sabotagePlayer')).toBe(1);
-
-    await guest.keyboard.press('e');
-    await expect(guest.getByText("Reject Host's Turn", { exact: true })).toBeVisible({ timeout: 15_000 });
-    await releaseGuestAction(guest, 'sabotagePlayer');
+    await releaseGuestAction(guest, 'sabotagePlayer', 'player-0');
     await expect(sabotageWaiting).toBeHidden({ timeout: 2_000 });
-
-    await page.keyboard.press('e');
-    await expect(guest.getByText("Reject Guest's Turn", { exact: true })).toBeVisible({ timeout: 15_000 });
     await expect(guest.getByRole('button', { name: /Hire Shadowfingers: Pickpocket/i })).toBeEnabled();
 
     await guest.locator('[data-zone-id="fence"]').click();
@@ -271,14 +267,8 @@ test('rejected sabotage and Fence actions unlock immediately instead of waiting 
     const protectionWaiting = guest.getByText('Waiting for host…', { exact: true });
     await expect(protectionWaiting).toBeVisible();
     await expect.poll(() => heldGuestActionCount(guest, 'buyProtection')).toBe(1);
-
-    await guest.keyboard.press('e');
-    await expect(guest.getByText("Reject Host's Turn", { exact: true })).toBeVisible({ timeout: 15_000 });
-    await releaseGuestAction(guest, 'buyProtection');
+    await releaseGuestAction(guest, 'buyProtection', 'player-0');
     await expect(protectionWaiting).toBeHidden({ timeout: 2_000 });
-
-    await page.keyboard.press('e');
-    await expect(guest.getByText("Reject Guest's Turn", { exact: true })).toBeVisible({ timeout: 15_000 });
     await expect(guest.getByRole('button', { name: /Protection — 3 Weeks/i })).toBeEnabled();
 
     const tipOff = guest.getByRole('button', { name: /Buy Tip-off/i });
@@ -288,14 +278,8 @@ test('rejected sabotage and Fence actions unlock immediately instead of waiting 
     const tipOffWaiting = guest.getByText('Waiting for host…', { exact: true });
     await expect(tipOffWaiting).toBeVisible();
     await expect.poll(() => heldGuestActionCount(guest, 'buyTipOff')).toBe(1);
-
-    await guest.keyboard.press('e');
-    await expect(guest.getByText("Reject Host's Turn", { exact: true })).toBeVisible({ timeout: 15_000 });
-    await releaseGuestAction(guest, 'buyTipOff');
+    await releaseGuestAction(guest, 'buyTipOff', 'player-0');
     await expect(tipOffWaiting).toBeHidden({ timeout: 2_000 });
-
-    await page.keyboard.press('e');
-    await expect(guest.getByText("Reject Guest's Turn", { exact: true })).toBeVisible({ timeout: 15_000 });
     await expect(guest.getByRole('button', { name: /Buy Tip-off/i })).toBeEnabled();
 
     expect(pageErrors, `Unexpected page errors:\n${pageErrors.join('\n')}`).toEqual([]);
