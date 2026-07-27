@@ -240,6 +240,7 @@ test('rejected sabotage and Fence actions unlock immediately instead of waiting 
     await expect(guest.getByText("Reject Guest's Turn", { exact: true })).toBeVisible({ timeout: 15_000 });
 
     await guest.locator('[data-zone-id="shadow-market"]').click();
+    await guest.getByRole('button', { name: 'Sabotage', exact: true }).click();
     const sabotage = guest.getByRole('button', { name: /Hire Shadowfingers: Pickpocket/i });
     await expect(sabotage).toBeVisible({ timeout: 10_000 });
     await expect(sabotage).toBeEnabled();
@@ -260,6 +261,7 @@ test('rejected sabotage and Fence actions unlock immediately instead of waiting 
     await expect(guest.getByRole('button', { name: /Hire Shadowfingers: Pickpocket/i })).toBeEnabled();
 
     await guest.locator('[data-zone-id="fence"]').click();
+    await guest.getByRole('button', { name: 'Protection', exact: true }).click();
     const protection = guest.getByRole('button', { name: /Protection — 3 Weeks/i });
     await expect(protection).toBeVisible({ timeout: 10_000 });
     await expect(protection).toBeEnabled();
