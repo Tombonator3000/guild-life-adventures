@@ -6,6 +6,7 @@ import { DeathModal } from './DeathModal';
 import { PlayerInfoModal } from './PlayerInfoModal';
 import { UpdateBanner } from './UpdateBanner';
 import { ChatPanel } from './ChatPanel';
+import { ContextualTips } from './ContextualTips';
 import { SpectatorOverlay } from './SpectatorOverlay';
 import { TopDropdownMenu } from './TopDropdownMenu';
 import { TutorialOverlay } from './TutorialOverlay';
@@ -35,6 +36,7 @@ export function GameBoardAuxiliaryLayer({
   deathModalProps,
   playerInfoProps,
   chatProps,
+  showContextualTips,
   spectatorOverlayProps,
   topDropdownProps,
 }: GameBoardAuxiliaryLayerProps) {
@@ -60,6 +62,7 @@ export function GameBoardAuxiliaryLayer({
       {playerInfoProps && <PlayerInfoModal {...playerInfoProps} />}
       <UpdateBanner />
       {chatProps && <ChatPanel {...chatProps} />}
+      {showContextualTips && <ContextualTips />}
       {spectatorOverlayProps && <SpectatorOverlay {...spectatorOverlayProps} />}
       {topDropdownProps && <TopDropdownMenu {...topDropdownProps} />}
     </>
