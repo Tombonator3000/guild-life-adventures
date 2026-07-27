@@ -4,6 +4,14 @@ function localPeerModule(channelName: string): string {
   return `
 const CHANNEL_NAME = ${JSON.stringify(channelName)};
 const localPeers = new Set();
+const heldActionNames = new Set();
+const heldActionMessages = [];
+
+function isHeldActionMessage(message) {
+  return message?.kind === 'data'
+    && message?.data?.type === 'action'
+    && heldActionNames.has(message.data.name);
+}
 
 class Emitter {
   constructor() {
@@ -100,7 +108,12 @@ class LocalPeer extends Emitter {
   }
 
   post(message) {
-    if (!this.destroyed) this.channel.postMessage(message);
+    if (this.destroyed) return;
+    if (isHeldActionMessage(message)) {
+      heldActionMessages.push({ peer: this, message });
+      return;
+    }
+    this.channel.postMessage(message);
   }
 
   handleMessage(message) {
@@ -176,6 +189,9 @@ class LocalPeer extends Emitter {
     this.dropConnections();
     this.destroyed = true;
     localPeers.delete(this);
+    for (let index = heldActionMessages.length - 1; index >= 0; index -= 1) {
+      if (heldActionMessages[index].peer === this) heldActionMessages.splice(index, 1);
+    }
     window.removeEventListener('pagehide', this.onPageHide);
     this.channel.close();
     this.emit('close');
@@ -191,6 +207,27 @@ globalThis.__guildE2EPeerControl = {
   },
   connectionCount() {
     return [...localPeers].reduce((total, peer) => total + peer.connections.size, 0);
+  },
+  holdAction(actionName) {
+    heldActionNames.add(actionName);
+  },
+  releaseHeldActions(actionName) {
+    if (actionName) heldActionNames.delete(actionName);
+    else heldActionNames.clear();
+
+    const remaining = [];
+    for (const held of heldActionMessages) {
+      const heldName = held.message?.data?.name;
+      if (!actionName || heldName === actionName) {
+        if (!held.peer.destroyed) held.peer.channel.postMessage(held.message);
+      } else {
+        remaining.push(held);
+      }
+    }
+    heldActionMessages.splice(0, heldActionMessages.length, ...remaining);
+  },
+  heldActionCount(actionName) {
+    return heldActionMessages.filter(held => !actionName || held.message?.data?.name === actionName).length;
   },
 };
 
