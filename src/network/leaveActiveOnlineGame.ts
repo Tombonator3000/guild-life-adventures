@@ -1,6 +1,10 @@
 import { useGameStore } from '@/store/gameStore';
 import { peerManager } from './PeerManager';
 import { resetNetworkState } from './networkState';
+import {
+  clearHostReconnectCredentials,
+  clearLocalReconnectCredential,
+} from './reconnectCredentials';
 
 const SESSION_STORAGE_KEY = 'guild-life-online-session';
 
@@ -30,6 +34,8 @@ export function cleanupActiveOnlineGame(): void {
     // sessionStorage may be unavailable in privacy-restricted browsers.
   }
 
+  clearLocalReconnectCredential();
+  clearHostReconnectCredentials();
   resetNetworkState();
 
   const store = useGameStore.getState();
