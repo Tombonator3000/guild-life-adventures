@@ -5,7 +5,7 @@ async function startEnvironmentGame(page: Page) {
   await page.addInitScript(() => { Math.random = () => .99; });
   await page.goto('/');
   // Use the existing session-only developer gesture, not a new production debug route.
-  await page.locator('button[aria-hidden="true"]').click({clickCount:5,delay:80});
+  await page.locator('button[aria-hidden="true"]').click({clickCount:5,delay:80,timeout:5000});
   await page.getByRole('button',{name:'New Adventure',exact:true}).click();
   await page.getByPlaceholder('Enter name...').fill('Environment Hero');
   await page.getByRole('checkbox',{name:/Show Tutorial/}).uncheck();

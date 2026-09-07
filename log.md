@@ -14288,3 +14288,5 @@ Fixed 20 findings from AUDIT-2026-02-12.md across all severity levels. Removed t
 - See docs/qa/living-guildholm/README.md for acceptance criteria, evidence and remaining validation. X article could not be read in full; no claims attributed to unread content.
 
 - Final review: festival particles also use deterministic decoration samples so toggling environment cannot advance gameplay randomness.
+
+- 2026-09-07T06:37Z: First CI passed 12 existing browser tests but exposed an obstructed title-screen developer gesture. Fixed stacking order; new tests retain real clicks and use a bounded 5-second gesture timeout. Re-running the same PR.

@@ -29,3 +29,13 @@ Reference supplied: https://x.com/AleiahLock/status/2096607552628781312 . Search
 - Physical Samsung S24 performance and sustained 60 fps: UNVERIFIED. CI frame timings are explicitly labeled and cannot establish physical-device performance.
 
 No new gameplay state fields, migrations, network actions, external services or runtime dependencies.
+
+## First CI review (bd3d3f6)
+
+Run: https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34090919421
+
+- TypeScript, 718 unit tests, build, lint and audio integrity: PASS.
+- Existing browser regression suite: 12 PASS, including online rejoin, rejected Sabotage/Fence actions and room closure.
+- Two new environment journeys: FAIL before reaching the board. Trace reports that the title welcome paragraph intercepts the intended developer button. Corrected the existing button's stacking order and shortened the test gesture timeout to fail promptly. This keeps actual UI clicks in the test rather than bypassing the bug with forced clicks.
+- All 42 local audio files also passed decoding/silence/duplicate checks.
+- Follow-up CI and screenshots must be reviewed before promoting PR #405 from draft.
