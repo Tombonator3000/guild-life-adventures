@@ -115,6 +115,8 @@ function saveSettings(settings: SFXSettings) {
 }
 
 class SFXManager {
+  /** Monotonic request count lets UI fallbacks avoid doubling action sounds. */
+  playRevision = 0;
   private settings: SFXSettings;
   private cachedSettings: SFXSettings;
   private listeners: Array<() => void> = [];
@@ -142,6 +144,7 @@ class SFXManager {
 
   /** Play a sound effect by ID using its declared primary source. */
   play(sfxId: SFXId) {
+    this.playRevision++;
     if (this.settings.sfxMuted) return;
 
     const sfx = SFX_LIBRARY[sfxId];

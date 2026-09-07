@@ -1,3 +1,4 @@
+import { playSFX } from '@/audio/sfxManager';
 import type { LocationId } from '@/types/game.types';
 import type { LocationTab, WorkInfo } from './LocationShell';
 import type { LocationTabContext, LocationTabFactoryMap } from './locationTabContext';
@@ -63,6 +64,7 @@ export function getWorkInfo(locationId: LocationId, ctx: LocationTabContext): Wo
     onWork: () => {
       const result = performWorkShift(player.id, hours < currentJobData.hoursPerShift ? 'remaining' : 'full');
       if (!result) return;
+      playSFX(result.success ? 'work-complete' : 'error');
       if (result.success) toast.success(result.message);
       else toast.error(result.message);
     },

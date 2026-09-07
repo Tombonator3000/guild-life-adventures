@@ -14310,3 +14310,9 @@ Verified runtime/test revision 35ca8933c4e4e8f7eb83512a08d2db588dcc014f in run 3
 Review corrections: shallow landscape frames scroll services and work together; employer/shop rows have button affordance; mobile resource strip preserves access to gold/time via horizontal scrolling; active festival is a reactive input to wage previews. First new browser test failed because it assumed every portrait was an image, while Brynn uses video; corrected the test and all 15 now pass. No game balance or save-state changes.
 
 A direct app-level typecheck uncovered 185 diagnostics also present on clean main 244df16; normalized diagnostics match exactly after correcting two new test typings. The configured root check does not expose this existing technical debt. Physical Samsung S24 performance remains UNVERIFIED. Evidence: docs/qa/classic-locations/README.md and https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34095687365/artifacts/10008590178 . Final checkpoint changes documentation only.
+
+## 2026-09-07 — Classic material, weather and interaction-audio pass
+
+Owner requested closer fidelity to the Forge concept inside the original board frame, richer weather graphics, restored lightning/thunder and appropriate button sounds. Added generated vellum and alpha mist materials, a shared primary workplace overview with actual work preview, existing raise service and career requirements, explanatory Forge smithing, cached multi-depth precipitation and splash rendering, board-local storm strokes followed by thunder, and contextual click fallback with synchronous action-sound precedence. City geometry, original caricatures and game rules remain intact. No dependencies or save fields added.
+
+Targeted tests passed. Full validation and runtime image review are pending; see docs/qa/material-weather/README.md. Existing app-level TypeScript debt is tracked separately from the configured root type check.

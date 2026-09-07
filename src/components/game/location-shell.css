@@ -85,3 +85,58 @@
 .location-content button.w-full.text-left:hover { border-color:#946c2f; background:#f5e5bd; }
 .location-content button.w-full.text-left:focus-visible { outline:2px solid #197487; outline-offset:1px; }
 @container (max-width:460px) { .location-npc-name span { display:block; } }
+
+/* Vellum and embossed brass bring the reference into the existing frame. */
+.location-menu { background:linear-gradient(#fff9e640,#eed5a51a),url('../../assets/ui/vellum.webp') center/384px; border:3px double #936b36; box-shadow:inset 0 0 22px #79491335; }
+.location-tabs { gap:3px; padding:8px 8px 0; border-color:#a48353; background:#76502112; }
+.location-tabs button { flex:1 0 auto; justify-content:center; font-family:Georgia,serif; font-size:14px; background:linear-gradient(#fbf0d580,#c5a57055); box-shadow:inset 0 1px 2px #fff8d9; border:1px solid #a1875e; border-bottom:0; }
+.location-tabs button[aria-pressed="true"] { background:linear-gradient(#e6bb58b0,#fff2d166); box-shadow:inset 0 2px 3px #fff3ac,0 -1px 3px #7d4c3360; color:#2d200e; }
+.location-content { padding:12px; }
+.material-card { border:1px solid #b69b70; border-radius:10px; background:linear-gradient(135deg,#fffcf080,#fff5dc40); box-shadow:inset 0 1px 3px #fffbee,0 2px 4px #65371920; padding:15px; }
+.workplace-overview { font-family:Georgia,'Times New Roman',serif; }
+.workplace-intro { display:flex; align-items:center; gap:12px; margin:0 0 12px; }
+.workplace-intro h2 { font-size:clamp(21px,2.1cqw,29px); line-height:1.05; font-weight:700; margin-bottom:4px; }
+.workplace-intro p { font-size:13px; }
+.workplace-seal { display:flex; align-items:center; justify-content:center; flex-shrink:0; width:54px; height:54px; background:linear-gradient(135deg,#bda16c45,#fff6d144); border-radius:12px; color:#66441f; }
+.workplace-seal svg { width:38px; height:38px; fill:#a6804b55; stroke-width:1.8; filter:drop-shadow(1px 2px 1px #39281455); }
+.location-work { border-top:1px solid #b69b70; }
+.location-work h3 { font-size:23px; line-height:1.15; font-weight:700; }
+.workplace-numbers { display:flex; align-items:center; margin:14px 0 9px; gap:20px; }
+.workplace-numbers > span { display:flex; align-items:center; gap:7px; font-size:32px; font-weight:700; white-space:nowrap; }
+.workplace-numbers > span + span { border-left:1px solid #a98b5a; padding-left:20px; }
+.workplace-numbers svg { width:30px; height:34px; fill:#cc983f77; color:#684421; filter:drop-shadow(1px 2px 1px #6d481f44); }
+.workplace-numbers small { font-size:24px; font-weight:400; }
+.workplace-wage { font-size:12px; color:#604a30; line-height:1.4; padding-bottom:12px; border-bottom:1px solid #bfa275; }
+.location-work-outcome,.location-work-warning { margin:11px 0; text-align:center; font-size:15px; font-weight:600; }
+.location-work-button { position:relative; display:block; text-align:center; min-height:52px; border:3px double #6b4618; border-radius:8px; font-family:Georgia,serif; font-size:23px; color:#fff4cf; text-shadow:0 2px 2px #432608; background:linear-gradient(115deg,#ffea8d40,transparent 35%),linear-gradient(#e3bb57b8,#ad7219db 50%,#89510ae8),url('../../assets/ui/vellum.webp') center/260px; box-shadow:inset 0 2px 2px #fff0a5,inset 0 -2px 4px #643905,0 3px 5px #4c2c2555; }
+.location-work-button::before,.location-work-button::after { content:'•'; position:absolute; top:1px; color:#e9c56e; text-shadow:0 1px 2px #3a220a; font-size:16px; }
+.location-work-button::before { left:7px; }.location-work-button::after { right:7px; }
+.location-work-button:disabled { text-shadow:none; }
+.workplace-secondary,.workplace-career summary,.workplace-return { display:block; margin:9px auto 0; border:1px solid #8e744e; border-radius:6px; padding:10px 14px; min-height:44px; font-size:15px; text-align:center; background:linear-gradient(#fff8e966,#c5a16a40); box-shadow:inset 0 1px #fff8df,0 2px 3px #65401d33; cursor:pointer; }
+.workplace-secondary:disabled { opacity:.55; cursor:not-allowed; }
+.workplace-secondary:hover:not(:disabled),.workplace-career summary:hover { background-color:#e5c78366; }
+.workplace-help,.workplace-consequence { font-size:11px; line-height:1.5; color:#675034; text-align:center; margin:7px 0 0; }
+.workplace-career { display:flex; align-items:flex-start; gap:12px; margin-top:12px; }
+.workplace-career > div { min-width:0; flex:1; }
+.workplace-career h3 { font-size:17px; line-height:1.2; font-weight:700; }
+.workplace-career p { font-size:12px; margin-top:5px; }
+.workplace-rank { width:40px; height:50px; flex-shrink:0; color:#ddb24f; padding:3px; background:linear-gradient(135deg,#5c4b2f,#282a23); border:2px solid #ae8743; border-radius:0 0 13px 13px; filter:drop-shadow(0 2px 2px #3a271744); }
+.workplace-career summary { list-style:revert; }
+.workplace-career ul { padding:8px 0 0; }
+.workplace-career li { padding:8px 0; border-bottom:1px solid #baa27d; font-size:12px; }
+.workplace-career li span { display:block; margin-top:3px; font-size:11px; }
+.workplace-tip { display:flex; gap:8px; align-items:center; font-size:11px; color:#705b3e; margin:12px 3px 2px; }
+.workplace-tip svg { width:19px; flex-shrink:0; }
+.workplace-return { flex-shrink:0; margin:4px 8px 8px; font-family:Georgia,serif; font-weight:700; }
+.forge-empty { text-align:center; padding:20px 16px; }
+.forge-empty .workplace-seal { margin:0 auto 12px; width:68px; height:68px; }
+.forge-empty h3 { font:bold 22px/1.15 Georgia,serif; margin-bottom:10px; }
+.forge-empty p { font:14px/1.5 Georgia,serif; }
+.forge-bonuses { display:flex; justify-content:center; gap:20px; border-top:1px solid #c1a779; border-bottom:1px solid #c1a779; margin:14px 0; padding:10px; font:13px Georgia,serif; }
+.forge-bonuses b { display:block; margin-top:5px; font-size:20px; color:#634019; }
+.forge-empty p.workplace-help { font-size:12px; }
+.location-content button.w-full.text-left { padding:10px 12px; border:1px solid #b49767; background:linear-gradient(110deg,#fff7e680,#d7b67435); box-shadow:inset 0 1px #fff9e2,0 2px 3px #60401f22; }
+.location-content button.w-full.text-left:disabled { cursor:not-allowed; opacity:.5; }
+.location-content button:focus-visible,.workplace-career summary:focus-visible { outline:3px solid #197487; outline-offset:2px; }
+@container (max-width:560px) { .material-card { padding:12px; }.workplace-numbers { gap:12px; }.workplace-numbers > span { font-size:28px; }.workplace-numbers > span + span { padding-left:12px; }.location-tabs button { font-size:12px; padding:9px 8px; } }
+@container (max-height:320px) { .workplace-intro h2 { font-size:20px; }.workplace-intro { gap:8px; }.workplace-seal { width:40px; height:40px; }.location-work h3 { font-size:20px; }.workplace-numbers { margin:9px 0; } }

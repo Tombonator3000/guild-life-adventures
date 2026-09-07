@@ -20,7 +20,7 @@ import type { SetFn, GetFn } from '../storeTypes';
 const WORK_EFFICIENCY_BONUS = 1.15;
 
 /** Minimum shifts worked at current job before a raise can be requested */
-const MIN_SHIFTS_FOR_RAISE = 3;
+export const MIN_SHIFTS_FOR_RAISE = 3;
 
 /** Base probability of a raise request succeeding (before dependability modifier) */
 const RAISE_BASE_CHANCE = 0.4;
@@ -41,7 +41,7 @@ const MAX_BONUS_SHIFTS = 10;
 const RAISE_AMOUNT_PERCENT = 0.15;
 
 /** Maximum wage allowed, expressed as a multiple of the job's base wage */
-const MAX_WAGE_MULTIPLIER = 3;
+export const MAX_WAGE_MULTIPLIER = 3;
 
 /** Fraction of wages garnished per week when rent is 4+ weeks overdue */
 const RENT_GARNISHMENT_RATE = 0.5;
