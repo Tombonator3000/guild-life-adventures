@@ -58,7 +58,7 @@ function serviceSound(location: LocationId, tab: string | undefined): SFXId {
 }
 
 function tabIcon(id: string) {
-  if (/work|employment/.test(id)) return <Briefcase />;
+  if (/work|employment|your-shift/.test(id)) return <Briefcase />;
   if (/repair|smith|salvage/.test(id)) return <Hammer />;
   if (/course|library|scholar/.test(id)) return <BookOpen />;
   if (/quest|bount/.test(id)) return <ScrollText />;

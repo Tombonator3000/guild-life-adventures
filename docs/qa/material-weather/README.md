@@ -26,3 +26,13 @@ Targeted unit tests pass for thunder timing/cancellation, no gameplay RNG use, c
 `e2e/material-weather.spec.ts` hires a Forge Laborer via the real Guild Hall menu, works three shifts, requests a raise, inspects careers and smithing, visits storm/snow/fog/rain, checks the thunder audio source, and works at phone viewport sizes. `e2e/classic-locations.spec.ts` still visits all ten workplaces and exercises banking.
 
 Runtime capture review and final CI results pending at this initial checkpoint. The baseline has 185 pre-existing application TypeScript diagnostics that the configured root check does not expose; changes must add none.
+
+## First runtime review (f49c45b)
+
+- Actual desktop and phone captures preserve the city geometry, central frame and caricatures. Vellum, raised gold CTA and explanatory smithing are visible.
+- The work card was too tall at the existing desktop frame size: clicking the CTA scrolled the job introduction out of view. Removed the redundant heading, tightened spacing and retained the readable CTA. Raise and career details remain available by scrolling.
+- Storm precipitation was too subtle against the bright town. Increased streak body/contrast and storm shade; fog already shows textured banks without covering controls.
+- CI passed 724 unit tests, build, root types, lint and audio integrity. Three browser journeys failed: old Work Shift accessible-name selector, old SVG particle selector, and ambiguity between Forge employer and debug teleport. Updated the tests to the actual controls. Also moved the tutorial highlight target and wording onto the new Work button.
+- Audio follow-up: one error listener per reused pool slot, intentional interruption does not mark a file bad, procedural sounds share the gesture-unlocked AudioContext, and audio noise has its own random stream. Dedicated tests cover listener bounds and thunder-noise independence.
+
+Final runtime review pending after these corrections.

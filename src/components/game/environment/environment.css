@@ -2,7 +2,7 @@
 .board-environment *, .board-atmosphere, .weather-overlay { pointer-events: none; }
 .board-atmosphere, .weather-overlay, .weather-particles, .weather-tint { position: absolute; inset: 0; width: 100%; height: 100%; }
 .board-atmosphere { z-index: 1; }
-.weather-tint-rain { background: linear-gradient(145deg, #172b4940, #1e344514); }
+.weather-tint-rain { background: linear-gradient(145deg, #13264166, #152d4b33); }
 .weather-tint-light-rain { background: linear-gradient(145deg, #607e9020, #72988510); }
 .weather-tint-snow { background: linear-gradient(160deg, #c9def536, #c4d1de10); }
 .weather-tint-fog { background: linear-gradient(130deg, #b3a6d52b, #ccd0d518); }

@@ -21,6 +21,17 @@ describe('interaction feedback', () => {
     expect(play).toHaveBeenCalledTimes(2);
     expect(play).toHaveBeenLastCalledWith('work-complete');
   });
+  it('recycles file-audio listeners without accumulating handlers on rapid clicks', () => {
+    vi.spyOn(HTMLMediaElement.prototype,'pause').mockImplementation(() => {});
+    vi.spyOn(HTMLMediaElement.prototype,'play').mockResolvedValue();
+    const add=vi.spyOn(HTMLMediaElement.prototype,'addEventListener');
+    const remove=vi.spyOn(HTMLMediaElement.prototype,'removeEventListener');
+    for(let i=0;i<24;i++) sfxManager.play('button-click');
+    const added=add.mock.calls.filter(call => call[0]==='error').length;
+    const removed=remove.mock.calls.filter(call => call[0]==='error').length;
+    expect(added).toBe(24);
+    expect(added-removed).toBeLessThanOrEqual(8);
+  });
   it('routes synthesized contextual feedback through the existing mute and volume settings', () => {
     vi.mocked(playSynthSFX).mockClear();
     sfxManager.setVolume(.2); sfxManager.setMuted(true); sfxManager.play('study');

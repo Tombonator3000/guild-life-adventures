@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import type { WeatherParticle } from '@/data/weather';
 
-export function particleBudget(particle: WeatherParticle, mobile: boolean) {
-  return particle === 'rain' ? (mobile ? 100 : 230) : particle === 'light-rain' ? (mobile ? 45 : 95) : (mobile ? 45 : 100);
+function particleBudget(particle: WeatherParticle, mobile: boolean) {
+  return particle === 'rain' ? (mobile ? 120 : 300) : particle === 'light-rain' ? (mobile ? 45 : 95) : (mobile ? 45 : 100);
 }
 
 // Independent, repeatable decorative seeds; never draw from the game's RNG.
@@ -27,8 +27,8 @@ export function WeatherParticles({ particle, isMobile }: { particle: WeatherPart
       paint.fillStyle=glow; paint.fillRect(0,0,32,32);
     } else {
       const trail = paint.createLinearGradient(0,0,0,96);
-      trail.addColorStop(0,'#c5def500'); trail.addColorStop(.7,'#d4e8f866'); trail.addColorStop(.93,'#e6f4ffd0'); trail.addColorStop(1,'#d4e8f800');
-      paint.fillStyle=trail; paint.beginPath(); paint.ellipse(16,48,3,47,0,0,Math.PI*2); paint.fill();
+      trail.addColorStop(0,'#c5def500'); trail.addColorStop(.7,'#d4e8f8aa'); trail.addColorStop(.93,'#e6f4ffd0'); trail.addColorStop(1,'#d4e8f800');
+      paint.fillStyle=trail; paint.beginPath(); paint.ellipse(16,48,4.5,47,0,0,Math.PI*2); paint.fill();
     }
     let width=1, height=1, frame=0, last=0, elapsed=0;
     const resize = () => {

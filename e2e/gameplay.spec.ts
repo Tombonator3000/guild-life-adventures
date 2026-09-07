@@ -43,7 +43,7 @@ test('completes the guided first turn through real game actions', async ({ page 
   await page.getByRole('button', { name: 'Accept Job', exact: true }).click();
 
   await expect(page.getByText('3. Work One Full Shift')).toBeVisible();
-  await page.getByRole('button', { name: /work shift/i }).click();
+  await page.getByRole('button', { name: /work \d+ hours/i }).click();
   await expect(page.getByText('4. Buy Food for the Week')).toBeVisible();
 
   await page.locator('[data-zone-id="general-store"]').click();

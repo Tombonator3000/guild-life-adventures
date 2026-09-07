@@ -21,7 +21,7 @@ test('forge work, tactile menus, weather pixels and storm audio stay inside the 
   if (await page.evaluate(() => !!document.fullscreenElement)) await page.keyboard.press('f');
   await page.getByRole('button',{name:/^dev$/i}).click();
   await page.getByTitle('Guild Hall',{exact:true}).click();
-  await page.getByRole('button',{name:'Forge',exact:true}).click();
+  await page.locator('.location-shell').getByRole('button',{name:'Forge',exact:true}).click();
   await page.getByRole('button',{name:'Apply',exact:true}).first().click();
   await page.getByRole('button',{name:'Accept Job',exact:true}).click();
   await page.getByTitle('The Forge',{exact:true}).click();
