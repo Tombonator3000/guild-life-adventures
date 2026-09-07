@@ -1,5 +1,5 @@
 /* The board, central frame and original character artwork remain unchanged. */
-.location-shell { height:100%; min-height:0; display:flex; flex-direction:column; container-type:inline-size; background:#f0e6d2; color:#382719; }
+.location-shell { height:100%; min-height:0; display:flex; flex-direction:column; container-type:size; background:#f0e6d2; color:#382719; }
 .location-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-shrink:0; padding:9px 12px; background:linear-gradient(110deg,var(--location-dark),var(--location-frame)); color:#fff1d4; border-bottom:2px solid #b69557; box-shadow:0 2px 5px #24140855; z-index:1; }
 .location-heading > :first-child { font-size:16px; font-weight:700; letter-spacing:.035em; }
 .location-heading > :last-child { font-size:11px; color:#f6e5c9; text-align:right; }
@@ -62,3 +62,20 @@
 .location-content .font-mono > span:first-child { white-space:normal; min-width:0; }
 .location-content button { min-height:36px; }
 @container (max-width:460px) { .location-content button { min-height:44px; } .location-item-preview { display:none; } }
+
+/* A landscape phone has a shallow central frame. Scroll services and work
+   together so neither can consume all the available menu height. */
+@container (max-height:320px) {
+  .location-body { grid-template-columns:32% minmax(0,1fr); grid-template-rows:minmax(0,1fr); }
+  .location-heading { padding:5px 8px; }
+  .location-heading > :first-child { font-size:13px; }
+  .location-heading > :last-child { font-size:10px; }
+  .location-menu { display:block; overflow-y:auto; scrollbar-width:thin; }
+  .location-content { overflow:visible; }
+  .location-scene { border-right:1px solid #ad8c55; border-bottom:0; }
+  .location-scene-portrait { inset:0 -8% -15%; mask-image:linear-gradient(to bottom,transparent,#000 12%,#000); }
+  .location-npc-name { width:100%; padding:5px; text-align:center; background:#21140bb3; }
+  .location-npc-name strong { display:block; margin:0; font-size:13px; }
+  .location-npc-name span { font-size:10px; }
+  .location-greeting { display:none; }
+}
