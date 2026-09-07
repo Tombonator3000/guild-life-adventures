@@ -42,3 +42,20 @@ Final runtime review pending after these corrections.
 All 726 unit tests and 16 browser journeys passed in run 34100535135; build, lint (27 inherited warnings), configured types and 42-file audio audit passed. The 185 app-level type diagnostics still exactly match the baseline. Actual Forge desktop, both phone orientations and storm captures were inspected. The work CTA and job introduction now fit the desktop viewport; storm rain and branching lightning are visibly present below the center controls.
 
 One visual issue remained despite passing tests: opening Smithing after scrolling through careers preserved the previous tab's scroll position and hid its heading. Added scroll reset on service/location change for both desktop and shallow-phone scroll owners, and strengthened the browser journey to require the Smithing heading and initial Work CTA inside the viewport. Final confirmation pending for this correction.
+
+## Verified delivery
+
+Runtime revision: `f6df4f150df4e164e257cebad888586d1d4404eb`.
+CI: https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34101125049
+Runtime captures: https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34101125049/artifacts/10010635532
+
+| Gate | Result | Evidence / limit |
+| --- | --- | --- |
+| Behavior | PASS | 16 browser journeys, including hiring at Guild Hall, working at Forge, requesting a raise, career details, tutorial, banking, mobile actions and storm audio |
+| Visual | PASS | Inspected final Forge work/Smithing/storm captures; original map/frame/Korr remain, primary work values and CTA fit, service heading returns to the top |
+| Regressions | PASS | 726 unit tests / 89 files, production build, configured root types, lint (27 inherited warnings), audio audit |
+| Application types | Inherited failure | Explicit app config still produces the same 185 baseline diagnostics; none added |
+| Device performance | UNVERIFIED | No physical phone benchmark or speaker-balance audition; headless viewport tests are not hardware evidence |
+| Delivery | PASS | Reviewable PR #407; no merge or deployment performed |
+
+The reference's tall menu is adapted to the owner's fixed center frame. Raise/career details and longer services use scrolling, particularly on shallow phones; the frame was not enlarged to fit a promotional composition. All source/asset changes were verified at the runtime revision above. The following documentation-only checkpoint records these results.
