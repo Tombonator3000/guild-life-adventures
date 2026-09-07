@@ -1,3 +1,4 @@
+import { EnvironmentControl } from '@/components/game/environment/EnvironmentControl';
 /**
  * OptionsMenu — Full-screen options modal with tabbed categories.
  * Used from both TitleScreen and in-game (SaveLoadMenu).
@@ -71,6 +72,7 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
           {tabs.map((tab) => (
             <button
               key={tab.id}
+              aria-label={tab.label}
               onClick={() => setActiveTab(tab.id)}
               className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-t font-display text-xs transition-colors ${
                 activeTab === tab.id
@@ -528,6 +530,8 @@ function DisplayTab({
   return (
     <div className="space-y-4">
       <SectionHeader title={t('optionsMenu.interface')} />
+
+      <EnvironmentControl />
 
       {/* Text Size */}
       <OptionRow

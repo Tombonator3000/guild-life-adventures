@@ -5,6 +5,8 @@
 
 const STORAGE_KEY = 'guild-life-options';
 
+export type EnvironmentDetail = 'full' | 'reduced' | 'off';
+
 export type BorderStyle = 'stone' | 'leather' | 'wood' | 'iron' | 'parchment' | 'none';
 export type TextSize = 'small' | 'medium' | 'large' | 'x-large';
 
@@ -17,6 +19,7 @@ export interface GameOptions {
   enableHexesCurses: boolean;  // Dark magic sabotage: hex locations, curse opponents, destroy equipment
 
   // === Display ===
+  environmentDetail: EnvironmentDetail; // Local visual preference; never changes weather rules
   showEventAnimations: boolean; // Animate event popups
   compactUI: boolean;          // Use compact stat displays
   showTurnNotifications: boolean; // Show turn-change notifications
@@ -45,6 +48,7 @@ const DEFAULT_OPTIONS: GameOptions = {
   enableHexesCurses: false,     // Off by default — opt-in rivalry feature
 
   // Display
+  environmentDetail: 'full',
   showEventAnimations: true,
   compactUI: false,
   showTurnNotifications: true,

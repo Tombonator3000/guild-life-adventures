@@ -14276,3 +14276,15 @@ Fixed 20 findings from AUDIT-2026-02-12.md across all severity levels. Removed t
 ### Build & Tests
 - TypeScript: compiles cleanly (tsc --noEmit)
 - Tests: 176/176 pass
+
+## 2026-09-07T06:26Z - Gauntlet: Living Guildholm
+
+- Inspected current main and matching Lovable revision f6f1aa7, existing weather, crows, festivals, controls and release workflow.
+- Added artwork-anchored chimney smoke, leaves, passing birds, forge embers and warm/magical lights. Weather suppresses birds during storms and leaves during snow.
+- Replaced overlapping weather particles/window droplets/full-screen lightning with deterministic board-space precipitation and restrained tints. Environment now stays behind controls.
+- Fixed bad-weather travel tooltip off-by-one and inaccessible mobile options tab names.
+- Added local Full/Calm/Off environment preference, system reduced-motion response and hidden-tab animation pause.
+- Added regression tests and weather/mobile screenshot journeys; CI preserves successful browser artifacts.
+- See docs/qa/living-guildholm/README.md for acceptance criteria, evidence and remaining validation. X article could not be read in full; no claims attributed to unread content.
+
+- Final review: festival particles also use deterministic decoration samples so toggling environment cannot advance gameplay randomness.

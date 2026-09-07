@@ -25,6 +25,19 @@ const visual = (text: string): ChangelogEntry => ({ icon: <Palette className={`$
 
 const CHANGELOG: Version[] = [
   {
+    version: 'v0.11.1',
+    date: 'September 7, 2026',
+    title: 'Living Guildholm',
+    highlights: [
+      visual('Chimney smoke, drifting leaves, passing birds, forge embers and warm or magical lights bring the illustrated town to life'),
+      visual('Weather now scales with the board and stays behind action panels, tokens and tooltips'),
+      improve('Choose Full, Calm or Off under Living environment; reduced motion is respected and hidden tabs pause ambient animation'),
+      improve('Mobile uses fewer weather particles; storms shelter the birds'),
+      fix('Bad-weather travel tooltips no longer count the starting location as an extra hour'),
+      fix('Display and other options tabs now have accessible names on mobile'),
+    ],
+  },
+  {
   version: 'v0.10.3',
   date: 'July 26, 2026',
   title: 'Phase 16Y: Audited Audio Integrity',
