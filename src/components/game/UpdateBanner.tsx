@@ -7,15 +7,15 @@ export function UpdateBanner() {
   if (!needRefresh) return null;
 
   return (
-    <div className="fixed left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-4 fade-in duration-300" style={{ bottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+    <div role="status" aria-live="polite" className="fixed max-w-[calc(100vw-1rem)] left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-4 fade-in duration-300" style={{ bottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
       <div className="parchment-panel px-5 py-3 flex items-center gap-3 shadow-lg border-2 border-primary/50">
         <RefreshCw className="w-5 h-5 text-primary animate-spin" style={{ animationDuration: '3s' }} />
         <div className="flex flex-col">
           <span className="font-display text-sm text-card-foreground font-bold">
             A new version is available!
           </span>
-          <span className="text-[10px] text-muted-foreground">
-            Click to update and see latest features
+          <span className="text-[11px] text-card-foreground">
+            Your local game is saved before reloading
           </span>
         </div>
         <button

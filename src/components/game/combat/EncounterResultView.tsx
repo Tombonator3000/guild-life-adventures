@@ -12,10 +12,14 @@ import {
 } from 'lucide-react';
 import type { EncounterResult } from '@/data/combatResolver';
 import { getEncounterIcon } from '@/data/combatResolver';
+import { getEncounterImage } from '@/assets/encounters';
 import { HealthBar } from './HealthBar';
 
 interface EncounterResultViewProps {
   result: EncounterResult;
+  encounterIndex: number;
+  totalEncounters: number;
+  totalGold: number;
   currentHealth: number;
   maxHealth: number;
   canRetreat: boolean;
@@ -27,7 +31,7 @@ interface EncounterResultViewProps {
 }
 
 export function EncounterResultView({
-  result,
+  result, encounterIndex, totalEncounters, totalGold,
   currentHealth,
   maxHealth,
   canRetreat,
@@ -41,15 +45,14 @@ export function EncounterResultView({
   const icon = getEncounterIcon(enc.type);
 
   return (
-    <div className="space-y-3 animate-in fade-in duration-300">
-      {/* Result header */}
-      <div className="text-center">
-        <div className="text-3xl mb-1">{icon}</div>
-        <h3 className="font-display text-lg text-[#e0d4b8]">{enc.name}</h3>
+    <section className="cave-result" aria-label="Encounter outcome" aria-live="polite">
+      <div className="cave-result-heading">
+        {getEncounterImage(enc.id) ? <img src={getEncounterImage(enc.id)} alt="" /> : <span>{icon}</span>}
+        <div><p className="cave-eyebrow">Encounter {encounterIndex + 1} of {totalEncounters} · resolved</p><h3>{enc.name}</h3><p>{enc.type === 'combat' || enc.type === 'boss' ? 'You survived the encounter.' : enc.type === 'healing' ? 'Spring visited.' : enc.type === 'treasure' ? 'Treasure collected.' : result.disarmed ? 'Trap safely disarmed.' : 'You passed the trap.'}</p></div>
       </div>
-
       {/* Result details */}
-      <div className="bg-[#1a1308] border border-[#8b7355]/40 rounded-lg p-3 space-y-2">
+      <div className="cave-result-ledger">
+        <div className="cave-result-total">This encounter: <strong>+{result.goldEarned}g</strong> · Run purse: <strong>{totalGold}g</strong></div>
         {/* Damage taken */}
         {result.damageDealt > 0 && (
           <div className="flex items-center gap-2 text-sm">
@@ -115,7 +118,7 @@ export function EncounterResultView({
       {currentHealth <= maxHealth * 0.3 && currentHealth > 0 && (
         <div className="flex items-center gap-2 text-xs text-orange-400 bg-orange-950/30 border border-orange-800/30 rounded p-2">
           <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-          <span>Health is low. Consider retreating to keep your gold.</span>
+          <span>Health is low. Retreat keeps half your run earnings.</span>
         </div>
       )}
 
@@ -127,8 +130,9 @@ export function EncounterResultView({
           : 'Not enough time to continue'}
       </div>
 
+      {!canRetreat && hasEnoughTime && <p className="cave-hint">The boss blocks your escape. Retreat is unavailable here.</p>}
       {/* Action buttons */}
-      <div className="flex gap-2">
+      <div className="cave-actions">
         {hasEnoughTime ? (
           <button
             className="flex-1 py-2 px-3 text-sm font-display rounded-lg bg-gradient-to-r from-amber-800 to-amber-700 hover:from-amber-700 hover:to-amber-600 text-[#e0d4b8] border border-amber-600/50 transition-all"
@@ -157,11 +161,11 @@ export function EncounterResultView({
           >
             <span className="flex items-center justify-center gap-1.5">
               <RotateCcw className="w-3.5 h-3.5" />
-              Retreat
+              Retreat · keep {Math.floor(totalGold * 0.5)}g
             </span>
           </button>
         )}
       </div>
-    </div>
+    </section>
   );
 }

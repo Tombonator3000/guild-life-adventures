@@ -25,6 +25,15 @@ const visual = (text: string): ChangelogEntry => ({ icon: <Palette className={`$
 
 const CHANGELOG: Version[] = [
   {
+    version: 'v0.11.4', date: 'September 7, 2026', title: 'Turn pages, explore clearly',
+    highlights: [
+      visual('Location services wrap into rows. Long menus use Previous and Next pages inside the classic frame.'),
+      improve('The Cave separates planning, equipment and records; woodcut encounter cards show clearer outcomes, health, loot and retreat costs.'),
+      fix('Blood Moon no longer draws healing springs. Existing blocked springs explain why they cannot heal.'),
+      fix('A shared update monitor checks on focus, reconnect and every minute; updating saves the current local game before reloading.'),
+    ],
+  },
+  {
     version: 'v0.11.3',
     date: 'September 7, 2026',
     title: 'Vellum, brass and rolling thunder',

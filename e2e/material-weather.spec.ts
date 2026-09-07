@@ -1,4 +1,5 @@
 import { expect, test } from './test';
+import { openMenuPage } from './menuPages';
 
 test('forge work, tactile menus, weather pixels and storm audio stay inside the classic board', async ({page},testInfo) => {
   test.setTimeout(90_000);
@@ -21,6 +22,7 @@ test('forge work, tactile menus, weather pixels and storm audio stay inside the 
   if (await page.evaluate(() => !!document.fullscreenElement)) await page.keyboard.press('f');
   await page.getByRole('button',{name:/^dev$/i}).click();
   await page.getByTitle('Guild Hall',{exact:true}).click();
+  await openMenuPage(page,page.locator('.location-shell').getByRole('button',{name:'Forge',exact:true}));
   await page.locator('.location-shell').getByRole('button',{name:'Forge',exact:true}).click();
   await page.getByRole('button',{name:'Apply',exact:true}).first().click();
   await page.getByRole('button',{name:'Accept Job',exact:true}).click();
@@ -36,6 +38,7 @@ test('forge work, tactile menus, weather pixels and storm audio stay inside the 
   await expect(shell.getByRole('button',{name:/Ask for a raise/})).toBeEnabled();
   await shell.getByRole('button',{name:/Ask for a raise/}).click();
   await expect(shell.getByRole('button',{name:/Ask for a raise/})).toBeDisabled();
+  await openMenuPage(page,shell.getByText('View career path',{exact:true}));
   await shell.getByText('View career path',{exact:true}).click();
   await expect(shell.getByText('Apprentice Smith',{exact:true})).toBeVisible();
   await shell.getByRole('button',{name:'Smithing',exact:true}).click();
@@ -61,7 +64,7 @@ test('forge work, tactile menus, weather pixels and storm audio stay inside the 
   await page.getByRole('button',{name:'Clear',exact:true}).click();
   for(const [width,height] of [[844,390],[390,844]]) {
     await page.setViewportSize({width,height});
-    await shell.locator('.location-work-button').scrollIntoViewIfNeeded();
+    await openMenuPage(page,shell.locator('.location-work-button'));
     await expect(shell.locator('.location-work-button')).toBeInViewport();
     await shell.locator('.location-work-button').click();
     await page.screenshot({path:testInfo.outputPath(`forge-work-${width}.png`)});

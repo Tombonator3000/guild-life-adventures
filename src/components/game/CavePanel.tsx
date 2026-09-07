@@ -4,7 +4,6 @@ import {
   Sparkles,
   Lock,
   CheckCircle,
-  ChevronRight,
   ChevronDown,
   Clock,
   Skull,
@@ -24,11 +23,9 @@ import {
   checkFloorRequirements,
   getDungeonProgress,
   calculateEducationBonuses,
-  getFloorTimeCost,
   getEncounterTimeCost,
   MAX_FLOOR_ATTEMPTS_PER_TURN,
   MAX_DUNGEON_FLOOR,
-  updateDungeonRecord,
   type DungeonFloor,
 } from '@/data/dungeon';
 import { CombatView, type CombatRunResult } from './CombatView';
@@ -37,18 +34,6 @@ import type { EquipmentDurabilityLoss } from '@/data/combatResolver';
 interface CavePanelProps {
   player: Player;
 }
-
-// ─── Degree ID to display name ───────────────────────────────────
-
-const DEGREE_NAMES: Record<string, string> = {
-  'trade-guild': 'Trade Guild',
-  'combat-training': 'Combat Training',
-  'master-combat': 'Master Combat',
-  'arcane-studies': 'Arcane Studies',
-  alchemy: 'Alchemy',
-  scholar: 'Scholar',
-  loremaster: 'Loremaster',
-};
 
 // ─── Floor status ────────────────────────────────────────────────
 
@@ -132,209 +117,6 @@ function showCombatOutcomeToast(result: CombatRunResult, floor: DungeonFloor): v
       { duration: 5000 },
     );
   }
-}
-
-// ─── Floor card (expanded details + enter button) ───────────────
-
-interface FloorCardProps {
-  floor: DungeonFloor;
-  player: Player;
-  combatStats: ReturnType<typeof calculateCombatStats>;
-  attemptsRemaining: number;
-  dungeonRecords: Record<number, { bestGold: number; runs: number; totalGold: number }>;
-  expandedFloor: number | null;
-  setExpandedFloor: (id: number | null) => void;
-  onEnterFloor: (floor: DungeonFloor) => void;
-}
-
-function FloorCard({
-  floor, player, combatStats, attemptsRemaining,
-  dungeonRecords, expandedFloor, setExpandedFloor, onEnterFloor,
-}: FloorCardProps) {
-  const status = getFloorStatus(floor, player.dungeonFloorsCleared);
-  const isExpanded = expandedFloor === floor.id;
-  const reqCheck = checkFloorRequirements(
-    floor, player.dungeonFloorsCleared,
-    player.equippedWeapon, player.equippedArmor,
-    combatStats, player.completedDegrees,
-  );
-  const totalTimeCost = getFloorTimeCost(floor, combatStats);
-  const encounterTime = getEncounterTimeCost(floor, combatStats);
-  const canAttempt =
-    status !== 'locked' &&
-    reqCheck.canEnter &&
-    player.timeRemaining >= encounterTime &&
-    player.health > 10 &&
-    attemptsRemaining > 0;
-
-  const borderColor =
-    status === 'cleared'
-      ? 'border-l-green-600'
-      : status === 'available'
-        ? reqCheck.canEnter
-          ? 'border-l-amber-500'
-          : 'border-l-red-800'
-        : 'border-l-gray-700';
-
-  const bgColor =
-    status === 'cleared'
-      ? 'bg-green-950'
-      : status === 'locked'
-        ? 'bg-gray-900'
-        : 'bg-[#2d1f0f]';
-
-  const isUltraEndgame = floor.id === 6;
-
-  return (
-    <div
-      className={`border border-[#8b7355] ${borderColor} border-l-4 rounded ${bgColor} ${isUltraEndgame ? 'ring-1 ring-amber-500/30' : ''}`}
-    >
-      {/* Floor header — clickable */}
-      <button
-        className="w-full flex items-center gap-2 p-2 text-left hover:bg-white/5 transition-colors"
-        onClick={() => setExpandedFloor(isExpanded ? null : floor.id)}
-      >
-        {isExpanded ? (
-          <ChevronDown className="w-3.5 h-3.5 text-[#8b7355] flex-shrink-0" />
-        ) : (
-          <ChevronRight className="w-3.5 h-3.5 text-[#8b7355] flex-shrink-0" />
-        )}
-        <span className={`text-xs font-mono w-5 ${isUltraEndgame ? 'text-amber-400' : 'text-[#8b7355]'}`}>
-          F{floor.id}
-        </span>
-        <span className={`text-sm flex-1 truncate ${isUltraEndgame ? 'text-amber-300 font-display' : 'text-[#e0d4b8]'}`}>
-          {floor.name}
-        </span>
-
-        {/* Status icon */}
-        {status === 'cleared' && (
-          <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-        )}
-        {status === 'available' && reqCheck.canEnter && (
-          <span className="text-amber-400 text-sm flex-shrink-0">⚔</span>
-        )}
-        {status === 'available' && !reqCheck.canEnter && (
-          <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
-        )}
-        {status === 'locked' && (
-          <Lock className="w-4 h-4 text-gray-600 flex-shrink-0" />
-        )}
-      </button>
-
-      {/* Expanded details */}
-      {isExpanded && (
-        <div className="px-3 pb-3 space-y-2 border-t border-[#8b7355]/30">
-          <p className="text-sm text-[#a09080] mt-2 italic">{floor.description}</p>
-
-          {/* Stats row */}
-          <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-mono">
-            <span className="text-[#a09080] flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" /> {encounterTime}h/enc ({totalTimeCost}h total)
-            </span>
-            <span className="text-[#c9a227]">
-              💰 {floor.goldRange[0]}-{floor.goldRange[1]}g
-            </span>
-            <span className="text-red-400 flex items-center gap-1">
-              <Heart className="w-3.5 h-3.5" /> {floor.healthRisk[0]}-{floor.healthRisk[1]} dmg
-            </span>
-          </div>
-
-          {/* Boss info */}
-          <div className="text-sm flex items-center gap-1.5">
-            <Skull className="w-4 h-4 text-red-600" />
-            <span className="text-red-300">Boss: {floor.boss.name}</span>
-            <span className="text-[#8b7355]">(Power {floor.boss.basePower})</span>
-          </div>
-
-          {/* Rare drop hint */}
-          <div className="text-sm text-[#8b7355]">
-            ✦ Rare Drop:{' '}
-            {player.dungeonFloorsCleared.includes(floor.id) ? floor.rareDrop.name : '???'} (5%)
-          </div>
-
-          {/* Re-run mini-boss hint */}
-          {player.dungeonFloorsCleared.includes(floor.id) && (
-            <div className="text-sm text-amber-600">
-              ★ 15% chance of wandering mini-boss on re-runs
-            </div>
-          )}
-
-          {/* Dungeon modifier info */}
-          <div className="text-sm text-[#8b7355]">
-            ⚡ Random modifier may apply (60% chance per run)
-          </div>
-
-          {/* Requirements check */}
-          {status === 'available' && (
-            <div className="space-y-0.5">
-              {reqCheck.canEnter ? (
-                <div className="text-sm text-green-400">✓ All requirements met</div>
-              ) : (
-                reqCheck.reasons.map((reason, i) => (
-                  <div key={i} className="text-sm text-red-400">✗ {reason}</div>
-                ))
-              )}
-              {floor.requirements.recommendedDegrees.length > 0 && (
-                <div className="text-sm text-[#8b7355]">
-                  Recommended:{' '}
-                  {floor.requirements.recommendedDegrees
-                    .map((d) => DEGREE_NAMES[d] || d)
-                    .join(', ')}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Cleared badge */}
-          {status === 'cleared' && (
-            <div className="text-sm text-green-400">✓ Floor cleared! Run again for gold.</div>
-          )}
-
-          {/* Personal best */}
-          {dungeonRecords[floor.id] && (
-            <div className="text-sm text-[#c9a227] flex items-center gap-1">
-              <Trophy className="w-3.5 h-3.5" />
-              Best: {dungeonRecords[floor.id].bestGold}g | Runs: {dungeonRecords[floor.id].runs} | Total: {dungeonRecords[floor.id].totalGold}g
-            </div>
-          )}
-
-          {/* Enter / Re-enter button */}
-          {status !== 'locked' && (
-            <button
-              className={
-                'w-full py-1.5 px-3 text-sm font-display rounded ' +
-                'bg-gradient-to-r from-amber-800 to-amber-700 ' +
-                'hover:from-amber-700 hover:to-amber-600 ' +
-                'disabled:opacity-40 disabled:cursor-not-allowed ' +
-                'text-[#e0d4b8] border border-amber-600/50 transition-all'
-              }
-              disabled={!canAttempt}
-              onClick={() => onEnterFloor(floor)}
-            >
-              {canAttempt
-                ? status === 'cleared'
-                  ? `Re-enter Floor ${floor.id}`
-                  : `Enter Floor ${floor.id}`
-                : attemptsRemaining <= 0
-                  ? 'Too fatigued (max attempts)'
-                  : !reqCheck.canEnter
-                    ? 'Requirements not met'
-                    : player.timeRemaining < encounterTime
-                      ? 'Not enough time'
-                      : 'Too injured'}
-            </button>
-          )}
-
-          {/* Locked message */}
-          {status === 'locked' && (
-            <div className="text-xs text-gray-400 text-center py-1">
-              Clear Floor {floor.requirements.previousFloorCleared} to unlock
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
 }
 
 // ─── E4: Post-combat loot summary panel ─────────────────────────
@@ -428,7 +210,8 @@ function CombatResultPanel({ result, floor, onDismiss }: CombatResultPanelProps)
 
 export function CavePanel({ player }: CavePanelProps) {
   const { t } = useTranslation();
-  const [expandedFloor, setExpandedFloor] = useState<number | null>(null);
+  const [expandedFloor, setExpandedFloor] = useState<number | null>(1);
+  const [section, setSection] = useState<'explore' | 'equipment' | 'records'>('explore');
   const [activeFloor, setActiveFloor] = useState<DungeonFloor | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   // E4: post-combat result summary
@@ -446,7 +229,6 @@ export function CavePanel({ player }: CavePanelProps) {
   );
   const eduBonuses = calculateEducationBonuses(player.completedDegrees);
   const progress = getDungeonProgress(player.dungeonFloorsCleared);
-  const progressPct = (progress.totalFloorsCleared / MAX_DUNGEON_FLOOR) * 100;
 
   const hasAnyBonus =
     eduBonuses.canDisarmTraps ||
@@ -569,49 +351,49 @@ export function CavePanel({ player }: CavePanelProps) {
     );
   }
 
-  // ─── Floor selection view ──────────────────────────────────
-
-  return (
-    <div className="space-y-3 bg-[#1a110a] rounded p-2">
-      {/* Header */}
-      <div>
-        <h4 className="font-display text-lg text-[#c9b888] flex items-center gap-2">
-          <Sparkles className="w-5 h-5" /> {t('panelCave.dungeonFloors')}
-        </h4>
-        <p className="text-sm text-[#c9b888] mt-1">
-          {t('panelCave.enterDungeon')}
-        </p>
+  const selectedFloor = DUNGEON_FLOORS.find(f => f.id === expandedFloor) ?? DUNGEON_FLOORS[0];
+  const requirements = checkFloorRequirements(selectedFloor, player.dungeonFloorsCleared, player.equippedWeapon, player.equippedArmor, combatStats, player.completedDegrees);
+  const entryTime = getEncounterTimeCost(selectedFloor, combatStats);
+  const reason = attemptsRemaining <= 0 ? 'No runs left this week.' : !requirements.canEnter ? requirements.reasons.join(' · ') : player.health <= 10 ? 'Recover above 10 HP before entering.' : player.timeRemaining < entryTime ? `You need ${entryTime} hours to enter.` : null;
+  return <div className="cave-lobby">
+    <nav className="cave-lobby-tabs" aria-label="Cave planning">
+      {(['explore', 'equipment', 'records'] as const).map(tab => <button key={tab} aria-pressed={section === tab} onClick={() => setSection(tab)}>{tab === 'explore' ? 'Explore' : tab === 'equipment' ? 'Prepare gear' : 'Run records'}</button>)}
+    </nav>
+    {section === 'explore' && <>
+      <p className="cave-progress"><strong>Choose your descent</strong><span>{attemptsRemaining} runs left · {progress.totalFloorsCleared}/{MAX_DUNGEON_FLOOR} cleared</span></p>
+      <nav className="cave-floor-tabs" aria-label="Dungeon floors">{DUNGEON_FLOORS.map(f => <button key={f.id} aria-pressed={selectedFloor.id === f.id} onClick={() => setExpandedFloor(f.id)}>Floor {f.id}{player.dungeonFloorsCleared.includes(f.id) ? ' ✓' : getFloorStatus(f, player.dungeonFloorsCleared) === 'locked' ? ' · Locked' : ''}</button>)}</nav>
+      <article className="material-card cave-plan">
+        <h3>{selectedFloor.name}</h3><p>{selectedFloor.description}</p>
+        <div className="cave-plan-numbers"><span><b>{entryTime} h</b> per encounter</span><span><b>{selectedFloor.goldRange[0]}–{selectedFloor.goldRange[1]} g</b> base reward range</span></div>
+        <p>Four encounters end with <strong>{selectedFloor.boss.name}</strong>. Gear and education affect damage, rewards and time.</p>
+        <p className="cave-hint">Retreat keeps 50% of earned gold and closes before the boss. Running out of time keeps all earned gold.</p>
+        {reason && <p className="cave-entry-warning" role="status">{reason}</p>}
+        <button className="gold-button" disabled={!!reason} onClick={() => handleEnterFloor(selectedFloor)}>Enter Floor {selectedFloor.id} · {entryTime}h</button>
+      </article>
+      {/* Rest in Cave */}
+      <div className="pt-2 border-t border-[#8b7355]/30">
+        <ActionButton
+          label={t('common.rest')}
+          cost={0}
+          time={8}
+          disabled={
+            player.timeRemaining < 8 ||
+            player.health >= player.maxHealth
+          }
+          onClick={() => {
+            const result = useGameStore.getState().performCaveRest(player.id);
+            if (result && !result.success) {
+              toast.error(result.message);
+              return;
+            }
+            const healAmount = Math.min(15, player.maxHealth - player.health);
+            toast.success(result?.message ?? `You rested and recovered ${healAmount} health.`);
+          }}
+        />
       </div>
 
-      {/* Attempts remaining */}
-      {attemptsRemaining < MAX_FLOOR_ATTEMPTS_PER_TURN && (
-        <div className={`text-xs font-mono px-2 py-1 rounded ${attemptsRemaining <= 0 ? 'bg-red-950/40 text-red-400' : 'bg-amber-950/40 text-amber-400'}`}>
-          Dungeon Runs: {attemptsRemaining}/{MAX_FLOOR_ATTEMPTS_PER_TURN} remaining this week
-        </div>
-      )}
-
-      {/* Progress bar */}
-      <div className="bg-[#2d1f0f] border border-[#8b7355] rounded p-2">
-        <div className="flex justify-between text-xs text-[#a09080] mb-1">
-          <span>{t('panelCave.dungeonFloors')}</span>
-          <span className="text-[#e0d4b8]">
-            {progress.totalFloorsCleared}/{MAX_DUNGEON_FLOOR} Floors
-          </span>
-        </div>
-        <div className="h-2 bg-black/40 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-amber-700 to-amber-500 transition-all"
-            style={{ width: `${progressPct}%` }}
-          />
-        </div>
-        {progress.allFloorsCleared && (
-          <div className="text-xs text-amber-400 text-center mt-1">
-            {t('panelCave.floorCleared')}
-          </div>
-        )}
-      </div>
-
-      {/* Equipment summary — E1: show item names + stats, E3: auto-equip button */}
+    </>}
+    {section === 'equipment' && <div className="space-y-2">      {/* Equipment summary — E1: show item names + stats, E3: auto-equip button */}
       <div className="bg-[#2d1f0f] border border-[#8b7355] rounded p-2 text-sm font-mono">
         <div className="flex items-center justify-between mb-1">
           <span className="text-[#a09080] uppercase tracking-wide">
@@ -716,7 +498,8 @@ export function CavePanel({ player }: CavePanelProps) {
         </div>
       )}
 
-      {/* Dungeon Leaderboard */}
+</div>}
+    {section === 'records' && <div>      {/* Dungeon Leaderboard */}
       {Object.keys(dungeonRecords).length > 0 && (
         <div className="bg-[#1a1a2e] border border-[#4a4a7a] rounded">
           <button
@@ -775,44 +558,6 @@ export function CavePanel({ player }: CavePanelProps) {
         </div>
       )}
 
-      {/* Floor selection */}
-      <div className="space-y-1.5">
-        {DUNGEON_FLOORS.map((floor) => (
-          <FloorCard
-            key={floor.id}
-            floor={floor}
-            player={player}
-            combatStats={combatStats}
-            attemptsRemaining={attemptsRemaining}
-            dungeonRecords={dungeonRecords}
-            expandedFloor={expandedFloor}
-            setExpandedFloor={setExpandedFloor}
-            onEnterFloor={handleEnterFloor}
-          />
-        ))}
-      </div>
-
-      {/* Rest in Cave */}
-      <div className="pt-2 border-t border-[#8b7355]/30">
-        <ActionButton
-          label={t('common.rest')}
-          cost={0}
-          time={8}
-          disabled={
-            player.timeRemaining < 8 ||
-            player.health >= player.maxHealth
-          }
-          onClick={() => {
-            const result = useGameStore.getState().performCaveRest(player.id);
-            if (result && !result.success) {
-              toast.error(result.message);
-              return;
-            }
-            const healAmount = Math.min(15, player.maxHealth - player.health);
-            toast.success(result?.message ?? `You rested and recovered ${healAmount} health.`);
-          }}
-        />
-      </div>
-    </div>
-  );
+{Object.keys(dungeonRecords).length === 0 && <p className="material-card">Your completed runs will appear here.</p>}</div>}
+  </div>;
 }

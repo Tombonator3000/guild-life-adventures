@@ -1,14 +1,7 @@
-import { useRegisterSW } from 'virtual:pwa-register/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-
-const SW_CHECK_INTERVAL_MS = 5 * 60 * 1000;   // SW update check every 5 min
-const VERSION_POLL_INTERVAL_MS = 60 * 1000;    // version.json poll every 60 sec
-
-/** Resolve version.json URL relative to the app's base path. */
-function getVersionUrl(): string {
-  const base = import.meta.env.BASE_URL || '/';
-  return `${base}version.json`;
-}
+import { registerSW } from 'virtual:pwa-register';
+import { useSyncExternalStore } from 'react';
+import { toast } from 'sonner';
+import { createUpdateMonitor } from './appUpdateMonitor';
 
 const RELOAD_KEY = 'guild-reload-count';
 const MAX_RELOADS = 3;
@@ -73,80 +66,36 @@ export async function hardRefresh(): Promise<void> {
   }
 }
 
+
+const listeners = new Set<() => void>();
+const monitor = createUpdateMonitor(__BUILD_TIME__, `${import.meta.env.BASE_URL || '/'}version.json`, () => listeners.forEach(listener => listener()));
+let registered = false;
+let registration: ServiceWorkerRegistration | undefined;
+const subscribe = (listener: () => void) => {
+  listeners.add(listener);
+  monitor.start();
+  if (!registered) {
+    registered = true;
+    registerSW({ onNeedRefresh: monitor.markAvailable, onRegisteredSW(_url, value) { registration = value; }, onRegisterError() { /* version polling remains active */ } });
+  }
+  return () => { listeners.delete(listener); if (!listeners.size) monitor.stop(); };
+};
+
+async function checkForUpdates() {
+  await Promise.allSettled([monitor.check(), registration?.update()]);
+}
+
+async function updateApp() {
+  // Keep the current local game, including an in-progress cave session, before reload.
+  const [{ useGameStore }, { saveGame }] = await Promise.all([import('@/store/gameStore'), import('@/data/saveLoad')]);
+  const state = useGameStore.getState();
+  if (state.players.length && state.phase !== 'title' && state.phase !== 'setup') {
+    if (!saveGame(state)) { toast.error('Could not save your game. Free some browser storage and try again.'); return; }
+  }
+  await hardRefresh();
+}
+
 export function useAppUpdate() {
-  const [versionMismatch, setVersionMismatch] = useState(false);
-  const pollingRef = useRef<ReturnType<typeof setInterval>>();
-
-  // SW registration — re-registers a fresh SW after the inline script
-  // unregistered any stale ones. On GitHub Pages, skipWaiting and clientsClaim
-  // are disabled, so the new SW won't interfere with the current page.
-  const {
-    needRefresh: [swNeedRefresh],
-  } = useRegisterSW({
-    onRegisteredSW(_swUrl, registration) {
-      if (!registration) return;
-      registration.update();
-      setInterval(() => registration.update(), SW_CHECK_INTERVAL_MS);
-    },
-  });
-
-  // version.json polling — the primary update detection method.
-  // Bypasses both browser cache (cache:'no-store') and CDN cache
-  // (Cache-Control: no-cache header + unique query param).
-  // Shows update banner when a new version is detected.
-  useEffect(() => {
-    const checkVersion = async () => {
-      try {
-        const url = `${getVersionUrl()}?_=${Date.now()}`;
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000);
-        const resp = await fetch(url, {
-          cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
-          signal: controller.signal,
-        });
-        clearTimeout(timeout);
-        if (!resp.ok) return;
-        const data = await resp.json();
-        if (data.buildTime && data.buildTime !== __BUILD_TIME__) {
-          setVersionMismatch(true);
-        }
-      } catch {
-        // Network error — skip this check
-      }
-    };
-
-    checkVersion();
-    pollingRef.current = setInterval(checkVersion, VERSION_POLL_INTERVAL_MS);
-    return () => clearInterval(pollingRef.current);
-  }, []);
-
-  const needRefresh = swNeedRefresh || versionMismatch;
-
-  const updateApp = useCallback(async () => {
-    await hardRefresh();
-  }, []);
-
-  const checkForUpdates = useCallback(async () => {
-    navigator.serviceWorker?.getRegistration().then(reg => reg?.update());
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
-      const resp = await fetch(`${getVersionUrl()}?_=${Date.now()}`, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-      if (!resp.ok) return;
-      const data = await resp.json();
-      if (data.buildTime && data.buildTime !== __BUILD_TIME__) {
-        setVersionMismatch(true);
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
-
+  const needRefresh = useSyncExternalStore(subscribe, monitor.getSnapshot);
   return { needRefresh, updateApp, checkForUpdates, hardRefresh };
 }
