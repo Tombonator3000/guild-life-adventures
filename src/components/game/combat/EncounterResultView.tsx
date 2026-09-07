@@ -49,7 +49,7 @@ export function EncounterResultView({
     <section className="cave-result" aria-label="Encounter outcome" aria-live="polite">
       <div className="cave-result-heading">
         {getEncounterImage(enc.id) ? <img src={getEncounterImage(enc.id)} alt="" /> : <span>{icon}</span>}
-        <div><p className="cave-eyebrow">Encounter {encounterIndex + 1} of {totalEncounters} · resolved</p><h3>{enc.name}</h3><p>{enc.type === 'combat' || enc.type === 'boss' ? 'You survived the encounter.' : enc.type === 'healing' ? 'Spring visited.' : enc.type === 'treasure' ? 'Treasure collected.' : result.disarmed ? 'Trap safely disarmed.' : 'You passed the trap.'}</p></div>
+        <div><p className="cave-eyebrow">Encounter {encounterIndex + 1} of {totalEncounters} · resolved</p><h3>{enc.name}</h3><span className="cave-compact-outcome">Health {previousHealth} → {currentHealth} HP · +{result.goldEarned}g</span><p>{enc.type === 'combat' || enc.type === 'boss' ? 'You survived the encounter.' : enc.type === 'healing' ? 'Spring visited.' : enc.type === 'treasure' ? 'Treasure collected.' : result.disarmed ? 'Trap safely disarmed.' : 'You passed the trap.'}</p></div>
       </div>
       {/* Result details */}
       <div className="cave-result-ledger">

@@ -82,3 +82,14 @@
   .cave-compact-status strong { display:block; font-size:13px; }
   .cave-compact-status span { font-size:11px; }
 }
+
+.cave-compact-outcome { display:none; }
+@container (max-height:320px) {
+  .cave-run[data-phase="encounter-result"] .cave-run-heading { display:none; }
+  .cave-result-heading { display:flex; margin:2px 0 5px; break-inside:avoid; }
+  .cave-result-heading img { float:none; margin:0; }
+  .cave-result-heading h3 { font-size:14px; margin:1px 0; }
+  .cave-result-heading .cave-eyebrow { margin:0; font-size:9px; }
+  .cave-result-heading p:not(.cave-eyebrow) { display:none; }
+  .cave-compact-outcome { display:block; font-size:11px; }
+}

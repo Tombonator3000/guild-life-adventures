@@ -84,6 +84,7 @@ test('cave load, encounter, result, retreat and settlement remain clear inside t
     await page.setViewportSize({width,height});
     await expect(retreat).toBeInViewport();
     await expect(page.getByRole('button',{name:/Continue Deeper/})).toBeInViewport();
+    if(width === 844) await expect(outcome.locator('.cave-compact-outcome')).toBeInViewport();
     await page.screenshot({path:testInfo.outputPath(`cave-outcome-${width}.png`)});
   }
   await retreat.click();
@@ -115,6 +116,7 @@ test('a deployed update appears on focus, saves the current game and reloads on 
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
   const update=page.getByRole('button',{name:'Update Now',exact:true});
   await expect(update).toBeVisible();
+  await expect.poll(()=>update.evaluate(el=>getComputedStyle(el.closest('[role="status"]')!).opacity)).toBe('1');
   await page.screenshot({path:testInfo.outputPath('update-available.png')});
   const navigation=page.waitForURL(url=>url.searchParams.has('_gv'),{waitUntil:'commit'});
   await update.click(); await navigation;
