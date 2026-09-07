@@ -2,6 +2,8 @@
 
 Owner direction, 7 September 2026. Supersedes the broader redesign brainstorm.
 
+Next VFX/icon/sidebar implementation order: [Board VFX implementation plan](BOARD_VFX_IMPLEMENTATION_PLAN.md). This plan preserves the existing artwork and layout. Its proposed effects are not yet implemented. For the current service navigation and no-inner-scroll location pages, the later [window/Cave/update pass](../qa/window-cave-update/README.md) supersedes the scrolling description below.
+
 ## Fixed identity
 
 - A digital board game first. Preserve the existing city artwork, all location positions, travel paths, sidebars and central frame.
