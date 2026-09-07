@@ -104,6 +104,16 @@ jobs:
       - name: Browser smoke tests
         run: bun run test:e2e
 
+      - name: Upload runtime screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-screenshots
+          path: |
+            test-results/**/*.png
+            test-results/**/error-context.md
+          if-no-files-found: ignore
+
       - name: Upload browser test artifacts
         if: always()
         uses: actions/upload-artifact@v4

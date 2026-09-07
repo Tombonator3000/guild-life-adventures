@@ -28,9 +28,9 @@ export function WorkplaceCard({ work }: { work: WorkInfo }) {
     <section className="location-work material-card" aria-label="Your work shift">
       <h3>{work.hoursPerShift < work.fullShiftHours ? 'Work a short shift' : 'Work one shift'}</h3>
       <div className="workplace-numbers"><span><Hourglass aria-hidden="true" />{work.hoursPerShift}<small>h</small></span><span><Coins aria-hidden="true" />+{work.earnings}<small>g</small></span></div>
-      <p className="workplace-wage">Wage: {work.wage}g/h · includes productivity bonus and active modifiers</p>
       <p id={outcomeId} className={work.blockedReason ? 'location-work-warning' : 'location-work-outcome'}>{work.blockedReason ?? `After shift: ${work.preview.hoursAfter}h left · ${work.preview.goldAfter}g`}</p>
       <button className="location-work-button" data-ui-sound="work-complete" data-tutorial-target="work-shift" onClick={work.onWork} disabled={!work.canWork} aria-describedby={outcomeId}>Work {work.hoursPerShift} hours</button>
+      <p className="workplace-wage">Wage: {work.wage}g/h · includes productivity bonus and active modifiers</p>
       <p className="workplace-consequence">{work.preview.happinessLoss > 0 ? `−${work.preview.happinessLoss} happiness per shift` : 'No happiness loss this shift'}{work.preview.deductions > 0 && ` · ${work.preview.deductions}g withheld for overdue payments`}</p>
       <button className="workplace-secondary" disabled={!!raiseReason} aria-describedby={raiseId} onClick={() => {
         const result = attemptRaise(player.id);

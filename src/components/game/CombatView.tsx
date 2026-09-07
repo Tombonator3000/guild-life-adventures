@@ -12,6 +12,8 @@ import { buildDungeonCompletionSummary } from '@/store/helpers/dungeonServiceHel
 import type { DungeonCompletionSummary } from '@/store/dungeonTypes';
 import { EncounterIntro, EncounterResultView, FloorSummaryView } from './combat';
 import { toast } from 'sonner';
+import './combat/cave.css';
+import { retreatFromDungeon } from '@/data/combatResolver';
 
 interface CombatViewProps {
   player: Player;
@@ -68,6 +70,9 @@ export function CombatView({ player, floor, onComplete, onCancel }: CombatViewPr
 
   const runState = session.runState;
   const currentEncounter = runState.encounters[runState.currentEncounterIndex];
+  const previousHealth = runState.results.slice(0, -1).reduce((health, result) => Math.min(player.maxHealth, Math.max(0, health - result.damageDealt + result.healed + result.potionHealed)), runState.startHealth);
+  const retreatGold = buildDungeonCompletionSummary({ ...session, runState: retreatFromDungeon(runState) }, player, activeFestival).goldEarned;
+  const settledGold = buildDungeonCompletionSummary(session, player, activeFestival).goldEarned;
   const nextEncounter = runState.encounters[runState.currentEncounterIndex + 1];
   const canRetreat = nextEncounter?.type !== 'boss' && currentEncounter?.type !== 'boss';
 
@@ -91,29 +96,29 @@ export function CombatView({ player, floor, onComplete, onCancel }: CombatViewPr
   };
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <h4 className="font-display text-base text-[#e0d4b8] flex items-center gap-2">
+    <div className="cave-run" data-phase={runState.phase}>
+      <div className="cave-run-heading">
+        <h4 className="font-display">
           <Sparkles className="w-4 h-4 text-amber-400" />
           {floor.name}
         </h4>
         {runState.phase !== 'floor-summary' && (
-          <span className="text-xs text-[#c4a46a]">Floor {floor.id}</span>
+          <span className="cave-floor-number">Floor {floor.id}</span>
         )}
       </div>
 
       {runState.modifier && (
         <div
-          className="text-xs font-mono px-2 py-1 rounded border flex items-center gap-1.5"
+          className="cave-modifier"
           style={{
             borderColor: runState.modifier.color,
-            color: runState.modifier.color,
+            color: '#4c261b',
             backgroundColor: `${runState.modifier.color}15`,
           }}
         >
           <span>{runState.modifier.icon}</span>
           <span className="font-bold">{runState.modifier.name}</span>
-          <span className="text-[#c8b090]">— {runState.modifier.description}</span>
+          <span className="cave-modifier-description">— {runState.modifier.description}</span>
         </div>
       )}
 
@@ -130,7 +135,8 @@ export function CombatView({ player, floor, onComplete, onCancel }: CombatViewPr
           totalEncounters={runState.encounters.length}
           currentHealth={runState.currentHealth}
           maxHealth={player.maxHealth}
-          canDisarm={session.educationBonuses.canDisarmTraps}
+          canDisarm={session.educationBonuses.canDisarmTraps && !runState.modifier?.disableDisarm}
+          modifier={runState.modifier}
           onFight={() => showFailure(resolveEncounter(player.id))}
           onSkip={() => showFailure(advanceRun(player.id, 'skip-healing'))}
         />
@@ -139,6 +145,11 @@ export function CombatView({ player, floor, onComplete, onCancel }: CombatViewPr
       {runState.phase === 'encounter-result' && runState.results.length > 0 && (
         <EncounterResultView
           result={runState.results[runState.results.length - 1]}
+          encounterIndex={runState.currentEncounterIndex}
+          totalEncounters={runState.encounters.length}
+          totalGold={runState.totalGold}
+          previousHealth={previousHealth}
+          retreatGold={retreatGold}
           currentHealth={runState.currentHealth}
           maxHealth={player.maxHealth}
           canRetreat={canRetreat}
@@ -154,6 +165,7 @@ export function CombatView({ player, floor, onComplete, onCancel }: CombatViewPr
         <FloorSummaryView
           state={runState}
           floor={floor}
+          settledGold={settledGold}
           onFinish={handleFinish}
         />
       )}

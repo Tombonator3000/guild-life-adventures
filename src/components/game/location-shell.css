@@ -142,3 +142,50 @@
 @container (max-height:320px) { .workplace-intro h2 { font-size:20px; }.workplace-intro { gap:8px; }.workplace-seal { width:40px; height:40px; }.location-work h3 { font-size:20px; }.workplace-numbers { margin:9px 0; } }
 
 @container (max-width:460px) { .workplace-numbers { flex-wrap:wrap; gap:8px; }.workplace-numbers > span + span { border-left:0; padding-left:0; }.workplace-numbers > span { font-size:25px; }.workplace-numbers svg { width:23px; height:28px; }.workplace-numbers small { font-size:20px; } }
+
+/* Services form a compact, complete grid. Long content turns as book pages. */
+.location-tabs { flex-wrap:wrap; overflow:visible; padding:5px; gap:3px; }
+.location-tabs button { flex:1 1 100px; min-width:0; min-height:34px; padding:5px 7px; font-size:12px; border:1px solid #a1875e; border-radius:5px; }
+.location-menu { display:flex; overflow:clip; }
+.location-content { overflow:clip; padding:8px; display:flex; flex-direction:column; }
+.location-pages { flex:1; min-height:0; display:flex; flex-direction:column; }
+.location-page-viewport { flex:1; min-height:0; overflow:clip; }
+.location-page-flow { height:100%; column-width:auto; column-count:1; column-gap:16px; column-fill:auto; overflow:visible; }
+.location-page-flow :is(button,li,tr,h2,h3,h4,p) { break-inside:avoid; }
+
+.location-page-flow :is([class*="overflow-y-auto"],[class*="overflow-auto"],[class*="overflow-x-auto"]) { overflow:visible!important; max-height:none!important; }
+.location-page-flow :is(.material-card,.location-work,.workplace-career) { box-decoration-break:clone; -webkit-box-decoration-break:clone; }
+.location-page-controls { display:flex; align-items:center; justify-content:space-between; gap:5px; border-top:1px solid #b99a6c; margin-top:5px; padding-top:4px; font-size:11px; flex-shrink:0; }
+.location-page-controls button { display:flex; align-items:center; gap:3px; min-height:30px; padding:4px 6px; border:1px solid #ae8c57; border-radius:4px; background:#f2e1bb; color:#47301b; }
+.location-page-controls button:disabled { opacity:.4; }
+.location-page-controls svg { width:14px; height:14px; }
+.location-item-preview { overflow:clip; }
+@container (max-width:460px) { .location-tabs button { flex-basis:84px; min-height:36px; }.location-page-controls button { min-height:36px; }.location-body { grid-template-rows:80px minmax(0,1fr); }.location-greeting { font-size:10px; } }
+@container (max-height:320px) { .location-body { grid-template-columns:25% minmax(0,1fr); grid-template-rows:minmax(0,1fr); }.location-tabs button { flex-basis:80px; min-height:28px; font-size:11px; padding:3px 5px; }.location-tabs svg { display:none; }.location-content { padding:5px; }.location-page-controls button { min-height:28px; }.workplace-return { min-height:28px; padding:3px; margin:2px 5px; font-size:11px; } }
+
+.location-service-picker { display:none; }
+@container (max-height:320px) {
+  .location-service-picker { display:block; flex-shrink:0; min-height:28px; padding:3px 8px; border-bottom:1px solid #ae8c57; background:#e8d3aa; color:#422e19; font:bold 12px Georgia,serif; }
+  .location-tabs { display:none; }
+  .location-menu[data-services-open="true"] .location-tabs { display:flex; align-content:start; overflow:clip; }
+  .location-menu[data-services-open="true"] .location-content,.location-menu[data-services-open="true"] .workplace-return { display:none; }
+  .location-page-flow .material-card { padding:6px; }
+  .location-page-flow .workplace-numbers { margin:5px 0; }
+  .location-page-flow .location-work h3 { font-size:17px; }
+  .location-page-flow .location-work-button { min-height:44px; padding:4px 8px; font-size:20px; }
+  .location-page-flow .workplace-career { display:block; }
+  .location-page-flow .workplace-rank { float:left; height:30px; width:25px; margin-right:6px; }
+}
+
+@container (max-height:460px) { .workplace-intro { margin-bottom:4px; }.location-work h3 { font-size:18px; }.workplace-numbers { margin:5px 0; }.workplace-numbers > span { font-size:24px; }.workplace-numbers svg { height:26px; width:23px; }.location-work-outcome { margin:5px 0; font-size:12px; }.location-work-button { min-height:44px; padding:4px 8px; font-size:20px; }.location-work.material-card { padding:8px; } }
+
+.location-action-dock { flex-shrink:0; }
+.location-action-dock:empty { display:none; }
+.location-action-dock .cave-actions { margin-top:6px; }
+.forge-empty .forge-empty-heading { display:flex; align-items:center; gap:8px; margin-bottom:7px; text-align:left; break-inside:avoid; }
+.forge-empty .workplace-seal { margin:0; width:32px; height:32px; }
+.forge-empty h3 { margin:0; font-size:18px; }
+.forge-empty p { font-size:12px; }
+.forge-bonuses { margin:8px 0; padding:7px; }
+
+.forge-bonuses { break-inside:avoid; }

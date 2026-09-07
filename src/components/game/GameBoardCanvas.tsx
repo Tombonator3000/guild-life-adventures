@@ -173,11 +173,12 @@ export function GameBoardCanvas({
 
 function BoardBanterOverlay({ centerPanel, isMobile }: { centerPanel: CenterPanel; isMobile: boolean }) {
   const { activeBanter, npcName, clearBanter } = useBanterStore();
+  const inDungeon = useGameStore(state => !!state.dungeonRuns[state.players[state.currentPlayerIndex]?.id]);
   if (!activeBanter || !npcName) return null;
 
   return (
     <div
-      className="absolute z-20 pointer-events-none flex items-end justify-start"
+      className={`absolute z-20 pointer-events-none items-end justify-start ${inDungeon ? 'hidden' : 'flex'}`}
       style={isMobile ? {
         bottom: '33%',
         left: '5%',

@@ -1,3 +1,4 @@
+import { openMenuPage } from './menuPages';
 import type { Page } from '@playwright/test';
 import { expect, test } from './test';
 import { installLocalPeerNetwork } from './local-peer-network';
@@ -248,6 +249,7 @@ test('rejected sabotage and Fence actions unlock immediately instead of waiting 
     await expect(sabotage).toBeEnabled();
 
     await holdGuestAction(guest, 'sabotagePlayer');
+    await openMenuPage(guest,sabotage);
     await sabotage.click();
     const sabotageWaiting = guest.getByText('Waiting for host…', { exact: true });
     await expect(sabotageWaiting).toBeVisible();
@@ -263,6 +265,7 @@ test('rejected sabotage and Fence actions unlock immediately instead of waiting 
     await expect(protection).toBeEnabled();
 
     await holdGuestAction(guest, 'buyProtection');
+    await openMenuPage(guest,protection);
     await protection.click();
     const protectionWaiting = guest.getByText('Waiting for host…', { exact: true });
     await expect(protectionWaiting).toBeVisible();
@@ -274,6 +277,7 @@ test('rejected sabotage and Fence actions unlock immediately instead of waiting 
     const tipOff = guest.getByRole('button', { name: /Buy Tip-off/i });
     await expect(tipOff).toBeEnabled();
     await holdGuestAction(guest, 'buyTipOff');
+    await openMenuPage(guest,tipOff);
     await tipOff.click();
     const tipOffWaiting = guest.getByText('Waiting for host…', { exact: true });
     await expect(tipOffWaiting).toBeVisible();

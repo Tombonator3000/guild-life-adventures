@@ -105,8 +105,8 @@ function SmithingSection({
 
       {!hasEquipment ? (
         <div className="material-card forge-empty">
-          <span className="workplace-seal"><Hammer aria-hidden="true" /></span>
-          <h3>Make good steel exceptional</h3>
+          <div className="forge-empty-heading"><span className="workplace-seal"><Hammer aria-hidden="true" /></span>
+          <h3>Make good steel exceptional</h3></div>
           <p>Korr can temper your weapons, armor and shields for a permanent combat bonus.</p>
           <div className="forge-bonuses"><span>Weapon <b>+{TEMPER_BONUS.weapon.attack} ATK</b></span><span>Armor <b>+{TEMPER_BONUS.armor.defense} DEF</b></span></div>
           <p className="workplace-help">Buy equipment at the Armory, then return here. Each item can be tempered once; price and time appear when you own it.</p>

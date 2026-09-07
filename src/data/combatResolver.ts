@@ -105,8 +105,13 @@ export function initDungeonRun(
   floorsCleared?: number[],
   playerMaxHealth?: number,
 ): DungeonRunState {
-  const encounters = generateFloorEncounters(floor, floorsCleared);
   const modifier = rollDungeonModifier();
+  // Blood Moon removes springs from the draw; never advertise a healing
+  // encounter that the resolver will silently reduce to zero.
+  const encounterFloor = modifier?.disableHealing
+    ? { ...floor, encounters: floor.encounters.filter(encounter => encounter.type !== 'healing') }
+    : floor;
+  const encounters = generateFloorEncounters(encounterFloor, floorsCleared);
   const hasMiniBoss = encounters.some(e => e.id.startsWith('mb-'));
 
   return {

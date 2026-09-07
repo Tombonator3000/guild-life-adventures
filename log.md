@@ -14323,3 +14323,18 @@ PR #407: https://github.com/Tombonator3000/guild-life-adventures/pull/407
 Runtime f6df4f150df4e164e257cebad888586d1d4404eb passed 726 tests in 89 files and 16 browser journeys, production build, configured root type check, lint (27 inherited warnings) and audio audit. CI run 34101125049 / job 101675580705; screenshot artifact 10010635532. Explicit application type check retains exactly the baseline's 185 diagnostics, with no additions.
 
 Inspected real Forge work, Smithing, storm and phone captures. Tightened the work card so job, time, net pay and gold CTA fit the desktop frame. Fixed retained scroll offsets hiding service headings and connected the tutorial to the new work button. Storm particles now have stronger contrast; branching lightning is visible below the UI and delayed thunder is exercised in-browser. Contextual sound cleanup prevents pooled-listener growth, shares the unlocked audio context, and isolates procedural audio randomness from gameplay. Original city layout, center frame, NPC caricatures and game rules are preserved. Detailed evidence and generation prompts are in docs/qa/material-weather/README.md. Physical phone performance/speaker balance remain unverified. No merge/deployment performed. This final checkpoint changes documentation only after the verified runtime revision.
+
+
+## 2026-09-07 — Window pages, Cave clarity and update detection (Gauntlet)
+
+Owner requests wrapped services/no internal menu scrolling, clearer living Cave and a working update prompt. Added shared location pages, compact Cave planning and encounter cards, correct Blood Moon encounter pool, and one wake-aware update monitor with saved refresh. Original board/frame/portraits retained. Runtime verification pending; see docs/qa/window-cave-update/README.md.
+
+
+### Verified window/Cave/update delivery — 2026-09-07
+
+PR #408: https://github.com/Tombonator3000/guild-life-adventures/pull/408
+Runtime e872a8e047e55b33159cdc1b01e1819fc026a19e passed 731 unit tests in 91 files and 19 browser journeys, production build, configured type check, lint (27 inherited warnings / 0 errors) and audio audit. CI 34123923654 / job 101748029461; screenshot artifact 10019454628. Explicit application checking retains 185 baseline diagnostics, with no additions.
+
+Reviewed actual wrapped market tabs and pages at desktop/phone sizes, Forge first page, Cave encounters/results/records and update prompt. Corrected page resets after inner service changes, near-empty Forge heading pages, Cave choices moving out of view, mobile banter covering encounters, and missing records icon. Cave choices are docked; landscape health/loot outcomes appear on page one. Canonical payout previews include rank/festival effects. Blood Moon no longer draws healing springs; old sessions explain the blocked spring. Shared version detection checks on wake/reconnect/poll and saves local play before reloading; online sessions must finish or be left before update.
+
+City geometry, center frame and original caricatures are preserved. Lovable source sync with the earlier merged revision was verified, but the next custom-domain publication must still be checked with an older live tab. Physical phone performance is unmeasured. No merge/deployment performed. Final checkpoint changes documentation only; see docs/qa/window-cave-update/README.md for gate results and release check.

@@ -27,7 +27,7 @@ function versionJsonPlugin(): PluginOption {
       mkdirSync(outDir, { recursive: true });
       writeFileSync(
         path.join(outDir, "version.json"),
-        JSON.stringify({ buildTime }),
+        JSON.stringify({ version: buildTime, buildTime }),
       );
     },
   };

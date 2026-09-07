@@ -1,4 +1,5 @@
 import { expect, test } from './test';
+import { openMenuPage } from './menuPages';
 
 test('classic board visits retain original NPCs and usable work and bank actions', async ({page}, testInfo) => {
   test.setTimeout(90_000);
@@ -36,6 +37,7 @@ test('classic board visits retain original NPCs and usable work and bank actions
   const shift=page.locator('.location-work-button');
   await expect(shift).toBeEnabled();
   const before=await page.locator('.location-work-outcome').innerText();
+  await openMenuPage(page,shift);
   await shift.click();
   await expect(page.locator('.location-work-outcome')).not.toHaveText(before);
   await page.screenshot({path:testInfo.outputPath('desktop-employed.png')});
@@ -46,6 +48,7 @@ test('classic board visits retain original NPCs and usable work and bank actions
     const box=await shift.boundingBox();
     expect(box!.height).toBeGreaterThanOrEqual(44);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth+1)).toBe(true);
+    await openMenuPage(page,shift);
     await shift.click();
     await page.screenshot({path:testInfo.outputPath(`mobile-employed-${width}.png`)});
   }
@@ -53,6 +56,7 @@ test('classic board visits retain original NPCs and usable work and bank actions
   await expect(page.locator('.location-shell')).toHaveAttribute('data-animated','false');
   await expect(page.locator('.location-motes')).toHaveCount(0);
   await page.locator('[data-zone-id="bank"]').click();
+  await openMenuPage(page,page.getByRole('button',{name:/deposit 50/i}));
   await page.getByRole('button',{name:/deposit 50/i}).click();
   await expect(page.getByRole('button',{name:/withdraw 50/i})).toBeVisible();
   await page.screenshot({path:testInfo.outputPath('mobile-bank.png')});

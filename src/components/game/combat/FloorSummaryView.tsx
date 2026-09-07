@@ -11,12 +11,13 @@ interface FloorSummaryViewProps {
   state: DungeonRunState;
   floor: DungeonFloor;
   onFinish: () => void;
+  settledGold: number;
 }
 
 export function FloorSummaryView({
   state,
   floor,
-  onFinish,
+  onFinish, settledGold,
 }: FloorSummaryViewProps) {
   const success = state.bossDefeated;
   const netHealing = state.totalHealed;
@@ -29,7 +30,7 @@ export function FloorSummaryView({
   }, [success, state.retreated]);
 
   return (
-    <div className="space-y-3 animate-in fade-in duration-300">
+    <div className="cave-summary space-y-3 animate-in fade-in duration-300">
       {/* Header */}
       <div className="text-center">
         <div className="text-3xl mb-1">
@@ -85,7 +86,7 @@ export function FloorSummaryView({
       <div className="bg-[#2d1f0f] border border-[#8b7355] rounded-lg p-3">
         <div className="grid grid-cols-2 gap-2 text-sm font-mono">
           <div className="text-amber-400">
-            💰 Gold: +{state.totalGold}g
+            💰 Gold to receive: +{settledGold}g
           </div>
           <div className="text-red-400">
             ❤ Damage: -{state.totalDamage}

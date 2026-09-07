@@ -1,0 +1,95 @@
+/* Existing woodcut encounters, staged as readable board-game cards. */
+.cave-run { color:#34291e; font:13px/1.35 Georgia,serif; }
+.cave-run-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
+.cave-run-heading h4 { display:flex; align-items:center; gap:6px; font-size:17px; font-weight:bold; }
+.cave-floor-number { font-size:12px; white-space:nowrap; }
+.cave-modifier { display:flex; gap:5px; align-items:baseline; border:1px solid; border-radius:5px; padding:5px 7px; margin-bottom:7px; font-size:11px; }
+.cave-modifier-description { color:#563b2d; }
+.cave-progress { display:flex; justify-content:space-between; gap:5px; margin:6px 0; font-size:12px; }
+.cave-progress span { display:flex; align-items:center; gap:4px; }
+.cave-encounter-card { display:grid; grid-template-columns:30% minmax(0,1fr); gap:12px; padding:10px; margin:9px 0; border:1px solid #807553; border-radius:7px; background:linear-gradient(125deg,#162629,#2c2116); color:#f7ead0; box-shadow:inset 0 0 20px #0006,0 3px 5px #4b321a33; break-inside:avoid; }
+.cave-encounter-art { position:relative; align-self:center; overflow:hidden; border:2px solid #9c8250; box-shadow:0 3px 9px #0007; }
+.cave-encounter-art img { width:100%; aspect-ratio:1; object-fit:cover; }
+.cave-encounter-art > span { font-size:50px; }
+.cave-encounter-art i { position:absolute; inset:0; background:radial-gradient(ellipse at 25% 85%,#ffc14b44,transparent 65%); mix-blend-mode:screen; pointer-events:none; }
+.location-shell[data-animated="true"] .cave-encounter-art i { animation:cave-lantern 3.7s ease-in-out infinite alternate; }
+.location-shell[data-animated="true"] .cave-encounter-art img { animation:cave-breathe 8s ease-in-out infinite alternate; }
+.cave-eyebrow { text-transform:uppercase; letter-spacing:.08em; font-size:10px; margin:0 0 4px; font-weight:bold; }
+.cave-encounter-copy h3,.cave-result h3 { font:bold 21px/1.15 Georgia,serif; margin:0 0 7px; }
+.cave-flavor { color:#ecdcc0; font-style:italic; font-size:12px; margin-bottom:9px; }
+.cave-stats { display:flex; flex-wrap:wrap; gap:6px 12px; padding-top:7px; border-top:1px solid #ae905655; font-size:12px; color:#ffe6a3; }
+.cave-stats span { display:flex; align-items:center; gap:4px; }.cave-stats svg { width:14px; height:14px; }
+.cave-hint { font-size:11px; margin:6px 0; }.cave-encounter-copy .cave-hint { color:#ddcbaa; }
+.cave-actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; break-inside:avoid; }
+.cave-actions button { flex:1; min-height:40px; padding:7px 10px; font:600 13px/1.2 Georgia,serif; }
+.cave-secondary { border:1px solid #987447; border-radius:5px; background:#e9d5b4; color:#422d1a; }
+.cave-result-heading { display:flex; gap:12px; align-items:center; margin:9px 0; }.cave-result-heading img { width:66px; height:66px; object-fit:cover; border:2px solid #a98a53; border-radius:5px; }
+.cave-result-ledger { background:#211b13; border:1px solid #907444; border-radius:6px; padding:10px; margin:8px 0; color:#f6e5bd; display:flex; flex-wrap:wrap; gap:8px 14px; }
+.cave-result-total { width:100%; font-size:14px; border-bottom:1px solid #ad8c5555; padding-bottom:7px; }
+.cave-result > div:not(.cave-result-ledger) { color:#4e3823; }
+.cave-result > div > span { color:inherit; }
+.cave-result .cave-actions button { color:#fff0cd; }
+.cave-result-ledger .text-xs { width:100%; }
+@keyframes cave-lantern { from { opacity:.25; } to { opacity:.9; } }
+@keyframes cave-breathe { from { transform:scale(1); } to { transform:scale(1.035); } }
+@container (max-width:460px) { .cave-encounter-card { gap:8px; padding:8px; grid-template-columns:25% minmax(0,1fr); }.cave-encounter-copy h3 { font-size:18px; }.cave-flavor { font-size:11px; }.cave-modifier { flex-wrap:wrap; }.cave-result-heading img { width:48px; height:48px; } }
+@container (max-height:320px) { .cave-encounter-card { gap:8px; padding:7px; grid-template-columns:18% minmax(0,1fr); }.cave-run-heading h4 { font-size:14px; }.cave-encounter-copy h3 { font-size:17px; }.cave-flavor { font-size:11px; }.cave-modifier { font-size:10px; }.cave-result-heading img { width:42px; height:42px; } }
+@media (prefers-reduced-motion:reduce) { .cave-encounter-art img,.cave-encounter-art i { animation:none!important; } }
+.cave-lobby { color:#3d2a18; font:13px/1.4 Georgia,serif; }
+.cave-lobby-tabs,.cave-floor-tabs { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; }
+.cave-lobby-tabs button,.cave-floor-tabs button { flex:1; border:1px solid #98784b; border-radius:5px; padding:5px 7px; background:#ead8b6; font-size:12px; }
+.cave-lobby-tabs button[aria-pressed="true"],.cave-floor-tabs button[aria-pressed="true"] { background:#503820; color:#fff0cb; }
+.cave-floor-tabs button { flex-basis:26%; }
+.cave-plan h3 { font-size:21px; font-weight:bold; margin-bottom:7px; }
+.cave-plan-numbers { display:flex; gap:18px; margin:10px 0; }.cave-plan-numbers b { display:block; font-size:20px; }
+.cave-plan .gold-button { width:100%; margin-top:8px; }
+.cave-entry-warning { color:#922c21; font-weight:bold; margin-top:8px; }
+
+.cave-health-label { color:#52381f; }.cave-result > .text-orange-400 { color:#7b341b; background:#f3d3a8; }
+
+@container (max-height:320px) { .cave-encounter-card { display:block; break-inside:auto; }.cave-encounter-art { width:64px; float:left; margin:0 8px 4px 0; }.cave-result-heading { display:block; }.cave-result-heading img { float:left; margin-right:8px; }.cave-actions button { min-height:36px; }.cave-result-ledger { display:block; padding:6px; }.cave-result-ledger > div { margin-bottom:5px; }.cave-modifier { display:block; }.cave-plan-numbers { display:block; }.cave-floor-tabs button { min-height:28px; } }
+
+.cave-health-change { color:#4b321b; font-size:12px; margin:7px 0; }.cave-summary > .text-center h3 { color:#4c341b; font-weight:bold; }.cave-summary > .text-center p { color:#61492e; }.cave-summary .text-\[\#8b7355\],.cave-summary .text-\[\#a09080\] { color:#dac9a9; }
+
+.cave-flavor summary { cursor:pointer; }
+.cave-flavor[open] summary { margin-bottom:5px; }
+.cave-encounter-card { margin:7px 0; padding:8px; gap:9px; }
+.cave-encounter-copy h3 { font-size:19px; margin-bottom:5px; }
+.cave-flavor { font-size:11px; margin-bottom:6px; }
+.cave-result-heading { gap:8px; margin:5px 0; }
+.cave-result-heading img { width:48px; height:48px; }
+.cave-result-heading p:not(.cave-eyebrow) { font-size:12px; }
+.cave-result h3 { font-size:19px; margin-bottom:3px; }
+.cave-result-ledger { gap:5px 10px; padding:7px; margin:6px 0; }
+.cave-result-total { font-size:12px; padding-bottom:4px; }
+.cave-result-bonuses { width:100%; font-size:11px; color:#e2d9f8; }
+.cave-result-bonuses summary { cursor:pointer; }
+.cave-result-bonuses p { padding-top:5px; }
+.location-action-dock .cave-actions { color:#412b18; }
+.location-action-dock .cave-actions button { font-size:12px; padding:6px; min-width:0; }
+@container (max-height:320px) { .location-action-dock .cave-actions button { min-height:32px; padding:4px; font-size:11px; }.cave-encounter-card { break-inside:auto; }.cave-result-heading img { width:36px; height:36px; } }
+
+.cave-compact-status { display:none; }
+@container (max-width:460px) {
+  .cave-encounter-card { display:block; break-inside:auto; }
+  .cave-encounter-art { width:56px; float:left; margin:0 8px 5px 0; }
+  .cave-stats { clear:both; }
+}
+@container (max-height:320px) {
+  .cave-run[data-phase="encounter-intro"] .cave-run-heading,.cave-encounter .cave-progress,.cave-intro-health { display:none; }
+  .cave-compact-status { display:flex; align-items:center; gap:7px; margin:2px 0 5px; break-inside:avoid; }
+  .cave-compact-status img { width:34px; height:34px; object-fit:cover; border:1px solid #987b4b; }
+  .cave-compact-status strong { display:block; font-size:13px; }
+  .cave-compact-status span { font-size:11px; }
+}
+
+.cave-compact-outcome { display:none; }
+@container (max-height:320px) {
+  .cave-run[data-phase="encounter-result"] .cave-run-heading { display:none; }
+  .cave-result-heading { display:flex; margin:2px 0 5px; break-inside:avoid; }
+  .cave-result-heading img { float:none; margin:0; }
+  .cave-result-heading h3 { font-size:14px; margin:1px 0; }
+  .cave-result-heading .cave-eyebrow { margin:0; font-size:9px; }
+  .cave-result-heading p:not(.cave-eyebrow) { display:none; }
+  .cave-compact-outcome { display:block; font-size:11px; }
+}
