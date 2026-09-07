@@ -187,3 +187,5 @@
 .forge-empty h3 { margin:0; font-size:18px; }
 .forge-empty p { font-size:12px; }
 .forge-bonuses { margin:8px 0; padding:7px; }
+
+.forge-bonuses { break-inside:avoid; }

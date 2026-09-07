@@ -19,8 +19,9 @@ export function EncounterIntro({ encounter, encounterIndex, totalEncounters, cur
   const [opening, ...rest] = encounter.flavorText.split(/(?<=[.!?])\s+/);
   const image = getEncounterImage(encounter.id);
   return <section className="cave-encounter" data-encounter-type={encounter.type} aria-label="Current encounter">
+    <div className="cave-compact-status">{image && <img src={image} alt="" />}<div><strong>{encounter.name}</strong><span>Encounter {encounterIndex + 1}/{totalEncounters} · {currentHealth}/{maxHealth} HP</span></div></div>
     <div className="cave-progress"><strong>Encounter {encounterIndex + 1} of {totalEncounters}</strong><span><Heart size={13} /> {currentHealth}/{maxHealth} HP</span></div>
-    <HealthBar currentHealth={currentHealth} maxHealth={maxHealth} />
+    <div className="cave-intro-health"><HealthBar currentHealth={currentHealth} maxHealth={maxHealth} /></div>
     <article className="cave-encounter-card" key={encounter.id}>
       <div className="cave-encounter-art" aria-hidden="true">{image ? <img src={image} alt="" /> : <span>{getEncounterIcon(encounter.type)}</span>}<i /></div>
       <div className="cave-encounter-copy"><p className="cave-eyebrow">{encounter.type === 'boss' ? 'Floor boss · no retreat' : encounter.type === 'combat' ? 'Enemy ahead' : encounter.type === 'healing' ? 'A moment of respite' : encounter.type === 'trap' ? 'Watch your step' : 'A discovery'}</p>
@@ -35,7 +36,7 @@ export function EncounterIntro({ encounter, encounterIndex, totalEncounters, cur
       </div>
     </article>
     <LocationActions><div className="cave-actions" role="group" aria-label="Encounter choices">
-      {!healingBlocked && <button className="gold-button" data-ui-sound={combat ? 'sword-hit' : encounter.type === 'healing' ? 'heal' : encounter.type === 'treasure' ? 'coin-gain' : 'button-click'} onClick={onFight}>{getEncounterAction(encounter, canDisarm)}</button>}
+      {!healingBlocked && <button className="gold-button" data-ui-sound={combat ? 'sword-hit' : encounter.type === 'healing' ? 'heal' : encounter.type === 'treasure' ? 'coin-gain' : 'button-click'} onClick={onFight}>{combat ? `Fight ${encounter.name}` : getEncounterAction(encounter, canDisarm)}</button>}
       {encounter.type === 'healing' && onSkip && <button className="cave-secondary" onClick={onSkip}>Leave Spring</button>}
     </div></LocationActions>
   </section>;

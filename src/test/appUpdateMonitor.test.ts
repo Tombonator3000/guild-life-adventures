@@ -12,7 +12,7 @@ describe('deployed update detection', () => {
   it('detects a new deployment on wake, shares one poll, and cleans up', async () => {
     vi.useFakeTimers();
     let marker = build;
-    const fetcher = vi.fn(async () => ({ok:true,json:async () => ({version:marker})}));
+    const fetcher = vi.fn(async (_url: RequestInfo | URL) => ({ok:true,json:async () => ({version:marker})}));
     vi.stubGlobal('fetch',fetcher);
     const notify = vi.fn();
     const monitor = createUpdateMonitor(build,'/guild-life-adventures/version.json',notify);

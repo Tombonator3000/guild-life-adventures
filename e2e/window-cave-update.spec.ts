@@ -70,6 +70,8 @@ test('cave load, encounter, result, retreat and settlement remain clear inside t
   for(const [width,height] of [[844,390],[390,844],[1280,720]]) {
     await page.setViewportSize({width,height});
     await expect(action).toBeInViewport();
+    await expect(page.getByTitle('Click to dismiss',{exact:true})).not.toBeVisible();
+    await expect(intro.getByText('Giant Rats',{exact:true}).filter({visible:true}).first()).toBeInViewport();
     await page.screenshot({path:testInfo.outputPath(`cave-encounter-${width}.png`)});
   }
   await action.click();
@@ -78,10 +80,23 @@ test('cave load, encounter, result, retreat and settlement remain clear inside t
   await expect(outcome).toContainText('Run loot:');
   await page.screenshot({path:testInfo.outputPath('cave-outcome.png')});
   const retreat=page.getByRole('button',{name:/Retreat · keep/});
-  await expect(retreat).toBeInViewport(); await retreat.click();
+  for (const [width,height] of [[844,390],[390,844],[1280,720]]) {
+    await page.setViewportSize({width,height});
+    await expect(retreat).toBeInViewport();
+    await expect(page.getByRole('button',{name:/Continue Deeper/})).toBeInViewport();
+    await page.screenshot({path:testInfo.outputPath(`cave-outcome-${width}.png`)});
+  }
+  await retreat.click();
   const finish=page.getByRole('button',{name:'Return to Dungeon',exact:true});
   await openMenuPage(page,finish); await finish.click();
   await expect(page.getByRole('heading',{name:/Retreated/})).toBeVisible();
+  const dismiss=page.getByRole('button',{name:'Continue',exact:true});
+  await openMenuPage(page,dismiss); await dismiss.click();
+  await page.getByRole('button',{name:'Run records',exact:true}).click();
+  const records=page.locator('.cave-lobby').getByRole('button',{name:/Dungeon Floors/i});
+  await openMenuPage(page,records); await records.click();
+  await expect(page.getByTitle('Total runs',{exact:true})).toContainText('1x');
+  await page.screenshot({path:testInfo.outputPath('cave-records.png')});
   await page.emulateMedia({reducedMotion:'reduce'});
   await expect(page.locator('.location-shell')).toHaveAttribute('data-animated','false');
 });

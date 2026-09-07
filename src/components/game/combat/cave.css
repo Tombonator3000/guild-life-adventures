@@ -68,3 +68,17 @@
 .location-action-dock .cave-actions { color:#412b18; }
 .location-action-dock .cave-actions button { font-size:12px; padding:6px; min-width:0; }
 @container (max-height:320px) { .location-action-dock .cave-actions button { min-height:32px; padding:4px; font-size:11px; }.cave-encounter-card { break-inside:auto; }.cave-result-heading img { width:36px; height:36px; } }
+
+.cave-compact-status { display:none; }
+@container (max-width:460px) {
+  .cave-encounter-card { display:block; break-inside:auto; }
+  .cave-encounter-art { width:56px; float:left; margin:0 8px 5px 0; }
+  .cave-stats { clear:both; }
+}
+@container (max-height:320px) {
+  .cave-run[data-phase="encounter-intro"] .cave-run-heading,.cave-encounter .cave-progress,.cave-intro-health { display:none; }
+  .cave-compact-status { display:flex; align-items:center; gap:7px; margin:2px 0 5px; break-inside:avoid; }
+  .cave-compact-status img { width:34px; height:34px; object-fit:cover; border:1px solid #987b4b; }
+  .cave-compact-status strong { display:block; font-size:13px; }
+  .cave-compact-status span { font-size:11px; }
+}

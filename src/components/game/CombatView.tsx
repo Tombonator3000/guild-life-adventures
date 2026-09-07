@@ -96,7 +96,7 @@ export function CombatView({ player, floor, onComplete, onCancel }: CombatViewPr
   };
 
   return (
-    <div className="cave-run">
+    <div className="cave-run" data-phase={runState.phase}>
       <div className="cave-run-heading">
         <h4 className="font-display">
           <Sparkles className="w-4 h-4 text-amber-400" />

@@ -5,6 +5,7 @@ import {
   Lock,
   CheckCircle,
   ChevronDown,
+  ChevronRight,
   Clock,
   Skull,
   Heart,

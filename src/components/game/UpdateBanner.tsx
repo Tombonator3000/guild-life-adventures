@@ -1,8 +1,10 @@
 import { RefreshCw } from 'lucide-react';
 import { useAppUpdate } from '@/hooks/useAppUpdate';
+import { useGameStore } from '@/store/gameStore';
 
 export function UpdateBanner() {
   const { needRefresh, updateApp } = useAppUpdate();
+  const online = useGameStore(state => state.networkMode !== 'local');
 
   if (!needRefresh) return null;
 
@@ -15,11 +17,12 @@ export function UpdateBanner() {
             A new version is available!
           </span>
           <span className="text-[11px] text-card-foreground">
-            Your local game is saved before reloading
+            {online ? 'Finish or leave the online session before updating.' : 'Your local game is saved before reloading.'}
           </span>
         </div>
         <button
           onClick={updateApp}
+          disabled={online}
           className="gold-button text-xs px-4 py-1.5 font-bold"
         >
           Update Now
