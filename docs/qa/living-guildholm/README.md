@@ -39,3 +39,22 @@ Run: https://github.com/Tombonator3000/guild-life-adventures/actions/runs/340909
 - Two new environment journeys: FAIL before reaching the board. Trace reports that the title welcome paragraph intercepts the intended developer button. Corrected the existing button's stacking order and shortened the test gesture timeout to fail promptly. This keeps actual UI clicks in the test rather than bypassing the bug with forced clicks.
 - All 42 local audio files also passed decoding/silence/duplicate checks.
 - Follow-up CI and screenshots must be reviewed before promoting PR #405 from draft.
+
+
+## Final automated verification (4b1a685)
+
+Run: https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34091717238
+
+| Gate | Result | Evidence |
+| --- | --- | --- |
+| TypeScript, production build, ESLint | PASS | Same-source CI run above |
+| Unit/component regressions | PASS | 718 tests across 86 files |
+| Browser regressions | PASS | All 14 tests passed in 1.8 minutes, including six weather states, actual changing smoke transform, mobile bank action, display controls, reduced motion and existing online tests |
+| Audio integrity | PASS | 42 files; no invalid, silent or duplicate files |
+| Manual visual review | UNVERIFIED | CI created screenshots, but the local execution environment disconnected before images could be opened |
+| Physical S24 / sustained 60 fps | UNVERIFIED | No physical device available; CI timing does not establish device performance |
+| Delivery | PASS for draft source PR | PR #405; no merge or production deployment |
+
+Screenshot artifact: https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34091717238/artifacts/10007151759 (10.8 MB). Includes desktop clear/rain/snow/fog/drought/storm, a later storm frame, desktop and mobile bank action, and mobile display settings.
+
+The final checkpoint commit changes documentation only; runtime and tests are identical to the verified 4b1a685 revision. PR stays draft until someone can inspect the actual screenshots. The next concrete step is to open these artifacts, review artwork alignment and legibility, and correct any demonstrated visual gaps before merge.
