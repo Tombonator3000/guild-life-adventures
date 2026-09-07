@@ -1,6 +1,6 @@
 // All visits remain inside the original board's central frame.
-import { useState, useEffect, useId, type ReactNode, type CSSProperties } from 'react';
-import { Briefcase, Clock, Coins, BookOpen, Hammer, ShoppingBag, Sparkles, ScrollText } from 'lucide-react';
+import { useState, useEffect, useLayoutEffect, useRef, useId, type ReactNode, type CSSProperties } from 'react';
+import { Briefcase, BookOpen, Hammer, ShoppingBag, Sparkles, ScrollText } from 'lucide-react';
 import type { LocationNPC } from '@/data/npcs';
 import { NpcPortrait } from './NpcPortrait';
 import { useBanter } from '@/hooks/useBanter';
@@ -12,7 +12,9 @@ import { getReputationGreeting } from '@/data/reputation';
 import { useGameOptions } from '@/hooks/useGameOptions';
 import { useEnvironmentActivity } from '@/hooks/useEnvironmentActivity';
 import type { getWorkPreview } from '@/store/helpers/workEducationHelpers';
+import type { SFXId } from '@/audio/sfxManager';
 import './location-shell.css';
+import { WorkplaceCard } from './WorkplaceCard';
 
 export interface LocationTab {
   id: string;
@@ -46,8 +48,17 @@ interface LocationShellProps {
   workInfo?: WorkInfo | null;
 }
 
+function serviceSound(location: LocationId, tab: string | undefined): SFXId {
+  if (tab === 'your-shift' || tab === 'work' || tab === 'jobs' || tab === 'renown' || tab === 'reputation') return 'button-click';
+  if (location === 'forge' || location === 'armory') return 'item-equip';
+  if (location === 'bank' || location === 'general-store' || location === 'shadow-market' || location === 'fence') return 'coin-spend';
+  if (location === 'academy') return 'study';
+  if (location === 'enchanter' && tab === 'healing') return 'heal';
+  return 'button-click';
+}
+
 function tabIcon(id: string) {
-  if (/work|employment/.test(id)) return <Briefcase />;
+  if (/work|employment|your-shift/.test(id)) return <Briefcase />;
   if (/repair|smith|salvage/.test(id)) return <Hammer />;
   if (/course|library|scholar/.test(id)) return <BookOpen />;
   if (/quest|bount/.test(id)) return <ScrollText />;
@@ -56,7 +67,9 @@ function tabIcon(id: string) {
 }
 
 export function LocationShell({ npc, tabs, defaultTab, locationId, locationName, workInfo }: LocationShellProps) {
-  const visibleTabs = tabs.filter(tab => !tab.hidden);
+  const hasWork = !!workInfo && !tabs.some(tab => tab.id === 'hexed');
+  const services = tabs.filter(tab => !tab.hidden && !(hasWork && locationId === 'guild-hall' && tab.id === 'work'));
+  const visibleTabs: LocationTab[] = hasWork ? [{ id: 'your-shift', label: 'Work', content: <WorkplaceCard work={workInfo!} /> }, ...services.map(tab => tab.id === 'work' ? { ...tab, label: 'Careers' } : tab)] : services;
   const [selectedTab, setSelectedTab] = useState(defaultTab || visibleTabs[0]?.id || '');
   const activeTab = visibleTabs.some(tab => tab.id === selectedTab) ? selectedTab : visibleTabs[0]?.id;
   const activeContent = visibleTabs.find(tab => tab.id === activeTab)?.content;
@@ -66,8 +79,21 @@ export function LocationShell({ npc, tabs, defaultTab, locationId, locationName,
   const { options } = useGameOptions();
   const { reducedMotion, visible } = useEnvironmentActivity();
   const id = useId();
+  const contentRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const animated = options.environmentDetail === 'full' && !reducedMotion && visible;
   const greeting = player ? getReputationGreeting(locationId, player.fame ?? 0, player.infamy ?? 0) : null;
+
+  useLayoutEffect(() => {
+    // Both layouts have a scroll owner: content on desktop, menu on shallow phones.
+    // A newly selected service should open at its heading, not the previous tab's offset.
+    if (contentRef.current) contentRef.current.scrollTop = 0;
+    if (menuRef.current) menuRef.current.scrollTop = 0;
+  }, [activeTab, locationId]);
+
+  useEffect(() => {
+    if (hasWork && !defaultTab) setSelectedTab('your-shift');
+  }, [hasWork, locationId, defaultTab]);
 
   useEffect(() => {
     const timer = setTimeout(() => tryTriggerBanter(locationId, player ?? undefined, players), 600);
@@ -92,40 +118,23 @@ export function LocationShell({ npc, tabs, defaultTab, locationId, locationName,
             <p className="location-greeting">“{greeting ?? npc.greeting}”</p>
             <div className="location-item-preview"><ItemPreviewPanel accentColor={npc.accentColor} /></div>
           </aside>
-          <div className="location-menu">
+          <div ref={menuRef} className="location-menu">
             {visibleTabs.length > 1 && <nav className="location-tabs" aria-label={`${locationName} services`}>
               {visibleTabs.map(tab => (
-                <button key={tab.id} type="button" aria-pressed={activeTab === tab.id} aria-controls={`${id}-content`}
+                <button key={tab.id} type="button" data-ui-sound="menu-open" aria-pressed={activeTab === tab.id} aria-controls={`${id}-content`}
                   onClick={() => setSelectedTab(tab.id)}>
                   <span aria-hidden="true">{tab.icon ?? tabIcon(tab.id)}</span>
                   {tab.label}{tab.badge && <b className="location-tab-badge">{tab.badge}</b>}
                 </button>
               ))}
             </nav>}
-            <div id={`${id}-content`} className="location-content" onClick={() => tryTriggerBanter(locationId)}>
+            <div ref={contentRef} id={`${id}-content`} className="location-content" data-ui-sound={serviceSound(locationId, activeTab)} onClick={() => tryTriggerBanter(locationId)}>
               {activeContent}
             </div>
-            {workInfo && <WorkplaceAction work={workInfo} />}
+            {hasWork && activeTab !== 'your-shift' && <button className="workplace-return" data-ui-sound="menu-open" onClick={() => setSelectedTab('your-shift')}>Your shift · {workInfo!.hoursPerShift}h · +{workInfo!.earnings}g →</button>}
           </div>
         </div>
       </section>
     </ItemPreviewProvider>
-  );
-}
-
-function WorkplaceAction({ work }: { work: WorkInfo }) {
-  const short = work.hoursPerShift < work.fullShiftHours;
-  return (
-    <section className="location-work" aria-label="Your work shift">
-      <div className="location-work-title"><Briefcase aria-hidden="true" /><strong>{work.jobName}</strong><span>{work.wage}g/h</span></div>
-      <button className="location-work-button" onClick={work.onWork} disabled={!work.canWork} aria-describedby="work-shift-outcome">
-        <span><Clock aria-hidden="true" />{short ? 'Short shift' : 'Work shift'} · {work.hoursPerShift}h</span>
-        <span><Coins aria-hidden="true" />+{work.earnings}g</span>
-      </button>
-      <p id="work-shift-outcome" className={work.blockedReason ? 'location-work-warning' : 'location-work-outcome'}>
-        {work.blockedReason ?? `After shift: ${work.preview.hoursAfter}h left · ${work.preview.goldAfter}g · ${work.preview.happinessLoss > 0 ? `−${work.preview.happinessLoss} happiness` : 'no happiness loss'}`}
-      </p>
-      {work.canWork && work.preview.deductions > 0 && <p className="location-work-deductions">{work.preview.gross}g earned − {work.preview.deductions}g withheld for overdue payments.</p>}
-    </section>
   );
 }

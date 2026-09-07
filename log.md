@@ -14310,3 +14310,16 @@ Verified runtime/test revision 35ca8933c4e4e8f7eb83512a08d2db588dcc014f in run 3
 Review corrections: shallow landscape frames scroll services and work together; employer/shop rows have button affordance; mobile resource strip preserves access to gold/time via horizontal scrolling; active festival is a reactive input to wage previews. First new browser test failed because it assumed every portrait was an image, while Brynn uses video; corrected the test and all 15 now pass. No game balance or save-state changes.
 
 A direct app-level typecheck uncovered 185 diagnostics also present on clean main 244df16; normalized diagnostics match exactly after correcting two new test typings. The configured root check does not expose this existing technical debt. Physical Samsung S24 performance remains UNVERIFIED. Evidence: docs/qa/classic-locations/README.md and https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34095687365/artifacts/10008590178 . Final checkpoint changes documentation only.
+
+## 2026-09-07 — Classic material, weather and interaction-audio pass
+
+Owner requested closer fidelity to the Forge concept inside the original board frame, richer weather graphics, restored lightning/thunder and appropriate button sounds. Added generated vellum and alpha mist materials, a shared primary workplace overview with actual work preview, existing raise service and career requirements, explanatory Forge smithing, cached multi-depth precipitation and splash rendering, board-local storm strokes followed by thunder, and contextual click fallback with synchronous action-sound precedence. City geometry, original caricatures and game rules remain intact. No dependencies or save fields added.
+
+Targeted tests passed. Full validation and runtime image review are pending; see docs/qa/material-weather/README.md. Existing app-level TypeScript debt is tracked separately from the configured root type check.
+
+### Verified material/weather/audio delivery — 2026-09-07
+
+PR #407: https://github.com/Tombonator3000/guild-life-adventures/pull/407
+Runtime f6df4f150df4e164e257cebad888586d1d4404eb passed 726 tests in 89 files and 16 browser journeys, production build, configured root type check, lint (27 inherited warnings) and audio audit. CI run 34101125049 / job 101675580705; screenshot artifact 10010635532. Explicit application type check retains exactly the baseline's 185 diagnostics, with no additions.
+
+Inspected real Forge work, Smithing, storm and phone captures. Tightened the work card so job, time, net pay and gold CTA fit the desktop frame. Fixed retained scroll offsets hiding service headings and connected the tutorial to the new work button. Storm particles now have stronger contrast; branching lightning is visible below the UI and delayed thunder is exercised in-browser. Contextual sound cleanup prevents pooled-listener growth, shares the unlocked audio context, and isolates procedural audio randomness from gameplay. Original city layout, center frame, NPC caricatures and game rules are preserved. Detailed evidence and generation prompts are in docs/qa/material-weather/README.md. Physical phone performance/speaker balance remain unverified. No merge/deployment performed. This final checkpoint changes documentation only after the verified runtime revision.

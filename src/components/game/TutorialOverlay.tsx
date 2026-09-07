@@ -235,8 +235,8 @@ export function TutorialOverlay({ onClose }: TutorialOverlayProps) {
         return {
           title: '3. Work One Full Shift',
           content: atWork
-            ? `You are at ${ownerJob?.location}. Use the highlighted Work Shift button. The real action spends ${ownerJob?.hoursPerShift ?? 0} hours and pays your current wage.`
-            : `Your new job is ${ownerJob?.name ?? 'stored on your character'} at ${ownerJob?.location ?? 'its employer'}. Travel to the highlighted workplace, then use Work Shift.`,
+            ? `You are at ${ownerJob?.location}. Use the highlighted gold Work button. The real action spends ${ownerJob?.hoursPerShift ?? 0} hours and pays your current wage.`
+            : `Your new job is ${ownerJob?.name ?? 'stored on your character'} at ${ownerJob?.location ?? 'its employer'}. Travel to the highlighted workplace, then use the gold Work button.`,
           tip: 'Working increases Experience and Dependability as well as gold. Career counts Dependability only while employed.',
           target: atWork
             ? '[data-tutorial-target="work-shift"]'

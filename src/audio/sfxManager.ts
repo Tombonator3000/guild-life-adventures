@@ -115,11 +115,14 @@ function saveSettings(settings: SFXSettings) {
 }
 
 class SFXManager {
+  /** Monotonic request count lets UI fallbacks avoid doubling action sounds. */
+  playRevision = 0;
   private settings: SFXSettings;
   private cachedSettings: SFXSettings;
   private listeners: Array<() => void> = [];
   private audioPool: HTMLAudioElement[] = [];
   private gainNodes: (GainNode | null)[] = [];
+  private errorHandlers: Array<(() => void) | undefined> = [];
   private poolIndex = 0;
   private readonly POOL_SIZE = 8;
   private failedFiles = new Set<SFXId>();
@@ -142,6 +145,7 @@ class SFXManager {
 
   /** Play a sound effect by ID using its declared primary source. */
   play(sfxId: SFXId) {
+    this.playRevision++;
     if (this.settings.sfxMuted) return;
 
     const sfx = SFX_LIBRARY[sfxId];
@@ -163,6 +167,8 @@ class SFXManager {
     const gain = this.gainNodes[index];
     this.poolIndex = (this.poolIndex + 1) % this.POOL_SIZE;
 
+    const previousHandler = this.errorHandlers[index];
+    if (previousHandler) audio.removeEventListener('error', previousHandler);
     audio.pause();
     audio.currentTime = 0;
     audio.src = url;
@@ -174,6 +180,8 @@ class SFXManager {
     const playPromise = audio.play();
     if (playPromise) {
       playPromise.catch((error) => {
+        // Reusing a pool slot may abort its previous clip; that file is not broken.
+        if (audio.getAttribute('src') !== url || error?.name === 'AbortError') return;
         if (error?.name === 'NotAllowedError') {
           playSynthSFX(sfxId, effectiveVolume);
         } else {
@@ -188,6 +196,7 @@ class SFXManager {
       playSynthSFX(sfxId, effectiveVolume);
       audio.removeEventListener('error', errorHandler);
     };
+    this.errorHandlers[index] = errorHandler;
     audio.addEventListener('error', errorHandler, { once: true });
   }
 

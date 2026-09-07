@@ -19,6 +19,7 @@ import {
   calculateCombatStats,
 } from '@/data/items';
 import { toast } from 'sonner';
+import { playSFX } from '@/audio/sfxManager';
 
 export type ForgeSection = 'smithing' | 'repairs' | 'salvage';
 
@@ -89,9 +90,9 @@ function SmithingSection({
   const hasEquipment = ownedEquipment.length > 0;
 
   return (
-    <div className="space-y-2">
-      {/* Combat stats display */}
-      <div className="bg-[#e8dcc8] border-[#8b7355] border rounded p-2">
+    <div className="space-y-2 forge-services">
+      {/* Combat stats are useful once the player owns equipment. */}
+      {hasEquipment && <div className="bg-[#e8dcc8] border-[#8b7355] border rounded p-2">
         <div className="text-xs text-[#6b5a42] uppercase tracking-wide mb-1">{t('common.attack')} / {t('common.defense')}</div>
         <div className="flex gap-4 font-mono text-sm">
           <span className="text-red-700">ATK: {stats.attack}</span>
@@ -100,14 +101,15 @@ function SmithingSection({
             <span className="text-yellow-700">BLK: {Math.round(stats.blockChance * 100)}%</span>
           )}
         </div>
-      </div>
+      </div>}
 
       {!hasEquipment ? (
-        <div className="bg-[#e8dcc8] border border-[#8b7355] rounded p-3 text-center">
-          <p className="text-sm text-[#3d2a14] font-display mb-1">{t('panelForge.temperEquipment')}</p>
-          <p className="text-xs text-[#6b5a42]">
-            {t('locations.armory')}
-          </p>
+        <div className="material-card forge-empty">
+          <span className="workplace-seal"><Hammer aria-hidden="true" /></span>
+          <h3>Make good steel exceptional</h3>
+          <p>Korr can temper your weapons, armor and shields for a permanent combat bonus.</p>
+          <div className="forge-bonuses"><span>Weapon <b>+{TEMPER_BONUS.weapon.attack} ATK</b></span><span>Armor <b>+{TEMPER_BONUS.armor.defense} DEF</b></span></div>
+          <p className="workplace-help">Buy equipment at the Armory, then return here. Each item can be tempered once; price and time appear when you own it.</p>
         </div>
       ) : (
         ownedEquipment.map(item => {
@@ -139,10 +141,11 @@ function SmithingSection({
                   </div>
                 </div>
               ) : (
-                <button
+                <button data-ui-sound="item-equip"
                   onClick={() => {
                     const result = equipmentServiceAction(player.id, 'temper', item.id);
                     if (!result) return;
+                    playSFX(result.success ? 'item-equip' : 'error');
                     if (result.success) toast.success(result.message);
                     else toast.error(result.message);
                   }}
@@ -168,7 +171,7 @@ function SmithingSection({
       )}
 
       <div className="mt-1 text-xs text-[#6b5a42] px-2">
-        {t('panelForge.temperBonus')}
+        Tempering improves combat stats. Repairs restore durability.
       </div>
     </div>
   );
@@ -212,7 +215,7 @@ function RepairsSection({
   });
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 forge-services">
       {/* Equipment Repair Section */}
       <div className="bg-[#e8dcc8] border-[#8b7355] border rounded p-2">
         <div className="text-xs text-[#6b5a42] uppercase tracking-wide mb-1">Equipment Repair</div>
@@ -239,10 +242,11 @@ function RepairsSection({
 
           return (
             <div key={item.id} className="py-1 px-1">
-              <button
+              <button data-ui-sound="item-equip"
                 onClick={() => {
                   const result = equipmentServiceAction(player.id, 'repair', item.id);
                   if (!result) return;
+                  playSFX(result.success ? 'item-equip' : 'error');
                   if (result.success) toast.success(result.message);
                   else toast.error(result.message);
                 }}
@@ -308,10 +312,11 @@ function RepairsSection({
 
           return (
             <div key={applianceId} className="py-1 px-1">
-              <button
+              <button data-ui-sound="item-equip"
                 onClick={() => {
                   const result = applianceServiceAction(player.id, 'repair-forge', applianceId);
                   if (!result) return;
+                  playSFX(result.success ? 'item-equip' : 'error');
                   if (result.success) toast.success(result.message);
                   else toast.error(result.message);
                 }}
@@ -381,7 +386,7 @@ function SalvageSection({
   const hasEquipment = ownedEquipment.length > 0;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 forge-services">
       <div className="bg-[#e8dcc8] border-[#8b7355] border rounded p-2">
         <div className="text-xs text-[#6b5a42] uppercase tracking-wide mb-1">{t('panelForge.salvageEquipment')}</div>
         <p className="text-xs text-[#6b5a42]">
@@ -406,10 +411,11 @@ function SalvageSection({
 
           return (
             <div key={item.id} className="py-1 px-1">
-              <button
+              <button data-ui-sound="coin-gain"
                 onClick={() => {
                   const result = equipmentServiceAction(player.id, 'salvage', item.id);
                   if (!result) return;
+                  playSFX(result.success ? 'coin-gain' : 'error');
                   if (result.success) toast.success(result.message);
                   else toast.error(result.message);
                 }}

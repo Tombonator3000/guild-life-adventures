@@ -53,10 +53,10 @@ describe('board environment and travel', () => {
   it('lets the player turn ambient motion off without changing weather or gameplay', () => {
     const {container} = renderBoard();
     const weather = useGameStore.getState().weather;
-    expect(container.querySelector('.weather-snow')).toBeInTheDocument();
+    expect(container.querySelector('canvas.weather-particles')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Living environment'),{target:{value:'reduced'}});
     expect(container.querySelector('.weather-tint-snow')).toBeInTheDocument();
-    expect(container.querySelector('.weather-snow')).not.toBeInTheDocument();
+    expect(container.querySelector('canvas.weather-particles')).not.toBeInTheDocument();
     expect(container.querySelector('.environment-smoke')).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Living environment'),{target:{value:'off'}});
     expect(container.querySelector('.board-environment')).not.toBeInTheDocument();

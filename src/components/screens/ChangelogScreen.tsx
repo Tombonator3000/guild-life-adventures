@@ -25,6 +25,19 @@ const visual = (text: string): ChangelogEntry => ({ icon: <Palette className={`$
 
 const CHANGELOG: Version[] = [
   {
+    version: 'v0.11.3',
+    date: 'September 7, 2026',
+    title: 'Vellum, brass and rolling thunder',
+    highlights: [
+      visual('Textured parchment menus, embossed brass work buttons and prominent shift cards inside the original board frame'),
+      improve('Your workplace opens on Work, with take-home pay, after-shift resources, raise requests and career requirements'),
+      visual('Layered rain and snow particles, splashes and painted mist add depth to the town weather'),
+      fix('Storm lightning and delayed thunder return; calm mode and reduced motion suppress strikes'),
+      improve('Contextual button sounds for work, money, equipment, study and healing respect sound settings'),
+      improve('The Forge explains tempering benefits and where to obtain equipment'),
+    ],
+  },
+  {
     version: 'v0.11.2',
     date: 'September 7, 2026',
     title: 'Life inside the board',

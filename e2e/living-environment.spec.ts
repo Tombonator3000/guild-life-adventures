@@ -65,7 +65,7 @@ test('mobile storm leaves bank actions usable and display settings reachable', a
   await page.getByRole('button',{name:'Storm',exact:true}).click();
   await page.setViewportSize({width:390,height:844});
   await expect(page.getByTitle('Stats & Inventory')).toBeVisible();
-  await expect(page.locator('.weather-rain')).toHaveCount(24);
+  await expect(page.locator('canvas.weather-particles')).toHaveAttribute('data-particle-budget','120');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth+1)).toBe(true);
   await page.screenshot({path:testInfo.outputPath('mobile-storm.png')});
   await page.locator('[data-zone-id="bank"]').click();

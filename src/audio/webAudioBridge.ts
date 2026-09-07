@@ -40,6 +40,11 @@ function getContext(): AudioContext | null {
   return ctx;
 }
 
+/** Share the gesture-unlocked context with procedural UI/weather effects. */
+export function getSharedAudioContext(): AudioContext | null {
+  return getContext();
+}
+
 /**
  * Connect an HTMLAudioElement to the Web Audio graph.
  * Returns a GainNode for volume control, or null if AudioContext is unavailable.

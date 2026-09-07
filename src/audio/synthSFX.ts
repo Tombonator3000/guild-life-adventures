@@ -2,17 +2,22 @@
 // Generates procedural sounds as fallback when MP3 files are not available.
 // Each sound is a function that creates audio nodes and plays them.
 
-let audioCtx: AudioContext | null = null;
+import { getSharedAudioContext } from './webAudioBridge';
+
+// Audio variation must not advance the random stream used by game events.
+let noiseSeed = 0x6d2b79f5;
+function audioRandom() {
+  noiseSeed ^= noiseSeed << 13;
+  noiseSeed ^= noiseSeed >>> 17;
+  noiseSeed ^= noiseSeed << 5;
+  return (noiseSeed >>> 0) / 4294967296;
+}
 
 function getCtx(): AudioContext {
-  if (!audioCtx) {
-    audioCtx = new AudioContext();
-  }
-  // Resume if suspended (autoplay policy)
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume().catch(() => {});
-  }
-  return audioCtx;
+  const context = getSharedAudioContext();
+  if (!context) throw new Error('AudioContext unavailable');
+  if (context.state === 'suspended') context.resume().catch(() => {});
+  return context;
 }
 
 // Helper: play a tone with envelope
@@ -44,7 +49,7 @@ function playNoise(duration: number, volume: number, filterFreq?: number) {
   const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
   const data = buffer.getChannelData(0);
   for (let i = 0; i < bufferSize; i++) {
-    data[i] = (Math.random() * 2 - 1);
+    data[i] = (audioRandom() * 2 - 1);
   }
   const source = ctx.createBufferSource();
   source.buffer = buffer;
@@ -308,10 +313,10 @@ export const SYNTH_SOUNDS: Record<string, (volume: number) => void> = {
     // Rapid clicking sounds
     for (let i = 0; i < 6; i++) {
       setTimeout(() => {
-        playNoise(0.03, vol * 0.2, 3000 + Math.random() * 2000);
+        playNoise(0.03, vol * 0.2, 3000 + audioRandom() * 2000);
       }, i * 40);
     }
-    setTimeout(() => playTone(800 + Math.random() * 400, 0.1, vol * 0.25, 'triangle'), 280);
+    setTimeout(() => playTone(800 + audioRandom() * 400, 0.1, vol * 0.25, 'triangle'), 280);
   },
 
   'death': (vol) => {
