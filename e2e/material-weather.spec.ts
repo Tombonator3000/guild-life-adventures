@@ -30,6 +30,7 @@ test('forge work, tactile menus, weather pixels and storm audio stay inside the 
   await expect(shell.getByText('Your job:',{exact:false})).toContainText('Forge Laborer');
   await expect(shell.getByRole('button',{name:/Ask for a raise/})).toBeDisabled();
   await expect(shell.getByText(/Work 3 shifts first/)).toBeVisible();
+  await expect(shell.locator('.location-work-button')).toBeInViewport();
   await page.screenshot({path:testInfo.outputPath('forge-work-desktop.png')});
   for(let i=0;i<3;i++) await shell.locator('.location-work-button').click();
   await expect(shell.getByRole('button',{name:/Ask for a raise/})).toBeEnabled();
@@ -38,7 +39,7 @@ test('forge work, tactile menus, weather pixels and storm audio stay inside the 
   await shell.getByText('View career path',{exact:true}).click();
   await expect(shell.getByText('Apprentice Smith',{exact:true})).toBeVisible();
   await shell.getByRole('button',{name:'Smithing',exact:true}).click();
-  await expect(shell.getByText('Make good steel exceptional')).toBeVisible();
+  await expect(shell.getByText('Make good steel exceptional')).toBeInViewport();
   await page.screenshot({path:testInfo.outputPath('forge-smithing-desktop.png')});
   await shell.getByRole('button',{name:'Work',exact:true}).click();
   await page.getByRole('button',{name:'Storm',exact:true}).click();

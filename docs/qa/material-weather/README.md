@@ -36,3 +36,9 @@ Runtime capture review and final CI results pending at this initial checkpoint. 
 - Audio follow-up: one error listener per reused pool slot, intentional interruption does not mark a file bad, procedural sounds share the gesture-unlocked AudioContext, and audio noise has its own random stream. Dedicated tests cover listener bounds and thunder-noise independence.
 
 Final runtime review pending after these corrections.
+
+## Second runtime review (0fd72b9)
+
+All 726 unit tests and 16 browser journeys passed in run 34100535135; build, lint (27 inherited warnings), configured types and 42-file audio audit passed. The 185 app-level type diagnostics still exactly match the baseline. Actual Forge desktop, both phone orientations and storm captures were inspected. The work CTA and job introduction now fit the desktop viewport; storm rain and branching lightning are visibly present below the center controls.
+
+One visual issue remained despite passing tests: opening Smithing after scrolling through careers preserved the previous tab's scroll position and hid its heading. Added scroll reset on service/location change for both desktop and shallow-phone scroll owners, and strengthened the browser journey to require the Smithing heading and initial Work CTA inside the viewport. Final confirmation pending for this correction.
