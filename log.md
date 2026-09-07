@@ -14296,3 +14296,9 @@ Fixed 20 findings from AUDIT-2026-02-12.md across all severity levels. Removed t
 - Verified revision 4b1a685 in Actions run 34091717238: 718 unit tests, all 14 browser tests, TypeScript, build, ESLint and audio audit pass. Smoke transform changes in the real browser; storm bank actions and display options work on a 390px viewport.
 - Captured all weather states and mobile/desktop screenshots in Actions artifact 10007151759. Local execution environment disconnected before images could be opened, so manual visual review and physical-device performance remain UNVERIFIED.
 - Preserved all work in draft PR #405; no merge/deployment. Next action: inspect the saved screenshots and complete visual review. Details in docs/qa/living-guildholm/README.md. This checkpoint changes documentation only.
+
+## 2026-09-07 - Classic board direction and living location visits
+
+Owner narrowed the scope: retain the city layout, central frame and original caricatures; reserve the broader redesign for Guild Life 2. Recorded the active direction in docs/design/CLASSIC_VISUAL_DIRECTION.md and archived the previous brainstorm separately.
+
+Implemented shared illustrated location scenes using original assets, location-specific light and motes, clearer service navigation, and a compact work outcome card within the existing frame. The board and location geometry are untouched. Work previews share actual pay/garnishment logic and explain clothing blocks; short shifts use the existing semantic service. Added preview-vs-action regression checks and a browser journey covering ten workplaces plus desktop/phone work and banking. Validation in progress; final results to follow.

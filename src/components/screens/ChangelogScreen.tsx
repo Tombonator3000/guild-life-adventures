@@ -25,6 +25,17 @@ const visual = (text: string): ChangelogEntry => ({ icon: <Palette className={`$
 
 const CHANGELOG: Version[] = [
   {
+    version: 'v0.11.2',
+    date: 'September 7, 2026',
+    title: 'Life inside the board',
+    highlights: [
+      visual('Original caricature characters and illustrated interiors now form living location scenes inside the familiar central frame'),
+      improve('Clearer service buttons and work cards show time, take-home pay and the result of a shift'),
+      fix('Work previews include festival bonuses and overdue-payment deductions; clothing requirements explain why a shift is unavailable'),
+      improve('Short shifts are available from the shared work card; small screens keep the original characters visible'),
+    ],
+  },
+  {
     version: 'v0.11.1',
     date: 'September 7, 2026',
     title: 'Living Guildholm',

@@ -1,5 +1,7 @@
 import type { Player } from '@/types/game.types';
 import { getJob } from '@/data/jobs';
+import { useGameStore } from '@/store/gameStore';
+import { getWorkPreview } from '@/store/helpers/workEducationHelpers';
 import { CLOTHING_THRESHOLDS, CLOTHING_TIER_LABELS, getClothingTier } from '@/data/items';
 import { Briefcase } from 'lucide-react';
 import {
@@ -17,6 +19,8 @@ interface WorkSectionProps {
 }
 
 export function WorkSection({ player, locationName, performWorkShift, variant }: WorkSectionProps) {
+  const week = useGameStore(state => state.week);
+  const festival = useGameStore(state => state.activeFestival);
   const jobData = player.currentJob ? getJob(player.currentJob) : null;
   const canWork = jobData && jobData.location === locationName;
 
@@ -59,12 +63,12 @@ export function WorkSection({ player, locationName, performWorkShift, variant }:
   }
 
   // Match actual workShift calculation: flat 15% bonus on earnings for all shifts
-  const earnings = Math.floor(jobData.hoursPerShift * player.currentWage * 1.15);
+  const earnings = getWorkPreview(player, jobData.hoursPerShift, week, festival).net;
 
   // Short shift: when not enough time for a full shift but some time remains
   const hasPartialTime = player.timeRemaining > 0 && player.timeRemaining < jobData.hoursPerShift;
   const partialHours = player.timeRemaining;
-  const partialEarnings = Math.floor(partialHours * player.currentWage * 1.15);
+  const partialEarnings = getWorkPreview(player, partialHours, week, festival).net;
 
   const handleWork = (mode: 'full' | 'remaining') => {
     const result = performWorkShift(player.id, mode);

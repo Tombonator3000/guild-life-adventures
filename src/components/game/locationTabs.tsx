@@ -2,6 +2,8 @@ import type { LocationId } from '@/types/game.types';
 import type { LocationTab, WorkInfo } from './LocationShell';
 import type { LocationTabContext, LocationTabFactoryMap } from './locationTabContext';
 import { getJob } from '@/data/jobs';
+import { CLOTHING_THRESHOLDS, CLOTHING_TIER_LABELS } from '@/data/items';
+import { getWorkPreview } from '@/store/helpers/workEducationHelpers';
 import { getGameOption } from '@/data/gameOptions';
 import { isLocationHexed, getHexById } from '@/data/hexes';
 import { getReputationUnlocks, REPUTATION_UNLOCKS } from '@/data/reputation';
@@ -39,15 +41,27 @@ export function getWorkInfo(locationId: LocationId, ctx: LocationTabContext): Wo
   const jobLocationName = JOB_LOCATION_MAP[locationId];
   if (!currentJobData || !jobLocationName || currentJobData.location !== jobLocationName) return null;
 
-  const earnings = Math.floor(currentJobData.hoursPerShift * player.currentWage * 1.15);
+  const hours = Math.min(currentJobData.hoursPerShift, player.timeRemaining);
+  const preview = getWorkPreview(player, hours, ctx.week, useGameStore.getState().activeFestival);
+  const threshold = CLOTHING_THRESHOLDS[currentJobData.requiredClothing];
+  const blockedReason = player.timeRemaining <= 0
+    ? 'No hours left this week.'
+    : player.clothingCondition <= 0
+      ? 'Buy clothing before you can work.'
+      : player.clothingCondition < threshold
+        ? `This job needs ${CLOTHING_TIER_LABELS[currentJobData.requiredClothing]} clothing. Buy or change your outfit first.`
+        : null;
   return {
     jobName: currentJobData.name,
     wage: player.currentWage,
-    hoursPerShift: currentJobData.hoursPerShift,
-    earnings,
-    canWork: player.timeRemaining >= currentJobData.hoursPerShift,
+    hoursPerShift: hours,
+    fullShiftHours: currentJobData.hoursPerShift,
+    earnings: preview.net,
+    preview,
+    blockedReason,
+    canWork: !blockedReason,
     onWork: () => {
-      const result = performWorkShift(player.id, 'full');
+      const result = performWorkShift(player.id, hours < currentJobData.hoursPerShift ? 'remaining' : 'full');
       if (!result) return;
       if (result.success) toast.success(result.message);
       else toast.error(result.message);
