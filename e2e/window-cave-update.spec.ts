@@ -33,6 +33,7 @@ test('wrapped market tabs and paged goods keep every service reachable', async (
     await shell.getByRole('button',{name:'Next menu page',exact:true}).click();
     await expect(shell.getByRole('status')).toContainText('Page 2');
     await page.screenshot({path:testInfo.outputPath(`shadow-market-${width}.png`)});
+    await openMenuPage(page,shell.locator('.location-page-flow button').last());
   }
 });
 
@@ -62,19 +63,25 @@ test('cave load, encounter, result, retreat and settlement remain clear inside t
   await openMenuPage(page,entry); await entry.click();
   const intro=page.getByRole('region',{name:'Current encounter'});
   await expect(intro).toBeVisible();
-  const action=intro.locator('.cave-actions button').first();
-  await openMenuPage(page,action);
+  const action=page.getByRole('group',{name:'Encounter choices'}).getByRole('button').first();
+  await expect(action).toBeInViewport();
   await page.screenshot({path:testInfo.outputPath('cave-encounter.png')});
+  if(await page.evaluate(()=>!!document.fullscreenElement)) await page.keyboard.press('f');
+  for(const [width,height] of [[844,390],[390,844],[1280,720]]) {
+    await page.setViewportSize({width,height});
+    await expect(action).toBeInViewport();
+    await page.screenshot({path:testInfo.outputPath(`cave-encounter-${width}.png`)});
+  }
   await action.click();
   const outcome=page.getByRole('region',{name:'Encounter outcome'});
   await expect(outcome).toContainText('resolved');
-  await expect(outcome).toContainText('Run purse:');
+  await expect(outcome).toContainText('Run loot:');
   await page.screenshot({path:testInfo.outputPath('cave-outcome.png')});
-  const retreat=outcome.getByRole('button',{name:/Retreat · keep/});
-  await openMenuPage(page,retreat); await retreat.click();
+  const retreat=page.getByRole('button',{name:/Retreat · keep/});
+  await expect(retreat).toBeInViewport(); await retreat.click();
   const finish=page.getByRole('button',{name:'Return to Dungeon',exact:true});
   await openMenuPage(page,finish); await finish.click();
-  await expect(page.getByText('Retreated',{exact:true})).toBeVisible();
+  await expect(page.getByRole('heading',{name:/Retreated/})).toBeVisible();
   await page.emulateMedia({reducedMotion:'reduce'});
   await expect(page.locator('.location-shell')).toHaveAttribute('data-animated','false');
 });

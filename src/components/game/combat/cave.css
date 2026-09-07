@@ -48,3 +48,23 @@
 .cave-health-label { color:#52381f; }.cave-result > .text-orange-400 { color:#7b341b; background:#f3d3a8; }
 
 @container (max-height:320px) { .cave-encounter-card { display:block; break-inside:auto; }.cave-encounter-art { width:64px; float:left; margin:0 8px 4px 0; }.cave-result-heading { display:block; }.cave-result-heading img { float:left; margin-right:8px; }.cave-actions button { min-height:36px; }.cave-result-ledger { display:block; padding:6px; }.cave-result-ledger > div { margin-bottom:5px; }.cave-modifier { display:block; }.cave-plan-numbers { display:block; }.cave-floor-tabs button { min-height:28px; } }
+
+.cave-health-change { color:#4b321b; font-size:12px; margin:7px 0; }.cave-summary > .text-center h3 { color:#4c341b; font-weight:bold; }.cave-summary > .text-center p { color:#61492e; }.cave-summary .text-\[\#8b7355\],.cave-summary .text-\[\#a09080\] { color:#dac9a9; }
+
+.cave-flavor summary { cursor:pointer; }
+.cave-flavor[open] summary { margin-bottom:5px; }
+.cave-encounter-card { margin:7px 0; padding:8px; gap:9px; }
+.cave-encounter-copy h3 { font-size:19px; margin-bottom:5px; }
+.cave-flavor { font-size:11px; margin-bottom:6px; }
+.cave-result-heading { gap:8px; margin:5px 0; }
+.cave-result-heading img { width:48px; height:48px; }
+.cave-result-heading p:not(.cave-eyebrow) { font-size:12px; }
+.cave-result h3 { font-size:19px; margin-bottom:3px; }
+.cave-result-ledger { gap:5px 10px; padding:7px; margin:6px 0; }
+.cave-result-total { font-size:12px; padding-bottom:4px; }
+.cave-result-bonuses { width:100%; font-size:11px; color:#e2d9f8; }
+.cave-result-bonuses summary { cursor:pointer; }
+.cave-result-bonuses p { padding-top:5px; }
+.location-action-dock .cave-actions { color:#412b18; }
+.location-action-dock .cave-actions button { font-size:12px; padding:6px; min-width:0; }
+@container (max-height:320px) { .location-action-dock .cave-actions button { min-height:32px; padding:4px; font-size:11px; }.cave-encounter-card { break-inside:auto; }.cave-result-heading img { width:36px; height:36px; } }

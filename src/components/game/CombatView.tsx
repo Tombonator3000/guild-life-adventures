@@ -13,6 +13,7 @@ import type { DungeonCompletionSummary } from '@/store/dungeonTypes';
 import { EncounterIntro, EncounterResultView, FloorSummaryView } from './combat';
 import { toast } from 'sonner';
 import './combat/cave.css';
+import { retreatFromDungeon } from '@/data/combatResolver';
 
 interface CombatViewProps {
   player: Player;
@@ -69,6 +70,9 @@ export function CombatView({ player, floor, onComplete, onCancel }: CombatViewPr
 
   const runState = session.runState;
   const currentEncounter = runState.encounters[runState.currentEncounterIndex];
+  const previousHealth = runState.results.slice(0, -1).reduce((health, result) => Math.min(player.maxHealth, Math.max(0, health - result.damageDealt + result.healed + result.potionHealed)), runState.startHealth);
+  const retreatGold = buildDungeonCompletionSummary({ ...session, runState: retreatFromDungeon(runState) }, player, activeFestival).goldEarned;
+  const settledGold = buildDungeonCompletionSummary(session, player, activeFestival).goldEarned;
   const nextEncounter = runState.encounters[runState.currentEncounterIndex + 1];
   const canRetreat = nextEncounter?.type !== 'boss' && currentEncounter?.type !== 'boss';
 
@@ -144,6 +148,8 @@ export function CombatView({ player, floor, onComplete, onCancel }: CombatViewPr
           encounterIndex={runState.currentEncounterIndex}
           totalEncounters={runState.encounters.length}
           totalGold={runState.totalGold}
+          previousHealth={previousHealth}
+          retreatGold={retreatGold}
           currentHealth={runState.currentHealth}
           maxHealth={player.maxHealth}
           canRetreat={canRetreat}
@@ -159,6 +165,7 @@ export function CombatView({ player, floor, onComplete, onCancel }: CombatViewPr
         <FloorSummaryView
           state={runState}
           floor={floor}
+          settledGold={settledGold}
           onFinish={handleFinish}
         />
       )}

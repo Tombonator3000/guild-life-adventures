@@ -89,6 +89,10 @@ async function updateApp() {
   // Keep the current local game, including an in-progress cave session, before reload.
   const [{ useGameStore }, { saveGame }] = await Promise.all([import('@/store/gameStore'), import('@/data/saveLoad')]);
   const state = useGameStore.getState();
+  if (state.networkMode !== 'local') {
+    toast.info('Finish or leave the online session before updating.');
+    return;
+  }
   if (state.players.length && state.phase !== 'title' && state.phase !== 'setup') {
     if (!saveGame(state)) { toast.error('Could not save your game. Free some browser storage and try again.'); return; }
   }

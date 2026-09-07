@@ -152,7 +152,7 @@
 .location-page-viewport { flex:1; min-height:0; overflow:clip; }
 .location-page-flow { height:100%; column-width:auto; column-count:1; column-gap:16px; column-fill:auto; overflow:visible; }
 .location-page-flow :is(button,li,tr,h2,h3,h4,p) { break-inside:avoid; }
-.location-page-flow :is(h2,h3,h4) { break-after:avoid; }
+
 .location-page-flow :is([class*="overflow-y-auto"],[class*="overflow-auto"],[class*="overflow-x-auto"]) { overflow:visible!important; max-height:none!important; }
 .location-page-flow :is(.material-card,.location-work,.workplace-career) { box-decoration-break:clone; -webkit-box-decoration-break:clone; }
 .location-page-controls { display:flex; align-items:center; justify-content:space-between; gap:5px; border-top:1px solid #b99a6c; margin-top:5px; padding-top:4px; font-size:11px; flex-shrink:0; }
@@ -178,3 +178,12 @@
 }
 
 @container (max-height:460px) { .workplace-intro { margin-bottom:4px; }.location-work h3 { font-size:18px; }.workplace-numbers { margin:5px 0; }.workplace-numbers > span { font-size:24px; }.workplace-numbers svg { height:26px; width:23px; }.location-work-outcome { margin:5px 0; font-size:12px; }.location-work-button { min-height:44px; padding:4px 8px; font-size:20px; }.location-work.material-card { padding:8px; } }
+
+.location-action-dock { flex-shrink:0; }
+.location-action-dock:empty { display:none; }
+.location-action-dock .cave-actions { margin-top:6px; }
+.forge-empty .forge-empty-heading { display:flex; align-items:center; gap:8px; margin-bottom:7px; text-align:left; break-inside:avoid; }
+.forge-empty .workplace-seal { margin:0; width:32px; height:32px; }
+.forge-empty h3 { margin:0; font-size:18px; }
+.forge-empty p { font-size:12px; }
+.forge-bonuses { margin:8px 0; padding:7px; }

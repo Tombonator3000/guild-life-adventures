@@ -1,10 +1,21 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+const ActionDock = createContext<HTMLDivElement | null | undefined>(undefined);
+
+/** Keep the current encounter's choices on screen while its story turns pages. */
+export function LocationActions({ children }: { children: ReactNode }) {
+  const dock = useContext(ActionDock);
+  if (dock === undefined) return <>{children}</>;
+  return dock ? createPortal(children, dock) : null;
+}
 
 /** Fixed-size book pages: native column fragmentation keeps live controls/state intact. */
 export function LocationPages({ children, pageKey }: { children: ReactNode; pageKey: string }) {
   const viewport = useRef<HTMLDivElement>(null);
   const flow = useRef<HTMLDivElement>(null);
+  const [dock, setDock] = useState<HTMLDivElement | null>(null);
   const [page, setPage] = useState(0);
   const [layout, setLayout] = useState({ width: 1, pages: 1 });
 
@@ -38,7 +49,7 @@ export function LocationPages({ children, pageKey }: { children: ReactNode; page
     return () => { cancelAnimationFrame(frame); resize.disconnect(); mutation.disconnect(); content.removeEventListener('load', measure, true); };
   }, []);
 
-  return <div className="location-pages">
+  return <ActionDock.Provider value={dock}><div className="location-pages">
     <div className="location-page-viewport" ref={viewport}>
       <div className="location-page-flow" ref={flow} style={{ transform: `translateX(-${page * (layout.width + 16)}px)` }}
         onFocusCapture={event => {
@@ -50,10 +61,11 @@ export function LocationPages({ children, pageKey }: { children: ReactNode; page
           if (offset < 0 || offset >= layout.width) setPage(old => Math.max(0, Math.min(layout.pages - 1, old + Math.round(offset / (layout.width + 16)))));
         }}>{children}</div>
     </div>
+    <div className="location-action-dock" ref={setDock} />
     <nav className="location-page-controls" aria-label="Menu pages" data-ui-sound="menu-open">
       <button aria-label="Previous menu page" disabled={page === 0} onClick={() => setPage(page - 1)}><ChevronLeft /> Previous</button>
       <span role="status">Page {page + 1} of {layout.pages}</span>
       <button aria-label="Next menu page" disabled={page >= layout.pages - 1} onClick={() => setPage(page + 1)}>Next <ChevronRight /></button>
     </nav>
-  </div>;
+  </div></ActionDock.Provider>;
 }
