@@ -200,7 +200,7 @@ export function TitleScreen() {
           <div className="text-center mb-10 relative">
             {/* Invisible dev-mode trigger (5 clicks within 2s) */}
             <button
-              className="absolute top-0 left-1/2 w-4 h-4 opacity-0 cursor-default select-none"
+              className="absolute top-0 left-1/2 z-10 w-4 h-4 opacity-0 cursor-default select-none"
               style={{ transform: 'translateX(-50%)' }}
               onClick={handleDevClick}
               aria-hidden="true"

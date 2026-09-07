@@ -14276,3 +14276,23 @@ Fixed 20 findings from AUDIT-2026-02-12.md across all severity levels. Removed t
 ### Build & Tests
 - TypeScript: compiles cleanly (tsc --noEmit)
 - Tests: 176/176 pass
+
+## 2026-09-07T06:26Z - Gauntlet: Living Guildholm
+
+- Inspected current main and matching Lovable revision f6f1aa7, existing weather, crows, festivals, controls and release workflow.
+- Added artwork-anchored chimney smoke, leaves, passing birds, forge embers and warm/magical lights. Weather suppresses birds during storms and leaves during snow.
+- Replaced overlapping weather particles/window droplets/full-screen lightning with deterministic board-space precipitation and restrained tints. Environment now stays behind controls.
+- Fixed bad-weather travel tooltip off-by-one and inaccessible mobile options tab names.
+- Added local Full/Calm/Off environment preference, system reduced-motion response and hidden-tab animation pause.
+- Added regression tests and weather/mobile screenshot journeys; CI preserves successful browser artifacts.
+- See docs/qa/living-guildholm/README.md for acceptance criteria, evidence and remaining validation. X article could not be read in full; no claims attributed to unread content.
+
+- Final review: festival particles also use deterministic decoration samples so toggling environment cannot advance gameplay randomness.
+
+- 2026-09-07T06:37Z: First CI passed 12 existing browser tests but exposed an obstructed title-screen developer gesture. Fixed stacking order; new tests retain real clicks and use a bounded 5-second gesture timeout. Re-running the same PR.
+
+## 2026-09-07T06:44Z - Living Guildholm final checkpoint
+
+- Verified revision 4b1a685 in Actions run 34091717238: 718 unit tests, all 14 browser tests, TypeScript, build, ESLint and audio audit pass. Smoke transform changes in the real browser; storm bank actions and display options work on a 390px viewport.
+- Captured all weather states and mobile/desktop screenshots in Actions artifact 10007151759. Local execution environment disconnected before images could be opened, so manual visual review and physical-device performance remain UNVERIFIED.
+- Preserved all work in draft PR #405; no merge/deployment. Next action: inspect the saved screenshots and complete visual review. Details in docs/qa/living-guildholm/README.md. This checkpoint changes documentation only.

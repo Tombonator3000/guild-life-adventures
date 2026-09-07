@@ -1,3 +1,4 @@
+import { EnvironmentControl } from '@/components/game/environment/EnvironmentControl';
 // OptionsTab - Save/Load, audio controls, AI speed, border style, keyboard shortcuts
 // Uses AudioVolumeControl for deduplicated music/ambient/SFX sliders
 
@@ -96,6 +97,10 @@ export function OptionsTab({
           onVolumeChange={sfx.setVolume}
           onToggleMute={sfx.toggleMute}
         />
+      </OptionSection>
+
+      <OptionSection title="Environment">
+        <EnvironmentControl />
       </OptionSection>
 
       {/* Panel Border Style */}

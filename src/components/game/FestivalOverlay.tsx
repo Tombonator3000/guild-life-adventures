@@ -17,6 +17,9 @@ import tourneyConfetti from '@/assets/tourney-confetti.jpg';
 import fairLantern from '@/assets/fair-lantern.png';
 import fairStreamers from '@/assets/fair-streamers.jpg';
 
+// Decoration must not advance the same random stream used by game events.
+const visualSample = (index: number, salt: number) => ((index * 137 + salt * 97) % 997) / 997;
+
 interface FestivalOverlayProps {
   activeFestival: FestivalId | null;
 }
@@ -43,11 +46,11 @@ function HarvestLayer() {
   const particles = useMemo(() =>
     Array.from({ length: 18 }, (_, i) => ({
       id: i,
-      left: Math.random() * 100,
-      delay: Math.random() * 10,
-      duration: 8 + Math.random() * 4,
-      size: 16 + Math.random() * 20,
-      opacity: 0.5 + Math.random() * 0.3,
+      left: visualSample(i, 1) * 100,
+      delay: visualSample(i, 2) * 10,
+      duration: 8 + visualSample(i, 3) * 4,
+      size: 16 + visualSample(i, 4) * 20,
+      opacity: 0.5 + visualSample(i, 5) * 0.3,
     })), []);
 
   return (
@@ -109,11 +112,11 @@ function SolsticeLayer() {
   const glitterParticles = useMemo(() =>
     Array.from({ length: 25 }, (_, i) => ({
       id: i,
-      left: Math.random() * 100,
-      top: Math.random() * 100,
-      delay: Math.random() * 8,
-      duration: 3 + Math.random() * 4,
-      size: 2 + Math.random() * 4,
+      left: visualSample(i, 6) * 100,
+      top: visualSample(i, 7) * 100,
+      delay: visualSample(i, 8) * 8,
+      duration: 3 + visualSample(i, 9) * 4,
+      size: 2 + visualSample(i, 10) * 4,
     })), []);
 
   return (
@@ -189,12 +192,12 @@ function TourneyLayer() {
   const confettiParticles = useMemo(() =>
     Array.from({ length: 30 }, (_, i) => ({
       id: i,
-      left: Math.random() * 100,
-      delay: Math.random() * 8,
-      duration: 6 + Math.random() * 5,
-      size: 6 + Math.random() * 10,
-      rotation: Math.random() * 360,
-      rotSpeed: 100 + Math.random() * 260,
+      left: visualSample(i, 11) * 100,
+      delay: visualSample(i, 12) * 8,
+      duration: 6 + visualSample(i, 13) * 5,
+      size: 6 + visualSample(i, 14) * 10,
+      rotation: visualSample(i, 15) * 360,
+      rotSpeed: 100 + visualSample(i, 16) * 260,
       hue: [0, 45, 55, 0, 45][i % 5], // red, gold, yellow cycle
     })), []);
 
@@ -276,12 +279,12 @@ function FairLayer() {
   const lanterns = useMemo(() =>
     Array.from({ length: 12 }, (_, i) => ({
       id: i,
-      left: 5 + Math.random() * 90,
-      delay: Math.random() * 12,
-      duration: 10 + Math.random() * 5,
-      size: 20 + Math.random() * 16,
-      opacity: 0.5 + Math.random() * 0.3,
-      sway: 15 + Math.random() * 25,
+      left: 5 + visualSample(i, 17) * 90,
+      delay: visualSample(i, 18) * 12,
+      duration: 10 + visualSample(i, 19) * 5,
+      size: 20 + visualSample(i, 20) * 16,
+      opacity: 0.5 + visualSample(i, 21) * 0.3,
+      sway: 15 + visualSample(i, 22) * 25,
     })), []);
 
   return (

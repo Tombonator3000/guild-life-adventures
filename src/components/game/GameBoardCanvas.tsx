@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { LOCATIONS, getMovementCost, getPath } from '@/data/locations';
+import { LOCATIONS, getMovementCost } from '@/data/locations';
 import { getQuestLocationObjectives } from '@/data/quests';
 import { useGameStore } from '@/store/gameStore';
 import { useBanterStore } from '@/store/banterStore';
@@ -14,6 +14,9 @@ import { LocationZone } from './LocationZone';
 import { PlayerToken } from './PlayerToken';
 import { ShadowfingersToken } from './ShadowfingersToken';
 import { WeatherOverlay } from './WeatherOverlay';
+import { BoardAtmosphere } from './environment/BoardAtmosphere';
+import { useGameOptions } from '@/hooks/useGameOptions';
+import { useEnvironmentActivity } from '@/hooks/useEnvironmentActivity';
 
 type CenterPanel = { top: number; left: number; width: number; height: number };
 type WeatherState = ReturnType<typeof useGameStore.getState>['weather'];
@@ -67,6 +70,9 @@ export function GameBoardCanvas({
   onAnimationComplete,
   onLocationReached,
 }: GameBoardCanvasProps) {
+  const { options } = useGameOptions();
+  const { reducedMotion, visible } = useEnvironmentActivity();
+  const animateEnvironment = options.environmentDetail === 'full' && !reducedMotion;
   const activeFestival = useGameStore(state => state.activeFestival);
   const chainProgress = currentPlayer?.activeQuest?.startsWith('nlchain:')
     ? currentPlayer.nlChainProgress
@@ -81,7 +87,7 @@ export function GameBoardCanvas({
         style={{ backgroundImage: `url(${gameBoard})`, backgroundSize: '100% 100%' }}
       />
 
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 z-[2]">
         {LOCATIONS.map(baseLocation => {
           const location = getLocationWithCustomPosition(baseLocation.id, isMobile) || baseLocation;
           const playersHere = players.filter(
@@ -91,7 +97,7 @@ export function GameBoardCanvas({
             ? getMovementCost(currentPlayer.currentLocation, location.id)
             : 0;
           const weatherExtra = baseMoveCost > 0 && weather?.movementCostExtra && currentPlayer
-            ? getPath(currentPlayer.currentLocation, location.id).length * weather.movementCostExtra
+            ? baseMoveCost * weather.movementCostExtra
             : 0;
           const moveCost = baseMoveCost + weatherExtra;
           const activeHex = locationHexes.find(
@@ -148,9 +154,16 @@ export function GameBoardCanvas({
         </div>
       )}
 
-      <GraveyardCrows />
-      <FestivalOverlay activeFestival={activeFestival} />
-      <WeatherOverlay particle={weather?.particle ?? null} weatherType={weather?.type} />
+      {options.environmentDetail !== 'off' && (
+        <div className="board-environment" aria-hidden="true" data-paused={!visible} data-detail={animateEnvironment ? 'full' : 'reduced'}>
+          <BoardAtmosphere weatherType={weather?.type} animated={animateEnvironment} isMobile={isMobile} />
+          {animateEnvironment && <>
+            {weather?.type !== 'thunderstorm' && weather?.type !== 'snowstorm' && <GraveyardCrows />}
+            <FestivalOverlay activeFestival={activeFestival} />
+          </>}
+          <WeatherOverlay particle={weather?.particle ?? null} weatherType={weather?.type} animated={animateEnvironment} isMobile={isMobile} />
+        </div>
+      )}
       <DebugOverlay customZones={customZones} centerPanel={debugCenterPanel} visible={showDebugOverlay} />
       <BoardBanterOverlay centerPanel={centerPanel} isMobile={isMobile} />
       {children}
