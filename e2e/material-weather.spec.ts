@@ -24,6 +24,7 @@ test('forge work, tactile menus, weather pixels and storm audio stay inside the 
   await page.getByTitle('Guild Hall',{exact:true}).click();
   await openMenuPage(page,page.locator('.location-shell').getByRole('button',{name:'Forge',exact:true}));
   await page.locator('.location-shell').getByRole('button',{name:'Forge',exact:true}).click();
+  await openMenuPage(page,page.getByRole('button',{name:'Apply',exact:true}).first());
   await page.getByRole('button',{name:'Apply',exact:true}).first().click();
   await page.getByRole('button',{name:'Accept Job',exact:true}).click();
   await page.getByTitle('The Forge',{exact:true}).click();
@@ -32,10 +33,12 @@ test('forge work, tactile menus, weather pixels and storm audio stay inside the 
   await expect(shell.getByText('Your job:',{exact:false})).toContainText('Forge Laborer');
   await expect(shell.getByRole('button',{name:/Ask for a raise/})).toBeDisabled();
   await expect(shell.getByText(/Work 3 shifts first/)).toBeVisible();
+  await openMenuPage(page,shell.locator('.location-work-button'));
   await expect(shell.locator('.location-work-button')).toBeInViewport();
   await page.screenshot({path:testInfo.outputPath('forge-work-desktop.png')});
   for(let i=0;i<3;i++) await shell.locator('.location-work-button').click();
   await expect(shell.getByRole('button',{name:/Ask for a raise/})).toBeEnabled();
+  await openMenuPage(page,shell.getByRole('button',{name:/Ask for a raise/}));
   await shell.getByRole('button',{name:/Ask for a raise/}).click();
   await expect(shell.getByRole('button',{name:/Ask for a raise/})).toBeDisabled();
   await openMenuPage(page,shell.getByText('View career path',{exact:true}));

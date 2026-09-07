@@ -10,19 +10,24 @@ test('wrapped market tabs and paged goods keep every service reachable', async (
   await page.getByPlaceholder('Enter name...').fill('Window Hero');
   await page.getByRole('checkbox',{name:/Show Tutorial/}).uncheck();
   await page.getByRole('button',{name:'Begin Adventure',exact:true}).click();
+  await expect(page.locator('[data-zone-id="forge"]')).toBeVisible();
   if(await page.evaluate(()=>!!document.fullscreenElement)) await page.keyboard.press('f');
   await page.getByRole('button',{name:/^dev$/i}).click();
   await page.getByTitle('Shadow Market',{exact:true}).click();
   const shell=page.locator('.location-shell[data-location="shadow-market"]');
   for(const [width,height] of [[1280,720],[844,390],[390,844]]) {
     await page.setViewportSize({width,height});
+    const picker=shell.locator('.location-service-picker');
+    if (await picker.isVisible()) await picker.click();
     const tabs=shell.locator('.location-tabs');
     await expect.poll(()=>tabs.evaluate(e=>e.scrollWidth<=e.clientWidth+1)).toBe(true);
     for(const button of await tabs.getByRole('button').all()) {
+      if (await picker.isVisible() && await picker.getAttribute('aria-expanded') === 'false') await picker.click();
       await expect(button).toBeInViewport();
       await button.click();
       await expect.poll(()=>shell.locator('.location-menu').evaluate(e=>e.scrollHeight<=e.clientHeight+1)).toBe(true);
     }
+    if (await picker.isVisible() && await picker.getAttribute('aria-expanded') === 'false') await picker.click();
     await tabs.getByRole('button',{name:'Goods',exact:true}).click();
     await expect(shell.getByRole('button',{name:'Next menu page',exact:true})).toBeEnabled();
     await shell.getByRole('button',{name:'Next menu page',exact:true}).click();
@@ -51,7 +56,7 @@ test('cave load, encounter, result, retreat and settlement remain clear inside t
     localStorage.setItem('guild-life-autosave',JSON.stringify(save));
   });
   await page.reload();
-  await page.getByRole('button',{name:/Continue Adventure/i}).click();
+  await page.getByRole('button',{name:/Continue Game/i}).click();
   await page.locator('[data-zone-id="cave"]').click();
   const entry=page.getByRole('button',{name:/Enter Floor 1/});
   await openMenuPage(page,entry); await entry.click();
@@ -79,6 +84,11 @@ test('a deployed update appears on focus, saves the current game and reloads on 
   await page.route('**/version.json?*',route=>route.fulfill({json:deployed?{buildTime:'2030-01-01T00:00:00.000Z'}:{}}));
   await page.goto('/');
   await expect(page.getByRole('button',{name:'Update Now',exact:true})).toHaveCount(0);
+  await page.getByRole('button',{name:'New Adventure',exact:true}).click();
+  await page.getByPlaceholder('Enter name...').fill('Update Hero');
+  await page.getByRole('checkbox',{name:/Show Tutorial/}).uncheck();
+  await page.getByRole('button',{name:'Begin Adventure',exact:true}).click();
+  await expect(page.locator('[data-zone-id="forge"]')).toBeVisible();
   deployed=true;
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
   const update=page.getByRole('button',{name:'Update Now',exact:true});
@@ -86,4 +96,5 @@ test('a deployed update appears on focus, saves the current game and reloads on 
   await page.screenshot({path:testInfo.outputPath('update-available.png')});
   const navigation=page.waitForURL(url=>url.searchParams.has('_gv'),{waitUntil:'commit'});
   await update.click(); await navigation;
+  await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('guild-life-autosave') || '{}').playerNames)).toEqual(['Update Hero']);
 });

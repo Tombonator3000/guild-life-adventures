@@ -1,3 +1,4 @@
+import { openMenuPage } from './menuPages';
 import type { Page } from '@playwright/test';
 import { expect, test } from './test';
 
@@ -43,6 +44,7 @@ test('completes the guided first turn through real game actions', async ({ page 
   await page.getByRole('button', { name: 'Accept Job', exact: true }).click();
 
   await expect(page.getByText('3. Work One Full Shift')).toBeVisible();
+  await openMenuPage(page,page.getByRole('button', { name: /work \d+ hours/i }));
   await page.getByRole('button', { name: /work \d+ hours/i }).click();
   await expect(page.getByText('4. Buy Food for the Week')).toBeVisible();
 

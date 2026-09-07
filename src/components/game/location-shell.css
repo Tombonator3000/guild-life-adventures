@@ -162,3 +162,19 @@
 .location-item-preview { overflow:clip; }
 @container (max-width:460px) { .location-tabs button { flex-basis:84px; min-height:36px; }.location-page-controls button { min-height:36px; }.location-body { grid-template-rows:80px minmax(0,1fr); }.location-greeting { font-size:10px; } }
 @container (max-height:320px) { .location-body { grid-template-columns:25% minmax(0,1fr); grid-template-rows:minmax(0,1fr); }.location-tabs button { flex-basis:80px; min-height:28px; font-size:11px; padding:3px 5px; }.location-tabs svg { display:none; }.location-content { padding:5px; }.location-page-controls button { min-height:28px; }.workplace-return { min-height:28px; padding:3px; margin:2px 5px; font-size:11px; } }
+
+.location-service-picker { display:none; }
+@container (max-height:320px) {
+  .location-service-picker { display:block; flex-shrink:0; min-height:28px; padding:3px 8px; border-bottom:1px solid #ae8c57; background:#e8d3aa; color:#422e19; font:bold 12px Georgia,serif; }
+  .location-tabs { display:none; }
+  .location-menu[data-services-open="true"] .location-tabs { display:flex; align-content:start; overflow:clip; }
+  .location-menu[data-services-open="true"] .location-content,.location-menu[data-services-open="true"] .workplace-return { display:none; }
+  .location-page-flow .material-card { padding:6px; }
+  .location-page-flow .workplace-numbers { margin:5px 0; }
+  .location-page-flow .location-work h3 { font-size:17px; }
+  .location-page-flow .location-work-button { min-height:44px; padding:4px 8px; font-size:20px; }
+  .location-page-flow .workplace-career { display:block; }
+  .location-page-flow .workplace-rank { float:left; height:30px; width:25px; margin-right:6px; }
+}
+
+@container (max-height:460px) { .workplace-intro { margin-bottom:4px; }.location-work h3 { font-size:18px; }.workplace-numbers { margin:5px 0; }.workplace-numbers > span { font-size:24px; }.workplace-numbers svg { height:26px; width:23px; }.location-work-outcome { margin:5px 0; font-size:12px; }.location-work-button { min-height:44px; padding:4px 8px; font-size:20px; }.location-work.material-card { padding:8px; } }

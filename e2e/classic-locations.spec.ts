@@ -37,6 +37,7 @@ test('classic board visits retain original NPCs and usable work and bank actions
   const shift=page.locator('.location-work-button');
   await expect(shift).toBeEnabled();
   const before=await page.locator('.location-work-outcome').innerText();
+  await openMenuPage(page,shift);
   await shift.click();
   await expect(page.locator('.location-work-outcome')).not.toHaveText(before);
   await page.screenshot({path:testInfo.outputPath('desktop-employed.png')});

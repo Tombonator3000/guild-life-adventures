@@ -26,7 +26,12 @@ export function LocationPages({ children, pageKey }: { children: ReactNode; page
     };
     const resize = new ResizeObserver(measure);
     resize.observe(box);
-    const mutation = new MutationObserver(measure);
+    const mutation = new MutationObserver(records => {
+      // Changing an inner service (employer, encounter, purchase details) opens
+      // its first page; text-only resource updates keep the reader's place.
+      if (records.some(record => record.type === 'childList' && [...record.removedNodes].some(node => node.nodeType === Node.ELEMENT_NODE))) setPage(0);
+      measure();
+    });
     mutation.observe(content, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['open', 'class', 'src'] });
     content.addEventListener('load', measure, true);
     measure();

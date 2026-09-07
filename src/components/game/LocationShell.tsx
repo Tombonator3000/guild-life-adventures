@@ -71,6 +71,7 @@ export function LocationShell({ npc, tabs, defaultTab, locationId, locationName,
   const hasWork = !!workInfo && !tabs.some(tab => tab.id === 'hexed');
   const services = tabs.filter(tab => !tab.hidden && !(hasWork && locationId === 'guild-hall' && tab.id === 'work'));
   const visibleTabs: LocationTab[] = hasWork ? [{ id: 'your-shift', label: 'Work', content: <WorkplaceCard work={workInfo!} /> }, ...services.map(tab => tab.id === 'work' ? { ...tab, label: 'Careers' } : tab)] : services;
+  const [servicesOpen, setServicesOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState(defaultTab || visibleTabs[0]?.id || '');
   const activeTab = visibleTabs.some(tab => tab.id === selectedTab) ? selectedTab : visibleTabs[0]?.id;
   const activeContent = visibleTabs.find(tab => tab.id === activeTab)?.content;
@@ -110,11 +111,12 @@ export function LocationShell({ npc, tabs, defaultTab, locationId, locationName,
             <p className="location-greeting">“{greeting ?? npc.greeting}”</p>
             <div className="location-item-preview"><ItemPreviewPanel accentColor={npc.accentColor} /></div>
           </aside>
-          <div className="location-menu">
+          <div className="location-menu" data-services-open={servicesOpen}>
+            {visibleTabs.length > 1 && <button className="location-service-picker" aria-expanded={servicesOpen} onClick={() => setServicesOpen(!servicesOpen)}>{visibleTabs.find(tab => tab.id === activeTab)?.label} · {servicesOpen ? 'Close services' : 'Choose service'}</button>}
             {visibleTabs.length > 1 && <nav className="location-tabs" aria-label={`${locationName} services`}>
               {visibleTabs.map(tab => (
                 <button key={tab.id} type="button" data-ui-sound="menu-open" aria-pressed={activeTab === tab.id} aria-controls={`${id}-content`}
-                  onClick={() => setSelectedTab(tab.id)}>
+                  onClick={() => { setSelectedTab(tab.id); setServicesOpen(false); }}>
                   <span aria-hidden="true">{tab.icon ?? tabIcon(tab.id)}</span>
                   {tab.label}{tab.badge && <b className="location-tab-badge">{tab.badge}</b>}
                 </button>

@@ -46,3 +46,5 @@
 .cave-entry-warning { color:#922c21; font-weight:bold; margin-top:8px; }
 
 .cave-health-label { color:#52381f; }.cave-result > .text-orange-400 { color:#7b341b; background:#f3d3a8; }
+
+@container (max-height:320px) { .cave-encounter-card { display:block; break-inside:auto; }.cave-encounter-art { width:64px; float:left; margin:0 8px 4px 0; }.cave-result-heading { display:block; }.cave-result-heading img { float:left; margin-right:8px; }.cave-actions button { min-height:36px; }.cave-result-ledger { display:block; padding:6px; }.cave-result-ledger > div { margin-bottom:5px; }.cave-modifier { display:block; }.cave-plan-numbers { display:block; }.cave-floor-tabs button { min-height:28px; } }
