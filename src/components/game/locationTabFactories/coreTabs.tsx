@@ -22,7 +22,6 @@ import { AcademyPanel } from '../AcademyPanel';
 import { LandlordPanel } from '../LandlordPanel';
 import { HexShopPanel } from '../HexShopPanel';
 import { getGameOption } from '@/data/gameOptions';
-import { useGameStore } from '@/store/gameStore';
 import { getWorkPreview } from '@/store/helpers/workEducationHelpers';
 import { getEnchanterHexStock } from '@/data/hexes';
 
@@ -131,7 +130,7 @@ function guildHallTabs(ctx: LocationTabContext): LocationTab[] {
             </div>
             <div className="flex justify-between text-sm font-mono mb-3">
               <span className="text-[#6b5a42]">Shift earnings:</span>
-              <span className="font-bold text-[#c9a227]">{getWorkPreview(player, currentJobData.hoursPerShift, week, useGameStore.getState().activeFestival).net}g</span>
+              <span className="font-bold text-[#c9a227]">{getWorkPreview(player, currentJobData.hoursPerShift, week, ctx.activeFestival).net}g</span>
             </div>
             <div className="flex gap-2">
               <button

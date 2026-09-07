@@ -11,14 +11,15 @@ beforeEach(() => {
 });
 
 describe('work preview matches real service results', () => {
-  it.each([null, 'midsummer-fair'])('includes festival %s, bonuses and both debt deductions', festival => {
+  it.each([null, 'midsummer-fair'] as const)('includes festival %s, bonuses and both debt deductions', festival => {
     const player = useGameStore.getState().players[0];
     useGameStore.setState({activeFestival:festival, players:[{...player, weeksSinceRent:4, rentDebt:200, loanAmount:100, loanWeeksRemaining:0, permanentGoldBonus:.2}]});
     const before = useGameStore.getState().players[0];
     const preview = getWorkPreview(before, 8, 7, festival);
     expect(useGameStore.getState().players[0]).toBe(before);
     expect(preview.deductions).toBeGreaterThan(0);
-    expect(useGameStore.getState().performWorkShift(before.id, 'full')?.success).toBe(true);
+    const result = useGameStore.getState().performWorkShift(before.id, 'full');
+    expect(result && result.success).toBe(true);
     const after = useGameStore.getState().players[0];
     expect(after.gold).toBe(preview.goldAfter);
     expect(after.timeRemaining).toBe(preview.hoursAfter);

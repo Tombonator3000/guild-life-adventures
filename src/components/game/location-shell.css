@@ -79,3 +79,9 @@
   .location-npc-name span { font-size:10px; }
   .location-greeting { display:none; }
 }
+
+/* Existing employer and shop rows should read as actions, not plain text. */
+.location-content button.w-full.text-left { margin:3px 0; padding:7px 9px; border:1px solid #c5ac83; border-radius:5px; background:linear-gradient(#fff7e7,#edddbf); box-shadow:0 1px 2px #62401f12; }
+.location-content button.w-full.text-left:hover { border-color:#946c2f; background:#f5e5bd; }
+.location-content button.w-full.text-left:focus-visible { outline:2px solid #197487; outline-offset:1px; }
+@container (max-width:460px) { .location-npc-name span { display:block; } }

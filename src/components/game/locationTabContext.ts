@@ -14,6 +14,7 @@ export interface LocationTabContext {
   priceModifier: number;
   economyTrend: number;
   week: number;
+  activeFestival: GameStore['activeFestival'];
   weeklyNewsEvents: GameStore['weeklyNewsEvents'];
   stockPrices: GameStore['stockPrices'];
   stockPriceHistory: GameStore['stockPriceHistory'];

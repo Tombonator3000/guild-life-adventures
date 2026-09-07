@@ -23,9 +23,9 @@ test('classic board visits retain original NPCs and usable work and bank actions
     await page.getByTitle(title,{exact:true}).click();
     const shell=page.locator(`.location-shell[data-location="${id}"]`);
     await expect(shell).toBeVisible();
-    const portrait=shell.locator('.location-scene-portrait img');
+    const portrait=shell.locator('.location-scene-portrait img, .location-scene-portrait video');
     await expect(portrait).toBeVisible();
-    await expect.poll(() => portrait.evaluate((img:HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+    await expect.poll(() => portrait.evaluate((media:HTMLImageElement | HTMLVideoElement) => media instanceof HTMLVideoElement ? media.videoWidth : media.naturalWidth)).toBeGreaterThan(0);
     if (npc) await expect(portrait).toHaveAttribute('alt',npc);
     if (['forge','guild-hall','bank','enchanter'].includes(id)) await page.screenshot({path:testInfo.outputPath(`desktop-${id}.png`)});
   }

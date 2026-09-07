@@ -15,7 +15,7 @@ The shared LocationShell uses existing location interiors at full visibility wit
 
 Service navigation uses illustrated icons, contrasting selected buttons and horizontal overflow instead of wrapping several rows into the action area. Existing service content and actions remain available. The shared work card shows job, wage, full/short shift hours, take-home pay, resulting hours/gold and happiness loss. It uses the actual pay and garnishment functions. Missing clothes and insufficient time are explained before clicking. Original work panels now share the same earnings preview.
 
-Narrow central frames use a short illustrated character scene above the menu, keeping characters visible rather than hiding them on phones. The outer board layout and central frame dimensions are unchanged.
+Narrow central frames use a short illustrated character scene above the menu, keeping characters visible rather than hiding them on phones. The outer board layout and central frame dimensions are unchanged. In shallow landscape frames, service content and the work card scroll together. The existing mobile resource strip starts with gold/time and scrolls horizontally instead of clipping its first resources.
 
 ## Acceptance and evidence
 

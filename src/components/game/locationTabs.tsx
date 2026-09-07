@@ -42,7 +42,7 @@ export function getWorkInfo(locationId: LocationId, ctx: LocationTabContext): Wo
   if (!currentJobData || !jobLocationName || currentJobData.location !== jobLocationName) return null;
 
   const hours = Math.min(currentJobData.hoursPerShift, player.timeRemaining);
-  const preview = getWorkPreview(player, hours, ctx.week, useGameStore.getState().activeFestival);
+  const preview = getWorkPreview(player, hours, ctx.week, ctx.activeFestival);
   const threshold = CLOTHING_THRESHOLDS[currentJobData.requiredClothing];
   const blockedReason = player.timeRemaining <= 0
     ? 'No hours left this week.'
