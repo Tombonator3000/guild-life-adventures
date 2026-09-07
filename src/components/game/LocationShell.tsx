@@ -1,33 +1,36 @@
-// LocationShell - Standardized location layout wrapper
-// Design: Colored header bar (top) + NPC portrait (left) + parchment content (right) + colored footer bar (bottom)
-// Every location uses the same visual structure with location-specific frame colors
-// Footer bar shows work shift button when player has a job at this location
-
-import { useState, useEffect, useMemo, type ReactNode, useCallback, isValidElement } from 'react';
+// All visits remain inside the original board's central frame.
+import { useState, useEffect, useId, type ReactNode, type CSSProperties } from 'react';
+import { Briefcase, Clock, Coins, BookOpen, Hammer, ShoppingBag, Sparkles, ScrollText } from 'lucide-react';
 import type { LocationNPC } from '@/data/npcs';
 import { NpcPortrait } from './NpcPortrait';
 import { useBanter } from '@/hooks/useBanter';
-import { useIsMobile } from '@/hooks/useIsMobile';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import type { LocationId } from '@/types/game.types';
 import { ItemPreviewProvider, ItemPreviewPanel } from './ItemPreview';
 import { LOCATION_BACKGROUNDS } from '@/assets/locations';
 import { getReputationGreeting } from '@/data/reputation';
+import { useGameOptions } from '@/hooks/useGameOptions';
+import { useEnvironmentActivity } from '@/hooks/useEnvironmentActivity';
+import type { getWorkPreview } from '@/store/helpers/workEducationHelpers';
+import './location-shell.css';
 
 export interface LocationTab {
   id: string;
   label: string;
   icon?: ReactNode;
   content: ReactNode;
-  badge?: string; // e.g., "!" for notifications
-  hidden?: boolean; // Hide tab (e.g., Work tab when no job here)
+  badge?: string;
+  hidden?: boolean;
 }
 
 export interface WorkInfo {
   jobName: string;
   wage: number;
   hoursPerShift: number;
+  fullShiftHours: number;
   earnings: number;
+  preview: ReturnType<typeof getWorkPreview>;
+  blockedReason: string | null;
   canWork: boolean;
   onWork: () => void;
 }
@@ -37,259 +40,92 @@ interface LocationShellProps {
   tabs: LocationTab[];
   defaultTab?: string;
   locationId: LocationId;
-  locationName: string; // Display name for header bar
+  locationName: string;
   largePortrait?: boolean;
   xlPortrait?: boolean;
-  workInfo?: WorkInfo | null; // Work section for footer bar
+  workInfo?: WorkInfo | null;
 }
 
-export function LocationShell({
-  npc,
-  tabs,
-  defaultTab,
-  locationId,
-  locationName,
-  largePortrait = false,
-  xlPortrait = false,
-  workInfo,
-}: LocationShellProps) {
-  const visibleTabs = tabs.filter(t => !t.hidden);
-  const [activeTab, setActiveTab] = useState(defaultTab || visibleTabs[0]?.id || '');
+function tabIcon(id: string) {
+  if (/work|employment/.test(id)) return <Briefcase />;
+  if (/repair|smith|salvage/.test(id)) return <Hammer />;
+  if (/course|library|scholar/.test(id)) return <BookOpen />;
+  if (/quest|bount/.test(id)) return <ScrollText />;
+  if (/renown|reputation|hex|magic/.test(id)) return <Sparkles />;
+  return <ShoppingBag />;
+}
+
+export function LocationShell({ npc, tabs, defaultTab, locationId, locationName, workInfo }: LocationShellProps) {
+  const visibleTabs = tabs.filter(tab => !tab.hidden);
+  const [selectedTab, setSelectedTab] = useState(defaultTab || visibleTabs[0]?.id || '');
+  const activeTab = visibleTabs.some(tab => tab.id === selectedTab) ? selectedTab : visibleTabs[0]?.id;
+  const activeContent = visibleTabs.find(tab => tab.id === activeTab)?.content;
   const { tryTriggerBanter } = useBanter();
-  const isMobile = useIsMobile();
-  const currentPlayer = useCurrentPlayer();
-  const players = useGameStore(s => s.players);
+  const player = useCurrentPlayer();
+  const players = useGameStore(state => state.players);
+  const { options } = useGameOptions();
+  const { reducedMotion, visible } = useEnvironmentActivity();
+  const id = useId();
+  const animated = options.environmentDetail === 'full' && !reducedMotion && visible;
+  const greeting = player ? getReputationGreeting(locationId, player.fame ?? 0, player.infamy ?? 0) : null;
 
-  // BUG FIX: Reset active tab when visible tabs change and current tab no longer exists
-  const activeContent = visibleTabs.find(t => t.id === activeTab)?.content;
-  const tabIds = visibleTabs.map(t => t.id).join(',');
   useEffect(() => {
-    if (!visibleTabs.find(t => t.id === activeTab)) {
-      setActiveTab(defaultTab || visibleTabs[0]?.id || '');
-    }
-  }, [tabIds]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Try to trigger banter when entering a location (with player context for context-aware lines)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      tryTriggerBanter(locationId, currentPlayer ?? undefined, players);
-    }, 600);
+    const timer = setTimeout(() => tryTriggerBanter(locationId, player ?? undefined, players), 600);
     return () => clearTimeout(timer);
-  }, [locationId, tryTriggerBanter, currentPlayer, players]);
-
-  // Reputation-based NPC greeting override
-  const reputationGreeting = useMemo(() => {
-    if (!currentPlayer) return null;
-    return getReputationGreeting(locationId, currentPlayer.fame ?? 0, currentPlayer.infamy ?? 0);
-  }, [locationId, currentPlayer]);
-
-  // If only one tab, skip the tab bar entirely
-  const showTabBar = visibleTabs.length > 1;
-
-  // Handle interaction - potentially trigger banter
-  const handleInteraction = useCallback(() => {
-    tryTriggerBanter(locationId);
-  }, [tryTriggerBanter, locationId]);
-
-  // Wrap content to capture clicks and trigger banter
-  const wrapWithInteractionHandler = (content: ReactNode): ReactNode => {
-    if (!isValidElement(content)) return content;
-
-    return (
-      <div onClick={handleInteraction} className="contents">
-        {content}
-      </div>
-    );
-  };
+  }, [locationId, tryTriggerBanter, player, players]);
 
   return (
     <ItemPreviewProvider>
-    <div className="flex flex-col h-full overflow-hidden" style={{ background: '#1a1410' }}>
-      {/* === HEADER BAR === Location-specific colored frame with name */}
-      <div
-        className="shrink-0 text-center py-1.5 font-bold tracking-widest uppercase text-white"
-        style={{
-          background: `linear-gradient(180deg, ${npc.frameColor} 0%, ${npc.frameDark} 100%)`,
-          borderBottom: `2px solid ${npc.frameBorder}`,
-          fontSize: 'clamp(0.7rem, 1.5vw, 1rem)',
-        }}
-      >
-        <div className="font-display">{locationName}</div>
-        <div
-          className="font-normal tracking-wider opacity-80"
-          style={{ fontSize: 'clamp(0.45rem, 0.9vw, 0.65rem)' }}
-        >
-          {npc.subtitle}
-        </div>
-      </div>
-
-      {/* === CONTENT AREA === NPC portrait (left) + parchment content (right) */}
-      <div
-        className="flex-1 flex gap-2 overflow-hidden p-2 relative"
-        style={{
-          background: 'linear-gradient(180deg, #f0e8d8 0%, #e8dcc8 100%)',
-        }}
-      >
-        {/* Faded location background image — behind all content */}
-        {LOCATION_BACKGROUNDS[locationId] && (
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              backgroundImage: `url(${LOCATION_BACKGROUNDS[locationId]})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              opacity: 0.13,
-              mixBlendMode: 'multiply',
-            }}
-          />
-        )}
-        {/* NPC Portrait - Left side, hidden on mobile */}
-        {!isMobile && (
-          <div className={`flex-shrink-0 ${xlPortrait ? 'w-64' : largePortrait ? 'w-52' : 'w-44'} flex flex-col items-center relative`}>
-            {/* Name/title banner ABOVE portrait */}
-            <div className="text-center mb-1">
-              <div
-                className="font-display text-sm font-bold leading-tight"
-                style={{ color: npc.accentColor }}
-              >
-                {npc.name}
-              </div>
-              <div className="text-[11px] text-[#6b5a42] leading-tight">
-                {npc.title}
-              </div>
+      <section className="location-shell" data-location={locationId} data-animated={animated} aria-label={locationName}
+        style={{ '--location-accent': npc.accentColor, '--location-dark': npc.frameDark, '--location-frame': npc.frameColor } as CSSProperties}>
+        <header className="location-heading">
+          <span className="font-display">{locationName}</span>
+          <span>{npc.subtitle}</span>
+        </header>
+        <div className="location-body">
+          <aside className="location-scene" aria-label={`${npc.name}, ${npc.title}`}>
+            <div className="location-scene-backdrop" style={{ backgroundImage: `url(${LOCATION_BACKGROUNDS[locationId]})` }} />
+            <NpcPortrait key={npc.name} npc={npc} scene />
+            {options.environmentDetail !== 'off' && <div className="location-scene-light" aria-hidden="true" />}
+            {animated && <div className="location-motes" aria-hidden="true"><i /><i /><i /><i /><i /></div>}
+            <div className="location-npc-name"><strong className="font-display">{npc.name}</strong><span>{npc.title}</span></div>
+            <p className="location-greeting">“{greeting ?? npc.greeting}”</p>
+            <div className="location-item-preview"><ItemPreviewPanel accentColor={npc.accentColor} /></div>
+          </aside>
+          <div className="location-menu">
+            {visibleTabs.length > 1 && <nav className="location-tabs" aria-label={`${locationName} services`}>
+              {visibleTabs.map(tab => (
+                <button key={tab.id} type="button" aria-pressed={activeTab === tab.id} aria-controls={`${id}-content`}
+                  onClick={() => setSelectedTab(tab.id)}>
+                  <span aria-hidden="true">{tab.icon ?? tabIcon(tab.id)}</span>
+                  {tab.label}{tab.badge && <b className="location-tab-badge">{tab.badge}</b>}
+                </button>
+              ))}
+            </nav>}
+            <div id={`${id}-content`} className="location-content" onClick={() => tryTriggerBanter(locationId)}>
+              {activeContent}
             </div>
-            <NpcPortrait npc={npc} size={xlPortrait ? 'xl' : largePortrait ? 'large' : 'normal'} />
-            <div
-              className="mt-1.5 text-[11px] italic text-center leading-tight px-1"
-              style={{ color: '#8b7355' }}
-            >
-              &ldquo;{reputationGreeting ?? npc.greeting}&rdquo;
-            </div>
-            {/* Item Preview Panel - below NPC info */}
-            <ItemPreviewPanel accentColor={npc.accentColor} />
-          </div>
-        )}
-
-        {/* Content area - Right side (full width on mobile) */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          {/* Mobile: compact NPC header inline with tabs */}
-          {isMobile && (
-            <div className="flex items-center gap-2 mb-1 flex-shrink-0">
-              <div
-                className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-sm flex-shrink-0 overflow-hidden"
-                style={{
-                  backgroundColor: npc.bgColor,
-                  borderColor: npc.accentColor,
-                }}
-              >
-                {npc.portraitImage ? (
-                  <img
-                    src={`${import.meta.env.BASE_URL}${npc.portraitImage}`}
-                    alt={npc.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-sm">{npc.portrait}</span>
-                )}
-              </div>
-              <span
-                className="font-display text-xs font-bold truncate"
-                style={{ color: npc.accentColor }}
-              >
-                {npc.name}
-              </span>
-            </div>
-          )}
-
-          {/* Tab navigation - parchment-colored tabs */}
-          {showTabBar && (
-            <div className="flex gap-1 mb-1.5 flex-wrap flex-shrink-0">
-              {visibleTabs.map(tab => {
-                const isActive = tab.id === activeTab;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`
-                      relative flex items-center gap-1 px-3 py-1.5 rounded-t text-xs font-display font-bold
-                      transition-colors border border-b-0
-                      ${isActive
-                        ? 'bg-[#f5efe5] text-[#3d2a14] border-[#8b7355]'
-                        : 'bg-[#e0d4b8] text-[#6b5a42] border-[#a09080] hover:bg-[#e8dcc8] hover:text-[#3d2a14]'
-                      }
-                    `}
-                  >
-                    {tab.icon && <span className="w-3.5 h-3.5">{tab.icon}</span>}
-                    {tab.label}
-                    {tab.badge && (
-                      <span className="absolute -top-1 -right-1 bg-[#c9a227] text-[#2d1f0f] text-[9px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">
-                        {tab.badge}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Tab content */}
-          <div className="flex-1 overflow-y-auto scrollbar-hide">
-            {wrapWithInteractionHandler(activeContent)}
+            {workInfo && <WorkplaceAction work={workInfo} />}
           </div>
         </div>
-      </div>
-
-      {/* === FOOTER BAR === Work section (if player has job here) */}
-      {workInfo && (
-        <div
-          className="shrink-0 flex items-center justify-between gap-2 px-3 py-2"
-          style={{
-            background: `linear-gradient(180deg, ${npc.frameDark} 0%, ${npc.frameColor} 100%)`,
-            borderTop: `2px solid ${npc.frameBorder}`,
-          }}
-        >
-          <div className="text-white min-w-0">
-            <div
-              className="font-bold uppercase tracking-wider"
-              style={{ fontSize: 'clamp(0.5rem, 1vw, 0.7rem)' }}
-            >
-              Work
-            </div>
-            <div
-              className="opacity-70 truncate"
-              style={{ fontSize: 'clamp(0.4rem, 0.8vw, 0.55rem)' }}
-            >
-              Current Job: {workInfo.jobName} ({workInfo.wage}g/hr)
-            </div>
-          </div>
-          <button
-            onClick={workInfo.onWork}
-            disabled={!workInfo.canWork}
-            className={`font-bold uppercase tracking-wider transition-all duration-200 shrink-0 ${workInfo.canWork ? 'hover:brightness-[1.15] hover:scale-[1.03] hover:-translate-y-px hover:shadow-[0_0_14px_hsl(45_85%_55%/0.45)] active:scale-[0.97] active:translate-y-0 active:brightness-95' : ''}`}
-            style={{
-              background: workInfo.canWork
-                ? 'linear-gradient(180deg, #c9a227 0%, #a08520 100%)'
-                : '#3a3a2a',
-              color: workInfo.canWork ? '#2d1f0f' : '#6b6b5a',
-              border: `2px solid ${workInfo.canWork ? '#d4b33c' : '#4a4a3a'}`,
-              borderRadius: '3px',
-              padding: 'clamp(3px, 0.6vw, 8px) clamp(10px, 2vw, 24px)',
-              fontSize: 'clamp(0.55rem, 1.1vw, 0.8rem)',
-              cursor: workInfo.canWork ? 'pointer' : 'not-allowed',
-              opacity: workInfo.canWork ? 1 : 0.6,
-            }}
-          >
-            Work Shift (+{workInfo.earnings}g)
-          </button>
-          <div
-            className="text-white opacity-60 shrink-0"
-            style={{ fontSize: 'clamp(0.4rem, 0.8vw, 0.55rem)' }}
-          >
-            {workInfo.hoursPerShift} hours per shift
-          </div>
-        </div>
-      )}
-    </div>
+      </section>
     </ItemPreviewProvider>
+  );
+}
+
+function WorkplaceAction({ work }: { work: WorkInfo }) {
+  const short = work.hoursPerShift < work.fullShiftHours;
+  return (
+    <section className="location-work" aria-label="Your work shift">
+      <div className="location-work-title"><Briefcase aria-hidden="true" /><strong>{work.jobName}</strong><span>{work.wage}g/h</span></div>
+      <button className="location-work-button" onClick={work.onWork} disabled={!work.canWork} aria-describedby="work-shift-outcome">
+        <span><Clock aria-hidden="true" />{short ? 'Short shift' : 'Work shift'} · {work.hoursPerShift}h</span>
+        <span><Coins aria-hidden="true" />+{work.earnings}g</span>
+      </button>
+      <p id="work-shift-outcome" className={work.blockedReason ? 'location-work-warning' : 'location-work-outcome'}>
+        {work.blockedReason ?? `After shift: ${work.preview.hoursAfter}h left · ${work.preview.goldAfter}g · ${work.preview.happinessLoss > 0 ? `−${work.preview.happinessLoss} happiness` : 'no happiness loss'}`}
+      </p>
+      {work.canWork && work.preview.deductions > 0 && <p className="location-work-deductions">{work.preview.gross}g earned − {work.preview.deductions}g withheld for overdue payments.</p>}
+    </section>
   );
 }

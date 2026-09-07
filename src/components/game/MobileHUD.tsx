@@ -61,7 +61,7 @@ export function MobileHUD({
       <div className="w-px h-4 bg-wood-light/50 flex-shrink-0" />
 
       {/* Resources strip */}
-      <div className="flex items-center gap-1.5 flex-1 justify-center overflow-hidden">
+      <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-start overflow-x-auto scrollbar-hide" role="region" aria-label="Player resources, scroll for more" tabIndex={0}>
         <ResourceChip icon={<Coins className="w-3 h-3" />} value={player.gold} color="text-gold" />
         <ResourceChip icon={<Clock className="w-3 h-3" />} value={player.timeRemaining} color="text-time" warning={player.timeRemaining < 10} />
         <ResourceChip icon={<Heart className="w-3 h-3" />} value={player.health} color="text-health" warning={player.health <= 20} />
@@ -129,7 +129,7 @@ function ResourceChip({
   warning?: boolean;
 }) {
   return (
-    <span className={`flex items-center gap-0.5 text-[11px] font-bold ${color} ${warning ? 'animate-pulse' : ''}`}>
+    <span className={`flex flex-shrink-0 items-center gap-0.5 text-[11px] font-bold ${color} ${warning ? 'animate-pulse' : ''}`}>
       {icon}
       <span className="font-display">{value}</span>
     </span>

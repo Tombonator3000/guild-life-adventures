@@ -130,6 +130,21 @@ function calculateWorkHappinessPenalty(gameWeek: number, playerAge: number, hour
   return basePenalty + agePenalty;
 }
 
+/** Read-only preview using the same pay and deductions as the actual shift. */
+export function getWorkPreview(player: Player, hours: number, week: number, festivalId: string | null) {
+  const gross = calculateEarnings(hours, player.currentWage, festivalId, player);
+  const { earnings } = applyGarnishments(gross, player);
+  const net = Math.max(0, earnings);
+  return {
+    gross,
+    net,
+    deductions: gross - net,
+    hoursAfter: Math.max(0, player.timeRemaining - hours),
+    goldAfter: player.gold + net,
+    happinessLoss: Math.min(player.happiness, calculateWorkHappinessPenalty(week, player.age ?? 18, hours)),
+  };
+}
+
 export function createWorkEducationActions(set: SetFn, get: GetFn) {
   return {
     workShift: (playerId: string, hours: number, wage: number): boolean => {

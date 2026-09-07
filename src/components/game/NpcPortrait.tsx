@@ -3,11 +3,14 @@
 // Falls back to portraitImage (JPG/PNG), then emoji on error.
 
 import { useState } from 'react';
+import { useEnvironmentActivity } from '@/hooks/useEnvironmentActivity';
+import { useGameOptions } from '@/hooks/useGameOptions';
 import type { LocationNPC } from '@/data/npcs';
 
 interface NpcPortraitProps {
   npc: LocationNPC;
   size?: 'normal' | 'large' | 'xl';
+  scene?: boolean;
 }
 
 const SIZES = {
@@ -16,18 +19,20 @@ const SIZES = {
   xl: 'w-60 h-72',
 };
 
-export function NpcPortrait({ npc, size = 'normal' }: NpcPortraitProps) {
+export function NpcPortrait({ npc, size = 'normal', scene = false }: NpcPortraitProps) {
   const [videoFailed, setVideoFailed] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
   const sizeClass = SIZES[size];
+  const { reducedMotion, visible } = useEnvironmentActivity();
+  const { options } = useGameOptions();
 
-  const showVideo = !!npc.portraitVideo && !videoFailed;
+  const showVideo = !!npc.portraitVideo && !videoFailed && visible && !reducedMotion && options.environmentDetail === 'full';
   const showImage = !showVideo && !!npc.portraitImage && !imgFailed;
 
   return (
     <div
-      className={`${sizeClass} rounded-lg border-2 flex items-center justify-center overflow-hidden mb-1.5 shadow-inner`}
-      style={{
+      className={scene ? 'location-scene-portrait' : `${sizeClass} rounded-lg border-2 flex items-center justify-center overflow-hidden mb-1.5 shadow-inner`}
+      style={scene ? undefined : {
         backgroundColor: npc.bgColor,
         borderColor: npc.accentColor,
         boxShadow: `inset 0 2px 8px rgba(0,0,0,0.4), 0 0 12px ${npc.accentColor}33`,
