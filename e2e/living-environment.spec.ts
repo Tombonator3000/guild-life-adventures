@@ -29,6 +29,8 @@ test('weather stays behind playable controls and preserves visual evidence', asy
   }
   await page.getByRole('button',{name:'Storm',exact:true}).click();
   const timing = await page.evaluate(async () => {
+    const smoke = document.querySelector('.environment-smoke')!;
+    const initialSmokeTransform = getComputedStyle(smoke).transform;
     const times: number[] = [];
     let previous = await new Promise<number>(resolve => requestAnimationFrame(resolve));
     for (let i=0;i<180;i++) {
@@ -36,8 +38,10 @@ test('weather stays behind playable controls and preserves visual evidence', asy
       times.push(now-previous); previous=now;
     }
     const sorted = [...times].sort((a,b) => a-b);
-    return {samples:times.length,averageFps:1000/(times.reduce((a,b)=>a+b,0)/times.length),p95Ms:sorted[Math.floor(sorted.length*.95)],p99Ms:sorted[Math.floor(sorted.length*.99)],conditions:'CI Chromium, development build, desktop storm. Not a physical-device benchmark.'};
+    return {ambientMotionChanged:getComputedStyle(smoke).transform !== initialSmokeTransform,samples:times.length,averageFps:1000/(times.reduce((a,b)=>a+b,0)/times.length),p95Ms:sorted[Math.floor(sorted.length*.95)],p99Ms:sorted[Math.floor(sorted.length*.99)],conditions:'CI Chromium, development build, desktop storm. Not a physical-device benchmark.'};
   });
+  expect(timing.ambientMotionChanged).toBe(true);
+  await page.screenshot({path:testInfo.outputPath('desktop-thunderstorm-later-frame.png')});
   await testInfo.attach('storm-frame-timing',{body:JSON.stringify(timing,null,2),contentType:'application/json'});
   await page.locator('[data-zone-id="bank"]').click();
   await expect(page.getByRole('button',{name:/deposit 50/i})).toBeVisible({timeout:15_000});
