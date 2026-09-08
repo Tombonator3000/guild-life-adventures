@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { writeFile } from 'node:fs/promises';
 import { expect, test } from './test';
 
 async function startEnvironmentGame(page: Page) {
@@ -19,6 +20,7 @@ async function startEnvironmentGame(page: Page) {
 test('weather stays behind playable controls and preserves visual evidence', async ({page},testInfo) => {
   test.setTimeout(90_000);
   const errors: string[] = [];
+  let heatRenderer: string | null = null;
   page.on('pageerror',error => errors.push(error.message));
   await startEnvironmentGame(page);
   for (const [label,type] of [['Clear','clear'],['Storm','thunderstorm'],['Snow','snowstorm'],['Fog','enchanted-fog'],['Rain','harvest-rain'],['Drought','drought']]) {
@@ -26,7 +28,7 @@ test('weather stays behind playable controls and preserves visual evidence', asy
     await expect(page.locator('.board-atmosphere')).toHaveAttribute('data-weather',type);
     if (type === 'drought') {
       await expect(page.locator('.heat-shimmer')).toHaveAttribute('data-status',/ready|fallback/);
-      await testInfo.attach('heat-renderer',{body:String(await page.locator('.heat-shimmer').getAttribute('data-status')),contentType:'text/plain'});
+      heatRenderer=await page.locator('.heat-shimmer').getAttribute('data-status');
     }
     // Wait for a rendered frame; screenshots keep the real live animations.
     await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
@@ -68,6 +70,7 @@ test('weather stays behind playable controls and preserves visual evidence', asy
   expect(timing.ambientMotionChanged).toBe(true);
   await page.screenshot({path:testInfo.outputPath('desktop-thunderstorm-later-frame.png')});
   await testInfo.attach('storm-frame-timing',{body:JSON.stringify(timing,null,2),contentType:'application/json'});
+  await writeFile(testInfo.outputPath('vfx-frame-timing.json'),JSON.stringify({...timing,heatRenderer,protectedPixels},null,2));
   await page.locator('[data-zone-id="bank"]').click();
   await expect(page.getByRole('button',{name:/deposit 50/i})).toBeVisible({timeout:15_000});
   await page.getByRole('button',{name:/deposit 50/i}).click();
