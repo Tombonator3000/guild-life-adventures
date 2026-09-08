@@ -51,6 +51,7 @@ export function useGameBoardKeyboard({
       // Let the open dialog own Escape instead of also opening the game menu.
       if (hasOpenDialog && e.key === 'Escape') return;
       if (hasOpenDialog && !e.ctrlKey && !e.shiftKey && e.key !== 'Escape') return;
+      if (document.querySelector('[data-character-panel]') && !e.ctrlKey && !e.metaKey && ['e', 't', ' '].includes(e.key.toLowerCase())) return;
 
       if (e.ctrlKey && e.shiftKey && e.key === 'Z' && isDevMode()) {
         e.preventDefault();

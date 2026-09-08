@@ -82,7 +82,7 @@
 
 .bank-receipt:empty { display:none; }
 .bank-receipt { font-size:11px; color:#375c35; line-height:1.3; }
-.mobile-map-surface .animated-player-token { scale:.48; }
+.mobile-map-surface .animated-player-token > div { scale:.48; transform-origin:0 0; }
 @media (orientation:landscape) {
   .mobile-action-region .location-service-picker { display:block; min-height:36px; flex-shrink:0; padding:4px 8px; background:#e8d3aa; color:#422e19; font:bold 12px Georgia,serif; }
   .mobile-action-region .location-tabs { display:none; }

@@ -7,6 +7,7 @@ import { Briefcase, ChevronLeft, GraduationCap, Shirt, Clock, Star, X, Check } f
 import { useTranslation } from '@/i18n';
 import { playSFX } from '@/audio/sfxManager';
 import { LocationActions } from './LocationPages';
+import { useLocationContentReset } from '@/hooks/useLocationContentReset';
 import {
   getEmployers,
   calculateOfferedWage,
@@ -54,6 +55,7 @@ export function GuildHallPanel({
     isRaise?: boolean;
     oldWage?: number;
   } | null>(null);
+  useLocationContentReset(`${selectedEmployer?.id ?? 'employers'}:${applicationResult?.job.id ?? 'list'}`);
   const employers = getEmployers();
 
   // Pre-calculate ALL wages once per week (deterministic per job per week)

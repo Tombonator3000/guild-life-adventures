@@ -6,7 +6,7 @@ import { LOCATIONS, getMovementCost } from '@/data/locations';
 import { getQuestLocationObjectives } from '@/data/quests';
 import { useGameStore } from '@/store/gameStore';
 import { useBanterStore } from '@/store/banterStore';
-import type { LocationId, Player } from '@/types/game.types';
+import type { AnimationLayerConfig, LocationId, Player } from '@/types/game.types';
 import gameBoard from '@/assets/game-board.jpeg';
 import { AnimatedPlayerToken } from './AnimatedPlayerToken';
 import { BanterBubble } from './BanterBubble';
@@ -30,6 +30,7 @@ interface GameBoardCanvasProps {
   weather: WeatherState;
   isMobile: boolean;
   centerPanel: CenterPanel;
+  animationLayers?: AnimationLayerConfig[];
   customZones: ComponentProps<typeof DebugOverlay>['customZones'];
   debugCenterPanel: ComponentProps<typeof DebugOverlay>['centerPanel'];
   showDebugOverlay: boolean;
@@ -54,6 +55,7 @@ export function GameBoardCanvas({
   weather,
   isMobile,
   centerPanel,
+  animationLayers,
   customZones,
   debugCenterPanel,
   showDebugOverlay,
@@ -149,7 +151,7 @@ export function GameBoardCanvas({
       )}
 
       <MilestoneNotice />
-      <BoardEnvironment centerPanel={isMobile ? NO_BOARD_PANEL : centerPanel} />
+      <BoardEnvironment centerPanel={isMobile ? NO_BOARD_PANEL : centerPanel} animationLayers={animationLayers} />
       <DebugOverlay customZones={customZones} centerPanel={debugCenterPanel} visible={showDebugOverlay} />
       <BoardBanterOverlay centerPanel={centerPanel} isMobile={isMobile} />
       {!isMobile && children}

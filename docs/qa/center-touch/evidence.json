@@ -1,0 +1,256 @@
+{
+  "date": "2026-09-08",
+  "baseCommit": "90186564d862e92483d95829511bff74c6e73386",
+  "checks": {
+    "build": "passed",
+    "unitTests": {
+      "files": 102,
+      "passed": 768
+    },
+    "eslint": {
+      "errors": 0,
+      "warnings": 27
+    },
+    "configuredTypecheck": "passed",
+    "extendedAppTypecheck": {
+      "baseDiagnosticCount": 185,
+      "candidateDiagnosticCount": 185,
+      "sameDiagnosticMessages": true
+    },
+    "postLayerRefreshVerification": {
+      "targetedUnitTests": 25,
+      "build": "passed",
+      "changedFileLint": "passed",
+      "configuredTypecheck": "passed",
+      "movementBrowserTest": "passed"
+    }
+  },
+  "browser": {
+    "runtime": "Playwright Chromium, headless; native CDP touch input",
+    "runs": [
+      {
+        "report": "center-regression.json",
+        "startTime": "2026-09-08T10:39:00.020Z",
+        "duration": 116840.399,
+        "expected": 13,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      {
+        "report": "final-evidence.json",
+        "startTime": "2026-09-08T10:51:39.503Z",
+        "duration": 46072.722,
+        "expected": 4,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      {
+        "report": "movement-delivery.json",
+        "startTime": "2026-09-08T10:56:44.257Z",
+        "duration": 11434.573,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    ],
+    "latestScenarioOutcomes": [
+      {
+        "file": "device-accessibility.spec.ts",
+        "title": "keyboard navigation reaches a real location and activates it",
+        "project": "chromium",
+        "status": "passed",
+        "runStarted": "2026-09-08T10:39:00.020Z"
+      },
+      {
+        "file": "device-accessibility.spec.ts",
+        "title": "gameplay shortcuts stay blocked while the game menu modal is open",
+        "project": "chromium",
+        "status": "passed",
+        "runStarted": "2026-09-08T10:39:00.020Z"
+      },
+      {
+        "file": "device-accessibility.spec.ts",
+        "title": "keeps the live board and mobile controls usable without page overflow",
+        "project": "chromium",
+        "status": "passed",
+        "runStarted": "2026-09-08T10:39:00.020Z"
+      },
+      {
+        "file": "device-accessibility.spec.ts",
+        "title": "switches cleanly between tablet portrait and desktop-style landscape",
+        "project": "chromium",
+        "status": "passed",
+        "runStarted": "2026-09-08T10:39:00.020Z"
+      },
+      {
+        "file": "immersive-touch.spec.ts",
+        "title": "immersive defaults, explicit display choice and manual survive a reload",
+        "project": "chromium",
+        "status": "passed",
+        "runStarted": "2026-09-08T10:51:39.503Z"
+      },
+      {
+        "file": "immersive-touch.spec.ts",
+        "title": "vertical scrolling and integrated character controls at 1194x834",
+        "project": "chromium",
+        "status": "passed",
+        "runStarted": "2026-09-08T10:51:39.503Z"
+      },
+      {
+        "file": "immersive-touch.spec.ts",
+        "title": "vertical scrolling and integrated character controls at 820x1180",
+        "project": "chromium",
+        "status": "passed",
+        "runStarted": "2026-09-08T10:51:39.503Z"
+      },
+      {
+        "file": "movement-rendering.spec.ts",
+        "title": "movement arrives on the canonical route with bounded rendering work",
+        "project": "chromium",
+        "status": "passed",
+        "runStarted": "2026-09-08T10:56:44.257Z"
+      },
+      {
+        "file": "painted-items.spec.ts",
+        "title": "painted equipment keeps its identity from shop to inventory at 390",
+        "project": "chromium",
+        "status": "passed",
+        "runStarted": "2026-09-08T10:39:00.020Z"
+      },
+      {
+        "file": "painted-items.spec.ts",
+        "title": "painted equipment keeps its identity from shop to inventory at 844",
+        "project": "chromium",
+        "status": "passed",
+        "runStarted": "2026-09-08T10:39:00.020Z"
+      },
+      {
+        "file": "painted-items.spec.ts",
+        "title": "painted equipment keeps its identity from shop to inventory at 1280",
+        "project": "chromium",
+        "status": "passed",
+        "runStarted": "2026-09-08T10:39:00.020Z"
+      },
+      {
+        "file": "window-cave-update.spec.ts",
+        "title": "wrapped market tabs and paged goods keep every service reachable",
+        "project": "chromium",
+        "status": "passed",
+        "runStarted": "2026-09-08T10:39:00.020Z"
+      },
+      {
+        "file": "window-cave-update.spec.ts",
+        "title": "cave load, encounter, result, retreat and settlement remain clear inside the frame",
+        "project": "chromium",
+        "status": "passed",
+        "runStarted": "2026-09-08T10:39:00.020Z"
+      },
+      {
+        "file": "window-cave-update.spec.ts",
+        "title": "a deployed update appears on focus, saves the current game and reloads on click",
+        "project": "chromium",
+        "status": "passed",
+        "runStarted": "2026-09-08T10:39:00.020Z"
+      }
+    ],
+    "setupCorrection": "Wait for the center toolbar/board keyboard handler before exiting fullscreen in tablet setup. Initial portrait failure resolved; final touch and movement run passed without retries."
+  },
+  "movementComparison": {
+    "method": "Same three destinations, seeded fresh game, assets loaded; Performance.getMetrics deltas include click, travel and arrival rendering. One sample per revision. MOVEMENT_BASELINE=1 skips only transform-style assertion on baseline.",
+    "base": {
+      "viewport": "1194x834",
+      "samples": [
+        {
+          "destination": "guild-hall",
+          "layoutCount": 60,
+          "recalcStyleCount": 112,
+          "layoutMs": 35.581,
+          "scriptMs": 985.4929999999999,
+          "taskMs": 1328.6970000000001
+        },
+        {
+          "destination": "bank",
+          "layoutCount": 15,
+          "recalcStyleCount": 48,
+          "layoutMs": 6.0269999999999975,
+          "scriptMs": 458.6080000000001,
+          "taskMs": 662.4830000000002
+        },
+        {
+          "destination": "armory",
+          "layoutCount": 48,
+          "recalcStyleCount": 94,
+          "layoutMs": 10.331,
+          "scriptMs": 774.8729999999997,
+          "taskMs": 1015.2639999999999
+        }
+      ]
+    },
+    "candidate": {
+      "viewport": "1194x834",
+      "samples": [
+        {
+          "destination": "guild-hall",
+          "layoutCount": 7,
+          "recalcStyleCount": 91,
+          "layoutMs": 22.233,
+          "scriptMs": 410.194,
+          "taskMs": 628.7769999999999
+        },
+        {
+          "destination": "bank",
+          "layoutCount": 6,
+          "recalcStyleCount": 42,
+          "layoutMs": 6.7749999999999995,
+          "scriptMs": 182.51999999999995,
+          "taskMs": 360.7250000000001
+        },
+        {
+          "destination": "armory",
+          "layoutCount": 8,
+          "recalcStyleCount": 96,
+          "layoutMs": 2.822999999999999,
+          "scriptMs": 378.56,
+          "taskMs": 644.038
+        }
+      ]
+    },
+    "previousCandidateSample": {
+      "viewport": "1194x834",
+      "samples": [
+        {
+          "destination": "guild-hall",
+          "layoutCount": 7,
+          "recalcStyleCount": 95,
+          "layoutMs": 13.17,
+          "scriptMs": 388.68399999999997,
+          "taskMs": 630.173
+        },
+        {
+          "destination": "bank",
+          "layoutCount": 7,
+          "recalcStyleCount": 65,
+          "layoutMs": 2.8780000000000006,
+          "scriptMs": 238.98799999999997,
+          "taskMs": 377.641
+        },
+        {
+          "destination": "armory",
+          "layoutCount": 8,
+          "recalcStyleCount": 94,
+          "layoutMs": 2.7539999999999996,
+          "scriptMs": 410.34800000000007,
+          "taskMs": 667.762
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "Physical iPad/Safari not available for verification.",
+    "Timings are local Chromium measurements, not an on-device FPS guarantee.",
+    "Full CI suite runs on the pull request."
+  ]
+}

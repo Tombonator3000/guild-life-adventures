@@ -14,7 +14,7 @@ function frame(now: number) { const pending=[...callbacks.values()];callbacks.cl
 
 describe('shared environment clock', () => {
   it('runs all surfaces on one RAF and freezes elapsed time across a hidden tab', () => {
-    const manager=new EffectManager(),world=vi.fn(),screen=vi.fn(),shader=vi.fn();
+    const manager=new EffectManager(60),world=vi.fn(),screen=vi.fn(),shader=vi.fn();
     manager.register(world); manager.register(screen); manager.register(shader); manager.setRunning(true);
     expect(callbacks.size).toBe(1);frame(100);frame(116);
     expect(world).toHaveBeenLastCalledWith(.016);expect(screen).toHaveBeenLastCalledWith(.016);expect(shader).toHaveBeenLastCalledWith(.016);
@@ -22,6 +22,14 @@ describe('shared environment clock', () => {
     manager.setRunning(true);frame(15000);expect(world).toHaveBeenLastCalledWith(.016);
     frame(15016);expect(world).toHaveBeenLastCalledWith(.032);
     manager.dispose();expect(callbacks.size).toBe(0);
+  });
+  it('limits atmosphere paints to 30 fps on a 120 Hz display', () => {
+    const manager = new EffectManager(), draw = vi.fn();
+    manager.register(draw); manager.setRunning(true); draw.mockClear();
+    for (let i = 0; i < 120; i++) frame(i * 1000 / 120);
+    expect(draw).toHaveBeenCalledTimes(30);
+    expect(callbacks.size).toBe(1);
+    manager.dispose();
   });
   it('paints static scenes on demand without starting a clock and releases the last surface', () => {
     const manager=new EffectManager(),draw=vi.fn();const remove=manager.register(draw);

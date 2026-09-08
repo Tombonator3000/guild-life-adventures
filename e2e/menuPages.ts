@@ -30,29 +30,8 @@ export async function selectLocationService(page: Page, name: string) {
   await service.click();
 }
 
-async function settlePages(page: Page) {
-  await page.locator('.location-page-flow').evaluateAll(async elements => {
-    await Promise.allSettled(elements.flatMap(el => el.getAnimations().map(animation => animation.finished)));
-  });
-}
-
+// Native lists can bring a control into view without changing its service state.
 export async function openMenuPage(page: Page, control: Locator) {
-  const previous=page.getByRole('button',{name:'Previous menu page',exact:true});
-  if (!(await previous.count())) return;
-  while (await previous.isEnabled()) { await previous.click(); await settlePages(page); }
-  await settlePages(page);
-  for (let i=0;i<40;i++) {
-    const fits=await control.evaluate(el=>{
-      const box=el.closest('.location-pages')?.querySelector('.location-page-viewport');
-      if (!box) return true;
-      const r=el.getBoundingClientRect(),b=box.getBoundingClientRect();
-      return r.left>=b.left-1 && r.right<=b.right+1 && r.top>=b.top-1 && r.bottom<=b.bottom+1;
-    });
-    if (fits) return;
-    const next=page.getByRole('button',{name:'Next menu page',exact:true});
-    await expect(next).toBeEnabled();
-    await next.click();
-    await settlePages(page);
-  }
-  throw new Error('Control did not fit any menu page');
+  await expect(control).toBeAttached();
+  await control.scrollIntoViewIfNeeded();
 }

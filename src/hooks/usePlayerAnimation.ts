@@ -20,7 +20,9 @@ function appendRoute(base: LocationId[], segment: LocationId[]): LocationId[] {
 }
 
 export function usePlayerAnimation() {
-  const { travelPlayer, selectLocation, endTurn } = useGameStore();
+  const travelPlayer = useGameStore(state => state.travelPlayer);
+  const selectLocation = useGameStore(state => state.selectLocation);
+  const endTurn = useGameStore(state => state.endTurn);
 
   const [animatingPlayer, setAnimatingPlayer] = useState<string | null>(null);
   const [animationPath, setAnimationPath] = useState<LocationId[] | null>(null);

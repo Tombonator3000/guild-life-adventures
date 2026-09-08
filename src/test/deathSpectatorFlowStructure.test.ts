@@ -25,7 +25,7 @@ describe('permadeath spectator flow boundaries', () => {
     expect(audienceSource).toContain('const currentPlayerCanAct = !!currentPlayer && !currentPlayer.isGameOver');
     expect(audienceSource).toContain('const isLocalPlayerTurn = currentPlayerCanAct');
     expect(boardSource).toContain('isLocalPlayerTurn');
-    expect(boardSource).toContain('onLocationClick={handleLocationClick}');
+    expect(boardSource).toContain('onLocationClick={location => { closePlayerInfo(); handleLocationClick(location); }}');
   });
 
   it('shows the death decision only to the affected online client', () => {

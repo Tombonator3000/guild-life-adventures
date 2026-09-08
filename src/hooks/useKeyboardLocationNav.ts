@@ -35,10 +35,10 @@ export function useKeyboardLocationNav({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't interfere when modifiers are held (Ctrl/Meta shortcuts)
-      if (e.ctrlKey || e.metaKey) return;
+      if (e.defaultPrevented || e.ctrlKey || e.metaKey) return;
 
       // Block when a Radix dialog is open
-      const hasOpenDialog = !!document.querySelector('[role="dialog"]');
+      const hasOpenDialog = !!document.querySelector('[role="dialog"], [data-character-panel]');
       if (hasOpenDialog) return;
 
       if (e.key === 'Tab') {

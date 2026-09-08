@@ -131,7 +131,6 @@ export function GameBoard() {
     closeGameMenu,
     openMobileGameMenu,
     showLeftDrawer,
-    openLeftDrawer,
     closeLeftDrawer,
     showRightDrawer,
     openRightDrawer,
@@ -241,7 +240,7 @@ export function GameBoard() {
         week,
         priceModifier,
         economyTrend,
-        onOpenLeftDrawer: openLeftDrawer,
+        onOpenLeftDrawer: () => setViewingPlayer(currentPlayer),
         onOpenRightDrawer: openRightDrawer,
         onOpenMenu: openGameMenu,
       } : null}
@@ -323,10 +322,6 @@ export function GameBoard() {
             canSpectate: canSpectateAfterDeath,
             leaveLabel: deathLeaveLabel,
           } : null}
-          playerInfoProps={viewingPlayer ? {
-            player: viewingPlayer,
-            onClose: closePlayerInfo,
-          } : null}
           chatProps={isOnline ? {
             messages: chatMessages,
             onSend: sendChatMessage,
@@ -370,6 +365,7 @@ export function GameBoard() {
         weather={weather}
         isMobile={isMobile}
         centerPanel={activeCenterPanel}
+        animationLayers={animationLayers}
         customZones={customZones}
         debugCenterPanel={centerPanel}
         showDebugOverlay={showDebugOverlay}
@@ -379,7 +375,7 @@ export function GameBoard() {
         pathVersion={pathVersion}
         shadowfingersTargetLocation={shadowfingersTargetLocation}
         getLocationWithCustomPosition={getLocationWithCustomPosition}
-        onLocationClick={handleLocationClick}
+        onLocationClick={location => { closePlayerInfo(); handleLocationClick(location); }}
         onViewPlayer={setViewingPlayer}
         onAnimationComplete={handleAnimationComplete}
         onLocationReached={handleLocationReached}
@@ -388,7 +384,11 @@ export function GameBoard() {
           isMobile={isMobile}
           centerPanel={activeCenterPanel}
           isCursed={isCursed}
-          onEndTurn={endTurn}
+          onEndTurn={() => { closePlayerInfo(); endTurn(); }}
+          playerInfoProps={viewingPlayer ? {
+            player: viewingPlayer,
+            onClose: closePlayerInfo,
+          } : null}
           hoursRemaining={currentPlayer?.timeRemaining}
           endTurnDisabled={!isLocalPlayerTurn || aiIsThinking || !!currentPlayer?.isAI || phase !== 'playing' || !!animatingPlayer || !!shadowfingersEvent || !!toadCurseEvent || !!visibleDeathEvent || !!applianceBreakageEvent?.fromCurse}
           toadProps={toadCurseEvent ? {
