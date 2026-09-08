@@ -631,6 +631,7 @@ export function createQuestActions(set: SetFn, get: GetFn) {
             activeQuest: null,
             questLocationProgress: [],
             pendingNLChainChoice: null,
+            questChoices: { ...p.questChoices, [step.id]: choice.id },
             nlChainProgress: { ...p.nlChainProgress, [chainId]: nextStepIndex },
             nlChainCompleted: isComplete ? [...p.nlChainCompleted, chainId] : p.nlChainCompleted,
             gameStats: {

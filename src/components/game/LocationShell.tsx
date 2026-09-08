@@ -1,3 +1,5 @@
+import { NpcFavorPanel } from './NpcFavorPanel';
+import { getNpcMemories } from '@/data/npcMemories';
 import { CityActivityPanel } from './CityActivityPanel';
 import { getCityActivities } from '@/data/cityActivities';
 import { GameIcon } from './GameIcon';
@@ -72,10 +74,12 @@ function tabIcon(id: string) {
 }
 
 export function LocationShell({ npc, tabs, defaultTab, locationId, locationName, workInfo }: LocationShellProps) {
+  const player = useCurrentPlayer();
+  const memories = player ? getNpcMemories(player, locationId) : [];
   const conditions = useGameStore(s => ({ week:s.week, activeFestival:s.activeFestival, weather:s.weather }));
   const cityActivities = getCityActivities(locationId, conditions);
   const hasWork = !!workInfo && !tabs.some(tab => tab.id === 'hexed');
-  const availableTabs: LocationTab[] = [...tabs, ...(cityActivities.length && !tabs.some(t => t.id === 'hexed') ? [{ id:'city-activities', label:'This Week', paged:false, content:<CityActivityPanel key={locationId} location={locationId} /> }] : [])];
+  const availableTabs: LocationTab[] = [...tabs, ...(memories.length && !tabs.some(t => t.id === 'hexed') ? [{id:'personal-favors',label:'Your contact',paged:false,content:<NpcFavorPanel key={locationId} location={locationId} />}]:[]), ...(cityActivities.length && !tabs.some(t => t.id === 'hexed') ? [{ id:'city-activities', label:'This Week', paged:false, content:<CityActivityPanel key={locationId} location={locationId} /> }] : [])];
   const services = availableTabs.filter(tab => !tab.hidden && !(hasWork && locationId === 'guild-hall' && tab.id === 'work'));
   const visibleTabs: LocationTab[] = hasWork ? [{ id: 'your-shift', label: 'Work', content: <WorkplaceCard work={workInfo!} /> }, ...services.map(tab => tab.id === 'work' ? { ...tab, label: 'Careers' } : tab)] : services;
   const [servicesOpen, setServicesOpen] = useState(false);
@@ -84,13 +88,12 @@ export function LocationShell({ npc, tabs, defaultTab, locationId, locationName,
   const selectedService = visibleTabs.find(tab => tab.id === activeTab);
   const activeContent = selectedService?.content;
   const { tryTriggerBanter } = useBanter();
-  const player = useCurrentPlayer();
   const players = useGameStore(state => state.players);
   const { options } = useGameOptions();
   const { reducedMotion, visible } = useEnvironmentActivity();
   const id = useId();
   const animated = options.environmentDetail === 'full' && !reducedMotion && visible;
-  const greeting = player ? getReputationGreeting(locationId, player.fame ?? 0, player.infamy ?? 0) : null;
+  const greeting = player ? memories[0]?.greeting ?? getReputationGreeting(locationId, player.fame ?? 0, player.infamy ?? 0) : null;
 
   useEffect(() => {
     if (hasWork && !defaultTab) setSelectedTab('your-shift');

@@ -55,6 +55,7 @@ export interface GameStore extends GameState {
   graduateDegree: (playerId: string, degreeId: DegreeId) => ActionResult | void;
   acceptJobOffer: (playerId: string, jobId: string) => ActionResult | void;
   acceptMarketRaise: (playerId: string) => ActionResult | void;
+  performNpcFavor: (playerId: string, favorId: string) => ActionResult | void;
   performCityActivity: (playerId: string, activityId: string) => ActionResult | void;
   performHomeActivity: (playerId: string, activity: 'relax' | 'sleep') => ActionResult | void;
   purchaseTavernItem: (playerId: string, itemId: string) => ActionResult | void;

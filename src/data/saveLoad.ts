@@ -1,3 +1,4 @@
+import { NPC_FAVORS, sanitizeQuestChoices } from './npcMemories';
 /**
  * Save/Load System for Guild Life Adventures
  * Supports auto-save and 3 manual save slots using localStorage.
@@ -254,6 +255,8 @@ export function normalizePlayer(p: Record<string, unknown>): void {
   setDefault(p, 'completedBountiesThisWeek', []);
   setDefault(p, 'questCooldownWeeksLeft', 0);
   setDefault(p, 'guildReputation', (p.completedQuests as number) || 0);
+  p.questChoices = sanitizeQuestChoices(p.questChoices);
+  p.claimedNpcFavors = Array.isArray(p.claimedNpcFavors) ? [...new Set(p.claimedNpcFavors.filter(id => NPC_FAVORS.some(f => f.id === id)))] : [];
   setDefault(p, 'cityActivityWeek', -1);
   setDefault(p, 'cityActivityId', '');
   setDefault(p, 'nlChainProgress', {});

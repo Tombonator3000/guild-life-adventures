@@ -101,3 +101,5 @@
 .event-report-effects { border-top:1px solid #ad8d56; padding:8px 0; font-size:14px; font-weight:bold; }
 .event-report-continue { align-self:center; min-height:44px; min-width:160px; padding:8px 18px; flex-shrink:0; }
 @container (max-width:430px) { .event-report-body aside { display:none; } }
+
+.rival-summary { margin:5px 0 0 27px; font:11px/1.4 Georgia,serif; color:#4d3922; }.rival-summary summary { cursor:pointer; padding:5px 0; }.rival-summary ul { list-style:disc; padding-left:14px; }

@@ -112,6 +112,7 @@ export function PlayersTab({ players, currentPlayerIndex, goalSettings }: Player
                 </div>
               )}
             </div>
+            {player.lastTurnSummary && player.lastTurnSummary.entries.length > 0 && <details className="rival-summary"><summary>Last turn · Week {player.lastTurnSummary.week}</summary><ul>{player.lastTurnSummary.entries.map((entry,i)=><li key={i}>{entry}</li>)}</ul></details>}
           </div>
         );
       })}

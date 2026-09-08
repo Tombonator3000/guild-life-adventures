@@ -135,6 +135,7 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'endTurn',
   'performHomeActivity',
   'performCityActivity',
+  'performNpcFavor',
   'performCaveRest',
 
   // Housing intent only. Host resolves office access, canonical price and time.

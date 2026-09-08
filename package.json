@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "validate": "bun run check:types && bun run test && bun run build && bun run lint"
+    "validate": "bun run check:types && bun run test && bun run build && bun run lint",
+    "test:balance": "vitest run --config vitest.balance.config.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
