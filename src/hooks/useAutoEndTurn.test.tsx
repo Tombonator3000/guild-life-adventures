@@ -80,4 +80,22 @@ describe('useAutoEndTurn permadeath recovery', () => {
     expect(state.players[1].isGameOver).toBe(true);
     expect(state.phase).toBe('event');
   });
+
+  it('keeps a living zero-hour turn open for free errands until End Turn', async () => {
+    useGameStore.getState().startNewGame(['Tenant'], false, goals);
+    useGameStore.setState(state => ({
+      week: 3,
+      players: state.players.map(player => ({ ...player, currentLocation: 'landlord', timeRemaining: 0, gold: 5000 })),
+    }));
+    render(<HookHarness />);
+    await act(async () => { await vi.advanceTimersByTimeAsync(2000); });
+    const id = useGameStore.getState().players[0].id;
+    act(() => { useGameStore.getState().payHousingRent(id, 4); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(2000); });
+    expect(useGameStore.getState().week).toBe(3);
+    expect(useGameStore.getState().players[0].rentPrepaidWeeks).toBe(4);
+    expect(useGameStore.getState().players[0].timeRemaining).toBe(0);
+    act(() => { useGameStore.getState().endTurn(); });
+    expect(useGameStore.getState().week).toBe(4);
+  });
 });

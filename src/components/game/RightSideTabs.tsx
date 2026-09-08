@@ -5,7 +5,7 @@ import { PanelDecoration } from './PanelDecoration';
 // Follows the medieval parchment aesthetic with amber-800/900 text colors
 
 import { useState } from 'react';
-import { Settings, Code, Users, Target, Coins, Smile, GraduationCap, TrendingUp, Menu, Trophy, Compass, Maximize, Minimize, Crown, LayoutDashboard } from 'lucide-react';
+import { Settings, Code, Users, Menu, Trophy, Maximize, Minimize, Crown, LayoutDashboard } from 'lucide-react';
 import { AchievementsPanel } from './AchievementsPanel';
 import { PlayersTab } from './tabs/PlayersTab';
 import { OptionsTab } from './tabs/OptionsTab';
@@ -153,8 +153,7 @@ export function RightSideTabs({
         )}
       </div>
 
-      {/* Goals Summary */}
-      <GoalsSummary goalSettings={goalSettings} />
+
     </div>
   );
 }
@@ -181,39 +180,5 @@ function TabButton({ tab, isActive, onClick }: { tab: TabConfig; isActive: boole
         {tab.label}
       </span>
     </button>
-  );
-}
-
-function GoalsSummary({ goalSettings }: { goalSettings: GoalSettings }) {
-  return (
-    <div className="flex-shrink-0 p-2 border-t-2 border-wood-light bg-amber-100/50">
-      <h4 className="text-[9px] text-amber-800 font-display flex items-center gap-1 mb-1">
-        <Target className="w-3 h-3" /> Goals to Win
-      </h4>
-      <div className="grid grid-cols-2 gap-1 text-[9px]">
-        <div className="flex items-center gap-1 text-amber-900">
-          <Coins className="w-3 h-3 text-amber-700" />
-          <span>{goalSettings.wealth}g</span>
-        </div>
-        <div className="flex items-center gap-1 text-amber-900">
-          <Smile className="w-3 h-3 text-amber-700" />
-          <span>{goalSettings.happiness}%</span>
-        </div>
-        <div className="flex items-center gap-1 text-amber-900">
-          <GraduationCap className="w-3 h-3 text-amber-700" />
-          <span>Lvl {goalSettings.education}</span>
-        </div>
-        <div className="flex items-center gap-1 text-amber-900">
-          <TrendingUp className="w-3 h-3 text-amber-700" />
-          <span>Dep {goalSettings.career}</span>
-        </div>
-        {(goalSettings.adventure ?? 0) > 0 && (
-          <div className="flex items-center gap-1 text-amber-900 col-span-2">
-            <Compass className="w-3 h-3 text-amber-700" />
-            <span>Adv {goalSettings.adventure}</span>
-          </div>
-        )}
-      </div>
-    </div>
   );
 }

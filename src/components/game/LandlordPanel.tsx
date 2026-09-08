@@ -36,7 +36,7 @@ export function LandlordPanel({ player, priceModifier }: LandlordPanelProps) {
             <span className="font-bold">{effectiveRent}g</span>
             {player.lockedRent > 0 && (
               <span className="text-xs text-[#2a7a2a] ml-1 flex items-center gap-1">
-                <Lock className="w-3 h-3" /> {t('common.owned')}
+                <Lock className="w-3 h-3" /> Locked rate
               </span>
             )}
           </div>
@@ -50,11 +50,11 @@ export function LandlordPanel({ player, priceModifier }: LandlordPanelProps) {
           </div>
         )}
         <div className="flex justify-between mb-2">
-          <span>{t('panelLandlord.rentDue')}:</span>
+          <span>Prepaid weeks:</span>
           <span className="font-bold text-[#2a7a2a]">{player.rentPrepaidWeeks}</span>
         </div>
         <div className="flex justify-between">
-          <span>{t('panelLandlord.weeksOverdue', { n: player.weeksSinceRent })}:</span>
+          <span>Weeks overdue:</span>
           <span className={`font-bold ${player.weeksSinceRent >= 4 ? 'text-destructive' : 'text-[#8b6914]'}`}>
             {player.weeksSinceRent}
           </span>
@@ -64,6 +64,7 @@ export function LandlordPanel({ player, priceModifier }: LandlordPanelProps) {
         )}
       </div>
 
+      <p className="text-xs text-[#6b5a42]">Paying rent and changing your home use no hours. Travel around town still takes time.</p>
       {/* Rent Payment Options */}
       {player.housing !== 'homeless' && (
         <>
@@ -72,10 +73,10 @@ export function LandlordPanel({ player, priceModifier }: LandlordPanelProps) {
           </h4>
           <div className="space-y-2">
             <ActionButton
-              label={`${t('panelLandlord.payRent')} 1 (${effectiveRent}g)`}
+              label={`${t('panelLandlord.payRent')} · 1 week`}
               cost={effectiveRent}
-              time={1}
-              disabled={player.gold < effectiveRent || player.timeRemaining < 1}
+              time={0}
+              disabled={player.gold < effectiveRent}
               darkText
               sfx="rent-paid"
               onClick={() => {
@@ -86,28 +87,14 @@ export function LandlordPanel({ player, priceModifier }: LandlordPanelProps) {
               }}
             />
             <ActionButton
-              label={`${t('panelLandlord.payRent')} 4 (${effectiveRent * 4}g)`}
+              label={`${t('panelLandlord.payRent')} · 4 weeks`}
               cost={effectiveRent * 4}
-              time={1}
-              disabled={player.gold < effectiveRent * 4 || player.timeRemaining < 1}
+              time={0}
+              disabled={player.gold < effectiveRent * 4}
               darkText
               sfx="rent-paid"
               onClick={() => {
                 const result = payHousingRent(player.id, 4);
-                if (!result) return;
-                if (result.success) toast.success(result.message);
-                else toast.error(result.message);
-              }}
-            />
-            <ActionButton
-              label={`${t('panelLandlord.payRent')} 8 (${effectiveRent * 8}g)`}
-              cost={effectiveRent * 8}
-              time={1}
-              disabled={player.gold < effectiveRent * 8 || player.timeRemaining < 1}
-              darkText
-              sfx="rent-paid"
-              onClick={() => {
-                const result = payHousingRent(player.id, 8);
                 if (!result) return;
                 if (result.success) toast.success(result.message);
                 else toast.error(result.message);
@@ -184,10 +171,10 @@ export function LandlordPanel({ player, priceModifier }: LandlordPanelProps) {
                   if (result.success) toast.success(result.message);
                   else toast.error(result.message);
                 }}
-                disabled={player.gold < moveCost || player.timeRemaining < 4}
+                disabled={player.gold < moveCost}
                 className="w-full gold-button text-xs py-1 disabled:opacity-50"
               >
-                {t('panelLandlord.moveIn')} ({moveCost}g, 4h)
+                {t('panelLandlord.moveIn')} · {moveCost}g
               </button>
             </div>
           );

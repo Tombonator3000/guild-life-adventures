@@ -1,13 +1,15 @@
 // Guild Life - The Guildholm Herald (Newspaper System)
 
-import type { PlayerNewsEventData } from '@/types/game.types';
+import type { GameState, PlayerNewsEventData } from '@/types/game.types';
 import { ALL_JOBS } from './jobs';
 import { QUESTS } from './quests';
+import { FESTIVALS } from './festivals';
 
 export interface NewsArticle {
   headline: string;
   content: string;
   category: 'economy' | 'jobs' | 'quests' | 'gossip' | 'events';
+  evidence?: 'recorded' | 'notice' | 'satire';
 }
 
 export interface Newspaper {
@@ -115,243 +117,40 @@ const GOSSIP_CONTENT = [
   "Sources indicate more developments are expected. Sources also indicate this is what sources always say.",
 ];
 
-const ECONOMY_HEADLINES_HIGH = [
-  "Market Prices Surge; Everyone Blames Everyone Else",
-  "Merchant Caravan Delayed by 'Unexpected Dragon'; Prices Rise",
-  "Economic Uncertainty Grips Guildholm; Certainty Spotted Fleeing South",
-  "Inflation Worries Local Business Owners; Gold Worth Less, Costs More, Nobody Understands",
-  "Supply Chain Disruption Hits Guildholm; Disruption Blamed on 'Everything'",
-  "Price Hikes Force Adventurers to Consider Budgeting; Concept Proves Challenging",
-  "Cost of Living Rises Again; Cost of Not Living Remains Free",
-  "Market Speculation Drives Prices Up; Speculation Also Drives Merchants Mad",
-  "Trade Route Bandits Cause Price Spike; Bandits Unaware of Economic Impact",
-  "Shopkeepers Raise Prices, Lower Standards; Customers Notice Both",
-  "Gold Coins Worth Less Than Last Month; Still Worth More Than Iron Coins, Somehow",
-  "General Store Reports Record Prices; Record Complaints Also Filed",
-  "Merchant Guild Blames Weather for High Prices; Weather Blames Merchants",
-  "Food Prices Climb Steeply; Adventurers Consider Growing Their Own; Fail",
-  "Economic Advisors Recommend 'Spending Less'; Public Recommends 'Advising Less'",
-  "Market Bubble Forms; Economists Debate Whether to Pop It or Decorate It",
-  "Prices Peak for Third Consecutive Week; Wallets Empty for Same Duration",
-];
+export type NewspaperContext = Pick<GameState, 'players' | 'weather' | 'activeFestival'>;
 
-const ECONOMY_HEADLINES_LOW = [
-  "Abundant Harvest Drives Prices Down; Farmers Unsure Whether to Celebrate or Panic",
-  "Trade Agreement Brings Cheaper Goods; Merchants Grumble Photogenically",
-  "Market Oversupply Benefits Consumers; Merchants Discover Concept of 'Too Much Cheese'",
-  "Economic Boom Reaches All Districts; Economists Baffled, Take Credit Anyway",
-  "Bargain Prices Across Guildholm; General Store Practically Giving Things Away (Not Actually)",
-  "Surplus Goods Flood Market; Shadow Market Announces 'Everything on Sale' (It Already Was)",
-  "Price Wars Erupt Between Merchants; Consumers Win for Once",
-  "Food Prices Drop to Historic Lows; Quality Described as 'Corresponding'",
-  "New Trade Route Opens; Prices Fall; Merchants Complain About Falling Prices",
-  "Market Competition Benefits All; Economists Shocked That Their Models Worked",
-  "Cheap Goods Attract Visitors From Neighboring Towns; Also Attract Their Opinions",
-  "Inventory Clearance Sale at General Store; Owner Seen Weeping Into Ledger",
-  "Record Low Prices Mean Record High Savings; Bank Celebrates Quietly",
-  "Merchant Caravans Arrive in Force; Market Stalls Overflow; Pickpockets Rejoice",
-  "Prices So Low Even the Fence Is Buying Retail; Trust in Economics Shaken",
-  "Budget-Friendly Week Expected; Financial Advisors Recommend 'Buying Everything'",
-  "Deflation Concerns Rise as Prices Fall; Irony Noted by Exactly One Person",
-];
-
-const ECONOMY_HEADLINES_NORMAL = [
-  "Markets Remain Stable This Week; Journalists Struggle for Headlines",
-  "Trade Continues at Expected Rates; Nothing to Report, Report Filed Anyway",
-  "Merchants Report Normal Activity; Normalcy Itself Considered Newsworthy",
-  "Economy Holds Steady; Economists Disappointed by Lack of Drama",
-  "Prices Unchanged from Last Week; Merchant Admits 'We're as Surprised as You'",
-  "Market Index Flat; Financial Page Unusually Short This Week",
-  "No Major Economic Events This Week; Headline Writers on Holiday",
-  "Trade Routes Operating Normally; Bandits Also Operating Normally",
-  "General Store Reports 'Average Week'; Owner Unsure Whether to Celebrate",
-  "Economic Indicators Indicate Nothing of Interest; Indicators Working as Intended",
-  "Market Steady As Goes; Economists Publish Paper on 'Why Stability Is Boring'",
-  "Prices Stable Across All Districts; Citizens Enjoy Brief Period of Not Complaining",
-  "Commerce Proceeds Without Incident; Incident Department Stands Down",
-  "Supply Meets Demand; Both Seem Pleased With the Arrangement",
-  "Financial Quarter Ends Unremarkably; Accountants Rejoice in Their Own Quiet Way",
-  "No News Is Good News; Bank Releases Statement Confirming It Has No Statement",
-  "Economic Calm Continues; Forecasters Predict It Won't Last; It Usually Doesn't",
-];
-
-export function generateNewspaper(week: number, priceModifier: number, economyTrend?: number, newsEvents?: PlayerNewsEventData[]): Newspaper {
-  const articles: NewsArticle[] = [];
-
-  // Economy article based on price modifier and trend
-  let economyHeadline: string;
-  let economyContent: string;
-  const trend = economyTrend ?? 0;
-  const trendText = trend === 1 ? ' Economists expect continued growth.' : trend === -1 ? ' Experts warn of further decline.' : '';
-
-  if (priceModifier > 1.1) {
-    economyHeadline = ECONOMY_HEADLINES_HIGH[Math.floor(Math.random() * ECONOMY_HEADLINES_HIGH.length)];
-    economyContent = `Prices are currently ${Math.round((priceModifier - 1) * 100)}% higher than usual. Consider postponing major purchases if possible.${trendText}`;
-  } else if (priceModifier < 0.9) {
-    economyHeadline = ECONOMY_HEADLINES_LOW[Math.floor(Math.random() * ECONOMY_HEADLINES_LOW.length)];
-    economyContent = `Prices are currently ${Math.round((1 - priceModifier) * 100)}% lower than usual. Great time to stock up on supplies!${trendText}`;
-  } else {
-    economyHeadline = ECONOMY_HEADLINES_NORMAL[Math.floor(Math.random() * ECONOMY_HEADLINES_NORMAL.length)];
-    economyContent = `Market prices are within normal ranges this week.${trendText || ' No significant changes expected.'}`;
-  }
-
-  articles.push({
-    headline: economyHeadline,
-    content: economyContent,
-    category: 'economy',
-  });
-
-  // Jobs article
-  const randomJobs = [...ALL_JOBS].sort(() => Math.random() - 0.5).slice(0, 3);
-  const jobHeadlines = [
-    "Employment Opportunities This Week",
-    "Guild Hall Posts New Job Listings",
-    "Help Wanted: Positions Open Across Guildholm",
-    "Career Corner: This Week's Openings",
-    "Looking for Work? These Positions Need Filling",
-    "Employers Seeking Workers; Workers Seeking Dignity; Both in Short Supply",
-    "Job Market Update: Who's Hiring This Week",
-    "New Vacancies Posted at Guild Hall",
-  ];
-  const jobContents = [
-    `The following positions are in high demand: ${randomJobs.map(j => j.name).join(', ')}. Visit the Guild Hall or local establishments to apply.`,
-    `Employers across Guildholm are looking for: ${randomJobs.map(j => j.name).join(', ')}. Experience preferred but not required. Breathing is required.`,
-    `This week's featured openings include: ${randomJobs.map(j => j.name).join(', ')}. Apply in person at the Guild Hall. Bring your CV. And your dignity. You'll need both.`,
-    `Positions available: ${randomJobs.map(j => j.name).join(', ')}. Competitive wages offered. 'Competitive' meaning 'slightly better than starvation.'`,
-  ];
-  articles.push({
-    headline: jobHeadlines[Math.floor(Math.random() * jobHeadlines.length)],
-    content: jobContents[Math.floor(Math.random() * jobContents.length)],
-    category: 'jobs',
-  });
-
-  // Quest rumors
-  const randomQuests = [...QUESTS].sort(() => Math.random() - 0.5).slice(0, 2);
-  const questHeadlines = [
-    "Adventurer's Corner: Quest Rumors",
-    "Guild Board: New Quests Available",
-    "Quest Watch: This Week's Adventures",
-    "Glory and Gold: Quests Seeking Heroes",
-    "The Notice Board: Fresh Quests Posted",
-    "Quest Opportunities for the Brave (and Reckless)",
-    "Adventure Awaits: Guild Hall Posts New Quests",
-    "Questing Season: Opportunities for All Ranks",
-  ];
-  const questContents = [
-    `The Guild Hall reports increased interest in the following quests: ${randomQuests.map(q => q.name).join(' and ')}. Rewards are said to be substantial.`,
-    `New quests posted this week include ${randomQuests.map(q => q.name).join(' and ')}. The Guild Master recommends 'adequate preparation.' We recommend 'not dying.'`,
-    `${randomQuests.map(q => q.name).join(' and ')} are among the week's available quests. Gold rewards await those who succeed. Tombstones await those who don't.`,
-    `This week's quest board features ${randomQuests.map(q => q.name).join(' and ')}. Aspiring heroes should apply at the Guild Hall with appropriate equipment and optimism.`,
-  ];
-  articles.push({
-    headline: questHeadlines[Math.floor(Math.random() * questHeadlines.length)],
-    content: questContents[Math.floor(Math.random() * questContents.length)],
-    category: 'quests',
-  });
-
-  // Random gossip
-  const gossipIndex = Math.floor(Math.random() * GOSSIP_HEADLINES.length);
-  const contentIndex = Math.floor(Math.random() * GOSSIP_CONTENT.length);
-  articles.push({
-    headline: GOSSIP_HEADLINES[gossipIndex],
-    content: GOSSIP_CONTENT[contentIndex],
-    category: 'gossip',
-  });
-
-  // Week-specific events
-  if (week % 4 === 0) {
-    const rentHeadlines = [
-      "Rent Due This Week!",
-      "Landlord Tomas Sharpens Quill; Rent Day Approaches",
-      "Quarterly Rent Notice: Pay or Face the Dwarf",
-      "Rent Week: Tomas Reminds Tenants He 'Doesn't Do Extensions'",
-      "Housing Payments Due; Eviction Dwarf Stretches Preparedly",
-    ];
-    const rentContent = [
-      "The Landlord's Office reminds all tenants that rent payments are due. Tomas has been sharpening his eviction notices with alarming enthusiasm.",
-      "Rent day is upon us. Landlord Tomas has been seen polishing the eviction paperwork. His smile suggests he hopes some of you have forgotten.",
-      "All tenants are reminded that rent must be paid on time. Late fees apply. Very late fees apply more. The eviction dwarf applies most of all.",
-      "Tomas's quarterly rent notice has been posted. It reads simply: 'Pay.' Brevity is the soul of intimidation.",
-    ];
-    articles.push({
-      headline: rentHeadlines[Math.floor(Math.random() * rentHeadlines.length)],
-      content: rentContent[Math.floor(Math.random() * rentContent.length)],
-      category: 'events',
+/** Reading the same edition is deterministic and never consumes gameplay RNG. */
+export function generateNewspaper(week: number, priceModifier: number, economyTrend = 0, newsEvents: PlayerNewsEventData[] = [], context?: NewspaperContext): Newspaper {
+  let seed = week * 2654435761;
+  const random = () => { seed = (Math.imul(seed,1664525)+1013904223)>>>0; return seed/4294967296; };
+  const pick = <T,>(values:T[]):T => values[Math.floor(random()*values.length)];
+  const articles:NewsArticle[] = generatePersonalizedArticles(newsEvents as PlayerNewsEvent[],random).map(article=>({...article,evidence:'recorded'}));
+  for (const player of context?.players ?? []) {
+    const summary = player.lastTurnSummary;
+    if (summary?.week === week-1 && summary.entries.length) articles.push({
+      headline:`${player.name}: a week in Guildholm`,
+      content:`Recorded in week ${summary.week}: ${summary.entries.join('. ')}.`,
+      category:'events',evidence:'recorded',
+    });
+    const snapshot=player.weeklySnapshots?.at(-1);
+    if (snapshot?.week===week && (snapshot.dividendsPaid??0)>0) articles.push({
+      headline:`The Broker pays ${player.name} ${snapshot.dividendsPaid}g`,
+      content:`The week ${week} settlement credited ${snapshot.dividendsPaid}g to ${player.name}'s cash. Other weekend income and expenses are listed separately in the Broker receipt.`,category:'economy',evidence:'recorded',
     });
   }
-
-  if (week % 8 === 0) {
-    const clothingHeadlines = [
-      "Clothing Inspection Scheduled",
-      "Dress Code Reminder Issued by Employers' Guild",
-      "Clothing Standards Check: Are You Properly Dressed?",
-      "Weekly Fashion Police: Employers Check Attire",
-      "Wardrobe Warning: Clothing Quality Inspections This Week",
-    ];
-    const clothingContent = [
-      "Employers across Guildholm are conducting clothing inspections. If you can see daylight through your trousers, it's time to visit the Armory.",
-      "Clothing standards must be maintained for employment. Peasant rags won't get you far. Noble attire opens doors. Being naked closes them.",
-      "This week's clothing inspection is a reminder that appearance matters. The Armory stocks all tiers. Your dignity is sold separately.",
-      "Employers are checking dress codes this week. Pro tip: if your clothes have more patches than fabric, you may need an upgrade.",
-    ];
-    articles.push({
-      headline: clothingHeadlines[Math.floor(Math.random() * clothingHeadlines.length)],
-      content: clothingContent[Math.floor(Math.random() * clothingContent.length)],
-      category: 'events',
-    });
-  }
-
-  // Additional periodic flavor articles
-  if (week % 6 === 0) {
-    const flavorHeadlines = [
-      "Dungeon Activity Report: Monsters 'Thriving'",
-      "Cave Expedition Warnings Reissued by Guild",
-      "Dungeon Safety Advisory: 'Please Stop Going In Unprepared'",
-    ];
-    const flavorContent = [
-      "The Guild's quarterly dungeon survey reports increased monster activity across all floors. Adventurers are advised to prepare thoroughly. Or write a will. Ideally both.",
-      "The Cave Authority reminds all adventurers that proper equipment is essential. Last month, three groups entered without healing potions. The statistics speak for themselves.",
-      "Dungeon activity has increased this quarter. The monsters are well-fed, well-rested, and 'enthusiastic about visitors.' In a bad way.",
-    ];
-    articles.push({
-      headline: flavorHeadlines[Math.floor(Math.random() * flavorHeadlines.length)],
-      content: flavorContent[Math.floor(Math.random() * flavorContent.length)],
-      category: 'events',
-    });
-  }
-
-  if (week % 10 === 0) {
-    const lifeHeadlines = [
-      "Life in Guildholm: A Weekly Reflection",
-      "Citizens' Corner: What Guildholm Is Saying",
-      "Town Crier's Column: Overheard in Guildholm",
-    ];
-    const lifeContent = [
-      "Life continues in Guildholm as it always has: with gold, quests, and the occasional explosion. The city endures. As do its residents. Mostly.",
-      "Overheard at the tavern: 'I came to Guildholm for adventure. I stayed because the tavern's stew is addictive. Also I'm broke.' A common story.",
-      "Guildholm remains a city of opportunity, danger, and unreasonably priced cheese. Come for the quests. Stay because you can't afford to leave.",
-    ];
-    articles.push({
-      headline: lifeHeadlines[Math.floor(Math.random() * lifeHeadlines.length)],
-      content: lifeContent[Math.floor(Math.random() * lifeContent.length)],
-      category: 'gossip',
-    });
-  }
-
-  // Personalized articles from player events (Jones-style: robbery, loan, crash headlines)
-  if (newsEvents && newsEvents.length > 0) {
-    const personalizedArticles = generatePersonalizedArticles(newsEvents as PlayerNewsEvent[]);
-    // Insert personalized articles near the top (after economy, before jobs)
-    articles.splice(1, 0, ...personalizedArticles);
-  }
-
-  return {
-    week,
-    articles,
-    priceModifier,
-    featuredJobs: randomJobs.map(j => j.id),
-    questRumors: randomQuests.map(q => q.id),
-  };
+  const weather=context?.weather;
+  if(weather && weather.type!=='clear') articles.push({headline:weather.name,content:`${weather.description} Travel: +${weather.movementCostExtra}h per step.`,category:'events',evidence:'recorded'});
+  const festival=FESTIVALS.find(f=>f.id===context?.activeFestival);
+  if(festival) articles.push({headline:`Guildholm celebrates ${festival.name}`,content:festival.description,category:'events',evidence:'recorded'});
+  const percent=Math.round((priceModifier-1)*100);
+  articles.push({headline:percent===0?'Market prices hold at the base rate':`Market prices ${Math.abs(percent)}% ${percent>0?'above':'below'} the base rate`,content:`Current shop prices: ${Math.abs(percent)}% ${percent>=0?'above':'below'} the base price. The economy is ${economyTrend>0?'growing':economyTrend<0?'contracting':'steady'}. These are the current conditions; future prices may change.`,category:'economy',evidence:'recorded'});
+  const jobs=context ? ALL_JOBS.filter(j=>j.careerLevel<=2 || !context.players.some(p=>!p.isGameOver&&p.currentJob===j.id)).slice((week%3)*2,(week%3)*2+3) : [];
+  articles.push({headline:'Guild Hall employment desk',content:jobs.length?`Unfilled or shared positions: ${jobs.map(j=>j.name).join(', ')}. Check career paths, qualifications and current wage offers at the Guild Hall.`:'Career paths, qualifications and job applications are available at the Guild Hall.',category:'jobs',evidence:'notice'});
+  const quests=[QUESTS[week%QUESTS.length],QUESTS[(week+1)%QUESTS.length]];
+  articles.push({headline:'From the Guild quest catalogue',content:`Featured: ${quests.map(q=>q.name).join(' and ')}. Your rank, progress and current quest determine eligibility. Ask at the Guild Hall before setting out.`,category:'quests',evidence:'notice'});
+  if((week+1)%4===0) articles.push({headline:'Tomas opens the housing office',content:'The scheduled rent office is open this week. Prepay 1 or 4 weeks or change your home. These transactions take no hours; travelling to the Landlord still does.',category:'events',evidence:'notice'});
+  articles.push({headline:pick(GOSSIP_HEADLINES),content:`A tall tale from the tavern, printed for amusement. ${pick(GOSSIP_CONTENT)}`,category:'gossip',evidence:'satire'});
+  return {week,articles,priceModifier,featuredJobs:jobs.map(j=>j.id),questRumors:quests.map(q=>q.id)};
 }
 
 // ============================================================
@@ -382,7 +181,7 @@ const ROBBERY_HEADLINES = [
   (name: string) => `${name} Reports Theft; Shadowfingers Leave Polite Thank-You Note`,
   (name: string) => `Another Robbery in Guildholm; ${name} Latest Victim`,
   (name: string) => `${name} Stripped of Gold; Insurance Company Denies Claim`,
-  (name: string) => `Pickpockets Target ${name} Near ${['the Bank', 'Shadow Market', 'the Slums', 'Guild Hall'][Math.floor(Math.random() * 4)]}`,
+  (name: string) => `Pickpockets Target ${name} in Guildholm`,
   (name: string) => `${name} Mugged; Assailants Described as 'Efficient and Courteous'`,
 ];
 
@@ -449,14 +248,14 @@ const CRASH_HEADLINES: Record<string, string[]> = {
 };
 
 /** Generate personalized articles based on player events from the previous week */
-export function generatePersonalizedArticles(events: PlayerNewsEvent[]): NewsArticle[] {
+export function generatePersonalizedArticles(events: PlayerNewsEvent[], random: () => number = Math.random): NewsArticle[] {
   const articles: NewsArticle[] = [];
 
   for (const event of events) {
     switch (event.type) {
       case 'robbery': {
-        const headlineFn = ROBBERY_HEADLINES[Math.floor(Math.random() * ROBBERY_HEADLINES.length)];
-        const contentFn = ROBBERY_CONTENT_VARIANTS[Math.floor(Math.random() * ROBBERY_CONTENT_VARIANTS.length)];
+        const headlineFn = ROBBERY_HEADLINES[Math.floor(random() * ROBBERY_HEADLINES.length)];
+        const contentFn = ROBBERY_CONTENT_VARIANTS[Math.floor(random() * ROBBERY_CONTENT_VARIANTS.length)];
         articles.push({
           headline: headlineFn(event.playerName),
           content: contentFn(event.playerName, event.goldLost),
@@ -465,8 +264,8 @@ export function generatePersonalizedArticles(events: PlayerNewsEvent[]): NewsArt
         break;
       }
       case 'apartment-robbery': {
-        const headlineFn = APARTMENT_ROBBERY_HEADLINES[Math.floor(Math.random() * APARTMENT_ROBBERY_HEADLINES.length)];
-        const contentFn = APARTMENT_ROBBERY_CONTENT_VARIANTS[Math.floor(Math.random() * APARTMENT_ROBBERY_CONTENT_VARIANTS.length)];
+        const headlineFn = APARTMENT_ROBBERY_HEADLINES[Math.floor(random() * APARTMENT_ROBBERY_HEADLINES.length)];
+        const contentFn = APARTMENT_ROBBERY_CONTENT_VARIANTS[Math.floor(random() * APARTMENT_ROBBERY_CONTENT_VARIANTS.length)];
         articles.push({
           headline: headlineFn(event.playerName),
           content: contentFn(event.playerName, event.itemsStolen),
@@ -475,8 +274,8 @@ export function generatePersonalizedArticles(events: PlayerNewsEvent[]): NewsArt
         break;
       }
       case 'loan-default': {
-        const headlineFn = LOAN_DEFAULT_HEADLINES[Math.floor(Math.random() * LOAN_DEFAULT_HEADLINES.length)];
-        const contentFn = LOAN_DEFAULT_CONTENT_VARIANTS[Math.floor(Math.random() * LOAN_DEFAULT_CONTENT_VARIANTS.length)];
+        const headlineFn = LOAN_DEFAULT_HEADLINES[Math.floor(random() * LOAN_DEFAULT_HEADLINES.length)];
+        const contentFn = LOAN_DEFAULT_CONTENT_VARIANTS[Math.floor(random() * LOAN_DEFAULT_CONTENT_VARIANTS.length)];
         articles.push({
           headline: headlineFn(event.playerName),
           content: contentFn(event.playerName, event.amountOwed),
@@ -499,8 +298,8 @@ export function generatePersonalizedArticles(events: PlayerNewsEvent[]): NewsArt
           `The bank confirmed ${event.playerName}'s loan is settled. In an unprecedented move, Björn the vault guard was seen smiling. Briefly.`,
         ];
         articles.push({
-          headline: repaidHeadlines[Math.floor(Math.random() * repaidHeadlines.length)],
-          content: repaidContent[Math.floor(Math.random() * repaidContent.length)],
+          headline: repaidHeadlines[Math.floor(random() * repaidHeadlines.length)],
+          content: repaidContent[Math.floor(random() * repaidContent.length)],
           category: 'economy',
         });
         break;
@@ -520,8 +319,8 @@ export function generatePersonalizedArticles(events: PlayerNewsEvent[]): NewsArt
           `${event.playerName} is now seeking employment${event.jobName ? ` after being released from their ${event.jobName} position` : ''}. The job market is described as 'challenging.' Also as 'terrible.'`,
         ];
         articles.push({
-          headline: firedHeadlines[Math.floor(Math.random() * firedHeadlines.length)],
-          content: firedContent[Math.floor(Math.random() * firedContent.length)],
+          headline: firedHeadlines[Math.floor(random() * firedHeadlines.length)],
+          content: firedContent[Math.floor(random() * firedContent.length)],
           category: 'jobs',
         });
         break;
@@ -541,8 +340,8 @@ export function generatePersonalizedArticles(events: PlayerNewsEvent[]): NewsArt
           `${event.playerName}'s pay has been cut amid economic turbulence. The employer's official statement: 'We're all in this together.' The employer's unofficial salary: unchanged.`,
         ];
         articles.push({
-          headline: paycutHeadlines[Math.floor(Math.random() * paycutHeadlines.length)],
-          content: paycutContent[Math.floor(Math.random() * paycutContent.length)],
+          headline: paycutHeadlines[Math.floor(random() * paycutHeadlines.length)],
+          content: paycutContent[Math.floor(random() * paycutContent.length)],
           category: 'economy',
         });
         break;
@@ -553,7 +352,7 @@ export function generatePersonalizedArticles(events: PlayerNewsEvent[]): NewsArt
         const severity = event.type.replace('crash-', '');
         const headlines = CRASH_HEADLINES[severity] || CRASH_HEADLINES['minor'];
         articles.push({
-          headline: headlines[Math.floor(Math.random() * headlines.length)],
+          headline: headlines[Math.floor(random() * headlines.length)],
           content: severity === 'major'
             ? 'A catastrophic market collapse has devastated Guildholm\'s economy. Businesses are closing and workers are being laid off across all sectors.'
             : severity === 'moderate'
@@ -578,8 +377,8 @@ export function generatePersonalizedArticles(events: PlayerNewsEvent[]): NewsArt
           `${event.playerName}'s stomach has filed a formal complaint. It seeks immediate resolution in the form of food. Any food. Please.`,
         ];
         articles.push({
-          headline: starvationHeadlines[Math.floor(Math.random() * starvationHeadlines.length)],
-          content: starvationContent[Math.floor(Math.random() * starvationContent.length)],
+          headline: starvationHeadlines[Math.floor(random() * starvationHeadlines.length)],
+          content: starvationContent[Math.floor(random() * starvationContent.length)],
           category: 'events',
         });
         break;
@@ -599,8 +398,8 @@ export function generatePersonalizedArticles(events: PlayerNewsEvent[]): NewsArt
           `${event.playerName} has fallen ill. Symptoms include general misery and an inability to adventure. The cure: gold and patience. Mostly gold.`,
         ];
         articles.push({
-          headline: sicknessHeadlines[Math.floor(Math.random() * sicknessHeadlines.length)],
-          content: sicknessContent[Math.floor(Math.random() * sicknessContent.length)],
+          headline: sicknessHeadlines[Math.floor(random() * sicknessHeadlines.length)],
+          content: sicknessContent[Math.floor(random() * sicknessContent.length)],
           category: 'events',
         });
         break;
@@ -620,8 +419,8 @@ export function generatePersonalizedArticles(events: PlayerNewsEvent[]): NewsArt
           `${event.playerName} is now without housing following an eviction by Landlord Tomas. Tomas was seen whistling afterwards. The eviction dwarf was seen cracking his knuckles.`,
         ];
         articles.push({
-          headline: evictionHeadlines[Math.floor(Math.random() * evictionHeadlines.length)],
-          content: evictionContent[Math.floor(Math.random() * evictionContent.length)],
+          headline: evictionHeadlines[Math.floor(random() * evictionHeadlines.length)],
+          content: evictionContent[Math.floor(random() * evictionContent.length)],
           category: 'events',
         });
         break;
@@ -642,8 +441,8 @@ export function generatePersonalizedArticles(events: PlayerNewsEvent[]): NewsArt
           `The Academy proudly announces ${event.playerName}'s completion of ${event.degreeName}. The Dean described it as 'a triumph of persistence over common sense.' A compliment.`,
         ];
         articles.push({
-          headline: degreeHeadlines[Math.floor(Math.random() * degreeHeadlines.length)],
-          content: degreeContent[Math.floor(Math.random() * degreeContent.length)],
+          headline: degreeHeadlines[Math.floor(random() * degreeHeadlines.length)],
+          content: degreeContent[Math.floor(random() * degreeContent.length)],
           category: 'events',
         });
         break;
@@ -664,8 +463,8 @@ export function generatePersonalizedArticles(events: PlayerNewsEvent[]): NewsArt
           `The quest "${event.questName}" is done, thanks to ${event.playerName}. The client has been notified. Gold has changed hands. Everyone is satisfied. This never happens.`,
         ];
         articles.push({
-          headline: questHeadlines[Math.floor(Math.random() * questHeadlines.length)],
-          content: questContent[Math.floor(Math.random() * questContent.length)],
+          headline: questHeadlines[Math.floor(random() * questHeadlines.length)],
+          content: questContent[Math.floor(random() * questContent.length)],
           category: 'quests',
         });
         break;
@@ -686,8 +485,8 @@ export function generatePersonalizedArticles(events: PlayerNewsEvent[]): NewsArt
             `${event.playerName} walked out of the Graveyard alive today, which is not how graveyards typically work. The priests charged a 'standard resurrection fee.' Standard for whom is unclear.`,
           ];
           articles.push({
-            headline: resHeadlines[Math.floor(Math.random() * resHeadlines.length)],
-            content: resContent[Math.floor(Math.random() * resContent.length)],
+            headline: resHeadlines[Math.floor(random() * resHeadlines.length)],
+            content: resContent[Math.floor(random() * resContent.length)],
             category: 'events',
           });
         } else {
@@ -705,8 +504,8 @@ export function generatePersonalizedArticles(events: PlayerNewsEvent[]): NewsArt
             `${event.playerName} is gone. The tombstone will read something respectful. The adventurers at the tavern will say something less so. Both are valid forms of remembrance.`,
           ];
           articles.push({
-            headline: deathHeadlines[Math.floor(Math.random() * deathHeadlines.length)],
-            content: deathContent[Math.floor(Math.random() * deathContent.length)],
+            headline: deathHeadlines[Math.floor(random() * deathHeadlines.length)],
+            content: deathContent[Math.floor(random() * deathContent.length)],
             category: 'events',
           });
         }

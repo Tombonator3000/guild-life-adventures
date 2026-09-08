@@ -1,11 +1,8 @@
-import { useMemo, useState } from 'react';
 import type { Player, LocationId } from '@/types/game.types';
 import { useTranslation } from '@/i18n';
 import { HOUSING_DATA } from '@/data/housing';
 import { JonesButton } from './JonesStylePanel';
-import { RoomScene, HomeActionBar, ApplianceLegend } from './home';
-import { HomeItemGenerator } from './home/HomeItemGenerator';
-import { loadZoneConfig } from '@/data/zoneStorage';
+import { RoomScene, HomeActionBar } from './home';
 import { getQuestLocationObjectives } from '@/data/quests';
 import { useGameStore } from '@/store/gameStore';
 import { playSFX } from '@/audio/sfxManager';
@@ -31,8 +28,6 @@ export function HomePanel({
   onDone,
 }: HomePanelProps) {
   const { t } = useTranslation();
-  const [showGenerator, setShowGenerator] = useState(false);
-  const customPositions = useMemo(() => loadZoneConfig()?.homeItemPositions, []);
   const store = useGameStore();
 
   // LOQ: Quest objective banner for home locations
@@ -105,9 +100,6 @@ export function HomePanel({
     );
   }
 
-  // Load custom item positions set via the Zone Editor's Home Layout mode
-  // customPositions moved to top (before early returns)
-
   const housingData = HOUSING_DATA[player.housing];
   const isNoble = player.housing === 'noble';
   const isSlums = player.housing === 'slums';
@@ -140,16 +132,6 @@ export function HomePanel({
   const handleRelax = () => runHomeActivity('relax');
   const handleSleep = () => runHomeActivity('sleep');
 
-  // Wall and floor colors based on housing tier
-  const wallColor = isNoble ? '#5c4a6d' : isSlums ? '#3d3224' : '#4a3d2e';
-  const wallAccent = isNoble ? '#7a6290' : isSlums ? '#2d2218' : '#5a4d3e';
-  const floorColor = isNoble ? '#6b4e2e' : isSlums ? '#4a3828' : '#5a4430';
-  const floorAccent = isNoble ? '#7d5e3e' : isSlums ? '#3a2a1a' : '#6a5440';
-
-  if (showGenerator) {
-    return <HomeItemGenerator onClose={() => setShowGenerator(false)} />;
-  }
-
   return (
     <div className="h-full flex flex-col overflow-hidden select-none" style={{ background: '#1a1410' }}>
       {/* LOQ: Quest objective banner at home location */}
@@ -170,7 +152,7 @@ export function HomePanel({
       )}
       {/* Header banner */}
       <div
-        className="text-center py-1.5 font-bold tracking-widest uppercase text-white shrink-0 relative"
+        className="home-panel-heading text-center py-1.5 font-bold tracking-widest uppercase text-white shrink-0 relative"
         style={{
           background: isNoble
             ? 'linear-gradient(180deg, #6b4e8a 0%, #4a3568 100%)'
@@ -182,29 +164,15 @@ export function HomePanel({
         }}
       >
         {isNoble ? t('housing.noble.name') : t('housing.slums.name')}
-        {import.meta.env.DEV && (
-          <button
-            onClick={() => setShowGenerator(true)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-xs opacity-40 hover:opacity-100"
-            title="Generate room item graphics"
-          >
-            🎨
-          </button>
-        )}
+
       </div>
 
       <RoomScene
         isNoble={isNoble}
-        isSlums={isSlums}
-        wallColor={wallColor}
-        wallAccent={wallAccent}
-        floorColor={floorColor}
-        floorAccent={floorAccent}
         ownedAppliances={ownedAppliances}
         brokenAppliances={brokenAppliances}
         ownedDurables={ownedDurables}
         relaxation={player.relaxation}
-        customPositions={customPositions}
       />
 
       <HomeActionBar
@@ -266,10 +234,7 @@ export function HomePanel({
         </div>
       )}
 
-      <ApplianceLegend
-        ownedAppliances={ownedAppliances}
-        brokenAppliances={brokenAppliances}
-      />
+
     </div>
   );
 }

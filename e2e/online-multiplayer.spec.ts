@@ -139,6 +139,7 @@ test('host and guest can start, synchronize an action, reconnect, and keep playi
     await expect(deposit).toBeVisible({ timeout: 10_000 });
     await deposit.click();
 
+    await guest.getByText('Finances & education', { exact: true }).click();
     const guestFinances = guest.getByRole('heading', { name: 'Finances' }).locator('..');
     await expect(guestFinances.getByText('50g', { exact: true })).toBeVisible({ timeout: 15_000 });
 
@@ -211,6 +212,7 @@ test('guest securely rejoins the same player after a page refresh with a new pee
     await expect(deposit).toBeVisible({ timeout: 10_000 });
     await deposit.click();
 
+    await guest.getByText('Finances & education', { exact: true }).click();
     const guestFinances = guest.getByRole('heading', { name: 'Finances' }).locator('..');
     await expect(guestFinances.getByText('50g', { exact: true })).toBeVisible({ timeout: 15_000 });
     expect(pageErrors, `Unexpected page errors:\n${pageErrors.join('\n')}`).toEqual([]);

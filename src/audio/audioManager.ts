@@ -14,13 +14,18 @@ export interface AudioSettings {
   musicMuted: boolean;
 }
 
+export function musicVolumeToGain(volume: number): number {
+  const value = Number.isFinite(volume) ? Math.max(0, Math.min(1, volume)) : 0;
+  return value * value;
+}
+
 function loadSettings(): AudioSettings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       return {
-        musicVolume: typeof parsed.musicVolume === 'number' ? parsed.musicVolume : DEFAULT_MUSIC_VOLUME,
+        musicVolume: Number.isFinite(parsed.musicVolume) ? Math.max(0, Math.min(1, parsed.musicVolume)) : DEFAULT_MUSIC_VOLUME,
         musicMuted: typeof parsed.musicMuted === 'boolean' ? parsed.musicMuted : false,
       };
     }
@@ -34,7 +39,9 @@ function saveSettings(settings: AudioSettings) {
   } catch { /* ignore */ }
 }
 
-class AudioManager {
+export class AudioManager {
+  private mixA = 1;
+  private mixB = 0;
   private deckA: HTMLAudioElement;
   private deckB: HTMLAudioElement;
   // Web Audio API gain nodes for iOS volume control (null = fallback to element.volume)
@@ -121,8 +128,20 @@ class AudioManager {
       clearInterval(this.fadeInterval);
       this.fadeInterval = null;
     }
-    this.fadeOut(this.getActiveDeck(), this.getActiveGain());
-    this.fadeOut(this.getInactiveDeck(), this.getInactiveGain());
+    const a = this.mixA;
+    const b = this.mixB;
+    let step = 0;
+    this.fadeInterval = setInterval(() => {
+      const remaining = Math.max(0, 1 - ++step / 20);
+      this.mixA = a * remaining;
+      this.mixB = b * remaining;
+      this.applyVolume();
+      if (!remaining) {
+        clearInterval(this.fadeInterval!);
+        this.fadeInterval = null;
+        for (const deck of [this.deckA, this.deckB]) { deck.pause(); deck.removeAttribute('src'); }
+      }
+    }, 25);
   }
 
   /** Get the currently playing track ID (or null). */
@@ -137,7 +156,7 @@ class AudioManager {
 
   /** Set music volume (0-1). */
   setVolume(volume: number) {
-    this.settings.musicVolume = Math.max(0, Math.min(1, volume));
+    this.settings.musicVolume = Number.isFinite(volume) ? Math.max(0, Math.min(1, volume)) : 0;
     this.applyVolume();
     saveSettings(this.settings);
     this.notify();
@@ -180,20 +199,8 @@ class AudioManager {
     return this.activeDeck === 'A' ? this.deckA : this.deckB;
   }
 
-  private getInactiveDeck(): HTMLAudioElement {
-    return this.activeDeck === 'A' ? this.deckB : this.deckA;
-  }
-
-  private getActiveGain(): GainNode | null {
-    return this.activeDeck === 'A' ? this.gainA : this.gainB;
-  }
-
-  private getInactiveGain(): GainNode | null {
-    return this.activeDeck === 'A' ? this.gainB : this.gainA;
-  }
-
   private effectiveVolume(): number {
-    return this.settings.musicMuted ? 0 : this.settings.musicVolume;
+    return this.settings.musicMuted ? 0 : musicVolumeToGain(this.settings.musicVolume);
   }
 
   /** Set volume on a gain node if available, otherwise use element.volume */
@@ -205,15 +212,10 @@ class AudioManager {
     }
   }
 
-  /** Read volume from a gain node if available, otherwise from element.volume */
-  private getGainVolume(gain: GainNode | null, deck: HTMLAudioElement): number {
-    return gain ? gain.gain.value : deck.volume;
-  }
-
   private applyVolume() {
     const vol = this.effectiveVolume();
-    // Only set volume on the active deck; inactive deck is either silent or fading out
-    this.setGainVolume(this.getActiveGain(), this.getActiveDeck(), vol);
+    this.setGainVolume(this.gainA, this.deckA, vol * this.mixA);
+    this.setGainVolume(this.gainB, this.deckB, vol * this.mixB);
   }
 
   private clearResumeListener() {
@@ -259,17 +261,18 @@ class AudioManager {
     this.clearResumeListener();
 
     const oldDeck = this.getActiveDeck();
-    const oldGain = this.getActiveGain();
+    const oldMix = this.activeDeck === 'A' ? this.mixA : this.mixB;
     // Switch active deck
     this.activeDeck = this.activeDeck === 'A' ? 'B' : 'A';
     const newDeck = this.getActiveDeck();
-    const newGain = this.getActiveGain();
+
 
     this.currentTrackId = trackId;
 
     // Prepare the new deck
     newDeck.src = url;
-    this.setGainVolume(newGain, newDeck, 0);
+    if (this.activeDeck === 'A') this.mixA = 0; else this.mixB = 0;
+    this.applyVolume();
     newDeck.currentTime = 0;
 
     // Resume AudioContext (iOS requires user gesture)
@@ -299,54 +302,26 @@ class AudioManager {
       newDeck.addEventListener('error', onError, { once: true });
     }
 
-    // Crossfade
-    const targetVolume = this.effectiveVolume();
-    const steps = 30; // ~30 steps during crossfade
-    const interval = CROSSFADE_MS / steps;
+    // Store only fade proportions. Every tick uses the LIVE volume/mute value.
+    const steps = 30;
     let step = 0;
-
     this.fadeInterval = setInterval(() => {
-      step++;
-      const progress = step / steps;
-
-      // New deck fades in
-      this.setGainVolume(newGain, newDeck, Math.min(targetVolume, targetVolume * progress));
-      // Old deck fades out
-      this.setGainVolume(oldGain, oldDeck, Math.max(0, targetVolume * (1 - progress)));
-
+      const progress = Math.min(1, ++step / steps);
+      if (this.activeDeck === 'A') {
+        this.mixA = progress;
+        this.mixB = oldMix * (1 - progress);
+      } else {
+        this.mixB = progress;
+        this.mixA = oldMix * (1 - progress);
+      }
+      this.applyVolume();
       if (step >= steps) {
-        if (this.fadeInterval) {
-          clearInterval(this.fadeInterval);
-          this.fadeInterval = null;
-        }
-        // Ensure final volumes
-        this.setGainVolume(newGain, newDeck, targetVolume);
-        this.setGainVolume(oldGain, oldDeck, 0);
+        clearInterval(this.fadeInterval!);
+        this.fadeInterval = null;
         oldDeck.pause();
-        oldDeck.src = '';
+        oldDeck.removeAttribute('src');
       }
-    }, interval);
-  }
-
-  private fadeOut(deck: HTMLAudioElement, gain: GainNode | null) {
-    const startVolume = this.getGainVolume(gain, deck);
-    if (startVolume <= 0) {
-      deck.pause();
-      deck.src = '';
-      return;
-    }
-    const steps = 20;
-    const interval = 500 / steps;
-    let step = 0;
-    const fadeTimer = setInterval(() => {
-      step++;
-      this.setGainVolume(gain, deck, Math.max(0, startVolume * (1 - step / steps)));
-      if (step >= steps) {
-        clearInterval(fadeTimer);
-        deck.pause();
-        deck.src = '';
-      }
-    }, interval);
+    }, CROSSFADE_MS / steps);
   }
 }
 

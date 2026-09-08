@@ -15,11 +15,11 @@ for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1280
   await expect(shell).toBeVisible();
   if(await picker.isVisible())await picker.click();
   await shell.getByRole('button',{name:'Weapons',exact:true}).click();
-  const dagger=shell.getByRole('button',{name:/^Simple Dagger/}).first();
+  const dagger=shell.getByRole('button',{name:/^Buy Simple Dagger/});
   await openMenuPage(page,dagger);
   await expect(dagger).toBeEnabled();
-  await expect(dagger.locator('.action-preview')).toContainText('0h');
-  const art=dagger.locator('[data-item-art="dagger"]');
+  await expect(shell).toContainText('Purchases equip immediately.');
+  const art=dagger.locator('..').locator('[data-item-art="dagger"]');
   const original=await art.evaluate(e=>getComputedStyle(e).backgroundImage);
   await expect(art).toBeInViewport();
   await page.screenshot({path:info.outputPath('painted-shop.png')});

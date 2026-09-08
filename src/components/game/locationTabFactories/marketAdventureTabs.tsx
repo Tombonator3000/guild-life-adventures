@@ -50,7 +50,7 @@ function shadowMarketTabs(ctx: LocationTabContext): LocationTab[] {
                 toast.error(result.message);
                 return;
               }
-              const newspaper = generateNewspaper(week, priceModifier, economyTrend, weeklyNewsEvents);
+              const newspaper = generateNewspaper(week, priceModifier, economyTrend, weeklyNewsEvents, useGameStore.getState());
               onShowNewspaper(newspaper);
             }}
           />

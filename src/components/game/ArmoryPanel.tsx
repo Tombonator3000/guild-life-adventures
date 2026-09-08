@@ -1,17 +1,14 @@
-import { ItemIcon } from './ItemIcon';
+import { useState } from 'react';
 import type { Player, EquipmentSlot } from '@/types/game.types';
-import {
-  JonesSectionHeader,
-  JonesMenuItem,
-} from './JonesStylePanel';
-import { ARMORY_ITEMS, getItemPrice, calculateCombatStats, getItem, getClothingTier, CLOTHING_TIER_LABELS, CLOTHING_THRESHOLDS, getDurabilityCondition, MAX_DURABILITY } from '@/data/items';
+import { ARMORY_ITEMS, getItemPrice, calculateCombatStats, getClothingTier, CLOTHING_TIER_LABELS, MAX_DURABILITY } from '@/data/items';
 import { itemToPreview, useItemPreview } from './ItemPreview';
-import { toast } from 'sonner';
-import { useTranslation } from '@/i18n';
+import { ItemIcon } from './ItemIcon';
 import { useGameStore } from '@/store/gameStore';
+import { useTranslation } from '@/i18n';
+import { toast } from 'sonner';
+import './player-experience.css';
 
 export type ArmorySection = 'clothing' | 'weapons' | 'armor' | 'shields';
-
 interface ArmoryPanelProps {
   player: Player;
   priceModifier: number;
@@ -20,290 +17,48 @@ interface ArmoryPanelProps {
   section?: ArmorySection;
 }
 
-export function ArmoryPanel({
-  player,
-  priceModifier,
-  equipItem,
-  unequipItem,
-  section,
-}: ArmoryPanelProps) {
+export function ArmoryPanel({ player, priceModifier, equipItem, unequipItem, section = 'clothing' }: ArmoryPanelProps) {
   const { t } = useTranslation();
   const { setPreview } = useItemPreview();
-  const purchaseEquipmentItem = useGameStore(s => s.purchaseEquipmentItem);
+  const purchase = useGameStore(s => s.purchaseEquipmentItem);
+  const [backup, setBackup] = useState(false);
+  const stats = calculateCombatStats(player.equippedWeapon, player.equippedArmor, player.equippedShield, player.temperedItems, player.equipmentDurability);
+  const slot = section === 'weapons' ? 'weapon' : section === 'shields' ? 'shield' : 'armor';
+  const equipped = slot === 'weapon' ? player.equippedWeapon : slot === 'armor' ? player.equippedArmor : player.equippedShield;
+  const items = ARMORY_ITEMS.filter(item => section === 'clothing' ? item.effect?.type === 'clothing' : item.equipSlot === slot);
 
-  const handlePurchase = (itemId: string, mode: 'primary' | 'backup' = 'primary') => {
-    const result = purchaseEquipmentItem(player.id, 'armory', itemId, mode);
-    if (!result) return;
-    if (result.success) toast.success(result.message);
-    else toast.error(result.message);
-  };
-  const combatStats = calculateCombatStats(
-    player.equippedWeapon,
-    player.equippedArmor,
-    player.equippedShield,
-    player.temperedItems,
-    player.equipmentDurability,
-  );
-
-  // In tabbed mode, use dark text on light parchment background
-  const darkText = !!section;
-  const largeText = !!section;
-
-  const clothingItems = ARMORY_ITEMS.filter(item => item.effect?.type === 'clothing');
-  const currentTier = getClothingTier(player.clothingCondition);
-  const tierLabel = CLOTHING_TIER_LABELS[currentTier];
-  const weaponItems = ARMORY_ITEMS.filter(item => item.equipSlot === 'weapon');
-  const armorItems = ARMORY_ITEMS.filter(item => item.equipSlot === 'armor');
-  const shieldItems = ARMORY_ITEMS.filter(item => item.equipSlot === 'shield');
-
-  const canPurchaseEquipment = (item: typeof ARMORY_ITEMS[0]) => {
-    if (item.requiresFloorCleared && !player.dungeonFloorsCleared.includes(item.requiresFloorCleared)) {
-      return false;
-    }
-    return true;
-  };
-
-  const renderEquipSection = (
-    title: string,
-    items: typeof ARMORY_ITEMS,
-    slot: EquipmentSlot,
-    equippedId: string | null,
-    showHeader = true,
-  ) => (
-    <>
-      {showHeader && <JonesSectionHeader title={title} />}
-      {items.map(item => {
-        const price = getItemPrice(item, priceModifier);
-        const owns = (player.durables[item.id] || 0) > 0;
-        const isEquipped = equippedId === item.id;
-        const canAfford = player.gold >= price;
-        const meetsFloorReq = canPurchaseEquipment(item);
-        const stats = item.equipStats;
-
-        // Build stat label
-        const statParts: string[] = [];
-        if (stats?.attack) statParts.push(`+${stats.attack} ATK`);
-        if (stats?.defense) statParts.push(`+${stats.defense} DEF`);
-        if (stats?.blockChance) statParts.push(`${Math.round(stats.blockChance * 100)}% BLK`);
-        const statLabel = statParts.join(', ');
-
-        const textSize = largeText ? 'text-base' : 'text-sm';
-        const textColor = darkText ? 'text-[#3d2a14]' : 'text-[#8b7355]';
-        const hoverBg = darkText ? 'hover:bg-[#d4c4a8]' : 'hover:bg-[#5c4a32]';
-
-        if (!meetsFloorReq) {
-          return (
-            <div key={item.id} className="py-1 px-2 opacity-40">
-              <div className={`font-mono ${textSize} ${textColor}`}>
-                🔒 {t(`items.${item.id}.name`) || item.name} ({statLabel}) — {t('panelArmory.requiresFloor', { n: item.requiresFloorCleared })}
-              </div>
-            </div>
-          );
-        }
-
-        const previewData = itemToPreview(item);
-
-        return (
-          <div key={item.id} className="py-0.5 px-1">
-            {owns ? (
-              <button
-                onClick={() => {
-                  if (isEquipped) {
-                    unequipItem(player.id, slot);
-                    toast.info(t('panelArmory.unequippedItem', { name: t(`items.${item.id}.name`) || item.name }));
-                  } else {
-                    equipItem(player.id, item.id, slot);
-                    toast.success(t('panelArmory.equippedItem', { name: t(`items.${item.id}.name`) || item.name }));
-                  }
-                }}
-                onMouseEnter={() => setPreview(previewData)}
-                onMouseLeave={() => setPreview(null)}
-                className={`w-full text-left py-1 px-2 rounded transition-colors ${
-                  isEquipped
-                    ? darkText ? 'bg-[#b8d4b8] border border-[#4a9c5a]' : 'bg-[#2a5c3a] border border-[#4a9c5a]'
-                    : hoverBg
-                }`}
-              >
-                <div className={`flex items-center gap-2 w-full font-mono ${textSize}`}><ItemIcon itemId={item.id} size={36} />
-                  <span className={isEquipped ? (darkText ? 'text-[#2a5c3a] font-bold' : 'text-[#a0d8b0] font-bold') : (darkText ? 'text-[#3d2a14]' : 'text-[#e0d4b8]')}>
-                    {isEquipped ? '⚔ ' : '  '}{t(`items.${item.id}.name`) || item.name}
-                  </span>
-                  <span className="flex-1"></span>
-                  {/* Durability indicator for owned equipment */}
-                  {(() => {
-                    const dur = player.equipmentDurability?.[item.id] ?? MAX_DURABILITY;
-                    if (dur >= MAX_DURABILITY) return null;
-                    const cond = getDurabilityCondition(dur);
-                    const color = cond === 'broken' ? (darkText ? 'text-red-700' : 'text-red-500')
-                      : cond === 'poor' ? (darkText ? 'text-red-600' : 'text-red-400')
-                      : cond === 'worn' ? (darkText ? 'text-amber-700' : 'text-amber-400')
-                      : (darkText ? 'text-green-700' : 'text-green-400');
-                    return <span className={`text-xs ml-1 ${color}`}>{dur}%</span>;
-                  })()}
-                  <span className={`text-xs ${darkText ? 'text-[#6b5a42]' : 'text-[#a09080]'} ml-2`}>{statLabel}</span>
-                  <span className="ml-2 text-xs">
-                    {isEquipped ? (
-                      <span className={darkText ? 'text-[#2a5c3a]' : 'text-[#a0d8b0]'}>[{t('panelArmory.equipped').toUpperCase()}]</span>
-                    ) : (
-                      <span className="text-gold">[{t('panelArmory.equip').toUpperCase()}]</span>
-                    )}
-                  </span>
-                </div>
-              </button>
-            ) : (
-              <JonesMenuItem
-                label={`${t(`items.${item.id}.name`) || item.name} (${statLabel})`}
-                price={price}
-                disabled={!canAfford}
-                darkText={darkText}
-                largeText={largeText}
-                previewData={previewData}
-                actionPreview={{ hours: 0, goldAfter: player.gold - price, effect: statLabel, blockedReason: !canAfford ? `Needs ${price}g; you have ${player.gold}g.` : undefined }}
-                onClick={() => handlePurchase(item.id)}
-              />
-            )}
-          </div>
-        );
-      })}
-    </>
-  );
-
-  const combatStatsHeader = (
-    <div className={`${darkText ? 'bg-[#e8dcc8] border-[#8b7355]' : 'bg-[#2d1f0f] border-[#8b7355]'} border rounded p-2 mb-2`}>
-      <div className={`text-xs ${darkText ? 'text-[#6b5a42]' : 'text-[#a09080]'} uppercase tracking-wide mb-1`}>{t('panelArmory.combatStats')}</div>
-      <div className={`flex gap-4 font-mono ${largeText ? 'text-base' : 'text-sm'}`}>
-        <span className="text-red-600">⚔ ATK: {combatStats.attack}</span>
-        <span className="text-blue-700">🛡 DEF: {combatStats.defense}</span>
-        {combatStats.blockChance > 0 && (
-          <span className="text-yellow-700">BLK: {Math.round(combatStats.blockChance * 100)}%</span>
-        )}
-      </div>
-      <div className={`flex gap-3 mt-1 text-xs ${darkText ? 'text-[#6b5a42]' : 'text-[#8b7355]'}`}>
-        <span>W: {player.equippedWeapon ? (t(`items.${player.equippedWeapon}.name`) || getItem(player.equippedWeapon)?.name) : t('stats.none')}</span>
-        <span>A: {player.equippedArmor ? (t(`items.${player.equippedArmor}.name`) || getItem(player.equippedArmor)?.name) : t('stats.none')}</span>
-        <span>S: {player.equippedShield ? (t(`items.${player.equippedShield}.name`) || getItem(player.equippedShield)?.name) : t('stats.none')}</span>
-      </div>
+  return <section className="armory-catalog" aria-label={`Armory ${section}`}>
+    <div className="armory-summary">
+      {section === 'clothing' ? <>
+        <p>Wearing <strong>{CLOTHING_TIER_LABELS[getClothingTier(player.clothingCondition)]} · {player.clothingCondition}%</strong></p>
+        <label><input type="checkbox" checked={backup} onChange={e => setBackup(e.target.checked)} /> Buy for wardrobe {player.backupOutfit != null && `(${player.backupOutfit}% stored)`}</label>
+      </> : <><p><strong>{stats.attack} ATK · {stats.defense} DEF{stats.blockChance > 0 && ` · ${Math.round(stats.blockChance * 100)}% block`}</strong></p><p>Purchases equip immediately. Your old gear stays in your inventory.</p></>}
     </div>
-  );
-
-  const footerNote = (
-    <div className={`mt-2 text-xs ${darkText ? 'text-[#6b5a42]' : 'text-[#8b7355]'} px-2`}>
-      {t('panelArmory.clickToEquip')}
-    </div>
-  );
-
-  // Tabbed mode: render only the specified section without JonesPanel wrapper
-  if (section) {
-    switch (section) {
-      case 'clothing':
-        return (
-          <div>
-            {/* Clothing status header */}
-            <div className="bg-[#e8dcc8] border border-[#8b7355] rounded p-2 mb-2">
-              <div className="text-xs text-[#6b5a42] uppercase tracking-wide mb-1">Current Clothing</div>
-              <div className="flex items-center gap-3 font-mono text-base">
-                <span className={player.clothingCondition <= 0 ? 'text-red-600 font-bold' : 'text-[#3d2a14]'}>
-                  {tierLabel} ({player.clothingCondition}%)
-                </span>
-              </div>
-              <div className="flex gap-3 mt-1 text-xs text-[#6b5a42]">
-                <span>Casual: {CLOTHING_THRESHOLDS.casual}+</span>
-                <span>Dress: {CLOTHING_THRESHOLDS.dress}+</span>
-                <span>Business: {CLOTHING_THRESHOLDS.business}+</span>
-              </div>
-            </div>
-            {clothingItems.map(item => {
-              const price = getItemPrice(item, priceModifier);
-              const canAfford = player.gold >= price;
-              const clothingValue = item.effect?.value ?? 0;
-              const wouldUpgrade = clothingValue > player.clothingCondition;
-              const itemTier = getClothingTier(clothingValue);
-              const itemTierLabel = CLOTHING_TIER_LABELS[itemTier];
-              const canStoreAsBackup = canAfford && clothingValue > (player.backupOutfit ?? 0);
-              return (
-                <div key={item.id}>
-                  <JonesMenuItem
-                    label={`${t(`items.${item.id}.name`) || item.name} [${itemTierLabel}]`}
-                    price={price}
-                    disabled={!canAfford || !wouldUpgrade}
-                    darkText={darkText}
-                    largeText={largeText}
-                    previewData={itemToPreview(item)}
-                    onClick={() => handlePurchase(item.id, 'primary')}
-                  />
-                  {canStoreAsBackup && (
-                    <JonesMenuItem
-                      label={`  ↳ Store as Backup Outfit [${itemTierLabel}]`}
-                      price={price}
-                      disabled={!canAfford}
-                      darkText={darkText}
-                      onClick={() => handlePurchase(item.id, 'backup')}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        );
-      case 'weapons':
-        return (
-          <div>
-            {combatStatsHeader}
-            {renderEquipSection(t('panelArmory.weapons'), weaponItems, 'weapon', player.equippedWeapon, false)}
-            {footerNote}
-          </div>
-        );
-      case 'armor':
-        return (
-          <div>
-            {combatStatsHeader}
-            {renderEquipSection(t('panelArmory.armor'), armorItems, 'armor', player.equippedArmor, false)}
-            {footerNote}
-          </div>
-        );
-      case 'shields':
-        return (
-          <div>
-            {combatStatsHeader}
-            {renderEquipSection(t('panelArmory.shields'), shieldItems, 'shield', player.equippedShield, false)}
-            {footerNote}
-          </div>
-        );
-    }
-  }
-
-  // Fallback: default to clothing
-  return (
-    <div>
-      {/* Clothing status header */}
-      <div className="bg-[#e8dcc8] border border-[#8b7355] rounded p-2 mb-2">
-        <div className="text-xs text-[#6b5a42] uppercase tracking-wide mb-1">Current Clothing</div>
-        <div className="flex items-center gap-3 font-mono text-base">
-          <span className={player.clothingCondition <= 0 ? 'text-red-600 font-bold' : 'text-[#3d2a14]'}>
-            {tierLabel} ({player.clothingCondition}%)
-          </span>
-        </div>
-      </div>
-      {clothingItems.map(item => {
-        const price = getItemPrice(item, priceModifier);
-        const canAfford = player.gold >= price;
-        const clothingValue = item.effect?.value ?? 0;
-        const wouldUpgrade = clothingValue > player.clothingCondition;
-        const itemTier = getClothingTier(clothingValue);
-        const itemTierLabel = CLOTHING_TIER_LABELS[itemTier];
-        return (
-          <JonesMenuItem
-            key={item.id}
-            label={`${t(`items.${item.id}.name`) || item.name} [${itemTierLabel}]`}
-            price={price}
-            disabled={!canAfford || !wouldUpgrade}
-            darkText
-            largeText
-            previewData={itemToPreview(item)}
-            onClick={() => handlePurchase(item.id, 'primary')}
-          />
-        );
-      })}
-    </div>
-  );
+    {items.map(item => {
+      const price = getItemPrice(item, priceModifier);
+      const clothing = section === 'clothing';
+      const owns = !clothing && (player.durables[item.id] ?? 0) > 0;
+      const active = owns && equipped === item.id;
+      const floorLocked = !!item.requiresFloorCleared && !player.dungeonFloorsCleared.includes(item.requiresFloorCleared);
+      const improves = !clothing || (item.effect?.value ?? 0) > (backup ? player.backupOutfit ?? 0 : player.clothingCondition);
+      const reason = floorLocked ? `Clear Cave floor ${item.requiresFloorCleared}` : !owns && player.gold < price ? 'Not enough gold' : !improves ? 'Already have this quality or better' : undefined;
+      const name = t(`items.${item.id}.name`) || item.name;
+      const durability = player.equipmentDurability?.[item.id] ?? MAX_DURABILITY;
+      const detail = clothing ? `${CLOTHING_TIER_LABELS[getClothingTier(item.effect?.value ?? 0)]} · ${item.effect?.value}% condition`
+        : [item.equipStats?.attack && `+${item.equipStats.attack} ATK`, item.equipStats?.defense && `+${item.equipStats.defense} DEF`, item.equipStats?.blockChance && `${Math.round(item.equipStats.blockChance * 100)}% block`, owns && durability < MAX_DURABILITY && `${durability}% condition`].filter(Boolean).join(' · ');
+      return <div key={item.id} className="armory-item" data-equipped={active} onMouseEnter={() => setPreview(itemToPreview(item))} onMouseLeave={() => setPreview(null)} onFocus={() => setPreview(itemToPreview(item))} onBlur={() => setPreview(null)}>
+        <ItemIcon itemId={item.id} size={44} />
+        <div className="armory-item-copy"><strong>{name}</strong><span>{detail}</span>{reason && <small>{reason}</small>}</div>
+        <button disabled={!!reason} aria-label={`${owns ? active ? 'Unequip' : 'Equip' : backup && clothing ? 'Store' : 'Buy'} ${name}${!owns ? ` for ${price}g` : ''}`} onClick={() => {
+          if (owns) {
+            if (active) unequipItem(player.id, slot); else equipItem(player.id, item.id, slot);
+          } else {
+            const result = purchase(player.id, 'armory', item.id, clothing && backup ? 'backup' : 'primary');
+            if (!result) return;
+            if (result.success) toast.success(result.message); else if (result) toast.error(result.message);
+          }
+        }}>{owns ? active ? 'Equipped ✓' : 'Equip' : <>{price}g <small>{clothing && backup ? 'Store' : 'Buy & wear'}</small></>}</button>
+      </div>;
+    })}
+  </section>;
 }

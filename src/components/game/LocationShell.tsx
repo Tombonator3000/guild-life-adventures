@@ -83,8 +83,8 @@ export function LocationShell({ npc, tabs, defaultTab, locationId, locationName,
   const cityActivities = getCityActivities(locationId, conditions);
   const hasWork = !!workInfo && !tabs.some(tab => tab.id === 'hexed');
   const availableTabs: LocationTab[] = [...tabs, ...(memories.length && !tabs.some(t => t.id === 'hexed') ? [{id:'personal-favors',label:'Your contact',paged:false,content:<NpcFavorPanel key={locationId} location={locationId} />}]:[]), ...(cityActivities.length && !tabs.some(t => t.id === 'hexed') ? [{ id:'city-activities', label:'This Week', paged:false, content:<CityActivityPanel key={locationId} location={locationId} /> }] : [])];
-  const services = availableTabs.filter(tab => !tab.hidden && !(hasWork && locationId === 'guild-hall' && tab.id === 'work'));
-  const visibleTabs: LocationTab[] = hasWork ? [{ id: 'your-shift', label: 'Work', content: <WorkplaceCard work={workInfo!} /> }, ...services.map(tab => tab.id === 'work' ? { ...tab, label: 'Careers' } : tab)] : services;
+  const services = availableTabs.filter(tab => !tab.hidden && !(hasWork && tab.id === 'work'));
+  const visibleTabs: LocationTab[] = hasWork ? [{ id: 'your-shift', label: 'Work', content: <WorkplaceCard work={workInfo!} /> }, ...services] : services;
   const [servicesOpen, setServicesOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState(defaultTab || visibleTabs[0]?.id || '');
   const activeTab = visibleTabs.some(tab => tab.id === selectedTab) ? selectedTab : visibleTabs[0]?.id;

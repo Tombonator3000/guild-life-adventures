@@ -11,6 +11,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     await page.getByRole('button', { name: 'Begin Adventure', exact: true }).click();
     if (await page.evaluate(() => !!document.fullscreenElement)) await page.keyboard.press('f');
     await expect(page.getByRole('region', { name: 'This Week' })).toBeVisible();
+    await expect(page.locator('.resource-overview .goal-overview').getByText('Career', { exact: true })).toBeInViewport();
     await page.screenshot({ path: info.outputPath('this-week.png') });
     if (viewport.width < 1024) {
       await expect.poll(async () => {

@@ -38,14 +38,14 @@ describe('host-authoritative housing services', () => {
     useGameStore.getState().startNewGame(['Housing Tester'], false, goals);
   });
 
-  it('prepaids rent using the host economy modifier and deducts time atomically', () => {
+  it('prepaids rent using the host economy modifier and preserves time atomically', () => {
     const playerId = preparePlayer();
     const result = useGameStore.getState().payHousingRent(playerId, 4);
     const player = useGameStore.getState().players[0];
 
     expect(result?.success).toBe(true);
     expect(player.gold).toBe(1400); // 75 * 2 * 4
-    expect(player.timeRemaining).toBe(11);
+    expect(player.timeRemaining).toBe(12);
     expect(player.rentPrepaidWeeks).toBe(4);
     expect(player.weeksSinceRent).toBe(0);
   });
@@ -67,7 +67,7 @@ describe('host-authoritative housing services', () => {
     expect(useGameStore.getState().payHousingRent(playerId, 1)?.success).toBe(false);
   });
 
-  it('moves housing using canonical market rent, cost and four-hour duration', () => {
+  it('moves housing using canonical market rent, cost without a time charge', () => {
     const playerId = preparePlayer({ housing: 'slums' });
     const result = useGameStore.getState().moveHousingAtLandlord(playerId, 'noble');
     const player = useGameStore.getState().players[0];
@@ -76,7 +76,7 @@ describe('host-authoritative housing services', () => {
     expect(player.housing).toBe('noble');
     expect(player.lockedRent).toBe(240);
     expect(player.gold).toBe(1520); // 2 * 240 move-in cost
-    expect(player.timeRemaining).toBe(8);
+    expect(player.timeRemaining).toBe(12);
     expect(player.rentPrepaidWeeks).toBe(0);
   });
 

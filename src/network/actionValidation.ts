@@ -139,7 +139,7 @@ export function validateGuestActionArgs(
 
     case 'payHousingRent': {
       const weeks = args[1];
-      return weeks === 1 || weeks === 4 || weeks === 8 ? null : 'Invalid rent period';
+      return weeks === 1 || weeks === 4 ? null : 'Invalid rent period';
     }
 
     case 'moveHousingAtLandlord':

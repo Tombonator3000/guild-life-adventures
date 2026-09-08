@@ -162,6 +162,9 @@ export function createEquipmentServiceActions(set: SetFn, get: GetFn) {
           gold: candidate.gold - price,
           happiness: Math.min(100, candidate.happiness + (item.effect?.type === 'happiness' ? item.effect.value : 0)),
           durables: { ...candidate.durables, [item.id]: 1 },
+          equippedWeapon: item.equipSlot === 'weapon' ? item.id : candidate.equippedWeapon,
+          equippedArmor: item.equipSlot === 'armor' ? item.id : candidate.equippedArmor,
+          equippedShield: item.equipSlot === 'shield' ? item.id : candidate.equippedShield,
           equipmentDurability: {
             ...candidate.equipmentDurability,
             [item.id]: MAX_DURABILITY,
@@ -172,7 +175,7 @@ export function createEquipmentServiceActions(set: SetFn, get: GetFn) {
           },
         }),
       }));
-      return { success: true, message: `Purchased ${item.name}.` };
+      return { success: true, message: `Purchased and equipped ${item.name}.` };
     },
 
     useEquipmentService: (
