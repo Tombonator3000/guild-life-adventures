@@ -1,11 +1,12 @@
 import { expect, test } from './test';
 import { openMenuPage, visitLocation } from './menuPages';
+import { enableDeveloperMode } from './developerMode';
 
 test('wrapped market tabs and paged goods keep every service reachable', async ({page},testInfo)=>{
   test.setTimeout(90000);
   await page.addInitScript(()=>{ Math.random=()=>.99; localStorage.setItem('guild-life-board-view', 'sidebars'); });
   await page.goto('/');
-  await page.locator('button[aria-hidden="true"]').click({clickCount:5,delay:80});
+  await enableDeveloperMode(page);
   await page.getByRole('button',{name:'New Adventure',exact:true}).click();
   await page.getByPlaceholder('Enter name...').fill('Window Hero');
   await page.getByRole('checkbox',{name:/Show Tutorial/}).uncheck();

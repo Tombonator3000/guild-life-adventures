@@ -105,3 +105,16 @@ log only; it does not remove or relax the failed checks.
 
 Original CI evidence: [PR run](https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34219277017),
 [main release run](https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34219454522).
+
+The first full check of PR #416 passed all three newspaper cases. Its remaining
+failure (market setup) and flaky weather case both stopped before finding the
+Dev tab. Their five-click burst could miss the small hidden trigger while the
+title/font layout was moving. The classic-locations test already handled the
+title reveal correctly. That approach is now shared by all four developer-mode
+fixtures: wait for fonts and finite title animations, then make five separate
+real locator clicks. It does not enable the gate through code or skip gameplay
+assertions. See [CI run](https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34220855851).
+
+All eight scenarios in the four affected browser files pass locally with the
+shared setup (93.1 seconds, no retries or flaky results). ESLint passes for all
+five changed test files. The newspaper runtime correction is unchanged.
