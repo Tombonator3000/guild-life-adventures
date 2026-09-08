@@ -1,0 +1,63 @@
+{
+  "base": "ad836771b913f7e1915ba550aa44bbdda39dfc7d",
+  "validated_runtime": "2d73680bb59f728adc613db7624b3766631b716a",
+  "local_validated_runtime": "1e57f7a6d4d58ac20cd2ff627a1f2c1b29c31e22",
+  "verified_runtime_tree": "8896274fbf8dda2eea54ac282df665e9cbb21b4d",
+  "unit_tests": 764,
+  "test_files": 101,
+  "configured_types": "passed",
+  "build": "passed",
+  "lint_errors": 0,
+  "inherited_lint_warnings": 27,
+  "app_type_diagnostics": {
+    "baseline": 185,
+    "current": 185,
+    "added": 0
+  },
+  "audio": {
+    "files": 42,
+    "silent": 0,
+    "invalid": 0,
+    "duplicateGroups": 0
+  },
+  "browser_runs": {
+    "full_suite": {
+      "startTime": "2026-09-08T08:04:42.123Z",
+      "duration": 241732.726,
+      "expected": 34,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "developer_menu_retry": {
+      "startTime": "2026-09-08T08:09:36.784Z",
+      "duration": 14018.151,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "final_overview": {
+      "startTime": "2026-09-08T08:11:41.013Z",
+      "duration": 28065.027,
+      "expected": 3,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "final_career": {
+      "startTime": "2026-09-08T08:18:25.743Z",
+      "duration": 21776.607,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    }
+  },
+  "limitations": [
+    "One developer-menu activation timeout passed on isolated retry.",
+    "Physical device sound output was not measured.",
+    "Referenced user attachments were not present.",
+    "No merge or deployment performed."
+  ]
+}

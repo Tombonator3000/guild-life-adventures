@@ -444,3 +444,14 @@ When reading a JSON field that may not exist, always use optional (`?`) types an
 | **Root cause** | `useGrimwaldAI.ts`: When an AI action fails (e.g. "buy food" fails because gold < price), the action key is added to `failedActionsRef` to prevent infinite retry loops. But if the AI later earns enough gold during the same turn, the "buy food" action remains blocked for the rest of the turn — the ref is only cleared at turn start. The failure reason was transient but the block is permanent for the turn. |
 | **Impact** | AI may fail to buy food/essentials when gold was the issue, potentially starving despite being able to afford it later in the turn. |
 | **Non-fix reason** | The failedActionsRef exists to prevent infinite retry loops. A proper fix requires tracking *why* an action failed to know when to retry — a significant refactor of AI action execution. Mitigated by: turns are 1 week, most actions get retried next turn, and starvation is handled by the weekly food check. |
+
+
+## 2026-09-08 — Player experience findings
+
+- **Music louder than the selected setting:** a crossfade captured the old volume and could overwrite later mute/volume changes. Store fade proportions separately and apply live gain to both decks. A squared slider curve also makes low settings quiet. Regression coverage exercises mute during fades and interrupted stop/start.
+- **Silent graduation:** the configured fanfare was not dispatched after a completed degree. Observe committed human-player degree changes, including host sync; do not dispatch from the attempted graduation click.
+- **Apparently missing dividends:** existing cash settlement was reproduced correctly. Other weekend deductions and unnamed messages obscured the credit. Named payout messages and a saved reconciliation receipt expose the actual amounts; fractional-credit mutation now clones the portfolio first.
+- **Zero-hour errands interrupted:** the board's automatic end timer returned players home before free purchases could finish. Living human players now finish explicitly with End Turn. AI and eliminated-player progression retain their existing handlers.
+- **Long menu page drift:** integer viewport widths accumulated subpixel alignment error. Page offsets preserve CSS width precision; page count tolerates rounded scroll width. Complete Herald reading is covered at desktop and both phone orientations.
+
+These changes are implemented in the local player-experience branch; upload/merge status is recorded in the audit log.
