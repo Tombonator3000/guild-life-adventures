@@ -82,3 +82,26 @@ Portrait checks:
 ![Character record in the portrait action area](qa/center-touch/character-portrait.webp)
 
 ![Portrait job-list scrollport](qa/center-touch/jobs-portrait.webp)
+
+## Release follow-up: newspaper navigation state
+
+PR #415 was merged as `12bc383177e60b4a57d61ab3af26faa5f0147119`
+while its full browser validation was still running. The PR run then passed 36
+browser scenarios and failed the three `player-experience.spec.ts` scenarios at
+the newspaper's final Next button. The main release check also failed there and
+skipped the gated build/deployment.
+
+`scrollBy({ behavior: 'instant' })` changes position immediately, but the native
+scroll event arrives later. The control could remain enabled briefly after the
+last page had been reached. Explicit Previous/Next actions now update the page
+and disabled states immediately; native scroll events still handle touch/wheel.
+
+The same unmodified browser tests now pass at 390×844, 844×390 and 1280×720:
+three passed, zero retries, zero flaky results (87.2 seconds). They verify that
+the final newspaper story remains visible and Next is disabled. The resulting
+phone screenshot was visually inspected. The production build, changed-file ESLint
+and configured TypeScript check also pass. This follow-up changes the shared control and this
+log only; it does not remove or relax the failed checks.
+
+Original CI evidence: [PR run](https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34219277017),
+[main release run](https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34219454522).
