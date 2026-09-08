@@ -58,7 +58,7 @@ export function SideInfoTabs({ player, goals, isCurrentPlayer, initialTab }: Sid
           const hasCurse = (player.activeCurses?.length ?? 0) > 0;
           return (
             <div
-              className={`rounded-lg border-2 ${hasCurse ? 'border-purple-500' : 'border-gold/50'} overflow-hidden shadow-lg bg-wood/30 p-1`}
+              className={`sidebar-character-frame rounded-lg border-2 ${hasCurse ? 'border-purple-500' : 'border-gold/50'} overflow-hidden shadow-lg bg-wood/30 p-1`}
               style={hasCurse ? { boxShadow: '0 0 0 1px rgba(147,51,234,0.35), 0 0 16px 5px rgba(147,51,234,0.5)' } : undefined}
             >
               <CharacterPortrait
@@ -72,12 +72,12 @@ export function SideInfoTabs({ player, goals, isCurrentPlayer, initialTab }: Sid
                 hasCurse={hasCurse}
                 isToad={player.activeCurses?.some(c => c.effectType === 'toad-transformation') ?? false}
                 curses={player.activeCurses}
-                className="shadow-md"
+                className="sidebar-character-portrait shadow-md"
               />
             </div>
           );
         })()}
-        <div className="mt-1.5 text-center">
+        <div className="sidebar-character-caption mt-1.5 text-center">
           <h3 className="font-display text-sm font-bold text-wood-dark">
             {player.name}
           </h3>

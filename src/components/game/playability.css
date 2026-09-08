@@ -106,6 +106,14 @@
 
 .mobile-map-viewport:not([data-zoom="true"]) { display:flex; align-items:center; }
 
+/* Keep the original portrait while leaving room to use inventory on short phones. */
+@media (max-width:1023px) and (max-height:500px) and (orientation:landscape) {
+  .guild-sidebar .sidebar-portrait { flex-direction:row; gap:8px; padding:6px; }
+  .sidebar-character-frame { flex-shrink:0; padding:2px; }
+  .sidebar-character-portrait { width:54px!important; min-width:54px!important; height:60px!important; min-height:60px!important; font-size:22px!important; }
+  .sidebar-character-caption { min-width:0; margin-top:0; text-align:left; }
+}
+
 @media (orientation:portrait) {
   .mobile-action-region .location-body { grid-template-rows:80px minmax(0,1fr); }
   .mobile-action-region .location-npc-name span { display:none; }

@@ -27,7 +27,7 @@ for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1280
   if(viewport.width<1024)await page.getByTitle('Stats & Inventory').click();
   await page.locator('.guild-sidebar').getByRole('button',{name:/^inventory$/i}).click();
   const owned=page.locator('.guild-sidebar [data-item-art="dagger"]').first();
-  await expect(owned).toBeVisible();
+  await expect(owned).toBeInViewport({ratio:1});
   expect(await owned.evaluate(e=>getComputedStyle(e).backgroundImage)).toBe(original);
   await page.screenshot({path:info.outputPath('painted-inventory.png')});
  });
