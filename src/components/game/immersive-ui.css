@@ -59,6 +59,18 @@
 .immersive-ledger .sidebar-heading { display:none; }
 .immersive-ledger .panel-content { background:linear-gradient(#fff7e399,#ead8b888); }
 .mobile-player-portrait { display:flex; align-items:center; justify-content:center; min-width:44px; min-height:44px; flex-shrink:0; }
+.character-panel { flex:1; min-height:0; display:flex; flex-direction:column; background:#f0e2c6 url('../../assets/ui/vellum.webp') center/384px; }
+.character-panel-heading { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:4px 10px; border-bottom:1px solid #b79b6c; color:#453018; }
+.character-panel-heading h2 { font:small-caps bold 16px Georgia,serif; }
+.character-panel-heading button { display:flex; align-items:center; gap:5px; min-height:40px; padding:4px 8px; border:1px solid #b79b6c; border-radius:4px; background:#fff2d2; font-size:12px; }
+.character-panel-heading svg { width:16px; height:16px; }
+.character-panel > .guild-sidebar { flex:1; min-height:0; height:auto; border:0; border-radius:0; }
+.character-panel .sidebar-portrait { padding:5px 12px; gap:10px; }
+.character-panel .sidebar-character-portrait { width:44px!important; min-width:44px!important; height:48px!important; min-height:48px!important; }
+.character-panel .sidebar-character-caption h3 { font-size:17px; }
+.character-panel .sidebar-tabs { padding-top:2px; }
+.character-panel .sidebar-tab { flex-direction:row; gap:7px; min-height:40px; }
+.character-panel .panel-content { padding:8px 12px; overflow-x:hidden; }
 /* Passive receipts must not intercept taps or pause forever over menu paging. */
 .toaster [data-sonner-toast]:not(:has(button)) { pointer-events:none; }
 .guild-support-menu { max-width:min(28rem,calc(100vw - 24px))!important; max-height:calc(100dvh - 24px); overflow-y:auto; background:#f0e2c6 url('../../assets/ui/vellum.webp') center/384px!important; border-color:#8e6a37!important; box-shadow:0 14px 70px #150e0bb0; }

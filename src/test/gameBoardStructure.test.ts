@@ -21,7 +21,6 @@ const extractedComponents = [
   'GameBoardOverlays',
   'SaveLoadMenu',
   'DeathModal',
-  'PlayerInfoModal',
   'UpdateBanner',
   'ChatPanel',
   'ContextualTips',
@@ -40,6 +39,7 @@ const canvasComponents = [
 ];
 
 const centerComponents = [
+  'CharacterPanel',
   'CursePanelOverlay',
   'CurseToadPanel',
   'CurseAppliancePanel',

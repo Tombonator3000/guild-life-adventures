@@ -64,7 +64,7 @@ test.describe('narrow mobile touch viewport', () => {
     await expect(page.getByRole('button', { name: /deposit 50/i })).toBeVisible({ timeout: 10_000 });
 
     await page.getByTitle('Stats & Inventory').tap();
-    await expect(page.getByText('Stats & Inventory', { exact: true })).toBeVisible();
+    await expect(page.getByRole('region', { name: /Character record/ })).toBeVisible();
     await expectNoPageOverflow(page);
   });
 });
@@ -91,7 +91,7 @@ test.describe('iPad-sized touch viewport', () => {
     await page.getByText('Finances & education', { exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Finances' })).toBeVisible();
     await expectNoPageOverflow(page);
-    await page.getByRole('dialog', { name: /Character record/ }).getByRole('button', { name: 'Close', exact: true }).tap();
+    await page.getByRole('region', { name: /Character record/ }).getByRole('button', { name: 'Back to game', exact: true }).tap();
 
     await page.locator('[data-zone-id="bank"]').click();
     await expect(page.getByRole('button', { name: /deposit 50/i })).toBeVisible({ timeout: 10_000 });

@@ -6,7 +6,9 @@ export class EffectManager {
   private frame: number | null = null;
   private last: number | null = null;
   private seconds = 0;
+  private lastPaint: number | null = null;
   private running = false;
+  constructor(private readonly fps = 30) {}
   register(draw: EffectFrame) {
     this.surfaces.add(draw);
     draw(this.seconds);
@@ -26,13 +28,19 @@ export class EffectManager {
     if (!this.running) return;
     if (this.last !== null) this.seconds += Math.min((now - this.last) / 1000, .05);
     this.last = now;
-    this.invalidate();
+    // Atmosphere does not need to repaint at a tablet's 60/120 Hz refresh rate.
+    // Token movement has its own display-synchronised clock.
+    if (this.lastPaint === null || now - this.lastPaint >= 1000 / this.fps - 1) {
+      this.lastPaint = now;
+      this.invalidate();
+    }
     this.schedule();
   };
   private cancel() {
     if (this.frame !== null) cancelAnimationFrame(this.frame);
     this.frame = null;
     this.last = null;
+    this.lastPaint = null;
   }
   dispose() { this.setRunning(false); this.surfaces.clear(); }
 }

@@ -6,6 +6,7 @@ import { CurseToadPanel } from './CurseToadPanel';
 import { EventPanel } from './EventPanel';
 import { LocationPanel } from './LocationPanel';
 import { ResourcePanel } from './ResourcePanel';
+import { CharacterPanel } from './CharacterPanel';
 import { ShadowfingersModal } from './ShadowfingersModal';
 import { SpectatorPanel } from './SpectatorPanel';
 
@@ -19,6 +20,7 @@ interface GameBoardCenterPanelProps {
   onEndTurn?: () => void;
   endTurnDisabled?: boolean;
   hoursRemaining?: number;
+  playerInfoProps?: OptionalProps<typeof CharacterPanel>;
   toadProps: OptionalProps<typeof CurseToadPanel>;
   applianceProps: OptionalProps<typeof CurseAppliancePanel>;
   shadowfingersProps: OptionalProps<typeof ShadowfingersModal>;
@@ -34,6 +36,7 @@ export function GameBoardCenterPanel({
   onEndTurn,
   endTurnDisabled,
   hoursRemaining,
+  playerInfoProps,
   toadProps,
   applianceProps,
   shadowfingersProps,
@@ -41,10 +44,12 @@ export function GameBoardCenterPanel({
   locationProps,
   spectatorProps,
 }: GameBoardCenterPanelProps) {
+  const showCharacter = !!playerInfoProps && !toadProps && !applianceProps && !shadowfingersProps && !eventProps;
   const locationName = locationProps && !eventProps && !shadowfingersProps && !toadProps && !applianceProps
     ? getLocation(locationProps.locationId)?.name : undefined;
   return (
     <div
+      data-center-panel
       data-fx-protect={`${centerPanel.top},${centerPanel.left},${centerPanel.width},${centerPanel.height}`}
       className={`overflow-hidden z-10 ${isMobile ? 'relative w-full h-full rounded-xl' : 'absolute'}`}
       style={isMobile ? undefined : {
@@ -61,6 +66,8 @@ export function GameBoardCenterPanel({
         </div>}
         <div className="center-panel-content flex-1 min-h-0 overflow-hidden relative flex flex-col">
         {isCursed && !applianceProps && !toadProps && <CursePanelOverlay isMobile={isMobile} />}
+        {showCharacter && <CharacterPanel {...playerInfoProps} />}
+        <div className={showCharacter ? 'hidden' : 'flex flex-col flex-1 min-h-0 overflow-hidden'}>
         {toadProps ? (
           <CurseToadPanel {...toadProps} />
         ) : applianceProps ? (
@@ -76,6 +83,7 @@ export function GameBoardCenterPanel({
         ) : (
           <ResourcePanel />
         )}
+        </div>
         </div>
       </div>
     </div>

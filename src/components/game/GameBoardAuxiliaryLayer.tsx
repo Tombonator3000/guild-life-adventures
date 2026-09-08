@@ -3,7 +3,6 @@ import { ZoneEditor } from './ZoneEditor';
 import { GameBoardOverlays } from './GameBoardOverlays';
 import { SaveLoadMenu } from './SaveLoadMenu';
 import { DeathModal } from './DeathModal';
-import { PlayerInfoModal } from './PlayerInfoModal';
 import { UpdateBanner } from './UpdateBanner';
 import { ChatPanel } from './ChatPanel';
 import { ContextualTips } from './ContextualTips';
@@ -21,7 +20,6 @@ interface GameBoardAuxiliaryLayerProps {
   saveMenuOpen: boolean;
   onCloseSaveMenu: () => void;
   deathModalProps: OptionalComponentProps<typeof DeathModal>;
-  playerInfoProps: OptionalComponentProps<typeof PlayerInfoModal>;
   chatProps: OptionalComponentProps<typeof ChatPanel>;
   showContextualTips: boolean;
   spectatorOverlayProps: OptionalComponentProps<typeof SpectatorOverlay>;
@@ -34,7 +32,6 @@ export function GameBoardAuxiliaryLayer({
   saveMenuOpen,
   onCloseSaveMenu,
   deathModalProps,
-  playerInfoProps,
   chatProps,
   showContextualTips,
   spectatorOverlayProps,
@@ -59,7 +56,6 @@ export function GameBoardAuxiliaryLayer({
       )}
       {saveMenuOpen && <SaveLoadMenu onClose={onCloseSaveMenu} />}
       {deathModalProps && <DeathModal {...deathModalProps} />}
-      {playerInfoProps && <PlayerInfoModal {...playerInfoProps} />}
       <UpdateBanner />
       {chatProps && <ChatPanel {...chatProps} />}
       {showContextualTips && <ContextualTips />}

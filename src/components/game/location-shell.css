@@ -143,19 +143,17 @@
 
 @container (max-width:460px) { .workplace-numbers { flex-wrap:wrap; gap:8px; }.workplace-numbers > span + span { border-left:0; padding-left:0; }.workplace-numbers > span { font-size:25px; }.workplace-numbers svg { width:23px; height:28px; }.workplace-numbers small { font-size:20px; } }
 
-/* Services form a compact, complete grid. Long content turns as book pages. */
+/* Services stay fixed; lists scroll vertically inside the existing frame. */
 .location-tabs { flex-wrap:wrap; overflow:visible; padding:5px; gap:3px; }
 .location-tabs button { flex:1 1 100px; min-width:0; min-height:34px; padding:5px 7px; font-size:12px; border:1px solid #a1875e; border-radius:5px; }
 .location-menu { display:flex; overflow:clip; }
 .location-content { overflow:clip; padding:8px; display:flex; flex-direction:column; }
 .location-pages { flex:1; min-height:0; display:flex; flex-direction:column; }
-.location-page-viewport { flex:1; min-height:0; overflow:clip; touch-action:pinch-zoom; }
-.location-page-viewport[data-dragging="true"] { user-select:none; -webkit-user-select:none; }
-.location-page-viewport:not([data-dragging]) .location-page-flow { transition:transform 140ms ease-out; }
+.location-page-viewport { flex:1; min-height:0; min-width:0; overflow-x:hidden; overflow-y:auto; touch-action:pan-y pinch-zoom; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; scrollbar-width:thin; scrollbar-color:#a28452 #eadcc3; }
 .menu-swipe-hint { display:none; }
 @media (pointer:coarse) { .menu-swipe-hint { display:block; font-size:9px; text-align:center; opacity:.75; } }
 @media (prefers-reduced-motion:reduce) { .location-page-viewport .location-page-flow { transition:none!important; } }
-.location-page-flow { height:100%; column-width:auto; column-count:1; column-gap:16px; column-fill:auto; overflow:visible; }
+.location-page-flow { min-width:0; display:flow-root; padding:2px 3px 8px; overflow-wrap:break-word; }
 .location-page-flow :is(button,li,tr,h2,h3,h4,p) { break-inside:avoid; }
 
 .location-page-flow :is([class*="overflow-y-auto"],[class*="overflow-auto"],[class*="overflow-x-auto"]) { overflow:visible!important; max-height:none!important; }
