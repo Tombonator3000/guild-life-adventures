@@ -11,6 +11,6 @@ Validation:
 - Production build and audio integrity pass; ESLint has zero errors and 19 existing warnings.
 - Generated CSS decreases from 178,050 to 149,418 bytes; the App chunk decreases from 277,883 to 270,291 bytes gzipped. Physical iPad/Safari frame rate is unverified.
 
-The open-PR review identifies #384, #385 and #389 as superseded direct-dependency updates. The other eight Dependabot PRs still cover used packages/workflows. #383 needs refreshing to cover all current artifact-upload steps; the Vite major upgrade needs its own migration checks.
+The open-PR review identifies #384, #385 and #389 as superseded direct-dependency updates. The other eight Dependabot PRs still cover used packages/workflows. The newer #416 also remains relevant: it fixes newspaper paging and browser setup independently of this cleanup. #383 needs refreshing to cover all current artifact-upload steps; the Vite major upgrade needs its own migration checks.
 
 Full removal inventory, measurements, screenshots and remaining limitations: `docs/AUDIT_LOG_CODE_CLEANUP.md` and `docs/qa/code-cleanup/evidence.json`.

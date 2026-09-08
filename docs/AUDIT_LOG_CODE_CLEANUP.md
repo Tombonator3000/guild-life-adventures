@@ -39,14 +39,18 @@ particular frame rate on an iPad or other physical device.
 
 ## Open PR audit
 
-GitHub returned eleven open PRs. All were authored by Dependabot; the recent
-game/UI implementation PRs through #415 are already merged. Each patch was read.
+The initial GitHub review found eleven open Dependabot PRs; each patch was read.
+The recent game/UI implementation PRs through #415 were already merged. The
+publication follow-up also reviewed the newer #416, which remains relevant.
+PRs #384, #385 and #389 are now closed as superseded by
+[cleanup PR #417](https://github.com/Tombonator3000/guild-life-adventures/pull/417).
+The eight remaining dependency PRs and #416 are retained.
 
 | PR | Verdict | Reason |
 | --- | --- | --- |
-| #389 — react-toggle | Superseded by this cleanup | Its only consumers were unused toggle/toggle-group scaffold components. |
-| #385 — react-alert-dialog | Superseded by this cleanup | The alert-dialog scaffold had no app or test consumer. The active game uses react-dialog, which stays. |
-| #384 — react-collection | Superseded as a direct dependency update | No direct imports. It still legitimately occurs transitively under active Radix components; do not remove those lock entries by hand. |
+| #389 — react-toggle | Closed; superseded by #417 | Its only consumers were unused toggle/toggle-group scaffold components. |
+| #385 — react-alert-dialog | Closed; superseded by #417 | The alert-dialog scaffold had no app or test consumer. The active game uses react-dialog, which stays. |
+| #384 — react-collection | Closed; superseded direct dependency update | No direct imports. It still legitimately occurs transitively under active Radix components; do not remove those lock entries by hand. |
 | #387 — react-toast | Still relevant | Active toaster and hook use it. |
 | #386 — sharp | Still relevant | Used by `scripts/generate-icons.mjs`. |
 | #388 — Vite 5 → 8 | Still relevant; separate migration | A major build-tool change needs plugin/PWA/build verification. It is not obsolete simply because it is old. |
@@ -55,6 +59,7 @@ game/UI implementation PRs through #415 are already merged. Each patch was read.
 | #381 — deploy-pages | Still relevant | Publishes the Pages artifact. |
 | #382 — configure-pages | Still relevant | Configures the Pages deployment. |
 | #383 — upload-artifact | Still relevant; refresh patch first | Used by validation. Its old patch predates the new balance/runtime-screenshot upload steps and does not update every current use. |
+| #416 — newspaper paging and browser setup | Still relevant; independent fix | Updates page controls immediately after button navigation and stabilizes the developer-mode gesture in browser fixtures. These files are not changed by this cleanup. |
 
 ## Verification status
 
@@ -68,7 +73,8 @@ game/UI implementation PRs through #415 are already merged. Each patch was read.
 | Audio | PASS | 42 files, zero silent/invalid files and zero exact duplicate groups. |
 | Build/render work | PASS | Production build; byte counts above; goal display performs 0 rather than 3 React commits on three unrelated location selections and still updates once for a stock-price change. |
 | Physical device 60 fps | UNVERIFIED | Chromium headless measurements cannot establish physical iPad/Safari frame rate. |
-| GitHub delivery | BLOCKED | Automatic approval review rejected the push because it requires explicit authorization to publish the new branch. No remote branch or PR was created and no old PR was closed. |
+| GitHub delivery | PASS | [PR #417](https://github.com/Tombonator3000/guild-life-adventures/pull/417) is open. The published source tree exactly matches the reviewed local snapshot. #384, #385 and #389 are closed with replacement references. |
+| GitHub validation | RUNNING at publication | Local checks above passed. The initial remote validation runs are recorded with their commit in `evidence.json`; current CI is visible on the PR. |
 
 ### Movement comparison
 
@@ -97,11 +103,22 @@ The tested runtime code is commit `42707ee`. The follow-up removes only the
 unreferenced starter stylesheet and records evidence. The stylesheet is not
 part of either emitted production build.
 
+### Publication follow-up
+
+The owner explicitly approved branch publication, one PR and the three closures
+on 2026-09-08 after the initial automatic approval rejection. Local Git had no
+GitHub credentials, so the connected GitHub app published the prepared tree.
+Published commit `702c198aac5e71aa9e8a1bcd782a45c1b4a5afd8` and local snapshot
+`d38ad6b1108da1fadbb82370cb31af296ed2299e` have the identical Git tree
+`379cf39a29b54b3246ce98f48d7c9a037f858a23`, including both runtime screenshots.
+Delivery-record follow-ups change documentation only. No merge was requested or
+performed in this cleanup task.
+
 ### Reviewable output
 
 - [Full evidence and raw movement samples](qa/code-cleanup/evidence.json)
 - [Prepared pull-request description](qa/code-cleanup/PULL_REQUEST.md)
-- [All eleven PR patches reviewed](qa/code-cleanup/pr-audit.json)
+- [Reviewed dependency PR patches and #416](qa/code-cleanup/pr-audit.json)
 - [Browser results](qa/code-cleanup/browser-validation.txt)
 - [Baseline AI report](qa/code-cleanup/balance-baseline.json) and [candidate AI report](qa/code-cleanup/balance-candidate.json)
 

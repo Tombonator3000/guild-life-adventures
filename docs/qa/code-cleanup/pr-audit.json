@@ -11,7 +11,9 @@
       }
     ],
     "number": 389,
-    "title": "Bump @radix-ui/react-toggle from 1.1.9 to 1.1.18"
+    "title": "Bump @radix-ui/react-toggle from 1.1.9 to 1.1.18",
+    "stateAtPublication": "closed",
+    "supersededBy": 417
   },
   {
     "files": [
@@ -25,7 +27,8 @@
       }
     ],
     "number": 388,
-    "title": "Bump vite from 5.4.19 to 8.1.5"
+    "title": "Bump vite from 5.4.19 to 8.1.5",
+    "stateAtPublication": "open"
   },
   {
     "files": [
@@ -39,7 +42,8 @@
       }
     ],
     "number": 387,
-    "title": "Bump @radix-ui/react-toast from 1.2.14 to 1.2.23"
+    "title": "Bump @radix-ui/react-toast from 1.2.14 to 1.2.23",
+    "stateAtPublication": "open"
   },
   {
     "files": [
@@ -53,7 +57,8 @@
       }
     ],
     "number": 386,
-    "title": "Bump sharp from 0.34.5 to 0.35.3"
+    "title": "Bump sharp from 0.34.5 to 0.35.3",
+    "stateAtPublication": "open"
   },
   {
     "files": [
@@ -67,7 +72,9 @@
       }
     ],
     "number": 385,
-    "title": "Bump @radix-ui/react-alert-dialog from 1.1.14 to 1.1.23"
+    "title": "Bump @radix-ui/react-alert-dialog from 1.1.14 to 1.1.23",
+    "stateAtPublication": "closed",
+    "supersededBy": 417
   },
   {
     "files": [
@@ -81,7 +88,9 @@
       }
     ],
     "number": 384,
-    "title": "Bump @radix-ui/react-collection from 1.1.7 to 1.1.15"
+    "title": "Bump @radix-ui/react-collection from 1.1.7 to 1.1.15",
+    "stateAtPublication": "closed",
+    "supersededBy": 417
   },
   {
     "files": [
@@ -91,7 +100,8 @@
       }
     ],
     "number": 383,
-    "title": "Bump actions/upload-artifact from 4 to 7"
+    "title": "Bump actions/upload-artifact from 4 to 7",
+    "stateAtPublication": "open"
   },
   {
     "files": [
@@ -101,7 +111,8 @@
       }
     ],
     "number": 382,
-    "title": "Bump actions/configure-pages from 5 to 6"
+    "title": "Bump actions/configure-pages from 5 to 6",
+    "stateAtPublication": "open"
   },
   {
     "files": [
@@ -111,7 +122,8 @@
       }
     ],
     "number": 381,
-    "title": "Bump actions/deploy-pages from 4 to 5"
+    "title": "Bump actions/deploy-pages from 4 to 5",
+    "stateAtPublication": "open"
   },
   {
     "files": [
@@ -125,7 +137,8 @@
       }
     ],
     "number": 380,
-    "title": "Bump actions/checkout from 4 to 7"
+    "title": "Bump actions/checkout from 4 to 7",
+    "stateAtPublication": "open"
   },
   {
     "files": [
@@ -135,6 +148,44 @@
       }
     ],
     "number": 379,
-    "title": "Bump actions/upload-pages-artifact from 3 to 5"
+    "title": "Bump actions/upload-pages-artifact from 3 to 5",
+    "stateAtPublication": "open"
+  },
+  {
+    "files": [
+      {
+        "filename": "docs/AUDIT_LOG_CENTER_TOUCH_PERFORMANCE.md",
+        "patch": "@@ -82,3 +82,39 @@ Portrait checks:\n ![Character record in the portrait action area](qa/center-touch/character-portrait.webp)\n \n ![Portrait job-list scrollport](qa/center-touch/jobs-portrait.webp)\n+\n+## Release follow-up: newspaper navigation state\n+\n+PR #415 was merged as `12bc383177e60b4a57d61ab3af26faa5f0147119`\n+while its full browser validation was still running. The PR run then passed 36\n+browser scenarios and failed the three `player-experience.spec.ts` scenarios at\n+the newspaper's final Next button. The main release check also failed there and\n+skipped the gated build/deployment.\n+\n+`scrollBy({ behavior: 'instant' })` changes position immediately, but the native\n+scroll event arrives later. The control could remain enabled briefly after the\n+last page had been reached. Explicit Previous/Next actions now update the page\n+and disabled states immediately; native scroll events still handle touch/wheel.\n+\n+The same unmodified browser tests now pass at 390×844, 844×390 and 1280×720:\n+three passed, zero retries, zero flaky results (87.2 seconds). They verify that\n+the final newspaper story remains visible and Next is disabled. The resulting\n+phone screenshot was visually inspected. The production build, changed-file ESLint\n+and configured TypeScript check also pass. This follow-up changes the shared control and this\n+log only; it does not remove or relax the failed checks.\n+\n+Original CI evidence: [PR run](https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34219277017),\n+[main release run](https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34219454522).\n+\n+The first full check of PR #416 passed all three newspaper cases. Its remaining\n+failure (market setup) and flaky weather case both stopped before finding the\n+Dev tab. Their five-click burst could miss the small hidden trigger while the\n+title/font layout was moving. The classic-locations test already handled the\n+title reveal correctly. That approach is now shared by all four developer-mode\n+fixtures: wait for fonts and finite title animations, then make five separate\n+real locator clicks. It does not enable the gate through code or skip gameplay\n+assertions. See [CI run](https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34220855851).\n+\n+All eight scenarios in the four affected browser files pass locally with the\n+shared setup (93.1 seconds, no retries or flaky results). ESLint passes for all\n+five changed test files. The newspaper runtime correction is unchanged."
+      },
+      {
+        "filename": "e2e/classic-locations.spec.ts",
+        "patch": "@@ -1,17 +1,14 @@\n import { expect, test } from './test';\n import { openMenuPage } from './menuPages';\n+import { enableDeveloperMode } from './developerMode';\n \n test('classic board visits retain original NPCs and usable work and bank actions', async ({page}, testInfo) => {\n   test.setTimeout(90_000);\n   const errors:string[]=[];\n   page.on('pageerror', error => errors.push(error.message));\n   await page.addInitScript(() => { Math.random = () => .99; localStorage.setItem('guild-life-board-view', 'sidebars'); });\n   await page.goto('/');\n-  // Finish the title's reveal before sending the five-click gesture.\n-  await page.locator('button[aria-hidden=\"true\"]').evaluate(async button => {\n-    await Promise.all(button.parentElement!.parentElement!.getAnimations({subtree:true}).filter(animation => Number.isFinite(animation.effect?.getComputedTiming().endTime as number)).map(animation => animation.finished.catch(() => {})));\n-  });\n-  for(let i=0;i<5;i++) await page.locator('button[aria-hidden=\"true\"]').click();\n+  await enableDeveloperMode(page);\n   await page.getByRole('button',{name:'New Adventure',exact:true}).click();\n   await page.getByPlaceholder('Enter name...').fill('Classic Hero');\n   await page.getByRole('checkbox',{name:/Show Tutorial/}).uncheck();"
+      },
+      {
+        "filename": "e2e/developerMode.ts",
+        "patch": "@@ -0,0 +1,14 @@\n+import type { Page } from '@playwright/test';\n+\n+/** Use the normal five-click gesture after the small title target stops moving. */\n+export async function enableDeveloperMode(page: Page) {\n+  await page.evaluate(() => document.fonts.ready.then(() => undefined));\n+  const trigger = page.locator('button[aria-hidden=\"true\"]');\n+  await trigger.evaluate(async button => {\n+    const animations = button.parentElement!.parentElement!.getAnimations({ subtree: true });\n+    await Promise.all(animations\n+      .filter(animation => Number.isFinite(animation.effect?.getComputedTiming().endTime as number))\n+      .map(animation => animation.finished.catch(() => {})));\n+  });\n+  for (let i = 0; i < 5; i++) await trigger.click();\n+}"
+      },
+      {
+        "filename": "e2e/living-environment.spec.ts",
+        "patch": "@@ -1,12 +1,12 @@\n import type { Page } from '@playwright/test';\n import { writeFile } from 'node:fs/promises';\n import { expect, test } from './test';\n+import { enableDeveloperMode } from './developerMode';\n \n async function startEnvironmentGame(page: Page) {\n   await page.addInitScript(() => { Math.random = () => .99; localStorage.setItem('guild-life-board-view', 'sidebars'); });\n   await page.goto('/');\n-  // Use the existing session-only developer gesture, not a new production debug route.\n-  await page.locator('button[aria-hidden=\"true\"]').click({clickCount:5,delay:80,timeout:5000});\n+  await enableDeveloperMode(page);\n   await page.getByRole('button',{name:'New Adventure',exact:true}).click();\n   await page.getByPlaceholder('Enter name...').fill('Environment Hero');\n   await page.getByRole('checkbox',{name:/Show Tutorial/}).uncheck();"
+      },
+      {
+        "filename": "e2e/material-weather.spec.ts",
+        "patch": "@@ -1,5 +1,6 @@\n import { expect, test } from './test';\n import { openMenuPage } from './menuPages';\n+import { enableDeveloperMode } from './developerMode';\n \n test('forge work, tactile menus, weather pixels and storm audio stay inside the classic board', async ({page},testInfo) => {\n   test.setTimeout(90_000);\n@@ -13,7 +14,7 @@ test('forge work, tactile menus, weather pixels and storm audio stay inside the\n     HTMLMediaElement.prototype.play=function() { played.push(this.src); return original.call(this); };\n   });\n   await page.goto('/');\n-  await page.locator('button[aria-hidden=\"true\"]').click({clickCount:5,delay:80});\n+  await enableDeveloperMode(page);\n   await page.getByRole('button',{name:'New Adventure',exact:true}).click();\n   await page.getByPlaceholder('Enter name...').fill('Forge Hero');\n   await page.getByRole('checkbox',{name:/Show Tutorial/}).uncheck();"
+      },
+      {
+        "filename": "e2e/window-cave-update.spec.ts",
+        "patch": "@@ -1,11 +1,12 @@\n import { expect, test } from './test';\n import { openMenuPage, visitLocation } from './menuPages';\n+import { enableDeveloperMode } from './developerMode';\n \n test('wrapped market tabs and paged goods keep every service reachable', async ({page},testInfo)=>{\n   test.setTimeout(90000);\n   await page.addInitScript(()=>{ Math.random=()=>.99; localStorage.setItem('guild-life-board-view', 'sidebars'); });\n   await page.goto('/');\n-  await page.locator('button[aria-hidden=\"true\"]').click({clickCount:5,delay:80});\n+  await enableDeveloperMode(page);\n   await page.getByRole('button',{name:'New Adventure',exact:true}).click();\n   await page.getByPlaceholder('Enter name...').fill('Window Hero');\n   await page.getByRole('checkbox',{name:/Show Tutorial/}).uncheck();"
+      },
+      {
+        "filename": "src/components/game/LocationPages.tsx",
+        "patch": "@@ -42,7 +42,11 @@ export function LocationPages({ children, pageKey }: { children: ReactNode; page\n \n   const turn = (direction: number) => {\n     const box = viewport.current;\n-    if (box) box.scrollBy({ top: direction * box.clientHeight, behavior: 'instant' });\n+    if (!box) return;\n+    box.scrollBy({ top: direction * box.clientHeight, behavior: 'instant' });\n+    // Button navigation is instant; disable the final control in the same update.\n+    // Native scroll events arrive later and still handle touch/wheel navigation.\n+    update();\n   };\n \n   return <ActionDock.Provider value={dock}><ScrollReset.Provider value={reset}><div className=\"location-pages\">"
+      }
+    ],
+    "number": 416,
+    "title": "Fix newspaper paging and stabilize browser test setup",
+    "reviewedHead": "daf45db2ca0aca37946b85ff3003d050facf73d6",
+    "stateAtPublication": "open",
+    "verdict": "Retain: independent newspaper paging and browser fixture corrections; no changed files overlap this cleanup."
   }
 ]

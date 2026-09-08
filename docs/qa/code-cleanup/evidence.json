@@ -9,7 +9,7 @@
     "bundleAndRenderWork": "PASS",
     "regressions": "PASS",
     "physicalDevice60fps": "UNVERIFIED",
-    "githubDelivery": "BLOCKED"
+    "githubDelivery": "PASS"
   },
   "tests": {
     "baselineUnitTests": 768,
@@ -346,10 +346,73 @@
   },
   "delivery": {
     "branch": "agent/gauntlet-code-cleanup",
-    "remoteBranchExists": false,
-    "pullRequestCreated": false,
-    "obsoletePRsClosed": false,
-    "blockedReason": "Automatic approval review rejected git push: it requires explicit user authorization to publish the new branch to the GitHub remote. No alternate write path was attempted.",
-    "pendingApproval": "Push the reviewed branch, open one pull request, and close superseded direct-dependency PRs #384, #385 and #389. No merge is requested."
+    "remoteBranchExists": true,
+    "pullRequestCreated": true,
+    "pullRequestNumber": 417,
+    "pullRequestUrl": "https://github.com/Tombonator3000/guild-life-adventures/pull/417",
+    "obsoletePRsClosed": true,
+    "closedPullRequests": [
+      384,
+      385,
+      389
+    ],
+    "retainedDependencyPullRequests": [
+      379,
+      380,
+      381,
+      382,
+      383,
+      386,
+      387,
+      388
+    ],
+    "separatelyReviewedPullRequests": [
+      416
+    ],
+    "merged": false,
+    "publicationMethod": "Connected GitHub app: blobs, tree, commit and branch",
+    "localSnapshotCommit": "d38ad6b1108da1fadbb82370cb31af296ed2299e",
+    "publishedSnapshotCommit": "702c198aac5e71aa9e8a1bcd782a45c1b4a5afd8",
+    "publishedSnapshotTree": "379cf39a29b54b3246ce98f48d7c9a037f858a23",
+    "publishedTreeMatchesLocalSnapshot": true,
+    "authorization": "The owner explicitly approved publishing the reviewed branch, opening one PR and closing #384, #385 and #389 in the 2026-09-08 follow-up.",
+    "history": [
+      {
+        "status": "BLOCKED",
+        "reason": "Automatic approval review rejected git push: it requires explicit user authorization to publish the new branch to the GitHub remote. No alternate write path was attempted."
+      },
+      {
+        "status": "AUTHORIZED",
+        "result": "Owner approved the requested publication and three closures."
+      },
+      {
+        "status": "GIT_AUTH_UNAVAILABLE",
+        "result": "Local git push could not read a GitHub username. The connected GitHub app published an exactly matching source tree."
+      },
+      {
+        "status": "PUBLISHED",
+        "result": "PR #417 is open; #384, #385 and #389 are closed without merging. Subsequent delivery-record edits are documentation only."
+      }
+    ],
+    "ciCheckpoint": {
+      "head": "702c198aac5e71aa9e8a1bcd782a45c1b4a5afd8",
+      "status": "in_progress",
+      "runs": [
+        {
+          "id": 34223682925,
+          "url": "https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34223682925",
+          "event": "pull_request",
+          "status": "in_progress",
+          "conclusion": null
+        },
+        {
+          "id": 34223652466,
+          "url": "https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34223652466",
+          "event": "push",
+          "status": "in_progress",
+          "conclusion": null
+        }
+      ]
+    }
   }
 }
