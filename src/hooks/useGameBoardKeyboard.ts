@@ -34,6 +34,7 @@ export function useGameBoardKeyboard({
 }) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return;
       const target = e.target as HTMLElement | null;
       const isTyping = target?.isContentEditable
         || target?.tagName === 'INPUT'
@@ -47,6 +48,8 @@ export function useGameBoardKeyboard({
       // Block game shortcuts when any Radix dialog/modal is open, except
       // developer shortcuts (Ctrl+Shift) and Escape.
       const hasOpenDialog = !!document.querySelector('[role="dialog"]');
+      // Let the open dialog own Escape instead of also opening the game menu.
+      if (hasOpenDialog && e.key === 'Escape') return;
       if (hasOpenDialog && !e.ctrlKey && !e.shiftKey && e.key !== 'Escape') return;
 
       if (e.ctrlKey && e.shiftKey && e.key === 'Z' && isDevMode()) {
@@ -90,7 +93,7 @@ export function useGameBoardKeyboard({
         if (document.fullscreenElement) {
           document.exitFullscreen().catch(() => {});
         } else {
-          document.documentElement.requestFullscreen().catch(() => {});
+          document.documentElement.requestFullscreen?.().catch(() => {});
         }
       }
       // B = Toggle fullboard mode (hide/show sidebars)

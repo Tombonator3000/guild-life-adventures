@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { Player } from '@/types/game.types';
 
 export function useGameBoardUiState() {
@@ -7,8 +7,16 @@ export function useGameBoardUiState() {
   const [showGameMenu, setShowGameMenu] = useState(false);
   const [showLeftDrawer, setShowLeftDrawer] = useState(false);
   const [showRightDrawer, setShowRightDrawer] = useState(false);
-  const [fullboardMode, setFullboardMode] = useState(false);
+  const [fullboardMode, setFullboardMode] = useState(() => {
+    try { return localStorage.getItem('guild-life-board-view') !== 'sidebars'; }
+    catch { return true; }
+  });
   const [viewingPlayer, setViewingPlayer] = useState<Player | null>(null);
+
+  useEffect(() => {
+    try { localStorage.setItem('guild-life-board-view', fullboardMode ? 'immersive' : 'sidebars'); }
+    catch { /* The view still works when browser storage is unavailable. */ }
+  }, [fullboardMode]);
 
   const openZoneEditor = useCallback(() => setShowZoneEditor(true), []);
   const closeZoneEditor = useCallback(() => setShowZoneEditor(false), []);

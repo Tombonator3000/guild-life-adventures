@@ -1,9 +1,9 @@
 import { expect, test } from './test';
-import { openMenuPage } from './menuPages';
+import { openMenuPage, visitLocation } from './menuPages';
 
 test('wrapped market tabs and paged goods keep every service reachable', async ({page},testInfo)=>{
   test.setTimeout(90000);
-  await page.addInitScript(()=>{ Math.random=()=>.99; });
+  await page.addInitScript(()=>{ Math.random=()=>.99; localStorage.setItem('guild-life-board-view', 'sidebars'); });
   await page.goto('/');
   await page.locator('button[aria-hidden="true"]').click({clickCount:5,delay:80});
   await page.getByRole('button',{name:'New Adventure',exact:true}).click();
@@ -62,7 +62,7 @@ test('cave load, encounter, result, retreat and settlement remain clear inside t
   });
   await page.reload();
   await page.getByRole('button',{name:/Continue Game/i}).click();
-  await page.locator('[data-zone-id="cave"]').click();
+  await visitLocation(page, 'cave');
   const entry=page.getByRole('button',{name:/Enter Floor 1/});
   await openMenuPage(page,entry); await entry.click();
   const intro=page.getByRole('region',{name:'Current encounter'});

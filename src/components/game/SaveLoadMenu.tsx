@@ -71,7 +71,7 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative parchment-panel p-6 w-full max-w-md">
+      <div className="relative parchment-panel guild-support-menu p-6 w-full max-w-md">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-display text-2xl text-card-foreground">{t('saveLoad.gameMenu')}</h2>

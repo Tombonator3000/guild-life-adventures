@@ -1,3 +1,4 @@
+import { visitLocation } from './menuPages';
 import { expect,test } from './test';
 for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1280,height:720}]) {
  test(`a remembered branch unlocks one favor at ${viewport.width}`,async({page},info)=>{
@@ -17,7 +18,7 @@ for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1280
   });
   await page.reload();await page.getByRole('button',{name:/Continue Game/}).click();
   if(await page.evaluate(()=>!!document.fullscreenElement))await page.keyboard.press('f');
-  await page.locator('[data-zone-id="guild-hall"]').click();
+  await visitLocation(page, 'guild-hall');
   const shell=page.locator('.location-shell[data-location="guild-hall"]'),picker=shell.locator('.location-service-picker');
   if(await picker.isVisible())await picker.click();
   await shell.getByRole('button',{name:'Your contact',exact:true}).click();

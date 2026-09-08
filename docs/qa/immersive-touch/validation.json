@@ -1,0 +1,79 @@
+{
+  "base": "e80e4def6e70fed68c41048f3d6267d0b70640b6",
+  "unit": {
+    "tests": 765,
+    "files": 101,
+    "passed": true
+  },
+  "production_build": "passed",
+  "configured_types": "passed",
+  "extended_app_types": {
+    "baseline_diagnostics": 185,
+    "current_diagnostics": 185,
+    "added": 0
+  },
+  "eslint": {
+    "errors": 0,
+    "inherited_warnings": 27
+  },
+  "browser_runs": [
+    {
+      "report": "immersive-full-e2e-final.json",
+      "startTime": "2026-09-08T09:57:01.145Z",
+      "duration": 283770.657,
+      "expected": 32,
+      "skipped": 0,
+      "unexpected": 6,
+      "flaky": 0
+    },
+    {
+      "report": "immersive-regression-corrections.json",
+      "startTime": "2026-09-08T10:03:02.145Z",
+      "duration": 140161.385,
+      "expected": 14,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    {
+      "report": "immersive-online-final.json",
+      "startTime": "2026-09-08T10:05:20.336Z",
+      "duration": 14626.469000000001,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    }
+  ],
+  "scenarios_with_passing_local_coverage": 38,
+  "unverified": [
+    "Physical iPad/Safari",
+    "Physical-device frame rate"
+  ],
+  "screenshots": {
+    "immersion-desktop.webp": {
+      "sha256": "0960d6c185a6077870c49fa9a17df8c624792bc093da1f57bf2c61ef8df0c1de"
+    },
+    "landscape-character.webp": {
+      "sha256": "f86de347db3f4a12aba07ec6c46db1844fa98c82bc0c2bfa28e200b38094a9f1"
+    },
+    "landscape-menu.webp": {
+      "sha256": "198deb31c2f4f7fceeb5b1b95666681d1c2fbbda125a8057ef33f3bd20cc033b"
+    },
+    "landscape-options.webp": {
+      "sha256": "c2593fcb740849ee9b5ff78f11c0ad69c5a9c71b4a9b42ef32bb27e7c25f2d2f"
+    },
+    "landscape-players.webp": {
+      "sha256": "ebbcfb0e5c59c33903eabba99e8c506891ee3fead7ef503f95b7037708835380"
+    },
+    "manual.webp": {
+      "sha256": "8d89244467f15b6906afa8927bb9fc0e856f823a5e0438893b6e7cb3e915adb2"
+    },
+    "portrait-character.webp": {
+      "sha256": "6e6796f30400446bd74b621577b3c1880061c72804fbbd56c7d172604d502dcc"
+    },
+    "portrait-menu.webp": {
+      "sha256": "e274ee08ba2fbbb405a4c673a774ca6c59db0a11174a21b4a0f36b18ad563feb"
+    }
+  }
+}

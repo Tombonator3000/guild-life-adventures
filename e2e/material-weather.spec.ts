@@ -6,7 +6,7 @@ test('forge work, tactile menus, weather pixels and storm audio stay inside the 
   const errors:string[]=[];
   page.on('pageerror', e => errors.push(e.message));
   await page.addInitScript(() => {
-    Math.random=()=>.99;
+    Math.random=()=>.99; localStorage.setItem('guild-life-board-view', 'sidebars');
     const original=HTMLMediaElement.prototype.play;
     const played:string[]=[];
     Object.defineProperty(window,'playedMedia',{value:played});

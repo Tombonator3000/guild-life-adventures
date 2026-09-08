@@ -149,7 +149,12 @@
 .location-menu { display:flex; overflow:clip; }
 .location-content { overflow:clip; padding:8px; display:flex; flex-direction:column; }
 .location-pages { flex:1; min-height:0; display:flex; flex-direction:column; }
-.location-page-viewport { flex:1; min-height:0; overflow:clip; }
+.location-page-viewport { flex:1; min-height:0; overflow:clip; touch-action:pinch-zoom; }
+.location-page-viewport[data-dragging="true"] { user-select:none; -webkit-user-select:none; }
+.location-page-viewport:not([data-dragging]) .location-page-flow { transition:transform 140ms ease-out; }
+.menu-swipe-hint { display:none; }
+@media (pointer:coarse) { .menu-swipe-hint { display:block; font-size:9px; text-align:center; opacity:.75; } }
+@media (prefers-reduced-motion:reduce) { .location-page-viewport .location-page-flow { transition:none!important; } }
 .location-page-flow { height:100%; column-width:auto; column-count:1; column-gap:16px; column-fill:auto; overflow:visible; }
 .location-page-flow :is(button,li,tr,h2,h3,h4,p) { break-inside:avoid; }
 

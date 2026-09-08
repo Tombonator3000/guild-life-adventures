@@ -47,6 +47,7 @@ interface RightSideTabsProps {
   onSkipAITurn: () => void;
   initialTab?: TabId;
   onToggleFullboard?: () => void;
+  compact?: boolean;
 }
 
 export function RightSideTabs({
@@ -63,6 +64,7 @@ export function RightSideTabs({
   onSkipAITurn,
   initialTab,
   onToggleFullboard,
+  compact = false,
 }: RightSideTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>(initialTab ?? 'players');
   const { isFullscreen, toggleFullscreen } = useFullscreen();
@@ -71,10 +73,10 @@ export function RightSideTabs({
   const TABS = getTabs(t).filter(tab => tab.id !== 'developer' || devMode);
 
   return (
-    <div className="guild-sidebar h-full flex flex-col bg-parchment rounded-lg border-2 border-wood-dark/50 overflow-hidden">
+    <div className={`guild-sidebar ${compact ? 'guild-sidebar--compact' : ''} h-full flex flex-col bg-parchment rounded-lg border-2 border-wood-dark/50 overflow-hidden`}>
       <PanelDecoration />
       {/* Header with Current Turn & Menu/Fullscreen */}
-      <div className="flex items-center justify-between p-2 bg-gradient-to-b from-wood-dark to-wood border-b-2 border-wood-light">
+      <div className="sidebar-heading flex items-center justify-between p-2 bg-gradient-to-b from-wood-dark to-wood border-b-2 border-wood-light">
         <div className="flex items-center gap-1.5 min-w-0">
           <Crown className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
           <h3 className="font-display text-xs font-bold text-parchment truncate">

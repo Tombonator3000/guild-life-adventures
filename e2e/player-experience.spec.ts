@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './test';
-import { openMenuPage } from './menuPages';
+import { openMenuPage, selectLocationService, visitLocation } from './menuPages';
 
 // Mature saved games provide fixtures; purchases, reading and paging use real UI controls.
 async function loadFixture(page: Page, location: string, housing = 'slums', furnished = true, hours = 20) {
@@ -23,7 +23,8 @@ async function loadFixture(page: Page, location: string, housing = 'slums', furn
   await page.reload();
   await page.getByRole('button', { name: /Continue Game/i }).click();
   if (await page.evaluate(() => !!document.fullscreenElement)) await page.keyboard.press('f');
-  await page.locator(`[data-zone-id="${location}"]`).click();
+  // The central token now opens the character record; tap the building beside it.
+  await visitLocation(page, location);
 }
 
 for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1280, height: 720 }]) {
@@ -91,7 +92,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     await page.screenshot({ path: info.outputPath('armory-equipped.png') });
 
     await loadFixture(page, 'bank');
-    await page.getByRole('button', { name: 'The Broker', exact: true }).click();
+    await selectLocationService(page, 'The Broker');
     const statement = page.getByRole('button', { name: 'View last dividend settlement' });
     await expect(statement).toBeInViewport();
     await expect(page.getByRole('button', { name: /^Sell All/ })).toBeInViewport();

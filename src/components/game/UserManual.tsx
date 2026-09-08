@@ -248,6 +248,18 @@ function BoardChapter() {
   return (
     <div>
       <H1>The Board</H1>
+      <H2>Display modes & touch controls</H2>
+      <P>The immersive board is the default: the city fills the available space and the sidebars stay out of the way. Your display choice is remembered on this device.</P>
+      <Table headers={['Mode or control', 'How to use it']} rows={[
+        ['Immersive board', 'Tap your portrait in the top bar, or a player token on the map, for Stats, Inventory and Goals. Players, awards and Options open in one compact panel.'],
+        ['Sidebars', 'On a wide screen, choose Show sidebars or press B. Choose the fullboard button in the sidebar, or B again, to return to the immersive board.'],
+        ['Browser fullscreen', 'New Adventure and Continue request fullscreen where supported. Use the fullscreen button or F to toggle it. The board layout and browser fullscreen are separate choices.'],
+        ['Menu pages', 'Swipe left or up for the next page; right or down for the previous page. Previous and Next buttons also work. Tap buttons normally and drag sliders to adjust them.'],
+        ['Phone & small tablet', 'The layout adapts to the screen. Tap your portrait or Stats for character details; Players opens the other panels. Drag the map to see nearby locations.'],
+        ['Close a character panel', 'Tap Close, tap outside the panel, or press Escape. E ends a turn only after the panel has closed.'],
+      ]} />
+      <Tip>Immersive mode keeps gold, hours, health and food in the top bar on wide screens. Tap the portrait for the rest; no sidebar information is lost.</Tip>
+      <H2>Locations</H2>
       <P>{PLAYER_RULE_TEXT.movement}</P>
       <Table headers={['Location', 'Main purpose']} rows={[
         ['Guild Hall', 'Job applications, Guild Pass, bounties and quests'],

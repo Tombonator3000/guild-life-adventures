@@ -1,4 +1,4 @@
-import { openMenuPage } from './menuPages';
+import { openMenuPage, selectLocationService } from './menuPages';
 import type { Page } from '@playwright/test';
 import { expect, test } from './test';
 import { installLocalPeerNetwork } from './local-peer-network';
@@ -139,6 +139,7 @@ test('host and guest can start, synchronize an action, reconnect, and keep playi
     await expect(deposit).toBeVisible({ timeout: 10_000 });
     await deposit.click();
 
+    await guest.locator('.immersive-player').click();
     await guest.getByText('Finances & education', { exact: true }).click();
     const guestFinances = guest.getByRole('heading', { name: 'Finances' }).locator('..');
     await expect(guestFinances.getByText('50g', { exact: true })).toBeVisible({ timeout: 15_000 });
@@ -152,10 +153,13 @@ test('host and guest can start, synchronize an action, reconnect, and keep playi
     });
     await expect.poll(() => connectionCount(guest), { timeout: 15_000 }).toBe(1);
 
+    await guest.keyboard.press('Escape');
     const withdraw = guest.getByRole('button', { name: /withdraw 50/i });
     await expect(withdraw).toBeVisible();
     await withdraw.click();
-    await expect(guestFinances.getByText('0g', { exact: true })).toBeVisible({ timeout: 15_000 });
+    await guest.locator('.immersive-player').click();
+    await guest.getByText('Finances & education', { exact: true }).click();
+    await expect(guestFinances.getByText('Savings', { exact: true }).locator('../..').getByText('0g', { exact: true })).toBeVisible({ timeout: 15_000 });
 
     expect(pageErrors, `Unexpected page errors:\n${pageErrors.join('\n')}`).toEqual([]);
   } finally {
@@ -212,6 +216,7 @@ test('guest securely rejoins the same player after a page refresh with a new pee
     await expect(deposit).toBeVisible({ timeout: 10_000 });
     await deposit.click();
 
+    await guest.locator('.immersive-player').click();
     await guest.getByText('Finances & education', { exact: true }).click();
     const guestFinances = guest.getByRole('heading', { name: 'Finances' }).locator('..');
     await expect(guestFinances.getByText('50g', { exact: true })).toBeVisible({ timeout: 15_000 });
@@ -245,7 +250,7 @@ test('rejected sabotage and Fence actions unlock immediately instead of waiting 
     await expect(guest.getByText("Reject Guest's Turn", { exact: true })).toBeVisible({ timeout: 15_000 });
 
     await guest.locator('[data-zone-id="shadow-market"]').click();
-    await guest.getByRole('button', { name: 'Sabotage', exact: true }).click();
+    await selectLocationService(guest, 'Sabotage');
     const sabotage = guest.getByRole('button', { name: /Hire Shadowfingers: Pickpocket/i });
     await expect(sabotage).toBeVisible({ timeout: 10_000 });
     await expect(sabotage).toBeEnabled();
@@ -261,7 +266,7 @@ test('rejected sabotage and Fence actions unlock immediately instead of waiting 
     await expect(guest.getByRole('button', { name: /Hire Shadowfingers: Pickpocket/i })).toBeEnabled();
 
     await guest.locator('[data-zone-id="fence"]').click();
-    await guest.getByRole('button', { name: 'Protection', exact: true }).click();
+    await selectLocationService(guest, 'Protection');
     const protection = guest.getByRole('button', { name: /Protection — 3 Weeks/i });
     await expect(protection).toBeVisible({ timeout: 10_000 });
     await expect(protection).toBeEnabled();

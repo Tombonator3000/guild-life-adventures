@@ -357,6 +357,7 @@ export function GameBoard() {
             economyTrend,
             weather,
             onExitFullboard: exitFullboard,
+            onOpenPlayer: () => setViewingPlayer(currentPlayer),
           } : null}
         />
       )}

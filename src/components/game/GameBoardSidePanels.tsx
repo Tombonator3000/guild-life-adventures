@@ -5,6 +5,7 @@ import { RightSideTabs } from './RightSideTabs';
 import { MobileHUD } from './MobileHUD';
 import { MobileDrawer } from './MobileDrawer';
 import { StoneBorderFrame } from './StoneBorderFrame';
+import './immersive-ui.css';
 
 type OptionalProps<T extends ElementType> = ComponentProps<T> | null;
 type DrawerStateProps = Pick<ComponentProps<typeof MobileDrawer>, 'isOpen' | 'onClose'>;
@@ -58,7 +59,7 @@ export function GameBoardSidePanels({
   return (
     <div
       className={`relative isolate w-screen h-screen-safe overflow-hidden bg-background flex safe-area-all ${isMobile ? 'flex-col' : 'flex-row'}`}
-      style={!isMobile && fullboardMode ? { paddingTop: '2rem' } : undefined}
+      style={!isMobile && fullboardMode ? { paddingTop: 'calc(56px + env(safe-area-inset-top, 0px))' } : undefined}
     >
       {isMobile && mobileHUDProps && <div data-fx-protect><MobileHUD {...mobileHUDProps} /></div>}
 
@@ -97,14 +98,14 @@ export function GameBoardSidePanels({
             side="left"
             title="Stats & Inventory"
           >
-            {sideInfoProps && <SideInfoTabs {...sideInfoProps} />}
+            {sideInfoProps && <SideInfoTabs {...sideInfoProps} compact />}
           </MobileDrawer>
           <MobileDrawer
             {...rightDrawerProps}
             side="right"
             title="Players & Options"
           >
-            <RightSideTabs {...sharedRightSideProps} {...mobileRightActions} />
+            <RightSideTabs {...sharedRightSideProps} {...mobileRightActions} compact />
           </MobileDrawer>
         </>
       )}

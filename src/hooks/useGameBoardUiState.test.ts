@@ -1,11 +1,12 @@
 import { act, renderHook } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import type { Player } from '@/types/game.types';
 import { useGameBoardUiState } from './useGameBoardUiState';
 
 const player = { id: 'player-one', name: 'Player One' } as Player;
 
 describe('useGameBoardUiState', () => {
+  beforeEach(() => localStorage.removeItem('guild-life-board-view'));
   it('starts with all transient UI closed', () => {
     const { result } = renderHook(() => useGameBoardUiState());
 
@@ -14,8 +15,20 @@ describe('useGameBoardUiState', () => {
     expect(result.current.showGameMenu).toBe(false);
     expect(result.current.showLeftDrawer).toBe(false);
     expect(result.current.showRightDrawer).toBe(false);
-    expect(result.current.fullboardMode).toBe(false);
+    expect(result.current.fullboardMode).toBe(true);
     expect(result.current.viewingPlayer).toBeNull();
+  });
+
+  it('remembers an explicit sidebar choice across remounts', () => {
+    const first = renderHook(() => useGameBoardUiState());
+    act(() => first.result.current.exitFullboard());
+    first.unmount();
+    const second = renderHook(() => useGameBoardUiState());
+    expect(second.result.current.fullboardMode).toBe(false);
+    act(() => second.result.current.enterFullboard());
+    second.unmount();
+    const third = renderHook(() => useGameBoardUiState());
+    expect(third.result.current.fullboardMode).toBe(true);
   });
 
   it('opens and closes the regular menu, drawers and fullboard mode', () => {

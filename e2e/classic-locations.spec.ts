@@ -5,7 +5,7 @@ test('classic board visits retain original NPCs and usable work and bank actions
   test.setTimeout(90_000);
   const errors:string[]=[];
   page.on('pageerror', error => errors.push(error.message));
-  await page.addInitScript(() => { Math.random = () => .99; });
+  await page.addInitScript(() => { Math.random = () => .99; localStorage.setItem('guild-life-board-view', 'sidebars'); });
   await page.goto('/');
   // Finish the title's reveal before sending the five-click gesture.
   await page.locator('button[aria-hidden="true"]').evaluate(async button => {
