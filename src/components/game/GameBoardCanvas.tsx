@@ -1,4 +1,5 @@
 import { BoardEnvironment } from './environment/BoardEnvironment';
+import { MobileBoardLayout } from './MobileBoardLayout';
 import type { ComponentProps, ReactNode } from 'react';
 import { LOCATIONS, getMovementCost } from '@/data/locations';
 import { getQuestLocationObjectives } from '@/data/quests';
@@ -17,6 +18,7 @@ type CenterPanel = { top: number; left: number; width: number; height: number };
 type WeatherState = ReturnType<typeof useGameStore.getState>['weather'];
 type LocationHex = ReturnType<typeof useGameStore.getState>['locationHexes'][number];
 type BoardLocation = (typeof LOCATIONS)[number];
+const NO_BOARD_PANEL = { top: 0, left: 0, width: 0, height: 0 };
 
 interface GameBoardCanvasProps {
   children: ReactNode;
@@ -71,8 +73,8 @@ export function GameBoardCanvas({
   const questObjectives = getQuestLocationObjectives(currentPlayer?.activeQuest ?? null, chainProgress);
   const questProgress = currentPlayer?.questLocationProgress ?? [];
 
-  return (
-    <div className="relative w-full h-full">
+  const board = (
+    <div className="relative w-full h-full" data-board-art>
       <div
         className="absolute inset-0 bg-no-repeat"
         style={{ backgroundImage: `url(${gameBoard})`, backgroundSize: '100% 100%' }}
@@ -145,12 +147,13 @@ export function GameBoardCanvas({
         </div>
       )}
 
-      <BoardEnvironment centerPanel={centerPanel} />
+      <BoardEnvironment centerPanel={isMobile ? NO_BOARD_PANEL : centerPanel} />
       <DebugOverlay customZones={customZones} centerPanel={debugCenterPanel} visible={showDebugOverlay} />
       <BoardBanterOverlay centerPanel={centerPanel} isMobile={isMobile} />
-      {children}
+      {!isMobile && children}
     </div>
   );
+  return isMobile ? <MobileBoardLayout menu={children}>{board}</MobileBoardLayout> : board;
 }
 
 function BoardBanterOverlay({ centerPanel, isMobile }: { centerPanel: CenterPanel; isMobile: boolean }) {

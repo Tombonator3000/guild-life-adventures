@@ -25,6 +25,7 @@ export interface LocationTab {
   content: ReactNode;
   badge?: string;
   hidden?: boolean;
+  paged?: boolean;
 }
 
 export interface WorkInfo {
@@ -75,7 +76,8 @@ export function LocationShell({ npc, tabs, defaultTab, locationId, locationName,
   const [servicesOpen, setServicesOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState(defaultTab || visibleTabs[0]?.id || '');
   const activeTab = visibleTabs.some(tab => tab.id === selectedTab) ? selectedTab : visibleTabs[0]?.id;
-  const activeContent = visibleTabs.find(tab => tab.id === activeTab)?.content;
+  const selectedService = visibleTabs.find(tab => tab.id === activeTab);
+  const activeContent = selectedService?.content;
   const { tryTriggerBanter } = useBanter();
   const player = useCurrentPlayer();
   const players = useGameStore(state => state.players);
@@ -124,7 +126,7 @@ export function LocationShell({ npc, tabs, defaultTab, locationId, locationName,
               ))}
             </nav>}
             <div id={`${id}-content`} className="location-content" data-ui-sound={serviceSound(locationId, activeTab)} onClick={() => tryTriggerBanter(locationId)}>
-              <LocationPages pageKey={`${locationId}-${activeTab}`}>{activeContent}</LocationPages>
+              {selectedService?.paged === false ? activeContent : <LocationPages pageKey={`${locationId}-${activeTab}`}>{activeContent}</LocationPages>}
             </div>
             {hasWork && activeTab !== 'your-shift' && <button className="workplace-return" data-ui-sound="menu-open" onClick={() => setSelectedTab('your-shift')}>Your shift · {workInfo!.hoursPerShift}h · +{workInfo!.earnings}g →</button>}
           </div>
