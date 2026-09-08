@@ -29,6 +29,8 @@ Avkrysning gjelder implementert funksjonalitet. Samlet nettleser- og leveranseko
 - [x] Steg 3 — arrangementer og rapport
 - [x] Steg 4 — simulator og baseline
 - [x] Steg 5 — NPC-er og rivaler
-- [ ] Steg 6 — verifisert leveranse
+- [x] Steg 6 — verifisert leveranse
+
+Fullført implementasjon: [Gauntlet-logg](../AUDIT_LOG_PLAYABILITY.md), [faktiske skjermbilder](../qa/playability/README.md) og [1000-spillsrapport](../qa/playability/balance/report.md). Samlet funksjonskontroll på `dd4568a`: 752 enhetstester og 32 nettlesertester uten retries, samt simulatorprøve, typegate, build, lint og lydkontroll bestod.
 
 Fysisk Samsung S24 og langvarig 60 fps er ikke verifisert i arbeidsmiljøet. Utvidet app-typesjekk har 185 eksisterende diagnostikker ved start; nye feil skal ikke aksepteres. Fremdrift, korreksjoner og kilderevisjon for bevis føres i `docs/AUDIT_LOG_PLAYABILITY.md`.

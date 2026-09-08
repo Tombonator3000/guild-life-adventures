@@ -40,3 +40,9 @@ CI `34182254977` på `9e20976`: 752 enhetstester og simulator-røykprøve bestod
 CI `34182998684` på `6dd579c`: alle 752 enhetstester, 32 nettlesertester uten retries, simulatorprøve, build, typegate, lint og lydkontroll bestod. De faktiske PNG-ene bekreftet rettet NPC-navn og våpentekst, bankhandlinger og ukeplan. Inventarbildet i 844×390 avslørte likevel at det store portrettet tok nesten hele panelets høyde. `toBeVisible` bekreftet bare at elementet var rendret, ikke at det var innenfor synsfeltet. Portrettet beholder samme bilde og forhold, men får en kompakt rad i lav mobil-landskapvisning. Gjenstandstesten krever nå `toBeInViewport({ratio:1})`. Ny samlet CI kreves før levering.
 
 Bildet av Loans viste også kvitteringen fra forrige aksjesalg. Banktjenestene får hver sin React-nøkkel slik at midlertidig kvittering og inntastinger starter på nytt ved tjenestebytte. Nettlesertesten avviser lekket salgskvittering på lånesiden.
+
+## 2026-09-08 — verifisert implementasjon
+
+CI `34183620307` på `dd4568aaee581fa989cd6f9f53695857bb3da377` bestod alle steg: 752 enhetstester, reproduserbar tre-spillsprøve, typegate, produksjonsbygg, lint, lydkontroll og 32 nettlesertester uten retries. Faktiske nye PNG-er fra artefakt `10039889224` viser hele gjenstanden og et kompakt originalportrett i 844×390, samt lånesiden uten en fremmed salgskvittering. Den skjerpede viewport-asserten består i 390×844, 844×390 og 1280×720.
+
+Åtte uendrede runtime-PNG-er med revisjon, kjøring og SHA-256 er bevart i [QA-pakken](qa/playability/README.md). Den utvidede app-typesjekken er sammenlignet med startbaseline: samme 185 eksisterende diagnostikker, ingen nye. Git-diffen for grafiske ressurser inneholder bare de nye gjenstandsatlasene og deres metadata; brett, portretter og figurer er ikke byttet ut. Etter denne funksjonskontrollen tilføyes bare planstatus, logg og QA-bevis. PR #412 leveres samlet for gjennomgang; ingen automatisk merge eller produksjonsdeploy.
