@@ -137,7 +137,7 @@ export function ContextualTips() {
       )}
       
       {/* Tip panel */}
-      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4 animate-fade-in">
+      <div data-fx-protect className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4 animate-fade-in pointer-events-none">
         <div className="bg-[#f0e8d8] border-2 border-[#c9a227] rounded-lg p-4 shadow-xl">
           <div className="flex items-start justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -146,7 +146,7 @@ export function ContextualTips() {
             </div>
             <button
               onClick={handleDismiss}
-              className="p-1 text-[#8b7355] hover:text-[#3d2a14] transition-colors"
+              className="pointer-events-auto p-1 text-[#8b7355] hover:text-[#3d2a14] transition-colors"
             >
               <X className="w-4 h-4" />
             </button>

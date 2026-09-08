@@ -167,6 +167,7 @@ export function TopDropdownMenu({
   return (
     <div
       ref={containerRef}
+      data-fx-protect
       className="fixed top-0 left-0 right-0 z-[60] select-none"
       onMouseEnter={cancelHide}
       onMouseLeave={scheduleHide}

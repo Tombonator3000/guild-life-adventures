@@ -1,0 +1,13 @@
+{
+  "ambientMotionChanged": true,
+  "samples": 180,
+  "averageFps": 59.669826957501854,
+  "p95Ms": 16.700000000000728,
+  "p99Ms": 16.80000000000109,
+  "conditions": "CI Chromium, development build, desktop storm. Not a physical-device benchmark.",
+  "heatRenderer": "ready",
+  "protectedPixels": [
+    0,
+    0
+  ]
+}

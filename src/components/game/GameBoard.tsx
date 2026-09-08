@@ -1,3 +1,4 @@
+import { EnvironmentProvider } from './environment/EnvironmentProvider';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { MOVEMENT_PATHS } from '@/data/locations';
@@ -231,6 +232,7 @@ export function GameBoard() {
     : null;
 
   return (
+    <EnvironmentProvider isMobile={isMobile}>
     <GameBoardSidePanels
       isMobile={isMobile}
       fullboardMode={fullboardMode}
@@ -428,5 +430,6 @@ export function GameBoard() {
         )}
       </GameBoardCanvas>
     </GameBoardSidePanels>
+    </EnvironmentProvider>
   );
 }

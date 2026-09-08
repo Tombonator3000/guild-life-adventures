@@ -1,3 +1,4 @@
+import { ScreenEventFX } from './environment/ScreenEventFX';
 import type { ComponentProps, ElementType, ReactNode } from 'react';
 import { SideInfoTabs } from './SideInfoTabs';
 import { RightSideTabs } from './RightSideTabs';
@@ -56,13 +57,14 @@ export function GameBoardSidePanels({
 }: GameBoardSidePanelsProps) {
   return (
     <div
-      className={`w-screen h-screen-safe overflow-hidden bg-background flex safe-area-all ${isMobile ? 'flex-col' : 'flex-row'}`}
+      className={`relative isolate w-screen h-screen-safe overflow-hidden bg-background flex safe-area-all ${isMobile ? 'flex-col' : 'flex-row'}`}
       style={!isMobile && fullboardMode ? { paddingTop: '2rem' } : undefined}
     >
-      {isMobile && mobileHUDProps && <MobileHUD {...mobileHUDProps} />}
+      {isMobile && mobileHUDProps && <div data-fx-protect><MobileHUD {...mobileHUDProps} /></div>}
 
       {!isMobile && !fullboardMode && (
         <div
+          data-fx-protect
           className="relative z-30 flex flex-col flex-shrink-0 h-full"
           style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
         >
@@ -78,6 +80,7 @@ export function GameBoardSidePanels({
 
       {!isMobile && !fullboardMode && (
         <div
+          data-fx-protect
           className="relative z-30 flex flex-col flex-shrink-0 h-full"
           style={{ width: `${SIDE_PANEL_WIDTH_PERCENT}%` }}
         >
@@ -106,6 +109,7 @@ export function GameBoardSidePanels({
         </>
       )}
 
+      <ScreenEventFX />
       {auxiliaryContent}
     </div>
   );

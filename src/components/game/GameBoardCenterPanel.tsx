@@ -45,6 +45,7 @@ export function GameBoardCenterPanel({
 
   return (
     <div
+      data-fx-protect={`${centerPanel.top},${centerPanel.left},${centerPanel.width},${centerPanel.height}`}
       className={`absolute overflow-hidden z-10 ${isMobile ? 'rounded-xl' : ''}`}
       style={{
         top: `${centerPanel.top}%`,
