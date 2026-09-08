@@ -82,3 +82,39 @@ Portrait checks:
 ![Character record in the portrait action area](qa/center-touch/character-portrait.webp)
 
 ![Portrait job-list scrollport](qa/center-touch/jobs-portrait.webp)
+
+## Release follow-up: newspaper navigation state
+
+PR #415 was merged as `12bc383177e60b4a57d61ab3af26faa5f0147119`
+while its full browser validation was still running. The PR run then passed 36
+browser scenarios and failed the three `player-experience.spec.ts` scenarios at
+the newspaper's final Next button. The main release check also failed there and
+skipped the gated build/deployment.
+
+`scrollBy({ behavior: 'instant' })` changes position immediately, but the native
+scroll event arrives later. The control could remain enabled briefly after the
+last page had been reached. Explicit Previous/Next actions now update the page
+and disabled states immediately; native scroll events still handle touch/wheel.
+
+The same unmodified browser tests now pass at 390×844, 844×390 and 1280×720:
+three passed, zero retries, zero flaky results (87.2 seconds). They verify that
+the final newspaper story remains visible and Next is disabled. The resulting
+phone screenshot was visually inspected. The production build, changed-file ESLint
+and configured TypeScript check also pass. This follow-up changes the shared control and this
+log only; it does not remove or relax the failed checks.
+
+Original CI evidence: [PR run](https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34219277017),
+[main release run](https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34219454522).
+
+The first full check of PR #416 passed all three newspaper cases. Its remaining
+failure (market setup) and flaky weather case both stopped before finding the
+Dev tab. Their five-click burst could miss the small hidden trigger while the
+title/font layout was moving. The classic-locations test already handled the
+title reveal correctly. That approach is now shared by all four developer-mode
+fixtures: wait for fonts and finite title animations, then make five separate
+real locator clicks. It does not enable the gate through code or skip gameplay
+assertions. See [CI run](https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34220855851).
+
+All eight scenarios in the four affected browser files pass locally with the
+shared setup (93.1 seconds, no retries or flaky results). ESLint passes for all
+five changed test files. The newspaper runtime correction is unchanged.

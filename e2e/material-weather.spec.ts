@@ -1,5 +1,6 @@
 import { expect, test } from './test';
 import { openMenuPage } from './menuPages';
+import { enableDeveloperMode } from './developerMode';
 
 test('forge work, tactile menus, weather pixels and storm audio stay inside the classic board', async ({page},testInfo) => {
   test.setTimeout(90_000);
@@ -13,7 +14,7 @@ test('forge work, tactile menus, weather pixels and storm audio stay inside the 
     HTMLMediaElement.prototype.play=function() { played.push(this.src); return original.call(this); };
   });
   await page.goto('/');
-  await page.locator('button[aria-hidden="true"]').click({clickCount:5,delay:80});
+  await enableDeveloperMode(page);
   await page.getByRole('button',{name:'New Adventure',exact:true}).click();
   await page.getByPlaceholder('Enter name...').fill('Forge Hero');
   await page.getByRole('checkbox',{name:/Show Tutorial/}).uncheck();
