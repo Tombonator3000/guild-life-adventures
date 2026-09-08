@@ -14352,3 +14352,10 @@ The automatic approval reviewer initially blocked the GitHub upload. The owner e
 ## 2026-09-08 — Immersive board and touch menus
 
 The owner requested finger browsing in central menus, character information from portraits, immersive mode as the default, and clearer fullboard menus. Added directional menu swipes with purchase-click suppression, live character dialogs shared with sidebars, a persistent display choice and a compact toolbar/ledger. The existing fullscreen gesture on New Adventure/Continue is retained, and modes/controls are documented in the in-game manual. Fixed a portrait-tablet grid rule that collapsed the action area and protected Escape while inspecting a character. Original board, tokens and portraits are retained. Validation and screenshots: docs/AUDIT_LOG_IMMERSIVE_TOUCH.md.
+
+
+## 2026-09-08 — Gauntlet code cleanup and open-PR review
+
+Removed 50 unused source files and 33 unused direct dependencies after tracing runtime, test and tooling consumers. Scoped 15 store subscriptions, memoized resource summaries and derived the AI action contract from one canonical selector. Replaced the no-op TypeScript command with real app/build checks and corrected its 185 diagnostics without excluding code. Preserved the live tutorial, board art, native touch flow, save format and multiplayer services.
+
+All eleven open Dependabot patches were inspected: three direct dependency updates are superseded by the cleanup; eight still address used packages/workflows. Details, evidence and final validation status are in [the cleanup audit](docs/AUDIT_LOG_CODE_CLEANUP.md).

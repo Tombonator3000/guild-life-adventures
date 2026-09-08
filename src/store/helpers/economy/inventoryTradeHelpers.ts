@@ -14,7 +14,7 @@ export function getFenceInventorySellPrice(itemId: string, priceModifier: number
  */
 export function createInventoryTradeActions(set: SetFn, get: GetFn) {
   return {
-    sellInventoryItem: (playerId: string, itemId: string): ActionResult | void => {
+    sellInventoryItem: (playerId: string, itemId: string): ActionResult | undefined => {
       const state = get();
       const player = state.players.find(candidate => candidate.id === playerId);
       if (!player) return { success: false, message: 'Player not found.' };

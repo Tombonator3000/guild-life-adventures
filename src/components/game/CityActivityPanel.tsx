@@ -1,10 +1,16 @@
+import { useShallow } from 'zustand/react/shallow';
 import { useState } from 'react';
 import { cityActivityBlock, cityActivityOutcome, getCityActivities } from '@/data/cityActivities';
 import { useCurrentPlayer, useGameStore } from '@/store/gameStore';
 import type { LocationId } from '@/types/game.types';
 
 export function CityActivityPanel({ location }: { location: LocationId }) {
-  const state = useGameStore();
+  const state = useGameStore(useShallow(state => ({
+    week: state.week,
+    activeFestival: state.activeFestival,
+    weather: state.weather,
+    performCityActivity: state.performCityActivity,
+  })));
   const player = useCurrentPlayer();
   const activities = getCityActivities(location, state);
   const [selected, setSelected] = useState('');

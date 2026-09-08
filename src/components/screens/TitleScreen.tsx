@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import { lazy, Suspense, useRef, useState, useMemo } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { Save, Trash2, Volume2, VolumeX, Download, Settings, Info, Share, Plus, X, BookOpen, ScrollText } from 'lucide-react';
@@ -41,7 +42,10 @@ const HEX_SECONDARY: React.CSSProperties = {
 
 export function TitleScreen() {
   // === ALL HOOKS BEFORE ANY EARLY RETURNS ===
-  const { setPhase, loadFromSlot } = useGameStore();
+  const { setPhase, loadFromSlot } = useGameStore(useShallow(state => ({
+    setPhase: state.setPhase,
+    loadFromSlot: state.loadFromSlot,
+  })));
   const [showLoadMenu, setShowLoadMenu] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [showManual, setShowManual] = useState(false);

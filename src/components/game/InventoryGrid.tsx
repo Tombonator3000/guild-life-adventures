@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 // InventoryGrid - Medieval-styled grid inventory with drag-drop and tooltips
 // Inspired by classic RPG inventory systems
 
@@ -49,7 +50,12 @@ interface InventoryGridProps {
 }
 
 export function InventoryGrid({ player }: InventoryGridProps) {
-  const store = useGameStore();
+  const store = useGameStore(useShallow(state => ({
+    equipItem: state.equipItem,
+    unequipItem: state.unequipItem,
+    castLocationHex: state.castLocationHex,
+    castPersonalCurse: state.castPersonalCurse,
+  })));
   const { equipItem, unequipItem } = store;
   const players = useGameStore(s => s.players);
   const [draggedItem, setDraggedItem] = useState<InventoryItem | null>(null);

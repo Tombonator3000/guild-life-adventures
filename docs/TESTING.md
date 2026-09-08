@@ -17,6 +17,8 @@ bun run test:e2e
 
 Lydkontrollen krever at `ffmpeg` og `ffprobe` er tilgjengelig lokalt.
 
+`check:types` kontrollerer både `tsconfig.app.json` (inkludert enhetstester) og `tsconfig.node.json`. Ikke bruk bare `tsc --noEmit`: rotkonfigurasjonen er en løsning uten egne kildefiler og kontrollerer ikke appen.
+
 Den samlede lokale hovedkontrollen kan kjøres med:
 
 ```bash

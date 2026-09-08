@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 /**
  * Contextual Tips System — auto-triggered tips based on game state
  * Shows helpful hints when the player is in a situation where guidance would help.
@@ -106,7 +107,12 @@ const CONTEXTUAL_TIPS: ContextualTip[] = [
 const dismissedTips = new Set<string>();
 
 export function ContextualTips() {
-  const { players, currentPlayerIndex, week, showTutorial } = useGameStore();
+  const { players, currentPlayerIndex, week, showTutorial } = useGameStore(useShallow(state => ({
+    players: state.players,
+    currentPlayerIndex: state.currentPlayerIndex,
+    week: state.week,
+    showTutorial: state.showTutorial,
+  })));
   const player = players[currentPlayerIndex];
   const [dismissedLocal, setDismissedLocal] = useState<Set<string>>(new Set(dismissedTips));
 

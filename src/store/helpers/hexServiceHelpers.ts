@@ -43,7 +43,7 @@ export function createHexServiceActions(set: SetFn, get: GetFn) {
       playerId: string,
       vendor: HexVendor,
       hexId: string,
-    ): ActionResult | void => {
+    ): ActionResult | undefined => {
       const disabled = featureEnabled();
       if (disabled) return disabled;
 
@@ -86,7 +86,7 @@ export function createHexServiceActions(set: SetFn, get: GetFn) {
       playerId: string,
       service: HexDefenseService,
       targetLocation?: LocationId,
-    ): ActionResult | void => {
+    ): ActionResult | undefined => {
       const disabled = featureEnabled();
       if (disabled) return disabled;
 
@@ -161,7 +161,7 @@ export function createHexServiceActions(set: SetFn, get: GetFn) {
     useGraveyardHexService: (
       playerId: string,
       service: GraveyardHexService,
-    ): GraveyardHexResult | void => {
+    ): GraveyardHexResult | undefined => {
       const disabled = featureEnabled();
       if (disabled) return disabled;
 

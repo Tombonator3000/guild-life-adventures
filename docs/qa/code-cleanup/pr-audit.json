@@ -1,0 +1,140 @@
+[
+  {
+    "files": [
+      {
+        "filename": "bun.lock",
+        "patch": "(lockfile)"
+      },
+      {
+        "filename": "package.json",
+        "patch": "@@ -45,7 +45,7 @@\n     \"@radix-ui/react-switch\": \"^1.2.5\",\n     \"@radix-ui/react-tabs\": \"^1.1.12\",\n     \"@radix-ui/react-toast\": \"^1.2.14\",\n-    \"@radix-ui/react-toggle\": \"^1.1.9\",\n+    \"@radix-ui/react-toggle\": \"^1.1.18\",\n     \"@radix-ui/react-toggle-group\": \"^1.1.10\",\n     \"@radix-ui/react-tooltip\": \"^1.2.7\",\n     \"@tanstack/react-query\": \"^5.83.0\","
+      }
+    ],
+    "number": 389,
+    "title": "Bump @radix-ui/react-toggle from 1.1.9 to 1.1.18"
+  },
+  {
+    "files": [
+      {
+        "filename": "bun.lock",
+        "patch": "(lockfile)"
+      },
+      {
+        "filename": "package.json",
+        "patch": "@@ -99,7 +99,7 @@\n     \"tailwindcss\": \"^3.4.17\",\n     \"typescript\": \"^5.8.3\",\n     \"typescript-eslint\": \"^8.38.0\",\n-    \"vite\": \"^5.4.19\",\n+    \"vite\": \"^8.1.5\",\n     \"vite-plugin-pwa\": \"^1.2.0\",\n     \"vitest\": \"^3.2.4\"\n   }"
+      }
+    ],
+    "number": 388,
+    "title": "Bump vite from 5.4.19 to 8.1.5"
+  },
+  {
+    "files": [
+      {
+        "filename": "bun.lock",
+        "patch": "(lockfile)"
+      },
+      {
+        "filename": "package.json",
+        "patch": "@@ -44,7 +44,7 @@\n     \"@radix-ui/react-slot\": \"^1.2.3\",\n     \"@radix-ui/react-switch\": \"^1.2.5\",\n     \"@radix-ui/react-tabs\": \"^1.1.12\",\n-    \"@radix-ui/react-toast\": \"^1.2.14\",\n+    \"@radix-ui/react-toast\": \"^1.2.23\",\n     \"@radix-ui/react-toggle\": \"^1.1.9\",\n     \"@radix-ui/react-toggle-group\": \"^1.1.10\",\n     \"@radix-ui/react-tooltip\": \"^1.2.7\","
+      }
+    ],
+    "number": 387,
+    "title": "Bump @radix-ui/react-toast from 1.2.14 to 1.2.23"
+  },
+  {
+    "files": [
+      {
+        "filename": "bun.lock",
+        "patch": "(lockfile)"
+      },
+      {
+        "filename": "package.json",
+        "patch": "@@ -95,7 +95,7 @@\n     \"lovable-tagger\": \"^1.1.13\",\n     \"partykit\": \"^0.0.115\",\n     \"postcss\": \"^8.5.6\",\n-    \"sharp\": \"^0.34.5\",\n+    \"sharp\": \"^0.35.3\",\n     \"tailwindcss\": \"^3.4.17\",\n     \"typescript\": \"^5.8.3\",\n     \"typescript-eslint\": \"^8.38.0\","
+      }
+    ],
+    "number": 386,
+    "title": "Bump sharp from 0.34.5 to 0.35.3"
+  },
+  {
+    "files": [
+      {
+        "filename": "bun.lock",
+        "patch": "(lockfile)"
+      },
+      {
+        "filename": "package.json",
+        "patch": "@@ -21,7 +21,7 @@\n     \"@hookform/resolvers\": \"^3.10.0\",\n     \"@jridgewell/set-array\": \"^1.2.1\",\n     \"@radix-ui/react-accordion\": \"^1.2.11\",\n-    \"@radix-ui/react-alert-dialog\": \"^1.1.14\",\n+    \"@radix-ui/react-alert-dialog\": \"^1.1.23\",\n     \"@radix-ui/react-aspect-ratio\": \"^1.1.7\",\n     \"@radix-ui/react-avatar\": \"^1.1.10\",\n     \"@radix-ui/react-checkbox\": \"^1.3.2\","
+      }
+    ],
+    "number": 385,
+    "title": "Bump @radix-ui/react-alert-dialog from 1.1.14 to 1.1.23"
+  },
+  {
+    "files": [
+      {
+        "filename": "bun.lock",
+        "patch": "(lockfile)"
+      },
+      {
+        "filename": "package.json",
+        "patch": "@@ -26,7 +26,7 @@\n     \"@radix-ui/react-avatar\": \"^1.1.10\",\n     \"@radix-ui/react-checkbox\": \"^1.3.2\",\n     \"@radix-ui/react-collapsible\": \"^1.1.11\",\n-    \"@radix-ui/react-collection\": \"^1.1.7\",\n+    \"@radix-ui/react-collection\": \"^1.1.15\",\n     \"@radix-ui/react-context-menu\": \"^2.2.15\",\n     \"@radix-ui/react-dialog\": \"^1.1.14\",\n     \"@radix-ui/react-dropdown-menu\": \"^2.1.15\","
+      }
+    ],
+    "number": 384,
+    "title": "Bump @radix-ui/react-collection from 1.1.7 to 1.1.15"
+  },
+  {
+    "files": [
+      {
+        "filename": ".github/workflows/agent-validate.yml",
+        "patch": "@@ -55,7 +55,7 @@ jobs:\n \n       - name: Upload unit test output\n         if: always()\n-        uses: actions/upload-artifact@v4\n+        uses: actions/upload-artifact@v7\n         with:\n           name: vitest-output\n           path: vitest-output.txt\n@@ -76,7 +76,7 @@ jobs:\n \n       - name: Upload lint output\n         if: always()\n-        uses: actions/upload-artifact@v4\n+        uses: actions/upload-artifact@v7\n         with:\n           name: lint-output\n           path: lint-output.txt\n@@ -92,7 +92,7 @@ jobs:\n \n       - name: Upload audio audit\n         if: always()\n-        uses: actions/upload-artifact@v4\n+        uses: actions/upload-artifact@v7\n         with:\n           name: audio-audit\n           path: audio-audit\n@@ -106,7 +106,7 @@ jobs:\n \n       - name: Upload browser test artifacts\n         if: failure()\n-        uses: actions/upload-artifact@v4\n+        uses: actions/upload-artifact@v7\n         with:\n           name: playwright-test-results\n           path: test-results"
+      }
+    ],
+    "number": 383,
+    "title": "Bump actions/upload-artifact from 4 to 7"
+  },
+  {
+    "files": [
+      {
+        "filename": ".github/workflows/deploy-github-pages.yml",
+        "patch": "@@ -97,7 +97,7 @@ jobs:\n         run: touch dist/.nojekyll\n \n       - name: Setup Pages\n-        uses: actions/configure-pages@v5\n+        uses: actions/configure-pages@v6\n \n       - name: Upload Pages artifact\n         uses: actions/upload-pages-artifact@v3"
+      }
+    ],
+    "number": 382,
+    "title": "Bump actions/configure-pages from 5 to 6"
+  },
+  {
+    "files": [
+      {
+        "filename": ".github/workflows/deploy-github-pages.yml",
+        "patch": "@@ -116,7 +116,7 @@ jobs:\n     steps:\n       - name: Deploy to GitHub Pages\n         id: deployment\n-        uses: actions/deploy-pages@v4\n+        uses: actions/deploy-pages@v5\n \n   smoke-test:\n     name: Verify published site"
+      }
+    ],
+    "number": 381,
+    "title": "Bump actions/deploy-pages from 4 to 5"
+  },
+  {
+    "files": [
+      {
+        "filename": ".github/workflows/agent-validate.yml",
+        "patch": "@@ -23,7 +23,7 @@ jobs:\n     timeout-minutes: 35\n     steps:\n       - name: Checkout\n-        uses: actions/checkout@v4\n+        uses: actions/checkout@v7\n \n       - name: Setup Bun\n         uses: oven-sh/setup-bun@v2"
+      },
+      {
+        "filename": ".github/workflows/deploy-github-pages.yml",
+        "patch": "@@ -49,7 +49,7 @@ jobs:\n \n       - name: Checkout\n         if: steps.credentials.outputs.configured == 'true'\n-        uses: actions/checkout@v4\n+        uses: actions/checkout@v7\n \n       - name: Setup Bun\n         if: steps.credentials.outputs.configured == 'true'\n@@ -75,7 +75,7 @@ jobs:\n     timeout-minutes: 15\n     steps:\n       - name: Checkout\n-        uses: actions/checkout@v4\n+        uses: actions/checkout@v7\n \n       - name: Setup Bun\n         uses: oven-sh/setup-bun@v2"
+      }
+    ],
+    "number": 380,
+    "title": "Bump actions/checkout from 4 to 7"
+  },
+  {
+    "files": [
+      {
+        "filename": ".github/workflows/deploy-github-pages.yml",
+        "patch": "@@ -100,7 +100,7 @@ jobs:\n         uses: actions/configure-pages@v5\n \n       - name: Upload Pages artifact\n-        uses: actions/upload-pages-artifact@v3\n+        uses: actions/upload-pages-artifact@v5\n         with:\n           path: dist\n "
+      }
+    ],
+    "number": 379,
+    "title": "Bump actions/upload-pages-artifact from 3 to 5"
+  }
+]

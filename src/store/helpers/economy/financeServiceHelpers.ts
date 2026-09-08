@@ -33,7 +33,7 @@ export function createFinanceServiceActions(set: SetFn, get: GetFn) {
       playerId: string,
       direction: BankTransferDirection,
       amount: number,
-    ): ActionResult | void => {
+    ): ActionResult | undefined => {
       const amountError = validatePositiveInteger(amount, MAX_TRANSFER_AMOUNT, 'Transfer amount');
       if (amountError) return amountError;
       const state = get();
@@ -78,7 +78,7 @@ export function createFinanceServiceActions(set: SetFn, get: GetFn) {
       side: StockTradeSide,
       stockId: string,
       shares: number,
-    ): ActionResult | void => {
+    ): ActionResult | undefined => {
       const shareError = validatePositiveInteger(shares, MAX_STOCK_SHARES, 'Share count');
       if (shareError) return shareError;
       const state = get();
@@ -134,7 +134,7 @@ export function createFinanceServiceActions(set: SetFn, get: GetFn) {
       playerId: string,
       service: LoanService,
       amount: number | 'all',
-    ): ActionResult | void => {
+    ): ActionResult | undefined => {
       const state = get();
       const visit = validateBankVisit(state, playerId);
       if ('error' in visit) return visit.error;

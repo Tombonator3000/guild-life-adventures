@@ -1,0 +1,182 @@
+[
+  {
+    "file": "App-DuUT4728.js",
+    "bytes": 874702,
+    "gzip": 277883
+  },
+  {
+    "file": "AudioController-CqmQWtSi.js",
+    "bytes": 278,
+    "gzip": 229
+  },
+  {
+    "file": "ChangelogScreen-Bw4cu8LK.js",
+    "bytes": 16901,
+    "gzip": 7073
+  },
+  {
+    "file": "CharacterPortrait-C0v-ZyLb.js",
+    "bytes": 7177,
+    "gzip": 2471
+  },
+  {
+    "file": "CreditsScreen-k147vtAv.js",
+    "bytes": 9446,
+    "gzip": 3554
+  },
+  {
+    "file": "GameBoard-DJU6BGnr.js",
+    "bytes": 697747,
+    "gzip": 202323
+  },
+  {
+    "file": "GameBoard-DuIordUX.css",
+    "bytes": 53974,
+    "gzip": 11896
+  },
+  {
+    "file": "GameSetup-DA15oZcY.js",
+    "bytes": 14230,
+    "gzip": 4465
+  },
+  {
+    "file": "HighScoreScreen-a_dO3wqO.js",
+    "bytes": 6260,
+    "gzip": 2348
+  },
+  {
+    "file": "OnlineLobby-BPg2aHbt.js",
+    "bytes": 415124,
+    "gzip": 122705
+  },
+  {
+    "file": "OptionsMenu-lKi_8jz3.js",
+    "bytes": 34099,
+    "gzip": 9885
+  },
+  {
+    "file": "PortraitPicker-D3JyPZEZ.js",
+    "bytes": 4032,
+    "gzip": 1736
+  },
+  {
+    "file": "UserManual-BhUgdfAI.js",
+    "bytes": 26659,
+    "gzip": 9260
+  },
+  {
+    "file": "VictoryScreen-BOcKQZG7.js",
+    "bytes": 415960,
+    "gzip": 114803
+  },
+  {
+    "file": "calculateGoalProgress-CYnObH4q.js",
+    "bytes": 2601,
+    "gzip": 1039
+  },
+  {
+    "file": "crown-CmgMcqFM.js",
+    "bytes": 529,
+    "gzip": 359
+  },
+  {
+    "file": "eye-C52ZOeDy.js",
+    "bytes": 418,
+    "gzip": 301
+  },
+  {
+    "file": "game-board-CjV40vCq.js",
+    "bytes": 59,
+    "gzip": 79
+  },
+  {
+    "file": "globe-Dwz2Vcc5.js",
+    "bytes": 409,
+    "gzip": 293
+  },
+  {
+    "file": "heart-DeKZfeRT.js",
+    "bytes": 1262,
+    "gzip": 555
+  },
+  {
+    "file": "index-BMv8Mjy8.css",
+    "bytes": 124076,
+    "gzip": 21107
+  },
+  {
+    "file": "index-DOAHrJQg.js",
+    "bytes": 145284,
+    "gzip": 47066
+  },
+  {
+    "file": "index-DfP5gAqZ.js",
+    "bytes": 203,
+    "gzip": 176
+  },
+  {
+    "file": "loader-circle-CRAYDpUA.js",
+    "bytes": 310,
+    "gzip": 257
+  },
+  {
+    "file": "minus-fj9Tf3Kd.js",
+    "bytes": 655,
+    "gzip": 338
+  },
+  {
+    "file": "playerFacingRules-CIUxI0Ng.js",
+    "bytes": 5194,
+    "gzip": 2526
+  },
+  {
+    "file": "scroll-area-DjErLEvk.js",
+    "bytes": 12524,
+    "gzip": 3951
+  },
+  {
+    "file": "sparkles-DfSinFIm.js",
+    "bytes": 924,
+    "gzip": 440
+  },
+  {
+    "file": "star-BaDd2zAh.js",
+    "bytes": 1111,
+    "gzip": 536
+  },
+  {
+    "file": "useNarration-D6b2SoP7.js",
+    "bytes": 16205,
+    "gzip": 5114
+  },
+  {
+    "file": "users-C95Kv84U.js",
+    "bytes": 715,
+    "gzip": 362
+  },
+  {
+    "file": "wifi-CfpjqriV.js",
+    "bytes": 1987,
+    "gzip": 630
+  },
+  {
+    "file": "workbox-window.prod.es5-vqzQaGvo.js",
+    "bytes": 5719,
+    "gzip": 2349
+  },
+  {
+    "file": "worldLeaderboard-BLr6ilpC.js",
+    "bytes": 16483,
+    "gzip": 5866
+  },
+  {
+    "file": "wrench-Cj-6DY00.js",
+    "bytes": 1346,
+    "gzip": 529
+  },
+  {
+    "file": "zap-D7ZkTndu.js",
+    "bytes": 683,
+    "gzip": 363
+  }
+]

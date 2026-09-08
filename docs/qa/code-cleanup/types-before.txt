@@ -1,0 +1,367 @@
+src/components/game/CavePanel.tsx(391,35): error TS2339: Property 'message' does not exist on type 'void | DungeonActionResult'.
+  Property 'message' does not exist on type 'void'.
+src/components/game/CombatView.tsx(92,17): error TS2339: Property 'summary' does not exist on type 'void | DungeonActionResult'.
+  Property 'summary' does not exist on type 'void'.
+src/components/game/GeneralStorePanel.tsx(65,17): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/components/game/GraveyardPanel.tsx(25,17): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/components/game/HealerPanel.tsx(26,17): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/components/game/TutorialOverlay.test.tsx(81,9): error TS2353: Object literal may only specify known properties, and 'isSpectating' does not exist in type 'GameStore | Partial<GameStore> | ((state: GameStore) => GameStore | Partial<GameStore>)'.
+src/components/game/TutorialOverlay.tsx(143,5): error TS2339: Property 'isSpectating' does not exist on type 'GameStore'.
+src/hooks/ai/actionExecutor.ts(161,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/actionExecutor.ts(166,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/actionExecutor.ts(171,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/employmentEducationHandlers.ts(17,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/employmentEducationHandlers.ts(29,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/employmentEducationHandlers.ts(34,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/employmentEducationHandlers.ts(41,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/employmentEducationHandlers.ts(48,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/equipmentHandlers.ts(30,16): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/equipmentHandlers.ts(46,16): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/equipmentHandlers.ts(57,18): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/equipmentHandlers.ts(64,18): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/equipmentHandlers.ts(75,18): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/equipmentHandlers.ts(82,18): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/equipmentHandlers.ts(97,18): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/equipmentHandlers.ts(104,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/hexHandlers.ts(32,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/hexHandlers.ts(39,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/hexHandlers.ts(44,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; backfired?: boolean; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/housingFinanceHandlers.ts(20,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/housingFinanceHandlers.ts(27,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/housingFinanceHandlers.ts(34,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/housingFinanceHandlers.ts(43,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/housingFinanceHandlers.ts(50,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/housingFinanceHandlers.ts(58,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/housingFinanceHandlers.ts(65,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/housingFinanceHandlers.ts(73,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/housingFinanceHandlers.ts(81,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/questDungeonHandlers.ts(78,17): error TS2339: Property 'success' does not exist on type 'void | DungeonActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/questDungeonHandlers.ts(78,26): error TS2322: Type 'void | DungeonActionResult' is not assignable to type 'DungeonActionResult'.
+  Type 'void' is not assignable to type 'DungeonActionResult'.
+src/hooks/ai/handlers/questDungeonHandlers.ts(89,22): error TS2339: Property 'success' does not exist on type 'void | DungeonActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/questDungeonHandlers.ts(89,31): error TS2322: Type 'void | DungeonActionResult' is not assignable to type 'DungeonActionResult'.
+  Type 'void' is not assignable to type 'DungeonActionResult'.
+src/hooks/ai/handlers/questDungeonHandlers.ts(101,22): error TS2339: Property 'success' does not exist on type 'void | DungeonActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/ai/handlers/questDungeonHandlers.ts(101,31): error TS2322: Type 'void | DungeonActionResult' is not assignable to type 'DungeonActionResult'.
+  Type 'void' is not assignable to type 'DungeonActionResult'.
+src/hooks/ai/handlers/questDungeonHandlers.ts(106,5): error TS2322: Type 'void | DungeonActionResult' is not assignable to type 'DungeonActionResult'.
+  Type 'void' is not assignable to type 'DungeonActionResult'.
+src/hooks/ai/handlers/resourceHandlers.ts(22,18): error TS2339: Property 'success' does not exist on type 'void | { success: boolean; message: string; }'.
+  Property 'success' does not exist on type 'void'.
+src/hooks/useGrimwaldAI.ts(92,5): error TS2353: Object literal may only specify known properties, and 'sellItem' does not exist in type 'StoreActions'.
+src/lib/calculateGoalProgress.test.ts(51,27): error TS2352: Conversion of type '"degree-1"[]' to type 'DegreeId[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '"degree-1"' is not comparable to type 'DegreeId'.
+src/lib/calculateGoalProgress.test.ts(106,27): error TS2352: Conversion of type '("a" | "b")[]' to type 'DegreeId[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '"a" | "b"' is not comparable to type 'DegreeId'.
+    Type '"b"' is not comparable to type 'DegreeId'.
+src/store/helpers/aiResourceServiceHelpers.ts(29,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/store/helpers/dungeonServiceHelpers.ts(18,15): error TS2459: Module '"@/types/game.types"' declares 'FestivalId' locally, but it is not exported.
+src/test/applianceServices.test.ts(36,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/applianceServices.test.ts(68,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/applianceServices.test.ts(86,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/applianceServices.test.ts(105,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/applianceServices.test.ts(123,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/applianceServices.test.ts(152,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/applianceServices.test.ts(183,18): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/applianceServices.test.ts(192,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/atomicServices.test.ts(45,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/atomicServices.test.ts(69,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/atomicServices.test.ts(110,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/atomicServices.test.ts(117,20): error TS2339: Property 'message' does not exist on type 'void | ActionResult'.
+  Property 'message' does not exist on type 'void'.
+src/test/atomicServices.test.ts(136,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/caveRest.test.ts(44,20): error TS2339: Property 'success' does not exist on type 'void | DungeonActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/caveRest.test.ts(57,20): error TS2339: Property 'success' does not exist on type 'void | DungeonActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/caveRest.test.ts(65,70): error TS2339: Property 'success' does not exist on type 'void | DungeonActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/caveRest.test.ts(68,63): error TS2339: Property 'success' does not exist on type 'void | DungeonActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/caveRest.test.ts(71,67): error TS2339: Property 'success' does not exist on type 'void | DungeonActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/caveRest.test.ts(78,66): error TS2339: Property 'success' does not exist on type 'void | DungeonActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/caveRest.test.ts(80,63): error TS2339: Property 'success' does not exist on type 'void | DungeonActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/dungeonServices.test.ts(57,20): error TS2339: Property 'success' does not exist on type 'void | DungeonActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/dungeonServices.test.ts(68,67): error TS2339: Property 'success' does not exist on type 'void | DungeonActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/dungeonServices.test.ts(71,73): error TS2339: Property 'success' does not exist on type 'void | DungeonActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/dungeonServices.test.ts(74,65): error TS2339: Property 'success' does not exist on type 'void | DungeonActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/dungeonServices.test.ts(77,66): error TS2339: Property 'success' does not exist on type 'void | DungeonActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/dungeonServices.test.ts(86,20): error TS2339: Property 'success' does not exist on type 'void | DungeonActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/dungeonServices.test.ts(102,20): error TS2339: Property 'success' does not exist on type 'void | DungeonActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/dungeonServices.test.ts(112,66): error TS2339: Property 'success' does not exist on type 'void | DungeonActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/dungeonServices.test.ts(172,20): error TS2339: Property 'success' does not exist on type 'void | DungeonActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/dungeonServices.test.ts(173,20): error TS2339: Property 'summary' does not exist on type 'void | DungeonActionResult'.
+  Property 'summary' does not exist on type 'void'.
+src/test/employmentEducationServices.test.ts(41,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/employmentEducationServices.test.ts(64,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/employmentEducationServices.test.ts(84,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/employmentEducationServices.test.ts(105,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/employmentEducationServices.test.ts(123,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/employmentOffers.test.ts(38,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/employmentOffers.test.ts(53,80): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/employmentOffers.test.ts(62,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/employmentOffers.test.ts(81,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/employmentOffers.test.ts(82,20): error TS2339: Property 'message' does not exist on type 'void | ActionResult'.
+  Property 'message' does not exist on type 'void'.
+src/test/employmentOffers.test.ts(94,79): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/employmentOffers.test.ts(109,66): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/employmentOffers.test.ts(111,66): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/equipmentServices.test.ts(35,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/equipmentServices.test.ts(54,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/equipmentServices.test.ts(74,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/equipmentServices.test.ts(95,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/equipmentServices.test.ts(115,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/equipmentServices.test.ts(140,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/equipmentServices.test.ts(163,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/equipmentServices.test.ts(188,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(36,81): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(37,82): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(45,81): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(46,82): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(47,83): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(49,80): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(56,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(57,20): error TS2339: Property 'message' does not exist on type 'void | ActionResult'.
+  Property 'message' does not exist on type 'void'.
+src/test/financeServices.test.ts(66,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(73,85): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(74,86): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(82,85): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(83,86): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(84,84): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(85,85): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(90,84): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(98,73): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(99,73): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(100,73): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(102,73): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(107,72): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(108,72): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/financeServices.test.ts(109,74): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/healerServices.test.ts(44,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/healerServices.test.ts(56,72): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/healerServices.test.ts(62,76): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/healerServices.test.ts(72,73): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/healerServices.test.ts(80,74): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/healerServices.test.ts(81,73): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/healerServices.test.ts(87,71): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/healerServices.test.ts(90,73): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/hexServices.test.ts(60,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/hexServices.test.ts(71,90): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/hexServices.test.ts(75,100): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/hexServices.test.ts(83,86): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/hexServices.test.ts(91,19): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/hexServices.test.ts(94,71): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/hexServices.test.ts(122,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/hexServices.test.ts(131,71): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/hexServices.test.ts(132,80): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/hexServices.test.ts(141,20): error TS2339: Property 'success' does not exist on type 'void | (ActionResult & { backfired?: boolean; })'.
+  Property 'success' does not exist on type 'void'.
+src/test/hexServices.test.ts(142,20): error TS2339: Property 'backfired' does not exist on type 'void | (ActionResult & { backfired?: boolean; })'.
+  Property 'backfired' does not exist on type 'void'.
+src/test/hexServices.test.ts(161,20): error TS2339: Property 'success' does not exist on type 'void | (ActionResult & { backfired?: boolean; })'.
+  Property 'success' does not exist on type 'void'.
+src/test/homeActivities.test.ts(44,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/homeActivities.test.ts(58,76): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/homeActivities.test.ts(70,76): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/homeActivities.test.ts(81,76): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/homeActivities.test.ts(89,78): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/homeActivities.test.ts(92,75): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/housingServices.test.ts(46,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/housingServices.test.ts(63,65): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/housingServices.test.ts(67,65): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/housingServices.test.ts(75,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/housingServices.test.ts(85,78): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/housingServices.test.ts(86,81): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/housingServices.test.ts(89,78): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/housingServices.test.ts(98,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/housingServices.test.ts(110,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/inventoryTradeServices.test.ts(36,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/inventoryTradeServices.test.ts(57,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/inventoryTradeServices.test.ts(70,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/inventoryTradeServices.test.ts(87,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/tavernService.test.ts(50,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/tavernService.test.ts(59,80): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/tavernService.test.ts(62,81): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/tavernService.test.ts(65,72): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/tavernService.test.ts(74,75): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/tavernService.test.ts(92,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/tavernService.test.ts(97,20): error TS2339: Property 'message' does not exist on type 'void | ActionResult'.
+  Property 'message' does not exist on type 'void'.
+src/test/travelService.test.ts(41,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/travelService.test.ts(69,8): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/travelService.test.ts(78,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/travelService.test.ts(89,8): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/travelService.test.ts(93,8): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/travelService.test.ts(104,78): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/travelService.test.ts(118,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/vendorServices.test.ts(35,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/vendorServices.test.ts(54,19): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/vendorServices.test.ts(59,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/vendorServices.test.ts(78,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/vendorServices.test.ts(97,19): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/vendorServices.test.ts(98,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/vendorServices.test.ts(118,21): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/vendorServices.test.ts(119,21): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/vendorServices.test.ts(120,23): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.
+src/test/vendorServices.test.ts(131,20): error TS2339: Property 'success' does not exist on type 'void | ActionResult'.
+  Property 'success' does not exist on type 'void'.

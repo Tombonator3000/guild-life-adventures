@@ -1,10 +1,15 @@
+import { memo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useCurrentPlayer, useGameStore } from '@/store/gameStore';
 import { GoalProgress } from './GoalProgress';
 import { ThisWeek } from './ThisWeek';
 
-export function ResourcePanel() {
+export const ResourcePanel = memo(function ResourcePanel() {
   const player = useCurrentPlayer();
-  const { goalSettings, week } = useGameStore();
+  const { goalSettings, week } = useGameStore(useShallow(state => ({
+    goalSettings: state.goalSettings,
+    week: state.week,
+  })));
 
   if (!player) return null;
 
@@ -32,4 +37,4 @@ export function ResourcePanel() {
       </div>
     </div>
   );
-}
+});

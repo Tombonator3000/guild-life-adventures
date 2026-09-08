@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { getPath } from '@/data/locations';
 import { type GameEvent } from '@/components/game/EventModal';
@@ -80,16 +81,16 @@ export function useLocationClick({
   getCurrentIntermediateLocation: () => LocationId | null;
   getAccumulatedSteps: () => number;
 }) {
-  const {
-    selectedLocation,
-    selectLocation,
-    week,
-    eventMessage,
-    eventSource,
-    phase,
-    dismissEvent,
-    weather,
-  } = useGameStore();
+  const { selectedLocation, selectLocation, week, eventMessage, eventSource, phase, dismissEvent, weather } = useGameStore(useShallow(state => ({
+    selectedLocation: state.selectedLocation,
+    selectLocation: state.selectLocation,
+    week: state.week,
+    eventMessage: state.eventMessage,
+    eventSource: state.eventSource,
+    phase: state.phase,
+    dismissEvent: state.dismissEvent,
+    weather: state.weather,
+  })));
   const currentPlayer = useCurrentPlayer();
 
   const handleLocationClick = (locationId: string) => {

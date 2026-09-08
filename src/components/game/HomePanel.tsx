@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import type { Player, LocationId } from '@/types/game.types';
 import { useTranslation } from '@/i18n';
 import { HOUSING_DATA } from '@/data/housing';
@@ -28,7 +29,11 @@ export function HomePanel({
   onDone,
 }: HomePanelProps) {
   const { t } = useTranslation();
-  const store = useGameStore();
+  const store = useGameStore(useShallow(state => ({
+    completeLocationObjective: state.completeLocationObjective,
+    performHomeActivity: state.performHomeActivity,
+    swapOutfits: state.swapOutfits,
+  })));
 
   // LOQ: Quest objective banner for home locations
   // Use nlChainProgress for nlchain quests, questChainProgress for linear chains

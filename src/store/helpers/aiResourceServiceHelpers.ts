@@ -15,7 +15,7 @@ export function createAIResourceServiceActions(_set: unknown, get: GetFn) {
       playerId: string,
       vendor: AIResourceVendor,
       itemId: string,
-    ): ActionResult | void => {
+    ): ActionResult | undefined => {
       const player = get().players.find(candidate => candidate.id === playerId);
       if (!player) return { success: false, message: 'Player not found.' };
       if (player.timeRemaining < 1) return { success: false, message: 'Not enough time to shop.' };

@@ -22,7 +22,8 @@ import { DIFFICULTY_SETTINGS } from '@/hooks/ai/types';
 import type { AIDifficulty, AIAction, CommitmentPlan } from '@/hooks/ai/types';
 import { calculateGoalProgress, calculateResourceUrgency, getWeakestGoal } from '@/hooks/ai/strategy';
 import { generateActions } from '@/hooks/ai/actionGenerator';
-import { executeAIAction, type StoreActions } from '@/hooks/ai/actionExecutor';
+import { executeAIAction } from '@/hooks/ai/actionExecutor';
+import { selectAIStoreActions } from '@/hooks/ai/storeActions';
 import { observeHumanPlayers, resetObservations } from '@/hooks/ai/playerObserver';
 import { recordPerformance, calculateAdjustment, applyAdjustment, resetPerformanceHistory } from '@/hooks/ai/difficultyAdjuster';
 import { recordAIGoalProgress, resetVelocityData } from '@/hooks/ai/goalVelocityTracker';
@@ -58,55 +59,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
 
   // Subscribe only to action references. The AI hook no longer rerenders for
   // every gold, time, movement or event mutation in the game store.
-  const storeActions = useGameStore(useShallow((state): StoreActions => ({
-    travelPlayer: state.travelPlayer,
-    performWorkShift: state.performWorkShift,
-    attemptWorkplaceRaise: state.attemptWorkplaceRaise,
-    performHomeActivity: state.performHomeActivity,
-    useHealerService: state.useHealerService,
-    purchaseAIResourceItem: state.purchaseAIResourceItem,
-    attendDegreeSession: state.attendDegreeSession,
-    graduateDegree: state.graduateDegree,
-    modifyGold: state.modifyGold,
-    modifyHealth: state.modifyHealth,
-    modifyHappiness: state.modifyHappiness,
-    modifyRelaxation: state.modifyRelaxation,
-    spendTime: state.spendTime,
-    acceptJobOffer: state.acceptJobOffer,
-    payHousingRent: state.payHousingRent,
-    transferBankFunds: state.transferBankFunds,
-    buyAppliance: state.buyAppliance,
-    moveHousingAtLandlord: state.moveHousingAtLandlord,
-    buyDurable: state.buyDurable,
-    equipItem: state.equipItem,
-    buyGuildPass: state.buyGuildPass,
-    takeQuest: state.takeQuest,
-    takeChainQuest: state.takeChainQuest,
-    takeBounty: state.takeBounty,
-    completeQuest: state.completeQuest,
-    completeLocationObjective: state.completeLocationObjective,
-    clearDungeonFloor: state.clearDungeonFloor,
-    applyRareDrop: state.applyRareDrop,
-    manageLoan: state.manageLoan,
-    tradeStock: state.tradeStock,
-    sellItem: state.sellItem,
-    pawnAppliance: state.pawnAppliance,
-    temperEquipment: state.temperEquipment,
-    forgeRepairEquipment: state.forgeRepairEquipment,
-    applyDurabilityLoss: state.applyDurabilityLoss,
-    castLocationHex: state.castLocationHex,
-    castPersonalCurse: state.castPersonalCurse,
-    purchaseHexScroll: state.purchaseHexScroll,
-    useHexDefense: state.useHexDefense,
-    useGraveyardHexService: state.useGraveyardHexService,
-    repairAppliance: state.repairAppliance,
-    forgeRepairAppliance: state.forgeRepairAppliance,
-    purchaseReputationUnlock: state.purchaseReputationUnlock,
-    buyProtection: state.buyProtection,
-    buyTipOff: state.buyTipOff,
-    sabotagePlayer: state.sabotagePlayer,
-    endTurn: state.endTurn,
-  })));
+  const storeActions = useGameStore(useShallow(selectAIStoreActions));
 
   /**
    * Execute a single AI action — delegates to the handler map in actionExecutor.ts

@@ -53,7 +53,7 @@ export function createVendorActions(set: SetFn, get: GetFn) {
       playerId: string,
       vendor: VendorId,
       itemId: string,
-    ): ActionResult | void => {
+    ): ActionResult | undefined => {
       const state = get();
       const player = state.players.find(candidate => candidate.id === playerId);
       if (!player) return { success: false, message: 'Player not found.' };

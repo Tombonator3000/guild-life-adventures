@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import { useState, useEffect } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { PLAYER_COLORS, AI_DIFFICULTY_NAMES, AI_OPPONENTS, type AIDifficulty, type AIConfig } from '@/types/game.types';
@@ -21,7 +22,12 @@ function getNamePool(gender: 'male' | 'female' | 'neutral'): string[] {
 }
 
 export function GameSetup() {
-  const { startNewGame, setPhase, setShowTutorial, setTutorialStep } = useGameStore();
+  const { startNewGame, setPhase, setShowTutorial, setTutorialStep } = useGameStore(useShallow(state => ({
+    startNewGame: state.startNewGame,
+    setPhase: state.setPhase,
+    setShowTutorial: state.setShowTutorial,
+    setTutorialStep: state.setTutorialStep,
+  })));
   const [playerNames, setPlayerNames] = useState<string[]>(['Adventurer 1']);
   const [playerPortraits, setPlayerPortraits] = useState<(string | null)[]>([null]);
   const [aiOpponents, setAiOpponents] = useState<AIConfig[]>([]);
