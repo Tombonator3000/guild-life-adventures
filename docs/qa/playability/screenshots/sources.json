@@ -1,0 +1,66 @@
+[
+  {
+    "file": "this-week-390x844.png",
+    "artifactPath": "playability-plans-and-banks-without-paging-at-390x844-chromium/this-week.png",
+    "sourceCommit": "6dd579c32ad0bc56703261a00e5544387d479ae3",
+    "run": 34182998684,
+    "artifact": 10039675465,
+    "sha256": "84c26c47c7f5cd027522ea7c0c6cd1426a2497cfeb3539333874408df5c00cc3"
+  },
+  {
+    "file": "bank-390x844.png",
+    "artifactPath": "playability-plans-and-banks-without-paging-at-390x844-chromium/bank-actions.png",
+    "sourceCommit": "6dd579c32ad0bc56703261a00e5544387d479ae3",
+    "run": 34182998684,
+    "artifact": 10039675465,
+    "sha256": "e2e8a258671369466fd276f09d02e28e4208505eb6ccf9e23b8ece94e8b60ff7"
+  },
+  {
+    "file": "broker-844x390.png",
+    "artifactPath": "playability-plans-and-banks-without-paging-at-844x390-chromium/broker-actions.png",
+    "sourceCommit": "6dd579c32ad0bc56703261a00e5544387d479ae3",
+    "run": 34182998684,
+    "artifact": 10039675465,
+    "sha256": "968b3b5a217c40176635ff1e2ce2ac897a9288b81b3369dbc836619e8f85d0b7"
+  },
+  {
+    "file": "city-activity-844x390.png",
+    "artifactPath": "city-activities-seasonal-choices-use-real-terms-at-844-chromium/city-activity-preview.png",
+    "sourceCommit": "6dd579c32ad0bc56703261a00e5544387d479ae3",
+    "run": 34182998684,
+    "artifact": 10039675465,
+    "sha256": "547252469d8dd41120a9b4c99d6625edafe3718beb230141bb4c29ef46f20cdd"
+  },
+  {
+    "file": "npc-memory-390x844.png",
+    "artifactPath": "npc-favors-a-remembered-branch-unlocks-one-favor-at-390-chromium/npc-memory-offer.png",
+    "sourceCommit": "6dd579c32ad0bc56703261a00e5544387d479ae3",
+    "run": 34182998684,
+    "artifact": 10039675465,
+    "sha256": "17960825406b8fb9cab215d55d5be16ab550a28645fdbf6993591d25996a56d5"
+  },
+  {
+    "file": "painted-items-1280x720.png",
+    "artifactPath": "painted-items-painted-equi-7fb7f-m-shop-to-inventory-at-1280-chromium/painted-inventory.png",
+    "sourceCommit": "6dd579c32ad0bc56703261a00e5544387d479ae3",
+    "run": 34182998684,
+    "artifact": 10039675465,
+    "sha256": "4e0a5a207937007f370f91a0aeba11bb61251b2daa786927fbc0811374022ddc"
+  },
+  {
+    "file": "inventory-844x390.png",
+    "artifactPath": "painted-items-painted-equi-4ec3e-om-shop-to-inventory-at-844-chromium/painted-inventory.png",
+    "sourceCommit": "dd4568aaee581fa989cd6f9f53695857bb3da377",
+    "run": 34183620307,
+    "artifact": 10039889224,
+    "sha256": "32fccae96fd89f6fc41c7dc434ea5d176121f2de142b01f15291c57823d5d8ed"
+  },
+  {
+    "file": "loans-844x390.png",
+    "artifactPath": "playability-plans-and-banks-without-paging-at-844x390-chromium/bank-loans.png",
+    "sourceCommit": "dd4568aaee581fa989cd6f9f53695857bb3da377",
+    "run": 34183620307,
+    "artifact": 10039889224,
+    "sha256": "f53e17903df44e880ae627e540615cd9a55ae9236fd00bc90052449adc34cb4a"
+  }
+]

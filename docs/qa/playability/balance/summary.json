@@ -1,0 +1,484 @@
+{
+  "schema": 1,
+  "sourceLocal": "f04d8e616a4d7c105b6aa08c8e7664d69977dbf7",
+  "sourceCommit": "113a7748e9c3c71d38eb4968d6175fae3a94543e",
+  "sourceTree": "1d013854b5900e480890a338bb9a9752bef9c3bc",
+  "seedMin": 20260908,
+  "seedMax": 20261907,
+  "attempts": 1000,
+  "completed": 1000,
+  "statuses": {
+    "victory": 1000
+  },
+  "options": {
+    "weather": true,
+    "festivals": true,
+    "aging": false,
+    "permadeath": true
+  },
+  "byPreset": [
+    {
+      "preset": "quick",
+      "goals": {
+        "wealth": 2000,
+        "happiness": 75,
+        "education": 18,
+        "career": 50,
+        "adventure": 0
+      },
+      "attempts": 250,
+      "completed": 250,
+      "goalWins": 250,
+      "survivalWins": 0,
+      "wins": {
+        "ai-grimwald": 111,
+        "ai-thornwick": 82,
+        "ai-morgath": 13,
+        "ai-seraphina": 44
+      },
+      "meanWeeks": 15.652,
+      "medianWeeks": 15,
+      "p90Weeks": 20
+    },
+    {
+      "preset": "standard",
+      "goals": {
+        "wealth": 5000,
+        "happiness": 100,
+        "education": 45,
+        "career": 75,
+        "adventure": 0
+      },
+      "attempts": 250,
+      "completed": 250,
+      "goalWins": 237,
+      "survivalWins": 13,
+      "wins": {
+        "ai-thornwick": 96,
+        "ai-seraphina": 70,
+        "ai-grimwald": 77,
+        "ai-morgath": 7
+      },
+      "meanWeeks": 43.192,
+      "medianWeeks": 36,
+      "p90Weeks": 67
+    },
+    {
+      "preset": "adventure",
+      "goals": {
+        "wealth": 4000,
+        "happiness": 80,
+        "education": 27,
+        "career": 65,
+        "adventure": 12
+      },
+      "attempts": 250,
+      "completed": 250,
+      "goalWins": 230,
+      "survivalWins": 20,
+      "wins": {
+        "ai-grimwald": 94,
+        "ai-thornwick": 49,
+        "ai-seraphina": 60,
+        "ai-morgath": 47
+      },
+      "meanWeeks": 60.432,
+      "medianWeeks": 49,
+      "p90Weeks": 107
+    },
+    {
+      "preset": "epic",
+      "goals": {
+        "wealth": 10000,
+        "happiness": 100,
+        "education": 90,
+        "career": 100,
+        "adventure": 20
+      },
+      "attempts": 250,
+      "completed": 250,
+      "goalWins": 151,
+      "survivalWins": 99,
+      "wins": {
+        "ai-grimwald": 99,
+        "ai-thornwick": 64,
+        "ai-morgath": 38,
+        "ai-seraphina": 49
+      },
+      "meanWeeks": 100.664,
+      "medianWeeks": 98,
+      "p90Weeks": 148
+    }
+  ],
+  "byDifficulty": [
+    {
+      "difficulty": "easy",
+      "games": 334,
+      "wins": {
+        "ai-grimwald": 111,
+        "ai-thornwick": 135,
+        "ai-seraphina": 75,
+        "ai-morgath": 13
+      }
+    },
+    {
+      "difficulty": "medium",
+      "games": 333,
+      "wins": {
+        "ai-thornwick": 79,
+        "ai-grimwald": 164,
+        "ai-morgath": 14,
+        "ai-seraphina": 76
+      }
+    },
+    {
+      "difficulty": "hard",
+      "games": 333,
+      "wins": {
+        "ai-grimwald": 106,
+        "ai-seraphina": 72,
+        "ai-thornwick": 77,
+        "ai-morgath": 78
+      }
+    }
+  ],
+  "personalities": [
+    {
+      "id": "ai-grimwald",
+      "appearances": 1000,
+      "wins": 381,
+      "deaths": 193,
+      "starving": 249,
+      "homeless": 63,
+      "overdueLoans": 60,
+      "maxDistress": 24,
+      "unusedHours": 158559
+    },
+    {
+      "id": "ai-seraphina",
+      "appearances": 1000,
+      "wins": 223,
+      "deaths": 149,
+      "starving": 304,
+      "homeless": 214,
+      "overdueLoans": 169,
+      "maxDistress": 50,
+      "unusedHours": 253335
+    },
+    {
+      "id": "ai-thornwick",
+      "appearances": 1000,
+      "wins": 291,
+      "deaths": 182,
+      "starving": 744,
+      "homeless": 438,
+      "overdueLoans": 23,
+      "maxDistress": 55,
+      "unusedHours": 147618
+    },
+    {
+      "id": "ai-morgath",
+      "appearances": 1000,
+      "wins": 105,
+      "deaths": 375,
+      "starving": 424,
+      "homeless": 246,
+      "overdueLoans": 280,
+      "maxDistress": 52,
+      "unusedHours": 159825
+    }
+  ],
+  "actions": [
+    {
+      "action": "apply-job",
+      "games": 1000,
+      "succeeded": 13909,
+      "failed": 0
+    },
+    {
+      "action": "buy-appliance",
+      "games": 896,
+      "succeeded": 14949,
+      "failed": 0
+    },
+    {
+      "action": "buy-clothing",
+      "games": 1000,
+      "succeeded": 34388,
+      "failed": 0
+    },
+    {
+      "action": "buy-equipment",
+      "games": 1000,
+      "succeeded": 19786,
+      "failed": 881
+    },
+    {
+      "action": "buy-food",
+      "games": 1000,
+      "succeeded": 527503,
+      "failed": 4661
+    },
+    {
+      "action": "buy-fresh-food",
+      "games": 289,
+      "succeeded": 1483,
+      "failed": 0
+    },
+    {
+      "action": "buy-guild-pass",
+      "games": 890,
+      "succeeded": 2500,
+      "failed": 0
+    },
+    {
+      "action": "buy-lottery-ticket",
+      "games": 578,
+      "succeeded": 2623,
+      "failed": 0
+    },
+    {
+      "action": "buy-protection",
+      "games": 662,
+      "succeeded": 7239,
+      "failed": 0
+    },
+    {
+      "action": "buy-stock",
+      "games": 100,
+      "succeeded": 1133,
+      "failed": 0
+    },
+    {
+      "action": "buy-ticket",
+      "games": 815,
+      "succeeded": 7913,
+      "failed": 0
+    },
+    {
+      "action": "buy-tip-off",
+      "games": 233,
+      "succeeded": 8561,
+      "failed": 0
+    },
+    {
+      "action": "complete-location-objective",
+      "games": 1000,
+      "succeeded": 53964,
+      "failed": 0
+    },
+    {
+      "action": "complete-quest",
+      "games": 1000,
+      "succeeded": 35084,
+      "failed": 0
+    },
+    {
+      "action": "cure-sickness",
+      "games": 265,
+      "succeeded": 343,
+      "failed": 5
+    },
+    {
+      "action": "deposit-bank",
+      "games": 764,
+      "succeeded": 43421,
+      "failed": 31918
+    },
+    {
+      "action": "downgrade-housing",
+      "games": 0,
+      "succeeded": 0,
+      "failed": 5345
+    },
+    {
+      "action": "explore-dungeon",
+      "games": 760,
+      "succeeded": 26473,
+      "failed": 10475
+    },
+    {
+      "action": "graduate",
+      "games": 1000,
+      "succeeded": 15123,
+      "failed": 0
+    },
+    {
+      "action": "heal",
+      "games": 662,
+      "succeeded": 16669,
+      "failed": 0
+    },
+    {
+      "action": "move",
+      "games": 1000,
+      "succeeded": 922142,
+      "failed": 25
+    },
+    {
+      "action": "move-housing",
+      "games": 714,
+      "succeeded": 1890,
+      "failed": 718
+    },
+    {
+      "action": "pawn-appliance",
+      "games": 839,
+      "succeeded": 10317,
+      "failed": 0
+    },
+    {
+      "action": "pay-rent",
+      "games": 1000,
+      "succeeded": 39670,
+      "failed": 0
+    },
+    {
+      "action": "repair-appliance",
+      "games": 444,
+      "succeeded": 1837,
+      "failed": 509
+    },
+    {
+      "action": "repair-equipment",
+      "games": 468,
+      "succeeded": 3609,
+      "failed": 0
+    },
+    {
+      "action": "repay-loan",
+      "games": 340,
+      "succeeded": 1951,
+      "failed": 0
+    },
+    {
+      "action": "request-raise",
+      "games": 983,
+      "succeeded": 12383,
+      "failed": 24982
+    },
+    {
+      "action": "rest",
+      "games": 663,
+      "succeeded": 8329,
+      "failed": 0
+    },
+    {
+      "action": "sabotage-player",
+      "games": 0,
+      "succeeded": 0,
+      "failed": 24295
+    },
+    {
+      "action": "sell-stock",
+      "games": 56,
+      "succeeded": 139,
+      "failed": 0
+    },
+    {
+      "action": "study",
+      "games": 1000,
+      "succeeded": 159662,
+      "failed": 96506
+    },
+    {
+      "action": "take-bounty",
+      "games": 1000,
+      "succeeded": 18913,
+      "failed": 0
+    },
+    {
+      "action": "take-chain-quest",
+      "games": 399,
+      "succeeded": 1793,
+      "failed": 0
+    },
+    {
+      "action": "take-loan",
+      "games": 367,
+      "succeeded": 2476,
+      "failed": 0
+    },
+    {
+      "action": "take-quest",
+      "games": 856,
+      "succeeded": 16279,
+      "failed": 0
+    },
+    {
+      "action": "temper-equipment",
+      "games": 901,
+      "succeeded": 6482,
+      "failed": 0
+    },
+    {
+      "action": "withdraw-bank",
+      "games": 364,
+      "succeeded": 3248,
+      "failed": 0
+    },
+    {
+      "action": "work",
+      "games": 1000,
+      "succeeded": 781923,
+      "failed": 83460
+    }
+  ],
+  "earlyLead": {
+    "eligible": 1000,
+    "clear": 175,
+    "held": 51,
+    "comebacks": 5
+  },
+  "finalJobs": {
+    "market-vendor": 698,
+    "market-porter": 83,
+    "bank-janitor": 185,
+    "tavern-dishwasher": 41,
+    "forge-manager": 405,
+    "weapons-instructor": 259,
+    "apprentice-smith": 200,
+    "tavern-chef": 592,
+    "barmaid": 158,
+    "guild-administrator": 144,
+    "floor-sweeper": 23,
+    "enchantment-assistant": 348,
+    "tavern-cook": 21,
+    "shop-manager": 22,
+    "master-smith": 124,
+    "scroll-copier": 10,
+    "guild-treasurer": 129,
+    "caravan-guard": 99,
+    "errand-runner": 56,
+    "guild-master-assistant": 79,
+    "arena-fighter": 51,
+    "shop-clerk": 37,
+    "bank-teller": 64,
+    "forge-laborer": 23,
+    "teacher": 60,
+    "city-guard": 24,
+    "unemployed": 20,
+    "guild-accountant": 2,
+    "assistant-clerk": 28,
+    "court-advisor": 3,
+    "journeyman-smith": 1,
+    "alchemist": 2,
+    "researcher": 5,
+    "sage": 2,
+    "senior-teacher": 1,
+    "academy-lecturer": 1
+  },
+  "finalDegrees": {
+    "trade-guild": 3933,
+    "junior-academy": 2260,
+    "arcane-studies": 2581,
+    "combat-training": 1888,
+    "master-combat": 1362,
+    "commerce": 1063,
+    "scholar": 789,
+    "advanced-scholar": 451,
+    "sage-studies": 346,
+    "loremaster": 261,
+    "alchemy": 189
+  }
+}

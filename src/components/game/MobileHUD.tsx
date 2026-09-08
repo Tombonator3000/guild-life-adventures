@@ -1,6 +1,8 @@
-import { Coins, Clock, Heart, Smile, Utensils, BarChart3, Users, Menu } from 'lucide-react';
+import { Coins, Clock, Heart, BarChart3, Users, Menu } from 'lucide-react';
 import type { Player } from '@/types/game.types';
 import { CharacterPortrait } from './CharacterPortrait';
+import './playability.css';
+import { ResourceValue } from './ResourceValue';
 
 interface MobileHUDProps {
   player: Player;
@@ -14,124 +16,21 @@ interface MobileHUDProps {
   disabled?: boolean;
 }
 
-export function MobileHUD({
-  player,
-  week,
-  priceModifier,
-  economyTrend,
-  onEndTurn,
-  onOpenLeftDrawer,
-  onOpenRightDrawer,
-  onOpenMenu,
-  disabled,
-}: MobileHUDProps) {
-  const trendIcon = economyTrend === 1 ? '\u2191' : economyTrend === -1 ? '\u2193' : '\u2194';
-
-  return (
-    <div
-      className="flex-shrink-0 flex items-center gap-1.5 px-1.5 py-1 bg-gradient-to-b from-wood-dark to-wood border-b-2 border-wood-light z-30"
-      style={{ borderLeft: `4px solid ${player.color}` }}
-    >
-      {/* Left drawer button */}
-      <button
-        onClick={onOpenLeftDrawer}
-        className="p-1.5 rounded text-parchment/80 hover:text-parchment active:bg-wood-light/30"
-        title="Stats & Inventory"
-      >
-        <BarChart3 className="w-4 h-4" />
-      </button>
-
-      {/* Player portrait + name */}
-      <div className="flex items-center gap-1 min-w-0">
-        <CharacterPortrait
-          portraitId={player.portraitId}
-          playerColor={player.color}
-          playerName={player.name}
-          size={16}
-          isAI={player.isAI}
-          hasCurse={(player.activeCurses?.length ?? 0) > 0}
-          curses={player.activeCurses}
-        />
-        <span className="font-display text-[10px] text-parchment truncate max-w-[50px]">
-          {player.name}
-        </span>
-      </div>
-
-      {/* Divider */}
-      <div className="w-px h-4 bg-wood-light/50 flex-shrink-0" />
-
-      {/* Resources strip */}
-      <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-start overflow-x-auto scrollbar-hide" role="region" aria-label="Player resources, scroll for more" tabIndex={0}>
-        <ResourceChip icon={<Coins className="w-3 h-3" />} value={player.gold} color="text-gold" />
-        <ResourceChip icon={<Clock className="w-3 h-3" />} value={player.timeRemaining} color="text-time" warning={player.timeRemaining < 10} />
-        <ResourceChip icon={<Heart className="w-3 h-3" />} value={player.health} color="text-health" warning={player.health <= 20} />
-        <ResourceChip icon={<Smile className="w-3 h-3" />} value={`${player.happiness}%`} color="text-happiness" />
-        <ResourceChip icon={<Utensils className="w-3 h-3" />} value={`${player.foodLevel}%`} color="text-secondary" warning={player.foodLevel < 25} />
-      </div>
-
-      {/* Divider */}
-      <div className="w-px h-4 bg-wood-light/50 flex-shrink-0" />
-
-      {/* Week + market + turn indicator */}
-      <div className="flex-shrink-0 text-center leading-none">
-        <div className="text-[9px] text-parchment/60 font-display">W{week}</div>
-        <div className="text-[8px] text-parchment/50">
-          {(priceModifier * 100).toFixed(0)}%{trendIcon}
-        </div>
-      </div>
-
-      {/* Player color dot — visible indicator of whose turn it is */}
-      <div
-        className="w-2.5 h-2.5 rounded-full flex-shrink-0 ring-1 ring-white/30"
-        style={{ background: player.color }}
-        title={`${player.name}'s turn`}
-      />
-
-      {/* End Turn */}
-      <button
-        onClick={onEndTurn}
-        disabled={disabled}
-        className="gold-button !text-[10px] !py-1 !px-2.5 !font-display flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        End Turn
-      </button>
-
-      {/* Right drawer */}
-      <button
-        onClick={onOpenRightDrawer}
-        className="p-1.5 rounded text-parchment/80 hover:text-parchment active:bg-wood-light/30"
-        title="Players & Options"
-      >
-        <Users className="w-4 h-4" />
-      </button>
-
-      {/* Game Menu */}
-      <button
-        onClick={onOpenMenu}
-        className="p-1.5 rounded text-parchment/80 hover:text-parchment active:bg-wood-light/30"
-        title="Game Menu"
-      >
-        <Menu className="w-4 h-4" />
-      </button>
+export function MobileHUD({ player, week, priceModifier, onEndTurn, onOpenLeftDrawer, onOpenRightDrawer, onOpenMenu, disabled }: MobileHUDProps) {
+  return <div className="mobile-hud" style={{ borderLeft: `4px solid ${player.color}` }}>
+    <div className="mobile-hud-top">
+      <CharacterPortrait portraitId={player.portraitId} playerColor={player.color} playerName={player.name} size={28} isAI={player.isAI} hasCurse={(player.activeCurses?.length ?? 0) > 0} curses={player.activeCurses} />
+      <span className="mobile-hud-name">{player.name}</span>
+      <span aria-label={`${player.gold} gold`}><Coins /><ResourceValue value={player.gold} identity={player.id} /></span>
+      <span aria-label={`${player.timeRemaining} hours remaining`}><Clock /><ResourceValue value={player.timeRemaining} identity={player.id} />h</span>
+      <span aria-label={`${player.health} health`}><Heart /><ResourceValue value={player.health} identity={player.id} /></span>
     </div>
-  );
-}
-
-function ResourceChip({
-  icon,
-  value,
-  color,
-  warning,
-}: {
-  icon: React.ReactNode;
-  value: string | number;
-  color: string;
-  warning?: boolean;
-}) {
-  return (
-    <span className={`flex flex-shrink-0 items-center gap-0.5 text-[11px] font-bold ${color} ${warning ? 'animate-pulse' : ''}`}>
-      {icon}
-      <span className="font-display">{value}</span>
-    </span>
-  );
+    <div className="mobile-hud-actions">
+      <button title="Stats & Inventory" aria-label="Stats & Inventory" onClick={onOpenLeftDrawer}><BarChart3 /></button>
+      <span className="mobile-week">Week {week}<small>Market {(priceModifier * 100).toFixed(0)}%</small></span>
+      <button className="gold-button" onClick={onEndTurn} disabled={disabled}>End Turn</button>
+      <button title="Players & Options" aria-label="Players & Options" onClick={onOpenRightDrawer}><Users /></button>
+      <button title="Game Menu" aria-label="Game Menu" onClick={onOpenMenu}><Menu /></button>
+    </div>
+  </div>;
 }

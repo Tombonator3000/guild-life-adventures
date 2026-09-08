@@ -1,0 +1,21 @@
+import { act,cleanup,fireEvent,render,screen } from '@testing-library/react';
+import { afterEach,expect,it,vi } from 'vitest';
+import { useGameStore } from '@/store/gameStore';
+import { LOCATION_NPCS } from '@/data/npcs';
+import { LocationShell } from './LocationShell';
+vi.mock('./NpcPortrait',()=>({NpcPortrait:()=>null}));
+vi.mock('@/hooks/useBanter',()=>({useBanter:()=>({tryTriggerBanter:()=>{}})}));
+afterEach(cleanup);
+it('mounts against real Zustand snapshots and adds/removes seasonal services without a render loop',()=>{
+  useGameStore.setState({networkMode:'local'});
+  useGameStore.getState().startNewGame(['Visitor'],false,{wealth:5000,happiness:100,education:45,career:75,adventure:0});
+  useGameStore.setState(s=>({activeFestival:'harvest-festival',players:s.players.map(p=>({...p,currentLocation:'general-store'}))}));
+  render(<LocationShell npc={LOCATION_NPCS['general-store']!} locationId="general-store" locationName="General Store" tabs={[{id:'goods',label:'Goods',paged:false,content:<p>Daily goods</p>}]} />);
+  fireEvent.click(screen.getByRole('button',{name:'This Week'}));
+  expect(screen.getByRole('region',{name:'City activities'})).toBeVisible();
+  fireEvent.click(screen.getByRole('button',{name:'Join activity · 4h'}));
+  expect(useGameStore.getState().players[0].gold).toBe(120);
+  act(()=>useGameStore.setState({activeFestival:null}));
+  expect(screen.queryByRole('region',{name:'City activities'})).toBeNull();
+  expect(screen.getByText('Daily goods')).toBeVisible();
+});

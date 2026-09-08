@@ -1,3 +1,4 @@
+import { summarizeTurn } from '@/lib/turnSummary';
 // Turn management helpers
 // endTurn, startTurn, processWeekEnd - the biggest functions in the store
 //
@@ -211,6 +212,8 @@ export function createTurnActions(set: SetFn, get: GetFn) {
       if (endingPlayer && !endingPlayer.isGameOver) {
         processEndOfTurnSpoilage(set, get, endingPlayer.id);
       }
+
+      if (endingPlayer) set(s => ({ players:s.players.map(p => p.id === endingPlayer.id ? {...p,lastTurnSummary:summarizeTurn(p,s.week)} : p) }));
 
       // Check if current player has achieved victory goals before switching turns
       const currentPlayer = get().players[get().currentPlayerIndex];

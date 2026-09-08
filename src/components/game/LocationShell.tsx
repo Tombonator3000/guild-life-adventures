@@ -1,3 +1,7 @@
+import { NpcFavorPanel } from './NpcFavorPanel';
+import { getNpcMemories } from '@/data/npcMemories';
+import { CityActivityPanel } from './CityActivityPanel';
+import { getCityActivities } from '@/data/cityActivities';
 import { GameIcon } from './GameIcon';
 // All visits remain inside the original board's central frame.
 import { useState, useEffect, useId, type ReactNode, type CSSProperties } from 'react';
@@ -25,6 +29,7 @@ export interface LocationTab {
   content: ReactNode;
   badge?: string;
   hidden?: boolean;
+  paged?: boolean;
 }
 
 export interface WorkInfo {
@@ -69,21 +74,29 @@ function tabIcon(id: string) {
 }
 
 export function LocationShell({ npc, tabs, defaultTab, locationId, locationName, workInfo }: LocationShellProps) {
+  const player = useCurrentPlayer();
+  const memories = player ? getNpcMemories(player, locationId) : [];
+  const week = useGameStore(s => s.week);
+  const activeFestival = useGameStore(s => s.activeFestival);
+  const weather = useGameStore(s => s.weather);
+  const conditions = { week, activeFestival, weather };
+  const cityActivities = getCityActivities(locationId, conditions);
   const hasWork = !!workInfo && !tabs.some(tab => tab.id === 'hexed');
-  const services = tabs.filter(tab => !tab.hidden && !(hasWork && locationId === 'guild-hall' && tab.id === 'work'));
+  const availableTabs: LocationTab[] = [...tabs, ...(memories.length && !tabs.some(t => t.id === 'hexed') ? [{id:'personal-favors',label:'Your contact',paged:false,content:<NpcFavorPanel key={locationId} location={locationId} />}]:[]), ...(cityActivities.length && !tabs.some(t => t.id === 'hexed') ? [{ id:'city-activities', label:'This Week', paged:false, content:<CityActivityPanel key={locationId} location={locationId} /> }] : [])];
+  const services = availableTabs.filter(tab => !tab.hidden && !(hasWork && locationId === 'guild-hall' && tab.id === 'work'));
   const visibleTabs: LocationTab[] = hasWork ? [{ id: 'your-shift', label: 'Work', content: <WorkplaceCard work={workInfo!} /> }, ...services.map(tab => tab.id === 'work' ? { ...tab, label: 'Careers' } : tab)] : services;
   const [servicesOpen, setServicesOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState(defaultTab || visibleTabs[0]?.id || '');
   const activeTab = visibleTabs.some(tab => tab.id === selectedTab) ? selectedTab : visibleTabs[0]?.id;
-  const activeContent = visibleTabs.find(tab => tab.id === activeTab)?.content;
+  const selectedService = visibleTabs.find(tab => tab.id === activeTab);
+  const activeContent = selectedService?.content;
   const { tryTriggerBanter } = useBanter();
-  const player = useCurrentPlayer();
   const players = useGameStore(state => state.players);
   const { options } = useGameOptions();
   const { reducedMotion, visible } = useEnvironmentActivity();
   const id = useId();
   const animated = options.environmentDetail === 'full' && !reducedMotion && visible;
-  const greeting = player ? getReputationGreeting(locationId, player.fame ?? 0, player.infamy ?? 0) : null;
+  const greeting = player ? memories[0]?.greeting ?? getReputationGreeting(locationId, player.fame ?? 0, player.infamy ?? 0) : null;
 
   useEffect(() => {
     if (hasWork && !defaultTab) setSelectedTab('your-shift');
@@ -124,7 +137,7 @@ export function LocationShell({ npc, tabs, defaultTab, locationId, locationName,
               ))}
             </nav>}
             <div id={`${id}-content`} className="location-content" data-ui-sound={serviceSound(locationId, activeTab)} onClick={() => tryTriggerBanter(locationId)}>
-              <LocationPages pageKey={`${locationId}-${activeTab}`}>{activeContent}</LocationPages>
+              {selectedService?.paged === false ? activeContent : <LocationPages pageKey={`${locationId}-${activeTab}`}>{activeContent}</LocationPages>}
             </div>
             {hasWork && activeTab !== 'your-shift' && <button className="workplace-return" data-ui-sound="menu-open" onClick={() => setSelectedTab('your-shift')}>Your shift · {workInfo!.hoursPerShift}h · +{workInfo!.earnings}g →</button>}
           </div>

@@ -1,4 +1,5 @@
 import { GameIcon } from './GameIcon';
+import { ResourceValue } from './ResourceValue';
 import { PanelDecoration } from './PanelDecoration';
 // SideInfoTabs - Left sidebar tabbed info panel inspired by Jones in the Fast Lane
 // Clean tabs-only design with Stats, Inventory, and Goals
@@ -57,7 +58,7 @@ export function SideInfoTabs({ player, goals, isCurrentPlayer, initialTab }: Sid
           const hasCurse = (player.activeCurses?.length ?? 0) > 0;
           return (
             <div
-              className={`rounded-lg border-2 ${hasCurse ? 'border-purple-500' : 'border-gold/50'} overflow-hidden shadow-lg bg-wood/30 p-1`}
+              className={`sidebar-character-frame rounded-lg border-2 ${hasCurse ? 'border-purple-500' : 'border-gold/50'} overflow-hidden shadow-lg bg-wood/30 p-1`}
               style={hasCurse ? { boxShadow: '0 0 0 1px rgba(147,51,234,0.35), 0 0 16px 5px rgba(147,51,234,0.5)' } : undefined}
             >
               <CharacterPortrait
@@ -71,12 +72,12 @@ export function SideInfoTabs({ player, goals, isCurrentPlayer, initialTab }: Sid
                 hasCurse={hasCurse}
                 isToad={player.activeCurses?.some(c => c.effectType === 'toad-transformation') ?? false}
                 curses={player.activeCurses}
-                className="shadow-md"
+                className="sidebar-character-portrait shadow-md"
               />
             </div>
           );
         })()}
-        <div className="mt-1.5 text-center">
+        <div className="sidebar-character-caption mt-1.5 text-center">
           <h3 className="font-display text-sm font-bold text-wood-dark">
             {player.name}
           </h3>
@@ -383,6 +384,7 @@ function ResourceRow({
   warning = false,
   highlight = false
 }: ResourceRowProps) {
+  const identity = useGameStore(s => s.players[s.currentPlayerIndex]?.id ?? "none");
   const showBar = barValue !== undefined && barMax !== undefined;
   
   return (
@@ -393,7 +395,7 @@ function ResourceRow({
           <span className="text-amber-800 font-medium">{label}</span>
         </div>
         <span className={`font-bold ${warning ? 'text-red-600 animate-pulse' : highlight ? 'text-amber-600' : 'text-amber-900'}`}>
-          {value}
+          <ResourceValue value={Number.parseFloat(value)} identity={identity}>{value}</ResourceValue>
         </span>
       </div>
       {showBar && (

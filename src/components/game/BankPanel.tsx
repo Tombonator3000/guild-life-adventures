@@ -1,205 +1,101 @@
 import { useState } from 'react';
 import type { Player } from '@/types/game.types';
 import { LOAN_MIN_SHIFTS_REQUIRED } from '@/types/game.types';
-import { STOCKS, calculateStockValue, calculateDividendAccrual, getStoredDividendCredit, previewDividendSettlement } from '@/data/stocks';
-import {
-  JonesSectionHeader,
-  JonesMenuItem,
-  JonesInfoRow,
-  JonesButton,
-} from './JonesStylePanel';
-import { toast } from 'sonner';
-import { useTranslation } from '@/i18n';
+import { STOCKS, calculateStockValue, calculateDividendAccrual, getStoredDividendCredit, previewDividendSettlement, getSellPrice } from '@/data/stocks';
+import { LOAN_PRODUCTS } from '@/store/helpers/economy/financeServiceHelpers';
 import { useGameStore } from '@/store/gameStore';
+import './playability.css';
 
+export type BankView = 'banking' | 'broker' | 'loans' | 'overview';
 interface BankPanelProps {
   player: Player;
   priceModifier?: number;
   stockPrices: Record<string, number>;
   stockPriceHistory?: Record<string, number[]>;
+  section?: BankView;
 }
 
-function Sparkline({ prices, width = 60, height = 16 }: { prices: number[]; width?: number; height?: number }) {
-  if (!prices || prices.length < 2) return null;
-  const min = Math.min(...prices);
-  const max = Math.max(...prices);
-  const range = max - min || 1;
-  const points = prices.map((price, index) => {
-    const x = (index / (prices.length - 1)) * width;
-    const y = height - ((price - min) / range) * (height - 2) - 1;
-    return `${x},${y}`;
-  }).join(' ');
-  const isUp = prices[prices.length - 1] >= prices[0];
-  return (
-    <svg width={width} height={height} className="inline-block ml-1" aria-hidden="true">
-      <polyline points={points} fill="none" stroke={isUp ? '#2a7a2a' : '#8b4a4a'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-type BankView = 'main' | 'broker' | 'loans';
-const TRADE_BUTTON = 'text-[10px] px-1.5 py-0.5 text-white rounded disabled:opacity-35 disabled:cursor-not-allowed';
-
-export function BankPanel({ player, priceModifier = 1.0, stockPrices, stockPriceHistory }: BankPanelProps) {
-  const { t } = useTranslation();
-  const transferFunds = useGameStore(state => state.transferBankFunds);
-  const stockTradeAction = useGameStore(state => state.tradeStock);
-  const loanAction = useGameStore(state => state.manageLoan);
-  const [view, setView] = useState<BankView>('main');
-
+export function BankPanel({ player, priceModifier = 1, stockPrices, stockPriceHistory, section = 'banking' }: BankPanelProps) {
+  const transfer = useGameStore(s => s.transferBankFunds);
+  const trade = useGameStore(s => s.tradeStock);
+  const loan = useGameStore(s => s.manageLoan);
+  const [amount, setAmount] = useState('50');
+  const [selectedStock, setSelectedStock] = useState(STOCKS[0].id);
+  const [loanAmount, setLoanAmount] = useState<number>(100);
+  const [receipt, setReceipt] = useState('');
   const report = (result: { success: boolean; message: string } | void) => {
-    if (!result) return;
-    if (result.success) toast.success(result.message);
-    else toast.error(result.message);
+    if (result) setReceipt(result.message);
   };
-
+  const value = Number(amount);
+  const valid = Number.isSafeInteger(value) && value > 0 && value <= 1_000_000;
   const stockValue = calculateStockValue(player.stocks, stockPrices);
   const weeklyAccrual = calculateDividendAccrual(player.stocks, stockPrices);
-  const storedDividendCredit = getStoredDividendCredit(player.stocks);
-  const dividendSettlement = previewDividendSettlement(player.stocks, stockPrices);
-  const legacyInvestments = Math.max(0, player.investments ?? 0);
-  const totalWealth = player.gold + player.savings + legacyInvestments + stockValue - player.loanAmount;
+  const wealth = player.gold + player.savings + (player.investments ?? 0) + stockValue - player.loanAmount;
+  const balances = <div className="bank-balances"><span>Cash <strong>{player.gold}g</strong></span><span>Savings <strong>{player.savings}g</strong></span></div>;
 
-  if (view === 'broker') {
-    return (
-      <div>
-        <div className="text-center mb-2">
-          <div className="font-display text-sm font-bold text-[#3d2a14]">{t('panelBank.theBroker')}</div>
-          <div className="text-xs text-[#6b5a42]">Shares, bonds, market risk and weekly income</div>
-        </div>
-        <JonesInfoRow label={t('panelBank.cash')} value={`${player.gold}g`} darkText largeText />
-        <JonesInfoRow label={t('panelBank.portfolioValue')} value={`${stockValue}g`} darkText largeText />
-        <JonesInfoRow label="Dividend Accrual" value={`+${weeklyAccrual.toFixed(2)}g/wk`} valueClass="text-[#2a7a2a]" darkText largeText />
-        {storedDividendCredit > 0 && (
-          <JonesInfoRow label="Stored Dividend Credit" value={`${storedDividendCredit.toFixed(2)}g`} darkText largeText />
-        )}
-        {dividendSettlement.payment > 0 && (
-          <JonesInfoRow label="Expected Next Payout" value={`+${dividendSettlement.payment}g`} valueClass="text-[#2a7a2a]" darkText largeText />
-        )}
-
-        <JonesSectionHeader title={t('panelBank.availableStocks')} />
-        {STOCKS.map(stock => {
-          const price = stockPrices[stock.id] || stock.basePrice;
-          const owned = player.stocks[stock.id] || 0;
-          const buyMax = Math.min(100_000, Math.floor(player.gold / price));
-          const history = stockPriceHistory?.[stock.id] || [];
-          const previousPrice = history.length >= 2 ? history[history.length - 2] : stock.basePrice;
-          const priceChange = price - previousPrice;
-          const percentChange = previousPrice > 0 ? ((priceChange / previousPrice) * 100).toFixed(1) : '0.0';
-          const dividendPerShare = price * stock.dividendRate;
-          const positionValue = owned * price;
-
-          const trade = (side: 'buy' | 'sell', shares: number) => {
-            if (shares <= 0) return;
-            report(stockTradeAction(player.id, side, stock.id, shares));
-          };
-
-          return (
-            <div key={stock.id} className="px-2 py-1.5 border-b border-[#8b7355]">
-              <div className="flex justify-between items-center font-mono text-sm">
-                <span className="text-[#3d2a14] text-xs">{t(`stocks.${stock.id}.name`) || stock.name}</span>
-                <div className="flex items-center gap-1">
-                  <Sparkline prices={history} />
-                  <span className="text-[#c9a227] font-bold">{price}g</span>
-                </div>
-              </div>
-              <div className="flex justify-between items-center text-xs mt-0.5">
-                <span className={priceChange >= 0 ? 'text-[#2a7a2a]' : 'text-[#8b4a4a]'}>
-                  {priceChange >= 0 ? '+' : ''}{priceChange}g ({priceChange >= 0 ? '+' : ''}{percentChange}%)
-                </span>
-                <span className="text-[#6b5a42]">Div: {dividendPerShare.toFixed(2)}g/share/wk</span>
-              </div>
-              <div className="flex justify-between items-center text-[10px] text-[#6b5a42] mt-0.5">
-                <span>
-                  {stock.isTBill ? t('panelBank.safe') : (stock.volatility > 0.25 ? t('panelBank.riskHigh') : stock.volatility > 0.15 ? t('panelBank.riskMed') : t('panelBank.riskLow'))}
-                </span>
-                <span>Own: {owned} · Value: {positionValue}g</span>
-              </div>
-              <div className="flex flex-wrap justify-end gap-1 mt-1">
-                <button onClick={() => trade('buy', 1)} disabled={buyMax < 1} className={`${TRADE_BUTTON} bg-[#2a5c3a]`}>Buy 1</button>
-                <button onClick={() => trade('buy', 5)} disabled={buyMax < 5} className={`${TRADE_BUTTON} bg-[#2a5c3a]`}>Buy 5</button>
-                <button onClick={() => trade('buy', buyMax)} disabled={buyMax < 1} className={`${TRADE_BUTTON} bg-[#1f4d30]`}>Buy Max</button>
-                <button onClick={() => trade('sell', 1)} disabled={owned < 1} className={`${TRADE_BUTTON} bg-[#8b4a4a]`}>Sell 1</button>
-                <button onClick={() => trade('sell', owned)} disabled={owned < 1} className={`${TRADE_BUTTON} bg-[#6f3434]`}>Sell All</button>
-              </div>
-            </div>
-          );
-        })}
-        <div className="mt-2 text-xs text-[#6b5a42] px-2">
-          {t('panelBank.sellFee')} Fractional dividends carry forward until they form whole gold.
-        </div>
-        <div className="mt-2 px-2">
-          <JonesButton label={t('common.back').toUpperCase()} onClick={() => setView('main')} variant="secondary" />
-        </div>
-      </div>
-    );
-  }
-
-  if (view === 'loans') {
-    const loanAmounts = [100, 250, 500, 1000];
-    const hasLoan = player.loanAmount > 0;
-    const hasJobHistory = (player.totalShiftsWorked || 0) >= LOAN_MIN_SHIFTS_REQUIRED;
-
-    return (
-      <div>
-        <div className="text-center mb-2">
-          <div className="font-display text-sm font-bold text-[#3d2a14]">{t('panelBank.loanSystem')}</div>
-          <div className="text-xs text-[#6b5a42]">{t('panelBank.weeklyInterest')}</div>
-        </div>
-        <div className="bg-[#d4c4a0] border border-[#8b7355] rounded px-2 py-1 mb-2">
-          <div className="flex justify-between text-xs">
-            <span className="text-[#6b5a42]">Current Loan Rate:</span>
-            <span className={`font-bold ${priceModifier > 1 ? 'text-[#8b4a4a]' : 'text-[#2a7a2a]'}`}>{(10 * priceModifier).toFixed(1)}%/wk</span>
-          </div>
-          <div className="flex justify-between text-xs">
-            <span className="text-[#6b5a42]">Savings Rate:</span>
-            <span className={`font-bold ${priceModifier > 1 ? 'text-[#2a7a2a]' : 'text-[#8b6914]'}`}>{(0.1 * priceModifier).toFixed(2)}%/wk</span>
-          </div>
-          <div className="text-xs text-[#8b6914] italic mt-0.5">Rates follow market conditions</div>
-        </div>
-        {hasLoan ? (
-          <>
-            <JonesInfoRow label={t('panelBank.currentDebt')} value={`${player.loanAmount}g`} valueClass="text-red-600" darkText largeText />
-            <JonesInfoRow label={t('panelBank.weeksRemaining')} value={`${player.loanWeeksRemaining}`} darkText largeText />
-            <JonesInfoRow label={t('panelBank.weeklyInterest')} value={`${(10 * priceModifier).toFixed(1)}%`} darkText largeText />
-            <JonesSectionHeader title={t('panelBank.repayLoan').toUpperCase()} />
-            {[50, 100, 250].map(amount => {
-              const actual = Math.min(amount, player.loanAmount);
-              return <JonesMenuItem key={amount} label={`${t('panelBank.repayLoan')} ${actual}g`} disabled={player.gold < actual || player.loanAmount <= 0} darkText largeText onClick={() => report(loanAction(player.id, 'repay', actual))} />;
-            })}
-            <JonesMenuItem label={`${t('panelBank.repayAll')} (${player.loanAmount}g)`} disabled={player.gold < player.loanAmount} darkText largeText onClick={() => report(loanAction(player.id, 'repay', 'all'))} />
-          </>
-        ) : hasJobHistory ? (
-          <>
-            <div className="text-sm text-[#6b5a42] px-2 mb-2">{t('panelBank.maxLoan')}</div>
-            <JonesSectionHeader title={t('panelBank.takeLoan').toUpperCase()} />
-            {loanAmounts.map(amount => <JonesMenuItem key={amount} label={`${t('panelBank.takeLoan')} ${amount}g`} price={amount} darkText largeText onClick={() => report(loanAction(player.id, 'borrow', amount))} />)}
-          </>
-        ) : (
-          <div className="text-sm text-[#8b4a4a] px-2 py-2">{t('panelBank.loanNoHistory')}</div>
-        )}
-        <div className="mt-2 text-xs text-[#6b5a42] px-2">{t('panelBank.noLoan')}</div>
-        <div className="mt-2 px-2"><JonesButton label={t('common.back').toUpperCase()} onClick={() => setView('main')} variant="secondary" /></div>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <JonesInfoRow label={t('panelBank.cash')} value={`${player.gold}g`} darkText largeText />
-      <JonesInfoRow label={t('panelBank.savings')} value={`${player.savings}g`} darkText largeText />
-      {player.savings > 0 && <JonesInfoRow label="Interest rate:" value={`${(0.1 * priceModifier).toFixed(2)}%/wk`} valueClass={priceModifier > 1 ? 'text-[#2a7a2a]' : 'text-[#8b6914]'} darkText largeText />}
-      <JonesInfoRow label="Stock Portfolio" value={`${stockValue}g`} darkText largeText />
-      {weeklyAccrual > 0 && <JonesInfoRow label="Dividend Accrual" value={`+${weeklyAccrual.toFixed(2)}g/wk`} valueClass="text-[#2a7a2a]" darkText largeText />}
-      {player.loanAmount > 0 && <JonesInfoRow label={t('stats.loanDebt')} value={`-${player.loanAmount}g`} valueClass="text-red-600" darkText largeText />}
-      <JonesInfoRow label={t('panelBank.totalWealth')} value={`${totalWealth}g`} valueClass="text-[#c9a227] font-bold" darkText largeText />
-
-      <JonesSectionHeader title={t('panelBank.banking')} />
-      <JonesMenuItem label={`${t('common.deposit')} 50 ${t('stats.gold')}`} price={50} disabled={player.gold < 50} darkText largeText onClick={() => report(transferFunds(player.id, 'deposit', 50))} />
-      <JonesMenuItem label={`${t('common.withdraw')} 50 ${t('stats.gold')}`} disabled={player.savings < 50} darkText largeText onClick={() => report(transferFunds(player.id, 'withdraw', 50))} />
-      <JonesSectionHeader title="FINANCIAL SERVICES" />
-      <JonesMenuItem label={`${t('panelBank.theBroker')} (${stockValue}g portfolio)`} darkText largeText onClick={() => setView('broker')} />
-      <JonesMenuItem label={player.loanAmount > 0 ? `${t('panelBank.loanSystem')} (${player.loanAmount}g)` : t('panelBank.loanSystem')} darkText largeText onClick={() => setView('loans')} />
+  if (section === 'banking') return <section className="bank-service" aria-label="Bank transfers">
+    {balances}
+    <label className="bank-amount">Amount <input aria-label="Transfer amount" inputMode="numeric" type="number" min="1" max="1000000" step="1" value={amount} onChange={e => setAmount(e.target.value)} /></label>
+    <div className="bank-actions">
+      <button disabled={!valid || player.gold < value} onClick={() => report(transfer(player.id, 'deposit', value))}>Deposit {valid ? value : ''} Gold</button>
+      <button disabled={!valid || player.savings < value} onClick={() => report(transfer(player.id, 'withdraw', value))}>Withdraw {valid ? value : ''} Gold</button>
     </div>
-  );
+    <p className="bank-help" role="status">{!valid ? 'Choose a positive whole amount, up to 1,000,000g.' : `Deposit: ${player.gold >= value ? `${player.gold - value}g cash · ${player.savings + value}g savings` : `needs ${value}g cash`}. Withdraw: ${player.savings >= value ? `${player.gold + value}g cash` : `needs ${value}g savings`}.`}</p>
+    {receipt && <p className="bank-receipt" role="status">{receipt}</p>}
+    <p className="bank-note">Transfers take 0h and keep your total wealth unchanged.</p>
+  </section>;
+
+  if (section === 'broker') {
+    const stock = STOCKS.find(s => s.id === selectedStock) ?? STOCKS[0];
+    const price = stockPrices[stock.id];
+    const ready = Number.isSafeInteger(price) && price > 0;
+    const owned = player.stocks[stock.id] ?? 0;
+    const maxBuy = ready ? Math.min(100_000, Math.floor(player.gold / price)) : 0;
+    const history = stockPriceHistory?.[stock.id] ?? [];
+    const previous = history.length >= 2 ? history[history.length - 2] : stock.basePrice;
+    return <section className="bank-service" aria-label="The Broker">
+      <label className="bank-amount">Company <select aria-label="Broker company" value={stock.id} onChange={e => setSelectedStock(e.target.value)}>{STOCKS.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+      <div className="bank-balances"><span>Price <strong>{ready ? `${price}g` : 'Unavailable'}</strong></span><span>Owned <strong>{owned}</strong></span><span>Cash <strong>{player.gold}g</strong></span></div>
+      <p className="bank-help">{stock.isTBill ? 'Fixed price' : ready ? `${price - previous >= 0 ? '+' : ''}${price - previous}g since previous quote · ${stock.volatility > .25 ? 'High' : stock.volatility > .15 ? 'Medium' : 'Low'} risk` : 'Wait for a market quote'}. {ready && `Dividend accrual: ${(price * stock.dividendRate).toFixed(2)}g/share/week.`}</p>
+      <div className="bank-actions bank-trades">
+        <button disabled={maxBuy < 1} onClick={() => report(trade(player.id, 'buy', stock.id, 1))}>Buy 1 · {ready ? price : '—'}g</button>
+        <button disabled={maxBuy < 5} onClick={() => report(trade(player.id, 'buy', stock.id, 5))}>Buy 5 · {ready ? price * 5 : '—'}g</button>
+        <button disabled={maxBuy < 1} onClick={() => report(trade(player.id, 'buy', stock.id, maxBuy))}>Buy Max ({maxBuy})</button>
+        <button disabled={!ready || owned < 1} onClick={() => report(trade(player.id, 'sell', stock.id, 1))}>Sell 1 · {ready ? getSellPrice(stock.id, 1, price) : '—'}g</button>
+        <button disabled={!ready || owned < 1} onClick={() => report(trade(player.id, 'sell', stock.id, owned))}>Sell All ({owned})</button>
+      </div>
+      {receipt && <p className="bank-receipt" role="status">{receipt}</p>}
+    <p className="bank-note">Trades take 0h. Sale proceeds include fees. Fractional dividends carry forward.</p>
+    </section>;
+  }
+
+  if (section === 'loans') {
+    const debt = player.loanAmount;
+    const hasHistory = (player.totalShiftsWorked ?? 0) >= LOAN_MIN_SHIFTS_REQUIRED;
+    const repayment = valid ? Math.min(value, debt) : 0;
+    return <section className="bank-service" aria-label="Bank loans">
+      <div className="bank-balances"><span>Debt <strong>{debt}g</strong></span><span>Rate <strong>{(10 * priceModifier).toFixed(1)}%/wk</strong></span>{debt > 0 && <span>Due <strong>{player.loanWeeksRemaining}w</strong></span>}</div>
+      {debt > 0 ? <>
+        <label className="bank-amount">Repayment <input aria-label="Repayment amount" type="number" inputMode="numeric" min="1" step="1" value={amount} onChange={e => setAmount(e.target.value)} /></label>
+        <div className="bank-actions"><button disabled={!valid || player.gold < repayment} onClick={() => report(loan(player.id, 'repay', repayment))}>Repay {repayment}g</button><button disabled={player.gold < debt} onClick={() => report(loan(player.id, 'repay', 'all'))}>Repay All ({debt}g)</button></div>
+        <p className="bank-help">{valid && player.gold >= repayment ? `After repayment: ${debt - repayment}g debt · ${player.gold - repayment}g cash.` : 'Choose an amount you can cover with cash.'}</p>
+      </> : <>
+        <label className="bank-amount">Loan <select aria-label="Loan amount" value={loanAmount} onChange={e => setLoanAmount(Number(e.target.value))}>{LOAN_PRODUCTS.map(n => <option key={n} value={n}>{n}g</option>)}</select></label>
+        <button className="bank-primary" disabled={!hasHistory} onClick={() => report(loan(player.id, 'borrow', loanAmount))}>Borrow {loanAmount}g</button>
+        <p className="bank-help">{hasHistory ? `After borrowing: ${player.gold + loanAmount}g cash, ${loanAmount}g debt. Due in 8 weeks.` : `Work ${LOAN_MIN_SHIFTS_REQUIRED} shifts first (${player.totalShiftsWorked ?? 0}/${LOAN_MIN_SHIFTS_REQUIRED}).`}</p>
+      </>}
+      {receipt && <p className="bank-receipt" role="status">{receipt}</p>}
+    <p className="bank-note">0h service. Interest compounds weekly; rates follow the market. Borrowing does not increase net wealth.</p>
+    </section>;
+  }
+
+  return <section className="bank-service" aria-label="Financial overview">
+    {balances}
+    <dl className="bank-overview">
+      <div><dt>Portfolio</dt><dd>{stockValue}g</dd></div><div><dt>Loan debt</dt><dd>−{player.loanAmount}g</dd></div>
+      <div><dt>Total wealth</dt><dd>{wealth}g</dd></div><div><dt>Savings rate</dt><dd>{(.1 * priceModifier).toFixed(2)}%/wk</dd></div>
+      <div><dt>Dividend accrual</dt><dd>{weeklyAccrual.toFixed(2)}g/wk</dd></div><div><dt>Stored credit</dt><dd>{getStoredDividendCredit(player.stocks).toFixed(2)}g</dd></div>
+      <div><dt>Next dividend at current prices</dt><dd>{previewDividendSettlement(player.stocks, stockPrices).payment}g</dd></div>
+    </dl>
+  </section>;
 }

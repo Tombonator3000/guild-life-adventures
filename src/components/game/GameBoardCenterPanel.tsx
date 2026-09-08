@@ -34,27 +34,18 @@ export function GameBoardCenterPanel({
   locationProps,
   spectatorProps,
 }: GameBoardCenterPanelProps) {
-  const visible = !isMobile
-    || !!locationProps
-    || !!eventProps
-    || !!applianceProps
-    || !!toadProps
-    || !!shadowfingersProps;
-
-  if (!visible) return null;
-
   return (
     <div
       data-fx-protect={`${centerPanel.top},${centerPanel.left},${centerPanel.width},${centerPanel.height}`}
-      className={`absolute overflow-hidden z-10 ${isMobile ? 'rounded-xl' : ''}`}
-      style={{
+      className={`overflow-hidden z-10 ${isMobile ? 'relative w-full h-full rounded-xl' : 'absolute'}`}
+      style={isMobile ? undefined : {
         top: `${centerPanel.top}%`,
         left: `${centerPanel.left}%`,
         width: `${centerPanel.width}%`,
         height: `${centerPanel.height}%`,
       }}
     >
-      <div className={`w-full h-full overflow-hidden flex flex-col bg-card/95 relative ${isMobile ? 'rounded-xl' : 'rounded-t-lg'} animate-scale-in`}>
+      <div className={`w-full h-full overflow-hidden flex flex-col bg-card/95 relative ${isMobile ? 'rounded-xl' : 'rounded-t-lg'}`}>
         {isCursed && !applianceProps && !toadProps && <CursePanelOverlay isMobile={isMobile} />}
         {toadProps ? (
           <CurseToadPanel {...toadProps} />
@@ -69,7 +60,7 @@ export function GameBoardCenterPanel({
         ) : spectatorProps ? (
           <SpectatorPanel {...spectatorProps} />
         ) : (
-          <ResourcePanel />
+          <ResourcePanel compact={isMobile} />
         )}
       </div>
     </div>

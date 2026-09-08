@@ -18,7 +18,8 @@ export function useGameBoardEventQueue({
     setEventQueueIdx(0);
   }, [currentEvent?.id]);
 
-  const isWeekendEvent = eventSource === 'weekend';
+  // Ordinary notices belong to one report; hazards retain individual acknowledgement.
+  const isWeekendEvent = eventSource === 'weekend' || currentEvent?.type === 'info' || currentEvent?.type === 'bonus';
   const eventLines = (!isWeekendEvent && currentEvent?.description.split('\n').filter(Boolean)) || [];
   const totalEventCount = isWeekendEvent ? 1 : eventLines.length;
   const currentEventLine = isWeekendEvent

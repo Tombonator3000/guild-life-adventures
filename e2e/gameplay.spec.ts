@@ -78,7 +78,7 @@ test('plays a turn, performs a bank action, saves, mutates, loads and ends the t
   await expect(depositButton).toBeVisible();
 
   const withdrawButton = page.getByRole('button', { name: /withdraw 50/i });
-  await expect(withdrawButton).toHaveCount(0);
+  await expect(withdrawButton).toBeDisabled();
   await depositButton.click();
   await expect(withdrawButton).toBeVisible();
 
@@ -93,7 +93,7 @@ test('plays a turn, performs a bank action, saves, mutates, loads and ends the t
   await expect(page.getByRole('heading', { name: 'Game Menu' })).toBeHidden();
 
   await withdrawButton.click();
-  await expect(withdrawButton).toHaveCount(0);
+  await expect(withdrawButton).toBeDisabled();
 
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Load Game' }).click();

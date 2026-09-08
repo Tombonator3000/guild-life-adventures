@@ -13,6 +13,9 @@ import { CLEAR_WEATHER } from '@/data/weather';
 import type { WeatherType, WeatherParticle } from '@/data/weather';
 import { FESTIVALS } from '@/data/festivals';
 import { saveGame, loadGame, deleteSave } from '@/data/saveLoad';
+import { captureTurnStart } from '@/lib/turnSummary';
+import { createNpcFavorActions } from './helpers/npcFavorHelpers';
+import { createCityActivityActions } from './helpers/cityActivityHelpers';
 import { createPlayerActions } from './helpers/playerHelpers';
 import { createEconomyActions } from './helpers/economyHelpers';
 import { createTurnActions } from './helpers/turnHelpers';
@@ -223,6 +226,8 @@ const createPlayer = (
 });
 
 export const useGameStore = create<GameStore>((set, get) => {
+  const npcFavorActions = createNpcFavorActions(set, get);
+  const cityActivityActions = createCityActivityActions(set, get);
   const playerActions = createPlayerActions(set, get);
   const economyActions = createEconomyActions(set, get);
   const turnActions = createTurnActions(set, get);
@@ -321,7 +326,7 @@ export const useGameStore = create<GameStore>((set, get) => {
 
       set({
         phase: 'playing',
-        players,
+        players: players.map(p => ({ ...p, publicTurnStart:captureTurnStart(p) })),
         currentPlayerIndex: 0,
         week: 1,
         priceModifier: 1.0,
@@ -349,6 +354,8 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     // Player actions (network-aware: guest actions forwarded to host)
     ...wrapWithNetworkGuard(playerActions),
+    ...wrapWithNetworkGuard(cityActivityActions),
+    ...wrapWithNetworkGuard(npcFavorActions),
 
     // Canonical route intent. Host validates route adjacency and computes time.
     ...wrapWithNetworkGuard(travelServiceActions),

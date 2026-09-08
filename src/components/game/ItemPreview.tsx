@@ -6,6 +6,7 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import type { Item, Appliance } from '@/data/items';
 import { getItemImage } from '@/assets/items';
+import { ItemIcon } from './ItemIcon';
 
 export interface PreviewStat {
   label: string;
@@ -20,6 +21,7 @@ export interface PreviewData {
   stats?: PreviewStat[];
   tags?: string[]; // e.g., "Durable", "Stealable", "Appliance", "Consumable"
   effect?: string; // Short effect summary like "+25 Food" or "+10 DEF"
+  itemId?: string;
   imageUrl?: string; // AI-generated item image
 }
 
@@ -104,14 +106,14 @@ export function ItemPreviewPanel({ accentColor = '#8b7355' }: ItemPreviewPanelPr
       </div>
 
       {/* Item image */}
-      {preview.imageUrl && (
+      {(preview.itemId || preview.imageUrl) && (
         <div className="flex justify-center py-2" style={{ backgroundColor: 'rgba(0,0,0,0.08)' }}>
-          <img
+          {preview.itemId ? <ItemIcon itemId={preview.itemId} size={96} /> : <img
             src={preview.imageUrl}
             alt={preview.name}
             className="w-24 h-24 object-contain rounded"
             loading="lazy"
-          />
+          />}
         </div>
       )}
 
@@ -235,6 +237,7 @@ export function itemToPreview(item: Item): PreviewData {
     stats: stats.length > 0 ? stats : undefined,
     tags: tags.length > 0 ? tags : undefined,
     effect: effectParts.length > 0 ? effectParts.join(' | ') : undefined,
+    itemId: item.id,
     imageUrl: getItemImage(item.id),
   };
 }
@@ -267,6 +270,7 @@ export function applianceToPreview(appliance: Appliance, source: 'enchanter' | '
     stats,
     tags,
     effect: effectParts.length > 0 ? effectParts.join(' | ') : undefined,
+    itemId: appliance.id,
     imageUrl: getItemImage(appliance.id),
   };
 }

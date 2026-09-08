@@ -15,7 +15,7 @@ describe('useGameBoardEventQueue', () => {
   it('advances through non-empty event lines before dismissing the store event', () => {
     const dismissEvent = vi.fn();
     const currentEvent = createEvent({
-      description: 'First line\n\nSecond line\nThird line',
+      description: 'First line\n\nSecond line\nThird line', type:'theft',
     });
     const { result } = renderHook(() => useGameBoardEventQueue({
       currentEvent,
@@ -70,11 +70,11 @@ describe('useGameBoardEventQueue', () => {
   it('resets to the first line when the event id changes', () => {
     const dismissEvent = vi.fn();
     const firstEvent = createEvent({
-      id: 'first-event',
+      id: 'first-event', type:'sickness',
       description: 'First A\nFirst B',
     });
     const secondEvent = createEvent({
-      id: 'second-event',
+      id: 'second-event', type:'sickness',
       title: 'SECOND EVENT',
       description: 'Second A\nSecond B',
     });
@@ -106,4 +106,13 @@ describe('useGameBoardEventQueue', () => {
 
     expect(result.current.queuedEvent).toBeNull();
   });
+});
+
+it('acknowledges an ordinary multi-line report once', () => {
+  const dismissEvent = vi.fn();
+  const currentEvent = createEvent({ description:'Rent paid\nDividend credited\nFestival began' });
+  const { result } = renderHook(() => useGameBoardEventQueue({currentEvent,eventSource:'weekly',dismissEvent}));
+  expect(result.current.queuedEvent?.description).toBe(currentEvent.description);
+  act(() => result.current.handleEventDismiss());
+  expect(dismissEvent).toHaveBeenCalledTimes(1);
 });

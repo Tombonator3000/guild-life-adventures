@@ -163,7 +163,7 @@ export function LocationZone({
         </div>
       )}
 
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
+      <div className="location-tokens absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
         {children}
       </div>
     </div>

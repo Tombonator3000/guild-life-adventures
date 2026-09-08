@@ -1,3 +1,4 @@
+import { captureTurnStart } from '@/lib/turnSummary';
 // Start-of-turn helpers: appliance breakage, food spoilage, starvation, robbery, bonuses
 // Extracted from turnHelpers.ts — see that file for the orchestrator (createTurnActions)
 //
@@ -461,5 +462,6 @@ export function createStartTurn(set: SetFn, get: GetFn) {
           : eventMessages.join('\n');
         set({ eventMessage: combined, eventSource: 'weekend' as const, phase: 'event' });
       }
+      set(s => ({ players:s.players.map(p => p.id === playerId ? {...p,publicTurnStart:captureTurnStart(p)} : p) }));
   };
 }

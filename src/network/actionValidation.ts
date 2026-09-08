@@ -1,3 +1,5 @@
+import { NPC_FAVORS } from '@/data/npcMemories';
+import { CITY_ACTIVITIES } from '@/data/cityActivities';
 import { ALLOWED_GUEST_ACTIONS } from './types';
 
 const ACTIONS_WITHOUT_ACTOR_ID = new Set([
@@ -82,6 +84,14 @@ export function validateGuestActionArgs(
   if (!Array.isArray(args)) return 'Invalid action arguments';
 
   switch (name) {
+    case 'performNpcFavor':
+      if (args.length !== 2) return 'Invalid favor arguments';
+      return validateEnumArg(args, 1, NPC_FAVORS.map(f => f.id), 'favor');
+
+    case 'performCityActivity':
+      if (args.length !== 2) return 'Invalid city activity arguments';
+      return validateEnumArg(args, 1, CITY_ACTIVITIES.map(a => a.id), 'city activity');
+
     case 'travelPlayer': {
       const route = args[1];
       if (!Array.isArray(route)) return 'Invalid travel route';

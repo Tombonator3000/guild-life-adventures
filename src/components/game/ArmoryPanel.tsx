@@ -1,3 +1,4 @@
+import { ItemIcon } from './ItemIcon';
 import type { Player, EquipmentSlot } from '@/types/game.types';
 import {
   JonesSectionHeader,
@@ -123,7 +124,7 @@ export function ArmoryPanel({
                     : hoverBg
                 }`}
               >
-                <div className={`flex items-baseline w-full font-mono ${textSize}`}>
+                <div className={`flex items-center gap-2 w-full font-mono ${textSize}`}><ItemIcon itemId={item.id} size={36} />
                   <span className={isEquipped ? (darkText ? 'text-[#2a5c3a] font-bold' : 'text-[#a0d8b0] font-bold') : (darkText ? 'text-[#3d2a14]' : 'text-[#e0d4b8]')}>
                     {isEquipped ? '⚔ ' : '  '}{t(`items.${item.id}.name`) || item.name}
                   </span>
@@ -157,6 +158,7 @@ export function ArmoryPanel({
                 darkText={darkText}
                 largeText={largeText}
                 previewData={previewData}
+                actionPreview={{ hours: 0, goldAfter: player.gold - price, effect: statLabel, blockedReason: !canAfford ? `Needs ${price}g; you have ${player.gold}g.` : undefined }}
                 onClick={() => handlePurchase(item.id)}
               />
             )}
@@ -177,9 +179,9 @@ export function ArmoryPanel({
         )}
       </div>
       <div className={`flex gap-3 mt-1 text-xs ${darkText ? 'text-[#6b5a42]' : 'text-[#8b7355]'}`}>
-        <span>W: {player.equippedWeapon ? (t(`items.${player.equippedWeapon}.name`) || getItem(player.equippedWeapon)?.name) : t('playerStats.none')}</span>
-        <span>A: {player.equippedArmor ? (t(`items.${player.equippedArmor}.name`) || getItem(player.equippedArmor)?.name) : t('playerStats.none')}</span>
-        <span>S: {player.equippedShield ? (t(`items.${player.equippedShield}.name`) || getItem(player.equippedShield)?.name) : t('playerStats.none')}</span>
+        <span>W: {player.equippedWeapon ? (t(`items.${player.equippedWeapon}.name`) || getItem(player.equippedWeapon)?.name) : t('stats.none')}</span>
+        <span>A: {player.equippedArmor ? (t(`items.${player.equippedArmor}.name`) || getItem(player.equippedArmor)?.name) : t('stats.none')}</span>
+        <span>S: {player.equippedShield ? (t(`items.${player.equippedShield}.name`) || getItem(player.equippedShield)?.name) : t('stats.none')}</span>
       </div>
     </div>
   );

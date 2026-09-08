@@ -15,7 +15,7 @@ import { BountyBoardPanel } from '../BountyBoardPanel';
 import { HealerPanel } from '../HealerPanel';
 import { EnchanterPanel } from '../EnchanterPanel';
 import { TavernPanel } from '../TavernPanel';
-import { BankPanel } from '../BankPanel';
+import { BankPanel, type BankView } from '../BankPanel';
 import { GeneralStorePanel } from '../GeneralStorePanel';
 import { ArmoryPanel } from '../ArmoryPanel';
 import { AcademyPanel } from '../AcademyPanel';
@@ -308,18 +308,11 @@ function academyTabs(ctx: LocationTabContext): LocationTab[] {
 
 function bankTabs(ctx: LocationTabContext): LocationTab[] {
   const { player, priceModifier, stockPrices, stockPriceHistory } = ctx;
-  return [{
-    id: 'banking',
-    label: 'Services',
-    content: (
-      <BankPanel
-        player={player}
-        priceModifier={priceModifier}
-        stockPrices={stockPrices}
-        stockPriceHistory={stockPriceHistory}
-      />
-    ),
-  }];
+  const services: { id: BankView; label: string }[] = [
+    { id: 'banking', label: 'Bank' }, { id: 'broker', label: 'The Broker' },
+    { id: 'loans', label: 'Loans' }, { id: 'overview', label: 'Overview' },
+  ];
+  return services.map(service => ({ ...service, paged: false, content: <BankPanel key={service.id} player={player} priceModifier={priceModifier} stockPrices={stockPrices} stockPriceHistory={stockPriceHistory} section={service.id} /> }));
 }
 
 function generalStoreTabs(ctx: LocationTabContext): LocationTab[] {

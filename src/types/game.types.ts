@@ -280,6 +280,12 @@ export interface Player {
   // Quest Chain progress (B1)
   questChainProgress: Record<string, number>; // chainId → steps completed (0-indexed)
   // Non-linear quest chain progress
+  questChoices?: Record<string, string>;
+  claimedNpcFavors?: string[];
+  publicTurnStart?: import('@/lib/turnSummary').PublicTurnStart;
+  lastTurnSummary?: import('@/lib/turnSummary').TurnSummary;
+  cityActivityWeek?: number; // One seasonal activity per player/week
+  cityActivityId?: string;
   nlChainProgress: Record<string, number>; // chainId → current step index
   nlChainCompleted: string[]; // IDs of completed non-linear chains
   /** Pending choice after completing a non-linear chain step (null = no pending choice) */
