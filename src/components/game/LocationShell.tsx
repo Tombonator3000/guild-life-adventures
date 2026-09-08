@@ -76,7 +76,10 @@ function tabIcon(id: string) {
 export function LocationShell({ npc, tabs, defaultTab, locationId, locationName, workInfo }: LocationShellProps) {
   const player = useCurrentPlayer();
   const memories = player ? getNpcMemories(player, locationId) : [];
-  const conditions = useGameStore(s => ({ week:s.week, activeFestival:s.activeFestival, weather:s.weather }));
+  const week = useGameStore(s => s.week);
+  const activeFestival = useGameStore(s => s.activeFestival);
+  const weather = useGameStore(s => s.weather);
+  const conditions = { week, activeFestival, weather };
   const cityActivities = getCityActivities(locationId, conditions);
   const hasWork = !!workInfo && !tabs.some(tab => tab.id === 'hexed');
   const availableTabs: LocationTab[] = [...tabs, ...(memories.length && !tabs.some(t => t.id === 'hexed') ? [{id:'personal-favors',label:'Your contact',paged:false,content:<NpcFavorPanel key={locationId} location={locationId} />}]:[]), ...(cityActivities.length && !tabs.some(t => t.id === 'hexed') ? [{ id:'city-activities', label:'This Week', paged:false, content:<CityActivityPanel key={locationId} location={locationId} /> }] : [])];

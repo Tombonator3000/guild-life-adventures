@@ -51,3 +51,9 @@ it('clamps visible recovery gains and persists a bounded weekly receipt', () => 
   expect(s.loadFromSlot(1)).toBe(true);
   expect(useGameStore.getState().players[0].cityActivityWeek).toBe(1);
 });
+
+it('does not let a wire call bypass another player’s location hex',()=>{
+  const s=useGameStore.getState(),id=s.players[0].id;
+  useGameStore.setState({locationHexes:[{hexId:'test-hex',casterId:s.players[1].id,casterName:'Rival',targetLocation:'guild-hall',weeksRemaining:1}]});
+  expect(s.performCityActivity(id,'tournament-steward')).toMatchObject({success:false,message:'A hex blocks this location.'});
+});

@@ -38,5 +38,12 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     await expect(page.getByRole('button', { name: /^Sell 1/ })).toBeEnabled();
     await page.getByRole('button', { name: /^Sell 1/ }).click();
     await page.screenshot({ path: info.outputPath('broker-actions.png') });
+    await page.getByRole('button', { name:'Loans', exact:true }).click();
+    await expect(page.getByRole('button', { name:'Borrow 100g' })).toBeDisabled();
+    await expect(page.getByRole('region', { name:'Bank loans' })).toContainText('shifts first');
+    await page.screenshot({ path:info.outputPath('bank-loans.png') });
+    await page.getByRole('button', { name:'Overview', exact:true }).click();
+    await expect(page.getByRole('region', { name:'Financial overview' })).toContainText('Total wealth');
+    await page.screenshot({ path:info.outputPath('bank-overview.png') });
   });
 }

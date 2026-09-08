@@ -75,7 +75,7 @@
 
 .bank-receipt:empty { display:none; }
 .bank-receipt { font-size:11px; color:#375c35; line-height:1.3; }
-.mobile-map-surface .animated-player-token { scale:.6; }
+.mobile-map-surface .animated-player-token { scale:.48; }
 @media (orientation:landscape) {
   .mobile-action-region .location-service-picker { display:block; min-height:36px; flex-shrink:0; padding:4px 8px; background:#e8d3aa; color:#422e19; font:bold 12px Georgia,serif; }
   .mobile-action-region .location-tabs { display:none; }
@@ -103,3 +103,5 @@
 @container (max-width:430px) { .event-report-body aside { display:none; } }
 
 .rival-summary { margin:5px 0 0 27px; font:11px/1.4 Georgia,serif; color:#4d3922; }.rival-summary summary { cursor:pointer; padding:5px 0; }.rival-summary ul { list-style:disc; padding-left:14px; }
+
+.mobile-map-viewport:not([data-zoom="true"]) { display:flex; align-items:center; }

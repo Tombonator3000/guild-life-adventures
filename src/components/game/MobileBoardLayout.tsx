@@ -23,12 +23,13 @@ export function MobileBoardLayout({ children, menu }: { children: ReactNode; men
   const scale = zoom ? 1.8 : 1;
   return <div className="mobile-board-layout">
     <div className="mobile-map-region">
-      <div ref={viewport} className="mobile-map-viewport" aria-label="Guildholm board"
+      <div ref={viewport} className="mobile-map-viewport" data-zoom={zoom} aria-label="Guildholm board"
         onPointerDownCapture={event => { pointer.current = { x: event.clientX, y: event.clientY }; }}
+        onPointerCancel={() => { pointer.current = null; }}
         onClickCapture={event => {
           const start = pointer.current;
           pointer.current = null;
-          if (start && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 12) {
+          if (event.detail !== 0 && start && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 12) {
             event.preventDefault(); event.stopPropagation();
           }
         }}>
