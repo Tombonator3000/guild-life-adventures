@@ -12,9 +12,10 @@ for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1280
   if(await page.evaluate(()=>!!document.fullscreenElement))await page.keyboard.press('f');
   await page.locator('[data-zone-id="armory"]').click();
   const shell=page.locator('.location-shell[data-location="armory"]'),picker=shell.locator('.location-service-picker');
+  await expect(shell).toBeVisible();
   if(await picker.isVisible())await picker.click();
   await shell.getByRole('button',{name:'Weapons',exact:true}).click();
-  const dagger=shell.getByRole('button',{name:/^Dagger/}).first();
+  const dagger=shell.getByRole('button',{name:/^Simple Dagger/}).first();
   await openMenuPage(page,dagger);
   await expect(dagger).toBeEnabled();
   await expect(dagger.locator('.action-preview')).toContainText('0h');
@@ -24,7 +25,7 @@ for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1280
   await page.screenshot({path:info.outputPath('painted-shop.png')});
   await dagger.click();
   if(viewport.width<1024)await page.getByTitle('Stats & Inventory').click();
-  await page.locator('.guild-sidebar').getByRole('button',{name:'Inventory',exact:true}).click();
+  await page.locator('.guild-sidebar').getByRole('button',{name:/^inventory$/i}).click();
   const owned=page.locator('.guild-sidebar [data-item-art="dagger"]').first();
   await expect(owned).toBeVisible();
   expect(await owned.evaluate(e=>getComputedStyle(e).backgroundImage)).toBe(original);

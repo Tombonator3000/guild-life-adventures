@@ -14,6 +14,8 @@ it('remembers only the validated actual branch choice and exposes its matching c
   s.makeNLChainChoice(id,'tg-1-report');
   const p=useGameStore.getState().players[0];
   expect(p.questChoices).toEqual({'tg-1-investigate':'tg-1-report'});
+  expect(useGameStore.getState().eventMessage).toContain('Escort the guard’s courier');
+  expect(useGameStore.getState().eventMessage).toContain('Open Your contact');
   expect(getNpcMemories(p,'guild-hall').map(f=>f.id)).toEqual(['guard-escort']);
   expect(getNpcMemories(p,'shadow-market')).toEqual([]);
 });

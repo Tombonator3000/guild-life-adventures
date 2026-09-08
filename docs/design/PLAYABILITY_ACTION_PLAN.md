@@ -22,11 +22,13 @@ Balanseendringer krever målt grunnlag. Eksisterende fame/infamy, oppdragsforgre
 
 ## Status
 
-- [ ] Steg 1 — mobil, bank og ukeplan
-- [ ] Steg 2 — handlinger og grafikk
-- [ ] Steg 3 — arrangementer og rapport
-- [ ] Steg 4 — simulator og baseline
-- [ ] Steg 5 — NPC-er og rivaler
+Avkrysning gjelder implementert funksjonalitet. Samlet nettleser- og leveransekontroll fullføres i steg 6.
+
+- [x] Steg 1 — mobil, bank og ukeplan
+- [x] Steg 2 — handlinger og grafikk
+- [x] Steg 3 — arrangementer og rapport
+- [x] Steg 4 — simulator og baseline
+- [x] Steg 5 — NPC-er og rivaler
 - [ ] Steg 6 — verifisert leveranse
 
 Fysisk Samsung S24 og langvarig 60 fps er ikke verifisert i arbeidsmiljøet. Utvidet app-typesjekk har 185 eksisterende diagnostikker ved start; nye feil skal ikke aksepteres. Fremdrift, korreksjoner og kilderevisjon for bevis føres i `docs/AUDIT_LOG_PLAYABILITY.md`.

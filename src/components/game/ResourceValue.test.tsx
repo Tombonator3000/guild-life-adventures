@@ -2,10 +2,10 @@ import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { ResourceValue } from './ResourceValue';
 const env = vi.hoisted(()=>({reducedMotion:true,visible:true}));
-const options = vi.hoisted(()=>({environmentDetail:'calm'}));
+const options = vi.hoisted(()=>({environmentDetail:'reduced'}));
 vi.mock('@/hooks/useEnvironmentActivity',()=>({useEnvironmentActivity:()=>env}));
 vi.mock('@/hooks/useGameOptions',()=>({useGameOptions:()=>({options})}));
-afterEach(()=>{ cleanup(); vi.useRealTimers(); options.environmentDetail='calm'; });
+afterEach(()=>{ cleanup(); vi.useRealTimers(); options.environmentDetail='reduced'; });
 it('shows a static real delta, expires it and never celebrates a player switch',()=>{
   vi.useFakeTimers();
   const r=render(<ResourceValue value={100} identity="one" />);

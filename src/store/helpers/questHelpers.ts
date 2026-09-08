@@ -9,6 +9,8 @@
 
 import type { LocationId, HousingTier, DeathEvent, GoalSettings, Player } from '@/types/game.types';
 import { GUILD_PASS_COST, GUILD_RANK_ORDER, GUILD_RANK_REQUIREMENTS } from '@/types/game.types';
+import { NPC_FAVORS } from '@/data/npcMemories';
+import { getLocation } from '@/data/locations';
 import { getGameOption } from '@/data/gameOptions';
 import {
   getQuest,
@@ -646,9 +648,11 @@ export function createQuestActions(set: SetFn, get: GetFn) {
       // Show choice outcome and chain completion notice for human players only
       const completedPlayer = get().players.find(p => p.id === playerId);
       if (completedPlayer && !completedPlayer.isAI) {
+        const favor = NPC_FAVORS.find(f => f.step === step.id && f.choice === choice.id);
+        const invitation = favor ? `\nContact unlocked at ${getLocation(favor.location)?.name ?? favor.location}: ${favor.name}. Open Your contact when you visit for this one-time offer.` : '';
         const msg = buildNLChainChoiceMessage(
           choice.outcomeText, chain.name, chain.completionBonusGold, chain.completionBonusHappiness, isComplete,
-        );
+        ) + invitation;
         if (msg) {
           const existing = get().eventMessage;
           set({ eventMessage: existing ? existing + '\n' + msg : msg, eventSource: 'weekly', phase: 'event' });

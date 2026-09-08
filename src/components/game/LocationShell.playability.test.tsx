@@ -11,7 +11,7 @@ it('mounts against real Zustand snapshots and adds/removes seasonal services wit
   useGameStore.getState().startNewGame(['Visitor'],false,{wealth:5000,happiness:100,education:45,career:75,adventure:0});
   useGameStore.setState(s=>({activeFestival:'harvest-festival',players:s.players.map(p=>({...p,currentLocation:'general-store'}))}));
   render(<LocationShell npc={LOCATION_NPCS['general-store']!} locationId="general-store" locationName="General Store" tabs={[{id:'goods',label:'Goods',paged:false,content:<p>Daily goods</p>}]} />);
-  fireEvent.click(screen.getByRole('button',{name:'This Week',exact:true}));
+  fireEvent.click(screen.getByRole('button',{name:'This Week'}));
   expect(screen.getByRole('region',{name:'City activities'})).toBeVisible();
   fireEvent.click(screen.getByRole('button',{name:'Join activity · 4h'}));
   expect(useGameStore.getState().players[0].gold).toBe(120);

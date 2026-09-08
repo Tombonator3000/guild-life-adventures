@@ -18,3 +18,19 @@ CI `34180368139` på `15b68a7`: typegate, enhetstester, build, lint og lydkontro
 Steg 2: 48 malte gjenstandsceller, felles ItemIcon for butikk/inventar/preview, kostnads-/utfallsrader for mat, utstyr og undervisning, korte numeriske ressursendringer og diplomer/stillinger. Produksjonsøkonomi gjenbrukes. Ressursmarkeringer respekterer Off/Calm og reduced motion.
 
 Steg 3: 15 avgrensede aktiviteter ved eksisterende steder, med autoritativ ID-validering og én aktivitet per spiller/uke. Fire nye domenetester består, inkludert falske argumenter, feil aktør, replay og save/load. Vanlige info/bonusmeldinger samles; helgehendelser var allerede samlet. Kritiske hendelser beholder egen bekreftelse. Rapportinnhold bruker samme sideinndeling som lokasjoner.
+
+## 2026-09-08 — kritisk review av stedskomponenten
+
+Kjøring `34181333295`, revisjon `99ce30f`: 746 enhetstester, build, typegate, lint og lydkontroll bestod, men browser viste 21 feil/5 bestått. Faktisk screenshot og `error-context.md` fra mobilbanken viste «Maximum update depth exceeded» i feilgrensen. Rotårsaken var et nytt objekt fra en Zustand 5-selector i LocationShell. Tre primitive/stabile selectorer erstatter objektselectoren. En ny integrasjonstest monterer den virkelige LocationShell mot faktisk Zustand-store, utfører en aktivitet og avslutter festivalen; den består. Dette var en reell UI-regresjon, ikke et snapshot som skulle godtas. Nettleserkontrollen kjøres på nytt på `9e20976`.
+
+NPC-favoritter følger seks konkrete, eksisterende oppdragsvalg. Valget registreres først etter autoritativ validering; ugyldige valg og ukjente lagringsnøkler ignoreres. Engangstilbud tar kun en ID på nettverket, validerer aktør/sted/tid/helse/minne og lagrer en begrenset kvitteringsliste. Kritisk review la også til blokkering for en annen spillers aktive stedshex og bokføring av faktisk gullforbruk.
+
+Rivalrapporter sammenligner offentlig tilstand ved turstart/turslutt. De inkluderer faktisk automatisk arbeid ved turavslutning, ikke bare eksplisitte klikk. Nye turer skriver over forrige rapport. Ingen skjulte bankbeløp, oppdiktede hensikter eller ekstra figurer.
+
+Simulatorens røykprøve fullførte alle fire målsett og gjentok første frø identisk. 1000 frø måles i fire disjunkte serier på frosset kilde `f04d8e6` (tilsvarende GitHub `113a7748e9c3c71d38eb4968d6175fae3a94543e`); produksjons-AI, økonomi og turregler er uendret av måleren. UI-rettelsene etter dette påvirker ikke kjøringene. Detaljrapport og avbruddsantall legges til etter fullføring.
+
+## 2026-09-08 — fullført balansebaseline og visuell detaljkontroll
+
+1000 av 1000 unike spill fullført, null fastlåste/ukegrense-avbrudd og null fangede runtimefeil. Fire serier gjentok sitt første frø identisk. Alle fire målsett har 250 spill, med rotert rekkefølge og vanskelighetsgrad. Medianvarighet: Quick 15, Standard 36, Adventure 49, Epic 98 uker. Epic hadde 99/250 siste-overlevende-seire; dette må ikke forveksles med rask måloppnåelse. Full lossless-detaljdata og aggregater er lagret under `docs/qa/playability/balance`. Baseline måler eksisterende AI; den bruker ikke nye byaktiviteter eller personlige tilbud. Handlingsavvisninger og personlighetsforskjeller står synlig i rapporten.
+
+CI `34182254977` på `9e20976`: 752 enhetstester og simulator-røykprøve bestod. Browser: 28 bestått, 3 gjenstandstester feilet på feil testnavn (“Dagger” versus “Simple Dagger”) og menyåpning før reiseanimasjon var ferdig. Én eldre dev-aktivering var flaky og bestod retry; testen venter nå på den faktiske tittelanimasjonen før femklikk-gesten. Faktiske screenshots bekrefter bank/Broker/Loans/Overview, byvalg og NPC-tilbud på desktop og begge mobilretninger. NPC-navn under snakkeboblen i stående mobil og en manglende oversettelsesnøkkel for tomt våpenspor ble også identifisert og rettet.
