@@ -9,7 +9,7 @@ export function UpdateBanner() {
   if (!needRefresh) return null;
 
   return (
-    <div role="status" aria-live="polite" className="fixed max-w-[calc(100vw-1rem)] left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-4 fade-in duration-300" style={{ bottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+    <div data-fx-protect role="status" aria-live="polite" className="fixed max-w-[calc(100vw-1rem)] left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-4 fade-in duration-300" style={{ bottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
       <div className="parchment-panel px-5 py-3 flex items-center gap-3 shadow-lg border-2 border-primary/50">
         <RefreshCw className="w-5 h-5 text-primary animate-spin" style={{ animationDuration: '3s' }} />
         <div className="flex flex-col">

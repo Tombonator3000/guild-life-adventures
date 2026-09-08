@@ -30,3 +30,13 @@ Existing icons receive small embossed medallions. Sidebar paper, wood and scenic
 Implementation is awaiting complete runtime review. Unit suite, production build, lint and baseline-aware app type comparison are in progress. Browser journeys cover existing banking, forge work/raise and mobile menu actions, all six weather states, all four festivals, and Full/Calm/Off. Performance numbers must be reported with the exact browser/build conditions; physical Samsung S24 remains unverified without device evidence.
 
 No merge or production deployment has been performed by this work.
+
+## First runtime review — 35acb66
+
+Run: https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34175854816
+
+733 unit tests, build, TypeScript workflow check, lint and audio audit passed. Browser suite: 18 passed, 1 failed. Weather/festivals, bank, forge work/raise, Cave, updates and mobile journeys passed. The guided first turn failed because the noninteractive contextual tip intercepted the Guild Hall click. Its body is now pointer-transparent; its close button remains interactive. The original guided-turn journey stays unchanged and must pass on the correction commit.
+
+Inspected actual CI PNGs: clear, snow, drought, tournament, storm/forge and mobile storm/bank. Original art and menu structure are intact, new material icons are legible, smoke/leaf textures have no black squares, and actions remain readable. Snow revealed missing desktop frost because corners were behind sidebars: anchor frost to the visible board rectangle and keep the painted branches inside it. Pennant proportions were too narrow: use square atlas dimensions. Added sparse screen-space foreground flakes/confetti and a shared screen reservation so festival+storm combinations obey the total mobile cap. Added pixel-alpha, static Calm-clock, mobile snow/drought and WebGL ready/fallback evidence to the next browser run.
+
+The board SHA-256 still equals `fcbbcaaf3d711628a11e4b9a4d9680bf4652a467b31deda6bb1338a7c6aa6d80`. Token/portrait components and location data have no diff from the base. The explicit app TypeScript check has exactly the same 185 pre-existing diagnostics as baseline, with no added or removed diagnostic lines after normalizing source line positions.

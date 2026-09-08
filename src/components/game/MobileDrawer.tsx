@@ -30,6 +30,7 @@ export function MobileDrawer({ isOpen, onClose, side, title, children }: MobileD
 
       {/* Drawer panel */}
       <div
+        data-fx-protect
         className={`
           relative flex flex-col h-full bg-parchment shadow-2xl
           w-72 max-w-[85vw]

@@ -4,7 +4,7 @@ import type { WeatherType } from '@/data/weather';
 export function effectPolicy(detail: EnvironmentDetail, reducedMotion: boolean, visible: boolean, mobile: boolean) {
   const quality = detail === 'off' ? 'off' : detail === 'reduced' || reducedMotion ? 'reduced' : 'full';
   return { quality, enabled: quality !== 'off', animated: quality === 'full', running: quality === 'full' && visible,
-    mobile, dpr: mobile ? 1.25 : 1.5, budget: mobile ? 180 : 480 } as const;
+    mobile, dpr: mobile ? 1.25 : 1.5, budget: mobile ? 180 : 480, screenBudget: mobile ? 10 : 24 } as const;
 }
 export type EffectPolicy = ReturnType<typeof effectPolicy>;
 export function precipitationBudget(weather: WeatherType | undefined, mobile: boolean) {

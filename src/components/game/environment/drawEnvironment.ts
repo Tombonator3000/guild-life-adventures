@@ -37,7 +37,7 @@ export function createWorldRenderer() {
     const rainy = weather === 'thunderstorm' || weather === 'harvest-rain';
     const s = assets?.sprites;
     let particles = 0;
-    const cap = policy.budget - (policy.mobile ? 10 : 24);
+    const cap = policy.budget - policy.screenBudget;
     const emit = (index: number,x: number,y: number,width: number,height: number,alpha: number,rotation=0) => {
       if (particles++ < cap) sprite(ctx,s?.[index],x,y,width,height,alpha,rotation);
     };
@@ -57,7 +57,8 @@ export function createWorldRenderer() {
     if (festival) {
       FESTIVAL_ANCHORS.forEach(([x,y],i) => {
         // Cloth stays present in Calm; no extra game objects or crowd tokens.
-        emit(15,x*w,y*h,Math.max(24,w*.039),h*.090,.88,policy.animated?Math.sin(t*1.6+i)*.045:0);
+        const size=Math.max(24,w*.046);
+        emit(15,x*w,y*h,size,size,.88,policy.animated?Math.sin(t*1.6+i)*.045:0);
         if (festival === 'midsummer-fair' || festival === 'harvest-festival') glow(ctx,x*w,(y+.045)*h,w*.024,'#ffbd62',.27);
       });
       if (festival === 'winter-solstice') {
@@ -105,10 +106,11 @@ export function createWorldRenderer() {
       const flight=mod(t+12,48);
       if (flight<14) for (let i=0;i<4;i++) sprite(ctx,assets.crow,(flight/14*w*1.3)-w*.15-i*17,h*(.07+.06*Math.sin(flight/14*Math.PI))+i%2*12,12+i,7+Math.sin(t*7+i)*2,.45,-.1);
     }
-    const rainCount=precipitationBudget(weather,policy.mobile);
+    const snowing=weather === 'snowstorm' || (festival === 'winter-solstice' && (!weather || weather === 'clear'));
+    const rainCount=precipitationBudget(snowing?'snowstorm':weather,policy.mobile);
     for (let i=0;i<rainCount && particles<cap;i++,particles++) {
       const p=POOL[i], depth=i%3;
-      if (weather === 'snowstorm') {
+      if (snowing) {
         const speed=12+depth*20+p.speed*9,x=mod(p.x*w+Math.sin(t*.4+p.phase*TAU)*(10+depth*8)+t*8,w),y=mod(p.y*h+t*speed,h+12)-6;
         ctx.fillStyle=`rgba(240,248,255,${.3+depth*.21})`;ctx.beginPath();ctx.ellipse(x,y,.7+depth*.7,.8+depth*.9,t+p.phase,0,TAU);ctx.fill();
       } else {
@@ -133,29 +135,42 @@ export function createWorldRenderer() {
   };
 }
 
-export function drawScreen(ctx: Context,w: number,h: number,t: number,scene: Scene) {
+export type ScreenRegion = {x:number;y:number;width:number;height:number};
+export function drawScreen(ctx: Context,w: number,h: number,t: number,scene: Scene,board: ScreenRegion = {x:0,y:0,width:w,height:h}) {
   ctx.clearRect(0,0,w,h);
   const {policy,assets,weather,festival}=scene;
+  let remaining: number=policy.screenBudget;
   if (weather === 'snowstorm' || festival === 'winter-solstice') {
-    const size=Math.min(w,h)*.27;
+    const size=Math.min(board.width,board.height)*.27;
     // Painted frost stays at the four corners; mid-screen and text remain clear.
-    for(let i=0;i<4;i++) sprite(ctx,assets?.sprites[14],i%2?w-size*.22:size*.22,i<2?h-size*.22:size*.22,size,size,.47,i===0?0:i===1?-Math.PI/2:i===2?Math.PI/2:Math.PI);
+    for(let i=0;i<4;i++) sprite(ctx,assets?.sprites[14],board.x+(i%2?board.width-size*.45:size*.45),board.y+(i<2?board.height-size*.45:size*.45),size,size,.47,i===0?0:i===1?-Math.PI/2:i===2?Math.PI/2:Math.PI);
+    remaining-=4;
   }
   if (weather === 'enchanted-fog') {
     const g=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.3,w/2,h/2,Math.max(w,h)*.65);g.addColorStop(0,'#41304f00');g.addColorStop(1,'#34234260');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
   }
-  if (!policy.animated) return;
+  if (!policy.animated) return policy.screenBudget-remaining;
+  if (weather === 'snowstorm') for (let i=0;i<(policy.mobile?4:8)&&remaining>0;i++,remaining--) {
+    const p=POOL[260+i],x=mod(p.x*w+Math.sin(t*.4+i)*25+t*14,w),y=mod(p.y*h+t*(48+p.speed*28),h);
+    ctx.fillStyle='#edf7ff9c';ctx.beginPath();ctx.ellipse(x,y,2+p.size,3+p.size,t*.2,0,TAU);ctx.fill();
+  }
+  if (festival === 'spring-tournament' || festival === 'midsummer-fair') for (let i=0;i<(policy.mobile?5:12)&&remaining>0;i++,remaining--) {
+    const p=POOL[280+i],x=mod(p.x*w+t*19+Math.sin(t+p.phase*6)*20,w),y=mod(p.y*h+t*(26+p.speed*20),h);
+    ctx.save();ctx.translate(x,y);ctx.rotate(t+p.phase*6);ctx.globalAlpha=.75;ctx.fillStyle=['#a83831','#d6ae4c','#527761'][i%3];ctx.fillRect(-3,-3,5,7*Math.cos(t*2+p.phase));ctx.restore();
+  }
   if (weather === 'thunderstorm' || weather === 'harvest-rain') {
-    const count=policy.mobile?7:18;
+    const count=Math.min(policy.mobile?7:18,remaining);
     for(let i=0;i<count;i++) {
       const p=POOL[200+i], age=mod(t/(7+p.speed*8)+p.phase,1);
       // Camera droplets use screen coordinates and much slower motion than world rain.
       sprite(ctx,assets?.sprites[13],w*p.x,h*(age*1.3-.15),22+p.size*17,40+p.size*32,Math.sin(age*Math.PI)*.42);
     }
+    remaining-=count;
     if (scene.strike !== null) {
       ctx.fillStyle='#d1e1ed15';ctx.fillRect(0,0,w,h);
       // A single restrained jagged stroke at the board edge, no repeated flashing.
       ctx.strokeStyle='#e2eaf4a0';ctx.lineWidth=1.8;ctx.beginPath();const x=w*(.78+(scene.strike%3)*.045);ctx.moveTo(x,0);ctx.lineTo(x-16,h*.075);ctx.lineTo(x+4,h*.065);ctx.lineTo(x-30,h*.17);ctx.stroke();
     }
   }
+  return policy.screenBudget-remaining;
 }

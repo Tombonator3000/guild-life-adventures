@@ -24,6 +24,10 @@ test('weather stays behind playable controls and preserves visual evidence', asy
   for (const [label,type] of [['Clear','clear'],['Storm','thunderstorm'],['Snow','snowstorm'],['Fog','enchanted-fog'],['Rain','harvest-rain'],['Drought','drought']]) {
     await page.getByRole('button',{name:label,exact:true}).click();
     await expect(page.locator('.board-atmosphere')).toHaveAttribute('data-weather',type);
+    if (type === 'drought') {
+      await expect(page.locator('.heat-shimmer')).toHaveAttribute('data-status',/ready|fallback/);
+      await testInfo.attach('heat-renderer',{body:String(await page.locator('.heat-shimmer').getAttribute('data-status')),contentType:'text/plain'});
+    }
     // Wait for a rendered frame; screenshots keep the real live animations.
     await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
     await page.screenshot({path:testInfo.outputPath(`desktop-${type}.png`)});
@@ -36,6 +40,19 @@ test('weather stays behind playable controls and preserves visual evidence', asy
   }
   await page.getByRole('button',{name:'Clear Festival',exact:true}).click();
   await page.getByRole('button',{name:'Storm',exact:true}).click();
+  // Actual alpha pixels, not just z-index or pointer-events declarations.
+  const protectedPixels = await page.evaluate(() => {
+    const screen=document.querySelector<HTMLCanvasElement>('.screen-event-fx')!;
+    const world=document.querySelector<HTMLCanvasElement>('.board-atmosphere')!;
+    const panel=document.querySelector('[data-fx-protect*=","]')!.getBoundingClientRect();
+    return [screen,world].map(canvas => {
+      const box=canvas.getBoundingClientRect();
+      const x=Math.round((panel.left+panel.width/2-box.left)*canvas.width/box.width);
+      const y=Math.round((panel.top+panel.height/2-box.top)*canvas.height/box.height);
+      return canvas.getContext('2d')!.getImageData(x,y,1,1).data[3];
+    });
+  });
+  expect(protectedPixels).toEqual([0,0]);
   const timing = await page.evaluate(async () => {
     const canvas = document.querySelector<HTMLCanvasElement>('.board-atmosphere')!;
     const initialPixels = canvas.toDataURL();
@@ -60,6 +77,9 @@ test('weather stays behind playable controls and preserves visual evidence', asy
   await page.getByLabel('Living environment').selectOption('reduced');
   await expect(page.locator('.weather-particles')).toHaveCount(0);
   await expect(page.locator('.environment-still[data-weather="thunderstorm"]')).toBeVisible();
+  const calmTime=await page.locator('.board-atmosphere').getAttribute('data-effect-time');
+  await page.waitForTimeout(150);
+  expect(await page.locator('.board-atmosphere').getAttribute('data-effect-time')).toBe(calmTime);
   await page.getByLabel('Living environment').selectOption('off');
   await expect(page.locator('.board-environment')).toHaveCount(0);
   await page.getByLabel('Living environment').selectOption('full');
@@ -68,12 +88,32 @@ test('weather stays behind playable controls and preserves visual evidence', asy
   expect(errors).toEqual([]);
 });
 
+test('snow and heat retain the original board and clear mobile action regions', async ({page},testInfo) => {
+  await startEnvironmentGame(page);
+  await page.getByRole('button',{name:'Snow',exact:true}).click();
+  await page.setViewportSize({width:390,height:844});
+  await page.screenshot({path:testInfo.outputPath('mobile-snow.png')});
+  await page.setViewportSize({width:1280,height:720});
+  await page.getByRole('button',{name:/^dev$/i}).click();
+  await page.getByRole('button',{name:'Drought',exact:true}).click();
+  await page.setViewportSize({width:844,height:390});
+  await expect(page.locator('.heat-shimmer')).toHaveAttribute('data-status',/ready|fallback/);
+  await page.screenshot({path:testInfo.outputPath('mobile-landscape-drought.png')});
+  await page.locator('[data-zone-id="bank"]').click();
+  await expect(page.getByRole('button',{name:/deposit 50/i})).toBeVisible({timeout:15_000});
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await expect(page.locator('.heat-shimmer')).toHaveCount(0);
+  await expect(page.locator('.board-environment')).toHaveAttribute('data-detail','reduced');
+  await page.screenshot({path:testInfo.outputPath('mobile-landscape-calm-bank.png')});
+});
+
 test('mobile storm leaves bank actions usable and display settings reachable', async ({page},testInfo) => {
   await startEnvironmentGame(page);
   await page.getByRole('button',{name:'Storm',exact:true}).click();
   await page.setViewportSize({width:390,height:844});
   await expect(page.getByTitle('Stats & Inventory')).toBeVisible();
   await expect(page.locator('canvas.weather-particles')).toHaveAttribute('data-particle-budget','120');
+  expect(Number(await page.locator('canvas.weather-particles').getAttribute('data-rendered-particles'))).toBeLessThanOrEqual(170);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth+1)).toBe(true);
   await page.screenshot({path:testInfo.outputPath('mobile-storm.png')});
   await page.locator('[data-zone-id="bank"]').click();
