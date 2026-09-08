@@ -49,4 +49,14 @@ Inspected final desktop snow, tournament, storm/forge, sidebar materials, mobile
 
 Short storm sample: 180 frames, 59.34 fps average, 16.8 ms p95/p99, changing actual canvas pixels. This is CI Chromium with a development build, not sustained or physical S24 verification. Physical-device performance remains UNVERIFIED.
 
-[Runtime images, gate table and raw measurements](qa/board-vfx/README.md) are committed for review. PR #410 contains the implementation and correction commits. The final evidence commit changes only documentation/images; runtime is identical to tested `61793ab`. No merge or deployment was performed.
+[Runtime images, gate table and raw measurements](qa/board-vfx/README.md) are committed for review. PR #410 contains the implementation and correction commits. Embedded visual evidence was captured on this version; the subsequent crow-settings correction is verified below. No merge or deployment was performed.
+
+## Final verification — 3baa6da
+
+The last correction refreshes the world renderer's saved crow-editor configuration at the React boundary. This preserves live editor changes without reading storage every animation frame. Targeted tests passed, and normalized app TypeScript diagnostics still match the 185-error baseline exactly (zero additions/removals).
+
+[Final full CI](https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34176858419) on `3baa6daf72ff43ae02496964eee38e463b16b5af`: **733 tests / 92 files PASS; 20 browser tests PASS; production build, root TypeScript check, lint and audio integrity PASS**. Lint remains at 27 existing warnings and zero errors. Inspected the final actual desktop snow and storm/forge captures again: original art, tokens, portraits and action readability are preserved.
+
+Final storm sample: **180 frames, 59.67 fps average, 16.7 ms p95, 16.8 ms p99**. Actual canvas pixels changed, WebGL heat renderer reported `ready`, and protected center-panel pixel alpha was `[0, 0]`. These are short CI Chromium/development-build measurements. Physical S24 performance and sustained 60 fps remain UNVERIFIED; the extended app typecheck remains FAIL on unchanged existing debt.
+
+The final evidence checkpoint updates only this audit, the QA index and its timing JSON. Runtime is identical to the successful `3baa6da` run. PR #410 is ready for review; no merge or production deployment was performed.

@@ -1,10 +1,10 @@
 # Board VFX — verified runtime
 
-Tested runtime: `61793ab77a70bcc4e54bbae5e78d1e2017d3a242`.
-[Successful full CI run](https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34176349430).
-[Original PNGs and timing JSON](https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34176349430/artifacts/10037466229).
+Tested runtime: `3baa6daf72ff43ae02496964eee38e463b16b5af`.
+[Successful final full CI run](https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34176858419).
+[Final original PNGs and timing JSON](https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34176858419/artifacts/10037649897).
 
-The images below are **actual Chromium game captures**, exported to WebP without cropping or layout changes. They are not generated concepts. The final documentation commit changes no runtime code.
+The images below are **actual Chromium game captures**, exported to WebP without cropping or layout changes. They are not generated concepts. Embedded images were captured on `61793ab` ([source artifact](https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34176349430/artifacts/10037466229)); the final runtime also refreshes saved crow-editor settings after React configuration changes. Final snow and storm/forge captures were inspected again with the original board and clear controls intact. The final documentation commit changes no runtime code.
 
 | Gate | Result | Evidence |
 | --- | --- | --- |
@@ -15,7 +15,7 @@ The images below are **actual Chromium game captures**, exported to WebP without
 | Shared lifecycle | PASS | Manager tests cover one RAF, pause/resume without elapsed-time jump, static invalidation and cleanup; browser Calm clock stays still |
 | Build/regressions | PASS | 733 tests across 92 files; production build, root TypeScript check, lint and audio audit pass |
 | Extended app types | FAIL (existing baseline) | Exactly 185 pre-existing diagnostics; no added/removed normalized diagnostics. Root TypeScript config does not expose this existing debt |
-| Short desktop frame sample | PASS for measured sample | 180 frames during storm in CI Chromium/dev: **59.34 fps average**, **16.8 ms p95/p99**; actual canvas pixels changed |
+| Short desktop frame sample | PASS for measured sample | 180 frames during storm in CI Chromium/dev: **59.67 fps average**, **16.7 ms p95 / 16.8 ms p99**; actual canvas pixels changed |
 | Physical S24 / sustained 60 fps | UNVERIFIED | Mobile viewports and budgets were tested, not physical-device performance or long-session stability |
 
 ## Snow / edge frost
