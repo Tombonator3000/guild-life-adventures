@@ -111,7 +111,7 @@ describe('GameBoard component boundaries', () => {
       'eventProps ?',
       'locationProps ?',
       'spectatorProps ?',
-      '<ResourcePanel />',
+      '<ResourcePanel ',
     ].map(token => centerSource.indexOf(token));
     expect(order.every(index => index >= 0)).toBe(true);
     expect(order).toEqual([...order].sort((a, b) => a - b));
