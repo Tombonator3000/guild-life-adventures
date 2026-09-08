@@ -40,3 +40,13 @@ Run: https://github.com/Tombonator3000/guild-life-adventures/actions/runs/341758
 Inspected actual CI PNGs: clear, snow, drought, tournament, storm/forge and mobile storm/bank. Original art and menu structure are intact, new material icons are legible, smoke/leaf textures have no black squares, and actions remain readable. Snow revealed missing desktop frost because corners were behind sidebars: anchor frost to the visible board rectangle and keep the painted branches inside it. Pennant proportions were too narrow: use square atlas dimensions. Added sparse screen-space foreground flakes/confetti and a shared screen reservation so festival+storm combinations obey the total mobile cap. Added pixel-alpha, static Calm-clock, mobile snow/drought and WebGL ready/fallback evidence to the next browser run.
 
 The board SHA-256 still equals `fcbbcaaf3d711628a11e4b9a4d9680bf4652a467b31deda6bb1338a7c6aa6d80`. Token/portrait components and location data have no diff from the base. The explicit app TypeScript check has exactly the same 185 pre-existing diagnostics as baseline, with no added or removed diagnostic lines after normalizing source line positions.
+
+## Verified delivery — 61793ab
+
+[Full CI](https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34176349430): **733 tests / 92 files PASS; 20 browser tests PASS; build, TypeScript workflow check, lint and audio integrity PASS**. Lint has the same 27 existing warnings. Guided first turn now passes without changing its test actions.
+
+Inspected final desktop snow, tournament, storm/forge, sidebar materials, mobile snow, landscape drought and Calm/bank captures. Frost is visible at the board corners, stays clear of sidebars/center UI, and scales down on phones. Cloth proportions are restored. Drought uses a ready WebGL renderer; reduced motion removes it. Alpha-pixel checks return `[0, 0]` for the two canvas surfaces at the action-panel center.
+
+Short storm sample: 180 frames, 59.34 fps average, 16.8 ms p95/p99, changing actual canvas pixels. This is CI Chromium with a development build, not sustained or physical S24 verification. Physical-device performance remains UNVERIFIED.
+
+[Runtime images, gate table and raw measurements](qa/board-vfx/README.md) are committed for review. PR #410 contains the implementation and correction commits. The final evidence commit changes only documentation/images; runtime is identical to tested `61793ab`. No merge or deployment was performed.

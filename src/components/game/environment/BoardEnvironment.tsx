@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useEnvironment } from './useEnvironment';
 import { createWorldRenderer, type Scene } from './drawEnvironment';
 import { precipitationBudget } from './effectPolicy';
@@ -19,7 +19,8 @@ export function BoardEnvironment({centerPanel}: {centerPanel: BoardRect}) {
 function WorldCanvas({centerPanel}: {centerPanel: BoardRect}) {
   const ref=useRef<HTMLCanvasElement>(null);
   const {manager,assets,policy,weather,festival,strike}=useEnvironment();
-  const render=useMemo(createWorldRenderer,[]);
+  // Zone-editor saves rerender the board; refresh saved crow controls at that boundary.
+  const render=createWorldRenderer();
   useEffect(() => {
     const canvas=ref.current,ctx=canvas?.getContext('2d');
     if (!canvas || !ctx) return;

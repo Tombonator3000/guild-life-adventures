@@ -28,7 +28,7 @@ function clipBoard(ctx: Context,w: number,h: number,panel: BoardRect) {
 }
 
 export function createWorldRenderer() {
-  // Read the existing animation editor setting at mount, as the original crow layer did.
+  // Read on React/config refresh, as the original crow layer did, never during a frame.
   const crows = loadZoneConfig()?.animationLayers?.find(l => l.id === 'graveyard-crows');
   return (ctx: Context,w: number,h: number,seconds: number,scene: Scene,panel: BoardRect) => {
     const {policy,assets,weather,festival} = scene;

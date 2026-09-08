@@ -2,6 +2,8 @@
 
 Dato: 7. september 2026. Kildegrunnlag: `main` ved `693ca1500e4f04b80b2c855f3bc5e68bb39928a9`, merge av PR #408.
 
+Oppdatert 8. september: Implementeringen er levert i [PR #410](https://github.com/Tombonator3000/guild-life-adventures/pull/410). Se [verifiserte spillbilder og tester](../qa/board-vfx/README.md) og [implementeringsloggen](../AUDIT_LOG_BOARD_VFX_IMPLEMENTATION.md). Resten av dette dokumentet beskriver planens opprinnelige grunnlag.
+
 **Leveransen her er en implementeringsplan. De nye effektene er ikke implementert eller ytelsesmålt i denne endringen.** Planen følger eierens siste arbeidsordre og viderefører [Classic Visual Direction](CLASSIC_VISUAL_DIRECTION.md). Tidligere forslag om et annet kart, realistiske erstatningsportretter eller ny UI-struktur gjelder ikke denne oppgaven.
 
 ## 1. Fast mål og fem akseptkrav
