@@ -529,7 +529,8 @@ function processHousing(p: Player, msgs: string[], newsEvents: PlayerNewsEventDa
 
 /** Process investments, savings interest, and stock dividends (deterministic — always runs)
  *  Dynamic interest: rates scale with priceModifier (boom = higher rates, recession = lower) */
-function processFinances(p: Player, stockPrices: Record<string, number>, msgs: string[], priceModifier: number = 1.0): void {
+function processFinances(p: Player, stockPrices: Record<string, number>, msgs: string[], priceModifier: number = 1.0): number {
+  let paid = 0;
   // Dynamic rate scaling: priceModifier 0.7–1.3 maps to 0.7x–1.3x rate multiplier
   const rateMultiplier = priceModifier;
 
@@ -552,11 +553,14 @@ function processFinances(p: Player, stockPrices: Record<string, number>, msgs: s
     const dividends = calculateDividends(p.stocks, stockPrices);
     if (dividends > 0) {
       p.gold += dividends;
+      paid = dividends;
+      p.gameStats = { ...p.gameStats, totalGoldEarned: (p.gameStats?.totalGoldEarned ?? 0) + dividends };
       if (!p.isAI) {
-        msgs.push(`Stock dividends paid: +${dividends}g`);
+        msgs.push(`${p.name}: Stock dividends paid to cash: +${dividends}g`);
       }
     }
   }
+  return paid;
 }
 
 /** Random Shadowfingers theft check (separate from deterministic finances) */
@@ -855,7 +859,7 @@ function processPawnExpiration(p: Player, newWeek: number, msgs: string[]): void
 // Per-player pipeline: calls all processors in order
 // ============================================================
 
-function processPlayerWeekEnd(p: Player, ctx: WeekEndContext, msgs: string[], newsEvents: PlayerNewsEventData[]): void {
+function processPlayerWeekEnd(p: Player, ctx: WeekEndContext, msgs: string[], newsEvents: PlayerNewsEventData[]): number {
   // IMPORTANT: processEmployment must run BEFORE resetWeeklyFlags so that
   // workedThisTurn is still set when checking for dependability penalty.
   // Previous order (reset then check) caused penalty to ALWAYS trigger.
@@ -871,7 +875,7 @@ function processPlayerWeekEnd(p: Player, ctx: WeekEndContext, msgs: string[], ne
   processWeatherOnPlayer(p, ctx.weather, msgs);
   processFestivalOnPlayer(p, ctx.festival);
   processHousing(p, msgs, newsEvents);
-  processFinances(p, ctx.stockPrices, msgs, ctx.priceModifier); // Interest/investments/dividends — dynamic rates
+  const dividendsPaid = processFinances(p, ctx.stockPrices, msgs, ctx.priceModifier); // Interest/investments/dividends — dynamic rates
   processOngoingSickness(p, msgs); // Ongoing drain — always runs if sick
   processLoans(p, msgs, newsEvents, ctx.stockPrices, ctx.priceModifier); // Dynamic loan interest
   processLeisure(p, ctx.newWeek, msgs);
@@ -888,6 +892,7 @@ function processPlayerWeekEnd(p: Player, ctx: WeekEndContext, msgs: string[], ne
       processRandomSickness(p, msgs);
     }
   }
+  return dividendsPaid;
 }
 
 // ============================================================
@@ -1126,15 +1131,18 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
         newsEvents.push({ type: `crash-${economy.crashResult.severity}` });
       }
       const updatedPlayers = state.players.map((player) => {
-        const p = { ...player };
+        const p = { ...player, stocks: { ...player.stocks } };
         if (p.isGameOver) return p;
-        processPlayerWeekEnd(p, ctx, eventMessages, newsEvents);
+        const dividendsPaid = processPlayerWeekEnd(p, ctx, eventMessages, newsEvents);
         // Record weekly snapshot for post-game dashboard
         const stockValue = Object.entries(p.stocks || {}).reduce((sum, [stockId, shares]) => {
           return sum + (shares * (ctx.stockPrices[stockId] || 0));
         }, 0);
         const snapshot = {
           week: newWeek,
+          dividendsPaid,
+          openingGold: player.gold,
+          otherGoldChange: p.gold - player.gold - dividendsPaid,
           gold: p.gold,
           health: p.health,
           happiness: p.happiness,
@@ -1143,6 +1151,7 @@ export function createProcessWeekEnd(set: SetFn, get: GetFn) {
           totalWealth: p.gold + p.savings + p.investments + stockValue - p.loanAmount,
         };
         p.weeklySnapshots = [...(p.weeklySnapshots || []), snapshot];
+        if (dividendsPaid > 0 && !p.isAI) eventMessages.push(`${p.name}: Cash settlement ${player.gold}g + ${dividendsPaid}g dividends ${snapshot.otherGoldChange >= 0 ? '+' : '−'} ${Math.abs(snapshot.otherGoldChange)}g other weekend changes = ${p.gold}g. See The Broker for your receipt.`);
         return p;
       });
 

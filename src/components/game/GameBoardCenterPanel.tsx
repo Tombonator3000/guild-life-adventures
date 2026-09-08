@@ -1,4 +1,5 @@
 import type { ComponentProps, ElementType } from 'react';
+import { getLocation } from '@/data/locations';
 import { CurseAppliancePanel } from './CurseAppliancePanel';
 import { CursePanelOverlay } from './CursePanelOverlay';
 import { CurseToadPanel } from './CurseToadPanel';
@@ -15,6 +16,9 @@ interface GameBoardCenterPanelProps {
   isMobile: boolean;
   centerPanel: CenterPanel;
   isCursed: boolean;
+  onEndTurn?: () => void;
+  endTurnDisabled?: boolean;
+  hoursRemaining?: number;
   toadProps: OptionalProps<typeof CurseToadPanel>;
   applianceProps: OptionalProps<typeof CurseAppliancePanel>;
   shadowfingersProps: OptionalProps<typeof ShadowfingersModal>;
@@ -27,6 +31,9 @@ export function GameBoardCenterPanel({
   isMobile,
   centerPanel,
   isCursed,
+  onEndTurn,
+  endTurnDisabled,
+  hoursRemaining,
   toadProps,
   applianceProps,
   shadowfingersProps,
@@ -34,6 +41,8 @@ export function GameBoardCenterPanel({
   locationProps,
   spectatorProps,
 }: GameBoardCenterPanelProps) {
+  const locationName = locationProps && !eventProps && !shadowfingersProps && !toadProps && !applianceProps
+    ? getLocation(locationProps.locationId)?.name : undefined;
   return (
     <div
       data-fx-protect={`${centerPanel.top},${centerPanel.left},${centerPanel.width},${centerPanel.height}`}
@@ -46,6 +55,11 @@ export function GameBoardCenterPanel({
       }}
     >
       <div className={`w-full h-full overflow-hidden flex flex-col bg-card/95 relative ${isMobile ? 'rounded-xl' : 'rounded-t-lg'}`}>
+        {onEndTurn && <div className="center-turn-toolbar" data-fx-protect>
+          <span>{locationName && <strong>{locationName}</strong>}<small>{hoursRemaining ?? 0}h left this week</small></span>
+          <button className="gold-button" title="End your turn (E)" onClick={onEndTurn} disabled={endTurnDisabled}>End Turn</button>
+        </div>}
+        <div className="center-panel-content flex-1 min-h-0 overflow-hidden relative flex flex-col">
         {isCursed && !applianceProps && !toadProps && <CursePanelOverlay isMobile={isMobile} />}
         {toadProps ? (
           <CurseToadPanel {...toadProps} />
@@ -60,8 +74,9 @@ export function GameBoardCenterPanel({
         ) : spectatorProps ? (
           <SpectatorPanel {...spectatorProps} />
         ) : (
-          <ResourcePanel compact={isMobile} />
+          <ResourcePanel />
         )}
+        </div>
       </div>
     </div>
   );

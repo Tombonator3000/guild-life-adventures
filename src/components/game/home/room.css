@@ -1,0 +1,11 @@
+.home-room { display:flex; flex-direction:column; flex:1; min-height:0; background:#1b140d; }
+.home-room-view { position:relative; min-height:0; flex:1; }
+.home-room-view svg { display:block; position:absolute; inset:0; width:100%; height:100%; }
+.home-room-item { cursor:pointer; outline:none; }
+.home-room-item image { pointer-events:none; }
+.home-room-hit { fill:transparent; stroke:transparent; stroke-width:3; }
+.home-room-item:hover .home-room-hit,.home-room-item:focus-visible .home-room-hit { stroke:#ddc48d; fill:#ffeeb51a; }
+.home-room-item[data-broken=true] image { filter:grayscale(.9); opacity:.55; }
+.home-comfort { position:absolute; left:10px; top:8px; background:#1b140dbe; color:#f4dec0; font-size:11px; padding:4px 7px; border-radius:3px; pointer-events:none; }
+.home-room-caption { min-height:40px; flex-shrink:0; padding:6px 10px; color:#d8c6a8; border-top:1px solid #735837; line-height:1.3; font-size:11px; }
+.home-room-caption strong { display:block; color:#f0dcb7; }

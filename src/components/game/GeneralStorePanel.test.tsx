@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useGameStore } from '@/store/gameStore';
 import { GeneralStorePanel } from './GeneralStorePanel';
 
@@ -21,21 +21,26 @@ function prepare(hasNewspaper = false) {
 
 describe('GeneralStorePanel newspaper flow', () => {
   beforeEach(() => {
+    vi.stubGlobal('ResizeObserver', class {
+      observe() {}
+      disconnect() {}
+    });
     localStorage.clear();
     prepare(false);
   });
+  afterEach(() => vi.unstubAllGlobals());
 
   it('opens the newspaper automatically after a successful purchase', async () => {
     render(<Harness />);
     const beforeGold = useGameStore.getState().players[0].gold;
     fireEvent.click(screen.getByRole('button', { name: /Guildholm Herald/i }));
 
-    expect(await screen.findByText('Week 1 Edition')).toBeInTheDocument();
+    expect(await screen.findByText('WEEK 1 · CITY EDITION')).toBeInTheDocument();
     expect(useGameStore.getState().players[0].hasNewspaper).toBe(true);
     expect(useGameStore.getState().players[0].gold).toBeLessThan(beforeGold);
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]);
-    await waitFor(() => expect(screen.queryByText('Week 1 Edition')).not.toBeInTheDocument());
+    fireEvent.click(screen.getAllByRole('button', { name: 'Close newspaper' })[0]);
+    await waitFor(() => expect(screen.queryByText('WEEK 1 · CITY EDITION')).not.toBeInTheDocument());
     expect(screen.getByRole('button', { name: /Read The Guildholm Herald/i })).toBeInTheDocument();
   });
 
@@ -43,11 +48,11 @@ describe('GeneralStorePanel newspaper flow', () => {
     prepare(true);
     render(<Harness />);
 
-    expect(screen.queryByText('Week 1 Edition')).not.toBeInTheDocument();
+    expect(screen.queryByText('WEEK 1 · CITY EDITION')).not.toBeInTheDocument();
     const beforeGold = useGameStore.getState().players[0].gold;
     fireEvent.click(screen.getByRole('button', { name: /Read The Guildholm Herald/i }));
 
-    expect(await screen.findByText('Week 1 Edition')).toBeInTheDocument();
+    expect(await screen.findByText('WEEK 1 · CITY EDITION')).toBeInTheDocument();
     expect(useGameStore.getState().players[0].gold).toBe(beforeGold);
   });
 
@@ -59,6 +64,6 @@ describe('GeneralStorePanel newspaper flow', () => {
       }));
     });
 
-    await waitFor(() => expect(screen.getByText('Week 1 Edition')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('WEEK 1 · CITY EDITION')).toBeInTheDocument());
   });
 });

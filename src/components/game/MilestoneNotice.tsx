@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useCurrentPlayer } from '@/store/gameStore';
 import { getJob } from '@/data/jobs';
 import { DEGREES } from '@/data/education';
+import { playSFX } from '@/audio/sfxManager';
 
 /** Observed achievements only; changing player or loading a view never creates an award. */
 export function MilestoneNotice() {
@@ -13,6 +14,9 @@ export function MilestoneNotice() {
     previous.current = player;
     if (!player || before?.id !== player.id) { setNotice(''); return; }
     const degree = player.completedDegrees.find(id => !before.completedDegrees.includes(id));
+    // Observe the committed result, including host acknowledgements for guests.
+    // Rejected actions and switching players must never celebrate a graduation.
+    if (degree && !player.isAI) playSFX('graduation');
     const job = player.currentJob && getJob(player.currentJob);
     const oldJob = before.currentJob && getJob(before.currentJob);
     const message = degree ? `Diploma earned: ${DEGREES[degree]?.name ?? degree}`

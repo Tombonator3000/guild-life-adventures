@@ -4,7 +4,9 @@ import { LOAN_MIN_SHIFTS_REQUIRED } from '@/types/game.types';
 import { STOCKS, calculateStockValue, calculateDividendAccrual, getStoredDividendCredit, previewDividendSettlement, getSellPrice } from '@/data/stocks';
 import { LOAN_PRODUCTS } from '@/store/helpers/economy/financeServiceHelpers';
 import { useGameStore } from '@/store/gameStore';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import './playability.css';
+import './player-experience.css';
 
 export type BankView = 'banking' | 'broker' | 'loans' | 'overview';
 interface BankPanelProps {
@@ -23,6 +25,7 @@ export function BankPanel({ player, priceModifier = 1, stockPrices, stockPriceHi
   const [selectedStock, setSelectedStock] = useState(STOCKS[0].id);
   const [loanAmount, setLoanAmount] = useState<number>(100);
   const [receipt, setReceipt] = useState('');
+  const [showSettlement, setShowSettlement] = useState(false);
   const report = (result: { success: boolean; message: string } | void) => {
     if (result) setReceipt(result.message);
   };
@@ -53,8 +56,11 @@ export function BankPanel({ player, priceModifier = 1, stockPrices, stockPriceHi
     const maxBuy = ready ? Math.min(100_000, Math.floor(player.gold / price)) : 0;
     const history = stockPriceHistory?.[stock.id] ?? [];
     const previous = history.length >= 2 ? history[history.length - 2] : stock.basePrice;
+    const settlement = player.weeklySnapshots?.at(-1);
     return <section className="bank-service" aria-label="The Broker">
-      <label className="bank-amount">Company <select aria-label="Broker company" value={stock.id} onChange={e => setSelectedStock(e.target.value)}>{STOCKS.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+      <div className="bank-amount">Company <select aria-label="Broker company" value={stock.id} onChange={e => setSelectedStock(e.target.value)}>{STOCKS.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
+        {settlement?.dividendsPaid !== undefined && <button className="dividend-receipt-trigger" aria-label="View last dividend settlement" onClick={() => setShowSettlement(true)}>Receipt<br />+{settlement.dividendsPaid}g</button>}
+      </div>
       <div className="bank-balances"><span>Price <strong>{ready ? `${price}g` : 'Unavailable'}</strong></span><span>Owned <strong>{owned}</strong></span><span>Cash <strong>{player.gold}g</strong></span></div>
       <p className="bank-help">{stock.isTBill ? 'Fixed price' : ready ? `${price - previous >= 0 ? '+' : ''}${price - previous}g since previous quote · ${stock.volatility > .25 ? 'High' : stock.volatility > .15 ? 'Medium' : 'Low'} risk` : 'Wait for a market quote'}. {ready && `Dividend accrual: ${(price * stock.dividendRate).toFixed(2)}g/share/week.`}</p>
       <div className="bank-actions bank-trades">
@@ -65,6 +71,19 @@ export function BankPanel({ player, priceModifier = 1, stockPrices, stockPriceHi
         <button disabled={!ready || owned < 1} onClick={() => report(trade(player.id, 'sell', stock.id, owned))}>Sell All ({owned})</button>
       </div>
       {receipt && <p className="bank-receipt" role="status">{receipt}</p>}
+      {settlement?.dividendsPaid !== undefined && <Dialog open={showSettlement} onOpenChange={setShowSettlement}>
+        <DialogContent className="max-w-md bg-parchment text-[#402d19]">
+          <DialogTitle>Week {settlement.week} dividend settlement</DialogTitle>
+          <DialogDescription className="text-[#665138]">+{settlement.dividendsPaid}g paid to your cash balance.</DialogDescription>
+          <dl className="settlement-lines">
+            <div><dt>Opening cash</dt><dd>{settlement.openingGold}g</dd></div>
+            <div><dt>Stock dividends</dt><dd>+{settlement.dividendsPaid}g</dd></div>
+            <div><dt>Other weekend changes</dt><dd>{(settlement.otherGoldChange ?? 0) >= 0 ? '+' : '−'}{Math.abs(settlement.otherGoldChange ?? 0)}g</dd></div>
+            <div><dt>Cash after settlement</dt><dd>{settlement.gold}g</dd></div>
+          </dl>
+          <p className="text-sm">Later purchases, income and turn-start events change your current cash balance.</p>
+        </DialogContent>
+      </Dialog>}
     <p className="bank-note">Trades take 0h. Sale proceeds include fees. Fractional dividends carry forward.</p>
     </section>;
   }

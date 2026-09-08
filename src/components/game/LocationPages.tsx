@@ -28,9 +28,11 @@ export function LocationPages({ children, pageKey }: { children: ReactNode; page
     const measure = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        const width = box.clientWidth;
+        // Preserve fractional CSS pixels: rounded clientWidth drifts across pages.
+        // CSS width also avoids reading the modal's temporary opening scale.
+        const width = Number.parseFloat(getComputedStyle(box).width) || box.clientWidth;
         if (!width) return;
-        const pages = Math.max(1, Math.ceil((content.scrollWidth + 16) / (width + 16)));
+        const pages = Math.max(1, Math.ceil((content.scrollWidth + 15) / (width + 16)));
         setLayout(old => old.width === width && old.pages === pages ? old : { width, pages });
         setPage(old => Math.min(old, pages - 1));
       });

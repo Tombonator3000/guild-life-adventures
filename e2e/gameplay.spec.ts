@@ -101,6 +101,7 @@ test('plays a turn, performs a bank action, saves, mutates, loads and ends the t
   await savedSlot.getByRole('button', { name: 'Load', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Game Menu' })).toBeHidden();
 
+  await page.getByText('Finances & education', { exact: true }).click();
   const financesSection = page.getByRole('heading', { name: 'Finances' }).locator('..');
   await expect(financesSection.getByText('50g', { exact: true })).toBeVisible();
 

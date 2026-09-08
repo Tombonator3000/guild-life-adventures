@@ -241,11 +241,9 @@ export function GameBoard() {
         week,
         priceModifier,
         economyTrend,
-        onEndTurn: endTurn,
         onOpenLeftDrawer: openLeftDrawer,
         onOpenRightDrawer: openRightDrawer,
         onOpenMenu: openGameMenu,
-        disabled: !isLocalPlayerTurn || aiIsThinking || currentPlayer.isAI,
       } : null}
       sideInfoProps={currentPlayer ? {
         player: currentPlayer,
@@ -358,8 +356,6 @@ export function GameBoard() {
             priceModifier,
             economyTrend,
             weather,
-            onEndTurn: endTurn,
-            endTurnDisabled: !isLocalPlayerTurn || aiIsThinking || !!currentPlayer.isAI,
             onExitFullboard: exitFullboard,
           } : null}
         />
@@ -391,6 +387,9 @@ export function GameBoard() {
           isMobile={isMobile}
           centerPanel={activeCenterPanel}
           isCursed={isCursed}
+          onEndTurn={endTurn}
+          hoursRemaining={currentPlayer?.timeRemaining}
+          endTurnDisabled={!isLocalPlayerTurn || aiIsThinking || !!currentPlayer?.isAI || phase !== 'playing' || !!animatingPlayer || !!shadowfingersEvent || !!toadCurseEvent || !!visibleDeathEvent || !!applianceBreakageEvent?.fromCurse}
           toadProps={toadCurseEvent ? {
             hoursLost: toadCurseEvent.hoursLost,
             curserName: toadCurseEvent.curserName,

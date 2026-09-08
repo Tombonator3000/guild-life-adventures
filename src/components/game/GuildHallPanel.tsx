@@ -6,6 +6,7 @@ import { useState, useMemo } from 'react';
 import { Briefcase, ChevronLeft, GraduationCap, Shirt, Clock, Star, X, Check } from 'lucide-react';
 import { useTranslation } from '@/i18n';
 import { playSFX } from '@/audio/sfxManager';
+import { LocationActions } from './LocationPages';
 import {
   getEmployers,
   calculateOfferedWage,
@@ -151,7 +152,7 @@ export function GuildHallPanel({
                 </p>
               )}
             </div>
-            <div className="flex gap-2">
+            <LocationActions><div className="flex gap-2 pt-2">
               <JonesButton
                 label={isRaise ? t('panelGuild.acceptRaise') : t('panelGuild.acceptJob')}
                 onClick={handleAcceptJob}
@@ -164,7 +165,7 @@ export function GuildHallPanel({
                 variant="secondary"
                 className="flex-1"
               />
-            </div>
+            </div></LocationActions>
           </div>
         ) : (
           <div className="space-y-3">

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Player, PlayerNewsEventData } from '@/types/game.types';
+import type { Player } from '@/types/game.types';
 import {
   JonesSectionHeader,
   JonesMenuItem,
@@ -7,7 +7,6 @@ import {
 } from './JonesStylePanel';
 import { GENERAL_STORE_ITEMS, getItemPrice } from '@/data/items';
 import { NEWSPAPER_COST, generateNewspaper } from '@/data/newspaper';
-import type { Newspaper } from '@/data/newspaper';
 import { PLAYER_RULE_TEXT, PLAYER_RULE_VALUES } from '@/data/playerFacingRules';
 import { itemToPreview } from './ItemPreview';
 import { NewspaperModal } from './NewspaperModal';
@@ -20,24 +19,6 @@ interface GeneralStorePanelProps {
   priceModifier: number;
 }
 
-const newspaperCache = new Map<string, Newspaper>();
-
-function getWeeklyNewspaper(
-  playerId: string,
-  week: number,
-  priceModifier: number,
-  economyTrend: number,
-  weeklyNewsEvents: PlayerNewsEventData[],
-): Newspaper {
-  const eventKey = JSON.stringify(weeklyNewsEvents);
-  const key = `${playerId}:${week}:${priceModifier.toFixed(4)}:${economyTrend}:${eventKey}`;
-  const cached = newspaperCache.get(key);
-  if (cached) return cached;
-  const generated = generateNewspaper(week, priceModifier, economyTrend, weeklyNewsEvents);
-  newspaperCache.set(key, generated);
-  return generated;
-}
-
 export function GeneralStorePanel({ player, priceModifier }: GeneralStorePanelProps) {
   const { t } = useTranslation();
   const purchaseNewspaper = useGameStore(state => state.purchaseNewspaper);
@@ -45,14 +26,17 @@ export function GeneralStorePanel({ player, priceModifier }: GeneralStorePanelPr
   const week = useGameStore(state => state.week);
   const economyTrend = useGameStore(state => state.economyTrend);
   const weeklyNewsEvents = useGameStore(state => state.weeklyNewsEvents);
+  const players = useGameStore(state => state.players);
+  const weather = useGameStore(state => state.weather);
+  const activeFestival = useGameStore(state => state.activeFestival);
   const [showNewspaper, setShowNewspaper] = useState(false);
   const previousHasNewspaper = useRef(player.hasNewspaper);
   const newspaperPrice = Math.round(NEWSPAPER_COST * priceModifier);
   const lotteryPrice = Math.round(10 * priceModifier);
 
   const newspaper = useMemo(
-    () => getWeeklyNewspaper(player.id, week, priceModifier, economyTrend, weeklyNewsEvents),
-    [player.id, week, priceModifier, economyTrend, weeklyNewsEvents],
+    () => generateNewspaper(week, priceModifier, economyTrend, weeklyNewsEvents, {players,weather,activeFestival}),
+    [week, priceModifier, economyTrend, weeklyNewsEvents, players, weather, activeFestival],
   );
 
   useEffect(() => {

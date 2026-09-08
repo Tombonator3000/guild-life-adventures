@@ -40,9 +40,6 @@ interface TopDropdownMenuProps {
   priceModifier: number;
   economyTrend: number;
   weather: WeatherState | null;
-  // End turn
-  onEndTurn: () => void;
-  endTurnDisabled: boolean;
   // Toggle fullboard mode off
   onExitFullboard: () => void;
 }
@@ -103,8 +100,6 @@ export function TopDropdownMenu({
   priceModifier,
   economyTrend,
   weather,
-  onEndTurn,
-  endTurnDisabled,
   onExitFullboard,
 }: TopDropdownMenuProps) {
   const { t } = useTranslation();
@@ -254,16 +249,8 @@ export function TopDropdownMenu({
           <span className="text-parchment/30 text-xs ml-1">│</span>
         </div>
 
-        {/* Right: End Turn + exit fullboard */}
+        {/* Exit fullboard */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          <button
-            onClick={onEndTurn}
-            disabled={endTurnDisabled}
-            className="px-3 py-0.5 bg-amber-700 hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed text-parchment text-[10px] font-display font-bold rounded transition-colors border border-amber-500"
-          >
-            End Turn (E)
-          </button>
-
           <button
             onClick={onExitFullboard}
             title="Exit fullboard mode (B)"

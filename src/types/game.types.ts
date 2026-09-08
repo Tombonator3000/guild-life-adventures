@@ -325,6 +325,10 @@ export interface Player {
 /** Weekly snapshot of key metrics for post-game graphs */
 export interface WeeklySnapshot {
   week: number;
+  /** Whole gold actually paid at settlement; absent in older saves. */
+  dividendsPaid?: number;
+  openingGold?: number;
+  otherGoldChange?: number;
   gold: number;
   health: number;
   happiness: number;

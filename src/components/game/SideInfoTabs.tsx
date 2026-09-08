@@ -1,4 +1,5 @@
 import { GameIcon } from './GameIcon';
+import './player-experience.css';
 import { ResourceValue } from './ResourceValue';
 import { PanelDecoration } from './PanelDecoration';
 // SideInfoTabs - Left sidebar tabbed info panel inspired by Jones in the Fast Lane
@@ -226,6 +227,7 @@ function StatsTab({ player }: { player: Player }) {
         />
       </StatSection>
 
+      <details className="sidebar-details"><summary>Character & livelihood</summary>
       {/* Character Info */}
       <StatSection title="Character">
         <StatRow icon={<Shield className="w-3.5 h-3.5" />} label="Depend." value={`${player.dependability}%`} warning={player.dependability < 30} />
@@ -244,6 +246,8 @@ function StatsTab({ player }: { player: Player }) {
         )}
       </StatSection>
 
+      </details>
+      <details className="sidebar-details"><summary>Finances & education</summary>
       {/* Finances */}
       <FinancesSection player={player} />
 
@@ -261,6 +265,7 @@ function StatsTab({ player }: { player: Player }) {
           </div>
         )}
       </StatSection>
+      </details>
     </div>
   );
 }
@@ -394,7 +399,7 @@ function ResourceRow({
           <GameIcon semantic={label}>{icon}</GameIcon>
           <span className="text-amber-800 font-medium">{label}</span>
         </div>
-        <span className={`font-bold ${warning ? 'text-red-600 animate-pulse' : highlight ? 'text-amber-600' : 'text-amber-900'}`}>
+        <span className={`font-bold ${warning ? 'text-red-600' : highlight ? 'text-amber-600' : 'text-amber-900'}`}>
           <ResourceValue value={Number.parseFloat(value)} identity={identity}>{value}</ResourceValue>
         </span>
       </div>

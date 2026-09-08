@@ -1,7 +1,6 @@
 import { useId } from 'react';
-import { Briefcase, Hammer, Hourglass, Coins, ChevronsUp, Info } from 'lucide-react';
-import { getJob, getJobsByLocation } from '@/data/jobs';
-import { DEGREES } from '@/data/education';
+import { Briefcase, Hammer, Hourglass, Coins, Info } from 'lucide-react';
+import { getJob } from '@/data/jobs';
 import { useCurrentPlayer, useGameStore } from '@/store/gameStore';
 import { MIN_SHIFTS_FOR_RAISE, MAX_WAGE_MULTIPLIER } from '@/store/helpers/workEducationHelpers';
 import { playSFX } from '@/audio/sfxManager';
@@ -16,8 +15,6 @@ export function WorkplaceCard({ work }: { work: WorkInfo }) {
   const raiseId = useId();
   if (!player) return null;
   const job = getJob(player.currentJob!);
-  const careers = job ? getJobsByLocation(job.location).filter(j => j.careerLevel > job.careerLevel).sort((a,b) => a.careerLevel-b.careerLevel || a.baseWage-b.baseWage) : [];
-  const next = careers[0];
   const raiseReason = job && player.currentWage >= Math.ceil(job.baseWage * MAX_WAGE_MULTIPLIER) ? 'You have reached the maximum wage for this position.'
     : player.raiseAttemptedThisTurn ? 'Already asked this turn. Try again next week.'
     : (player.shiftsWorkedSinceHire || 0) < MIN_SHIFTS_FOR_RAISE ? `Work ${MIN_SHIFTS_FOR_RAISE} shifts first (${player.shiftsWorkedSinceHire || 0}/${MIN_SHIFTS_FOR_RAISE}).`
@@ -39,12 +36,6 @@ export function WorkplaceCard({ work }: { work: WorkInfo }) {
         if (result.success) toast.success(result.message); else toast.error(result.message);
       }}>Ask for a raise · 1 h</button>
       <p id={raiseId} className="workplace-help">{raiseReason ?? 'An attempt costs 1h, even if denied.'}</p>
-    </section>
-    <section className="workplace-career material-card" aria-label="Career path">
-      <ChevronsUp className="workplace-rank" aria-hidden="true" />
-      <div><h3>{next ? `Next step: ${next.name}` : 'You hold a top position here'}</h3><p>Apply for positions at the Guild Hall.</p>
-        {next && <details><summary data-ui-sound="menu-open">View career path</summary><ul>{careers.map(j => <li key={j.id}><strong>{j.name}</strong><span>{j.baseWage}g/h base · {j.hoursPerShift}h shifts</span><span>Experience {player.experience}/{j.requiredExperience} · Dependability {player.dependability}/{j.requiredDependability}</span><span>Clothing: {j.requiredClothing}{j.requiredDegrees.length > 0 && ` · Education: ${j.requiredDegrees.map(d => DEGREES[d]?.name ?? d).join(', ')}`}</span></li>)}</ul></details>}
-      </div>
     </section>
     <p className="workplace-tip"><Info aria-hidden="true" />Plan your remaining hours before starting another shift.</p>
   </div>;

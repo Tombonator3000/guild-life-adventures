@@ -41,9 +41,9 @@ test('forge work, tactile menus, weather pixels and storm audio stay inside the 
   await openMenuPage(page,shell.getByRole('button',{name:/Ask for a raise/}));
   await shell.getByRole('button',{name:/Ask for a raise/}).click();
   await expect(shell.getByRole('button',{name:/Ask for a raise/})).toBeDisabled();
-  await openMenuPage(page,shell.getByText('View career path',{exact:true}));
-  await shell.getByText('View career path',{exact:true}).click();
-  await expect(shell.getByText('Apprentice Smith',{exact:true})).toBeVisible();
+  await expect(shell.getByText('View career path',{exact:true})).toHaveCount(0);
+  await expect(shell.getByRole('button',{name:'Careers',exact:true})).toHaveCount(0);
+  await expect(shell.getByText('Apprentice Smith',{exact:true})).toHaveCount(0);
   await shell.getByRole('button',{name:'Smithing',exact:true}).click();
   await expect(shell.getByText('Make good steel exceptional')).toBeInViewport();
   await page.screenshot({path:testInfo.outputPath('forge-smithing-desktop.png')});

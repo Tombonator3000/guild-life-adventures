@@ -2,8 +2,7 @@ import { HOUSING_DATA } from '@/data/housing';
 import type { HousingTier } from '@/types/game.types';
 import type { ActionResult, GetFn, SetFn } from '../../storeTypes';
 
-const RENT_PAYMENT_WEEKS = new Set([1, 4, 8]);
-const MOVE_TIME = 4;
+const RENT_PAYMENT_WEEKS = new Set([1, 4]);
 const LANDLORD_SERVICE_TIME = 1;
 
 export function isLandlordOpen(week: number, weeksSinceRent: number): boolean {
@@ -39,7 +38,7 @@ function validateLandlordVisit(
 
 export function createHousingServiceActions(set: SetFn, get: GetFn) {
   return {
-    payHousingRent: (playerId: string, weeks: 1 | 4 | 8): ActionResult | void => {
+    payHousingRent: (playerId: string, weeks: 1 | 4): ActionResult | void => {
       const state = get();
       const visit = validateLandlordVisit(state, playerId);
       if ('error' in visit) return visit.error;
@@ -48,10 +47,7 @@ export function createHousingServiceActions(set: SetFn, get: GetFn) {
         return { success: false, message: 'You do not have housing to pay rent for.' };
       }
       if (!RENT_PAYMENT_WEEKS.has(weeks)) {
-        return { success: false, message: 'Rent can only be prepaid for 1, 4 or 8 weeks.' };
-      }
-      if (player.timeRemaining < LANDLORD_SERVICE_TIME) {
-        return { success: false, message: 'Not enough time to pay rent.' };
+        return { success: false, message: 'Rent can only be prepaid for 1 or 4 weeks.' };
       }
 
       const weeklyRent = getEffectiveHousingRent(player.housing, player.lockedRent, state.priceModifier);
@@ -64,7 +60,6 @@ export function createHousingServiceActions(set: SetFn, get: GetFn) {
         players: current.players.map(candidate => candidate.id === playerId ? {
           ...candidate,
           gold: candidate.gold - totalCost,
-          timeRemaining: Math.max(0, candidate.timeRemaining - LANDLORD_SERVICE_TIME),
           rentPrepaidWeeks: candidate.rentPrepaidWeeks + weeks,
           weeksSinceRent: 0,
           rentExtensionUsed: false,
@@ -89,9 +84,6 @@ export function createHousingServiceActions(set: SetFn, get: GetFn) {
       if (tier === player.housing) {
         return { success: false, message: 'You already live there.' };
       }
-      if (player.timeRemaining < MOVE_TIME) {
-        return { success: false, message: 'Moving requires 4 hours.' };
-      }
 
       const lockedRent = Math.round(HOUSING_DATA[tier].weeklyRent * state.priceModifier);
       const moveCost = lockedRent * 2;
@@ -103,7 +95,6 @@ export function createHousingServiceActions(set: SetFn, get: GetFn) {
         players: current.players.map(candidate => candidate.id === playerId ? {
           ...candidate,
           gold: candidate.gold - moveCost,
-          timeRemaining: Math.max(0, candidate.timeRemaining - MOVE_TIME),
           housing: tier,
           weeksSinceRent: 0,
           rentPrepaidWeeks: 0,
