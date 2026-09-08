@@ -1,3 +1,4 @@
+import { GameIcon } from './GameIcon';
 // All visits remain inside the original board's central frame.
 import { useState, useEffect, useId, type ReactNode, type CSSProperties } from 'react';
 import { Briefcase, BookOpen, Hammer, ShoppingBag, Sparkles, ScrollText } from 'lucide-react';
@@ -117,7 +118,7 @@ export function LocationShell({ npc, tabs, defaultTab, locationId, locationName,
               {visibleTabs.map(tab => (
                 <button key={tab.id} type="button" data-ui-sound="menu-open" aria-pressed={activeTab === tab.id} aria-controls={`${id}-content`}
                   onClick={() => { setSelectedTab(tab.id); setServicesOpen(false); }}>
-                  <span aria-hidden="true">{tab.icon ?? tabIcon(tab.id)}</span>
+                  <GameIcon semantic={tab.id}>{tab.icon ?? tabIcon(tab.id)}</GameIcon>
                   {tab.label}{tab.badge && <b className="location-tab-badge">{tab.badge}</b>}
                 </button>
               ))}

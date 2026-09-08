@@ -11,6 +11,7 @@ async function startEnvironmentGame(page: Page) {
   await page.getByRole('checkbox',{name:/Show Tutorial/}).uncheck();
   await page.getByRole('button',{name:'Begin Adventure',exact:true}).click();
   await expect(page.locator('.board-environment')).toBeVisible();
+  await expect(page.locator('.board-atmosphere')).toHaveAttribute('data-assets','ready');
   if (await page.evaluate(() => !!document.fullscreenElement)) await page.keyboard.press('f');
   await page.getByRole('button',{name:/^dev$/i}).click();
 }
@@ -27,10 +28,17 @@ test('weather stays behind playable controls and preserves visual evidence', asy
     await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
     await page.screenshot({path:testInfo.outputPath(`desktop-${type}.png`)});
   }
+  for (const [label,id] of [['Harvest','harvest-festival'],['Solstice','winter-solstice'],['Tourney','spring-tournament'],['Fair','midsummer-fair']]) {
+    await page.getByRole('button',{name:'Clear',exact:true}).click();
+    await page.getByRole('button',{name:label,exact:true}).click();
+    await expect(page.locator('.board-atmosphere')).toHaveAttribute('data-festival',id);
+    await page.screenshot({path:testInfo.outputPath(`desktop-${id}.png`)});
+  }
+  await page.getByRole('button',{name:'Clear Festival',exact:true}).click();
   await page.getByRole('button',{name:'Storm',exact:true}).click();
   const timing = await page.evaluate(async () => {
-    const smoke = document.querySelector('.environment-smoke')!;
-    const initialSmokeTransform = getComputedStyle(smoke).transform;
+    const canvas = document.querySelector<HTMLCanvasElement>('.board-atmosphere')!;
+    const initialPixels = canvas.toDataURL();
     const times: number[] = [];
     let previous = await new Promise<number>(resolve => requestAnimationFrame(resolve));
     for (let i=0;i<180;i++) {
@@ -38,7 +46,7 @@ test('weather stays behind playable controls and preserves visual evidence', asy
       times.push(now-previous); previous=now;
     }
     const sorted = [...times].sort((a,b) => a-b);
-    return {ambientMotionChanged:getComputedStyle(smoke).transform !== initialSmokeTransform,samples:times.length,averageFps:1000/(times.reduce((a,b)=>a+b,0)/times.length),p95Ms:sorted[Math.floor(sorted.length*.95)],p99Ms:sorted[Math.floor(sorted.length*.99)],conditions:'CI Chromium, development build, desktop storm. Not a physical-device benchmark.'};
+    return {ambientMotionChanged:canvas.toDataURL() !== initialPixels,samples:times.length,averageFps:1000/(times.reduce((a,b)=>a+b,0)/times.length),p95Ms:sorted[Math.floor(sorted.length*.95)],p99Ms:sorted[Math.floor(sorted.length*.99)],conditions:'CI Chromium, development build, desktop storm. Not a physical-device benchmark.'};
   });
   expect(timing.ambientMotionChanged).toBe(true);
   await page.screenshot({path:testInfo.outputPath('desktop-thunderstorm-later-frame.png')});
@@ -51,7 +59,7 @@ test('weather stays behind playable controls and preserves visual evidence', asy
   await page.getByRole('button',{name:/^options$/i}).click();
   await page.getByLabel('Living environment').selectOption('reduced');
   await expect(page.locator('.weather-particles')).toHaveCount(0);
-  await expect(page.locator('.weather-tint-rain')).toBeVisible();
+  await expect(page.locator('.environment-still[data-weather="thunderstorm"]')).toBeVisible();
   await page.getByLabel('Living environment').selectOption('off');
   await expect(page.locator('.board-environment')).toHaveCount(0);
   await page.getByLabel('Living environment').selectOption('full');

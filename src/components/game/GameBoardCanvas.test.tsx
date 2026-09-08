@@ -1,3 +1,4 @@
+import { EnvironmentProvider } from './environment/EnvironmentProvider';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { GameBoardCanvas } from './GameBoardCanvas';
@@ -15,7 +16,7 @@ vi.mock('./DebugOverlay', () => ({ DebugOverlay: () => null }));
 function renderBoard() {
   const state = useGameStore.getState();
   const player = state.players[0];
-  return render(<>
+  return render(<EnvironmentProvider isMobile={false}>
     <EnvironmentControl />
     <GameBoardCanvas players={state.players} currentPlayer={player} selectedLocation={null}
       locationHexes={[]} weather={state.weather} isMobile={false}
@@ -26,10 +27,11 @@ function renderBoard() {
       onLocationClick={vi.fn()} onViewPlayer={vi.fn()} onAnimationComplete={vi.fn()} onLocationReached={vi.fn()}>
       <button>Action panel</button>
     </GameBoardCanvas>
-  </>);
+  </EnvironmentProvider>);
 }
 
 beforeEach(() => {
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
   resetGameOptions();
   useGameStore.setState({networkMode:'local'});
   useGameStore.getState().startNewGame(['Traveler'],false,{wealth:5000,happiness:100,education:45,career:75,adventure:0});
@@ -55,7 +57,7 @@ describe('board environment and travel', () => {
     const weather = useGameStore.getState().weather;
     expect(container.querySelector('canvas.weather-particles')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Living environment'),{target:{value:'reduced'}});
-    expect(container.querySelector('.weather-tint-snow')).toBeInTheDocument();
+    expect(container.querySelector('.environment-still[data-weather="snowstorm"]')).toBeInTheDocument();
     expect(container.querySelector('canvas.weather-particles')).not.toBeInTheDocument();
     expect(container.querySelector('.environment-smoke')).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Living environment'),{target:{value:'off'}});
@@ -71,7 +73,7 @@ describe('board environment and travel', () => {
     const {container} = renderBoard();
     expect(container.querySelector('.board-environment')).toHaveAttribute('data-detail','reduced');
     expect(container.querySelector('.weather-particles')).not.toBeInTheDocument();
-    expect(container.querySelector('.weather-tint-snow')).toBeInTheDocument();
+    expect(container.querySelector('.environment-still[data-weather="snowstorm"]')).toBeInTheDocument();
   });
 
   it('pauses when the document is hidden and resumes when it is visible', () => {

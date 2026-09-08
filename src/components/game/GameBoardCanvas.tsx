@@ -1,3 +1,4 @@
+import { BoardEnvironment } from './environment/BoardEnvironment';
 import type { ComponentProps, ReactNode } from 'react';
 import { LOCATIONS, getMovementCost } from '@/data/locations';
 import { getQuestLocationObjectives } from '@/data/quests';
@@ -8,15 +9,9 @@ import gameBoard from '@/assets/game-board.jpeg';
 import { AnimatedPlayerToken } from './AnimatedPlayerToken';
 import { BanterBubble } from './BanterBubble';
 import { DebugOverlay } from './DebugOverlay';
-import { FestivalOverlay } from './FestivalOverlay';
-import { GraveyardCrows } from './GraveyardCrows';
 import { LocationZone } from './LocationZone';
 import { PlayerToken } from './PlayerToken';
 import { ShadowfingersToken } from './ShadowfingersToken';
-import { WeatherOverlay } from './WeatherOverlay';
-import { BoardAtmosphere } from './environment/BoardAtmosphere';
-import { useGameOptions } from '@/hooks/useGameOptions';
-import { useEnvironmentActivity } from '@/hooks/useEnvironmentActivity';
 
 type CenterPanel = { top: number; left: number; width: number; height: number };
 type WeatherState = ReturnType<typeof useGameStore.getState>['weather'];
@@ -70,10 +65,6 @@ export function GameBoardCanvas({
   onAnimationComplete,
   onLocationReached,
 }: GameBoardCanvasProps) {
-  const { options } = useGameOptions();
-  const { reducedMotion, visible } = useEnvironmentActivity();
-  const animateEnvironment = options.environmentDetail === 'full' && !reducedMotion;
-  const activeFestival = useGameStore(state => state.activeFestival);
   const chainProgress = currentPlayer?.activeQuest?.startsWith('nlchain:')
     ? currentPlayer.nlChainProgress
     : currentPlayer?.questChainProgress;
@@ -154,16 +145,7 @@ export function GameBoardCanvas({
         </div>
       )}
 
-      {options.environmentDetail !== 'off' && (
-        <div className="board-environment" aria-hidden="true" data-paused={!visible} data-detail={animateEnvironment ? 'full' : 'reduced'}>
-          <BoardAtmosphere weatherType={weather?.type} animated={animateEnvironment} isMobile={isMobile} />
-          {animateEnvironment && <>
-            {weather?.type !== 'thunderstorm' && weather?.type !== 'snowstorm' && <GraveyardCrows />}
-            <FestivalOverlay activeFestival={activeFestival} />
-          </>}
-          <WeatherOverlay particle={weather?.particle ?? null} weatherType={weather?.type} animated={animateEnvironment} isMobile={isMobile} />
-        </div>
-      )}
+      <BoardEnvironment centerPanel={centerPanel} />
       <DebugOverlay customZones={customZones} centerPanel={debugCenterPanel} visible={showDebugOverlay} />
       <BoardBanterOverlay centerPanel={centerPanel} isMobile={isMobile} />
       {children}

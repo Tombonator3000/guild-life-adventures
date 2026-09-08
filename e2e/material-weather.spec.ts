@@ -49,19 +49,19 @@ test('forge work, tactile menus, weather pixels and storm audio stay inside the 
   await page.screenshot({path:testInfo.outputPath('forge-smithing-desktop.png')});
   await shell.getByRole('button',{name:'Work',exact:true}).click();
   await page.getByRole('button',{name:'Storm',exact:true}).click();
-  const weather=page.locator('.weather-overlay');
+  const weather=page.locator('canvas.board-atmosphere');
   await expect(weather).toHaveAttribute('data-weather','thunderstorm');
-  await expect.poll(() => weather.locator('canvas').evaluate((c:HTMLCanvasElement) => {
+  await expect.poll(() => weather.evaluate((c:HTMLCanvasElement) => {
     const data=c.getContext('2d')!.getImageData(0,0,c.width,c.height).data;
     return data.some((v,i) => i%4===3 && v>0);
   })).toBe(true);
-  await expect(weather.locator('.weather-lightning')).toBeVisible({timeout:7000});
+  await expect(page.locator('.screen-event-fx')).not.toHaveAttribute('data-strike','none',{timeout:7000});
   await page.screenshot({path:testInfo.outputPath('storm-desktop.png')});
   await expect.poll(() => page.evaluate(() => (window as unknown as {playedMedia:string[]}).playedMedia.some(src => src.includes('weather-thunder.mp3'))),{timeout:4000}).toBe(true);
   for (const [label,type] of [['Snow','snowstorm'],['Fog','enchanted-fog'],['Rain','harvest-rain']]) {
     await page.getByRole('button',{name:label,exact:true}).click();
     await expect(weather).toHaveAttribute('data-weather',type);
-    await expect(weather.locator('.weather-lightning')).toHaveCount(0);
+    await expect(page.locator('.screen-event-fx')).toHaveAttribute('data-strike','none');
     if (type==='enchanted-fog') await page.screenshot({path:testInfo.outputPath('fog-desktop.png')});
   }
   await page.getByRole('button',{name:'Clear',exact:true}).click();

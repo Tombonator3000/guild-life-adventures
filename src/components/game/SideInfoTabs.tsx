@@ -1,3 +1,5 @@
+import { GameIcon } from './GameIcon';
+import { PanelDecoration } from './PanelDecoration';
 // SideInfoTabs - Left sidebar tabbed info panel inspired by Jones in the Fast Lane
 // Clean tabs-only design with Stats, Inventory, and Goals
 
@@ -45,11 +47,12 @@ export function SideInfoTabs({ player, goals, isCurrentPlayer, initialTab }: Sid
 
   return (
     <div
-      className={`h-full flex flex-col bg-parchment rounded-lg border-2 overflow-hidden ${(player.activeCurses?.length ?? 0) > 0 ? 'border-purple-500' : isCurrentPlayer ? 'border-accent' : 'border-wood-dark/50'}`}
+      className={`guild-sidebar h-full flex flex-col bg-parchment rounded-lg border-2 overflow-hidden ${(player.activeCurses?.length ?? 0) > 0 ? 'border-purple-500' : isCurrentPlayer ? 'border-accent' : 'border-wood-dark/50'}`}
       style={(player.activeCurses?.length ?? 0) > 0 ? { boxShadow: '0 0 14px 4px rgba(147,51,234,0.55)' } : undefined}
     >
+      <PanelDecoration />
       {/* Player Portrait - Large, prominent display */}
-      <div className="flex-shrink-0 flex flex-col items-center p-3 bg-parchment border-b-2 border-wood-light/50">
+      <div className="sidebar-portrait flex-shrink-0 flex flex-col items-center p-3 bg-parchment border-b-2 border-wood-light/50">
         {(() => {
           const hasCurse = (player.activeCurses?.length ?? 0) > 0;
           return (
@@ -102,7 +105,7 @@ export function SideInfoTabs({ player, goals, isCurrentPlayer, initialTab }: Sid
       )}
 
       {/* Tab Navigation */}
-      <div className="flex-shrink-0 flex justify-center gap-0.5 p-1 bg-gradient-to-b from-wood to-wood-light">
+      <div className="sidebar-tabs flex-shrink-0 flex justify-center gap-0.5 p-1 bg-gradient-to-b from-wood to-wood-light">
         {TABS.map((tab) => (
           <TabButton
             key={tab.id}
@@ -114,7 +117,7 @@ export function SideInfoTabs({ player, goals, isCurrentPlayer, initialTab }: Sid
       </div>
 
       {/* Tab Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto p-2 min-h-0 bg-parchment">
+      <div className="panel-content flex-1 overflow-y-auto p-2 min-h-0 bg-parchment">
         {activeTab === 'stats' && <StatsTab player={player} />}
         {activeTab === 'inventory' && <InventoryGrid player={player} />}
         {activeTab === 'goals' && <GoalsTab player={player} goals={goals} />}
@@ -134,17 +137,18 @@ function TabButton({ tab, isActive, onClick }: TabButtonProps) {
     <button
       onClick={onClick}
       className={`
-        relative flex flex-col items-center justify-center
+        sidebar-tab relative flex flex-col items-center justify-center
         w-14 h-10 rounded-t transition-all duration-200
         ${isActive 
           ? 'bg-parchment text-wood-dark border border-b-0 border-wood-dark -mb-[1px] z-10' 
           : 'bg-wood-light/50 text-parchment/90 hover:bg-wood-light hover:text-parchment border border-transparent'
         }
       `}
+      aria-pressed={isActive}
       title={tab.label}
     >
       <div className={`${isActive ? 'text-accent' : 'text-parchment/80'}`}>
-        {tab.icon}
+        <GameIcon semantic={tab.id}>{tab.icon}</GameIcon>
       </div>
       <span className={`text-[7px] font-display font-bold uppercase tracking-wide leading-tight ${isActive ? 'text-wood-dark' : ''}`}>
         {tab.label}
@@ -347,7 +351,7 @@ function GoalsTab({ player, goals }: { player: Player; goals: GoalSettings }) {
 
 function StatSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-amber-100/50 rounded p-2 border border-amber-700/30">
+    <div className="stat-section bg-amber-100/50 rounded p-2 border border-amber-700/30">
       <h3 className="font-display text-[10px] font-bold text-amber-900 mb-1.5 uppercase tracking-wide border-b border-amber-700/30 pb-0.5">
         {title}
       </h3>
@@ -385,7 +389,7 @@ function ResourceRow({
     <div className={`${warning ? 'bg-destructive/15 rounded px-1 -mx-1' : ''}`}>
       <div className="flex items-center justify-between text-[11px]">
         <div className="flex items-center gap-1.5">
-          <span className="text-amber-800">{icon}</span>
+          <GameIcon semantic={label}>{icon}</GameIcon>
           <span className="text-amber-800 font-medium">{label}</span>
         </div>
         <span className={`font-bold ${warning ? 'text-red-600 animate-pulse' : highlight ? 'text-amber-600' : 'text-amber-900'}`}>
@@ -416,7 +420,7 @@ function StatRow({ icon, label, value, highlight = false, warning = false }: Sta
   return (
     <div className="flex items-center justify-between text-[11px]">
       <div className="flex items-center gap-1.5">
-        <span className="text-amber-800">{icon}</span>
+        <GameIcon semantic={label}>{icon}</GameIcon>
         <span className="text-amber-800 font-medium">{label}</span>
       </div>
       <span className={`font-bold ${warning ? 'text-red-600' : highlight ? 'text-amber-600' : 'text-amber-900'}`}>

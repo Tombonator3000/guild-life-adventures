@@ -1,0 +1,17 @@
+.game-icon { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; width:18px; height:18px; border:1px solid #8e6733; border-radius:50%; color:#77501e; background:radial-gradient(ellipse at 28% 18%,#fff4b3,#d3b572 55%,#998048); box-shadow:inset 0 1px 1px #ffefbc,inset 0 -1px 2px #5d3e29,0 1px 1px #40291244; }
+.game-icon > svg { width:12px; height:12px; stroke-width:2.1; filter:drop-shadow(0 1px 0 #fff3c488); }
+.game-icon[data-tone='ruby'] { color:#84292a; background:radial-gradient(ellipse at 28% 18%,#f2c998,#d2936c 55%,#8b4b39); }
+.game-icon[data-tone='jade'] { color:#345834; background:radial-gradient(ellipse at 28% 18%,#eee1a7,#a5b57c 55%,#6b7650); }
+.game-icon[data-tone='sapphire'] { color:#344f74; background:radial-gradient(ellipse at 28% 18%,#e5dfb0,#a4b8be 55%,#728396); }
+.guild-sidebar { position:relative; isolation:isolate; background-image:url('../../assets/ui/vellum.webp'); background-size:384px; box-shadow:inset 0 0 0 1px #e8c87a,inset 0 0 16px #5e3b2544; }
+.guild-sidebar > :not(.panel-decoration) { position:relative; }
+.guild-sidebar .panel-content { background:transparent; }
+.guild-sidebar .panel-content > * { position:relative; }
+.panel-decoration { position:absolute; inset:0; z-index:-1; pointer-events:none; background:linear-gradient(#f5e7c222,#f5e7c244),url('../../assets/ui/sidebar-landscape.webp') bottom center / 100% auto no-repeat; }
+.guild-sidebar .stat-section { background:linear-gradient(120deg,#fff7dcdf,#eedab2df); border-color:#96734466; box-shadow:inset 0 1px 0 #fff8dd,0 1px 2px #6d472421; }
+.guild-sidebar .sidebar-portrait { background:linear-gradient(#eee0c344,#d7ba8144),url('../../assets/ui/vellum.webp') center/384px; box-shadow:inset 0 0 16px #7d532426; }
+.guild-sidebar .sidebar-tabs { background:linear-gradient(90deg,#34251ddd,#705035bb,#34251ddd),url('../../assets/ui/vellum.webp') center/260px; box-shadow:inset 0 1px 0 #d4b77599,inset 0 -1px 0 #291e18; }
+.guild-sidebar .sidebar-tab[aria-pressed='true'] { box-shadow:inset 0 1px 0 #fff2bb,0 -1px 4px #25180f60; }
+.location-tabs .game-icon { width:20px; height:20px; }
+.location-tabs .game-icon > svg { width:13px; height:13px; }
+@media(forced-colors:active) { .panel-decoration { display:none; }.game-icon { background:Canvas; color:CanvasText; border:1px solid CanvasText; } }

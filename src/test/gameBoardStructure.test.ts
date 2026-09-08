@@ -34,9 +34,7 @@ const canvasComponents = [
   'PlayerToken',
   'AnimatedPlayerToken',
   'ShadowfingersToken',
-  'GraveyardCrows',
-  'FestivalOverlay',
-  'WeatherOverlay',
+  'BoardEnvironment',
   'DebugOverlay',
   'BanterBubble',
 ];
