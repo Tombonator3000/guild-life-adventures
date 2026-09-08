@@ -1,0 +1,418 @@
+{
+  "date": "2026-09-08",
+  "baseCommit": "12bc383177e60b4a57d61ab3af26faa5f0147119",
+  "testedCodeCommit": "42707eef4726b7311c70adce24860ed71564cc47",
+  "followup": "Only the unreferenced src/App.css stylesheet was removed after the code commit; remaining changes are evidence and documentation. App.css is absent from both builds and has no imports.",
+  "gateStatus": {
+    "behavior": "PASS",
+    "visualPreservation": "PASS",
+    "bundleAndRenderWork": "PASS",
+    "regressions": "PASS",
+    "physicalDevice60fps": "UNVERIFIED",
+    "githubDelivery": "PASS"
+  },
+  "tests": {
+    "baselineUnitTests": 768,
+    "candidateUnitTests": 770,
+    "candidateUnitFiles": 103,
+    "browserScenarios": 39,
+    "browserRetries": 0,
+    "productionMovementRunsPerBuild": 3,
+    "newRegressionsFailOnBaseline": 2,
+    "newRegressionsPassOnCandidate": 2,
+    "seededGamesPerBuild": 3,
+    "seededReportsIdenticalExceptSourceCommit": true,
+    "audio": {
+      "files": 42,
+      "silent": 0,
+      "invalid": 0,
+      "duplicateGroups": 0
+    }
+  },
+  "types": {
+    "configuredOldCommandCheckedSourceFiles": false,
+    "baselineAppDiagnostics": 185,
+    "candidateAppDiagnostics": 0,
+    "candidateNodeDiagnostics": 0,
+    "command": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json"
+  },
+  "lint": {
+    "before": {
+      "errors": 0,
+      "warnings": 27
+    },
+    "after": {
+      "errors": 0,
+      "warnings": 19
+    }
+  },
+  "cleanup": {
+    "files": [
+      "src/App.css",
+      "src/components/NavLink.tsx",
+      "src/components/game/ConfirmDialog.tsx",
+      "src/components/game/InfoTabs.tsx",
+      "src/components/game/PlayerInfoPanel.tsx",
+      "src/components/game/TurnOrderPanel.tsx",
+      "src/components/game/WorkSection.tsx",
+      "src/components/game/home/HomeItemGenerator.tsx",
+      "src/components/ui/accordion.tsx",
+      "src/components/ui/alert-dialog.tsx",
+      "src/components/ui/alert.tsx",
+      "src/components/ui/aspect-ratio.tsx",
+      "src/components/ui/avatar.tsx",
+      "src/components/ui/badge.tsx",
+      "src/components/ui/breadcrumb.tsx",
+      "src/components/ui/calendar.tsx",
+      "src/components/ui/card.tsx",
+      "src/components/ui/carousel.tsx",
+      "src/components/ui/chart.tsx",
+      "src/components/ui/checkbox.tsx",
+      "src/components/ui/collapsible.tsx",
+      "src/components/ui/command.tsx",
+      "src/components/ui/context-menu.tsx",
+      "src/components/ui/drawer.tsx",
+      "src/components/ui/dropdown-menu.tsx",
+      "src/components/ui/form.tsx",
+      "src/components/ui/hover-card.tsx",
+      "src/components/ui/input-otp.tsx",
+      "src/components/ui/input.tsx",
+      "src/components/ui/label.tsx",
+      "src/components/ui/menubar.tsx",
+      "src/components/ui/navigation-menu.tsx",
+      "src/components/ui/pagination.tsx",
+      "src/components/ui/popover.tsx",
+      "src/components/ui/progress.tsx",
+      "src/components/ui/radio-group.tsx",
+      "src/components/ui/resizable.tsx",
+      "src/components/ui/sfx-button.tsx",
+      "src/components/ui/sheet.tsx",
+      "src/components/ui/sidebar.tsx",
+      "src/components/ui/skeleton.tsx",
+      "src/components/ui/table.tsx",
+      "src/components/ui/tabs.tsx",
+      "src/components/ui/textarea.tsx",
+      "src/components/ui/toggle-group.tsx",
+      "src/components/ui/toggle.tsx",
+      "src/components/ui/use-toast.ts",
+      "src/hooks/use-mobile.tsx",
+      "src/lib/partykit.ts",
+      "src/utils/homeItemImageCache.ts"
+    ],
+    "dependencies": [
+      "@hookform/resolvers",
+      "@jridgewell/set-array",
+      "@radix-ui/react-accordion",
+      "@radix-ui/react-alert-dialog",
+      "@radix-ui/react-aspect-ratio",
+      "@radix-ui/react-avatar",
+      "@radix-ui/react-checkbox",
+      "@radix-ui/react-collapsible",
+      "@radix-ui/react-collection",
+      "@radix-ui/react-context-menu",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-hover-card",
+      "@radix-ui/react-label",
+      "@radix-ui/react-menubar",
+      "@radix-ui/react-navigation-menu",
+      "@radix-ui/react-popover",
+      "@radix-ui/react-progress",
+      "@radix-ui/react-radio-group",
+      "@radix-ui/react-tabs",
+      "@radix-ui/react-toggle",
+      "@radix-ui/react-toggle-group",
+      "@tanstack/react-query",
+      "cmdk",
+      "date-fns",
+      "embla-carousel-react",
+      "framer-motion",
+      "input-otp",
+      "pify",
+      "react-day-picker",
+      "react-hook-form",
+      "react-resizable-panels",
+      "vaul",
+      "zod"
+    ]
+  },
+  "renderIsolation": {
+    "scenario": "Three separate board location selections with a mounted goal display",
+    "baseCommits": 3,
+    "candidateCommits": 0,
+    "candidatePortfolioPriceUpdateCommits": 1
+  },
+  "movement": {
+    "conditions": "Production Vite preview; Chromium headless; 1194x834; fixed RNG; three runs per build, three trips each. Runs sequential with other test/build jobs finished. Not physical-device FPS.",
+    "results": {
+      "baseline": {
+        "runs": [
+          {
+            "viewport": "1194x834",
+            "samples": [
+              {
+                "destination": "guild-hall",
+                "layoutCount": 7,
+                "recalcStyleCount": 95,
+                "layoutMs": 22.75,
+                "scriptMs": 433.274,
+                "taskMs": 679.69
+              },
+              {
+                "destination": "bank",
+                "layoutCount": 6,
+                "recalcStyleCount": 41,
+                "layoutMs": 5.351999999999999,
+                "scriptMs": 179.01600000000002,
+                "taskMs": 325.7009999999999
+              },
+              {
+                "destination": "armory",
+                "layoutCount": 8,
+                "recalcStyleCount": 95,
+                "layoutMs": 2.576000000000002,
+                "scriptMs": 374.379,
+                "taskMs": 621.246
+              }
+            ]
+          },
+          {
+            "viewport": "1194x834",
+            "samples": [
+              {
+                "destination": "guild-hall",
+                "layoutCount": 7,
+                "recalcStyleCount": 95,
+                "layoutMs": 20.869,
+                "scriptMs": 355.21000000000004,
+                "taskMs": 569.538
+              },
+              {
+                "destination": "bank",
+                "layoutCount": 7,
+                "recalcStyleCount": 61,
+                "layoutMs": 3.962,
+                "scriptMs": 245.83699999999996,
+                "taskMs": 401.047
+              },
+              {
+                "destination": "armory",
+                "layoutCount": 8,
+                "recalcStyleCount": 95,
+                "layoutMs": 2.840000000000002,
+                "scriptMs": 380.267,
+                "taskMs": 615.4369999999999
+              }
+            ]
+          },
+          {
+            "viewport": "1194x834",
+            "samples": [
+              {
+                "destination": "guild-hall",
+                "layoutCount": 7,
+                "recalcStyleCount": 97,
+                "layoutMs": 18.804000000000002,
+                "scriptMs": 422.851,
+                "taskMs": 652.5799999999999
+              },
+              {
+                "destination": "bank",
+                "layoutCount": 6,
+                "recalcStyleCount": 41,
+                "layoutMs": 4.652999999999998,
+                "scriptMs": 171.07099999999997,
+                "taskMs": 334.40999999999997
+              },
+              {
+                "destination": "armory",
+                "layoutCount": 8,
+                "recalcStyleCount": 93,
+                "layoutMs": 2.8520000000000003,
+                "scriptMs": 375.62700000000007,
+                "taskMs": 623.266
+              }
+            ]
+          }
+        ],
+        "medians": {
+          "layoutCount": 21,
+          "recalcStyleCount": 231,
+          "layoutMs": 27.671000000000003,
+          "scriptMs": 981.314,
+          "taskMs": 1610.2559999999999
+        }
+      },
+      "candidate": {
+        "runs": [
+          {
+            "viewport": "1194x834",
+            "samples": [
+              {
+                "destination": "guild-hall",
+                "layoutCount": 7,
+                "recalcStyleCount": 93,
+                "layoutMs": 19.899,
+                "scriptMs": 340.75,
+                "taskMs": 540.294
+              },
+              {
+                "destination": "bank",
+                "layoutCount": 7,
+                "recalcStyleCount": 62,
+                "layoutMs": 4.675999999999999,
+                "scriptMs": 241.76800000000003,
+                "taskMs": 411.05799999999994
+              },
+              {
+                "destination": "armory",
+                "layoutCount": 8,
+                "recalcStyleCount": 93,
+                "layoutMs": 3.2660000000000013,
+                "scriptMs": 348.449,
+                "taskMs": 597.2909999999999
+              }
+            ]
+          },
+          {
+            "viewport": "1194x834",
+            "samples": [
+              {
+                "destination": "guild-hall",
+                "layoutCount": 7,
+                "recalcStyleCount": 97,
+                "layoutMs": 19.522000000000002,
+                "scriptMs": 429.933,
+                "taskMs": 653.593
+              },
+              {
+                "destination": "bank",
+                "layoutCount": 6,
+                "recalcStyleCount": 39,
+                "layoutMs": 4.281999999999997,
+                "scriptMs": 177.64999999999998,
+                "taskMs": 319.93799999999993
+              },
+              {
+                "destination": "armory",
+                "layoutCount": 9,
+                "recalcStyleCount": 93,
+                "layoutMs": 2.5660000000000025,
+                "scriptMs": 358.822,
+                "taskMs": 600.3829999999999
+              }
+            ]
+          },
+          {
+            "viewport": "1194x834",
+            "samples": [
+              {
+                "destination": "guild-hall",
+                "layoutCount": 7,
+                "recalcStyleCount": 94,
+                "layoutMs": 19.002000000000002,
+                "scriptMs": 392.231,
+                "taskMs": 612.302
+              },
+              {
+                "destination": "bank",
+                "layoutCount": 7,
+                "recalcStyleCount": 65,
+                "layoutMs": 3.599999999999999,
+                "scriptMs": 262.20700000000005,
+                "taskMs": 444.485
+              },
+              {
+                "destination": "armory",
+                "layoutCount": 8,
+                "recalcStyleCount": 96,
+                "layoutMs": 2.717999999999998,
+                "scriptMs": 396.42300000000006,
+                "taskMs": 614.089
+              }
+            ]
+          }
+        ],
+        "medians": {
+          "layoutCount": 22,
+          "recalcStyleCount": 248,
+          "layoutMs": 26.37,
+          "scriptMs": 966.405,
+          "taskMs": 1573.9139999999998
+        }
+      }
+    },
+    "interpretation": "No material movement throughput change established. Script/task medians are slightly lower but style/layout operation counts vary; do not claim a universal speedup.",
+    "earlierSample": "The single initial candidate sample overlapped a TypeScript process and was slower (1377.51ms script, 2265.45ms tasks). The repeated comparison removes that confound."
+  },
+  "delivery": {
+    "branch": "agent/gauntlet-code-cleanup",
+    "remoteBranchExists": true,
+    "pullRequestCreated": true,
+    "pullRequestNumber": 417,
+    "pullRequestUrl": "https://github.com/Tombonator3000/guild-life-adventures/pull/417",
+    "obsoletePRsClosed": true,
+    "closedPullRequests": [
+      384,
+      385,
+      389
+    ],
+    "retainedDependencyPullRequests": [
+      379,
+      380,
+      381,
+      382,
+      383,
+      386,
+      387,
+      388
+    ],
+    "separatelyReviewedPullRequests": [
+      416
+    ],
+    "merged": false,
+    "publicationMethod": "Connected GitHub app: blobs, tree, commit and branch",
+    "localSnapshotCommit": "d38ad6b1108da1fadbb82370cb31af296ed2299e",
+    "publishedSnapshotCommit": "702c198aac5e71aa9e8a1bcd782a45c1b4a5afd8",
+    "publishedSnapshotTree": "379cf39a29b54b3246ce98f48d7c9a037f858a23",
+    "publishedTreeMatchesLocalSnapshot": true,
+    "authorization": "The owner explicitly approved publishing the reviewed branch, opening one PR and closing #384, #385 and #389 in the 2026-09-08 follow-up.",
+    "history": [
+      {
+        "status": "BLOCKED",
+        "reason": "Automatic approval review rejected git push: it requires explicit user authorization to publish the new branch to the GitHub remote. No alternate write path was attempted."
+      },
+      {
+        "status": "AUTHORIZED",
+        "result": "Owner approved the requested publication and three closures."
+      },
+      {
+        "status": "GIT_AUTH_UNAVAILABLE",
+        "result": "Local git push could not read a GitHub username. The connected GitHub app published an exactly matching source tree."
+      },
+      {
+        "status": "PUBLISHED",
+        "result": "PR #417 is open; #384, #385 and #389 are closed without merging. Subsequent delivery-record edits are documentation only."
+      }
+    ],
+    "ciCheckpoint": {
+      "head": "702c198aac5e71aa9e8a1bcd782a45c1b4a5afd8",
+      "status": "in_progress",
+      "runs": [
+        {
+          "id": 34223682925,
+          "url": "https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34223682925",
+          "event": "pull_request",
+          "status": "in_progress",
+          "conclusion": null
+        },
+        {
+          "id": 34223652466,
+          "url": "https://github.com/Tombonator3000/guild-life-adventures/actions/runs/34223652466",
+          "event": "push",
+          "status": "in_progress",
+          "conclusion": null
+        }
+      ]
+    }
+  }
+}

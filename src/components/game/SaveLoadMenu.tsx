@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { Save, FolderOpen, Trash2, X, Home, Settings, BookOpen } from 'lucide-react';
@@ -14,7 +15,12 @@ interface SaveLoadMenuProps {
 }
 
 export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
-  const { saveToSlot, loadFromSlot, setPhase, networkMode } = useGameStore();
+  const { saveToSlot, loadFromSlot, setPhase, networkMode } = useGameStore(useShallow(state => ({
+    saveToSlot: state.saveToSlot,
+    loadFromSlot: state.loadFromSlot,
+    setPhase: state.setPhase,
+    networkMode: state.networkMode,
+  })));
   const { t } = useTranslation();
   const [mode, setMode] = useState<'save' | 'load'>('save');
   const [showOptions, setShowOptions] = useState(false);

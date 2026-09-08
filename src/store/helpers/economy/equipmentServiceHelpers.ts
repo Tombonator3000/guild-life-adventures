@@ -40,7 +40,7 @@ export function createEquipmentServiceActions(set: SetFn, get: GetFn) {
       vendor: EquipmentVendor,
       itemId: string,
       mode: ArmoryPurchaseMode = 'primary',
-    ): ActionResult | void => {
+    ): ActionResult | undefined => {
       const state = get();
       const player = state.players.find(candidate => candidate.id === playerId);
       if (!player) return { success: false, message: 'Player not found.' };
@@ -182,7 +182,7 @@ export function createEquipmentServiceActions(set: SetFn, get: GetFn) {
       playerId: string,
       service: EquipmentService,
       itemId: string,
-    ): ActionResult | void => {
+    ): ActionResult | undefined => {
       const state = get();
       const player = state.players.find(candidate => candidate.id === playerId);
       const item = ARMORY_ITEMS.find(candidate => candidate.id === itemId && candidate.equipSlot);

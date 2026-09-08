@@ -77,8 +77,7 @@ describe('TutorialOverlay guided first turn', () => {
     act(() => {
       useGameStore.setState({
         networkMode: 'guest',
-        localPlayerId: 'another-player',
-        isSpectating: true,
+        localPlayerId: null,
       });
     });
 
@@ -89,11 +88,21 @@ describe('TutorialOverlay guided first turn', () => {
       useGameStore.setState(state => ({
         networkMode: 'local',
         localPlayerId: null,
-        isSpectating: false,
         players: state.players.map((player, index) => index === 0 ? { ...player, isAI: true } : player),
       }));
     });
     rerender(<TutorialOverlay onClose={vi.fn()} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('does not guide an eliminated player while they spectate the survivors', () => {
+    useGameStore.getState().startNewGame(['Eliminated', 'Survivor'], false, goals);
+    useGameStore.getState().setShowTutorial(true);
+    useGameStore.setState(state => ({
+      players: state.players.map((player, index) => index === 0 ? { ...player, isGameOver: true } : player),
+    }));
+
+    const { container } = render(<TutorialOverlay onClose={vi.fn()} />);
     expect(container).toBeEmptyDOMElement();
   });
 

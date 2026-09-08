@@ -74,63 +74,8 @@ import {
   handleSabotagePlayer,
 } from './handlers';
 
-/**
- * All store actions needed by AI action handlers, bundled as a single object.
- * This replaces passing 35+ individual function references.
- */
-export interface StoreActions {
-  travelPlayer: (playerId: string, route: import('@/types/game.types').LocationId[]) => { success: boolean; message: string } | void;
-  performWorkShift: (playerId: string, mode: 'full' | 'remaining') => { success: boolean; message: string } | void;
-  attemptWorkplaceRaise: (playerId: string) => { success: boolean; message: string } | void;
-  performHomeActivity: (playerId: string, activity: 'relax' | 'sleep') => { success: boolean; message: string } | void;
-  useHealerService: (playerId: string, serviceId: 'minor' | 'moderate' | 'full' | 'cure' | 'blessing') => { success: boolean; message: string } | void;
-  purchaseAIResourceItem: (playerId: string, vendor: 'general-store' | 'shadow-market' | 'rusty-tankard' | 'armory', itemId: string) => { success: boolean; message: string } | void;
-  attendDegreeSession: (playerId: string, degreeId: import('@/types/game.types').DegreeId, mode: 'standard' | 'cram') => { success: boolean; message: string } | void;
-  graduateDegree: (playerId: string, degreeId: import('@/types/game.types').DegreeId) => { success: boolean; message: string } | void;
-  modifyGold: (playerId: string, amount: number) => void;
-  modifyHealth: (playerId: string, amount: number) => void;
-  modifyHappiness: (playerId: string, amount: number) => void;
-  modifyRelaxation: (playerId: string, amount: number) => void;
-  spendTime: (playerId: string, hours: number) => void;
-  acceptJobOffer: (playerId: string, jobId: string) => { success: boolean; message: string } | void;
-  payHousingRent: (playerId: string, weeks: 1 | 4 | 8) => { success: boolean; message: string } | void;
-  transferBankFunds: (playerId: string, direction: 'deposit' | 'withdraw', amount: number) => { success: boolean; message: string } | void;
-  buyAppliance: (playerId: string, applianceId: string, cost: number, source: string) => void;
-  moveHousingAtLandlord: (playerId: string, tier: import('@/types/game.types').HousingTier) => { success: boolean; message: string } | void;
-  buyDurable: (playerId: string, itemId: string, cost: number) => void;
-  equipItem: (playerId: string, itemId: string, slot: string) => void;
-  buyGuildPass: (playerId: string) => void;
-  takeQuest: (playerId: string, questId: string) => void;
-  takeChainQuest: (playerId: string, chainId: string) => void;
-  takeBounty: (playerId: string, bountyId: string) => void;
-  completeQuest: (playerId: string) => void;
-  completeLocationObjective: (playerId: string, objectiveId: string) => void;
-  clearDungeonFloor: (playerId: string, floorId: number) => void;
-  applyRareDrop: (playerId: string, dropId: string) => void;
-  manageLoan: (playerId: string, service: 'borrow' | 'repay', amount: number | 'all') => { success: boolean; message: string } | void;
-  tradeStock: (playerId: string, side: 'buy' | 'sell', stockId: string, shares: number) => { success: boolean; message: string } | void;
-  sellInventoryItem: (playerId: string, itemId: string) => { success: boolean; message: string } | void;
-  pawnAppliance: (playerId: string, applianceId: string, pawnValue: number) => void;
-  temperEquipment: (playerId: string, itemId: string, slot: string, cost: number) => void;
-  forgeRepairEquipment: (playerId: string, itemId: string, cost: number) => void;
-  applyDurabilityLoss: (playerId: string, durabilityLoss: import('@/data/combatResolver').EquipmentDurabilityLoss) => void;
-  // Hexes & Curses
-  castLocationHex: (playerId: string, hexId: string) => { success: boolean; message: string };
-  castPersonalCurse: (playerId: string, hexId: string, targetId: string) => { success: boolean; message: string };
-  purchaseHexScroll: (playerId: string, vendor: 'enchanter' | 'shadow-market', hexId: string) => { success: boolean; message: string } | void;
-  useHexDefense: (playerId: string, service: 'amulet' | 'dispel', targetLocation?: import('@/types/game.types').LocationId) => { success: boolean; message: string } | void;
-  useGraveyardHexService: (playerId: string, service: 'ritual' | 'reflect' | 'cleanse') => { success: boolean; message: string; backfired?: boolean } | void;
-  // Appliance repair
-  repairAppliance: (playerId: string, applianceId: string) => number;
-  forgeRepairAppliance: (playerId: string, applianceId: string) => number;
-  // Reputation (host-authoritative, atomic)
-  purchaseReputationUnlock: (playerId: string, unlockId: string) => { success: boolean; message: string } | void;
-  // Fence services (host-authoritative, atomic)
-  buyProtection: (playerId: string, weeks: number) => { success: boolean; message: string } | void;
-  buyTipOff: (playerId: string, targetId: string) => { success: boolean; message: string } | void;
-  sabotagePlayer: (saboteurId: string, targetId: string, optionId: string) => { success: boolean; message: string } | void;
-  endTurn: () => void;
-}
+import type { StoreActions } from './storeActions';
+export type { StoreActions } from './storeActions';
 
 /** Handler function signature: takes player + action + store actions, returns success */
 type ActionHandler = (player: Player, action: AIAction, store: StoreActions) => boolean;

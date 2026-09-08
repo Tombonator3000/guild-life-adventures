@@ -51,7 +51,7 @@ export function createServiceActions(set: SetFn, get: GetFn) {
   return {
     // This later economy action intentionally overrides the legacy player-helper
     // implementation. It is the authoritative sabotage entry point.
-    sabotagePlayer: (saboteurId: string, targetId: string, optionId: string): ActionResult | void => {
+    sabotagePlayer: (saboteurId: string, targetId: string, optionId: string): ActionResult | undefined => {
       const state = get();
       const saboteur = state.players.find(p => p.id === saboteurId);
       const target = state.players.find(p => p.id === targetId);
@@ -92,7 +92,7 @@ export function createServiceActions(set: SetFn, get: GetFn) {
       return { success: true, message: option.label };
     },
 
-    useHealerService: (playerId: string, serviceId: HealerServiceId): ActionResult | void => {
+    useHealerService: (playerId: string, serviceId: HealerServiceId): ActionResult | undefined => {
       const state = get();
       const player = state.players.find(p => p.id === playerId);
       const service = HEALER_SERVICES[serviceId];
@@ -130,7 +130,7 @@ export function createServiceActions(set: SetFn, get: GetFn) {
       return { success: true, message: 'Healing service completed' };
     },
 
-    useGraveyardService: (playerId: string, serviceId: GraveyardServiceId): ActionResult | void => {
+    useGraveyardService: (playerId: string, serviceId: GraveyardServiceId): ActionResult | undefined => {
       const state = get();
       const player = state.players.find(p => p.id === playerId);
       const service = GRAVEYARD_SERVICES[serviceId];
@@ -162,7 +162,7 @@ export function createServiceActions(set: SetFn, get: GetFn) {
       return { success: true, message: 'Graveyard service completed' };
     },
 
-    gambleAtFence: (playerId: string, stake: number): ActionResult | void => {
+    gambleAtFence: (playerId: string, stake: number): ActionResult | undefined => {
       const state = get();
       const player = state.players.find(p => p.id === playerId);
       const odds = GAMBLE_TABLE[stake];
@@ -189,7 +189,7 @@ export function createServiceActions(set: SetFn, get: GetFn) {
       return { success: true, message };
     },
 
-    purchaseNewspaper: (playerId: string, vendor: NewspaperVendor): ActionResult | void => {
+    purchaseNewspaper: (playerId: string, vendor: NewspaperVendor): ActionResult | undefined => {
       const state = get();
       const player = state.players.find(p => p.id === playerId);
       if (!player) return { success: false, message: 'Player not found' };

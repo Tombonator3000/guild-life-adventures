@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Coins, Smile, GraduationCap, Briefcase, Target, Compass } from 'lucide-react';
 import type { Player, GoalSettings } from '@/types/game.types';
 import { calculateStockValue } from '@/data/stocks';
@@ -10,8 +11,8 @@ interface GoalProgressProps {
   compact?: boolean;
 }
 
-export function GoalProgress({ player, goals, compact = false }: GoalProgressProps) {
-  const { stockPrices } = useGameStore();
+export const GoalProgress = memo(function GoalProgress({ player, goals, compact = false }: GoalProgressProps) {
+  const stockPrices = useGameStore(state => state.stockPrices);
   const { t } = useTranslation();
   // Calculate progress for each goal (includes stocks and loans)
   const stockValue = calculateStockValue(player.stocks, stockPrices);
@@ -99,7 +100,7 @@ export function GoalProgress({ player, goals, compact = false }: GoalProgressPro
       )}
     </div>
   );
-}
+});
 
 interface GoalBarProps {
   icon: React.ReactNode;

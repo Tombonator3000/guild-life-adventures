@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import { useMemo, useState } from 'react';
 import { BarChart3, Crown, Scroll, Star, Trophy } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
@@ -11,18 +12,18 @@ import { PerformanceStandings } from './PerformanceStandings';
 import { HighScorePanel } from './HighScorePanel';
 
 export function VictoryScreen() {
-  const {
-    setPhase,
-    resetForNewGame,
-    winner,
-    players,
-    goalSettings,
-    eventMessage,
-    stockPrices,
-    week,
-    networkMode,
-    localPlayerId,
-  } = useGameStore();
+  const { setPhase, resetForNewGame, winner, players, goalSettings, eventMessage, stockPrices, week, networkMode, localPlayerId } = useGameStore(useShallow(state => ({
+    setPhase: state.setPhase,
+    resetForNewGame: state.resetForNewGame,
+    winner: state.winner,
+    players: state.players,
+    goalSettings: state.goalSettings,
+    eventMessage: state.eventMessage,
+    stockPrices: state.stockPrices,
+    week: state.week,
+    networkMode: state.networkMode,
+    localPlayerId: state.localPlayerId,
+  })));
   const [showStats, setShowStats] = useState(false);
 
   const results = useMemo(

@@ -48,7 +48,7 @@ describe('calculateGoalProgress', () => {
       createPlayer({
         gold: 1050,
         happiness: 75,
-        completedDegrees: ['degree-1'] as Player['completedDegrees'],
+        completedDegrees: ['trade-guild'],
         currentJob: 'job-1',
         dependability: 50,
       }),
@@ -103,7 +103,7 @@ describe('calculateGoalProgress', () => {
       createPlayer({
         gold: 5000,
         happiness: 100,
-        completedDegrees: ['a', 'b'] as Player['completedDegrees'],
+        completedDegrees: ['trade-guild', 'junior-academy'],
         currentJob: 'job-1',
         dependability: 100,
       }),

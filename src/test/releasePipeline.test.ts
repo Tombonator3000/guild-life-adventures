@@ -51,7 +51,7 @@ describe('Phase 16Y release safety policy', () => {
   });
 
   it('provides stable local commands for the workflow gates', () => {
-    expect(packageJson.scripts['check:types']).toBe('tsc --noEmit');
+    expect(packageJson.scripts['check:types']).toBe('tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json');
     expect(packageJson.scripts.test).toBe('vitest run');
     expect(packageJson.scripts['test:e2e']).toBe('playwright test');
     expect(packageJson.scripts.validate).toContain('bun run check:types');

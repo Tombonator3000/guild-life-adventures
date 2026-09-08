@@ -17,7 +17,7 @@ import { subscribeToGameListings, type GameListing } from '@/network/gameListing
 type LobbyView = 'menu' | 'creating' | 'joining' | 'host-lobby' | 'guest-lobby' | 'browse' | 'spectating';
 
 export function OnlineLobby() {
-  const { setPhase } = useGameStore();
+  const setPhase = useGameStore(state => state.setPhase);
   const {
     isHost,
     roomCode,

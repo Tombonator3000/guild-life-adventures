@@ -1,14 +1,15 @@
+import { useShallow } from 'zustand/react/shallow';
 import { useCallback, useEffect, useRef } from 'react';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 
 export function useAutoEndTurn() {
   const currentPlayer = useCurrentPlayer();
-  const {
-    phase,
-    currentPlayerIndex,
-    checkDeath,
-    networkMode,
-  } = useGameStore();
+  const { phase, currentPlayerIndex, checkDeath, networkMode } = useGameStore(useShallow(state => ({
+    phase: state.phase,
+    currentPlayerIndex: state.currentPlayerIndex,
+    checkDeath: state.checkDeath,
+    networkMode: state.networkMode,
+  })));
 
   const scheduledEndTurnRef = useRef<number | null>(null);
   const autoEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

@@ -38,7 +38,7 @@ function validateLandlordVisit(
 
 export function createHousingServiceActions(set: SetFn, get: GetFn) {
   return {
-    payHousingRent: (playerId: string, weeks: 1 | 4): ActionResult | void => {
+    payHousingRent: (playerId: string, weeks: 1 | 4): ActionResult | undefined => {
       const state = get();
       const visit = validateLandlordVisit(state, playerId);
       if ('error' in visit) return visit.error;
@@ -73,7 +73,7 @@ export function createHousingServiceActions(set: SetFn, get: GetFn) {
       return { success: true, message: `Rent prepaid for ${weeks} week${weeks === 1 ? '' : 's'} (${totalCost}g).` };
     },
 
-    moveHousingAtLandlord: (playerId: string, tier: HousingTier): ActionResult | void => {
+    moveHousingAtLandlord: (playerId: string, tier: HousingTier): ActionResult | undefined => {
       const state = get();
       const visit = validateLandlordVisit(state, playerId);
       if ('error' in visit) return visit.error;
@@ -110,7 +110,7 @@ export function createHousingServiceActions(set: SetFn, get: GetFn) {
       return { success: true, message: `Moved into ${HOUSING_DATA[tier].name} for ${moveCost}g.` };
     },
 
-    requestRentExtensionAtLandlord: (playerId: string): ActionResult | void => {
+    requestRentExtensionAtLandlord: (playerId: string): ActionResult | undefined => {
       const state = get();
       const visit = validateLandlordVisit(state, playerId);
       if ('error' in visit) return visit.error;

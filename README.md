@@ -59,7 +59,7 @@ bun run build:github
 - Zustand 5
 - Tailwind CSS og shadcn/ui
 - Vitest, Testing Library og Playwright
-- PeerJS/PartyKit-baserte nettverkslag
+- PeerJS for nettspill, MQTT for offentlige rom og PartyKit for verdensranking
 - Web Audio API og verifiserte MP3-filer
 - vite-plugin-pwa
 

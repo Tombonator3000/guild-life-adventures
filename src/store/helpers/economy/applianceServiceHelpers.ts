@@ -61,7 +61,7 @@ export function createApplianceServiceActions(set: SetFn, get: GetFn) {
       playerId: string,
       vendor: ApplianceVendor,
       applianceId: string,
-    ): ActionResult | void => {
+    ): ActionResult | undefined => {
       const state = get();
       const player = state.players.find(candidate => candidate.id === playerId);
       const appliance = getAppliance(applianceId);
@@ -126,7 +126,7 @@ export function createApplianceServiceActions(set: SetFn, get: GetFn) {
       playerId: string,
       service: ApplianceService,
       applianceId: string,
-    ): ActionResult | void => {
+    ): ActionResult | undefined => {
       const state = get();
       const player = state.players.find(candidate => candidate.id === playerId);
       const appliance = getAppliance(applianceId);

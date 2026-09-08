@@ -1,3 +1,5 @@
+import { deriveGameBoardAudienceState } from '@/lib/deriveGameBoardAudienceState';
+import { useShallow } from 'zustand/react/shallow';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Lightbulb, LocateFixed, X } from 'lucide-react';
 import { useCurrentPlayer, useGameStore } from '@/store/gameStore';
@@ -131,18 +133,17 @@ function findVisibleTarget(selector?: string): HTMLElement | null {
 
 export function TutorialOverlay({ onClose }: TutorialOverlayProps) {
   const currentPlayer = useCurrentPlayer();
-  const {
-    players,
-    week,
-    currentPlayerIndex,
-    tutorialStep,
-    setTutorialStep,
-    setShowTutorial,
-    networkMode,
-    localPlayerId,
-    isSpectating,
-    phase,
-  } = useGameStore();
+  const { players, week, currentPlayerIndex, tutorialStep, setTutorialStep, setShowTutorial, networkMode, localPlayerId, phase } = useGameStore(useShallow(state => ({
+    players: state.players,
+    week: state.week,
+    currentPlayerIndex: state.currentPlayerIndex,
+    tutorialStep: state.tutorialStep,
+    setTutorialStep: state.setTutorialStep,
+    setShowTutorial: state.setShowTutorial,
+    networkMode: state.networkMode,
+    localPlayerId: state.localPlayerId,
+    phase: state.phase,
+  })));
   const [showReference, setShowReference] = useState(false);
   const [referenceStep, setReferenceStep] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
@@ -166,6 +167,9 @@ export function TutorialOverlay({ onClose }: TutorialOverlayProps) {
     || (localPlayerId !== null && localPlayerId === owner?.id)
   );
   const isOwnerTurn = currentPlayer?.id === owner?.id && !currentPlayer?.isAI;
+  const { isSpectating } = deriveGameBoardAudienceState({
+    players, currentPlayer, localPlayerId, isOnline: networkMode !== 'local', phase,
+  });
   const canDisplayGuide = phase === 'playing' && isLocalOwner && isOwnerTurn && !isSpectating;
 
   const completeTutorial = useCallback(() => {

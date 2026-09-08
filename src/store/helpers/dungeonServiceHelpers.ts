@@ -1,4 +1,4 @@
-import { FESTIVALS } from '@/data/festivals';
+import { FESTIVALS, type FestivalId } from '@/data/festivals';
 import {
   calculateEducationBonuses,
   checkFloorRequirements,
@@ -15,7 +15,7 @@ import {
   retreatFromDungeon,
 } from '@/data/combatResolver';
 import { calculateCombatStats, MAX_DURABILITY } from '@/data/items';
-import type { FestivalId, Player } from '@/types/game.types';
+import type { Player } from '@/types/game.types';
 import type { GetFn, SetFn } from '../storeTypes';
 import type {
   DungeonActionResult,
