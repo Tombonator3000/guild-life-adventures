@@ -1,6 +1,8 @@
 // Inline event panel that renders inside the center panel (not a Dialog overlay)
 // Redesigned: large text filling center, button at bottom center, woodcut illustrations
 
+import { LocationPages } from './LocationPages';
+import './playability.css';
 import { useEffect } from 'react';
 import { AlertTriangle, Skull, Home, Coins, Heart, Utensils } from 'lucide-react';
 import type { GameEvent } from './EventModal';
@@ -70,63 +72,16 @@ export function EventPanel({ event, onDismiss }: EventPanelProps) {
   // Parse multi-line event description into separate event lines for display
   const descriptionLines = event.description.split('\n').filter(line => line.trim());
 
-  return (
-    <div className="h-full w-full flex flex-col parchment-panel">
-      {/* Scrollable content area - fills available space */}
-      <div className="flex-1 flex flex-col items-center justify-center p-4 overflow-y-auto min-h-0">
-        {/* Woodcut illustration or fallback icon */}
-        <div className="flex-shrink-0 mb-3">
-          {(() => {
-            const img = getQuestImage(event.id) || getEventImage(event.id, event.type);
-            if (img) {
-              return (
-                <img
-                  src={img}
-                  alt={event.title}
-                  className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 object-contain rounded-lg border-2 border-card-foreground/20"
-                  style={{ filter: 'sepia(0.3)' }}
-                  loading="lazy"
-                />
-              );
-            }
-            return getIcon();
-          })()}
-        </div>
-
-        {/* Title - large and prominent */}
-        <h2 className="font-display text-3xl text-card-foreground text-center mb-4 drop-shadow-sm">
-          {event.title}
-        </h2>
-
-        {/* Event description lines - large readable text, wide to minimize scrolling */}
-        <div className="w-full max-w-3xl space-y-2 mb-4 px-2">
-          {descriptionLines.map((line, i) => (
-            <p
-              key={i}
-              className="font-display text-lg text-card-foreground text-center leading-relaxed"
-            >
-              {line}
-            </p>
-          ))}
-        </div>
-
-        {/* Effects summary */}
-        {effectsText && (
-          <div className="wood-frame px-6 py-3 text-parchment text-center w-full max-w-3xl">
-            <span className="font-display text-lg font-semibold">{effectsText}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Fixed button at bottom center */}
-      <div className="flex-shrink-0 p-4 flex justify-center">
-        <button
-          onClick={onDismiss}
-          className="gold-button text-lg px-12 py-3 min-w-[200px]"
-        >
-          {event.type === 'death' ? t('events.gameOver') : t('events.continue')}
-        </button>
-      </div>
+  const illustration = getQuestImage(event.id) || getEventImage(event.id, event.type);
+  return <section className="event-report parchment-panel" aria-label="Event report">
+    <h2 className="font-display">{event.title}</h2>
+    <div className="event-report-body">
+      <aside aria-hidden="true">{illustration ? <img src={illustration} alt="" /> : getIcon()}</aside>
+      <LocationPages pageKey={event.id}>
+        <div className="event-report-copy">{descriptionLines.map((line, i) => <p key={i}>{line}</p>)}</div>
+        {effectsText && <p className="event-report-effects">{effectsText}</p>}
+      </LocationPages>
     </div>
-  );
+    <button onClick={onDismiss} className="gold-button event-report-continue">{event.type === 'death' ? t('events.gameOver') : t('events.continue')}</button>
+  </section>;
 }

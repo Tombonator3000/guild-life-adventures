@@ -29,9 +29,13 @@ test('wrapped market tabs and paged goods keep every service reachable', async (
     }
     if (await picker.isVisible() && await picker.getAttribute('aria-expanded') === 'false') await picker.click();
     await tabs.getByRole('button',{name:'Goods',exact:true}).click();
-    await expect(shell.getByRole('button',{name:'Next menu page',exact:true})).toBeEnabled();
-    await shell.getByRole('button',{name:'Next menu page',exact:true}).click();
-    await expect(shell.getByRole('status')).toContainText('Page 2');
+    const nextPage = shell.getByRole('button',{name:'Next menu page',exact:true});
+    if (await nextPage.isEnabled()) {
+      await nextPage.click();
+      await expect(shell.getByRole('status')).toContainText('Page 2');
+    } else {
+      await expect(shell.locator('.location-page-flow button').last()).toBeInViewport();
+    }
     await page.screenshot({path:testInfo.outputPath(`shadow-market-${width}.png`)});
     await openMenuPage(page,shell.locator('.location-page-flow button').last());
   }

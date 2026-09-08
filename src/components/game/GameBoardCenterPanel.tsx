@@ -45,7 +45,7 @@ export function GameBoardCenterPanel({
         height: `${centerPanel.height}%`,
       }}
     >
-      <div className={`w-full h-full overflow-hidden flex flex-col bg-card/95 relative ${isMobile ? 'rounded-xl' : 'rounded-t-lg'} animate-scale-in`}>
+      <div className={`w-full h-full overflow-hidden flex flex-col bg-card/95 relative ${isMobile ? 'rounded-xl' : 'rounded-t-lg'}`}>
         {isCursed && !applianceProps && !toadProps && <CursePanelOverlay isMobile={isMobile} />}
         {toadProps ? (
           <CurseToadPanel {...toadProps} />

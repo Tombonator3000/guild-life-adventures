@@ -187,7 +187,8 @@ describe('GameBoard component boundaries', () => {
     expect(gameBoardSource).not.toContain('const [eventQueueIdx');
     expect(gameBoardSource).not.toContain('const eventLines =');
     expect(gameBoardSource).not.toContain('const totalEventCount =');
-    expect(eventQueueSource).toContain("const isWeekendEvent = eventSource === 'weekend';");
+    expect(eventQueueSource).toContain("eventSource === 'weekend'");
+    expect(eventQueueSource).toContain("currentEvent?.type === 'info'");
     expect(eventQueueSource).toContain('setEventQueueIdx(index => index + 1);');
     expect(eventQueueSource).toContain('dismissEvent();');
   });

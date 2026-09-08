@@ -1,3 +1,5 @@
+import { CityActivityPanel } from './CityActivityPanel';
+import { getCityActivities } from '@/data/cityActivities';
 import { GameIcon } from './GameIcon';
 // All visits remain inside the original board's central frame.
 import { useState, useEffect, useId, type ReactNode, type CSSProperties } from 'react';
@@ -70,8 +72,11 @@ function tabIcon(id: string) {
 }
 
 export function LocationShell({ npc, tabs, defaultTab, locationId, locationName, workInfo }: LocationShellProps) {
+  const conditions = useGameStore(s => ({ week:s.week, activeFestival:s.activeFestival, weather:s.weather }));
+  const cityActivities = getCityActivities(locationId, conditions);
   const hasWork = !!workInfo && !tabs.some(tab => tab.id === 'hexed');
-  const services = tabs.filter(tab => !tab.hidden && !(hasWork && locationId === 'guild-hall' && tab.id === 'work'));
+  const availableTabs: LocationTab[] = [...tabs, ...(cityActivities.length && !tabs.some(t => t.id === 'hexed') ? [{ id:'city-activities', label:'This Week', paged:false, content:<CityActivityPanel key={locationId} location={locationId} /> }] : [])];
+  const services = availableTabs.filter(tab => !tab.hidden && !(hasWork && locationId === 'guild-hall' && tab.id === 'work'));
   const visibleTabs: LocationTab[] = hasWork ? [{ id: 'your-shift', label: 'Work', content: <WorkplaceCard work={workInfo!} /> }, ...services.map(tab => tab.id === 'work' ? { ...tab, label: 'Careers' } : tab)] : services;
   const [servicesOpen, setServicesOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState(defaultTab || visibleTabs[0]?.id || '');

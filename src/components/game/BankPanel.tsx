@@ -3,7 +3,6 @@ import type { Player } from '@/types/game.types';
 import { LOAN_MIN_SHIFTS_REQUIRED } from '@/types/game.types';
 import { STOCKS, calculateStockValue, calculateDividendAccrual, getStoredDividendCredit, previewDividendSettlement, getSellPrice } from '@/data/stocks';
 import { LOAN_PRODUCTS } from '@/store/helpers/economy/financeServiceHelpers';
-import { toast } from 'sonner';
 import { useGameStore } from '@/store/gameStore';
 import './playability.css';
 
@@ -23,8 +22,9 @@ export function BankPanel({ player, priceModifier = 1, stockPrices, stockPriceHi
   const [amount, setAmount] = useState('50');
   const [selectedStock, setSelectedStock] = useState(STOCKS[0].id);
   const [loanAmount, setLoanAmount] = useState<number>(100);
+  const [receipt, setReceipt] = useState('');
   const report = (result: { success: boolean; message: string } | void) => {
-    if (result) (result.success ? toast.success : toast.error)(result.message);
+    if (result) setReceipt(result.message);
   };
   const value = Number(amount);
   const valid = Number.isSafeInteger(value) && value > 0 && value <= 1_000_000;
@@ -41,6 +41,7 @@ export function BankPanel({ player, priceModifier = 1, stockPrices, stockPriceHi
       <button disabled={!valid || player.savings < value} onClick={() => report(transfer(player.id, 'withdraw', value))}>Withdraw {valid ? value : ''} Gold</button>
     </div>
     <p className="bank-help" role="status">{!valid ? 'Choose a positive whole amount, up to 1,000,000g.' : `Deposit: ${player.gold >= value ? `${player.gold - value}g cash · ${player.savings + value}g savings` : `needs ${value}g cash`}. Withdraw: ${player.savings >= value ? `${player.gold + value}g cash` : `needs ${value}g savings`}.`}</p>
+    {receipt && <p className="bank-receipt" role="status">{receipt}</p>}
     <p className="bank-note">Transfers take 0h and keep your total wealth unchanged.</p>
   </section>;
 
@@ -63,7 +64,8 @@ export function BankPanel({ player, priceModifier = 1, stockPrices, stockPriceHi
         <button disabled={!ready || owned < 1} onClick={() => report(trade(player.id, 'sell', stock.id, 1))}>Sell 1 · {ready ? getSellPrice(stock.id, 1, price) : '—'}g</button>
         <button disabled={!ready || owned < 1} onClick={() => report(trade(player.id, 'sell', stock.id, owned))}>Sell All ({owned})</button>
       </div>
-      <p className="bank-note">Trades take 0h. Sale proceeds include fees. Fractional dividends carry forward.</p>
+      {receipt && <p className="bank-receipt" role="status">{receipt}</p>}
+    <p className="bank-note">Trades take 0h. Sale proceeds include fees. Fractional dividends carry forward.</p>
     </section>;
   }
 
@@ -82,7 +84,8 @@ export function BankPanel({ player, priceModifier = 1, stockPrices, stockPriceHi
         <button className="bank-primary" disabled={!hasHistory} onClick={() => report(loan(player.id, 'borrow', loanAmount))}>Borrow {loanAmount}g</button>
         <p className="bank-help">{hasHistory ? `After borrowing: ${player.gold + loanAmount}g cash, ${loanAmount}g debt. Due in 8 weeks.` : `Work ${LOAN_MIN_SHIFTS_REQUIRED} shifts first (${player.totalShiftsWorked ?? 0}/${LOAN_MIN_SHIFTS_REQUIRED}).`}</p>
       </>}
-      <p className="bank-note">0h service. Interest compounds weekly; rates follow the market. Borrowing does not increase net wealth.</p>
+      {receipt && <p className="bank-receipt" role="status">{receipt}</p>}
+    <p className="bank-note">0h service. Interest compounds weekly; rates follow the market. Borrowing does not increase net wealth.</p>
     </section>;
   }
 

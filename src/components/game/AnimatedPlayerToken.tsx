@@ -102,7 +102,7 @@ export function AnimatedPlayerToken({
   return (
     <div
       className={cn(
-        'absolute w-20 h-20 rounded-full shadow-xl z-50 relative',
+        'animated-player-token absolute w-20 h-20 rounded-full shadow-xl z-50 relative',
         isCurrent && !animationPath && 'ring-2 ring-yellow-400 ring-offset-1 animate-bounce',
         animationPath && 'animate-token-walk'
       )}

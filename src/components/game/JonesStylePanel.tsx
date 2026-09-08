@@ -4,6 +4,8 @@
 // - Clean list format for locations, employers, etc.
 
 import type React from 'react';
+import { ItemIcon } from './ItemIcon';
+import { ActionPreview, type ActionPreviewData } from './ActionPreview';
 import { useItemPreview, type PreviewData } from './ItemPreview';
 
 interface JonesMenuItemProps {
@@ -16,6 +18,7 @@ interface JonesMenuItemProps {
   className?: string;
   darkText?: boolean; // Use dark brown text for light backgrounds
   largeText?: boolean; // Use larger text (text-base instead of text-sm)
+  actionPreview?: ActionPreviewData;
   previewData?: PreviewData; // Item preview shown on hover below NPC portrait
 }
 
@@ -31,6 +34,7 @@ export function JonesMenuItem({
   darkText = false,
   largeText = false,
   previewData,
+  actionPreview,
 }: JonesMenuItemProps) {
   const { setPreview } = useItemPreview();
   const textSize = largeText ? 'text-base' : 'text-sm';
@@ -47,30 +51,33 @@ export function JonesMenuItem({
   const hoverHandlers = previewData ? {
     onMouseEnter: () => setPreview(previewData),
     onMouseLeave: () => setPreview(null),
+    onFocus: () => setPreview(previewData),
+    onBlur: () => setPreview(null),
   } : {};
 
   const content = (
     <div
       className={`
-        flex items-baseline w-full font-mono ${textSize}
+        flex items-center gap-2 w-full font-mono ${textSize}
         ${disabled ? 'opacity-50' : ''}
         ${textColor}
         ${className}
       `}
     >
-      <span className="whitespace-nowrap">{label}</span>
+      {previewData?.itemId && <ItemIcon itemId={previewData.itemId} size={40} />}
+      <span className="min-w-0 whitespace-normal">{label}</span>
       {price !== undefined && (
         <>
           <span className={`flex-1 border-b border-dotted ${dotColor} mx-1 mb-1`}></span>
           <span className={`whitespace-nowrap font-bold ${darkText ? 'text-[#8b6914]' : 'text-gold'}`}>
-            ${price}{suffix}
+            {price}g{suffix}
           </span>
         </>
       )}
     </div>
   );
 
-  if (onClick && !disabled) {
+  if (onClick) {
     return (
       <button
         onClick={onClick}
@@ -79,6 +86,7 @@ export function JonesMenuItem({
         {...hoverHandlers}
       >
         {content}
+        {actionPreview && <ActionPreview {...actionPreview} />}
       </button>
     );
   }

@@ -254,6 +254,8 @@ export function normalizePlayer(p: Record<string, unknown>): void {
   setDefault(p, 'completedBountiesThisWeek', []);
   setDefault(p, 'questCooldownWeeksLeft', 0);
   setDefault(p, 'guildReputation', (p.completedQuests as number) || 0);
+  setDefault(p, 'cityActivityWeek', -1);
+  setDefault(p, 'cityActivityId', '');
   setDefault(p, 'nlChainProgress', {});
   setDefault(p, 'nlChainCompleted', []);
   setDefault(p, 'pendingNLChainChoice', null);

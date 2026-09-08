@@ -1,3 +1,4 @@
+import { MilestoneNotice } from './MilestoneNotice';
 import { BoardEnvironment } from './environment/BoardEnvironment';
 import { MobileBoardLayout } from './MobileBoardLayout';
 import type { ComponentProps, ReactNode } from 'react';
@@ -147,6 +148,7 @@ export function GameBoardCanvas({
         </div>
       )}
 
+      <MilestoneNotice />
       <BoardEnvironment centerPanel={isMobile ? NO_BOARD_PANEL : centerPanel} />
       <DebugOverlay customZones={customZones} centerPanel={debugCenterPanel} visible={showDebugOverlay} />
       <BoardBanterOverlay centerPanel={centerPanel} isMobile={isMobile} />

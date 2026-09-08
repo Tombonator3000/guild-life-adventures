@@ -111,6 +111,7 @@ export function AcademyPanel({
                   <>
                     <JonesMenuItem
                       label={`${t('panelAcademy.attend')} (${degree.hoursPerSession}h)`}
+                      actionPreview={{ hours: degree.hoursPerSession, goldAfter: player.gold - sessionCost, effect: `${Math.min(sessionsNeeded, progress + 1)}/${sessionsNeeded} sessions`, blockedReason: player.gold < sessionCost ? `Needs ${sessionCost}g tuition.` : player.timeRemaining < degree.hoursPerSession ? `Needs ${degree.hoursPerSession}h; ${player.timeRemaining}h left.` : undefined }}
                       price={sessionCost}
                       disabled={!canAfford}
                       darkText
@@ -126,6 +127,7 @@ export function AcademyPanel({
                     {player.timeRemaining > 0 && player.timeRemaining < degree.hoursPerSession && player.gold >= sessionCost && (
                       <JonesMenuItem
                         label={`Cram Session (${player.timeRemaining}h, counts as 1 session)`}
+                        actionPreview={{ hours: player.timeRemaining, goldAfter: player.gold - sessionCost, effect: `${Math.min(sessionsNeeded, progress + 1)}/${sessionsNeeded} sessions` }}
                         price={sessionCost}
                         disabled={player.gold < sessionCost}
                         darkText

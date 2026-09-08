@@ -134,6 +134,7 @@ export const ALLOWED_GUEST_ACTIONS = new Set([
   'travelPlayer',
   'endTurn',
   'performHomeActivity',
+  'performCityActivity',
   'performCaveRest',
 
   // Housing intent only. Host resolves office access, canonical price and time.

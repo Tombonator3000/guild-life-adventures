@@ -2,6 +2,7 @@ import { Coins, Clock, Heart, BarChart3, Users, Menu } from 'lucide-react';
 import type { Player } from '@/types/game.types';
 import { CharacterPortrait } from './CharacterPortrait';
 import './playability.css';
+import { ResourceValue } from './ResourceValue';
 
 interface MobileHUDProps {
   player: Player;
@@ -20,9 +21,9 @@ export function MobileHUD({ player, week, priceModifier, onEndTurn, onOpenLeftDr
     <div className="mobile-hud-top">
       <CharacterPortrait portraitId={player.portraitId} playerColor={player.color} playerName={player.name} size={28} isAI={player.isAI} hasCurse={(player.activeCurses?.length ?? 0) > 0} curses={player.activeCurses} />
       <span className="mobile-hud-name">{player.name}</span>
-      <span aria-label={`${player.gold} gold`}><Coins />{player.gold}</span>
-      <span aria-label={`${player.timeRemaining} hours remaining`}><Clock />{player.timeRemaining}h</span>
-      <span aria-label={`${player.health} health`}><Heart />{player.health}</span>
+      <span aria-label={`${player.gold} gold`}><Coins /><ResourceValue value={player.gold} identity={player.id} /></span>
+      <span aria-label={`${player.timeRemaining} hours remaining`}><Clock /><ResourceValue value={player.timeRemaining} identity={player.id} />h</span>
+      <span aria-label={`${player.health} health`}><Heart /><ResourceValue value={player.health} identity={player.id} /></span>
     </div>
     <div className="mobile-hud-actions">
       <button title="Stats & Inventory" aria-label="Stats & Inventory" onClick={onOpenLeftDrawer}><BarChart3 /></button>

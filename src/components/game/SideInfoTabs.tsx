@@ -1,4 +1,5 @@
 import { GameIcon } from './GameIcon';
+import { ResourceValue } from './ResourceValue';
 import { PanelDecoration } from './PanelDecoration';
 // SideInfoTabs - Left sidebar tabbed info panel inspired by Jones in the Fast Lane
 // Clean tabs-only design with Stats, Inventory, and Goals
@@ -383,6 +384,7 @@ function ResourceRow({
   warning = false,
   highlight = false
 }: ResourceRowProps) {
+  const identity = useGameStore(s => s.players[s.currentPlayerIndex]?.id ?? "none");
   const showBar = barValue !== undefined && barMax !== undefined;
   
   return (
@@ -393,7 +395,7 @@ function ResourceRow({
           <span className="text-amber-800 font-medium">{label}</span>
         </div>
         <span className={`font-bold ${warning ? 'text-red-600 animate-pulse' : highlight ? 'text-amber-600' : 'text-amber-900'}`}>
-          {value}
+          <ResourceValue value={Number.parseFloat(value)} identity={identity}>{value}</ResourceValue>
         </span>
       </div>
       {showBar && (

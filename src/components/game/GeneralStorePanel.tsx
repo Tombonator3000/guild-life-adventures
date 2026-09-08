@@ -89,7 +89,7 @@ export function GeneralStorePanel({ player, priceModifier }: GeneralStorePanelPr
         {GENERAL_STORE_ITEMS.filter(item => item.effect?.type === 'food' && !item.isFreshFood).map(item => {
           const price = getItemPrice(item, priceModifier);
           const itemName = t(`items.${item.id}.name`) || item.name;
-          return <JonesMenuItem key={item.id} label={itemName} price={price} disabled={player.gold < price} darkText largeText previewData={itemToPreview(item)} onClick={() => handlePurchase(item.id, t('panelStore.purchased', { name: itemName }))} />;
+          return <JonesMenuItem key={item.id} label={itemName} price={price} disabled={player.gold < price} darkText largeText previewData={itemToPreview(item)} actionPreview={{ hours: 0, goldAfter: player.gold - price, effect: item.isFreshFood ? `${Math.min(maxFreshFood, player.freshFood + (item.freshFoodUnits ?? 0))}/${maxFreshFood} supplies` : `Food ${Math.min(100, player.foodLevel + (item.effect?.value ?? 0))}%`, blockedReason: player.gold < price ? `Needs ${price}g; you have ${player.gold}g.` : item.isFreshFood && player.freshFood >= maxFreshFood ? 'Fresh-food storage is full.' : undefined }} onClick={() => handlePurchase(item.id, t('panelStore.purchased', { name: itemName }))} />;
         })}
 
         <JonesSectionHeader title={t('panelStore.freshFood')} />
@@ -99,9 +99,9 @@ export function GeneralStorePanel({ player, priceModifier }: GeneralStorePanelPr
           const units = item.freshFoodUnits || 0;
           const spaceLeft = maxFreshFood - player.freshFood;
           const itemName = t(`items.${item.id}.name`) || item.name;
-          return <JonesMenuItem key={item.id} label={`${itemName} (+${units})`} price={price} disabled={player.gold < price || spaceLeft <= 0} darkText largeText previewData={itemToPreview(item)} onClick={() => handlePurchase(item.id, t('panelStore.storedFreshFood', { units: Math.min(units, spaceLeft) }))} />;
+          return <JonesMenuItem key={item.id} label={`${itemName} (+${units})`} price={price} disabled={player.gold < price || spaceLeft <= 0} darkText largeText previewData={itemToPreview(item)} actionPreview={{ hours: 0, goldAfter: player.gold - price, effect: item.isFreshFood ? `${Math.min(maxFreshFood, player.freshFood + (item.freshFoodUnits ?? 0))}/${maxFreshFood} supplies` : `Food ${Math.min(100, player.foodLevel + (item.effect?.value ?? 0))}%`, blockedReason: player.gold < price ? `Needs ${price}g; you have ${player.gold}g.` : item.isFreshFood && player.freshFood >= maxFreshFood ? 'Fresh-food storage is full.' : undefined }} onClick={() => handlePurchase(item.id, t('panelStore.storedFreshFood', { units: Math.min(units, spaceLeft) }))} />;
         })}
-        {!hasPreservationBox && <div className="text-xs text-[#6b5a42] px-2 mb-1">Fresh food requires a working Preservation Box.</div>}
+        {!hasPreservationBox && <div className="text-xs text-[#6b5a42] px-2 mb-1">Without a working Preservation Box, fresh food may spoil at turn end.</div>}
 
         <JonesSectionHeader title={t('panelStore.durables')} />
         <JonesMenuItem
