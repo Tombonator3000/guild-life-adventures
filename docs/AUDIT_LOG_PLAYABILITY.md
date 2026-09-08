@@ -38,3 +38,5 @@ CI `34182254977` på `9e20976`: 752 enhetstester og simulator-røykprøve bestod
 ## 2026-09-08 — grønn CI og inventarfunn fra faktisk bilde
 
 CI `34182998684` på `6dd579c`: alle 752 enhetstester, 32 nettlesertester uten retries, simulatorprøve, build, typegate, lint og lydkontroll bestod. De faktiske PNG-ene bekreftet rettet NPC-navn og våpentekst, bankhandlinger og ukeplan. Inventarbildet i 844×390 avslørte likevel at det store portrettet tok nesten hele panelets høyde. `toBeVisible` bekreftet bare at elementet var rendret, ikke at det var innenfor synsfeltet. Portrettet beholder samme bilde og forhold, men får en kompakt rad i lav mobil-landskapvisning. Gjenstandstesten krever nå `toBeInViewport({ratio:1})`. Ny samlet CI kreves før levering.
+
+Bildet av Loans viste også kvitteringen fra forrige aksjesalg. Banktjenestene får hver sin React-nøkkel slik at midlertidig kvittering og inntastinger starter på nytt ved tjenestebytte. Nettlesertesten avviser lekket salgskvittering på lånesiden.

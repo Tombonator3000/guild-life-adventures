@@ -312,7 +312,7 @@ function bankTabs(ctx: LocationTabContext): LocationTab[] {
     { id: 'banking', label: 'Bank' }, { id: 'broker', label: 'The Broker' },
     { id: 'loans', label: 'Loans' }, { id: 'overview', label: 'Overview' },
   ];
-  return services.map(service => ({ ...service, paged: false, content: <BankPanel player={player} priceModifier={priceModifier} stockPrices={stockPrices} stockPriceHistory={stockPriceHistory} section={service.id} /> }));
+  return services.map(service => ({ ...service, paged: false, content: <BankPanel key={service.id} player={player} priceModifier={priceModifier} stockPrices={stockPrices} stockPriceHistory={stockPriceHistory} section={service.id} /> }));
 }
 
 function generalStoreTabs(ctx: LocationTabContext): LocationTab[] {

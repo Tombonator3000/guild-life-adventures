@@ -41,6 +41,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     await page.getByRole('button', { name:'Loans', exact:true }).click();
     await expect(page.getByRole('button', { name:'Borrow 100g' })).toBeDisabled();
     await expect(page.getByRole('region', { name:'Bank loans' })).toContainText('shifts first');
+    await expect(page.getByRole('region', { name:'Bank loans' })).not.toContainText('Sold 1');
     await page.screenshot({ path:info.outputPath('bank-loans.png') });
     await page.getByRole('button', { name:'Overview', exact:true }).click();
     await expect(page.getByRole('region', { name:'Financial overview' })).toContainText('Total wealth');
