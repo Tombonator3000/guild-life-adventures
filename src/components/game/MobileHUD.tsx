@@ -17,7 +17,9 @@ interface MobileHUDProps {
 export function MobileHUD({ player, week, priceModifier, onOpenLeftDrawer, onOpenRightDrawer, onOpenMenu }: MobileHUDProps) {
   return <div className="mobile-hud" style={{ borderLeft: `4px solid ${player.color}` }}>
     <div className="mobile-hud-top">
-      <CharacterPortrait portraitId={player.portraitId} playerColor={player.color} playerName={player.name} size={28} isAI={player.isAI} hasCurse={(player.activeCurses?.length ?? 0) > 0} curses={player.activeCurses} />
+      <button className="mobile-player-portrait" aria-label={`View ${player.name}'s character`} onClick={onOpenLeftDrawer}>
+        <CharacterPortrait portraitId={player.portraitId} playerColor={player.color} playerName={player.name} size={32} isAI={player.isAI} hasCurse={(player.activeCurses?.length ?? 0) > 0} curses={player.activeCurses} />
+      </button>
       <span className="mobile-hud-name">{player.name}</span>
       <span aria-label={`${player.gold} gold`}><Coins /><ResourceValue value={player.gold} identity={player.id} /></span>
       <span aria-label={`${player.timeRemaining} hours remaining`}><Clock /><ResourceValue value={player.timeRemaining} identity={player.id} />h</span>

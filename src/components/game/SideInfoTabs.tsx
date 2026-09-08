@@ -40,16 +40,17 @@ interface SideInfoTabsProps {
   goals: GoalSettings;
   isCurrentPlayer: boolean;
   initialTab?: TabId;
+  compact?: boolean;
 }
 
-export function SideInfoTabs({ player, goals, isCurrentPlayer, initialTab }: SideInfoTabsProps) {
+export function SideInfoTabs({ player, goals, isCurrentPlayer, initialTab, compact = false }: SideInfoTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>(initialTab ?? 'stats');
   const { t } = useTranslation();
   const TABS = getTabs(t);
 
   return (
     <div
-      className={`guild-sidebar h-full flex flex-col bg-parchment rounded-lg border-2 overflow-hidden ${(player.activeCurses?.length ?? 0) > 0 ? 'border-purple-500' : isCurrentPlayer ? 'border-accent' : 'border-wood-dark/50'}`}
+      className={`guild-sidebar ${compact ? 'guild-sidebar--compact' : ''} h-full flex flex-col bg-parchment rounded-lg border-2 overflow-hidden ${(player.activeCurses?.length ?? 0) > 0 ? 'border-purple-500' : isCurrentPlayer ? 'border-accent' : 'border-wood-dark/50'}`}
       style={(player.activeCurses?.length ?? 0) > 0 ? { boxShadow: '0 0 14px 4px rgba(147,51,234,0.55)' } : undefined}
     >
       <PanelDecoration />
@@ -66,8 +67,8 @@ export function SideInfoTabs({ player, goals, isCurrentPlayer, initialTab }: Sid
                 portraitId={player.portraitId}
                 playerColor={player.color}
                 playerName={player.name}
-                size={180}
-                height={200}
+                size={compact ? 64 : 180}
+                height={compact ? 72 : 200}
                 shape="rect"
                 isAI={player.isAI}
                 hasCurse={hasCurse}

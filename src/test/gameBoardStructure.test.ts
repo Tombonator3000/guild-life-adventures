@@ -155,7 +155,7 @@ describe('GameBoard component boundaries', () => {
     expect(gameBoardSource).not.toContain('desktopRightProps={{');
     expect(gameBoardSource).not.toContain('mobileRightProps={{');
     expect(sidePanelsSource).toContain('<RightSideTabs {...sharedRightSideProps} {...desktopRightActions} />');
-    expect(sidePanelsSource).toContain('<RightSideTabs {...sharedRightSideProps} {...mobileRightActions} />');
+    expect(sidePanelsSource).toContain('<RightSideTabs {...sharedRightSideProps} {...mobileRightActions}');
     expect(sidePanelsSource).toContain("type DesktopRightSideActions = RightSideActions & Pick<RightSideProps, 'onToggleFullboard'>;");
   });
 
@@ -169,7 +169,7 @@ describe('GameBoard component boundaries', () => {
     expect(gameBoardSource).toContain('onToggleZoneEditor: openMobileZoneEditor');
     expect(gameBoardSource).toContain('onCloseSaveMenu={closeGameMenu}');
     expect(gameBoardSource).toContain('onExitFullboard: exitFullboard');
-    expect(uiStateSource).toContain("import { useCallback, useState } from 'react';");
+    expect(uiStateSource).toMatch(/import \{[^}]*useCallback[^}]*useState[^}]*\} from 'react'/);
     expect(uiStateSource).toContain('const closePlayerInfo = useCallback(() => setViewingPlayer(null), []);');
   });
 

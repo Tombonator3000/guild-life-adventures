@@ -69,12 +69,22 @@ export function PlayerToken({ player, index, isCurrent, onClickPlayer }: PlayerT
         'relative w-16 h-16 rounded-full shadow-lg transition-all duration-300 animate-token-arrive',
         isCurrent && !isDead && 'animate-float ring-2 ring-gold ring-offset-1',
         isDead && 'grayscale opacity-50',
-        onClickPlayer && !isCurrent && 'cursor-pointer hover:scale-110'
+        onClickPlayer && 'cursor-pointer hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold'
       )}
       style={{
         zIndex: isCurrent ? 10 : index,
       }}
       title={isDead ? `${player.name} (fallen)` : player.name}
+      role={onClickPlayer ? 'button' : undefined}
+      tabIndex={onClickPlayer ? 0 : undefined}
+      aria-label={onClickPlayer ? `View ${player.name}'s character` : undefined}
+      onKeyDown={onClickPlayer ? event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          event.stopPropagation();
+          onClickPlayer(player);
+        }
+      } : undefined}
       onClick={handleClick}
     >
       <CharacterPortrait
@@ -99,4 +109,3 @@ export function PlayerToken({ player, index, isCurrent, onClickPlayer }: PlayerT
     </div>
   );
 }
-

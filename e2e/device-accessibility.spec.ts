@@ -87,9 +87,11 @@ test.describe('iPad-sized touch viewport', () => {
 
     await page.setViewportSize({ width: 1180, height: 820 });
     await expect(page.getByTitle('Stats & Inventory')).toHaveCount(0);
+    await page.locator('.immersive-player').tap();
     await page.getByText('Finances & education', { exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Finances' })).toBeVisible();
     await expectNoPageOverflow(page);
+    await page.getByRole('dialog', { name: /Character record/ }).getByRole('button', { name: 'Close', exact: true }).tap();
 
     await page.locator('[data-zone-id="bank"]').click();
     await expect(page.getByRole('button', { name: /deposit 50/i })).toBeVisible({ timeout: 10_000 });

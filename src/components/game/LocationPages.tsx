@@ -1,6 +1,7 @@
 import { createContext, useContext, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useMenuSwipe } from '@/hooks/useMenuSwipe';
 
 const ActionDock = createContext<HTMLDivElement | null | undefined>(undefined);
 
@@ -18,6 +19,7 @@ export function LocationPages({ children, pageKey }: { children: ReactNode; page
   const [dock, setDock] = useState<HTMLDivElement | null>(null);
   const [page, setPage] = useState(0);
   const [layout, setLayout] = useState({ width: 1, pages: 1 });
+  const swipe = useMenuSwipe(flow, direction => setPage(old => Math.max(0, Math.min(layout.pages - 1, old + direction))));
 
   useLayoutEffect(() => { setPage(0); }, [pageKey]);
   useLayoutEffect(() => {
@@ -52,8 +54,8 @@ export function LocationPages({ children, pageKey }: { children: ReactNode; page
   }, []);
 
   return <ActionDock.Provider value={dock}><div className="location-pages">
-    <div className="location-page-viewport" ref={viewport}>
-      <div className="location-page-flow" ref={flow} style={{ transform: `translateX(-${page * (layout.width + 16)}px)` }}
+    <div className="location-page-viewport" ref={viewport} {...swipe}>
+      <div className="location-page-flow" ref={flow} style={{ transform: `translateX(calc(-${page * (layout.width + 16)}px + var(--page-drag, 0px)))` }}
         onFocusCapture={event => {
           // Keyboard navigation turns to the page containing the newly focused control.
           const target = event.target as HTMLElement;
@@ -66,7 +68,7 @@ export function LocationPages({ children, pageKey }: { children: ReactNode; page
     <div className="location-action-dock" ref={setDock} />
     <nav className="location-page-controls" aria-label="Menu pages" data-ui-sound="menu-open">
       <button aria-label="Previous menu page" disabled={page === 0} onClick={() => setPage(page - 1)}><ChevronLeft /> Previous</button>
-      <span role="status">Page {page + 1} of {layout.pages}</span>
+      <span role="status">Page {page + 1} of {layout.pages}{layout.pages > 1 && <small className="menu-swipe-hint">Swipe to turn</small>}</span>
       <button aria-label="Next menu page" disabled={page >= layout.pages - 1} onClick={() => setPage(page + 1)}>Next <ChevronRight /></button>
     </nav>
   </div></ActionDock.Provider>;

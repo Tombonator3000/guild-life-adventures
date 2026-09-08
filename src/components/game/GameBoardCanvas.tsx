@@ -119,7 +119,7 @@ export function GameBoardCanvas({
                   player={player}
                   index={index}
                   isCurrent={player.id === currentPlayer?.id}
-                  onClickPlayer={player.id !== currentPlayer?.id ? onViewPlayer : undefined}
+                  onClickPlayer={onViewPlayer}
                 />
               ))}
             </LocationZone>

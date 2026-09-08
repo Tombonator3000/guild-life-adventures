@@ -1,3 +1,4 @@
+import { selectLocationService } from './menuPages';
 import { expect, test } from './test';
 
 for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1280, height: 720 }]) {
@@ -33,18 +34,18 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     await deposit.click();
     await page.getByRole('button', { name: 'Withdraw 50 Gold' }).click();
     await page.screenshot({ path: info.outputPath('bank-actions.png') });
-    await page.getByRole('button', { name: 'The Broker', exact: true }).click();
+    await selectLocationService(page, 'The Broker');
     await page.getByLabel('Broker company').selectOption('crown-bonds');
     await page.getByRole('button', { name: /^Buy 1/ }).click();
     await expect(page.getByRole('button', { name: /^Sell 1/ })).toBeEnabled();
     await page.getByRole('button', { name: /^Sell 1/ }).click();
     await page.screenshot({ path: info.outputPath('broker-actions.png') });
-    await page.getByRole('button', { name:'Loans', exact:true }).click();
+    await selectLocationService(page, 'Loans');
     await expect(page.getByRole('button', { name:'Borrow 100g' })).toBeDisabled();
     await expect(page.getByRole('region', { name:'Bank loans' })).toContainText('shifts first');
     await expect(page.getByRole('region', { name:'Bank loans' })).not.toContainText('Sold 1');
     await page.screenshot({ path:info.outputPath('bank-loans.png') });
-    await page.getByRole('button', { name:'Overview', exact:true }).click();
+    await selectLocationService(page, 'Overview');
     await expect(page.getByRole('region', { name:'Financial overview' })).toContainText('Total wealth');
     await page.screenshot({ path:info.outputPath('bank-overview.png') });
   });

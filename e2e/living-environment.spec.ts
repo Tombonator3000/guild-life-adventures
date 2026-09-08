@@ -3,7 +3,7 @@ import { writeFile } from 'node:fs/promises';
 import { expect, test } from './test';
 
 async function startEnvironmentGame(page: Page) {
-  await page.addInitScript(() => { Math.random = () => .99; });
+  await page.addInitScript(() => { Math.random = () => .99; localStorage.setItem('guild-life-board-view', 'sidebars'); });
   await page.goto('/');
   // Use the existing session-only developer gesture, not a new production debug route.
   await page.locator('button[aria-hidden="true"]').click({clickCount:5,delay:80,timeout:5000});

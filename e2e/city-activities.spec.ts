@@ -1,3 +1,4 @@
+import { visitLocation } from './menuPages';
 import { expect, test } from './test';
 for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1280,height:720}]) {
   test(`seasonal choices use real terms at ${viewport.width}`,async({page},info)=>{
@@ -18,7 +19,7 @@ for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1280
     await page.reload();
     await page.getByRole('button',{name:/Continue Game/}).click();
     if(await page.evaluate(()=>!!document.fullscreenElement)) await page.keyboard.press('f');
-    await page.locator('[data-zone-id="general-store"]').click();
+    await visitLocation(page, 'general-store');
     const shell=page.locator('.location-shell[data-location="general-store"]');
     const picker=shell.locator('.location-service-picker');
     if(await picker.isVisible()) await picker.click();

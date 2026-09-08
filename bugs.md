@@ -455,3 +455,11 @@ When reading a JSON field that may not exist, always use optional (`?`) types an
 - **Long menu page drift:** integer viewport widths accumulated subpixel alignment error. Page offsets preserve CSS width precision; page count tolerates rounded scroll width. Complete Herald reading is covered at desktop and both phone orientations.
 
 These changes are implemented in the local player-experience branch; upload/merge status is recorded in the audit log.
+
+
+## 2026-09-08 — Central touch paging and tablet panels
+
+- Paged location content used clipped CSS columns but only Previous/Next controls. Added finger/pen gestures, preserving ordinary taps, native inputs and keyboard paging. Suppress the click following a drag so swiping over an item cannot buy it. Native pointer capture transfer must ignore a child button's bubbling lost-capture event.
+- Portrait mobile CSS set two grid rows but kept two desktop columns above 460px. Both scene and menu collapsed into the 64px first row. Explicitly use one column in portrait, preserving the landscape override.
+- Player quick-look cards held an old Player object and duplicated resource/wage formatting. Reuse live sidebar data and tabs. Dialog Escape must not also toggle the game menu.
+- Passive purchase notifications could intercept the next-page button and remain hovered indefinitely on small screens. Let pointer input through passive toasts; preserve interactive toast controls.
