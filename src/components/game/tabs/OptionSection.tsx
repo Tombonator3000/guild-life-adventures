@@ -3,7 +3,7 @@
 
 export function OptionSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-amber-100/50 rounded p-2 border border-amber-700/30">
+    <div className="guild-option-section bg-amber-100/50 rounded p-2 border border-amber-700/30">
       <h3 className="font-display text-[10px] font-bold text-amber-900 mb-1.5 uppercase tracking-wide border-b border-amber-700/30 pb-0.5">
         {title}
       </h3>

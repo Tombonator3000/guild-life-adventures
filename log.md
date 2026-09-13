@@ -14384,3 +14384,25 @@ Local validation: TypeScript, nine focused setup/lifecycle tests, production bui
 and ESLint (0 errors, 18 existing warnings). CI coverage now includes desktop,
 iPad portrait/landscape, phone regression sizes and unavailable WebGL2. Runtime
 capture review is pending CI; see docs/qa/guildhall-entry/README.md.
+
+
+## 2026-09-13 - Cohesive menus, UI and player flow (Gauntlet + brainstorming)
+
+Extended the approved gold/parchment entry design through Options, save/load, the
+manual, news, scores, credits, online entry, results and shared location controls.
+Support menus use one accessible frame, predictable Escape/focus return, readable
+text sizes and larger controls. The manual exposes all chapters on desktop and a
+labelled chapter picker on narrower layouts. Saves confirm destructive manual-slot
+changes. Required quest choices now occupy the center page without a dead Close
+button. Credits appear immediately and respect music and motion preferences.
+
+The original board, location scenes, portraits, game rules and save format remain.
+No dependencies or generated assets added. Design comparison and full surface
+inventory: docs/design/COHESIVE_UI.md. Sequential review and evidence:
+docs/qa/cohesive-ui/README.md.
+
+Local checks: production build, app/build TypeScript, 779 existing unit tests and
+two new focused regressions pass. ESLint reports zero errors and the same 18
+existing warnings. Full CI and viewport screenshot review are pending. A managed
+browser policy blocks localhost previews, so repository CI supplies browser
+evidence. Physical iPad Safari performance remains unverified.

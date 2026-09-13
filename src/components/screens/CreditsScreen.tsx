@@ -1,8 +1,10 @@
 // Credits Screen — rolling text with Guild Life logo background and random music
 
 import { useEffect, useRef, useState } from 'react';
-import { X } from 'lucide-react';
-import guildLogo from '@/assets/Guild-Life-Logo.jpg';
+import { BookOpen, Play, Pause } from 'lucide-react';
+import { GuildDialog } from '@/components/ui/GuildDialog';
+import { useAudioSettings } from '@/hooks/useMusic';
+import { useEnvironmentActivity } from '@/hooks/useEnvironmentActivity';
 import { audioManager } from '@/audio/audioManager';
 
 // All music tracks available in the game
@@ -151,114 +153,67 @@ export function CreditsScreen({ onClose }: CreditsScreenProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [scrollComplete, setScrollComplete] = useState(false);
+  const [autoScroll, setAutoScroll] = useState(false);
+  const { musicMuted, musicVolume } = useAudioSettings();
+  const { reducedMotion, visible } = useEnvironmentActivity();
 
-  // Stop menu music, pick a random credits track, and play it
   useEffect(() => {
-    // Stop the AudioManager's menu music so it doesn't overlap
     audioManager.stop();
-
-    const baseUrl = import.meta.env.BASE_URL;
     const randomTrack = MUSIC_FILES[Math.floor(Math.random() * MUSIC_FILES.length)];
-    const audio = new Audio(baseUrl + randomTrack);
-    audio.volume = 0.4;
+    const audio = new Audio(import.meta.env.BASE_URL + randomTrack);
     audio.loop = true;
     audioRef.current = audio;
-
-    audio.play().catch(() => {
-      // Autoplay blocked — will play on first user interaction
-      const resumeAudio = () => {
-        audio.play().catch(() => {});
-        document.removeEventListener('click', resumeAudio);
-        document.removeEventListener('keydown', resumeAudio);
-      };
-      document.addEventListener('click', resumeAudio);
-      document.addEventListener('keydown', resumeAudio);
-    });
-
     return () => {
       audio.pause();
       audio.src = '';
       audioRef.current = null;
-      // Restart menu music when credits close
       audioManager.play('main-theme');
     };
   }, []);
 
-  // Auto-scroll the credits
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = musicVolume;
+    audio.muted = musicMuted;
+    if (musicMuted || !visible) audio.pause();
+    else audio.play().catch(() => {});
+  }, [musicMuted, musicVolume, visible]);
+
   useEffect(() => {
     const el = scrollRef.current;
-    if (!el) return;
-
-    let animId: number;
+    if (!el || !autoScroll || reducedMotion || !visible) return;
     let lastTime = performance.now();
-
+    let animId: number;
     const scroll = (time: number) => {
-      const delta = time - lastTime;
+      el.scrollTop += Math.min(time - lastTime, 50) / 1000 * 40;
       lastTime = time;
-
-      // Scroll at ~40px per second
-      el.scrollTop += (delta / 1000) * 40;
-
-      // Check if we've reached the end
       if (el.scrollTop + el.clientHeight >= el.scrollHeight - 10) {
         setScrollComplete(true);
+        setAutoScroll(false);
+        return;
       }
-
       animId = requestAnimationFrame(scroll);
     };
-
     animId = requestAnimationFrame(scroll);
-
     return () => cancelAnimationFrame(animId);
-  }, []);
+  }, [autoScroll, reducedMotion, visible]);
 
-  const handleClose = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-    onClose();
-  };
+  const handleClose = () => { audioRef.current?.pause(); onClose(); };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Background image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${guildLogo})` }}
-      />
-      {/* Dark overlay for readability */}
-      <div className="absolute inset-0 bg-black/70" />
-
-      {/* Close button */}
-      <button
-        onClick={handleClose}
-        className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-black/40 hover:bg-black/60 transition-colors text-white/80 hover:text-white"
-        title="Close credits"
-      >
-        <X className="w-6 h-6" />
-      </button>
-
-      {/* Click anywhere to close hint */}
-      {scrollComplete && (
-        <button
-          onClick={handleClose}
-          className="absolute bottom-8 z-10 text-white/60 font-display text-sm animate-pulse"
-        >
-          Click anywhere to close
-        </button>
-      )}
-
-      {/* Scrolling credits */}
-      <div
-        ref={scrollRef}
-        className="relative z-[5] w-full max-w-2xl h-full overflow-hidden"
-        style={{ maskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)' }}
-      >
-        {/* Initial spacer to start text from bottom */}
-        <div style={{ height: '100vh' }} />
-
+    <GuildDialog title="About Guild Life" onClose={handleClose} closeLabel="Close credits" icon={<BookOpen />}
+      className="guild-credits" bodyRef={scrollRef}
+      description="The people, questionable choices and inspiration behind Guildholm."
+      footer={<div className="guild-dialog-footer-row">
+        <button disabled={reducedMotion} aria-pressed={autoScroll} className="guild-button" onClick={() => {
+          if (scrollComplete) { scrollRef.current?.scrollTo({top:0}); setScrollComplete(false); }
+          setAutoScroll(value => !value);
+        }}>{autoScroll ? <Pause /> : <Play />}{autoScroll ? 'Pause credits' : 'Roll credits'}</button>
+        <button className="guild-button guild-button--gold" onClick={handleClose}>Done</button>
+      </div>}>
         {/* Credit lines */}
-        <div className="flex flex-col items-center px-6 pb-[50vh]">
+        <div className="flex flex-col items-center px-2 py-4">
           {CREDITS_TEXT.map((line, i) => {
             switch (line.type) {
               case 'title':
@@ -308,7 +263,6 @@ export function CreditsScreen({ onClose }: CreditsScreenProps) {
             }
           })}
         </div>
-      </div>
-    </div>
+    </GuildDialog>
   );
 }

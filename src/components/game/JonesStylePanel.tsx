@@ -82,7 +82,7 @@ export function JonesMenuItem({
       <button
         onClick={onClick}
         disabled={disabled}
-        className={`w-full text-left py-1 px-2 ${hoverBg} transition-all duration-200 rounded`}
+        className={`guild-menu-row w-full text-left py-1 px-2 ${hoverBg} transition-all duration-200 rounded`}
         {...hoverHandlers}
       >
         {content}
@@ -139,7 +139,7 @@ export function JonesListItem({
       <button
         onClick={onClick}
         disabled={disabled}
-        className={`w-full text-left py-1 px-2 ${hoverBg} transition-all duration-200 rounded`}
+        className={`guild-menu-row w-full text-left py-1 px-2 ${hoverBg} transition-all duration-200 rounded`}
       >
         {content}
       </button>

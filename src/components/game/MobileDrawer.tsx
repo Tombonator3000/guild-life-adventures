@@ -43,8 +43,9 @@ export function MobileDrawer({ isOpen, onClose, side, title, children }: MobileD
             <span className="font-display text-sm text-parchment font-bold">{title}</span>
           )}
           <button
+            aria-label={`Close ${title ?? 'panel'}`}
             onClick={onClose}
-            className="p-1 rounded text-parchment/80 hover:text-parchment ml-auto"
+            className="min-w-11 min-h-11 flex items-center justify-center p-1 rounded text-parchment/80 hover:text-parchment ml-auto"
           >
             <X className="w-5 h-5" />
           </button>

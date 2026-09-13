@@ -8,9 +8,8 @@ import {
   ShieldAlert,
   Star,
   Trash2,
-  X,
 } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { GuildDialog } from '@/components/ui/GuildDialog';
 import {
   clearLocalHighScores,
   loadLocalHighScores,
@@ -119,30 +118,13 @@ export function HighScoreScreen({ onClose }: HighScoreScreenProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/65" onClick={onClose} />
-      <div className="relative parchment-panel p-5 w-full max-w-2xl mx-4" style={{ maxHeight: '88vh' }}>
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-card-foreground z-10"
-          aria-label="Close Hall of Fame"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        <div className="text-center mb-4">
-          <h2 className="font-display text-2xl text-card-foreground flex items-center justify-center gap-2">
-            <Medal className="w-6 h-6 text-amber-600" /> Hall of Fame
-          </h2>
-          <p className="text-xs text-muted-foreground mt-1">
-            Performance rankings are separate from the victory race.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 mb-4">
+    <GuildDialog title="Hall of Fame" onClose={onClose} icon={<Medal />} closeLabel="Close Hall of Fame"
+      description="Performance rankings are separate from the victory race."
+      footer={<div className="guild-dialog-footer-row"><span className="text-sm text-muted-foreground">Local scores stay on this device.</span><button onClick={onClose} className="guild-button guild-button--gold">Done</button></div>}>
+        <div className="guild-tabs mb-4" aria-label="Ranking source">
           <button
             type="button"
+            aria-pressed={source === 'local'}
             onClick={() => changeSource('local')}
             className={`rounded-lg border px-4 py-2 font-display text-sm transition-colors ${
               source === 'local'
@@ -154,6 +136,7 @@ export function HighScoreScreen({ onClose }: HighScoreScreenProps) {
           </button>
           <button
             type="button"
+            aria-pressed={source === 'world'}
             onClick={() => changeSource('world')}
             className={`rounded-lg border px-4 py-2 font-display text-sm transition-colors inline-flex items-center justify-center gap-2 ${
               source === 'world'
@@ -209,7 +192,7 @@ export function HighScoreScreen({ onClose }: HighScoreScreenProps) {
           </div>
         )}
 
-        <ScrollArea className="pr-2" style={{ height: 'min(55vh, 520px)' }}>
+        <div className="guild-ranking-list">
           {source === 'world' && !worldAvailable ? (
             <div className="rounded-lg border border-amber-300 bg-amber-50/60 p-4 text-sm text-amber-900">
               World ranking is not configured on this deployment. Local Hall of Fame still works normally.
@@ -235,14 +218,13 @@ export function HighScoreScreen({ onClose }: HighScoreScreenProps) {
                 : 'No community scores match this goal profile yet.'}
             </div>
           )}
-        </ScrollArea>
+        </div>
 
         {source === 'world' && worldAvailable && (
           <p className="text-[11px] text-muted-foreground text-center mt-3">
             Scores can only be submitted voluntarily from the post-game screen after saving them locally.
           </p>
         )}
-      </div>
-    </div>
+    </GuildDialog>
   );
 }

@@ -44,7 +44,7 @@ export function VictoryScreen() {
   // Handle the rare case where every player perished and no winner exists.
   if (!winningResult) {
     return (
-      <div className="relative min-h-screen-safe overflow-x-hidden overflow-y-auto">
+      <div className="guild-results relative min-h-screen-safe overflow-x-hidden overflow-y-auto">
         <div
           className="fixed inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${gameBoard})` }}
@@ -57,7 +57,7 @@ export function VictoryScreen() {
             <h1 className="font-display text-5xl md:text-6xl font-bold text-foreground mb-4">
               Game Over
             </h1>
-            <p className="font-display text-xl text-muted-foreground">
+            <p className="guild-results-caption font-display text-xl text-muted-foreground">
               All adventurers have perished...
             </p>
           </div>
@@ -74,7 +74,7 @@ export function VictoryScreen() {
   }
 
   return (
-    <div className="relative min-h-screen-safe overflow-x-hidden overflow-y-auto">
+    <div className="guild-results relative min-h-screen-safe overflow-x-hidden overflow-y-auto">
       <VictoryEffects />
       <div
         className="fixed inset-0 bg-cover bg-center"
@@ -109,7 +109,7 @@ export function VictoryScreen() {
             </p>
           </div>
 
-          <p className="font-display text-lg text-muted-foreground">
+          <p className="guild-results-caption font-display text-lg text-muted-foreground">
             {isLastStanding
               ? 'is the last one standing!'
               : winningResult.allGoalsMet
@@ -169,13 +169,13 @@ export function VictoryScreen() {
         <div className="flex flex-wrap justify-center gap-4 pb-16">
           <button
             onClick={() => resetForNewGame()}
-            className="gold-button text-lg px-8 py-3"
+            className="guild-button text-lg px-8 py-3"
           >
             Return to Title
           </button>
           <button
             onClick={() => { resetForNewGame(); setPhase('setup'); }}
-            className="px-8 py-3 bg-secondary text-secondary-foreground rounded-lg font-display text-lg hover:bg-secondary/80 transition-colors"
+            className="guild-button guild-button--gold text-lg px-8 py-3"
           >
             New Game
           </button>

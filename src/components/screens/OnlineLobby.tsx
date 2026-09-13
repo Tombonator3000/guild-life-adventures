@@ -162,7 +162,7 @@ export function OnlineLobby() {
   const canStart = (lobbyPlayers.length >= 2 || settings.includeAI) && allGuestsReady;
 
   return (
-    <div className="relative min-h-screen-safe overflow-x-hidden overflow-y-auto">
+    <div className="guild-online relative min-h-screen-safe overflow-x-hidden overflow-y-auto">
       {/* Background */}
       <div
         className="fixed inset-0 bg-cover bg-center opacity-30"
@@ -172,7 +172,7 @@ export function OnlineLobby() {
 
       <div className="relative z-10 min-h-screen-safe flex flex-col items-center justify-center px-4 py-8">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="guild-online-heading text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Globe className="w-8 h-8 text-primary" />
             <h1 className="font-display text-4xl font-bold text-amber-900">Online Multiplayer</h1>
@@ -191,7 +191,7 @@ export function OnlineLobby() {
 
         {/* --- Main Menu --- */}
         {view === 'menu' && (
-          <div className="w-full max-w-md space-y-4">
+          <div className="guild-online-menu w-full max-w-md space-y-4">
             {/* Rejoin Prompt */}
             {rejoinSession && (
               <div className="parchment-panel p-4 border-2 border-primary/40">
@@ -234,6 +234,7 @@ export function OnlineLobby() {
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
                 className="w-full px-4 py-2 bg-input border border-border rounded font-body text-amber-900 placeholder:text-amber-600/50 focus:outline-none focus:ring-2 focus:ring-primary"
+                aria-label="Your Name"
                 placeholder="Enter your name..."
                 maxLength={20}
               />
@@ -336,6 +337,7 @@ export function OnlineLobby() {
                 value={codeInput}
                 onChange={(e) => setCodeInput(e.target.value.toUpperCase().slice(0, 6))}
                 className="w-full px-4 py-3 bg-input border border-border rounded font-mono text-2xl text-center text-amber-900 tracking-[0.3em] placeholder:text-amber-600/50 placeholder:tracking-normal placeholder:text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                aria-label="Room Code"
                 placeholder="Enter code"
                 maxLength={6}
               />

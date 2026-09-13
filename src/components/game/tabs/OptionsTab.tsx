@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { OptionsMenu } from '../OptionsMenu';
 import { EnvironmentControl } from '@/components/game/environment/EnvironmentControl';
 // OptionsTab - Save/Load, audio controls, AI speed, border style, keyboard shortcuts
 // Uses AudioVolumeControl for deduplicated music/ambient/SFX sliders
@@ -33,6 +35,7 @@ export function OptionsTab({
   onSetAISpeed,
   onSkipAITurn,
 }: OptionsTabProps) {
+  const [showAllOptions, setShowAllOptions] = useState(false);
   const { musicVolume, musicMuted, setVolume: setMusicVolume, toggleMute: toggleMusicMute } = useAudioSettings();
   const sfx = useSFXSettings();
   const ambient = useAmbientSettings();
@@ -49,6 +52,8 @@ export function OptionsTab({
 
   return (
     <div className="space-y-2">
+      <button className="guild-button w-full" onClick={() => setShowAllOptions(true)}>All Options</button>
+      {showAllOptions && <OptionsMenu onClose={() => setShowAllOptions(false)} />}
       {/* Save/Load Section */}
       <OptionSection title="Save / Load">
         <button
@@ -109,6 +114,7 @@ export function OptionsTab({
           {BORDER_OPTIONS.map(({ value, label }) => (
             <button
               key={value}
+              aria-pressed={options.borderStyle === value}
               onClick={() => setOption('borderStyle', value)}
               className={`flex-1 flex items-center justify-center gap-1 p-1.5 rounded border text-[10px] font-display transition-all ${
                 options.borderStyle === value
@@ -128,6 +134,7 @@ export function OptionsTab({
           {AI_SPEED_OPTIONS.map(({ speed, icon, label }) => (
             <button
               key={speed}
+              aria-pressed={aiSpeedMultiplier === speed}
               onClick={() => onSetAISpeed(speed)}
               className={`flex-1 flex flex-col items-center gap-0.5 p-1.5 rounded border text-[10px] font-display transition-all ${
                 aiSpeedMultiplier === speed
@@ -153,6 +160,7 @@ export function OptionsTab({
       {/* Opponent Visibility */}
       <OptionSection title="Opponent Visibility">
         <button
+          aria-pressed={options.showOpponentActions}
           onClick={() => setOption('showOpponentActions', !options.showOpponentActions)}
           className={`w-full flex items-center justify-between gap-2 p-2 rounded border text-xs font-display transition-colors ${
             options.showOpponentActions
@@ -176,6 +184,7 @@ export function OptionsTab({
       {/* Accessibility */}
       <OptionSection title="Accessibility">
         <button
+          aria-pressed={options.enableKeyboardNav}
           onClick={() => setOption('enableKeyboardNav', !options.enableKeyboardNav)}
           className={`w-full flex items-center justify-between gap-2 p-2 rounded border text-xs font-display transition-colors ${
             options.enableKeyboardNav

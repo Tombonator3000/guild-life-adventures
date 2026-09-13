@@ -23,6 +23,8 @@ export function AudioVolumeControl({
   return (
     <div className="flex items-center gap-2">
       <button
+        aria-label={muted ? `Unmute ${label}` : `Mute ${label}`}
+        aria-pressed={!muted}
         onClick={onToggleMute}
         className={`p-1.5 rounded border text-xs transition-colors ${
           muted
@@ -34,6 +36,7 @@ export function AudioVolumeControl({
         {muted ? <VolumeX className="w-3.5 h-3.5" /> : icon}
       </button>
       <input
+        aria-label={`${label} volume`}
         type="range"
         min={0}
         max={100}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { X, ChevronDown, ChevronRight, Sparkles, Bug, Wrench, Swords, Globe, Palette } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ChevronDown, ChevronRight, Sparkles, Bug, Wrench, Swords, Globe, Palette } from 'lucide-react';
+import { GuildDialog } from '@/components/ui/GuildDialog';
 
 interface ChangelogEntry {
   icon: React.ReactNode;
@@ -24,6 +24,17 @@ const multi = (text: string): ChangelogEntry => ({ icon: <Globe className={`${IC
 const visual = (text: string): ChangelogEntry => ({ icon: <Palette className={`${ICON_STYLE} text-pink-400`} />, text });
 
 const CHANGELOG: Version[] = [
+  {
+    version: 'v0.11.7', date: 'September 13, 2026', title: 'One guild, one design',
+    highlights: [
+      visual('Options, saves, the manual, news, scores and credits share parchment pages, brass details and clear gold actions.'),
+      improve('Support menus share keyboard focus, Escape, readable text sizes and larger touch targets. The manual has a desktop chapter index and a compact chapter picker.'),
+      improve('Location actions, service tabs, online setup and results follow the same material and selection rules as the title screen.'),
+      fix('Required quest choices stay inside the board and no longer offer a Close button that does nothing.'),
+      fix('Credits appear immediately. Optional scrolling respects reduced motion, and credit music follows your music settings.'),
+      improve('Existing manual saves ask before overwriting or deleting them from the game menu.'),
+    ],
+  },
   {
     version: 'v0.11.6', date: 'September 13, 2026', title: 'The Guildholm welcome',
     highlights: [
@@ -300,8 +311,8 @@ function VersionBlock({ version, initialOpen }: { version: Version; initialOpen:
   const [open, setOpen] = useState(initialOpen);
 
   return (
-    <div className="border border-border/30 rounded overflow-hidden">
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/30">
+    <div className="guild-version">
+      <button aria-expanded={open} onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/30">
         {open ? <ChevronDown className="w-4 h-4 text-primary shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2 flex-wrap">
@@ -326,33 +337,11 @@ function VersionBlock({ version, initialOpen }: { version: Version; initialOpen:
 }
 
 export function ChangelogScreen({ onClose }: { onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative parchment-panel p-5 w-full max-w-lg mx-4" style={{ maxHeight: '85vh' }}>
-        <button onClick={onClose} className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-card-foreground z-10" aria-label="Close changelog">
-          <X className="w-5 h-5" />
-        </button>
-
-        <h2 className="font-display text-xl text-card-foreground text-center mb-1">What's New</h2>
-        <p className="text-xs text-muted-foreground text-center mb-4 font-display italic">Development changelog & version history</p>
-
-        <div className="flex flex-wrap gap-x-3 gap-y-1 justify-center mb-4 text-[0.6rem] text-muted-foreground">
-          <span className="flex items-center gap-1"><Sparkles className="w-2.5 h-2.5 text-amber-400" /> Feature</span>
-          <span className="flex items-center gap-1"><Bug className="w-2.5 h-2.5 text-red-400" /> Fix</span>
-          <span className="flex items-center gap-1"><Swords className="w-2.5 h-2.5 text-purple-400" /> AI</span>
-          <span className="flex items-center gap-1"><Globe className="w-2.5 h-2.5 text-green-400" /> Online</span>
-          <span className="flex items-center gap-1"><Palette className="w-2.5 h-2.5 text-pink-400" /> Visual</span>
-        </div>
-
-        <ScrollArea className="pr-2" style={{ height: 'calc(85vh - 160px)' }}>
-          <div className="space-y-2">
-            {CHANGELOG.map((version, index) => (
-              <VersionBlock key={version.version} version={version} initialOpen={index === 0} />
-            ))}
-          </div>
-        </ScrollArea>
-      </div>
+  return <GuildDialog title="What's New" onClose={onClose} closeLabel="Close changelog" icon={<Sparkles />}
+    description="News from Guildholm · improvements and version history"
+    footer={<div className="guild-dialog-footer-row"><span className="text-sm text-muted-foreground">Select a version to read its changes.</span><button onClick={onClose} className="guild-button guild-button--gold">Done</button></div>}>
+    <div className="space-y-3">
+      {CHANGELOG.map((version, index) => <VersionBlock key={version.version} version={version} initialOpen={index === 0} />)}
     </div>
-  );
+  </GuildDialog>;
 }
