@@ -1,5 +1,6 @@
 import { expect, test } from './test';
 import { openMenuPage } from './menuPages';
+import { enableDeveloperMode } from './developerMode';
 
 test('classic board visits retain original NPCs and usable work and bank actions', async ({page}, testInfo) => {
   test.setTimeout(90_000);
@@ -7,11 +8,7 @@ test('classic board visits retain original NPCs and usable work and bank actions
   page.on('pageerror', error => errors.push(error.message));
   await page.addInitScript(() => { Math.random = () => .99; localStorage.setItem('guild-life-board-view', 'sidebars'); });
   await page.goto('/');
-  // Finish the title's reveal before sending the five-click gesture.
-  await page.locator('button[aria-hidden="true"]').evaluate(async button => {
-    await Promise.all(button.parentElement!.parentElement!.getAnimations({subtree:true}).filter(animation => Number.isFinite(animation.effect?.getComputedTiming().endTime as number)).map(animation => animation.finished.catch(() => {})));
-  });
-  for(let i=0;i<5;i++) await page.locator('button[aria-hidden="true"]').click();
+  await enableDeveloperMode(page);
   await page.getByRole('button',{name:'New Adventure',exact:true}).click();
   await page.getByPlaceholder('Enter name...').fill('Classic Hero');
   await page.getByRole('checkbox',{name:/Show Tutorial/}).uncheck();

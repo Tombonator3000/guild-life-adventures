@@ -42,7 +42,11 @@ export function LocationPages({ children, pageKey }: { children: ReactNode; page
 
   const turn = (direction: number) => {
     const box = viewport.current;
-    if (box) box.scrollBy({ top: direction * box.clientHeight, behavior: 'instant' });
+    if (!box) return;
+    box.scrollBy({ top: direction * box.clientHeight, behavior: 'instant' });
+    // Button navigation is instant; disable the final control in the same update.
+    // Native scroll events arrive later and still handle touch/wheel navigation.
+    update();
   };
 
   return <ActionDock.Provider value={dock}><ScrollReset.Provider value={reset}><div className="location-pages">
