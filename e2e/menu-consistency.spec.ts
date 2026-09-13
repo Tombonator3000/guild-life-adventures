@@ -22,12 +22,24 @@ async function checkDialog(dialog: Locator) {
 
 for (const viewport of [{width:1440,height:900},{width:1024,height:768},{width:768,height:1024},{width:390,height:844}]) {
   test.describe(`cohesive menus ${viewport.width}`, () => {
-    test.use({viewport, hasTouch:true});
+    test.use({viewport, hasTouch:true, ...(viewport.width === 768 ? {
+      userAgent:'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1',
+    } : {})});
     test('settings, manual, saves, credits, news, scores and online entry remain readable and navigable', async ({page}, info) => {
       test.setTimeout(120_000);
       const errors: string[] = [];
       page.on('pageerror', error => errors.push(error.message));
       await page.goto('/');
+      if (viewport.width === 768) {
+        const install = page.getByRole('button',{name:'Install Guild Life',exact:true});
+        await install.click();
+        const guide = page.getByRole('dialog',{name:'Install on iPad / iPhone',exact:true});
+        await expect(guide).toBeVisible();
+        await checkDialog(guide);
+        await page.screenshot({path:info.outputPath('ipad-install-guide.png')});
+        await page.keyboard.press('Escape');
+        await expect(install).toBeFocused();
+      }
       const optionsButton = page.getByRole('button', {name:'Options',exact:true});
       await optionsButton.click();
       let dialog = page.getByRole('dialog', {name:'Options',exact:true});
@@ -139,7 +151,6 @@ test('all fifteen locations keep their service menus inside the original board',
     for (let i=0;i<await services.count();i++) {
       await services.nth(i).click();
       await expect(services.nth(i)).toHaveAttribute('aria-pressed','true');
-
     }
     const bounds = await shell.evaluate(root => {
       const center = root.closest('[data-center-panel]')!.getBoundingClientRect();

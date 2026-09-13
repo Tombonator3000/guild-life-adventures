@@ -12,7 +12,6 @@ import {
   Info,
   Share,
   Plus,
-  X,
   BookOpen,
   ScrollText,
   Compass,
@@ -434,18 +433,9 @@ export function TitleScreen() {
 
       {/* iOS PWA Install Guide */}
       {showIOSGuide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60" onClick={dismissIOSGuide} />
-          <div className="relative parchment-panel p-6 w-full max-w-sm mx-4">
-            <button
-              onClick={dismissIOSGuide}
-              className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-card-foreground"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <h2 className="font-display text-xl text-card-foreground mb-4 text-center">
-              {t('title.installTitle')}
-            </h2>
+        <GuildDialog title={t('title.installTitle')} onClose={dismissIOSGuide} icon={<Download />}
+          className="guild-dialog--compact"
+          footer={<div className="guild-dialog-footer-row"><button onClick={dismissIOSGuide} className="guild-button guild-button--gold">{t('title.gotIt')}</button></div>}>
             <div className="space-y-4 text-sm text-card-foreground">
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center font-display font-bold text-primary">
@@ -477,13 +467,7 @@ export function TitleScreen() {
             <p className="text-xs text-muted-foreground mt-4 text-center">
               The app will run fullscreen with offline support.
             </p>
-            <div className="mt-4 flex justify-center">
-              <button onClick={dismissIOSGuide} className="entry-button entry-button--gold">
-                {t('title.gotIt')}
-              </button>
-            </div>
-          </div>
-        </div>
+        </GuildDialog>
       )}
     </div>
   );

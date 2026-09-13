@@ -55,7 +55,7 @@ This is an implementation, not a new concept image or a replacement board.
 
 | Area | Canonical components / coverage | Treatment |
 | --- | --- | --- |
-| Title, continue, setup, portrait picker, presets | TitleScreen, GameSetup, PortraitPicker, GuildSeal | Preserve approved composition; unify Load Game and shared Close |
+| Title, continue, setup, portrait picker, presets | TitleScreen, GameSetup, PortraitPicker, GuildSeal | Preserve approved composition; unify Load Game, iOS install guide and shared Close |
 | Options and quick settings | OptionsMenu, OptionsTab, OptionSection, AudioVolumeControl, EnvironmentControl | Common dialog and material; named switches/sliders, visible selections, reset/update disclosure, All Options entry |
 | Save/load and return | SaveLoadMenu, title Load Game | Common slots and frame; Resume primary; explicit overwrite/delete confirmation in game menu |
 | Manual, news, credits, rankings | UserManual, ChangelogScreen, CreditsScreen, HighScoreScreen | Shared frame, text scaling, navigation, focus; keep source content and ranking behavior |
