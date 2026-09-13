@@ -7,7 +7,7 @@ async function assertEntryLayout(page: Page) {
     const issues: string[] = [];
     if (document.documentElement.scrollWidth > width + 1) issues.push('horizontal page overflow');
     for (const button of root.querySelectorAll<HTMLElement>(
-      '.entry-button, .entry-portrait, .entry-name-input, .entry-difficulty',
+      '.entry-button, .entry-portrait, .entry-name-input, .entry-difficulty-choice',
     )) {
       if (!button.getClientRects().length) continue;
       const bounds = button.getBoundingClientRect();
@@ -32,6 +32,9 @@ for (const viewport of [
   { width: 390, height: 844 },
   { width: 844, height: 390 },
   { width: 1280, height: 720 },
+  { width: 1440, height: 900 },
+  { width: 1024, height: 768 },
+  { width: 768, height: 1024 },
 ]) {
   test(`gold menus preserve a full roster and custom goals at ${viewport.width}x${viewport.height}`, async ({
     page,
@@ -52,7 +55,9 @@ for (const viewport of [
     await picker.getByRole('button', { name: 'Mage', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Choose portrait for Menu Hero' })).toBeFocused();
     await expect(
-      page.getByRole('button', { name: 'Choose portrait for Menu Hero' }).getByRole('img', { name: 'Mage' }),
+      page
+        .getByRole('button', { name: 'Choose portrait for Menu Hero' })
+        .getByRole('img', { name: 'Mage' }),
     ).toBeVisible();
     for (let i = 0; i < 4; i++) await page.getByRole('button', { name: 'Add AI opponent' }).click();
     await expect(page.getByRole('button', { name: 'Add AI opponent' })).toBeDisabled();
@@ -60,7 +65,7 @@ for (const viewport of [
     await expect(page.getByRole('button', { name: 'Add human player' })).toBeDisabled();
     await page.getByRole('button', { name: 'Next players' }).click();
     await page.getByRole('button', { name: 'Next players' }).click();
-    await page.getByRole('combobox').last().selectOption('hard');
+    await page.getByRole('radio', { name: 'Master' }).last().check();
     await assertEntryLayout(page);
     await page.screenshot({ path: info.outputPath('players.png'), fullPage: true });
     await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
@@ -80,7 +85,7 @@ for (const viewport of [
     await page.keyboard.press('ArrowRight');
     await expect(page.getByRole('heading', { name: 'Your Custom game' })).toBeVisible();
     await page.getByRole('button', { name: 'Back', exact: true }).click();
-    await expect(page.getByRole('combobox').last()).toHaveValue('hard');
+    await expect(page.getByRole('radio', { name: 'Master' }).last()).toBeChecked();
     await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
     await expect(page.getByText('4,500 gold', { exact: true })).toBeVisible();
     await assertEntryLayout(page);
@@ -136,6 +141,27 @@ test('large text and reduced motion retain readable, reachable menu actions', as
   expect(animations).toBe(0);
   await page.getByRole('button', { name: 'New Adventure', exact: true }).click();
   await assertEntryLayout(page);
+  await page.getByRole('button', { name: /Choose portrait for/ }).click();
+  const portraitDialog = page.getByRole('dialog', { name: 'Choose Your Portrait' });
+  await expect(portraitDialog).toHaveCSS('font-size', '22px');
+  await page.getByRole('button', { name: 'Close portrait picker' }).click();
   await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
   await assertEntryLayout(page);
+});
+
+
+test('the title remains usable without WebGL2 on desktop', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.addInitScript(() => {
+    const original = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (...args) {
+      if (args[0] === 'webgl2') return null;
+      return Reflect.apply(original, this, args);
+    } as typeof original;
+  });
+  await page.goto('/');
+  await expect(page.locator('.entry-seal')).toHaveAttribute('data-renderer', 'static');
+  await page.getByRole('button', { name: 'New Adventure', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Prepare Your Adventure' })).toBeVisible();
+  await expect(page.locator('.entry-seal-canvas canvas')).toHaveCount(0);
 });

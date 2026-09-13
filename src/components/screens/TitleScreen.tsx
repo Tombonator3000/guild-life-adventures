@@ -15,6 +15,13 @@ import {
   X,
   BookOpen,
   ScrollText,
+  Compass,
+  Users,
+  ChevronRight,
+  Coins,
+  Heart,
+  GraduationCap,
+  Briefcase,
 } from 'lucide-react';
 import titleDay from '@/assets/title-day.jpg';
 import titleNight from '@/assets/title-night.jpg';
@@ -28,6 +35,8 @@ import { useFullscreen } from '@/hooks/useFullscreen';
 import { useTranslation } from '@/i18n';
 import { useGameOptions } from '@/hooks/useGameOptions';
 import { TitleHighScoreLauncher } from './TitleHighScoreLauncher';
+import { EntryCorners, EntryDivider } from './EntryOrnaments';
+import { GuildSeal } from './GuildSeal';
 import './entry-menu.css';
 
 // Lazy-load heavy sub-components that are only shown on user interaction.
@@ -227,16 +236,40 @@ export function TitleScreen() {
 
       <main className="entry-title-layout">
         <div className="entry-title-heading">
-          <button className="entry-dev-trigger" onClick={handleDevClick} aria-hidden="true" tabIndex={-1} />
+          <button
+            className="entry-dev-trigger"
+            onClick={handleDevClick}
+            aria-hidden="true"
+            tabIndex={-1}
+          />
+          <GuildSeal detail={options.environmentDetail} />
           <p className="entry-eyebrow">Welcome to Guildholm</p>
           <h1>Guild Life</h1>
+          <EntryDivider />
           <p className="entry-tagline">
             A Fantasy Life Simulator.
             <br />
             Whose Fantasy? Not Yours.
           </p>
+          <div className="entry-life-pillars" aria-label="Four paths to a winning life">
+            <span>
+              <Coins aria-hidden="true" /> Wealth
+            </span>
+            <span>
+              <Heart aria-hidden="true" /> Happiness
+            </span>
+            <span>
+              <GraduationCap aria-hidden="true" /> Education
+            </span>
+            <span>
+              <Briefcase aria-hidden="true" /> Career
+            </span>
+          </div>
         </div>
         <nav className="entry-menu-panel" aria-label="Main menu">
+          <EntryCorners />
+          <p className="entry-menu-intro">Your next chapter awaits</p>
+          <EntryDivider />
           <button
             type="button"
             onClick={() => {
@@ -245,7 +278,9 @@ export function TitleScreen() {
             }}
             className="entry-button entry-button--gold entry-button--primary"
           >
-            {t('title.newAdventure')}
+            <Compass aria-hidden="true" />
+            <span>{t('title.newAdventure')}</span>
+            <ChevronRight className="entry-button-arrow" aria-hidden="true" />
           </button>
           {autoSave && (
             <button
@@ -254,13 +289,14 @@ export function TitleScreen() {
               className="entry-button entry-resume"
               aria-label={t('title.continueGame')}
             >
+              <BookOpen aria-hidden="true" />
               <span className="entry-resume-copy">
                 <span>{t('title.continueGame')}</span>
                 <span className="entry-save-detail">
                   {t('board.week')} {autoSave.week} · {autoSave.playerNames.join(', ')}
                 </span>
               </span>
-              <span aria-hidden="true">→</span>
+              <ChevronRight className="entry-button-arrow" aria-hidden="true" />
             </button>
           )}
           <button
@@ -269,10 +305,13 @@ export function TitleScreen() {
               enterFullscreen();
               setPhase('online-lobby');
             }}
-            className="entry-button"
+            className="entry-button entry-menu-action"
           >
-            {t('title.onlineMultiplayer')}
+            <Users aria-hidden="true" />
+            <span>{t('title.onlineMultiplayer')}</span>
+            <ChevronRight className="entry-button-arrow" aria-hidden="true" />
           </button>
+          <EntryDivider />
           <div className="entry-utility-grid">
             <button
               ref={loadButtonRef}
@@ -301,20 +340,20 @@ export function TitleScreen() {
             </button>
             <button
               type="button"
-              onClick={() => setShowChangelog(true)}
+              onClick={() => setShowCredits(true)}
               className="entry-button entry-button--quiet"
             >
-              <ScrollText aria-hidden="true" />
-              What's New
+              <Info aria-hidden="true" />
+              {t('common.about')}
             </button>
           </div>
           <button
             type="button"
-            onClick={() => setShowCredits(true)}
-            className="entry-button entry-button--quiet"
+            onClick={() => setShowChangelog(true)}
+            className="entry-button entry-button--quiet entry-whats-new"
           >
-            <Info aria-hidden="true" />
-            {t('common.about')}
+            <ScrollText aria-hidden="true" />
+            What's New
           </button>
           <p className="entry-footnote">{t('title.inspiredBy')}</p>
         </nav>

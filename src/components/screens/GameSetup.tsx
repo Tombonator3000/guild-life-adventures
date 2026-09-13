@@ -23,14 +23,25 @@ import {
   Play,
   Trash2,
   Users,
+  Image,
+  Plus,
+  Hourglass,
+  Shield,
+  Crown,
+  Coins,
+  Heart,
+  GraduationCap,
+  Briefcase,
 } from 'lucide-react';
 import { CharacterPortrait } from '@/components/game/CharacterPortrait';
 import { PortraitPicker } from '@/components/game/PortraitPicker';
 import { getDefaultAIPortrait, PLAYER_PORTRAITS } from '@/data/portraits';
 import titleDay from '@/assets/title-day.jpg';
 import { getSetupPreset, SETUP_PRESETS } from './setupGoals';
+import { EntryCorners } from './EntryOrnaments';
 import './entry-menu.css';
 
+const PRESET_ICONS = { quick: Hourglass, standard: Shield, adventure: Compass, epic: Crown };
 const MAX_TOTAL_PLAYERS = 6;
 const PLAYERS_PER_PAGE = 2;
 const MALE_NAMES = [
@@ -127,7 +138,9 @@ export function GameSetup() {
 
   const allNames = () => [...players.map((player) => player.name), ...aiOpponents.map((ai) => ai.name)];
   const updatePlayer = (index: number, changes: Partial<HumanPlayer>) => {
-    setPlayers((current) => current.map((player, i) => (i === index ? { ...player, ...changes } : player)));
+    setPlayers((current) =>
+      current.map((player, i) => (i === index ? { ...player, ...changes } : player)),
+    );
     setNameError(null);
   };
   const updateAI = (index: number, changes: Partial<AIConfig>) => {
@@ -226,6 +239,7 @@ export function GameSetup() {
         <span className="entry-small">New Adventure</span>
       </header>
       <form
+        className="entry-setup-shell"
         onSubmit={(event) => {
           event.preventDefault();
           if (step === 'players') {
@@ -233,6 +247,7 @@ export function GameSetup() {
           } else handleStart();
         }}
       >
+        <EntryCorners />
         <main className="entry-setup">
           <div className="entry-heading">
             <h1>Prepare Your Adventure</h1>
@@ -245,7 +260,10 @@ export function GameSetup() {
               aria-current={step === 'players' ? 'step' : undefined}
               onClick={() => setStep('players')}
             >
-              <span className="entry-step-number">1</span>Players
+              <span className="entry-step-number">
+                {step === 'goals' ? <Check aria-hidden="true" /> : '1'}
+              </span>
+              Players
             </button>
             <button
               type="button"
@@ -259,7 +277,7 @@ export function GameSetup() {
             </button>
           </nav>
           {step === 'players' ? (
-            <section aria-labelledby="setup-step-heading">
+            <section className="entry-ledger" aria-labelledby="setup-step-heading">
               <div className="entry-step-header">
                 <h2 id="setup-step-heading" ref={headingRef} tabIndex={-1}>
                   Adventurers
@@ -290,14 +308,16 @@ export function GameSetup() {
                           <button
                             type="button"
                             className="entry-portrait"
-                            onClick={() => setPortraitSelection({ index: player.index, type: player.type })}
+                            onClick={() =>
+                              setPortraitSelection({ index: player.index, type: player.type })
+                            }
                             aria-label={`Choose portrait for ${player.name || 'adventurer'}`}
                           >
                             <CharacterPortrait
                               portraitId={player.portraitId ?? null}
                               playerColor={isAI ? aiDefinition.color : PLAYER_COLORS[player.index].value}
                               playerName={player.name}
-                              size={72}
+                              size={88}
                               isAI={isAI}
                             />
                           </button>
@@ -323,43 +343,41 @@ export function GameSetup() {
                           </div>
                         </div>
                         <div className="entry-player-actions">
-                          {isAI ? (
-                            <label>
-                              <span className="entry-field-label">Difficulty</span>
-                              <select
-                                className="entry-difficulty"
-                                aria-label={`Difficulty for ${player.name}`}
-                                value={player.difficulty}
-                                onChange={(event) =>
-                                  updateAI(player.index, { difficulty: event.target.value as AIDifficulty })
+                          {!isAI && (
+                            <>
+                              <button
+                                type="button"
+                                className="entry-button"
+                                onClick={() =>
+                                  setPortraitSelection({ index: player.index, type: player.type })
+                                }
+                                aria-label={`Change portrait for ${player.name || 'adventurer'}`}
+                              >
+                                <Image aria-hidden="true" /> Portrait
+                              </button>
+                              <button
+                                type="button"
+                                className="entry-button"
+                                onClick={() =>
+                                  updatePlayer(
+                                    player.index,
+                                    randomPlayer(
+                                      allNames().filter((_, index) => index !== player.index),
+                                      players
+                                        .filter((_, index) => index !== player.index)
+                                        .map((other) => other.portraitId),
+                                    ),
+                                  )
                                 }
                               >
-                                {(['easy', 'medium', 'hard'] as AIDifficulty[]).map((difficulty) => (
-                                  <option key={difficulty} value={difficulty}>
-                                    {AI_DIFFICULTY_NAMES[difficulty]}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-                          ) : (
-                            <button
-                              type="button"
-                              className="entry-button entry-button--gold"
-                              onClick={() =>
-                                updatePlayer(
-                                  player.index,
-                                  randomPlayer(
-                                    allNames().filter((_, index) => index !== player.index),
-                                    players
-                                      .filter((_, index) => index !== player.index)
-                                      .map((other) => other.portraitId),
-                                  ),
-                                )
-                              }
-                            >
-                              <Dice6 aria-hidden="true" />
-                              Randomize
-                            </button>
+                                <Dice6 aria-hidden="true" /> Randomize
+                              </button>
+                            </>
+                          )}
+                          {isAI && (
+                            <span className="entry-field-label">
+                              <Bot aria-hidden="true" /> AI opponent
+                            </span>
                           )}
                           <button
                             type="button"
@@ -372,16 +390,47 @@ export function GameSetup() {
                                   current.filter((_, index) => index !== player.index),
                                 );
                               else if (players.length > 1)
-                                setPlayers((current) => current.filter((_, index) => index !== player.index));
+                                setPlayers((current) =>
+                                  current.filter((_, index) => index !== player.index),
+                                );
                               setNameError(null);
                             }}
                           >
                             <Trash2 aria-hidden="true" />
                           </button>
                         </div>
+                        {isAI && (
+                          <fieldset className="entry-difficulty-group">
+                            <legend>Difficulty for {player.name || 'AI rival'}</legend>
+                            <div className="entry-difficulty-options">
+                              {(['easy', 'medium', 'hard'] as AIDifficulty[]).map((difficulty) => (
+                                <label className="entry-difficulty-choice" key={difficulty}>
+                                  <input
+                                    type="radio"
+                                    name={`difficulty-${key}`}
+                                    value={difficulty}
+                                    checked={player.difficulty === difficulty}
+                                    onChange={() => updateAI(player.index, { difficulty })}
+                                  />
+                                  <span>{AI_DIFFICULTY_NAMES[difficulty]}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </fieldset>
+                        )}
                       </article>
                     );
                   })}
+                {totalPlayers === 1 && (
+                  <button type="button" className="entry-empty-player" onClick={addAIOpponent}>
+                    <span className="entry-empty-seal">
+                      <Users aria-hidden="true" />
+                    </span>
+                    <strong>A rival makes a good story</strong>
+                    <span>Invite an AI rival</span>
+                    <small>Or play solo and build your own life.</small>
+                  </button>
+                )}
               </div>
               {pageCount > 1 && (
                 <nav className="entry-roster-pages" aria-label="Player pages">
@@ -417,6 +466,7 @@ export function GameSetup() {
                   className="entry-button"
                   aria-label="Add human player"
                 >
+                  <Plus aria-hidden="true" />
                   <Users aria-hidden="true" />
                   Local player
                 </button>
@@ -427,8 +477,9 @@ export function GameSetup() {
                   className="entry-button"
                   aria-label="Add AI opponent"
                 >
+                  <Plus aria-hidden="true" />
                   <Bot aria-hidden="true" />
-                  AI rival
+                  AI opponent
                 </button>
               </div>
               <p className="entry-roster-help">
@@ -451,63 +502,84 @@ export function GameSetup() {
               </label>
             </section>
           ) : (
-            <section aria-labelledby="setup-step-heading">
+            <section className="entry-ledger" aria-labelledby="setup-step-heading">
               <div className="entry-step-header">
                 <h2 id="setup-step-heading" ref={headingRef} tabIndex={-1}>
                   Victory Goals
                 </h2>
                 <span className="entry-small">{selectedPreset?.name ?? 'Custom'}</span>
               </div>
-              <div className="entry-goal-presets" role="group" aria-label="Victory goal presets">
-                {SETUP_PRESETS.map((preset) => (
-                  <button
-                    type="button"
-                    key={preset.id}
-                    className="entry-button entry-preset"
-                    aria-label={preset.name}
-                    aria-pressed={selectedPreset?.id === preset.id}
-                    onClick={() => setGoals({ ...preset.goals })}
-                  >
-                    <span className="entry-preset-heading">
-                      <strong>{preset.name}</strong>
-                      {selectedPreset?.id === preset.id && <Check aria-hidden="true" />}
-                    </span>
-                    <small>{preset.description}</small>
-                  </button>
-                ))}
-              </div>
-              <div className="entry-goal-summary" aria-live="polite">
-                <h3>Your {selectedPreset?.name ?? 'Custom'} game</h3>
-                <dl className="entry-goal-values">
-                  <div className="entry-goal-value">
-                    <dt>Net wealth</dt>
-                    <dd>{goals.wealth.toLocaleString('en-US')} gold</dd>
-                  </div>
-                  <div className="entry-goal-value">
-                    <dt>Happiness</dt>
-                    <dd>{goals.happiness}%</dd>
-                  </div>
-                  <div className="entry-goal-value">
-                    <dt>Education</dt>
-                    <dd>
-                      {goals.education / 9} degrees · {goals.education} pts
-                    </dd>
-                  </div>
-                  <div className="entry-goal-value">
-                    <dt>Career</dt>
-                    <dd>{goals.career} dependability</dd>
-                  </div>
-                  {goals.adventure > 0 && (
+              <div className="entry-goals-layout">
+                <div className="entry-goal-presets" role="group" aria-label="Victory goal presets">
+                  {SETUP_PRESETS.map((preset) => {
+                    const PresetIcon = PRESET_ICONS[preset.id];
+                    return (
+                      <button
+                        type="button"
+                        key={preset.id}
+                        className="entry-button entry-preset"
+                        aria-label={preset.name}
+                        aria-pressed={selectedPreset?.id === preset.id}
+                        onClick={() => setGoals({ ...preset.goals })}
+                      >
+                        <PresetIcon className="entry-preset-icon" aria-hidden="true" />
+                        <span className="entry-preset-heading">
+                          <strong>{preset.name}</strong>
+                          {selectedPreset?.id === preset.id && <Check aria-hidden="true" />}
+                        </span>
+                        <small>{preset.description}</small>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="entry-goal-summary" aria-live="polite">
+                  <h3>Your {selectedPreset?.name ?? 'Custom'} game</h3>
+                  <dl className="entry-goal-values">
                     <div className="entry-goal-value">
-                      <dt>Adventure</dt>
-                      <dd>{goals.adventure} pts</dd>
+                      <dt>
+                        <Coins aria-hidden="true" />
+                        Net wealth
+                      </dt>
+                      <dd>{goals.wealth.toLocaleString('en-US')} gold</dd>
                     </div>
-                  )}
-                </dl>
-                <p>
-                  First to reach all {goals.adventure > 0 ? 'five' : 'four'} goals wins. Career counts while
-                  employed.
-                </p>
+                    <div className="entry-goal-value">
+                      <dt>
+                        <Heart aria-hidden="true" />
+                        Happiness
+                      </dt>
+                      <dd>{goals.happiness}%</dd>
+                    </div>
+                    <div className="entry-goal-value">
+                      <dt>
+                        <GraduationCap aria-hidden="true" />
+                        Education
+                      </dt>
+                      <dd>
+                        {goals.education / 9} degrees · {goals.education} pts
+                      </dd>
+                    </div>
+                    <div className="entry-goal-value">
+                      <dt>
+                        <Briefcase aria-hidden="true" />
+                        Career
+                      </dt>
+                      <dd>{goals.career} dependability</dd>
+                    </div>
+                    {goals.adventure > 0 && (
+                      <div className="entry-goal-value">
+                        <dt>
+                          <Compass aria-hidden="true" />
+                          Adventure
+                        </dt>
+                        <dd>{goals.adventure} pts</dd>
+                      </div>
+                    )}
+                  </dl>
+                  <p>
+                    First to reach all {goals.adventure > 0 ? 'five' : 'four'} goals wins. Career counts
+                    while employed.
+                  </p>
+                </div>
               </div>
               <details className="entry-customize">
                 <summary className="entry-button">
@@ -588,6 +660,19 @@ export function GameSetup() {
           )}
         </main>
         <footer className="entry-dock">
+          <div className="entry-dock-party" aria-hidden="true">
+            {roster.slice(0, 3).map((player, index) => (
+              <CharacterPortrait
+                key={`${player.type}-${player.index}`}
+                portraitId={player.portraitId ?? null}
+                playerName={player.name}
+                playerColor={PLAYER_COLORS[index].value}
+                size={38}
+                isAI={player.type === 'ai'}
+              />
+            ))}
+            {totalPlayers > 3 && <span>+{totalPlayers - 3}</span>}
+          </div>
           <p className="entry-dock-summary">
             {players.length} local player{players.length > 1 ? 's' : ''} · {aiOpponents.length} AI ·{' '}
             {selectedPreset?.name ?? 'Custom'} · Tutorial {enableTutorial ? 'on' : 'off'}
@@ -629,7 +714,8 @@ export function GameSetup() {
           }
           playerName={portraitOwner.name}
           onSelect={(portraitId) => {
-            if (portraitSelection.type === 'human') updatePlayer(portraitSelection.index, { portraitId });
+            if (portraitSelection.type === 'human')
+              updatePlayer(portraitSelection.index, { portraitId });
             else updateAI(portraitSelection.index, { portraitId: portraitId ?? undefined });
             setPortraitSelection(null);
           }}
