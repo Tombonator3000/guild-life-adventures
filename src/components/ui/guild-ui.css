@@ -41,6 +41,7 @@ button.gold-button, .guild-primary, .guild-button--gold {
 }
 .guild-button--danger { color: #8b2e27; background: #fff0e7; border-color: #a85d48; }
 .guild-button--quiet { background: transparent; box-shadow: none; border-color: transparent; }
+.guild-board-button { min-height: 44px; padding: 6px 12px; font-size: 13px; }
 .guild-button--icon { min-width: 48px; padding: 10px; }
 .guild-button > svg { width: 18px; height: 18px; flex-shrink: 0; }
 button.gold-button:hover:not(:disabled), .guild-button:hover:not(:disabled), .guild-primary:hover:not(:disabled) {
@@ -120,6 +121,8 @@ button.gold-button:active:not(:disabled), .guild-button:active:not(:disabled) { 
 .guild-option-row { display: grid; grid-template-columns: 22px minmax(0,1fr) auto; align-items: start; gap: 12px; padding: 16px 0; }
 .guild-option-row > :last-child { align-self: center; max-width: 175px; }
 .guild-option-row [role='switch'] { position: relative; height: 28px; width: 48px; margin-block: 8px; }
+.guild-option-row [role='switch'][data-state='unchecked'] { background: #d5c09a; border-color: #8c714b; }
+.guild-option-row [role='switch'] > span { background: #fff8e7; box-shadow: 0 1px 3px #38291a55; }
 .guild-option-row [role='switch']::before { content: ''; position: absolute; inset: -10px 0; }
 .guild-option-row p { line-height: 1.5; margin-top: 4px; }
 .guild-option-row > :first-child { margin-top: 3px; color: var(--guild-brass); }
