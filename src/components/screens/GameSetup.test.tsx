@@ -4,7 +4,9 @@ import { GameSetup } from './GameSetup';
 import { useGameStore } from '@/store/gameStore';
 
 // Exercise the real setup and game store. Portrait rendering is covered by browser checks.
-vi.mock('@/components/game/CharacterPortrait', () => ({ CharacterPortrait: () => <span>Portrait</span> }));
+vi.mock('@/components/game/CharacterPortrait', () => ({
+  CharacterPortrait: () => <span>Portrait</span>,
+}));
 vi.mock('@/components/game/PortraitPicker', () => ({
   PortraitPicker: ({ onSelect }: { onSelect: (id: string) => void }) => (
     <button onClick={() => onSelect('mage')}>Select mage portrait</button>
@@ -31,14 +33,14 @@ describe('adventure setup', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Select mage portrait' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add AI opponent' }));
     fireEvent.change(screen.getByPlaceholderText('AI name...'), { target: { value: '  Rival  ' } });
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'hard' } });
+    fireEvent.click(screen.getByRole('radio', { name: 'Master' }));
     fireEvent.click(screen.getByRole('checkbox', { name: /Show Tutorial/ }));
     next();
     fireEvent.click(screen.getByRole('button', { name: 'Adventure' }));
     expect(screen.getByText(/First to reach all five/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(screen.getByPlaceholderText('Enter name...')).toHaveValue('  Tom  ');
-    expect(screen.getByRole('combobox')).toHaveValue('hard');
+    expect(screen.getByRole('radio', { name: 'Master' })).toBeChecked();
     next();
     expect(screen.getByRole('button', { name: 'Adventure' })).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(screen.getByRole('button', { name: 'Begin Adventure' }));
@@ -78,10 +80,14 @@ describe('adventure setup', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next players' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next players' }));
     fireEvent.click(
-      within(screen.getByRole('article', { name: 'AI rival 4' })).getByRole('button', { name: /Remove/ }),
+      within(screen.getByRole('article', { name: 'AI rival 4' })).getByRole('button', {
+        name: /Remove/,
+      }),
     );
     fireEvent.click(
-      within(screen.getByRole('article', { name: 'AI rival 3' })).getByRole('button', { name: /Remove/ }),
+      within(screen.getByRole('article', { name: 'AI rival 3' })).getByRole('button', {
+        name: /Remove/,
+      }),
     );
     expect(screen.getByText('Players 3–4 of 4')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Add AI opponent' })).toBeEnabled();
@@ -92,7 +98,9 @@ describe('adventure setup', () => {
     next();
     fireEvent.click(screen.getByRole('button', { name: 'Quick Game' }));
     fireEvent.click(screen.getByText('Customize targets'));
-    fireEvent.change(screen.getByRole('slider', { name: /Wealth Target/ }), { target: { value: '6000' } });
+    fireEvent.change(screen.getByRole('slider', { name: /Wealth Target/ }), {
+      target: { value: '6000' },
+    });
     expect(screen.getByRole('heading', { name: 'Your Custom game' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Quick Game' })).toHaveAttribute('aria-pressed', 'false');
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));

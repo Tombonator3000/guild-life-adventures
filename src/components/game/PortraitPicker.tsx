@@ -7,6 +7,7 @@ import {
   type PortraitGroup,
 } from '@/data/portraits';
 import { CharacterPortrait } from './CharacterPortrait';
+import { useGameOptions } from '@/hooks/useGameOptions';
 import { ChevronLeft, ChevronRight, X, Upload } from 'lucide-react';
 import '../screens/entry-menu.css';
 
@@ -27,6 +28,7 @@ export function PortraitPicker({
   onSelect,
   onClose,
 }: PortraitPickerProps) {
+  const { options } = useGameOptions();
   const [activeGroup, setActiveGroup] = useState<PortraitGroup | 'all'>('all');
   const [page, setPage] = useState(() =>
     Math.floor(
@@ -55,6 +57,7 @@ export function PortraitPicker({
         <Dialog.Overlay className="entry-portrait-overlay" />
         <Dialog.Content
           className="entry-portrait-dialog"
+          data-text-size={options.textSize}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
             if (opener.current?.isConnected) opener.current.focus();

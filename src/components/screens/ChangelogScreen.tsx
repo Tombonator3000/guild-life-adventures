@@ -25,6 +25,15 @@ const visual = (text: string): ChangelogEntry => ({ icon: <Palette className={`$
 
 const CHANGELOG: Version[] = [
   {
+    version: 'v0.11.6', date: 'September 13, 2026', title: 'The Guildholm welcome',
+    highlights: [
+      visual('A wide, cinematic title menu with engraved brass frames, warm gold buttons and the original Guildholm city.'),
+      improve('Desktop and iPad lead the layout: parchment player cards and a side-by-side preset and goal overview, with generous touch controls.'),
+      improve('Choose each AI rival’s difficulty directly with Novice, Cunning and Master buttons. Your party stays visible beside the next action.'),
+      visual('A gently lit 3D guild compass decorates the title screen on larger displays. Calm, Off and reduced-motion settings use its static counterpart.'),
+    ],
+  },
+  {
     version: 'v0.11.5', date: 'September 13, 2026', title: 'A golden welcome to Guildholm',
     highlights: [
       visual('Embossed gold buttons, larger text and clearer actions on the original illustrated title screen.'),

@@ -14366,3 +14366,21 @@ All eleven open Dependabot patches were inspected: three direct dependency updat
 Reworked the start screen and pre-game setup using the existing Guildholm art, shared gold buttons, larger touch controls, two setup steps, paged player/portrait selection, real save details and explicit victory presets. The owner confirmed Chrome Desktop site mode and authorized implementation and merges. Native responsive layout is retained; browser desktop emulation remains a browser setting. See [the entry-menu audit](docs/AUDIT_LOG_ENTRY_MENUS.md) for acceptance criteria, verification and limitations.
 
 Merged newspaper fix #416. Maintenance #418 integrates Actions updates #379–383, sharp #386 and Toast #387, preserving the cleaned dependency list and current validation artifacts. Vite 8 #388 is held separately because the current SWC plugin and Vitest do not declare support for Vite 8.
+
+## 2026-09-13 — Guildhall entry concepts, desktop and tablet first
+
+Implemented Tom's approved gold/parchment menu concepts with desktop and iPad as
+primary targets. The title uses a broad city-and-menu composition, shared engraved
+frames and gold primary actions. Setup uses parchment player cards, native AI
+difficulty radios, preset/goal columns and a persistent party/action footer.
+Original board, portraits, save/load and exact game rules are retained.
+
+Three.js is an isolated, lazy-loaded decorative compass medallion with real brass
+lighting. It stops in hidden tabs, disposes on leaving the title, and uses a static
+fallback on phones, reduced motion, Calm/Off or WebGL failure. No full-screen 3D
+passes or board changes. Device-level sustained 60 fps remains unverified.
+
+Local validation: TypeScript, nine focused setup/lifecycle tests, production build,
+and ESLint (0 errors, 18 existing warnings). CI coverage now includes desktop,
+iPad portrait/landscape, phone regression sizes and unavailable WebGL2. Runtime
+capture review is pending CI; see docs/qa/guildhall-entry/README.md.

@@ -104,6 +104,7 @@ Junior Academy → Scholar Path → Loremaster / Commerce Degree
 
 - Use Zustand actions for all state changes
 - All game text in English
+- Platform priority (Tom, 2026-09-13): desktop and iPad/tablet first; mobile is a bonus. Entry menus should use broad desktop layouts, clear parchment/gold materials and touch-size controls on tablets. Keep the existing board and character artwork. Three.js is optional decoration with a static fallback, never a dependency for interacting with a menu.
 - Zone positions defined as percentages in `ZONE_CONFIGS`
 - Appliances have break chances (1/51 enchanter, 1/36 market)
 - All React hooks (useState, useMemo, useEffect) MUST be called before any early returns in components
