@@ -10,6 +10,7 @@ async function startEnvironmentGame(page: Page) {
   await page.getByRole('button',{name:'New Adventure',exact:true}).click();
   await page.getByPlaceholder('Enter name...').fill('Environment Hero');
   await page.getByRole('checkbox',{name:/Show Tutorial/}).uncheck();
+  await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
   await page.getByRole('button',{name:'Begin Adventure',exact:true}).click();
   await expect(page.locator('.board-environment')).toBeVisible();
   await expect(page.locator('.board-atmosphere')).toHaveAttribute('data-assets','ready');

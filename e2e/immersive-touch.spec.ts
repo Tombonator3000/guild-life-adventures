@@ -8,6 +8,7 @@ async function start(page: Page) {
   await page.getByRole('button', { name: 'New Adventure', exact: true }).click();
   await page.getByPlaceholder('Enter name...').fill('Tablet Adventurer');
   await page.getByRole('checkbox', { name: /Show Tutorial/ }).uncheck();
+  await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
   await page.getByRole('button', { name: 'Begin Adventure', exact: true }).click();
   // Wait for the board's keyboard handler before leaving the browser fullscreen
   // requested by New Adventure. Otherwise F can be sent during lazy loading.

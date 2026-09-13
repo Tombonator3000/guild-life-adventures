@@ -9,6 +9,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     await page.getByRole('button', { name: 'New Adventure', exact: true }).click();
     await page.getByPlaceholder('Enter name...').fill('Week Planner');
     await page.getByRole('checkbox', { name: /Show Tutorial/ }).uncheck();
+    await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
     await page.getByRole('button', { name: 'Begin Adventure', exact: true }).click();
     if (await page.evaluate(() => !!document.fullscreenElement)) await page.keyboard.press('f');
     await expect(page.getByRole('region', { name: 'This Week' })).toBeVisible();

@@ -1,7 +1,14 @@
 import { useRef, useState } from 'react';
-import { PLAYER_PORTRAITS, PORTRAIT_GROUPS, type PortraitDefinition, type PortraitGroup } from '@/data/portraits';
+import * as Dialog from '@radix-ui/react-dialog';
+import {
+  PLAYER_PORTRAITS,
+  PORTRAIT_GROUPS,
+  type PortraitDefinition,
+  type PortraitGroup,
+} from '@/data/portraits';
 import { CharacterPortrait } from './CharacterPortrait';
-import { X, Upload } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Upload } from 'lucide-react';
+import '../screens/entry-menu.css';
 
 interface PortraitPickerProps {
   selectedPortraitId: string | null;
@@ -10,11 +17,9 @@ interface PortraitPickerProps {
   onSelect: (portraitId: string | null) => void;
   onClose: () => void;
 }
+const PORTRAITS_PER_PAGE = 8;
 
-/**
- * Modal overlay for selecting a character portrait.
- * Shows portraits grouped by category tabs.
- */
+/** Paged portrait selection keeps the original artwork and custom-photo support. */
 export function PortraitPicker({
   selectedPortraitId,
   playerColor,
@@ -23,103 +28,126 @@ export function PortraitPicker({
   onClose,
 }: PortraitPickerProps) {
   const [activeGroup, setActiveGroup] = useState<PortraitGroup | 'all'>('all');
-
-  const filteredPortraits = activeGroup === 'all'
-    ? PLAYER_PORTRAITS
-    : PLAYER_PORTRAITS.filter(p => p.group === activeGroup);
-
-  return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50"
-      onClick={onClose}
-    >
-      <div
-        className="parchment-panel p-5 max-w-lg w-full mx-4 relative"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 p-1 text-amber-700 hover:text-amber-900"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        <h3 className="font-display text-lg text-amber-900 mb-3">
-          Choose Your Portrait
-        </h3>
-
-        {/* Category tabs */}
-        <div className="flex flex-wrap gap-1 mb-3">
-          <TabButton
-            active={activeGroup === 'all'}
-            onClick={() => setActiveGroup('all')}
-            label="All"
-          />
-          {PORTRAIT_GROUPS.map(g => (
-            <TabButton
-              key={g.key}
-              active={activeGroup === g.key}
-              onClick={() => setActiveGroup(g.key)}
-              label={g.label}
-            />
-          ))}
-        </div>
-
-        {/* Portrait grid with scroll */}
-        <div className="max-h-[320px] overflow-y-auto pr-1">
-          <div className="grid grid-cols-5 gap-2">
-            {/* "No portrait" option — only in "All" tab */}
-            {activeGroup === 'all' && (
-              <PortraitOption
-                portrait={null}
-                isSelected={selectedPortraitId === null}
-                playerColor={playerColor}
-                playerName={playerName}
-                onSelect={() => onSelect(null)}
-              />
-            )}
-
-            {filteredPortraits.map((portrait) => (
-              <PortraitOption
-                key={portrait.id}
-                portrait={portrait}
-                isSelected={selectedPortraitId === portrait.id}
-                playerColor={playerColor}
-                playerName={playerName}
-                onSelect={() => onSelect(portrait.id)}
-              />
-            ))}
-
-            {/* Upload your own photo — only in "All" tab */}
-            {activeGroup === 'all' && (
-              <UploadPortraitTile
-                selectedPortraitId={selectedPortraitId}
-                onSelect={onSelect}
-              />
-            )}
-          </div>
-        </div>
-
-        <p className="text-xs text-amber-700/60 text-center mt-3">
-          Click a portrait to select it, or upload your own photo.
-        </p>
-      </div>
-    </div>
+  const [page, setPage] = useState(() =>
+    Math.floor(
+      Math.max(0, PLAYER_PORTRAITS.findIndex((p) => p.id === selectedPortraitId) + 2) / PORTRAITS_PER_PAGE,
+    ),
   );
-}
+  const opener = useRef(document.activeElement as HTMLElement | null);
+  const filtered =
+    activeGroup === 'all' ? PLAYER_PORTRAITS : PLAYER_PORTRAITS.filter((p) => p.group === activeGroup);
+  const choices: (PortraitDefinition | 'none' | 'upload')[] =
+    activeGroup === 'all' ? ['none', 'upload', ...filtered] : filtered;
+  const pageCount = Math.ceil(choices.length / PORTRAITS_PER_PAGE);
+  const changeGroup = (group: PortraitGroup | 'all') => {
+    setActiveGroup(group);
+    setPage(0);
+  };
 
-function TabButton({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
   return (
-    <button
-      onClick={onClick}
-      className={`px-2.5 py-1 rounded-md text-xs font-display transition-all ${
-        active
-          ? 'bg-primary text-primary-foreground shadow-sm'
-          : 'bg-amber-100/60 text-amber-800 hover:bg-amber-200/80'
-      }`}
+    <Dialog.Root
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
     >
-      {label}
-    </button>
+      <Dialog.Portal>
+        <Dialog.Overlay className="entry-portrait-overlay" />
+        <Dialog.Content
+          className="entry-portrait-dialog"
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            if (opener.current?.isConnected) opener.current.focus();
+          }}
+        >
+          <div className="entry-portrait-header">
+            <Dialog.Title>Choose Your Portrait</Dialog.Title>
+            <Dialog.Close asChild>
+              <button
+                type="button"
+                className="entry-button entry-button--icon"
+                aria-label="Close portrait picker"
+              >
+                <X aria-hidden="true" />
+              </button>
+            </Dialog.Close>
+          </div>
+          <Dialog.Description className="entry-portrait-description">
+            Choose a face for {playerName || 'your adventurer'}. Every portrait is cosmetic.
+          </Dialog.Description>
+          <div className="entry-portrait-groups" role="group" aria-label="Portrait categories">
+            <button
+              type="button"
+              className="entry-button"
+              aria-pressed={activeGroup === 'all'}
+              onClick={() => changeGroup('all')}
+            >
+              All
+            </button>
+            {PORTRAIT_GROUPS.map((group) => (
+              <button
+                type="button"
+                key={group.key}
+                className="entry-button"
+                aria-pressed={activeGroup === group.key}
+                onClick={() => changeGroup(group.key)}
+              >
+                {group.label}
+              </button>
+            ))}
+          </div>
+          <div className="entry-portrait-grid">
+            {choices
+              .slice(page * PORTRAITS_PER_PAGE, (page + 1) * PORTRAITS_PER_PAGE)
+              .map((choice) =>
+                choice === 'upload' ? (
+                  <UploadPortraitTile
+                    key="upload"
+                    selectedPortraitId={selectedPortraitId}
+                    onSelect={onSelect}
+                  />
+                ) : (
+                  <PortraitOption
+                    key={choice === 'none' ? 'none' : choice.id}
+                    portrait={choice === 'none' ? null : choice}
+                    isSelected={
+                      choice === 'none' ? selectedPortraitId === null : selectedPortraitId === choice.id
+                    }
+                    playerColor={playerColor}
+                    playerName={playerName}
+                    onSelect={() => onSelect(choice === 'none' ? null : choice.id)}
+                  />
+                ),
+              )}
+          </div>
+          {pageCount > 1 && (
+            <nav className="entry-portrait-pages" aria-label="Portrait pages">
+              <button
+                type="button"
+                className="entry-button entry-button--icon"
+                aria-label="Previous portraits"
+                disabled={page === 0}
+                onClick={() => setPage((current) => current - 1)}
+              >
+                <ChevronLeft aria-hidden="true" />
+              </button>
+              <span aria-live="polite">
+                Page {page + 1} of {pageCount}
+              </span>
+              <button
+                type="button"
+                className="entry-button entry-button--icon"
+                aria-label="Next portraits"
+                disabled={page === pageCount - 1}
+                onClick={() => setPage((current) => current + 1)}
+              >
+                <ChevronRight aria-hidden="true" />
+              </button>
+            </nav>
+          )}
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 
@@ -138,12 +166,11 @@ function PortraitOption({
 }) {
   return (
     <button
+      type="button"
+      className="entry-portrait-option"
+      aria-label={portrait?.name || 'No portrait'}
+      aria-pressed={isSelected}
       onClick={onSelect}
-      className={`flex flex-col items-center gap-1 p-1.5 rounded-lg transition-all ${
-        isSelected
-          ? 'bg-primary/20 ring-2 ring-primary'
-          : 'hover:bg-amber-100/50'
-      }`}
     >
       <CharacterPortrait
         portraitId={portrait?.id || null}
@@ -152,9 +179,7 @@ function PortraitOption({
         size={56}
         isAI={false}
       />
-      <span className="text-[10px] text-amber-900 font-display truncate w-full text-center">
-        {portrait?.name || 'None'}
-      </span>
+      <span className="entry-portrait-name">{portrait?.name || 'None'}</span>
     </button>
   );
 }
@@ -198,12 +223,11 @@ function UploadPortraitTile({
 
   return (
     <button
+      type="button"
+      aria-label="Upload your own portrait"
+      aria-pressed={isCustomSelected}
       onClick={() => inputRef.current?.click()}
-      className={`flex flex-col items-center gap-1 p-1.5 rounded-lg transition-all ${
-        isCustomSelected
-          ? 'bg-primary/20 ring-2 ring-primary'
-          : 'hover:bg-amber-100/50'
-      }`}
+      className="entry-portrait-option"
       title="Upload your own photo"
     >
       {isCustomSelected ? (
@@ -218,16 +242,8 @@ function UploadPortraitTile({
           <Upload className="w-5 h-5 text-amber-700/60" />
         </div>
       )}
-      <span className="text-[10px] text-amber-900 font-display truncate w-full text-center">
-        Upload
-      </span>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFile}
-      />
+      <span className="entry-portrait-name">Upload</span>
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
     </button>
   );
 }

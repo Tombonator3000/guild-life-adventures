@@ -3,15 +3,15 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const readSource = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
-const indexSource = readSource('src/pages/Index.tsx');
+const titleSource = readSource('src/components/screens/TitleScreen.tsx');
 const launcherSource = readSource('src/components/screens/TitleHighScoreLauncher.tsx');
 const scoreScreenSource = readSource('src/components/screens/HighScoreScreen.tsx');
 const changelogSource = readSource('src/components/screens/ChangelogScreen.tsx');
 
 describe('title Hall of Fame and current changelog', () => {
   it('exposes Hall of Fame directly from the title screen', () => {
-    expect(indexSource).toContain("import { TitleHighScoreLauncher }");
-    expect(indexSource).toContain('<TitleHighScoreLauncher />');
+    expect(titleSource).toContain("import { TitleHighScoreLauncher }");
+    expect(titleSource).toContain('<TitleHighScoreLauncher />');
     expect(launcherSource).toContain('Hall of Fame');
     expect(launcherSource).toContain('Open Hall of Fame and world ranking');
   });

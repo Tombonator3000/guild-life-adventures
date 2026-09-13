@@ -10,6 +10,7 @@ test('movement arrives on the canonical route with bounded rendering work', asyn
   await page.getByRole('button', { name: 'New Adventure', exact: true }).click();
   await page.getByPlaceholder('Enter name...').fill('Movement Test');
   await page.getByRole('checkbox', { name: /Show Tutorial/ }).uncheck();
+  await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
   await page.getByRole('button', { name: 'Begin Adventure', exact: true }).click();
   if (await page.evaluate(() => !!document.fullscreenElement)) await page.keyboard.press('f');
   await expect(page.locator('.board-atmosphere')).toHaveAttribute('data-assets', 'ready');

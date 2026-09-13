@@ -14359,3 +14359,10 @@ The owner requested finger browsing in central menus, character information from
 Removed 50 unused source files and 33 unused direct dependencies after tracing runtime, test and tooling consumers. Scoped 15 store subscriptions, memoized resource summaries and derived the AI action contract from one canonical selector. Replaced the no-op TypeScript command with real app/build checks and corrected its 185 diagnostics without excluding code. Preserved the live tutorial, board art, native touch flow, save format and multiplayer services.
 
 All eleven open Dependabot patches were inspected: three direct dependency updates are superseded by the cleanup; eight still address used packages/workflows. Details, evidence and final validation status are in [the cleanup audit](docs/AUDIT_LOG_CODE_CLEANUP.md).
+
+
+## 2026-09-13 — Golden entry menus and reviewed maintenance
+
+Reworked the start screen and pre-game setup using the existing Guildholm art, shared gold buttons, larger touch controls, two setup steps, paged player/portrait selection, real save details and explicit victory presets. The owner confirmed Chrome Desktop site mode and authorized implementation and merges. Native responsive layout is retained; browser desktop emulation remains a browser setting. See [the entry-menu audit](docs/AUDIT_LOG_ENTRY_MENUS.md) for acceptance criteria, verification and limitations.
+
+Merged newspaper fix #416. Maintenance #418 integrates Actions updates #379–383, sharp #386 and Toast #387, preserving the cleaned dependency list and current validation artifacts. Vite 8 #388 is held separately because the current SWC plugin and Vitest do not declare support for Vite 8.

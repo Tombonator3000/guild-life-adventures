@@ -25,6 +25,17 @@ const visual = (text: string): ChangelogEntry => ({ icon: <Palette className={`$
 
 const CHANGELOG: Version[] = [
   {
+    version: 'v0.11.5', date: 'September 13, 2026', title: 'A golden welcome to Guildholm',
+    highlights: [
+      visual('Embossed gold buttons, larger text and clearer actions on the original illustrated title screen.'),
+      improve('Prepare your adventure in two steps: Players, then Game Goals. Names, portraits, rival difficulty and targets stay with you when moving between steps.'),
+      improve('Up to six players and four AI rivals, with paged player cards and a larger keyboard-accessible portrait picker.'),
+      improve('Victory presets show their actual targets and selected state. Custom targets remain available under Customize targets.'),
+      fix('Continue shows the real saved week and players, and disappears when its autosave is deleted.'),
+      improve('Entry menus respect larger text and reduced motion, with larger touch controls across phone, tablet and desktop layouts.'),
+    ],
+  },
+  {
     version: 'v0.11.4', date: 'September 7, 2026', title: 'Turn pages, explore clearly',
     highlights: [
       visual('Location services wrap into rows. Long menus use Previous and Next pages inside the classic frame.'),

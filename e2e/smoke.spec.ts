@@ -20,6 +20,8 @@ test('a new adventure opens the game setup screen', async ({ page }) => {
   await page.getByRole('button', { name: /new adventure/i }).click();
 
   await expect(page.getByRole('heading', { name: 'Prepare Your Adventure' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Adventurers' })).toBeVisible();
+  await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Victory Goals' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Begin Adventure' })).toBeVisible();
   expect(pageErrors).toEqual([]);

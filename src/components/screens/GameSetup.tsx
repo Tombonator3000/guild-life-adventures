@@ -1,413 +1,639 @@
 import { useShallow } from 'zustand/react/shallow';
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { PLAYER_COLORS, AI_DIFFICULTY_NAMES, AI_OPPONENTS, type AIDifficulty, type AIConfig } from '@/types/game.types';
+import {
+  PLAYER_COLORS,
+  AI_DIFFICULTY_NAMES,
+  AI_OPPONENTS,
+  type AIConfig,
+  type AIDifficulty,
+  type GoalSettings,
+} from '@/types/game.types';
 import { PLAYER_RULE_TEXT } from '@/data/playerFacingRules';
-import { Plus, Minus, Bot, Play, Brain, Zap, Crown, Lightbulb, Trash2, Compass, Dice6 } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Bot,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Compass,
+  Dice6,
+  Play,
+  Trash2,
+  Users,
+} from 'lucide-react';
 import { CharacterPortrait } from '@/components/game/CharacterPortrait';
 import { PortraitPicker } from '@/components/game/PortraitPicker';
 import { getDefaultAIPortrait, PLAYER_PORTRAITS } from '@/data/portraits';
-import gameBoard from '@/assets/game-board.jpeg';
+import titleDay from '@/assets/title-day.jpg';
+import { getSetupPreset, SETUP_PRESETS } from './setupGoals';
+import './entry-menu.css';
 
 const MAX_TOTAL_PLAYERS = 6;
-
-const MALE_NAMES = ['Aldric', 'Fenwick', 'Oswin', 'Tavish', 'Cormac', 'Gareth', 'Dorian', 'Theron', 'Rowan', 'Edwyn', 'Calder', 'Bram', 'Orin', 'Silvain', 'Varric'];
-const FEMALE_NAMES = ['Brynn', 'Mira', 'Isolde', 'Lyra', 'Wren', 'Selja', 'Elara', 'Vesper', 'Sigrid', 'Maren', 'Nessa', 'Faye', 'Petra', 'Tilda', 'Hadley'];
+const PLAYERS_PER_PAGE = 2;
+const MALE_NAMES = [
+  'Aldric',
+  'Fenwick',
+  'Oswin',
+  'Tavish',
+  'Cormac',
+  'Gareth',
+  'Dorian',
+  'Theron',
+  'Rowan',
+  'Edwyn',
+  'Calder',
+  'Bram',
+  'Orin',
+  'Silvain',
+  'Varric',
+];
+const FEMALE_NAMES = [
+  'Brynn',
+  'Mira',
+  'Isolde',
+  'Lyra',
+  'Wren',
+  'Selja',
+  'Elara',
+  'Vesper',
+  'Sigrid',
+  'Maren',
+  'Nessa',
+  'Faye',
+  'Petra',
+  'Tilda',
+  'Hadley',
+];
 const NEUTRAL_NAMES = ['Ash', 'Sage', 'Quinn', 'Robin', 'River', 'Scout'];
+interface HumanPlayer {
+  name: string;
+  portraitId: string | null;
+}
+type SetupStep = 'players' | 'goals';
+type PortraitSelection = { index: number; type: 'human' | 'ai' };
 
-function getNamePool(gender: 'male' | 'female' | 'neutral'): string[] {
-  if (gender === 'male') return MALE_NAMES;
-  if (gender === 'female') return FEMALE_NAMES;
-  return [...MALE_NAMES, ...FEMALE_NAMES, ...NEUTRAL_NAMES];
+function randomPlayer(usedNames: string[] = [], usedPortraits: (string | null)[] = []): HumanPlayer {
+  const available = PLAYER_PORTRAITS.filter((portrait) => !usedPortraits.includes(portrait.id));
+  const portraits = available.length ? available : PLAYER_PORTRAITS;
+  const portrait = portraits[Math.floor(Math.random() * portraits.length)];
+  const names =
+    portrait.gender === 'male'
+      ? MALE_NAMES
+      : portrait.gender === 'female'
+        ? FEMALE_NAMES
+        : [...MALE_NAMES, ...FEMALE_NAMES, ...NEUTRAL_NAMES];
+  const unused = names.filter(
+    (name) => !usedNames.some((used) => used.trim().toLowerCase() === name.toLowerCase()),
+  );
+  const pool = unused.length ? unused : names;
+  return { name: pool[Math.floor(Math.random() * pool.length)], portraitId: portrait.id };
 }
 
 export function GameSetup() {
-  const { startNewGame, setPhase, setShowTutorial, setTutorialStep } = useGameStore(useShallow(state => ({
-    startNewGame: state.startNewGame,
-    setPhase: state.setPhase,
-    setShowTutorial: state.setShowTutorial,
-    setTutorialStep: state.setTutorialStep,
-  })));
-  const [playerNames, setPlayerNames] = useState<string[]>(['Adventurer 1']);
-  const [playerPortraits, setPlayerPortraits] = useState<(string | null)[]>([null]);
+  const { startNewGame, setPhase, setShowTutorial, setTutorialStep } = useGameStore(
+    useShallow((state) => ({
+      startNewGame: state.startNewGame,
+      setPhase: state.setPhase,
+      setShowTutorial: state.setShowTutorial,
+      setTutorialStep: state.setTutorialStep,
+    })),
+  );
+  const [players, setPlayers] = useState<HumanPlayer[]>(() => [randomPlayer()]);
   const [aiOpponents, setAiOpponents] = useState<AIConfig[]>([]);
   const [enableTutorial, setEnableTutorial] = useState(true);
   const [nameError, setNameError] = useState<string | null>(null);
-  const [portraitPickerIndex, setPortraitPickerIndex] = useState<number | null>(null);
-  const [portraitPickerType, setPortraitPickerType] = useState<'human' | 'ai'>('human');
-  const [goals, setGoals] = useState({
-    wealth: 5000,
-    happiness: 100,
-    education: 45,
-    career: 75,
-    adventure: 0,
-  });
-
-  const totalPlayers = playerNames.length + aiOpponents.length;
+  const [portraitSelection, setPortraitSelection] = useState<PortraitSelection | null>(null);
+  const [goals, setGoals] = useState<GoalSettings>({ ...SETUP_PRESETS[1].goals });
+  const [step, setStep] = useState<SetupStep>('players');
+  const [rosterPage, setRosterPage] = useState(0);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const previousStep = useRef(step);
+  const totalPlayers = players.length + aiOpponents.length;
   const canAddMore = totalPlayers < MAX_TOTAL_PLAYERS;
-  const canAddMoreAI = canAddMore && aiOpponents.length < AI_OPPONENTS.length;
+  const pageCount = Math.ceil(totalPlayers / PLAYERS_PER_PAGE);
+  const currentPage = Math.min(rosterPage, pageCount - 1);
+  const selectedPreset = getSetupPreset(goals);
 
   useEffect(() => {
-    const randomPortrait = PLAYER_PORTRAITS[Math.floor(Math.random() * PLAYER_PORTRAITS.length)];
-    const namePool = getNamePool(randomPortrait.gender ?? 'neutral');
-    const randomName = namePool[Math.floor(Math.random() * namePool.length)];
-    setPlayerNames([randomName]);
-    setPlayerPortraits([randomPortrait.id]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (previousStep.current !== step) {
+      headingRef.current?.focus();
+      headingRef.current?.scrollIntoView({ block: 'start' });
+      previousStep.current = step;
+    }
+  }, [step]);
 
-  const randomizePlayer = (index: number) => {
-    const usedPortraits = playerPortraits.filter((_, i) => i !== index);
-    const available = PLAYER_PORTRAITS.filter(p => !usedPortraits.includes(p.id));
-    const portrait = available.length > 0
-      ? available[Math.floor(Math.random() * available.length)]
-      : PLAYER_PORTRAITS[Math.floor(Math.random() * PLAYER_PORTRAITS.length)];
-    const namePool = getNamePool(portrait.gender ?? 'neutral');
-    const randomName = namePool[Math.floor(Math.random() * namePool.length)];
-    const newNames = [...playerNames];
-    newNames[index] = randomName;
-    setPlayerNames(newNames);
-    const newPortraits = [...playerPortraits];
-    newPortraits[index] = portrait.id;
-    setPlayerPortraits(newPortraits);
+  const allNames = () => [...players.map((player) => player.name), ...aiOpponents.map((ai) => ai.name)];
+  const updatePlayer = (index: number, changes: Partial<HumanPlayer>) => {
+    setPlayers((current) => current.map((player, i) => (i === index ? { ...player, ...changes } : player)));
+    setNameError(null);
   };
-
+  const updateAI = (index: number, changes: Partial<AIConfig>) => {
+    setAiOpponents((current) => current.map((ai, i) => (i === index ? { ...ai, ...changes } : ai)));
+    setNameError(null);
+  };
   const addPlayer = () => {
-    if (canAddMore) {
-      setPlayerNames([...playerNames, `Adventurer ${playerNames.length + 1}`]);
-      setPlayerPortraits([...playerPortraits, null]);
-    }
+    if (!canAddMore) return;
+    setPlayers((current) => [
+      ...current,
+      randomPlayer(
+        allNames(),
+        current.map((player) => player.portraitId),
+      ),
+    ]);
+    setRosterPage(Math.floor(players.length / PLAYERS_PER_PAGE));
+    setNameError(null);
   };
-
-  const removePlayer = (index: number) => {
-    if (playerNames.length > 1) {
-      setPlayerNames(playerNames.filter((_, i) => i !== index));
-      setPlayerPortraits(playerPortraits.filter((_, i) => i !== index));
-    }
-  };
-
-  const updateName = (index: number, name: string) => {
-    const newNames = [...playerNames];
-    newNames[index] = name;
-    setPlayerNames(newNames);
-    if (nameError) setNameError(null);
-  };
-
-  const updatePlayerPortrait = (index: number, portraitId: string | null) => {
-    const newPortraits = [...playerPortraits];
-    newPortraits[index] = portraitId;
-    setPlayerPortraits(newPortraits);
-  };
-
   const addAIOpponent = () => {
-    if (canAddMoreAI) {
-      const aiIndex = aiOpponents.length;
-      const defaultName = AI_OPPONENTS[aiIndex]?.name || `AI ${aiIndex + 1}`;
-      setAiOpponents([...aiOpponents, { name: defaultName, difficulty: 'medium', portraitId: getDefaultAIPortrait(aiIndex) }]);
+    if (!canAddMore || aiOpponents.length >= AI_OPPONENTS.length) return;
+    const used = allNames().map((name) => name.trim().toLowerCase());
+    const unusedIndex = AI_OPPONENTS.findIndex((ai) => !used.includes(ai.name.toLowerCase()));
+    const index = unusedIndex === -1 ? aiOpponents.length : unusedIndex;
+    setAiOpponents((current) => [
+      ...current,
+      {
+        name: unusedIndex === -1 ? `Rival ${totalPlayers + 1}` : AI_OPPONENTS[index].name,
+        difficulty: 'medium',
+        portraitId: getDefaultAIPortrait(index),
+      },
+    ]);
+    setRosterPage(Math.floor(totalPlayers / PLAYERS_PER_PAGE));
+    setNameError(null);
+  };
+  const validateNames = () => {
+    const names = allNames().map((name) => name.trim());
+    let badIndex = names.findIndex((name) => name.length === 0 || name.length > 20);
+    let message =
+      badIndex < 0
+        ? ''
+        : names[badIndex].length === 0
+          ? 'Give every adventurer and AI rival a name.'
+          : 'Names must be 20 characters or fewer.';
+    if (badIndex < 0) {
+      badIndex = names.findIndex((name, index) =>
+        names.slice(0, index).some((other) => other.toLowerCase() === name.toLowerCase()),
+      );
+      if (badIndex >= 0) message = 'All adventurers and AI rivals must have unique names.';
     }
-  };
-
-  const removeAIOpponent = (index: number) => {
-    setAiOpponents(aiOpponents.filter((_, i) => i !== index));
-  };
-
-  const updateAIName = (index: number, name: string) => {
-    const updated = [...aiOpponents];
-    updated[index] = { ...updated[index], name };
-    setAiOpponents(updated);
-  };
-
-  const updateAIDifficulty = (index: number, difficulty: AIDifficulty) => {
-    const updated = [...aiOpponents];
-    updated[index] = { ...updated[index], difficulty };
-    setAiOpponents(updated);
-  };
-
-  const updateAIPortrait = (index: number, portraitId: string | null) => {
-    const updated = [...aiOpponents];
-    updated[index] = { ...updated[index], portraitId: portraitId ?? undefined };
-    setAiOpponents(updated);
-  };
-
-  const openPortraitPicker = (index: number, type: 'human' | 'ai') => {
-    setPortraitPickerIndex(index);
-    setPortraitPickerType(type);
-  };
-
-  const handlePortraitSelect = (portraitId: string | null) => {
-    if (portraitPickerIndex === null) return;
-    if (portraitPickerType === 'human') updatePlayerPortrait(portraitPickerIndex, portraitId);
-    else updateAIPortrait(portraitPickerIndex, portraitId);
-    setPortraitPickerIndex(null);
-  };
-
-  const handleStart = () => {
-    const trimmedNames = playerNames.map(n => n.trim());
-    if (trimmedNames.some(n => n.length === 0)) {
-      setNameError('All adventurers must have a name.');
-      return;
-    }
-    if (trimmedNames.some(n => n.length > 20)) {
-      setNameError('Names must be 20 characters or fewer.');
-      return;
-    }
-    const allNames = [...trimmedNames, ...aiOpponents.map(a => a.name.trim())];
-    if (new Set(allNames.map(n => n.toLowerCase())).size !== allNames.length) {
-      setNameError('All adventurers must have unique names.');
-      return;
+    if (badIndex >= 0) {
+      setNameError(message);
+      setRosterPage(Math.floor(badIndex / PLAYERS_PER_PAGE));
+      setStep('players');
+      return false;
     }
     setNameError(null);
-
+    return true;
+  };
+  const handleStart = () => {
+    if (!validateNames()) return;
     try {
-      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+      if (!document.fullscreenElement && document.documentElement.requestFullscreen)
         document.documentElement.requestFullscreen().catch(() => {});
-      }
-    } catch { /* ignore */ }
-
+    } catch {
+      /* Browsers may not support fullscreen. */
+    }
     startNewGame(
-      playerNames,
+      players.map((player) => player.name.trim()),
       false,
       goals,
       'medium',
-      aiOpponents.length > 0 ? aiOpponents : undefined,
-      playerPortraits,
+      aiOpponents.length ? aiOpponents.map((ai) => ({ ...ai, name: ai.name.trim() })) : undefined,
+      players.map((player) => player.portraitId),
     );
     setTutorialStep(0);
     setShowTutorial(enableTutorial);
   };
-
-  const presets = {
-    quick: { wealth: 2000, happiness: 75, education: 18, career: 50, adventure: 0 },
-    standard: { wealth: 5000, happiness: 100, education: 45, career: 75, adventure: 0 },
-    adventure: { wealth: 4000, happiness: 80, education: 27, career: 65, adventure: 12 },
-    epic: { wealth: 10000, happiness: 100, education: 90, career: 100, adventure: 20 },
-  };
-
-  const estimatedDuration = (() => {
-    const degrees = Math.floor(goals.education / 9);
-    const wealthK = goals.wealth / 1000;
-    const careerPct = goals.career / 100;
-    const adventureBonus = goals.adventure > 0 ? goals.adventure * 0.5 : 0;
-    const baseMinutes = degrees * 12 + wealthK * 5 + careerPct * 20 + adventureBonus;
-    const totalPlrs = Math.max(playerNames.length + aiOpponents.length, 1);
-    const scaled = baseMinutes * (0.7 + totalPlrs * 0.15);
-    const lo = Math.round(scaled * 0.8 / 5) * 5;
-    const hi = Math.round(scaled * 1.3 / 5) * 5;
-    if (hi >= 180) return `${Math.round(lo / 60 * 2) / 2}–${Math.round(hi / 60 * 2) / 2} hours`;
-    return `${lo}–${hi} minutes`;
-  })();
+  const roster = [
+    ...players.map((player, index) => ({ ...player, index, type: 'human' as const })),
+    ...aiOpponents.map((ai, index) => ({ ...ai, index, type: 'ai' as const })),
+  ];
+  const portraitOwner =
+    portraitSelection?.type === 'human'
+      ? players[portraitSelection.index]
+      : portraitSelection
+        ? aiOpponents[portraitSelection.index]
+        : null;
 
   return (
-    <div className="relative min-h-screen-safe overflow-x-hidden overflow-y-auto">
-      <div className="fixed inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: `url(${gameBoard})` }} />
-      <div className="fixed inset-0 bg-background/80" />
-
-      <div className="relative z-10 min-h-screen-safe flex flex-col items-center justify-center px-4 py-8">
-        <h1 className="font-display text-4xl font-bold text-amber-900 mb-8">Prepare Your Adventure</h1>
-
-        <div className="w-full max-w-2xl space-y-6">
-          <div className="parchment-panel p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display text-xl font-semibold text-amber-900">Adventurers</h2>
-              <button onClick={addPlayer} disabled={!canAddMore} className="p-2 wood-frame text-parchment hover:brightness-110 disabled:opacity-50" title="Add human player">
-                <Plus className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {playerNames.map((name, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
-                    <button onClick={() => openPortraitPicker(index, 'human')} className="rounded-full animate-pulse-gold cursor-pointer focus:outline-none" title="Click to choose your portrait">
-                      <CharacterPortrait portraitId={playerPortraits[index]} playerColor={PLAYER_COLORS[index].value} playerName={name} size={64} isAI={false} />
-                    </button>
-                    <span className="text-[9px] text-amber-600 font-display leading-tight select-none">Tap to pick</span>
-                  </div>
-                  <div className="flex-1 flex flex-col gap-1.5">
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(event) => updateName(index, event.target.value)}
-                      className="w-full px-4 py-2 bg-input border border-border rounded font-body text-amber-900 placeholder:text-amber-600/50 focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="Enter name..."
-                    />
-                    <button onClick={() => randomizePlayer(index)} className="flex items-center gap-1.5 px-3 py-1 rounded border border-amber-400/60 bg-amber-50/60 text-amber-700 text-xs font-display hover:bg-amber-100/80 hover:border-amber-500 transition-all" title="Randomize name and portrait">
-                      <Dice6 className="w-3.5 h-3.5" />
-                      Randomize
-                    </button>
-                  </div>
-                  <button onClick={() => removePlayer(index)} disabled={playerNames.length <= 1} className="p-2 text-destructive hover:bg-destructive/10 rounded disabled:opacity-30" aria-label={`Remove ${name}`}>
-                    <Minus className="w-5 h-5" />
+    <div className="entry-screen entry-screen--setup">
+      <div className="entry-backdrop" aria-hidden="true">
+        <img src={titleDay} alt="" />
+      </div>
+      <header className="entry-topbar">
+        <span className="entry-brand">Guild Life</span>
+        <span className="entry-small">New Adventure</span>
+      </header>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (step === 'players') {
+            if (validateNames()) setStep('goals');
+          } else handleStart();
+        }}
+      >
+        <main className="entry-setup">
+          <div className="entry-heading">
+            <h1>Prepare Your Adventure</h1>
+            <p>Your name. Your rivals. Your life in Guildholm.</p>
+          </div>
+          <nav className="entry-steps" aria-label="Adventure setup">
+            <button
+              type="button"
+              className="entry-button"
+              aria-current={step === 'players' ? 'step' : undefined}
+              onClick={() => setStep('players')}
+            >
+              <span className="entry-step-number">1</span>Players
+            </button>
+            <button
+              type="button"
+              className="entry-button"
+              aria-current={step === 'goals' ? 'step' : undefined}
+              onClick={() => {
+                if (validateNames()) setStep('goals');
+              }}
+            >
+              <span className="entry-step-number">2</span>Game Goals
+            </button>
+          </nav>
+          {step === 'players' ? (
+            <section aria-labelledby="setup-step-heading">
+              <div className="entry-step-header">
+                <h2 id="setup-step-heading" ref={headingRef} tabIndex={-1}>
+                  Adventurers
+                </h2>
+                <span className="entry-small" aria-live="polite">
+                  {totalPlayers}/{MAX_TOTAL_PLAYERS} players
+                </span>
+              </div>
+              {nameError && (
+                <p className="entry-error" role="alert">
+                  {nameError}
+                </p>
+              )}
+              <div className="entry-roster">
+                {roster
+                  .slice(currentPage * PLAYERS_PER_PAGE, (currentPage + 1) * PLAYERS_PER_PAGE)
+                  .map((player) => {
+                    const isAI = player.type === 'ai';
+                    const key = `${player.type}-${player.index}`;
+                    const aiDefinition = AI_OPPONENTS[player.index] || AI_OPPONENTS[0];
+                    return (
+                      <article
+                        className="entry-player"
+                        key={key}
+                        aria-label={`${isAI ? 'AI rival' : 'Local player'} ${player.index + 1}`}
+                      >
+                        <div className="entry-player-main">
+                          <button
+                            type="button"
+                            className="entry-portrait"
+                            onClick={() => setPortraitSelection({ index: player.index, type: player.type })}
+                            aria-label={`Choose portrait for ${player.name || 'adventurer'}`}
+                          >
+                            <CharacterPortrait
+                              portraitId={player.portraitId ?? null}
+                              playerColor={isAI ? aiDefinition.color : PLAYER_COLORS[player.index].value}
+                              playerName={player.name}
+                              size={72}
+                              isAI={isAI}
+                            />
+                          </button>
+                          <div className="entry-player-fields">
+                            <label className="entry-field-label" htmlFor={`name-${key}`}>
+                              {isAI ? 'AI rival' : 'Local player'} · Name
+                            </label>
+                            <input
+                              id={`name-${key}`}
+                              type="text"
+                              value={player.name}
+                              maxLength={20}
+                              autoComplete="off"
+                              spellCheck={false}
+                              onChange={(event) =>
+                                isAI
+                                  ? updateAI(player.index, { name: event.target.value })
+                                  : updatePlayer(player.index, { name: event.target.value })
+                              }
+                              className="entry-name-input"
+                              placeholder={isAI ? 'AI name...' : 'Enter name...'}
+                            />
+                          </div>
+                        </div>
+                        <div className="entry-player-actions">
+                          {isAI ? (
+                            <label>
+                              <span className="entry-field-label">Difficulty</span>
+                              <select
+                                className="entry-difficulty"
+                                aria-label={`Difficulty for ${player.name}`}
+                                value={player.difficulty}
+                                onChange={(event) =>
+                                  updateAI(player.index, { difficulty: event.target.value as AIDifficulty })
+                                }
+                              >
+                                {(['easy', 'medium', 'hard'] as AIDifficulty[]).map((difficulty) => (
+                                  <option key={difficulty} value={difficulty}>
+                                    {AI_DIFFICULTY_NAMES[difficulty]}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          ) : (
+                            <button
+                              type="button"
+                              className="entry-button entry-button--gold"
+                              onClick={() =>
+                                updatePlayer(
+                                  player.index,
+                                  randomPlayer(
+                                    allNames().filter((_, index) => index !== player.index),
+                                    players
+                                      .filter((_, index) => index !== player.index)
+                                      .map((other) => other.portraitId),
+                                  ),
+                                )
+                              }
+                            >
+                              <Dice6 aria-hidden="true" />
+                              Randomize
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className="entry-button entry-button--danger entry-button--icon"
+                            disabled={!isAI && players.length === 1}
+                            aria-label={`Remove ${player.name || 'adventurer'}`}
+                            onClick={() => {
+                              if (isAI)
+                                setAiOpponents((current) =>
+                                  current.filter((_, index) => index !== player.index),
+                                );
+                              else if (players.length > 1)
+                                setPlayers((current) => current.filter((_, index) => index !== player.index));
+                              setNameError(null);
+                            }}
+                          >
+                            <Trash2 aria-hidden="true" />
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })}
+              </div>
+              {pageCount > 1 && (
+                <nav className="entry-roster-pages" aria-label="Player pages">
+                  <button
+                    type="button"
+                    className="entry-button entry-button--icon"
+                    aria-label="Previous players"
+                    disabled={currentPage === 0}
+                    onClick={() => setRosterPage(currentPage - 1)}
+                  >
+                    <ChevronLeft aria-hidden="true" />
                   </button>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-4 pt-4 border-t border-border">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Bot className="w-5 h-5 text-amber-700" />
-                  <span className="font-display text-amber-900">AI Opponents ({aiOpponents.length})</span>
-                </div>
-                <button onClick={addAIOpponent} disabled={!canAddMoreAI} className="p-2 wood-frame text-parchment hover:brightness-110 disabled:opacity-50 flex items-center gap-1" title="Add AI opponent">
-                  <Bot className="w-4 h-4" />
-                  <Plus className="w-4 h-4" />
+                  <span className="entry-small" aria-live="polite">
+                    Players {currentPage * PLAYERS_PER_PAGE + 1}–
+                    {Math.min((currentPage + 1) * PLAYERS_PER_PAGE, totalPlayers)} of {totalPlayers}
+                  </span>
+                  <button
+                    type="button"
+                    className="entry-button entry-button--icon"
+                    aria-label="Next players"
+                    disabled={currentPage === pageCount - 1}
+                    onClick={() => setRosterPage(currentPage + 1)}
+                  >
+                    <ChevronRight aria-hidden="true" />
+                  </button>
+                </nav>
+              )}
+              <div className="entry-add-players">
+                <button
+                  type="button"
+                  onClick={addPlayer}
+                  disabled={!canAddMore}
+                  className="entry-button"
+                  aria-label="Add human player"
+                >
+                  <Users aria-hidden="true" />
+                  Local player
+                </button>
+                <button
+                  type="button"
+                  onClick={addAIOpponent}
+                  disabled={!canAddMore || aiOpponents.length >= AI_OPPONENTS.length}
+                  className="entry-button"
+                  aria-label="Add AI opponent"
+                >
+                  <Bot aria-hidden="true" />
+                  AI rival
                 </button>
               </div>
-
-              {aiOpponents.length === 0 && <p className="text-sm text-amber-700/60 italic ml-7">No AI opponents. Click + to add one.</p>}
-
-              <div className="space-y-3">
-                {aiOpponents.map((ai, index) => {
-                  const aiDef = AI_OPPONENTS[index] || AI_OPPONENTS[0];
-                  return (
-                    <div key={index} className="bg-background/30 rounded p-3 border border-border/50">
-                      <div className="flex items-center gap-3 mb-2">
-                        <button onClick={() => openPortraitPicker(index, 'ai')} className="flex-shrink-0 rounded-full hover:ring-2 hover:ring-primary transition-all cursor-pointer" title="Choose portrait">
-                          <CharacterPortrait portraitId={ai.portraitId || getDefaultAIPortrait(index)} playerColor={aiDef.color} playerName={ai.name} size={64} isAI={true} />
-                        </button>
-                        <input
-                          type="text"
-                          value={ai.name}
-                          onChange={(event) => updateAIName(index, event.target.value)}
-                          className="flex-1 px-3 py-1.5 bg-input border border-border rounded font-body text-amber-900 text-sm placeholder:text-amber-600/50 focus:outline-none focus:ring-2 focus:ring-primary"
-                          placeholder="AI name..."
-                        />
-                        <button onClick={() => removeAIOpponent(index)} className="p-1.5 text-destructive hover:bg-destructive/10 rounded" title="Remove AI">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <div className="flex gap-1.5 ml-[76px]">
-                        {(['easy', 'medium', 'hard'] as AIDifficulty[]).map(diff => (
-                          <button
-                            key={diff}
-                            onClick={() => updateAIDifficulty(index, diff)}
-                            className={`flex-1 px-2 py-1 rounded border text-xs transition-all ${ai.difficulty === diff ? 'border-primary bg-primary/30 text-amber-900 font-bold' : 'border-border bg-background/50 text-amber-900 hover:border-primary/50'}`}
-                          >
-                            <div className="flex items-center justify-center gap-1">
-                              {diff === 'easy' && <Brain className="w-3 h-3" />}
-                              {diff === 'medium' && <Zap className="w-3 h-3" />}
-                              {diff === 'hard' && <Crown className="w-3 h-3" />}
-                              <span>{AI_DIFFICULTY_NAMES[diff]}</span>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {aiOpponents.length > 0 && <p className="text-xs text-amber-700/60 mt-2 ml-7">{totalPlayers}/{MAX_TOTAL_PLAYERS} total players. Each AI plays independently.</p>}
-            </div>
-
-            <div className="mt-4 pt-4 border-t border-border">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" checked={enableTutorial} onChange={(event) => setEnableTutorial(event.target.checked)} className="w-5 h-5 accent-primary" />
-                <Lightbulb className="w-5 h-5 text-amber-700" />
-                <span className="font-display text-amber-900">Show Tutorial (recommended for new players)</span>
+              <p className="entry-roster-help">
+                {aiOpponents.length
+                  ? `${aiOpponents.length} AI rival${aiOpponents.length > 1 ? 's' : ''}. Each AI plays independently.`
+                  : players.length === 1
+                    ? 'A solo game. Add rivals or share this device with friends.'
+                    : 'Local players take turns on this device.'}
+              </p>
+              <label className="entry-tutorial">
+                <input
+                  type="checkbox"
+                  checked={enableTutorial}
+                  onChange={(event) => setEnableTutorial(event.target.checked)}
+                />
+                <span>
+                  <strong>Show Tutorial</strong>
+                  <small>Guide my first turn · Recommended for new players</small>
+                </span>
               </label>
-            </div>
-          </div>
-
-          <div className="parchment-panel p-6">
-            <h2 className="font-display text-xl font-semibold text-amber-900 mb-2">Victory Goals</h2>
-            <p className="text-amber-700 text-sm mb-4">Set the targets required to win. First to reach all {goals.adventure > 0 ? 'five' : 'four'} goals wins!</p>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-              <button onClick={() => setGoals(presets.quick)} className="flex-1 p-2 wood-frame text-parchment text-sm font-display hover:brightness-110">Quick Game</button>
-              <button onClick={() => setGoals(presets.standard)} className="flex-1 p-2 wood-frame text-parchment text-sm font-display hover:brightness-110">Standard</button>
-              <button onClick={() => setGoals(presets.adventure)} className="p-2 wood-frame text-parchment text-sm font-display hover:brightness-110" title="Quest-focused mode with an Adventure victory target">Adventure</button>
-              <button onClick={() => setGoals(presets.epic)} className="p-2 wood-frame text-parchment text-sm font-display hover:brightness-110">Epic Quest</button>
-            </div>
-            <p className="text-xs text-amber-700/80 italic mb-4 text-center">Estimated game length: <span className="font-semibold text-amber-800">{estimatedDuration}</span> per player</p>
-
-            <div className="grid grid-cols-2 gap-4">
-              <GoalSlider
-                label="Wealth Target"
-                value={goals.wealth}
-                onChange={(value) => setGoals({ ...goals, wealth: value })}
-                min={1000}
-                max={20000}
-                step={500}
-                unit="g"
-                description={PLAYER_RULE_TEXT.wealthFormula}
-              />
-              <GoalSlider
-                label="Happiness Target"
-                value={goals.happiness}
-                onChange={(value) => setGoals({ ...goals, happiness: value })}
-                min={25}
-                max={100}
-                step={5}
-                unit="%"
-                description="Current Happiness, with progress measured beyond the starting 50."
-              />
-              <GoalSlider
-                label="Education (Degrees)"
-                value={goals.education}
-                onChange={(value) => setGoals({ ...goals, education: value })}
-                min={9}
-                max={99}
-                step={9}
-                unit=" pts"
-                description={`${Math.floor(goals.education / 9)} degree${Math.floor(goals.education / 9) !== 1 ? 's' : ''} required`}
-              />
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="font-display text-amber-900">Career</span>
-                  <span className="text-amber-700 font-semibold">{goals.career} Dependability</span>
-                </div>
-                <p className="text-xs text-amber-700 mb-2">{PLAYER_RULE_TEXT.career}</p>
-                <input type="range" min={10} max={100} step={5} value={goals.career} onChange={(event) => setGoals({ ...goals, career: Number(event.target.value) })} className="w-full accent-primary" />
+            </section>
+          ) : (
+            <section aria-labelledby="setup-step-heading">
+              <div className="entry-step-header">
+                <h2 id="setup-step-heading" ref={headingRef} tabIndex={-1}>
+                  Victory Goals
+                </h2>
+                <span className="entry-small">{selectedPreset?.name ?? 'Custom'}</span>
               </div>
-            </div>
-
-            <div className="mt-4 pt-4 border-t border-border">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Compass className="w-5 h-5 text-amber-700" />
-                  <span className="font-display text-amber-900">Adventure Goal</span>
-                  <span className="text-xs text-amber-600">(Optional)</span>
-                </div>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <span className="text-xs text-amber-700">{goals.adventure > 0 ? 'Enabled' : 'Disabled'}</span>
-                  <input type="checkbox" checked={goals.adventure > 0} onChange={(event) => setGoals({ ...goals, adventure: event.target.checked ? 10 : 0 })} className="w-4 h-4 accent-primary" />
-                </label>
+              <div className="entry-goal-presets" role="group" aria-label="Victory goal presets">
+                {SETUP_PRESETS.map((preset) => (
+                  <button
+                    type="button"
+                    key={preset.id}
+                    className="entry-button entry-preset"
+                    aria-label={preset.name}
+                    aria-pressed={selectedPreset?.id === preset.id}
+                    onClick={() => setGoals({ ...preset.goals })}
+                  >
+                    <span className="entry-preset-heading">
+                      <strong>{preset.name}</strong>
+                      {selectedPreset?.id === preset.id && <Check aria-hidden="true" />}
+                    </span>
+                    <small>{preset.description}</small>
+                  </button>
+                ))}
               </div>
-              {goals.adventure > 0 && (
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-display text-amber-900">Adventure Target</span>
-                    <span className="text-amber-700 font-semibold">{goals.adventure} pts</span>
+              <div className="entry-goal-summary" aria-live="polite">
+                <h3>Your {selectedPreset?.name ?? 'Custom'} game</h3>
+                <dl className="entry-goal-values">
+                  <div className="entry-goal-value">
+                    <dt>Net wealth</dt>
+                    <dd>{goals.wealth.toLocaleString('en-US')} gold</dd>
                   </div>
-                  <p className="text-xs text-amber-700 mb-2">{PLAYER_RULE_TEXT.adventure}</p>
-                  <input type="range" min={3} max={25} step={1} value={goals.adventure} onChange={(event) => setGoals({ ...goals, adventure: Number(event.target.value) })} className="w-full accent-primary" />
+                  <div className="entry-goal-value">
+                    <dt>Happiness</dt>
+                    <dd>{goals.happiness}%</dd>
+                  </div>
+                  <div className="entry-goal-value">
+                    <dt>Education</dt>
+                    <dd>
+                      {goals.education / 9} degrees · {goals.education} pts
+                    </dd>
+                  </div>
+                  <div className="entry-goal-value">
+                    <dt>Career</dt>
+                    <dd>{goals.career} dependability</dd>
+                  </div>
+                  {goals.adventure > 0 && (
+                    <div className="entry-goal-value">
+                      <dt>Adventure</dt>
+                      <dd>{goals.adventure} pts</dd>
+                    </div>
+                  )}
+                </dl>
+                <p>
+                  First to reach all {goals.adventure > 0 ? 'five' : 'four'} goals wins. Career counts while
+                  employed.
+                </p>
+              </div>
+              <details className="entry-customize">
+                <summary className="entry-button">
+                  Customize targets <ChevronDown aria-hidden="true" />
+                </summary>
+                <div className="entry-custom-grid">
+                  <GoalSlider
+                    id="wealth"
+                    label="Wealth Target"
+                    value={goals.wealth}
+                    onChange={(wealth) => setGoals((current) => ({ ...current, wealth }))}
+                    min={1000}
+                    max={20000}
+                    step={500}
+                    unit="g"
+                    description={PLAYER_RULE_TEXT.wealthFormula}
+                  />
+                  <GoalSlider
+                    id="happiness"
+                    label="Happiness Target"
+                    value={goals.happiness}
+                    onChange={(happiness) => setGoals((current) => ({ ...current, happiness }))}
+                    min={25}
+                    max={100}
+                    step={5}
+                    unit="%"
+                    description="Current Happiness, with progress measured beyond the starting 50."
+                  />
+                  <GoalSlider
+                    id="education"
+                    label="Education"
+                    value={goals.education}
+                    onChange={(education) => setGoals((current) => ({ ...current, education }))}
+                    min={9}
+                    max={99}
+                    step={9}
+                    unit=" pts"
+                    description={`${goals.education / 9} degrees required`}
+                  />
+                  <GoalSlider
+                    id="career"
+                    label="Career"
+                    value={goals.career}
+                    onChange={(career) => setGoals((current) => ({ ...current, career }))}
+                    min={10}
+                    max={100}
+                    step={5}
+                    unit=" dependability"
+                    description={PLAYER_RULE_TEXT.career}
+                  />
                 </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex justify-center gap-4">
-            <button onClick={() => setPhase('title')} className="px-6 py-3 wood-frame text-parchment font-display hover:brightness-110">Back</button>
-            <div className="flex flex-col items-end gap-1">
-              {nameError && <p className="text-red-600 text-sm font-body">{nameError}</p>}
-              <button onClick={handleStart} className="gold-button flex items-center gap-2">
-                <Play className="w-5 h-5" />
+                <label className="entry-adventure-toggle">
+                  <input
+                    type="checkbox"
+                    checked={goals.adventure > 0}
+                    onChange={(event) =>
+                      setGoals((current) => ({ ...current, adventure: event.target.checked ? 10 : 0 }))
+                    }
+                  />
+                  <Compass aria-hidden="true" />
+                  Include Adventure Goal
+                </label>
+                {goals.adventure > 0 && (
+                  <GoalSlider
+                    id="adventure"
+                    label="Adventure Target"
+                    value={goals.adventure}
+                    onChange={(adventure) => setGoals((current) => ({ ...current, adventure }))}
+                    min={3}
+                    max={25}
+                    step={1}
+                    unit=" pts"
+                    description={PLAYER_RULE_TEXT.adventure}
+                  />
+                )}
+              </details>
+            </section>
+          )}
+        </main>
+        <footer className="entry-dock">
+          <p className="entry-dock-summary">
+            {players.length} local player{players.length > 1 ? 's' : ''} · {aiOpponents.length} AI ·{' '}
+            {selectedPreset?.name ?? 'Custom'} · Tutorial {enableTutorial ? 'on' : 'off'}
+          </p>
+          <button
+            type="button"
+            className="entry-button"
+            onClick={() => (step === 'players' ? setPhase('title') : setStep('players'))}
+          >
+            <ArrowLeft aria-hidden="true" />
+            Back
+          </button>
+          <button
+            type="submit"
+            className="entry-button entry-button--gold"
+            aria-label={step === 'players' ? 'Choose Game Goals' : 'Begin Adventure'}
+          >
+            {step === 'players' ? (
+              <>
+                Choose Game Goals
+                <ArrowRight aria-hidden="true" />
+              </>
+            ) : (
+              <>
+                <Play aria-hidden="true" />
                 Begin Adventure
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {portraitPickerIndex !== null && (
+              </>
+            )}
+          </button>
+        </footer>
+      </form>
+      {portraitSelection && portraitOwner && (
         <PortraitPicker
-          selectedPortraitId={portraitPickerType === 'human' ? playerPortraits[portraitPickerIndex] : aiOpponents[portraitPickerIndex]?.portraitId || null}
-          playerColor={portraitPickerType === 'human' ? PLAYER_COLORS[portraitPickerIndex].value : (AI_OPPONENTS[portraitPickerIndex] || AI_OPPONENTS[0]).color}
-          playerName={portraitPickerType === 'human' ? playerNames[portraitPickerIndex] : aiOpponents[portraitPickerIndex]?.name || 'AI'}
-          onSelect={handlePortraitSelect}
-          onClose={() => setPortraitPickerIndex(null)}
+          selectedPortraitId={portraitOwner.portraitId ?? null}
+          playerColor={
+            portraitSelection.type === 'human'
+              ? PLAYER_COLORS[portraitSelection.index].value
+              : AI_OPPONENTS[portraitSelection.index].color
+          }
+          playerName={portraitOwner.name}
+          onSelect={(portraitId) => {
+            if (portraitSelection.type === 'human') updatePlayer(portraitSelection.index, { portraitId });
+            else updateAI(portraitSelection.index, { portraitId: portraitId ?? undefined });
+            setPortraitSelection(null);
+          }}
+          onClose={() => setPortraitSelection(null)}
         />
       )}
     </div>
@@ -415,25 +641,37 @@ export function GameSetup() {
 }
 
 interface GoalSliderProps {
+  id: string;
   label: string;
   value: number;
   onChange: (value: number) => void;
   min: number;
   max: number;
-  step?: number;
+  step: number;
   unit: string;
-  description?: string;
+  description: string;
 }
-
-function GoalSlider({ label, value, onChange, min, max, step = 1, unit, description }: GoalSliderProps) {
+function GoalSlider({ id, label, value, onChange, min, max, step, unit, description }: GoalSliderProps) {
   return (
-    <div>
-      <div className="flex justify-between text-sm mb-1">
-        <span className="font-display text-amber-900">{label}</span>
-        <span className="text-amber-700 font-semibold">{value}{unit}</span>
-      </div>
-      {description && <p className="text-xs text-amber-700 mb-2">{description}</p>}
-      <input type="range" min={min} max={max} step={step} value={value} onChange={(event) => onChange(Number(event.target.value))} className="w-full accent-primary" />
+    <div className="entry-goal-slider">
+      <label htmlFor={`goal-${id}`}>
+        <span>{label}</span>
+        <output htmlFor={`goal-${id}`}>
+          {value}
+          {unit}
+        </output>
+      </label>
+      <p id={`goal-${id}-description`}>{description}</p>
+      <input
+        id={`goal-${id}`}
+        aria-describedby={`goal-${id}-description`}
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+      />
     </div>
   );
 }
