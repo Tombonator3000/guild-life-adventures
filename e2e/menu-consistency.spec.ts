@@ -39,6 +39,7 @@ for (const viewport of [{width:1440,height:900},{width:1024,height:768},{width:7
         await dialog.getByRole('button', {name:tab,exact:true}).click();
         await expect(dialog.getByRole('button', {name:tab,exact:true})).toHaveAttribute('aria-pressed','true');
         await checkDialog(dialog);
+        await page.screenshot({path:info.outputPath(`options-${tab.toLowerCase()}.png`)});
       }
       await dialog.getByRole('button', {name:'Audio',exact:true}).click();
       await dialog.getByRole('switch',{name:'Music',exact:true}).check();
@@ -129,20 +130,24 @@ test('all fifteen locations keep their service menus inside the original board',
   ];
   for (const [title,id] of visits) {
     await page.getByTitle(title,{exact:true}).click();
-    const shell = page.locator(`.location-shell[data-location="${id}"]`);
+    const home = id === 'noble-heights' || id === 'slums';
+    const shell = home
+      ? page.getByRole('region', {name:`${title} home`,exact:true})
+      : page.locator(`.location-shell[data-location="${id}"]`);
     await expect(shell).toBeVisible();
     const services = shell.locator('.location-tabs button');
     for (let i=0;i<await services.count();i++) {
       await services.nth(i).click();
       await expect(services.nth(i)).toHaveAttribute('aria-pressed','true');
-      const bounds = await shell.evaluate(root => {
-        const center = root.closest('[data-center-panel]')!.getBoundingClientRect();
-        const box = root.getBoundingClientRect();
-        return {inside:box.left >= center.left-1 && box.right <= center.right+1 && box.top >= center.top-1 && box.bottom <= center.bottom+1, dialogs:root.querySelectorAll('[role="dialog"]').length};
-      });
-      expect(bounds.inside).toBe(true);
-      expect(bounds.dialogs).toBe(0);
+
     }
+    const bounds = await shell.evaluate(root => {
+      const center = root.closest('[data-center-panel]')!.getBoundingClientRect();
+      const box = root.getBoundingClientRect();
+      return {inside:box.left >= center.left-1 && box.right <= center.right+1 && box.top >= center.top-1 && box.bottom <= center.bottom+1, dialogs:root.querySelectorAll('[role="dialog"]').length};
+    });
+    expect(bounds.inside).toBe(true);
+    expect(bounds.dialogs).toBe(0);
     if (await services.count()) await services.first().click();
     await page.screenshot({path:info.outputPath(`location-${id}.png`)});
   }

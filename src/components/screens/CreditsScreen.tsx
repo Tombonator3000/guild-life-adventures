@@ -6,22 +6,10 @@ import { GuildDialog } from '@/components/ui/GuildDialog';
 import { useAudioSettings } from '@/hooks/useMusic';
 import { useEnvironmentActivity } from '@/hooks/useEnvironmentActivity';
 import { audioManager } from '@/audio/audioManager';
+import { MUSIC_TRACKS } from '@/audio/musicConfig';
 
-// All music tracks available in the game
-const MUSIC_FILES = [
-  'music/01MainTheme.mp3',
-  'music/02OnTheStreet.mp3',
-  'music/03guildhall.mp3',
-  'music/06Bank.mp3',
-  'music/09TheSlums.mp3',
-  'music/10Noble-Heights.mp3',
-  'music/11EnchantersWorkshop.mp3',
-  'music/13rustytankard.mp3',
-  'music/18OhWhatAWeekend.mp3',
-  'music/19Winner.mp3',
-  'music/20Cave.mp3',
-  'music/Dragons_Lair.mp3',
-];
+// Use the same gain-controlled music path as the rest of the game.
+const CREDIT_TRACKS = Object.keys(MUSIC_TRACKS);
 
 const CREDITS_TEXT = [
   { type: 'title', text: 'GUILD LIFE ADVENTURES' },
@@ -151,34 +139,24 @@ interface CreditsScreenProps {
 
 export function CreditsScreen({ onClose }: CreditsScreenProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [creditsTrack] = useState(() => CREDIT_TRACKS[Math.floor(Math.random() * CREDIT_TRACKS.length)]);
   const [scrollComplete, setScrollComplete] = useState(false);
   const [autoScroll, setAutoScroll] = useState(false);
-  const { musicMuted, musicVolume } = useAudioSettings();
+  const { musicMuted } = useAudioSettings();
   const { reducedMotion, visible } = useEnvironmentActivity();
 
   useEffect(() => {
-    audioManager.stop();
-    const randomTrack = MUSIC_FILES[Math.floor(Math.random() * MUSIC_FILES.length)];
-    const audio = new Audio(import.meta.env.BASE_URL + randomTrack);
-    audio.loop = true;
-    audioRef.current = audio;
+    const previousTrack = audioManager.getCurrentTrack();
     return () => {
-      audio.pause();
-      audio.src = '';
-      audioRef.current = null;
-      audioManager.play('main-theme');
+      if (previousTrack) audioManager.play(previousTrack);
+      else audioManager.stop();
     };
   }, []);
 
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.volume = musicVolume;
-    audio.muted = musicMuted;
-    if (musicMuted || !visible) audio.pause();
-    else audio.play().catch(() => {});
-  }, [musicMuted, musicVolume, visible]);
+    if (musicMuted || !visible) audioManager.stop();
+    else audioManager.play(creditsTrack);
+  }, [creditsTrack, musicMuted, visible]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -199,7 +177,7 @@ export function CreditsScreen({ onClose }: CreditsScreenProps) {
     return () => cancelAnimationFrame(animId);
   }, [autoScroll, reducedMotion, visible]);
 
-  const handleClose = () => { audioRef.current?.pause(); onClose(); };
+  const handleClose = onClose;
 
   return (
     <GuildDialog title="About Guild Life" onClose={handleClose} closeLabel="Close credits" icon={<BookOpen />}

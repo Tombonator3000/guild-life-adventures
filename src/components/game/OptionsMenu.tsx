@@ -65,34 +65,32 @@ export function OptionsMenu({ onClose }: OptionsMenuProps) {
           {tab.icon}<span>{tab.label}</span>
         </button>)}
       </nav>}
-      footer={<>
-        <div className="guild-dialog-footer-row">
+      footer={<div className="guild-dialog-footer-row">
           <button onClick={() => setShowManual(true)} className="guild-button"><BookOpen />{t('optionsMenu.adventurersManual')}</button>
           <button onClick={onClose} className="guild-button guild-button--gold">{t('common.done')}</button>
-        </div>
-        <details className="guild-options-maintenance">
-          <summary>Updates &amp; reset</summary>
-          <div>
-            <span>{t('optionsMenu.build')}: {getBuildVersion()}</span>
-            {needRefresh ? <button onClick={updateApp} className="guild-button guild-button--gold"><RotateCcw />{t('optionsMenu.updateAvailable')}</button>
-              : <button className="guild-button" onClick={() => { setCheckingUpdate(true); checkForUpdates(); setTimeout(() => setCheckingUpdate(false), 3000); }}>
-                <RotateCcw className={checkingUpdate ? 'animate-spin' : ''} />{checkingUpdate ? t('optionsMenu.checking') : t('optionsMenu.checkForUpdates')}
-              </button>}
-            <button onClick={hardRefresh} className="guild-button" title="Clear caches and reload from server">{t('optionsMenu.forceRefresh')}</button>
-            {showResetConfirm ? <>
-              <span>{t('optionsMenu.resetAllOptions')}</span>
-              <button onClick={() => { resetOptions(); setShowResetConfirm(false); }} className="guild-button guild-button--danger">{t('optionsMenu.yesReset')}</button>
-              <button onClick={() => setShowResetConfirm(false)} className="guild-button">{t('common.cancel')}</button>
-            </> : <button onClick={() => setShowResetConfirm(true)} className="guild-button guild-button--quiet">{t('optionsMenu.resetDefaults')}</button>}
-          </div>
-        </details>
-      </>}>
+      </div>}>
       <div id="guild-options-content" key={activeTab}>
         {activeTab === 'gameplay' && <GameplayTab options={options} setOption={setOption} language={language} setLanguage={setLanguage} t={t} />}
         {activeTab === 'audio' && <AudioTab audio={audio} sfx={sfx} ambient={ambient} narration={narration} t={t} />}
         {activeTab === 'display' && <DisplayTab options={options} setOption={setOption} t={t} />}
         {activeTab === 'speed' && <SpeedTab options={options} setOption={setOption} t={t} />}
       </div>
+      <details className="guild-options-maintenance">
+        <summary>Updates &amp; reset</summary>
+        <div>
+          <span>{t('optionsMenu.build')}: {getBuildVersion()}</span>
+          {needRefresh ? <button onClick={updateApp} className="guild-button guild-button--gold"><RotateCcw />{t('optionsMenu.updateAvailable')}</button>
+            : <button className="guild-button" onClick={() => { setCheckingUpdate(true); checkForUpdates(); setTimeout(() => setCheckingUpdate(false), 3000); }}>
+              <RotateCcw className={checkingUpdate ? 'animate-spin' : ''} />{checkingUpdate ? t('optionsMenu.checking') : t('optionsMenu.checkForUpdates')}
+            </button>}
+          <button onClick={hardRefresh} className="guild-button" title="Clear caches and reload from server">{t('optionsMenu.forceRefresh')}</button>
+          {showResetConfirm ? <>
+            <span>{t('optionsMenu.resetAllOptions')}</span>
+            <button onClick={() => { resetOptions(); setShowResetConfirm(false); }} className="guild-button guild-button--danger">{t('optionsMenu.yesReset')}</button>
+            <button onClick={() => setShowResetConfirm(false)} className="guild-button">{t('common.cancel')}</button>
+          </> : <button onClick={() => setShowResetConfirm(true)} className="guild-button guild-button--quiet">{t('optionsMenu.resetDefaults')}</button>}
+        </div>
+      </details>
     </GuildDialog>
     {showManual && <UserManual onClose={() => setShowManual(false)} />}
   </>;

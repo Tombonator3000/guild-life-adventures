@@ -124,7 +124,7 @@ button.gold-button:active:not(:disabled), .guild-button:active:not(:disabled) { 
 .guild-option-row p { line-height: 1.5; margin-top: 4px; }
 .guild-option-row > :first-child { margin-top: 3px; color: var(--guild-brass); }
 .guild-option-row > :first-child svg { color: currentColor; }
-.guild-options-maintenance { margin-top: 10px; font-size: .8em; }
+.guild-options-maintenance { margin-top: 24px; padding-top: 10px; border-top: 1px solid #b69865; font-size: .8em; }
 .guild-options-maintenance summary { padding: 10px 0; cursor: pointer; color: #6a5237; }
 .guild-options-maintenance > div { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding-top: 8px; }
 
