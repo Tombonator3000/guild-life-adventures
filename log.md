@@ -14406,3 +14406,24 @@ two new focused regressions pass. ESLint reports zero errors and the same 18
 existing warnings. Full CI and viewport screenshot review are pending. A managed
 browser policy blocks localhost previews, so repository CI supplies browser
 evidence. Physical iPad Safari performance remains unverified.
+
+
+### Verified cohesive UI delivery - 2026-09-13
+
+PR #421: https://github.com/Tombonator3000/guild-life-adventures/pull/421
+Verified runtime 29f07ff312c6f69d2bbe1cda4a0b37db3328a017, tree
+7b0d23a0368bfe0215386ce798d6aee33dc33179. CI 34788453371 / job 103808139495
+passed 781 unit tests in 107 files and 54 browser journeys, app/build TypeScript,
+production build, lint (0 errors, 18 inherited warnings), seeded balance and audio
+audit. No browser failures or flaky cases reported.
+
+Reviewed actual support-menu captures at desktop, tablet landscape/portrait and
+phone sizes, all 15 locations, the in-game save menu, Cave and furnished homes.
+The first review corrected faint Off switches and unrelated home-button styles.
+The new layout check initially measured Close during its opening animation; it
+now measures settled geometry and preserves later capture evidence on failure.
+Keyboard focus, Escape, nested menus, save/load and online regressions pass.
+Original board, NPCs, game rules and saves are preserved. Physical iPad Safari
+performance remains unverified. Detailed findings and artifact links are in
+docs/qa/cohesive-ui/README.md. This checkpoint is documentation only; release
+verification is recorded on PR #421.
