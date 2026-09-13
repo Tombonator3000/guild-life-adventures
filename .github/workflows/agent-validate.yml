@@ -23,7 +23,7 @@ jobs:
     timeout-minutes: 35
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -55,7 +55,7 @@ jobs:
 
       - name: Upload unit test output
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vitest-output
           path: vitest-output.txt
@@ -66,7 +66,7 @@ jobs:
 
       - name: Upload balance smoke
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: balance-smoke
           path: balance-ci
@@ -87,7 +87,7 @@ jobs:
 
       - name: Upload lint output
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lint-output
           path: lint-output.txt
@@ -103,7 +103,7 @@ jobs:
 
       - name: Upload audio audit
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: audio-audit
           path: audio-audit
@@ -117,7 +117,7 @@ jobs:
 
       - name: Upload runtime screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: runtime-screenshots
           path: |
@@ -127,7 +127,7 @@ jobs:
 
       - name: Upload browser test artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-test-results
           path: test-results
