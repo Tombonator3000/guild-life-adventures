@@ -152,7 +152,9 @@ button.gold-button:active:not(:disabled), .guild-button:active:not(:disabled) { 
 .guild-quest-choice { margin-bottom: 12px; }
 
 /* Existing in-board controls use the same materials without changing the board. */
-.location-shell .location-tabs button, .guild-sidebar .sidebar-tab { min-height: 44px; border-radius: 4px; border: 1px solid #b99a5e; }
+.location-shell .location-tabs button, .guild-sidebar .sidebar-tab { border-radius: 4px; border: 1px solid #b99a5e; }
+.guild-sidebar .sidebar-tab { min-height: 44px; }
+@container (min-height: 321px) { .location-shell .location-tabs button { min-height: 44px; } }
 .location-shell .location-tabs button[aria-pressed='true'], .guild-sidebar .sidebar-tab[aria-pressed='true'] { background: var(--guild-gold-fill); color: #30200f; box-shadow: var(--guild-control-shadow); }
 .guild-sidebar .sidebar-tab[aria-pressed='true'] :is(span, div) { color: #30200f; }
 .location-shell .location-heading { border-bottom: 3px double #c5a363; }

@@ -148,7 +148,12 @@ test('all fifteen locations keep their service menus inside the original board',
       : page.locator(`.location-shell[data-location="${id}"]`);
     await expect(shell).toBeVisible();
     const services = shell.locator('.location-tabs button');
+    const picker = shell.locator('.location-service-picker');
+    const openServices = async () => {
+      if (await picker.isVisible() && await picker.getAttribute('aria-expanded') === 'false') await picker.click();
+    };
     for (let i=0;i<await services.count();i++) {
+      await openServices();
       await services.nth(i).click();
       await expect(services.nth(i)).toHaveAttribute('aria-pressed','true');
     }
@@ -159,7 +164,10 @@ test('all fifteen locations keep their service menus inside the original board',
     });
     expect(bounds.inside).toBe(true);
     expect(bounds.dialogs).toBe(0);
-    if (await services.count()) await services.first().click();
+    if (await services.count()) {
+      await openServices();
+      await services.first().click();
+    }
     await page.screenshot({path:info.outputPath(`location-${id}.png`)});
   }
   await page.keyboard.press('Escape');
