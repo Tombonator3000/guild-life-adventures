@@ -1,5 +1,5 @@
 import { useShallow } from 'zustand/react/shallow';
-import * as Dialog from '@radix-ui/react-dialog';
+import { GuildDialog } from '@/components/ui/GuildDialog';
 import { lazy, Suspense, useRef, useState, useMemo } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import {
@@ -12,7 +12,6 @@ import {
   Info,
   Share,
   Plus,
-  X,
   BookOpen,
   ScrollText,
   Compass,
@@ -360,43 +359,28 @@ export function TitleScreen() {
       </main>
 
       {/* Load Game Modal */}
-      <Dialog.Root open={showLoadMenu} onOpenChange={setShowLoadMenu}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60" />
-          <Dialog.Content
-            className="entry-load-dialog parchment-panel p-6"
-            aria-describedby={undefined}
-            onCloseAutoFocus={(event) => {
-              event.preventDefault();
-              loadButtonRef.current?.focus();
-            }}
-          >
-            <Dialog.Title className="font-display text-2xl text-card-foreground mb-4 text-center">
-              {t('title.loadGame')}
-            </Dialog.Title>
-            <div className="space-y-3">
+      {showLoadMenu && <GuildDialog title={t('title.loadGame')} onClose={() => setShowLoadMenu(false)} icon={<Save />}
+        className="guild-dialog--compact" description="Choose a saved adventure to pick up where you left off."
+        footer={<div className="guild-dialog-footer-row"><span className="text-sm text-muted-foreground">Saves are stored on this device.</span><button onClick={() => setShowLoadMenu(false)} className="guild-button">{t('common.cancel')}</button></div>}>
+            <div className="guild-save-slots">
               {slots.map((s) => (
                 <div
                   key={s.slot}
-                  className={`entry-save-row flex items-center gap-3 p-3 rounded border ${
-                    s.exists
-                      ? 'border-border bg-background/50 hover:border-primary cursor-pointer'
-                      : 'border-border/30 bg-background/20 opacity-50'
-                  }`}
+                  className="guild-save-slot"
                 >
                   <button
-                    className="flex-1 text-left"
+                    className="guild-button guild-load-slot flex-1 text-left"
                     disabled={!s.exists}
                     onClick={() => s.exists && handleLoadSlot(s.slot)}
                   >
                     <div className="font-display text-sm text-card-foreground">{s.slotName}</div>
                     {s.exists && (
-                      <div className="entry-save-detail">
+                      <div className="text-sm text-muted-foreground">
                         {t('board.week')} {s.week} &middot; {s.playerNames.join(', ')} &middot;{' '}
                         {formatSaveDate(s.timestamp)}
                       </div>
                     )}
-                    {!s.exists && <div className="entry-save-detail">{t('common.empty')}</div>}
+                    {!s.exists && <div className="text-sm text-muted-foreground">{t('common.empty')}</div>}
                   </button>
                   {s.exists && (
                     <button
@@ -404,7 +388,7 @@ export function TitleScreen() {
                         e.stopPropagation();
                         handleDeleteSlot(s.slot);
                       }}
-                      className="entry-button entry-button--danger entry-button--icon"
+                      className="guild-button guild-button--danger guild-button--icon"
                       title={t('saveLoad.deleteSave')}
                       aria-label={`Delete ${s.slotName}`}
                     >
@@ -414,14 +398,7 @@ export function TitleScreen() {
                 </div>
               ))}
             </div>
-            <div className="mt-4 flex justify-center">
-              <button onClick={() => setShowLoadMenu(false)} className="entry-button entry-button--gold">
-                {t('common.cancel')}
-              </button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+      </GuildDialog>}
 
       {/* Options Modal (lazy-loaded to avoid eagerly importing audio singletons) */}
       {showOptions && (
@@ -456,18 +433,9 @@ export function TitleScreen() {
 
       {/* iOS PWA Install Guide */}
       {showIOSGuide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60" onClick={dismissIOSGuide} />
-          <div className="relative parchment-panel p-6 w-full max-w-sm mx-4">
-            <button
-              onClick={dismissIOSGuide}
-              className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-card-foreground"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <h2 className="font-display text-xl text-card-foreground mb-4 text-center">
-              {t('title.installTitle')}
-            </h2>
+        <GuildDialog title={t('title.installTitle')} onClose={dismissIOSGuide} icon={<Download />}
+          className="guild-dialog--compact"
+          footer={<div className="guild-dialog-footer-row"><button onClick={dismissIOSGuide} className="guild-button guild-button--gold">{t('title.gotIt')}</button></div>}>
             <div className="space-y-4 text-sm text-card-foreground">
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center font-display font-bold text-primary">
@@ -499,13 +467,7 @@ export function TitleScreen() {
             <p className="text-xs text-muted-foreground mt-4 text-center">
               The app will run fullscreen with offline support.
             </p>
-            <div className="mt-4 flex justify-center">
-              <button onClick={dismissIOSGuide} className="entry-button entry-button--gold">
-                {t('title.gotIt')}
-              </button>
-            </div>
-          </div>
-        </div>
+        </GuildDialog>
       )}
     </div>
   );

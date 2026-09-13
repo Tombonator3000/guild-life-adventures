@@ -93,6 +93,7 @@ export function ChatPanel({ messages, onSend, playerName, playerColor }: ChatPan
               Guild Chat
             </span>
             <button
+              aria-label="Close chat"
               onClick={() => setIsOpen(false)}
               className="text-amber-600 hover:text-amber-300 transition-colors"
             >
@@ -146,11 +147,13 @@ export function ChatPanel({ messages, onSend, playerName, playerColor }: ChatPan
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
+              aria-label="Chat message"
               placeholder="Type a message..."
               maxLength={200}
               className="flex-1 bg-transparent text-amber-100 placeholder:text-amber-700 text-xs outline-none font-body"
             />
             <button
+              aria-label="Send message"
               onClick={handleSend}
               disabled={!input.trim()}
               className="p-1.5 rounded text-amber-500 hover:text-amber-300 disabled:opacity-30 transition-colors"
@@ -175,6 +178,7 @@ export function ChatPanel({ messages, onSend, playerName, playerColor }: ChatPan
         onClick={() => setIsOpen(o => !o)}
         className="relative w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105 active:scale-95"
         style={{ background: 'rgba(30, 18, 8, 0.85)', border: '2px solid rgba(180, 120, 30, 0.6)' }}
+        aria-expanded={isOpen}
         title={isOpen ? 'Close chat' : 'Open chat'}
       >
         <MessageCircle className="w-5 h-5 text-amber-400" />

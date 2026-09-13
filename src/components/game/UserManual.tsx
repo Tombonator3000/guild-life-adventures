@@ -3,9 +3,10 @@
  * Numerical rule claims are derived from executable game data where possible.
  */
 
+import { GuildDialog } from '@/components/ui/GuildDialog';
 import { useEffect, useRef, useState } from 'react';
 import {
-  X, BookOpen, Map, Clock, Briefcase, GraduationCap, Home,
+  BookOpen, Map, Clock, Briefcase, GraduationCap, Home,
   ShoppingBag, Heart, Sword, Coins, Skull, Calendar, Trophy,
   Lightbulb, ChevronLeft, ChevronRight, ScrollText, Sparkles,
 } from 'lucide-react';
@@ -67,70 +68,36 @@ export function UserManual({ onClose }: UserManualProps) {
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    contentRef.current?.scrollTo({ top: 0, behavior: 'instant' });
   }, [activeChapter]);
 
   const currentIndex = CHAPTERS.findIndex(chapter => chapter.id === activeChapter);
   const previous = currentIndex > 0 ? CHAPTERS[currentIndex - 1] : null;
   const next = currentIndex < CHAPTERS.length - 1 ? CHAPTERS[currentIndex + 1] : null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative parchment-panel p-0 w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-primary" />
-            <h2 className="font-display text-2xl text-card-foreground">Adventurer's Manual</h2>
-          </div>
-          <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground" aria-label="Close manual">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="flex-shrink-0 overflow-x-auto border-b border-border bg-background/30">
-          <div className="flex gap-0.5 px-4 py-2 min-w-max">
-            {CHAPTERS.map(chapter => (
-              <button
-                key={chapter.id}
-                onClick={() => setActiveChapter(chapter.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-display text-xs whitespace-nowrap transition-colors ${
-                  activeChapter === chapter.id
-                    ? 'bg-primary/20 text-primary border border-primary'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-background/50 border border-transparent'
-                }`}
-              >
-                {chapter.icon}
-                {chapter.title}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div ref={contentRef} className="flex-1 overflow-y-auto px-6 py-5">
-          <ChapterContent chapter={activeChapter} />
-        </div>
-
-        <div className="flex items-center justify-between px-6 py-3 border-t border-border flex-shrink-0">
-          {previous ? (
-            <button onClick={() => setActiveChapter(previous.id)} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground font-display">
-              <ChevronLeft className="w-4 h-4" />
-              {previous.title}
-            </button>
-          ) : <div />}
-          <span className="text-[10px] text-muted-foreground font-display">{currentIndex + 1} / {CHAPTERS.length}</span>
-          {next ? (
-            <button onClick={() => setActiveChapter(next.id)} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground font-display">
-              {next.title}
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          ) : (
-            <button onClick={onClose} className="px-4 py-1.5 wood-frame text-parchment font-display text-xs hover:brightness-110">Done</button>
-          )}
-        </div>
-      </div>
+  return <GuildDialog title="Adventurer's Manual" icon={<BookOpen />} onClose={onClose} closeLabel="Close manual"
+    description="Your guide to life, work and questionable decisions in Guildholm."
+    className="guild-manual" bodyRef={contentRef}
+    footer={<div className="guild-manual-footer">
+      <button disabled={!previous} onClick={() => previous && setActiveChapter(previous.id)} className="guild-button"><ChevronLeft />{previous?.title ?? 'Previous'}</button>
+      <span aria-live="polite">{currentIndex + 1} / {CHAPTERS.length}</span>
+      {next ? <button onClick={() => setActiveChapter(next.id)} className="guild-button">{next.title}<ChevronRight /></button>
+        : <button onClick={onClose} className="guild-button guild-button--gold">Done</button>}
+    </div>}>
+    <label className="guild-manual-select guild-form-label">Chapter
+      <select value={activeChapter} onChange={event => setActiveChapter(event.target.value as ChapterId)}>
+        {CHAPTERS.map((chapter, index) => <option key={chapter.id} value={chapter.id}>{index + 1}. {chapter.title}</option>)}
+      </select>
+    </label>
+    <div className="guild-manual-layout">
+      <nav className="guild-manual-chapters" aria-label="Manual chapters">
+        {CHAPTERS.map(chapter => <button key={chapter.id} className="guild-button"
+          aria-current={activeChapter === chapter.id ? 'page' : undefined}
+          onClick={() => setActiveChapter(chapter.id)}>{chapter.icon}<span>{chapter.title}</span></button>)}
+      </nav>
+      <article className="guild-manual-article"><ChapterContent chapter={activeChapter} /></article>
     </div>
-  );
+  </GuildDialog>;
 }
 
 function ChapterContent({ chapter }: { chapter: ChapterId }) {

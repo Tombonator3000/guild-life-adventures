@@ -211,6 +211,15 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
     return map;
   }, [quests]);
 
+  // A required branch choice owns the existing quest page until it is made.
+  // Keep it in the board and never display a Close button that does nothing.
+  if (player.pendingNLChainChoice) {
+    const { chainId, stepIndex } = player.pendingNLChainChoice;
+    const step = getCurrentNonLinearStep(chainId, stepIndex);
+    if (step?.choices) return <ChainChoiceModal stepName={step.name} choices={step.choices}
+      step={step} onChoice={onMakeNLChainChoice} />;
+  }
+
   // Bounties are handled by BountyBoardPanel — skip active bounty display here
   if (activeQuestData && activeQuestData.type !== 'bounty') {
     const rankInfo = QUEST_RANK_INFO[activeQuestData.rank as keyof typeof QUEST_RANK_INFO] || { name: activeQuestData.rank, color: 'text-muted-foreground' };
@@ -289,21 +298,6 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
           </div>
         </div>
 
-        {/* Pending NL Chain Choice Modal */}
-        {player.pendingNLChainChoice && (() => {
-          const { chainId, stepIndex } = player.pendingNLChainChoice;
-          const step = getCurrentNonLinearStep(chainId, stepIndex);
-          if (!step || !step.choices) return null;
-          return (
-            <ChainChoiceModal
-              stepName={step.name}
-              choices={step.choices}
-              step={step}
-              onChoice={(choiceId) => onMakeNLChainChoice(choiceId)}
-              onCancel={() => {}} // Can't cancel — must choose
-            />
-          );
-        })()}
       </div>
     );
   }
@@ -454,22 +448,6 @@ export function QuestPanel({ quests, player, week, onTakeQuest, onCompleteQuest,
           );
         })}
       </div>
-
-      {/* Pending NL Chain Choice Modal (when not on active quest) */}
-      {player.pendingNLChainChoice && (() => {
-        const { chainId, stepIndex } = player.pendingNLChainChoice;
-        const step = getCurrentNonLinearStep(chainId, stepIndex);
-        if (!step || !step.choices) return null;
-        return (
-          <ChainChoiceModal
-            stepName={step.name}
-            choices={step.choices}
-            step={step}
-            onChoice={(choiceId) => onMakeNLChainChoice(choiceId)}
-            onCancel={() => {}}
-          />
-        );
-      })()}
 
       {/* Regular Quests */}
       <JonesSectionHeader title="AVAILABLE QUESTS" />

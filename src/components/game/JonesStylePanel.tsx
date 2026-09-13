@@ -82,7 +82,7 @@ export function JonesMenuItem({
       <button
         onClick={onClick}
         disabled={disabled}
-        className={`w-full text-left py-1 px-2 ${hoverBg} transition-all duration-200 rounded`}
+        className={`guild-menu-row w-full text-left py-1 px-2 ${hoverBg} transition-all duration-200 rounded`}
         {...hoverHandlers}
       >
         {content}
@@ -139,7 +139,7 @@ export function JonesListItem({
       <button
         onClick={onClick}
         disabled={disabled}
-        className={`w-full text-left py-1 px-2 ${hoverBg} transition-all duration-200 rounded`}
+        className={`guild-menu-row w-full text-left py-1 px-2 ${hoverBg} transition-all duration-200 rounded`}
       >
         {content}
       </button>
@@ -310,10 +310,8 @@ export function JonesButton({
   variant = 'primary',
   className = '',
 }: JonesButtonProps) {
-  const baseClasses = 'font-mono text-sm py-1.5 px-4 rounded transition-all duration-200 hover:scale-[1.02] hover:-translate-y-px active:scale-[0.97] active:translate-y-0 disabled:hover:scale-100 disabled:hover:translate-y-0';
-  const variantClasses = variant === 'primary'
-    ? 'bg-[#c9a227] text-[#2d1f0f] hover:bg-[#d4b33c] hover:shadow-[0_0_12px_hsl(45_85%_55%/0.4)] font-bold'
-    : 'bg-[#5c4a32] text-[#e0d4b8] hover:bg-[#6d5a42] hover:shadow-md';
+  const baseClasses = 'guild-button guild-board-button';
+  const variantClasses = variant === 'primary' ? 'guild-button--gold' : '';
 
   return (
     <button

@@ -150,13 +150,13 @@ export function LocationPanel({ locationId }: LocationPanelProps) {
   const isHomeLocation = locationId === 'noble-heights' || locationId === 'slums';
   if (isHomeLocation && isHere) {
     return (
-      <div className="h-full">
+      <section className="h-full" aria-label={`${location.name} home`}>
         <HomePanel
           player={player}
           locationId={locationId}
           onDone={() => store.selectLocation(null)}
         />
-      </div>
+      </section>
     );
   }
 

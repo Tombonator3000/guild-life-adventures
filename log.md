@@ -14384,3 +14384,46 @@ Local validation: TypeScript, nine focused setup/lifecycle tests, production bui
 and ESLint (0 errors, 18 existing warnings). CI coverage now includes desktop,
 iPad portrait/landscape, phone regression sizes and unavailable WebGL2. Runtime
 capture review is pending CI; see docs/qa/guildhall-entry/README.md.
+
+
+## 2026-09-13 - Cohesive menus, UI and player flow (Gauntlet + brainstorming)
+
+Extended the approved gold/parchment entry design through Options, save/load, the
+manual, news, scores, credits, online entry, results and shared location controls.
+Support menus use one accessible frame, predictable Escape/focus return, readable
+text sizes and larger controls. The manual exposes all chapters on desktop and a
+labelled chapter picker on narrower layouts. Saves confirm destructive manual-slot
+changes. Required quest choices now occupy the center page without a dead Close
+button. Credits appear immediately and respect music and motion preferences.
+
+The original board, location scenes, portraits, game rules and save format remain.
+No dependencies or generated assets added. Design comparison and full surface
+inventory: docs/design/COHESIVE_UI.md. Sequential review and evidence:
+docs/qa/cohesive-ui/README.md.
+
+Local checks: production build, app/build TypeScript, 779 existing unit tests and
+two new focused regressions pass. ESLint reports zero errors and the same 18
+existing warnings. Full CI and viewport screenshot review are pending. A managed
+browser policy blocks localhost previews, so repository CI supplies browser
+evidence. Physical iPad Safari performance remains unverified.
+
+
+### Verified cohesive UI delivery - 2026-09-13
+
+PR #421: https://github.com/Tombonator3000/guild-life-adventures/pull/421
+Verified runtime 29f07ff312c6f69d2bbe1cda4a0b37db3328a017, tree
+7b0d23a0368bfe0215386ce798d6aee33dc33179. CI 34788453371 / job 103808139495
+passed 781 unit tests in 107 files and 54 browser journeys, app/build TypeScript,
+production build, lint (0 errors, 18 inherited warnings), seeded balance and audio
+audit. No browser failures or flaky cases reported.
+
+Reviewed actual support-menu captures at desktop, tablet landscape/portrait and
+phone sizes, all 15 locations, the in-game save menu, Cave and furnished homes.
+The first review corrected faint Off switches and unrelated home-button styles.
+The new layout check initially measured Close during its opening animation; it
+now measures settled geometry and preserves later capture evidence on failure.
+Keyboard focus, Escape, nested menus, save/load and online regressions pass.
+Original board, NPCs, game rules and saves are preserved. Physical iPad Safari
+performance remains unverified. Detailed findings and artifact links are in
+docs/qa/cohesive-ui/README.md. This checkpoint is documentation only; release
+verification is recorded on PR #421.

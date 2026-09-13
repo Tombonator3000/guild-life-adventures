@@ -1,7 +1,8 @@
+import { GuildDialog } from '@/components/ui/GuildDialog';
 import { useShallow } from 'zustand/react/shallow';
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { Save, FolderOpen, Trash2, X, Home, Settings, BookOpen } from 'lucide-react';
+import { Save, FolderOpen, Trash2, Home, Settings, BookOpen } from 'lucide-react';
 import { getSaveSlots, formatSaveDate, deleteSave } from '@/data/saveLoad';
 import type { SaveSlotInfo } from '@/data/saveLoad';
 import { toast } from 'sonner';
@@ -26,6 +27,8 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
   const [showOptions, setShowOptions] = useState(false);
   const [showManual, setShowManual] = useState(false);
   const [slots, setSlots] = useState<SaveSlotInfo[]>(() => getSaveSlots());
+
+  const [pending, setPending] = useState<{ slot: number; action: 'save' | 'delete' } | null>(null);
 
   const refreshSlots = () => setSlots(getSaveSlots());
 
@@ -74,134 +77,46 @@ export function SaveLoadMenu({ onClose }: SaveLoadMenuProps) {
       ? 'Leave Online Game'
       : t('saveLoad.saveReturn');
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative parchment-panel guild-support-menu p-6 w-full max-w-md">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-2xl text-card-foreground">{t('saveLoad.gameMenu')}</h2>
-          <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground">
-            <X className="w-5 h-5" />
-          </button>
+  return <>
+    <GuildDialog title={t('saveLoad.gameMenu')} onClose={onClose} icon={<Save />} className="guild-dialog--compact"
+      description="Keep your progress safe, or return to an earlier chapter."
+      navigation={<nav className="guild-tabs" aria-label="Save and load">
+        <button aria-pressed={mode === 'save'} onClick={() => { setMode('save'); setPending(null); }}><Save />{t('saveLoad.saveGame')}</button>
+        <button aria-pressed={mode === 'load'} onClick={() => { setMode('load'); setPending(null); refreshSlots(); }}><FolderOpen />{t('saveLoad.loadGame')}</button>
+      </nav>}
+      footer={<div className="guild-save-footer">
+        <button className="guild-button guild-button--gold" onClick={onClose}>Resume Adventure</button>
+        <div>
+          <button onClick={() => setShowOptions(true)} className="guild-button"><Settings />{t('common.options')}</button>
+          <button onClick={() => setShowManual(true)} className="guild-button"><BookOpen />{t('common.manual')}</button>
         </div>
-
-        {/* Mode tabs */}
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={() => setMode('save')}
-            className={`flex-1 p-2.5 rounded font-display text-sm font-semibold flex items-center justify-center gap-2 ${
-              mode === 'save'
-                ? 'bg-primary/20 text-primary border border-primary'
-                : 'bg-background/50 text-wood border border-border hover:border-primary/50 hover:text-wood-dark'
-            }`}
-          >
-            <Save className="w-4 h-4" /> {t('saveLoad.saveGame')}
-          </button>
-          <button
-            onClick={() => { setMode('load'); refreshSlots(); }}
-            className={`flex-1 p-2.5 rounded font-display text-sm font-semibold flex items-center justify-center gap-2 ${
-              mode === 'load'
-                ? 'bg-primary/20 text-primary border border-primary'
-                : 'bg-background/50 text-wood border border-border hover:border-primary/50 hover:text-wood-dark'
-            }`}
-          >
-            <FolderOpen className="w-4 h-4" /> {t('saveLoad.loadGame')}
-          </button>
-        </div>
-
-        {/* Slots */}
-        <div className="space-y-2">
-          {slots.map((s) => {
-            const isAutoSave = s.slot === 0;
-            return (
-              <div
-                key={s.slot}
-                className={`flex items-center gap-3 p-3 rounded border ${
-                  s.exists
-                    ? 'border-border bg-background/50'
-                    : 'border-border/30 bg-background/20'
-                } ${isAutoSave && mode === 'save' ? 'opacity-50' : ''}`}
-              >
-                <div className="flex-1">
-                  <div className="font-display text-base font-semibold text-wood-dark">
-                    {s.slotName}
-                    {isAutoSave && <span className="text-xs font-normal text-wood-light ml-2">{t('setup.automatic')}</span>}
-                  </div>
-                  {s.exists ? (
-                    <div className="text-sm text-wood">
-                      {t('board.week')} {s.week} &middot; {s.playerNames.join(', ')} &middot; {formatSaveDate(s.timestamp)}
-                    </div>
-                  ) : (
-                    <div className="text-sm text-wood-light">{t('common.empty')}</div>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-1">
-                  {mode === 'save' && !isAutoSave && (
-                    <button
-                      onClick={() => handleSave(s.slot)}
-                      className="px-3 py-1.5 text-sm font-display font-semibold bg-primary/20 text-primary rounded hover:bg-primary/30"
-                    >
-                      {t('common.save')}
-                    </button>
-                  )}
-                  {mode === 'load' && s.exists && (
-                    <button
-                      onClick={() => handleLoad(s.slot)}
-                      className="px-3 py-1.5 text-sm font-display font-semibold bg-primary/20 text-primary rounded hover:bg-primary/30"
-                    >
-                      {t('common.load')}
-                    </button>
-                  )}
-                  {s.exists && !isAutoSave && (
-                    <button
-                      onClick={() => handleDelete(s.slot)}
-                      className="p-1 text-destructive/60 hover:text-destructive"
-                      title={t('saveLoad.deleteSave')}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Options + Manual + Quit */}
-        <div className="mt-4 pt-4 border-t border-border space-y-2">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowOptions(true)}
-              className="flex-1 p-2.5 rounded border border-border bg-background/50 text-wood hover:text-wood-dark hover:border-foreground/30 font-display text-sm font-semibold flex items-center justify-center gap-2"
-            >
-              <Settings className="w-4 h-4" /> {t('common.options')}
-            </button>
-            <button
-              onClick={() => setShowManual(true)}
-              className="flex-1 p-2.5 rounded border border-border bg-background/50 text-wood hover:text-wood-dark hover:border-foreground/30 font-display text-sm font-semibold flex items-center justify-center gap-2"
-            >
-              <BookOpen className="w-4 h-4" /> {t('common.manual')}
-            </button>
+        <button onClick={handleQuitToTitle} className="guild-button guild-button--quiet"><Home />{quitLabel}</button>
+      </div>}>
+      <div className="guild-save-slots">
+        {slots.map(s => <div key={s.slot} className="guild-save-slot">
+          <div>
+            <div className="font-display font-semibold">{s.slotName}</div>
+            <div className="text-sm text-muted-foreground">{s.exists
+              ? `${t('board.week')} ${s.week} · ${s.playerNames.join(', ')} · ${formatSaveDate(s.timestamp)}`
+              : t('common.empty')}</div>
+            {s.slot === 0 && <div className="text-xs text-muted-foreground">{t('setup.automatic')}</div>}
           </div>
-          <button
-            onClick={handleQuitToTitle}
-            className="w-full p-2.5 rounded border border-border bg-background/50 text-wood hover:text-wood-dark hover:border-foreground/30 font-display text-sm font-semibold flex items-center justify-center gap-2"
-          >
-            <Home className="w-4 h-4" /> {quitLabel}
-          </button>
-        </div>
-
-        {/* Options Modal (rendered on top of game menu) */}
-        {showOptions && (
-          <OptionsMenu onClose={() => setShowOptions(false)} />
-        )}
-        {/* Manual Modal (rendered on top of game menu) */}
-        {showManual && (
-          <UserManual onClose={() => setShowManual(false)} />
-        )}
+          <div className="guild-save-actions">
+            {mode === 'save' && s.slot !== 0 && <button className="guild-button" onClick={() => s.exists ? setPending({slot:s.slot,action:'save'}) : handleSave(s.slot)}>{t('common.save')}</button>}
+            {mode === 'load' && s.exists && <button className="guild-button guild-button--gold" onClick={() => handleLoad(s.slot)}>{t('common.load')}</button>}
+            {s.exists && s.slot !== 0 && <button className="guild-button guild-button--danger guild-button--icon" aria-label={`Delete ${s.slotName}`} onClick={() => setPending({slot:s.slot,action:'delete'})}><Trash2 /></button>}
+          </div>
+          {pending?.slot === s.slot && <div className="w-full" role="group" aria-label="Confirm save change">
+            <p className="text-sm mb-2">{pending.action === 'delete' ? 'Delete this saved adventure?' : 'Replace this save with your current adventure?'}</p>
+            <div className="guild-save-actions">
+              <button className="guild-button guild-button--danger" onClick={() => { if (pending.action === 'delete') handleDelete(s.slot); else handleSave(s.slot); setPending(null); }}>{pending.action === 'delete' ? 'Confirm delete' : 'Confirm overwrite'}</button>
+              <button className="guild-button" onClick={() => setPending(null)}>{t('common.cancel')}</button>
+            </div>
+          </div>}
+        </div>)}
       </div>
-    </div>
-  );
+    </GuildDialog>
+    {showOptions && <OptionsMenu onClose={() => setShowOptions(false)} />}
+    {showManual && <UserManual onClose={() => setShowManual(false)} />}
+  </>;
 }
