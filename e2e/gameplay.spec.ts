@@ -20,6 +20,8 @@ async function startSinglePlayerGame(page: Page, options: { tutorial?: boolean }
     await tutorial.uncheck();
   }
 
+  await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
+
   await page.getByRole('button', { name: 'Begin Adventure' }).click();
   await expect(page.locator('[data-zone-id="bank"]')).toBeVisible();
 }

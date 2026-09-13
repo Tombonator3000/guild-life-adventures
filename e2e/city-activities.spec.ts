@@ -8,6 +8,7 @@ for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1280
     await page.getByRole('button',{name:'New Adventure',exact:true}).click();
     await page.getByPlaceholder('Enter name...').fill('City Visitor');
     await page.getByRole('checkbox',{name:/Show Tutorial/}).uncheck();
+    await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
     await page.getByRole('button',{name:'Begin Adventure',exact:true}).click();
     await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('guild-life-autosave'))).toBe(true);
     await page.evaluate(()=>{

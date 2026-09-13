@@ -8,6 +8,7 @@ for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1280
   await page.getByRole('button',{name:'New Adventure',exact:true}).click();
   await page.getByPlaceholder('Enter name...').fill('Equipment Buyer');
   await page.getByRole('checkbox',{name:/Show Tutorial/}).uncheck();
+  await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
   await page.getByRole('button',{name:'Begin Adventure',exact:true}).click();
   if(await page.evaluate(()=>!!document.fullscreenElement))await page.keyboard.press('f');
   await page.locator('[data-zone-id="armory"]').click();

@@ -47,3 +47,5 @@ Tracker: #390
 - Phase 16Y rules audit: [`docs/AUDIT_LOG_PHASE16Y.md`](./docs/AUDIT_LOG_PHASE16Y.md)
 - Phase 16Y release audit: [`docs/AUDIT_LOG_PHASE16Y_RELEASE_SAFETY.md`](./docs/AUDIT_LOG_PHASE16Y_RELEASE_SAFETY.md)
 - Architecture: [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)
+
+- Entry-menu overhaul: [`docs/AUDIT_LOG_ENTRY_MENUS.md`](./docs/AUDIT_LOG_ENTRY_MENUS.md)

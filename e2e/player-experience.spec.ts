@@ -38,6 +38,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     await page.getByRole('button', { name: 'New Adventure', exact: true }).click();
     await page.getByPlaceholder('Enter name...').fill('City Reader');
     await page.getByRole('checkbox', { name: /Show Tutorial/ }).uncheck();
+    await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
     await page.getByRole('button', { name: 'Begin Adventure', exact: true }).click();
 
     for (const [location, housing, furnished] of [['slums', 'slums', false], ['slums', 'slums', true], ['noble-heights', 'noble', true]] as const) {

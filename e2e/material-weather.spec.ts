@@ -18,6 +18,7 @@ test('forge work, tactile menus, weather pixels and storm audio stay inside the 
   await page.getByRole('button',{name:'New Adventure',exact:true}).click();
   await page.getByPlaceholder('Enter name...').fill('Forge Hero');
   await page.getByRole('checkbox',{name:/Show Tutorial/}).uncheck();
+  await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
   await page.getByRole('button',{name:'Begin Adventure',exact:true}).click();
   await expect(page.locator('[data-zone-id="forge"]')).toBeVisible();
   if (await page.evaluate(() => !!document.fullscreenElement)) await page.keyboard.press('f');

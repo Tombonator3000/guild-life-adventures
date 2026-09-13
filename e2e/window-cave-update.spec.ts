@@ -10,6 +10,7 @@ test('wrapped market tabs and paged goods keep every service reachable', async (
   await page.getByRole('button',{name:'New Adventure',exact:true}).click();
   await page.getByPlaceholder('Enter name...').fill('Window Hero');
   await page.getByRole('checkbox',{name:/Show Tutorial/}).uncheck();
+  await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
   await page.getByRole('button',{name:'Begin Adventure',exact:true}).click();
   await expect(page.locator('[data-zone-id="forge"]')).toBeVisible();
   if(await page.evaluate(()=>!!document.fullscreenElement)) await page.keyboard.press('f');
@@ -49,6 +50,7 @@ test('cave load, encounter, result, retreat and settlement remain clear inside t
   await page.getByRole('button',{name:'New Adventure',exact:true}).click();
   await page.getByPlaceholder('Enter name...').fill('Cave Hero');
   await page.getByRole('checkbox',{name:/Show Tutorial/}).uncheck();
+  await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
   await page.getByRole('button',{name:'Begin Adventure',exact:true}).click();
   await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('guild-life-autosave'))).toBe(true);
   // A saved, educated adventurer is the fixture; entry/resolution/retreat/settlement use real controls.
@@ -115,6 +117,7 @@ test('a deployed update appears on focus, saves the current game and reloads on 
   await page.getByRole('button',{name:'New Adventure',exact:true}).click();
   await page.getByPlaceholder('Enter name...').fill('Update Hero');
   await page.getByRole('checkbox',{name:/Show Tutorial/}).uncheck();
+  await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
   await page.getByRole('button',{name:'Begin Adventure',exact:true}).click();
   await expect(page.locator('[data-zone-id="forge"]')).toBeVisible();
   deployed=true;

@@ -16,6 +16,8 @@ async function startSinglePlayerGame(page: Page, options: { keyboardNav?: boolea
   const tutorial = page.getByRole('checkbox', { name: /show tutorial/i });
   if (await tutorial.isChecked()) await tutorial.uncheck();
 
+  await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
+
   await page.getByRole('button', { name: 'Begin Adventure' }).click();
   await expect(page.locator('[data-zone-id="bank"]')).toBeVisible();
 }
