@@ -5,8 +5,10 @@ import type { EffectPolicy } from './effectPolicy';
 import { precipitationBudget, sample } from './effectPolicy';
 import { CHIMNEYS, LIGHTS, PUDDLES, FESTIVAL_ANCHORS, type BoardRect } from './effectAnchors';
 import { loadZoneConfig } from '@/data/zoneStorage';
+import { townWind, type TownAtmosphere } from './TownAtmosphere';
+import { createRoofSnowPainter } from './snowRoofs';
 
-export type Scene = { policy: EffectPolicy; assets: EffectAssets | null; weather?: WeatherType; festival?: FestivalId; strike: number | null; threeWeather?: boolean };
+export type Scene = { policy: EffectPolicy; assets: EffectAssets | null; weather?: WeatherType; festival?: FestivalId; strike: number | null; threeWeather?: boolean; town?: TownAtmosphere };
 type Context = CanvasRenderingContext2D;
 const TAU = Math.PI * 2;
 const mod = (x: number, n: number) => ((x % n) + n) % n;
@@ -30,9 +32,13 @@ function clipBoard(ctx: Context,w: number,h: number,panel: BoardRect) {
 export function createWorldRenderer() {
   // Read on React/config refresh, as the original crow layer did, never during a frame.
   const crows = loadZoneConfig()?.animationLayers?.find(l => l.id === 'graveyard-crows');
+  const paintSnow = createRoofSnowPainter();
   return (ctx: Context,w: number,h: number,seconds: number,scene: Scene,panel: BoardRect) => {
     const {policy,assets,weather,festival} = scene;
     const t = policy.animated ? seconds : 0;
+    scene.town?.update(seconds,weather,policy.animated);
+    const wind=scene.town?.wind??townWind(t,weather);
+    const drift=scene.town?.drift??{x:t*10,y:t*-2};
     const winter = weather === 'snowstorm' || festival === 'winter-solstice';
     const rainy = weather === 'thunderstorm' || weather === 'harvest-rain';
     const s = assets?.sprites;
@@ -47,13 +53,26 @@ export function createWorldRenderer() {
     ctx.fillRect(0,0,w,h);
     for (const [x,y,r,color] of LIGHTS) glow(ctx,x*w,y*h,r*w,color,(winter ? .49 : .32) * (1+ .13*Math.sin(t*1.3+x*11)));
     // Existing wet ground: sheen in clear weather, localized ripples when wet, ice when cold.
-    for (const [x,y,rx,ry] of PUDDLES) {
+    for (const [index,[x,y,rx,ry]] of PUDDLES.entries()) {
       ctx.save(); ctx.translate(x*w,y*h); ctx.scale(1,ry*h/(rx*w));
+      ctx.beginPath();ctx.ellipse(0,0,rx*w,rx*w,0,0,TAU);ctx.clip();
       const g=ctx.createRadialGradient(0,0,0,0,0,rx*w); g.addColorStop(0,winter?'#d5f5ff65':rainy?'#accddd50':'#e2ddba20'); g.addColorStop(1,'#bddceb00');
       ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,rx*w,0,TAU);ctx.fill();
+      // Broken strips reflect sky and nearby warm windows, only within the painted water.
+      if (!winter && weather!=='drought') for (let j=0;j<11;j++) {
+        const band=(j/10-.5)*rx*w*1.65;
+        const offset=Math.sin(t*(1.2+wind.gust)+j*1.9+index)*rx*w*.09;
+        const length=(.15+.43*sample(j,index+8))*rx*w*(1-Math.abs(j/10-.5));
+        ctx.globalAlpha=(rainy?.3:.17)*(1+Math.sin(t*.6+index)*.18);
+        ctx.fillStyle=j%3===0?'#ffcf85':'#c6e3ec';
+        ctx.fillRect(offset-length*.5,band,length,Math.max(.65,w*.001));
+      }
+      ctx.globalAlpha=1;
+      if(scene.strike!==null && !winter) {ctx.fillStyle='#d7ebff35';ctx.fillRect(-rx*w,-rx*w,rx*w*2,rx*w*2);}
       if (policy.animated && rainy) for (let j=0;j<3;j++) { const age=mod(t*.48+j/3+x,1);ctx.strokeStyle=`rgba(210,232,240,${(1-age)*.4})`;ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,0,age*rx*w,0,TAU);ctx.stroke(); }
       ctx.restore();
     }
+    paintSnow(ctx,w,h,policy.animated?(scene.town?.snow??0):weather==='snowstorm'?.55:(scene.town?.snow??0));
     if (festival) {
       FESTIVAL_ANCHORS.forEach(([x,y],i) => {
         // Cloth stays present in Calm; no extra game objects or crowd tokens.
@@ -68,7 +87,7 @@ export function createWorldRenderer() {
     if (!policy.animated) { ctx.restore();return 0; }
     // Broad shadow passes at two depths, never narrow repeated stripes.
     for (let i=0;i<(scene.threeWeather?0:2);i++) {
-      const x=mod(t*(i?3.3:1.8)+w*(.18+i*.51),w*1.7)-w*.35;
+      const x=mod(drift.x*(i?.33:.18)*w/1000+w*(.18+i*.51),w*1.7)-w*.35;
       emit(4,x,h*(.22+i*.55),w*.79,h*.49,rainy?.26:.15,.04);
     }
     // Four chimney anchors, wispy four-stage smoke, stronger contrast in winter.
@@ -76,12 +95,31 @@ export function createWorldRenderer() {
       const count=policy.mobile?3:6;
       for (let j=0;j<count;j++) {
         const age=mod(t/8+j/count+c*.21,1), stage=age*3;
-        const width=w*(.028+age*.052), px=x*w+age*w*.027+Math.sin(age*5+c)*w*.006, py=y*h-age*h*.16;
+        const width=w*(.028+age*.052), px=x*w+age*age*wind.x*w*.0018+Math.sin(age*5+c)*w*.003,
+          py=y*h-age*h*.16+age*age*wind.y*h*.0018;
         const alpha=Math.sin(age*Math.PI)*(winter?.45:.32);
-        emit(Math.floor(stage),px,py,width,width*1.2,alpha*(1-stage%1),-.2);
-        if (stage<3) emit(Math.floor(stage)+1,px,py,width,width*1.2,alpha*(stage%1),-.2);
+        emit(Math.floor(stage),px,py,width,width*1.2,alpha*(1-stage%1),wind.x*.006);
+        if (stage<3) emit(Math.floor(stage)+1,px,py,width,width*1.2,alpha*(stage%1),wind.x*.006);
       }
     });
+    // Brief, bounded sparks after a confirmed forge shift, not a perpetual celebration.
+    for (const burst of scene.town?.bursts??[]) {
+      const age=seconds-burst.start;
+      if(age<0||age>2.8) continue;
+      glow(ctx,w*.108,h*.854,w*.044,'#ffad45',Math.exp(-age*2)*.8);
+      for(let i=0;i<(policy.mobile?18:32);i++) {
+        const p=POOL[(i+burst.id*11)%POOL.length],flight=age*(.7+p.speed*.45);
+        const vx=(p.x-.5)*.13,vy=-.08-p.y*.1;
+        const x=w*(.108+vx*flight+wind.x*.00012*flight*flight);
+        const y=h*(.854+vy*flight+.075*flight*flight);
+        const fade=Math.max(0,1-flight/1.6);
+        if(fade<=0) continue;
+        ctx.strokeStyle=`rgba(255,${Math.round(140+fade*90)},65,${fade*.85})`;
+        ctx.lineWidth=1+fade;ctx.beginPath();ctx.moveTo(x,y);
+        ctx.lineTo(x-vx*w*.025,y-(vy+.15*flight)*h*.025);ctx.stroke();
+        emit(7,x,y,3+p.size*4,3+p.size*4,fade*.85);
+      }
+    }
     // Forge embers and tower motes are anchored to the existing art.
     for (let i=0;i<(policy.mobile?4:10);i++) {
       const p=POOL[i],age=mod(t*.32+p.phase,1);
@@ -92,8 +130,9 @@ export function createWorldRenderer() {
     // Leaves have distinct painted silhouettes and three depth/speed bands.
     const leafCount = policy.mobile ? 5 : festival === 'harvest-festival' || weather === 'drought' ? 24 : 13;
     if (!winter) for (let i=0;i<leafCount;i++) {
-      const p=POOL[i+50],depth=i%3, speed=7+depth*7;
-      const x=mod(p.x*w+t*speed,w+60)-30, y=mod(p.y*h+t*(3+depth*2)+Math.sin(t*.7+p.phase*TAU)*12,h+40)-20;
+      const p=POOL[i+50],depth=i%3, windScale=.7+depth*.65;
+      const x=mod(p.x*w+drift.x*windScale*w/1000,w+60)-30,
+        y=mod(p.y*h+(drift.y*windScale+t*(3+depth*2))*h/1000+Math.sin(t*.7+p.phase*TAU)*12,h+40)-20;
       const size=(policy.mobile?8:10)+depth*5+p.size*5;
       emit(weather === 'drought'?12:8+i%4,x,y,size,size*(.5+.5*Math.abs(Math.cos(t*1.2+p.phase))),.62,t*.55+p.phase*TAU);
     }
@@ -104,18 +143,18 @@ export function createWorldRenderer() {
         sprite(ctx,assets.crow,w*((crows?.cx??3)+(i-2)*.3)/100+Math.cos(a)*orbit,h*((crows?.cy??30)+(i%2))/100+Math.sin(a)*orbit*.55,(11+i)*(crows?.size??1),(7+i*.5)*(crows?.size??1),.68,Math.sin(a)*.12);
       }
       const flight=mod(t+12,48);
-      if (flight<14) for (let i=0;i<4;i++) sprite(ctx,assets.crow,(flight/14*w*1.3)-w*.15-i*17,h*(.07+.06*Math.sin(flight/14*Math.PI))+i%2*12,12+i,7+Math.sin(t*7+i)*2,.45,-.1);
+      if (!scene.threeWeather && flight<14) for (let i=0;i<4;i++) sprite(ctx,assets.crow,(flight/14*w*1.3)-w*.15-i*17,h*(.07+.06*Math.sin(flight/14*Math.PI))+i%2*12,12+i,7+Math.sin(t*7+i)*2,.45,-.1);
     }
     const snowing=weather === 'snowstorm' || (festival === 'winter-solstice' && (!weather || weather === 'clear'));
     const rainCount=scene.threeWeather && !snowing ? 0 : precipitationBudget(snowing?'snowstorm':weather,policy.mobile);
     for (let i=0;i<rainCount && particles<cap;i++,particles++) {
       const p=POOL[i], depth=i%3;
       if (snowing) {
-        const speed=12+depth*20+p.speed*9,x=mod(p.x*w+Math.sin(t*.4+p.phase*TAU)*(10+depth*8)+t*8,w),y=mod(p.y*h+t*speed,h+12)-6;
+        const speed=12+depth*20+p.speed*9,x=mod(p.x*w+Math.sin(t*.4+p.phase*TAU)*(10+depth*8)+drift.x*(.5+depth*.3)*w/1000,w),y=mod(p.y*h+t*speed,h+12)-6;
         ctx.fillStyle=`rgba(240,248,255,${.3+depth*.21})`;ctx.beginPath();ctx.ellipse(x,y,.7+depth*.7,.8+depth*.9,t+p.phase,0,TAU);ctx.fill();
       } else {
-        const speed=380+depth*160, y=mod(p.y*h+t*speed,h+60)-30,x=mod(p.x*w-t*speed*.16,w);
-        ctx.strokeStyle=`rgba(193,215,231,${.14+depth*.07})`;ctx.lineWidth=.55+depth*.3;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-3-depth*2,y+11+depth*8);ctx.stroke();
+        const speed=380+depth*160, y=mod(p.y*h+t*speed,h+60)-30,x=mod(p.x*w+drift.x*(1+depth)*w/1000,w);
+        ctx.strokeStyle=`rgba(193,215,231,${.14+depth*.07})`;ctx.lineWidth=.55+depth*.3;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+wind.x*.12,y+11+depth*8);ctx.stroke();
       }
     }
     if (weather === 'drought') for (let i=0;i<(policy.mobile?3:6);i++) {

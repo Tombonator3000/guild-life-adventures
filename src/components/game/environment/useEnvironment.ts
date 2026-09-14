@@ -3,10 +3,12 @@ import type { useGameStore } from '@/store/gameStore';
 import type { EffectManager } from './EffectManager';
 import type { EffectAssets } from './effectAssets';
 import type { EffectPolicy } from './effectPolicy';
+import type { TownAtmosphere } from './TownAtmosphere';
 
 type GameState = ReturnType<typeof useGameStore.getState>;
 interface EnvironmentState {
   manager: EffectManager;
+  town: TownAtmosphere;
   assets: EffectAssets | null;
   policy: EffectPolicy;
   weather: GameState['weather'];

@@ -9,6 +9,7 @@ export class EffectManager {
   private lastPaint: number | null = null;
   private running = false;
   constructor(private readonly fps = 30) {}
+  get elapsed() { return this.seconds; }
   register(draw: EffectFrame) {
     this.surfaces.add(draw);
     draw(this.seconds);
