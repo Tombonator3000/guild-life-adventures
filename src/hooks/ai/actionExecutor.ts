@@ -101,8 +101,8 @@ function handleMove(player: Player, action: AIAction, store: StoreActions): bool
   return true;
 }
 
-function handleRest(player: Player, _action: AIAction, store: StoreActions): boolean {
-  const result = store.performHomeActivity(player.id, 'relax');
+function handleRest(player: Player, action: AIAction, store: StoreActions): boolean {
+  const result = store.performHomeActivity(player.id, action.details?.activity === 'sleep' ? 'sleep' : 'relax');
   return result?.success ?? false;
 }
 

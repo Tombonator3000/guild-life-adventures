@@ -1078,7 +1078,7 @@ function resolveWeekEndOutcome(
     players: players.map((p, index) =>
       index === firstAliveIndex
         ? { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: firstPlayerHome, dungeonAttemptsThisTurn: 0, hadRandomEventThisTurn: false, workedThisTurn: false, raiseAttemptedThisTurn: false }
-        : p
+        : p.isGameOver ? p : { ...p, currentLocation: getHomeLocation(p.housing), previousLocation: null }
     ),
     rentDueWeek: isRentDue ? newWeek : rentDueWeek,
     selectedLocation: null,

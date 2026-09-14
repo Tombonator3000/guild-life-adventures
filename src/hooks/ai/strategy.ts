@@ -7,7 +7,7 @@
 import type { Player, LocationId, DegreeId } from '@/types/game.types';
 import { getAvailableJobs, getJob, ALL_JOBS, canWorkJob, type Job } from '@/data/jobs';
 import { getAvailableDegrees, type Degree } from '@/data/education';
-import { DUNGEON_FLOORS, checkFloorRequirements, getFloorTimeCost, calculateEducationBonuses } from '@/data/dungeon';
+import { DUNGEON_FLOORS, checkFloorRequirements, getFloorTimeCost, calculateEducationBonuses, MAX_FLOOR_ATTEMPTS_PER_TURN } from '@/data/dungeon';
 import { calculateCombatStats } from '@/data/items';
 import {
   getWeeklyQuests,
@@ -282,6 +282,7 @@ export function getJobLocation(job: Job): LocationId {
  * Returns floor ID or null if no floor is advisable.
  */
 export function getBestDungeonFloor(player: Player, settings: DifficultySettings): number | null {
+  if (player.completedDegrees.length === 0 || (player.dungeonAttemptsThisTurn ?? 0) >= MAX_FLOOR_ATTEMPTS_PER_TURN) return null;
   const combatStats = calculateCombatStats(
     player.equippedWeapon,
     player.equippedArmor,
@@ -327,6 +328,9 @@ export function getBestDungeonFloor(player: Player, settings: DifficultySettings
     const highestCleared = Math.max(...player.dungeonFloorsCleared);
     const floor = DUNGEON_FLOORS.find(f => f.id === highestCleared);
     if (floor) {
+      const requirements = checkFloorRequirements(floor, player.dungeonFloorsCleared, player.equippedWeapon,
+        player.equippedArmor, combatStats, player.completedDegrees);
+      if (!requirements.canEnter) return null;
       const timeCost = getFloorTimeCost(floor, combatStats);
       if (player.timeRemaining >= timeCost + 4 && player.health >= 50) {
         return floor.id;

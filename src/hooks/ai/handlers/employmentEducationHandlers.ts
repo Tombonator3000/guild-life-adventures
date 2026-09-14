@@ -12,8 +12,8 @@ import { DEGREES } from '@/data/education';
 import type { AIAction } from '../types';
 import type { StoreActions } from '../actionExecutor';
 
-export function handleWork(player: Player, _action: AIAction, store: StoreActions): boolean {
-  const result = store.performWorkShift(player.id, 'full');
+export function handleWork(player: Player, action: AIAction, store: StoreActions): boolean {
+  const result = store.performWorkShift(player.id, action.details?.mode === 'remaining' ? 'remaining' : 'full');
   return result?.success ?? false;
 }
 

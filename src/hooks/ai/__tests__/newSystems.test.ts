@@ -477,7 +477,7 @@ describe('getCommitmentBonus', () => {
       priorityBonus: 30,
     };
     expect(getCommitmentBonus(plan, 'work')).toBe(30);
-    expect(getCommitmentBonus(plan, 'move')).toBe(30);
+    expect(getCommitmentBonus(plan, 'move')).toBe(0); // Travel needs a useful destination action.
   });
 
   it('returns 0 for non-aligned action', () => {

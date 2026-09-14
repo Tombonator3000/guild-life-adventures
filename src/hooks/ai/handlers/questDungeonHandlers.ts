@@ -12,6 +12,8 @@ import type { DungeonActionResult } from '@/store/dungeonTypes';
 
 import type { AIAction } from '../types';
 import type { StoreActions } from '../actionExecutor';
+import { getAIPersonality } from '../types';
+import type { DungeonRunSession, DungeonAdvanceAction } from '@/store/dungeonTypes';
 
 // ─── Guild & Quests ─────────────────────────────────────────────────────
 
@@ -68,6 +70,20 @@ function failure(message: string): DungeonActionResult {
   return { success: false, message };
 }
 
+/** Use observed damage and remaining health, without predicting unseen rolls. */
+export function chooseDungeonContinuation(player: Player, session: DungeonRunSession): DungeonAdvanceAction {
+  if (player.timeRemaining < session.encounterTimeCost) return 'leave';
+  const run = session.runState;
+  const current = run.encounters[run.currentEncounterIndex];
+  const next = run.encounters[run.currentEncounterIndex + 1];
+  // Match the same boss lock shown by the interactive dungeon UI.
+  const canRetreat = current?.type !== 'boss' && next?.type !== 'boss';
+  const recentDamage = Math.max(0, ...run.results.slice(-2).map(result => result.damageDealt));
+  const caution = getAIPersonality(player.id).dungeonRiskTolerance;
+  const reserve = Math.max(player.maxHealth * 0.3, recentDamage * 1.5) * caution;
+  return canRetreat && player.health < reserve ? 'retreat' : 'continue';
+}
+
 /**
  * Synchronously drives the same host-owned dungeon session used by the
  * interactive UI. The AI chooses only the floor; encounter generation,
@@ -94,9 +110,7 @@ function autoResolveCanonicalDungeon(playerId: string, floorId: number): Dungeon
       const currentPlayer = state.players.find(candidate => candidate.id === playerId);
       if (!currentPlayer) return failure('Player not found during dungeon run.');
 
-      const nextAction = currentPlayer.timeRemaining >= session.encounterTimeCost
-        ? 'continue'
-        : 'leave';
+      const nextAction = chooseDungeonContinuation(currentPlayer, session);
       const advanced = state.advanceDungeonRun(playerId, nextAction);
       if (!advanced?.success) return advanced ?? failure('The dungeon run could not advance.');
       continue;

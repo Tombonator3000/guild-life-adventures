@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { executeAIAction, type StoreActions } from '../actionExecutor';
 import type { AIAction } from '../types';
 import { useGameStore } from '@/store/gameStore';
+import { chooseDungeonContinuation } from '../handlers/questDungeonHandlers';
 
 const goals = {
   wealth: 5000,
@@ -154,5 +155,19 @@ describe('AI canonical dungeon session execution', () => {
     expect(success).toBe(false);
     expect(useGameStore.getState().dungeonRuns[player.id]).toBeUndefined();
     expect(useGameStore.getState().players[0].dungeonAttemptsThisTurn).toBe(0);
+  });
+
+  it('chooses a legal retreat when observed damage makes continuing too dangerous', () => {
+    const player = preparePlayer({ id: 'ai-seraphina' });
+    expect(useGameStore.getState().beginDungeonRun(player.id, 1).success).toBe(true);
+    expect(useGameStore.getState().resolveDungeonEncounter(player.id).success).toBe(true);
+    const session = useGameStore.getState().dungeonRuns[player.id];
+    const decision = chooseDungeonContinuation({ ...useGameStore.getState().players[0], health: 5 }, session);
+    expect(decision).toBe('retreat');
+    expect(useGameStore.getState().advanceDungeonRun(player.id, decision).success).toBe(true);
+    const result = useGameStore.getState().finalizeDungeonRun(player.id);
+    expect(result.success).toBe(true);
+    expect(result.summary?.retreated).toBe(true);
+    expect(useGameStore.getState().dungeonRuns[player.id]).toBeUndefined();
   });
 });
