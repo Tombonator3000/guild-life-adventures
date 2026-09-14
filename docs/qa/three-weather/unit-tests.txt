@@ -1,0 +1,18 @@
+
+ RUN  v3.2.4 /workspace/scratch/ae9d419bc888/guild-life-adventures
+
+ ✓ src/components/game/environment/EffectManager.test.ts (6 tests) 13ms
+ ✓ src/components/game/environment/useStorm.test.tsx (1 test) 20ms
+stderr | src/components/game/GameBoardCanvas.test.tsx
+[WebAudio] AudioContext unavailable — falling back to element.volume
+
+Browserslist: browsers data (caniuse-lite) is 8 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+ ✓ src/components/game/GameBoardCanvas.test.tsx (4 tests) 140ms
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  14:12:10
+   Duration  2.39s (transform 1.03s, setup 188ms, collect 1.55s, tests 174ms, environment 974ms, prepare 231ms)
+

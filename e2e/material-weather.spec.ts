@@ -69,6 +69,7 @@ test('forge work, tactile menus, weather pixels and storm audio stay inside the 
   await page.getByRole('button',{name:'Clear',exact:true}).click();
   for(const [width,height] of [[844,390],[390,844]]) {
     await page.setViewportSize({width,height});
+    await expect(page.locator('.mobile-action-region').locator('.location-work-button')).toBeVisible();
     await openMenuPage(page,shell.locator('.location-work-button'));
     await expect(shell.locator('.location-work-button')).toBeInViewport();
     await shell.locator('.location-work-button').click();

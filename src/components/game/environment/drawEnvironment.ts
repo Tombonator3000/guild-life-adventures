@@ -6,7 +6,7 @@ import { precipitationBudget, sample } from './effectPolicy';
 import { CHIMNEYS, LIGHTS, PUDDLES, FESTIVAL_ANCHORS, type BoardRect } from './effectAnchors';
 import { loadZoneConfig } from '@/data/zoneStorage';
 
-export type Scene = { policy: EffectPolicy; assets: EffectAssets | null; weather?: WeatherType; festival?: FestivalId; strike: number | null };
+export type Scene = { policy: EffectPolicy; assets: EffectAssets | null; weather?: WeatherType; festival?: FestivalId; strike: number | null; threeWeather?: boolean };
 type Context = CanvasRenderingContext2D;
 const TAU = Math.PI * 2;
 const mod = (x: number, n: number) => ((x % n) + n) % n;
@@ -67,7 +67,7 @@ export function createWorldRenderer() {
     }
     if (!policy.animated) { ctx.restore();return 0; }
     // Broad shadow passes at two depths, never narrow repeated stripes.
-    for (let i=0;i<2;i++) {
+    for (let i=0;i<(scene.threeWeather?0:2);i++) {
       const x=mod(t*(i?3.3:1.8)+w*(.18+i*.51),w*1.7)-w*.35;
       emit(4,x,h*(.22+i*.55),w*.79,h*.49,rainy?.26:.15,.04);
     }
@@ -107,7 +107,7 @@ export function createWorldRenderer() {
       if (flight<14) for (let i=0;i<4;i++) sprite(ctx,assets.crow,(flight/14*w*1.3)-w*.15-i*17,h*(.07+.06*Math.sin(flight/14*Math.PI))+i%2*12,12+i,7+Math.sin(t*7+i)*2,.45,-.1);
     }
     const snowing=weather === 'snowstorm' || (festival === 'winter-solstice' && (!weather || weather === 'clear'));
-    const rainCount=precipitationBudget(snowing?'snowstorm':weather,policy.mobile);
+    const rainCount=scene.threeWeather && !snowing ? 0 : precipitationBudget(snowing?'snowstorm':weather,policy.mobile);
     for (let i=0;i<rainCount && particles<cap;i++,particles++) {
       const p=POOL[i], depth=i%3;
       if (snowing) {
@@ -158,7 +158,7 @@ export function drawScreen(ctx: Context,w: number,h: number,t: number,scene: Sce
     const p=POOL[280+i],x=mod(p.x*w+t*19+Math.sin(t+p.phase*6)*20,w),y=mod(p.y*h+t*(26+p.speed*20),h);
     ctx.save();ctx.translate(x,y);ctx.rotate(t+p.phase*6);ctx.globalAlpha=.75;ctx.fillStyle=['#a83831','#d6ae4c','#527761'][i%3];ctx.fillRect(-3,-3,5,7*Math.cos(t*2+p.phase));ctx.restore();
   }
-  if (weather === 'thunderstorm' || weather === 'harvest-rain') {
+  if (!scene.threeWeather && (weather === 'thunderstorm' || weather === 'harvest-rain')) {
     const count=Math.min(policy.mobile?7:18,remaining);
     for(let i=0;i<count;i++) {
       const p=POOL[200+i], age=mod(t/(7+p.speed*8)+p.phase,1);

@@ -9,6 +9,7 @@ import { useStorm } from './useStorm';
 import { EnvironmentContext } from './useEnvironment';
 
 function useEnvironmentState(isMobile: boolean) {
+  const [threeReady,setThreeReady] = useState(false);
   const [manager] = useState(() => new EffectManager());
   const [assets,setAssets] = useState<EffectAssets | null>(null);
   const {options} = useGameOptions();
@@ -25,7 +26,7 @@ function useEnvironmentState(isMobile: boolean) {
     return () => { current = false; };
   },[policy.enabled]);
   useEffect(() => () => manager.dispose(),[manager]);
-  return {manager,assets,policy,weather,festival,strike};
+  return {manager,assets,policy,weather,festival,strike,threeReady:policy.animated && threeReady,setThreeReady};
 }
 export function EnvironmentProvider({isMobile,children}: {isMobile: boolean; children: ReactNode}) {
   const value = useEnvironmentState(isMobile);
