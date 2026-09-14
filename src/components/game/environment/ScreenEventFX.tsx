@@ -1,3 +1,4 @@
+import { ThreeWeather } from './ThreeWeather';
 import { useEffect, useRef } from 'react';
 import { useEnvironment } from './useEnvironment';
 import { drawScreen, type Scene, type ScreenRegion } from './drawEnvironment';
@@ -6,18 +7,21 @@ export function ScreenEventFX() {
   const {policy, weather, festival}=useEnvironment();
   const hasScreenEffect = ['snowstorm', 'enchanted-fog', 'thunderstorm', 'harvest-rain'].includes(weather?.type ?? '')
     || ['winter-solstice', 'spring-tournament', 'midsummer-fair'].includes(festival ?? '');
-  return policy.enabled && hasScreenEffect ? <ScreenCanvas /> : null;
+  return <>
+    {policy.animated && <ThreeWeather />}
+    {policy.enabled && hasScreenEffect && <ScreenCanvas />}
+  </>;
 }
 function ScreenCanvas() {
   const ref=useRef<HTMLCanvasElement>(null);
-  const {manager,assets,policy,weather,festival,strike}=useEnvironment();
+  const {manager,assets,policy,weather,festival,strike,threeReady}=useEnvironment();
   useEffect(() => {
     const canvas=ref.current,ctx=canvas?.getContext('2d'),shell=canvas?.parentElement;
     if (!canvas || !ctx || !shell) return;
     let w=0,h=0;
     let board: ScreenRegion={x:0,y:0,width:0,height:0};
     let holes: Array<{x:number;y:number;w:number;h:number}> = [];
-    const scene: Scene={policy,assets,weather:weather?.type,festival:festival??undefined,strike};
+    const scene: Scene={policy,assets,weather:weather?.type,festival:festival??undefined,strike,threeWeather:threeReady};
     let measureFrame: number | null = null;
     const measure=() => {
       measureFrame = null;
@@ -61,6 +65,6 @@ function ScreenCanvas() {
     document.addEventListener('transitionend',onTransition,true);document.addEventListener('animationend',onTransition,true);
     resize();
     return () => {if (measureFrame !== null) cancelAnimationFrame(measureFrame);unsubscribe();observer.disconnect();mutation.disconnect();window.removeEventListener('resize',resize);document.removeEventListener('scroll',onScroll,true);document.removeEventListener('transitionend',onTransition,true);document.removeEventListener('animationend',onTransition,true);};
-  },[manager,assets,policy,weather?.type,festival,strike]);
+  },[manager,assets,policy,weather?.type,festival,strike,threeReady]);
   return <canvas ref={ref} className="screen-event-fx" aria-hidden="true" data-weather={weather?.type??'clear'} data-strike={strike??'none'} />;
 }

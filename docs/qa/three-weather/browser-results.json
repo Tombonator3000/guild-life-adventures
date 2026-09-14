@@ -1,0 +1,17 @@
+{
+  "sourceRevision": "2b94a3a018fc1dbcb5492afc0ed56bcca72051e4",
+  "build": "vite production build",
+  "browser": "Chromium 153 headless, ANGLE SwiftShader",
+  "tests": [
+    {
+      "name": "forge work, tactile menus, weather pixels and storm audio stay inside the classic board",
+      "status": "passed",
+      "durationMs": 31167
+    },
+    {
+      "name": "Three weather preserves the board, panel controls and Canvas fallback",
+      "status": "passed",
+      "durationMs": 40293
+    }
+  ]
+}

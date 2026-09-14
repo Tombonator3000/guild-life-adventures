@@ -12,6 +12,8 @@ interface EnvironmentState {
   weather: GameState['weather'];
   festival: GameState['activeFestival'];
   strike: number | null;
+  threeReady: boolean;
+  setThreeReady: (ready: boolean) => void;
 }
 export const EnvironmentContext = createContext<EnvironmentState | null>(null);
 export function useEnvironment() {
