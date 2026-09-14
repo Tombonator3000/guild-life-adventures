@@ -36,27 +36,36 @@ One shared 30 Hz atmosphere clock and one WebGL renderer. No new dependency, ima
 
 Physical desktop/iPad sustained 60 fps and Safari are **UNVERIFIED**. Headless Chromium/SwiftShader measurements are diagnostics, not device-performance claims. External Google Fonts are unavailable in this test environment, so screenshots use the existing fallback fonts.
 
-## Final checkpoint
+## Recovery and verified delivery
 
-Tested local source commit: `5a489594d1e508d5b409210eacfca29f96d1e967`.
-Tested source tree: `f351e0914ce87c2e8e87821b7556cc30cdb68bc8`.
-The delivery checkpoint adds this evidence only; application source is identical.
+Application source is identical to recovered GitHub commit `f7054bb6f0530c729cbc37feabeb053d8b4d4253`. The previous task's unpublished source was transferred from its cloud workspace and merged via PR #429 while local verification was in progress. This follow-up completes the test harness and missing evidence. No application changes were needed after recovery.
 
-- Production Vite build: PASS (existing large-chunk advisory remains).
-- Application and Node TypeScript checks: PASS.
-- ESLint for all changed source/test files and `git diff --check`: PASS.
-- Focused unit/component suite: 18/18 PASS across TownAtmosphere, EffectManager, useStorm and GameBoardCanvas.
-- Production Chromium end-to-end suite: 3/3 PASS, 0 retries/flaky failures, 210.9 seconds on the final run. Includes living-town actions, material/weather regressions and Three/Canvas fallback controls.
-- Final observed snow coverage before melting: 0.612; one confirmed forge burst; shared Canvas/WebGL wind X: 14.848 in both layers. No app exceptions or shader errors.
-- Software-rendered storm timing: 139 samples, 17.23 average fps, p95 133.3 ms, p99 166.7 ms. This does **not** meet or verify 60 fps; it is not a physical desktop/iPad benchmark. No performance uplift is claimed. Hardware testing remains open.
-- Expected harness limitations: unavailable external fonts, aborted music request during navigation, ReadPixels diagnostic stall and unsupported WEBGL_lose_context warning. Controls and forced fallback still pass.
+Validation on local Kubuntu using the production build, Bun 1.3.14, Three.js 0.180.0 and Playwright 1.61.1 / Chromium 149:
 
-Unaltered final runtime captures:
+| Gate | Result | Evidence / limitation |
+| --- | --- | --- |
+| TypeScript | PASS | App and Node projects |
+| Unit/component tests | PASS | 811 tests in 111 files |
+| Production build | PASS | Existing large-chunk advisory |
+| ESLint | PASS | Zero errors, 18 existing warnings; changed test also checked separately |
+| Required browser journeys | PASS | 3/3, zero retries, 128.5 seconds; production preview, one worker, video/trace disabled |
+| Revised living-town test | PASS | Repository configuration, 67.1 seconds, no retries; checks accumulation rate against effect time as well as coverage and melt |
+| Visual inspection | PASS | Actual desktop and tablet viewport screenshots below; paired bird frames show movement; sparks clear the token; glints align with the water; snow follows roof planes |
+| Input protection / fallback | PASS | Protected panel alpha zero; weather controls, rotation, reduced motion and forced WebGL fallback exercised |
+| Hardware performance | UNVERIFIED | No physical iPad or Safari measurement |
 
-- [3D birds over the original board](mesh-birds-desktop.png)
+The local browser run observed matching wind X values of 14.994 in both renderers, one confirmed forge burst, and roof snow coverage 0.637 before clearing the weather and verifying melt. Full numerical results and test durations are in [browser-results.json](browser-results.json).
+
+The initial local run with continuous video/trace hit the 85-second snow wait at coverage 0.455 while the machine was under heavy memory pressure. Its trace grew to about 200 MB. One lightweight three-test run passed, but a subsequent run still timed out at coverage 0.527 under variable host load. The final test therefore checks snow growth against the actual effect clock (including its rate), allows at most 180 seconds to accumulate 26 effect seconds, and still requires more than 60% coverage followed by melting. It disables continuous recording while retaining explicit screenshots, console diagnostics and normal failure screenshots. This revised test passed with the repository configuration. Application timing and snow rates were not changed to make the test pass.
+
+An 8-second software-rendered storm sample produced 117 intervals, 14.50 average fps, p95/p99 83.4 ms. This diagnostic does not meet 60 fps and is not a physical GPU/iPad result. No performance improvement or hardware performance guarantee is claimed. Viewport sizes were 1440 × 960 and 1180 × 820; the regression suite also exercises portrait/landscape layout and fallback.
+
+Unaltered runtime captures:
+
+- [3D birds over the original board](mesh-birds-desktop.png) · [Later flight frame](mesh-birds-flight.png)
 - [Successful forge work and sparks](forge-action-sparks.png)
 - [Reflections and rain rings](puddle-reflections.png)
-- [Accumulated roof snow, desktop](snow-roofs-desktop.png)
+- [Snow at the start](snow-start.png) · [Accumulated roof snow, desktop](snow-roofs-desktop.png)
 - [Accumulated roof snow, tablet viewport](snow-roofs-tablet.png)
 
-Run the regression tests with `npx playwright test e2e/living-town.spec.ts e2e/material-weather.spec.ts e2e/three-weather.spec.ts`. This checkpoint used a production preview on port 4189, one worker and headless Chromium/SwiftShader; the tablet capture is a viewport test, not physical-device validation.
+For a production check, run `bun run build`, start `bun run preview --host 127.0.0.1 --port 4173`, then run `bun x playwright test e2e/living-town.spec.ts e2e/material-weather.spec.ts e2e/three-weather.spec.ts --workers=1`. The living-town journey controls its own recording settings so CI and local runs retain the same animation assertions.

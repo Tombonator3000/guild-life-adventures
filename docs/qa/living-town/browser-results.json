@@ -1,0 +1,101 @@
+{
+  "applicationCommit": "f7054bb6f0530c729cbc37feabeb053d8b4d4253",
+  "applicationTree": "659bef0857979b9c9fb31ad080ae7f653475dd2c",
+  "environment": "Local Kubuntu, production Vite preview, Playwright Chromium 149 / software rendering; one worker, video and trace disabled",
+  "stats": {
+    "startTime": "2026-09-14T16:30:36.195Z",
+    "duration": 128510.315,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "tests": [
+    {
+      "name": "living town: mesh birds, shared wind, successful forge work and gradual roof snow",
+      "status": "passed",
+      "durationMs": 72200,
+      "checks": {
+        "town-checks": {
+          "wind": {
+            "world": "14.981",
+            "gpu": "14.981"
+          },
+          "snowCoverBeforeMelt": 0.604,
+          "forgeBursts": 1,
+          "birdGeometry": "articulated XYZ mesh",
+          "viewport": [
+            1440,
+            960
+          ],
+          "physicalIPad": "unverified"
+        }
+      }
+    },
+    {
+      "name": "forge work, tactile menus, weather pixels and storm audio stay inside the classic board",
+      "status": "passed",
+      "durationMs": 22290,
+      "checks": {}
+    },
+    {
+      "name": "Three weather preserves the board, panel controls and Canvas fallback",
+      "status": "passed",
+      "durationMs": 32396,
+      "checks": {
+        "gpu-pixels": {
+          "painted": 190389,
+          "panelAlpha": 0,
+          "calls": 4
+        },
+        "cloud-runtime-timing": {
+          "renderer": "headless Chromium / SwiftShader",
+          "viewport": [
+            1440,
+            960
+          ],
+          "samples": 117,
+          "averageFps": 14.504611722701574,
+          "p95": 83.39999999999964,
+          "p99": 83.40000000000146
+        }
+      }
+    }
+  ],
+  "finalLivingTownRun": {
+    "config": "Repository playwright.config.ts; recording disabled by living-town.spec.ts",
+    "stats": {
+      "startTime": "2026-09-14T16:36:44.320Z",
+      "duration": 67764.548,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "status": "passed",
+    "durationMs": 67112,
+    "checks": {
+      "wind": {
+        "world": "14.994",
+        "gpu": "14.994"
+      },
+      "snowStart": {
+        "time": 20.331,
+        "cover": 0.005
+      },
+      "snowGrown": {
+        "time": 46.876,
+        "cover": 0.637
+      },
+      "snowCoverBeforeMelt": 0.637,
+      "forgeBursts": 1,
+      "birdGeometry": "articulated XYZ mesh",
+      "viewport": [
+        1440,
+        960
+      ],
+      "physicalIPad": "unverified"
+    },
+    "testFileBlob": "556df68369a1b6ed4eef2034669c5fa528bd0137"
+  }
+}

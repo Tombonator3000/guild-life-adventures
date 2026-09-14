@@ -2,8 +2,12 @@ import {expect,test} from './test';
 import {enableDeveloperMode} from './developerMode';
 import {openMenuPage} from './menuPages';
 
+// This long animation journey keeps explicit screenshots and console diagnostics.
+// Continuous video/trace capture can starve software rendering and stall its clock.
+test.use({video:'off',trace:'off'});
+
 test('living town: mesh birds, shared wind, successful forge work and gradual roof snow',async({page},testInfo)=>{
-  test.setTimeout(200_000);
+  test.setTimeout(300_000);
   const errors:string[]=[];
   page.on('pageerror',e=>errors.push(e.message));
   page.on('console',m=>{if(m.type()==='error'&&/THREE|shader|WebGL/i.test(m.text()))errors.push(m.text());});
@@ -50,19 +54,25 @@ test('living town: mesh birds, shared wind, successful forge work and gradual ro
   await page.getByRole('button',{name:'Snow',exact:true}).click();
   await expect(gpu).toHaveAttribute('data-birds','0');
   await expect.poll(async()=>Number(await world.getAttribute('data-snow-cover'))).toBeLessThan(.1);
+  const snowStart=await world.evaluate(c=>({time:Number(c.dataset.effectTime),cover:Number(c.dataset.snowCover)}));
   await page.screenshot({path:testInfo.outputPath('snow-start.png')});
-  await expect.poll(async()=>Number(await world.getAttribute('data-snow-cover')),{timeout:85000}).toBeGreaterThan(.6);
-  const grown=Number(await world.getAttribute('data-snow-cover'));
+  // The shared clock deliberately caps long frames. Verify the rate against that
+  // clock, with a bounded wall-time allowance for loaded software-rendered CI hosts.
+  await expect.poll(async()=>Number(await world.getAttribute('data-effect-time')),{timeout:180000}).toBeGreaterThan(snowStart.time+26);
+  const snowGrown=await world.evaluate(c=>({time:Number(c.dataset.effectTime),cover:Number(c.dataset.snowCover)}));
+  expect(snowGrown.cover).toBeCloseTo(Math.min(1,snowStart.cover+(snowGrown.time-snowStart.time)/42),2);
+  const grown=snowGrown.cover;
+  expect(grown).toBeGreaterThan(.6);
   await page.screenshot({path:testInfo.outputPath('snow-roofs-desktop.png')});
   await page.setViewportSize({width:1180,height:820});
   await expect(gpu).toHaveAttribute('data-renderer','three');
   await page.screenshot({path:testInfo.outputPath('snow-roofs-tablet.png')});
   await page.getByRole('button',{name:'Clear',exact:true}).click();
   expect(Number(await world.getAttribute('data-snow-cover'))).toBeGreaterThan(.5);
-  await expect.poll(async()=>Number(await world.getAttribute('data-snow-cover')),{timeout:25000}).toBeLessThan(grown-.08);
+  await expect.poll(async()=>Number(await world.getAttribute('data-snow-cover')),{timeout:45000}).toBeLessThan(grown-.08);
   await page.emulateMedia({reducedMotion:'reduce'});
   await expect(gpu).toHaveCount(0);await expect(page.locator('.environment-still')).toBeVisible();
   await expect(world).toHaveAttribute('data-active-bursts','0');
-  await testInfo.attach('town-checks',{body:JSON.stringify({wind,snowCoverBeforeMelt:grown,forgeBursts:1,birdGeometry:'articulated XYZ mesh',viewport:[1440,960],physicalIPad:'unverified'}),contentType:'application/json'});
+  await testInfo.attach('town-checks',{body:JSON.stringify({wind,snowStart,snowGrown,snowCoverBeforeMelt:grown,forgeBursts:1,birdGeometry:'articulated XYZ mesh',viewport:[1440,960],physicalIPad:'unverified'}),contentType:'application/json'});
   expect(errors).toEqual([]);
 });
