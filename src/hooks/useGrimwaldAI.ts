@@ -52,7 +52,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
   // Track visited locations this turn to prevent back-and-forth oscillation
   const visitedLocationsRef = useRef<Set<string>>(new Set());
   // Commitment plan: persists across turns for 2-4 turn strategic focus
-  const commitmentPlanRef = useRef<CommitmentPlan | null>(null);
+  const commitmentPlansRef = useRef<Map<string, CommitmentPlan>>(new Map());
 
   const goalSettings = useGameStore(state => state.goalSettings);
   const endTurn = useGameStore(state => state.endTurn);
@@ -89,7 +89,27 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     // another player. The guard in step() aborts when the index no longer matches.
     const startingPlayerIndex = useGameStore.getState().currentPlayerIndex;
 
-    let actionsRemaining = 25; // Safety limit (was 15 — too low, AI ended turns with 20+ hours left)
+    let actionsRemaining = 32; // Bounded budget shared by normal and fast execution.
+    const startingWeek = useGameStore.getState().week;
+    const ownsTurn = () => {
+      const live = useGameStore.getState();
+      return live.phase !== 'victory' && live.week === startingWeek
+        && live.currentPlayerIndex === startingPlayerIndex
+        && live.players[startingPlayerIndex]?.id === player.id;
+    };
+    const endOwnedTurn = () => {
+      isExecutingRef.current = false;
+      if (ownsTurn()) endTurn();
+    };
+    let commitmentPlan = commitmentPlansRef.current.get(player.id) ?? null;
+    const refreshPlan = (livePlayer: Player) => {
+      const live = useGameStore.getState();
+      const progress = calculateGoalProgress(livePlayer, goalSettings, live.stockPrices);
+      if (commitmentPlan && !isCommitmentValid(commitmentPlan, livePlayer, progress, live.week)) commitmentPlan = null;
+      if (!commitmentPlan) commitmentPlan = generateCommitmentPlan(livePlayer, progress, baseSettings, live.week);
+      if (commitmentPlan) commitmentPlansRef.current.set(player.id, commitmentPlan);
+      else commitmentPlansRef.current.delete(player.id);
+    };
     let currentPlayer = player;
     let settings = baseSettings; // Set before step closure so it's always defined
 
@@ -107,19 +127,8 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
       const initProgress = calculateGoalProgress(player, goalSettings, initState.stockPrices);
       recordAIGoalProgress(player.id, initProgress, initState.week);
 
-      // ── Commitment plan: validate existing plan or generate a new one ──
-      if (commitmentPlanRef.current && !isCommitmentValid(
-        commitmentPlanRef.current, player, initProgress, initState.week
-      )) {
-        console.log(`[Grimwald AI] ${player.name} commitment plan expired: ${commitmentPlanRef.current.description}`);
-        commitmentPlanRef.current = null;
-      }
-      if (!commitmentPlanRef.current) {
-        commitmentPlanRef.current = generateCommitmentPlan(player, initProgress, baseSettings, initState.week);
-        if (commitmentPlanRef.current) {
-          console.log(`[Grimwald AI] ${player.name} new commitment: ${commitmentPlanRef.current.description}`);
-        }
-      }
+      // Each opponent keeps its own multi-turn plan when the shared hook switches seats.
+      refreshPlan(player);
 
       // ── Calculate dynamic difficulty adjustment ──
       const adjustment = calculateAdjustment(player.id);
@@ -134,7 +143,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     } catch (initErr) {
       console.error('[Grimwald AI] Init error in runAITurn, resetting execution flag:', initErr);
       isExecutingRef.current = false;
-      try { endTurn(); } catch { /* ignore */ }
+      try { endOwnedTurn(); } catch { /* ignore */ }
       return;
     }
 
@@ -147,7 +156,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         // BUG FIX: Stale-step guard — abort if the turn was advanced externally (e.g. by
         // useAutoEndTurn firing before the AI step). Without this, the stale step would
         // see timeRemaining=0 and call endTurn() a second time, skipping the next player.
-        if (state.currentPlayerIndex !== startingPlayerIndex) {
+        if (!ownsTurn()) {
           console.log(`[Grimwald AI] Stale step for ${player.name} (expected idx ${startingPlayerIndex}, got ${state.currentPlayerIndex}), aborting`);
           isExecutingRef.current = false;
           return;
@@ -158,12 +167,12 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
           console.log(`[Grimwald AI] Turn skipped by player`);
           // Execute remaining actions instantly without delays. BUG-013: this path
           // must use the same dependency-aware failure records as the normal loop.
-          let emergencyLimit = 30;
-          let consecutiveFailures = 0;
+          let emergencyLimit = actionsRemaining;
           while (emergencyLimit > 0) {
             const fastState = useGameStore.getState();
             const fastPlayer = fastState.players.find(p => p.id === player.id);
-            if (!fastPlayer || fastPlayer.timeRemaining < 1 || fastPlayer.isGameOver) break;
+            if (!ownsTurn() || !fastPlayer || fastPlayer.timeRemaining < 1 || fastPlayer.isGameOver) break;
+            refreshPlan(fastPlayer);
             const fastActions = generateActions(
               fastPlayer,
               goalSettings,
@@ -171,7 +180,8 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
               fastState.week,
               fastState.priceModifier,
               fastState.stockPrices,
-              commitmentPlanRef.current,
+              commitmentPlan,
+              visitedLocationsRef.current,
             );
             const viableFastActions = getViableAIActions(
               fastActions,
@@ -188,13 +198,10 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
                 fastAction,
                 fastPlayer,
               );
-              consecutiveFailures++;
               console.log(
                 `[Grimwald AI] Fast action failed (${failure.reason}, attempt ${failure.attemptsForSignature}): ${fastAction.description}`,
               );
-              if (consecutiveFailures >= 3) break;
             } else {
-              consecutiveFailures = 0;
               if (fastAction.type === 'move' && fastAction.location) {
                 visitedLocationsRef.current.add(fastAction.location);
               }
@@ -202,8 +209,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
             emergencyLimit--;
           }
           useGameStore.setState({ skipAITurn: false });
-          endTurn();
-          isExecutingRef.current = false;
+          endOwnedTurn();
           return;
         }
 
@@ -214,11 +220,13 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
           // Previously used `timeRemaining > 0` guard which skipped endTurn when time hit exactly 0,
           // freezing the turn permanently.
           if (!currentPlayer.isGameOver) {
-            endTurn();
+            endOwnedTurn();
           }
           isExecutingRef.current = false;
           return;
         }
+
+        refreshPlan(currentPlayer);
 
         // Generate possible actions (with adjusted settings + commitment plan)
         const actions = generateActions(
@@ -228,7 +236,8 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
           state.week,
           state.priceModifier,
           state.stockPrices,
-          commitmentPlanRef.current,
+          commitmentPlan,
+          visitedLocationsRef.current,
         );
 
         // Suppress only the exact action + prerequisite state that failed. If the
@@ -239,26 +248,13 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
           failedActionsRef.current,
         );
 
-        // Apply oscillation penalty: strongly discourage returning to already-visited locations.
-        // Exception: never penalize the home location — returning home at end of turn is
-        // intentional behavior (generateHomeReturnActions), not oscillation.
-        const OSCILLATION_PENALTY = 20;
-        const playerHome = currentPlayer.housing === 'noble' ? 'noble-heights'
-          : currentPlayer.housing === 'slums' ? 'slums' : null;
-        const penalizedActions = viableActions.map(a =>
-          (a.type === 'move' && a.location && visitedLocationsRef.current.has(a.location)
-            && a.location !== playerHome)
-            ? { ...a, priority: a.priority - OSCILLATION_PENALTY }
-            : a
-        ).sort((a, b) => b.priority - a.priority);
-
-        // Never fall back to a known failed action. If nothing remains, finish safely.
-        const bestAction = penalizedActions[0];
+        // Both presentation speeds use the same scoring and failure filter.
+        // Travel history was already considered before difficulty mistakes.
+        const bestAction = viableActions[0];
 
         if (!bestAction || bestAction.type === 'end-turn') {
           console.log(`[Grimwald AI] Ending turn. Log: ${actionLogRef.current.join(' -> ')}`);
-          endTurn();
-          isExecutingRef.current = false;
+          endOwnedTurn();
           return;
         }
 
@@ -284,8 +280,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         const postActionPlayer = useGameStore.getState().players.find(p => p.id === player.id);
         if (!postActionPlayer || postActionPlayer.isGameOver || postActionPlayer.health <= 0) {
           console.log(`[Grimwald AI] Player died during action, ending turn immediately`);
-          endTurn();
-          isExecutingRef.current = false;
+          endOwnedTurn();
           return;
         }
 
@@ -297,7 +292,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
         // Guarantee flag is always reset — prevents AI from freezing permanently on uncaught error
         console.error('[Grimwald AI] Uncaught error in step, resetting execution flag:', err);
         isExecutingRef.current = false;
-        try { endTurn(); } catch { /* ignore secondary failure */ }
+        try { endOwnedTurn(); } catch { /* ignore secondary failure */ }
       }
     };
 
@@ -314,7 +309,7 @@ export function useGrimwaldAI(difficulty: AIDifficulty = 'medium') {
     resetObservations();
     resetPerformanceHistory();
     resetVelocityData();
-    commitmentPlanRef.current = null;
+    commitmentPlansRef.current.clear();
     failedActionsRef.current.clear();
     visitedLocationsRef.current.clear();
   }, []);

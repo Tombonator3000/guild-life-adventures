@@ -14,9 +14,9 @@ import type { StoreActions } from '../actionExecutor';
 
 // ─── Housing & Rent ─────────────────────────────────────────────────────
 
-export function handlePayRent(player: Player, _action: AIAction, store: StoreActions): boolean {
+export function handlePayRent(player: Player, action: AIAction, store: StoreActions): boolean {
   if (player.housing === 'homeless') return false;
-  const result = store.payHousingRent(player.id, 1);
+  const result = store.payHousingRent(player.id, action.details?.weeks === 4 ? 4 : 1);
   return result?.success ?? false;
 }
 

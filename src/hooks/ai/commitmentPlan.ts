@@ -16,7 +16,7 @@
  */
 
 import type { Player, DegreeId } from '@/types/game.types';
-import type { GoalProgress, DifficultySettings, CommitmentPlan, AIActionType } from './types';
+import type { GoalProgress, DifficultySettings, CommitmentPlan, AIActionType, AIAction } from './types';
 import { getStuckGoals } from './goalVelocityTracker';
 import { getRankedDegreesROI, getDegreeUnlockChain } from './strategy';
 import { RENT_COSTS } from '@/types/game.types';
@@ -42,7 +42,7 @@ function tryEarnDegreePlan(
   week: number,
 ): CommitmentPlan | null {
   // Only when education is not the most progressed goal
-  if (progress.education.progress > 0.8) return null;
+  if (progress.education.progress >= 1) return null;
 
   const ranked = getRankedDegreesROI(player, settings);
   if (ranked.length === 0) return null;
@@ -184,7 +184,7 @@ function tryWealthSprintPlan(
   settings: DifficultySettings,
   week: number,
 ): CommitmentPlan | null {
-  if (progress.wealth.progress < 0.65) return null; // Only sprint when close
+  if (progress.wealth.progress < 0.65 || progress.wealth.progress >= 1) return null;
 
   return {
     type: 'wealth-sprint',
@@ -235,7 +235,9 @@ export function generateCommitmentPlan(
   const housingPlan = trySaveHousingPlan(player, progress, settings, week);
   if (housingPlan) return housingPlan;
 
-  const degreePlan = stuckGoals.includes('education') ? null : tryEarnDegreePlan(player, progress, settings, week);
+  // Degree points arrive at graduation, not every study session. Flat displayed
+  // progress must not permanently exclude the very plan that can unstick it.
+  const degreePlan = tryEarnDegreePlan(player, progress, settings, week);
   if (degreePlan) return degreePlan;
 
   const dungeonPlan = tryDungeonRunPlan(player, progress, settings, week);
@@ -270,6 +272,7 @@ export function isCommitmentValid(
   switch (plan.type) {
     case 'earn-degree':
       if (!plan.targetId) return false;
+      if (progress.education.progress >= 1) return false;
       // Complete if degree is now done
       if (player.completedDegrees.includes(plan.targetId as DegreeId)) return false;
       return true;
@@ -302,9 +305,15 @@ export function isCommitmentValid(
  */
 export function getCommitmentBonus(
   plan: CommitmentPlan | null,
-  actionType: AIActionType,
+  action: AIAction | AIActionType,
 ): number {
   if (!plan) return 0;
+  const actionType = typeof action === 'string' ? action : action.type;
+  // Travel is scored using the actual action available at its destination.
+  // A generic move bonus rewarded every detour, irrespective of the plan.
+  if (actionType === 'move') return 0;
+  if (plan.type === 'earn-degree' && typeof action !== 'string'
+      && action.details?.degreeId !== plan.targetId) return 0;
   if (plan.alignedActions.includes(actionType)) return plan.priorityBonus;
   return 0;
 }

@@ -213,7 +213,15 @@ export function createTurnActions(set: SetFn, get: GetFn) {
         processEndOfTurnSpoilage(set, get, endingPlayer.id);
       }
 
-      if (endingPlayer) set(s => ({ players:s.players.map(p => p.id === endingPlayer.id ? {...p,lastTurnSummary:summarizeTurn(p,s.week)} : p) }));
+      // Settle the location's remaining work/rest first, then put the finished
+      // player home on EVERY exit path (including week rollover and victory).
+      if (endingPlayer) set(s => ({
+        players: s.players.map(p => p.id === endingPlayer.id ? {
+          ...p,
+          lastTurnSummary: summarizeTurn(p, s.week),
+          ...(!p.isGameOver ? { currentLocation: getHomeLocation(p.housing), previousLocation: null } : {}),
+        } : p),
+      }));
 
       // Check if current player has achieved victory goals before switching turns
       const currentPlayer = get().players[get().currentPlayerIndex];
@@ -262,11 +270,7 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           return;
         }
         // C9: Move player to their home location at start of turn
-        // Also return the ending player to their home so their icon doesn't stay at last visited location
         const homeLocation: LocationId = getHomeLocation(nextPlayer.housing);
-        const endingPlayerIdx = postVictoryState.currentPlayerIndex;
-        const endingPlayerForHome = freshState.players[endingPlayerIdx];
-        const endingHomeLocation: LocationId | null = endingPlayerForHome ? getHomeLocation(endingPlayerForHome.housing) : null;
         set({
           currentPlayerIndex: nextIndex,
           phase: 'playing',
@@ -275,9 +279,6 @@ export function createTurnActions(set: SetFn, get: GetFn) {
           players: freshState.players.map((p, index) => {
             if (index === nextIndex) {
               return { ...p, timeRemaining: HOURS_PER_TURN, currentLocation: homeLocation, dungeonAttemptsThisTurn: 0, hadRandomEventThisTurn: false, workedThisTurn: false, raiseAttemptedThisTurn: false, tavernAlesDrunkThisTurn: 0 };
-            }
-            if (endingHomeLocation && index === endingPlayerIdx) {
-              return { ...p, currentLocation: endingHomeLocation };
             }
             return p;
           }),

@@ -19,6 +19,7 @@ import type { Player } from '@/types/game.types';
 import { getGameOption } from '@/data/gameOptions';
 import { getHexById } from '@/data/hexes';
 import { useGameStore } from '@/store/gameStore';
+import { SABOTAGE_OPTIONS, computePrice } from '@/data/sabotage';
 
 // ── Shared rivalry context passed to each sub-generator ─────────────
 
@@ -393,19 +394,17 @@ function generateSabotageActions({ ctx, biggestThreat, threatIsClose }: RivalryC
   const SABOTAGE_LOCATIONS = ['fence', 'shadow-market'] as const;
   const atSabotageLoc = (SABOTAGE_LOCATIONS as readonly string[]).includes(currentLocation);
 
-  const options = [
-    { type: 'pickpocket', baseCost: 50, effectType: 'gold', effectValue: 30 },
-    { type: 'distraction', baseCost: 35, effectType: 'time', effectValue: 6 },
-    { type: 'mudslinger', baseCost: 40, effectType: 'clothing', effectValue: 25 },
-  ];
+  // Turn-start resets a rival's hours, so buying time-loss between their turns
+  // cannot delay them. Only pay for a lasting effect on resources they possess.
+  const options = SABOTAGE_OPTIONS.filter(option =>
+    (option.effect.type === 'gold-theft' && biggestThreat.gold > 0)
+    || (option.effect.type === 'clothing-damage' && biggestThreat.clothingCondition > 0));
+  const preferred = biggestThreat.gold >= 300 ? 'pickpocket' : 'mudslinger';
+  const chosen = options.find(option => option.id === preferred) ?? options[0];
+  if (!chosen) return [];
 
-  let chosen = options[0];
-  if (biggestThreat.gold >= 300) chosen = options[0];
-  else if (biggestThreat.timeRemaining > 30) chosen = options[1];
-  else chosen = options[2];
-
-  const cost = Math.round(chosen.baseCost * priceModifier);
-  if (player.gold < cost + 50) return [];
+  const cost = computePrice(chosen.baseCost, priceModifier);
+  if (player.gold < cost + 50 || player.timeRemaining < chosen.timeCost) return [];
 
   const priority = Math.round(50 * ctx.personality.weights.rivalry);
 
@@ -413,11 +412,11 @@ function generateSabotageActions({ ctx, biggestThreat, threatIsClose }: RivalryC
     return [{
       type: 'sabotage-player',
       priority,
-      description: `Hire Shadowfingers (${chosen.type}) on ${biggestThreat.name}`,
+      description: `Hire Shadowfingers (${chosen.id}) on ${biggestThreat.name}`,
       details: {
         targetId: biggestThreat.id,
-        effectType: chosen.effectType,
-        effectValue: chosen.effectValue,
+        optionId: chosen.id,
+        hours: chosen.timeCost,
         cost,
       },
     }];

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { LOCATIONS } from '@/data/locations';
 import type { LocationId } from '@/types/game.types';
@@ -23,6 +23,7 @@ export function usePlayerAnimation() {
   const travelPlayer = useGameStore(state => state.travelPlayer);
   const selectLocation = useGameStore(state => state.selectLocation);
   const endTurn = useGameStore(state => state.endTurn);
+  const activeTurn = useGameStore(state => `${state.week}:${state.players[state.currentPlayerIndex]?.id}:${state.phase === 'victory'}`);
 
   const [animatingPlayer, setAnimatingPlayer] = useState<string | null>(null);
   const [animationPath, setAnimationPath] = useState<LocationId[] | null>(null);
@@ -34,6 +35,19 @@ export function usePlayerAnimation() {
   const routePrefixRef = useRef<LocationId[]>([]);
   const lastReachedLocationIndexRef = useRef(0);
   const accumulatedStepsRef = useRef(0);
+  const visualTurnRef = useRef<string | null>(null);
+
+  // AI travel is already committed. A visual path from the finished turn must
+  // not cover the token's authoritative home position during the next turn.
+  useEffect(() => {
+    if (!animatingPlayer || pendingMoveRef.current || visualTurnRef.current === activeTurn) return;
+    currentPathRef.current = null;
+    routePrefixRef.current = [];
+    lastReachedLocationIndexRef.current = 0;
+    accumulatedStepsRef.current = 0;
+    setAnimatingPlayer(null);
+    setAnimationPath(null);
+  }, [activeTurn, animatingPlayer]);
 
   // Called by AnimatedPlayerToken when it reaches a location zone center
   const handleLocationReached = useCallback((pathLocationIndex: number) => {
@@ -148,6 +162,8 @@ export function usePlayerAnimation() {
     playerId: string,
     path: LocationId[],
   ) => {
+    const state = useGameStore.getState();
+    visualTurnRef.current = `${state.week}:${state.players[state.currentPlayerIndex]?.id}:${state.phase === 'victory'}`;
     pendingMoveRef.current = null;
     currentPathRef.current = path;
     routePrefixRef.current = [];

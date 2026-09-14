@@ -8,7 +8,9 @@
 
 import type { Player, LocationId } from '@/types/game.types';
 import { HOURS_PER_TURN } from '@/types/game.types';
-import { calculatePathDistance } from '@/data/locations';
+import { BOARD_PATH, calculatePathDistance } from '@/data/locations';
+import { calculateCanonicalTravelCost } from '@/store/helpers/travelServiceHelpers';
+import { getEffectiveHousingRent } from '@/store/helpers/economy/housingServiceHelpers';
 import { useGameStore } from '@/store/gameStore';
 
 import type { DifficultySettings, AIAction, AIPersonality, CommitmentPlan } from './types';
@@ -28,9 +30,10 @@ import {
   generateRivalryActions,
 } from './actions';
 import { getCounterStrategyWeights, type CounterStrategyWeights } from './playerObserver';
-import { identifyNeededVisits, planTurnRoute } from './turnPlanner';
+import { getAIActionIdentity } from './failedActionCache';
+import { generateTacticalActions, isTacticallyFeasible, getSurvivalPriority, applyGoalRelevance, getEssentialReserve } from './tacticalPlanning';
 import { getVelocityAdjustments } from './goalVelocityTracker';
-import { getCommitmentBonus } from './commitmentPlan';
+import { getCommitmentBonus, isCommitmentValid } from './commitmentPlan';
 
 /**
  * Maps each AI action type to its personality weight category.
@@ -159,36 +162,6 @@ function applyTimeBudgetAwareness(actions: AIAction[], turnTimeRatio: number, pl
   }
 }
 
-/**
- * HARD AI: Apply travel cost penalty to move actions.
- * Actions requiring long travel should have reduced priority relative to their value.
- * This prevents the AI from wasting hours traveling to distant locations for low-value tasks.
- */
-function applyTravelCostPenalty(
-  actions: AIAction[],
-  currentLocation: string,
-  efficiencyWeight: number,
-  weatherMoveExtra: number,
-): void {
-  if (efficiencyWeight < 0.5) return; // Only for medium+ AI
-
-  for (const action of actions) {
-    if (action.type === 'move' && action.location) {
-      const baseSteps = calculatePathDistance(currentLocation as LocationId, action.location);
-      const totalCost = baseSteps + baseSteps * weatherMoveExtra;
-
-      // Penalty scales with distance and efficiency weight
-      // Hard AI (eff=0.95): 5 steps = -7.1 penalty (was -4.5)
-      const penalty = Math.round(totalCost * efficiencyWeight * 1.5); // was 1.0 — stronger deterrent
-      action.priority -= penalty;
-
-      // Extra penalty for distant moves (4+ steps) — reinforces local batching
-      if (totalCost >= 4) {
-        action.priority -= Math.round(totalCost * 1.0); // was 0.5
-      }
-    }
-  }
-}
 
 /**
  * HARD AI: Location batching bonus.
@@ -211,45 +184,6 @@ function applyLocationBatchingBonus(actions: AIAction[], currentLocation: string
   }
 }
 
-/**
- * HARD AI: Goal completion sprint with smarter calculation.
- * When a goal is close to completion, calculate exact actions needed
- * and boost those specific actions significantly.
- */
-function applySmartGoalSprint(
-  actions: AIAction[],
-  progress: import('./types').GoalProgress,
-  planningDepth: number,
-): void {
-  if (planningDepth < 3) return; // Hard AI only
-
-  // Goal sprint actions — maps each goal to actions that directly contribute to it
-  const GOAL_SPRINT_ACTIONS: Record<string, string[]> = {
-    wealth: ['work', 'deposit-bank', 'complete-quest', 'sell-stock'],
-    happiness: ['buy-appliance', 'rest', 'buy-ticket', 'graduate'],
-    education: ['study', 'graduate'],
-    career: ['work', 'apply-job'],
-  };
-
-  // Find goals that are 55%+ complete (lowered from 65% — harder AI starts sprinting earlier)
-  const GOAL_KEYS = ['wealth', 'happiness', 'education', 'career'] as const;
-  const sprintTargets = GOAL_KEYS
-    .filter(g => progress[g].progress >= 0.55 && progress[g].progress < 1.0)
-    .map(g => ({ goal: g, gap: progress[g].target - progress[g].current, progress: progress[g].progress }))
-    .sort((a, b) => b.progress - a.progress);
-
-  if (sprintTargets.length === 0) return;
-
-  const topSprint = sprintTargets[0];
-  const sprintBoost = Math.round(15 + (topSprint.progress - 0.55) * 33); // 15-28 boost (was 15-25)
-  const boostActions = new Set(GOAL_SPRINT_ACTIONS[topSprint.goal]);
-
-  for (const action of actions) {
-    if (boostActions.has(action.type)) {
-      action.priority += sprintBoost;
-    }
-  }
-}
 
 /**
  * Maps each AI action type to its counter-strategy weight category.
@@ -351,7 +285,7 @@ function applyVelocityAdjustments(
 function applyCommitmentBonus(actions: AIAction[], plan: CommitmentPlan | null): void {
   if (!plan) return;
   for (const action of actions) {
-    const bonus = getCommitmentBonus(plan, action.type);
+    const bonus = getCommitmentBonus(plan, action);
     if (bonus > 0) {
       action.priority += bonus;
     }
@@ -373,199 +307,108 @@ function applyCounterStrategy(
   applyCounterStrategyWeights(actions, counterWeights);
 }
 
-/**
- * Route optimization: boost moves to locations that satisfy multiple needs.
- * If two or more move actions target the same location, boost those moves
- * proportionally so the AI prefers efficient multi-errand trips.
- */
-function applyMultiNeedLocationBonus(actions: AIAction[]): void {
-  const locationNeeds: Record<string, number> = {};
-  for (const action of actions) {
-    if (action.type === 'move' && action.location) {
-      locationNeeds[action.location] = (locationNeeds[action.location] || 0) + 1;
-    }
-  }
-  for (const action of actions) {
-    if (action.type === 'move' && action.location && (locationNeeds[action.location] || 0) > 1) {
-      action.priority += 5 * (locationNeeds[action.location] - 1);
-    }
-  }
-}
 
-/**
- * HARD AI: Turn plan route optimization.
- * At the start of a turn (>70% time remaining), computes an optimal visit order
- * and boosts moves toward the first planned destination.
- */
-function applyTurnPlanRouteBoost(
-  actions: AIAction[],
-  player: Player,
-  settings: DifficultySettings,
-  progress: import('./types').GoalProgress,
-  goals: { wealth: number; happiness: number; education: number; career: number },
-  weatherMoveExtra: number,
-  priceModifier: number,
-  rivals: Player[],
-  turnTimeRatio: number,
-): void {
-  if (settings.planningDepth < 3 || turnTimeRatio <= 0.7) return;
-
-  const neededVisits = identifyNeededVisits(
-    player, settings, progress, goals, weatherMoveExtra, priceModifier, rivals
-  );
-  const plan = planTurnRoute(player.currentLocation, neededVisits, player.timeRemaining, weatherMoveExtra);
-
-  if (plan.visits.length > 0) {
-    const nextPlannedLocation = plan.visits[0].location;
-    for (const action of actions) {
-      if (action.type === 'move' && action.location === nextPlannedLocation) {
-        action.priority += 12; // Strong boost for planned route
-      }
-    }
-  }
-}
 
 /**
  * Main AI decision engine - generates prioritized list of possible actions
  */
 export function generateActions(
   player: Player,
-  goals: { wealth: number; happiness: number; education: number; career: number },
+  goals: { wealth: number; happiness: number; education: number; career: number; adventure?: number },
   settings: DifficultySettings,
   week: number,
   priceModifier: number,
   stockPrices?: Record<string, number>,
   commitmentPlan?: CommitmentPlan | null,
+  visitedLocations: ReadonlySet<string> = new Set(),
 ): AIAction[] {
   const progress = calculateGoalProgress(player, goals, stockPrices);
-  const urgency = calculateResourceUrgency(player);
-  const weakestGoal = getWeakestGoal(progress);
-  const currentLocation = player.currentLocation;
-
-  // C4: Get rival players for competitive awareness
   const state = useGameStore.getState();
-  const allPlayers = state.players;
-  const rivals = allPlayers.filter(p => p.id !== player.id && !p.isGameOver);
+  const rivals = state.players.filter(p => p.id !== player.id && !p.isGameOver);
+  const personality = getDynamicPersonality(getAIPersonality(player.id), player, rivals);
+  const weatherExtra = state.weather?.movementCostExtra ?? 0;
+  const travelCost = (from: LocationId, to: LocationId) =>
+    calculateCanonicalTravelCost(calculatePathDistance(from, to), weatherExtra);
+  const plan = commitmentPlan && isCommitmentValid(commitmentPlan, player, progress, week) ? commitmentPlan : null;
+  const generators = [generateCriticalActions, generateGoalActions, generateStrategicActions,
+    generateEconomicActions, generateQuestDungeonActions, generateRivalryActions];
 
-  // Get personality for this AI player (with dynamic wealth-based scaling)
-  const basePersonality = getAIPersonality(player.id);
-  const personality = getDynamicPersonality(basePersonality, player, rivals);
-
-  // Weather and festival context
-  // Weather uses movementCostExtra: additive hours per location step
-  const weatherMoveExtra = state.weather?.movementCostExtra ?? 0;
-  const activeFestival = state.activeFestival ?? null;
-
-  // Express weather impact as a multiplier for ActionContext (approximate)
-  const weatherMoveCostMult = weatherMoveExtra > 0 ? 1.5 : 1.0;
-
-  // Time budget: fraction of turn remaining
-  const turnTimeRatio = player.timeRemaining / HOURS_PER_TURN;
-
-  // Helper to calculate movement cost (includes weather extra cost per step)
-  const moveCost = (to: Parameters<typeof calculatePathDistance>[1]) => {
-    const baseSteps = calculatePathDistance(currentLocation, to);
-    // Weather adds extra hours per step
-    return baseSteps + (baseSteps * weatherMoveExtra);
-  };
-
-  // Build shared context for all action generators
-  const ctx: ActionContext = {
-    player,
-    goals,
-    settings,
-    personality,
-    week,
-    priceModifier,
-    currentLocation,
-    moveCost,
-    progress,
-    urgency,
-    weakestGoal,
-    rivals,
-    weatherMoveCostMult,
-    activeFestival,
-    turnTimeRatio,
-  };
-
-  // Collect actions from all category generators
-  const actions: AIAction[] = [
-    ...generateCriticalActions(ctx),
-    ...generateGoalActions(ctx),
-    ...generateStrategicActions(ctx),
-    ...generateEconomicActions(ctx),
-    ...generateQuestDungeonActions(ctx),
-    ...generateRivalryActions(ctx),
-  ];
-
-  // ============================================
-  // PERSONALITY: Apply personality-based weights
-  // ============================================
-  applyPersonalityWeights(actions, personality);
-
-  // ============================================
-  // COUNTER-STRATEGY: Adapt to observed human player behavior
-  // ============================================
-  applyCounterStrategy(actions, rivals, settings.planningDepth);
-
-  // ============================================
-  // VELOCITY: Boost alternatives for stuck goals, momentum for fast ones
-  // ============================================
-  applyVelocityAdjustments(actions, player.id, week, settings.planningDepth);
-
-  // ============================================
-  // COMMITMENT: Bonus for actions aligned with the current multi-turn plan
-  // ============================================
-  applyCommitmentBonus(actions, commitmentPlan ?? null);
-
-  // ============================================
-  // TIME BUDGET: Adjust priorities based on turn phase
-  // ============================================
-  applyTimeBudgetAwareness(actions, turnTimeRatio, settings.planningDepth);
-
-  // ============================================
-  // AI-12: ROUTE OPTIMIZATION
-  // ============================================
-  applyMultiNeedLocationBonus(actions);
-
-  // ============================================
-  // HARD AI: Travel cost penalty (cost-adjusted scoring)
-  // ============================================
-  applyTravelCostPenalty(actions, currentLocation, settings.efficiencyWeight, weatherMoveExtra);
-
-  // ============================================
-  // HARD AI: Location batching bonus
-  // ============================================
-  if (settings.planningDepth >= 3) {
-    applyLocationBatchingBonus(actions, currentLocation);
-  }
-
-  // ============================================
-  // HARD AI: Smart goal sprint (65% threshold instead of 80%)
-  // ============================================
-  applySmartGoalSprint(actions, progress, settings.planningDepth);
-
-  // ============================================
-  // HARD AI: Turn plan route optimization
-  // ============================================
-  applyTurnPlanRouteBoost(actions, player, settings, progress, goals, weatherMoveExtra, priceModifier, rivals, turnTimeRatio);
-
-  // ============================================
-  // DEFAULT ACTION - End turn if nothing else
-  // ============================================
-  actions.push({
-    type: 'end-turn',
-    priority: 1,
-    description: 'End turn',
+  const makeContext = (at: Player): ActionContext => ({
+    player: at, goals, settings, personality, week, priceModifier,
+    currentLocation: at.currentLocation,
+    moveCost: to => travelCost(at.currentLocation, to),
+    progress, urgency: calculateResourceUrgency(at), weakestGoal: getWeakestGoal(progress), rivals,
+    weatherMoveCostMult: 1 + Math.max(0, weatherExtra), activeFestival: state.activeFestival ?? null,
+    turnTimeRatio: at.timeRemaining / HOURS_PER_TURN,
   });
-
-  // Sort by priority (highest first)
-  actions.sort((a, b) => b.priority - a.priority);
-
-  // ============================================
-  // MISTAKES: Improved mistake system
-  // ============================================
-  applyMistakes(actions, settings.mistakeChance);
-
-  return actions;
+  const initialContext = makeContext(player);
+  // Novices still consider obvious destinations; medium/hard inspect every board
+  // location. This is bounded one-visit lookahead, not simulated future dice rolls.
+  const locations = settings.planningDepth >= 2 ? BOARD_PATH : [...new Set([
+    player.currentLocation,
+    ...generators.flatMap(gen => gen(initialContext)).filter(a => a.type === 'move' && a.location).map(a => a.location!),
+  ])];
+  const candidates: Array<{ action: AIAction; ctx: ActionContext; travel: number }> = [];
+  for (const location of locations) {
+    const travel = travelCost(player.currentLocation, location);
+    if (travel >= player.timeRemaining && location !== player.currentLocation) continue;
+    const at = { ...player, currentLocation: location, timeRemaining: player.timeRemaining - travel };
+    const ctx = makeContext(at);
+    const unique = new Map<string, AIAction>();
+    for (const action of [...generators.flatMap(gen => gen(ctx)),
+      ...generateTacticalActions(ctx, plan?.type === 'earn-degree' ? plan.targetId : undefined)]) {
+      if (!isTacticallyFeasible(action, ctx)) continue;
+      if (action.type === 'pay-rent') {
+        const rent = getEffectiveHousingRent(player.housing, player.lockedRent, priceModifier);
+        const weeks = player.gold >= rent * 4 + getEssentialReserve(player, priceModifier) + 50 ? 4 : 1;
+        action.details = { ...action.details, weeks };
+        action.description = `Pay ${weeks} week${weeks === 1 ? '' : 's'} of rent`;
+      }
+      if (action.type === 'deposit-bank') {
+        const amount = Math.min(Number(action.details?.amount ?? 0), player.gold - getEssentialReserve(player, priceModifier) - 40);
+        if (amount < 25) continue;
+        action.details = { ...action.details, amount };
+      }
+      const key = getAIActionIdentity(action);
+      if (!unique.has(key) || unique.get(key)!.priority < action.priority) unique.set(key, action);
+    }
+    const actions = [...unique.values()];
+    applyPersonalityWeights(actions, personality);
+    applyCounterStrategy(actions, rivals, settings.planningDepth);
+    applyCommitmentBonus(actions, plan);
+    applyTimeBudgetAwareness(actions, ctx.turnTimeRatio, settings.planningDepth);
+    if (location === player.currentLocation && settings.planningDepth >= 3) applyLocationBatchingBonus(actions, location);
+    for (const action of actions) candidates.push({ action, ctx, travel });
+  }
+  // Velocity tracking has a per-week cooldown: sample it once, then apply the
+  // same adjustments to current and projected actions.
+  applyVelocityAdjustments(candidates.map(c => c.action), player.id, week, settings.planningDepth);
+  const ranked = candidates.map(({ action, ctx, travel }) => {
+    applyGoalRelevance(action, ctx);
+    // An affordable, feasible degree commitment is a real decision. Otherwise
+    // lucrative local work can outscore it forever and trap an AI in a low-wage
+    // job. Survival and immediate victory still outrank this investment.
+    if (plan?.type === 'earn-degree' && action.details?.degreeId === plan.targetId
+      && (action.type === 'study' || action.type === 'graduate')) action.priority = Math.max(action.priority, 240);
+    const survivalPriority = getSurvivalPriority(action, ctx);
+    if (survivalPriority) action.priority = survivalPriority;
+    if (travel === 0) return action;
+    const revisitPenalty = visitedLocations.has(ctx.currentLocation) && !survivalPriority ? 8 : 0;
+    return {
+      type: 'move' as const,
+      location: ctx.currentLocation,
+      priority: action.priority - travel * (1 + settings.efficiencyWeight * 2) - revisitPenalty,
+      description: `Travel to ${ctx.currentLocation}: ${action.description}`,
+      details: { nextActionType: action.type, nextActionDetails: action.details },
+    };
+  });
+  ranked.push({ type: 'end-turn', priority: 1, description: 'End turn' });
+  ranked.sort((a, b) => b.priority - a.priority);
+  // Mistakes choose among useful alternatives, never survival, victory or idle.
+  if (ranked[0].priority < 400 && ranked[0].type !== 'end-turn') {
+    const choices = ranked.filter(a => a.type !== 'end-turn' && a.priority >= ranked[0].priority * 0.75).slice(0, 5);
+    applyMistakes(choices, settings.mistakeChance);
+    if (choices[0]) return [choices[0], ...ranked.filter(a => a !== choices[0])];
+  }
+  return ranked;
 }
