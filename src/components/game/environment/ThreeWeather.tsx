@@ -63,7 +63,7 @@ export function ThreeWeather() {
         unsubscribe=manager.register(seconds=>{
           try {
             const state=latest.current;
-            const calls=renderer?.draw(seconds,state.weather?.type,state.strike);
+            const calls=renderer?.draw(seconds,state.weather?.type,state.strike,state.town);
             canvas.dataset.drawCalls=String(calls??0);canvas.dataset.effectTime=seconds.toFixed(3);
           } catch { if(registered) fail(); else initialFailure=true; }
         });
