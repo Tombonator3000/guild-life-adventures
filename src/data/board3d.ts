@@ -10,6 +10,7 @@ export interface Board3DLocation {
   id: LocationId;
   name: string;
   shortName: string;
+  backgroundUrl: string;
   x: number;
   z: number;
   color: string;
@@ -19,7 +20,7 @@ export interface Board3DLocation {
   actionResult: string;
 }
 
-export const BOARD_3D_LOCATIONS: Board3DLocation[] = [
+const BOARD_3D_LOCATION_DEFINITIONS: Omit<Board3DLocation, 'backgroundUrl'>[] = [
   { id: 'noble-heights', name: 'Noble Heights', shortName: 'Noble Heights', x: -10.5, z: -6.8, color: '#b9c5d1', accent: '#b45f3c', action: 'Slapp av', actionCost: 1, actionResult: '+1 lykke' },
   { id: 'graveyard', name: 'The Graveyard', shortName: 'Graveyard', x: -11.4, z: -2.2, color: '#657180', accent: '#9aa5b5', action: 'Be ved kapellet', actionCost: 1, actionResult: '+1 ro' },
   { id: 'general-store', name: 'General Store', shortName: 'General Store', x: -10.2, z: 2.5, color: '#c48a55', accent: '#70462d', action: 'Kjøp forsyninger', actionCost: 1, actionResult: 'Forsyninger klare' },
@@ -36,6 +37,11 @@ export const BOARD_3D_LOCATIONS: Board3DLocation[] = [
   { id: 'slums', name: 'The Slums', shortName: 'Slums', x: 0.0, z: -7.2, color: '#756150', accent: '#b47b4c', action: 'Hvil hjemme', actionCost: 1, actionResult: '+3 helse' },
   { id: 'landlord', name: "Landlord's Office", shortName: 'Landlord', x: -5.2, z: -7.0, color: '#96765a', accent: '#d4a537', action: 'Betal husleie', actionCost: 1, actionResult: 'Husly sikret' },
 ];
+
+export const BOARD_3D_LOCATIONS: Board3DLocation[] = BOARD_3D_LOCATION_DEFINITIONS.map((location) => ({
+  ...location,
+  backgroundUrl: `${import.meta.env.BASE_URL}board3d/backgrounds/${location.id}.jpg`,
+}));
 
 export const BOARD_3D_BY_ID = Object.fromEntries(
   BOARD_3D_LOCATIONS.map((location) => [location.id, location]),

@@ -21,6 +21,7 @@ Core player loop:
 - Topology: the exact `BOARD_PATH` order and `getPath` movement cost remain canonical.
 - Art direction: painterly medieval tabletop fantasy, chunky readable silhouettes, warm parchment center, moss/stone/timber/terracotta palette, soft shadows and restrained detail.
 - Model generation: no Magnific/Tripo integration is available in the current workspace. The buildings are deterministic Blender-authored primitives with a documented generator script, an honest substitute for the requested handoff while preserving editability.
+- Background handoff: the original `game-board.jpeg` is split into fifteen named JPG reference plates under `public/board3d/backgrounds/`; each canonical 3D location resolves its own `backgroundUrl`.
 - Image concepts: the built-in image generator was attempted for three previews but returned account usage-limit 429; the existing `game-board.jpeg` and approved environment assets remain the visual references.
 
 ## Content envelope
@@ -32,7 +33,7 @@ Core player loop:
 | Actions | One readable prototype action per location; forge/guild/cave/academy/home update sample resources | Full store-service parity |
 | Camera | Orbit, zoom, reset-friendly home view | Cinematic camera tours |
 | Runtime | Browser route inside existing Vite app | Native desktop build |
-| Art | Blender GLB plus editable generator script | Tripo/Magnific-generated meshes unavailable here |
+| Art | Blender GLB, editable generator script and 15 JPG reference plates | Tripo/Magnific-generated meshes unavailable here |
 
 ## Stack and handoffs
 

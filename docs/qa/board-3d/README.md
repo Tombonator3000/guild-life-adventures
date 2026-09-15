@@ -14,6 +14,7 @@ This file records the 3D conversion evidence for branch `agent/3d-board-conversi
 | GLB export | PASS | `public/board3d/guildholm_3d_board.glb` — 2.8 MB handoff |
 | Blender MCP summary/reopen | PASS | `evidence/blender-mcp-3d-board/summary-final.json`, `reopen-final.json` — 15 roots, 283 meshes, 19,290 triangles |
 | Blender authoring render | PASS | `evidence/blender-mcp-3d-board/guildholm_3d_board.png` |
+| Per-location JPG background plates | PASS | `public/board3d/backgrounds/manifest.json` — 15 named crops from the original 5056×3392 board; browser QA returned 200/image/jpeg for all 15 |
 | Browser runtime loads GLB | PASS | `evidence/blender-mcp-3d-board/runtime-initial.png` |
 | Real click/select/travel/action journey | PASS | `browser-results.json`, `runtime-playtest-enchanter.png` — Slums → Enchanter, 12 → 7 hours, action feedback, week reset |
 | Responsive layout | PASS | `browser-results.json`, `runtime-mobile.png`, `runtime-portrait.png` — no horizontal overflow at 844×390 or 390×844 |
@@ -39,3 +40,5 @@ The 3D authoring source is procedural and editable. Magnific/Tripo and the reque
 ## Opening
 
 From the repository root, use the installed project runtime to start Vite and open `/board-3d`. The title screen also has a **3D Board Lab** entry once the route is built.
+
+To regenerate the plates after changing the source board, run `scripts/split_board_backgrounds.mjs`. The crop manifest keeps each location's source rectangle explicit and replaceable for a future Tripo handoff.

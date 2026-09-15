@@ -1,0 +1,117 @@
+{
+  "source": "src/assets/game-board.jpeg",
+  "sourceSize": {
+    "width": 5056,
+    "height": 3392
+  },
+  "output": "public/board3d/backgrounds",
+  "format": "JPEG",
+  "maxWidth": 1280,
+  "backgrounds": [
+    {
+      "id": "noble-heights",
+      "x": 0,
+      "y": 0,
+      "width": 900,
+      "height": 900
+    },
+    {
+      "id": "graveyard",
+      "x": 0,
+      "y": 650,
+      "width": 850,
+      "height": 700
+    },
+    {
+      "id": "general-store",
+      "x": 100,
+      "y": 1050,
+      "width": 950,
+      "height": 850
+    },
+    {
+      "id": "bank",
+      "x": 100,
+      "y": 1750,
+      "width": 900,
+      "height": 800
+    },
+    {
+      "id": "forge",
+      "x": 0,
+      "y": 2450,
+      "width": 1050,
+      "height": 942
+    },
+    {
+      "id": "guild-hall",
+      "x": 1350,
+      "y": 2450,
+      "width": 1150,
+      "height": 900
+    },
+    {
+      "id": "cave",
+      "x": 2300,
+      "y": 2500,
+      "width": 1150,
+      "height": 892
+    },
+    {
+      "id": "academy",
+      "x": 3100,
+      "y": 2450,
+      "width": 1350,
+      "height": 942
+    },
+    {
+      "id": "enchanter",
+      "x": 4160,
+      "y": 1850,
+      "width": 896,
+      "height": 1542
+    },
+    {
+      "id": "armory",
+      "x": 4050,
+      "y": 1050,
+      "width": 1006,
+      "height": 1150
+    },
+    {
+      "id": "rusty-tankard",
+      "x": 4300,
+      "y": 450,
+      "width": 756,
+      "height": 1050
+    },
+    {
+      "id": "shadow-market",
+      "x": 2050,
+      "y": 0,
+      "width": 1150,
+      "height": 800
+    },
+    {
+      "id": "fence",
+      "x": 3150,
+      "y": 0,
+      "width": 900,
+      "height": 850
+    },
+    {
+      "id": "slums",
+      "x": 4200,
+      "y": 0,
+      "width": 856,
+      "height": 850
+    },
+    {
+      "id": "landlord",
+      "x": 1300,
+      "y": 0,
+      "width": 850,
+      "height": 820
+    }
+  ]
+}

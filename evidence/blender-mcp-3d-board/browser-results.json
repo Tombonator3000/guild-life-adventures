@@ -2,6 +2,83 @@
   "baseUrl": "http://127.0.0.1:4173/board-3d",
   "initialStatus": "Uke\n1\nTimer\n12\nGull\n120\nHP\n82",
   "canvasCount": 1,
+  "backgroundAssets": [
+    {
+      "id": "noble-heights",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "graveyard",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "general-store",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "bank",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "forge",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "guild-hall",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "cave",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "academy",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "enchanter",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "armory",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "rusty-tankard",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "shadow-market",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "fence",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "slums",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "landlord",
+      "status": 200,
+      "contentType": "image/jpeg"
+    }
+  ],
   "selectionToast": "Enchanter's Workshop valgt · 5 timer langs ringen.",
   "selectionInspector": "Enchanter's Workshop\n\nRute fra The Slums: 5 timer.\n\nLad magien\n+1 glød\n\nUtdanning\n0\nLykke\n40",
   "arrivalInspector": "Enchanter's Workshop\n\nDu står her nå.\n\nLad magien\n+1 glød\n\nUtdanning\n0\nLykke\n40",
