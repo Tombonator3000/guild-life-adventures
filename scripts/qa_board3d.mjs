@@ -19,6 +19,14 @@ await page.screenshot({ path: `${evidenceDir}runtime-initial.png` });
 
 const canvasCount = await page.locator('canvas').count();
 const initialStatus = await page.locator('.board3d-status').first().innerText();
+const backgroundIds = [
+  'noble-heights', 'graveyard', 'general-store', 'bank', 'forge', 'guild-hall', 'cave', 'academy',
+  'enchanter', 'armory', 'rusty-tankard', 'shadow-market', 'fence', 'slums', 'landlord',
+];
+const backgroundAssets = await Promise.all(backgroundIds.map(async (id) => {
+  const response = await page.request.get(new URL(`/board3d/backgrounds/${id}.jpg`, baseUrl).href);
+  return { id, status: response.status(), contentType: response.headers()['content-type'] || '' };
+}));
 
 // The Enchanter tower is a stable, visible landmark in the gameplay camera.
 // This is a real pointer click against the rendered canvas, not DOM state setup.
@@ -66,6 +74,7 @@ const result = {
   baseUrl,
   initialStatus,
   canvasCount,
+  backgroundAssets,
   selectionToast,
   selectionInspector,
   arrivalInspector,
