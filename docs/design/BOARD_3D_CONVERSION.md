@@ -20,7 +20,8 @@ Core player loop:
 - Delivery: same Vite/React web app, separate `/board-3d` route and title-menu entry; 2D board is untouched.
 - Topology: the exact `BOARD_PATH` order and `getPath` movement cost remain canonical.
 - Art direction: painterly medieval tabletop fantasy, chunky readable silhouettes, warm parchment center, moss/stone/timber/terracotta palette, soft shadows and restrained detail.
-- Model generation: Magnific is installed and its 3D tool exposes Tripo models `tripo-p1` and `tripo-v31`. This branch uses deterministic Blender primitives as the playable blockout; a generated-mesh replacement is kept as a separate handoff because a run in this session consumes credits.
+- Model generation: Magnific's 3D tool exposes Tripo models `tripo-p1` and `tripo-v31`. All fifteen landmarks are generated with `tripo-p1`, normalized in Blender and integrated into the final GLB; the deterministic primitives remain a recoverable per-location fallback.
+- Ambient life: six low-poly 3D birds are instanced and animated in the Three.js runtime; they are intentionally authored procedurally because repeated small animated props benefit more from shared geometry than from separate Tripo generations.
 - Background handoff: the original `game-board.jpeg` is split into fifteen named JPG reference plates under `public/board3d/backgrounds/`; each canonical 3D location resolves its own `backgroundUrl`.
 - Image concepts: the built-in image generator was attempted for three previews but returned account usage-limit 429; the existing `game-board.jpeg` and approved environment assets remain the visual references.
 
@@ -33,7 +34,7 @@ Core player loop:
 | Actions | One readable prototype action per location; forge/guild/cave/academy/home update sample resources | Full store-service parity |
 | Camera | Orbit, zoom, reset-friendly home view | Cinematic camera tours |
 | Runtime | Browser route inside existing Vite app | Native desktop build |
-| Art | Blender GLB, editable generator script and 15 JPG reference plates | One Tripo pilot is verified; 15-location mesh replacement remains pending |
+| Art | 15 Tripo landmark meshes, editable Blender source, final GLB and 15 JPG reference plates | Full interiors, character rigs and cinematic camera tours |
 
 ## Stack and handoffs
 
@@ -43,7 +44,7 @@ Core player loop:
 | 3D authoring | Blender 4.5.13 LTS | deterministic Python scene script | `.blend`, `.glb`, render | `public/board3d/` | VERIFIED WORKING |
 | Authoring inspection | Blender MCP stdio, reviewed local bridge | saved `.blend` | datablock summary, render, reopen check | `evidence/blender-mcp-3d-board/` | VERIFIED WORKING |
 | Browser runtime | Three.js 0.180.0 + GLTFLoader + OrbitControls | exported GLB | orbitable, clickable diorama | `/board-3d` | VERIFIED after browser run |
-| Generator pipeline | Magnific → Tripo | connected external service | source image → 3D GLB | replaceable handoff for landmark meshes | PILOT VERIFIED; batch pending |
+| Generator pipeline | Magnific → Tripo | connected external service | 15 JPG plates → 15 GLBs → normalized board GLB | replaceable handoff for landmark meshes | 15/15 VERIFIED AND INTEGRATED |
 
 ## Acceptance criteria
 
@@ -58,4 +59,6 @@ Core player loop:
 - A. Board blockout and Blender export: 15 building roots, ring road, central parchment, lights, camera, GLB.
 - B. Browser handoff: actual GLB import, orbit controls, clickable landmarks, player token.
 - C. Playtest loop: route cost, travel, action feedback, week reset and return link.
-- D. Gauntlet checkpoint: runtime screenshot, input journey, build/test/lint, Blender MCP summary/render/reopen, limitations.
+- D. Tripo landmark pass: 15 image-to-3D GLBs, per-asset bounds/scale manifest, Blender integration and combined export.
+- E. Ambient-life pass: shared low-poly bird geometry, six animated instances, no interaction hit targets.
+- F. Gauntlet checkpoint: runtime screenshot, input journey, build/test/lint, Blender summary/render/reopen, limitations.

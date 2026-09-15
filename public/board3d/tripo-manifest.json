@@ -1,0 +1,319 @@
+{
+  "assets": [
+    {
+      "locationId": "noble-heights",
+      "status": "accepted",
+      "model": "tripo-p1",
+      "faceLimit": 10000,
+      "textureQuality": "standard",
+      "referenceJpg": "public/board3d/backgrounds/noble-heights.jpg",
+      "referenceSha256": "296174df44ce95c6a90551ba15a0799fb2ae64c7e03aae5af2339933e8e10e05",
+      "candidateGlb": "evidence/blender-mcp-3d-board/tripo-batch/noble-heights.glb",
+      "candidateSha256": "f4e15d19974af6ed6cf240ae131cd6e32095a7a64cce2752967201512ce2031b",
+      "sourceFile": "noble-heights.glb",
+      "bounds": [
+        14.6505,
+        13.01133,
+        15.00293
+      ],
+      "sourceFaces": 8890,
+      "integratedFaces": 4500,
+      "runtimeFaceBudget": 4500,
+      "normalizationScale": 0.28821045
+    },
+    {
+      "locationId": "graveyard",
+      "status": "accepted",
+      "model": "tripo-p1",
+      "faceLimit": 10000,
+      "textureQuality": "standard",
+      "referenceJpg": "public/board3d/backgrounds/graveyard.jpg",
+      "referenceSha256": "1bbaa8176b733b06af0f0ca1e9812e3bb8089f05c22ff50ef14062b4ceb7cddc",
+      "candidateGlb": "evidence/blender-mcp-3d-board/tripo-batch/graveyard.glb",
+      "candidateSha256": "ba666afc9cffdf5f415be5faa5ccc7eddba4482e9ae619eeb88d340d4a3f36cb",
+      "sourceFile": "graveyard.glb",
+      "bounds": [
+        1.30117,
+        1.2009,
+        1.00472
+      ],
+      "sourceFaces": 9203,
+      "integratedFaces": 4500,
+      "runtimeFaceBudget": 4500,
+      "normalizationScale": 2.74521836
+    },
+    {
+      "locationId": "general-store",
+      "status": "accepted",
+      "model": "tripo-p1",
+      "faceLimit": 10000,
+      "textureQuality": "standard",
+      "referenceJpg": "public/board3d/backgrounds/general-store.jpg",
+      "referenceSha256": "6ee7982684ebbc488eea5e02e1db7956dc393163ff8c5772833e4eb69f92da29",
+      "candidateGlb": "evidence/blender-mcp-3d-board/tripo-batch/general-store.glb",
+      "candidateSha256": "7f2c0592ea2e9f8eabaf8a3ba98e89d9be2dfc9c66f0078494a55935a4af44c7",
+      "sourceFile": "general-store.glb",
+      "bounds": [
+        3.43044,
+        2.74497,
+        3.0
+      ],
+      "sourceFaces": 9454,
+      "integratedFaces": 4500,
+      "runtimeFaceBudget": 4500,
+      "normalizationScale": 0.95906039
+    },
+    {
+      "locationId": "bank",
+      "status": "accepted",
+      "model": "tripo-p1",
+      "faceLimit": 10000,
+      "textureQuality": "standard",
+      "referenceJpg": "public/board3d/backgrounds/bank.jpg",
+      "referenceSha256": "aa937a9dcb14881b93901d648b1ed2023d4bc6892434216a7d528216dcdf8dcc",
+      "candidateGlb": "evidence/blender-mcp-3d-board/tripo-batch/bank.glb",
+      "candidateSha256": "2a03eab7aa9aa4b597cb9dfa360e13ecbe253e9ea74e438b879e8f07ae9cb270",
+      "sourceFile": "bank.glb",
+      "bounds": [
+        8.90657,
+        8.27513,
+        8.05183
+      ],
+      "sourceFaces": 9268,
+      "integratedFaces": 4500,
+      "runtimeFaceBudget": 4500,
+      "normalizationScale": 0.37994435
+    },
+    {
+      "locationId": "forge",
+      "status": "accepted",
+      "model": "tripo-p1",
+      "faceLimit": 10000,
+      "textureQuality": "standard",
+      "referenceJpg": "public/board3d/backgrounds/forge.jpg",
+      "referenceSha256": "656c890daa2e125100e2b6694e848959c79912ea78b15c493b2a3ec3adb42dde",
+      "candidateGlb": "evidence/blender-mcp-3d-board/tripo-batch/forge.glb",
+      "candidateSha256": "3bef0980b106eea2f000ce8291be9ae561dfc9eb8da254df2432aa49f4aef99d",
+      "sourceFile": "forge.glb",
+      "bounds": [
+        9.71925,
+        8.95437,
+        5.0
+      ],
+      "sourceFaces": 9274,
+      "integratedFaces": 4500,
+      "runtimeFaceBudget": 4500,
+      "normalizationScale": 0.36741827
+    },
+    {
+      "locationId": "guild-hall",
+      "status": "accepted",
+      "model": "tripo-p1",
+      "faceLimit": 10000,
+      "textureQuality": "standard",
+      "referenceJpg": "public/board3d/backgrounds/guild-hall.jpg",
+      "referenceSha256": "668080f36991bfbb19295c3da302364476bb871ec36a4629508999679495c19a",
+      "candidateGlb": "evidence/blender-mcp-3d-board/tripo-batch/guild-hall.glb",
+      "candidateSha256": "fd5ca8465a0e6946b538fe6b1ab272bc5e6687a7d5a58f2979fbac2cc9d7b910",
+      "sourceFile": "guild-hall.glb",
+      "bounds": [
+        1.82131,
+        1.83082,
+        1.20348
+      ],
+      "sourceFaces": 9535,
+      "integratedFaces": 4500,
+      "runtimeFaceBudget": 4500,
+      "normalizationScale": 1.95103608
+    },
+    {
+      "locationId": "cave",
+      "status": "accepted",
+      "model": "tripo-p1",
+      "faceLimit": 10000,
+      "textureQuality": "standard",
+      "referenceJpg": "public/board3d/backgrounds/cave.jpg",
+      "referenceSha256": "ecfb4f6b7674592b38c5cb69fea2ba5ce5503e8bf39f4bbff8f6db13eff7f195",
+      "candidateGlb": "evidence/blender-mcp-3d-board/tripo-batch/cave.glb",
+      "candidateSha256": "855f4ddf0165e0e2d3e66dcf0f8fcd6b08c61dd7be94755458f0039ed350f4fb",
+      "sourceFile": "cave.glb",
+      "bounds": [
+        3.01408,
+        2.222,
+        3.00733
+      ],
+      "sourceFaces": 9105,
+      "integratedFaces": 4500,
+      "runtimeFaceBudget": 4500,
+      "normalizationScale": 1.15650652
+    },
+    {
+      "locationId": "academy",
+      "status": "accepted",
+      "model": "tripo-p1",
+      "faceLimit": 10000,
+      "textureQuality": "standard",
+      "referenceJpg": "public/board3d/backgrounds/academy.jpg",
+      "referenceSha256": "d44dfaf03601ba4883e51a35ef787ae1c44dedf5bbd745813dec39cebf0cc16b",
+      "candidateGlb": "evidence/blender-mcp-3d-board/tripo-batch/academy.glb",
+      "candidateSha256": "e403e68cb849bec44abfffbd844bccfc2a4c1a1b0cad308ecbc3b82135f6ee61",
+      "sourceFile": "academy.glb",
+      "bounds": [
+        10.03327,
+        11.41092,
+        8.01027
+      ],
+      "sourceFaces": 9406,
+      "integratedFaces": 4500,
+      "runtimeFaceBudget": 4500,
+      "normalizationScale": 0.39349079
+    },
+    {
+      "locationId": "enchanter",
+      "status": "accepted",
+      "model": "tripo-p1",
+      "faceLimit": 10000,
+      "textureQuality": "standard",
+      "referenceJpg": "public/board3d/backgrounds/enchanter.jpg",
+      "referenceSha256": "ad585faa896ad1f060f0bead83bcb332ffb7fea9f072c1ae5f91ec0280383f20",
+      "candidateGlb": "evidence/blender-mcp-3d-board/tripo-pilot/enchanter_tripo.glb",
+      "candidateSha256": "d31468a3d763147b222e6367454acb699e35df4d621285f1600a35e0136d52a8",
+      "sourceFile": "enchanter_tripo.glb",
+      "bounds": [
+        4.5392,
+        5.22202,
+        12.00336
+      ],
+      "sourceFaces": 8539,
+      "integratedFaces": 4500,
+      "runtimeFaceBudget": 4500,
+      "normalizationScale": 0.2505966
+    },
+    {
+      "locationId": "armory",
+      "status": "accepted",
+      "model": "tripo-p1",
+      "faceLimit": 10000,
+      "textureQuality": "standard",
+      "referenceJpg": "public/board3d/backgrounds/armory.jpg",
+      "referenceSha256": "ed76887a94b704e306c4f77e7e5465581ff17907ddfa20aa00050cb5a6fa3a00",
+      "candidateGlb": "evidence/blender-mcp-3d-board/tripo-batch/armory.glb",
+      "candidateSha256": "0f59fd0b7cf6f70d8f483b1c2db4bac5d276a4ec956685633f03b0c4a2388bf7",
+      "sourceFile": "armory.glb",
+      "bounds": [
+        4.43769,
+        6.21277,
+        4.00058
+      ],
+      "sourceFaces": 9188,
+      "integratedFaces": 4500,
+      "runtimeFaceBudget": 4500,
+      "normalizationScale": 0.54468491
+    },
+    {
+      "locationId": "rusty-tankard",
+      "status": "accepted",
+      "model": "tripo-p1",
+      "faceLimit": 10000,
+      "textureQuality": "standard",
+      "referenceJpg": "public/board3d/backgrounds/rusty-tankard.jpg",
+      "referenceSha256": "1fb09418bba689c6239bb36ac93412eef978443312eadfa6a38b4571df37c176",
+      "candidateGlb": "evidence/blender-mcp-3d-board/tripo-batch/rusty-tankard.glb",
+      "candidateSha256": "850f979b569f85bd8c9a11a37779f8bb8801e7cc75c299692250e2065f0a0dde",
+      "sourceFile": "rusty-tankard.glb",
+      "bounds": [
+        5.26165,
+        7.32616,
+        4.0
+      ],
+      "sourceFaces": 9033,
+      "integratedFaces": 4500,
+      "runtimeFaceBudget": 4500,
+      "normalizationScale": 0.48756752
+    },
+    {
+      "locationId": "shadow-market",
+      "status": "accepted",
+      "model": "tripo-p1",
+      "faceLimit": 10000,
+      "textureQuality": "standard",
+      "referenceJpg": "public/board3d/backgrounds/shadow-market.jpg",
+      "referenceSha256": "2a7e06f462bfc31fdf76aa25ed5915b6f3a900974e2c1651a3ce881dd6d21175",
+      "candidateGlb": "evidence/blender-mcp-3d-board/tripo-batch/shadow-market.glb",
+      "candidateSha256": "9cd24312244ebb646fa091a573830304310abc8be0bceed651e40b6a1057feaf",
+      "sourceFile": "shadow-market.glb",
+      "bounds": [
+        4.22986,
+        7.68403,
+        3.51213
+      ],
+      "sourceFaces": 8979,
+      "integratedFaces": 4500,
+      "runtimeFaceBudget": 4500,
+      "normalizationScale": 0.42816077
+    },
+    {
+      "locationId": "fence",
+      "status": "accepted",
+      "model": "tripo-p1",
+      "faceLimit": 10000,
+      "textureQuality": "standard",
+      "referenceJpg": "public/board3d/backgrounds/fence.jpg",
+      "referenceSha256": "4523b9a2ad2d67f256ff2fdf460cb9ddde40204e5e4a579d3236c3d2a7f0e5ec",
+      "candidateGlb": "evidence/blender-mcp-3d-board/tripo-batch/fence.glb",
+      "candidateSha256": "139462eef189898cdffeda8d3776d4646e3cda8a8594f4204a64910d021829db",
+      "sourceFile": "fence.glb",
+      "bounds": [
+        6.9679,
+        5.56494,
+        3.51231
+      ],
+      "sourceFaces": 9353,
+      "integratedFaces": 4500,
+      "runtimeFaceBudget": 4500,
+      "normalizationScale": 0.51263629
+    },
+    {
+      "locationId": "slums",
+      "status": "accepted",
+      "model": "tripo-p1",
+      "faceLimit": 10000,
+      "textureQuality": "standard",
+      "referenceJpg": "public/board3d/backgrounds/slums.jpg",
+      "referenceSha256": "c1d46216476e92a67a3644d677387b8d76ab1c771483a587373d7d9de68f3162",
+      "candidateGlb": "evidence/blender-mcp-3d-board/tripo-batch/slums.glb",
+      "candidateSha256": "313a617879311ef2156748ad720ea3780b5d869e78477bb2ad6eb75ea6b17168",
+      "sourceFile": "slums.glb",
+      "bounds": [
+        6.73857,
+        5.3937,
+        5.01827
+      ],
+      "sourceFaces": 9056,
+      "integratedFaces": 4500,
+      "runtimeFaceBudget": 4500,
+      "normalizationScale": 0.55768761
+    },
+    {
+      "locationId": "landlord",
+      "status": "accepted",
+      "model": "tripo-p1",
+      "faceLimit": 10000,
+      "textureQuality": "standard",
+      "referenceJpg": "public/board3d/backgrounds/landlord.jpg",
+      "referenceSha256": "beaa7a9cdd37bd1e26507dc032c6b15011e5548d3cb718ad6cfc8050736de4fa",
+      "candidateGlb": "evidence/blender-mcp-3d-board/tripo-batch/landlord.glb",
+      "candidateSha256": "94cd88889d68d570f7254817b425cf39223b487edf8a59720ac7ebd1807251ce",
+      "sourceFile": "landlord.glb",
+      "bounds": [
+        4.21826,
+        4.21443,
+        4.0039
+      ],
+      "sourceFaces": 9220,
+      "integratedFaces": 4500,
+      "runtimeFaceBudget": 4500,
+      "normalizationScale": 0.7799423
+    }
+  ]
+}

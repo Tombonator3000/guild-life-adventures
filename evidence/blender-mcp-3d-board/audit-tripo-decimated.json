@@ -1,0 +1,297 @@
+{
+  "timestamp_utc": "2026-09-15T21:09:03.809735+00:00",
+  "server": "/home/tombonator3000t/signal47-tools/blender-mcp-env/bin/blender-mcp",
+  "blender": "/home/tombonator3000t/signal47-tools/blender-4.5.13-linux-x64/blender",
+  "transport": "stdio",
+  "live_sync_disabled": true,
+  "server_info": {
+    "name": "blender-mcp",
+    "title": null,
+    "version": "1.30.0",
+    "websiteUrl": null,
+    "icons": null
+  },
+  "request": {
+    "tool": "execute_blender_code_for_cli",
+    "arguments": {
+      "blend_file": "/home/tombonator3000t/.codex/.chatgpt-projects/g-p-6a6327df6bc48191959b379ab205fa22/guild-life-adventures/public/board3d/guildholm_3d_board.blend",
+      "code": "import bpy, mathutils\nroots = {}\nfor root in sorted((obj for obj in bpy.context.scene.objects if obj.type == 'EMPTY' and obj.name.startswith('location_')), key=lambda obj: obj.name):\n    meshes = [obj for obj in root.children_recursive if obj.type == 'MESH']\n    corners = [obj.matrix_world @ mathutils.Vector(corner) for obj in meshes for corner in obj.bound_box]\n    bounds = None if not corners else {'min': [round(min(point[index] for point in corners), 5) for index in range(3)], 'max': [round(max(point[index] for point in corners), 5) for index in range(3)]}\n    roots[root.name] = {'source': root.get('source'), 'assetFile': root.get('assetFile'), 'meshCount': len(meshes), 'bounds': bounds}\nresult = {'locationCount': len(roots), 'tripoRoots': sum(value['source'] == 'magnific-tripo' for value in roots.values()), 'fallbackRoots': sum(value['source'] != 'magnific-tripo' for value in roots.values()), 'roots': roots, 'imageCount': len(bpy.data.images), 'materialCount': len(bpy.data.materials)}"
+    }
+  },
+  "response": {
+    "meta": null,
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"locationCount\": 15,\n  \"tripoRoots\": 15,\n  \"fallbackRoots\": 0,\n  \"roots\": {\n    \"location_academy\": {\n      \"source\": \"magnific-tripo\",\n      \"assetFile\": \"academy.glb\",\n      \"meshCount\": 1,\n      \"bounds\": {\n        \"min\": [\n          3.626,\n          0.4,\n          8.12402\n        ],\n        \"max\": [\n          7.574,\n          4.89009,\n          11.27598\n        ]\n      }\n    },\n    \"location_armory\": {\n      \"source\": \"magnific-tripo\",\n      \"assetFile\": \"armory.glb\",\n      \"meshCount\": 1,\n      \"bounds\": {\n        \"min\": [\n          9.59143,\n          0.4,\n          2.51047\n        ],\n        \"max\": [\n          12.00857,\n          3.784,\n          4.68953\n        ]\n      }\n    },\n    \"location_bank\": {\n      \"source\": \"magnific-tripo\",\n      \"assetFile\": \"bank.glb\",\n      \"meshCount\": 1,\n      \"bounds\": {\n        \"min\": [\n          -12.192,\n          0.4,\n          5.67038\n        ],\n        \"max\": [\n          -8.808,\n          3.54409,\n          8.72962\n        ]\n      }\n    },\n    \"location_cave\": {\n      \"source\": \"magnific-tripo\",\n      \"assetFile\": \"cave.glb\",\n      \"meshCount\": 1,\n      \"bounds\": {\n        \"min\": [\n          -0.3429,\n          0.4,\n          8.361\n        ],\n        \"max\": [\n          3.1429,\n          2.96976,\n          11.839\n        ]\n      }\n    },\n    \"location_enchanter\": {\n      \"source\": \"magnific-tripo\",\n      \"assetFile\": \"enchanter_tripo.glb\",\n      \"meshCount\": 1,\n      \"bounds\": {\n        \"min\": [\n          8.73125,\n          0.4,\n          5.796\n        ],\n        \"max\": [\n          9.86875,\n          1.70862,\n          8.804\n        ]\n      }\n    },\n    \"location_fence\": {\n      \"source\": \"magnific-tripo\",\n      \"assetFile\": \"fence.glb\",\n      \"meshCount\": 1,\n      \"bounds\": {\n        \"min\": [\n          3.214,\n          0.4,\n          -7.90027\n        ],\n        \"max\": [\n          6.786,\n          3.25279,\n          -6.09973\n        ]\n      }\n    },\n    \"location_forge\": {\n      \"source\": \"magnific-tripo\",\n      \"assetFile\": \"forge.glb\",\n      \"meshCount\": 1,\n      \"bounds\": {\n        \"min\": [\n          -8.78551,\n          0.4,\n          8.88145\n        ],\n        \"max\": [\n          -5.21449,\n          3.69,\n          10.71855\n        ]\n      }\n    },\n    \"location_general-store\": {\n      \"source\": \"magnific-tripo\",\n      \"assetFile\": \"general-store.glb\",\n      \"meshCount\": 1,\n      \"bounds\": {\n        \"min\": [\n          -11.845,\n          0.4,\n          1.06141\n        ],\n        \"max\": [\n          -8.555,\n          3.03259,\n          3.93859\n        ]\n      }\n    },\n    \"location_graveyard\": {\n      \"source\": \"magnific-tripo\",\n      \"assetFile\": \"graveyard.glb\",\n      \"meshCount\": 1,\n      \"bounds\": {\n        \"min\": [\n          -13.186,\n          0.4,\n          -3.57909\n        ],\n        \"max\": [\n          -9.614,\n          3.69672,\n          -0.82091\n        ]\n      }\n    },\n    \"location_guild-hall\": {\n      \"source\": \"magnific-tripo\",\n      \"assetFile\": \"guild-hall.glb\",\n      \"meshCount\": 1,\n      \"bounds\": {\n        \"min\": [\n          -4.37672,\n          0.4,\n          8.92598\n        ],\n        \"max\": [\n          -0.82328,\n          3.972,\n          11.27402\n        ]\n      }\n    },\n    \"location_landlord\": {\n      \"source\": \"magnific-tripo\",\n      \"assetFile\": \"landlord.glb\",\n      \"meshCount\": 1,\n      \"bounds\": {\n        \"min\": [\n          -6.845,\n          0.4,\n          -8.56141\n        ],\n        \"max\": [\n          -3.555,\n          3.68701,\n          -5.43859\n        ]\n      }\n    },\n    \"location_noble-heights\": {\n      \"source\": \"magnific-tripo\",\n      \"assetFile\": \"noble-heights.glb\",\n      \"meshCount\": 1,\n      \"bounds\": {\n        \"min\": [\n          -12.61121,\n          0.4,\n          -8.962\n        ],\n        \"max\": [\n          -8.38879,\n          4.15,\n          -4.638\n        ]\n      }\n    },\n    \"location_rusty-tankard\": {\n      \"source\": \"magnific-tripo\",\n      \"assetFile\": \"rusty-tankard.glb\",\n      \"meshCount\": 1,\n      \"bounds\": {\n        \"min\": [\n          9.3173,\n          0.4,\n          -1.87513\n        ],\n        \"max\": [\n          11.8827,\n          3.972,\n          0.07513\n        ]\n      }\n    },\n    \"location_shadow-market\": {\n      \"source\": \"magnific-tripo\",\n      \"assetFile\": \"shadow-market.glb\",\n      \"meshCount\": 1,\n      \"bounds\": {\n        \"min\": [\n          8.09447,\n          0.4,\n          -6.15188\n        ],\n        \"max\": [\n          9.90553,\n          3.69,\n          -4.64812\n        ]\n      }\n    },\n    \"location_slums\": {\n      \"source\": \"magnific-tripo\",\n      \"assetFile\": \"slums.glb\",\n      \"meshCount\": 1,\n      \"bounds\": {\n        \"min\": [\n          -1.87901,\n          0.4,\n          -8.59931\n        ],\n        \"max\": [\n          1.87901,\n          3.408,\n          -5.80069\n        ]\n      }\n    }\n  },\n  \"imageCount\": 16,\n  \"materialCount\": 31\n}",
+        "annotations": null,
+        "meta": null
+      }
+    ],
+    "structuredContent": {
+      "locationCount": 15,
+      "tripoRoots": 15,
+      "fallbackRoots": 0,
+      "roots": {
+        "location_academy": {
+          "source": "magnific-tripo",
+          "assetFile": "academy.glb",
+          "meshCount": 1,
+          "bounds": {
+            "min": [
+              3.626,
+              0.4,
+              8.12402
+            ],
+            "max": [
+              7.574,
+              4.89009,
+              11.27598
+            ]
+          }
+        },
+        "location_armory": {
+          "source": "magnific-tripo",
+          "assetFile": "armory.glb",
+          "meshCount": 1,
+          "bounds": {
+            "min": [
+              9.59143,
+              0.4,
+              2.51047
+            ],
+            "max": [
+              12.00857,
+              3.784,
+              4.68953
+            ]
+          }
+        },
+        "location_bank": {
+          "source": "magnific-tripo",
+          "assetFile": "bank.glb",
+          "meshCount": 1,
+          "bounds": {
+            "min": [
+              -12.192,
+              0.4,
+              5.67038
+            ],
+            "max": [
+              -8.808,
+              3.54409,
+              8.72962
+            ]
+          }
+        },
+        "location_cave": {
+          "source": "magnific-tripo",
+          "assetFile": "cave.glb",
+          "meshCount": 1,
+          "bounds": {
+            "min": [
+              -0.3429,
+              0.4,
+              8.361
+            ],
+            "max": [
+              3.1429,
+              2.96976,
+              11.839
+            ]
+          }
+        },
+        "location_enchanter": {
+          "source": "magnific-tripo",
+          "assetFile": "enchanter_tripo.glb",
+          "meshCount": 1,
+          "bounds": {
+            "min": [
+              8.73125,
+              0.4,
+              5.796
+            ],
+            "max": [
+              9.86875,
+              1.70862,
+              8.804
+            ]
+          }
+        },
+        "location_fence": {
+          "source": "magnific-tripo",
+          "assetFile": "fence.glb",
+          "meshCount": 1,
+          "bounds": {
+            "min": [
+              3.214,
+              0.4,
+              -7.90027
+            ],
+            "max": [
+              6.786,
+              3.25279,
+              -6.09973
+            ]
+          }
+        },
+        "location_forge": {
+          "source": "magnific-tripo",
+          "assetFile": "forge.glb",
+          "meshCount": 1,
+          "bounds": {
+            "min": [
+              -8.78551,
+              0.4,
+              8.88145
+            ],
+            "max": [
+              -5.21449,
+              3.69,
+              10.71855
+            ]
+          }
+        },
+        "location_general-store": {
+          "source": "magnific-tripo",
+          "assetFile": "general-store.glb",
+          "meshCount": 1,
+          "bounds": {
+            "min": [
+              -11.845,
+              0.4,
+              1.06141
+            ],
+            "max": [
+              -8.555,
+              3.03259,
+              3.93859
+            ]
+          }
+        },
+        "location_graveyard": {
+          "source": "magnific-tripo",
+          "assetFile": "graveyard.glb",
+          "meshCount": 1,
+          "bounds": {
+            "min": [
+              -13.186,
+              0.4,
+              -3.57909
+            ],
+            "max": [
+              -9.614,
+              3.69672,
+              -0.82091
+            ]
+          }
+        },
+        "location_guild-hall": {
+          "source": "magnific-tripo",
+          "assetFile": "guild-hall.glb",
+          "meshCount": 1,
+          "bounds": {
+            "min": [
+              -4.37672,
+              0.4,
+              8.92598
+            ],
+            "max": [
+              -0.82328,
+              3.972,
+              11.27402
+            ]
+          }
+        },
+        "location_landlord": {
+          "source": "magnific-tripo",
+          "assetFile": "landlord.glb",
+          "meshCount": 1,
+          "bounds": {
+            "min": [
+              -6.845,
+              0.4,
+              -8.56141
+            ],
+            "max": [
+              -3.555,
+              3.68701,
+              -5.43859
+            ]
+          }
+        },
+        "location_noble-heights": {
+          "source": "magnific-tripo",
+          "assetFile": "noble-heights.glb",
+          "meshCount": 1,
+          "bounds": {
+            "min": [
+              -12.61121,
+              0.4,
+              -8.962
+            ],
+            "max": [
+              -8.38879,
+              4.15,
+              -4.638
+            ]
+          }
+        },
+        "location_rusty-tankard": {
+          "source": "magnific-tripo",
+          "assetFile": "rusty-tankard.glb",
+          "meshCount": 1,
+          "bounds": {
+            "min": [
+              9.3173,
+              0.4,
+              -1.87513
+            ],
+            "max": [
+              11.8827,
+              3.972,
+              0.07513
+            ]
+          }
+        },
+        "location_shadow-market": {
+          "source": "magnific-tripo",
+          "assetFile": "shadow-market.glb",
+          "meshCount": 1,
+          "bounds": {
+            "min": [
+              8.09447,
+              0.4,
+              -6.15188
+            ],
+            "max": [
+              9.90553,
+              3.69,
+              -4.64812
+            ]
+          }
+        },
+        "location_slums": {
+          "source": "magnific-tripo",
+          "assetFile": "slums.glb",
+          "meshCount": 1,
+          "bounds": {
+            "min": [
+              -1.87901,
+              0.4,
+              -8.59931
+            ],
+            "max": [
+              1.87901,
+              3.408,
+              -5.80069
+            ]
+          }
+        }
+      },
+      "imageCount": 16,
+      "materialCount": 31
+    },
+    "isError": false
+  }
+}

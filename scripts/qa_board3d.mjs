@@ -19,6 +19,31 @@ await page.screenshot({ path: `${evidenceDir}runtime-initial.png` });
 
 const canvasCount = await page.locator('canvas').count();
 const initialStatus = await page.locator('.board3d-status').first().innerText();
+const tripoManifestResponse = await page.request.get(new URL('/board3d/tripo-manifest.json', baseUrl).href);
+const tripoManifest = tripoManifestResponse.ok() ? await tripoManifestResponse.json() : null;
+const frameSample = await page.evaluate(() => new Promise((resolve) => {
+  const samples = [];
+  const startedAt = performance.now();
+  let previous = startedAt;
+  const tick = (time) => {
+    samples.push(time - previous);
+    previous = time;
+    if (time - startedAt >= 1200) {
+      const sorted = samples.slice(1).sort((a, b) => a - b);
+      const percentile = (value) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * value))] ?? null;
+      resolve({
+        sampleCount: sorted.length,
+        averageMs: sorted.length ? sorted.reduce((sum, value) => sum + value, 0) / sorted.length : null,
+        p95Ms: percentile(0.95),
+        p99Ms: percentile(0.99),
+        maxMs: sorted.at(-1) ?? null,
+      });
+      return;
+    }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}));
 const backgroundIds = [
   'noble-heights', 'graveyard', 'general-store', 'bank', 'forge', 'guild-hall', 'cave', 'academy',
   'enchanter', 'armory', 'rusty-tankard', 'shadow-market', 'fence', 'slums', 'landlord',
@@ -30,7 +55,9 @@ const backgroundAssets = await Promise.all(backgroundIds.map(async (id) => {
 
 // The Enchanter tower is a stable, visible landmark in the gameplay camera.
 // This is a real pointer click against the rendered canvas, not DOM state setup.
-await page.mouse.click(710, 535);
+// The Tripo silhouettes sit slightly lower than the original blockout, so the
+// click is on the visible mesh rather than its non-interactive label sprite.
+await page.mouse.click(710, 565);
 const selectionToast = await page.locator('.board3d-toast').innerText();
 const selectionInspector = await page.locator('.board3d-inspector').innerText();
 
@@ -74,6 +101,14 @@ const result = {
   baseUrl,
   initialStatus,
   canvasCount,
+  tripoManifest: {
+    status: tripoManifestResponse.status(),
+    contentType: tripoManifestResponse.headers()['content-type'] || '',
+    assetCount: tripoManifest?.assets?.length ?? 0,
+    acceptedCount: tripoManifest?.assets?.filter((asset) => asset.status === 'accepted').length ?? 0,
+    fallbackCount: tripoManifest?.assets?.filter((asset) => asset.status === 'fallback').length ?? 0,
+  },
+  frameSample,
   backgroundAssets,
   selectionToast,
   selectionInspector,

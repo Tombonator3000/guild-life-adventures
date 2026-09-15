@@ -2,6 +2,20 @@
   "baseUrl": "http://127.0.0.1:4173/board-3d",
   "initialStatus": "Uke\n1\nTimer\n12\nGull\n120\nHP\n82",
   "canvasCount": 1,
+  "tripoManifest": {
+    "status": 200,
+    "contentType": "application/json",
+    "assetCount": 15,
+    "acceptedCount": 15,
+    "fallbackCount": 0
+  },
+  "frameSample": {
+    "sampleCount": 25,
+    "averageMs": 48.66399999999998,
+    "p95Ms": 66.59999999999945,
+    "p99Ms": 66.59999999999945,
+    "maxMs": 66.59999999999945
+  },
   "backgroundAssets": [
     {
       "id": "noble-heights",

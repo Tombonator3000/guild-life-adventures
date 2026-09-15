@@ -2,12 +2,17 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AmbientLight,
+  BoxGeometry,
   Color,
   DirectionalLight,
+  Euler,
   Fog,
   Group,
+  InstancedMesh,
+  Matrix4,
   Mesh,
   MeshStandardMaterial,
+  Quaternion,
   type Object3D,
   PerspectiveCamera,
   CanvasTexture,
@@ -75,6 +80,89 @@ function locationPathPoints(path: LocationId[]) {
   });
 }
 
+interface BirdFlock {
+  group: Group;
+  update: (time: number) => void;
+  dispose: () => void;
+}
+
+function createBirdFlock(): BirdFlock {
+  const group = new Group();
+  group.name = 'guildholm-3d-bird-flock';
+  const bodyGeometry = new SphereGeometry(0.16, 6, 4);
+  const wingGeometry = new BoxGeometry(0.34, 0.035, 0.12);
+  const bodyMaterial = new MeshStandardMaterial({ color: '#324853', roughness: 0.82, metalness: 0.05 });
+  const wingMaterial = new MeshStandardMaterial({ color: '#6f8e8d', roughness: 0.84, metalness: 0.02 });
+  const states = [
+    { x: -8.2, z: 4.1, height: 7.2, radius: 1.7, speed: 0.72, phase: 0.2, scale: 1.0 },
+    { x: -1.8, z: 5.8, height: 6.4, radius: 1.4, speed: 0.92, phase: 1.7, scale: 0.82 },
+    { x: 7.1, z: 2.4, height: 7.0, radius: 1.8, speed: 0.64, phase: 3.1, scale: 1.12 },
+    { x: 8.0, z: -4.4, height: 5.8, radius: 1.5, speed: 0.84, phase: 4.4, scale: 0.9 },
+    { x: -6.3, z: -4.8, height: 6.1, radius: 1.2, speed: 0.76, phase: 5.6, scale: 0.74 },
+    { x: 2.4, z: -7.4, height: 6.8, radius: 1.35, speed: 0.68, phase: 6.9, scale: 0.86 },
+  ];
+  const bodies = new InstancedMesh(bodyGeometry, bodyMaterial, states.length);
+  const wings = new InstancedMesh(wingGeometry, wingMaterial, states.length * 2);
+  bodies.name = '3d-birds-bodies';
+  wings.name = '3d-birds-wings';
+  bodies.castShadow = true;
+  wings.castShadow = true;
+  group.add(bodies, wings);
+
+  const bodyMatrix = new Matrix4();
+  const wingMatrix = new Matrix4();
+  const position = new Vector3();
+  const wingPosition = new Vector3();
+  const bodyRotation = new Quaternion();
+  const wingRotation = new Quaternion();
+  const scale = new Vector3();
+  const offsetAxis = new Vector3(0, 1, 0);
+
+  const update = (time: number) => {
+    states.forEach((bird, index) => {
+      const angle = bird.phase + time * 0.00032 * bird.speed;
+      const nextAngle = angle + 0.015;
+      position.set(
+        bird.x + Math.cos(angle) * bird.radius,
+        bird.height + Math.sin(time * 0.004 + bird.phase) * 0.16,
+        bird.z + Math.sin(angle * 0.86) * bird.radius,
+      );
+      const heading = Math.atan2(
+        Math.sin(nextAngle * 0.86) - Math.sin(angle * 0.86),
+        Math.cos(nextAngle) - Math.cos(angle),
+      );
+      bodyRotation.setFromEuler(new Euler(0, heading, 0));
+      scale.set(bird.scale * 1.45, bird.scale * 0.72, bird.scale * 0.72);
+      bodyMatrix.compose(position, bodyRotation, scale);
+      bodies.setMatrixAt(index, bodyMatrix);
+
+      const flap = Math.sin(time * 0.014 + bird.phase) * 0.5;
+      [-1, 1].forEach((side, sideIndex) => {
+        wingPosition.set(side * bird.scale * 0.22, bird.scale * 0.02, 0)
+          .applyAxisAngle(offsetAxis, heading)
+          .add(position);
+        wingRotation.setFromEuler(new Euler(0, heading, side * (0.42 + flap)));
+        scale.set(bird.scale, bird.scale, bird.scale);
+        wingMatrix.compose(wingPosition, wingRotation, scale);
+        wings.setMatrixAt(index * 2 + sideIndex, wingMatrix);
+      });
+    });
+    bodies.instanceMatrix.needsUpdate = true;
+    wings.instanceMatrix.needsUpdate = true;
+  };
+
+  return {
+    group,
+    update,
+    dispose: () => {
+      bodyGeometry.dispose();
+      wingGeometry.dispose();
+      bodyMaterial.dispose();
+      wingMaterial.dispose();
+    },
+  };
+}
+
 export function Board3D({ modelUrl = MODEL_URL }: Board3DProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const [modelReady, setModelReady] = useState(false);
@@ -118,11 +206,13 @@ export function Board3D({ modelUrl = MODEL_URL }: Board3DProps) {
     camera.position.set(20, 22, 21);
     camera.lookAt(0, 0, 0);
 
-    const renderer = new WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    const renderer = new WebGLRenderer({ antialias: false, alpha: false, powerPreference: 'high-performance' });
+    // Keep the full Tripo city readable on mobile and software WebGL. The
+    // authoring render retains shadows; runtime uses a conservative pixel
+    // budget so the interactive board stays responsive.
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1));
     renderer.outputColorSpace = 'srgb';
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = 1;
+    renderer.shadowMap.enabled = false;
     stage.appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -136,12 +226,6 @@ export function Board3D({ modelUrl = MODEL_URL }: Board3DProps) {
     scene.add(new AmbientLight('#fff2d0', 1.85));
     const keyLight = new DirectionalLight('#ffe5b0', 3.4);
     keyLight.position.set(-12, 22, 10);
-    keyLight.castShadow = true;
-    keyLight.shadow.mapSize.set(1024, 1024);
-    keyLight.shadow.camera.left = -18;
-    keyLight.shadow.camera.right = 18;
-    keyLight.shadow.camera.top = 18;
-    keyLight.shadow.camera.bottom = -18;
     scene.add(keyLight);
     const coolFill = new DirectionalLight('#99c9dc', 0.9);
     coolFill.position.set(12, 9, -14);
@@ -162,6 +246,8 @@ export function Board3D({ modelUrl = MODEL_URL }: Board3DProps) {
     routeMarker.rotation.x = -Math.PI / 2;
     routeMarker.position.y = 0.49;
     scene.add(routeMarker);
+    const birdFlock = createBirdFlock();
+    scene.add(birdFlock.group);
 
     const pointer = new Vector2();
     const raycaster = new Raycaster();
@@ -221,8 +307,8 @@ export function Board3D({ modelUrl = MODEL_URL }: Board3DProps) {
       world.rotation.x = Math.PI / 2;
       world.traverse((object) => {
         if (object instanceof Mesh) {
-          object.castShadow = true;
-          object.receiveShadow = true;
+          object.castShadow = false;
+          object.receiveShadow = false;
         }
         const id = object.userData?.locationId || object.name.match(/^location_(.+)$/)?.[1];
         if (id && BOARD_3D_BY_ID[id as LocationId]) {
@@ -249,6 +335,7 @@ export function Board3D({ modelUrl = MODEL_URL }: Board3DProps) {
       animationFrame = requestAnimationFrame(animate);
       controls.update();
       const now = performance.now();
+      birdFlock.update(now);
       const active = BOARD_3D_BY_ID[currentLocationRef.current];
       const travelAnimation = travelAnimationRef.current;
       if (travelAnimation) {
@@ -288,6 +375,7 @@ export function Board3D({ modelUrl = MODEL_URL }: Board3DProps) {
       renderer.domElement.removeEventListener('click', handleClick);
       controls.dispose();
       renderer.dispose();
+      birdFlock.dispose();
       if (world) world.traverse((object) => {
         if (object instanceof Mesh) {
           object.geometry.dispose();

@@ -1,0 +1,7 @@
+{
+  "tool": "execute_blender_code_for_cli",
+  "arguments": {
+    "blend_file": "/home/tombonator3000t/.codex/.chatgpt-projects/g-p-6a6327df6bc48191959b379ab205fa22/guild-life-adventures/public/board3d/guildholm_3d_board.blend",
+    "code": "import bpy, mathutils\nroots = {}\nfor root in sorted((obj for obj in bpy.context.scene.objects if obj.type == 'EMPTY' and obj.name.startswith('location_')), key=lambda obj: obj.name):\n    meshes = [obj for obj in root.children_recursive if obj.type == 'MESH']\n    corners = [obj.matrix_world @ mathutils.Vector(corner) for obj in meshes for corner in obj.bound_box]\n    bounds = None if not corners else {'min': [round(min(point[index] for point in corners), 5) for index in range(3)], 'max': [round(max(point[index] for point in corners), 5) for index in range(3)]}\n    roots[root.name] = {'source': root.get('source'), 'assetFile': root.get('assetFile'), 'meshCount': len(meshes), 'bounds': bounds}\nresult = {'locationCount': len(roots), 'tripoRoots': sum(value['source'] == 'magnific-tripo' for value in roots.values()), 'fallbackRoots': sum(value['source'] != 'magnific-tripo' for value in roots.values()), 'roots': roots, 'imageCount': len(bpy.data.images), 'materialCount': len(bpy.data.materials)}"
+  }
+}

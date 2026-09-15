@@ -1,14 +1,16 @@
 """Build the Guildholm 3D board authoring source and browser handoff.
 
-This is intentionally deterministic and procedural: it keeps the editable
-Blender source in the repo as a playable blockout while a Tripo/Magnific
-mesh-generation replacement remains a separate handoff. Run with the
-project's pinned Blender executable.
+This keeps the editable Blender source and deterministically integrates the
+accepted Magnific/Tripo handoff for all fifteen landmarks. Missing candidates
+fall back to the authored blockout so the playable route remains recoverable.
+Run with the project's pinned Blender executable.
 """
 
 from __future__ import annotations
 
 import math
+import hashlib
+import json
 from pathlib import Path
 
 import bpy
@@ -18,8 +20,11 @@ from mathutils import Vector
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "public" / "board3d"
 EVIDENCE_DIR = ROOT / "evidence" / "blender-mcp-3d-board"
+TRIPO_BATCH_DIR = EVIDENCE_DIR / "tripo-batch"
+TRIPO_PILOT_DIR = EVIDENCE_DIR / "tripo-pilot"
 BLEND_PATH = OUT_DIR / "guildholm_3d_board.blend"
 GLB_PATH = OUT_DIR / "guildholm_3d_board.glb"
+TRIPO_MANIFEST_PATH = OUT_DIR / "tripo-manifest.json"
 RENDER_PATH = EVIDENCE_DIR / "guildholm_3d_board.png"
 
 
@@ -55,6 +60,42 @@ COLORS = {
     "water": "#3c7280", "purple": "#7853a4", "glow": "#f0a13c",
     "leaf": "#47704d", "leaf_dark": "#294c3a", "slate": "#677788",
 }
+
+
+# Generated GLBs are accepted into the board only when they exist in this
+# explicit handoff map. Missing files deliberately fall back to the authored
+# blockout so a partial external-service run never breaks the playable route.
+TRIPO_ASSETS = {
+    "noble-heights": TRIPO_BATCH_DIR / "noble-heights.glb",
+    "graveyard": TRIPO_BATCH_DIR / "graveyard.glb",
+    "general-store": TRIPO_BATCH_DIR / "general-store.glb",
+    "bank": TRIPO_BATCH_DIR / "bank.glb",
+    "forge": TRIPO_BATCH_DIR / "forge.glb",
+    "guild-hall": TRIPO_BATCH_DIR / "guild-hall.glb",
+    "cave": TRIPO_BATCH_DIR / "cave.glb",
+    "academy": TRIPO_BATCH_DIR / "academy.glb",
+    "enchanter": TRIPO_PILOT_DIR / "enchanter_tripo.glb",
+    "armory": TRIPO_BATCH_DIR / "armory.glb",
+    "rusty-tankard": TRIPO_BATCH_DIR / "rusty-tankard.glb",
+    "shadow-market": TRIPO_BATCH_DIR / "shadow-market.glb",
+    "fence": TRIPO_BATCH_DIR / "fence.glb",
+    "slums": TRIPO_BATCH_DIR / "slums.glb",
+    "landlord": TRIPO_BATCH_DIR / "landlord.glb",
+}
+
+TRIPO_ENVELOPES = {
+    "noble-heights": (4.6, 4.6, 5.4), "graveyard": (3.8, 3.8, 3.6),
+    "general-store": (3.5, 3.4, 3.4), "bank": (3.6, 3.5, 3.8),
+    "forge": (3.9, 3.8, 3.5), "guild-hall": (4.1, 3.8, 3.8),
+    "cave": (3.8, 3.7, 3.2), "academy": (4.2, 3.8, 4.8),
+    "enchanter": (3.2, 3.2, 5.6), "armory": (3.5, 3.4, 3.6),
+    "rusty-tankard": (3.8, 3.7, 3.8), "shadow-market": (3.8, 3.7, 3.5),
+    "fence": (3.8, 3.7, 3.5), "slums": (4.0, 3.8, 3.2),
+    "landlord": (3.5, 3.4, 3.7),
+}
+
+TRIPO_RESULTS = {}
+TRIPO_RUNTIME_FACE_BUDGET = 4500
 
 
 def rgb(value: str):
@@ -162,6 +203,98 @@ def make_root(location_id):
     return root
 
 
+def _object_bounds(objects):
+    corners = [obj.matrix_world @ Vector(corner) for obj in objects for corner in obj.bound_box]
+    minimum = Vector((min(point.x for point in corners), min(point.y for point in corners), min(point.z for point in corners)))
+    maximum = Vector((max(point.x for point in corners), max(point.y for point in corners), max(point.z for point in corners)))
+    return minimum, maximum
+
+
+def _sha256(path):
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def import_tripo_asset(root, location_id, x, z):
+    path = TRIPO_ASSETS.get(location_id)
+    if not path or not path.exists():
+        return False
+
+    before = set(bpy.context.scene.objects)
+    try:
+        bpy.ops.import_scene.gltf(filepath=str(path))
+    except RuntimeError as error:
+        print("TRIPO_IMPORT_FALLBACK", location_id, str(error))
+        return False
+
+    imported = [obj for obj in bpy.context.scene.objects if obj not in before]
+    if not imported:
+        print("TRIPO_IMPORT_FALLBACK", location_id, "no imported objects")
+        return False
+
+    container = bpy.data.objects.new(f"tripo_{location_id}", None)
+    bpy.context.collection.objects.link(container)
+    container.parent = root
+    for obj in imported:
+        if obj.parent is None:
+            obj.parent = container
+
+    mesh_imported = [obj for obj in imported if obj.type == "MESH"]
+    if not mesh_imported:
+        print("TRIPO_IMPORT_FALLBACK", location_id, "no mesh objects")
+        return False
+    source_faces = sum(len(obj.data.polygons) for obj in mesh_imported)
+    for obj in mesh_imported:
+        face_count = len(obj.data.polygons)
+        if face_count <= TRIPO_RUNTIME_FACE_BUDGET:
+            continue
+        bpy.context.view_layer.objects.active = obj
+        obj.select_set(True)
+        modifier = obj.modifiers.new("runtime silhouette budget", "DECIMATE")
+        modifier.ratio = TRIPO_RUNTIME_FACE_BUDGET / face_count
+        bpy.ops.object.modifier_apply(modifier=modifier.name)
+        obj.select_set(False)
+    integrated_faces = sum(len(obj.data.polygons) for obj in mesh_imported)
+    minimum, maximum = _object_bounds(mesh_imported)
+    size = maximum - minimum
+    target_width, target_depth, target_height = TRIPO_ENVELOPES[location_id]
+    scale = min(target_width / max(size.x, 0.001), target_depth / max(size.z, 0.001), target_height / max(size.y, 0.001)) * 0.94
+    container.scale = (scale, scale, scale)
+    container.location = (x - ((minimum.x + maximum.x) * 0.5) * scale, 0.4 - minimum.y * scale, z - ((minimum.z + maximum.z) * 0.5) * scale)
+    container["assetSource"] = "magnific-tripo"
+    container["sourceFile"] = path.name
+    container["normalizationScale"] = scale
+    root["source"] = "magnific-tripo"
+    root["assetFile"] = path.name
+    source_plate = OUT_DIR / "backgrounds" / f"{location_id}.jpg"
+    candidate_relative = "tripo-pilot/enchanter_tripo.glb" if location_id == "enchanter" else f"tripo-batch/{location_id}.glb"
+    TRIPO_RESULTS[location_id] = {
+        "locationId": location_id,
+        "status": "accepted",
+        "model": "tripo-p1",
+        "faceLimit": 10000,
+        "textureQuality": "standard",
+        "referenceJpg": f"public/board3d/backgrounds/{location_id}.jpg",
+        "referenceSha256": _sha256(source_plate) if source_plate.exists() else None,
+        "candidateGlb": f"evidence/blender-mcp-3d-board/{candidate_relative}",
+        "candidateSha256": _sha256(path),
+        "sourceFile": path.name,
+        "bounds": [round(value, 5) for value in size],
+        "sourceFaces": source_faces,
+        "integratedFaces": integrated_faces,
+        "runtimeFaceBudget": TRIPO_RUNTIME_FACE_BUDGET,
+        "normalizationScale": round(scale, 8),
+    }
+    for obj in mesh_imported:
+        obj["locationId"] = location_id
+        obj.select_set(False)
+    print("TRIPO_IMPORT", {"location": location_id, "source": str(path), "scale": round(scale, 5), "bounds": tuple(round(value, 3) for value in size), "sourceFaces": source_faces, "integratedFaces": integrated_faces})
+    return True
+
+
 def house(root, location_id, x, z, width, depth, height, body_color, roof_color, sign_color=None):
     body = cube("body", (x, height / 2 + 0.4, z), (width, height, depth), material(f"{location_id}-body", body_color), root, location_id, 0.12)
     roof = cone("roof", (x, height + 1.0, z), 1.0, 1.0, material(f"{location_id}-roof", roof_color), root, location_id, 4, (-math.pi / 2, 0, 0), (width * 0.67, depth * 0.67, 1.45))
@@ -265,6 +398,16 @@ def landlord(root, location_id, x, z):
 def add_location(location_id):
     x, z = POSITIONS[location_id]
     root = make_root(location_id)
+    if import_tripo_asset(root, location_id, x, z):
+        return root
+    TRIPO_RESULTS[location_id] = {
+        "locationId": location_id,
+        "status": "fallback",
+        "model": None,
+        "referenceJpg": f"public/board3d/backgrounds/{location_id}.jpg",
+        "candidateGlb": None,
+        "sourceFile": "procedural-blender-v1",
+    }
     if location_id == "noble-heights": castle(root, location_id, x, z)
     elif location_id == "graveyard": graveyard(root, location_id, x, z)
     elif location_id == "cave": cave(root, location_id, x, z)
@@ -412,7 +555,11 @@ def add_scene():
         "triangles": sum(len(obj.data.polygons) for obj in meshes),
         "materials": len(bpy.data.materials),
         "locations": LOCATION_ORDER,
+        "tripoAccepted": sum(item["status"] == "accepted" for item in TRIPO_RESULTS.values()),
+        "tripoFallback": sum(item["status"] == "fallback" for item in TRIPO_RESULTS.values()),
+        "tripoIntegratedFaces": sum(item.get("integratedFaces", 0) for item in TRIPO_RESULTS.values()),
     }
+    TRIPO_MANIFEST_PATH.write_text(json.dumps({"assets": [TRIPO_RESULTS[location_id] for location_id in LOCATION_ORDER]}, indent=2) + "\n")
     print("BOARD3D_RESULT", result)
 
 

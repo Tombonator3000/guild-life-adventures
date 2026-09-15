@@ -10,18 +10,19 @@ This file records the 3D conversion evidence for branch `agent/3d-board-conversi
 
 | Gate | Result | Evidence |
 | --- | --- | --- |
-| Blender script creates saved editable scene | PASS | `public/board3d/guildholm_3d_board.blend` — 15 location roots, 301 objects |
-| GLB export | PASS | `public/board3d/guildholm_3d_board.glb` — 2.8 MB handoff |
-| Blender MCP summary/reopen | PASS | `evidence/blender-mcp-3d-board/summary-final.json`, `reopen-final.json` — 15 roots, 283 meshes, 19,290 triangles |
+| Blender script creates saved editable scene | PASS | `public/board3d/guildholm_3d_board.blend` — 15 location roots with Tripo assets and fallback-capable generator |
+| GLB export | PASS | `public/board3d/guildholm_3d_board.glb` — 13.4 MB handoff, 77,790 triangles |
+| Blender MCP summary/reopen | PASS | `summary-tripo-decimated.json`, `reopen-tripo-decimated.json`, `audit-tripo-decimated.json` — 15 roots, 141 mesh objects, 77,790 triangles, 15/15 Tripo roots |
 | Blender authoring render | PASS | `evidence/blender-mcp-3d-board/guildholm_3d_board.png` |
 | Per-location JPG background plates | PASS | `public/board3d/backgrounds/manifest.json` — 15 named crops from the original 5056×3392 board; browser QA returned 200/image/jpeg for all 15 |
 | Browser runtime loads GLB | PASS | `evidence/blender-mcp-3d-board/runtime-initial.png` |
 | Real click/select/travel/action journey | PASS | `browser-results.json`, `runtime-playtest-enchanter.png` — Slums → Enchanter, 12 → 7 hours, action feedback, week reset |
 | Responsive layout | PASS | `browser-results.json`, `runtime-mobile.png`, `runtime-portrait.png` — no horizontal overflow at 844×390 or 390×844 |
-| TypeScript/tests/build/lint | PASS | typecheck, 813 Vitest tests, Vite production build, full lint with 0 errors (18 pre-existing warnings) |
+| TypeScript/tests/build/lint | PASS | typecheck, Vitest suite, Vite production build, full lint with 0 errors (18 pre-existing warnings) |
 | In-app CUA preview | UNVERIFIED | Admin security blocked opening the localhost tab; production preview was verified with automated Chromium instead |
-| 60 fps target on physical target hardware | UNVERIFIED | no physical device measurement in this environment |
-| Magnific/Tripo asset handoff | PILOT VERIFIED / BATCH PENDING | Magnific access and Tripo models are verified; one Enchanter `tripo-p1` GLB pilot was generated and inspected in Blender for 580 credits. Account reports 21,055 credits, and the current session warns that further generations will consume them |
+| 60 fps target on physical target hardware | UNVERIFIED | headless SwiftShader sample improved to 48.7 ms average / 66.6 ms p95 after the runtime budget pass; no physical device measurement in this environment |
+| Magnific/Tripo asset handoff | PASS | 15/15 `tripo-p1` GLBs generated from the 15 JPG plates, downloaded, normalized and integrated. Batch used 8,120 credits; 12,355 remain in the current session |
+| 3D bird layer | PASS | six shared low-poly bird instances with runtime wing/bob animation; excluded from landmark hit testing |
 
 ## Review checklist
 
@@ -35,7 +36,7 @@ This file records the 3D conversion evidence for branch `agent/3d-board-conversi
 
 The automated production-preview pass performs a real canvas pointer click on the Enchanter landmark, reads the five-hour route cost, travels from Slums, waits for arrival, activates **Lad magien**, and ends the turn. The captured result has no browser console errors or page errors.
 
-The 3D authoring source is procedural and editable. Magnific/Tripo access is verified with the Enchanter pilot at `evidence/blender-mcp-3d-board/tripo-pilot/`. The public playable GLB remains the deterministic blockout while a full 15-location generated-mesh batch awaits review; the requested image concept pass is separate and previously hit a 429 usage limit.
+The 3D authoring source is editable and now integrates all fifteen accepted Tripo landmark meshes. Raw generated candidates are retained under `evidence/blender-mcp-3d-board/tripo-batch/`, the Enchanter pilot remains under `tripo-pilot/`, and `public/board3d/tripo-manifest.json` records source hashes, face budgets and normalization. The requested image concept pass is separate and previously hit a 429 usage limit.
 
 ## Opening
 
