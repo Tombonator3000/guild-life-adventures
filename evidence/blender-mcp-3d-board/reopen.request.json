@@ -1,0 +1,7 @@
+{
+  "tool": "execute_blender_code_for_cli",
+  "arguments": {
+    "blend_file": "/home/tombonator3000t/.codex/.chatgpt-projects/g-p-6a6327df6bc48191959b379ab205fa22/guild-life-adventures/public/board3d/guildholm_3d_board.blend",
+    "code": "import bpy\nroots = sorted(obj.name for obj in bpy.context.scene.objects if obj.type == 'EMPTY' and obj.name.startswith('location_'))\nmeshes = [obj for obj in bpy.context.scene.objects if obj.type == 'MESH']\nresult = {'location_roots': roots, 'location_count': len(roots), 'mesh_count': len(meshes), 'triangle_count': sum(len(obj.data.polygons) for obj in meshes), 'scene_camera': bpy.context.scene.camera.name if bpy.context.scene.camera else None}"
+  }
+}

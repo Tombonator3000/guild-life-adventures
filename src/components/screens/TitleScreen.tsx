@@ -21,7 +21,9 @@ import {
   Heart,
   GraduationCap,
   Briefcase,
+  Box,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import titleDay from '@/assets/title-day.jpg';
 import titleNight from '@/assets/title-night.jpg';
 import { activateDevMode } from '@/hooks/useDevMode';
@@ -312,6 +314,14 @@ export function TitleScreen() {
           </button>
           <EntryDivider />
           <div className="entry-utility-grid">
+            <Link
+              to="/board-3d"
+              className="entry-button entry-menu-action"
+              aria-label="Open Guildholm 3D board lab"
+            >
+              <Box aria-hidden="true" />
+              3D Board Lab
+            </Link>
             <button
               ref={loadButtonRef}
               type="button"
