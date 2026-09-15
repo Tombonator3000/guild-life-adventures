@@ -385,6 +385,10 @@ export function Board3D({ modelUrl = MODEL_URL }: Board3DProps) {
                 <span className="board3d-location-dot" style={{ color: selected.accent, background: selected.accent }} />
                 {selected.name}
               </div>
+              <div className="board3d-reference">
+                <img src={selected.backgroundUrl} alt={`${selected.name} bakgrunn`} />
+                <span><strong>2D bakgrunnsplate</strong><small>{selected.id}.jpg</small></span>
+              </div>
               <p>{selected.id === currentLocation ? 'Du står her nå.' : `Rute fra ${current.name}: ${travelCost} timer.`}</p>
               <p className="board3d-action-copy"><strong>{selected.action}</strong><br />{selected.actionResult}</p>
               <div className="board3d-status" style={{ justifyContent: 'flex-start', marginTop: 10 }}>

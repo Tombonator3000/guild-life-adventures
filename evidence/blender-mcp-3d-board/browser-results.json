@@ -80,8 +80,8 @@
     }
   ],
   "selectionToast": "Enchanter's Workshop valgt · 5 timer langs ringen.",
-  "selectionInspector": "Enchanter's Workshop\n\nRute fra The Slums: 5 timer.\n\nLad magien\n+1 glød\n\nUtdanning\n0\nLykke\n40",
-  "arrivalInspector": "Enchanter's Workshop\n\nDu står her nå.\n\nLad magien\n+1 glød\n\nUtdanning\n0\nLykke\n40",
+  "selectionInspector": "Enchanter's Workshop\n2D bakgrunnsplate\nenchanter.jpg\n\nRute fra The Slums: 5 timer.\n\nLad magien\n+1 glød\n\nUtdanning\n0\nLykke\n40",
+  "arrivalInspector": "Enchanter's Workshop\n2D bakgrunnsplate\nenchanter.jpg\n\nDu står her nå.\n\nLad magien\n+1 glød\n\nUtdanning\n0\nLykke\n40",
   "arrivalStatus": "Uke\n1\nTimer\n7\nGull\n120\nHP\n82",
   "actionToast": "Lad magien: +1 glød.",
   "nextWeekStatus": "Uke\n2\nTimer\n12\nGull\n120\nHP\n82",

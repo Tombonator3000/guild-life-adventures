@@ -168,6 +168,28 @@
   box-shadow: 0 0 13px currentColor;
 }
 
+.board3d-reference {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+  color: #e8d6af;
+  font-size: 0.76rem;
+}
+
+.board3d-reference img {
+  display: block;
+  width: 96px;
+  height: 64px;
+  border: 1px solid rgba(217, 175, 85, 0.45);
+  border-radius: 6px;
+  object-fit: cover;
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.25);
+}
+
+.board3d-reference span { display: grid; gap: 3px; }
+.board3d-reference small { color: #b9ad94; font-size: 0.7rem; }
+
 .board3d-action-copy {
   margin-top: 10px !important;
   padding: 9px 10px;
