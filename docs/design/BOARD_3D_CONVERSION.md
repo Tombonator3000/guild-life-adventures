@@ -20,7 +20,7 @@ Core player loop:
 - Delivery: same Vite/React web app, separate `/board-3d` route and title-menu entry; 2D board is untouched.
 - Topology: the exact `BOARD_PATH` order and `getPath` movement cost remain canonical.
 - Art direction: painterly medieval tabletop fantasy, chunky readable silhouettes, warm parchment center, moss/stone/timber/terracotta palette, soft shadows and restrained detail.
-- Model generation: no Magnific/Tripo integration is available in the current workspace. The buildings are deterministic Blender-authored primitives with a documented generator script, an honest substitute for the requested handoff while preserving editability.
+- Model generation: Magnific is installed and its 3D tool exposes Tripo models `tripo-p1` and `tripo-v31`. This branch uses deterministic Blender primitives as the playable blockout; a generated-mesh replacement is kept as a separate handoff because a run in this session consumes credits.
 - Background handoff: the original `game-board.jpeg` is split into fifteen named JPG reference plates under `public/board3d/backgrounds/`; each canonical 3D location resolves its own `backgroundUrl`.
 - Image concepts: the built-in image generator was attempted for three previews but returned account usage-limit 429; the existing `game-board.jpeg` and approved environment assets remain the visual references.
 
@@ -33,7 +33,7 @@ Core player loop:
 | Actions | One readable prototype action per location; forge/guild/cave/academy/home update sample resources | Full store-service parity |
 | Camera | Orbit, zoom, reset-friendly home view | Cinematic camera tours |
 | Runtime | Browser route inside existing Vite app | Native desktop build |
-| Art | Blender GLB, editable generator script and 15 JPG reference plates | Tripo/Magnific-generated meshes unavailable here |
+| Art | Blender GLB, editable generator script and 15 JPG reference plates | One Tripo pilot is verified; 15-location mesh replacement remains pending |
 
 ## Stack and handoffs
 
@@ -43,7 +43,7 @@ Core player loop:
 | 3D authoring | Blender 4.5.13 LTS | deterministic Python scene script | `.blend`, `.glb`, render | `public/board3d/` | VERIFIED WORKING |
 | Authoring inspection | Blender MCP stdio, reviewed local bridge | saved `.blend` | datablock summary, render, reopen check | `evidence/blender-mcp-3d-board/` | VERIFIED WORKING |
 | Browser runtime | Three.js 0.180.0 + GLTFLoader + OrbitControls | exported GLB | orbitable, clickable diorama | `/board-3d` | VERIFIED after browser run |
-| Generator candidates | Magnific/Tripo | external service | — | no connector or authorized account route in workspace | UNAVAILABLE |
+| Generator pipeline | Magnific → Tripo | connected external service | source image → 3D GLB | replaceable handoff for landmark meshes | PILOT VERIFIED; batch pending |
 
 ## Acceptance criteria
 

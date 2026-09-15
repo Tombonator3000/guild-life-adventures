@@ -1,8 +1,9 @@
 """Build the Guildholm 3D board authoring source and browser handoff.
 
 This is intentionally deterministic and procedural: it keeps the editable
-Blender source in the repo while standing in for an unavailable Tripo/Magnific
-mesh-generation handoff. Run with the project's pinned Blender executable.
+Blender source in the repo as a playable blockout while a Tripo/Magnific
+mesh-generation replacement remains a separate handoff. Run with the
+project's pinned Blender executable.
 """
 
 from __future__ import annotations
