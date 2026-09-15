@@ -1,0 +1,117 @@
+{
+  "baseUrl": "http://127.0.0.1:4173/board-3d",
+  "initialStatus": "Uke\n1\nTimer\n12\nGull\n120\nHP\n82",
+  "canvasCount": 1,
+  "tripoManifest": {
+    "status": 200,
+    "contentType": "application/json",
+    "assetCount": 15,
+    "acceptedCount": 15,
+    "fallbackCount": 0
+  },
+  "frameSample": {
+    "sampleCount": 25,
+    "averageMs": 48.66399999999998,
+    "p95Ms": 66.59999999999945,
+    "p99Ms": 66.59999999999945,
+    "maxMs": 66.59999999999945
+  },
+  "backgroundAssets": [
+    {
+      "id": "noble-heights",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "graveyard",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "general-store",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "bank",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "forge",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "guild-hall",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "cave",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "academy",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "enchanter",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "armory",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "rusty-tankard",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "shadow-market",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "fence",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "slums",
+      "status": 200,
+      "contentType": "image/jpeg"
+    },
+    {
+      "id": "landlord",
+      "status": 200,
+      "contentType": "image/jpeg"
+    }
+  ],
+  "selectionToast": "Enchanter's Workshop valgt · 5 timer langs ringen.",
+  "selectionInspector": "Enchanter's Workshop\n2D bakgrunnsplate\nenchanter.jpg\n\nRute fra The Slums: 5 timer.\n\nLad magien\n+1 glød\n\nUtdanning\n0\nLykke\n40",
+  "arrivalInspector": "Enchanter's Workshop\n2D bakgrunnsplate\nenchanter.jpg\n\nDu står her nå.\n\nLad magien\n+1 glød\n\nUtdanning\n0\nLykke\n40",
+  "arrivalStatus": "Uke\n1\nTimer\n7\nGull\n120\nHP\n82",
+  "actionToast": "Lad magien: +1 glød.",
+  "nextWeekStatus": "Uke\n2\nTimer\n12\nGull\n120\nHP\n82",
+  "mobileLayout": {
+    "width": 844,
+    "scrollWidth": 844,
+    "hasHorizontalOverflow": false,
+    "canvasWidth": 844
+  },
+  "portraitLayout": {
+    "width": 390,
+    "height": 844,
+    "scrollWidth": 390,
+    "hasHorizontalOverflow": false,
+    "canvasWidth": 390
+  },
+  "consoleErrors": [],
+  "pageErrors": []
+}

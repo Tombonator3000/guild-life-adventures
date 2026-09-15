@@ -1,0 +1,56 @@
+{
+  "timestamp_utc": "2026-09-15T19:05:31.428206+00:00",
+  "server": "/home/tombonator3000t/signal47-tools/blender-mcp-env/bin/blender-mcp",
+  "blender": "/home/tombonator3000t/signal47-tools/blender-4.5.13-linux-x64/blender",
+  "transport": "stdio",
+  "live_sync_disabled": true,
+  "server_info": {
+    "name": "blender-mcp",
+    "title": null,
+    "version": "1.30.0",
+    "websiteUrl": null,
+    "icons": null
+  },
+  "request": {
+    "tool": "execute_blender_code_for_cli",
+    "arguments": {
+      "blend_file": "/home/tombonator3000t/.codex/.chatgpt-projects/g-p-6a6327df6bc48191959b379ab205fa22/guild-life-adventures/public/board3d/guildholm_3d_board.blend",
+      "code": "import bpy\nroots = sorted(obj.name for obj in bpy.context.scene.objects if obj.type == 'EMPTY' and obj.name.startswith('location_'))\nmeshes = [obj for obj in bpy.context.scene.objects if obj.type == 'MESH']\nresult = {'location_roots': roots, 'location_count': len(roots), 'mesh_count': len(meshes), 'triangle_count': sum(len(obj.data.polygons) for obj in meshes), 'scene_camera': bpy.context.scene.camera.name if bpy.context.scene.camera else None}"
+    }
+  },
+  "response": {
+    "meta": null,
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"location_roots\": [\n    \"location_academy\",\n    \"location_armory\",\n    \"location_bank\",\n    \"location_cave\",\n    \"location_enchanter\",\n    \"location_fence\",\n    \"location_forge\",\n    \"location_general-store\",\n    \"location_graveyard\",\n    \"location_guild-hall\",\n    \"location_landlord\",\n    \"location_noble-heights\",\n    \"location_rusty-tankard\",\n    \"location_shadow-market\",\n    \"location_slums\"\n  ],\n  \"location_count\": 15,\n  \"mesh_count\": 283,\n  \"triangle_count\": 19290,\n  \"scene_camera\": \"Guildholm 3D gameplay camera\"\n}",
+        "annotations": null,
+        "meta": null
+      }
+    ],
+    "structuredContent": {
+      "location_roots": [
+        "location_academy",
+        "location_armory",
+        "location_bank",
+        "location_cave",
+        "location_enchanter",
+        "location_fence",
+        "location_forge",
+        "location_general-store",
+        "location_graveyard",
+        "location_guild-hall",
+        "location_landlord",
+        "location_noble-heights",
+        "location_rusty-tankard",
+        "location_shadow-market",
+        "location_slums"
+      ],
+      "location_count": 15,
+      "mesh_count": 283,
+      "triangle_count": 19290,
+      "scene_camera": "Guildholm 3D gameplay camera"
+    },
+    "isError": false
+  }
+}
