@@ -50,6 +50,7 @@ const DEFAULT_OPTIONS: GameOptions = {
 
   // Display
   environmentDetail: 'full',
+  cloudShadowIntensity: 1,
   showEventAnimations: true,
   compactUI: false,
   showTurnNotifications: true,
