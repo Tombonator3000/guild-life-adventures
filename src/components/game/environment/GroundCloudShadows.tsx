@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { BoardRect } from './effectAnchors';
+import type { WeatherType } from '@/data/weather';
 import { paintCloudShadowFallback } from './cloudShadowFallback';
 import { useEnvironment } from './useEnvironment';
 
@@ -12,7 +13,7 @@ export function GroundCloudShadows({centerPanel}: {centerPanel: BoardRect}) {
   useEffect(()=>{
     const host=hostRef.current;if(!host) return;
     let cancelled=false,unsubscribe=()=>{},observer:ResizeObserver|undefined;
-    let renderer:{resize:(width:number,height:number,panel:BoardRect)=>void;draw:(seconds:number,weather:typeof environment.weather extends infer T ? T extends {type: infer W} ? W : never : never)=>void;dispose:()=>void}|undefined;
+    let renderer:{resize:(width:number,height:number,panel:BoardRect)=>void;draw:(seconds:number,weather?:WeatherType)=>void;dispose:()=>void}|undefined;
     const glCanvas=document.createElement('canvas');glCanvas.className='ground-cloud-shadow-canvas';glCanvas.setAttribute('aria-hidden','true');host.appendChild(glCanvas);
     const fallback=()=>{
       unsubscribe();unsubscribe=()=>{};renderer?.dispose();renderer=undefined;
