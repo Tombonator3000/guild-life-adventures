@@ -3,7 +3,7 @@ import type { FestivalId } from '@/data/festivals';
 import type { EffectAssets } from './effectAssets';
 import type { EffectPolicy } from './effectPolicy';
 import { precipitationBudget, sample } from './effectPolicy';
-import { CHIMNEYS, LIGHTS, PUDDLES, FESTIVAL_ANCHORS, type BoardRect } from './effectAnchors';
+import { CHIMNEYS, ENCHANTER_CAULDRON, LIGHTS, PUDDLES, FESTIVAL_ANCHORS, type BoardRect } from './effectAnchors';
 import { loadZoneConfig } from '@/data/zoneStorage';
 import { townWind, type TownAtmosphere } from './TownAtmosphere';
 import { createRoofSnowPainter } from './snowRoofs';
@@ -22,6 +22,14 @@ function sprite(ctx: Context, image: CanvasImageSource | undefined | null, x: nu
 function glow(ctx: Context,x: number,y: number,r: number,color: string,alpha: number) {
   const g = ctx.createRadialGradient(x,y,0,x,y,r); g.addColorStop(0,color); g.addColorStop(.2,color+'b0'); g.addColorStop(1,color+'00');
   ctx.save(); ctx.globalCompositeOperation='screen'; ctx.globalAlpha=alpha; ctx.fillStyle=g; ctx.fillRect(x-r,y-r,r*2,r*2); ctx.restore();
+}
+function magicalSmokePuff(ctx: Context,x: number,y: number,r: number,alpha: number) {
+  const g=ctx.createRadialGradient(x,y,0,x,y,r);
+  g.addColorStop(0,'rgba(164,255,184,.9)');
+  g.addColorStop(.42,'rgba(74,220,124,.62)');
+  g.addColorStop(1,'rgba(20,112,72,0)');
+  ctx.save();ctx.globalCompositeOperation='screen';ctx.globalAlpha=alpha;ctx.fillStyle=g;
+  ctx.beginPath();ctx.ellipse(x,y,r*.72,r,0,0,TAU);ctx.fill();ctx.restore();
 }
 function clipBoard(ctx: Context,w: number,h: number,panel: BoardRect) {
   ctx.beginPath(); ctx.rect(0,0,w,h);
@@ -97,6 +105,17 @@ export function createWorldRenderer() {
         if (stage<3) emit(Math.floor(stage)+1,px,py,width,width*1.2,alpha*(stage%1),wind.x*.006);
       }
     });
+    // Magical green vapour rises from the brewing cauldron beside the Enchanter's Workshop.
+    const [cauldronX,cauldronY]=ENCHANTER_CAULDRON;
+    for(let i=0;i<(policy.mobile?4:7);i++) {
+      const age=mod(t/7.5+i/(policy.mobile?4:7),1);
+      const curl=Math.sin(age*TAU*1.35+i*1.7)*w*.007;
+      const px=cauldronX*w+curl+age*age*wind.x*w*.0007;
+      const py=cauldronY*h-age*h*.125;
+      const radius=w*(.008+age*.017);
+      magicalSmokePuff(ctx,px,py,radius,Math.sin(age*Math.PI)*(.42-age*.12));
+    }
+    glow(ctx,cauldronX*w,cauldronY*h,w*.013,'#54e88b',.36);
     // Brief, bounded sparks after a confirmed forge shift, not a perpetual celebration.
     for (const burst of scene.town?.bursts??[]) {
       const age=seconds-burst.start;

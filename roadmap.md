@@ -4,3 +4,5 @@
 - [x] Remove only the legacy duplicate cloud/cloud-shadow passes.
 - [x] Add focused unit and browser coverage for visuals, policies, layering, fallback, and cleanup.
 - [x] Run full validation and save concise evidence under docs/qa/cloud-shadows.
+- [x] Add green magical smoke above the Enchanter's cauldron without changing chimney smoke.
+- [x] Verify the cauldron smoke on the actual 2D board.
