@@ -57,9 +57,10 @@ describe('board environment and travel', () => {
     const weather = useGameStore.getState().weather;
     const ground=container.querySelector('.board-ground-layer');
     expect(ground).toBeInTheDocument();
+    expect(ground).toHaveAttribute('aria-hidden','true');
+    expect(ground).toHaveClass('board-ground-layer');
     expect(ground?.firstElementChild).toHaveClass('board-painting');
     expect(ground?.querySelector('.ground-cloud-shadows')).toBeInTheDocument();
-    expect(ground).toHaveStyle({pointerEvents:'none'});
     expect(container.querySelector('canvas.weather-particles')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Living environment'),{target:{value:'reduced'}});
     expect(container.querySelector('.environment-still[data-weather="snowstorm"]')).toBeInTheDocument();
