@@ -20,7 +20,7 @@ export function paintCloudShadowFallback(canvas: HTMLCanvasElement, width: numbe
     const u = (x + 0.5) / canvas.width, v = (y + 0.5) / canvas.height;
     const multiplier = insidePanel(u, v, panel)
       ? { r: 1, g: 1, b: 1 }
-      : cloudMultiplier(cloudCoverage(u, v, aspect, 0), weather);
+      : cloudMultiplier(cloudCoverage(u, v, aspect, 0), weather, intensity);
     const offset = (y * canvas.width + x) * 4;
     image.data[offset] = Math.round(multiplier.r * 255);
     image.data[offset + 1] = Math.round(multiplier.g * 255);
