@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CLOUD_INTENSITY_DEFAULT, CLOUD_INTENSITY_MAX, CLOUD_INTENSITY_MIN, CLOUD_MAX_STRENGTH,
   CLOUD_MIN_MULTIPLIER, cloudBufferSize, cloudCoverage, cloudMultiplier,
-  cloudStrength, createCloudNoise,
+  clampCloudIntensity, cloudStrength, createCloudNoise,
 } from './cloudShadowModel';
 
 describe('cloud shadow model', () => {
@@ -38,5 +39,20 @@ describe('cloud shadow model', () => {
   it('caps the low-resolution backing buffer independently of DPR', () => {
     expect(cloudBufferSize(1920,1080,false)).toEqual({width:640,height:360});
     expect(cloudBufferSize(1180,820,true)).toEqual({width:480,height:334});
+  });
+
+  it('keeps the user shadow intensity inside the safe range', () => {
+    expect(clampCloudIntensity(undefined)).toBe(CLOUD_INTENSITY_DEFAULT);
+    expect(clampCloudIntensity(Number.NaN)).toBe(CLOUD_INTENSITY_DEFAULT);
+    expect(clampCloudIntensity(-5)).toBe(CLOUD_INTENSITY_MIN);
+    expect(clampCloudIntensity(99)).toBe(CLOUD_INTENSITY_MAX);
+    expect(cloudStrength('thunderstorm',99)).toBeLessThanOrEqual(CLOUD_MAX_STRENGTH);
+    expect(cloudStrength(undefined,0)).toBe(0);
+    expect(cloudStrength(undefined,1.3)).toBeGreaterThan(cloudStrength(undefined,1));
+    for(const intensity of [0,0.5,1,1.3,50]) {
+      const multiplier=cloudMultiplier(1,'thunderstorm',intensity);
+      expect(Math.min(multiplier.r,multiplier.g,multiplier.b)).toBeGreaterThanOrEqual(CLOUD_MIN_MULTIPLIER);
+      expect(Math.max(multiplier.r,multiplier.g,multiplier.b)).toBeLessThanOrEqual(1);
+    }
   });
 });
