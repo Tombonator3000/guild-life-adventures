@@ -20,6 +20,7 @@ export interface GameOptions {
 
   // === Display ===
   environmentDetail: EnvironmentDetail; // Local visual preference; never changes weather rules
+  cloudShadowIntensity: number; // 0 – 1.3 bounded multiplier on cloud shadow darkening
   showEventAnimations: boolean; // Animate event popups
   compactUI: boolean;          // Use compact stat displays
   showTurnNotifications: boolean; // Show turn-change notifications
@@ -49,6 +50,7 @@ const DEFAULT_OPTIONS: GameOptions = {
 
   // Display
   environmentDetail: 'full',
+  cloudShadowIntensity: 1,
   showEventAnimations: true,
   compactUI: false,
   showTurnNotifications: true,

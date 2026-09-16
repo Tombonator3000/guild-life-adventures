@@ -8,7 +8,7 @@ function insidePanel(u: number, v: number, panel: BoardRect) {
   return u >= left && u <= left + panel.width / 100 && v >= top && v <= top + panel.height / 100;
 }
 
-export function paintCloudShadowFallback(canvas: HTMLCanvasElement, width: number, height: number, weather: WeatherType | undefined, panel: BoardRect) {
+export function paintCloudShadowFallback(canvas: HTMLCanvasElement, width: number, height: number, weather: WeatherType | undefined, panel: BoardRect, intensity?: number) {
   const scale = Math.min(1, CLOUD_FALLBACK_LONG_EDGE / Math.max(1, width, height));
   canvas.width = Math.max(1, Math.round(width * scale));
   canvas.height = Math.max(1, Math.round(height * scale));
@@ -20,7 +20,7 @@ export function paintCloudShadowFallback(canvas: HTMLCanvasElement, width: numbe
     const u = (x + 0.5) / canvas.width, v = (y + 0.5) / canvas.height;
     const multiplier = insidePanel(u, v, panel)
       ? { r: 1, g: 1, b: 1 }
-      : cloudMultiplier(cloudCoverage(u, v, aspect, 0), weather);
+      : cloudMultiplier(cloudCoverage(u, v, aspect, 0), weather, intensity);
     const offset = (y * canvas.width + x) * 4;
     image.data[offset] = Math.round(multiplier.r * 255);
     image.data[offset + 1] = Math.round(multiplier.g * 255);

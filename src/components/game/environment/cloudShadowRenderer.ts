@@ -43,10 +43,10 @@ const FRAGMENT = /* glsl */`
       gl_FragColor=vec4(1.0); return;
     }
     vec2 p=vec2(uv.x*aspect,uv.y)*3.1;
-    float a=field(p+vec2(13.7,7.3)-time*vec2(.012,.0048),0.0);
+    float a=field(p+vec2(13.7,7.3)-time*vec2(.042,.017),0.0);
     float angle=.5235987756; mat2 rotate=mat2(cos(angle),sin(angle),-sin(angle),cos(angle));
-    float b=field(rotate*p+vec2(-9.2,21.4)+time*vec2(-.0067,.0031),1.0);
-    float coverage=smoothstep(.35,.65,a*.64+b*.36);
+    float b=field(rotate*p+vec2(-9.2,21.4)+time*vec2(-.023,.011),1.0);
+    float coverage=smoothstep(.4,.6,a*.64+b*.36);
     float shade=1.0-coverage*strength;
     vec3 multiplier=shade*vec3(1.0-coverage*.025,1.0-coverage*.012,1.0);
     if(hasBoard>.5) {
@@ -86,9 +86,9 @@ export function createCloudShadowRenderer(canvas: HTMLCanvasElement, compact: bo
       renderer.setSize(size.width,size.height,false);uniforms.aspect.value=width/Math.max(1,height);
       uniforms.panel.value.set(panel.left/100,panel.top/100,panel.width/100,panel.height/100);
     },
-    draw(seconds:number,weather?:WeatherType) {
+    draw(seconds:number,weather?:WeatherType,intensity?:number) {
       if(!width||!height) return;
-      uniforms.time.value=seconds;uniforms.strength.value=cloudStrength(weather);renderer.render(scene,camera);
+      uniforms.time.value=seconds;uniforms.strength.value=cloudStrength(weather,intensity);renderer.render(scene,camera);
       if(failed) throw new Error('Cloud shadow shader failed to compile');
       canvas.dataset.renderer='three';canvas.dataset.effectTime=seconds.toFixed(3);canvas.dataset.drawCalls=String(renderer.info.render.calls);
     },
