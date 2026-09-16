@@ -1,5 +1,7 @@
 /** Artwork UVs: deliberately independent of editable hit zones. Original board 5056 × 3392. */
 export const CHIMNEYS = [[.098,.760],[.141,.761],[.130,.372],[.928,.243]] as const;
+/** The green brewing cauldron beside the Enchanter's Workshop. */
+export const ENCHANTER_CAULDRON = [.915, .839] as const;
 export const LIGHTS = [
   [.108,.854, .024, '#ffac42'], [.876,.318,.012,'#ffc974'], [.895,.328,.010,'#ffc974'],
   [.125,.678,.014,'#ffc974'], [.847,.750,.020,'#93aaff'], [.875,.748,.017,'#ce9dff'],
