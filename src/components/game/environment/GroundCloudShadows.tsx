@@ -6,8 +6,9 @@ import { useEnvironment } from './useEnvironment';
 export function GroundCloudShadows({centerPanel}: {centerPanel: BoardRect}) {
   const hostRef=useRef<HTMLDivElement>(null);
   const environment=useEnvironment();
+  const {manager,policy}=environment;
   const latest=useRef(environment);
-  useEffect(()=>{latest.current=environment;environment.manager.invalidate();},[environment]);
+  useEffect(()=>{latest.current=environment;manager.invalidate();},[environment,manager]);
   useEffect(()=>{
     const host=hostRef.current;if(!host) return;
     let cancelled=false,unsubscribe=()=>{},observer:ResizeObserver|undefined;
@@ -25,16 +26,16 @@ export function GroundCloudShadows({centerPanel}: {centerPanel: BoardRect}) {
     void import('./cloudShadowRenderer').then(module=>{
       if(cancelled) return;
       try {
-        renderer=module.createCloudShadowRenderer(glCanvas,environment.policy.mobile,()=>environment.manager.invalidate());
-        const resize=()=>{const box=host.getBoundingClientRect();renderer?.resize(box.width,box.height,centerPanel);environment.manager.invalidate();};
+        renderer=module.createCloudShadowRenderer(glCanvas,policy.mobile,()=>manager.invalidate());
+        const resize=()=>{const box=host.getBoundingClientRect();renderer?.resize(box.width,box.height,centerPanel);manager.invalidate();};
         observer=new ResizeObserver(resize);observer.observe(host);resize();
-        unsubscribe=environment.manager.register(seconds=>{
-          try {renderer?.draw(environment.policy.animated?seconds:0,latest.current.weather?.type);glCanvas.style.visibility='visible';}
+        unsubscribe=manager.register(seconds=>{
+          try {renderer?.draw(policy.animated?seconds:0,latest.current.weather?.type);glCanvas.style.visibility='visible';}
           catch {glCanvas.removeEventListener('webglcontextlost',lost);fallback();}
         });
       } catch {glCanvas.removeEventListener('webglcontextlost',lost);fallback();}
     }).catch(()=>{if(!cancelled) fallback();});
     return ()=>{cancelled=true;unsubscribe();observer?.disconnect();glCanvas.removeEventListener('webglcontextlost',lost);renderer?.dispose();host.replaceChildren();};
-  },[environment.manager,environment.policy.animated,environment.policy.mobile,centerPanel]);
-  return <div ref={hostRef} className="ground-cloud-shadows" aria-hidden="true" data-shadow-policy={environment.policy.quality} />;
+  },[manager,policy.animated,policy.mobile,centerPanel]);
+  return <div ref={hostRef} className="ground-cloud-shadows" aria-hidden="true" data-shadow-policy={policy.quality} />;
 }
