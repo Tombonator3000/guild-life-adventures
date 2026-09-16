@@ -89,37 +89,6 @@ export function createThreeWeather(canvas: HTMLCanvasElement, coarsePointer: boo
     const mesh = new Mesh(geometry,material);mesh.frustumCulled=false;mesh.renderOrder=resources.length;
     scene.add(mesh);resources.push({geometry,material});return mesh;
   };
-  const cloudVertex = `
-    uniform float shadow;
-    void main() {
-      float depth=.55+seed.z*.45;
-      vec2 size=board.zw*vec2(.62,.52)*depth;
-      vec2 origin=vec2(fract(seed.x+windOffset.x*(.00018+seed.z*.0001))*1.8-.4, seed.y*.88+.06)*board.zw;
-      origin.y+=sin(windOffset.y*.002)*board.w*.02;
-      origin+=vec2(22.,32.)*shadow*depth;
-      place(board.xy+origin+position.xy*size);
-    }
-  `;
-  const cloudFragment = `
-    uniform float shadow;
-    void main() {
-      protectUI();
-      vec2 q=(vUv-.5)*2.0;
-      float edge=1.0-smoothstep(.35,1.0,length(q*vec2(.84,1.0)));
-      vec2 p=vUv*vec2(4.1,3.4)+vSeed.xy*19.0+time*.006;
-      float n=cloud(p), density=smoothstep(.30,.76,n)*edge;
-      if(shadow>.5) {gl_FragColor=vec4(.08,.13,.19,density*(.17+storm*.13)*(1.0-drought*.85));return;}
-      float relief=clamp((n-cloud(p+vec2(-.13,-.18)))*3.0+.55,0.0,1.0);
-      vec3 lit=mix(vec3(.37,.45,.51),vec3(.87,.91,.91),relief);
-      lit=mix(lit,lit*.48,storm*.65)+flash*.4;
-      vec3 color=mix(lit,vec3(.08,.13,.19),shadow);
-      float opacity=mix(.36+storm*.18,.17+storm*.13,shadow)*(1.0-drought*.85);
-      gl_FragColor=vec4(color,density*opacity);
-    }
-  `;
-  const shadowMesh=pass(4,cloudVertex,cloudFragment,{shadow:{value:1}});
-  const cloudMesh=pass(4,cloudVertex,cloudFragment,{shadow:{value:0}});
-
   const rainMesh=pass(300,`
     void main() {
       float depth=.35+seed.z*.65;
@@ -233,7 +202,6 @@ export function createThreeWeather(canvas: HTMLCanvasElement, coarsePointer: boo
       uniforms.strikeIndex.value=strike??0;
       rainMesh.visible=dropMesh.visible=wet;
       const rainCount=compact?120:300;
-      shadowMesh.geometry.instanceCount=cloudMesh.geometry.instanceCount=compact?3:4;
       dropMesh.geometry.instanceCount=compact?10:20;
       rainMesh.geometry.instanceCount=weather==='thunderstorm'?rainCount:Math.round(rainCount*.34);
       lightning.visible=strike!==null;

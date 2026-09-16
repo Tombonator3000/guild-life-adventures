@@ -66,7 +66,7 @@ export function createCloudShadowRenderer(canvas: HTMLCanvasElement, compact: bo
   noise.wrapS = noise.wrapT = ClampToEdgeWrapping; noise.minFilter = noise.magFilter = LinearFilter; noise.colorSpace = NoColorSpace; noise.needsUpdate = true;
   const blank = document.createElement('canvas'); blank.width = blank.height = 1;
   const board = new CanvasTexture(blank); board.colorSpace = NoColorSpace;
-  const uniforms = { noiseMap:{value:noise}, boardMap:{value:board}, hasBoard:{value:0}, time:{value:0}, aspect:{value:1}, strength:{value:.27}, panel:{value:new Vector4()} };
+  const uniforms = { noiseMap:{value:noise}, boardMap:{value:board as import('three').Texture}, hasBoard:{value:0}, time:{value:0}, aspect:{value:1}, strength:{value:.27}, panel:{value:new Vector4()} };
   const geometry = new PlaneGeometry(2,2);
   const material = new ShaderMaterial({uniforms,vertexShader:VERTEX,fragmentShader:FRAGMENT,depthTest:false,depthWrite:false,toneMapped:false});
   const mesh = new Mesh(geometry,material), scene = new Scene(), camera = new OrthographicCamera(-1,1,1,-1,0,1); scene.add(mesh);
