@@ -55,13 +55,22 @@ describe('board environment and travel', () => {
   it('lets the player turn ambient motion off without changing weather or gameplay', () => {
     const {container} = renderBoard();
     const weather = useGameStore.getState().weather;
+    const ground=container.querySelector('.board-ground-layer');
+    expect(ground).toBeInTheDocument();
+    expect(ground).toHaveAttribute('aria-hidden','true');
+    expect(ground).toHaveClass('board-ground-layer');
+    expect(ground?.firstElementChild).toHaveClass('board-painting');
+    expect(ground?.querySelector('.ground-cloud-shadows')).toBeInTheDocument();
     expect(container.querySelector('canvas.weather-particles')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Living environment'),{target:{value:'reduced'}});
     expect(container.querySelector('.environment-still[data-weather="snowstorm"]')).toBeInTheDocument();
     expect(container.querySelector('canvas.weather-particles')).not.toBeInTheDocument();
+    expect(container.querySelector('.ground-cloud-shadows')).toHaveAttribute('data-shadow-policy','reduced');
     expect(container.querySelector('.environment-smoke')).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Living environment'),{target:{value:'off'}});
     expect(container.querySelector('.board-environment')).not.toBeInTheDocument();
+    expect(container.querySelector('.ground-cloud-shadows')).not.toBeInTheDocument();
+    expect(container.querySelector('.board-painting')).toBeInTheDocument();
     expect(useGameStore.getState().weather).toBe(weather);
     expect(screen.getByRole('button',{name:'Action panel'})).toBeEnabled();
     expect(JSON.parse(localStorage.getItem('guild-life-options')!).environmentDetail).toBe('off');

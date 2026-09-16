@@ -5,7 +5,7 @@ Scope: the existing Guild Life top-down board, artwork, tokens, rules and menu l
 
 ## Selected direction
 
-A layered 2.5D atmosphere using the installed Three.js 0.180.0. Procedural shaded cloud sheets drift at different speeds, with offset soft shadows; instanced rain streaks vary in depth, speed and size; slow glossy camera droplets leave narrow wet trails along the board edges. A branching edge lightning stroke and short light wash follow the existing thunder event.
+A layered 2.5D atmosphere using the installed Three.js 0.180.0. Instanced rain streaks vary in depth, speed and size; slow glossy camera droplets leave narrow wet trails along the board edges. A branching edge lightning stroke and short light wash follow the existing thunder event. The former visible cloud sheets and paired shadow sprites were retired in favor of the dedicated ground-only system documented under `docs/qa/cloud-shadows`.
 
 The camera droplets use procedural lighting and highlights. They do not refract the live DOM/game board. This avoids duplicating the board as a GPU texture or capturing menus every frame.
 
@@ -22,8 +22,8 @@ Alternatives considered: replacing the map with a full 3D town would change the 
 ## Implementation and budget
 
 - One transparent WebGL canvas, shared existing 30 Hz atmosphere clock; token/UI animation keeps its own timing.
-- Five draw calls maximum during a strike: cloud shadows, clouds, rain, droplets, lightning. Two in clear weather, four in rain.
-- Up to 300 rain streaks / 20 camera drops / 4 clouds + 4 shadows on desktop. Coarse pointers (including iPad desktop-site mode) or viewports below 1024 CSS px use 120 / 10 / 3 + 3. Harvest rain uses about one third of the storm streak count.
+- Three draw calls maximum during a strike: rain, droplets and lightning. The ground-only cloud-shadow multiplier uses one separate bounded draw call.
+- Up to 300 rain streaks / 20 camera drops on desktop. Coarse pointers (including iPad desktop-site mode) or viewports below 1024 CSS px use 120 / 10. Harvest rain uses about one third of the storm streak count.
 - DPR capped at 1.25 desktop, 1 for coarse pointers/narrow layouts. No depth buffer, multisampling, postprocessing, per-frame DOM reads or pixel readback in production.
 - Measured board bounds and protected UI rectangles clip the shader. ResizeObserver, protected-panel mount/unmount, resize, scroll and completed transitions update those bounds.
 - Existing 2D rain/cloud-shadow/camera-drop strokes are suppressed only after the Three renderer succeeds. Smoke, leaves, wildlife, forge/tower lights, puddles, fog, snow and festival effects stay in their existing layer.
@@ -37,7 +37,7 @@ Alternatives considered: replacing the map with a full 3D town would change the 
 | A breakpoint change recreated the renderer on the same canvas after context disposal | Context loss could leave empty weather | Keep the renderer across resize, adjust instance budgets/DPR in place; browser asserts a live context after tablet rotation |
 | Existing forge regression scrolled a control while the mobile layout was remounting | Test could fail on a detached element | Wait for the mobile work control before scrolling; retain all original work/raise/audio assertions |
 
-## Proposed next effects (not implemented in this change)
+## Proposed next effects
 
 | Priority | Effect | Placement / trigger | Why it fits |
 | --- | --- | --- | --- |

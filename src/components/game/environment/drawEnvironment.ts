@@ -85,11 +85,6 @@ export function createWorldRenderer() {
       }
     }
     if (!policy.animated) { ctx.restore();return 0; }
-    // Broad shadow passes at two depths, never narrow repeated stripes.
-    for (let i=0;i<(scene.threeWeather?0:2);i++) {
-      const x=mod(drift.x*(i?.33:.18)*w/1000+w*(.18+i*.51),w*1.7)-w*.35;
-      emit(4,x,h*(.22+i*.55),w*.79,h*.49,rainy?.26:.15,.04);
-    }
     // Four chimney anchors, wispy four-stage smoke, stronger contrast in winter.
     CHIMNEYS.forEach(([x,y],c) => {
       const count=policy.mobile?3:6;

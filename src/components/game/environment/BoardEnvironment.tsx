@@ -4,7 +4,6 @@ import { createWorldRenderer, type Scene } from './drawEnvironment';
 import { precipitationBudget } from './effectPolicy';
 import type { BoardRect } from './effectAnchors';
 import type { AnimationLayerConfig } from '@/types/game.types';
-import { HeatShimmer } from './HeatShimmer';
 import './effects.css';
 
 interface BoardEnvironmentProps { centerPanel: BoardRect; animationLayers?: AnimationLayerConfig[]; }
@@ -14,7 +13,6 @@ export function BoardEnvironment({centerPanel, animationLayers}: BoardEnvironmen
   const {policy,weather}=environment;
   if (!policy.enabled) return null;
   return <div className="board-environment" aria-hidden="true" data-paused={!policy.running} data-detail={policy.quality}>
-    {policy.animated && weather?.type === 'drought' && <HeatShimmer centerPanel={centerPanel} />}
     <WorldCanvas centerPanel={centerPanel} animationLayers={animationLayers} />
   </div>;
 }

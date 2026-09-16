@@ -1,5 +1,6 @@
 import { MilestoneNotice } from './MilestoneNotice';
 import { BoardEnvironment } from './environment/BoardEnvironment';
+import { BoardGroundLayer } from './environment/BoardGroundLayer';
 import { MobileBoardLayout } from './MobileBoardLayout';
 import type { ComponentProps, ReactNode } from 'react';
 import { LOCATIONS, getMovementCost } from '@/data/locations';
@@ -7,7 +8,6 @@ import { getQuestLocationObjectives } from '@/data/quests';
 import { useGameStore } from '@/store/gameStore';
 import { useBanterStore } from '@/store/banterStore';
 import type { AnimationLayerConfig, LocationId, Player } from '@/types/game.types';
-import gameBoard from '@/assets/game-board.jpeg';
 import { AnimatedPlayerToken } from './AnimatedPlayerToken';
 import { BanterBubble } from './BanterBubble';
 import { DebugOverlay } from './DebugOverlay';
@@ -78,10 +78,7 @@ export function GameBoardCanvas({
 
   const board = (
     <div className="relative w-full h-full" data-board-art>
-      <div
-        className="absolute inset-0 bg-no-repeat"
-        style={{ backgroundImage: `url(${gameBoard})`, backgroundSize: '100% 100%' }}
-      />
+      <BoardGroundLayer centerPanel={isMobile ? NO_BOARD_PANEL : centerPanel} />
 
       <div className="absolute inset-0 z-[2]">
         {LOCATIONS.map(baseLocation => {
