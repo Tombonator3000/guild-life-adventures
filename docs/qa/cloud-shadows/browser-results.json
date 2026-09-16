@@ -1,0 +1,69 @@
+{
+  "url": "http://localhost:8080/",
+  "times": [
+    "0.583",
+    "2.033"
+  ],
+  "layer": {
+    "renderer": "three",
+    "time": "6.316",
+    "drawCalls": "1",
+    "pointer": "none",
+    "isolation": "isolate",
+    "blend": "normal",
+    "groundZ": "0",
+    "zoneZ": "auto",
+    "canvas": [
+      259,
+      480
+    ],
+    "board": [
+      973,
+      1800
+    ]
+  },
+  "clickThrough": true,
+  "calm": {
+    "policy": "reduced",
+    "time": "0.000",
+    "painting": true
+  },
+  "off": {
+    "shadow": false,
+    "painting": true
+  },
+  "tabletLandscape": {
+    "canvas": [
+      480,
+      439
+    ],
+    "board": [
+      897,
+      820
+    ],
+    "renderer": "three"
+  },
+  "tabletPortrait": {
+    "canvas": [
+      480,
+      322
+    ],
+    "board": [
+      589,
+      395
+    ],
+    "renderer": "three",
+    "overflow": true
+  },
+  "fallback": {
+    "renderer": "canvas",
+    "size": [
+      69,
+      128
+    ],
+    "visible": "visible"
+  },
+  "errors": [
+    "Warning: Function components cannot be given refs. Attempts to access this ref will fail. Did you mean to use React.forwardRef()?%s%s \n\nCheck the render method of `ScreenEventFX`. \n    at ThreeWeather (http://localhost:8080/src/components/game/environment/ThreeWeather.tsx:26:17)\n    at ScreenEventFX (http://localhost:8080/src/components/game/environment/ScreenEventFX.tsx:28:43)\n    at div\n    at GameBoardSidePanels (http://localhost:8080/src/components/game/GameBoardSidePanels.tsx:29:39)\n    at EnvironmentProvider (http://localhost:8080/src/components/game/environment/EnvironmentProvider.tsx:110:39)\n    at GameBoard (http://localhost:8080/src/components/game/GameBoard.tsx:51:420)\n    at Suspense\n    at div\n    at Index (http://localhost:8080/src/pages/Index.tsx:167:82)\n    at RenderedRoute (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=9adba6b1:4088:5)\n    at Routes (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=9adba6b1:4558:5)\n    at Router (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=9adba6b1:4501:15)\n    at BrowserRouter (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=9adba6b1:5247:5)\n    at Provider (http://localhost:8080/node_modules/.vite/deps/chunk-RJ7WAUOI.js?v=c1ff425e:48:15)\n    at TooltipProvider (http://localhost:8080/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=12e2d142:53:5)\n    at ErrorBoundary (http://localhost:8080/src/App.tsx:132:9)\n    at App"
+  ]
+}
