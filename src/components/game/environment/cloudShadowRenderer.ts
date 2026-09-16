@@ -59,7 +59,7 @@ const FRAGMENT = /* glsl */`
   }
 `;
 
-export function createCloudShadowRenderer(canvas: HTMLCanvasElement, compact: boolean, onTextureError?: () => void) {
+export function createCloudShadowRenderer(canvas: HTMLCanvasElement, compact: boolean, onTextureSettled?: () => void) {
   const renderer = new WebGLRenderer({ canvas, alpha: false, antialias: false, depth: false, stencil: false, powerPreference: 'low-power' });
   renderer.setPixelRatio(1); renderer.toneMapping = 0; renderer.setClearColor(0xffffff, 1);
   const noise = new DataTexture(createCloudNoise(), CLOUD_NOISE_SIZE, CLOUD_NOISE_SIZE, RGBAFormat, UnsignedByteType);
@@ -76,7 +76,8 @@ export function createCloudShadowRenderer(canvas: HTMLCanvasElement, compact: bo
     if (disposed) { texture.dispose(); return; }
     texture.colorSpace=NoColorSpace; texture.wrapS=texture.wrapT=ClampToEdgeWrapping;
     uniforms.boardMap.value.dispose(); uniforms.boardMap.value=texture; uniforms.hasBoard.value=1;
-  },undefined,()=>{ if(!disposed) onTextureError?.(); });
+    onTextureSettled?.();
+  },undefined,()=>{ if(!disposed) onTextureSettled?.(); });
   return {
     resize(nextWidth:number,nextHeight:number,panel:BoardRect) {
       width=nextWidth;height=nextHeight;

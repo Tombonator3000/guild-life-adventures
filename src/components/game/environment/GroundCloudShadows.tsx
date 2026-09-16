@@ -25,7 +25,7 @@ export function GroundCloudShadows({centerPanel}: {centerPanel: BoardRect}) {
     void import('./cloudShadowRenderer').then(module=>{
       if(cancelled) return;
       try {
-        renderer=module.createCloudShadowRenderer(glCanvas,environment.policy.mobile);
+        renderer=module.createCloudShadowRenderer(glCanvas,environment.policy.mobile,()=>environment.manager.invalidate());
         const resize=()=>{const box=host.getBoundingClientRect();renderer?.resize(box.width,box.height,centerPanel);environment.manager.invalidate();};
         observer=new ResizeObserver(resize);observer.observe(host);resize();
         unsubscribe=environment.manager.register(seconds=>{

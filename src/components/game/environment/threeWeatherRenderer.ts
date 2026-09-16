@@ -50,9 +50,6 @@ const fragmentHeader = `
     vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
     return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);
   }
-  float cloud(vec2 p) {
-    return noise(p)*.56 + noise(p*2.03)*.28 + noise(p*4.11)*.12 + noise(p*8.21)*.04;
-  }
 `;
 
 /** One transparent WebGL surface, including occasional instanced 3D birds. */
