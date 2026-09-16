@@ -38,10 +38,11 @@ const FRAGMENT = /* glsl */`
     return channelNoise(p,channel)*.58+channelNoise(p*2.03,channel)*.29+channelNoise(p*4.11,channel)*.13;
   }
   void main() {
-    if(panel.z>0.0&&panel.w>0.0&&vUv.x>=panel.x&&vUv.x<=panel.x+panel.z&&vUv.y>=panel.y&&vUv.y<=panel.y+panel.w) {
+    vec2 uv=vec2(vUv.x,1.0-vUv.y);
+    if(panel.z>0.0&&panel.w>0.0&&uv.x>=panel.x&&uv.x<=panel.x+panel.z&&uv.y>=panel.y&&uv.y<=panel.y+panel.w) {
       gl_FragColor=vec4(1.0); return;
     }
-    vec2 p=vec2(vUv.x*aspect,vUv.y)*3.1;
+    vec2 p=vec2(uv.x*aspect,uv.y)*3.1;
     float a=field(p+vec2(13.7,7.3)-time*vec2(.012,.0048),0.0);
     float angle=.5235987756; mat2 rotate=mat2(cos(angle),sin(angle),-sin(angle),cos(angle));
     float b=field(rotate*p+vec2(-9.2,21.4)+time*vec2(-.0067,.0031),1.0);
@@ -92,7 +93,7 @@ export function createCloudShadowRenderer(canvas: HTMLCanvasElement, compact: bo
       canvas.dataset.renderer='three';canvas.dataset.effectTime=seconds.toFixed(3);canvas.dataset.drawCalls=String(renderer.info.render.calls);
     },
     dispose() {
-      disposed=true;loaded.dispose();uniforms.boardMap.value.dispose();noise.dispose();geometry.dispose();material.dispose();renderer.dispose();renderer.forceContextLoss();
+      disposed=true;if(uniforms.boardMap.value!==loaded) loaded.dispose();uniforms.boardMap.value.dispose();noise.dispose();geometry.dispose();material.dispose();renderer.dispose();renderer.forceContextLoss();
     },
   };
 }

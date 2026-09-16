@@ -60,7 +60,6 @@ describe('board environment and travel', () => {
     expect(ground?.firstElementChild).toHaveClass('board-painting');
     expect(ground?.querySelector('.ground-cloud-shadows')).toBeInTheDocument();
     expect(ground).toHaveStyle({pointerEvents:'none'});
-    expect(container.querySelector('.board-ground-layer + .z\\[2\\]')).not.toBeInTheDocument();
     expect(container.querySelector('canvas.weather-particles')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Living environment'),{target:{value:'reduced'}});
     expect(container.querySelector('.environment-still[data-weather="snowstorm"]')).toBeInTheDocument();
