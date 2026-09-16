@@ -48,15 +48,27 @@ function field(channel: 0 | 1, x: number, y: number) {
 
 export function cloudCoverage(u: number, v: number, aspect: number, seconds: number) {
   const px = u * aspect * 3.1, py = v * 3.1;
-  const a = field(0, px + 13.7 - seconds * 0.012, py + 7.3 - seconds * 0.0048);
+  const a = field(0, px + 13.7 - seconds * 0.042, py + 7.3 - seconds * 0.017);
   const angle = Math.PI / 6, cos = Math.cos(angle), sin = Math.sin(angle);
   const rx = px * cos - py * sin, ry = px * sin + py * cos;
-  const b = field(1, rx - 9.2 - seconds * 0.0067, ry + 21.4 + seconds * 0.0031);
+  const b = field(1, rx - 9.2 - seconds * 0.023, ry + 21.4 + seconds * 0.011);
   const combined = a * 0.64 + b * 0.36;
-  return smooth(clamp01((combined - 0.35) / 0.3));
+  return smooth(clamp01((combined - 0.4) / 0.2));
 }
 
-export function cloudStrength(weather?: WeatherType) {
+/** User-facing shadow intensity is a bounded multiplier on the weather strength. */
+export const CLOUD_INTENSITY_MIN = 0;
+export const CLOUD_INTENSITY_MAX = 1.3;
+export const CLOUD_INTENSITY_DEFAULT = 1;
+/** Hard cap: this effect never darkens a channel by more than 35%. */
+export const CLOUD_MAX_STRENGTH = 0.35;
+
+export function clampCloudIntensity(intensity = CLOUD_INTENSITY_DEFAULT) {
+  if (!Number.isFinite(intensity)) return CLOUD_INTENSITY_DEFAULT;
+  return Math.max(CLOUD_INTENSITY_MIN, Math.min(CLOUD_INTENSITY_MAX, intensity));
+}
+
+function baseStrength(weather?: WeatherType) {
   if (weather === 'drought') return 0.15;
   if (weather === 'thunderstorm') return 0.33;
   if (weather === 'harvest-rain') return 0.29;
@@ -65,8 +77,12 @@ export function cloudStrength(weather?: WeatherType) {
   return 0.27;
 }
 
-export function cloudMultiplier(coverage: number, weather?: WeatherType) {
-  const shadow = 1 - clamp01(coverage) * cloudStrength(weather);
+export function cloudStrength(weather?: WeatherType, intensity = CLOUD_INTENSITY_DEFAULT) {
+  return Math.min(CLOUD_MAX_STRENGTH, baseStrength(weather) * clampCloudIntensity(intensity));
+}
+
+export function cloudMultiplier(coverage: number, weather?: WeatherType, intensity = CLOUD_INTENSITY_DEFAULT) {
+  const shadow = 1 - clamp01(coverage) * cloudStrength(weather, intensity);
   return {
     r: Math.max(CLOUD_MIN_MULTIPLIER, shadow * (1 - coverage * 0.025)),
     g: Math.max(CLOUD_MIN_MULTIPLIER, shadow * (1 - coverage * 0.012)),
