@@ -129,7 +129,7 @@ export function OptionsTab({
       </OptionSection>
 
       {/* AI Speed Controls */}
-      <OptionSection title="AI Speed">
+      <OptionSection title="Rival Speed">
         <div className="flex gap-1">
           {AI_SPEED_OPTIONS.map(({ speed, icon, label }) => (
             <button
@@ -152,7 +152,7 @@ export function OptionsTab({
             onClick={onSkipAITurn}
             className="w-full mt-1 p-1.5 bg-red-100 hover:bg-red-200 rounded border border-red-300 text-red-700 font-display text-[10px] transition-colors"
           >
-            Skip AI Turn (Space)
+            Skip Rival Turn (Space)
           </button>
         )}
       </OptionSection>
@@ -211,7 +211,7 @@ export function OptionsTab({
           <ShortcutRow keys="ESC" action="Game Menu" />
           <ShortcutRow keys="E" action="End Turn" />
           <ShortcutRow keys="T" action="Toggle Tutorial" />
-          <ShortcutRow keys="Space" action="Skip AI Turn" />
+          <ShortcutRow keys="Space" action="Skip Rival Turn" />
           <ShortcutRow keys="M" action="Mute Music" />
           {options.enableKeyboardNav && (
             <>

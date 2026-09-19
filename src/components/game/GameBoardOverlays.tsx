@@ -141,7 +141,7 @@ export function GameBoardOverlays({
               <CharacterPortrait
                 portraitId={currentPlayer?.portraitId || null}
                 playerColor={currentPlayer?.color || '#E5E5E5'}
-                playerName={currentPlayer?.name || 'AI'}
+                playerName={currentPlayer?.name || 'Rival'}
                 size={isMobile ? 72 : 96}
                 isAI
                 hasCurse={(currentPlayer?.activeCurses?.length ?? 0) > 0}
@@ -155,7 +155,7 @@ export function GameBoardOverlays({
             <div className="flex items-center gap-2">
               <Bot className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-primary animate-bounce`} />
               <h3 className={`font-display ${isMobile ? 'text-lg' : 'text-2xl'} text-card-foreground tracking-wide`}>
-                {currentPlayer?.name || 'AI'} is Scheming...
+                {currentPlayer?.name || 'Rival'} is Scheming...
               </h3>
             </div>
             {showActions && currentAIAction ? (

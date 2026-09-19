@@ -102,6 +102,8 @@ Junior Academy → Scholar Path → Loremaster / Commerce Degree
 
 ## Code Conventions
 
+- Player-facing text must not reference AI tools, model vendors, or development assistants. Describe computer-controlled characters as rivals or computer rivals; About credits name only Tom Husby.
+
 - Use Zustand actions for all state changes
 - All game text in English
 - Platform priority (Tom, 2026-09-13): desktop and iPad/tablet first; mobile is a bonus. Entry menus should use broad desktop layouts, clear parchment/gold materials and touch-size controls on tablets. Keep the existing board and character artwork. Three.js is optional decoration with a static fallback, never a dependency for interacting with a menu.

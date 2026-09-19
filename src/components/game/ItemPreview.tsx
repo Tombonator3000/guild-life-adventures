@@ -22,7 +22,7 @@ export interface PreviewData {
   tags?: string[]; // e.g., "Durable", "Stealable", "Appliance", "Consumable"
   effect?: string; // Short effect summary like "+25 Food" or "+10 DEF"
   itemId?: string;
-  imageUrl?: string; // AI-generated item image
+  imageUrl?: string; // Optional item image
 }
 
 interface ItemPreviewContextValue {

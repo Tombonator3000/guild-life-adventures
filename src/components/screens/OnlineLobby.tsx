@@ -628,7 +628,7 @@ export function OnlineLobby() {
                   />
                   <Bot className="w-5 h-5 text-amber-700" />
                   <span className="font-display text-amber-900 text-sm">
-                    Include Grimwald (AI)
+                    Include Grimwald (computer rival)
                   </span>
                 </label>
                 {settings.includeAI && (
@@ -754,7 +754,7 @@ export function OnlineLobby() {
                 className="gold-button flex items-center gap-2 disabled:opacity-50"
               >
                 <Play className="w-5 h-5" />
-                Start Game ({lobbyPlayers.length} players{settings.includeAI ? ' + AI' : ''})
+                Start Game ({lobbyPlayers.length} players{settings.includeAI ? ' + rival' : ''})
               </button>
             </div>
           </div>
@@ -854,7 +854,7 @@ export function OnlineLobby() {
                   <span>Happiness: {settings.goals.happiness}%</span>
                   <span>Education: {Math.floor(settings.goals.education / 9)} degrees</span>
                   <span>Career: {settings.goals.career} dep</span>
-                  {settings.includeAI && <span className="col-span-2">AI: {AI_DIFFICULTY_NAMES[settings.aiDifficulty]}</span>}
+                  {settings.includeAI && <span className="col-span-2">Rival: {AI_DIFFICULTY_NAMES[settings.aiDifficulty]}</span>}
                 </div>
               </div>
             </div>

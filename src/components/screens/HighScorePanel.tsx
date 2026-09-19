@@ -191,7 +191,7 @@ export function HighScorePanel({
         </div>
       ) : (
         <p className="text-sm text-muted-foreground mb-5">
-          Spectators and AI players cannot submit a Hall of Fame name.
+          Spectators and computer rivals cannot submit a Hall of Fame name.
         </p>
       )}
 
