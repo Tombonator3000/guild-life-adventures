@@ -158,7 +158,7 @@ export function CharacterPortrait({
             className="font-bold text-white drop-shadow-md"
             style={{ fontSize: size * 0.4 }}
           >
-            {isAI ? 'AI' : playerName.charAt(0).toUpperCase()}
+            {playerName.charAt(0).toUpperCase() || (isAI ? 'R' : '?')}
           </span>
           {hasCurse && <CurseOverlay size={size} height={actualHeight} shape={shape} />}
         </div>

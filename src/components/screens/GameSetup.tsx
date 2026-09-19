@@ -182,13 +182,13 @@ export function GameSetup() {
       badIndex < 0
         ? ''
         : names[badIndex].length === 0
-          ? 'Give every adventurer and AI rival a name.'
+          ? 'Give every adventurer and rival a name.'
           : 'Names must be 20 characters or fewer.';
     if (badIndex < 0) {
       badIndex = names.findIndex((name, index) =>
         names.slice(0, index).some((other) => other.toLowerCase() === name.toLowerCase()),
       );
-      if (badIndex >= 0) message = 'All adventurers and AI rivals must have unique names.';
+      if (badIndex >= 0) message = 'All adventurers and rivals must have unique names.';
     }
     if (badIndex >= 0) {
       setNameError(message);
@@ -302,7 +302,7 @@ export function GameSetup() {
                       <article
                         className="entry-player"
                         key={key}
-                        aria-label={`${isAI ? 'AI rival' : 'Local player'} ${player.index + 1}`}
+                        aria-label={`${isAI ? 'Computer rival' : 'Local player'} ${player.index + 1}`}
                       >
                         <div className="entry-player-main">
                           <button
@@ -323,7 +323,7 @@ export function GameSetup() {
                           </button>
                           <div className="entry-player-fields">
                             <label className="entry-field-label" htmlFor={`name-${key}`}>
-                              {isAI ? 'AI rival' : 'Local player'} · Name
+                              {isAI ? 'Computer rival' : 'Local player'} · Name
                             </label>
                             <input
                               id={`name-${key}`}
@@ -338,7 +338,7 @@ export function GameSetup() {
                                   : updatePlayer(player.index, { name: event.target.value })
                               }
                               className="entry-name-input"
-                              placeholder={isAI ? 'AI name...' : 'Enter name...'}
+                              placeholder={isAI ? 'Rival name...' : 'Enter name...'}
                             />
                           </div>
                         </div>
@@ -376,7 +376,7 @@ export function GameSetup() {
                           )}
                           {isAI && (
                             <span className="entry-field-label">
-                              <Bot aria-hidden="true" /> AI opponent
+                              <Bot aria-hidden="true" /> Computer rival
                             </span>
                           )}
                           <button
@@ -401,7 +401,7 @@ export function GameSetup() {
                         </div>
                         {isAI && (
                           <fieldset className="entry-difficulty-group">
-                            <legend>Difficulty for {player.name || 'AI rival'}</legend>
+                            <legend>Difficulty for {player.name || 'Computer rival'}</legend>
                             <div className="entry-difficulty-options">
                               {(['easy', 'medium', 'hard'] as AIDifficulty[]).map((difficulty) => (
                                 <label className="entry-difficulty-choice" key={difficulty}>
@@ -427,7 +427,7 @@ export function GameSetup() {
                       <Users aria-hidden="true" />
                     </span>
                     <strong>A rival makes a good story</strong>
-                    <span>Invite an AI rival</span>
+                    <span>Invite a computer rival</span>
                     <small>Or play solo and build your own life.</small>
                   </button>
                 )}
@@ -475,16 +475,16 @@ export function GameSetup() {
                   onClick={addAIOpponent}
                   disabled={!canAddMore || aiOpponents.length >= AI_OPPONENTS.length}
                   className="entry-button"
-                  aria-label="Add AI opponent"
+                  aria-label="Add computer rival"
                 >
                   <Plus aria-hidden="true" />
                   <Bot aria-hidden="true" />
-                  AI opponent
+                  Computer rival
                 </button>
               </div>
               <p className="entry-roster-help">
                 {aiOpponents.length
-                  ? `${aiOpponents.length} AI rival${aiOpponents.length > 1 ? 's' : ''}. Each AI plays independently.`
+                  ? `${aiOpponents.length} computer rival${aiOpponents.length > 1 ? 's' : ''}. Each rival plays independently.`
                   : players.length === 1
                     ? 'A solo game. Add rivals or share this device with friends.'
                     : 'Local players take turns on this device.'}
@@ -674,7 +674,7 @@ export function GameSetup() {
             {totalPlayers > 3 && <span>+{totalPlayers - 3}</span>}
           </div>
           <p className="entry-dock-summary">
-            {players.length} local player{players.length > 1 ? 's' : ''} · {aiOpponents.length} AI ·{' '}
+            {players.length} local player{players.length > 1 ? 's' : ''} · {aiOpponents.length} rivals ·{' '}
             {selectedPreset?.name ?? 'Custom'} · Tutorial {enableTutorial ? 'on' : 'off'}
           </p>
           <button

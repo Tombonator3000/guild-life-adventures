@@ -1,6 +1,6 @@
 # Painted item atlases
 
-Generated with OpenAI ImageGen on 2026-09-08 for this project. Three 4×4 illustrated fantasy object sheets, compressed to 1024×1024 WebP at quality 86 with Sharp. No board, portrait, building or token artwork was replaced. Each cell is rendered with CSS background positioning by `ItemIcon`; the canonical catalogue mapping and shared aliases live in `painted.ts`. Store rows, inventory and previews use the same component. Existing images remain fallback assets.
+Created on 2026-09-08 for this project. Three 4×4 illustrated fantasy object sheets, compressed to 1024×1024 WebP at quality 86 with Sharp. No board, portrait, building or token artwork was replaced. Each cell is rendered with CSS background positioning by `ItemIcon`; the canonical catalogue mapping and shared aliases live in `painted.ts`. Store rows, inventory and previews use the same component. Existing images remain fallback assets.
 
 The source sheets were visually inspected for cell order and object identity before integration. Cell numbering is row-major, starting at zero. Native rendering crops the assigned cell; compression does not redraw images.
 

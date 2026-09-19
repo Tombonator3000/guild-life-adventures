@@ -9078,3 +9078,4 @@ Created custom skills and documented built-in workflow commands in CLAUDE.md.
 
 ### Verifisering
 - 358/358 tester grønn etter alle endringer.
+[2026-09-19 09:12 UTC] Removed player-facing AI/tool/vendor references; rewrote About credits around Guildholm and Tom Husby; renamed visible computer opponents to rivals across setup, online, options, overlays, changelog, translations, and packaged asset notes.

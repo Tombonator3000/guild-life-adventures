@@ -15,7 +15,7 @@ it('keeps credits quiet when muted or hidden and uses the shared music path when
   expect(audioManager.stop).toHaveBeenCalled();
   expect(audioManager.play).not.toHaveBeenCalled();
   expect(screen.getByRole('button',{name:'Roll credits'})).toBeDisabled();
-  expect(screen.getByText('Tom Husby',{exact:true})).toBeVisible();
+  expect(screen.getAllByText('Tom Husby',{exact:true})[0]).toBeVisible();
 
   state.muted = false;
   rerender(<CreditsScreen onClose={vi.fn()} />);

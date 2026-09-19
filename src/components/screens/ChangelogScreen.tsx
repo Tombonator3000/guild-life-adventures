@@ -19,7 +19,7 @@ const ICON_STYLE = 'w-3.5 h-3.5 shrink-0 mt-0.5';
 const feat = (text: string): ChangelogEntry => ({ icon: <Sparkles className={`${ICON_STYLE} text-amber-400`} />, text });
 const fix = (text: string): ChangelogEntry => ({ icon: <Bug className={`${ICON_STYLE} text-red-400`} />, text });
 const improve = (text: string): ChangelogEntry => ({ icon: <Wrench className={`${ICON_STYLE} text-blue-400`} />, text });
-const ai = (text: string): ChangelogEntry => ({ icon: <Swords className={`${ICON_STYLE} text-purple-400`} />, text });
+const rival = (text: string): ChangelogEntry => ({ icon: <Swords className={`${ICON_STYLE} text-purple-400`} />, text });
 const multi = (text: string): ChangelogEntry => ({ icon: <Globe className={`${ICON_STYLE} text-green-400`} />, text });
 const visual = (text: string): ChangelogEntry => ({ icon: <Palette className={`${ICON_STYLE} text-pink-400`} />, text });
 
@@ -40,7 +40,7 @@ const CHANGELOG: Version[] = [
     highlights: [
       visual('A wide, cinematic title menu with engraved brass frames, warm gold buttons and the original Guildholm city.'),
       improve('Desktop and iPad lead the layout: parchment player cards and a side-by-side preset and goal overview, with generous touch controls.'),
-      improve('Choose each AI rival’s difficulty directly with Novice, Cunning and Master buttons. Your party stays visible beside the next action.'),
+      improve('Choose each computer rival’s difficulty directly with Novice, Cunning and Master buttons. Your party stays visible beside the next action.'),
       visual('A gently lit 3D guild compass decorates the title screen on larger displays. Calm, Off and reduced-motion settings use its static counterpart.'),
     ],
   },
@@ -49,7 +49,7 @@ const CHANGELOG: Version[] = [
     highlights: [
       visual('Embossed gold buttons, larger text and clearer actions on the original illustrated title screen.'),
       improve('Prepare your adventure in two steps: Players, then Game Goals. Names, portraits, rival difficulty and targets stay with you when moving between steps.'),
-      improve('Up to six players and four AI rivals, with paged player cards and a larger keyboard-accessible portrait picker.'),
+      improve('Up to six players and four computer rivals, with paged player cards and a larger keyboard-accessible portrait picker.'),
       improve('Victory presets show their actual targets and selected state. Custom targets remain available under Customize targets.'),
       fix('Continue shows the real saved week and players, and disappears when its autosave is deleted.'),
       improve('Entry menus respect larger text and reduced motion, with larger touch controls across phone, tablet and desktop layouts.'),
@@ -118,14 +118,14 @@ const CHANGELOG: Version[] = [
   {
     version: 'v0.10.2',
     date: 'July 26, 2026',
-    title: 'Phase 16Y: AI Failure Recovery',
+    title: 'Phase 16Y: Rival Failure Recovery',
     highlights: [
-      ai('AI failure memory now tracks the complete requested action and the relevant player state instead of a permanent turn-wide blacklist'),
+      rival('Rival failure memory now tracks the complete requested action and the relevant player state instead of a permanent turn-wide blacklist'),
       fix('Actions rejected for insufficient gold, wrong location, missing education or equipment can be tried again after those prerequisites change'),
       fix('Identical rejected actions remain blocked while the relevant state is unchanged, preventing repeated failure loops'),
-      ai('Normal AI turns and Skip AI Turn now use the same dependency-aware failure cache'),
-      fix('The AI no longer falls back to a known rejected action when no viable alternative remains'),
-      improve('Failure records are isolated per AI player and include structured reason and attempt data for easier diagnosis'),
+      rival('Normal rival turns and Skip Rival Turn now use the same dependency-aware failure cache'),
+      fix('The rival no longer falls back to a known rejected action when no viable alternative remains'),
+      improve('Failure records are isolated per computer rival and include structured reason and attempt data for easier diagnosis'),
     ],
   },
   {
@@ -155,7 +155,7 @@ const CHANGELOG: Version[] = [
       fix('Goal completion starts at 0% instead of showing pre-filled progress before the player has achieved anything'),
       fix('Permadeath no longer leaves the eliminated player holding the active turn and freezing the match'),
       fix('Eliminated players can no longer move around or perform actions'),
-      multi('Dead online players now choose between Spectate Game and leaving; the host automatically continues remaining human or AI turns'),
+      multi('Dead online players now choose between Spectate Game and leaving; the host automatically continues remaining human or computer-rival turns'),
       fix('Solo games now end correctly when no player survives'),
       feat('The Broker is now the single investment system, with Buy 1/5/Max, Sell 1/All, position values and exact dividend information'),
       improve('Legacy Investments balances migrate safely into Savings with no withdrawal penalty'),
@@ -171,9 +171,9 @@ const CHANGELOG: Version[] = [
     highlights: [
       feat('Player Sabotage system at Shadow Market — hire operatives against rivals (pickpocket, distraction, mudslinger)'),
       feat('Dynamic bank interest rates — savings/loan rates scale with market conditions'),
-      ai('AI Trash Talk — personality-specific banter bubbles after successful actions'),
-      ai('AI Strategic Location Blocking — Hard AI races to block rival key locations'),
-      ai('AI Dynamic Personality — gambling/rivalry/caution adjust based on wealth position'),
+      rival('Rival Trash Talk — personality-specific banter bubbles after successful actions'),
+      rival('Rival Strategic Location Blocking — Master rivals race to block rival key locations'),
+      rival('Dynamic Rival Personality — gambling/rivalry/caution adjust based on wealth position'),
     ],
   },
   {
@@ -181,7 +181,7 @@ const CHANGELOG: Version[] = [
     date: 'March 13, 2026',
     title: 'Photo-Realistic Locations',
     highlights: [
-      visual('13 location backgrounds replaced with photo-realistic AI art'),
+      visual('13 location backgrounds replaced with photo-realistic artwork'),
       fix('SpectatorPanel career progress display when unemployed'),
       fix('4 bugs found via parallel bug hunt (358/358 tests passing)'),
     ],
@@ -201,21 +201,21 @@ const CHANGELOG: Version[] = [
       feat('Short shift & cram study for partial time use'),
       feat('Home item hover tooltips with effect info'),
       visual('15 location background illustrations'),
-      ai('AI handler refactor into 6 domain submodules'),
-      fix('Morgath (warrior AI) not returning home at end of turn'),
-      fix('Duplicate AI player ID when adding 5th opponent'),
+      rival('Rival behavior refactor into 6 domain submodules'),
+      fix('Morgath (warrior rival) not returning home at end of turn'),
+      fix('Duplicate rival player ID when adding 5th opponent'),
     ],
   },
   {
     version: 'v0.6.0',
     date: 'March 6, 2026',
-    title: 'AI Rebalance & Music Variants',
+    title: 'Rival Rebalance & Music Variants',
     highlights: [
       feat('Music track variants — 2-3 random variations per location'),
       feat('Jones-style full-course tuition — pay all sessions upfront'),
       feat('Location services preview when out of time'),
-      ai('Universal happiness floor — all AIs maintain minimum happiness'),
-      ai('Thornwick personality rebalance (education 0.8→1.1, social 0.7→0.9)'),
+      rival('Universal happiness floor — all computer rivals maintain minimum happiness'),
+      rival('Thornwick personality rebalance (education 0.8→1.1, social 0.7→0.9)'),
       fix('Infinite reload loop on startup (BUG-015)'),
       fix('Dungeon text contrast improvements'),
     ],
@@ -223,16 +223,16 @@ const CHANGELOG: Version[] = [
   {
     version: 'v0.5.0',
     date: 'March 4, 2026',
-    title: 'MQTT Discovery & AI Tuning',
+    title: 'MQTT Discovery & Rival Tuning',
     highlights: [
       multi('MQTT room browser replaces PartyKit — zero config, zero deploy'),
       feat('Portrait discoverability + custom photo upload'),
       feat('Career goal requires employment (Jones-style)'),
       feat('Entry-level jobs (careerLevel 1-2) now shareable'),
-      ai('AI action limit raised (15→25 actions per turn)'),
-      ai('AI cash flow forecast corrected (40→28 usable hours)'),
-      ai('AI difficulty settings tightened for Hard/Master'),
-      ai('9 AI parameter fixes across strategy, urgency, and planning'),
+      rival('Rival action limit raised (15→25 actions per turn)'),
+      rival('Rival cash flow forecast corrected (40→28 usable hours)'),
+      rival('Rival difficulty settings tightened for Hard/Master'),
+      rival('9 rival parameter fixes across strategy, urgency, and planning'),
     ],
   },
   {
@@ -244,9 +244,9 @@ const CHANGELOG: Version[] = [
       feat('Victory screen leaderboard for multiplayer'),
       feat('Spectator mode for eliminated players'),
       feat('Dead player tokens show grayscale + skull badge'),
-      fix('AI freeze when Seraphina completes quest objectives (BUG-014-D)'),
+      fix('Rival freeze when Seraphina completes quest objectives (BUG-014-D)'),
       fix('Homeless happiness penalty not actually applied'),
-      fix('AI appliance repair time wrong (1h→2h/3h)'),
+      fix('Rival appliance repair time wrong (1h→2h/3h)'),
       fix('Keyboard shortcuts firing inside modals blocked'),
       fix('Player name duplicate/length validation added'),
     ],
@@ -273,9 +273,9 @@ const CHANGELOG: Version[] = [
       feat('Complete LOQ coverage for all 18 quests + chain quests'),
       feat('NL chain multi-LOQ (2-3 objectives per step)'),
       feat('Expanded bounty pool (9→18 bounties, 4 per week)'),
-      ai('AI LOQ awareness — AI travels to quest objective locations'),
+      rival('Rival objective awareness - rivals travel to quest objective locations'),
       improve('Weekend message clutter reduction (max 4 messages)'),
-      fix('AI oscillation prevention (visited location tracking)'),
+      fix('Rival oscillation prevention (visited location tracking)'),
       fix('Travel events capped to 1 per turn'),
     ],
   },
@@ -296,8 +296,8 @@ const CHANGELOG: Version[] = [
       feat('24 achievements with cumulative stats'),
       feat('Weather system (5 types) + seasonal festivals'),
       feat('103 random events'),
-      ai('4 AI opponents (Grimwald, Seraphina, Thornwick, Morgath)'),
-      ai('3 difficulty levels with personality weights'),
+      rival('4 computer rivals (Grimwald, Seraphina, Thornwick, Morgath)'),
+      rival('3 difficulty levels with personality weights'),
       multi('WebRTC P2P multiplayer via PeerJS'),
       multi('Host migration + zombie player auto-skip'),
       feat('PWA with offline support'),

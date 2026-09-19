@@ -1,5 +1,5 @@
 // Quest & Bounty woodcut illustration imports
-// All AI-generated 512×512 medieval woodcut-style quest illustrations
+// All 512×512 medieval woodcut-style quest illustrations
 
 // Regular Quests (18 original)
 import ratExtermination from './rat-extermination.jpg';

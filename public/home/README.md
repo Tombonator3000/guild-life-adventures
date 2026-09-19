@@ -1,6 +1,6 @@
 # Home artwork
 
-Created with OpenAI ImageGen for Guild Life Adventures on 2026-09-08.
+Created for Guild Life Adventures on 2026-09-08.
 
 Two 1536 × 1024 painted interiors share the same bed, desk, wall and bookshelf surfaces. Noble Heights was generated as a material/furnishing variation of the Slums reference. A transparent sheet supplied sixteen painted objects, cropped to individual alpha WebPs. The room backgrounds use WebP quality 88; objects use quality 92 with lossless alpha.
 

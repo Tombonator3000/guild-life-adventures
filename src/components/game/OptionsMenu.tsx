@@ -570,7 +570,7 @@ function SpeedTab({
       />
 
       <Separator />
-      <SectionHeader title="AI Speed" />
+      <SectionHeader title="Rival Speed" />
 
       <div className="flex gap-2">
         {AI_SPEED_OPTIONS.map(({ speed, icon, label }) => (
@@ -590,7 +590,7 @@ function SpeedTab({
         ))}
       </div>
       <p className="text-xs text-muted-foreground font-display">
-        Controls how fast the AI opponent takes their turn.
+        Controls how fast computer rivals take their turns.
       </p>
     </div>
   );

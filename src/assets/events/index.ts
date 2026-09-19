@@ -1,5 +1,5 @@
-// Auto-generated event woodcut illustration imports
-// All AI-generated 512×512 medieval woodcut-style event illustrations
+// Event woodcut illustration imports
+// All 512×512 medieval woodcut-style event illustrations
 
 // Crime & Theft
 import shadowfingersTheft from './shadowfingers-theft.jpg';

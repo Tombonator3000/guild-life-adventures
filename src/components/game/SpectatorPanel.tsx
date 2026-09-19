@@ -98,7 +98,7 @@ export function SpectatorPanel({ players, goalSettings, week, stockPrices, isPur
                 <span className="font-display text-xs font-bold text-[#3d2b1f] truncate block">
                   {player.name}
                   {player.isGameOver && ' 💀'}
-                  {player.isAI && ' 🤖'}
+                  {player.isAI && ' ⚔'}
                 </span>
               </div>
               <span
