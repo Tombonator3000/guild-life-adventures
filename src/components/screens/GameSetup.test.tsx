@@ -26,13 +26,13 @@ afterEach(() => {
 const next = () => fireEvent.click(screen.getByRole('button', { name: 'Choose Game Goals' }));
 
 describe('adventure setup', () => {
-  it('preserves names, portraits, individual AI difficulty, goals and tutorial across both steps into the actual game', () => {
+  it('preserves names, portraits, individual rival difficulty, goals and tutorial across both steps into the actual game', () => {
     render(<GameSetup />);
     fireEvent.change(screen.getByPlaceholderText('Enter name...'), { target: { value: '  Tom  ' } });
     fireEvent.click(screen.getByRole('button', { name: /Choose portrait/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Select mage portrait' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Add AI opponent' }));
-    fireEvent.change(screen.getByPlaceholderText('AI name...'), { target: { value: '  Rival  ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add computer rival' }));
+    fireEvent.change(screen.getByPlaceholderText('Rival name...'), { target: { value: '  Rival  ' } });
     fireEvent.click(screen.getByRole('radio', { name: 'Master' }));
     fireEvent.click(screen.getByRole('checkbox', { name: /Show Tutorial/ }));
     next();
@@ -58,39 +58,39 @@ describe('adventure setup', () => {
     expect(state.showTutorial).toBe(false);
   });
 
-  it('blocks blank AI names and duplicates across humans and AI', () => {
+  it('blocks blank rival names and duplicates across humans and rivals', () => {
     render(<GameSetup />);
     fireEvent.change(screen.getByPlaceholderText('Enter name...'), { target: { value: 'Tom' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Add AI opponent' }));
-    fireEvent.change(screen.getByPlaceholderText('AI name...'), { target: { value: '   ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add computer rival' }));
+    fireEvent.change(screen.getByPlaceholderText('Rival name...'), { target: { value: '   ' } });
     next();
     expect(screen.getByRole('alert')).toHaveTextContent('Give every adventurer');
-    fireEvent.change(screen.getByPlaceholderText('AI name...'), { target: { value: ' tom ' } });
+    fireEvent.change(screen.getByPlaceholderText('Rival name...'), { target: { value: ' tom ' } });
     next();
     expect(screen.getByRole('alert')).toHaveTextContent('unique names');
     expect(screen.queryByRole('button', { name: 'Begin Adventure' })).toBeNull();
   });
 
-  it('keeps the six-player and four-AI limits and recovers paging after removal', () => {
+  it('keeps the six-player and four-rival limits and recovers paging after removal', () => {
     render(<GameSetup />);
-    for (let i = 0; i < 4; i++) fireEvent.click(screen.getByRole('button', { name: 'Add AI opponent' }));
-    expect(screen.getByRole('button', { name: 'Add AI opponent' })).toBeDisabled();
+    for (let i = 0; i < 4; i++) fireEvent.click(screen.getByRole('button', { name: 'Add computer rival' }));
+    expect(screen.getByRole('button', { name: 'Add computer rival' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Add human player' }));
     expect(screen.getByRole('button', { name: 'Add human player' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Next players' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next players' }));
     fireEvent.click(
-      within(screen.getByRole('article', { name: 'AI rival 4' })).getByRole('button', {
+      within(screen.getByRole('article', { name: 'Computer rival 4' })).getByRole('button', {
         name: /Remove/,
       }),
     );
     fireEvent.click(
-      within(screen.getByRole('article', { name: 'AI rival 3' })).getByRole('button', {
+      within(screen.getByRole('article', { name: 'Computer rival 3' })).getByRole('button', {
         name: /Remove/,
       }),
     );
     expect(screen.getByText('Players 3–4 of 4')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Add AI opponent' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Add computer rival' })).toBeEnabled();
   });
 
   it('labels edited goals as Custom and retains them when changing steps', () => {
