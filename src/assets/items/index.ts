@@ -1,5 +1,5 @@
-// Auto-generated item image imports
-// All AI-generated 512×512 item icons for the game
+// Item image imports
+// All 512×512 item icons for the game
 
 // Weapons
 import dagger from './dagger.jpg';
@@ -75,7 +75,7 @@ import encyclopedia from './encyclopedia.jpg';
 import dictionary from './dictionary.jpg';
 import atlas from './atlas.jpg';
 
-/** Map item IDs to their AI-generated images */
+/** Map item IDs to their illustrated images */
 export const ITEM_IMAGES: Record<string, string> = {
   // Weapons
   'dagger': dagger,

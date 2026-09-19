@@ -1,5 +1,5 @@
-// Auto-generated dungeon encounter woodcut illustration imports
-// All AI-generated 512×512 medieval woodcut-style encounter illustrations
+// Dungeon encounter woodcut illustration imports
+// All 512×512 medieval woodcut-style encounter illustrations
 
 // Floor 1: Entrance Cavern
 import f1Rats from './f1-rats.jpg';

@@ -421,7 +421,7 @@ export function OnlineLobby() {
                         {game.hasAI && (
                           <span className="text-xs bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
                             <Bot className="w-3 h-3 inline mr-0.5" />
-                            AI
+                            Rival
                           </span>
                         )}
                         <span className="text-xs text-amber-600 font-mono">{game.roomCode}</span>
