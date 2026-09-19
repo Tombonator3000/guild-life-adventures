@@ -1,12 +1,12 @@
 import {
   CanvasTexture, ClampToEdgeWrapping, DataTexture, LinearFilter, Mesh, NoColorSpace,
   OrthographicCamera, PlaneGeometry, RGBAFormat, Scene, ShaderMaterial, TextureLoader,
-  UnsignedByteType, Vector4, WebGLRenderer,
+  UnsignedByteType, Vector2, Vector4, WebGLRenderer,
 } from 'three';
 import gameBoard from '@/assets/game-board.jpeg';
 import type { WeatherType } from '@/data/weather';
 import type { BoardRect } from './effectAnchors';
-import { CLOUD_NOISE_SIZE, cloudBufferSize, cloudStrength, createCloudNoise } from './cloudShadowModel';
+import { CLOUD_NOISE_SIZE, cloudBufferSize, cloudStrength, createCloudNoise, type CloudWindDrift } from './cloudShadowModel';
 
 const VERTEX = /* glsl */`
   varying vec2 vUv;
@@ -22,6 +22,7 @@ const FRAGMENT = /* glsl */`
   uniform float time;
   uniform float aspect;
   uniform float strength;
+  uniform vec2 windDrift;
   uniform vec4 panel;
   float cubic(float x) { return x*x*(3.0-2.0*x); }
   float channelNoise(vec2 p,float channel) {
@@ -42,11 +43,12 @@ const FRAGMENT = /* glsl */`
     if(panel.z>0.0&&panel.w>0.0&&uv.x>=panel.x&&uv.x<=panel.x+panel.z&&uv.y>=panel.y&&uv.y<=panel.y+panel.w) {
       gl_FragColor=vec4(1.0); return;
     }
-    vec2 p=vec2(uv.x*aspect,uv.y)*3.1;
-    float a=field(p+vec2(13.7,7.3)-time*vec2(.042,.017),0.0);
+    float scale=2.45;
+    vec2 p=vec2(uv.x*aspect,uv.y)*scale-windDrift/1000.0*scale;
+    float a=field(p+vec2(13.7,7.3)-time*vec2(.004,.0015),0.0);
     float angle=.5235987756; mat2 rotate=mat2(cos(angle),sin(angle),-sin(angle),cos(angle));
-    float b=field(rotate*p+vec2(-9.2,21.4)+time*vec2(-.023,.011),1.0);
-    float coverage=smoothstep(.4,.6,a*.64+b*.36);
+    float b=field(rotate*p+vec2(-9.2,21.4)+time*vec2(-.002,.001),1.0);
+    float coverage=smoothstep(.42,.56,a*.72+b*.28);
     float shade=1.0-coverage*strength;
     vec3 multiplier=shade*vec3(1.0-coverage*.025,1.0-coverage*.012,1.0);
     if(hasBoard>.5) {
@@ -67,7 +69,7 @@ export function createCloudShadowRenderer(canvas: HTMLCanvasElement, compact: bo
   noise.wrapS = noise.wrapT = ClampToEdgeWrapping; noise.minFilter = noise.magFilter = LinearFilter; noise.colorSpace = NoColorSpace; noise.needsUpdate = true;
   const blank = document.createElement('canvas'); blank.width = blank.height = 1;
   const board = new CanvasTexture(blank); board.colorSpace = NoColorSpace;
-  const uniforms = { noiseMap:{value:noise}, boardMap:{value:board as import('three').Texture}, hasBoard:{value:0}, time:{value:0}, aspect:{value:1}, strength:{value:.27}, panel:{value:new Vector4()} };
+  const uniforms = { noiseMap:{value:noise}, boardMap:{value:board as import('three').Texture}, hasBoard:{value:0}, time:{value:0}, aspect:{value:1}, strength:{value:.31}, windDrift:{value:new Vector2()}, panel:{value:new Vector4()} };
   const geometry = new PlaneGeometry(2,2);
   const material = new ShaderMaterial({uniforms,vertexShader:VERTEX,fragmentShader:FRAGMENT,depthTest:false,depthWrite:false,toneMapped:false});
   const mesh = new Mesh(geometry,material), scene = new Scene(), camera = new OrthographicCamera(-1,1,1,-1,0,1); scene.add(mesh);
@@ -86,9 +88,9 @@ export function createCloudShadowRenderer(canvas: HTMLCanvasElement, compact: bo
       renderer.setSize(size.width,size.height,false);uniforms.aspect.value=width/Math.max(1,height);
       uniforms.panel.value.set(panel.left/100,panel.top/100,panel.width/100,panel.height/100);
     },
-    draw(seconds:number,weather?:WeatherType,intensity?:number) {
+    draw(seconds:number,weather?:WeatherType,intensity?:number,windDrift:CloudWindDrift={x:0,y:0}) {
       if(!width||!height) return;
-      uniforms.time.value=seconds;uniforms.strength.value=cloudStrength(weather,intensity);renderer.render(scene,camera);
+      uniforms.time.value=seconds;uniforms.strength.value=cloudStrength(weather,intensity);uniforms.windDrift.value.set(windDrift.x,windDrift.y);renderer.render(scene,camera);
       if(failed) throw new Error('Cloud shadow shader failed to compile');
       canvas.dataset.renderer='three';canvas.dataset.effectTime=seconds.toFixed(3);canvas.dataset.drawCalls=String(renderer.info.render.calls);
     },
