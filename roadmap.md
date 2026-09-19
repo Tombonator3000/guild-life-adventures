@@ -6,4 +6,4 @@
 - [x] Run full validation and save concise evidence under docs/qa/cloud-shadows.
 - [x] Add green magical smoke above the Enchanter's cauldron without changing chimney smoke.
 - [x] Verify the cauldron smoke on the actual 2D board.
-- [ ] Make cloud shadows clearly recognizable and synchronize their travel with the shared town wind.
+- [x] Make cloud shadows clearly recognizable and synchronize their travel with the shared town wind.
