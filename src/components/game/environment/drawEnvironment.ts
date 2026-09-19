@@ -31,6 +31,10 @@ function magicalSmokePuff(ctx: Context,x: number,y: number,r: number,alpha: numb
   ctx.save();ctx.globalCompositeOperation='screen';ctx.globalAlpha=alpha;ctx.fillStyle=g;
   ctx.beginPath();ctx.ellipse(x,y,r*.72,r,0,0,TAU);ctx.fill();ctx.restore();
 }
+export function smokeWindOffset(age: number,w: number,h: number,wind: {x:number;y:number}) {
+  const travel=age*age;
+  return {x:travel*wind.x*w*.0018,y:travel*wind.y*h*.0018};
+}
 function clipBoard(ctx: Context,w: number,h: number,panel: BoardRect) {
   ctx.beginPath(); ctx.rect(0,0,w,h);
   ctx.rect(panel.left*w/100,panel.top*h/100,panel.width*w/100,panel.height*h/100);
@@ -98,8 +102,9 @@ export function createWorldRenderer() {
       const count=policy.mobile?3:6;
       for (let j=0;j<count;j++) {
         const age=mod(t/8+j/count+c*.21,1), stage=age*3;
-        const width=w*(.028+age*.052), px=x*w+age*age*wind.x*w*.0018+Math.sin(age*5+c)*w*.003,
-          py=y*h-age*h*.16+age*age*wind.y*h*.0018;
+        const windOffset=smokeWindOffset(age,w,h,wind);
+        const width=w*(.028+age*.052), px=x*w+windOffset.x+Math.sin(age*5+c)*w*.003,
+          py=y*h-age*h*.16+windOffset.y;
         const alpha=Math.sin(age*Math.PI)*(winter?.45:.32);
         emit(Math.floor(stage),px,py,width,width*1.2,alpha*(1-stage%1),wind.x*.006);
         if (stage<3) emit(Math.floor(stage)+1,px,py,width,width*1.2,alpha*(stage%1),wind.x*.006);
@@ -110,8 +115,9 @@ export function createWorldRenderer() {
     for(let i=0;i<(policy.mobile?4:7);i++) {
       const age=mod(t/7.5+i/(policy.mobile?4:7),1);
       const curl=Math.sin(age*TAU*1.35+i*1.7)*w*.007;
-      const px=cauldronX*w+curl+age*age*wind.x*w*.0007;
-      const py=cauldronY*h-age*h*.125;
+      const windOffset=smokeWindOffset(age,w,h,wind);
+      const px=cauldronX*w+curl+windOffset.x;
+      const py=cauldronY*h-age*h*.125+windOffset.y;
       const radius=w*(.008+age*.017);
       magicalSmokePuff(ctx,px,py,radius,Math.sin(age*Math.PI)*(.42-age*.12));
     }
