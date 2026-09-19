@@ -39,12 +39,12 @@ describe('post-game result boundaries', () => {
     expect(victorySource).toContain('week={week}');
   });
 
-  it('provides a name-based local Hall of Fame without submitting AI opponents', () => {
+  it('provides a name-based local Hall of Fame without submitting computer rivals', () => {
     expect(victorySource).toContain('<HighScorePanel');
     expect(highScoreSource).toContain('results.filter(result => !result.player.isAI)');
     expect(highScoreSource).toContain('Hall of Fame name');
     expect(highScoreSource).toContain('saveLocalHighScore(entry)');
-    expect(highScoreSource).toContain('Spectators and AI players cannot submit');
+    expect(highScoreSource).toContain('Spectators and computer rivals cannot submit');
   });
 
   it('keeps world submission voluntary and visibly unverified', () => {
