@@ -18,4 +18,5 @@ it('mounts against real Zustand snapshots and adds/removes seasonal services wit
   act(()=>useGameStore.setState({activeFestival:null}));
   expect(screen.queryByRole('region',{name:'City activities'})).toBeNull();
   expect(screen.getByText('Daily goods')).toBeVisible();
+  expect(screen.queryByRole('navigation',{name:'Menu pages'})).toBeNull();
 });

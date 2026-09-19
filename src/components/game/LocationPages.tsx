@@ -54,10 +54,10 @@ export function LocationPages({ children, pageKey }: { children: ReactNode; page
       <div className="location-page-flow" ref={flow}>{children}</div>
     </div>
     <div className="location-action-dock" ref={setDock} />
-    <nav className="location-page-controls" aria-label="Menu pages" data-ui-sound="menu-open">
+    {layout.pages > 1 && <nav className="location-page-controls" aria-label="Menu pages" data-ui-sound="menu-open">
       <button aria-label="Previous menu page" disabled={layout.atStart} onClick={() => turn(-1)}><ChevronUp /> Previous</button>
-      <span role="status">Page {layout.page} of {layout.pages}{layout.pages > 1 && <small className="menu-swipe-hint">Scroll up or down</small>}</span>
+      <span role="status">Page {layout.page} of {layout.pages}<small className="menu-swipe-hint">Scroll up or down</small></span>
       <button aria-label="Next menu page" disabled={layout.atEnd} onClick={() => turn(1)}>Next <ChevronDown /></button>
-    </nav>
+    </nav>}
   </div></ScrollReset.Provider></ActionDock.Provider>;
 }

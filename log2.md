@@ -1,5 +1,11 @@
 # Guild Life Adventures - Development Log 2
 
+## 2026-09-19T09:21Z — Workplace and Location Menu Cleanup
+
+- Kept salary raise requests exclusively in the Guild Hall.
+- Removed the raise action and remaining-hours planning hint from workplace cards.
+- Hid Previous, Next, and page status controls when location content fits on one page.
+
 > **Continuation of log.md** (which reached 14,000+ lines / 732KB).
 > Previous log: see `log.md` for all entries from 2026-02-05 through 2026-02-14.
 

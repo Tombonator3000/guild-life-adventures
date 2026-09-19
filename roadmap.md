@@ -9,3 +9,4 @@
 - [x] Make cloud shadows clearly recognizable and synchronize their travel with the shared town wind.
 
 - [x] Remove player-facing references to automated tools and vendors; rewrite About around Guildholm and Tom Husby.
+- [x] Keep raise requests in the Guild Hall and hide unnecessary workplace hints and menu paging controls.
