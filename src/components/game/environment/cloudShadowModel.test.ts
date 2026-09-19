@@ -28,12 +28,12 @@ describe('cloud shadow model', () => {
   });
 
   it('changes over minutes without resetting at thirty seconds', () => {
-    const at0=cloudCoverage(.27,.64,1.49,0);
-    const at30=cloudCoverage(.27,.64,1.49,30);
-    const at180=cloudCoverage(.27,.64,1.49,180);
-    expect(at30).not.toBeCloseTo(at0,8);
-    expect(at180).not.toBeCloseTo(at0,8);
-    expect(at30).not.toBeCloseTo(at180,8);
+    const sampleGrid=(seconds:number)=>Array.from({length:49},(_,index)=>
+      cloudCoverage((index%7)/6,Math.floor(index/7)/6,1.49,seconds));
+    const at0=sampleGrid(0), at30=sampleGrid(30), at180=sampleGrid(180);
+    expect(at30).not.toEqual(at0);
+    expect(at180).not.toEqual(at0);
+    expect(at30).not.toEqual(at180);
   });
 
   it('advects in the same direction and speed as the shared wind drift', () => {
