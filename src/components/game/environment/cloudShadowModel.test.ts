@@ -36,6 +36,13 @@ describe('cloud shadow model', () => {
     expect(at30).not.toBeCloseTo(at180,8);
   });
 
+  it('advects in the same direction and speed as the shared wind drift', () => {
+    const aspect=1.49, u=.43, v=.57;
+    const drift={x:120,y:-35};
+    const shifted=cloudCoverage(u,v,aspect,0,drift);
+    expect(shifted).toBeCloseTo(cloudCoverage(u-drift.x/1000/aspect,v-drift.y/1000,aspect,0),10);
+  });
+
   it('caps the low-resolution backing buffer independently of DPR', () => {
     expect(cloudBufferSize(1920,1080,false)).toEqual({width:640,height:360});
     expect(cloudBufferSize(1180,820,true)).toEqual({width:480,height:334});

@@ -5,6 +5,7 @@ import { paintCloudShadowFallback } from './cloudShadowFallback';
 import { useEnvironment } from './useEnvironment';
 import { useGameOptions } from '@/hooks/useGameOptions';
 import { clampCloudIntensity } from './cloudShadowModel';
+import type { CloudWindDrift } from './cloudShadowModel';
 
 export function GroundCloudShadows({centerPanel}: {centerPanel: BoardRect}) {
   const hostRef=useRef<HTMLDivElement>(null);
@@ -17,7 +18,7 @@ export function GroundCloudShadows({centerPanel}: {centerPanel: BoardRect}) {
   useEffect(()=>{
     const host=hostRef.current;if(!host) return;
     let cancelled=false,unsubscribe=()=>{},observer:ResizeObserver|undefined;
-    let renderer:{resize:(width:number,height:number,panel:BoardRect)=>void;draw:(seconds:number,weather?:WeatherType,intensity?:number)=>void;dispose:()=>void}|undefined;
+    let renderer:{resize:(width:number,height:number,panel:BoardRect)=>void;draw:(seconds:number,weather?:WeatherType,intensity?:number,windDrift?:CloudWindDrift)=>void;dispose:()=>void}|undefined;
     const glCanvas=document.createElement('canvas');glCanvas.className='ground-cloud-shadow-canvas';glCanvas.setAttribute('aria-hidden','true');host.appendChild(glCanvas);
     const fallback=()=>{
       unsubscribe();unsubscribe=()=>{};renderer?.dispose();renderer=undefined;
@@ -35,7 +36,13 @@ export function GroundCloudShadows({centerPanel}: {centerPanel: BoardRect}) {
         const resize=()=>{const box=host.getBoundingClientRect();renderer?.resize(box.width,box.height,centerPanel);manager.invalidate();};
         observer=new ResizeObserver(resize);observer.observe(host);resize();
         unsubscribe=manager.register(seconds=>{
-          try {renderer?.draw(policy.animated?seconds:0,latest.current.environment.weather?.type,latest.current.intensity);glCanvas.style.visibility='visible';}
+          try {
+            const current=latest.current.environment;
+            current.town.update(seconds,current.weather?.type,policy.animated);
+            const windDrift=policy.animated?current.town.drift:{x:0,y:0};
+            renderer?.draw(policy.animated?seconds:0,current.weather?.type,latest.current.intensity,windDrift);
+            glCanvas.style.visibility='visible';
+          }
           catch {glCanvas.removeEventListener('webglcontextlost',lost);fallback();}
         });
       } catch {glCanvas.removeEventListener('webglcontextlost',lost);fallback();}

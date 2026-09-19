@@ -46,14 +46,20 @@ function field(channel: 0 | 1, x: number, y: number) {
     + valueNoise(channel, x * 4.11, y * 4.11) * 0.13;
 }
 
-export function cloudCoverage(u: number, v: number, aspect: number, seconds: number) {
-  const px = u * aspect * 3.1, py = v * 3.1;
-  const a = field(0, px + 13.7 - seconds * 0.042, py + 7.3 - seconds * 0.017);
+export type CloudWindDrift = { x: number; y: number };
+
+/** Wind drift uses TownAtmosphere's reference pixels, so clouds and smoke advect together. */
+export function cloudCoverage(u: number, v: number, aspect: number, seconds: number, windDrift: CloudWindDrift = { x: 0, y: 0 }) {
+  const scale = 2.45;
+  const windX = windDrift.x / 1000 * scale;
+  const windY = windDrift.y / 1000 * scale;
+  const px = u * aspect * scale - windX, py = v * scale - windY;
+  const a = field(0, px + 13.7 - seconds * 0.004, py + 7.3 - seconds * 0.0015);
   const angle = Math.PI / 6, cos = Math.cos(angle), sin = Math.sin(angle);
   const rx = px * cos - py * sin, ry = px * sin + py * cos;
-  const b = field(1, rx - 9.2 - seconds * 0.023, ry + 21.4 + seconds * 0.011);
-  const combined = a * 0.64 + b * 0.36;
-  return smooth(clamp01((combined - 0.4) / 0.2));
+  const b = field(1, rx - 9.2 - seconds * 0.002, ry + 21.4 + seconds * 0.001);
+  const combined = a * 0.72 + b * 0.28;
+  return smooth(clamp01((combined - 0.42) / 0.14));
 }
 
 /** User-facing shadow intensity is a bounded multiplier on the weather strength. */
@@ -74,7 +80,7 @@ function baseStrength(weather?: WeatherType) {
   if (weather === 'harvest-rain') return 0.29;
   if (weather === 'snowstorm') return 0.22;
   if (weather === 'enchanted-fog') return 0.18;
-  return 0.27;
+  return 0.31;
 }
 
 export function cloudStrength(weather?: WeatherType, intensity = CLOUD_INTENSITY_DEFAULT) {
