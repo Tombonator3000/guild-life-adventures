@@ -61,7 +61,7 @@ export function GameBoardSidePanels({
       className={`relative isolate w-screen h-screen-safe overflow-hidden bg-background flex safe-area-all ${isMobile ? 'flex-col' : 'flex-row'}`}
       style={!isMobile && fullboardMode ? { paddingTop: 'calc(56px + env(safe-area-inset-top, 0px))' } : undefined}
     >
-      {isMobile && mobileHUDProps && <div data-fx-protect><MobileHUD {...mobileHUDProps} /></div>}
+      {isMobile && mobileHUDProps && <div className="mobile-hud-layer" data-fx-protect><MobileHUD {...mobileHUDProps} /></div>}
 
       {!isMobile && !fullboardMode && (
         <div
