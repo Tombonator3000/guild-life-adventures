@@ -81,7 +81,7 @@ test.describe('narrow mobile touch viewport', () => {
     await expectNoPageOverflow(page);
   });
 
-  test('keeps guidance outside the map and map locations easy to tap', async ({ page }) => {
+  test('uses the full screen board with guidance in its protected center', async ({ page }) => {
     await startGuidedMobileGame(page);
     const guide = page.getByLabel('Guided first turn');
     const map = page.locator('.mobile-map-region');
@@ -91,7 +91,12 @@ test.describe('narrow mobile touch viewport', () => {
     const [guideBox, mapBox] = await Promise.all([guide.boundingBox(), map.boundingBox()]);
     expect(guideBox).not.toBeNull();
     expect(mapBox).not.toBeNull();
-    expect(guideBox?.y).toBeGreaterThanOrEqual((mapBox?.y ?? 0) + (mapBox?.height ?? 0));
+    expect(mapBox?.width).toBeGreaterThanOrEqual(389);
+    expect(mapBox?.height).toBeGreaterThanOrEqual(843);
+    expect(guideBox?.x).toBeGreaterThan(mapBox?.x ?? 0);
+    expect(guideBox?.y).toBeGreaterThan(mapBox?.y ?? 0);
+    expect((guideBox?.x ?? 0) + (guideBox?.width ?? 0)).toBeLessThanOrEqual((mapBox?.x ?? 0) + (mapBox?.width ?? 0));
+    expect((guideBox?.y ?? 0) + (guideBox?.height ?? 0)).toBeLessThanOrEqual((mapBox?.y ?? 0) + (mapBox?.height ?? 0));
 
     await page.getByRole('button', { name: /start guide/i }).tap();
     const guildHall = page.getByRole('button', { name: /Guild Hall, travel time/i });

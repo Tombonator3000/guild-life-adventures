@@ -154,7 +154,7 @@ export function GameBoardCanvas({
       {!isMobile && children}
     </div>
   );
-  return isMobile ? <MobileBoardLayout menu={children}>{board}</MobileBoardLayout> : board;
+  return isMobile ? <MobileBoardLayout menu={children} centerPanel={centerPanel}>{board}</MobileBoardLayout> : board;
 }
 
 function BoardBanterOverlay({ centerPanel, isMobile }: { centerPanel: CenterPanel; isMobile: boolean }) {
