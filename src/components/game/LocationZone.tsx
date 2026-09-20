@@ -34,7 +34,7 @@ export function LocationZone({
 }: LocationZoneProps) {
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     setMousePos({
       x: e.clientX - rect.left,
@@ -47,9 +47,11 @@ export function LocationZone({
   };
 
   return (
-    <div
+    <button
+      type="button"
       data-zone-id={location.id}
       data-tutorial-target={`location-${location.id}`}
+      aria-label={`${location.name}${moveCost > 0 && !isCurrentLocation ? `, travel time ${moveCost} hours` : ''}${isCurrentLocation ? ', current location' : ''}`}
       className={cn(
         'location-zone group',
         isSelected && 'active'
@@ -166,6 +168,6 @@ export function LocationZone({
       <div className="location-tokens absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
         {children}
       </div>
-    </div>
+    </button>
   );
 }

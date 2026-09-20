@@ -73,6 +73,16 @@ describe('TutorialOverlay guided first turn', () => {
     expect(screen.getByText(/60 hours each turn/i)).toBeInTheDocument();
   });
 
+  it('uses a compact phone guide with large controls', () => {
+    render(<TutorialOverlay compact onClose={vi.fn()} />);
+
+    const guide = screen.getByLabelText('Guided first turn');
+    expect(guide).toHaveClass('mobile-tutorial');
+    expect(screen.getByRole('button', { name: /close guided tutorial/i })).toBeVisible();
+    expect(screen.getByRole('button', { name: /start guide/i })).toBeVisible();
+    expect(screen.getByRole('button', { name: /details/i })).toBeVisible();
+  });
+
   it('does not cover spectators, remote players or AI turns', () => {
     act(() => {
       useGameStore.setState({

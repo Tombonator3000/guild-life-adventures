@@ -104,6 +104,7 @@ Junior Academy → Scholar Path → Loremaster / Commerce Degree
 
 - Player-facing text must not reference AI tools, model vendors, or development assistants. Describe computer-controlled characters as rivals or computer rivals; About credits name only Tom Husby.
 - Raise requests are a Guild Hall service only. Workplace cards show the work action without raise controls or remaining-hours planning hints. Location Previous/Next controls render only when content spans multiple pages.
+- Phone UI is intentionally minimal: guidance stays outside the map, contextual tips never stack with the guided tutorial, and primary touch controls are at least 44x44px with high-contrast text.
 
 - Use Zustand actions for all state changes
 - All game text in English

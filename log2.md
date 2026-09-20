@@ -1,5 +1,12 @@
 # Guild Life Adventures - Development Log 2
 
+## 2026-09-20T16:43Z — Mobile readability and navigation
+
+- Moved the phone tutorial into a compact slot between the map and action area so it cannot cover destinations.
+- Prevented contextual tips from stacking with the guided tutorial.
+- Simplified the phone status bar, enlarged map and interface touch targets, and strengthened text/button contrast.
+- Made every map location a named, keyboard-accessible button.
+
 ## 2026-09-19T09:21Z — Workplace and Location Menu Cleanup
 
 - Kept salary raise requests exclusively in the Guild Hall.

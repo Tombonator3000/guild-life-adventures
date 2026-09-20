@@ -22,6 +22,17 @@ async function startSinglePlayerGame(page: Page, options: { keyboardNav?: boolea
   await expect(page.locator('[data-zone-id="bank"]')).toBeVisible();
 }
 
+async function startGuidedMobileGame(page: Page) {
+  await page.addInitScript(() => { Math.random = () => 0.99; });
+  await page.goto('/');
+  await page.getByRole('button', { name: /new adventure/i }).click();
+  await page.getByPlaceholder('Enter name...').fill('Guided Hero');
+  const tutorial = page.getByRole('checkbox', { name: /show tutorial/i });
+  if (!(await tutorial.isChecked())) await tutorial.check();
+  await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
+  await page.getByRole('button', { name: 'Begin Adventure' }).click();
+}
+
 async function expectNoPageOverflow(page: Page) {
   const measurements = await page.evaluate(() => ({
     viewport: window.innerWidth,
@@ -68,6 +79,27 @@ test.describe('narrow mobile touch viewport', () => {
     await page.getByTitle('Stats & Inventory').tap();
     await expect(page.getByRole('region', { name: /Character record/ })).toBeVisible();
     await expectNoPageOverflow(page);
+  });
+
+  test('keeps guidance outside the map and map locations easy to tap', async ({ page }) => {
+    await startGuidedMobileGame(page);
+    const guide = page.getByLabel('Guided first turn');
+    const map = page.locator('.mobile-map-region');
+    await expect(guide).toBeVisible();
+    await expect(page.getByText('Get a Job!', { exact: true })).toHaveCount(0);
+
+    const [guideBox, mapBox] = await Promise.all([guide.boundingBox(), map.boundingBox()]);
+    expect(guideBox).not.toBeNull();
+    expect(mapBox).not.toBeNull();
+    expect(guideBox?.y).toBeGreaterThanOrEqual((mapBox?.y ?? 0) + (mapBox?.height ?? 0));
+
+    await page.getByRole('button', { name: /start guide/i }).tap();
+    const guildHall = page.getByRole('button', { name: /Guild Hall, travel time/i });
+    const targetBox = await guildHall.boundingBox();
+    expect(targetBox?.width).toBeGreaterThanOrEqual(44);
+    expect(targetBox?.height).toBeGreaterThanOrEqual(44);
+    await guildHall.tap();
+    await expect(page.getByText('Guild Hall', { exact: true }).first()).toBeVisible();
   });
 });
 
