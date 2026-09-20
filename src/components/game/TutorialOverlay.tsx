@@ -337,7 +337,7 @@ export function TutorialOverlay({ onClose, compact = false }: TutorialOverlayPro
   if (showReference) {
     const reference = TUTORIAL_STEPS[referenceStep];
     return (
-      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Tutorial rule reference">
+      <div className={`fixed inset-0 z-[70] flex items-center justify-center p-4 ${compact ? 'mobile-reference' : ''}`} role="dialog" aria-modal="true" aria-label="Tutorial rule reference">
         <div className="absolute inset-0 bg-black/65" onClick={() => setShowReference(false)} />
         <div className="relative parchment-panel p-5 w-full max-w-lg shadow-2xl">
           <div className="flex items-start justify-between gap-3 mb-3">

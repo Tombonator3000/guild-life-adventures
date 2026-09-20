@@ -47,25 +47,25 @@ export function LocationZone({
   };
 
   return (
-    <button
-      type="button"
-      data-zone-id={location.id}
-      data-tutorial-target={`location-${location.id}`}
-      aria-label={`${location.name}${moveCost > 0 && !isCurrentLocation ? `, travel time ${moveCost} hours` : ''}${isCurrentLocation ? ', current location' : ''}`}
-      className={cn(
-        'location-zone group',
-        isSelected && 'active'
-      )}
+    <div
+      className="location-zone-wrap"
       style={{
         top: location.position.top,
         left: location.position.left,
         width: location.position.width,
         height: location.position.height,
       }}
-      onClick={onClick}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
     >
+      <button
+        type="button"
+        data-zone-id={location.id}
+        data-tutorial-target={`location-${location.id}`}
+        aria-label={`${location.name}${moveCost > 0 && !isCurrentLocation ? `, travel time ${moveCost} hours` : ''}${isCurrentLocation ? ', current location' : ''}`}
+        className={cn('location-zone group', isSelected && 'active')}
+        onClick={onClick}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      >
       {/* Keyboard focus ring */}
       {isKeyboardFocused && (
         <div
@@ -165,9 +165,10 @@ export function LocationZone({
         </div>
       )}
 
-      <div className="location-tokens absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
+      </button>
+      <div className="location-tokens absolute z-30 bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
         {children}
       </div>
-    </button>
+    </div>
   );
 }

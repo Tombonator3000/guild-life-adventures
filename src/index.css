@@ -201,8 +201,12 @@ input, textarea, select, [contenteditable] {
     box-shadow: inset 0 -2px 4px hsl(0 0% 0% / 0.2), 0 0 8px currentColor;
   }
 
+  .location-zone-wrap {
+    @apply absolute;
+  }
+
   .location-zone {
-    @apply absolute cursor-default transition-all duration-200;
+    @apply absolute inset-0 w-full h-full cursor-default transition-all duration-200;
     appearance: none;
     padding: 0;
     background: transparent;

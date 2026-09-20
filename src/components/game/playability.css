@@ -106,6 +106,18 @@
 @media (pointer:coarse) and (max-width:1023px) {
   .mobile-map-surface .location-zone { min-width:44px; min-height:44px; padding:0; background:transparent; }
   .mobile-action-region :is(button,[role="button"],select,input) { min-height:44px; }
+  .mobile-reference button { min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center; }
+}
+
+@media (max-width:600px) {
+  .mobile-action-region { font-size:14px; }
+  .mobile-action-region :is(p,li,label,summary) { line-height:1.4; }
+  .mobile-action-region .this-week li { font-size:13px; }
+  .mobile-action-region .location-body { grid-template-rows:minmax(48px,64px) minmax(0,1fr); }
+  .mobile-action-region .location-greeting { display:none; }
+  .mobile-action-region .location-scene { min-height:48px; }
+  .center-turn-toolbar { min-height:48px; font-size:13px; }
+  .center-turn-toolbar button { min-height:44px; padding:7px 14px; }
 }
 
 .bank-receipt:empty { display:none; }
