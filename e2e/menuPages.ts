@@ -10,7 +10,7 @@ export async function visitLocation(page: Page, location: string) {
       for (const fx of [.05, .95, .5, .25, .75]) {
         const x = r.left + r.width * fx, y = r.top + r.height * fy;
         const hit = document.elementFromPoint(x, y);
-        if (hit && el.contains(hit) && !hit.closest('[role="button"], button')) return { x, y };
+      if (hit === el || (hit && el.contains(hit) && !hit.closest('[role="button"], button'))) return { x, y };
       }
     }
     return null;

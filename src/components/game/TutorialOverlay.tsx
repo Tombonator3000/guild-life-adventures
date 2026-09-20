@@ -64,6 +64,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
 
 interface TutorialOverlayProps {
   onClose: () => void;
+  compact?: boolean;
 }
 
 interface TutorialBaseline {
@@ -131,7 +132,7 @@ function findVisibleTarget(selector?: string): HTMLElement | null {
   return null;
 }
 
-export function TutorialOverlay({ onClose }: TutorialOverlayProps) {
+export function TutorialOverlay({ onClose, compact = false }: TutorialOverlayProps) {
   const currentPlayer = useCurrentPlayer();
   const { players, week, currentPlayerIndex, tutorialStep, setTutorialStep, setShowTutorial, networkMode, localPlayerId, phase } = useGameStore(useShallow(state => ({
     players: state.players,
@@ -312,10 +313,31 @@ export function TutorialOverlay({ onClose }: TutorialOverlayProps) {
 
   if (!baseline || !owner || !canDisplayGuide) return null;
 
+  if (compact && !showReference) {
+    return (
+      <aside className="mobile-tutorial" aria-live="polite" aria-label="Guided first turn">
+        <div className="mobile-tutorial-heading">
+          <LocateFixed aria-hidden="true" />
+          <strong>{guidedStep.title}</strong>
+          <button type="button" onClick={handleClose} aria-label="Close guided tutorial"><X /></button>
+        </div>
+        <p>{guidedStep.content}</p>
+        <div className="mobile-tutorial-actions">
+          <button type="button" onClick={() => setShowReference(true)}><BookOpen /> Details</button>
+          {tutorialStep === 0 && (
+            <button type="button" className="mobile-tutorial-start" onClick={() => setTutorialStep(1)}>
+              Start guide <ChevronRight />
+            </button>
+          )}
+        </div>
+      </aside>
+    );
+  }
+
   if (showReference) {
     const reference = TUTORIAL_STEPS[referenceStep];
     return (
-      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Tutorial rule reference">
+      <div className={`fixed inset-0 z-[70] flex items-center justify-center p-4 ${compact ? 'mobile-reference' : ''}`} role="dialog" aria-modal="true" aria-label="Tutorial rule reference">
         <div className="absolute inset-0 bg-black/65" onClick={() => setShowReference(false)} />
         <div className="relative parchment-panel p-5 w-full max-w-lg shadow-2xl">
           <div className="flex items-start justify-between gap-3 mb-3">

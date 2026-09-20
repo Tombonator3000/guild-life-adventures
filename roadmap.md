@@ -10,3 +10,4 @@
 
 - [x] Remove player-facing references to automated tools and vendors; rewrite About around Guildholm and Tom Husby.
 - [x] Keep raise requests in the Guild Hall and hide unnecessary workplace hints and menu paging controls.
+- [x] Improve phone readability, tap targets, map navigation, and keep guidance outside the map.

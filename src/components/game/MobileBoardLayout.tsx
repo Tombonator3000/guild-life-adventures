@@ -40,6 +40,7 @@ export function MobileBoardLayout({ children, menu }: { children: ReactNode; men
         viewport.current?.scrollTo({ left: 0, top: 0 });
       }}>{zoom ? 'Fit map' : 'Zoom map'}</button>
     </div>
+    <div id="mobile-guide-slot" className="mobile-guide-slot" data-fx-protect />
     <div className="mobile-action-region" data-fx-protect>{menu}</div>
   </div>;
 }

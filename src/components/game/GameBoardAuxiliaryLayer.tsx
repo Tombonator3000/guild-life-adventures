@@ -11,6 +11,8 @@ import { TopDropdownMenu } from './TopDropdownMenu';
 import { TutorialOverlay } from './TutorialOverlay';
 import { useLegacyFinanceMigration } from '@/hooks/useLegacyFinanceMigration';
 import { useGameStore } from '@/store/gameStore';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 type OptionalComponentProps<T extends ElementType> = ComponentProps<T> | null;
 
@@ -40,25 +42,35 @@ export function GameBoardAuxiliaryLayer({
   useLegacyFinanceMigration();
   const showTutorial = useGameStore(state => state.showTutorial);
   const setShowTutorial = useGameStore(state => state.setShowTutorial);
+  const [mobileGuideSlot, setMobileGuideSlot] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setMobileGuideSlot(overlayProps.isMobile ? document.getElementById('mobile-guide-slot') : null);
+  }, [overlayProps.isMobile]);
+
+  const tutorial = showTutorial
+    ? <TutorialOverlay compact={overlayProps.isMobile} onClose={() => setShowTutorial(false)} />
+    : null;
 
   return (
     <>
       {zoneEditorProps && <ZoneEditor {...zoneEditorProps} />}
       <GameBoardOverlays {...overlayProps} />
-      {showTutorial && (
+      {showTutorial && !overlayProps.isMobile && (
         <div className="guided-tutorial-host">
           <style>{`
             .guided-tutorial-host [aria-live="polite"] { top: .75rem !important; bottom: auto !important; pointer-events: none; }
             .guided-tutorial-host [aria-live="polite"] button { pointer-events: auto; }
           `}</style>
-          <TutorialOverlay onClose={() => setShowTutorial(false)} />
+          {tutorial}
         </div>
       )}
+      {showTutorial && overlayProps.isMobile && mobileGuideSlot && createPortal(tutorial, mobileGuideSlot)}
       {saveMenuOpen && <SaveLoadMenu onClose={onCloseSaveMenu} />}
       {deathModalProps && <DeathModal {...deathModalProps} />}
       <UpdateBanner />
       {chatProps && <ChatPanel {...chatProps} />}
-      {showContextualTips && <ContextualTips />}
+      {showContextualTips && !showTutorial && <ContextualTips />}
       {spectatorOverlayProps && <SpectatorOverlay {...spectatorOverlayProps} />}
       {topDropdownProps && <TopDropdownMenu {...topDropdownProps} />}
     </>
