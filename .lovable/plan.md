@@ -1,36 +1,35 @@
-# Cloud Shadow Ground Layer
+# Mobile readability and navigation pass
 
 ## Goal
-Add broad, soft, organic cloud shadows to the existing 2D board painting without changing the board art, layout, gameplay, player artwork, menus, 3D Board Lab, or unrelated effects. Desktop and tablet remain the priority.
+Make phone play readable, easy to tap, and simple to navigate without changing game rules, board artwork, desktop layout, or tablet priorities.
 
-## Implementation
-1. **Create one dedicated ground-shadow renderer**
-   - Add a board-sized, pointer-transparent, accessibility-hidden canvas directly above `game-board.jpeg` and below zones, stationary tokens, animated tokens, path indicators, menus, and UI.
-   - Drive it from the existing `EffectManager`; do not add another animation loop or game-state writes.
-   - Use one bounded draw-call Three.js shader pass with two independently seeded procedural noise fields, distinct scales and slow diagonal drift vectors. Combine them into a soft mask with clear sunlit gaps, typical core darkening of 20–28%, and a hard maximum of 35%.
-   - Use multiplicative RGB output suitable for CSS `mix-blend-mode: multiply`, with a subtle cool/desaturated multiplier derived from the sampled board texture rather than claiming alpha-only desaturation.
+## Changes
+1. **Keep guidance off the play area**
+   - On phones, replace the large guided-tour card with a compact instruction bar below the map and above the action area.
+   - Show only the current task, a clear dismiss control, and an optional expandable detail view.
+   - Never display the contextual tip card at the same time as the guided tutorial.
+   - Keep target highlighting visible without intercepting taps.
 
-2. **Integrate policy, clipping, resilience, and drought behavior**
-   - Full mode animates slowly; Calm/system reduced-motion renders one deterministic static frame; Off unmounts the layer. Hidden tabs pause through the shared manager.
-   - Protect the existing percentage center-panel rectangle, including the current zero-sized mobile rectangle, and preserve exact registration on resize, fullscreen, and orientation changes.
-   - Add a low-cost Canvas2D static fallback for import, texture, WebGL, shader, and context-loss failures. Handle asynchronous unmount safely and dispose renderer resources, textures, observers, and manager registrations.
-   - Keep the original JPEG as the sharp visible artwork. Adjust drought heat shimmer composition so it cannot replace or fully obscure the shadow layer.
+2. **Make the mobile map easier to use**
+   - Give the map more usable height and keep the action panel independently scrollable.
+   - Make location zones proper keyboard/touch controls with accessible names.
+   - Add minimum 44×44 touch hit areas where the painted location area is smaller, while preserving visual placement.
+   - Keep drag-to-pan and fit/zoom controls, but enlarge the zoom control and improve its contrast.
 
-3. **Remove duplicate cloud ownership only**
-   - Remove the two legacy cloud-shadow sprites from `drawEnvironment.ts`.
-   - Remove `shadowMesh`, `cloudMesh`, their shaders, and instance updates from `threeWeatherRenderer.ts`.
-   - Preserve rain, snow, smoke, puddles, lantern/tower/window glows, birds, bird shadows, droplets, lightning, festivals, and all existing gameplay/UI behavior. Ensure light/glow painting remains above the new ground shadows.
+3. **Reduce mobile interface density**
+   - Collapse the top status area into one concise row with the essential resources and three 44×44 controls.
+   - Hide decorative NPC copy and nonessential supporting text on narrow phones while retaining action consequences.
+   - Keep service selection compact and ensure the current action remains prominent.
 
-4. **Add focused automated coverage**
-   - Unit-test deterministic private noise, temporal change without a 30-second reset, mask/strength bounds, layer order and pointer protection, Full/Calm/Off behavior, shared-clock registration, cleanup, fallback, context loss, and async unmount.
-   - Update existing environment and Three-weather assertions to reflect the single cloud-shadow owner while retaining weather fallback coverage.
+4. **Improve contrast and text sizing**
+   - Replace faint gold-on-parchment instructional text with dark semantic text.
+   - Raise phone body/supporting text to readable sizes and strengthen disabled-state contrast without making disabled controls look active.
+   - Ensure all mobile controls have visible focus states and at least 44×44 targets.
 
-5. **Verify the actual game board and document evidence**
-   - Run focused tests, full Vitest, TypeScript checks, scoped lint plus full lint reporting, and production build.
-   - Run Playwright on a real new-game board: capture two separated effect times; inspect for dark-only organic shadows and sunlit gaps; verify tokens/UI stay above, protected panel pixels remain unaffected, board clicks and tablet touch/scroll work, fullscreen/resize/orientation stay registered, Calm is static, Off removes the layer, drought retains shadows, and forced WebGL loss falls back without errors.
-   - Save a concise dated implementation/test log under `docs/qa/`, including measured conditions, exact results, tested source commit SHA, and an explicit note that physical iPad performance remains unverified unless measured on hardware. Do not publish or change visibility.
+5. **Validate the real game screen**
+   - Add focused accessibility tests for guide placement, single-guide behavior, semantic map controls, and tap-target sizes.
+   - Test a real new game at 390×844 and iPad portrait/landscape, including tutorial navigation and opening a location.
+   - Run TypeScript, full tests, lint, and production build; document the result without publishing.
 
-## Technical constraints
-- No new dependencies, generated art, gameplay RNG, per-frame React renders, per-frame layout reads, fullscreen post-processing, or replacement/downsampling of the visible board image.
-- Keep shader/fallback state private to the visual layer and stable across normal weather/store updates.
-- The final report will list changed files, exact test totals/results, the current commit SHA, and any remaining unverified hardware performance.
+## Scope guard
+No gameplay, economy, artwork, desktop board, multiplayer rules, visibility, or publishing changes.
