@@ -1,4 +1,5 @@
 import { useRef, type ReactNode } from 'react';
+import { RotateCw, Smartphone } from 'lucide-react';
 import './playability.css';
 
 type CenterPanel = { top: number; left: number; width: number; height: number };
@@ -7,6 +8,14 @@ export function MobileBoardLayout({ children, menu, centerPanel }: { children: R
   const viewport = useRef<HTMLDivElement>(null);
   const pointer = useRef<{ x: number; y: number } | null>(null);
   return <div className="mobile-board-layout">
+    <div className="phone-landscape-notice" role="status" aria-live="polite">
+      <div className="phone-landscape-icon" aria-hidden="true">
+        <Smartphone />
+        <RotateCw />
+      </div>
+      <strong>Rotate your phone</strong>
+      <span>Guildholm is played sideways for the largest board.</span>
+    </div>
     <div className="mobile-map-region">
       <div ref={viewport} className="mobile-map-viewport" aria-label="Guildholm board"
         onPointerDownCapture={event => { pointer.current = { x: event.clientX, y: event.clientY }; }}

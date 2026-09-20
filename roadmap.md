@@ -12,3 +12,4 @@
 - [x] Keep raise requests in the Guild Hall and hide unnecessary workplace hints and menu paging controls.
 - [x] Improve phone readability, tap targets, map navigation, and keep guidance outside the map.
 - [x] Fill the phone screen with the board and place text and actions inside its protected center.
+- [x] Require landscape play on phones so the board uses the largest available screen area.
