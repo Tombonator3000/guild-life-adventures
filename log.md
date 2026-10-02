@@ -14470,3 +14470,12 @@ Checks: 5 new unit tests (`StudioSplash.test.tsx`), full suite 829/829 green
 1280x800 with reduced motion: gate, drop, landed logo and handover to the title
 screen work, and the splash stays away when `navigator.webdriver` is set.
 Not checked on a real iPad or phone (added to todo.md).
+
+## 2026-10-02 05:28 (Europe/Oslo) - Studio splash to main
+
+Tom reported that the logo did not show in Guild Life. Cause: the change was only
+on the branch `ccr-b7000311-bo6tvl`, while GitHub Pages and Lovable build from
+`main`. Checked the `build:github` bundle under `/guild-life-adventures/` with the
+automation flag off: the splash shows, the logo loads from the base path, it
+hands over to the title and there are no page errors. Tom chose to open a PR and
+merge it once CI is green: PR #432.
