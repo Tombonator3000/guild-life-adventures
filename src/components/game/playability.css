@@ -11,6 +11,9 @@
 .mobile-action-region .location-body { grid-template-columns:minmax(0,1fr); grid-template-rows:64px minmax(0,1fr); }
 .mobile-action-region .location-npc-name strong { font-size:15px; }
 .mobile-action-region .location-content { padding:6px; }
+/* The phone menu lives in the board's small center frame. Services without paging (bank, This Week,
+   Your contact) must scroll there, or their lower actions are clipped out of reach. */
+.mobile-action-region .location-content { overflow-y:auto; overscroll-behavior:contain; touch-action:pan-y pinch-zoom; -webkit-overflow-scrolling:touch; }
 .mobile-action-region .location-tabs button { min-height:40px; }
 .mobile-action-region .location-greeting { font-size:11px; }
 .mobile-map-surface .location-tokens { transform:translateX(-50%) scale(.6); transform-origin:center bottom; gap:0; }

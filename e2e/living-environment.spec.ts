@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 import { expect, test } from './test';
 import { enableDeveloperMode } from './developerMode';
+import { rotatePhoneToLandscape } from './menuPages';
 
 async function startEnvironmentGame(page: Page) {
   await page.addInitScript(() => { Math.random = () => .99; localStorage.setItem('guild-life-board-view', 'sidebars'); });
@@ -115,6 +116,7 @@ test('mobile storm leaves bank actions usable and display settings reachable', a
   await startEnvironmentGame(page);
   await page.getByRole('button',{name:'Storm',exact:true}).click();
   await page.setViewportSize({width:390,height:844});
+  await rotatePhoneToLandscape(page);
   await expect(page.getByTitle('Stats & Inventory')).toBeVisible();
   await expect(page.locator('canvas.weather-particles')).toHaveAttribute('data-particle-budget','120');
   expect(Number(await page.locator('canvas.weather-particles').getAttribute('data-rendered-particles'))).toBeLessThanOrEqual(170);

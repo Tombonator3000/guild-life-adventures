@@ -59,8 +59,8 @@ for (const viewport of [
         .getByRole('button', { name: 'Choose portrait for Menu Hero' })
         .getByRole('img', { name: 'Mage' }),
     ).toBeVisible();
-    for (let i = 0; i < 4; i++) await page.getByRole('button', { name: 'Add AI opponent' }).click();
-    await expect(page.getByRole('button', { name: 'Add AI opponent' })).toBeDisabled();
+    for (let i = 0; i < 4; i++) await page.getByRole('button', { name: 'Add computer rival' }).click();
+    await expect(page.getByRole('button', { name: 'Add computer rival' })).toBeDisabled();
     await page.getByRole('button', { name: 'Add human player' }).click();
     await expect(page.getByRole('button', { name: 'Add human player' })).toBeDisabled();
     await page.getByRole('button', { name: 'Next players' }).click();

@@ -14479,3 +14479,31 @@ on the branch `ccr-b7000311-bo6tvl`, while GitHub Pages and Lovable build from
 automation flag off: the splash shows, the logo loads from the base path, it
 hands over to the title and there are no page errors. Tom chose to open a PR and
 merge it once CI is green: PR #432.
+
+## 2026-10-02 05:45 (Europe/Oslo) - Red browser tests block GitHub Pages (in progress)
+
+After PR #432 was merged, Tom said the game was not updated. guild-life.com is the
+Lovable deployment and needs Publish/Update in Lovable (Tom does that himself).
+GitHub Pages has not deployed since 2026-09-19 (run 530): the deploy workflow runs the
+full validation first, and 29 Playwright tests have failed on main since the Lovable
+edits of 2026-09-19/20. Tom asked for the tests to be fixed in a separate PR.
+
+Causes found (all from intended Lovable changes, not from the studio splash):
+- "Add AI opponent" was renamed "Add computer rival" (no AI wording in player text).
+  Unit tests were updated, e2e was not (ai-tactics, entry-menus).
+- Locations became real buttons; player tokens now sit beside the button in
+  `.location-zone-wrap` instead of inside it (ai-tactics, movement-rendering).
+  New helper `locationArea()` in e2e/menuPages.ts.
+- Portrait phones show "Rotate your phone" instead of the board. Board tests that start
+  on a portrait phone now check the notice and turn the phone sideways
+  (`rotatePhoneToLandscape()`), or check the notice in viewport loops.
+- "Ask for a raise" is gone from workplaces (Guild Hall service only). material-weather
+  now checks that the forge shows no raise control.
+- Real bug: on landscape phones the location menu lives in the board's small center
+  frame (about 209 px tall at 844x390). Services without paging (bank, This Week,
+  Your contact) were clipped by `overflow: clip` with no scroll and no page controls,
+  so "Join activity" and similar actions could not be reached. Fix in playability.css:
+  `.mobile-action-region .location-content` scrolls vertically. The tests scroll the
+  control into view (`openMenuPage`) before checking it.
+
+Status: changes committed to `ccr-b7000311-bo6tvl`, local verification still running.
