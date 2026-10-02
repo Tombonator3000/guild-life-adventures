@@ -14532,3 +14532,13 @@ connections are blocked in this container; they pass in CI), and movement-render
 player-experience 844x390, which failed under load with two workers and passed twice each
 when run alone. Vitest 829/829, check:types, production build, ESLint 0 errors (18
 inherited warnings).
+
+## 2026-10-02 07:26 (Europe/Oslo) - PR #433 merged, GitHub Pages deployed again
+
+PR #433 passed validation on its head (b732e1d, including all Playwright journeys in CI)
+and was merged as 1fa0671 on Tom's instruction. Deploy to GitHub Pages run 538 is green
+for the first time since 2026-09-19: validate, build, publish and the published-site
+check all passed (published 07:12 Oslo time). Checked the live site: the new index.html
+with the splash fonts is served and `assets/studio-logo-C5lYOQC1.webp` returns 200
+(174952 bytes, same file as in the repo). guild-life.com (Lovable) still needs Publish
+or Update in Lovable; Tom does that himself.
