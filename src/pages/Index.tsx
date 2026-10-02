@@ -1,9 +1,11 @@
-import { lazy, Suspense, Component, type ReactNode } from 'react';
+import { lazy, Suspense, Component, useCallback, useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { useGameOptions } from '@/hooks/useGameOptions';
 import { useSecurePageRejoin } from '@/network/useSecurePageRejoin';
 import { TitleScreen } from '@/components/screens/TitleScreen';
+import { StudioSplash } from '@/components/screens/StudioSplash';
+import { shouldShowStudioSplash } from '@/components/screens/studioSplashPolicy';
 
 /**
  * Retry wrapper for React.lazy() dynamic imports.
@@ -100,6 +102,23 @@ class SilentErrorBoundary extends Component<{ children: ReactNode }, { failed: b
   render() { return this.state.failed ? null : this.props.children; }
 }
 
+/** If the studio splash ever fails, skip straight to the title screen. */
+class SplashErrorBoundary extends Component<{ children: ReactNode; onError: () => void }, { failed: boolean }> {
+  constructor(props: { children: ReactNode; onError: () => void }) {
+    super(props);
+    this.state = { failed: false };
+  }
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(error: unknown) {
+    console.warn('[Guild Life] Studio splash failed, skipping it:', error);
+    this.props.onError();
+  }
+  render() { return this.state.failed ? null : this.props.children; }
+}
+
+/** The studio splash plays once per page load, never again when returning to the title. */
+let studioSplashSeen = false;
+
 /** Minimal loading fallback shown while a lazy screen chunk loads. */
 function ScreenLoader() {
   return (
@@ -127,6 +146,18 @@ const Index = () => {
   const currentPlayer = useCurrentPlayer();
   const { options } = useGameOptions();
   useSecurePageRejoin();
+  // Only on a fresh start at the title screen, so a page-refresh rejoin is not held up
+  const [splashActive, setSplashActive] = useState(() => !studioSplashSeen && phase === 'title' && shouldShowStudioSplash());
+  const finishSplash = useCallback(() => {
+    studioSplashSeen = true;
+    setSplashActive(false);
+  }, []);
+  // While the splash plays, the audio controller stays unmounted so title music waits for the fanfare
+  const splash = splashActive ? (
+    <SplashErrorBoundary onError={finishSplash}>
+      <StudioSplash onDone={finishSplash} />
+    </SplashErrorBoundary>
+  ) : null;
 
   // TitleScreen is eagerly loaded — always renders immediately.
   // All other screens are lazy-loaded inside Suspense.
@@ -134,19 +165,22 @@ const Index = () => {
     return (
       <div data-text-size={options.textSize}>
         <TitleScreen />
+        {splash}
         {/* Audio controller lazy-loaded separately — if audio modules fail,
             the game still starts. SilentErrorBoundary swallows load errors. */}
-        <SilentErrorBoundary>
-          <Suspense fallback={null}>
-            <AudioController
-              phase={phase}
-              playerLocation={null}
-              selectedLocation={selectedLocation}
-              eventMessage={eventMessage}
-              weekendEvent={weekendEvent}
-            />
-          </Suspense>
-        </SilentErrorBoundary>
+        {!splashActive && (
+          <SilentErrorBoundary>
+            <Suspense fallback={null}>
+              <AudioController
+                phase={phase}
+                playerLocation={null}
+                selectedLocation={selectedLocation}
+                eventMessage={eventMessage}
+                weekendEvent={weekendEvent}
+              />
+            </Suspense>
+          </SilentErrorBoundary>
+        )}
       </div>
     );
   }
@@ -170,17 +204,20 @@ const Index = () => {
   return (
     <div data-text-size={options.textSize}>
       <Suspense fallback={<ScreenLoader />}>{screen}</Suspense>
-      <SilentErrorBoundary>
-        <Suspense fallback={null}>
-          <AudioController
-            phase={phase}
-            playerLocation={currentPlayer?.currentLocation ?? null}
-            selectedLocation={selectedLocation}
-            eventMessage={eventMessage}
-            weekendEvent={weekendEvent}
-          />
-        </Suspense>
-      </SilentErrorBoundary>
+      {splash}
+      {!splashActive && (
+        <SilentErrorBoundary>
+          <Suspense fallback={null}>
+            <AudioController
+              phase={phase}
+              playerLocation={currentPlayer?.currentLocation ?? null}
+              selectedLocation={selectedLocation}
+              eventMessage={eventMessage}
+              weekendEvent={weekendEvent}
+            />
+          </Suspense>
+        </SilentErrorBoundary>
+      )}
     </div>
   );
 };

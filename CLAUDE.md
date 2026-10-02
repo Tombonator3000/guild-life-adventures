@@ -106,6 +106,7 @@ Junior Academy → Scholar Path → Loremaster / Commerce Degree
 - Raise requests are a Guild Hall service only. Workplace cards show the work action without raise controls or remaining-hours planning hints. Location Previous/Next controls render only when content spans multiple pages.
 - Phone gameplay is landscape-only so the board uses the largest available area. Portrait phones show a rotation notice; tablets remain usable in either orientation. Phone UI is intentionally minimal: guidance stays outside the map, contextual tips never stack with the guided tutorial, and primary touch controls are at least 44x44px with high-contrast text.
 
+- Studio splash (2026-10-02): `StudioSplash.tsx` shows Tom's Happy Happy Funtimes Emporium before the title screen, the same intro as Loincloth Legends. Once per page load, skipped under `navigator.webdriver` (Playwright) and `?nosplash`, forced with `?splash`. `AudioController` mounts only after it ends. Do not change `src/assets/studio-logo.webp` unless Tom asks. Mirror splash changes in Loincloth Legends.
 - Use Zustand actions for all state changes
 - All game text in English
 - Platform priority (Tom, 2026-09-13): desktop and iPad/tablet first; mobile is a bonus. Entry menus should use broad desktop layouts, clear parchment/gold materials and touch-size controls on tablets. Keep the existing board and character artwork. Three.js is optional decoration with a static fallback, never a dependency for interacting with a menu.
