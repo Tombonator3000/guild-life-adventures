@@ -1,5 +1,5 @@
 import { expect, test } from './test';
-import { openMenuPage } from './menuPages';
+import { expectRotateNotice, isPortraitPhone, openMenuPage } from './menuPages';
 import { enableDeveloperMode } from './developerMode';
 
 test('forge work, tactile menus, weather pixels and storm audio stay inside the classic board', async ({page},testInfo) => {
@@ -67,6 +67,7 @@ test('forge work, tactile menus, weather pixels and storm audio stay inside the 
   await page.getByRole('button',{name:'Clear',exact:true}).click();
   for(const [width,height] of [[844,390],[390,844]]) {
     await page.setViewportSize({width,height});
+    if (isPortraitPhone({width,height})) { await expectRotateNotice(page); continue; }
     await expect(page.locator('.mobile-action-region').locator('.location-work-button')).toBeVisible();
     await openMenuPage(page,shell.locator('.location-work-button'));
     await expect(shell.locator('.location-work-button')).toBeInViewport();

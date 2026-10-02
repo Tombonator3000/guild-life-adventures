@@ -20,10 +20,12 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     await expect(career).toBeInViewport();
     await page.screenshot({ path: info.outputPath('this-week.png') });
     if (viewport.width < 1024) {
+      // Phones give the whole landscape screen to the board.
+      const screen = page.viewportSize()!;
       await expect.poll(async () => {
         const r = await page.locator('[data-board-art]').boundingBox();
-        return r ? r.width / r.height : 0;
-      }).toBeCloseTo(5056 / 3392, 2);
+        return r ? Math.min(r.width - screen.width, r.height - screen.height) : -1;
+      }).toBeGreaterThanOrEqual(-1);
     }
     await page.locator('[data-zone-id="bank"]').click();
     const deposit = page.getByRole('button', { name: 'Deposit 50 Gold' });

@@ -93,7 +93,9 @@ test.describe('narrow mobile touch viewport', () => {
 
   test('uses the full landscape screen with guidance in its protected center', async ({ page }) => {
     await startGuidedMobileGame(page);
-    await leaveBrowserFullscreen(page);
+    // The browser cannot resize a fullscreen window; leave it through the browser API.
+    await page.evaluate(async () => { if (document.fullscreenElement) await document.exitFullscreen(); });
+    await expect.poll(() => page.evaluate(() => document.fullscreenElement === null)).toBe(true);
     await page.setViewportSize({ width: 844, height: 390 });
     const guide = page.getByLabel('Guided first turn');
     const map = page.locator('.mobile-map-region');
