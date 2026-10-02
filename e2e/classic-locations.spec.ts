@@ -1,5 +1,5 @@
 import { expect, test } from './test';
-import { openMenuPage } from './menuPages';
+import { expectRotateNotice, isPortraitPhone, openMenuPage } from './menuPages';
 import { enableDeveloperMode } from './developerMode';
 
 test('classic board visits retain original NPCs and usable work and bank actions', async ({page}, testInfo) => {
@@ -43,8 +43,10 @@ test('classic board visits retain original NPCs and usable work and bank actions
   await shift.click();
   await expect(page.locator('.location-work-outcome')).not.toHaveText(before);
   await page.screenshot({path:testInfo.outputPath('desktop-employed.png')});
-  for (const [width,height] of [[844,390],[390,844]]) {
+  // Portrait first: the phone then ends sideways for the bank visit below.
+  for (const [width,height] of [[390,844],[844,390]]) {
     await page.setViewportSize({width,height});
+    if (isPortraitPhone({width,height})) { await expectRotateNotice(page); continue; }
     await expect(shift).toBeVisible();
     await expect(page.locator('.location-scene-portrait img')).toBeVisible();
     const box=await shift.boundingBox();

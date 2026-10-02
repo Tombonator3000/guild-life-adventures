@@ -19,7 +19,10 @@ async function startSinglePlayerGame(page: Page, options: { keyboardNav?: boolea
   await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
 
   await page.getByRole('button', { name: 'Begin Adventure' }).click();
-  await expect(page.locator('[data-zone-id="bank"]')).toBeVisible();
+  const bank = page.locator('[data-zone-id="bank"]');
+  await expect(bank).toBeAttached();
+  // Portrait phones show the rotate notice in front of the board.
+  if (!(await page.locator('.phone-landscape-notice').isVisible())) await expect(bank).toBeVisible();
 }
 
 async function startGuidedMobileGame(page: Page) {
@@ -74,6 +77,7 @@ test.describe('narrow mobile touch viewport', () => {
     await expect(page.locator('.mobile-map-region')).toBeHidden();
     await expectNoPageOverflow(page);
 
+    await leaveBrowserFullscreen(page);
     await page.setViewportSize({ width: 844, height: 390 });
     await expect(page.getByText('Rotate your phone', { exact: true })).toBeHidden();
     await expect(page.getByRole('button', { name: 'End Turn', exact: true })).toBeVisible();
@@ -89,6 +93,9 @@ test.describe('narrow mobile touch viewport', () => {
 
   test('uses the full landscape screen with guidance in its protected center', async ({ page }) => {
     await startGuidedMobileGame(page);
+    // The browser cannot resize a fullscreen window; leave it through the browser API.
+    await page.evaluate(async () => { if (document.fullscreenElement) await document.exitFullscreen(); });
+    await expect.poll(() => page.evaluate(() => document.fullscreenElement === null)).toBe(true);
     await page.setViewportSize({ width: 844, height: 390 });
     const guide = page.getByLabel('Guided first turn');
     const map = page.locator('.mobile-map-region');

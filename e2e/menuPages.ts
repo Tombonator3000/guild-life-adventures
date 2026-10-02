@@ -19,6 +19,31 @@ export async function visitLocation(page: Page, location: string) {
   await page.mouse.click(point!.x, point!.y);
 }
 
+// A location is a button; its player tokens sit beside it in the same wrapper (no nested buttons).
+export function locationArea(page: Page, location: string) {
+  return page.locator('.location-zone-wrap').filter({ has: page.locator(`[data-zone-id="${location}"]`) });
+}
+
+// Phones play sideways: a portrait phone shows the rotate notice instead of the board.
+export const isPortraitPhone = (size: { width: number; height: number }) => size.width <= 600 && size.height > size.width;
+
+export async function expectRotateNotice(page: Page) {
+  await expect(page.getByText('Rotate your phone', { exact: true })).toBeVisible();
+  await expect(page.locator('.mobile-map-region')).toBeHidden();
+}
+
+// Turn a portrait phone sideways mid-game, as a player would. No-op for other sizes.
+export async function rotatePhoneToLandscape(page: Page) {
+  const size = page.viewportSize();
+  if (!size || !isPortraitPhone(size)) return;
+  await expectRotateNotice(page);
+  // The browser cannot resize a fullscreen window.
+  await page.evaluate(async () => { if (document.fullscreenElement) await document.exitFullscreen(); });
+  await expect.poll(() => page.evaluate(() => document.fullscreenElement === null)).toBe(true);
+  await page.setViewportSize({ width: size.height, height: size.width });
+  await expect(page.getByText('Rotate your phone', { exact: true })).toBeHidden();
+}
+
 // Short boards collapse service tabs behind this picker in either display mode.
 export async function selectLocationService(page: Page, name: string) {
   const shell = page.locator('.location-shell');

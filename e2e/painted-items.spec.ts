@@ -1,5 +1,5 @@
 import { expect,test } from './test';
-import { openMenuPage } from './menuPages';
+import { openMenuPage, rotatePhoneToLandscape } from './menuPages';
 for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1280,height:720}]) {
  test(`painted equipment keeps its identity from shop to inventory at ${viewport.width}`,async({page},info)=>{
   await page.setViewportSize(viewport);
@@ -11,6 +11,7 @@ for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1280
   await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
   await page.getByRole('button',{name:'Begin Adventure',exact:true}).click();
   if(await page.evaluate(()=>!!document.fullscreenElement))await page.keyboard.press('f');
+  await rotatePhoneToLandscape(page);
   await page.locator('[data-zone-id="armory"]').click();
   const shell=page.locator('.location-shell[data-location="armory"]'),picker=shell.locator('.location-service-picker');
   await expect(shell).toBeVisible();
@@ -29,6 +30,7 @@ for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1280
   else await page.locator('.immersive-player').click();
   await page.locator('.guild-sidebar').getByRole('button',{name:/^inventory$/i}).click();
   const owned=page.locator('.guild-sidebar [data-item-art="dagger"]').first();
+  await openMenuPage(page,owned);
   await expect(owned).toBeInViewport({ratio:1});
   expect(await owned.evaluate(e=>getComputedStyle(e).backgroundImage)).toBe(original);
   await page.screenshot({path:info.outputPath('painted-inventory.png')});

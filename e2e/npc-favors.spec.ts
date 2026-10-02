@@ -1,4 +1,4 @@
-import { visitLocation } from './menuPages';
+import { openMenuPage, rotatePhoneToLandscape, visitLocation } from './menuPages';
 import { expect,test } from './test';
 for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1280,height:720}]) {
  test(`a remembered branch unlocks one favor at ${viewport.width}`,async({page},info)=>{
@@ -19,12 +19,14 @@ for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1280
   });
   await page.reload();await page.getByRole('button',{name:/Continue Game/}).click();
   if(await page.evaluate(()=>!!document.fullscreenElement))await page.keyboard.press('f');
+  await rotatePhoneToLandscape(page);
   await visitLocation(page, 'guild-hall');
   const shell=page.locator('.location-shell[data-location="guild-hall"]'),picker=shell.locator('.location-service-picker');
   if(await picker.isVisible())await picker.click();
   await shell.getByRole('button',{name:'Your contact',exact:true}).click();
   const panel=page.getByRole('region',{name:'Personal favors'}),accept=panel.getByRole('button',{name:'Accept favor · 4h'});
   await expect(panel).toContainText('You brought the evidence to the guard');
+  await openMenuPage(page,accept);
   await expect(accept).toBeInViewport();
   await page.screenshot({path:info.outputPath('npc-memory-offer.png')});
   await accept.click();await expect(accept).toBeDisabled();

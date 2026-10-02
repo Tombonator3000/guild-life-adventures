@@ -1,5 +1,5 @@
 import { expect, test } from './test';
-import { openMenuPage } from './menuPages';
+import { expectRotateNotice, isPortraitPhone, openMenuPage } from './menuPages';
 import { enableDeveloperMode } from './developerMode';
 
 test('forge work, tactile menus, weather pixels and storm audio stay inside the classic board', async ({page},testInfo) => {
@@ -33,16 +33,14 @@ test('forge work, tactile menus, weather pixels and storm audio stay inside the 
   const shell=page.locator('.location-shell[data-location="forge"]');
   await expect(shell.getByRole('button',{name:'Work',exact:true})).toHaveAttribute('aria-pressed','true');
   await expect(shell.getByText('Your job:',{exact:false})).toContainText('Forge Laborer');
-  await expect(shell.getByRole('button',{name:/Ask for a raise/})).toBeDisabled();
-  await expect(shell.getByText(/Work 3 shifts first/)).toBeVisible();
+  // Raise requests are a Guild Hall service: the workplace offers the shift only.
+  await expect(shell.getByRole('button',{name:/Ask for a raise/})).toHaveCount(0);
+  await expect(shell.getByText(/Plan your remaining hours/)).toHaveCount(0);
   await openMenuPage(page,shell.locator('.location-work-button'));
   await expect(shell.locator('.location-work-button')).toBeInViewport();
   await page.screenshot({path:testInfo.outputPath('forge-work-desktop.png')});
   for(let i=0;i<3;i++) await shell.locator('.location-work-button').click();
-  await expect(shell.getByRole('button',{name:/Ask for a raise/})).toBeEnabled();
-  await openMenuPage(page,shell.getByRole('button',{name:/Ask for a raise/}));
-  await shell.getByRole('button',{name:/Ask for a raise/}).click();
-  await expect(shell.getByRole('button',{name:/Ask for a raise/})).toBeDisabled();
+  await expect(shell.getByRole('button',{name:/Ask for a raise/})).toHaveCount(0);
   await expect(shell.getByText('View career path',{exact:true})).toHaveCount(0);
   await expect(shell.getByRole('button',{name:'Careers',exact:true})).toHaveCount(0);
   await expect(shell.getByText('Apprentice Smith',{exact:true})).toHaveCount(0);
@@ -69,6 +67,7 @@ test('forge work, tactile menus, weather pixels and storm audio stay inside the 
   await page.getByRole('button',{name:'Clear',exact:true}).click();
   for(const [width,height] of [[844,390],[390,844]]) {
     await page.setViewportSize({width,height});
+    if (isPortraitPhone({width,height})) { await expectRotateNotice(page); continue; }
     await expect(page.locator('.mobile-action-region').locator('.location-work-button')).toBeVisible();
     await openMenuPage(page,shell.locator('.location-work-button'));
     await expect(shell.locator('.location-work-button')).toBeInViewport();

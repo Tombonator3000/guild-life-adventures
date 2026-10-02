@@ -2,15 +2,20 @@
 .phone-landscape-notice { display:none; }
 .mobile-map-region,.mobile-map-viewport,.mobile-map-surface { position:absolute; inset:0; width:100%; height:100%; min-width:0; min-height:0; }
 .mobile-map-viewport { overflow:hidden; touch-action:manipulation; }
-.mobile-center-region { position:absolute; z-index:42; display:flex; min-width:0; min-height:0; overflow:hidden; }
+/* The first-turn guide takes its own space at the top of the center frame and the menu fills the rest.
+   Stacked on top of each other, the menu's own layers hid the guide and the guide would cover its targets. */
+.mobile-center-region { position:absolute; z-index:42; display:flex; flex-direction:column; min-width:0; min-height:0; overflow:hidden; }
 .mobile-guide-slot:empty { display:none; }
-.mobile-guide-slot { position:absolute; inset:0; z-index:3; min-width:0; overflow:auto; }
-.mobile-action-region { position:relative; width:100%; height:100%; min-height:0; min-width:0; overflow:hidden; border:2px solid hsl(var(--border)); border-radius:6px; box-shadow:var(--shadow-medieval); }
+.mobile-guide-slot { position:relative; flex:none; max-height:60%; min-width:0; overflow:auto; }
+.mobile-action-region { position:relative; width:100%; flex:1 1 0; min-height:0; min-width:0; overflow:hidden; border:2px solid hsl(var(--border)); border-radius:6px; box-shadow:var(--shadow-medieval); }
 .mobile-action-region > [data-fx-protect] { width:100%; height:100%; }
 .mobile-action-region .location-heading { padding:5px 10px; }
 .mobile-action-region .location-body { grid-template-columns:minmax(0,1fr); grid-template-rows:64px minmax(0,1fr); }
 .mobile-action-region .location-npc-name strong { font-size:15px; }
 .mobile-action-region .location-content { padding:6px; }
+/* The phone menu lives in the board's small center frame. Services without paging (bank, This Week,
+   Your contact) must scroll there, or their lower actions are clipped out of reach. */
+.mobile-action-region .location-content { overflow-y:auto; overscroll-behavior:contain; touch-action:pan-y pinch-zoom; -webkit-overflow-scrolling:touch; }
 .mobile-action-region .location-tabs button { min-height:40px; }
 .mobile-action-region .location-greeting { font-size:11px; }
 .mobile-map-surface .location-tokens { transform:translateX(-50%) scale(.6); transform-origin:center bottom; gap:0; }
@@ -35,6 +40,14 @@
 .resource-overview .this-week { flex-shrink:0; }
 .resource-overview .goal-overview { min-height:0; overflow:hidden; }
 .mobile-action-region .resource-overview { padding:9px; }
+/* In the phone's center frame the week overview scrolls instead of squeezing the goals to nothing. */
+.mobile-action-region .resource-overview { overflow-y:auto; overscroll-behavior:contain; touch-action:pan-y pinch-zoom; }
+.mobile-action-region .resource-overview .goal-overview { flex-shrink:0; overflow:visible; }
+/* The character record scrolls as one page in the phone's center frame; nested, its inventory got a 16px window. */
+.mobile-action-region .character-panel { overflow-y:auto; overscroll-behavior:contain; touch-action:pan-y pinch-zoom; }
+.mobile-action-region .character-panel-heading { position:sticky; top:0; z-index:2; background:#f0e2c6 url('../../assets/ui/vellum.webp') center/384px; }
+.mobile-action-region .character-panel > .guild-sidebar { flex:none; overflow:visible; }
+.mobile-action-region .character-panel .panel-content { flex:none; min-height:auto; overflow:visible; }
 .mobile-action-region .resource-overview .resource-summary-grid { display:none; }
 .bank-service { display:flex; flex-direction:column; gap:8px; color:#402d19; min-height:0; font-size:13px; }
 .bank-balances { display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px 12px; padding:6px 8px; background:#80623412; border-bottom:1px solid #b99a6c; }
@@ -94,6 +107,8 @@
 .mobile-tutorial-actions button { min-height:44px; padding:7px 10px; display:flex; align-items:center; gap:5px; color:hsl(var(--card-foreground)); border:1px solid hsl(var(--border)); border-radius:4px; font-size:13px; font-weight:700; }
 .mobile-tutorial-actions svg { width:16px; height:16px; }
 .mobile-tutorial-actions .mobile-tutorial-start { color:hsl(var(--primary-foreground)); background:hsl(var(--primary)); border-color:hsl(var(--gold-dark)); }
+/* Landscape phones: one line of guide text leaves more of the center frame to the menu; Details has the rest. */
+@media (max-height:500px) { .mobile-tutorial > p { -webkit-line-clamp:1; } }
 @media (max-width:420px) {
   .mobile-hud-name { display:none; }
   .mobile-health { display:none; }

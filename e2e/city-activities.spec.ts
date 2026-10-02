@@ -1,4 +1,4 @@
-import { visitLocation } from './menuPages';
+import { openMenuPage, rotatePhoneToLandscape, visitLocation } from './menuPages';
 import { expect, test } from './test';
 for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1280,height:720}]) {
   test(`seasonal choices use real terms at ${viewport.width}`,async({page},info)=>{
@@ -20,6 +20,7 @@ for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1280
     await page.reload();
     await page.getByRole('button',{name:/Continue Game/}).click();
     if(await page.evaluate(()=>!!document.fullscreenElement)) await page.keyboard.press('f');
+    await rotatePhoneToLandscape(page);
     await visitLocation(page, 'general-store');
     const shell=page.locator('.location-shell[data-location="general-store"]');
     const picker=shell.locator('.location-service-picker');
@@ -27,6 +28,8 @@ for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1280
     await shell.getByRole('button',{name:'This Week',exact:true}).click();
     await page.getByLabel('City activity',{exact:true}).selectOption('harvest-feast');
     const join=page.getByRole('button',{name:'Join activity · 4h'});
+    // The phone menu is the board's small center frame; the activity scrolls inside it.
+    await openMenuPage(page,join);
     await expect(join).toBeInViewport();
     await expect(page.getByRole('region',{name:'City activities'})).toContainText('488g cash after · +1 happiness · +1 food');
     await page.screenshot({path:info.outputPath('city-activity-preview.png')});

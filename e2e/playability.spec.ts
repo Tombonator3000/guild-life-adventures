@@ -1,4 +1,4 @@
-import { selectLocationService } from './menuPages';
+import { openMenuPage, rotatePhoneToLandscape, selectLocationService } from './menuPages';
 import { expect, test } from './test';
 
 for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1280, height: 720 }]) {
@@ -12,20 +12,27 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
     await page.getByRole('button', { name: 'Begin Adventure', exact: true }).click();
     if (await page.evaluate(() => !!document.fullscreenElement)) await page.keyboard.press('f');
+    await rotatePhoneToLandscape(page);
     await expect(page.getByRole('region', { name: 'This Week' })).toBeVisible();
-    await expect(page.locator('.resource-overview .goal-overview').getByText('Career', { exact: true })).toBeInViewport();
+    // On a phone the overview scrolls inside the board's center frame.
+    const career = page.locator('.resource-overview .goal-overview').getByText('Career', { exact: true });
+    await openMenuPage(page, career);
+    await expect(career).toBeInViewport();
     await page.screenshot({ path: info.outputPath('this-week.png') });
     if (viewport.width < 1024) {
+      // Phones give the whole landscape screen to the board.
+      const screen = page.viewportSize()!;
       await expect.poll(async () => {
         const r = await page.locator('[data-board-art]').boundingBox();
-        return r ? r.width / r.height : 0;
-      }).toBeCloseTo(5056 / 3392, 2);
+        return r ? Math.min(r.width - screen.width, r.height - screen.height) : -1;
+      }).toBeGreaterThanOrEqual(-1);
     }
     await page.locator('[data-zone-id="bank"]').click();
     const deposit = page.getByRole('button', { name: 'Deposit 50 Gold' });
     await expect(deposit).toBeEnabled();
     await expect(page.getByRole('button', { name: 'Next menu page' })).toHaveCount(0);
     for (const action of [deposit, page.getByRole('button', { name: 'Withdraw 50 Gold' })]) {
+      await openMenuPage(page, action);
       const inside = await action.evaluate(el => {
         const r = el.getBoundingClientRect(), panel = el.closest('.location-content')!.getBoundingClientRect();
         return r.top >= panel.top && r.bottom <= panel.bottom && r.left >= panel.left && r.right <= panel.right;

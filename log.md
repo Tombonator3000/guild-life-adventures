@@ -14479,3 +14479,56 @@ on the branch `ccr-b7000311-bo6tvl`, while GitHub Pages and Lovable build from
 automation flag off: the splash shows, the logo loads from the base path, it
 hands over to the title and there are no page errors. Tom chose to open a PR and
 merge it once CI is green: PR #432.
+
+## 2026-10-02 05:45 (Europe/Oslo) - Red browser tests block GitHub Pages (in progress)
+
+After PR #432 was merged, Tom said the game was not updated. guild-life.com is the
+Lovable deployment and needs Publish/Update in Lovable (Tom does that himself).
+GitHub Pages has not deployed since 2026-09-19 (run 530): the deploy workflow runs the
+full validation first, and 29 Playwright tests have failed on main since the Lovable
+edits of 2026-09-19/20. Tom asked for the tests to be fixed in a separate PR.
+
+Causes found (all from intended Lovable changes, not from the studio splash):
+- "Add AI opponent" was renamed "Add computer rival" (no AI wording in player text).
+  Unit tests were updated, e2e was not (ai-tactics, entry-menus).
+- Locations became real buttons; player tokens now sit beside the button in
+  `.location-zone-wrap` instead of inside it (ai-tactics, movement-rendering).
+  New helper `locationArea()` in e2e/menuPages.ts.
+- Portrait phones show "Rotate your phone" instead of the board. Board tests that start
+  on a portrait phone now check the notice and turn the phone sideways
+  (`rotatePhoneToLandscape()`), or check the notice in viewport loops.
+- "Ask for a raise" is gone from workplaces (Guild Hall service only). material-weather
+  now checks that the forge shows no raise control.
+- Real bug: on landscape phones the location menu lives in the board's small center
+  frame (about 209 px tall at 844x390). Services without paging (bank, This Week,
+  Your contact) were clipped by `overflow: clip` with no scroll and no page controls,
+  so "Join activity" and similar actions could not be reached. Fix in playability.css:
+  `.mobile-action-region .location-content` scrolls vertically. The tests scroll the
+  control into view (`openMenuPage`) before checking it.
+
+Status: changes committed to `ccr-b7000311-bo6tvl`, local verification still running.
+
+## 2026-10-02 06:27 (Europe/Oslo) - Browser tests green again, phone layout fixes
+
+Continuation of the entry above. More real problems turned up on landscape phones
+(844x390), all from the 2026-09-20 move of the phone menu into the board's center frame:
+- The guided first turn was rendered under the menu (the menu's own `z-10` layer beat the
+  guide slot's `z-index: 3`), so new players never saw it and could not tap Start guide.
+  The guide now takes its own space at the top of `.mobile-center-region` (column flex)
+  and the menu fills the rest. Overlaying was not an option: the guide points at menu
+  controls and End Turn. One line of guide text on screens under 500px high.
+- The week overview squeezed the victory goals to 0px height. It now scrolls.
+- The character record gave its inventory a 16px scroll window. The whole record now
+  scrolls as one page with the heading pinned.
+- e2e: phones now give the whole landscape screen to the board (Lovable's own guided test
+  asserts this), so playability checks that instead of the art's 1.49 aspect ratio.
+  Fullscreen is left through the browser API before rotating (the F shortcut is ignored
+  while the guide is up). material-weather checks the rotate notice in portrait.
+- Changelog v0.11.9 "Room to play sideways". CLAUDE.md: phone center frame and e2e rules.
+
+Verification (local, container Chromium 1194, CI uses 1228): full Playwright suite 56/61.
+The 5 others: 3 online-multiplayer tests that also fail locally on untouched main (peer
+connections are blocked in this container; they pass in CI), and movement-rendering plus
+player-experience 844x390, which failed under load with two workers and passed twice each
+when run alone. Vitest 829/829, check:types, production build, ESLint 0 errors (18
+inherited warnings).

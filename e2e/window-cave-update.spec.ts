@@ -1,5 +1,5 @@
 import { expect, test } from './test';
-import { openMenuPage, visitLocation } from './menuPages';
+import { expectRotateNotice, isPortraitPhone, openMenuPage, visitLocation } from './menuPages';
 import { enableDeveloperMode } from './developerMode';
 
 test('wrapped market tabs and paged goods keep every service reachable', async ({page},testInfo)=>{
@@ -19,6 +19,7 @@ test('wrapped market tabs and paged goods keep every service reachable', async (
   const shell=page.locator('.location-shell[data-location="shadow-market"]');
   for(const [width,height] of [[1280,720],[844,390],[390,844]]) {
     await page.setViewportSize({width,height});
+    if (isPortraitPhone({width,height})) { await expectRotateNotice(page); continue; }
     const picker=shell.locator('.location-service-picker');
     if (await picker.isVisible()) await picker.click();
     const tabs=shell.locator('.location-tabs');
@@ -76,6 +77,7 @@ test('cave load, encounter, result, retreat and settlement remain clear inside t
   if(await page.evaluate(()=>!!document.fullscreenElement)) await page.keyboard.press('f');
   for(const [width,height] of [[844,390],[390,844],[1280,720]]) {
     await page.setViewportSize({width,height});
+    if (isPortraitPhone({width,height})) { await expectRotateNotice(page); continue; }
     await expect(action).toBeInViewport();
     await expect(page.getByTitle('Click to dismiss',{exact:true})).not.toBeVisible();
     await expect(intro.getByText('Giant Rats',{exact:true}).filter({visible:true}).first()).toBeInViewport();
@@ -89,6 +91,7 @@ test('cave load, encounter, result, retreat and settlement remain clear inside t
   const retreat=page.getByRole('button',{name:/Retreat · keep/});
   for (const [width,height] of [[844,390],[390,844],[1280,720]]) {
     await page.setViewportSize({width,height});
+    if (isPortraitPhone({width,height})) { await expectRotateNotice(page); continue; }
     await expect(retreat).toBeInViewport();
     await expect(page.getByRole('button',{name:/Continue Deeper/})).toBeInViewport();
     if(width === 844) await expect(outcome.locator('.cave-compact-outcome')).toBeInViewport();

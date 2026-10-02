@@ -1,6 +1,6 @@
 import { writeFileSync } from 'node:fs';
 import { expect, test } from './test';
-import { visitLocation } from './menuPages';
+import { locationArea, visitLocation } from './menuPages';
 
 test('movement arrives on the canonical route with bounded rendering work', async ({ page }, info) => {
   test.setTimeout(90_000);
@@ -29,7 +29,7 @@ test('movement arrives on the canonical route with bounded rendering work', asyn
       expect(style.left).toBe(''); expect(style.top).toBe('');
     }
     await expect(moving).toHaveCount(0, { timeout: 15_000 });
-    await expect(page.locator(`[data-zone-id="${destination}"]`).getByRole('button', { name: "View Movement Test's character", exact: true })).toBeVisible();
+    await expect(locationArea(page, destination).getByRole('button', { name: "View Movement Test's character", exact: true })).toBeVisible();
     await expect(page.locator(`.location-shell[data-location="${destination}"]`)).toBeVisible();
     const after = await metrics();
     samples.push({ destination, layoutCount: after.LayoutCount - before.LayoutCount, recalcStyleCount: after.RecalcStyleCount - before.RecalcStyleCount,

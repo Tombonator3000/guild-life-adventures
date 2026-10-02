@@ -1,4 +1,5 @@
 import { expect, test } from './test';
+import { locationArea } from './menuPages';
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 1194, height: 834 }]) {
   for (const skip of [false, true]) {
@@ -14,8 +15,8 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1194, height: 834
       await page.getByRole('button', { name: 'New Adventure', exact: true }).click();
       await page.getByPlaceholder('Enter name...').fill('Tactics Test');
       await page.getByRole('checkbox', { name: /Show Tutorial/ }).uncheck();
-      await page.getByRole('button', { name: 'Add AI opponent' }).click();
-      await page.getByRole('button', { name: 'Add AI opponent' }).click();
+      await page.getByRole('button', { name: 'Add computer rival' }).click();
+      await page.getByRole('button', { name: 'Add computer rival' }).click();
       for (const radio of await page.getByRole('radio', { name: 'Master', exact: true }).all()) await radio.check();
       await page.getByRole('button', { name: 'Choose Game Goals', exact: true }).click();
       await page.getByRole('button', { name: 'Begin Adventure', exact: true }).click();
@@ -29,7 +30,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1194, height: 834
       await expect(page.getByText(/Week\s+2/).first()).toBeVisible();
       await expect(page.locator('.animated-player-token')).toHaveCount(0);
       for (const name of ['Grimwald', 'Seraphina']) {
-        await expect(page.locator('[data-zone-id="slums"]').getByRole('button', {
+        await expect(locationArea(page, 'slums').getByRole('button', {
           name: `View ${name}'s character`, exact: true,
         })).toBeVisible();
       }
