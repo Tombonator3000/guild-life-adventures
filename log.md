@@ -14507,3 +14507,28 @@ Causes found (all from intended Lovable changes, not from the studio splash):
   control into view (`openMenuPage`) before checking it.
 
 Status: changes committed to `ccr-b7000311-bo6tvl`, local verification still running.
+
+## 2026-10-02 06:27 (Europe/Oslo) - Browser tests green again, phone layout fixes
+
+Continuation of the entry above. More real problems turned up on landscape phones
+(844x390), all from the 2026-09-20 move of the phone menu into the board's center frame:
+- The guided first turn was rendered under the menu (the menu's own `z-10` layer beat the
+  guide slot's `z-index: 3`), so new players never saw it and could not tap Start guide.
+  The guide now takes its own space at the top of `.mobile-center-region` (column flex)
+  and the menu fills the rest. Overlaying was not an option: the guide points at menu
+  controls and End Turn. One line of guide text on screens under 500px high.
+- The week overview squeezed the victory goals to 0px height. It now scrolls.
+- The character record gave its inventory a 16px scroll window. The whole record now
+  scrolls as one page with the heading pinned.
+- e2e: phones now give the whole landscape screen to the board (Lovable's own guided test
+  asserts this), so playability checks that instead of the art's 1.49 aspect ratio.
+  Fullscreen is left through the browser API before rotating (the F shortcut is ignored
+  while the guide is up). material-weather checks the rotate notice in portrait.
+- Changelog v0.11.9 "Room to play sideways". CLAUDE.md: phone center frame and e2e rules.
+
+Verification (local, container Chromium 1194, CI uses 1228): full Playwright suite 56/61.
+The 5 others: 3 online-multiplayer tests that also fail locally on untouched main (peer
+connections are blocked in this container; they pass in CI), and movement-rendering plus
+player-experience 844x390, which failed under load with two workers and passed twice each
+when run alone. Vitest 829/829, check:types, production build, ESLint 0 errors (18
+inherited warnings).

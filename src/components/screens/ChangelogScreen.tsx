@@ -25,6 +25,14 @@ const visual = (text: string): ChangelogEntry => ({ icon: <Palette className={`$
 
 const CHANGELOG: Version[] = [
   {
+    version: 'v0.11.9', date: 'October 2, 2026', title: 'Room to play sideways',
+    highlights: [
+      fix('On phones held sideways the guided first turn appears above the menu again, and the buttons it points to stay reachable.'),
+      fix('Bank, This Week and Your contact scroll inside the small phone menu instead of hiding their lower actions.'),
+      fix('Your victory goals and the character record scroll on phones instead of being squeezed out of sight.'),
+    ],
+  },
+  {
     version: 'v0.11.8', date: 'October 2, 2026', title: 'A grand studio entrance',
     highlights: [
       visual('Tom’s Happy Happy Funtimes Emporium opens the game with a drum roll, fanfare, sunburst and confetti. Press any key or tap to skip it.'),
