@@ -20,6 +20,7 @@ Tracker: #390
 | P1 | Interactive first-turn onboarding | #393 |
 | P1 | Online, mobile and endgame browser coverage | #394 |
 | P2 | Seeded multi-game balance simulator | #395 |
+| P2 | Studio splash: check sound unlock and layout on a real iPad and phone | Open (splash added 2026-10-02) |
 
 ## Working rules
 

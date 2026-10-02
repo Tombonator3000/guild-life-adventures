@@ -1,0 +1,141 @@
+/* Studio splash (Tom's Happy Happy Funtimes Emporium). Same look as Loincloth Legends (src/style.css there). */
+.studio-splash {
+  --sp-gold: #f1c24a;
+  --sp-font-num: 'Press Start 2P', 'Courier New', ui-monospace, monospace;
+  --sp-font-body: 'VT323', 'Courier New', ui-monospace, monospace;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: radial-gradient(ellipse at 50% 45%, #1d2d5c 0%, #0b1026 55%, #04050b 100%);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+.studio-splash .sp-gate { position: relative; z-index: 2; text-align: center; display: flex; flex-direction: column; gap: 16px; align-items: center; padding: 20px; transition: opacity 0.25s; }
+.studio-splash .sp-press { font-family: var(--sp-font-num); font-size: clamp(14px, 2.2vw, 22px); color: var(--sp-gold); letter-spacing: 0.14em; text-shadow: 3px 3px 0 #000; animation: spBlink 1.1s steps(2) infinite; }
+.studio-splash .sp-small { font-family: var(--sp-font-body); font-size: clamp(16px, 1.8vw, 22px); color: rgba(244, 227, 193, 0.6); }
+.studio-splash.go .sp-gate { opacity: 0; pointer-events: none; }
+.studio-splash .sp-stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; }
+.studio-splash.go .sp-stage { opacity: 1; }
+
+.studio-splash .sp-burst {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 160vmax;
+  height: 160vmax;
+  margin: -80vmax 0 0 -80vmax;
+  border-radius: 50%;
+  opacity: 0;
+  transform: scale(0.15);
+  transition: transform 1.1s cubic-bezier(0.2, 1.25, 0.3, 1), opacity 0.35s;
+  -webkit-mask-image: radial-gradient(circle, #000 0%, rgba(0, 0, 0, 0.9) 16%, transparent 44%);
+  mask-image: radial-gradient(circle, #000 0%, rgba(0, 0, 0, 0.9) 16%, transparent 44%);
+}
+.studio-splash .sp-burst::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: repeating-conic-gradient(#c8102e 0deg 7.5deg, #f4e3c1 7.5deg 15deg);
+  animation: spSpin 40s linear infinite;
+}
+.studio-splash.landed .sp-burst { opacity: 0.5; transform: scale(1); }
+.studio-splash .sp-glow {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 90vmin;
+  height: 90vmin;
+  margin: -45vmin 0 0 -45vmin;
+  background: radial-gradient(circle, rgba(255, 236, 170, 0.6), transparent 62%);
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+.studio-splash.landed .sp-glow { opacity: 1; }
+.studio-splash .sp-logo {
+  position: relative;
+  width: min(72vw, 92vh);
+  max-width: 960px;
+  height: auto;
+  margin-top: -6vh;
+  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.65));
+  transform: translateY(-150vh) scale(0.7) rotate(-9deg);
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+.studio-splash.go .sp-logo { animation: spDrop 0.72s cubic-bezier(0.5, 0, 0.9, 0.55) forwards; }
+.studio-splash.landed .sp-logo { animation: spLand 1s cubic-bezier(0.2, 1.4, 0.4, 1) forwards, spFloat 3.2s ease-in-out 1s infinite; }
+.studio-splash .sp-presents {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 7vh;
+  text-align: center;
+  font-family: var(--sp-font-num);
+  font-size: clamp(14px, 2.4vw, 26px);
+  letter-spacing: 0.6em;
+  padding-left: 0.6em;
+  color: #f4e3c1;
+  text-shadow: 3px 3px 0 #c8102e, 6px 6px 0 #000;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s, transform 0.6s;
+}
+.studio-splash.pres .sp-presents { opacity: 1; transform: translateY(0); }
+.studio-splash .sp-sparkles i {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  background: #fff6c8;
+  clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+  filter: drop-shadow(0 0 6px #ffe08a);
+  opacity: 0;
+  animation: spTwinkle 1.7s ease-in-out infinite;
+}
+.studio-splash .sp-confetti i {
+  position: absolute;
+  width: 10px;
+  height: 16px;
+  border-radius: 2px;
+  opacity: 0;
+  animation-name: spConf;
+  animation-timing-function: cubic-bezier(0.15, 0.6, 0.4, 1);
+  animation-fill-mode: forwards;
+}
+.studio-splash .sp-flash { position: absolute; inset: 0; background: #fffbe8; opacity: 0; pointer-events: none; }
+.studio-splash.landed .sp-flash { animation: spFlash 0.55s ease-out; }
+@keyframes spBlink { 50% { opacity: 0.15; } }
+@keyframes spSpin { to { transform: rotate(360deg); } }
+@keyframes spDrop { from { transform: translateY(-150vh) scale(0.7) rotate(-9deg); } to { transform: translateY(0) scale(1) rotate(0deg); } }
+@keyframes spLand {
+  0% { transform: translateY(0) scale(1.2, 0.76); }
+  28% { transform: translateY(-5vh) scale(0.93, 1.08); }
+  55% { transform: translateY(0) scale(1.05, 0.96); }
+  78% { transform: translateY(-1vh) scale(0.99, 1.01); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes spFloat { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-1.2vh) rotate(0.7deg); } }
+@keyframes spTwinkle { 0%, 100% { opacity: 0; transform: scale(0.2) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(45deg); } }
+@keyframes spConf {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0deg); }
+  85% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); }
+}
+@keyframes spFlash { 0% { opacity: 0.85; } 100% { opacity: 0; } }
+/* Reduced motion: the logo fades in where it stands, no blinking, flying confetti or flash */
+@media (prefers-reduced-motion: reduce) {
+  .studio-splash .sp-press, .studio-splash .sp-burst::before, .studio-splash .sp-sparkles i { animation: none; }
+  .studio-splash.go .sp-logo, .studio-splash.landed .sp-logo { animation: none; transform: none; }
+  .studio-splash .sp-stage { transition: opacity 0.4s; }
+  .studio-splash .sp-burst { transform: scale(1); transition: opacity 0.35s; }
+  .studio-splash .sp-confetti, .studio-splash .sp-flash { display: none; }
+}

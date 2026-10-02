@@ -389,6 +389,13 @@ Noble Heights → Graveyard → General Store → Bank → Forge → Guild Hall 
 - Auto-resume AudioContext on user interaction
 - All 3 managers route through GainNodes
 
+### Studio Splash (2026-10-02)
+- `src/components/screens/StudioSplash.tsx` + `studio-splash.css`: Tom's Happy Happy Funtimes Emporium intro, the same as in Loincloth Legends (logo, sunburst, confetti, PRESENTS). Logo: `src/assets/studio-logo.webp`, copied unchanged from Loincloth Legends. The logo belongs to Tom; do not change it unless asked.
+- Fanfare and sparkles: `src/audio/studioFanfare.ts`, ported from Loincloth `audio.fanfare()`/`sparkle()`. Shared AudioContext, follows SFX volume and mute.
+- `Index.tsx` shows it once per page load, only when the first phase is `title`. `AudioController` stays unmounted while it plays, so title music starts after the fanfare.
+- Skipped when `navigator.webdriver` is set (Playwright) and with `?nosplash`. `?splash` forces it. Policy: `studioSplashPolicy.ts`.
+- If the splash changes in one game, mirror it in the other.
+
 ### Audio Files
 - `public/music/` — 11 MP3 tracks (Main Theme, Guild Hall, Slums, Cave, Noble Heights, Weekend, Winner, etc.)
 - `public/ambient/` — 16 ambient loops
@@ -599,6 +606,7 @@ bun run test:watch     # Watch mode
 | 2026-02-12 | Full game audit (106 findings), 20 audit fixes, dungeon woodcuts, clothing 3-tier system, appliance bonuses, forced loans, crash tiers, relaxation, newspaper, equipment durability |
 | 2026-02-13 | 2 code refactoring rounds, clothing quality, equipment durability, Jones compatibility audit (91%), food spoilage system, 185 tests |
 | 2026-02-14 | PWA infinite loading fix, item image overhaul (50 medieval woodcuts), project documentation overhaul (log2.md + MEMORY.md) |
+| 2026-10-02 | Studio splash (Tom's Happy Happy Funtimes Emporium) ported from Loincloth Legends |
 
 ---
 

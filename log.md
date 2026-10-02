@@ -14427,3 +14427,46 @@ Original board, NPCs, game rules and saves are preserved. Physical iPad Safari
 performance remains unverified. Detailed findings and artifact links are in
 docs/qa/cohesive-ui/README.md. This checkpoint is documentation only; release
 verification is recorded on PR #421.
+
+## 2026-10-02 05:16 (Europe/Oslo) - Studio splash from Loincloth Legends
+
+Tom asked for the same startup logo as Loincloth Legends: the Tom's Happy Happy
+Funtimes Emporium splash. Ported it from Loincloth Legends (`src/ui/splash.ts`,
+the splash part of `src/style.css` and `audio.fanfare()`/`audio.sparkle()`).
+
+What it does: a "PRESS ANY KEY" / "TAP TO BEGIN" gate (browsers keep sound
+locked until the first interaction), then the logo drops in with a drum roll,
+cymbal, brass chord and calliope ta-da, a red and cream sunburst, glow, sparkles,
+confetti and PRESENTS. It fades into the title screen after about 5 seconds.
+The second key press or tap skips it.
+
+Files:
+- `src/assets/studio-logo.webp`: copied unchanged from Loincloth Legends.
+- `src/components/screens/StudioSplash.tsx` + `studio-splash.css`: the splash as a
+  React component. Keys are caught in the capture phase so they never reach the
+  title menu behind it. Ctrl/Cmd/Alt shortcuts and F-keys are left alone.
+- `src/components/screens/studioSplashPolicy.ts`: skipped when `navigator.webdriver`
+  is set (Playwright e2e) and with `?nosplash`. `?splash` forces it.
+- `src/audio/studioFanfare.ts`: the fanfare synthesized on the shared AudioContext,
+  through the SFX volume and mute settings. Uses its own random stream, not Math.random.
+- `src/pages/Index.tsx`: shows the splash once per page load when the first phase
+  is `title` (so a page refresh rejoin is not held up). `AudioController` stays
+  unmounted until the splash ends, so the title music starts after the fanfare.
+  A small error boundary skips the splash if it ever fails.
+- `index.html`: Press Start 2P and VT323 added to the Google Fonts link, same fonts
+  as in Loincloth. Only used by the splash; Courier New is the fallback.
+- Changelog v0.11.8 "A grand studio entrance".
+
+Difference from Loincloth: with reduced motion the logo simply fades in, without
+blinking text, flying confetti or the white flash. In Loincloth the logo ends up
+off screen with reduced motion (`.splash.landed .sp-logo { animation: none }`
+falls back to the start transform `translateY(-150vh)`). Verified in Chromium:
+logo at y = -909 px with reduced motion. Not fixed in Loincloth, reported to Tom.
+No gamepad polling and no fullscreen request on touch, since Guild Life uses neither.
+
+Checks: 5 new unit tests (`StudioSplash.test.tsx`), full suite 829/829 green
+(116 files), `check:types` clean, production build OK, ESLint 0 errors (the same
+18 inherited warnings). Screenshots in Chromium at 1440x900, 844x390 (phone, touch) and
+1280x800 with reduced motion: gate, drop, landed logo and handover to the title
+screen work, and the splash stays away when `navigator.webdriver` is set.
+Not checked on a real iPad or phone (added to todo.md).

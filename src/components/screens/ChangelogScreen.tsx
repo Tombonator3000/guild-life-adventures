@@ -25,6 +25,13 @@ const visual = (text: string): ChangelogEntry => ({ icon: <Palette className={`$
 
 const CHANGELOG: Version[] = [
   {
+    version: 'v0.11.8', date: 'October 2, 2026', title: 'A grand studio entrance',
+    highlights: [
+      visual('Tom’s Happy Happy Funtimes Emporium opens the game with a drum roll, fanfare, sunburst and confetti. Press any key or tap to skip it.'),
+      improve('The title music waits for the fanfare, and the intro follows your sound effect volume and reduced-motion settings.'),
+    ],
+  },
+  {
     version: 'v0.11.7', date: 'September 13, 2026', title: 'One guild, one design',
     highlights: [
       visual('Options, saves, the manual, news, scores and credits share parchment pages, brass details and clear gold actions.'),
