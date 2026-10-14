@@ -113,6 +113,8 @@ describe('PeerManager signaling reconnection', () => {
     manager.onStatusChange(status => statuses.push(status));
 
     const createPromise = manager.createRoom();
+    // PeerJS loads on demand, so the peer exists after the import resolves.
+    await vi.waitFor(() => expect(peerMockState.peers[0]).toBeDefined());
     const peer = peerMockState.peers[0];
     peer.emit('open', peer.id);
     await createPromise;
@@ -137,6 +139,8 @@ describe('PeerManager signaling reconnection', () => {
     manager.onStatusChange(status => statuses.push(status));
 
     const joinPromise = manager.joinRoom('ROOM');
+    // PeerJS loads on demand, so the peer exists after the import resolves.
+    await vi.waitFor(() => expect(peerMockState.peers[0]).toBeDefined());
     const peer = peerMockState.peers[0];
     peer.emit('open', peer.id);
     const hostConnection = peer.createdConnections[0];

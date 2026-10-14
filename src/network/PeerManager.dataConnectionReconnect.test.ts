@@ -105,6 +105,8 @@ async function createConnectedGuest() {
   const manager = new PeerManager();
   manager.setReconnectPlayerName('Reconnecting Player');
   const joinPromise = manager.joinRoom('ROOM');
+  // PeerJS loads on demand, so the peer exists after the import resolves.
+  await vi.waitFor(() => expect(peerMockState.peers[0]).toBeDefined());
   const peer = peerMockState.peers[0];
   peer.emit('open', peer.id);
   const initialConnection = peer.createdConnections[0];

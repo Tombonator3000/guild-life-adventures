@@ -14532,3 +14532,60 @@ connections are blocked in this container; they pass in CI), and movement-render
 player-experience 844x390, which failed under load with two workers and passed twice each
 when run alone. Vitest 829/829, check:types, production build, ESLint 0 errors (18
 inherited warnings).
+
+## 2026-10-02 07:26 (Europe/Oslo) - PR #433 merged, GitHub Pages deployed again
+
+PR #433 passed validation on its head (b732e1d, including all Playwright journeys in CI)
+and was merged as 1fa0671 on Tom's instruction. Deploy to GitHub Pages run 538 is green
+for the first time since 2026-09-19: validate, build, publish and the published-site
+check all passed (published 07:12 Oslo time). Checked the live site: the new index.html
+with the splash fonts is served and `assets/studio-logo-C5lYOQC1.webp` returns 200
+(174952 bytes, same file as in the repo). guild-life.com (Lovable) still needs Publish
+or Update in Lovable; Tom does that himself.
+
+## 2026-10-14 22:21 (Europe/Oslo) - Faster startup: smaller entry bundle and idle prefetch
+
+Tom asked to refactor and optimize, and chose load time in Guild Life. Measured with a
+local per-chunk build report (not committed) and Playwright: fresh browser per run, CPU
+throttled 4x, Google Fonts blocked, gzip like GitHub Pages, emulated 10 Mbit/s with
+150 ms latency. Median of 7 runs (start: 5).
+
+Findings:
+- `App.tsx` imported the `Board3D` lab page statically, which put all of three.js
+  (705 kB) into the startup bundle. The title compass and weather already load it lazily.
+- PeerJS with webrtc-adapter, sdp and binarypack (about 200 kB unminified) was loaded at
+  startup through `useSecurePageRejoin` and `PeerManager`, but is only used online.
+- German and Spanish strings (about 99 kB of source) loaded for everyone.
+- The Radix toast system (`Toaster`, `toast.tsx`, `use-toast.ts`) was mounted but never
+  used; all 33 callers use Sonner.
+
+Changes:
+- `Board3D` is a lazy route. `lazyWithRetry` moved to `src/lib/lazyWithRetry.ts` and
+  `ScreenLoader` to `src/components/screens/ScreenLoader.tsx` so both can share them.
+- `src/network/peerJsLoader.ts`: PeerJS loads on the first online action. `PeerManager`
+  sets "connecting" first, then awaits the module; a failed load ends with a readable
+  error. `peerDiscovery` uses the same loader. Two PeerManager tests wait for the peer.
+- `src/i18n/index.ts`: English bundled, de/es through loaders; a revision counter makes
+  `useTranslation` re-render when strings arrive; `main.tsx` awaits `whenLanguageReady()`
+  so a saved German or Spanish choice shows on the first frame.
+- `src/hooks/useIdlePrefetch.ts`: idle prefetch of GameSetup from the title (plus the
+  board when an autosave exists) and of the board from setup. Skipped during the studio
+  splash and when the browser asks to save data.
+- Removed the unused Radix toast files and the `@radix-ui/react-toast` dependency.
+- Changelog v0.11.10 "A quicker road to Guildholm". CLAUDE.md rule for the startup bundle.
+
+Results:
+- JS needed before the title: 1792 kB to 817 kB (gzip about 541 kB to 268 kB).
+  `App` chunk 1688 kB to 650 kB.
+- Title ready on the emulated mobile link: 1924 ms to 1142 ms (41% faster).
+- Board visible after Begin Adventure: 913 ms to 416 ms (54% faster).
+- Browser checks: saved German renders German on the first frame (only `de` loaded),
+  switching to Spanish in Options loads `es` and updates live, PeerJS is not loaded on
+  the title, the 3D board lab still renders.
+- Vitest 829/829, check:types, build, ESLint 0 errors (18 inherited warnings).
+- Full Playwright suite with two workers: 57/61. movement-rendering and the three
+  online-multiplayer tests failed under load; run alone with one worker all five
+  (including online-room-closure) pass, and the PeerManager logs show rooms created,
+  guests connected and reconnected through the lazily loaded PeerJS.
+- Correction to the 2026-10-02 entries: the local online-multiplayer failures then were
+  also load-related, not blocked peer connections. They pass in this container alone.

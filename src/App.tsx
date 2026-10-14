@@ -1,14 +1,18 @@
-import { Component, useEffect, type ReactNode } from "react";
-import { Toaster } from "@/components/ui/toaster";
+import { Component, Suspense, useEffect, type ReactNode } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import Board3D from "./pages/Board3D";
 import NotFound from "./pages/NotFound";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import { ScreenLoader } from "@/components/screens/ScreenLoader";
 import "./components/ui/guild-ui.css";
 
 import { installInteractionSounds } from "./audio/interactionSounds";
+
+// The 3D board lab is the only static user of three.js; loading it on demand keeps three.js
+// out of the startup bundle (the title compass and weather already load it lazily).
+const Board3D = lazyWithRetry(() => import("./pages/Board3D"));
 
 function InteractionSounds() {
   useEffect(() => installInteractionSounds(), []);
@@ -85,12 +89,11 @@ const App = () => (
   <ErrorBoundary>
     <TooltipProvider>
       <InteractionSounds />
-      <Toaster />
       <Sonner />
       <BrowserRouter basename={import.meta.env.BASE_URL}>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/board-3d" element={<Board3D />} />
+          <Route path="/board-3d" element={<Suspense fallback={<ScreenLoader />}><Board3D /></Suspense>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
