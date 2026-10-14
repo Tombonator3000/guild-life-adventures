@@ -14583,4 +14583,9 @@ Results:
   switching to Spanish in Options loads `es` and updates live, PeerJS is not loaded on
   the title, the 3D board lab still renders.
 - Vitest 829/829, check:types, build, ESLint 0 errors (18 inherited warnings).
-- Full Playwright suite: running.
+- Full Playwright suite with two workers: 57/61. movement-rendering and the three
+  online-multiplayer tests failed under load; run alone with one worker all five
+  (including online-room-closure) pass, and the PeerManager logs show rooms created,
+  guests connected and reconnected through the lazily loaded PeerJS.
+- Correction to the 2026-10-02 entries: the local online-multiplayer failures then were
+  also load-related, not blocked peer connections. They pass in this container alone.
