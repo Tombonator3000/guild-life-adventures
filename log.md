@@ -14589,3 +14589,12 @@ Results:
   guests connected and reconnected through the lazily loaded PeerJS.
 - Correction to the 2026-10-02 entries: the local online-multiplayer failures then were
   also load-related, not blocked peer connections. They pass in this container alone.
+
+## 2026-10-14 23:43 (Europe/Oslo) - PR #434 merged and deployed
+
+PR #434 passed validation on b9e972c (including all Playwright journeys in CI) and was
+merged as 52deb0f on Tom's instruction. Deploy to GitHub Pages run 539 is green. Live
+check: the published entry loads `App-DA0U1C8a.js`, 650635 bytes (205860 gzip), with no
+three.js in it; version.json shows the 21:34 UTC build. Solution card written in the
+project library on its branch: `losninger/bygg/vite-oppstartspakke-lat-innlasting.md`.
+guild-life.com (Lovable) still needs Publish or Update in Lovable.
