@@ -2,8 +2,9 @@
 // Uses WebRTC P2P via PeerJS cloud signaling
 // Features: heartbeat/keepalive, reconnection window, TURN fallback, latency tracking
 
-import Peer from 'peerjs';
+import type Peer from 'peerjs';
 import type { DataConnection } from 'peerjs';
+import { loadPeerJs } from './peerJsLoader';
 import type { HostMessage, GuestMessage, NetworkMessage, ConnectionStatus } from './types';
 import { generateRoomCode, roomCodeToPeerId } from './roomCodes';
 
@@ -204,6 +205,17 @@ export class PeerManager {
 
   // --- PeerJS Config ---
 
+  /** Load PeerJS on demand; a failed load ends the attempt with a readable error. */
+  private async loadPeer() {
+    try {
+      return await loadPeerJs();
+    } catch (error) {
+      console.error('[PeerManager] Could not load PeerJS:', error);
+      this.setStatus('error');
+      throw new Error('Could not load the multiplayer module. Check your internet connection and try again.');
+    }
+  }
+
   private getPeerConfig() {
     return {
       debug: import.meta.env.DEV ? 2 : 0,
@@ -218,9 +230,10 @@ export class PeerManager {
     this._isHost = true;
     this._roomCode = generateRoomCode();
     const peerId = roomCodeToPeerId(this._roomCode);
+    this.setStatus('connecting');
+    const Peer = await this.loadPeer();
 
     return new Promise((resolve, reject) => {
-      this.setStatus('connecting');
       let settled = false;
 
       this.peer = new Peer(peerId, this.getPeerConfig());
@@ -285,9 +298,10 @@ export class PeerManager {
     this._isHost = false;
     this._roomCode = roomCode.toUpperCase();
     const hostPeerId = roomCodeToPeerId(this._roomCode);
+    this.setStatus('connecting');
+    const Peer = await this.loadPeer();
 
     return new Promise((resolve, reject) => {
-      this.setStatus('connecting');
       let settled = false;
 
       this.peer = new Peer(this.getPeerConfig());

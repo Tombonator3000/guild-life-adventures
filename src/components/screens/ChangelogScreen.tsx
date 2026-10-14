@@ -25,6 +25,14 @@ const visual = (text: string): ChangelogEntry => ({ icon: <Palette className={`$
 
 const CHANGELOG: Version[] = [
   {
+    version: 'v0.11.10', date: 'October 14, 2026', title: 'A quicker road to Guildholm',
+    highlights: [
+      improve('The title screen loads less than half as much code before it appears, and opens about 40% sooner on a typical mobile connection.'),
+      improve('While you set up your adventure, the town loads in the background, so the board appears about twice as fast after Begin Adventure.'),
+      improve('German and Spanish texts, online play and the 3D board lab load only when you use them.'),
+    ],
+  },
+  {
     version: 'v0.11.9', date: 'October 2, 2026', title: 'Room to play sideways',
     highlights: [
       fix('On phones held sideways the guided first turn appears above the menu again, and the buttons it points to stay reachable.'),

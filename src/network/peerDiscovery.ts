@@ -8,7 +8,8 @@
 // The free PeerJS cloud server (0.peerjs.com) does NOT expose /peers.
 // Set VITE_PEERJS_HOST to use a self-hosted server where it works.
 
-import Peer from 'peerjs';
+import type Peer from 'peerjs';
+import { loadPeerJs } from './peerJsLoader';
 import { peerIdToRoomCode, roomCodeToPeerId, isValidRoomCode } from './roomCodes';
 import { searchLocalRooms } from './localDiscovery';
 
@@ -92,7 +93,13 @@ async function fetchGuildPeerRoomCodes(): Promise<string[]> {
 }
 
 /** Connect briefly to a room's host and request game metadata */
-function probeRoom(roomCode: string): Promise<PeerDiscoveredGame | null> {
+async function probeRoom(roomCode: string): Promise<PeerDiscoveredGame | null> {
+  let Peer: typeof import('peerjs').default;
+  try {
+    Peer = await loadPeerJs();
+  } catch {
+    return null;
+  }
   return new Promise(resolve => {
     let tempPeer: Peer | null = new Peer({
       debug: 0,

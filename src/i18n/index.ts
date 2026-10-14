@@ -13,14 +13,19 @@
 
 import { useSyncExternalStore, useCallback } from 'react';
 import { en } from './en';
-import { de } from './de';
-import { es } from './es';
 import type { Language, TranslationStrings } from './types';
 
 export type { Language, TranslationStrings };
 
 // === Language map ===
-const translations: Record<Language, TranslationStrings> = { en, de, es };
+// English is the fallback and always loaded. Other languages load on demand so
+// English players do not download them at startup.
+const translations: Partial<Record<Language, TranslationStrings>> = { en };
+const loaders: Record<Exclude<Language, 'en'>, () => Promise<TranslationStrings>> = {
+  de: () => import('./de').then(m => m.de),
+  es: () => import('./es').then(m => m.es),
+};
+const loading = new Map<Language, Promise<void>>();
 
 /** Display labels for language picker. */
 export const LANGUAGE_OPTIONS: { value: Language; label: string; flag: string }[] = [
@@ -35,7 +40,7 @@ const LANG_STORAGE_KEY = 'guild-life-language';
 let currentLanguage: Language = (() => {
   try {
     const stored = localStorage.getItem(LANG_STORAGE_KEY);
-    if (stored && stored in translations) return stored as Language;
+    if (stored && LANGUAGE_OPTIONS.some(option => option.value === stored)) return stored as Language;
   } catch { /* ignore */ }
   return 'en';
 })();
@@ -44,7 +49,11 @@ let currentLanguage: Language = (() => {
 type Listener = () => void;
 const listeners = new Set<Listener>();
 
+// Bumped on a language switch and when a language's strings finish loading.
+let revision = 0;
+
 function notify() {
+  revision += 1;
   for (const cb of listeners) cb();
 }
 
@@ -59,12 +68,38 @@ export function getLanguage(): Language {
   return currentLanguage;
 }
 
+/** Load a language's strings once; English is always present. Failed loads fall back to English. */
+function loadLanguage(lang: Language): Promise<void> {
+  if (translations[lang]) return Promise.resolve();
+  let pending = loading.get(lang);
+  if (!pending) {
+    pending = loaders[lang as Exclude<Language, 'en'>]()
+      .then(strings => {
+        translations[lang] = strings;
+        if (lang === currentLanguage) notify();
+      })
+      .catch(error => {
+        loading.delete(lang);
+        console.warn(`[i18n] Could not load "${lang}", using English:`, error);
+      });
+    loading.set(lang, pending);
+  }
+  return pending;
+}
+
+/** Resolves when the selected language is loaded (await before the first render to avoid an English flash). */
+export function whenLanguageReady(): Promise<void> {
+  return loadLanguage(currentLanguage);
+}
+
 export function setLanguage(lang: Language): void {
   if (lang === currentLanguage) return;
   currentLanguage = lang;
   try {
     localStorage.setItem(LANG_STORAGE_KEY, lang);
   } catch { /* ignore */ }
+  // English text shows until the chosen language arrives, then listeners re-render.
+  void loadLanguage(lang);
   notify();
 }
 
@@ -109,20 +144,20 @@ export function t(key: string, params?: Record<string, string | number>): string
 
 // === React hook ===
 
-const getSnapshot = () => currentLanguage;
+const getSnapshot = () => revision;
 
 export function useTranslation() {
-  const language = useSyncExternalStore(subscribeLanguage, getSnapshot);
+  const languageRevision = useSyncExternalStore(subscribeLanguage, getSnapshot);
 
   const translate = useCallback(
     (key: string, params?: Record<string, string | number>) => t(key, params),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [language],
+    [languageRevision],
   );
 
   return {
     t: translate,
-    language,
+    language: currentLanguage,
     setLanguage,
   };
 }

@@ -607,6 +607,7 @@ bun run test:watch     # Watch mode
 | 2026-02-13 | 2 code refactoring rounds, clothing quality, equipment durability, Jones compatibility audit (91%), food spoilage system, 185 tests |
 | 2026-02-14 | PWA infinite loading fix, item image overhaul (50 medieval woodcuts), project documentation overhaul (log2.md + MEMORY.md) |
 | 2026-10-02 | Studio splash (Tom's Happy Happy Funtimes Emporium) ported from Loincloth Legends |
+| 2026-10-14 | Startup bundle cut from 1792 to 817 kB before the title (three.js, PeerJS, de/es lazy), idle prefetch of setup and board, unused Radix toast removed |
 
 ---
 

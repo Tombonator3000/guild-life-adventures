@@ -28,7 +28,9 @@ async function mount() {
   // Mount immediately. The shared update monitor compares the running bundle
   // with the deployed marker and offers a player-controlled, saved refresh.
   try {
-    const { default: App } = await import("./App.tsx");
+    const [{ default: App }, { whenLanguageReady }] = await Promise.all([import("./App.tsx"), import("./i18n")]);
+    // German and Spanish load on demand; wait so the first screen is already in the saved language.
+    await whenLanguageReady();
     const root = document.getElementById("root");
     if (!root) throw new Error('Root element not found');
     createRoot(root).render(<App />);

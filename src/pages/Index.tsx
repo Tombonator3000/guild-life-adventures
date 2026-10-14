@@ -1,86 +1,29 @@
 import { lazy, Suspense, Component, useCallback, useState, type ReactNode } from 'react';
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
+import { ScreenLoader } from '@/components/screens/ScreenLoader';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore, useCurrentPlayer } from '@/store/gameStore';
 import { useGameOptions } from '@/hooks/useGameOptions';
+import { useIdlePrefetch } from '@/hooks/useIdlePrefetch';
+import { hasAutoSave } from '@/data/saveLoad';
 import { useSecurePageRejoin } from '@/network/useSecurePageRejoin';
 import { TitleScreen } from '@/components/screens/TitleScreen';
 import { StudioSplash } from '@/components/screens/StudioSplash';
 import { shouldShowStudioSplash } from '@/components/screens/studioSplashPolicy';
-
-/**
- * Retry wrapper for React.lazy() dynamic imports.
- * When a chunk fails to load (hash mismatch after deploy, network error, stale SW cache),
- * this retries the import once before giving up. On retry failure, it clears all caches
- * and reloads the page, which is the most reliable recovery for stale-cache scenarios.
- *
- * Includes reload loop protection using the same sessionStorage counter as hardRefresh().
- * Without this, persistent chunk failures could cause infinite reloads.
- */
-function lazyWithRetry<T extends { default: React.ComponentType<unknown> }>(
-  factory: () => Promise<T>,
-): React.LazyExoticComponent<T['default']> {
-  return lazy(() =>
-    factory().catch(() => {
-      // First retry — chunk may have failed due to transient network error
-      return factory().catch(async () => {
-        // Second failure — likely stale cache. Clear everything and reload.
-        console.error('[Guild Life] Chunk loading failed twice — clearing cache and reloading');
-
-        // Reload loop protection: if too many reloads recently, don't reload again.
-        // Uses the same sessionStorage counter as hardRefresh() and the index.html fallback.
-        try {
-          const RELOAD_KEY = 'guild-reload-count';
-          const d = JSON.parse(sessionStorage.getItem(RELOAD_KEY) || 'null');
-          const count = (d && Date.now() - d.ts < 120_000) ? (d.count || 0) : 0;
-          if (count >= 3) {
-            console.warn('[Guild Life] Reload loop detected — not reloading from lazyWithRetry');
-            throw new Error('Chunk loading failed after retries (reload limit reached)');
-          }
-          // Bump counter
-          const next = { ts: d?.ts || Date.now(), count: count + 1 };
-          sessionStorage.setItem(RELOAD_KEY, JSON.stringify(next));
-        } catch (e) {
-          if (e instanceof Error && e.message.includes('reload limit')) throw e;
-          // sessionStorage unavailable — proceed with reload anyway
-        }
-
-        try {
-          if ('caches' in window) {
-            const names = await caches.keys();
-            await Promise.all(names.map(name => caches.delete(name)));
-          }
-          if (navigator.serviceWorker) {
-            const regs = await navigator.serviceWorker.getRegistrations();
-            await Promise.all(regs.map(r => r.unregister()));
-          }
-        } catch {
-          // Ignore — reload regardless
-        }
-        // Wait for cleanup to propagate before reloading
-        await new Promise(r => setTimeout(r, 500));
-        // Cache-busting reload: location.reload() may serve stale cached HTML
-        // (GitHub Pages max-age=600). Adding ?_gv= forces fresh network fetch.
-        try {
-          const url = new URL(window.location.href);
-          url.searchParams.set('_gv', String(Date.now()));
-          window.location.replace(url.toString());
-        } catch {
-          window.location.reload();
-        }
-        // Return a never-resolving promise to prevent React error while reloading
-        return new Promise<T>(() => {});
-      });
-    })
-  );
-}
 
 // Lazy-load screens that aren't needed at startup.
 // Only TitleScreen is eagerly loaded (initial phase = 'title').
 // This prevents a module failure in GameBoard's 25+ sub-component tree
 // from blocking the entire app from mounting.
 // Uses lazyWithRetry to recover from chunk loading failures (stale cache after deploy).
-const GameSetup = lazyWithRetry(() => import('@/components/screens/GameSetup').then(m => ({ default: m.GameSetup })));
-const GameBoard = lazyWithRetry(() => import('@/components/game/GameBoard').then(m => ({ default: m.GameBoard })));
+const loadGameSetup = () => import('@/components/screens/GameSetup');
+const loadGameBoard = () => import('@/components/game/GameBoard');
+const GameSetup = lazyWithRetry(() => loadGameSetup().then(m => ({ default: m.GameSetup })));
+const GameBoard = lazyWithRetry(() => loadGameBoard().then(m => ({ default: m.GameBoard })));
+// Screens worth warming while the player is on the current one (see useIdlePrefetch).
+const PREFETCH_FROM_TITLE = [loadGameSetup] as const;
+const PREFETCH_FROM_TITLE_WITH_SAVE = [loadGameSetup, loadGameBoard] as const;
+const PREFETCH_FROM_SETUP = [loadGameBoard] as const;
 const VictoryScreen = lazyWithRetry(() => import('@/components/screens/VictoryScreen').then(m => ({ default: m.VictoryScreen })));
 const OnlineLobby = lazyWithRetry(() => import('@/components/screens/OnlineLobby').then(m => ({ default: m.OnlineLobby })));
 
@@ -119,22 +62,6 @@ class SplashErrorBoundary extends Component<{ children: ReactNode; onError: () =
 /** The studio splash plays once per page load, never again when returning to the title. */
 let studioSplashSeen = false;
 
-/** Minimal loading fallback shown while a lazy screen chunk loads. */
-function ScreenLoader() {
-  return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: '#1f170a',
-      color: '#e8dcc8',
-      fontFamily: 'serif',
-    }}>
-      <p style={{ opacity: 0.7 }}>Loading...</p>
-    </div>
-  );
-}
 
 const Index = () => {
   const { phase, eventMessage, selectedLocation, weekendEvent } = useGameStore(useShallow(state => ({
@@ -152,6 +79,10 @@ const Index = () => {
     studioSplashSeen = true;
     setSplashActive(false);
   }, []);
+  // Warm the next screen in idle time, but not during the splash animation.
+  const resumable = phase === 'title' && !splashActive && hasAutoSave();
+  const prefetchKey = splashActive ? null : phase === 'title' ? (resumable ? 'title-save' : 'title') : phase === 'setup' ? 'setup' : null;
+  useIdlePrefetch(prefetchKey, prefetchKey === 'title-save' ? PREFETCH_FROM_TITLE_WITH_SAVE : prefetchKey === 'title' ? PREFETCH_FROM_TITLE : PREFETCH_FROM_SETUP);
   // While the splash plays, the audio controller stays unmounted so title music waits for the fanfare
   const splash = splashActive ? (
     <SplashErrorBoundary onError={finishSplash}>
